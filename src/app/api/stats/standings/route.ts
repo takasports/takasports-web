@@ -48,6 +48,8 @@ export interface StatsStandingsResponse {
   womenLigaF: StandingRow[]
   womenGoals: StandingRow[]
   womenAssists: StandingRow[]
+  pgaTourLeaderboard: StandingRow[]
+  pgaFedExCup: StandingRow[]
   meta: Record<string, BlockMeta>
   updatedAt: string
 }
@@ -432,6 +434,82 @@ const FIFA_RANKING: StandingRow[] = [
   { rank: 10, name: 'Alemania',       abbr: 'GER', value: '1730', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'up',   extra: { Pts: '1730.37' } },
 ]
 
+// ── PGA Tour via ESPN ─────────────────────────────────────────────────────────
+
+interface PGAResult {
+  leaderboard: StandingRow[]
+  fedExCup: StandingRow[]
+  tournamentName: string
+}
+
+async function fetchPGA(): Promise<PGAResult> {
+  const empty: PGAResult = { leaderboard: [], fedExCup: [], tournamentName: '' }
+  try {
+    const [sbRes, fedRes] = await Promise.all([
+      fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard', { next: { revalidate: 1800 } }),
+      fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/standings', { next: { revalidate: 3600 } }),
+    ])
+
+    let leaderboard: StandingRow[] = []
+    let tournamentName = ''
+    if (sbRes.ok) {
+      const sb = await sbRes.json()
+      const event = (sb.events as Record<string, unknown>[] | undefined)?.[0]
+      if (event) {
+        tournamentName = (event.name as string) ?? ''
+        const comp = (event.competitions as Record<string, unknown>[] | undefined)?.[0]
+        const competitors = (comp?.competitors as Record<string, unknown>[]) ?? []
+        leaderboard = competitors
+          .map(c => {
+            const ath = c.athlete as Record<string, unknown>
+            const score = (c.score as Record<string, unknown>)?.displayValue as string ?? 'E'
+            const status = (c.status as Record<string, unknown>)?.type as Record<string, unknown>
+            const thru = (status?.description as string) ?? ''
+            const pos = String(c.sortOrder ?? 99)
+            return {
+              rank: Number(pos),
+              name: (ath?.displayName as string) ?? '—',
+              abbr: (ath?.flag as Record<string, unknown>)?.alt as string ?? '',
+              value: score,
+              sub: thru ? `Hoyo ${thru}` : 'Completado',
+              trend: 'flat' as const,
+              extra: { Torneo: tournamentName },
+            }
+          })
+          .sort((a, b) => a.rank - b.rank)
+          .slice(0, 10)
+          .map((r, i) => ({ ...r, rank: i + 1 }))
+      }
+    }
+
+    let fedExCup: StandingRow[] = []
+    if (fedRes.ok) {
+      const fed = await fedRes.json()
+      const standings = (fed.standings as Record<string, unknown> | undefined)
+      const entries = (standings?.entries as Record<string, unknown>[]) ?? []
+      fedExCup = entries.slice(0, 10).map((e, i) => {
+        const ath = e.athlete as Record<string, unknown>
+        const stats = (e.stats as Array<{ name: string; displayValue: string }>) ?? []
+        const pts = stats.find(s => s.name === 'fedexCupPoints')?.displayValue ?? '0'
+        return {
+          rank: i + 1,
+          name: (ath?.displayName as string) ?? '—',
+          abbr: (ath?.flag as Record<string, unknown>)?.alt as string ?? '',
+          value: pts,
+          sub: `${pts} pts FedEx`,
+          trend: 'flat' as const,
+          extra: {},
+        }
+      })
+    }
+
+    return { leaderboard, fedExCup, tournamentName }
+  } catch (err) {
+    console.error('[standings] PGA failed:', err)
+    return empty
+  }
+}
+
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
@@ -444,10 +522,11 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   ufc: ['ufcP4P'],
   selecciones: ['fifaRanking'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
+  golf: ['pgaTourLeaderboard', 'pgaFedExCup'],
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
-  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats] = await Promise.all([
+  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga] = await Promise.all([
     Promise.allSettled(FOOTBALL_LEAGUES.map(l => fetchFootball(l.slug, l.id, l.label))),
     fetchF1All(),
     fetchNBA(),
@@ -456,6 +535,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchUFCP4P(),
     fetchWomenLigaF(),
     fetchWomenStats(),
+    fetchPGA(),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
 
@@ -486,10 +566,12 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     atpRanking:      tennis.atp.length ? live('ESPN') : unavail('ESPN'),
     wtaRanking:      tennis.wta.length ? live('ESPN') : unavail('ESPN'),
     fifaRanking:     histor('FIFA', FIFA_RANKING_AS_OF),
-    ufcP4P:          unavail('ESPN (endpoint obsoleto)'),
-    womenLigaF:      womenLigaF.length         ? live('ESPN') : unavail('ESPN'),
-    womenGoals:      womenStats.goals.length   ? live('ESPN') : unavail('ESPN'),
-    womenAssists:    womenStats.assists.length ? live('ESPN') : unavail('ESPN'),
+    ufcP4P:              unavail('ESPN (endpoint obsoleto)'),
+    womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
+    womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
+    womenAssists:        womenStats.assists.length     ? live('ESPN') : unavail('ESPN'),
+    pgaTourLeaderboard:  pga.leaderboard.length        ? live(`ESPN · ${pga.tournamentName || 'PGA Tour'}`) : unavail('ESPN'),
+    pgaFedExCup:         pga.fedExCup.length           ? live('ESPN · FedEx Cup') : unavail('ESPN'),
   }
 
   return {
@@ -512,10 +594,12 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fifaRanking:    FIFA_RANKING,
     ufcP4P,
     womenLigaF,
-    womenGoals:     womenStats.goals,
-    womenAssists:   womenStats.assists,
+    womenGoals:          womenStats.goals,
+    womenAssists:        womenStats.assists,
+    pgaTourLeaderboard:  pga.leaderboard,
+    pgaFedExCup:         pga.fedExCup,
     meta,
-    updatedAt:      now,
+    updatedAt:           now,
   }
 }
 

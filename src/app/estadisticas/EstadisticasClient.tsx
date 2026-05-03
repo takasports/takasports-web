@@ -1202,6 +1202,36 @@ const SPORTS: SportConfig[] = [
       },
     ],
   },
+  {
+    id: 'golf', label: 'Golf', emoji: '⛳', accent: '#84cc16',
+    sections: [
+      {
+        id: 'pga', label: 'PGA Tour', icon: '🏌️',
+        blocks: [
+          {
+            id: 'pga-leaderboard', title: 'Leaderboard torneo activo', metric: 'Score',
+            rows: [
+              { rank: 1, name: 'Scottie Scheffler',  value: '-12', sub: 'Completado', flag: '🇺🇸', trend: 'up' },
+              { rank: 2, name: 'Rory McIlroy',        value: '-10', sub: 'Completado', flag: '🇬🇧', trend: 'up' },
+              { rank: 3, name: 'Collin Morikawa',     value: '-8',  sub: 'Completado', flag: '🇺🇸', trend: 'flat' },
+              { rank: 4, name: 'Xander Schauffele',   value: '-7',  sub: 'Completado', flag: '🇺🇸', trend: 'flat' },
+              { rank: 5, name: 'Jon Rahm',            value: '-6',  sub: 'Completado', flag: '🇪🇸', trend: 'flat' },
+            ],
+          },
+          {
+            id: 'pga-fedex', title: 'FedEx Cup (clasificación)', metric: 'Puntos',
+            rows: [
+              { rank: 1, name: 'Scottie Scheffler',  value: '2850', sub: 'Puntos FedEx', flag: '🇺🇸', trend: 'up' },
+              { rank: 2, name: 'Rory McIlroy',        value: '2340', sub: 'Puntos FedEx', flag: '🇬🇧', trend: 'up' },
+              { rank: 3, name: 'Collin Morikawa',     value: '2110', sub: 'Puntos FedEx', flag: '🇺🇸', trend: 'flat' },
+              { rank: 4, name: 'Xander Schauffele',   value: '1980', sub: 'Puntos FedEx', flag: '🇺🇸', trend: 'flat' },
+              { rank: 5, name: 'Jon Rahm',            value: '1720', sub: 'Puntos FedEx', flag: '🇪🇸', trend: 'flat' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ]
 
 const SECTION_BLOCK_COUNT = new Map(
@@ -1531,6 +1561,7 @@ const LIVE_BLOCK_IDS = new Set([
   'ranking-fifa',
   'nba-scoring', 'nba-rebounds', 'nba-assists', 'nba-blocks', 'nba-steals', 'nba-efficiency', 'nba-3pt',
   'f-ligaf-tabla', 'f-goleadoras', 'f-asistencias',
+  'pga-leaderboard', 'pga-fedex',
 ])
 
 interface LiveStandingRow {
@@ -1554,6 +1585,8 @@ interface LiveStandingsData {
   ufcP4P: LiveStandingRow[]
   womenLigaF: LiveStandingRow[]
   womenGoals: LiveStandingRow[]; womenAssists: LiveStandingRow[]
+  pgaTourLeaderboard?: LiveStandingRow[]
+  pgaFedExCup?: LiveStandingRow[]
   meta?: Record<string, BlockMeta>
   updatedAt?: string
 }
@@ -1574,6 +1607,7 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   // but the hardcoded P4P list is curated/current. Falling back to the generic "Ref. 24/25" badge
   // is more honest than tagging it "No disponible".
   'f-ligaf-tabla': 'womenLigaF', 'f-goleadoras': 'womenGoals', 'f-asistencias': 'womenAssists',
+  'pga-leaderboard': 'pgaTourLeaderboard', 'pga-fedex': 'pgaFedExCup',
 }
 
 // ── Player stats types (from /api/stats/players) ──────────────────
@@ -1779,9 +1813,11 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (block.id === 'nba-steals'        && liveData.nbaSteals?.length)      return { ...block, rows: toStatRows(liveData.nbaSteals) }
         if (block.id === 'nba-efficiency'    && liveData.nbaEfficiency?.length)  return { ...block, rows: toStatRows(liveData.nbaEfficiency) }
         if (block.id === 'nba-3pt'           && liveData.nba3ptMade?.length)     return { ...block, rows: toStatRows(liveData.nba3ptMade) }
-        if (block.id === 'f-ligaf-tabla'     && liveData.womenLigaF?.length)     return { ...block, rows: toStatRows(liveData.womenLigaF),   placeholder: false }
-        if (block.id === 'f-goleadoras'      && liveData.womenGoals?.length)     return { ...block, rows: toStatRows(liveData.womenGoals),    placeholder: false }
-        if (block.id === 'f-asistencias'     && liveData.womenAssists?.length)   return { ...block, rows: toStatRows(liveData.womenAssists),  placeholder: false }
+        if (block.id === 'f-ligaf-tabla'     && liveData.womenLigaF?.length)          return { ...block, rows: toStatRows(liveData.womenLigaF),          placeholder: false }
+        if (block.id === 'f-goleadoras'      && liveData.womenGoals?.length)          return { ...block, rows: toStatRows(liveData.womenGoals),           placeholder: false }
+        if (block.id === 'f-asistencias'     && liveData.womenAssists?.length)        return { ...block, rows: toStatRows(liveData.womenAssists),         placeholder: false }
+        if (block.id === 'pga-leaderboard'   && liveData.pgaTourLeaderboard?.length)  return { ...block, rows: toStatRows(liveData.pgaTourLeaderboard!) }
+        if (block.id === 'pga-fedex'         && liveData.pgaFedExCup?.length)         return { ...block, rows: toStatRows(liveData.pgaFedExCup!) }
 
         if (block.id === 'goles-equipo') {
           const allTeams = liveData.football.flatMap(league =>
