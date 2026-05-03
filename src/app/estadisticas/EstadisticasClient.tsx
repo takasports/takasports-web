@@ -815,8 +815,15 @@ const SPORTS: SportConfig[] = [
           {
             id: 'tabla-uel', title: 'Europa League', metric: 'Pts',
             rows: [
-              { rank: 1,  name: 'Manchester United', value: '—', sub: 'Fase de grupos', trend: 'flat' as const, extra: {} },
-              { rank: 2,  name: 'Roma',               value: '—', sub: 'Fase de grupos', trend: 'flat' as const, extra: {} },
+              { rank: 1,  name: 'Manchester United', value: '—', sub: 'Fase de liga', trend: 'flat' as const, extra: {} },
+              { rank: 2,  name: 'Roma',               value: '—', sub: 'Fase de liga', trend: 'flat' as const, extra: {} },
+            ],
+          },
+          {
+            id: 'tabla-uecl', title: 'Conference League', metric: 'Pts',
+            rows: [
+              { rank: 1,  name: 'Chelsea',            value: '—', sub: 'Fase de liga', trend: 'flat' as const, extra: {} },
+              { rank: 2,  name: 'Real Betis',          value: '—', sub: 'Fase de liga', trend: 'flat' as const, extra: {} },
             ],
           },
           {
@@ -1553,7 +1560,7 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
 // ─────────────────────────────────────────────────────────────────
 // IDs of blocks that get replaced with live standings/ESPN data
 const LIVE_BLOCK_IDS = new Set([
-  'tabla-laliga', 'tabla-premier', 'tabla-serie-a', 'tabla-bundesliga', 'tabla-ligue1', 'tabla-ucl', 'tabla-uel',
+  'tabla-laliga', 'tabla-premier', 'tabla-serie-a', 'tabla-bundesliga', 'tabla-ligue1', 'tabla-ucl', 'tabla-uel', 'tabla-uecl',
   'nba-este', 'nba-oeste',
   'f1-campeonato', 'f1-constructores', 'f1-poles', 'f1-vueltas-rapidas',
   'atp-ranking', 'wta-ranking',
@@ -1594,7 +1601,7 @@ interface LiveStandingsData {
 // Map block.id -> standings payload key (for meta lookup)
 const BLOCK_TO_META_KEY: Record<string, string> = {
   'tabla-laliga': 'football', 'tabla-premier': 'football', 'tabla-serie-a': 'football',
-  'tabla-bundesliga': 'football', 'tabla-ligue1': 'football', 'tabla-ucl': 'football', 'tabla-uel': 'football',
+  'tabla-bundesliga': 'football', 'tabla-ligue1': 'football', 'tabla-ucl': 'football', 'tabla-uel': 'football', 'tabla-uecl': 'football',
   'goles-equipo': 'football', 'menos-goles': 'football',
   'nba-este': 'nbaEast', 'nba-oeste': 'nbaWest',
   'nba-scoring': 'nbaScoring', 'nba-rebounds': 'nbaRebounds', 'nba-assists': 'nbaAssists',

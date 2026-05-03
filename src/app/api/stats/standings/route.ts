@@ -66,8 +66,9 @@ const FOOTBALL_LEAGUES = [
   { slug: 'soccer/ita.1',         id: 'tabla-serie-a',    label: 'Serie A' },
   { slug: 'soccer/ger.1',         id: 'tabla-bundesliga', label: 'Bundesliga' },
   { slug: 'soccer/fra.1',         id: 'tabla-ligue1',     label: 'Ligue 1' },
-  { slug: 'soccer/uefa.champions',id: 'tabla-ucl',        label: 'Champions League' },
-  { slug: 'soccer/uefa.europa',   id: 'tabla-uel',        label: 'Europa League' },
+  { slug: 'soccer/uefa.champions',   id: 'tabla-ucl',  label: 'Champions League' },
+  { slug: 'soccer/uefa.europa',      id: 'tabla-uel',  label: 'Europa League' },
+  { slug: 'soccer/uefa.conference',  id: 'tabla-uecl', label: 'Conference League' },
 ]
 
 type RawStat = { name: string; value?: number; displayValue?: string }
@@ -445,65 +446,43 @@ interface PGAResult {
 async function fetchPGA(): Promise<PGAResult> {
   const empty: PGAResult = { leaderboard: [], fedExCup: [], tournamentName: '' }
   try {
-    const [sbRes, fedRes] = await Promise.all([
-      fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard', { next: { revalidate: 1800 } }),
-      fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/standings', { next: { revalidate: 3600 } }),
-    ])
+    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard', { next: { revalidate: 1800 } })
+    if (!res.ok) return empty
+    const sb = await res.json()
+    const event = (sb.events as Record<string, unknown>[] | undefined)?.[0]
+    if (!event) return empty
 
-    let leaderboard: StandingRow[] = []
-    let tournamentName = ''
-    if (sbRes.ok) {
-      const sb = await sbRes.json()
-      const event = (sb.events as Record<string, unknown>[] | undefined)?.[0]
-      if (event) {
-        tournamentName = (event.name as string) ?? ''
-        const comp = (event.competitions as Record<string, unknown>[] | undefined)?.[0]
-        const competitors = (comp?.competitors as Record<string, unknown>[]) ?? []
-        leaderboard = competitors
-          .map(c => {
-            const ath = c.athlete as Record<string, unknown>
-            const score = (c.score as Record<string, unknown>)?.displayValue as string ?? 'E'
-            const status = (c.status as Record<string, unknown>)?.type as Record<string, unknown>
-            const thru = (status?.description as string) ?? ''
-            const pos = String(c.sortOrder ?? 99)
-            return {
-              rank: Number(pos),
-              name: (ath?.displayName as string) ?? '—',
-              abbr: (ath?.flag as Record<string, unknown>)?.alt as string ?? '',
-              value: score,
-              sub: thru ? `Hoyo ${thru}` : 'Completado',
-              trend: 'flat' as const,
-              extra: { Torneo: tournamentName },
-            }
-          })
-          .sort((a, b) => a.rank - b.rank)
-          .slice(0, 10)
-          .map((r, i) => ({ ...r, rank: i + 1 }))
-      }
-    }
+    const tournamentName = (event.name as string) ?? 'PGA Tour'
+    const eventStatus = (event.status as Record<string, unknown>)?.type as Record<string, unknown>
+    const isCompleted = eventStatus?.state === 'post'
+    const isLive      = eventStatus?.state === 'in'
 
-    let fedExCup: StandingRow[] = []
-    if (fedRes.ok) {
-      const fed = await fedRes.json()
-      const standings = (fed.standings as Record<string, unknown> | undefined)
-      const entries = (standings?.entries as Record<string, unknown>[]) ?? []
-      fedExCup = entries.slice(0, 10).map((e, i) => {
-        const ath = e.athlete as Record<string, unknown>
-        const stats = (e.stats as Array<{ name: string; displayValue: string }>) ?? []
-        const pts = stats.find(s => s.name === 'fedexCupPoints')?.displayValue ?? '0'
+    const comp = (event.competitions as Record<string, unknown>[] | undefined)?.[0]
+    const competitors = (comp?.competitors as Record<string, unknown>[]) ?? []
+
+    const leaderboard = competitors
+      .map(c => {
+        const ath = c.athlete as Record<string, unknown>
+        const scoreRaw = c.score as string | number | null
+        const scoreNum = scoreRaw !== null && scoreRaw !== undefined ? Number(scoreRaw) : null
+        const scoreStr = scoreNum === null ? 'E' : scoreNum === 0 ? 'E' : scoreNum > 0 ? `+${scoreNum}` : String(scoreNum)
+        const country = (ath?.flag as Record<string, unknown>)?.alt as string ?? ''
+        const subLabel = isCompleted ? 'Final' : isLive ? 'En juego' : 'Próximo'
         return {
-          rank: i + 1,
+          rank: Number(c.order ?? 99),
           name: (ath?.displayName as string) ?? '—',
-          abbr: (ath?.flag as Record<string, unknown>)?.alt as string ?? '',
-          value: pts,
-          sub: `${pts} pts FedEx`,
+          abbr: country.slice(0, 3).toUpperCase(),
+          value: scoreStr,
+          sub: subLabel,
           trend: 'flat' as const,
-          extra: {},
+          extra: { Torneo: tournamentName, País: country },
         }
       })
-    }
+      .sort((a, b) => a.rank - b.rank)
+      .slice(0, 10)
+      .map((r, i) => ({ ...r, rank: i + 1 }))
 
-    return { leaderboard, fedExCup, tournamentName }
+    return { leaderboard, fedExCup: [], tournamentName }
   } catch (err) {
     console.error('[standings] PGA failed:', err)
     return empty
@@ -570,8 +549,8 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
     womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
     womenAssists:        womenStats.assists.length     ? live('ESPN') : unavail('ESPN'),
-    pgaTourLeaderboard:  pga.leaderboard.length        ? live(`ESPN · ${pga.tournamentName || 'PGA Tour'}`) : unavail('ESPN'),
-    pgaFedExCup:         pga.fedExCup.length           ? live('ESPN · FedEx Cup') : unavail('ESPN'),
+    pgaTourLeaderboard:  pga.leaderboard.length ? live(`ESPN · ${pga.tournamentName || 'PGA Tour'}`) : unavail('ESPN'),
+    pgaFedExCup:         histor('Manual', '2026-04'),
   }
 
   return {
