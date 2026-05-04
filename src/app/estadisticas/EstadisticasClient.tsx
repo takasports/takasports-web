@@ -808,8 +808,8 @@ const SPORTS: SportConfig[] = [
           {
             id: 'tabla-ucl', title: 'Champions League', metric: 'Pts',
             rows: [
-              { rank: 1,  name: 'Real Madrid',      value: '—', sub: 'Fase de grupos', trend: 'flat' as const, extra: {} },
-              { rank: 2,  name: 'Manchester City',  value: '—', sub: 'Fase de grupos', trend: 'flat' as const, extra: {} },
+              { rank: 1,  name: 'Real Madrid',      value: '—', sub: 'Fase de liga', trend: 'flat' as const, extra: {} },
+              { rank: 2,  name: 'Manchester City',  value: '—', sub: 'Fase de liga', trend: 'flat' as const, extra: {} },
             ],
           },
           {
@@ -889,6 +889,42 @@ const SPORTS: SportConfig[] = [
               { rank: 8,  name: 'Marruecos',      value: '1756.8', sub: 'pts FIFA', flag: '🇲🇦', trend: 'up' },
               { rank: 9,  name: 'Bélgica',        value: '1734.7', sub: 'pts FIFA', flag: '🇧🇪', trend: 'down' },
               { rank: 10, name: 'Alemania',       value: '1730.4', sub: 'pts FIFA', flag: '🇩🇪', trend: 'up' },
+            ],
+          },
+          {
+            id: 'nations-a1', title: 'Nations League · Grupo A1', metric: 'Pts',
+            rows: [
+              { rank: 1, name: 'Italia',    value: '—', sub: 'Por jugar', flag: '🇮🇹', trend: 'flat' as const, extra: {} },
+              { rank: 2, name: 'Bélgica',   value: '—', sub: 'Por jugar', flag: '🇧🇪', trend: 'flat' as const, extra: {} },
+              { rank: 3, name: 'Francia',   value: '—', sub: 'Por jugar', flag: '🇫🇷', trend: 'flat' as const, extra: {} },
+              { rank: 4, name: 'Croacia',   value: '—', sub: 'Por jugar', flag: '🇭🇷', trend: 'flat' as const, extra: {} },
+            ],
+          },
+          {
+            id: 'nations-a2', title: 'Nations League · Grupo A2', metric: 'Pts',
+            rows: [
+              { rank: 1, name: 'Países Bajos', value: '—', sub: 'Por jugar', flag: '🇳🇱', trend: 'flat' as const, extra: {} },
+              { rank: 2, name: 'Grecia',        value: '—', sub: 'Por jugar', flag: '🇬🇷', trend: 'flat' as const, extra: {} },
+              { rank: 3, name: 'Finlandia',     value: '—', sub: 'Por jugar', flag: '🇫🇮', trend: 'flat' as const, extra: {} },
+              { rank: 4, name: 'Polonia',        value: '—', sub: 'Por jugar', flag: '🇵🇱', trend: 'flat' as const, extra: {} },
+            ],
+          },
+          {
+            id: 'nations-a3', title: 'Nations League · Grupo A3', metric: 'Pts',
+            rows: [
+              { rank: 1, name: 'España',      value: '—', sub: 'Por jugar', flag: '🇪🇸', trend: 'flat' as const, extra: {} },
+              { rank: 2, name: 'Inglaterra',   value: '—', sub: 'Por jugar', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'flat' as const, extra: {} },
+              { rank: 3, name: 'Alemania',     value: '—', sub: 'Por jugar', flag: '🇩🇪', trend: 'flat' as const, extra: {} },
+              { rank: 4, name: 'Portugal',     value: '—', sub: 'Por jugar', flag: '🇵🇹', trend: 'flat' as const, extra: {} },
+            ],
+          },
+          {
+            id: 'nations-a4', title: 'Nations League · Grupo A4', metric: 'Pts',
+            rows: [
+              { rank: 1, name: 'Noruega',    value: '—', sub: 'Por jugar', flag: '🇳🇴', trend: 'flat' as const, extra: {} },
+              { rank: 2, name: 'Dinamarca',  value: '—', sub: 'Por jugar', flag: '🇩🇰', trend: 'flat' as const, extra: {} },
+              { rank: 3, name: 'Serbia',     value: '—', sub: 'Por jugar', flag: '🇷🇸', trend: 'flat' as const, extra: {} },
+              { rank: 4, name: 'Escocia',    value: '—', sub: 'Por jugar', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', trend: 'flat' as const, extra: {} },
             ],
           },
           {
@@ -1569,6 +1605,7 @@ const LIVE_BLOCK_IDS = new Set([
   'nba-scoring', 'nba-rebounds', 'nba-assists', 'nba-blocks', 'nba-steals', 'nba-efficiency', 'nba-3pt',
   'f-ligaf-tabla', 'f-goleadoras', 'f-asistencias',
   'pga-leaderboard', 'pga-fedex',
+  'nations-a1', 'nations-a2', 'nations-a3', 'nations-a4',
 ])
 
 interface LiveStandingRow {
@@ -1594,6 +1631,7 @@ interface LiveStandingsData {
   womenGoals: LiveStandingRow[]; womenAssists: LiveStandingRow[]
   pgaTourLeaderboard?: LiveStandingRow[]
   pgaFedExCup?: LiveStandingRow[]
+  nationsLeague?: LiveLeague[]
   meta?: Record<string, BlockMeta>
   updatedAt?: string
 }
@@ -1615,6 +1653,7 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   // is more honest than tagging it "No disponible".
   'f-ligaf-tabla': 'womenLigaF', 'f-goleadoras': 'womenGoals', 'f-asistencias': 'womenAssists',
   'pga-leaderboard': 'pgaTourLeaderboard', 'pga-fedex': 'pgaFedExCup',
+  'nations-a1': 'nationsLeague', 'nations-a2': 'nationsLeague', 'nations-a3': 'nationsLeague', 'nations-a4': 'nationsLeague',
 }
 
 // ── Player stats types (from /api/stats/players) ──────────────────
@@ -1825,6 +1864,10 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (block.id === 'f-asistencias'     && liveData.womenAssists?.length)        return { ...block, rows: toStatRows(liveData.womenAssists),         placeholder: false }
         if (block.id === 'pga-leaderboard'   && liveData.pgaTourLeaderboard?.length)  return { ...block, rows: toStatRows(liveData.pgaTourLeaderboard!) }
         if (block.id === 'pga-fedex'         && liveData.pgaFedExCup?.length)         return { ...block, rows: toStatRows(liveData.pgaFedExCup!) }
+        if (block.id.startsWith('nations-') && liveData.nationsLeague?.length) {
+          const group = liveData.nationsLeague.find(g => g.id === block.id)
+          if (group?.rows.length) return { ...block, rows: toStatRows(group.rows) }
+        }
 
         if (block.id === 'goles-equipo') {
           const allTeams = liveData.football.flatMap(league =>

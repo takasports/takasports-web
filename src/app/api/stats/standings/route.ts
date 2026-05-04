@@ -50,6 +50,7 @@ export interface StatsStandingsResponse {
   womenAssists: StandingRow[]
   pgaTourLeaderboard: StandingRow[]
   pgaFedExCup: StandingRow[]
+  nationsLeague: LeagueStandings[]
   meta: Record<string, BlockMeta>
   updatedAt: string
 }
@@ -435,16 +436,63 @@ const FIFA_RANKING: StandingRow[] = [
   { rank: 10, name: 'Alemania',       abbr: 'GER', value: '1730', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'up',   extra: { Pts: '1730.37' } },
 ]
 
+// ── UEFA Nations League via ESPN ──────────────────────────────────────────────
+
+const NATIONS_LEAGUE_A_GROUPS = ['A1', 'A2', 'A3', 'A4']
+
+async function fetchNationsLeague(): Promise<LeagueStandings[]> {
+  try {
+    const res = await fetch('https://site.web.api.espn.com/apis/v2/sports/soccer/uefa.nations/standings', { next: { revalidate: 3600 } })
+    if (!res.ok) return []
+    const json = await res.json()
+    const children = (json.children as Record<string, unknown>[]) ?? []
+    const results: LeagueStandings[] = []
+    for (const child of children) {
+      const name = (child.name as string) ?? ''
+      const groupLetter = name.replace('Group ', '')
+      if (!NATIONS_LEAGUE_A_GROUPS.includes(groupLetter)) continue
+      const entries = (child.standings as Record<string, unknown>)?.entries as Record<string, unknown>[] ?? []
+      const rows: StandingRow[] = entries.map((e, i) => {
+        const team  = e.team as Record<string, unknown>
+        const stats = (e.stats as RawStat[]) ?? []
+        const w = sv(stats, 'wins'); const d = sv(stats, 'ties'); const l = sv(stats, 'losses')
+        const pts = sv(stats, 'points'); const gp = w + d + l
+        const gd  = sv(stats, 'pointDifferential')
+        return {
+          rank: i + 1,
+          name: (team?.displayName as string) ?? '—',
+          abbr: (team?.abbreviation as string) ?? '',
+          value: String(Math.round(pts)),
+          sub: gp > 0 ? `${gp} PJ · ${gd >= 0 ? '+' : ''}${Math.round(gd)}` : 'Por jugar',
+          trend: 'flat' as const,
+          extra: { V: String(w), E: String(d), D: String(l) },
+        }
+      })
+      // Only include groups with at least one match played
+      const hasData = rows.some(r => r.sub !== 'Por jugar')
+      if (hasData) {
+        results.push({ id: `nations-${groupLetter.toLowerCase()}`, label: `Grupo ${groupLetter} · Nations League`, rows })
+      }
+    }
+    return results
+  } catch (err) {
+    console.error('[standings] Nations League failed:', err)
+    return []
+  }
+}
+
 // ── PGA Tour via ESPN ─────────────────────────────────────────────────────────
 
 interface PGAResult {
   leaderboard: StandingRow[]
   fedExCup: StandingRow[]
   tournamentName: string
+  isCompleted: boolean
+  isLive: boolean
 }
 
 async function fetchPGA(): Promise<PGAResult> {
-  const empty: PGAResult = { leaderboard: [], fedExCup: [], tournamentName: '' }
+  const empty: PGAResult = { leaderboard: [], fedExCup: [], tournamentName: '', isCompleted: false, isLive: false }
   try {
     const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard', { next: { revalidate: 1800 } })
     if (!res.ok) return empty
@@ -482,7 +530,7 @@ async function fetchPGA(): Promise<PGAResult> {
       .slice(0, 10)
       .map((r, i) => ({ ...r, rank: i + 1 }))
 
-    return { leaderboard, fedExCup: [], tournamentName }
+    return { leaderboard, fedExCup: [], tournamentName, isCompleted, isLive }
   } catch (err) {
     console.error('[standings] PGA failed:', err)
     return empty
@@ -499,13 +547,13 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   tenis: ['atpRanking', 'wtaRanking'],
   tennis: ['atpRanking', 'wtaRanking'],
   ufc: ['ufcP4P'],
-  selecciones: ['fifaRanking'],
+  selecciones: ['fifaRanking', 'nationsLeague'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
   golf: ['pgaTourLeaderboard', 'pgaFedExCup'],
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
-  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga] = await Promise.all([
+  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga, nationsLeague] = await Promise.all([
     Promise.allSettled(FOOTBALL_LEAGUES.map(l => fetchFootball(l.slug, l.id, l.label))),
     fetchF1All(),
     fetchNBA(),
@@ -515,6 +563,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchWomenLigaF(),
     fetchWomenStats(),
     fetchPGA(),
+    fetchNationsLeague(),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
 
@@ -549,8 +598,13 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
     womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
     womenAssists:        womenStats.assists.length     ? live('ESPN') : unavail('ESPN'),
-    pgaTourLeaderboard:  pga.leaderboard.length ? live(`ESPN · ${pga.tournamentName || 'PGA Tour'}`) : unavail('ESPN'),
+    pgaTourLeaderboard:  pga.leaderboard.length
+      ? pga.isLive      ? live(`ESPN · ${pga.tournamentName}`)
+      : pga.isCompleted ? ({ status: 'stale', source: `ESPN · ${pga.tournamentName}`, fetchedAt: now, asOf: 'Final' } satisfies BlockMeta)
+      :                   unavail('ESPN')
+      : unavail('ESPN'),
     pgaFedExCup:         histor('Manual', '2026-04'),
+    nationsLeague:       nationsLeague.length ? live('ESPN · UEFA Nations League') : unavail('ESPN · Nations League no iniciada'),
   }
 
   return {
@@ -577,6 +631,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     womenAssists:        womenStats.assists,
     pgaTourLeaderboard:  pga.leaderboard,
     pgaFedExCup:         pga.fedExCup,
+    nationsLeague,
     meta,
     updatedAt:           now,
   }
