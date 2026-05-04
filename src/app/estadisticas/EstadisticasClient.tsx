@@ -952,23 +952,24 @@ const SPORTS: SportConfig[] = [
           {
             id: 'stats-dt', title: 'Rendimiento entrenadores · % victorias', metric: '% Vic.',
             rows: [
-              { rank: 1, name: 'Pep Guardiola', team: 'Man City',     value: '72%', sub: '29 PJ', flag: '🇪🇸', trend: 'flat', extra: { GF: '2.83', GC: '0.62' } },
-              { rank: 2, name: 'Hansi Flick',   team: 'FC Barcelona', value: '70%', sub: '29 PJ', flag: '🇩🇪', trend: 'up',   extra: { GF: '2.72', GC: '0.83' } },
-              { rank: 3, name: 'Carlo Ancelotti',team: 'Real Madrid', value: '68%', sub: '29 PJ', flag: '🇮🇹', trend: 'flat', extra: { GF: '2.62', GC: '0.76' } },
-              { rank: 4, name: 'Mikel Arteta',  team: 'Arsenal',      value: '65%', sub: '29 PJ', flag: '🇪🇸', trend: 'up',   extra: { GF: '2.34', GC: '0.69' } },
-              { rank: 5, name: 'Luis Enrique',  team: 'PSG',          value: '62%', sub: '28 PJ', flag: '🇪🇸', trend: 'up',   extra: { GF: '2.10', GC: '0.92' } },
-              { rank: 6, name: 'Ruben Amorim',   team: 'Man United',   value: '42%', sub: '27 PJ', flag: '🇵🇹', trend: 'down', extra: { GF: '1.52', GC: '1.48' } },
-              { rank: 7, name: 'Xabi Alonso',   team: 'Leverkusen',   value: '74%', sub: '27 PJ', flag: '🇪🇸', trend: 'up',  extra: { GF: '2.41', GC: '0.78' } },
+              { rank: 1, name: 'Xabi Alonso',   team: 'Real Madrid',  value: '74%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'up',   extra: { GF: '2.70', GC: '0.65' } },
+              { rank: 2, name: 'Hansi Flick',   team: 'FC Barcelona', value: '71%', sub: 'Temp. 25/26', flag: '🇩🇪', trend: 'up',   extra: { GF: '2.68', GC: '0.81' } },
+              { rank: 3, name: 'Pep Guardiola', team: 'Man City',     value: '68%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'flat', extra: { GF: '2.54', GC: '0.74' } },
+              { rank: 4, name: 'Mikel Arteta',  team: 'Arsenal',      value: '66%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'up',   extra: { GF: '2.41', GC: '0.66' } },
+              { rank: 5, name: 'Luis Enrique',  team: 'PSG',          value: '63%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'flat', extra: { GF: '2.18', GC: '0.88' } },
+              { rank: 6, name: 'Diego Simeone', team: 'Atlético',     value: '58%', sub: 'Temp. 25/26', flag: '🇦🇷', trend: 'flat', extra: { GF: '1.82', GC: '0.91' } },
+              { rank: 7, name: 'Ruben Amorim',  team: 'Man United',   value: '44%', sub: 'Temp. 25/26', flag: '🇵🇹', trend: 'up',   extra: { GF: '1.61', GC: '1.38' } },
             ],
           },
           {
             id: 'dt-trofeos', title: 'DT con más trofeos activos', metric: 'Trofeos',
             rows: [
-              { rank: 1, name: 'Pep Guardiola', team: 'Man City',     value: '38', sub: 'en activo', flag: '🇪🇸', trend: 'flat' },
-              { rank: 2, name: 'Carlo Ancelotti',team: 'Real Madrid', value: '28', sub: 'en activo', flag: '🇮🇹', trend: 'flat' },
-              { rank: 3, name: 'José Mourinho', team: 'Libre',        value: '25', sub: 'histórico',  flag: '🇵🇹', trend: 'flat' },
-              { rank: 4, name: 'Diego Simeone', team: 'Atlético',     value: '12', sub: 'en activo', flag: '🇦🇷', trend: 'flat' },
-              { rank: 5, name: 'Hansi Flick',   team: 'FC Barcelona', value: '9',  sub: 'en activo', flag: '🇩🇪', trend: 'up' },
+              { rank: 1, name: 'Pep Guardiola',  team: 'Man City',     value: '40', sub: 'en activo', flag: '🇪🇸', trend: 'up' },
+              { rank: 2, name: 'Carlo Ancelotti', team: 'Brasil',       value: '28', sub: 'en activo', flag: '🇮🇹', trend: 'flat' },
+              { rank: 3, name: 'José Mourinho',   team: 'Fenerbahçe',   value: '26', sub: 'en activo',  flag: '🇵🇹', trend: 'flat' },
+              { rank: 4, name: 'Diego Simeone',   team: 'Atlético',     value: '13', sub: 'en activo', flag: '🇦🇷', trend: 'flat' },
+              { rank: 5, name: 'Hansi Flick',     team: 'FC Barcelona', value: '11', sub: 'en activo', flag: '🇩🇪', trend: 'up' },
+              { rank: 6, name: 'Xabi Alonso',     team: 'Real Madrid',  value: '3',  sub: 'en activo', flag: '🇪🇸', trend: 'up' },
             ],
           },
         ],
@@ -1862,7 +1863,10 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (block.id === 'f-ligaf-tabla'     && liveData.womenLigaF?.length)          return { ...block, rows: toStatRows(liveData.womenLigaF),          placeholder: false }
         if (block.id === 'f-goleadoras'      && liveData.womenGoals?.length)          return { ...block, rows: toStatRows(liveData.womenGoals),           placeholder: false }
         if (block.id === 'f-asistencias'     && liveData.womenAssists?.length)        return { ...block, rows: toStatRows(liveData.womenAssists),         placeholder: false }
-        if (block.id === 'pga-leaderboard'   && liveData.pgaTourLeaderboard?.length)  return { ...block, rows: toStatRows(liveData.pgaTourLeaderboard!) }
+        if (block.id === 'pga-leaderboard'   && liveData.pgaTourLeaderboard?.length) {
+          const tournamentName = liveData.pgaTourLeaderboard![0]?.extra?.Torneo ?? ''
+          return { ...block, title: tournamentName || 'Leaderboard PGA Tour', rows: toStatRows(liveData.pgaTourLeaderboard!) }
+        }
         if (block.id === 'pga-fedex'         && liveData.pgaFedExCup?.length)         return { ...block, rows: toStatRows(liveData.pgaFedExCup!) }
         if (block.id.startsWith('nations-') && liveData.nationsLeague?.length) {
           const group = liveData.nationsLeague.find(g => g.id === block.id)
@@ -1911,6 +1915,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   }
 
   function isBlockLive(block: StatBlock): boolean {
+    const meta = liveData?.meta?.[BLOCK_TO_META_KEY[block.id]]
+    if (meta?.status === 'unavailable') return false
     if (liveData && LIVE_BLOCK_IDS.has(block.id) && block.rows.length > 0) return true
     if (livePlayerData && LIVE_PLAYER_BLOCK_IDS.has(block.id) && block.rows.length > 0) return true
     return false
