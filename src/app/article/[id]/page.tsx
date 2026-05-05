@@ -20,6 +20,9 @@ function readingTime(body?: string | null): number | null {
   return Math.max(1, Math.round(words / 200))
 }
 
+interface FaqItem { q: string; a: string }
+interface SourceRef { name?: string; url?: string }
+
 interface Article {
   _id: string
   slug?: string
@@ -30,6 +33,7 @@ interface Article {
   short_summary?: string
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null  // Taka: plain URL string
+  imageAlt?: string | null
   isTaka?: boolean
   category?: string
   sport?: string
@@ -37,6 +41,11 @@ interface Article {
   source_name?: string
   source_url?: string
   publishedAt?: string
+  tldr?: string[] | null
+  faq?: FaqItem[] | null
+  focusKeyword?: string | null
+  secondaryKeywords?: string[] | null
+  sourceUrls?: SourceRef[] | null
 }
 
 interface RelatedArticle {
@@ -309,6 +318,73 @@ export default async function ArticlePage({
   ])
 
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1400).height(600).url() : null)
+  const canonical = `https://takasportsmedia.com/article/${article.slug ?? id}`
+
+  // JSON-LD: Article + FAQPage (rich snippets)
+  type LDArticle = {
+    '@context': string
+    '@type': string
+    headline: string
+    description?: string
+    image?: string[]
+    datePublished?: string
+    dateModified?: string
+    inLanguage: string
+    mainEntityOfPage: { '@type': string; '@id': string }
+    keywords?: string
+    articleSection?: string
+    author: { '@type': string; name: string; url: string }
+    publisher: { '@type': string; name: string; logo: { '@type': string; url: string } }
+  }
+  const articleJsonLd: LDArticle = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: article.title,
+    description: article.short_summary ?? undefined,
+    image: imgUrl ? [imgUrl] : undefined,
+    datePublished: article.publishedAt,
+    dateModified: article.publishedAt,
+    inLanguage: 'es-ES',
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+    keywords: [article.focusKeyword, ...(article.secondaryKeywords ?? []), ...(article.tags ?? [])]
+      .filter(Boolean)
+      .join(', ') || undefined,
+    articleSection: article.category ?? undefined,
+    author: { '@type': 'Organization', name: 'TakaSports', url: 'https://takasportsmedia.com' },
+    publisher: {
+      '@type': 'Organization',
+      name: 'TakaSports',
+      logo: { '@type': 'ImageObject', url: 'https://takasportsmedia.com/icon.png' },
+    },
+  }
+  const sportSlug = article.sport ?? null
+  const sportLabel = sportSlug ? getSportLabel(sportSlug, article.category) : null
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: 'https://takasportsmedia.com' },
+      ...(sportSlug && sportLabel
+        ? [{ '@type': 'ListItem', position: 2, name: sportLabel, item: `https://takasportsmedia.com/${sportSlug}` }]
+        : []),
+      {
+        '@type': 'ListItem',
+        position: sportSlug ? 3 : 2,
+        name: article.title,
+        item: canonical,
+      },
+    ],
+  }
+
+  const faqJsonLd = article.faq && article.faq.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: article.faq.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  } : null
 
   const paragraphs = article.bodyText
     ? article.bodyText.split('\n').filter((p) => p.trim().length > 0)
@@ -322,6 +398,11 @@ export default async function ArticlePage({
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+      {faqJsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      )}
       <ReadingProgress accent={accent} />
       <ReadTracker item={{
         slug: article.slug ?? id,
@@ -427,12 +508,40 @@ export default async function ArticlePage({
                 className="relative w-full rounded-2xl overflow-hidden mb-8"
                 style={{ height: 'clamp(240px, 52vw, 480px)' }}
               >
-                <Image src={imgUrl} alt={article.title} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 850px" />
+                <Image src={imgUrl} alt={article.imageAlt ?? article.title} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 850px" />
                 <div
                   className="absolute inset-0"
                   style={{ background: 'linear-gradient(to top,rgba(9,9,15,0.2) 0%,transparent 50%)' }}
                 />
               </div>
+            )}
+
+            {/* TL;DR — claves rápidas */}
+            {article.tldr && article.tldr.length > 0 && (
+              <aside
+                className="mb-8 rounded-2xl p-5"
+                style={{
+                  background: `linear-gradient(135deg, ${badgeColor}10, ${badgeColor}05)`,
+                  border: `1px solid ${badgeBorder}`,
+                  maxWidth: 680,
+                }}
+                aria-label="Claves rápidas"
+              >
+                <p
+                  className="text-[10px] font-black uppercase tracking-widest mb-3"
+                  style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}
+                >
+                  Claves en 30 segundos
+                </p>
+                <ul className="flex flex-col gap-2">
+                  {article.tldr.map((item, i) => (
+                    <li key={i} className="flex gap-2.5" style={{ color: '#D4D4E5', fontSize: '0.95rem', lineHeight: 1.55 }}>
+                      <span style={{ color: badgeColor, flexShrink: 0, fontWeight: 800 }}>›</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </aside>
             )}
 
             {/* Summary — destacado editorial */}
