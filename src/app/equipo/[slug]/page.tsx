@@ -470,6 +470,39 @@ function TeamContent({ team }: { team: TeamDetail }) {
         ))}
       </div>
 
+      {/* Recent form */}
+      {(() => {
+        const form = team.results
+          .filter(r => r.result === 'W' || r.result === 'D' || r.result === 'L')
+          .slice(-5)
+          .reverse()
+        if (form.length === 0) return null
+        return (
+          <div className="flex items-center gap-3 mb-6">
+            <span
+              className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A]"
+              style={{ fontFamily: 'var(--font-sport)' }}
+            >
+              Forma
+            </span>
+            <div className="flex gap-1.5">
+              {form.map((r, i) => {
+                const color = r.result === 'W' ? '#22c55e' : r.result === 'L' ? '#ef4444' : '#f59e0b'
+                return (
+                  <div
+                    key={i}
+                    className="w-7 h-7 rounded-md flex items-center justify-center text-[12px] font-black"
+                    style={{ background: `${color}22`, color, fontFamily: 'var(--font-sport)' }}
+                  >
+                    {r.result}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Featured player */}
       {team.featuredPlayer && (
         <FeaturedPlayerCard player={team.featuredPlayer} teamColor={team.color} />
