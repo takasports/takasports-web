@@ -128,13 +128,20 @@ const LIGA_FILTERS_BY_SPORT: Record<string, { label: string; slug: string }[]> =
 
 // ── Página principal ──────────────────────────────────────────────────
 // (Componentes base extraídos a src/components/rankings/)
+type DbData = Partial<Record<string, RankingEntry[]>>
+
 export default function RankingsClient({
   initialMovers  = [],
   initialFallers = [],
+  dbData         = {},
 }: {
   initialMovers?:  MoverEntry[]
   initialFallers?: MoverEntry[]
+  dbData?:         DbData
 }) {
+  // Helper: DB data si tiene entries, si no el estático
+  const db = (cat: string, fallback: RankingEntry[]): RankingEntry[] =>
+    (dbData[cat] && dbData[cat]!.length > 0) ? dbData[cat]! : fallback
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -187,25 +194,26 @@ export default function RankingsClient({
   // Build type map for contenido total view (estable entre renders)
   const contenidoTypeMap = useMemo(() => {
     const m = new Map<string, 'Creador' | 'Periodista'>()
-    RANKING_CREADORES.forEach(e => m.set(e.id, 'Creador'))
-    RANKING_PERIODISTAS.forEach(e => m.set(e.id, 'Periodista'))
-    RANKING_CREADORES_WWE.forEach(e => m.set(e.id, 'Creador'))
+    db('creadores', RANKING_CREADORES).forEach(e => m.set(e.id, 'Creador'))
+    db('periodistas', RANKING_PERIODISTAS).forEach(e => m.set(e.id, 'Periodista'))
+    db('creadores_wwe', RANKING_CREADORES_WWE).forEach(e => m.set(e.id, 'Creador'))
     return m
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbData])
 
   const isFemenino = gender === 'f' && (activeSport === 'futbol' || activeSport === 'ufc')
 
   // ── Bases filtradas por deporte ───────────────────────────────────
   const jugadoresBase = isFemenino
-    ? activeSport === 'ufc' ? RANKING_LUCHADORAS_UFC : RANKING_JUGADORAS
+    ? activeSport === 'ufc' ? db('luchadoras_ufc', RANKING_LUCHADORAS_UFC) : db('jugadoras', RANKING_JUGADORAS)
     : activeSport
-      ? RANKING_JUGADORES.filter(e => e.sport === activeSport)
-      : RANKING_JUGADORES
+      ? db('jugadores', RANKING_JUGADORES).filter(e => e.sport === activeSport)
+      : db('jugadores', RANKING_JUGADORES)
   const clubesBase = isFemenino
-    ? RANKING_CLUBES_FEMENINO
+    ? db('clubes_femenino', RANKING_CLUBES_FEMENINO)
     : activeSport
-      ? RANKING_CLUBES.filter(e => e.sport === activeSport)
-      : RANKING_CLUBES
+      ? db('clubes', RANKING_CLUBES).filter(e => e.sport === activeSport)
+      : db('clubes', RANKING_CLUBES)
 
   // ── Resolver entries ──────────────────────────────────────────────
   let entries: RankingEntry[] = []
@@ -213,10 +221,10 @@ export default function RankingsClient({
 
   if (activeSport === 'wwe') {
     if (subEntity === 'creadores') {
-      entries = RANKING_CREADORES_WWE.filter(e => !e.featured)
-      featuredEntries = RANKING_CREADORES_WWE.filter(e => e.featured)
+      entries = db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => !e.featured)
+      featuredEntries = db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => e.featured)
     } else {
-      const wweBase = RANKING_JUGADORES
+      const wweBase = db('jugadores', RANKING_JUGADORES)
         .filter(e => e.sport === 'wwe')
         .sort((a, b) => getDisplayScore(b) - getDisplayScore(a))
       if (subEntity === 'total') entries = wweBase
@@ -228,22 +236,22 @@ export default function RankingsClient({
     const sportMatch = (e: RankingEntry) => !contenidoSport || e.sport === contenidoSport
     if (subEntity === 'total') {
       entries = [
-        ...RANKING_CREADORES.filter(e => !e.featured),
-        ...RANKING_PERIODISTAS.filter(e => !e.featured),
-        ...RANKING_CREADORES_WWE.filter(e => !e.featured),
+        ...db('creadores', RANKING_CREADORES).filter(e => !e.featured),
+        ...db('periodistas', RANKING_PERIODISTAS).filter(e => !e.featured),
+        ...db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => !e.featured),
       ]
         .filter(sportMatch)
         .sort((a, b) => getDisplayScore(b) - getDisplayScore(a))
     } else if (subEntity === 'creadores') {
       const allCreadores = [
-        ...RANKING_CREADORES,
-        ...RANKING_CREADORES_WWE,
+        ...db('creadores', RANKING_CREADORES),
+        ...db('creadores_wwe', RANKING_CREADORES_WWE),
       ]
       entries = allCreadores.filter(e => !e.featured && sportMatch(e))
       featuredEntries = allCreadores.filter(e => e.featured && sportMatch(e))
     } else if (subEntity === 'periodistas') {
-      entries = RANKING_PERIODISTAS.filter(e => !e.featured && sportMatch(e))
-      featuredEntries = RANKING_PERIODISTAS.filter(e => e.featured && sportMatch(e))
+      entries = db('periodistas', RANKING_PERIODISTAS).filter(e => !e.featured && sportMatch(e))
+      featuredEntries = db('periodistas', RANKING_PERIODISTAS).filter(e => e.featured && sportMatch(e))
     }
   } else if (activeTab === 'jugadores') {
     if (jugadoresScope === 'global') {
@@ -253,14 +261,14 @@ export default function RankingsClient({
     } else if (jugadoresScope === 'posicion') {
       entries = positionFilter ? jugadoresBase.filter(e => e.position === positionFilter) : jugadoresBase
     } else if (jugadoresScope === 'sub21') {
-      const base = RANKING_JUGADORES_SUB21
+      const base = db('sub21', RANKING_JUGADORES_SUB21)
       entries = activeSport ? base.filter(e => e.sport === activeSport) : base
     } else if (jugadoresScope === 'pais') {
       if (paisJugadores === 'latam') {
-        const base = RANKING_JUGADORES_LATAM
+        const base = db('latam', RANKING_JUGADORES_LATAM)
         entries = activeSport ? base.filter(e => e.sport === activeSport) : base
       } else if (paisJugadores === 'concacaf') {
-        const base = RANKING_JUGADORES_CONCACAF
+        const base = db('concacaf', RANKING_JUGADORES_CONCACAF)
         entries = activeSport ? base.filter(e => e.sport === activeSport) : base
       } else {
         entries = jugadoresBase.filter(e => e.region === 'europa')
@@ -282,7 +290,7 @@ export default function RankingsClient({
       }
     }
   } else if (activeTab === 'entrenadores') {
-    const base = RANKINGS_BY_TAB.entrenadores
+    const base = db('entrenadores', RANKINGS_BY_TAB.entrenadores)
     entries = activeSport ? base.filter(e => e.sport === activeSport) : base
   }
 
