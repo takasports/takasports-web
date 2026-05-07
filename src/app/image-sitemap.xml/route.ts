@@ -3,7 +3,8 @@ import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 86400
 
-function escapeXml(str: string): string {
+function escapeXml(str: string | null | undefined): string {
+  if (!str) return ''
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -22,12 +23,12 @@ export async function GET() {
     .catch(() => [] as Array<{ slug: string; title: string; imageUrl: string | null; imageAlt: string | null }>)
 
   const urls = articles
-    .filter(a => a.slug && a.imageUrl)
+    .filter(a => a.slug && typeof a.imageUrl === 'string' && a.imageUrl.length > 0)
     .map(
       a => `  <url>
     <loc>${SITE_URL}/noticias/${a.slug}</loc>
     <image:image>
-      <image:loc>${escapeXml(a.imageUrl!)}</image:loc>
+      <image:loc>${escapeXml(a.imageUrl)}</image:loc>
       <image:title>${escapeXml(a.title)}</image:title>
       ${a.imageAlt ? `<image:caption>${escapeXml(a.imageAlt)}</image:caption>` : ''}
     </image:image>

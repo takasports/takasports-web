@@ -3,7 +3,8 @@ import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 3600
 
-function escapeXml(str: string): string {
+function escapeXml(str: string | null | undefined): string {
+  if (!str) return ''
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
