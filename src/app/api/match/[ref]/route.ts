@@ -328,9 +328,12 @@ function buildSoccer(json: Record<string, unknown>, homeId?: string): MatchDetai
     const typeKey = asString(typeObj?.type) ?? ''
     if (!SCORING_TYPES.has(typeKey)) continue
     const team = asObj(ev.team)
+    // Prefer participants[0].athlete.displayName over shortText (shortText gets truncated at ~30 chars)
+    const firstParticipant = asObj(asArr(ev.participants)[0])
+    const playerFromParticipant = asString(asObj(firstParticipant?.athlete)?.displayName)
     const shortText = asString(ev.shortText) ?? ''
-    // Extract player name from shortText: "Vinícius Júnior Goal" → "Vinícius Júnior"
-    const player = shortText.replace(/ (Goal|Yellow Card|Red Card|Own Goal|Penalty)$/i, '').trim() || undefined
+    const playerFromShort = shortText.replace(/ (Goal|Yellow Card|Red Card|Own Goal|Penalty)$/i, '').trim()
+    const player = playerFromParticipant || playerFromShort || undefined
     const clock = asString(asObj(ev.clock)?.displayValue)
     scoring.push({
       team:   asString(team?.id) === homeId ? 'home' : 'away',

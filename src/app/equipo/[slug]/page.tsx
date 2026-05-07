@@ -1,10 +1,12 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
-import type { TeamDetail, TeamResult, RosterPlayer, TeamTableRow } from '@/app/api/team/[slug]/route'
+import Image from 'next/image'
+import type { TeamDetail, TeamResult, RosterPlayer } from '@/app/api/team/[slug]/route'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import { TeamTabs } from './TeamTabs'
+import { StandingsTab } from './StandingsTab'
 import { SITE_URL, SITE_NAME, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const revalidate = 300
@@ -52,7 +54,12 @@ function formatDate(iso: string): string {
 
 function formatShortDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
+    const d = new Date(iso)
+    const currentYear = new Date().getFullYear()
+    const opts: Intl.DateTimeFormatOptions = d.getFullYear() !== currentYear
+      ? { day: '2-digit', month: 'short', year: 'numeric' }
+      : { day: '2-digit', month: 'short' }
+    return d.toLocaleDateString('es-ES', opts)
   } catch { return iso }
 }
 
@@ -78,8 +85,8 @@ function FeaturedPlayerCard({ player, teamColor }: { player: RosterPlayer; teamC
         style={{ width: 72, height: 72, background: `${accent}22` }}
       >
         {player.headshot ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={player.headshot} alt={player.name} className="w-full h-full object-cover" />
+          <Image src={player.headshot} alt={player.name} width={72} height={72} unoptimized
+            style={{ objectFit: 'cover', borderRadius: 12 }} />
         ) : (
           <span className="font-black text-2xl" style={{ color: accent, fontFamily: 'var(--font-display)' }}>
             {player.jersey ? `#${player.jersey}` : player.name.charAt(0)}
@@ -163,8 +170,8 @@ function ResultRow({ r, teamId }: { r: TeamResult; teamId: string }) {
               {r.homeTeam.abbr}
             </span>
             {r.homeTeam.logo && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={r.homeTeam.logo} alt={r.homeTeam.abbr} className="w-5 h-5 object-contain flex-shrink-0" />
+              <Image src={r.homeTeam.logo} alt={r.homeTeam.abbr} width={20} height={20} unoptimized
+                style={{ objectFit: 'contain', flexShrink: 0 }} />
             )}
           </div>
 
@@ -182,8 +189,8 @@ function ResultRow({ r, teamId }: { r: TeamResult; teamId: string }) {
           {/* Away */}
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             {r.awayTeam.logo && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={r.awayTeam.logo} alt={r.awayTeam.abbr} className="w-5 h-5 object-contain flex-shrink-0" />
+              <Image src={r.awayTeam.logo} alt={r.awayTeam.abbr} width={20} height={20} unoptimized
+                style={{ objectFit: 'contain', flexShrink: 0 }} />
             )}
             <span
               className="text-[13px] font-semibold truncate"
@@ -261,8 +268,8 @@ function PlayerRow({ player }: { player: RosterPlayer }) {
         style={{ background: 'rgba(124,58,237,0.18)', border: '1px solid rgba(124,58,237,0.25)' }}
       >
         {player.headshot ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={player.headshot} alt={player.name} className="w-full h-full object-cover" />
+          <Image src={player.headshot} alt={player.name} width={32} height={32} unoptimized
+            style={{ objectFit: 'cover', borderRadius: '50%' }} />
         ) : (
           <span className="text-[11px] font-black text-[#C4B5FD]" style={{ fontFamily: 'var(--font-sport)' }}>
             {player.jersey ?? player.name.charAt(0)}
@@ -369,81 +376,6 @@ function RosterTab({ roster }: { roster: RosterPlayer[] }) {
   )
 }
 
-// ── Standings Tab ──────────────────────────────────────────────────────
-function StandingsTab({ table, teamId, leagueSlug }: { table: TeamTableRow[]; teamId: string; leagueSlug: string }) {
-  if (table.length === 0) {
-    return <div className="text-center py-10 text-[#5A5A6A] text-sm">Sin datos de clasificación</div>
-  }
-
-  return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.025)' }}>
-      {/* Header */}
-      <div
-        className="flex items-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-widest text-[#3A3A4A]"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', fontFamily: 'var(--font-sport)' }}
-      >
-        <span className="w-6 text-center">#</span>
-        <span className="flex-1">Equipo</span>
-        <span className="w-7 text-center">PJ</span>
-        <span className="w-7 text-center">V</span>
-        <span className="w-7 text-center">E</span>
-        <span className="w-7 text-center">D</span>
-        <span className="hidden sm:block w-9 text-center">DG</span>
-        <span className="w-8 text-center font-black text-[#5A5A6A]">PTS</span>
-      </div>
-      {table.map(row => {
-        const isMain = row.isMain
-        const rowHref = row.teamId && !isMain ? `/equipo/${leagueSlug.replace('/', '_')}_${row.teamId}` : undefined
-        return (
-          <div
-            key={row.rank}
-            className={`flex items-center gap-2 px-4 py-2.5${rowHref ? ' cursor-pointer hover:bg-white/5 transition-colors' : ''}`}
-            style={{
-              borderBottom: '1px solid rgba(255,255,255,0.03)',
-              background: isMain ? 'rgba(124,58,237,0.12)' : undefined,
-            }}
-            onClick={rowHref ? () => { window.location.href = rowHref } : undefined}
-          >
-            <span
-              className="w-6 text-center text-[12px] font-black flex-shrink-0"
-              style={{ color: isMain ? '#C4B5FD' : '#5A5A6A', fontFamily: 'var(--font-sport)' }}
-            >
-              {row.rank}
-            </span>
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {row.logo && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={row.logo} alt={row.abbr} className="w-5 h-5 object-contain flex-shrink-0" />
-              )}
-              <span
-                className="text-[12px] font-semibold truncate"
-                style={{ color: isMain ? '#fff' : '#9A9AAA', fontWeight: isMain ? 700 : 400 }}
-              >
-                {row.abbr}
-              </span>
-            </div>
-            <span className="w-7 text-center text-[12px] text-[#5A5A6A]">{row.gp}</span>
-            <span className="w-7 text-center text-[12px] text-[#5A5A6A]">{row.w}</span>
-            <span className="w-7 text-center text-[12px] text-[#5A5A6A]">{row.d}</span>
-            <span className="w-7 text-center text-[12px] text-[#5A5A6A]">{row.l}</span>
-            <span
-              className="hidden sm:block w-9 text-center text-[12px]"
-              style={{ color: row.gd > 0 ? '#22c55e' : row.gd < 0 ? '#ef4444' : '#5A5A6A' }}
-            >
-              {row.gd > 0 ? `+${row.gd}` : row.gd}
-            </span>
-            <span
-              className="w-8 text-center text-[13px] font-black"
-              style={{ color: isMain ? '#C4B5FD' : '#fff', fontFamily: 'var(--font-display)' }}
-            >
-              {row.pts}
-            </span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
 
 // ── Main Team Content ──────────────────────────────────────────────────
 function TeamContent({ team }: { team: TeamDetail }) {
@@ -473,8 +405,8 @@ function TeamContent({ team }: { team: TeamDetail }) {
           style={{ background: `${accent}18` }}
         >
           {team.logo && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={team.logo} alt={team.name} className="w-full h-full object-contain" />
+            <Image src={team.logo} alt={team.name} width={64} height={64} unoptimized
+              style={{ objectFit: 'contain' }} />
           )}
         </div>
 
@@ -521,7 +453,9 @@ function TeamContent({ team }: { team: TeamDetail }) {
         {[
           { label: 'Jugados', value: team.record?.gp ?? past.length },
           { label: 'Victorias', value: team.record?.w ?? past.filter(r => r.result === 'W').length },
-          { label: 'Próximos', value: upcoming.length },
+          upcoming.length > 0
+            ? { label: 'Próximos', value: upcoming.length }
+            : { label: 'Puntos', value: team.record?.pts ?? '—' },
         ].map(s => (
           <div
             key={s.label}
@@ -551,7 +485,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
       >
         <ResultsTab results={team.results} teamId={team.id} />
         <RosterTab roster={team.roster} />
-        <StandingsTab table={team.leagueTable} teamId={team.id} leagueSlug={team.leagueSlug} />
+        <StandingsTab table={team.leagueTable} leagueSlug={team.leagueSlug} />
       </TeamTabs>
     </div>
   )

@@ -93,6 +93,8 @@ function rowToEntry(row: any): RankingEntry {
     gender:       row.gender ?? undefined,
     featured:     row.featured ?? undefined,
     scorePrev:    row.score_prev !== null ? Number(row.score_prev) : undefined,
+    scoreSport:   row.score_sport !== null && row.score_sport !== undefined ? Number(row.score_sport) : undefined,
+    rankSport:    row.rank_sport  !== null && row.rank_sport  !== undefined ? Number(row.rank_sport)  : undefined,
     trendReason:  row.trend_reason ?? undefined,
     factors:      row.factors ?? undefined,
     editorialBoost: row.editorial_boost !== null ? Number(row.editorial_boost) : undefined,

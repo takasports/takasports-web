@@ -8,6 +8,15 @@ export function getDisplayScore(entry: RankingEntry): number {
   return entry.factors ? calcScore(entry.factors, entry.editorialBoost) : entry.score
 }
 
+// Score específico del deporte: rendimiento-heavy (r×0.50 + c×0.30 + m×0.15 + n×0.05)
+// Se usa cuando hay un filtro de deporte activo en el ranking.
+export function getSportScore(entry: RankingEntry): number {
+  if (entry.scoreSport !== undefined) return entry.scoreSport
+  if (!entry.factors) return entry.score
+  const { rendimiento, contexto, mediatico, narrativa } = entry.factors
+  return Math.round((rendimiento * 0.50 + contexto * 0.30 + mediatico * 0.15 + narrativa * 0.05) * 10) / 10
+}
+
 export function getEffectiveTrend(entry: RankingEntry): Trend {
   const s = getDisplayScore(entry)
   return entry.scorePrev !== undefined ? calcTrend(s, entry.scorePrev) : entry.trend

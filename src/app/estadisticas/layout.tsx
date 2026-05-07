@@ -2,11 +2,11 @@ import type { Metadata } from 'next'
 import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: 'Estadísticas deportivas — TakaSports',
-  description: 'Clasificaciones de LaLiga, Premier League, NBA, F1 y más ligas deportivas actualizadas en tiempo real.',
+  title: 'Estadísticas deportivas en vivo',
+  description: 'Goleadores, asistencias, clasificaciones de LaLiga, Premier League, NBA, F1 y más ligas actualizadas en tiempo real.',
   alternates: { canonical: `${SITE_URL}/estadisticas` },
   openGraph: {
-    title: 'Estadísticas deportivas — TakaSports',
+    title: 'Estadísticas deportivas en vivo | TakaSports',
     description: 'Clasificaciones actualizadas de las principales ligas del mundo.',
     url: `${SITE_URL}/estadisticas`,
     siteName: 'TakaSports',

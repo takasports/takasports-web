@@ -18,7 +18,7 @@ import {
   type RankingEntry, type RankingTab,
   type JugadoresScope, type ClubesScope,
 } from '@/lib/rankings'
-import { getDisplayScore } from '@/lib/rankings-ui'
+import { getDisplayScore, getSportScore } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
 import RankRow from '@/components/rankings/RankRow'
 import TopOneRow from '@/components/rankings/TopOneRow'
@@ -284,6 +284,15 @@ export default function RankingsClient({
   } else if (activeTab === 'entrenadores') {
     const base = RANKINGS_BY_TAB.entrenadores
     entries = activeSport ? base.filter(e => e.sport === activeSport) : base
+  }
+
+  // Cuando hay filtro de deporte activo en jugadores: reordenar por score
+  // específico del deporte (rendimiento-heavy) y reasignar ranks 1, 2, 3…
+  const sportFilterActive = !!activeSport && !isSpecialSport && !isContenido
+  if (sportFilterActive && activeTab === 'jugadores' && jugadoresScope === 'global') {
+    entries = [...entries]
+      .sort((a, b) => getSportScore(b) - getSportScore(a))
+      .map((e, i) => ({ ...e, rank: i + 1, _globalRank: e.rank }))
   }
 
   // Re-rank sequentially when entries aren't in canonical global order

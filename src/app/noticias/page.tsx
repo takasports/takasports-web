@@ -13,11 +13,11 @@ import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
 export const revalidate = 60
 
 export const metadata: Metadata = {
-  title: 'Noticias — TakaSports',
-  description: 'Todas las noticias del deporte en tiempo real. Fútbol, NBA, F1, Tenis, UFC y más.',
+  title: 'Noticias deportivas en tiempo real',
+  description: 'Todas las noticias del deporte al minuto: fútbol, NBA, F1, Tenis, UFC, WWE y más. Actualizado cada hora.',
   alternates: { canonical: `${SITE_URL}/noticias` },
   openGraph: {
-    title: 'Noticias deportivas — TakaSports',
+    title: 'Noticias deportivas en tiempo real | TakaSports',
     description: 'Todas las noticias del deporte en tiempo real. Fútbol, NBA, F1, Tenis, UFC y más.',
     url: `${SITE_URL}/noticias`,
     siteName: 'TakaSports',

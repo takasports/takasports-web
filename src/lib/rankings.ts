@@ -49,6 +49,8 @@ export interface RankingEntry {
   position?: string      // posición del jugador
   gender?: 'f'           // solo presente en entradas femeninas
   scorePrev?: number     // score del período anterior — permite calcular trend automáticamente
+  scoreSport?: number    // score específico del deporte (rendimiento-heavy) — usado cuando hay filtro de deporte
+  rankSport?: number     // posición dentro del deporte — usado cuando hay filtro de deporte
   trendReason?: string   // razón del movimiento (aparece como tooltip)
   factors?: {            // desglose editorial de la puntuación
     rendimiento: number  // forma reciente + stats (35 %)

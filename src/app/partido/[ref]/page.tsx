@@ -1,13 +1,15 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import type {
   MatchDetail, MatchStat, ScoringEvent, BasketballLeader, MmaFighter,
-  RacingResult, GolfLeader, LineupPlayer, TeamLineup, LeagueTableRow,
+  RacingResult, GolfLeader, LineupPlayer, TeamLineup,
 } from '@/app/api/match/[ref]/route'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import { MatchTabs } from './MatchTabs'
+import { LeagueTableBlock } from './LeagueTable'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const revalidate = 30
@@ -85,7 +87,7 @@ async function fetchMatchDetail(ref: string): Promise<MatchDetail | null> {
 function TeamLogo({ logo, name, size = 56 }: { logo?: string; name: string; size?: number }) {
   if (logo) {
     return (
-      <img src={logo} alt={name} width={size} height={size}
+      <Image src={logo} alt={name} width={size} height={size} unoptimized
         style={{ width: size, height: size, objectFit: 'contain' }} />
     )
   }
@@ -323,7 +325,7 @@ function LeaderCard({ leader }: { leader: BasketballLeader }) {
     <div className="flex items-center gap-3 p-2.5 rounded-lg"
       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
       {leader.headshot
-        ? <img src={leader.headshot} alt={leader.player} width={36} height={36} className="rounded-full" style={{ objectFit: 'cover', background: '#1A1A28' }} />
+        ? <Image src={leader.headshot} alt={leader.player} width={36} height={36} unoptimized className="rounded-full" style={{ objectFit: 'cover', background: '#1A1A28' }} />
         : <div className="w-9 h-9 rounded-full" style={{ background: '#1A1A28' }} />
       }
       <div className="flex-1 min-w-0">
@@ -392,7 +394,7 @@ function FighterCard({ fighter, side }: { fighter: MmaFighter; side: 'home' | 'a
   return (
     <div className={`flex flex-col ${side === 'away' ? 'items-end text-right' : 'items-start text-left'} gap-2 flex-1`}>
       {fighter.headshot
-        ? <img src={fighter.headshot} alt={fighter.name} width={72} height={72} className="rounded-full"
+        ? <Image src={fighter.headshot} alt={fighter.name} width={72} height={72} unoptimized className="rounded-full"
             style={{ objectFit: 'cover', background: '#1A1A28', border: fighter.winner ? '2px solid #4ade80' : '2px solid rgba(255,255,255,0.06)' }} />
         : <div className="w-[72px] h-[72px] rounded-full" style={{ background: '#1A1A28' }} />
       }
@@ -786,121 +788,6 @@ function LineupField({ lineups, homeTeam, awayTeam }: {
         awayTeam={awayTeam}
       />
     </div>
-  )
-}
-
-// ── League table ───────────────────────────────────────────────────
-function LeagueTableBlock({ rows, leagueLabel, leagueSlug }: { rows: LeagueTableRow[]; leagueLabel: string; leagueSlug: string }) {
-  // Find range: show 3 above top highlighted and 3 below bottom highlighted
-  const highlightedIdxs = rows.reduce<number[]>((acc, r, i) => {
-    if (r.highlight) acc.push(i)
-    return acc
-  }, [])
-  const minI = highlightedIdxs.length ? Math.max(0, Math.min(...highlightedIdxs) - 3) : 0
-  const maxI = highlightedIdxs.length ? Math.min(rows.length - 1, Math.max(...highlightedIdxs) + 3) : rows.length - 1
-  const visible = rows.slice(minI, maxI + 1)
-  const showAll = visible.length >= rows.length
-
-  return (
-    <Section title={`Clasificación · ${leagueLabel}`}>
-      {/* Team headers */}
-      <div className="flex gap-3 mb-3 flex-wrap">
-        {rows.filter(r => r.highlight).map(r => (
-          <div key={r.name} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
-            style={{
-              background: r.highlight === 'home' ? 'rgba(129,140,248,0.10)' : 'rgba(245,158,11,0.10)',
-              border: `1px solid ${r.highlight === 'home' ? 'rgba(129,140,248,0.25)' : 'rgba(245,158,11,0.25)'}`,
-            }}>
-            {r.logo && (
-              <img src={r.logo} alt={r.name} width={16} height={16} style={{ objectFit: 'contain' }} />
-            )}
-            <span className="text-[10px] font-black" style={{ color: r.highlight === 'home' ? '#818cf8' : '#f59e0b', fontFamily: 'var(--font-sport)' }}>
-              {r.abbr || r.name}
-            </span>
-            <span className="text-[10px] font-black" style={{ color: r.highlight === 'home' ? '#818cf8' : '#f59e0b', fontFamily: 'var(--font-display)' }}>
-              {r.rank}º · {r.pts} pts
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="overflow-x-auto -mx-1 px-1">
-        <table className="w-full text-[10px]" style={{ fontFamily: 'var(--font-sport)', borderCollapse: 'separate', borderSpacing: '0 1px' }}>
-          <thead>
-            <tr style={{ color: '#3A3A5A' }}>
-              <th className="text-left font-semibold pb-2 w-5">#</th>
-              <th className="text-left font-semibold pb-2">Equipo</th>
-              <th className="text-center font-semibold pb-2 px-1 w-7">PJ</th>
-              <th className="text-center font-semibold pb-2 px-1 w-7">V</th>
-              <th className="text-center font-semibold pb-2 px-1 w-7">E</th>
-              <th className="text-center font-semibold pb-2 px-1 w-7">D</th>
-              <th className="text-center font-semibold pb-2 px-1 w-8">DG</th>
-              <th className="text-center font-black pb-2 px-1 w-8" style={{ color: '#9090A8' }}>PTS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {minI > 0 && (
-              <tr>
-                <td colSpan={8} className="py-1 text-center text-[9px]" style={{ color: '#2A2A3A' }}>
-                  ···
-                </td>
-              </tr>
-            )}
-            {visible.map((row) => {
-              const isHome = row.highlight === 'home'
-              const isAway = row.highlight === 'away'
-              const accent = isHome ? '#818cf8' : isAway ? '#f59e0b' : undefined
-              const teamHref = row.teamId ? `/equipo/${leagueSlug.replace('/', '_')}_${row.teamId}` : undefined
-              const RowWrapper = ({ children }: { children: React.ReactNode }) =>
-                teamHref ? (
-                  <tr key={row.rank} style={{ background: accent ? `${accent}0e` : 'transparent', cursor: 'pointer' }}
-                    onClick={() => { window.location.href = teamHref }}>
-                    {children}
-                  </tr>
-                ) : (
-                  <tr key={row.rank} style={{ background: accent ? `${accent}0e` : 'transparent' }}>
-                    {children}
-                  </tr>
-                )
-              return (
-                <RowWrapper key={row.rank}>
-                  <td className="py-1.5 pl-1 tabular-nums" style={{ color: accent ?? '#3A3A5A', fontWeight: accent ? 900 : 600 }}>
-                    {row.rank}
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <div className="flex items-center gap-1.5">
-                      {row.logo && (
-                        <img src={row.logo} alt={row.name} width={14} height={14} style={{ objectFit: 'contain', flexShrink: 0 }} />
-                      )}
-                      <span className="font-black truncate" style={{ color: accent ?? '#C0C0D4', maxWidth: 120 }}>
-                        {row.abbr || row.name}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.gp}</td>
-                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.w}</td>
-                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.d}</td>
-                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.l}</td>
-                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>
-                    {row.gd >= 0 ? `+${row.gd}` : row.gd}
-                  </td>
-                  <td className="text-center font-black tabular-nums py-1.5" style={{ color: accent ?? '#E0E0F0' }}>
-                    {row.pts}
-                  </td>
-                </RowWrapper>
-              )
-            })}
-            {!showAll && maxI < rows.length - 1 && (
-              <tr>
-                <td colSpan={8} className="py-1 text-center text-[9px]" style={{ color: '#2A2A3A' }}>
-                  ···
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </Section>
   )
 }
 
