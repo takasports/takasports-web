@@ -1,0 +1,1213 @@
+'use client'
+
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import Link from 'next/link'
+import { trackGameStart, trackGameComplete } from '@/lib/analytics'
+import Header from '@/components/Header'
+import LiveStrip from '@/components/LiveStrip'
+import Footer from '@/components/Footer'
+import ScrollToTop from '@/components/ScrollToTop'
+import { searchPlayers, getPlayerById, type Player, type PlayerPosition } from '@/lib/players-catalog'
+import { getWeeklyChallenge, type FormationId, type Challenge } from '@/lib/mionce-challenges'
+
+// ── Constants ────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'ts_mionce_state'
+const ACCENT = '#93C5FD'
+const ACCENT_DIM = '#2563EB'
+
+interface SlotDef {
+  id: string                 // gk, lb, cb1, cb2, rb, cm1, cm2, st1...
+  position: PlayerPosition   // GK | DEF | MID | FWD
+  label: string              // "GK", "LB", "CB", "CM", "ST", etc.
+  x: number                  // 0-100 (% horizontal)
+  y: number                  // 0-100 (% vertical, 100=arriba=ataque)
+}
+
+// Posiciones en %. y=10 (cerca de GK) hasta y=90 (delanteros).
+// El campo se renderiza con GK abajo y portería rival arriba.
+const FORMATIONS: Record<FormationId, SlotDef[]> = {
+  '4-3-3': [
+    { id: 'gk',  position: 'GK',  label: 'PT', x: 50, y: 8 },
+    { id: 'lb',  position: 'DEF', label: 'LI', x: 14, y: 26 },
+    { id: 'cb1', position: 'DEF', label: 'DC', x: 36, y: 24 },
+    { id: 'cb2', position: 'DEF', label: 'DC', x: 64, y: 24 },
+    { id: 'rb',  position: 'DEF', label: 'LD', x: 86, y: 26 },
+    { id: 'cm1', position: 'MID', label: 'MC', x: 28, y: 50 },
+    { id: 'cm2', position: 'MID', label: 'MC', x: 50, y: 46 },
+    { id: 'cm3', position: 'MID', label: 'MC', x: 72, y: 50 },
+    { id: 'lw',  position: 'FWD', label: 'EI', x: 18, y: 76 },
+    { id: 'st',  position: 'FWD', label: 'DC', x: 50, y: 82 },
+    { id: 'rw',  position: 'FWD', label: 'ED', x: 82, y: 76 },
+  ],
+  '4-4-2': [
+    { id: 'gk',  position: 'GK',  label: 'PT', x: 50, y: 8 },
+    { id: 'lb',  position: 'DEF', label: 'LI', x: 14, y: 26 },
+    { id: 'cb1', position: 'DEF', label: 'DC', x: 36, y: 24 },
+    { id: 'cb2', position: 'DEF', label: 'DC', x: 64, y: 24 },
+    { id: 'rb',  position: 'DEF', label: 'LD', x: 86, y: 26 },
+    { id: 'lm',  position: 'MID', label: 'MI', x: 14, y: 52 },
+    { id: 'cm1', position: 'MID', label: 'MC', x: 36, y: 50 },
+    { id: 'cm2', position: 'MID', label: 'MC', x: 64, y: 50 },
+    { id: 'rm',  position: 'MID', label: 'MD', x: 86, y: 52 },
+    { id: 'st1', position: 'FWD', label: 'DC', x: 36, y: 80 },
+    { id: 'st2', position: 'FWD', label: 'DC', x: 64, y: 80 },
+  ],
+  '3-5-2': [
+    { id: 'gk',  position: 'GK',  label: 'PT', x: 50, y: 8 },
+    { id: 'cb1', position: 'DEF', label: 'DC', x: 24, y: 24 },
+    { id: 'cb2', position: 'DEF', label: 'DC', x: 50, y: 22 },
+    { id: 'cb3', position: 'DEF', label: 'DC', x: 76, y: 24 },
+    { id: 'lwb', position: 'MID', label: 'CI', x: 10, y: 48 },
+    { id: 'cm1', position: 'MID', label: 'MC', x: 32, y: 50 },
+    { id: 'cm2', position: 'MID', label: 'MCO', x: 50, y: 56 },
+    { id: 'cm3', position: 'MID', label: 'MC', x: 68, y: 50 },
+    { id: 'rwb', position: 'MID', label: 'CD', x: 90, y: 48 },
+    { id: 'st1', position: 'FWD', label: 'DC', x: 36, y: 82 },
+    { id: 'st2', position: 'FWD', label: 'DC', x: 64, y: 82 },
+  ],
+  '4-2-3-1': [
+    { id: 'gk',  position: 'GK',  label: 'PT', x: 50, y: 8 },
+    { id: 'lb',  position: 'DEF', label: 'LI', x: 14, y: 26 },
+    { id: 'cb1', position: 'DEF', label: 'DC', x: 36, y: 24 },
+    { id: 'cb2', position: 'DEF', label: 'DC', x: 64, y: 24 },
+    { id: 'rb',  position: 'DEF', label: 'LD', x: 86, y: 26 },
+    { id: 'dm1', position: 'MID', label: 'MCD', x: 36, y: 44 },
+    { id: 'dm2', position: 'MID', label: 'MCD', x: 64, y: 44 },
+    { id: 'lam', position: 'MID', label: 'EI', x: 16, y: 66 },
+    { id: 'cam', position: 'MID', label: 'MCO', x: 50, y: 64 },
+    { id: 'ram', position: 'MID', label: 'ED', x: 84, y: 66 },
+    { id: 'st',  position: 'FWD', label: 'DC', x: 50, y: 84 },
+  ],
+}
+
+const FORMATION_LIST: FormationId[] = ['4-3-3', '4-4-2', '3-5-2', '4-2-3-1']
+
+// ── Types ────────────────────────────────────────────────────────
+
+interface StoredState {
+  weekKey: string
+  formation: FormationId
+  slots: Record<string, string>  // slotId -> playerId
+}
+
+// ── Country flags (emoji) ────────────────────────────────────────
+
+const FLAG: Record<string, string> = {
+  'España': '🇪🇸', 'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Francia': '🇫🇷',
+  'Alemania': '🇩🇪', 'Italia': '🇮🇹', 'Inglaterra': '🇬🇧', 'Portugal': '🇵🇹',
+  'Países Bajos': '🇳🇱', 'Bélgica': '🇧🇪', 'Croacia': '🇭🇷', 'Uruguay': '🇺🇾',
+  'Colombia': '🇨🇴', 'Chile': '🇨🇱', 'México': '🇲🇽', 'Estados Unidos': '🇺🇸',
+  'Polonia': '🇵🇱', 'Noruega': '🇳🇴', 'Suecia': '🇸🇪', 'Dinamarca': '🇩🇰',
+  'Suiza': '🇨🇭', 'Austria': '🇦🇹', 'Hungría': '🇭🇺', 'Chequia': '🇨🇿',
+  'Serbia': '🇷🇸', 'Ucrania': '🇺🇦', 'Rusia': '🇷🇺', 'Turquía': '🇹🇷',
+  'Marruecos': '🇲🇦', 'Senegal': '🇸🇳', 'Egipto': '🇪🇬', 'Nigeria': '🇳🇬',
+  'Camerún': '🇨🇲', 'Ghana': '🇬🇭', 'Costa de Marfil': '🇨🇮', 'Mali': '🇲🇱',
+  'Liberia': '🇱🇷', 'Gabón': '🇬🇦', 'Burkina Faso': '🇧🇫', 'RD del Congo': '🇨🇩',
+  'Mozambique': '🇲🇿', 'Corea del Sur': '🇰🇷', 'Japón': '🇯🇵', 'Irán': '🇮🇷',
+  'Costa Rica': '🇨🇷', 'Paraguay': '🇵🇾', 'Perú': '🇵🇪', 'Ecuador': '🇪🇨',
+  'Bolivia': '🇧🇴', 'Venezuela': '🇻🇪', 'Bulgaria': '🇧🇬', 'Rumanía': '🇷🇴',
+  'Eslovaquia': '🇸🇰', 'Eslovenia': '🇸🇮', 'Escocia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'Irlanda': '🇮🇪',
+  'Armenia': '🇦🇲', 'Georgia': '🇬🇪', 'Guinea': '🇬🇳', 'Canadá': '🇨🇦',
+  'Montenegro': '🇲🇪',
+}
+
+function flag(country: string): string {
+  return FLAG[country] ?? '🏳️'
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+
+function loadState(): StoredState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+function saveState(s: StoredState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s))
+  } catch { /* ignore */ }
+}
+
+// ── Icons ────────────────────────────────────────────────────────
+
+function IconClose() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconSearch() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="6" cy="6" r="4.25" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M9.5 9.5L12 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconPlus() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconBack() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M11 7H3M6.5 3.5L3 7l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconShare() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="11" cy="3" r="1.8" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="3" cy="7" r="1.8" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="11" cy="11" r="1.8" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M9.5 4L4.5 6.2M4.5 7.8L9.5 10" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  )
+}
+
+function IconImage() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x="1.5" y="2.5" width="11" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="4.5" cy="5.5" r="1" fill="currentColor" />
+      <path d="M1.5 9.5l3-3 2.5 2.5 2-2 3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// ── Share image generator (Canvas 2D) ───────────────────────────
+
+function generateShareImage(
+  formationSlots: SlotDef[],
+  playerSlots: Record<string, string>,
+  challengeTitle: string,
+  formation: FormationId,
+  weekKey: string,
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const W = 600
+    const H = 900
+    const canvas = document.createElement('canvas')
+    canvas.width = W
+    canvas.height = H
+    const ctx = canvas.getContext('2d')
+    if (!ctx) { reject(new Error('no canvas')); return }
+
+    // ── Fondo ──────────────────────────────────────────────────
+    ctx.fillStyle = '#09090F'
+    ctx.fillRect(0, 0, W, H)
+
+    // Glow azul top-left
+    const glowTL = ctx.createRadialGradient(0, 0, 0, 0, 0, 400)
+    glowTL.addColorStop(0, 'rgba(37,99,235,0.18)')
+    glowTL.addColorStop(1, 'transparent')
+    ctx.fillStyle = glowTL
+    ctx.fillRect(0, 0, W, H)
+
+    // Glow azul bottom-right
+    const glowBR = ctx.createRadialGradient(W, H, 0, W, H, 360)
+    glowBR.addColorStop(0, 'rgba(147,197,253,0.08)')
+    glowBR.addColorStop(1, 'transparent')
+    ctx.fillStyle = glowBR
+    ctx.fillRect(0, 0, W, H)
+
+    // ── Header ─────────────────────────────────────────────────
+    const HEADER_H = 100
+    // Logo
+    ctx.font = 'bold 28px "Arial Black", Arial, sans-serif'
+    ctx.fillStyle = '#FFFFFF'
+    ctx.fillText('TAKA', 32, 46)
+    ctx.fillStyle = '#93C5FD'
+    const takaW = ctx.measureText('TAKA').width
+    ctx.fillText('SPORTS', 32 + takaW, 46)
+
+    // Dot separador + semana
+    ctx.font = '600 11px Arial, sans-serif'
+    ctx.fillStyle = 'rgba(147,197,253,0.7)'
+    ctx.fillText(`MI ONCE  ·  ${weekKey}  ·  ${formation}`, 32, 68)
+
+    // Línea separadora
+    ctx.strokeStyle = 'rgba(147,197,253,0.15)'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(32, HEADER_H - 8)
+    ctx.lineTo(W - 32, HEADER_H - 8)
+    ctx.stroke()
+
+    // Título reto
+    ctx.font = 'bold 18px "Arial Black", Arial, sans-serif'
+    ctx.fillStyle = '#F0F0F5'
+    const maxTitleW = W - 64
+    let title = challengeTitle
+    // Truncar si muy largo
+    while (ctx.measureText(title).width > maxTitleW && title.length > 10) {
+      title = title.slice(0, -1)
+    }
+    if (title !== challengeTitle) title += '…'
+    ctx.fillText(title, 32, HEADER_H + 26)
+
+    // ── Campo ──────────────────────────────────────────────────
+    const FIELD_X = 30
+    const FIELD_Y = HEADER_H + 50
+    const FIELD_W = W - 60
+    const FIELD_H = 620
+
+    // Fondo verde con franjas
+    const greenGrad = ctx.createLinearGradient(FIELD_X, FIELD_Y, FIELD_X, FIELD_Y + FIELD_H)
+    greenGrad.addColorStop(0, '#0a3d1f')
+    greenGrad.addColorStop(0.5, '#0d4a26')
+    greenGrad.addColorStop(1, '#0a3d1f')
+    ctx.fillStyle = greenGrad
+    ctx.beginPath()
+    ctx.roundRect(FIELD_X, FIELD_Y, FIELD_W, FIELD_H, 12)
+    ctx.fill()
+
+    // Franjas alternadas
+    ctx.save()
+    ctx.beginPath()
+    ctx.roundRect(FIELD_X, FIELD_Y, FIELD_W, FIELD_H, 12)
+    ctx.clip()
+    const stripeH = FIELD_H / 10
+    for (let i = 0; i < 10; i++) {
+      if (i % 2 === 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.03)'
+        ctx.fillRect(FIELD_X, FIELD_Y + i * stripeH, FIELD_W, stripeH)
+      }
+    }
+    ctx.restore()
+
+    // Marcas del campo
+    ctx.save()
+    ctx.beginPath()
+    ctx.roundRect(FIELD_X, FIELD_Y, FIELD_W, FIELD_H, 12)
+    ctx.clip()
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'
+    ctx.lineWidth = 1.2
+
+    const fx = FIELD_X, fy = FIELD_Y, fw = FIELD_W, fh = FIELD_H
+
+    // Borde
+    ctx.strokeRect(fx + 10, fy + 10, fw - 20, fh - 20)
+    // Línea media
+    ctx.beginPath()
+    ctx.moveTo(fx + 10, fy + fh / 2)
+    ctx.lineTo(fx + fw - 10, fy + fh / 2)
+    ctx.stroke()
+    // Círculo central
+    ctx.beginPath()
+    ctx.arc(fx + fw / 2, fy + fh / 2, fh * 0.08, 0, Math.PI * 2)
+    ctx.stroke()
+    // Punto central
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'
+    ctx.beginPath()
+    ctx.arc(fx + fw / 2, fy + fh / 2, 3, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Área grande inferior (portería propia)
+    const areaW = fw * 0.55, areaH = fh * 0.12
+    ctx.strokeRect(fx + (fw - areaW) / 2, fy + fh - 10 - areaH, areaW, areaH)
+    // Área pequeña inferior
+    const smallW = fw * 0.3, smallH = fh * 0.055
+    ctx.strokeRect(fx + (fw - smallW) / 2, fy + fh - 10 - smallH, smallW, smallH)
+
+    // Área grande superior
+    ctx.strokeRect(fx + (fw - areaW) / 2, fy + 10, areaW, areaH)
+    ctx.strokeRect(fx + (fw - smallW) / 2, fy + 10, smallW, smallH)
+
+    ctx.restore()
+
+    // ── Jugadores ──────────────────────────────────────────────
+    const AVATAR_R = 22
+    const LABEL_PAD = 4
+
+    formationSlots.forEach(slot => {
+      const pid = playerSlots[slot.id]
+      const player = pid ? getPlayerById(pid) : null
+
+      // Coordenadas: x% del campo, bottom y% del campo
+      const cx = fx + (slot.x / 100) * fw
+      const cy = fy + fh - (slot.y / 100) * fh
+
+      if (player) {
+        // Círculo relleno azul
+        const grad = ctx.createRadialGradient(cx - AVATAR_R * 0.3, cy - AVATAR_R * 0.3, 0, cx, cy, AVATAR_R)
+        grad.addColorStop(0, '#3B82F6')
+        grad.addColorStop(1, '#1E3A8A')
+        ctx.fillStyle = grad
+        ctx.beginPath()
+        ctx.arc(cx, cy, AVATAR_R, 0, Math.PI * 2)
+        ctx.fill()
+
+        // Borde
+        ctx.strokeStyle = '#93C5FD'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.arc(cx, cy, AVATAR_R, 0, Math.PI * 2)
+        ctx.stroke()
+
+        // Iniciales
+        const initials = player.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('')
+        ctx.font = 'bold 12px "Arial Black", Arial, sans-serif'
+        ctx.fillStyle = '#FFFFFF'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(initials, cx, cy)
+
+        // Apellido en cápsula
+        const apellido = player.name.split(' ').slice(-1)[0].toUpperCase()
+        ctx.font = 'bold 9px Arial, sans-serif'
+        const labelW = Math.min(ctx.measureText(apellido).width + LABEL_PAD * 2 + 4, fw * 0.25)
+        const labelH = 16
+        const labelX = cx - labelW / 2
+        const labelY = cy + AVATAR_R + 3
+
+        ctx.fillStyle = 'rgba(0,0,0,0.75)'
+        ctx.beginPath()
+        ctx.roundRect(labelX, labelY, labelW, labelH, 4)
+        ctx.fill()
+
+        ctx.fillStyle = '#F0F0F5'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        // Truncar apellido si necesario
+        let ap = apellido
+        while (ctx.measureText(ap).width > labelW - LABEL_PAD * 2 && ap.length > 3) ap = ap.slice(0, -1)
+        if (ap !== apellido) ap += '.'
+        ctx.fillText(ap, cx, labelY + labelH / 2)
+      } else {
+        // Círculo vacío punteado
+        ctx.setLineDash([4, 3])
+        ctx.strokeStyle = 'rgba(147,197,253,0.4)'
+        ctx.lineWidth = 1.5
+        ctx.beginPath()
+        ctx.arc(cx, cy, AVATAR_R, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.setLineDash([])
+
+        // Label de posición
+        ctx.font = 'bold 10px "Arial Black", Arial, sans-serif'
+        ctx.fillStyle = 'rgba(147,197,253,0.6)'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(slot.label, cx, cy)
+      }
+    })
+
+    // ── Footer ─────────────────────────────────────────────────
+    const FOOTER_Y = FIELD_Y + FIELD_H + 20
+    ctx.textAlign = 'center'
+    ctx.font = '500 12px Arial, sans-serif'
+    ctx.fillStyle = 'rgba(147,197,253,0.5)'
+    ctx.textBaseline = 'alphabetic'
+    ctx.fillText('takasportsmedia.com', W / 2, FOOTER_Y + 20)
+
+    // Puntos decorativos
+    ctx.fillStyle = 'rgba(147,197,253,0.3)'
+    ctx.beginPath()
+    ctx.arc(W / 2 - 90, FOOTER_Y + 15, 2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(W / 2 + 90, FOOTER_Y + 15, 2, 0, Math.PI * 2)
+    ctx.fill()
+
+    canvas.toBlob(blob => {
+      if (blob) resolve(blob)
+      else reject(new Error('canvas toBlob failed'))
+    }, 'image/png')
+  })
+}
+
+function IconReset() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2 4.5h6c2.2 0 3.5 1.4 3.5 3.5s-1.3 3.5-3.5 3.5H4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 2L2 4.5 4 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// ── Player search modal ─────────────────────────────────────────
+
+interface SearchModalProps {
+  slot: SlotDef
+  challenge: Challenge
+  excludeIds: string[]
+  onSelect: (player: Player) => void
+  onClose: () => void
+}
+
+function PlayerSearchModal({ slot, challenge, excludeIds, onSelect, onClose }: SearchModalProps) {
+  const [query, setQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [onClose])
+
+  const results = useMemo(() => {
+    const all = searchPlayers(query, { position: slot.position, excludeIds, limit: 60 })
+    if (challenge.filter) return all.filter(challenge.filter)
+    return all
+  }, [query, slot.position, excludeIds, challenge])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col"
+        style={{ background: 'var(--bg-card)', border: `1px solid ${ACCENT_DIM}40`, maxHeight: '85vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-black"
+            style={{ background: `${ACCENT_DIM}28`, color: ACCENT, border: `1px solid ${ACCENT_DIM}40`, fontFamily: 'var(--font-sport)' }}
+          >
+            {slot.label}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+              Buscar {slot.position === 'GK' ? 'portero' : slot.position === 'DEF' ? 'defensa' : slot.position === 'MID' ? 'centrocampista' : 'delantero'}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              {challenge.title}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+            style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)' }}
+            aria-label="Cerrar"
+          >
+            <IconClose />
+          </button>
+        </div>
+
+        {/* Search input */}
+        <div className="p-4 pb-2">
+          <div
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+            style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <span style={{ color: 'var(--text-muted)' }}><IconSearch /></span>
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Nombre del jugador o club…"
+              className="flex-1 bg-transparent outline-none text-sm"
+              style={{ color: '#F0F0F5' }}
+            />
+            {query && (
+              <button onClick={() => setQuery('')} style={{ color: 'var(--text-muted)' }}>
+                <IconClose />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Results list */}
+        <div className="flex-1 overflow-y-auto px-2 pb-3">
+          {results.length === 0 ? (
+            <div className="px-4 py-10 text-center">
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                No hay jugadores que encajen.
+              </p>
+              <p className="text-[11px] mt-1" style={{ color: '#3A3A52' }}>
+                Prueba a cambiar el término de búsqueda.
+              </p>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-1">
+              {results.map(p => (
+                <li key={p.id}>
+                  <button
+                    onClick={() => onSelect(p)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left hover:bg-white/5"
+                  >
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-black flex-shrink-0"
+                      style={{
+                        background: `linear-gradient(135deg, ${ACCENT_DIM}40, ${ACCENT_DIM}10)`,
+                        color: ACCENT,
+                        border: `1px solid ${ACCENT_DIM}40`,
+                        fontFamily: 'var(--font-display)',
+                      }}
+                    >
+                      {p.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-black truncate" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+                        <span className="mr-1.5">{flag(p.country)}</span>{p.name}
+                      </p>
+                      <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
+                        {p.club}
+                      </p>
+                    </div>
+                    <span
+                      className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded flex-shrink-0"
+                      style={{
+                        background: p.era === 'current' ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.04)',
+                        color: p.era === 'current' ? '#4ade80' : '#5A5A7A',
+                        fontFamily: 'var(--font-sport)',
+                      }}
+                    >
+                      {p.era === 'current' ? 'Activo' : 'Leyenda'}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Pitch slot ───────────────────────────────────────────────────
+
+interface PitchSlotProps {
+  slot: SlotDef
+  player: Player | null
+  onClick: () => void
+  onClear: () => void
+}
+
+function PitchSlot({ slot, player, onClick, onClear }: PitchSlotProps) {
+  return (
+    <div
+      className="absolute -translate-x-1/2 -translate-y-1/2"
+      style={{ left: `${slot.x}%`, bottom: `${slot.y}%` }}
+    >
+      {player ? (
+        <div className="relative group">
+          <button
+            onClick={onClick}
+            className="flex flex-col items-center gap-1 transition-transform hover:scale-105"
+          >
+            <div
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-xs sm:text-sm font-black"
+              style={{
+                background: `linear-gradient(135deg, ${ACCENT_DIM}, #1E3A8A)`,
+                color: '#fff',
+                border: `2px solid ${ACCENT}`,
+                boxShadow: `0 4px 16px ${ACCENT_DIM}60, 0 0 0 3px rgba(0,0,0,0.4)`,
+                fontFamily: 'var(--font-display)',
+              }}
+            >
+              {player.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
+            </div>
+            <div
+              className="px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-black whitespace-nowrap max-w-[90px] sm:max-w-[110px] truncate"
+              style={{
+                background: 'rgba(0,0,0,0.7)',
+                color: '#F0F0F5',
+                border: '1px solid rgba(255,255,255,0.1)',
+                fontFamily: 'var(--font-display)',
+              }}
+            >
+              <span className="mr-1">{flag(player.country)}</span>
+              {player.name.split(' ').slice(-1)[0]}
+            </div>
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onClear() }}
+            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ background: '#DC2626', color: '#fff', border: '2px solid #0F0A20' }}
+            aria-label="Quitar jugador"
+          >
+            <IconClose />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={onClick}
+          className="flex flex-col items-center gap-1 transition-transform hover:scale-110"
+        >
+          <div
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center"
+            style={{
+              background: 'rgba(0,0,0,0.4)',
+              color: ACCENT,
+              border: `2px dashed ${ACCENT}80`,
+              backdropFilter: 'blur(2px)',
+            }}
+          >
+            <IconPlus />
+          </div>
+          <span
+            className="px-1.5 py-0.5 rounded text-[9px] font-black"
+            style={{
+              background: 'rgba(0,0,0,0.6)',
+              color: ACCENT,
+              fontFamily: 'var(--font-sport)',
+              letterSpacing: '0.08em',
+            }}
+          >
+            {slot.label}
+          </span>
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ── Pitch ────────────────────────────────────────────────────────
+
+function Pitch({ slots, players, onSlotClick, onSlotClear }: {
+  slots: SlotDef[]
+  players: Record<string, string>
+  onSlotClick: (slot: SlotDef) => void
+  onSlotClear: (slotId: string) => void
+}) {
+  return (
+    <div
+      className="relative w-full rounded-2xl overflow-hidden"
+      style={{
+        aspectRatio: '3 / 4',
+        background: 'linear-gradient(180deg, #0a3d1f 0%, #0d4a26 50%, #0a3d1f 100%)',
+        border: `1px solid ${ACCENT_DIM}40`,
+        boxShadow: `inset 0 0 80px rgba(0,0,0,0.5)`,
+      }}
+    >
+      {/* Stripes */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-20"
+        style={{
+          background: 'repeating-linear-gradient(0deg, transparent 0, transparent 10%, rgba(255,255,255,0.08) 10%, rgba(255,255,255,0.08) 20%)',
+        }}
+      />
+
+      {/* Field markings */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 133" preserveAspectRatio="none">
+        {/* Outer */}
+        <rect x="2" y="2" width="96" height="129" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" />
+        {/* Halfway line */}
+        <line x1="2" y1="66.5" x2="98" y2="66.5" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" />
+        {/* Center circle */}
+        <circle cx="50" cy="66.5" r="10" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" />
+        <circle cx="50" cy="66.5" r="0.6" fill="rgba(255,255,255,0.5)" />
+        {/* Bottom box (own goal) */}
+        <rect x="28" y="119" width="44" height="12" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" />
+        <rect x="38" y="127" width="24" height="4" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" />
+        <circle cx="50" cy="123" r="0.6" fill="rgba(255,255,255,0.5)" />
+        {/* Top box (opponent goal) */}
+        <rect x="28" y="2" width="44" height="12" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" />
+        <rect x="38" y="2" width="24" height="4" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" />
+        <circle cx="50" cy="10" r="0.6" fill="rgba(255,255,255,0.5)" />
+        {/* Corners */}
+        <path d="M2,4 A2,2 0 0 0 4,2" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.3" />
+        <path d="M96,2 A2,2 0 0 0 98,4" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.3" />
+        <path d="M2,129 A2,2 0 0 1 4,131" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.3" />
+        <path d="M98,129 A2,2 0 0 0 96,131" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.3" />
+      </svg>
+
+      {/* Slots */}
+      {slots.map(slot => {
+        const playerId = players[slot.id]
+        const player = playerId ? getPlayerById(playerId) ?? null : null
+        return (
+          <PitchSlot
+            key={slot.id}
+            slot={slot}
+            player={player}
+            onClick={() => onSlotClick(slot)}
+            onClear={() => onSlotClear(slot.id)}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────
+
+export default function MiOncePage() {
+  const [hydrated, setHydrated] = useState(false)
+  const [formation, setFormation] = useState<FormationId>('4-3-3')
+  const [slots, setSlots] = useState<Record<string, string>>({})
+  const [activeSlot, setActiveSlot] = useState<SlotDef | null>(null)
+  const [shareToast, setShareToast] = useState<string | null>(null)
+
+  const { challenge, week } = useMemo(() => getWeeklyChallenge(), [])
+
+  // Hydrate from localStorage; reset si la semana cambió
+  useEffect(() => {
+    const stored = loadState()
+    if (stored && stored.weekKey === week.key) {
+      setFormation(stored.formation)
+      setSlots(stored.slots ?? {})
+    } else {
+      setFormation(challenge.recommendedFormation)
+      setSlots({})
+    }
+    setHydrated(true)
+  }, [week.key, challenge.recommendedFormation])
+
+  // Persist
+  useEffect(() => {
+    if (!hydrated) return
+    saveState({ weekKey: week.key, formation, slots })
+  }, [hydrated, week.key, formation, slots])
+
+  // Auto-clear toast
+  useEffect(() => {
+    if (!shareToast) return
+    const t = setTimeout(() => setShareToast(null), 2200)
+    return () => clearTimeout(t)
+  }, [shareToast])
+
+  const formationSlots = FORMATIONS[formation]
+  const filledCount = formationSlots.filter(s => !!slots[s.id]).length
+  const isComplete = filledCount === 11
+
+  const prevFilledRef = useRef(0)
+  useEffect(() => {
+    if (prevFilledRef.current === 0 && filledCount === 1) trackGameStart('mi_once')
+    if (!prevFilledRef.current || prevFilledRef.current < 11) {
+      if (filledCount === 11) trackGameComplete({ game: 'mi_once', correct: 11, total: 11 })
+    }
+    prevFilledRef.current = filledCount
+  }, [filledCount])
+
+  const usedPlayerIds = useMemo(() => Object.values(slots).filter(Boolean), [slots])
+
+  const handleSelectPlayer = useCallback((player: Player) => {
+    if (!activeSlot) return
+    setSlots(prev => ({ ...prev, [activeSlot.id]: player.id }))
+    setActiveSlot(null)
+  }, [activeSlot])
+
+  const handleClearSlot = useCallback((slotId: string) => {
+    setSlots(prev => {
+      const next = { ...prev }
+      delete next[slotId]
+      return next
+    })
+  }, [])
+
+  const handleChangeFormation = (newFormation: FormationId) => {
+    if (newFormation === formation) return
+    // Migrar jugadores compatibles por posición. Slots sin coincidencia se pierden.
+    const oldSlots = FORMATIONS[formation]
+    const newSlots = FORMATIONS[newFormation]
+    const migrated: Record<string, string> = {}
+
+    // Pool de jugadores agrupados por posición
+    const byPos: Record<PlayerPosition, string[]> = { GK: [], DEF: [], MID: [], FWD: [] }
+    oldSlots.forEach(s => {
+      const pid = slots[s.id]
+      if (pid) byPos[s.position].push(pid)
+    })
+
+    newSlots.forEach(s => {
+      const pid = byPos[s.position].shift()
+      if (pid) migrated[s.id] = pid
+    })
+
+    setFormation(newFormation)
+    setSlots(migrated)
+  }
+
+  const handleReset = () => {
+    if (filledCount === 0) return
+    if (!confirm('¿Vaciar todo el once?')) return
+    setSlots({})
+  }
+
+  const [generatingImage, setGeneratingImage] = useState(false)
+
+  const handleShareImage = async () => {
+    if (generatingImage) return
+    setGeneratingImage(true)
+    try {
+      const blob = await generateShareImage(formationSlots, slots, challenge.title, formation, week.key)
+      const file = new File([blob], 'mi-once-takasports.png', { type: 'image/png' })
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Mi Once — ${challenge.title}` })
+        setShareToast('¡Imagen compartida!')
+      } else {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'mi-once-takasports.png'
+        a.click()
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+        setShareToast('Imagen descargada')
+      }
+    } catch {
+      setShareToast('No se pudo generar la imagen')
+    } finally {
+      setGeneratingImage(false)
+    }
+  }
+
+  const handleShare = async () => {
+    // Build visual formation text
+    const bySlot: Record<string, string> = {}
+    formationSlots.forEach(s => {
+      const p = slots[s.id] ? getPlayerById(slots[s.id]) : null
+      bySlot[s.id] = p ? p.name.split(' ').pop()! : '?'
+    })
+    // Group by y-band (row) sorted top to bottom (highest y first = attack)
+    const bands = formationSlots
+      .slice()
+      .sort((a, b) => b.y - a.y)
+      .reduce<SlotDef[][]>((acc, slot) => {
+        const last = acc[acc.length - 1]
+        if (last && Math.abs(last[0].y - slot.y) < 14) {
+          last.push(slot)
+        } else {
+          acc.push([slot])
+        }
+        return acc
+      }, [])
+    const pitchLines = bands.map(band =>
+      band.sort((a, b) => a.x - b.x).map(s => bySlot[s.id]).join('  ')
+    )
+    const filled = formationSlots.filter(s => !!slots[s.id]).length
+    const stars = filled >= 11 ? '⭐' : filled >= 8 ? '✨' : ''
+    const text = [
+      `⚽ Mi Once — ${challenge.title} ${stars}`,
+      `📐 ${formation} | TakaSports`,
+      '',
+      ...pitchLines,
+      '',
+      `takasportsmedia.com/mionce`,
+    ].join('\n')
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Mi Once — TakaSports', text })
+        setShareToast('¡Compartido!')
+      } else {
+        await navigator.clipboard.writeText(text)
+        setShareToast('Copiado al portapapeles')
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(text)
+        setShareToast('Copiado al portapapeles')
+      } catch {
+        setShareToast('No se pudo compartir')
+      }
+    }
+  }
+
+  return (
+    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+      <Header />
+      <LiveStrip />
+
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+        {/* Breadcrumb */}
+        <div className="pt-6 sm:pt-8">
+          <Link
+            href="/juegos"
+            className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-colors hover:text-white"
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
+          >
+            <IconBack />
+            Volver a juegos
+          </Link>
+        </div>
+
+        {/* Hero */}
+        <div className="pt-4 pb-6">
+          <div className="flex items-center gap-2.5 mb-2">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: ACCENT }} />
+            <span
+              className="text-[10px] font-black uppercase tracking-widest"
+              style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}
+            >
+              Mi Once · Reto semanal · {week.key}
+            </span>
+          </div>
+          <h1
+            className="font-black leading-tight mb-2"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(1.6rem, 3.5vw, 2.6rem)',
+              color: '#F8F8FF',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {challenge.title}
+          </h1>
+          <p className="text-sm" style={{ color: 'var(--text-muted)', maxWidth: 620 }}>
+            {challenge.description}
+          </p>
+        </div>
+
+        {/* Layout principal */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          {/* Campo */}
+          <div className="flex flex-col gap-4">
+            {/* Toolbar formación */}
+            <div
+              className="flex items-center gap-2 p-2 rounded-xl overflow-x-auto"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              <span
+                className="text-[10px] font-black uppercase tracking-widest px-2 flex-shrink-0"
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
+              >
+                Formación
+              </span>
+              {FORMATION_LIST.map(f => {
+                const active = f === formation
+                return (
+                  <button
+                    key={f}
+                    onClick={() => handleChangeFormation(f)}
+                    className="flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all"
+                    style={{
+                      background: active ? `linear-gradient(135deg, ${ACCENT_DIM}, #1E3A8A)` : 'rgba(255,255,255,0.04)',
+                      color: active ? '#fff' : 'var(--text-muted)',
+                      border: active ? `1px solid ${ACCENT}` : '1px solid rgba(255,255,255,0.06)',
+                      fontFamily: 'var(--font-sport)',
+                      boxShadow: active ? `0 2px 12px ${ACCENT_DIM}40` : 'none',
+                    }}
+                  >
+                    {f}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Pitch */}
+            <div className="max-w-[560px] mx-auto w-full">
+              {hydrated && (
+                <Pitch
+                  slots={formationSlots}
+                  players={slots}
+                  onSlotClick={setActiveSlot}
+                  onSlotClear={handleClearSlot}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <aside className="flex flex-col gap-4">
+            {/* Progress card */}
+            <div
+              className="rounded-2xl p-5"
+              style={{
+                background: isComplete
+                  ? `linear-gradient(135deg, ${ACCENT_DIM}28, ${ACCENT_DIM}10)`
+                  : 'var(--bg-card)',
+                border: isComplete ? `1px solid ${ACCENT}` : '1px solid var(--border)',
+              }}
+            >
+              <p
+                className="text-[10px] font-black uppercase tracking-widest mb-2"
+                style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}
+              >
+                Progreso
+              </p>
+              <div className="flex items-baseline gap-2 mb-3">
+                <span
+                  className="font-black"
+                  style={{ fontFamily: 'var(--font-display)', fontSize: 36, color: '#F0F0F5' }}
+                >
+                  {filledCount}
+                </span>
+                <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>/ 11</span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div
+                  className="h-full transition-all duration-300"
+                  style={{
+                    width: `${(filledCount / 11) * 100}%`,
+                    background: `linear-gradient(90deg, ${ACCENT_DIM}, ${ACCENT})`,
+                  }}
+                />
+              </div>
+              {isComplete && (
+                <p className="mt-3 text-xs font-black" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+                  ¡Once completo! Comparte tu alineación.
+                </p>
+              )}
+            </div>
+
+            {/* Acciones */}
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={handleShareImage}
+                disabled={generatingImage || filledCount === 0}
+                className="py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 col-span-1"
+                style={{
+                  background: `linear-gradient(135deg, ${ACCENT_DIM}, #1E3A8A)`,
+                  color: '#fff',
+                  border: `1px solid ${ACCENT}80`,
+                  fontFamily: 'var(--font-sport)',
+                  letterSpacing: '0.06em',
+                  boxShadow: `0 4px 16px ${ACCENT_DIM}30`,
+                }}
+              >
+                <IconImage />
+                {generatingImage ? '…' : 'Imagen'}
+              </button>
+              <button
+                onClick={handleShare}
+                className="py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 col-span-1"
+                style={{
+                  background: 'rgba(147,197,253,0.08)',
+                  color: ACCENT,
+                  border: `1px solid ${ACCENT_DIM}40`,
+                  fontFamily: 'var(--font-sport)',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                <IconShare />
+                Texto
+              </button>
+              <button
+                onClick={handleReset}
+                disabled={filledCount === 0}
+                className="py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 col-span-1"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  color: 'var(--text-muted)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  fontFamily: 'var(--font-sport)',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                <IconReset />
+                Vaciar
+              </button>
+            </div>
+
+            {/* Lista del once */}
+            <div
+              className="rounded-2xl p-4"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              <p
+                className="text-[10px] font-black uppercase tracking-widest mb-3"
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
+              >
+                Tu plantilla
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                {formationSlots.map(s => {
+                  const p = slots[s.id] ? getPlayerById(slots[s.id]) : null
+                  return (
+                    <li key={s.id}>
+                      <button
+                        onClick={() => setActiveSlot(s)}
+                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-left hover:bg-white/5"
+                      >
+                        <span
+                          className="w-9 text-[9px] font-black uppercase tracking-widest text-center px-1 py-0.5 rounded flex-shrink-0"
+                          style={{
+                            background: `${ACCENT_DIM}20`,
+                            color: ACCENT,
+                            border: `1px solid ${ACCENT_DIM}30`,
+                            fontFamily: 'var(--font-sport)',
+                          }}
+                        >
+                          {s.label}
+                        </span>
+                        {p ? (
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[12px] font-black truncate" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+                              {flag(p.country)} {p.name}
+                            </p>
+                            <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
+                              {p.club}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="flex-1 text-[12px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+                            Sin jugador
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+
+            {/* Tip */}
+            <div
+              className="rounded-2xl p-4"
+              style={{ background: 'rgba(147,197,253,0.04)', border: `1px solid ${ACCENT_DIM}20` }}
+            >
+              <p
+                className="text-[9px] font-black uppercase tracking-widest mb-1.5"
+                style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}
+              >
+                Cómo funciona
+              </p>
+              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                Toca cada hueco para buscar un jugador. Cada lunes hay un reto distinto.
+                Tu plantilla se guarda automáticamente en este dispositivo.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      {/* Modal */}
+      {activeSlot && (
+        <PlayerSearchModal
+          slot={activeSlot}
+          challenge={challenge}
+          excludeIds={usedPlayerIds.filter(id => id !== slots[activeSlot.id])}
+          onSelect={handleSelectPlayer}
+          onClose={() => setActiveSlot(null)}
+        />
+      )}
+
+      {/* Toast */}
+      {shareToast && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-xs font-black"
+          style={{
+            background: `linear-gradient(135deg, ${ACCENT_DIM}, #1E3A8A)`,
+            color: '#fff',
+            border: `1px solid ${ACCENT}`,
+            boxShadow: `0 8px 28px ${ACCENT_DIM}50`,
+            fontFamily: 'var(--font-sport)',
+            letterSpacing: '0.04em',
+          }}
+        >
+          {shareToast}
+        </div>
+      )}
+
+      <Footer />
+      <ScrollToTop />
+    </div>
+  )
+}
