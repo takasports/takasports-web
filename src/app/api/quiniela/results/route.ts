@@ -1,0 +1,104 @@
+import { NextResponse } from 'next/server'
+import type { MatchResult } from '@/lib/quiniela'
+
+export type { MatchResult }
+
+const FOOTBALL_SLUGS = [
+  'soccer/uefa.champions',
+  'soccer/uefa.europa',
+  'soccer/esp.copa_del_rey',
+  'soccer/esp.1',
+  'soccer/eng.1',
+  'soccer/ita.1',
+  'soccer/ger.1',
+  'soccer/fra.1',
+]
+
+function dateRangeParam(): string {
+  const now = new Date()
+  const start = new Date(now)
+  start.setDate(now.getDate() - 7)
+  const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
+  return `${fmt(start)}-${fmt(now)}`
+}
+
+async function fetchWithRetry(url: string): Promise<Response | null> {
+  for (let i = 0; i < 2; i++) {
+    try {
+      const res = await fetch(url, { next: { revalidate: 120 } })
+      if (res.ok) return res
+      if (res.status < 500) return res
+    } catch { /* retry */ }
+    await new Promise(r => setTimeout(r, 200 * (i + 1)))
+  }
+  return null
+}
+
+async function fetchResultsFromLeague(slug: string): Promise<MatchResult[]> {
+  const res = await fetchWithRetry(
+    `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${dateRangeParam()}&limit=20`
+  )
+  if (!res || !res.ok) return []
+  let json: { events?: Array<Record<string, unknown>> }
+  try { json = await res.json() } catch { return [] }
+  const results: MatchResult[] = []
+
+  for (const ev of json.events ?? []) {
+    const competition = (ev.competitions as Array<Record<string, unknown>> | undefined)?.[0]
+    if (!competition) continue
+    const status = competition.status as Record<string, unknown> | undefined
+    const statusName = (status?.type as Record<string, unknown> | undefined)?.name as string ?? ''
+    if (statusName !== 'STATUS_FINAL') continue
+
+    const competitors = (competition.competitors as Array<Record<string, unknown>>) ?? []
+    if (competitors.length < 2) continue
+
+    const homeComp = competitors.find(c => c.homeAway === 'home') ?? competitors[0]
+    const awayComp = competitors.find(c => c.homeAway === 'away') ?? competitors[1]
+    const homeTeam = homeComp?.team as Record<string, unknown>
+    const awayTeam = awayComp?.team as Record<string, unknown>
+    const home = (homeTeam?.displayName as string) || (homeTeam?.shortDisplayName as string)
+    const away = (awayTeam?.displayName as string) || (awayTeam?.shortDisplayName as string)
+    const homeGoals = parseInt(String(homeComp?.score ?? '0'), 10)
+    const awayGoals = parseInt(String(awayComp?.score ?? '0'), 10)
+    if (!home || !away || Number.isNaN(homeGoals) || Number.isNaN(awayGoals)) continue
+
+    const outcome: '1' | 'X' | '2' =
+      homeGoals > awayGoals ? '1' : homeGoals < awayGoals ? '2' : 'X'
+
+    results.push({ home, away, homeGoals, awayGoals, outcome, espnId: ev.id as string })
+  }
+  return results
+}
+
+interface CacheEntry { data: MatchResult[]; ts: number }
+let cache: CacheEntry | null = null
+const CACHE_TTL = 2 * 60_000
+
+export async function GET() {
+  const now = Date.now()
+  if (cache && now - cache.ts < CACHE_TTL) return NextResponse.json(cache.data)
+
+  const settled = await Promise.allSettled(FOOTBALL_SLUGS.map(fetchResultsFromLeague))
+  const all: MatchResult[] = []
+  for (const r of settled) {
+    if (r.status === 'fulfilled') all.push(...r.value)
+  }
+
+  // Dedupe primero por espnId, luego por par como fallback
+  const seenId = new Set<string>()
+  const seenPair = new Set<string>()
+  const deduped = all.filter(m => {
+    if (m.espnId) {
+      if (seenId.has(m.espnId)) return false
+      seenId.add(m.espnId)
+    }
+    const key = `${m.home}|${m.away}`
+    if (seenPair.has(key)) return false
+    seenPair.add(key)
+    return true
+  })
+
+  cache = { data: deduped, ts: now }
+  return NextResponse.json(deduped)
+}

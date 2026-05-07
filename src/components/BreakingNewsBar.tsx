@@ -1,16 +1,42 @@
-const ITEMS = [
-  'Mbappé anota hat-trick en el Clásico y Real Madrid remonta al Barça en el Bernabéu',
-  'Celtics eliminan a los Cavaliers y avanzan a las Finales del Este por segundo año consecutivo',
-  'Verstappen domina los libres del GP de España — Leclerc a 0.3s en la FP2',
-  'Alcaraz y Sinner confirman semis en Roland Garros — el duelo más esperado del año',
-  'UFC 302: Makhachev retiene el cinturón peso ligero con TKO en el tercer round',
-  'Argentina convoca a Lautaro y De Paul para la doble fecha de Eliminatorias de junio',
-  'PSG y Atlético de Madrid negocian el traspaso de Griezmann por 65 millones',
-  'Lewis Hamilton debuta en rojo: primer test oficial con Ferrari en Fiorano esta semana',
+import { getSportEmoji, getSportLabel } from '@/lib/sports'
+
+interface TickerItem {
+  title: string
+  sport?: string
+}
+
+const FALLBACK_ITEMS: TickerItem[] = [
+  { title: 'Mbappé anota hat-trick en el Clásico y Real Madrid remonta al Barça', sport: 'futbol' },
+  { title: 'Celtics avanzan a las Finales del Este por segundo año consecutivo', sport: 'baloncesto' },
+  { title: 'Verstappen domina los libres del GP de España — Leclerc a 0.3s', sport: 'formula1' },
+  { title: 'Alcaraz y Sinner confirman semis en Roland Garros', sport: 'tenis' },
+  { title: 'UFC 302: Makhachev retiene el cinturón peso ligero con TKO', sport: 'ufc' },
+  { title: 'Lewis Hamilton debuta en rojo: primer test oficial con Ferrari', sport: 'formula1' },
 ]
 
-export default function BreakingNewsBar() {
-  const text = ITEMS.join('   ·   ')
+function buildText(items: TickerItem[]): string {
+  return items.map(item => {
+    const label = item.sport ? getSportLabel(item.sport) : null
+    const emoji = label ? getSportEmoji(label) : null
+    return emoji ? `${emoji} ${item.title}` : item.title
+  }).join('   ·   ')
+}
+
+export default function BreakingNewsBar({
+  items,
+  titles,
+}: {
+  items?: TickerItem[]
+  titles?: string[]
+}) {
+  const resolved: TickerItem[] =
+    items && items.length > 0
+      ? items
+      : titles && titles.length > 0
+        ? titles.map(t => ({ title: t }))
+        : FALLBACK_ITEMS
+
+  const text = buildText(resolved)
   const doubled = `${text}   ·   ${text}`
 
   return (
@@ -38,7 +64,7 @@ export default function BreakingNewsBar() {
         <div className="flex-1 overflow-hidden">
           <span
             className="inline-block whitespace-nowrap text-xs animate-ticker"
-            style={{ color: '#A0A0B0' }}
+            style={{ color: '#B4B4C8' }}
           >
             {doubled}
           </span>

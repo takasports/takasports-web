@@ -1,11 +1,14 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import type {
-  MatchDetail, MatchStat, ScoringEvent, BasketballLeader, MmaFighter, RacingResult, GolfLeader,
+  MatchDetail, MatchStat, ScoringEvent, BasketballLeader, MmaFighter,
+  RacingResult, GolfLeader, LineupPlayer, TeamLineup, LeagueTableRow,
 } from '@/app/api/match/[ref]/route'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
+import { MatchTabs } from './MatchTabs'
+import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const revalidate = 30
 
@@ -37,12 +40,12 @@ export async function generateMetadata({
     description = match.statusLabel
   }
 
-  const ogImage = match.homeLogo ?? 'https://takasportsmedia.com/taka-icon.png'
+  const ogImage = match.homeLogo ?? `${SITE_URL}/taka-icon.png`
 
   return {
     title,
     description,
-    alternates: { canonical: `https://takasportsmedia.com/partido/${ref}` },
+    alternates: { canonical: `${SITE_URL}/partido/${ref}` },
     openGraph: {
       title,
       description,
@@ -69,7 +72,7 @@ const isLive = (s: string) => LIVE_STATUSES.has(s)
 async function fetchMatchDetail(ref: string): Promise<MatchDetail | null> {
   try {
     const base = process.env.NEXT_PUBLIC_SITE_URL
-      ?? (process.env.NODE_ENV === 'production' ? 'https://takasportsmedia.com' : 'http://localhost:3000')
+      ?? (process.env.NODE_ENV === 'production' ? SITE_URL : 'http://localhost:3000')
     const res  = await fetch(`${base}/api/match/${ref}`, { next: { revalidate: 30 } })
     if (!res.ok) return null
     return res.json()
@@ -78,7 +81,7 @@ async function fetchMatchDetail(ref: string): Promise<MatchDetail | null> {
   }
 }
 
-// ── Shared bits ────────────────────────────────────────────────────
+// ── Shared primitives ──────────────────────────────────────────────
 function TeamLogo({ logo, name, size = 56 }: { logo?: string; name: string; size?: number }) {
   if (logo) {
     return (
@@ -121,6 +124,117 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="text-center py-12 rounded-xl"
+      style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.07)' }}>
+      <p className="text-[12px] font-semibold" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+        {message}
+      </p>
+    </div>
+  )
+}
+
+// ── Scoreboard hero ────────────────────────────────────────────────
+function TeamScoreboard({ match }: { match: MatchDetail }) {
+  const live = isLive(match.status)
+  const hasScore = match.homeScore != null && match.awayScore != null
+  return (
+    <div className="rounded-2xl p-6 mb-5"
+      style={{
+        background: live
+          ? 'linear-gradient(135deg, rgba(74,222,128,0.06) 0%, rgba(9,9,15,0.8) 60%)'
+          : 'rgba(255,255,255,0.03)',
+        border: live ? '1px solid rgba(74,222,128,0.18)' : '1px solid rgba(255,255,255,0.07)',
+      }}>
+      <div className="flex items-center justify-between gap-4">
+        {/* Home team */}
+        {match.homeTeamId ? (
+          <Link href={`/equipo/${match.leagueSlug.replace('/', '_')}_${match.homeTeamId}`}
+            className="flex flex-col items-center gap-2 flex-1 hover:opacity-80 transition-opacity">
+            <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={52} />
+            <p className="text-center font-black text-sm leading-tight"
+              style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
+              {match.homeAbbr ?? match.homeTeam}
+            </p>
+          </Link>
+        ) : (
+          <div className="flex flex-col items-center gap-2 flex-1">
+            <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={52} />
+            <p className="text-center font-black text-sm leading-tight"
+              style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
+              {match.homeAbbr ?? match.homeTeam}
+            </p>
+          </div>
+        )}
+        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+          {hasScore ? (
+            <p className="font-black tabular-nums"
+              style={{ color: live ? '#4ade80' : '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 42, letterSpacing: '0.04em', lineHeight: 1 }}>
+              {match.homeScore} – {match.awayScore}
+            </p>
+          ) : (
+            <p className="font-black" style={{ color: '#3A3A5A', fontFamily: 'var(--font-display)', fontSize: 28 }}>vs</p>
+          )}
+          <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+            style={{
+              color: live ? '#4ade80' : '#5A5A6A',
+              background: live ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.04)',
+              fontFamily: 'var(--font-sport)',
+            }}>
+            {match.statusLabel}
+          </span>
+        </div>
+        {/* Away team */}
+        {match.awayTeamId ? (
+          <Link href={`/equipo/${match.leagueSlug.replace('/', '_')}_${match.awayTeamId}`}
+            className="flex flex-col items-center gap-2 flex-1 hover:opacity-80 transition-opacity">
+            <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={52} />
+            <p className="text-center font-black text-sm leading-tight"
+              style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
+              {match.awayAbbr ?? match.awayTeam}
+            </p>
+          </Link>
+        ) : (
+          <div className="flex flex-col items-center gap-2 flex-1">
+            <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={52} />
+            <p className="text-center font-black text-sm leading-tight"
+              style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
+              {match.awayAbbr ?? match.awayTeam}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function InfoRow({ match }: { match: MatchDetail }) {
+  if (!match.venue && !match.broadcast) return null
+  return (
+    <div className="flex flex-wrap gap-3 mb-5">
+      {match.venue && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+            <path d="M6 1C4.34 1 3 2.34 3 4c0 2.5 3 7 3 7s3-4.5 3-7c0-1.66-1.34-3-3-3z" stroke="#5A5A6A" strokeWidth="1.2" />
+            <circle cx="6" cy="4" r="1" fill="#5A5A6A" />
+          </svg>
+          <span className="text-[10px]" style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>{match.venue}</span>
+        </div>
+      )}
+      {match.broadcast && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <span className="text-[10px]">📺</span>
+          <span className="text-[10px]" style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>{match.broadcast}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Stats bar ──────────────────────────────────────────────────────
 function StatBar({ stat }: { stat: MatchStat }) {
   const hNum = parseFloat(stat.home.replace('%', '').replace(',', '.'))
   const aNum = parseFloat(stat.away.replace('%', '').replace(',', '.'))
@@ -143,85 +257,7 @@ function StatBar({ stat }: { stat: MatchStat }) {
   )
 }
 
-// ── Team scoreboard hero (soccer / basketball / tennis) ────────────
-function TeamScoreboard({ match }: { match: MatchDetail }) {
-  const live = isLive(match.status)
-  const hasScore = match.homeScore != null && match.awayScore != null
-  return (
-    <div className="rounded-2xl p-6 mb-6"
-      style={{
-        background: live
-          ? 'linear-gradient(135deg, rgba(74,222,128,0.06) 0%, rgba(9,9,15,0.8) 60%)'
-          : 'rgba(255,255,255,0.03)',
-        border: live ? '1px solid rgba(74,222,128,0.18)' : '1px solid rgba(255,255,255,0.07)',
-      }}>
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-col items-center gap-2 flex-1">
-          <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={56} />
-          <p className="text-center font-black text-sm leading-tight"
-            style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
-            {match.homeAbbr ?? match.homeTeam}
-          </p>
-        </div>
-        <div className="flex flex-col items-center gap-1 flex-shrink-0">
-          {hasScore ? (
-            <p className="font-black tabular-nums"
-              style={{ color: live ? '#4ade80' : '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 42, letterSpacing: '0.04em', lineHeight: 1 }}>
-              {match.homeScore} – {match.awayScore}
-            </p>
-          ) : (
-            <p className="font-black" style={{ color: '#3A3A5A', fontFamily: 'var(--font-display)', fontSize: 28 }}>vs</p>
-          )}
-          <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
-            style={{
-              color: live ? '#4ade80' : '#5A5A6A',
-              background: live ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.04)',
-              fontFamily: 'var(--font-sport)',
-            }}>
-            {match.statusLabel}
-          </span>
-        </div>
-        <div className="flex flex-col items-center gap-2 flex-1">
-          <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={56} />
-          <p className="text-center font-black text-sm leading-tight"
-            style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
-            {match.awayAbbr ?? match.awayTeam}
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function InfoRow({ match }: { match: MatchDetail }) {
-  if (!match.venue && !match.broadcast) return null
-  return (
-    <div className="flex flex-wrap gap-3 mb-6">
-      {match.venue && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-            <path d="M6 1C4.34 1 3 2.34 3 4c0 2.5 3 7 3 7s3-4.5 3-7c0-1.66-1.34-3-3-3z" stroke="#5A5A6A" strokeWidth="1.2" />
-            <circle cx="6" cy="4" r="1" fill="#5A5A6A" />
-          </svg>
-          <span className="text-[10px]" style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>{match.venue}</span>
-        </div>
-      )}
-      {match.broadcast && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-            <rect x="1.5" y="3" width="9" height="6" rx="1" stroke="#5A5A6A" strokeWidth="1.2" />
-            <path d="M4 3V2.5M8 3V2.5" stroke="#5A5A6A" strokeWidth="1.2" strokeLinecap="round" />
-          </svg>
-          <span className="text-[10px]" style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>{match.broadcast}</span>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Soccer block ───────────────────────────────────────────────────
+// ── Soccer blocks ──────────────────────────────────────────────────
 function ScoringTimeline({ events, homeTeam, awayTeam }: { events: ScoringEvent[]; homeTeam: string; awayTeam: string }) {
   if (events.length === 0) return null
   const ICONS: Record<string, string> = {
@@ -246,31 +282,7 @@ function ScoringTimeline({ events, homeTeam, awayTeam }: { events: ScoringEvent[
   )
 }
 
-function SoccerBlock({ match }: { match: MatchDetail }) {
-  if (!match.soccer) return null
-  return (
-    <>
-      {match.soccer.stats.length > 0 && (
-        <Section title="Estadísticas">
-          <div className="flex items-center justify-between text-[10px] font-black mb-3" style={{ fontFamily: 'var(--font-sport)' }}>
-            <span style={{ color: '#818cf8' }}>{match.homeAbbr ?? match.homeTeam}</span>
-            <span style={{ color: '#f59e0b' }}>{match.awayAbbr ?? match.awayTeam}</span>
-          </div>
-          <div className="flex flex-col gap-3">
-            {match.soccer.stats.map((s, i) => <StatBar key={i} stat={s} />)}
-          </div>
-        </Section>
-      )}
-      {match.soccer.scoring.length > 0 && (
-        <Section title="Eventos">
-          <ScoringTimeline events={match.soccer.scoring} homeTeam={match.homeTeam ?? ''} awayTeam={match.awayTeam ?? ''} />
-        </Section>
-      )}
-    </>
-  )
-}
-
-// ── Basketball block ───────────────────────────────────────────────
+// ── Basketball blocks ──────────────────────────────────────────────
 function QuarterTable({ home, away, homeAbbr, awayAbbr }: {
   home: (number | null)[]; away: (number | null)[]; homeAbbr: string; awayAbbr: string
 }) {
@@ -328,88 +340,49 @@ function LeaderCard({ leader }: { leader: BasketballLeader }) {
   )
 }
 
-function BasketballBlock({ match }: { match: MatchDetail }) {
-  if (!match.basketball) return null
-  const { quarters, leaders, stats } = match.basketball
-  const hasQuarters = quarters.home.some(v => v != null) || quarters.away.some(v => v != null)
-  return (
-    <>
-      {hasQuarters && (
-        <Section title="Marcador por cuartos">
-          <QuarterTable
-            home={quarters.home} away={quarters.away}
-            homeAbbr={match.homeAbbr ?? match.homeTeam ?? '—'}
-            awayAbbr={match.awayAbbr ?? match.awayTeam ?? '—'}
-          />
-        </Section>
-      )}
-      {leaders.length > 0 && (
-        <Section title="Líderes del partido">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {leaders.map((l, i) => <LeaderCard key={i} leader={l} />)}
-          </div>
-        </Section>
-      )}
-      {stats.length > 0 && (
-        <Section title="Estadísticas de equipo">
-          <div className="flex items-center justify-between text-[10px] font-black mb-3" style={{ fontFamily: 'var(--font-sport)' }}>
-            <span style={{ color: '#818cf8' }}>{match.homeAbbr ?? match.homeTeam}</span>
-            <span style={{ color: '#f59e0b' }}>{match.awayAbbr ?? match.awayTeam}</span>
-          </div>
-          <div className="flex flex-col gap-3">
-            {stats.map((s, i) => <StatBar key={i} stat={s} />)}
-          </div>
-        </Section>
-      )}
-    </>
-  )
-}
-
 // ── Tennis block ───────────────────────────────────────────────────
 function TennisBlock({ match }: { match: MatchDetail }) {
   if (!match.tennis) return null
   const t = match.tennis
   const setCount = Math.max(t.sets.home.length, t.sets.away.length)
   return (
-    <>
-      <div className="rounded-2xl p-6 mb-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-        {t.round && (
-          <p className="text-[10px] font-black uppercase tracking-widest text-center mb-3"
-            style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
-            {t.round}
-          </p>
-        )}
-        <div className="flex flex-col gap-3">
-          {(['home', 'away'] as const).map(side => {
-            const player = side === 'home' ? t.homePlayer : t.awayPlayer
-            const sets   = side === 'home' ? t.sets.home  : t.sets.away
-            return (
-              <div key={side} className="flex items-center justify-between gap-3">
-                <span className="font-black text-sm" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
-                  {player ?? '—'}
-                </span>
-                <div className="flex gap-2">
-                  {Array.from({ length: setCount }).map((_, i) => (
-                    <span key={i} className="w-7 h-7 flex items-center justify-center rounded-md font-black tabular-nums text-sm"
-                      style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        color: side === 'home' ? '#818cf8' : '#f59e0b',
-                        fontFamily: 'var(--font-display)',
-                      }}>
-                      {sets[i] ?? '—'}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-        <p className="text-[10px] text-center mt-4 uppercase tracking-widest font-black"
+    <div className="rounded-2xl p-6 mb-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+      {t.round && (
+        <p className="text-[10px] font-black uppercase tracking-widest text-center mb-3"
           style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
-          {match.statusLabel}
+          {t.round}
         </p>
+      )}
+      <div className="flex flex-col gap-3">
+        {(['home', 'away'] as const).map(side => {
+          const player = side === 'home' ? t.homePlayer : t.awayPlayer
+          const sets   = side === 'home' ? t.sets.home  : t.sets.away
+          return (
+            <div key={side} className="flex items-center justify-between gap-3">
+              <span className="font-black text-sm" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
+                {player ?? '—'}
+              </span>
+              <div className="flex gap-2">
+                {Array.from({ length: setCount }).map((_, i) => (
+                  <span key={i} className="w-7 h-7 flex items-center justify-center rounded-md font-black tabular-nums text-sm"
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      color: side === 'home' ? '#818cf8' : '#f59e0b',
+                      fontFamily: 'var(--font-display)',
+                    }}>
+                    {sets[i] ?? '—'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )
+        })}
       </div>
-    </>
+      <p className="text-[10px] text-center mt-4 uppercase tracking-widest font-black"
+        style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+        {match.statusLabel}
+      </p>
+    </div>
   )
 }
 
@@ -426,12 +399,8 @@ function FighterCard({ fighter, side }: { fighter: MmaFighter; side: 'home' | 'a
       <p className="font-black text-sm leading-tight" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
         {fighter.name}
       </p>
-      {fighter.flag && (
-        <p className="text-[10px]" style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>{fighter.flag}</p>
-      )}
-      {fighter.record && (
-        <p className="text-[10px] tabular-nums" style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>{fighter.record}</p>
-      )}
+      {fighter.flag && <p className="text-[10px]" style={{ color: '#6A6A7A' }}>{fighter.flag}</p>}
+      {fighter.record && <p className="text-[10px] tabular-nums" style={{ color: '#8A8AA0' }}>{fighter.record}</p>}
       {fighter.winner && (
         <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
           style={{ background: 'rgba(74,222,128,0.12)', color: accent, border: '1px solid rgba(74,222,128,0.3)', fontFamily: 'var(--font-sport)' }}>
@@ -471,7 +440,6 @@ function MmaBlock({ match }: { match: MatchDetail }) {
           {b ? <FighterCard fighter={b} side="away" /> : <div className="flex-1" />}
         </div>
       </div>
-
       <Section title="Detalles del combate">
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -495,7 +463,7 @@ function MmaBlock({ match }: { match: MatchDetail }) {
   )
 }
 
-// ── Racing (F1) block ──────────────────────────────────────────────
+// ── Racing block ───────────────────────────────────────────────────
 function RacingBlock({ match }: { match: MatchDetail }) {
   if (!match.racing) return null
   const r = match.racing
@@ -580,49 +548,527 @@ function GolfBlock({ match }: { match: MatchDetail }) {
   )
 }
 
-// ── Match content ──────────────────────────────────────────────────
-function MatchContent({ match }: { match: MatchDetail }) {
-  const live = isLive(match.status)
-  const showTeamHero = match.sport === 'soccer' || match.sport === 'basketball'
+// ── Lineup field ───────────────────────────────────────────────────
+function getFormationPositions(formation: string | undefined, side: 'home' | 'away'): [number, number][] {
+  const raw   = (formation ?? '4-4-2').split('-').map(Number).filter(n => n > 0 && n <= 6)
+  const lines = raw.length > 0 ? raw : [4, 4, 2]
+  const positions: [number, number][] = []
+
+  // GK
+  positions.push([50, side === 'home' ? 88 : 12])
+
+  for (let li = 0; li < lines.length; li++) {
+    const count = lines[li]
+    const ratio = lines.length > 1 ? li / (lines.length - 1) : 0
+    const y = side === 'home'
+      ? 72 - ratio * 44   // defenders → 72%, forwards → 28%
+      : 28 + ratio * 44   // defenders → 28%, forwards → 72%
+    for (let i = 0; i < count; i++) {
+      const x = (i + 1) * 100 / (count + 1)
+      positions.push([x, y])
+    }
+  }
+  return positions
+}
+
+function playerDisplayName(p: LineupPlayer): string {
+  const base = p.shortName ?? p.name
+  const parts = base.trim().split(' ')
+  return parts.length > 1 ? parts[parts.length - 1] : base
+}
+
+function PlayerDot({ player, x, y, side }: {
+  player: LineupPlayer
+  x: number
+  y: number
+  side: 'home' | 'away'
+}) {
+  const color  = side === 'home' ? '#818cf8' : '#f59e0b'
+  const label  = playerDisplayName(player)
+  const jersey = player.jersey ?? label.slice(0, 2).toUpperCase()
 
   return (
-    <div className="max-w-2xl mx-auto px-4 pb-16">
-      <div className="py-5">
-        <Link href="/calendario" className="inline-flex items-center gap-1.5 text-[11px] font-semibold transition-opacity hover:opacity-70"
-          style={{ color: '#5A5A6A', textDecoration: 'none', fontFamily: 'var(--font-sport)' }}>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Volver
-        </Link>
+    <div
+      className="absolute flex flex-col items-center pointer-events-none"
+      style={{
+        left: `${x}%`,
+        top: `${y}%`,
+        transform: 'translate(-50%, -50%)',
+        zIndex: 2,
+      }}
+    >
+      <div
+        className="flex items-center justify-center rounded-full font-black text-[10px] tabular-nums"
+        style={{
+          width: 26,
+          height: 26,
+          background: color,
+          color: '#0A0A12',
+          border: '2px solid rgba(255,255,255,0.25)',
+          boxShadow: `0 2px 8px ${color}55`,
+          flexShrink: 0,
+        }}
+      >
+        {jersey}
       </div>
-
-      <div className="flex items-center gap-2 mb-6 flex-wrap">
-        <Pill>{match.leagueLabel}</Pill>
-        {live && (
-          <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
-            style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
-            En Vivo
-          </span>
-        )}
-      </div>
-
-      {showTeamHero && <TeamScoreboard match={match} />}
-      {showTeamHero && <InfoRow match={match} />}
-
-      {match.sport === 'soccer'     && <SoccerBlock match={match} />}
-      {match.sport === 'basketball' && <BasketballBlock match={match} />}
-      {match.sport === 'tennis'     && <TennisBlock match={match} />}
-      {match.sport === 'mma'        && <MmaBlock match={match} />}
-      {match.sport === 'racing'     && <RacingBlock match={match} />}
-      {match.sport === 'golf'       && <GolfBlock match={match} />}
-
-      {!showTeamHero && <InfoRow match={match} />}
+      <span
+        className="mt-0.5 text-center font-bold leading-tight"
+        style={{
+          fontSize: 8,
+          color: 'rgba(255,255,255,0.9)',
+          textShadow: '0 1px 4px rgba(0,0,0,0.9)',
+          maxWidth: 48,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {label.length > 9 ? label.slice(0, 9) + '.' : label}
+      </span>
     </div>
   )
 }
 
+function FieldMarkings() {
+  return (
+    <svg
+      className="absolute inset-0 w-full h-full"
+      viewBox="0 0 200 300"
+      preserveAspectRatio="none"
+      fill="none"
+      stroke="rgba(255,255,255,0.18)"
+      strokeWidth="1"
+    >
+      {/* Outer border */}
+      <rect x="3" y="3" width="194" height="294" />
+      {/* Center line */}
+      <line x1="3" y1="150" x2="197" y2="150" />
+      {/* Center circle (approx, will be elliptical) */}
+      <ellipse cx="100" cy="150" rx="30" ry="20" />
+      <circle cx="100" cy="150" r="2" fill="rgba(255,255,255,0.18)" stroke="none" />
+      {/* Home penalty area (bottom) */}
+      <rect x="40" y="228" width="120" height="63" />
+      {/* Home 6-yard box */}
+      <rect x="72" y="268" width="56" height="23" />
+      {/* Away penalty area (top) */}
+      <rect x="40" y="9" width="120" height="63" />
+      {/* Away 6-yard box */}
+      <rect x="72" y="9" width="56" height="23" />
+      {/* Home penalty spot */}
+      <circle cx="100" cy="246" r="1.5" fill="rgba(255,255,255,0.18)" stroke="none" />
+      {/* Away penalty spot */}
+      <circle cx="100" cy="54" r="1.5" fill="rgba(255,255,255,0.18)" stroke="none" />
+      {/* Home goal */}
+      <rect x="82" y="294" width="36" height="6" strokeWidth="1.5" />
+      {/* Away goal */}
+      <rect x="82" y="0" width="36" height="6" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
+function BenchSection({ home, away, homeTeam, awayTeam }: {
+  home: TeamLineup
+  away: TeamLineup
+  homeTeam?: string
+  awayTeam?: string
+}) {
+  if (!home.bench.length && !away.bench.length) return null
+  return (
+    <div className="mt-4 grid grid-cols-2 gap-3">
+      {[
+        { lineup: away, label: awayTeam ?? 'Visitante', color: '#f59e0b' },
+        { lineup: home, label: homeTeam ?? 'Local',     color: '#818cf8' },
+      ].map(({ lineup, label, color }) => (
+        <div key={label} className="rounded-xl p-3"
+          style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <p className="text-[9px] font-black uppercase tracking-widest mb-2"
+            style={{ color, fontFamily: 'var(--font-sport)' }}>
+            {label} — Banquillo
+          </p>
+          <div className="flex flex-col gap-1">
+            {lineup.bench.map((p, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="w-5 text-[9px] font-black tabular-nums text-right flex-shrink-0"
+                  style={{ color: '#5A5A6A' }}>
+                  {p.jersey ?? '—'}
+                </span>
+                <span className="text-[10px] font-semibold truncate" style={{ color: '#C0C0D4', fontFamily: 'var(--font-sport)' }}>
+                  {playerDisplayName(p)}
+                </span>
+                {p.posAbbr && (
+                  <span className="text-[8px] ml-auto flex-shrink-0 px-1 py-0.5 rounded"
+                    style={{ background: `${color}18`, color, fontFamily: 'var(--font-sport)' }}>
+                    {p.posAbbr}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function LineupField({ lineups, homeTeam, awayTeam }: {
+  lineups: NonNullable<MatchDetail['lineups']>
+  homeTeam?: string
+  awayTeam?: string
+}) {
+  const homePositions = getFormationPositions(lineups.home.formation, 'home')
+  const awayPositions = getFormationPositions(lineups.away.formation, 'away')
+
+  return (
+    <div>
+      {/* Formation header */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex flex-col items-start gap-0.5">
+          <span className="text-[9px] uppercase tracking-widest" style={{ color: '#f59e0b', fontFamily: 'var(--font-sport)' }}>
+            {awayTeam ?? 'Visitante'}
+          </span>
+          <span className="text-[14px] font-black tabular-nums" style={{ color: '#f59e0b', fontFamily: 'var(--font-display)' }}>
+            {lineups.away.formation ?? '—'}
+          </span>
+        </div>
+        <span className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+          Formaciones
+        </span>
+        <div className="flex flex-col items-end gap-0.5">
+          <span className="text-[9px] uppercase tracking-widest" style={{ color: '#818cf8', fontFamily: 'var(--font-sport)' }}>
+            {homeTeam ?? 'Local'}
+          </span>
+          <span className="text-[14px] font-black tabular-nums" style={{ color: '#818cf8', fontFamily: 'var(--font-display)' }}>
+            {lineups.home.formation ?? '—'}
+          </span>
+        </div>
+      </div>
+
+      {/* Field */}
+      <div
+        className="relative w-full overflow-hidden rounded-xl"
+        style={{
+          aspectRatio: '2/3',
+          background: 'linear-gradient(180deg, #1b4a1b 0%, #1e5a1e 48%, #1b5018 52%, #1b4a1b 100%)',
+          boxShadow: 'inset 0 0 40px rgba(0,0,0,0.4)',
+        }}
+      >
+        {/* Grass stripes */}
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="absolute w-full pointer-events-none"
+            style={{
+              top: `${i * 10}%`,
+              height: '10%',
+              background: i % 2 === 0 ? 'rgba(0,0,0,0.07)' : 'transparent',
+            }}
+          />
+        ))}
+
+        <FieldMarkings />
+
+        {/* Away players (top) */}
+        {lineups.away.starters.map((player, i) => {
+          const [x, y] = awayPositions[i] ?? [50, 20]
+          return <PlayerDot key={`away-${i}`} player={player} x={x} y={y} side="away" />
+        })}
+
+        {/* Home players (bottom) */}
+        {lineups.home.starters.map((player, i) => {
+          const [x, y] = homePositions[i] ?? [50, 80]
+          return <PlayerDot key={`home-${i}`} player={player} x={x} y={y} side="home" />
+        })}
+      </div>
+
+      {/* Bench */}
+      <BenchSection
+        home={lineups.home}
+        away={lineups.away}
+        homeTeam={homeTeam}
+        awayTeam={awayTeam}
+      />
+    </div>
+  )
+}
+
+// ── League table ───────────────────────────────────────────────────
+function LeagueTableBlock({ rows, leagueLabel, leagueSlug }: { rows: LeagueTableRow[]; leagueLabel: string; leagueSlug: string }) {
+  // Find range: show 3 above top highlighted and 3 below bottom highlighted
+  const highlightedIdxs = rows.reduce<number[]>((acc, r, i) => {
+    if (r.highlight) acc.push(i)
+    return acc
+  }, [])
+  const minI = highlightedIdxs.length ? Math.max(0, Math.min(...highlightedIdxs) - 3) : 0
+  const maxI = highlightedIdxs.length ? Math.min(rows.length - 1, Math.max(...highlightedIdxs) + 3) : rows.length - 1
+  const visible = rows.slice(minI, maxI + 1)
+  const showAll = visible.length >= rows.length
+
+  return (
+    <Section title={`Clasificación · ${leagueLabel}`}>
+      {/* Team headers */}
+      <div className="flex gap-3 mb-3 flex-wrap">
+        {rows.filter(r => r.highlight).map(r => (
+          <div key={r.name} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
+            style={{
+              background: r.highlight === 'home' ? 'rgba(129,140,248,0.10)' : 'rgba(245,158,11,0.10)',
+              border: `1px solid ${r.highlight === 'home' ? 'rgba(129,140,248,0.25)' : 'rgba(245,158,11,0.25)'}`,
+            }}>
+            {r.logo && (
+              <img src={r.logo} alt={r.name} width={16} height={16} style={{ objectFit: 'contain' }} />
+            )}
+            <span className="text-[10px] font-black" style={{ color: r.highlight === 'home' ? '#818cf8' : '#f59e0b', fontFamily: 'var(--font-sport)' }}>
+              {r.abbr || r.name}
+            </span>
+            <span className="text-[10px] font-black" style={{ color: r.highlight === 'home' ? '#818cf8' : '#f59e0b', fontFamily: 'var(--font-display)' }}>
+              {r.rank}º · {r.pts} pts
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="overflow-x-auto -mx-1 px-1">
+        <table className="w-full text-[10px]" style={{ fontFamily: 'var(--font-sport)', borderCollapse: 'separate', borderSpacing: '0 1px' }}>
+          <thead>
+            <tr style={{ color: '#3A3A5A' }}>
+              <th className="text-left font-semibold pb-2 w-5">#</th>
+              <th className="text-left font-semibold pb-2">Equipo</th>
+              <th className="text-center font-semibold pb-2 px-1 w-7">PJ</th>
+              <th className="text-center font-semibold pb-2 px-1 w-7">V</th>
+              <th className="text-center font-semibold pb-2 px-1 w-7">E</th>
+              <th className="text-center font-semibold pb-2 px-1 w-7">D</th>
+              <th className="text-center font-semibold pb-2 px-1 w-8">DG</th>
+              <th className="text-center font-black pb-2 px-1 w-8" style={{ color: '#9090A8' }}>PTS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {minI > 0 && (
+              <tr>
+                <td colSpan={8} className="py-1 text-center text-[9px]" style={{ color: '#2A2A3A' }}>
+                  ···
+                </td>
+              </tr>
+            )}
+            {visible.map((row) => {
+              const isHome = row.highlight === 'home'
+              const isAway = row.highlight === 'away'
+              const accent = isHome ? '#818cf8' : isAway ? '#f59e0b' : undefined
+              const teamHref = row.teamId ? `/equipo/${leagueSlug.replace('/', '_')}_${row.teamId}` : undefined
+              const RowWrapper = ({ children }: { children: React.ReactNode }) =>
+                teamHref ? (
+                  <tr key={row.rank} style={{ background: accent ? `${accent}0e` : 'transparent', cursor: 'pointer' }}
+                    onClick={() => { window.location.href = teamHref }}>
+                    {children}
+                  </tr>
+                ) : (
+                  <tr key={row.rank} style={{ background: accent ? `${accent}0e` : 'transparent' }}>
+                    {children}
+                  </tr>
+                )
+              return (
+                <RowWrapper key={row.rank}>
+                  <td className="py-1.5 pl-1 tabular-nums" style={{ color: accent ?? '#3A3A5A', fontWeight: accent ? 900 : 600 }}>
+                    {row.rank}
+                  </td>
+                  <td className="py-1.5 pr-2">
+                    <div className="flex items-center gap-1.5">
+                      {row.logo && (
+                        <img src={row.logo} alt={row.name} width={14} height={14} style={{ objectFit: 'contain', flexShrink: 0 }} />
+                      )}
+                      <span className="font-black truncate" style={{ color: accent ?? '#C0C0D4', maxWidth: 120 }}>
+                        {row.abbr || row.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.gp}</td>
+                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.w}</td>
+                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.d}</td>
+                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.l}</td>
+                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>
+                    {row.gd >= 0 ? `+${row.gd}` : row.gd}
+                  </td>
+                  <td className="text-center font-black tabular-nums py-1.5" style={{ color: accent ?? '#E0E0F0' }}>
+                    {row.pts}
+                  </td>
+                </RowWrapper>
+              )
+            })}
+            {!showAll && maxI < rows.length - 1 && (
+              <tr>
+                <td colSpan={8} className="py-1 text-center text-[9px]" style={{ color: '#2A2A3A' }}>
+                  ···
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </Section>
+  )
+}
+
+// ── Main match content ─────────────────────────────────────────────
+function MatchContent({ match }: { match: MatchDetail }) {
+  const live       = isLive(match.status)
+  const isSoccer   = match.sport === 'soccer'
+  const isBasket   = match.sport === 'basketball'
+  const usesTabs   = isSoccer || isBasket
+
+  const hasLineups = !!(match.lineups?.home.starters.length || match.lineups?.away.starters.length)
+  const hasSoccerStats    = isSoccer && (match.soccer?.stats.length ?? 0) > 0
+  const hasBasketStats    = isBasket && (match.basketball?.stats.length ?? 0) > 0
+  const hasSoccerScoring  = isSoccer && (match.soccer?.scoring.length ?? 0) > 0
+  const hasStats   = hasSoccerStats || hasBasketStats
+  const hasTable   = (match.leagueTable?.length ?? 0) > 0
+
+  const backLink = (
+    <div className="py-5">
+      <Link
+        href="/calendario"
+        className="inline-flex items-center gap-1.5 text-[11px] font-semibold transition-opacity hover:opacity-70"
+        style={{ color: '#5A5A6A', textDecoration: 'none', fontFamily: 'var(--font-sport)' }}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Volver
+      </Link>
+    </div>
+  )
+
+  const leaguePills = (
+    <div className="flex items-center gap-2 mb-5 flex-wrap">
+      <Pill>{match.leagueLabel}</Pill>
+      {live && (
+        <span
+          className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+          style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
+          En Vivo
+        </span>
+      )}
+    </div>
+  )
+
+  // Non-tabbed sports (tennis, mma, racing, golf)
+  if (!usesTabs) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 pb-16">
+        {backLink}
+        {leaguePills}
+        <InfoRow match={match} />
+        {match.sport === 'tennis'     && <TennisBlock  match={match} />}
+        {match.sport === 'mma'        && <MmaBlock     match={match} />}
+        {match.sport === 'racing'     && <RacingBlock  match={match} />}
+        {match.sport === 'golf'       && <GolfBlock    match={match} />}
+      </div>
+    )
+  }
+
+  const tabs = [
+    { id: 'resumen',      label: 'Resumen',       available: true },
+    { id: 'alineacion',   label: 'Alineación',    available: hasLineups },
+    { id: 'estadisticas', label: 'Estadísticas',  available: hasStats },
+    { id: 'clasificacion',label: 'Clasificación', available: hasTable },
+  ]
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 pb-16">
+      {backLink}
+      {leaguePills}
+      <TeamScoreboard match={match} />
+      <InfoRow match={match} />
+
+      <MatchTabs tabs={tabs}>
+        {/* ── Tab 0: Resumen ───────────────────────────── */}
+        <div>
+          {hasSoccerScoring && (
+            <Section title="Eventos del partido">
+              <ScoringTimeline
+                events={match.soccer!.scoring}
+                homeTeam={match.homeTeam ?? ''}
+                awayTeam={match.awayTeam ?? ''}
+              />
+            </Section>
+          )}
+          {isBasket && match.basketball && (
+            <>
+              {(match.basketball.quarters.home.some(v => v != null) || match.basketball.quarters.away.some(v => v != null)) && (
+                <Section title="Marcador por cuartos">
+                  <QuarterTable
+                    home={match.basketball.quarters.home}
+                    away={match.basketball.quarters.away}
+                    homeAbbr={match.homeAbbr ?? match.homeTeam ?? '—'}
+                    awayAbbr={match.awayAbbr ?? match.awayTeam ?? '—'}
+                  />
+                </Section>
+              )}
+              {match.basketball.leaders.length > 0 && (
+                <Section title="Líderes del partido">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {match.basketball.leaders.map((l, i) => <LeaderCard key={i} leader={l} />)}
+                  </div>
+                </Section>
+              )}
+            </>
+          )}
+          {!hasSoccerScoring && !isBasket && (
+            <EmptyState message="Sin eventos registrados aún" />
+          )}
+        </div>
+
+        {/* ── Tab 1: Alineación ────────────────────────── */}
+        <div>
+          {hasLineups ? (
+            <LineupField
+              lineups={match.lineups!}
+              homeTeam={match.homeTeam}
+              awayTeam={match.awayTeam}
+            />
+          ) : (
+            <EmptyState message="Alineación no disponible aún" />
+          )}
+        </div>
+
+        {/* ── Tab 2: Estadísticas ──────────────────────── */}
+        <div>
+          {hasSoccerStats && (
+            <Section title="Estadísticas del partido">
+              <div className="flex items-center justify-between text-[10px] font-black mb-4" style={{ fontFamily: 'var(--font-sport)' }}>
+                <span style={{ color: '#818cf8' }}>{match.homeAbbr ?? match.homeTeam}</span>
+                <span style={{ color: '#f59e0b' }}>{match.awayAbbr ?? match.awayTeam}</span>
+              </div>
+              <div className="flex flex-col gap-3">
+                {match.soccer!.stats.map((s, i) => <StatBar key={i} stat={s} />)}
+              </div>
+            </Section>
+          )}
+          {hasBasketStats && (
+            <Section title="Estadísticas de equipo">
+              <div className="flex items-center justify-between text-[10px] font-black mb-4" style={{ fontFamily: 'var(--font-sport)' }}>
+                <span style={{ color: '#818cf8' }}>{match.homeAbbr ?? match.homeTeam}</span>
+                <span style={{ color: '#f59e0b' }}>{match.awayAbbr ?? match.awayTeam}</span>
+              </div>
+              <div className="flex flex-col gap-3">
+                {match.basketball!.stats.map((s, i) => <StatBar key={i} stat={s} />)}
+              </div>
+            </Section>
+          )}
+          {!hasStats && <EmptyState message="Estadísticas no disponibles" />}
+        </div>
+
+        {/* ── Tab 3: Clasificación ─────────────────────── */}
+        <div>
+          {hasTable ? (
+            <LeagueTableBlock rows={match.leagueTable!} leagueLabel={match.leagueLabel} leagueSlug={match.leagueSlug} />
+          ) : (
+            <EmptyState message="Clasificación no disponible" />
+          )}
+        </div>
+      </MatchTabs>
+    </div>
+  )
+}
+
+// ── Not found ──────────────────────────────────────────────────────
 function NotFound() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-24 flex flex-col items-center gap-4 text-center">

@@ -952,13 +952,13 @@ const SPORTS: SportConfig[] = [
           {
             id: 'stats-dt', title: 'Rendimiento entrenadores · % victorias', metric: '% Vic.',
             rows: [
-              { rank: 1, name: 'Xabi Alonso',   team: 'Real Madrid',  value: '74%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'up',   extra: { GF: '2.70', GC: '0.65' } },
-              { rank: 2, name: 'Hansi Flick',   team: 'FC Barcelona', value: '71%', sub: 'Temp. 25/26', flag: '🇩🇪', trend: 'up',   extra: { GF: '2.68', GC: '0.81' } },
-              { rank: 3, name: 'Pep Guardiola', team: 'Man City',     value: '68%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'flat', extra: { GF: '2.54', GC: '0.74' } },
-              { rank: 4, name: 'Mikel Arteta',  team: 'Arsenal',      value: '66%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'up',   extra: { GF: '2.41', GC: '0.66' } },
-              { rank: 5, name: 'Luis Enrique',  team: 'PSG',          value: '63%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'flat', extra: { GF: '2.18', GC: '0.88' } },
-              { rank: 6, name: 'Diego Simeone', team: 'Atlético',     value: '58%', sub: 'Temp. 25/26', flag: '🇦🇷', trend: 'flat', extra: { GF: '1.82', GC: '0.91' } },
-              { rank: 7, name: 'Ruben Amorim',  team: 'Man United',   value: '44%', sub: 'Temp. 25/26', flag: '🇵🇹', trend: 'up',   extra: { GF: '1.61', GC: '1.38' } },
+              { rank: 1, name: 'Hansi Flick',        team: 'FC Barcelona', value: '73%', sub: 'Temp. 25/26', flag: '🇩🇪', trend: 'up',   extra: { GF: '2.88', GC: '0.74' } },
+              { rank: 2, name: 'Luis Enrique',        team: 'PSG',          value: '70%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'up',   extra: { GF: '2.44', GC: '0.82' } },
+              { rank: 3, name: 'Pep Guardiola',       team: 'Man City',     value: '68%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'flat', extra: { GF: '2.54', GC: '0.74' } },
+              { rank: 4, name: 'Mikel Arteta',        team: 'Arsenal',      value: '66%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'up',   extra: { GF: '2.41', GC: '0.66' } },
+              { rank: 5, name: 'Vincent Kompany',     team: 'Bayern Munich',value: '61%', sub: 'Temp. 25/26', flag: '🇧🇪', trend: 'up',   extra: { GF: '2.31', GC: '0.98' } },
+              { rank: 6, name: 'Diego Simeone',       team: 'Atlético',     value: '58%', sub: 'Temp. 25/26', flag: '🇦🇷', trend: 'flat', extra: { GF: '1.82', GC: '0.91' } },
+              { rank: 7, name: 'Arne Slot',           team: 'Liverpool',    value: '53%', sub: 'Temp. 25/26', flag: '🇳🇱', trend: 'flat', extra: { GF: '1.74', GC: '1.12' } },
             ],
           },
           {
@@ -966,10 +966,10 @@ const SPORTS: SportConfig[] = [
             rows: [
               { rank: 1, name: 'Pep Guardiola',  team: 'Man City',     value: '40', sub: 'en activo', flag: '🇪🇸', trend: 'up' },
               { rank: 2, name: 'Carlo Ancelotti', team: 'Brasil',       value: '28', sub: 'en activo', flag: '🇮🇹', trend: 'flat' },
-              { rank: 3, name: 'José Mourinho',   team: 'Fenerbahçe',   value: '26', sub: 'en activo',  flag: '🇵🇹', trend: 'flat' },
+              { rank: 3, name: 'José Mourinho',   team: 'Benfica',      value: '26', sub: 'en activo',  flag: '🇵🇹', trend: 'flat' },
               { rank: 4, name: 'Diego Simeone',   team: 'Atlético',     value: '13', sub: 'en activo', flag: '🇦🇷', trend: 'flat' },
               { rank: 5, name: 'Hansi Flick',     team: 'FC Barcelona', value: '11', sub: 'en activo', flag: '🇩🇪', trend: 'up' },
-              { rank: 6, name: 'Xabi Alonso',     team: 'Real Madrid',  value: '3',  sub: 'en activo', flag: '🇪🇸', trend: 'up' },
+              { rank: 6, name: 'Xabi Alonso',     team: 'Sin equipo',   value: '3',  sub: 'en activo', flag: '🇪🇸', trend: 'flat' },
             ],
           },
         ],
@@ -1607,11 +1607,13 @@ const LIVE_BLOCK_IDS = new Set([
   'f-ligaf-tabla', 'f-goleadoras', 'f-asistencias',
   'pga-leaderboard', 'pga-fedex',
   'nations-a1', 'nations-a2', 'nations-a3', 'nations-a4',
+  'stats-dt',
 ])
 
 interface LiveStandingRow {
   rank: number; name: string; abbr: string; value: string; sub: string
   trend?: 'up' | 'down' | 'flat'; extra: Record<string, string>
+  flag?: string
 }
 interface LiveLeague { id: string; label: string; rows: LiveStandingRow[] }
 type FreshnessStatus = 'live' | 'stale' | 'historical' | 'unavailable'
@@ -1633,6 +1635,7 @@ interface LiveStandingsData {
   pgaTourLeaderboard?: LiveStandingRow[]
   pgaFedExCup?: LiveStandingRow[]
   nationsLeague?: LiveLeague[]
+  coachesWinRate?: LiveStandingRow[]
   meta?: Record<string, BlockMeta>
   updatedAt?: string
 }
@@ -1655,6 +1658,7 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'f-ligaf-tabla': 'womenLigaF', 'f-goleadoras': 'womenGoals', 'f-asistencias': 'womenAssists',
   'pga-leaderboard': 'pgaTourLeaderboard', 'pga-fedex': 'pgaFedExCup',
   'nations-a1': 'nationsLeague', 'nations-a2': 'nationsLeague', 'nations-a3': 'nationsLeague', 'nations-a4': 'nationsLeague',
+  'stats-dt': 'coachesWinRate',
 }
 
 // ── Player stats types (from /api/stats/players) ──────────────────
@@ -1784,6 +1788,7 @@ function toStatRows(rows: LiveStandingRow[], teamKey?: string): StatRow[] {
   return rows.map(r => ({
     rank: r.rank, name: r.name,
     team: teamKey ? r.extra[teamKey] : r.abbr || undefined,
+    flag: r.flag,
     value: r.value, sub: r.sub, trend: r.trend ?? 'flat',
     extra: Object.fromEntries(Object.entries(r.extra).filter(([k]) => k !== teamKey)),
   }))
@@ -1868,6 +1873,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           return { ...block, title: tournamentName || 'Leaderboard PGA Tour', rows: toStatRows(liveData.pgaTourLeaderboard!) }
         }
         if (block.id === 'pga-fedex'         && liveData.pgaFedExCup?.length)         return { ...block, rows: toStatRows(liveData.pgaFedExCup!) }
+        if (block.id === 'stats-dt'          && liveData.coachesWinRate?.length)      return { ...block, rows: toStatRows(liveData.coachesWinRate!, 'Club') }
         if (block.id.startsWith('nations-') && liveData.nationsLeague?.length) {
           const group = liveData.nationsLeague.find(g => g.id === block.id)
           if (group?.rows.length) return { ...block, rows: toStatRows(group.rows) }

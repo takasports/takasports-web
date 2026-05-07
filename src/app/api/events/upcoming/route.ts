@@ -1,0 +1,170 @@
+import { NextResponse } from 'next/server'
+import { SOURCE_TZ } from '@/lib/timezone'
+
+export interface UpcomingEvent {
+  id: string
+  homeTeam: string
+  awayTeam: string | null
+  time: string       // "21:00" en SOURCE_TZ
+  dateLabel: string  // "Hoy" | "Mañana"
+  sport: string      // 'soccer'|'basketball'|'racing'|'mma'|'tennis'
+  comp: string
+  matchRef?: string  // "{sport}_{league}_{espnId}" for detail page URL
+  homeLogo?: string
+  awayLogo?: string
+  homeAbbr?: string
+  awayAbbr?: string
+}
+
+interface CacheEntry { data: UpcomingEvent[]; ts: number }
+let cache: CacheEntry | null = null
+const CACHE_TTL = 5 * 60_000 // 5 min
+
+// Ordered by display priority
+const SOURCES = [
+  { slug: 'soccer/uefa.champions',  sport: 'soccer',     comp: 'Champions'  },
+  { slug: 'soccer/esp.copa_del_rey',sport: 'soccer',     comp: 'Copa Rey'   },
+  { slug: 'soccer/esp.1',           sport: 'soccer',     comp: 'LaLiga'     },
+  { slug: 'soccer/eng.1',           sport: 'soccer',     comp: 'Premier'    },
+  { slug: 'soccer/ita.1',           sport: 'soccer',     comp: 'Serie A'    },
+  { slug: 'soccer/ger.1',           sport: 'soccer',     comp: 'Bundesliga' },
+  { slug: 'soccer/fra.1',           sport: 'soccer',     comp: 'Ligue 1'    },
+  { slug: 'basketball/nba',         sport: 'basketball', comp: 'NBA'        },
+  { slug: 'racing/f1',              sport: 'racing',     comp: 'F1'         },
+  { slug: 'mma/ufc',                sport: 'mma',        comp: 'UFC'        },
+]
+
+function toTimeStr(isoDate: string): string {
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: SOURCE_TZ, hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(new Date(isoDate))
+  const h = parts.find(p => p.type === 'hour')?.value   ?? '00'
+  const m = parts.find(p => p.type === 'minute')?.value ?? '00'
+  return `${h}:${m}`
+}
+
+function toDateLabel(isoDate: string): string | null {
+  const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: SOURCE_TZ }).format(new Date())
+  const eventStr = new Intl.DateTimeFormat('en-CA', { timeZone: SOURCE_TZ }).format(new Date(isoDate))
+  const diff = Math.round((new Date(eventStr).getTime() - new Date(todayStr).getTime()) / 86_400_000)
+  if (diff < 0) return null          // past
+  if (diff === 0) return 'Hoy'
+  if (diff === 1) return 'Mañana'
+  if (diff <= 3) {
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+    const d = new Date(eventStr + 'T12:00:00Z')
+    return `${days[d.getUTCDay()]}`
+  }
+  return null  // too far ahead
+}
+
+async function fetchUpcomingFromLeague(
+  slug: string, sport: string, comp: string
+): Promise<UpcomingEvent[]> {
+  try {
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
+      { next: { revalidate: 300 } }
+    )
+    if (!res.ok) return []
+    const json = await res.json()
+    const results: UpcomingEvent[] = []
+
+    for (const ev of json.events ?? []) {
+      const competition = ev.competitions?.[0]
+      if (!competition) continue
+      const statusName: string = competition.status?.type?.name ?? ''
+      if (statusName !== 'STATUS_SCHEDULED') continue
+
+      const isoDate: string = ev.date ?? ''
+      if (!isoDate) continue
+
+      const dateLabel = toDateLabel(isoDate)
+      if (!dateLabel) continue
+
+      const competitors: Record<string, unknown>[] = competition.competitors ?? []
+      let homeTeam: string
+      let awayTeam: string | null = null
+
+      let homeLogo: string | undefined
+      let awayLogo: string | undefined
+      let homeAbbr: string | undefined
+      let awayAbbr: string | undefined
+
+      if (competitors.length >= 2) {
+        const home = competitors.find(c => c.homeAway === 'home') ?? competitors[0]
+        const away = competitors.find(c => c.homeAway === 'away') ?? competitors[1]
+        const homeTeamObj = home?.team as Record<string, unknown>
+        const awayTeamObj = away?.team as Record<string, unknown>
+        homeTeam  = homeTeamObj?.displayName as string ?? homeTeamObj?.shortDisplayName as string ?? ''
+        awayTeam  = awayTeamObj?.displayName as string ?? null
+        homeAbbr  = homeTeamObj?.abbreviation as string | undefined
+        awayAbbr  = awayTeamObj?.abbreviation as string | undefined
+        homeLogo  = (homeTeamObj?.logoDark ?? homeTeamObj?.logo) as string | undefined
+        awayLogo  = (awayTeamObj?.logoDark ?? awayTeamObj?.logo) as string | undefined
+      } else {
+        homeTeam = ev.name as string ?? ev.shortName as string ?? comp
+      }
+
+      if (!homeTeam) continue
+
+      results.push({
+        id: String(ev.id),
+        homeTeam,
+        awayTeam,
+        time: toTimeStr(isoDate),
+        dateLabel,
+        sport,
+        comp,
+        matchRef: `${slug.replace('/', '_')}_${String(ev.id)}`,
+        homeLogo,
+        awayLogo,
+        homeAbbr,
+        awayAbbr,
+      })
+    }
+
+    // Sort by date ascending
+    results.sort((a, b) => {
+      const ta = json.events.find((e: Record<string, unknown>) => String(e.id) === a.id)?.date ?? ''
+      const tb = json.events.find((e: Record<string, unknown>) => String(e.id) === b.id)?.date ?? ''
+      return ta.localeCompare(tb)
+    })
+
+    return results
+  } catch (err) {
+    console.error(`[upcoming] ESPN fetch failed for ${slug}:`, err)
+    return []
+  }
+}
+
+export async function GET() {
+  const now = Date.now()
+  if (cache && now - cache.ts < CACHE_TTL) {
+    return NextResponse.json(cache.data)
+  }
+
+  const settled = await Promise.allSettled(
+    SOURCES.map(s => fetchUpcomingFromLeague(s.slug, s.sport, s.comp))
+  )
+
+  // Collect all upcoming events, keeping source priority order
+  const all: UpcomingEvent[] = []
+  for (const r of settled) {
+    if (r.status === 'fulfilled') all.push(...r.value)
+  }
+
+  // Sort: today first, then by time, capped at 8 events
+  const today = all.filter(e => e.dateLabel === 'Hoy').slice(0, 5)
+  const tomorrow = all.filter(e => e.dateLabel === 'Mañana').slice(0, 3)
+  const rest = all.filter(e => e.dateLabel !== 'Hoy' && e.dateLabel !== 'Mañana').slice(0, 3)
+
+  const data = today.length > 0
+    ? today.slice(0, 8)
+    : tomorrow.length > 0
+      ? [...tomorrow, ...rest].slice(0, 8)
+      : rest.slice(0, 8)
+
+  cache = { data, ts: now }
+  return NextResponse.json(data)
+}

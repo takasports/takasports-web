@@ -1,0 +1,78 @@
+// Seed reels — shown when no Sanity/Instagram data is available.
+// Used as fallback so the section always looks populated.
+// Replace with real content by adding reels to Sanity CMS or setting INSTAGRAM_ACCESS_TOKEN.
+
+export const SEED_REELS = [
+  {
+    id: 'seed-futbol-1',
+    instagram_url: 'https://www.instagram.com/taka.sports/',
+    thumbnail_url: null as null,
+    timestamp: new Date(Date.now() - 86400000 * 1).toISOString(),
+    caption: 'El golazo de la semana ⚽🔥 #futbol #laliga',
+    sport: 'futbol',
+    title: 'El golazo de la semana',
+  },
+  {
+    id: 'seed-futbol-2',
+    instagram_url: 'https://www.instagram.com/taka.sports/',
+    thumbnail_url: null as null,
+    timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
+    caption: 'Parada de portero que para los relojes 🧤 #futbol #goalkeeper',
+    sport: 'futbol',
+    title: 'Parada imposible del portero',
+  },
+  {
+    id: 'seed-baloncesto-1',
+    instagram_url: 'https://www.instagram.com/taka.sports/',
+    thumbnail_url: null as null,
+    timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
+    caption: 'Mate del año en la NBA 🏀🔥 #nba #basketball',
+    sport: 'baloncesto',
+    title: 'El mate del año en la NBA',
+  },
+  {
+    id: 'seed-f1-1',
+    instagram_url: 'https://www.instagram.com/taka.sports/',
+    thumbnail_url: null as null,
+    timestamp: new Date(Date.now() - 86400000 * 3).toISOString(),
+    caption: 'La salida más espectacular del Gran Premio 🏎️🔴 #f1 #formula1',
+    sport: 'formula1',
+    title: 'La salida más épica del GP',
+  },
+  {
+    id: 'seed-tenis-1',
+    instagram_url: 'https://www.instagram.com/taka.sports/',
+    thumbnail_url: null as null,
+    timestamp: new Date(Date.now() - 86400000 * 4).toISOString(),
+    caption: 'El punto imposible de Alcaraz 🎾✨ #tenis #atp #alcaraz',
+    sport: 'tenis',
+    title: 'El punto imposible de Alcaraz',
+  },
+  {
+    id: 'seed-ufc-1',
+    instagram_url: 'https://www.instagram.com/taka.sports/',
+    thumbnail_url: null as null,
+    timestamp: new Date(Date.now() - 86400000 * 5).toISOString(),
+    caption: 'KO de la semana en el octágono 🥊💥 #ufc #mma',
+    sport: 'ufc',
+    title: 'KO de la semana en UFC',
+  },
+  {
+    id: 'seed-baloncesto-2',
+    instagram_url: 'https://www.instagram.com/taka.sports/',
+    thumbnail_url: null as null,
+    timestamp: new Date(Date.now() - 86400000 * 6).toISOString(),
+    caption: 'Triple doble histórico en los playoffs 🏀 #nba #playoffs',
+    sport: 'baloncesto',
+    title: 'Triple doble histórico en playoffs',
+  },
+  {
+    id: 'seed-futbol-3',
+    instagram_url: 'https://www.instagram.com/taka.sports/',
+    thumbnail_url: null as null,
+    timestamp: new Date(Date.now() - 86400000 * 7).toISOString(),
+    caption: 'Los mejores regates de la temporada ⚽✨ #futbol #skills',
+    sport: 'futbol',
+    title: 'Mejores regates de la temporada',
+  },
+]

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { sanityClient, homeArticlesQuery, reelsQuery, eventsQuery } from '@/lib/sanity'
+import { sanityClient, articlesQuery, reelsQuery, eventsQuery } from '@/lib/sanity'
 import { SLUG_TO_LABEL } from '@/lib/sports'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents } from '@/lib/espn'
@@ -10,28 +10,27 @@ import BreakingNewsBar from '@/components/BreakingNewsBar'
 import LiveStrip from '@/components/LiveStrip'
 import HomeContent from '@/components/HomeContent'
 import Footer from '@/components/Footer'
+import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const revalidate = 60
 
 export const metadata: Metadata = {
   title: 'TakaSports — Noticias deportivas en tiempo real',
   description: 'Las últimas noticias de fútbol, NBA, F1, UFC, Tenis y más. Resultados en vivo, calendario y análisis deportivo.',
-  alternates: { canonical: 'https://takasportsmedia.com' },
+  alternates: { canonical: SITE_URL },
   openGraph: {
     title: 'TakaSports — Noticias deportivas en tiempo real',
     description: 'Las últimas noticias de fútbol, NBA, F1, UFC, Tenis y más.',
-    url: 'https://takasportsmedia.com',
+    url: SITE_URL,
     siteName: 'TakaSports',
     locale: 'es_ES',
     type: 'website',
-    images: [{ url: 'https://takasportsmedia.com/taka-logo.png', width: 512, height: 512, alt: 'TakaSports' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'TakaSports — Noticias deportivas en tiempo real',
     description: 'Las últimas noticias de fútbol, NBA, F1, UFC, Tenis y más.',
     site: '@takasports',
-    images: ['https://takasportsmedia.com/taka-logo.png'],
   },
 }
 
@@ -72,7 +71,7 @@ export default async function Home({
 }) {
   const { sport } = await searchParams
   const [rawArticles, sanityReels, rawEvents, espnEvents] = await Promise.all([
-    sanityClient.fetch<HomeArticle[]>(homeArticlesQuery),
+    sanityClient.fetch<HomeArticle[]>(articlesQuery),
     sanityClient.fetch(reelsQuery),
     sanityClient.fetch(eventsQuery).catch(() => []),
     fetchEspnEvents().catch(() => []),
@@ -100,15 +99,15 @@ export default async function Home({
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'TakaSports',
-    url: 'https://takasportsmedia.com',
+    url: SITE_URL,
   }
 
   const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'TakaSports',
-    url: 'https://takasportsmedia.com',
-    logo: { '@type': 'ImageObject', url: 'https://takasportsmedia.com/taka-logo.png' },
+    url: SITE_URL,
+    logo: { '@type': 'ImageObject', url: LOGO_URL },
     sameAs: ['https://twitter.com/takasports'],
   }
 

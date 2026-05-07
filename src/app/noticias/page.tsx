@@ -8,17 +8,18 @@ import LiveStrip from '@/components/LiveStrip'
 import NoticiasContent from '@/components/NoticiasContent'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
+import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const revalidate = 60
 
 export const metadata: Metadata = {
   title: 'Noticias — TakaSports',
   description: 'Todas las noticias del deporte en tiempo real. Fútbol, NBA, F1, Tenis, UFC y más.',
-  alternates: { canonical: 'https://takasportsmedia.com/noticias' },
+  alternates: { canonical: `${SITE_URL}/noticias` },
   openGraph: {
     title: 'Noticias deportivas — TakaSports',
     description: 'Todas las noticias del deporte en tiempo real. Fútbol, NBA, F1, Tenis, UFC y más.',
-    url: 'https://takasportsmedia.com/noticias',
+    url: `${SITE_URL}/noticias`,
     siteName: 'TakaSports',
     locale: 'es_ES',
     type: 'website',

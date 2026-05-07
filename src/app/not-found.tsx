@@ -1,12 +1,14 @@
 import Link from 'next/link'
 import Header from '@/components/Header'
+import Footer from '@/components/Footer'
+import { LogoMark } from '@/components/Logo'
 
 export default function NotFound() {
   return (
-    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg-base)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Header />
 
-      <main className="max-w-[1440px] mx-auto px-6 xl:px-10">
+      <main className="max-w-[1440px] mx-auto px-6 xl:px-10 flex-1">
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-6">
 
           {/* Number */}
@@ -24,10 +26,7 @@ export default function NotFound() {
               404
             </span>
             <div className="absolute inset-0 flex items-center justify-center">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <circle cx="24" cy="24" r="22" stroke="#7C3AED" strokeWidth="1.5" opacity="0.3" />
-                <path d="M24 14v12M24 32v2" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
-              </svg>
+              <LogoMark size={56} />
             </div>
           </div>
 
@@ -82,6 +81,8 @@ export default function NotFound() {
 
         </div>
       </main>
+
+      <Footer />
     </div>
   )
 }

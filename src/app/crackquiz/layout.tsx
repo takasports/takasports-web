@@ -1,24 +1,23 @@
 import type { Metadata } from 'next'
+import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: 'CrackQuiz — TakaSports',
   description: 'Trivia de fútbol y deporte general. Rondas diarias cronometradas, racha de aciertos y puntuación máxima.',
-  alternates: { canonical: 'https://takasportsmedia.com/crackquiz' },
+  alternates: { canonical: `${SITE_URL}/crackquiz` },
   openGraph: {
     title: 'CrackQuiz — TakaSports',
     description: '¿Cuánto sabes de fútbol? 10 preguntas, 30 segundos cada una. Reto diario de trivia deportiva.',
-    url: 'https://takasportsmedia.com/crackquiz',
+    url: `${SITE_URL}/crackquiz`,
     siteName: 'TakaSports',
     locale: 'es_ES',
     type: 'website',
-    images: [{ url: 'https://takasportsmedia.com/og-crackquiz.png', width: 1200, height: 630, alt: 'CrackQuiz' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'CrackQuiz — TakaSports',
     description: '¿Cuánto sabes de fútbol? Trivia deportiva diaria.',
     site: '@takasports',
-    images: ['https://takasportsmedia.com/og-crackquiz.png'],
   },
 }
 

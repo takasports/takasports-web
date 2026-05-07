@@ -1,11 +1,6 @@
 import Link from 'next/link'
 import QuinielaModule from './QuinielaModule'
-
-const UPCOMING = [
-  { home: 'Real Madrid', away: 'Atlético', time: 'Hoy · 21:00',    sport: 'Fútbol', accent: '#22c55e' },
-  { home: 'Lakers',      away: 'Celtics',  time: 'Mañana · 02:30', sport: 'NBA',    accent: '#f59e0b' },
-  { home: 'GP Japón',    away: null,       time: 'Dom · 07:00',    sport: 'F1',     accent: '#ef4444' },
-]
+import { HOME_EVENTS } from '@/lib/events'
 
 function SectionHeader({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
@@ -45,35 +40,43 @@ export default function Sidebar() {
           Próximos
         </SectionHeader>
         <div className="flex flex-col gap-1.5">
-          {UPCOMING.map((event, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between p-2.5 rounded-xl transition-all hover:brightness-105"
+          {HOME_EVENTS.length > 0 ? HOME_EVENTS.map((event) => (
+            <Link
+              key={event.id}
+              href="/calendario"
+              className="flex items-center justify-between p-2.5 rounded-xl transition-all hover:brightness-110"
               style={{
                 background: 'var(--bg-card)',
                 border: '1px solid var(--border)',
                 borderLeft: `3px solid ${event.accent}`,
+                textDecoration: 'none',
               }}
             >
               <div className="flex-1 min-w-0">
                 <p
-                  className="text-[12px] font-semibold leading-tight"
+                  className="text-[12px] font-semibold leading-tight truncate"
                   style={{ color: '#D0D0E0', fontFamily: 'var(--font-sport)' }}
                 >
                   {event.home}{event.away ? ` vs ${event.away}` : ''}
                 </p>
                 <p className="text-[10px] mt-0.5" style={{ color: event.accent, opacity: 0.7 }}>
-                  {event.sport}
+                  {event.sport} · {event.comp}
                 </p>
               </div>
-              <span
-                className="text-[11px] font-black flex-shrink-0 ml-2"
-                style={{ color: '#6B6B7B', fontFamily: 'var(--font-display)', letterSpacing: '0.02em' }}
-              >
-                {event.time}
-              </span>
-            </div>
-          ))}
+              <div className="flex-shrink-0 ml-2 text-right">
+                <p className="text-[11px] font-black tabular-nums" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
+                  {event.time}
+                </p>
+                <p className="text-[9px]" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>
+                  {event.date}
+                </p>
+              </div>
+            </Link>
+          )) : (
+            <p className="text-xs px-1" style={{ color: 'var(--text-faint)' }}>
+              Próximos eventos próximamente.
+            </p>
+          )}
         </div>
       </div>
 

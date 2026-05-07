@@ -2,6 +2,9 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import Header from '@/components/Header'
+import Footer from '@/components/Footer'
+import { captureException } from '@/lib/monitoring'
 
 export default function Error({
   error,
@@ -11,15 +14,14 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    // Log en desarrollo; en producción conectar a Sentry u otro servicio
-    console.error('[TakaSports error]', error)
+    captureException(error, { digest: error.digest })
   }, [error])
 
   return (
-    <div
-      style={{ background: 'var(--bg-base)', minHeight: '100vh' }}
-      className="flex flex-col items-center justify-center px-6 text-center gap-6"
-    >
+    <div style={{ background: 'var(--bg-base)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Header />
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6">
+
       {/* Icon */}
       <div
         className="w-16 h-16 rounded-2xl flex items-center justify-center"
@@ -79,6 +81,9 @@ export default function Error({
           Ir al inicio
         </Link>
       </div>
+
+      </div>
+      <Footer />
     </div>
   )
 }

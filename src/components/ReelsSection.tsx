@@ -1,14 +1,56 @@
-import { urlFor } from '@/lib/sanity'
+'use client'
 
-interface Reel {
-  _id: string
+import { useState, useEffect, useRef } from 'react'
+import { urlFor } from '@/lib/sanity'
+import { timeAgo } from '@/lib/timeAgo'
+import { getSportStyle, getSportLabel } from '@/lib/sports'
+import { useTilt } from '@/hooks/useTilt'
+import { useScrollReveal } from '@/hooks/useScrollReveal'
+
+// ── Tipo de entrada — compatible con Sanity y con Instagram API ─
+interface SanityReel {
+  _id?: string
   instagram_url?: string
   thumbnail?: { asset: { _ref: string } }
+  sport?: string
   category?: string
   title?: string
   publishedAt?: string
+  id?: string
+  thumbnail_url?: string
+  video_url?: string
+  timestamp?: string
 }
 
+// ── Normalizado interno ─────────────────────────────────────────
+interface Reel {
+  key: string
+  instagram_url: string
+  thumbnailUrl: string | null
+  videoUrl: string | null
+  date: string
+  sport: string
+  title: string
+}
+
+function normalize(r: SanityReel, index: number): Reel {
+  const sport = r.sport || r.category || ''
+  const thumbnailUrl =
+    r.thumbnail_url ||
+    (r.thumbnail?.asset ? urlFor(r.thumbnail).width(360).height(600).url() : null)
+
+  return {
+    key:           r._id || r.id || `reel-${index}`,
+    instagram_url: r.instagram_url || '',
+    thumbnailUrl,
+    videoUrl:      r.video_url || null,
+    date:          r.publishedAt || r.timestamp || '',
+    sport,
+    title:         r.title || 'Reel',
+  }
+}
+
+// ── Iconos ─────────────────────────────────────────────────────
 function IGIcon({ size = 13 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -22,7 +64,7 @@ function IGIcon({ size = 13 }: { size?: number }) {
 function PlayBtn() {
   return (
     <div
-      className="w-9 h-9 rounded-full flex items-center justify-center transition-transform hover:scale-105"
+      className="w-9 h-9 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
       style={{
         background: 'rgba(255,255,255,0.22)',
         backdropFilter: 'blur(10px)',
@@ -37,69 +79,220 @@ function PlayBtn() {
   )
 }
 
-const EMPTY_SLOTS = [
-  { label: 'Fútbol',  bg: 'linear-gradient(160deg,#1e1b4b 0%,#09090F 100%)', accent: '#22c55e' },
-  { label: 'UFC',     bg: 'linear-gradient(160deg,#2d1515 0%,#09090F 100%)', accent: '#ef4444' },
-  { label: 'NBA',     bg: 'linear-gradient(160deg,#172554 0%,#09090F 100%)', accent: '#f59e0b' },
-  { label: 'F1',      bg: 'linear-gradient(160deg,#2d1000 0%,#09090F 100%)', accent: '#ef4444' },
-  { label: 'Tenis',   bg: 'linear-gradient(160deg,#0c2a18 0%,#09090F 100%)', accent: '#84cc16' },
-  { label: 'Rugby',   bg: 'linear-gradient(160deg,#1f1040 0%,#09090F 100%)', accent: '#a78bfa' },
+// ── Shimmer skeleton ────────────────────────────────────────────
+function ReelSkeleton() {
+  return (
+    <>
+      <style>{`
+        @keyframes shimmer {
+          0%   { background-position: -200% 0; }
+          100% { background-position:  200% 0; }
+        }
+      `}</style>
+      <div
+        className="relative flex-shrink-0"
+        style={{
+          width: 180, height: 300, borderRadius: 16,
+          background: 'linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 100%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 1.6s infinite linear',
+        }}
+      />
+    </>
+  )
+}
+
+// ── Placeholders ────────────────────────────────────────────────
+const REEL_PLACEHOLDERS = [
+  { sport: 'futbol',     accent: '#22c55e', emoji: '⚽', label: 'Fútbol' },
+  { sport: 'baloncesto', accent: '#f59e0b', emoji: '🏀', label: 'Baloncesto' },
+  { sport: 'formula1',   accent: '#ef4444', emoji: '🏎️', label: 'F1' },
+  { sport: 'tenis',      accent: '#d97706', emoji: '🎾', label: 'Tenis' },
+  { sport: 'ufc',        accent: '#f97316', emoji: '🥊', label: 'UFC' },
+  { sport: 'rugby',      accent: '#a78bfa', emoji: '🏉', label: 'Rugby' },
 ]
 
-function ReelCard({
-  href,
-  bg,
-  category,
-  label,
-  accent,
-  isPlaceholder,
-}: {
-  href: string
-  bg: string
-  category?: string
-  label: string
-  accent?: string
-  isPlaceholder?: boolean
-}) {
+// ── Modal ───────────────────────────────────────────────────────
+function ReelModal({ reel, onClose }: { reel: Reel; onClose: () => void }) {
+  const { accent } = getSportStyle(reel.sport)
+  const label = getSportLabel(reel.sport)
+
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="relative flex-shrink-0 overflow-hidden block group"
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(18px)' }}
+      onClick={onClose}
+      aria-hidden="true"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={reel.title}
+        className="relative flex flex-col"
+        style={{
+          width: '100%',
+          maxWidth: 360,
+          borderRadius: 20,
+          overflow: 'hidden',
+          boxShadow: `0 32px 72px rgba(0,0,0,0.8), 0 0 0 1px ${accent}30`,
+          animation: 'reelModalIn 280ms cubic-bezier(0.34,1.15,0.64,1) forwards',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        <style>{`
+          @keyframes reelModalIn {
+            from { opacity:0; transform:scale(0.93) translateY(14px); }
+            to   { opacity:1; transform:scale(1) translateY(0); }
+          }
+        `}</style>
+
+        {/* Header */}
+        <div
+          className="flex items-center justify-between gap-3 px-4 py-3 flex-shrink-0"
+          style={{ background: '#0D0D18', borderBottom: `1px solid ${accent}22` }}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <IGIcon size={13} />
+            {label && (
+              <span
+                className="text-[9px] font-black uppercase tracking-widest flex-shrink-0"
+                style={{ color: accent, fontFamily: 'var(--font-sport)' }}
+              >
+                {label}
+              </span>
+            )}
+            <span className="text-[12px] font-semibold truncate" style={{ color: '#C8C8DC' }}>
+              {reel.title}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {reel.instagram_url && (
+              <a
+                href={reel.instagram_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Ver en Instagram"
+                className="w-7 h-7 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                <IGIcon size={12} />
+              </a>
+            )}
+            <button
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="w-7 h-7 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#888' }}
+            >
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Player — video nativo con proxy, sin depender de Instagram */}
+        {reel.videoUrl ? (
+          <video
+            src={reel.videoUrl}
+            poster={reel.thumbnailUrl ?? undefined}
+            controls
+            autoPlay
+            playsInline
+            style={{
+              width: '100%',
+              aspectRatio: '9/16',
+              background: '#000',
+              display: 'block',
+              maxHeight: '75vh',
+              objectFit: 'contain',
+            }}
+          />
+        ) : (
+          <div
+            className="flex flex-col items-center justify-center gap-4 py-16 px-8 text-center"
+            style={{ background: 'linear-gradient(160deg,#1e1b4b,#09090F)', minHeight: 320 }}
+          >
+            <p className="font-black text-base" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+              {reel.title}
+            </p>
+            {reel.instagram_url && (
+              <a
+                href={reel.instagram_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs underline"
+                style={{ color: accent }}
+              >
+                Ver en Instagram →
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Card ────────────────────────────────────────────────────────
+function ReelCard({ reel, onClick }: { reel: Reel; onClick: () => void }) {
+  const { accent } = getSportStyle(reel.sport)
+  const label = getSportLabel(reel.sport)
+  const { elRef } = useTilt({ max: 5, scale: 1.03, glare: false })
+
+  return (
+    <div ref={elRef}>
+    <button
+      onClick={onClick}
+      aria-label={`Reproducir: ${reel.title}`}
+      className="relative flex-shrink-0 overflow-hidden group text-left w-full h-full"
       style={{
-        width: 158,
-        height: 268,
+        width: 180,
+        height: 300,
         borderRadius: 16,
-        background: bg,
-        boxShadow: '0 12px 36px rgba(0,0,0,0.55)',
-        textDecoration: 'none',
+        background: reel.thumbnailUrl
+          ? `url(${reel.thumbnailUrl}) center/cover no-repeat`
+          : `linear-gradient(160deg, ${accent}18, #09090F)`,
+        boxShadow: `0 12px 36px rgba(0,0,0,0.55), 0 0 0 1.5px ${accent}28`,
+        border: `1.5px solid ${accent}22`,
+        cursor: 'pointer',
+        padding: 0,
       }}
     >
-      {/* Bottom gradient — más pronunciado */}
-      <div
-        className="absolute inset-0"
-        style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.2) 45%,transparent 70%)' }}
-      />
-      {/* Top vignette */}
-      <div
-        className="absolute inset-0"
-        style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,0.35) 0%,transparent 35%)' }}
-      />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.9) 0%,rgba(0,0,0,0.1) 50%,transparent 70%)' }} />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,0.28) 0%,transparent 30%)' }} />
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: `${accent}14` }} />
 
-      {/* Hover overlay */}
-      <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-        style={{ background: 'rgba(124,58,237,0.1)' }}
-      />
+      {/* Overlay "Reproducir" — visible en hover */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="w-11 h-11 rounded-full flex items-center justify-center"
+            style={{
+              background: 'rgba(255,255,255,0.22)',
+              backdropFilter: 'blur(14px)',
+              border: '1.5px solid rgba(255,255,255,0.4)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            }}
+          >
+            <svg width="13" height="15" viewBox="0 0 10 12" fill="none">
+              <path d="M1.5 1.5L8.5 6L1.5 10.5V1.5Z" fill="white" />
+            </svg>
+          </div>
+          <span
+            className="text-[10px] font-black uppercase tracking-widest text-white px-3 py-1 rounded-full"
+            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}
+          >
+            Reproducir
+          </span>
+        </div>
+      </div>
 
-      {/* Content */}
       <div className="absolute inset-0 flex flex-col justify-between p-3.5">
-        {/* Top row */}
         <div className="flex items-start justify-between">
           <div
             className="flex items-center gap-1.5 px-2 py-1 rounded-full"
-            style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)' }}
+            style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}
           >
             <IGIcon size={11} />
             <span className="text-[9px] font-black uppercase tracking-widest text-white opacity-80">Reels</span>
@@ -107,45 +300,148 @@ function ReelCard({
           <PlayBtn />
         </div>
 
-        {/* Bottom */}
         <div>
-          {(category || isPlaceholder) && (
-            <span
-              className="inline-block text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full mb-2"
-              style={{
-                background: isPlaceholder ? 'rgba(124,58,237,0.25)' : `${accent ?? '#7C3AED'}28`,
-                color: isPlaceholder ? '#A78BFA' : (accent ?? '#A78BFA'),
-                border: `1px solid ${isPlaceholder ? 'rgba(124,58,237,0.3)' : `${accent ?? '#7C3AED'}45`}`,
-              }}
-            >
-              {isPlaceholder ? 'Pronto' : category}
-            </span>
+          {reel.date && (
+            <p className="text-[9px] mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              {timeAgo(reel.date)}
+            </p>
+          )}
+          {label && (
+            <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+              {label}
+            </p>
           )}
           <p
-            className="text-[14px] font-black leading-tight"
-            style={{
-              fontFamily: 'var(--font-display)',
-              color: '#F8F8FF',
-              letterSpacing: '0.01em',
-              textShadow: '0 1px 8px rgba(0,0,0,0.6)',
-            }}
+            className="text-[13px] font-black leading-tight line-clamp-2"
+            style={{ fontFamily: 'var(--font-display)', color: '#F8F8FF', textShadow: '0 1px 8px rgba(0,0,0,0.7)' }}
           >
-            {label}
+            {reel.title}
           </p>
+          <div style={{ marginTop: 8, height: 2, borderRadius: 2, background: `linear-gradient(to right, ${accent}CC, ${accent}22)` }} />
         </div>
       </div>
-    </a>
+    </button>
+    </div>
   )
 }
 
-export default function ReelsSection({ reels }: { reels: Reel[] }) {
+// ── Placeholder ─────────────────────────────────────────────────
+function ReelPlaceholder({ accent, emoji, label }: { accent: string; emoji: string; label: string }) {
   return (
-    <section className="pt-5 pb-0" id="reels">
+    <div
+      className="relative flex-shrink-0 flex flex-col items-center justify-center gap-3"
+      style={{
+        width: 180, height: 300, borderRadius: 16,
+        background: `linear-gradient(160deg, ${accent}22 0%, rgba(14,12,28,0.98) 65%)`,
+        boxShadow: `0 0 0 1.5px ${accent}40, 0 8px 28px ${accent}20`,
+        border: `1.5px solid ${accent}45`,
+      }}
+    >
+      <div className="absolute inset-0 pointer-events-none" style={{ borderRadius: 16, background: `radial-gradient(ellipse at 50% 30%, ${accent}14 0%, transparent 65%)` }} />
+      <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-full" style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
+        <IGIcon size={9} />
+        <span className="text-[8px] font-black uppercase tracking-widest text-white opacity-60">Reels</span>
+      </div>
+      <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl relative z-10" style={{ background: `${accent}20`, border: `1px solid ${accent}35` }}>
+        {emoji}
+      </div>
+      <div className="text-center px-4 relative z-10">
+        <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>{label}</p>
+        <p className="text-[8px] font-black uppercase tracking-widest mt-1" style={{ color: 'rgba(255,255,255,0.28)', fontFamily: 'var(--font-sport)' }}>Próximamente</p>
+      </div>
+      <div className="absolute bottom-3 left-3.5 right-3.5" style={{ height: 2, borderRadius: 2, background: `linear-gradient(to right, ${accent}90, ${accent}15)` }} />
+    </div>
+  )
+}
 
-      {/* Header — alineado con el grid */}
+// ── Filtro por deporte ──────────────────────────────────────────
+function SportTabs({ sports, active, onChange }: { sports: string[]; active: string; onChange: (s: string) => void }) {
+  const tabs = [{ slug: '', label: 'Todos' }, ...sports.map(s => ({ slug: s, label: getSportLabel(s) || s }))]
+  return (
+    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide mb-4">
+      {tabs.map(tab => {
+        const isActive = active === tab.slug
+        const accent = tab.slug ? getSportStyle(tab.slug).accent : '#7C3AED'
+        return (
+          <button
+            key={tab.slug}
+            onClick={() => onChange(tab.slug)}
+            style={{
+              padding: '4px 13px', borderRadius: 999, fontSize: 9,
+              fontFamily: 'var(--font-sport)', fontWeight: 800, letterSpacing: '0.1em',
+              textTransform: 'uppercase' as const, flexShrink: 0, whiteSpace: 'nowrap' as const,
+              border: `1px solid ${isActive ? accent : 'rgba(255,255,255,0.07)'}`,
+              background: isActive ? `${accent}18` : 'transparent',
+              color: isActive ? accent : '#3A3A52',
+              cursor: 'pointer', transition: 'all 160ms ease',
+            }}
+          >
+            {tab.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Componente principal ────────────────────────────────────────
+export default function ReelsSection({
+  reels: rawReels,
+  initialSport = '',
+}: {
+  reels: SanityReel[]
+  initialSport?: string
+}) {
+  const [liveReels, setLiveReels] = useState<SanityReel[] | null>(null)
+  const [loadingLive, setLoadingLive] = useState(true)
+  const source = liveReels ?? rawReels
+  const reels = source.map((r, i) => normalize(r, i))
+  const [activeSport, setActiveSport] = useState(initialSport)
+  const [activeReel, setActiveReel] = useState<Reel | null>(null)
+
+  // Si los rawReels iniciales son seed (sin thumbnail), mostramos skeletons mientras carga live
+  const isSeed = rawReels.every(r => !r.thumbnail_url)
+  const showSkeleton = isSeed && loadingLive
+
+  useEffect(() => {
+    fetch('/api/instagram/reels')
+      .then(r => r.json())
+      .then((data: SanityReel[]) => { if (data?.length) setLiveReels(data) })
+      .catch(() => {})
+      .finally(() => setLoadingLive(false))
+  }, [])
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const containerRef = useScrollReveal()
+  const [scrollRatio, setScrollRatio] = useState(0)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const onScroll = () => {
+      const max = el.scrollWidth - el.clientWidth
+      setScrollRatio(max > 0 ? el.scrollLeft / max : 0)
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollLeft = 0
+    setScrollRatio(0)
+  }, [activeSport])
+
+  const hasReels = reels.length > 0
+  const availableSports = Array.from(new Set(reels.map(r => r.sport).filter(Boolean))) as string[]
+  const visible = activeSport ? reels.filter(r => r.sport === activeSport) : reels
+
+  return (
+    <section ref={containerRef} className="pt-5 pb-0" id="reels" style={{ background: 'var(--bg-base)' }}>
+
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          {/* Accent con IG gradient */}
           <div
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
             style={{
@@ -154,76 +450,84 @@ export default function ReelsSection({ reels }: { reels: Reel[] }) {
             }}
           >
             <IGIcon size={11} />
-            <h2
-              className="text-[11px] font-black uppercase tracking-widest"
-              style={{ color: '#D4A0C8', fontFamily: 'var(--font-sport)' }}
-            >
-              Reels
-            </h2>
+            <h2 className="label-display text-[13px] uppercase" style={{ color: '#D4A0C8' }}>Reels</h2>
           </div>
           <span className="text-[10px]" style={{ color: '#3A3A4A' }}>·</span>
           <span className="text-[11px]" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
-            Últimos en redes
+            {hasReels ? `${visible.length} reels` : 'Próximamente'}
           </span>
         </div>
         <a
-          href="https://www.instagram.com"
+          href="https://www.instagram.com/taka.sports"
           target="_blank"
           rel="noopener noreferrer"
           className="text-[11px] font-semibold transition-opacity hover:opacity-70"
-          style={{ color: '#9B6DB5', fontFamily: 'var(--font-sport)' }}
+          style={{ color: '#9B6DB5', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
         >
-          Ver en Instagram →
+          @taka.sports →
         </a>
       </div>
 
-      {/* Carril — sangra hasta el borde del viewport */}
-      <div className="relative -mx-6 xl:-mx-10">
+      {hasReels && availableSports.length > 1 && (
+        <SportTabs sports={availableSports} active={activeSport} onChange={setActiveSport} />
+      )}
+
+      <div className="relative -mx-6 xl:-mx-10" style={{ background: 'var(--bg-base)' }}>
         <div
+          ref={scrollRef}
           className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 pt-1"
-          style={{ paddingLeft: 'max(24px, calc((100vw - 1440px) / 2 + 40px))' }}
+          style={{ paddingLeft: 'max(24px, calc((100vw - 1440px) / 2 + 40px))', background: 'var(--bg-base)' }}
         >
-          {reels.length > 0
-            ? reels.map((reel) => {
-                const imgUrl = reel.thumbnail?.asset
-                  ? urlFor(reel.thumbnail).width(320).height(540).url()
-                  : null
-                return (
-                  <ReelCard
-                    key={reel._id}
-                    href={reel.instagram_url ?? 'https://www.instagram.com'}
-                    bg={imgUrl ? `url(${imgUrl}) center/cover` : 'linear-gradient(160deg,#1e1b4b,#09090F)'}
-                    category={reel.category}
-                    label={reel.title ?? 'Reel'}
-                  />
+          {showSkeleton
+            ? Array.from({ length: 6 }).map((_, i) => <ReelSkeleton key={i} />)
+            : hasReels && visible.length > 0
+              ? visible.map(reel => <div key={reel.key} data-reveal><ReelCard reel={reel} onClick={() => setActiveReel(reel)} /></div>)
+              : hasReels && visible.length === 0
+                ? (
+                  <div
+                    className="flex flex-col items-center justify-center gap-2 flex-shrink-0"
+                    style={{ width: '100%', minHeight: 200, color: '#3A3A52' }}
+                  >
+                    <span style={{ fontSize: 28 }}>📭</span>
+                    <p className="text-[11px] font-black uppercase tracking-widest" style={{ fontFamily: 'var(--font-sport)' }}>
+                      Sin reels en esta categoría
+                    </p>
+                  </div>
                 )
-              })
-            : EMPTY_SLOTS.map(({ label, bg, accent }, i) => (
-                <ReelCard
-                  key={i}
-                  href="https://www.instagram.com"
-                  bg={bg}
-                  label={label}
-                  accent={accent}
-                  isPlaceholder
-                />
-              ))
+                : REEL_PLACEHOLDERS.map(p => <div key={p.sport} data-reveal><ReelPlaceholder accent={p.accent} emoji={p.emoji} label={p.label} /></div>)
           }
-          {/* Padding final para que el último card no quede pegado al edge */}
           <div className="flex-shrink-0 w-6 xl:w-10" />
         </div>
 
-        {/* Fade izquierda */}
-        <div
-          className="absolute left-0 top-0 bottom-2 w-6 xl:w-10 pointer-events-none z-10"
-          style={{ background: 'linear-gradient(to right,var(--bg-base),transparent)' }}
-        />
-        {/* Fade derecha */}
-        <div
-          className="absolute right-0 top-0 bottom-2 w-24 pointer-events-none z-10"
-          style={{ background: 'linear-gradient(to right,transparent,var(--bg-base))' }}
-        />
+        <div className="absolute left-0 top-0 bottom-2 w-6 xl:w-10 pointer-events-none z-10" style={{ background: 'linear-gradient(to right,var(--bg-base),transparent)' }} />
+        <div className="absolute right-0 top-0 bottom-2 w-16 pointer-events-none z-10" style={{ background: 'linear-gradient(to right,transparent,var(--bg-base))' }} />
       </div>
+
+      {/* Barra de progreso scroll — solo móvil, solo con reels reales */}
+      {hasReels && !showSkeleton && (
+        <div className="lg:hidden mt-2 px-6 flex items-center gap-2">
+          <div
+            className="flex-1 rounded-full overflow-hidden"
+            style={{ height: 2, background: 'rgba(255,255,255,0.06)' }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${Math.max(8, scrollRatio * 100)}%`,
+                background: 'linear-gradient(to right, #7C3AED, #A78BFA)',
+                borderRadius: 999,
+                transition: 'width 80ms linear',
+                marginLeft: `${scrollRatio * (100 - Math.max(8, scrollRatio * 100))}%`,
+              }}
+            />
+          </div>
+          <span className="text-[9px] font-black tabular-nums flex-shrink-0" style={{ color: '#38384A', fontFamily: 'var(--font-sport)' }}>
+            {visible.length} reels
+          </span>
+        </div>
+      )}
+
+      {activeReel && <ReelModal reel={activeReel} onClose={() => setActiveReel(null)} />}
     </section>
   )
 }

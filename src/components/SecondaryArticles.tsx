@@ -1,114 +1,120 @@
-import Image from 'next/image'
+import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle } from '@/lib/sports'
+import { getSportStyle, getSportLabel } from '@/lib/sports'
 
 interface Article {
   _id: string
+  slug?: string
   title: string
   publishedAt?: string
   category?: string
   sport?: string
-  image?: { asset: { _ref: string } }
+  image?: { asset: { _ref: string } } | null
+  imageUrl?: string | null
 }
 
 export default function SecondaryArticles({ articles }: { articles: Article[] }) {
   return (
     <div
+      className="grid grid-cols-2 sm:grid-cols-3 gap-px"
       style={{
-        background: 'rgba(255,255,255,0.026)',
         borderRadius: '0 0 16px 16px',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
+        borderTop: '1px solid rgba(255,255,255,0.05)',
         overflow: 'hidden',
       }}
     >
-      {/* Label de bloque */}
-      <div
-        className="flex items-center gap-2 px-4 pt-3 pb-2"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-      >
-        <span style={{ display: 'block', width: 3, height: 12, background: '#7C3AED', borderRadius: 2, flexShrink: 0 }} />
-        <span
-          className="text-[9px] font-black uppercase tracking-widest"
-          style={{ color: '#5A4A8A', fontFamily: 'var(--font-sport)' }}
-        >
-          También en portada
-        </span>
-      </div>
+      {articles.map((article, idx) => {
+        const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(320).height(200).url() : null)
+        const label = getSportLabel(article.sport, article.category)
+        const { accent } = getSportStyle(article.sport, article.category)
+        const num = String(idx + 1).padStart(2, '0')
+        const href = `/article/${article.slug ?? article._id}`
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${articles.length}, 1fr)`,
-          gap: 1,
-          background: 'rgba(255,255,255,0.035)',
-        }}
-      >
-        {articles.map((article, idx) => {
-          const imgUrl = article.image?.asset
-            ? urlFor(article.image).width(240).height(160).url()
-            : null
-          const label = article.sport ?? article.category
-          const { accent } = getSportStyle(article.sport, article.category)
-
-          return (
-            <Link
-              key={article._id}
-              href={`/article/${article._id}`}
-              className="news-card flex gap-3 p-4 transition-all"
+        return (
+          <Link
+            key={article._id}
+            href={href}
+            className="group relative flex flex-col justify-end overflow-hidden"
+            style={{
+              background: 'rgba(9,9,15,0.82)',
+              borderLeft: idx > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+              borderTop: `2px solid ${accent}`,
+              minHeight: 'clamp(100px, 18vw, 140px)',
+              textDecoration: 'none',
+            }}
+          >
+            {/* Watermark number */}
+            <span
+              aria-hidden
               style={{
-                background: idx === 0
-                  ? 'rgba(255,255,255,0.03)'
-                  : 'rgba(9,9,15,0.5)',
-                textDecoration: 'none',
+                position: 'absolute',
+                top: -4,
+                right: 10,
+                fontFamily: 'var(--font-display)',
+                fontSize: 72,
+                fontWeight: 900,
+                lineHeight: 1,
+                color: accent,
+                opacity: 0.055,
+                letterSpacing: '-0.04em',
+                pointerEvents: 'none',
+                userSelect: 'none',
               }}
             >
-              {/* Thumbnail */}
-              <div
-                className="flex-shrink-0 rounded-lg overflow-hidden"
-                style={{
-                  width: 80,
-                  height: 60,
-                  background: 'linear-gradient(145deg,#1a1a2e,#0f0820)',
-                  flexShrink: 0,
-                }}
-              >
-                {imgUrl ? (
-                  <Image src={imgUrl} alt={article.title} width={80} height={60} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full" style={{ background: 'linear-gradient(135deg,#1e1b4b,#1a0a30)' }} />
-                )}
-              </div>
+              {num}
+            </span>
 
-              {/* Text */}
-              <div className="flex flex-col justify-between flex-1 min-w-0 py-0.5">
-                <div>
-                  {label && (
-                    <span
-                      className="text-[9px] font-black uppercase tracking-widest"
-                      style={{ color: accent, fontFamily: 'var(--font-sport)' }}
-                    >
-                      {label}
-                    </span>
-                  )}
-                  <h3
-                    className="news-title text-[12px] font-semibold leading-snug line-clamp-2 mt-0.5"
-                    style={{ color: '#D4D4E8' }}
-                  >
-                    {article.title}
-                  </h3>
-                </div>
-                {article.publishedAt && (
-                  <p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>
-                    {timeAgo(article.publishedAt)}
-                  </p>
-                )}
-              </div>
-            </Link>
-          )
-        })}
-      </div>
+            {/* Thumbnail or sport gradient */}
+            <div className="absolute inset-0 z-0">
+              {imgUrl ? (
+                <Image src={imgUrl} alt={article.title} fill className="object-cover" />
+              ) : (
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    background: `radial-gradient(ellipse 120% 100% at 80% 0%, ${accent}18 0%, transparent 70%)`,
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Gradient overlay */}
+            <div
+              className="absolute inset-0 z-10"
+              style={{ background: imgUrl
+                ? 'linear-gradient(to top, rgba(9,9,15,0.97) 0%, rgba(9,9,15,0.75) 50%, rgba(9,9,15,0.45) 100%)'
+                : 'linear-gradient(to top, rgba(9,9,15,1) 0%, rgba(9,9,15,0.7) 60%, rgba(9,9,15,0.2) 100%)'
+              }}
+            />
+
+            {/* Content */}
+            <div className="relative z-20 p-4">
+              {label && (
+                <span
+                  className="block text-[9px] font-black uppercase tracking-widest mb-1"
+                  style={{ color: accent, fontFamily: 'var(--font-sport)' }}
+                >
+                  {label}
+                </span>
+              )}
+              <h3
+                className="text-[12.5px] font-bold leading-snug line-clamp-2 mb-1.5 transition-colors group-hover:text-white"
+                style={{ color: '#D8D8F0', fontFamily: 'var(--font-display)' }}
+              >
+                {article.title}
+              </h3>
+              {article.publishedAt && (
+                <p className="text-[10px]" style={{ color: '#3D3D58' }}>
+                  {timeAgo(article.publishedAt)}
+                </p>
+              )}
+            </div>
+          </Link>
+        )
+      })}
     </div>
   )
 }

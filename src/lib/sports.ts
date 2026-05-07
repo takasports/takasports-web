@@ -1,49 +1,83 @@
-// Lista centralizada de deportes — agregar aquí para que se propague a CategoriesFilter
-export const SPORT_CATEGORIES = [
-  'Todo',
-  'Fútbol',
-  'UFC',
-  'NBA',
-  'F1',
-  'Tenis',
-  'Rugby',
-  'Básquet',
-]
+// Convención oficial de deportes — slugs canónicos alineados con Sanity:
+// - `sport` en Sanity = slug: 'futbol', 'wwe', 'baloncesto', 'formula1', 'tenis', 'ufc', 'rugby'
+// - Labels visuales: 'Fútbol', 'WWE', 'NBA', 'F1', 'Tenis', 'UFC', 'Rugby'
 
-// Mapeo display → URL slug (para persistencia de filtros en URL)
-export const CATEGORY_TO_SLUG: Record<string, string> = {
-  'Fútbol':  'futbol',
-  'UFC':     'ufc',
-  'NBA':     'nba',
-  'F1':      'f1',
-  'Tenis':   'tenis',
-  'Rugby':   'rugby',
-  'Básquet': 'basquet',
+// Slug → label visual (fuente de verdad)
+export const SLUG_TO_LABEL: Record<string, string> = {
+  futbol:     'Fútbol',
+  wwe:        'WWE',
+  formula1:   'F1',
+  baloncesto: 'NBA',
+  tenis:      'Tenis',
+  ufc:        'UFC',
+  rugby:      'Rugby',
 }
 
-// Colores y gradientes por deporte — para placeholders sin imagen
+// Label visual → slug (inverso, para filtros y URLs)
+export const CATEGORY_TO_SLUG: Record<string, string> = Object.fromEntries(
+  Object.entries(SLUG_TO_LABEL).map(([slug, label]) => [label, slug])
+)
+
+// Categorías principales del filtro global (Home / Noticias)
+export const HOME_SPORT_CATEGORIES = ['Todo', 'Fútbol', 'WWE', 'F1', 'NBA', 'Tenis', 'UFC']
+
+// Categorías extra para el dropdown "Más"
+export const MORE_SPORT_CATEGORIES = ['Rugby']
+
+// Lista completa (compatibilidad interna)
+export const SPORT_CATEGORIES = ['Todo', ...Object.values(SLUG_TO_LABEL)]
+
+// Colores por slug — clave = slug canónico Sanity
 export const SPORT_STYLE: Record<string, { bg: string; accent: string }> = {
-  'Fútbol':  { bg: 'linear-gradient(145deg,#0d2818,#09090F)', accent: '#22c55e' },
-  'UFC':     { bg: 'linear-gradient(145deg,#2a1010,#09090F)', accent: '#ef4444' },
-  'NBA':     { bg: 'linear-gradient(145deg,#0f1e3d,#09090F)', accent: '#f59e0b' },
-  'F1':      { bg: 'linear-gradient(145deg,#2a1010,#09090F)', accent: '#ef4444' },
-  'Tenis':   { bg: 'linear-gradient(145deg,#0d2012,#09090F)', accent: '#84cc16' },
-  'Rugby':   { bg: 'linear-gradient(145deg,#1a0f38,#09090F)', accent: '#a78bfa' },
-  'Básquet': { bg: 'linear-gradient(145deg,#271500,#09090F)', accent: '#f97316' },
+  futbol:     { bg: 'linear-gradient(145deg,#0d2818,#09090F)', accent: '#22c55e' },
+  wwe:        { bg: 'linear-gradient(145deg,#2a0808,#09090F)', accent: '#facc15' },
+  baloncesto: { bg: 'linear-gradient(145deg,#0f1e3d,#09090F)', accent: '#f59e0b' },
+  formula1:   { bg: 'linear-gradient(145deg,#2a1010,#09090F)', accent: '#ef4444' },
+  tenis:      { bg: 'linear-gradient(145deg,#1c1208,#09090F)', accent: '#d97706' },
+  ufc:        { bg: 'linear-gradient(145deg,#2a1408,#09090F)', accent: '#f97316' },
+  rugby:      { bg: 'linear-gradient(145deg,#1a0f38,#09090F)', accent: '#a78bfa' },
 }
 
+// Acepta slug canónico ('futbol', 'baloncesto'…) o label visual ('Fútbol', 'NBA'…)
 export function getSportStyle(sport?: string, category?: string) {
-  const key = sport ?? category ?? ''
-  return SPORT_STYLE[key] ?? { bg: 'linear-gradient(145deg,#1a1a2e,#09090F)', accent: '#7C3AED' }
+  const raw = sport ?? category ?? ''
+  const slug = raw.toLowerCase()
+  if (SPORT_STYLE[slug]) return SPORT_STYLE[slug]
+  const fromLabel = CATEGORY_TO_SLUG[raw]
+  if (fromLabel && SPORT_STYLE[fromLabel]) return SPORT_STYLE[fromLabel]
+  return { bg: 'linear-gradient(145deg,#1a1a2e,#09090F)', accent: '#7C3AED' }
 }
 
-// Tabs de navegación superior (usadas en la barra de nav del header, no como segunda fila)
+// Label para mostrar — normaliza slug o label a su forma canónica
+export function getSportLabel(sport?: string, category?: string): string {
+  const raw = sport ?? category ?? ''
+  return SLUG_TO_LABEL[raw.toLowerCase()] ?? raw
+}
+
+// Emoji por label visual — fuente única de verdad
+export const SPORT_EMOJI: Record<string, string> = {
+  Fútbol:     '⚽',
+  NBA:        '🏀',
+  Baloncesto: '🏀',
+  F1:         '🏎️',
+  Tenis:      '🎾',
+  UFC:        '🥊',
+  Rugby:      '🏉',
+  WWE:        '🎭',
+}
+
+export function getSportEmoji(sport: string): string {
+  return SPORT_EMOJI[sport] ?? SPORT_EMOJI[SLUG_TO_LABEL[sport.toLowerCase()]] ?? '🏆'
+}
+
+// Tabs de navegación superior
 export const SPORT_TABS = [
-  { label: 'Todos',    slug: '',         href: '/' },
-  { label: 'Fútbol',  slug: 'futbol',   href: '/?sport=futbol' },
-  { label: 'UFC',     slug: 'ufc',      href: '/?sport=ufc' },
-  { label: 'NBA',     slug: 'nba',      href: '/?sport=nba' },
-  { label: 'F1',      slug: 'f1',       href: '/?sport=f1' },
-  { label: 'Tenis',   slug: 'tenis',    href: '/?sport=tenis' },
-  { label: 'Rugby',   slug: 'rugby',    href: '/?sport=rugby' },
+  { label: 'Todos',  slug: '',           href: '/' },
+  { label: 'Fútbol', slug: 'futbol',     href: '/?sport=futbol' },
+  { label: 'WWE',    slug: 'wwe',        href: '/?sport=wwe' },
+  { label: 'UFC',    slug: 'ufc',        href: '/?sport=ufc' },
+  { label: 'NBA',    slug: 'baloncesto', href: '/?sport=baloncesto' },
+  { label: 'F1',     slug: 'formula1',   href: '/?sport=formula1' },
+  { label: 'Tenis',  slug: 'tenis',      href: '/?sport=tenis' },
+  { label: 'Rugby',  slug: 'rugby',      href: '/?sport=rugby' },
 ]

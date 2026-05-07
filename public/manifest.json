@@ -1,0 +1,47 @@
+{
+  "name": "TakaSports — Deporte en vivo",
+  "short_name": "TakaSports",
+  "description": "Quiniela, juegos diarios, noticias y resultados en vivo de fútbol, NBA, UFC, F1 y tenis",
+  "start_url": "/juegos",
+  "display": "standalone",
+  "background_color": "#09090F",
+  "theme_color": "#EA580C",
+  "orientation": "portrait",
+  "lang": "es",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "TakaGrid",
+      "short_name": "TakaGrid",
+      "url": "/takagrid",
+      "description": "Puzzle diario: conecta jugadores con su club"
+    },
+    {
+      "name": "CrackQuiz",
+      "short_name": "CrackQuiz",
+      "url": "/crackquiz",
+      "description": "Trivia deportiva diaria"
+    },
+    {
+      "name": "Mi Once",
+      "short_name": "Mi Once",
+      "url": "/mionce",
+      "description": "Alinea tu once ideal semanal"
+    },
+    {
+      "name": "Quiniela",
+      "short_name": "Quiniela",
+      "url": "/quiniela",
+      "description": "Predice los resultados de la jornada"
+    }
+  ],
+  "categories": ["sports", "games", "news"]
+}

@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Image from 'next/image'
+import { useState, useEffect, useRef } from 'react'
+import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle } from '@/lib/sports'
+import { getSportStyle, getSportLabel } from '@/lib/sports'
 
 interface Article {
   _id: string
+  slug?: string
   title: string
   short_summary?: string
   publishedAt?: string
@@ -19,23 +20,32 @@ interface Article {
 
 export default function FeaturedArticle({ articles }: { articles: Article[] }) {
   const [current, setCurrent] = useState(0)
+  const [hovered, setHovered] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     if (articles.length <= 1) return
-    const t = setInterval(() => setCurrent((p) => (p + 1) % articles.length), 7500)
-    return () => clearInterval(t)
-  }, [articles.length])
+    if (hovered) {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      return
+    }
+    intervalRef.current = setInterval(() => setCurrent((p) => (p + 1) % articles.length), 7500)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [articles.length, hovered])
 
   const article = articles[current]
   if (!article) return null
 
-  const label = article.sport ?? article.category
+  const label = getSportLabel(article.sport, article.category)
   const { accent: labelAccent } = getSportStyle(article.sport, article.category)
+  const href = `/article/${article.slug ?? article._id}`
 
   return (
     <div
       className="relative w-full overflow-hidden"
-      style={{ height: 'clamp(300px, 30vw, 460px)', borderRadius: '16px 16px 0 0' }}
+      style={{ height: 'clamp(340px, 52vh, 620px)', borderRadius: '16px 16px 0 0' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {/* ── Crossfade images ── */}
       {articles.map((art, i) => {
@@ -73,7 +83,7 @@ export default function FeaturedArticle({ articles }: { articles: Article[] }) {
       {/* ── Overlays fijos sobre las imágenes ── */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
-        style={{ background: 'linear-gradient(to top,rgba(9,9,15,0.97) 0%,rgba(9,9,15,0.55) 38%,rgba(9,9,15,0.1) 65%,transparent 100%)' }}
+        style={{ background: 'linear-gradient(to top,rgba(9,9,15,0.95) 0%,rgba(9,9,15,0.55) 32%,rgba(9,9,15,0.1) 58%,transparent 100%)' }}
       />
       <div
         className="absolute inset-0 z-10 pointer-events-none"
@@ -87,7 +97,7 @@ export default function FeaturedArticle({ articles }: { articles: Article[] }) {
 
       {/* ── Link wrapper sobre todo ── */}
       <Link
-        href={`/article/${article._id}`}
+        href={href}
         className="absolute inset-0 z-20 flex flex-col justify-between p-7 md:p-9 group"
         style={{ textDecoration: 'none' }}
       >
@@ -175,10 +185,10 @@ export default function FeaturedArticle({ articles }: { articles: Article[] }) {
       </Link>
 
       {/* Flechas prev/next — z-30 para estar sobre el Link */}
-      {articles.length > 1 && current > 0 && (
+      {articles.length > 1 && (
         <button
-          onClick={() => setCurrent(current - 1)}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center z-30 transition-opacity hover:opacity-80"
+          onClick={() => setCurrent((current - 1 + articles.length) % articles.length)}
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center z-30 transition-opacity duration-200 opacity-50 hover:opacity-90"
           style={{ background: 'rgba(9,9,15,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}
         >
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -186,9 +196,9 @@ export default function FeaturedArticle({ articles }: { articles: Article[] }) {
           </svg>
         </button>
       )}
-      {articles.length > 1 && current < articles.length - 1 && (
+      {articles.length > 1 && (
         <button
-          onClick={() => setCurrent(current + 1)}
+          onClick={() => setCurrent((current + 1) % articles.length)}
           className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center z-30 transition-opacity hover:opacity-80"
           style={{ background: 'rgba(9,9,15,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}
         >

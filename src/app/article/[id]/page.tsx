@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import Image from 'next/image'
+import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { PortableText } from '@portabletext/react'
 import { sanityClient, articleDetailQuery, relatedArticlesQuery, nextArticleQuery, urlFor } from '@/lib/sanity'
@@ -13,6 +13,7 @@ import BackButton from './BackButton'
 import ScrollToTop from '@/components/ScrollToTop'
 import ReadingProgress from './ReadingProgress'
 import ReadTracker from './ReadTracker'
+import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 function readingTime(body?: string | null): number | null {
   if (!body || body.trim().length === 0) return null
@@ -69,7 +70,7 @@ export async function generateMetadata({
   if (!article) return { title: 'TakaSports' }
 
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1200).height(630).url() : undefined)
-  const canonical = `https://takasportsmedia.com/article/${article.slug ?? id}`
+  const canonical = `${SITE_URL}/article/${article.slug ?? id}`
 
   return {
     title: `${article.title} — TakaSports`,
@@ -318,7 +319,7 @@ export default async function ArticlePage({
   ])
 
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1400).height(600).url() : null)
-  const canonical = `https://takasportsmedia.com/article/${article.slug ?? id}`
+  const canonical = `${SITE_URL}/article/${article.slug ?? id}`
 
   // JSON-LD: Article + FAQPage (rich snippets)
   type LDArticle = {
@@ -350,11 +351,11 @@ export default async function ArticlePage({
       .filter(Boolean)
       .join(', ') || undefined,
     articleSection: article.category ?? undefined,
-    author: { '@type': 'Organization', name: 'TakaSports', url: 'https://takasportsmedia.com' },
+    author: { '@type': 'Organization', name: 'TakaSports', url: SITE_URL },
     publisher: {
       '@type': 'Organization',
       name: 'TakaSports',
-      logo: { '@type': 'ImageObject', url: 'https://takasportsmedia.com/icon.png' },
+      logo: { '@type': 'ImageObject', url: ICON_URL },
     },
   }
   const sportSlug = article.sport ?? null
@@ -363,9 +364,9 @@ export default async function ArticlePage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: 'https://takasportsmedia.com' },
+      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
       ...(sportSlug && sportLabel
-        ? [{ '@type': 'ListItem', position: 2, name: sportLabel, item: `https://takasportsmedia.com/${sportSlug}` }]
+        ? [{ '@type': 'ListItem', position: 2, name: sportLabel, item: `${SITE_URL}/${sportSlug}` }]
         : []),
       {
         '@type': 'ListItem',

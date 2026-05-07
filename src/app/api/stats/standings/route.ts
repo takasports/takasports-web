@@ -8,6 +8,7 @@ export interface StandingRow {
   sub: string
   trend: 'up' | 'down' | 'flat'
   extra: Record<string, string>
+  flag?: string
 }
 
 export interface LeagueStandings {
@@ -51,6 +52,7 @@ export interface StatsStandingsResponse {
   pgaTourLeaderboard: StandingRow[]
   pgaFedExCup: StandingRow[]
   nationsLeague: LeagueStandings[]
+  coachesWinRate: StandingRow[]
   meta: Record<string, BlockMeta>
   updatedAt: string
 }
@@ -537,6 +539,91 @@ async function fetchPGA(): Promise<PGAResult> {
   }
 }
 
+// ── FedEx Cup via ESPN statistics endpoint ────────────────────────────────────
+
+async function fetchFedExCup(): Promise<StandingRow[]> {
+  try {
+    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/statistics', { next: { revalidate: 3600 } })
+    if (!res.ok) return []
+    const d = await res.json()
+    const stats = d.stats as Record<string, unknown>
+    const cats = (stats?.categories as Record<string, unknown>[]) ?? []
+    const fedex = cats.find(c => (c as Record<string, unknown>).name === 'cupPoints') as Record<string, unknown> | undefined
+    if (!fedex) return []
+    const season = (d.season as Record<string, unknown>)?.year ?? ''
+    const leaders = (fedex.leaders as Record<string, unknown>[]) ?? []
+    return leaders.slice(0, 10).map((l, i) => {
+      const ath = l.athlete as Record<string, unknown>
+      return {
+        rank:  i + 1,
+        name:  (ath?.displayName as string) ?? '—',
+        abbr:  '',
+        value: String(Math.round((l.value as number) ?? 0)),
+        sub:   `Temp. ${season}`,
+        trend: 'flat' as const,
+        extra: { Pts: String(Math.round((l.value as number) ?? 0)) },
+      }
+    })
+  } catch (err) {
+    console.error('[standings] FedEx Cup failed:', err)
+    return []
+  }
+}
+
+// ── Coaches win-rate via ESPN team records ────────────────────────────────────
+// Update coach names here when managers change. Win% auto-fetches from ESPN.
+
+const COACH_CONFIG = [
+  { name: 'Hansi Flick',     team: 'FC Barcelona',  flag: '🇩🇪', league: 'esp.1', teamId: '83'   },
+  { name: 'Vincent Kompany', team: 'Bayern Munich', flag: '🇧🇪', league: 'ger.1', teamId: '132'  },
+  { name: 'Luis Enrique',    team: 'PSG',           flag: '🇪🇸', league: 'fra.1', teamId: '160'  },
+  { name: 'Pep Guardiola',   team: 'Man City',      flag: '🇪🇸', league: 'eng.1', teamId: '382'  },
+  { name: 'Mikel Arteta',    team: 'Arsenal',       flag: '🇪🇸', league: 'eng.1', teamId: '359'  },
+  { name: 'Diego Simeone',   team: 'Atlético',      flag: '🇦🇷', league: 'esp.1', teamId: '1068' },
+  { name: 'Arne Slot',       team: 'Liverpool',     flag: '🇳🇱', league: 'eng.1', teamId: '364'  },
+]
+
+async function fetchCoachRecords(): Promise<StandingRow[]> {
+  const results = await Promise.allSettled(
+    COACH_CONFIG.map(async coach => {
+      const res = await fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/soccer/${coach.league}/teams/${coach.teamId}`,
+        { next: { revalidate: 3600 } }
+      )
+      if (!res.ok) return null
+      const d = await res.json()
+      const team = d.team ?? d
+      const items: Record<string, unknown>[] = team?.record?.items ?? []
+      const total = (items.find((i: Record<string, unknown>) => i.type === 'total') ?? items[0]) as Record<string, unknown> | undefined
+      if (!total) return null
+      const parts = String(total.summary ?? '').split('-').map(Number)
+      const w = parts[0] || 0; const dr = parts[1] || 0; const l = parts[2] || 0
+      const gp = w + dr + l
+      if (gp === 0) return null
+      const winPct = Math.round((w / gp) * 100)
+      const stats = (total.stats as Record<string, unknown>[]) ?? []
+      const sv2 = (name: string) => Number((stats.find((s: Record<string, unknown>) => s.name === name) as Record<string, unknown> | undefined)?.value ?? 0)
+      const gf = sv2('pointsFor'); const gc = sv2('pointsAgainst')
+      const gpFull = sv2('gamesPlayed') || gp
+      return {
+        rank:  0,
+        name:  coach.name,
+        abbr:  coach.team,
+        flag:  coach.flag,
+        value: `${winPct}%`,
+        sub:   `Temp. 25/26 · ${gpFull} PJ`,
+        trend: 'flat' as const,
+        extra: { GF: (gf / gpFull).toFixed(2), GC: (gc / gpFull).toFixed(2), Club: coach.team },
+      } satisfies StandingRow
+    })
+  )
+  return results
+    .map(r => r.status === 'fulfilled' ? r.value : null)
+    .filter((r): r is NonNullable<typeof r> => r !== null)
+    .sort((a, b) => parseFloat(b!.value) - parseFloat(a!.value))
+    .map((r, i) => ({ ...r!, rank: i + 1 })) as StandingRow[]
+}
+
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
@@ -553,7 +640,7 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
-  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga, nationsLeague] = await Promise.all([
+  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga, nationsLeague, fedExCup, coaches] = await Promise.all([
     Promise.allSettled(FOOTBALL_LEAGUES.map(l => fetchFootball(l.slug, l.id, l.label))),
     fetchF1All(),
     fetchNBA(),
@@ -564,6 +651,8 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchWomenStats(),
     fetchPGA(),
     fetchNationsLeague(),
+    fetchFedExCup(),
+    fetchCoachRecords(),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
 
@@ -603,8 +692,9 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
       : pga.isCompleted ? ({ status: 'stale', source: `ESPN · ${pga.tournamentName}`, fetchedAt: now, asOf: 'Final' } satisfies BlockMeta)
       :                   unavail('ESPN')
       : unavail('ESPN'),
-    pgaFedExCup:         histor('Manual', '2026-04'),
+    pgaFedExCup:         fedExCup.length ? live('ESPN') : unavail('ESPN'),
     nationsLeague:       nationsLeague.length ? live('ESPN · UEFA Nations League') : unavail('ESPN · Nations League no iniciada'),
+    coachesWinRate:      coaches.length ? live('ESPN') : unavail('ESPN'),
   }
 
   return {
@@ -630,8 +720,9 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     womenGoals:          womenStats.goals,
     womenAssists:        womenStats.assists,
     pgaTourLeaderboard:  pga.leaderboard,
-    pgaFedExCup:         pga.fedExCup,
+    pgaFedExCup:         fedExCup,
     nationsLeague,
+    coachesWinRate:      coaches,
     meta,
     updatedAt:           now,
   }

@@ -1,203 +1,211 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-const QUINIELA_MATCHES = [
-  { home: 'Real Madrid', away: 'Barça'   },
-  { home: 'Atlético',    away: 'Sevilla' },
-  { home: 'Valencia',    away: 'Betis'   },
-]
+export interface QuinielaMatch {
+  home: string
+  away: string
+  comp?: string
+  time?: string
+  isoDate?: string
+  odds?: { home: number; draw: number; away: number }
+  espnId?: string
+  homeLogo?: string
+  awayLogo?: string
+  homeAbbr?: string
+  awayAbbr?: string
+  homeShort?: string
+  awayShort?: string
+}
 
-type Pick = '1' | 'X' | '2'
+export const QUINIELA_PICKS_KEY = 'ts_quiniela_picks'
+
+// 'open' = picks editables · 'started' = partidos en curso, bloqueado · 'finished' = jornada cerrada
+export const MATCH_STATUS: 'open' | 'started' | 'finished' = 'open'
+
+export type Pick = '1' | 'X' | '2' | '1X' | 'X2'
+
+export type QuinielaSaved = {
+  jornada: string
+  picks: { home: string; away: string; pick: Pick; mvp?: string; exactHome?: number; exactAway?: number }[]
+  captainIdx?: number
+}
+
+// Sin fallback estático: si /api/quiniela aún no responde mostramos "Cargando…",
+// si responde vacío mostramos "Sin partidos esta semana".
+export const QUINIELA_MATCHES: QuinielaMatch[] = []
+export const QUINIELA_JORNADA = 'Esta semana'
+
+function TeamLogo({ name, logo }: { name: string; logo?: string }) {
+  const [err, setErr] = useState(false)
+  if (logo && !err) {
+    return (
+      <img
+        src={logo}
+        alt={name}
+        width={18}
+        height={18}
+        onError={() => setErr(true)}
+        style={{ objectFit: 'contain', flexShrink: 0 }}
+      />
+    )
+  }
+  const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+  return (
+    <span
+      style={{
+        width: 18, height: 18, borderRadius: 4,
+        background: 'rgba(124,58,237,0.18)',
+        border: '1px solid rgba(124,58,237,0.25)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 7, fontWeight: 900, color: '#A78BFA', flexShrink: 0,
+        letterSpacing: '-0.02em',
+      }}
+    >
+      {initials}
+    </span>
+  )
+}
 
 function PredictionModal({
-  onClose,
+  matches, jornada, onClose,
 }: {
-  onClose: () => void
+  matches: QuinielaMatch[]
+  jornada: string
+  onClose: (submitted?: boolean) => void
 }) {
   const [picks, setPicks] = useState<Record<number, Pick>>({})
   const [submitted, setSubmitted] = useState(false)
 
-  const allPicked = QUINIELA_MATCHES.every((_, i) => picks[i] !== undefined)
+  const allPicked = matches.every((_, i) => picks[i] !== undefined)
+  const PICK_OPTIONS: Pick[] = ['1', 'X', '2']
+  const PICK_LABELS: Record<Pick, string> = { '1': 'Local', X: 'Empate', '2': 'Visitante', '1X': 'Loc/Emp', 'X2': 'Emp/Vis' }
+  const PICK_COLOR: Record<Pick, string> = { '1': '#22c55e', X: '#f59e0b', '2': '#ef4444', '1X': '#6ee7b7', 'X2': '#fb923c' }
 
   const handleSubmit = () => {
-    if (allPicked) setSubmitted(true)
+    if (!allPicked) return
+    const saved: QuinielaSaved = {
+      jornada,
+      picks: matches.map((m, i) => ({ home: m.home, away: m.away, pick: picks[i] })),
+    }
+    try { localStorage.setItem(QUINIELA_PICKS_KEY, JSON.stringify(saved)) } catch { /* ignore */ }
+    // Sincroniza al servidor — falla silenciosamente si no hay sesión
+    fetch('/api/quiniela/score', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jornada, picks: saved.picks }),
+    }).catch(() => { /* ok offline */ })
+    setSubmitted(true)
   }
 
-  const PICK_OPTIONS: Pick[] = ['1', 'X', '2']
-  const PICK_LABELS: Record<Pick, string> = { '1': 'Local', 'X': 'Empate', '2': 'Visitante' }
-
   return (
-    <div className="quiniela-modal-backdrop" onClick={onClose}>
+    <div className="quiniela-modal-backdrop" onClick={() => onClose(submitted)}>
       <div
         className="w-full relative"
-        style={{ maxWidth: 480, borderRadius: 20, overflow: 'hidden' }}
+        style={{ maxWidth: 460, borderRadius: 20, overflow: 'hidden' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Fondo con glow */}
         <div
           style={{
-            background: 'linear-gradient(150deg,#1E1040 0%,#130D32 50%,#0F0A1E 100%)',
+            background: 'linear-gradient(160deg,#1A0030 0%,#120025 50%,#08000F 100%)',
             border: '1px solid rgba(124,58,237,0.3)',
             borderRadius: 20,
             overflow: 'hidden',
           }}
         >
-          {/* Glow */}
-          <div
-            className="absolute -top-12 -right-12 w-48 h-48 blur-3xl opacity-20 pointer-events-none"
-            style={{ background: '#7C3AED' }}
-          />
+          <div className="absolute -top-10 -right-10 w-40 h-40 blur-3xl opacity-15 pointer-events-none" style={{ background: '#7C3AED' }} />
 
           {submitted ? (
-            /* ── Estado: enviado ── */
             <div className="px-6 py-8 text-center relative z-10">
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
-                style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)' }}
-              >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                   <path d="M5 13L9 17L19 7" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <h3
-                className="text-lg font-black mb-1"
-                style={{ fontFamily: 'var(--font-display)', color: '#F0F0F5', letterSpacing: '-0.01em' }}
-              >
+              <h3 className="text-lg font-black mb-1" style={{ fontFamily: 'var(--font-display)', color: '#F0F0F5', letterSpacing: '-0.01em' }}>
                 ¡Predicción enviada!
               </h3>
-              <p className="text-sm mb-6" style={{ color: '#9090A4' }}>
-                Tus picks para la Jornada 38
-              </p>
-              <div className="flex flex-col gap-2 mb-6">
-                {QUINIELA_MATCHES.map((m, i) => {
-                  const pick = picks[i]
-                  return (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between px-3 py-2 rounded-xl"
-                      style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }}
-                    >
-                      <span className="text-xs" style={{ color: '#9090A4', fontFamily: 'var(--font-sport)' }}>
-                        {m.home} vs {m.away}
-                      </span>
-                      <span
-                        className="text-xs font-black px-2.5 py-1 rounded-lg"
-                        style={{ background: 'rgba(124,58,237,0.25)', color: '#C4B5FD' }}
-                      >
-                        {pick} · {PICK_LABELS[pick!]}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-              <p className="text-xs mb-5" style={{ color: '#5A5A6A' }}>
-                Las predicciones se confirmarán cuando arranque la jornada.
-              </p>
-              <button
-                onClick={onClose}
-                className="w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-widest"
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#9090A4', border: '1px solid rgba(255,255,255,0.08)' }}
-              >
+              <p className="text-sm mb-5" style={{ color: '#9090A4' }}>Tus picks para {jornada}</p>
+              <button onClick={() => onClose(true)} className="w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-widest" style={{ background: 'rgba(255,255,255,0.06)', color: '#9090A4', border: '1px solid rgba(255,255,255,0.08)' }}>
                 Cerrar
               </button>
             </div>
           ) : (
-            /* ── Estado: seleccionando ── */
             <div className="relative z-10">
-              {/* Header */}
-              <div
-                className="px-5 pt-5 pb-4 flex items-start justify-between"
-                style={{ borderBottom: '1px solid rgba(124,58,237,0.12)' }}
-              >
+              <div className="px-5 pt-5 pb-4 flex items-start justify-between" style={{ borderBottom: '1px solid rgba(124,58,237,0.12)' }}>
                 <div>
-                  <h3
-                    className="text-base font-black"
-                    style={{ fontFamily: 'var(--font-display)', color: '#F0F0F5', letterSpacing: '-0.01em' }}
-                  >
-                    Quiniela · Jornada 38
+                  <h3 className="text-base font-black" style={{ fontFamily: 'var(--font-display)', color: '#F0F0F5', letterSpacing: '-0.01em' }}>
+                    Quiniela · {jornada}
                   </h3>
-                  <p className="text-xs mt-0.5" style={{ color: '#5A4878' }}>
-                    Selecciona el resultado de cada partido
-                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: '#5A4878' }}>Selecciona el resultado de cada partido</p>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center"
-                  style={{ background: 'rgba(255,255,255,0.07)', color: '#5A5A6A' }}
-                >
+                <button onClick={() => onClose(false)} className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.07)', color: '#5A5A6A' }}>
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 </button>
               </div>
 
-              {/* Picks */}
-              <div className="px-5 py-4 flex flex-col gap-3">
-                {QUINIELA_MATCHES.map((m, i) => (
+              <div className="px-5 py-4 flex flex-col gap-4">
+                {matches.map((m, i) => {
+                  const oddsValues = m.odds
+                    ? [m.odds.home, m.odds.draw, m.odds.away]
+                    : [null, null, null]
+                  return (
                   <div key={i}>
-                    {/* Partido */}
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold" style={{ color: '#C0C0D8', fontFamily: 'var(--font-sport)' }}>
-                        {m.home}
-                      </span>
-                      <span className="text-[9px] font-black px-2 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: '#4A4A5A' }}>
-                        VS
-                      </span>
-                      <span className="text-xs font-semibold" style={{ color: '#C0C0D8', fontFamily: 'var(--font-sport)' }}>
-                        {m.away}
-                      </span>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-black text-right flex-1 truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>{m.home}</span>
+                      <div className="flex flex-col items-center mx-2 flex-shrink-0">
+                        <span className="text-[9px] font-black px-3 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A50', letterSpacing: '0.05em' }}>VS</span>
+                        {m.comp && <span className="text-[8px] mt-0.5" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>{m.comp}</span>}
+                      </div>
+                      <span className="text-xs font-black text-left flex-1 truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>{m.away}</span>
                     </div>
-                    {/* Opciones 1/X/2 */}
-                    <div className="grid grid-cols-3 gap-2">
-                      {PICK_OPTIONS.map((opt) => {
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {PICK_OPTIONS.map((opt, oi) => {
                         const selected = picks[i] === opt
+                        const col = PICK_COLOR[opt]
+                        const odd = oddsValues[oi]
                         return (
                           <button
                             key={opt}
-                            onClick={() => setPicks((prev) => ({ ...prev, [i]: opt }))}
-                            className="py-2 rounded-xl font-black text-sm transition-all"
+                            onClick={() => setPicks((p) => ({ ...p, [i]: opt }))}
+                            className="rounded-xl font-black transition-all flex flex-col items-center justify-center gap-0.5"
                             style={{
                               fontFamily: 'var(--font-display)',
-                              background: selected
-                                ? 'linear-gradient(135deg,#7C3AED,#6025C0)'
-                                : 'rgba(255,255,255,0.05)',
-                              color: selected ? '#fff' : '#5A5A6A',
-                              border: selected
-                                ? '1px solid rgba(124,58,237,0.5)'
-                                : '1px solid rgba(255,255,255,0.07)',
-                              boxShadow: selected ? '0 2px 12px rgba(124,58,237,0.3)' : 'none',
-                              transform: selected ? 'scale(1.02)' : 'scale(1)',
+                              fontSize: 15,
+                              minHeight: 52,
+                              background: selected ? `${col}22` : 'rgba(255,255,255,0.04)',
+                              color: selected ? col : '#4A4A6A',
+                              border: selected ? `1px solid ${col}55` : '1px solid rgba(255,255,255,0.06)',
+                              boxShadow: selected ? `0 0 14px ${col}30` : 'none',
+                              transform: selected ? 'scale(1.04)' : 'scale(1)',
                             }}
                           >
-                            {opt}
+                            <span>{opt}</span>
+                            {odd ? (
+                              <span style={{ fontSize: 9, fontFamily: 'var(--font-sport)', color: selected ? col : '#5A5A7A', opacity: 0.9 }}>{odd.toFixed(2)}</span>
+                            ) : (
+                              <span style={{ fontSize: 8, fontFamily: 'var(--font-sport)', opacity: 0.6 }}>{PICK_LABELS[opt]}</span>
+                            )}
                           </button>
                         )
                       })}
                     </div>
-                    {picks[i] && (
-                      <p className="text-[10px] mt-1 text-center" style={{ color: '#7C3AED' }}>
-                        {picks[i] === '1' ? m.home : picks[i] === '2' ? m.away : 'Empate'}
-                      </p>
-                    )}
                   </div>
-                ))}
+                  )
+                })}
               </div>
 
-              {/* CTA */}
               <div className="px-5 pb-5">
                 <button
                   onClick={handleSubmit}
                   disabled={!allPicked}
                   className="w-full py-3 rounded-xl font-black uppercase tracking-widest transition-all"
                   style={{
-                    background: allPicked
-                      ? 'linear-gradient(135deg,#7C3AED,#6025C0)'
-                      : 'rgba(255,255,255,0.04)',
+                    background: allPicked ? 'linear-gradient(135deg,#7C3AED,#5B21B6)' : 'rgba(255,255,255,0.04)',
                     color: allPicked ? '#fff' : '#3A3A4A',
-                    border: allPicked
-                      ? '1px solid rgba(124,58,237,0.4)'
-                      : '1px solid rgba(255,255,255,0.05)',
+                    border: allPicked ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.05)',
                     fontSize: 12,
                     fontFamily: 'var(--font-sport)',
                     letterSpacing: '0.08em',
@@ -205,9 +213,7 @@ function PredictionModal({
                     cursor: allPicked ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  {allPicked
-                    ? 'Confirmar predicción →'
-                    : `Elige ${QUINIELA_MATCHES.length - Object.keys(picks).length} partido${QUINIELA_MATCHES.length - Object.keys(picks).length !== 1 ? 's' : ''} más`}
+                  {allPicked ? 'Confirmar predicción →' : `Elige ${matches.length - Object.keys(picks).length} partido${matches.length - Object.keys(picks).length !== 1 ? 's' : ''} más`}
                 </button>
               </div>
             </div>
@@ -218,9 +224,43 @@ function PredictionModal({
   )
 }
 
-// ── Módulo principal ─────────────────────────────────────────
 export default function QuinielaModule() {
   const [showModal, setShowModal] = useState(false)
+  const [alreadyVoted, setAlreadyVoted] = useState(false)
+  const [matches, setMatches] = useState<QuinielaMatch[]>(QUINIELA_MATCHES)
+  const [jornada, setJornada] = useState(QUINIELA_JORNADA)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/quiniela')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        setLoaded(true)
+        if (data?.matches?.length) {
+          setMatches(data.matches)
+          setJornada(data.jornada)
+          try {
+            const raw = localStorage.getItem(QUINIELA_PICKS_KEY)
+            if (raw) {
+              const parsed = JSON.parse(raw)
+              if (parsed?.picks && Array.isArray(parsed.picks) && parsed.jornada === data.jornada) {
+                setAlreadyVoted(true)
+              } else {
+                localStorage.removeItem(QUINIELA_PICKS_KEY)
+              }
+            }
+          } catch { /* ignore */ }
+        } else {
+          setMatches([])
+        }
+      })
+      .catch(() => { setLoaded(true) })
+  }, [])
+
+  const handleClose = (submitted?: boolean) => {
+    if (submitted) setAlreadyVoted(true)
+    setShowModal(false)
+  }
 
   return (
     <>
@@ -228,26 +268,15 @@ export default function QuinielaModule() {
         id="quiniela"
         className="rounded-2xl overflow-hidden relative"
         style={{
-          background: 'linear-gradient(150deg,#1E1040 0%,#150D35 40%,#0F0A20 100%)',
+          background: 'linear-gradient(150deg,#1A0030 0%,#120025 40%,#08000F 100%)',
           border: '1px solid rgba(124,58,237,0.28)',
         }}
       >
-        {/* Glow */}
-        <div
-          className="absolute -top-10 -right-10 w-44 h-44 blur-3xl opacity-25 pointer-events-none"
-          style={{ background: '#7C3AED' }}
-        />
+        <div className="absolute -top-10 -right-10 w-44 h-44 blur-3xl opacity-20 pointer-events-none" style={{ background: '#7C3AED' }} />
 
-        {/* Header */}
-        <div
-          className="px-4 pt-4 pb-3 flex items-center justify-between"
-          style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}
-        >
+        <div className="px-4 pt-4 pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}>
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.28)' }}
-            >
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.28)' }}>
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                 <rect x="1" y="1" width="5" height="5" rx="1" stroke="#A78BFA" strokeWidth="1.3" />
                 <rect x="8" y="1" width="5" height="5" rx="1" stroke="#A78BFA" strokeWidth="1.3" />
@@ -256,61 +285,72 @@ export default function QuinielaModule() {
               </svg>
             </div>
             <div>
-              <p className="text-xs font-black uppercase tracking-wider" style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
-                Quiniela
-              </p>
-              <p className="text-[10px]" style={{ color: '#5A4878' }}>Jornada 38 · LaLiga</p>
+              <p className="text-xs font-black uppercase tracking-wider" style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>Quiniela</p>
+              <p className="text-[10px]" style={{ color: '#5A4878' }}>{jornada}</p>
             </div>
           </div>
-          <span
-            className="text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider flex-shrink-0"
-            style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.2)' }}
-          >
-            Activa
-          </span>
+          {MATCH_STATUS === 'open' && (
+            <span className="text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-widest flex-shrink-0 flex items-center gap-1" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', fontFamily: 'var(--font-sport)' }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block animate-pulse" />
+              Abierta
+            </span>
+          )}
         </div>
 
-        {/* Preview partidos */}
-        <div className="px-4 py-3 flex flex-col gap-2 relative z-10">
-          {QUINIELA_MATCHES.map((m, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 py-1.5 px-2.5 rounded-xl"
-              style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.04)' }}
-            >
-              <span className="flex-1 text-[11px] font-semibold truncate text-right" style={{ color: '#C0C0D8', fontFamily: 'var(--font-sport)' }}>
-                {m.home}
-              </span>
-              <span className="flex-shrink-0 text-[9px] font-black px-2 py-0.5 rounded-lg" style={{ background: 'rgba(124,58,237,0.12)', color: '#5A5A7A', minWidth: 28, textAlign: 'center' }}>
-                VS
-              </span>
-              <span className="flex-1 text-[11px] font-semibold truncate" style={{ color: '#C0C0D8', fontFamily: 'var(--font-sport)' }}>
-                {m.away}
-              </span>
+        <div className="px-4 py-3 flex flex-col gap-1.5 relative z-10">
+          {matches.length > 0 ? matches.map((m, i) => (
+            <div key={i} className="flex items-center gap-2 py-2 px-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div className="flex-1 flex items-center justify-end gap-1.5 min-w-0">
+                <span className="text-[11px] font-black truncate" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>{m.homeShort ?? m.home}</span>
+                <TeamLogo name={m.home} logo={m.homeLogo} />
+              </div>
+              <span className="flex-shrink-0 text-[9px] font-black px-2 py-0.5 rounded-lg" style={{ background: 'rgba(124,58,237,0.1)', color: '#4A4A6A', minWidth: 28, textAlign: 'center' }}>VS</span>
+              <div className="flex-1 flex items-center gap-1.5 min-w-0">
+                <TeamLogo name={m.away} logo={m.awayLogo} />
+                <span className="text-[11px] font-black truncate" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>{m.awayShort ?? m.away}</span>
+              </div>
             </div>
-          ))}
+          )) : loaded ? (
+            <div className="py-5 flex flex-col items-center gap-1.5">
+              <span className="text-2xl">📅</span>
+              <p className="text-xs font-black" style={{ color: '#4A4A6A', fontFamily: 'var(--font-display)' }}>Sin partidos esta semana</p>
+              <p className="text-[10px]" style={{ color: '#3A3A58' }}>Vuelve cuando haya jornada activa</p>
+            </div>
+          ) : (
+            <div className="py-5 flex items-center justify-center">
+              <span className="text-[10px] animate-pulse" style={{ color: '#3A3A58' }}>Cargando…</span>
+            </div>
+          )}
         </div>
 
-        {/* CTA */}
         <div className="px-4 pb-4 relative z-10">
-          <button
-            onClick={() => setShowModal(true)}
-            className="w-full py-2.5 rounded-xl font-black uppercase tracking-widest transition-opacity hover:opacity-85"
-            style={{
-              background: 'linear-gradient(135deg,#7C3AED,#6025C0)',
-              color: '#fff',
-              fontSize: 11,
-              fontFamily: 'var(--font-sport)',
-              letterSpacing: '0.08em',
-              boxShadow: '0 4px 18px rgba(124,58,237,0.32)',
-            }}
-          >
-            Hacer predicción →
-          </button>
+          {alreadyVoted ? (
+            <div className="w-full py-2.5 rounded-xl flex items-center justify-center gap-2" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                <path d="M5 13L9 17L19 7" stroke="#4ade80" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#4ade80', fontFamily: 'var(--font-sport)' }}>Predicción enviada</span>
+            </div>
+          ) : matches.length === 0 ? null : (
+            <button
+              onClick={() => setShowModal(true)}
+              className="w-full py-2.5 rounded-xl font-black uppercase tracking-widest transition-opacity hover:opacity-85"
+              style={{
+                background: 'linear-gradient(135deg,#7C3AED,#5B21B6)',
+                color: '#fff',
+                fontSize: 11,
+                fontFamily: 'var(--font-sport)',
+                letterSpacing: '0.08em',
+                boxShadow: '0 4px 18px rgba(124,58,237,0.32)',
+              }}
+            >
+              Hacer predicción →
+            </button>
+          )}
         </div>
       </div>
 
-      {showModal && <PredictionModal onClose={() => setShowModal(false)} />}
+      {showModal && <PredictionModal matches={matches} jornada={jornada} onClose={handleClose} />}
     </>
   )
 }

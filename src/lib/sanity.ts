@@ -18,22 +18,34 @@ export function urlFor(source: SanityImageSource) {
 
 // Feed principal — normaliza artículos viejos (status=="publicado") + nuevos de Taka System (tienen headline)
 // Los dos usan _type=="article" pero campos diferentes; se mapean a forma común aquí.
-export const articlesQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc) {
+export const articlesQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...20] {
   _id,
   "slug": slug.current,
   "title": select(defined(headline) => headline, title),
   "short_summary": select(defined(headline) => metaDescription, short_summary),
   "imageUrl": select(defined(headline) => imageUrl, null),
-  "image": select(defined(headline) => null, image),
+  "image": select(defined(headline) => mainImage, image),
   publishedAt,
-  "sport": select(defined(headline) => "futbol", sport),
+  sport,
   "category": select(defined(headline) => competition, category),
   "priority": select(defined(headline) => "destacado", priority),
   "isTaka": defined(headline)
 }`
 
-// Home — mismo set pero el reordenamiento por prioridad se hace en el servidor (ver page.tsx)
-export const homeArticlesQuery = articlesQuery
+// Feed por deporte — para páginas /[sport]: solo ese deporte, más artículos
+export const articlesBySportQuery = `*[_type == "article" && sport == $sport && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...40] {
+  _id,
+  "slug": slug.current,
+  "title": select(defined(headline) => headline, title),
+  "short_summary": select(defined(headline) => metaDescription, short_summary),
+  "imageUrl": select(defined(headline) => imageUrl, null),
+  "image": select(defined(headline) => mainImage, image),
+  publishedAt,
+  sport,
+  "category": select(defined(headline) => competition, category),
+  "priority": select(defined(headline) => "destacado", priority),
+  "isTaka": defined(headline)
+}`
 
 // Feed sin filtro de status — para preview/editor (usar con token)
 export const articlesAllQuery = `*[_type == "article"] | order(publishedAt desc) {
@@ -41,7 +53,7 @@ export const articlesAllQuery = `*[_type == "article"] | order(publishedAt desc)
   sport, type, priority, status, category, image
 }`
 
-// Artículo detalle — normaliza ambos schemas
+// Artículo detalle — normaliza ambos schemas + campos SEO long-form (tldr, faq, focusKeyword, imageAlt, sourceUrls)
 export const articleDetailQuery = `*[_type == "article" && (slug.current == $id || _id == $id)][0] {
   _id,
   "slug": slug.current,
@@ -49,26 +61,32 @@ export const articleDetailQuery = `*[_type == "article" && (slug.current == $id 
   "subtitle": select(defined(headline) => null, subtitle),
   "short_summary": select(defined(headline) => metaDescription, short_summary),
   "imageUrl": select(defined(headline) => imageUrl, null),
-  "image": select(defined(headline) => null, image),
+  "image": select(defined(headline) => mainImage, image),
+  "imageAlt": select(defined(headline) => imageAlt, null),
   "bodyPortable": select(defined(headline) => body, null),
   "bodyText": select(!defined(headline) => body, null),
   "isTaka": defined(headline),
-  "sport": select(defined(headline) => "futbol", sport),
+  sport,
   "category": select(defined(headline) => competition, category),
   tags,
   source_name,
   source_url,
-  publishedAt
+  publishedAt,
+  "tldr": select(defined(headline) => tldr, null),
+  "faq": select(defined(headline) => faq, null),
+  "focusKeyword": select(defined(headline) => focusKeyword, null),
+  "secondaryKeywords": select(defined(headline) => secondaryKeywords, null),
+  "sourceUrls": select(defined(headline) => sourceUrls, null)
 }`
 
 // Artículos relacionados — incluye ambos schemas
-export const relatedArticlesQuery = `*[_type == "article" && _id != $id && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && (sport == $sport || category == $category || (defined(headline) && ($sport == "futbol" || $sport == "Fútbol")))] | order(publishedAt desc)[0...3] {
+export const relatedArticlesQuery = `*[_type == "article" && _id != $id && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && (sport == $sport || category == $category)] | order(publishedAt desc)[0...3] {
   _id, "slug": slug.current,
   "title": select(defined(headline) => headline, title),
   "imageUrl": select(defined(headline) => imageUrl, null),
-  "image": select(defined(headline) => null, image),
+  "image": select(defined(headline) => mainImage, image),
   publishedAt,
-  "sport": select(defined(headline) => "futbol", sport),
+  sport,
   "category": select(defined(headline) => competition, category)
 }`
 
@@ -78,9 +96,9 @@ export const nextArticleQuery = `*[_type == "article" && (status == "publicado" 
   "title": select(defined(headline) => headline, title),
   "short_summary": select(defined(headline) => metaDescription, short_summary),
   "imageUrl": select(defined(headline) => imageUrl, null),
-  "image": select(defined(headline) => null, image),
+  "image": select(defined(headline) => mainImage, image),
   publishedAt,
-  "sport": select(defined(headline) => "futbol", sport),
+  sport,
   "category": select(defined(headline) => competition, category)
 }`
 
@@ -90,9 +108,9 @@ export const searchArticlesQuery = `*[_type == "article" && (status == "publicad
   "title": select(defined(headline) => headline, title),
   "short_summary": select(defined(headline) => metaDescription, short_summary),
   "imageUrl": select(defined(headline) => imageUrl, null),
-  "image": select(defined(headline) => null, image),
+  "image": select(defined(headline) => mainImage, image),
   publishedAt,
-  "sport": select(defined(headline) => "futbol", sport),
+  sport,
   "category": select(defined(headline) => competition, category)
 }`
 
@@ -113,4 +131,35 @@ export const reelsQuery = `*[_type == "reel"] | order(publishedAt desc) {
 export const eventsQuery = `*[_type == "event" && status in ["programado", "en_vivo"]] | order(date asc)[0...60] {
   _id, sport, home, away, date, venue, status, stage, broadcast,
   "competition": competition->{ name, "slug": slug.current }
+}`
+
+// Detalle de un evento Sanity por _id
+export const eventDetailQuery = `*[_type == "event" && _id == $id][0] {
+  _id, sport, home, away, date, venue, status, stage, broadcast,
+  "competition": competition->{ name, "slug": slug.current }
+}`
+
+// Artículos relacionados a un evento — mismo deporte, ventana temporal ±7/+2 días
+// Prioriza artículos que mencionan los equipos/participantes ($home, $away) en el título
+export const relatedByEventQuery = `*[
+  _type == "article" &&
+  (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) &&
+  sport == $sport &&
+  publishedAt >= $from &&
+  publishedAt <= $to
+] | score(
+  boost(title match $home, 3),
+  boost(title match $away, 3),
+  boost(select(defined(headline) => headline, title) match $home, 2),
+  boost(select(defined(headline) => headline, title) match $away, 2)
+) | order(@.score desc, publishedAt desc)[0...4] {
+  _id,
+  "slug": slug.current,
+  "title": select(defined(headline) => headline, title),
+  "short_summary": select(defined(headline) => metaDescription, short_summary),
+  "imageUrl": select(defined(headline) => imageUrl, null),
+  "image": select(defined(headline) => mainImage, image),
+  publishedAt,
+  sport,
+  "category": select(defined(headline) => competition, category)
 }`
