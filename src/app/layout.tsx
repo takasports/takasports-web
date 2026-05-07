@@ -3,8 +3,10 @@ import { Geist } from 'next/font/google'
 import { Barlow_Condensed, Bebas_Neue, Barlow_Semi_Condensed } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
+import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
+const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID
 
 const geist = Geist({
   variable: '--font-geist-sans',
@@ -38,8 +40,21 @@ const barlowSemiCondensed = Barlow_Semi_Condensed({
 })
 
 export const metadata: Metadata = {
-  title: 'TakaSports — Noticias deportivas',
+  title: {
+    default: 'TakaSports — Noticias deportivas',
+    template: '%s | TakaSports',
+  },
   description: 'Las últimas noticias del deporte en un solo lugar. Fútbol, NBA, UFC, F1, Tenis y más.',
+  keywords: ['noticias deportivas', 'fútbol', 'NBA', 'F1', 'UFC', 'tenis', 'LaLiga', 'Premier League', 'TakaSports', 'resultados en vivo', 'calendario deportivo'],
+  authors: [{ name: 'TakaSports', url: SITE_URL }],
+  creator: 'TakaSports',
+  publisher: 'TakaSports',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+  },
+  alternates: { canonical: SITE_URL },
   verification: { google: 'LkOObyh0JeHucGf6NTELFcAQxFSMJrd2-9QoWVMM1g4' },
   manifest: '/manifest.json',
   appleWebApp: {
@@ -53,15 +68,13 @@ export const metadata: Metadata = {
     siteName: 'TakaSports',
     locale: 'es_ES',
     type: 'website',
-    url: 'https://takasportsmedia.com',
-    images: [{ url: 'https://takasportsmedia.com/taka-logo.png', width: 512, height: 512, alt: 'TakaSports' }],
+    url: SITE_URL,
   },
   twitter: {
     card: 'summary_large_image',
     title: 'TakaSports — Noticias deportivas',
     description: 'Las últimas noticias del deporte en un solo lugar.',
     site: '@takasports',
-    images: ['https://takasportsmedia.com/taka-logo.png'],
   },
 }
 
@@ -81,6 +94,36 @@ export default function RootLayout({
       className={`${geist.variable} ${barlowCondensed.variable} ${bebasNeue.variable} ${barlowSemiCondensed.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'Organization',
+                '@id': `${SITE_URL}/#organization`,
+                name: 'TakaSports',
+                url: SITE_URL,
+                logo: { '@type': 'ImageObject', url: LOGO_URL, width: 512, height: 512 },
+                sameAs: ['https://www.instagram.com/takasportsmedia', 'https://twitter.com/takasports'],
+              },
+              {
+                '@type': 'WebSite',
+                '@id': `${SITE_URL}/#website`,
+                url: SITE_URL,
+                name: 'TakaSports',
+                description: 'Las últimas noticias del deporte en un solo lugar.',
+                publisher: { '@id': `${SITE_URL}/#organization` },
+                inLanguage: 'es-ES',
+                potentialAction: {
+                  '@type': 'SearchAction',
+                  target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/noticias?q={search_term_string}` },
+                  'query-input': 'required name=search_term_string',
+                },
+              },
+            ],
+          }) }}
+        />
         {children}
         <script
           dangerouslySetInnerHTML={{
@@ -97,6 +140,11 @@ export default function RootLayout({
               {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}',{page_path:window.location.pathname});`}
             </Script>
           </>
+        )}
+        {CLARITY_ID && (
+          <Script id="clarity-init" strategy="afterInteractive">
+            {`(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${CLARITY_ID}");`}
+          </Script>
         )}
       </body>
     </html>

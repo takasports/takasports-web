@@ -4,17 +4,26 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { sanityClient, searchArticlesQuery, urlFor } from '@/lib/sanity'
+import { LogoFull } from './Logo'
+import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
+import { createClient } from '@/lib/supabase'
+import { trackSearch } from '@/lib/analytics'
+import type { User } from '@supabase/supabase-js'
+import dynamic from 'next/dynamic'
+
+const AuthModal = dynamic(() => import('./AuthModal'), { ssr: false })
 
 const INNER = 'max-w-[1440px] mx-auto px-6 xl:px-10'
 
 const NAV_LINKS = [
-  { label: 'Inicio',     href: '/'          },
-  { label: 'Noticias',   href: '/noticias'  },
-  { label: 'Calendario', href: '/calendario'},
-  { label: 'Quiniela',   href: '/quiniela'  },
-  { label: 'Juegos',     href: '/juegos'    },
+  { label: 'Inicio',       href: '/'              },
+  { label: 'Noticias',     href: '/noticias'      },
+  { label: 'Calendario',   href: '/calendario'    },
+  { label: 'Estadísticas', href: '/estadisticas'  },
+  { label: 'Rankings',     href: '/rankings'      },
+  { label: 'Juegos',       href: '/juegos'        },
+  { label: 'Quiniela',     href: '/quiniela'      },
 ]
 
 function isNavActive(href: string, pathname: string): boolean {
@@ -24,6 +33,7 @@ function isNavActive(href: string, pathname: string): boolean {
 
 interface SearchArticle {
   _id: string
+  slug?: string
   title: string
   publishedAt?: string
   sport?: string
@@ -34,35 +44,56 @@ interface SearchArticle {
 // ── Search Modal ─────────────────────────────────────────────
 function SearchModal({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState('')
-  const [articles, setArticles] = useState<SearchArticle[]>([])
-  const [loading, setLoading] = useState(true)
+  const [results, setResults] = useState<SearchArticle[]>([])
+  const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Focus input on mount
   useEffect(() => {
-    sanityClient.fetch<SearchArticle[]>(searchArticlesQuery).then((data) => {
-      setArticles(data ?? [])
-      setLoading(false)
-    })
     setTimeout(() => inputRef.current?.focus(), 50)
   }, [])
 
+  // Escape key handler
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
-  const results = query.trim().length < 2
-    ? []
-    : articles.filter((a) =>
-        a.title.toLowerCase().includes(query.toLowerCase()) ||
-        a.sport?.toLowerCase().includes(query.toLowerCase()) ||
-        a.category?.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 8)
+  // Debounced search against API endpoint
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    const q = query.trim()
+    if (q.length < 2) {
+      setResults([])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    debounceRef.current = setTimeout(async () => {
+      trackSearch(q)
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
+        if (res.ok) setResults(await res.json())
+      } catch {
+        setResults([])
+      } finally {
+        setLoading(false)
+      }
+    }, 280)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [query])
 
   return (
-    <div className="search-overlay" onClick={onClose}>
-      <div className="search-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="search-overlay" onClick={onClose} aria-hidden="true">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Buscar artículos"
+        className="search-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Input */}
         <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <svg width="16" height="16" viewBox="0 0 14 14" fill="none" style={{ color: '#5A5A6A', flexShrink: 0 }}>
@@ -78,13 +109,13 @@ function SearchModal({ onClose }: { onClose: () => void }) {
             style={{ color: '#EBEBF5', fontFamily: 'var(--font-geist-sans)' }}
           />
           {query && (
-            <button onClick={() => setQuery('')} style={{ color: '#5A5A6A', flexShrink: 0 }}>
+            <button onClick={() => setQuery('')} aria-label="Limpiar búsqueda" style={{ color: '#5A5A6A', flexShrink: 0 }}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </button>
           )}
-          <button onClick={onClose} className="text-xs px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.07)', color: '#5A5A6A' }}>
+          <button onClick={onClose} aria-label="Cerrar búsqueda" className="text-xs px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.07)', color: '#5A5A6A' }}>
             Esc
           </button>
         </div>
@@ -92,7 +123,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
         {/* Resultados */}
         <div style={{ maxHeight: 420, overflowY: 'auto' }}>
           {loading && (
-            <div className="px-4 py-8 text-center text-sm" style={{ color: '#4A4A5A' }}>Cargando...</div>
+            <div className="px-4 py-8 text-center text-sm" style={{ color: '#4A4A5A' }}>Buscando...</div>
           )}
           {!loading && query.trim().length >= 2 && results.length === 0 && (
             <div className="px-4 py-8 text-center">
@@ -114,7 +145,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                 return (
                   <Link
                     key={article._id}
-                    href={`/article/${article._id}`}
+                    href={`/article/${article.slug ?? article._id}`}
                     onClick={onClose}
                     className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-white/5"
                     style={{ textDecoration: 'none' }}
@@ -147,7 +178,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
         {/* Footer */}
         <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <span className="text-[10px]" style={{ color: '#3A3A4A' }}>
-            {loading ? 'Cargando índice...' : `${articles.length} artículos indexados`}
+            {loading ? 'Buscando...' : results.length > 0 ? `${results.length} resultados` : 'Escribe para buscar'}
           </span>
           <span className="text-[10px]" style={{ color: '#3A3A4A' }}>↵ abrir · Esc cerrar</span>
         </div>
@@ -179,8 +210,20 @@ export default function Header() {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => { setMenuOpen(false) }, [pathname])
+
+  useEffect(() => {
+    const supabase = createClient()
+    if (!supabase) return
+    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   useEffect(() => {
     document.body.style.overflow = (menuOpen || searchOpen) ? 'hidden' : ''
@@ -212,37 +255,29 @@ export default function Header() {
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <div className={`${INNER} flex items-center h-14 gap-6`}>
+        <div className={`${INNER} flex items-center h-14 gap-4`}>
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 flex-shrink-0" style={{ textDecoration: 'none' }}>
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#7C3AED 0%,#4F46E5 100%)' }}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2.5 1.5L10 6L2.5 10.5V1.5Z" fill="white" />
-              </svg>
-            </div>
-            <span className="text-[20px] font-black" style={{ fontFamily: 'var(--font-display)', color: '#F0F0F5', letterSpacing: '-0.01em' }}>
-              Taka<span style={{ color: '#8B5CF6' }}>Sports</span>
-            </span>
-          </Link>
+          <LogoFull size={30} />
 
           {/* Nav desktop */}
-          <nav className="hidden md:flex items-center gap-0.5 flex-1">
+          <nav className="hidden lg:flex items-center gap-0 flex-1" aria-label="Navegación principal">
             {NAV_LINKS.map(({ label, href }) => {
               const active = isNavActive(href, pathname)
               return (
                 <Link
                   key={href}
                   href={href}
-                  className={`nav-link relative flex items-center px-3.5 py-1.5 text-[13px] font-semibold whitespace-nowrap${active ? ' active' : ''}`}
-                  style={{ fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
+                  aria-current={active ? 'page' : undefined}
+                  className={`nav-link relative flex items-center px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap${active ? ' active' : ''}`}
+                  style={{ fontFamily: 'var(--font-sport)', textDecoration: 'none', letterSpacing: '0.01em' }}
                 >
                   {label}
                   {active && (
                     <span style={{
                       position: 'absolute', bottom: 0, left: '50%',
                       transform: 'translateX(-50%)',
-                      width: 18, height: 2,
+                      width: 16, height: 2,
                       background: '#7C3AED', borderRadius: 1,
                     }} />
                   )}
@@ -256,29 +291,68 @@ export default function Header() {
             <button
               aria-label="Buscar"
               onClick={openSearch}
-              className="search-bar hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#4A4A5A' }}
+              className="search-bar hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors hover:border-white/15"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#7A7A8E' }}
             >
               <SearchIcon />
-              <span className="text-xs" style={{ color: '#4A4A5A' }}>Buscar artículos...</span>
-              <kbd className="hidden md:block text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)', color: '#3A3A4A' }}>
+              <span className="text-xs" style={{ color: '#7A7A8E' }}>Buscar artículos...</span>
+              <kbd className="hidden md:block text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5A6E' }}>
                 ⌘K
               </kbd>
             </button>
 
+            {/* Search icon — solo visible en < xl */}
             <button
-              aria-label="Mi perfil"
-              className="profile-btn flex items-center justify-center rounded-full flex-shrink-0"
-              style={{ width: 34, height: 34, background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.22)', color: '#9B7CF6' }}
+              aria-label="Buscar"
+              onClick={openSearch}
+              className="xl:hidden flex items-center justify-center rounded-lg flex-shrink-0"
+              style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#7A7A8E' }}
             >
-              <ProfileIcon />
+              <SearchIcon />
             </button>
+
+            {user ? (
+              <Link
+                href="/perfil"
+                aria-label="Mi perfil"
+                className="profile-btn flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden"
+                style={{ width: 34, height: 34, background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.4)', textDecoration: 'none' }}
+              >
+                {user.user_metadata?.avatar_url ? (
+                  <Image
+                    src={user.user_metadata.avatar_url as string}
+                    alt={user.user_metadata?.full_name ?? 'Avatar'}
+                    width={34} height={34}
+                    className="object-cover w-full h-full"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <span
+                    className="text-xs font-black"
+                    style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}
+                  >
+                    {((user.user_metadata?.full_name ?? user.email ?? 'U') as string)
+                      .split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <button
+                onClick={() => setAuthOpen(true)}
+                aria-label="Iniciar sesión"
+                className="profile-btn flex items-center justify-center rounded-full flex-shrink-0"
+                style={{ width: 34, height: 34, background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.22)', color: '#9B7CF6', cursor: 'pointer' }}
+              >
+                <ProfileIcon />
+              </button>
+            )}
+            {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
 
             {/* Hamburger */}
             <button
               aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
               onClick={() => setMenuOpen((v) => !v)}
-              className="md:hidden flex items-center justify-center rounded-lg flex-shrink-0"
+              className="lg:hidden flex items-center justify-center rounded-lg flex-shrink-0"
               style={{ width: 34, height: 34, background: menuOpen ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               {menuOpen ? (
@@ -300,8 +374,8 @@ export default function Header() {
       {/* Mobile drawer */}
       {menuOpen && (
         <>
-          <div className="drawer-backdrop" onClick={() => setMenuOpen(false)} />
-          <nav className="drawer-panel">
+          <div className="drawer-backdrop" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+          <nav className="drawer-panel" aria-label="Menú de navegación">
             <div style={{ background: 'rgba(13,13,20,0.98)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="px-6 py-4 flex flex-col gap-1">
 
@@ -322,6 +396,7 @@ export default function Header() {
                       key={href}
                       href={href}
                       onClick={() => setMenuOpen(false)}
+                      aria-current={active ? 'page' : undefined}
                       className="flex items-center justify-between px-3 py-3 rounded-xl transition-all"
                       style={{
                         background: active ? 'rgba(124,58,237,0.12)' : 'transparent',
@@ -340,13 +415,15 @@ export default function Header() {
 
                 <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '4px 0' }} />
 
-                <button
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl w-full text-left"
-                  style={{ color: '#9090A4', fontFamily: 'var(--font-sport)', fontSize: 15, fontWeight: 600 }}
+                <Link
+                  href="/perfil"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl w-full"
+                  style={{ color: '#9090A4', fontFamily: 'var(--font-sport)', fontSize: 15, fontWeight: 600, textDecoration: 'none' }}
                 >
                   <ProfileIcon />
                   <span>Mi perfil</span>
-                </button>
+                </Link>
               </div>
             </div>
           </nav>
