@@ -113,8 +113,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title,
     description,
     alternates: { canonical: `${SITE_URL}/evento/${id}` },
-    openGraph: { title, description, type: 'website', siteName: 'TakaSports' },
-    twitter:   { card: 'summary', title, description },
+    openGraph: { title, description, type: 'website', url: `${SITE_URL}/evento/${id}`, siteName: 'TakaSports', locale: 'es_ES' },
+    twitter:   { card: 'summary_large_image', title, description, site: '@takasports', creator: '@takasports' },
   }
 }
 
@@ -196,8 +196,35 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
   const dateStr   = formatEventDate(event.date)
   const timeStr   = formatEventTime(event.date)
 
+  const eventStatusMap: Record<string, string> = {
+    programado: 'https://schema.org/EventScheduled',
+    en_vivo:    'https://schema.org/EventScheduled',
+    finalizado: 'https://schema.org/EventCancelled',
+  }
+  const sportsEventJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: event.away ? `${event.home} vs ${event.away}` : event.home,
+    startDate: event.date,
+    url: `${SITE_URL}/evento/${id}`,
+    sport: sportLabel,
+    eventStatus: eventStatusMap[event.status ?? 'programado'] ?? 'https://schema.org/EventScheduled',
+    ...(event.venue ? { location: { '@type': 'Place', name: event.venue } } : {}),
+    ...(event.competition ? {
+      organizer: { '@type': 'Organization', name: event.competition.name },
+      superEvent: { '@type': 'SportsEvent', name: event.competition.name },
+    } : {}),
+    ...(event.away ? {
+      competitor: [
+        { '@type': 'SportsTeam', name: event.home },
+        { '@type': 'SportsTeam', name: event.away },
+      ],
+    } : {}),
+  }
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }} className="flex flex-col">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEventJsonLd) }} />
       <Header />
       <LiveStrip />
 

@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     default: 'TakaSports — Noticias deportivas',
     template: '%s | TakaSports',
   },
-  description: 'Las últimas noticias del deporte en un solo lugar. Fútbol, NBA, UFC, F1, Tenis y más.',
+  description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario, rankings y juegos. Actualizado cada hora.',
   keywords: ['noticias deportivas', 'fútbol', 'NBA', 'F1', 'UFC', 'tenis', 'LaLiga', 'Premier League', 'TakaSports', 'resultados en vivo', 'calendario deportivo'],
   authors: [{ name: 'TakaSports', url: SITE_URL }],
   creator: 'TakaSports',
@@ -63,18 +63,20 @@ export const metadata: Metadata = {
     title: 'TakaSports',
   },
   openGraph: {
-    title: 'TakaSports — Noticias deportivas',
-    description: 'Las últimas noticias del deporte en un solo lugar.',
+    title: 'TakaSports — Noticias deportivas en tiempo real',
+    description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario, rankings y juegos.',
     siteName: 'TakaSports',
     locale: 'es_ES',
     type: 'website',
     url: SITE_URL,
+    images: [{ url: `${SITE_URL}/opengraph-image.png`, width: 1200, height: 630, alt: 'TakaSports — Noticias deportivas' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TakaSports — Noticias deportivas',
-    description: 'Las últimas noticias del deporte en un solo lugar.',
+    title: 'TakaSports — Noticias deportivas en tiempo real',
+    description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario y juegos.',
     site: '@takasports',
+    creator: '@takasports',
   },
 }
 
@@ -93,6 +95,13 @@ export default function RootLayout({
       lang="es"
       className={`${geist.variable} ${barlowCondensed.variable} ${bebasNeue.variable} ${barlowSemiCondensed.variable} h-full`}
     >
+      <head>
+        <link rel="preconnect" href="https://cdn.sanity.io" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://site.api.espn.com" />
+        <link rel="dns-prefetch" href="https://v3.football.api-sports.io" />
+      </head>
       <body className="min-h-full flex flex-col">
         <script
           type="application/ld+json"
@@ -112,7 +121,7 @@ export default function RootLayout({
                 '@id': `${SITE_URL}/#website`,
                 url: SITE_URL,
                 name: 'TakaSports',
-                description: 'Las últimas noticias del deporte en un solo lugar.',
+                description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario, rankings y juegos.',
                 publisher: { '@id': `${SITE_URL}/#organization` },
                 inLanguage: 'es-ES',
                 potentialAction: {
