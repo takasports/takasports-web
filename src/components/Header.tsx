@@ -41,32 +41,62 @@ interface SearchArticle {
   image?: { asset: { _ref: string } }
 }
 
+interface SearchPlayer {
+  id: string
+  name: string
+  subtitle: string
+  category: string
+  sport: string
+  score: number
+  rank: number
+  emoji?: string
+  photo?: string
+  catLabel: string
+}
+
+const SPORT_ACCENT: Record<string, string> = {
+  futbol: '#22C55E', baloncesto: '#F97316', formula1: '#EF4444',
+  tenis: '#EAB308', contenido: '#7C3AED',
+}
+
+function playerRankingsUrl(player: SearchPlayer, q: string): string {
+  const tab = player.category === 'jugadoras' ? 'jugadoras'
+    : player.category === 'sub21' ? 'jugadores'
+    : player.category === 'latam' ? 'jugadores'
+    : player.category === 'concacaf' ? 'jugadores'
+    : player.category
+  const params = new URLSearchParams({ tab, q })
+  if (player.category === 'sub21') params.set('scope', 'sub21')
+  if (player.category === 'latam') params.set('scope', 'pais')
+  if (player.category === 'concacaf') params.set('scope', 'concacaf')
+  return `/rankings?${params.toString()}`
+}
+
 // ── Search Modal ─────────────────────────────────────────────
 function SearchModal({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<SearchArticle[]>([])
+  const [articles, setArticles] = useState<SearchArticle[]>([])
+  const [players, setPlayers] = useState<SearchPlayer[]>([])
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Focus input on mount
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 50)
   }, [])
 
-  // Escape key handler
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
-  // Debounced search against API endpoint
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     const q = query.trim()
     if (q.length < 2) {
-      setResults([])
+      setArticles([])
+      setPlayers([])
       setLoading(false)
       return
     }
@@ -75,9 +105,20 @@ function SearchModal({ onClose }: { onClose: () => void }) {
       trackSearch(q)
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
-        if (res.ok) setResults(await res.json())
+        if (res.ok) {
+          const data = await res.json()
+          // Support both old format (array) and new format ({ articles, players })
+          if (Array.isArray(data)) {
+            setArticles(data)
+            setPlayers([])
+          } else {
+            setArticles(data.articles ?? [])
+            setPlayers(data.players ?? [])
+          }
+        }
       } catch {
-        setResults([])
+        setArticles([])
+        setPlayers([])
       } finally {
         setLoading(false)
       }
@@ -85,12 +126,14 @@ function SearchModal({ onClose }: { onClose: () => void }) {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [query])
 
+  const totalResults = articles.length + players.length
+
   return (
     <div className="search-overlay" onClick={onClose} aria-hidden="true">
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Buscar artículos"
+        aria-label="Buscar en TakaSports"
         className="search-modal"
         onClick={(e) => e.stopPropagation()}
       >
@@ -104,7 +147,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar artículos, deportes..."
+            placeholder="Buscar jugadores, noticias, deportes..."
             className="flex-1 bg-transparent outline-none text-sm"
             style={{ color: '#EBEBF5', fontFamily: 'var(--font-geist-sans)' }}
           />
@@ -121,11 +164,11 @@ function SearchModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Resultados */}
-        <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+        <div style={{ maxHeight: 460, overflowY: 'auto' }}>
           {loading && (
             <div className="px-4 py-8 text-center text-sm" style={{ color: '#4A4A5A' }}>Buscando...</div>
           )}
-          {!loading && query.trim().length >= 2 && results.length === 0 && (
+          {!loading && query.trim().length >= 2 && totalResults === 0 && (
             <div className="px-4 py-8 text-center">
               <p className="text-sm" style={{ color: '#5A5A6A' }}>
                 Sin resultados para &ldquo;<span style={{ color: '#9090A4' }}>{query}</span>&rdquo;
@@ -137,9 +180,74 @@ function SearchModal({ onClose }: { onClose: () => void }) {
               Escribe al menos 2 caracteres para buscar
             </div>
           )}
-          {results.length > 0 && (
-            <div className="py-1">
-              {results.map((article) => {
+
+          {/* Jugadores */}
+          {players.length > 0 && (
+            <div className="pt-2 pb-1">
+              <div className="px-4 pb-1">
+                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A5A6A' }}>
+                  Rankings
+                </span>
+              </div>
+              {players.map((player) => {
+                const accent = SPORT_ACCENT[player.sport] ?? '#7C3AED'
+                return (
+                  <Link
+                    key={player.id}
+                    href={playerRankingsUrl(player, query.trim())}
+                    onClick={onClose}
+                    className="flex items-center gap-3 px-4 py-2 transition-colors hover:bg-white/5"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    {/* Avatar */}
+                    <div className="flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center text-base"
+                      style={{ width: 34, height: 34, background: `${accent}18`, border: `1px solid ${accent}30` }}>
+                      {player.photo
+                        ? <Image src={player.photo} alt={player.name} width={34} height={34} className="w-full h-full object-cover" />
+                        : <span>{player.emoji ?? '👤'}</span>
+                      }
+                    </div>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold leading-tight truncate" style={{ color: '#EBEBF5' }}>
+                        {player.name}
+                      </p>
+                      <p className="text-[10px] truncate" style={{ color: '#5A5A6A' }}>
+                        {player.subtitle}
+                      </p>
+                    </div>
+                    {/* Score + badge */}
+                    <div className="flex-shrink-0 flex flex-col items-end gap-0.5">
+                      <span className="text-[11px] font-black tabular-nums" style={{ color: accent }}>
+                        {player.score}
+                      </span>
+                      <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                        style={{ background: `${accent}15`, color: accent }}>
+                        {player.catLabel}
+                      </span>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Separador */}
+          {players.length > 0 && articles.length > 0 && (
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '4px 16px' }} />
+          )}
+
+          {/* Artículos */}
+          {articles.length > 0 && (
+            <div className="pt-2 pb-1">
+              {players.length > 0 && (
+                <div className="px-4 pb-1">
+                  <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A5A6A' }}>
+                    Noticias
+                  </span>
+                </div>
+              )}
+              {articles.map((article) => {
                 const imgUrl = article.image?.asset ? urlFor(article.image).width(120).height(80).url() : null
                 const label = article.sport ?? article.category
                 return (
@@ -178,7 +286,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
         {/* Footer */}
         <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <span className="text-[10px]" style={{ color: '#3A3A4A' }}>
-            {loading ? 'Buscando...' : results.length > 0 ? `${results.length} resultados` : 'Escribe para buscar'}
+            {loading ? 'Buscando...' : totalResults > 0 ? `${totalResults} resultado${totalResults !== 1 ? 's' : ''}` : 'Escribe para buscar'}
           </span>
           <span className="text-[10px]" style={{ color: '#3A3A4A' }}>↵ abrir · Esc cerrar</span>
         </div>
@@ -295,7 +403,7 @@ export default function Header() {
               style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#7A7A8E' }}
             >
               <SearchIcon />
-              <span className="text-xs" style={{ color: '#7A7A8E' }}>Buscar artículos...</span>
+              <span className="text-xs" style={{ color: '#7A7A8E' }}>Buscar jugadores, noticias...</span>
               <kbd className="hidden md:block text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5A6E' }}>
                 ⌘K
               </kbd>
@@ -386,7 +494,7 @@ export default function Header() {
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#4A4A5A', fontFamily: 'var(--font-sport)', fontSize: 14, fontWeight: 600, textAlign: 'left' }}
                 >
                   <SearchIcon />
-                  <span>Buscar artículos...</span>
+                  <span>Buscar jugadores, noticias...</span>
                 </button>
 
                 {NAV_LINKS.map(({ label, href }) => {

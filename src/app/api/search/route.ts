@@ -1,19 +1,18 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@sanity/client'
+import { createClient as createSanity } from '@sanity/client'
+import { createClient as createSupabase } from '@supabase/supabase-js'
 import { captureException } from '@/lib/monitoring'
 
-const sanity = createClient({
+const sanity = createSanity({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
   apiVersion: '2024-01-01',
   useCdn: true,
 })
 
-// Sanity GROQ full-text search — filters server-side, returns max 8 results.
-// Accepts ?q=query (min 2 chars). Results are cached 60s via ISR.
-export const revalidate = 60
+export const revalidate = 30
 
-const SEARCH_QUERY = `*[
+const ARTICLE_QUERY = `*[
   _type == "article"
   && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
   && (
@@ -23,7 +22,7 @@ const SEARCH_QUERY = `*[
     || category match $q + "*"
     || competition match $q + "*"
   )
-] | order(publishedAt desc)[0...8] {
+] | order(publishedAt desc)[0...5] {
   _id,
   "slug": slug.current,
   "title": select(defined(headline) => headline, title),
@@ -35,22 +34,57 @@ const SEARCH_QUERY = `*[
   "category": select(defined(headline) => competition, category)
 }`
 
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return null
+  return createSupabase(url, key)
+}
+
+const CAT_LABEL: Record<string, string> = {
+  jugadores: 'Jugador', jugadoras: 'Jugadora', clubes: 'Club',
+  entrenadores: 'Entrenador', sub21: 'Sub-21', latam: 'LATAM',
+  concacaf: 'CONCACAF', creadores: 'Creador', periodistas: 'Periodista',
+}
+
 export async function GET(req: NextRequest) {
   const raw = req.nextUrl.searchParams.get('q')?.trim() ?? ''
-  // Strip GROQ-sensitive chars; enforce min/max length
   const q = raw.replace(/[*?^${}()|[\]\\]/g, '').slice(0, 100)
 
-  if (q.length < 2) {
-    return NextResponse.json([])
-  }
+  if (q.length < 2) return NextResponse.json({ articles: [], players: [] })
 
-  try {
-    const results = await sanity.fetch(SEARCH_QUERY, { q })
-    return NextResponse.json(results, {
-      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
-    })
-  } catch (err) {
-    captureException(err, { route: '/api/search', q })
-    return NextResponse.json({ error: 'Search failed' }, { status: 500 })
-  }
+  const sb = getSupabase()
+
+  const [articleRes, playerRes] = await Promise.allSettled([
+    sanity.fetch(ARTICLE_QUERY, { q }).catch(() => []),
+    sb
+      ? sb
+          .from('ranking_view')
+          .select('id,name,subtitle,category,sport,score,rank,emoji,image_url')
+          .ilike('name', `%${q}%`)
+          .order('score', { ascending: false })
+          .limit(6)
+      : Promise.resolve({ data: [], error: null }),
+  ])
+
+  const articles = articleRes.status === 'fulfilled' ? (articleRes.value ?? []) : []
+  const players  = playerRes.status === 'fulfilled' && playerRes.value && 'data' in playerRes.value
+    ? (playerRes.value.data ?? []).map((p: Record<string, unknown>) => ({
+        id:       p.id,
+        name:     p.name,
+        subtitle: p.subtitle,
+        category: p.category,
+        sport:    p.sport,
+        score:    p.score,
+        rank:     p.rank,
+        emoji:    p.emoji,
+        photo:    p.image_url,
+        catLabel: CAT_LABEL[p.category as string] ?? String(p.category),
+      }))
+    : []
+
+  return NextResponse.json(
+    { articles, players },
+    { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
+  )
 }
