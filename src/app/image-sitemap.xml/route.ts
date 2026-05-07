@@ -16,8 +16,11 @@ function escapeXml(str: string | null | undefined): string {
 export async function GET() {
   const articles = await sanityClient
     .fetch<Array<{ slug: string; title: string; imageUrl: string | null; imageAlt: string | null }>>(
-      `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(imageUrl)] | order(publishedAt desc)[0...2000] {
-        "slug": slug.current, title, imageUrl, imageAlt
+      `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(imageUrl) && defined(slug)] | order(publishedAt desc)[0...2000] {
+        "slug": slug.current,
+        "title": select(defined(headline) => headline, title),
+        "imageUrl": select(defined(headline) => imageUrl, null),
+        imageAlt
       }`,
     )
     .catch(() => [] as Array<{ slug: string; title: string; imageUrl: string | null; imageAlt: string | null }>)
