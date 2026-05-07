@@ -52,10 +52,11 @@ const SOURCE_LABELS: Record<string, string> = {
   creadores_wwe: 'WWE Creadores',
 }
 
-// ── SSG: una página por id (estático + DB) ────────────────────────
+// ── SSG: top 500 por score en build time; el resto on-demand via ISR ─
+export const dynamicParams = true
 export async function generateStaticParams() {
   const staticIds = getAllRankingEntries().map(e => e.id)
-  const dbIds = await getAllEntryIdsFromDb()
+  const dbIds = await getAllEntryIdsFromDb(500) // solo top 500
   const allIds = [...new Set([...staticIds, ...dbIds])]
   return allIds.map(id => ({ id }))
 }

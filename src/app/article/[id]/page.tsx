@@ -15,6 +15,8 @@ import ReadingProgress from './ReadingProgress'
 import ReadTracker from './ReadTracker'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
+export const revalidate = 3600
+
 function readingTime(body?: string | null): number | null {
   if (!body || body.trim().length === 0) return null
   const words = body.trim().split(/\s+/).length

@@ -273,17 +273,20 @@ export async function getLastIngestTime(): Promise<string | null> {
 }
 
 /**
- * Devuelve todas las entries únicas de la DB, deduplicadas por id (mayor score gana).
- * Se usa en generateStaticParams para incluir entries que el cron añadió y
- * aún no están en el archivo estático.
+ * Devuelve las entries únicas de la DB, deduplicadas por id.
+ * Limitado a `limit` entradas ordenadas por score desc para evitar
+ * generar miles de páginas estáticas en build time.
+ * El resto se generan on-demand via ISR (dynamicParams = true).
  */
-export async function getAllEntryIdsFromDb(): Promise<string[]> {
+export async function getAllEntryIdsFromDb(limit = 500): Promise<string[]> {
   if (!supabaseConfigured()) return []
   try {
     const sb = getReadClient()
     const { data, error } = await sb
       .from('ranking_view')
       .select('id')
+      .order('score', { ascending: false })
+      .limit(limit)
     if (error || !data) return []
     return [...new Set(data.map((r: { id: string }) => r.id))]
   } catch {

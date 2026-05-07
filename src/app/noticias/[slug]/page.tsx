@@ -15,6 +15,8 @@ import ReadingProgress from '@/app/article/[id]/ReadingProgress'
 import ReadTracker from '@/app/article/[id]/ReadTracker'
 import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
 
+export const revalidate = 3600
+
 function readingTime(body?: string | null): number | null {
   if (!body || body.trim().length === 0) return null
   const words = body.trim().split(/\s+/).length
@@ -192,13 +194,14 @@ function ArticleSidebar({
         {article.tags && article.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
             {article.tags.map((tag) => (
-              <span
+              <Link
                 key={tag}
-                className="text-[10px] px-2.5 py-1 rounded-full"
-                style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                href={`/tag/${encodeURIComponent(tag)}`}
+                className="text-[10px] px-2.5 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"
+                style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)', textDecoration: 'none' }}
               >
                 #{tag}
-              </span>
+              </Link>
             ))}
           </div>
         )}
@@ -612,13 +615,14 @@ export default async function NoticiaPage({
               {article.tags && article.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-10">
                   {article.tags.map((tag) => (
-                    <span
+                    <Link
                       key={tag}
-                      className="text-xs px-3 py-1 rounded-full"
-                      style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                      href={`/tag/${encodeURIComponent(tag)}`}
+                      className="text-xs px-3 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"
+                      style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)', textDecoration: 'none' }}
                     >
                       #{tag}
-                    </span>
+                    </Link>
                   ))}
                 </div>
               )}
