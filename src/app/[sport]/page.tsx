@@ -85,15 +85,6 @@ export default async function SportPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sportEvents = (upcomingEvents as any[]) ?? []
 
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
-      { '@type': 'ListItem', position: 2, name: label, item: `${SITE_URL}/${sport}` },
-    ],
-  }
-
   const collectionJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
@@ -110,7 +101,6 @@ export default async function SportPage({
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <Header />
       <BreakingNewsBar

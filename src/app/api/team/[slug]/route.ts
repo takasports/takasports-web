@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { getZone } from '@/lib/league-zones'
+export type { StandingZone } from '@/lib/league-zones'
 
 // ── Types ────────────────────────────────────────────────────────────
 export interface TeamResult {
