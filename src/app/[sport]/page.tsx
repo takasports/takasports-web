@@ -13,6 +13,10 @@ import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/c
 
 export const revalidate = 60
 
+export function generateStaticParams() {
+  return Object.keys(SLUG_TO_LABEL).map(sport => ({ sport }))
+}
+
 // Metadata dinámica por deporte
 export async function generateMetadata({
   params,

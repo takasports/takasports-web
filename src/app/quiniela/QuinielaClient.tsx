@@ -3285,6 +3285,13 @@ export default function QuinielaClient() {
 
           {/* Columna principal */}
           <div className="flex-1 min-w-0 flex flex-col gap-6">
+            {activeTab === 'official' && !hydrated && (
+              <div className="flex flex-col gap-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', height: 148, animation: `pulse ${1 + i * 0.1}s ease-in-out infinite alternate` }} />
+                ))}
+              </div>
+            )}
             {activeTab === 'official' && hydrated && (
               saved
                 ? <PicksSummary

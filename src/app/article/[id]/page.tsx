@@ -421,9 +421,22 @@ export default async function ArticlePage({
         {/* Layout: columna editorial + rail derecho en desktop */}
         <div className="lg:grid lg:gap-12 lg:items-start mx-auto" style={{ gridTemplateColumns: 'minmax(0,1fr) 268px', maxWidth: 1160 }}>
 
-        {/* Back — alineado con la columna principal del grid */}
-        <div className="pt-6 pb-5 lg:col-span-2">
+        {/* Breadcrumb + back — alineado con la columna principal del grid */}
+        <div className="pt-6 pb-5 lg:col-span-2 flex items-center gap-3">
           <BackButton />
+          {sportSlug && sportLabel && (
+            <nav className="hidden sm:flex items-center gap-1.5 text-[11px] min-w-0" aria-label="Breadcrumb">
+              <Link href="/" className="hover:opacity-70 transition-opacity flex-shrink-0" style={{ color: 'var(--text-faint)', textDecoration: 'none' }}>
+                TakaSports
+              </Link>
+              <span style={{ color: 'var(--text-faint)' }}>/</span>
+              <Link href={`/${sportSlug}`} className="hover:opacity-70 transition-opacity flex-shrink-0 font-semibold" style={{ color: accent, textDecoration: 'none' }}>
+                {sportLabel}
+              </Link>
+              <span style={{ color: 'var(--text-faint)' }}>/</span>
+              <span className="truncate" style={{ color: 'var(--text-muted)' }}>{article.title}</span>
+            </nav>
+          )}
         </div>
 
           {/* ── COLUMNA PRINCIPAL ── */}
@@ -785,6 +798,29 @@ export default async function ArticlePage({
                 </div>
               </Link>
             </div>
+          </div>
+        )}
+
+        {/* Más sobre [sport] — internal link */}
+        {sportSlug && sportLabel && (
+          <div className="mx-auto mt-10 mb-4" style={{ maxWidth: 1160 }}>
+            <Link
+              href={`/${sportSlug}`}
+              className="group flex items-center justify-between gap-4 rounded-2xl px-6 py-4 transition-all hover:brightness-110"
+              style={{ background: `linear-gradient(135deg, ${badgeColor}12, ${badgeColor}06)`, border: `1px solid ${badgeBorder}`, textDecoration: 'none' }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}>
+                  Más sobre
+                </span>
+                <span className="font-black text-sm" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+                  {sportLabel}
+                </span>
+              </div>
+              <svg className="flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ color: badgeColor }}>
+                <path d="M4 9h10M10 5l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
           </div>
         )}
 
