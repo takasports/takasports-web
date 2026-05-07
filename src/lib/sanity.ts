@@ -151,6 +151,12 @@ export const eventsQuery = `*[_type == "event" && status in ["programado", "en_v
   "competition": competition->{ name, "slug": slug.current }
 }`
 
+// Próximos eventos filtrados por deporte (hub pages)
+export const eventsBySportQuery = `*[_type == "event" && sport == $sport && status in ["programado", "en_vivo"]] | order(date asc)[0...5] {
+  _id, sport, home, away, date, venue, status, stage, broadcast,
+  "competition": competition->{ name, "slug": slug.current }
+}`
+
 // Detalle de un evento Sanity por _id
 export const eventDetailQuery = `*[_type == "event" && _id == $id][0] {
   _id, sport, home, away, date, venue, status, stage, broadcast,

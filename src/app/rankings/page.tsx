@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import RankingsClient from './RankingsClient'
-import { getTopMovers, getAllRankings } from '@/lib/rankings-data'
+import { getTopMovers, getAllRankings, getLastIngestTime } from '@/lib/rankings-data'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import {
   RANKING_JUGADORES, RANKING_CLUBES, RANKING_ENTRENADORES,
@@ -159,10 +159,11 @@ function buildItemListJsonLd(sp: SP) {
 export default async function Page(
   { searchParams }: { searchParams: Promise<SP> }
 ) {
-  const [sp, { movers, fallers }, dbData] = await Promise.all([
+  const [sp, { movers, fallers }, dbData, lastUpdated] = await Promise.all([
     searchParams,
     getTopMovers(3),
     getAllRankings(),
+    getLastIngestTime(),
   ])
   const jsonLd = buildItemListJsonLd(sp)
   return (
@@ -172,7 +173,7 @@ export default async function Page(
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <RankingsClient initialMovers={movers} initialFallers={fallers} dbData={dbData} />
+      <RankingsClient initialMovers={movers} initialFallers={fallers} dbData={dbData} lastUpdated={lastUpdated ?? undefined} />
     </>
   )
 }

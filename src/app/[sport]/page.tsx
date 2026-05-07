@@ -1,12 +1,14 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { sanityClient, articlesBySportQuery, reelsQuery } from '@/lib/sanity'
+import { sanityClient, articlesBySportQuery, reelsQuery, eventsBySportQuery } from '@/lib/sanity'
 import { SLUG_TO_LABEL, getSportEmoji } from '@/lib/sports'
+import { getRanking } from '@/lib/rankings-data'
 import reelsData from '@/lib/reels-data.json'
 import Header from '@/components/Header'
 import BreakingNewsBar from '@/components/BreakingNewsBar'
 import LiveStrip from '@/components/LiveStrip'
 import NoticiasContent from '@/components/NoticiasContent'
+import SportHubHeader from '@/components/SportHubHeader'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
@@ -65,12 +67,23 @@ export default async function SportPage({
   // Si el slug no es un deporte válido → 404
   if (!label) notFound()
 
-  const [articles, reels] = await Promise.all([
-    sanityClient.fetch(articlesBySportQuery, { sport: sport.toLowerCase() }),
+  const sportSlug = sport.toLowerCase()
+  const rankCategory = sportSlug === 'wwe' ? 'creadores_wwe' : 'jugadores'
+
+  const [articles, reels, allRankings, upcomingEvents] = await Promise.all([
+    sanityClient.fetch(articlesBySportQuery, { sport: sportSlug }),
     sanityClient.fetch(reelsQuery),
+    getRanking(rankCategory),
+    sanityClient.fetch(eventsBySportQuery, { sport: sportSlug }),
   ])
 
+  const topRankings = rankCategory === 'jugadores'
+    ? allRankings.filter((e: { sport?: string }) => e.sport === sportSlug).slice(0, 5)
+    : allRankings.slice(0, 5)
+
   const igReels = (reels as unknown[]).length > 0 ? reels : reelsData
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sportEvents = (upcomingEvents as any[]) ?? []
 
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -109,6 +122,12 @@ export default async function SportPage({
         )}
       />
       <LiveStrip />
+      <SportHubHeader
+        sport={sportSlug}
+        label={label}
+        topRankings={topRankings}
+        upcomingEvents={sportEvents}
+      />
 
       <main className="max-w-[1440px] mx-auto pb-24">
         <NoticiasContent

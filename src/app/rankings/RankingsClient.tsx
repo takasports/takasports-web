@@ -134,10 +134,12 @@ export default function RankingsClient({
   initialMovers  = [],
   initialFallers = [],
   dbData         = {},
+  lastUpdated,
 }: {
   initialMovers?:  MoverEntry[]
   initialFallers?: MoverEntry[]
   dbData?:         DbData
+  lastUpdated?:    string
 }) {
   // Helper: DB data si tiene entries, si no el estático
   const db = (cat: string, fallback: RankingEntry[]): RankingEntry[] =>
@@ -432,6 +434,14 @@ export default function RankingsClient({
               <span className="text-[9px] font-black uppercase tracking-[0.18em] px-3 py-1.5 rounded-full"
                 style={{ background: 'rgba(124,58,237,0.12)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.28)', fontFamily: 'var(--font-sport)' }}>
                 {(() => {
+                  if (lastUpdated) {
+                    const d = new Date(lastUpdated)
+                    const now = new Date()
+                    const diffMs = now.getTime() - d.getTime()
+                    const diffDays = Math.floor(diffMs / 86400000)
+                    const label = diffDays === 0 ? 'hoy' : diffDays === 1 ? 'hace 1 día' : `hace ${diffDays} días`
+                    return `Actualizado ${label} · ${d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                  }
                   const now = new Date()
                   const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1)
                   const fmt = (d: Date) => d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })

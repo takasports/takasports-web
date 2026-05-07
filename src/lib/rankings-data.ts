@@ -252,6 +252,27 @@ export async function findEntryByIdFromDb(id: string): Promise<RankingEntry | un
 }
 
 /**
+ * Devuelve la fecha del último ingest automático (MAX last_auto_update).
+ * Útil para mostrar "Actualizado hace X días" en la UI.
+ */
+export async function getLastIngestTime(): Promise<string | null> {
+  if (!supabaseConfigured()) return null
+  try {
+    const sb = getReadClient()
+    const { data, error } = await sb
+      .from('ranking_entries')
+      .select('last_auto_update')
+      .not('last_auto_update', 'is', null)
+      .order('last_auto_update', { ascending: false })
+      .limit(1)
+    if (error || !data || data.length === 0) return null
+    return (data[0] as { last_auto_update: string }).last_auto_update ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Devuelve todas las entries únicas de la DB, deduplicadas por id (mayor score gana).
  * Se usa en generateStaticParams para incluir entries que el cron añadió y
  * aún no están en el archivo estático.
