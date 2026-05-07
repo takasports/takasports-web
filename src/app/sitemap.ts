@@ -34,10 +34,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Rankings filtrados — title dinámico ya cubre el SEO en la misma URL
   const RANKINGS_FILTERED: MetadataRoute.Sitemap = [
     'futbol', 'baloncesto', 'formula1', 'tenis', 'ufc', 'wwe', 'contenido',
-  ].flatMap(deporte => [
-    { url: `${BASE_URL}/rankings?deporte=${deporte}`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.7 },
-    { url: `${BASE_URL}/rankings?deporte=${deporte}&tab=clubes`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.65 },
-  ])
+  ].map(deporte => (
+    { url: `${BASE_URL}/rankings?deporte=${deporte}`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.7 }
+  ))
 
   const rankingDetailRoutes: MetadataRoute.Sitemap = getAllRankingEntries().map(e => ({
     url: `${BASE_URL}/rankings/${e.id}`,
