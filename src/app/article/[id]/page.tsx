@@ -73,7 +73,7 @@ export async function generateMetadata({
   const canonical = `${SITE_URL}/article/${article.slug ?? id}`
 
   return {
-    title: `${article.title} — TakaSports`,
+    title: article.title,
     description: article.short_summary ?? article.subtitle,
     alternates: { canonical },
     openGraph: {
@@ -196,13 +196,14 @@ function ArticleSidebar({
         {article.tags && article.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
             {article.tags.map((tag) => (
-              <span
+              <Link
                 key={tag}
-                className="text-[10px] px-2.5 py-1 rounded-full"
-                style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                href={`/tag/${encodeURIComponent(tag)}`}
+                className="text-[10px] px-2.5 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"
+                style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)', textDecoration: 'none' }}
               >
                 #{tag}
-              </span>
+              </Link>
             ))}
           </div>
         )}
@@ -304,7 +305,7 @@ export default async function ArticlePage({
   const [relatedFinal, nextArticle] = await Promise.all([
     sanityClient
       .fetch<RelatedArticle[]>(relatedArticlesQuery, {
-        id,
+        id: article._id,
         sport: article.sport ?? '',
         category: article.category ?? '',
       })
@@ -617,13 +618,14 @@ export default async function ArticlePage({
               {article.tags && article.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-10">
                   {article.tags.map((tag) => (
-                    <span
+                    <Link
                       key={tag}
-                      className="text-xs px-3 py-1 rounded-full"
-                      style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                      href={`/tag/${encodeURIComponent(tag)}`}
+                      className="text-xs px-3 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"
+                      style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)', textDecoration: 'none' }}
                     >
                       #{tag}
-                    </span>
+                    </Link>
                   ))}
                 </div>
               )}

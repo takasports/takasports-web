@@ -1,17 +1,20 @@
 import type { MetadataRoute } from 'next'
-import { sanityClient } from '@/lib/sanity'
+import { sanityClient, allTagsQuery } from '@/lib/sanity'
 import { SLUG_TO_LABEL } from '@/lib/sports'
 import { getAllRankingEntries } from '@/lib/rankings-search'
-import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
+import { SITE_URL } from '@/lib/constants'
 
 const BASE_URL = SITE_URL
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const articles = await sanityClient.fetch<Array<{ slug: string; publishedAt: string }>>(
-    `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc) {
-      "slug": slug.current, publishedAt
-    }`
-  ).catch(() => [])
+  const [articles, tags] = await Promise.all([
+    sanityClient.fetch<Array<{ slug: string; publishedAt: string }>>(
+      `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc) {
+        "slug": slug.current, publishedAt
+      }`
+    ).catch(() => []),
+    sanityClient.fetch<string[]>(allTagsQuery).catch(() => [] as string[]),
+  ])
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: 'hourly', priority: 1 },
@@ -59,5 +62,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
-  return [...staticRoutes, ...sportRoutes, ...RANKINGS_FILTERED, ...rankingDetailRoutes, ...articleRoutes]
+  const tagRoutes: MetadataRoute.Sitemap = (tags as string[])
+    .filter(Boolean)
+    .map(tag => ({
+      url: `${BASE_URL}/tag/${encodeURIComponent(tag)}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.5,
+    }))
+
+  return [...staticRoutes, ...sportRoutes, ...RANKINGS_FILTERED, ...rankingDetailRoutes, ...articleRoutes, ...tagRoutes]
 }

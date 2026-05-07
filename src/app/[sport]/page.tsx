@@ -24,8 +24,8 @@ export async function generateMetadata({
   if (!label) return {}
 
   const emoji = getSportEmoji(label)
-  const title = `${label} — Noticias TakaSports`
-  const description = `Últimas noticias de ${label}: resultados, fichajes, análisis y mucho más en TakaSports.`
+  const title = `${label}: noticias, resultados y análisis`
+  const description = `Últimas noticias de ${label}: resultados, fichajes, partidos en vivo y análisis en profundidad. Actualizado al minuto.`
 
   return {
     title,
@@ -34,7 +34,7 @@ export async function generateMetadata({
       canonical: `${SITE_URL}/${sport}`,
     },
     openGraph: {
-      title: `${emoji} ${title}`,
+      title: `${emoji} ${title} | TakaSports`,
       description,
       siteName: 'TakaSports',
       locale: 'es_ES',
@@ -43,7 +43,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${emoji} ${title}`,
+      title: `${emoji} ${title} | TakaSports`,
       description,
       site: '@takasports',
     },
@@ -68,8 +68,33 @@ export default async function SportPage({
 
   const igReels = (reels as unknown[]).length > 0 ? reels : reelsData
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: label, item: `${SITE_URL}/${sport}` },
+    ],
+  }
+
+  const collectionJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${label} — TakaSports`,
+    description: `Últimas noticias de ${label}: resultados, fichajes, partidos en vivo y análisis en profundidad.`,
+    url: `${SITE_URL}/${sport}`,
+    inLanguage: 'es-ES',
+    publisher: {
+      '@type': 'Organization',
+      name: 'TakaSports',
+      url: SITE_URL,
+    },
+  }
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <Header />
       <BreakingNewsBar
         items={articles.slice(0, 8).map(

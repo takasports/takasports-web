@@ -3,12 +3,13 @@
 import { LogoFull } from './Logo'
 
 const SPORTS_LINKS = [
-  { label: 'Fútbol',     href: '/noticias?sport=futbol' },
-  { label: 'UFC',        href: '/noticias?sport=ufc' },
-  { label: 'Baloncesto', href: '/noticias?sport=baloncesto' },
-  { label: 'F1',         href: '/noticias?sport=formula1' },
-  { label: 'Tenis',      href: '/noticias?sport=tenis' },
-  { label: 'Rugby',      href: '/noticias?sport=rugby' },
+  { label: 'Fútbol',     href: '/futbol' },
+  { label: 'NBA',        href: '/baloncesto' },
+  { label: 'F1',         href: '/formula1' },
+  { label: 'UFC',        href: '/ufc' },
+  { label: 'Tenis',      href: '/tenis' },
+  { label: 'WWE',        href: '/wwe' },
+  { label: 'Rugby',      href: '/rugby' },
 ]
 const PLATFORM_LINKS = [
   { label: 'Inicio',       href: '/' },

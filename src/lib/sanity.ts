@@ -18,7 +18,7 @@ export function urlFor(source: SanityImageSource) {
 
 // Feed principal — normaliza artículos viejos (status=="publicado") + nuevos de Taka System (tienen headline)
 // Los dos usan _type=="article" pero campos diferentes; se mapean a forma común aquí.
-export const articlesQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...20] {
+export const articlesQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...40] {
   _id,
   "slug": slug.current,
   "title": select(defined(headline) => headline, title),
@@ -113,6 +113,24 @@ export const searchArticlesQuery = `*[_type == "article" && (status == "publicad
   sport,
   "category": select(defined(headline) => competition, category)
 }`
+
+// Feed por tag — para páginas /tag/[tag]
+export const articlesByTagQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && $tag in coalesce(tags, [])] | order(publishedAt desc)[0...40] {
+  _id,
+  "slug": slug.current,
+  "title": select(defined(headline) => headline, title),
+  "short_summary": select(defined(headline) => metaDescription, short_summary),
+  "imageUrl": select(defined(headline) => imageUrl, null),
+  "image": select(defined(headline) => mainImage, image),
+  publishedAt,
+  sport,
+  "category": select(defined(headline) => competition, category),
+  "priority": select(defined(headline) => "destacado", priority),
+  "isTaka": defined(headline)
+}`
+
+// Todos los tags únicos — para el sitemap
+export const allTagsQuery = `array::unique(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(tags)].tags[])`
 
 // Breaking — para LiveStrip (últimas 6h, tipo breaking; solo artículos viejos)
 export const breakingQuery = `*[_type == "article" && status == "publicado" && type == "breaking" && publishedAt > $since] | order(publishedAt desc)[0...5] {

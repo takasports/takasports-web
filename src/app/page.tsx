@@ -15,7 +15,7 @@ import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/c
 export const revalidate = 60
 
 export const metadata: Metadata = {
-  title: 'TakaSports — Noticias deportivas en tiempo real',
+  title: { absolute: 'TakaSports — Noticias deportivas en tiempo real' },
   description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario, rankings y juegos. Actualizado cada hora.',
   alternates: { canonical: SITE_URL },
   openGraph: {
