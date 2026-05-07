@@ -60,6 +60,7 @@ export function StandingsTab({
             <div
               key={row.rank}
               className={`flex items-center gap-2 px-4 py-2.5${rowHref ? ' cursor-pointer hover:bg-white/5 transition-colors' : ''}`}
+              title={row.zone ? ZONE_LABEL[row.zone] : undefined}
               style={{
                 borderBottom: '1px solid rgba(255,255,255,0.03)',
                 background: isMain ? 'rgba(124,58,237,0.12)' : undefined,

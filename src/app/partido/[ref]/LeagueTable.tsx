@@ -5,11 +5,19 @@ import { useRouter } from 'next/navigation'
 import type { LeagueTableRow, StandingZone } from '@/app/api/match/[ref]/route'
 
 const ZONE_COLOR: Record<StandingZone, string> = {
-  champions:         '#3b82f6',
-  europa:            '#f97316',
-  conference:        '#10b981',
-  relegation_playoff:'#f59e0b',
-  relegation:        '#ef4444',
+  champions:          '#3b82f6',
+  europa:             '#f97316',
+  conference:         '#10b981',
+  relegation_playoff: '#f59e0b',
+  relegation:         '#ef4444',
+}
+
+const ZONE_LABEL: Record<StandingZone, string> = {
+  champions:          'Champions League',
+  europa:             'Europa League',
+  conference:         'Conference League',
+  relegation_playoff: 'Play-off descenso',
+  relegation:         'Descenso',
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -98,6 +106,7 @@ export function LeagueTableBlock({
               return (
                 <tr
                   key={row.rank}
+                  title={row.zone ? ZONE_LABEL[row.zone] : undefined}
                   style={{
                     background: accent ? `${accent}0e` : 'transparent',
                     cursor: teamHref ? 'pointer' : 'default',

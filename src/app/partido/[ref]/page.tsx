@@ -11,6 +11,8 @@ import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import { MatchTabs } from './MatchTabs'
 import { LeagueTableBlock } from './LeagueTable'
+import { LiveRefresh } from './LiveRefresh'
+import { ShareButton } from '@/components/ShareButton'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const revalidate = 30
@@ -806,8 +808,12 @@ function MatchContent({ match }: { match: MatchDetail }) {
   const hasStats   = hasSoccerStats || hasBasketStats
   const hasTable   = (match.leagueTable?.length ?? 0) > 0
 
+  const shareTitle = match.homeTeam && match.awayTeam
+    ? `${match.homeTeam} vs ${match.awayTeam} · ${match.leagueLabel}`
+    : match.leagueLabel
+
   const backLink = (
-    <div className="py-5">
+    <div className="py-5 flex items-center justify-between">
       <Link
         href="/calendario"
         className="inline-flex items-center gap-1.5 text-[11px] font-semibold transition-opacity hover:opacity-70"
@@ -818,6 +824,7 @@ function MatchContent({ match }: { match: MatchDetail }) {
         </svg>
         Volver
       </Link>
+      <ShareButton title={shareTitle} />
     </div>
   )
 
@@ -840,6 +847,7 @@ function MatchContent({ match }: { match: MatchDetail }) {
   if (!usesTabs) {
     return (
       <div className="max-w-2xl mx-auto px-4 pb-16">
+        <LiveRefresh isLive={live} />
         {backLink}
         {leaguePills}
         <InfoRow match={match} />
@@ -860,6 +868,7 @@ function MatchContent({ match }: { match: MatchDetail }) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 pb-16">
+      <LiveRefresh isLive={live} />
       {backLink}
       {leaguePills}
       <TeamScoreboard match={match} />
