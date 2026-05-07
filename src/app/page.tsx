@@ -16,21 +16,23 @@ export const revalidate = 60
 
 export const metadata: Metadata = {
   title: 'TakaSports — Noticias deportivas en tiempo real',
-  description: 'Las últimas noticias de fútbol, NBA, F1, UFC, Tenis y más. Resultados en vivo, calendario y análisis deportivo.',
+  description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario, rankings y juegos. Actualizado cada hora.',
   alternates: { canonical: SITE_URL },
   openGraph: {
     title: 'TakaSports — Noticias deportivas en tiempo real',
-    description: 'Las últimas noticias de fútbol, NBA, F1, UFC, Tenis y más.',
+    description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario, rankings y juegos.',
     url: SITE_URL,
     siteName: 'TakaSports',
     locale: 'es_ES',
     type: 'website',
+    images: [{ url: `${SITE_URL}/opengraph-image.png`, width: 1200, height: 630, alt: 'TakaSports — Noticias deportivas' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'TakaSports — Noticias deportivas en tiempo real',
-    description: 'Las últimas noticias de fútbol, NBA, F1, UFC, Tenis y más.',
+    description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario y juegos.',
     site: '@takasports',
+    creator: '@takasports',
   },
 }
 
