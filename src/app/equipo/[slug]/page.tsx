@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { TeamDetail, TeamResult, RosterPlayer } from '@/app/api/team/[slug]/route'
@@ -450,13 +451,16 @@ function TeamContent({ team }: { team: TeamDetail }) {
 
       {/* Quick stats bar */}
       <div className="grid grid-cols-3 gap-3 mb-6">
-        {[
-          { label: 'Jugados', value: team.record?.gp ?? past.length },
-          { label: 'Victorias', value: team.record?.w ?? past.filter(r => r.result === 'W').length },
-          upcoming.length > 0
-            ? { label: 'Próximos', value: upcoming.length }
-            : { label: 'Puntos', value: team.record?.pts ?? '—' },
-        ].map(s => (
+        {(() => {
+          const gp = team.record?.gp ?? past.length
+          const w = team.record?.w ?? past.filter(r => r.result === 'W').length
+          const winPct = gp > 0 ? `${Math.round((w / gp) * 100)}%` : '—'
+          return [
+            { label: 'Jugados', value: gp },
+            { label: 'Victorias', value: w },
+            { label: '% Victorias', value: winPct },
+          ]
+        })().map(s => (
           <div
             key={s.label}
             className="rounded-xl p-3 text-center"
@@ -528,6 +532,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
 export default async function EquipoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const team = await fetchTeamDetail(slug)
+  if (!team) notFound()
 
   return (
     <>
@@ -535,13 +540,7 @@ export default async function EquipoPage({ params }: { params: Promise<{ slug: s
       <Header />
       <main style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
         <Suspense>
-          {team ? (
-            <TeamContent team={team} />
-          ) : (
-            <div className="max-w-2xl mx-auto px-4 py-20 text-center text-[#5A5A6A]">
-              No se encontró información del equipo.
-            </div>
-          )}
+          <TeamContent team={team} />
         </Suspense>
       </main>
       <Footer />

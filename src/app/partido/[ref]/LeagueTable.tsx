@@ -2,7 +2,15 @@
 
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import type { LeagueTableRow } from '@/app/api/match/[ref]/route'
+import type { LeagueTableRow, StandingZone } from '@/app/api/match/[ref]/route'
+
+const ZONE_COLOR: Record<StandingZone, string> = {
+  champions:         '#3b82f6',
+  europa:            '#f97316',
+  conference:        '#10b981',
+  relegation_playoff:'#f59e0b',
+  relegation:        '#ef4444',
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -93,6 +101,7 @@ export function LeagueTableBlock({
                   style={{
                     background: accent ? `${accent}0e` : 'transparent',
                     cursor: teamHref ? 'pointer' : 'default',
+                    borderLeft: row.zone ? `3px solid ${ZONE_COLOR[row.zone]}` : '3px solid transparent',
                   }}
                   onClick={teamHref ? () => router.push(teamHref) : undefined}
                 >
@@ -134,6 +143,26 @@ export function LeagueTableBlock({
           </tbody>
         </table>
       </div>
+      {/* Zone legend */}
+      {(() => {
+        const usedZones = [...new Set(rows.map(r => r.zone).filter(Boolean))] as StandingZone[]
+        if (!usedZones.length) return null
+        const ZONE_LABEL: Record<StandingZone, string> = {
+          champions: 'Champions', europa: 'Europa League',
+          conference: 'Conference', relegation_playoff: 'Play-off',
+          relegation: 'Descenso',
+        }
+        return (
+          <div className="flex flex-wrap gap-x-3 gap-y-1 pt-2">
+            {usedZones.map(z => (
+              <div key={z} className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: ZONE_COLOR[z] }} />
+                <span className="text-[9px]" style={{ color: '#4A4A6A' }}>{ZONE_LABEL[z]}</span>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
     </Section>
   )
 }

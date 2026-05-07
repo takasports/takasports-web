@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type {
@@ -956,22 +957,6 @@ function MatchContent({ match }: { match: MatchDetail }) {
 }
 
 // ── Not found ──────────────────────────────────────────────────────
-function NotFound() {
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-24 flex flex-col items-center gap-4 text-center">
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-        style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
-        ⚽
-      </div>
-      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No se encontró información de este partido.</p>
-      <Link href="/calendario" className="text-xs font-semibold px-4 py-2 rounded-full transition-opacity hover:opacity-80"
-        style={{ background: 'rgba(124,58,237,0.15)', color: '#C4B5FD', border: '1px solid rgba(124,58,237,0.3)', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}>
-        Volver al calendario
-      </Link>
-    </div>
-  )
-}
-
 // ── Page ───────────────────────────────────────────────────────────
 export default async function MatchPage({
   params,
@@ -980,18 +965,15 @@ export default async function MatchPage({
 }) {
   const { ref } = await params
   const match   = await fetchMatchDetail(ref)
+  if (!match) notFound()
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }} className="flex flex-col">
       <Header />
       <LiveStrip />
       <main className="flex-1">
-        <Suspense fallback={
-          <div className="max-w-2xl mx-auto px-4 py-24 text-center">
-            <p className="text-sm animate-pulse" style={{ color: '#4A4A5A' }}>Cargando partido…</p>
-          </div>
-        }>
-          {match ? <MatchContent match={match} /> : <NotFound />}
+        <Suspense>
+          <MatchContent match={match} />
         </Suspense>
       </main>
       <Footer />

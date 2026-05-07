@@ -2,7 +2,15 @@
 
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import type { TeamTableRow } from '@/app/api/team/[slug]/route'
+import type { TeamTableRow, StandingZone } from '@/app/api/team/[slug]/route'
+
+const ZONE_COLOR: Record<StandingZone, string> = {
+  champions:         '#3b82f6',
+  europa:            '#f97316',
+  conference:        '#10b981',
+  relegation_playoff:'#f59e0b',
+  relegation:        '#ef4444',
+}
 
 export function StandingsTab({
   table,
@@ -18,6 +26,7 @@ export function StandingsTab({
   }
 
   return (
+    <>
     <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.025)' }}>
       <div
         className="flex items-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-widest text-[#3A3A4A]"
@@ -44,6 +53,7 @@ export function StandingsTab({
             style={{
               borderBottom: '1px solid rgba(255,255,255,0.03)',
               background: isMain ? 'rgba(124,58,237,0.12)' : undefined,
+              borderLeft: row.zone ? `3px solid ${ZONE_COLOR[row.zone]}` : '3px solid transparent',
             }}
             onClick={rowHref ? () => router.push(rowHref) : undefined}
           >
@@ -85,5 +95,26 @@ export function StandingsTab({
         )
       })}
     </div>
+    {/* Zone legend */}
+    {(() => {
+      const usedZones = [...new Set(table.map(r => r.zone).filter(Boolean))] as StandingZone[]
+      if (!usedZones.length) return null
+      const ZONE_LABEL: Record<StandingZone, string> = {
+        champions: 'Champions League', europa: 'Europa League',
+        conference: 'Conference League', relegation_playoff: 'Play-off descenso',
+        relegation: 'Descenso',
+      }
+      return (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 pt-3 pb-1">
+          {usedZones.map(z => (
+            <div key={z} className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: ZONE_COLOR[z] }} />
+              <span className="text-[10px] text-[#5A5A6A]">{ZONE_LABEL[z]}</span>
+            </div>
+          ))}
+        </div>
+      )
+    })()}
+    </>
   )
 }
