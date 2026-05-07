@@ -146,7 +146,7 @@ export default function NewsFeed({
             return (
               <Link
                 key={article._id}
-                href={`/article/${article.slug ?? article._id}`}
+                href={`/noticias/${article.slug ?? article._id}`}
                 className="news-card flex gap-3.5 rounded-xl p-3"
                 data-reveal
                 style={{
@@ -219,7 +219,7 @@ export default function NewsFeed({
             return (
               <Link
                 key={article._id}
-                href={`/article/${article.slug ?? article._id}`}
+                href={`/noticias/${article.slug ?? article._id}`}
                 className="news-card rounded-xl overflow-hidden block"
                 data-reveal
                 style={{

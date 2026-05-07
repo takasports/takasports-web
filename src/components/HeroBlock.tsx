@@ -10,7 +10,7 @@ import { useTilt } from '@/hooks/useTilt'
 
 // ── Tira compacta inferior — 5 artículos ───────────────────────
 function CompactStripItem({ art }: { art: Article }) {
-  const href = `/article/${art.slug ?? art._id}`
+  const href = `/noticias/${art.slug ?? art._id}`
   const { accent } = getSportStyle(art.sport, art.category)
   const label = getSportLabel(art.sport, art.category)
   const rawImgUrl = art.imageUrl ?? (art.image?.asset ? urlFor(art.image).width(160).height(100).url() : null)
@@ -137,7 +137,7 @@ function BigCard({
   visible: boolean
   animKey: number
 }) {
-  const href = `/article/${article.slug ?? article._id}`
+  const href = `/noticias/${article.slug ?? article._id}`
   const label = getSportLabel(article.sport, article.category)
   const { accent } = getSportStyle(article.sport, article.category)
   const rawImgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1200).height(680).url() : null)
@@ -269,7 +269,7 @@ function SmallCard({
   visible: boolean
   delay: number
 }) {
-  const href = `/article/${article.slug ?? article._id}`
+  const href = `/noticias/${article.slug ?? article._id}`
   const label = getSportLabel(article.sport, article.category)
   const { accent } = getSportStyle(article.sport, article.category)
   const rawImgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(500).height(300).url() : null)

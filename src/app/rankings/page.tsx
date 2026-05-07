@@ -116,7 +116,8 @@ export async function generateMetadata(
   const { title, description } = buildTitle(sp)
   const params = new URLSearchParams()
   if (sp.deporte) params.set('deporte', String(sp.deporte))
-  if (sp.tab) params.set('tab', String(sp.tab))
+  const tab = pickStr(sp, 'tab')
+  if (tab && tab !== 'jugadores') params.set('tab', tab)
   const canonicalPath = params.toString() ? `/rankings?${params}` : '/rankings'
 
   return {

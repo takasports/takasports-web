@@ -38,7 +38,7 @@ export default function FeaturedArticle({ articles }: { articles: Article[] }) {
 
   const label = getSportLabel(article.sport, article.category)
   const { accent: labelAccent } = getSportStyle(article.sport, article.category)
-  const href = `/article/${article.slug ?? article._id}`
+  const href = `/noticias/${article.slug ?? article._id}`
 
   return (
     <div

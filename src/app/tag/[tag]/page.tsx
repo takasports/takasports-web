@@ -117,7 +117,7 @@ export default async function TagPage({
           {articles.map((article) => {
             const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(600).height(340).url() : null)
             const { accent } = getSportStyle(article.sport, article.category)
-            const href = `/article/${article.slug ?? article._id}`
+            const href = `/noticias/${article.slug ?? article._id}`
             return (
               <Link
                 key={article._id}

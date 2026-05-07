@@ -145,7 +145,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                 return (
                   <Link
                     key={article._id}
-                    href={`/article/${article.slug ?? article._id}`}
+                    href={`/noticias/${article.slug ?? article._id}`}
                     onClick={onClose}
                     className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-white/5"
                     style={{ textDecoration: 'none' }}

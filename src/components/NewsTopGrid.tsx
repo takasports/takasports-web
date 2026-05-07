@@ -37,7 +37,7 @@ function SportBadge({ sport, category }: { sport?: string; category?: string }) 
 }
 
 function FeaturedCard({ article }: { article: Article }) {
-  const href = `/article/${article.slug ?? article._id}`
+  const href = `/noticias/${article.slug ?? article._id}`
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(900).height(520).url() : null)
 
   return (
@@ -138,7 +138,7 @@ function FeaturedCard({ article }: { article: Article }) {
 function SecondaryCard({ article }: { article: Article }) {
   const { accent } = getSportStyle(article.sport, article.category)
   const label = getSportLabel(article.sport, article.category)
-  const href = `/article/${article.slug ?? article._id}`
+  const href = `/noticias/${article.slug ?? article._id}`
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(280).height(180).url() : null)
 
   return (

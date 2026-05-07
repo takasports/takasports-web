@@ -484,7 +484,7 @@ export default function PerfilPage() {
                     return (
                       <Link
                         key={item.slug}
-                        href={`/article/${item.slug}`}
+                        href={`/noticias/${item.slug}`}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:brightness-110"
                         style={{
                           background: 'var(--bg-card)',

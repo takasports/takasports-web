@@ -63,7 +63,7 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
               return (
                 <Link
                   key={article._id}
-                  href={`/article/${article.slug ?? article._id}`}
+                  href={`/noticias/${article.slug ?? article._id}`}
                   className="group flex items-start gap-3 p-2.5 rounded-xl transition-all hover:brightness-110"
                   style={{
                     textDecoration: 'none',

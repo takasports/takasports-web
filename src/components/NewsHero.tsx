@@ -49,7 +49,7 @@ function HeroCard({ article, isActive, onClick }: {
   isActive: boolean
   onClick: () => void
 }) {
-  const href = `/article/${article.slug ?? article._id}`
+  const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1400).height(800).url() : null)
 
@@ -144,7 +144,7 @@ function SecondaryCard({ article, isActive, onClick }: {
   isActive: boolean
   onClick: () => void
 }) {
-  const href = `/article/${article.slug ?? article._id}`
+  const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(720).height(400).url() : null)
 

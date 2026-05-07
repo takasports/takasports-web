@@ -142,7 +142,7 @@ function SportPill({ sport, accent }: { sport: string; accent: string }) {
 
 function RelatedArticleCard({ article }: { article: RelatedArticle }) {
   const img = articleImageUrl(article)
-  const href = `/article/${article.slug ?? article._id}`
+  const href = `/noticias/${article.slug ?? article._id}`
   return (
     <Link href={href} className="block no-underline group">
       <div className="flex gap-3 p-3 rounded-xl transition-all hover:brightness-110"

@@ -148,7 +148,7 @@ body {
 
 /* ── Artículo visitado — feedback :visited ── */
 a.news-card:visited .news-title,
-a[href^="/article/"]:visited .news-title {
+a[href^="/noticias/"]:visited .news-title {
   color: #8080A0 !important;
 }
 

@@ -62,7 +62,7 @@ export default function NewsCarousel({ articles }: { articles: Article[] }) {
   if (items.length === 0) return null
 
   const article = items[active]
-  const href = `/article/${article.slug ?? article._id}`
+  const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
   const label = getSportLabel(article.sport, article.category)
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(560).height(400).url() : null)

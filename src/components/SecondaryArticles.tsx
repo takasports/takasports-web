@@ -30,7 +30,7 @@ export default function SecondaryArticles({ articles }: { articles: Article[] })
         const label = getSportLabel(article.sport, article.category)
         const { accent } = getSportStyle(article.sport, article.category)
         const num = String(idx + 1).padStart(2, '0')
-        const href = `/article/${article.slug ?? article._id}`
+        const href = `/noticias/${article.slug ?? article._id}`
 
         return (
           <Link

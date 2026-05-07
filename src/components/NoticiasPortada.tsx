@@ -41,7 +41,7 @@ function SportChip({ sport, category }: { sport?: string; category?: string }) {
 }
 
 function BigCard({ article }: { article: Article }) {
-  const href = `/article/${article.slug ?? article._id}`
+  const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(900).height(640).url() : null)
   const { elRef, glareRef } = useTilt({ max: 7, scale: 1.02, glare: true })
@@ -118,7 +118,7 @@ function BigCard({ article }: { article: Article }) {
 }
 
 function GridCard({ article, priority = false }: { article: Article; priority?: boolean }) {
-  const href = `/article/${article.slug ?? article._id}`
+  const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(500).height(380).url() : null)
   const { elRef } = useTilt({ max: 4, scale: 1.025 })
