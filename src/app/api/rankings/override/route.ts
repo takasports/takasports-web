@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   revalidatePath('/rankings')
+  revalidatePath(`/rankings/${id}`)
   return NextResponse.json({ ok: true, entry: data })
 }
 
@@ -146,5 +147,6 @@ export async function DELETE(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   revalidatePath('/rankings')
+  revalidatePath(`/rankings/${id}`)
   return NextResponse.json({ ok: true, cleared: field })
 }

@@ -144,6 +144,8 @@ export async function POST(req: NextRequest) {
     .eq('id', runId)
 
   revalidatePath('/rankings')
+  revalidatePath('/rankings/comparar')
+  revalidatePath('/rankings/[id]', 'page')
 
   return NextResponse.json({
     ok: true,
