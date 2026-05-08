@@ -2,18 +2,20 @@ import type { MetadataRoute } from 'next'
 import { sanityClient, allTagsQuery } from '@/lib/sanity'
 import { SLUG_TO_LABEL } from '@/lib/sports'
 import { getAllRankingEntries } from '@/lib/rankings-search'
+import { getAllEntryIdsFromDb } from '@/lib/rankings-data'
 import { SITE_URL } from '@/lib/constants'
 
 const BASE_URL = SITE_URL
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articles, tags] = await Promise.all([
+  const [articles, tags, dbIds] = await Promise.all([
     sanityClient.fetch<Array<{ slug: string; publishedAt: string }>>(
       `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc) {
         "slug": slug.current, publishedAt
       }`
     ).catch(() => []),
     sanityClient.fetch<string[]>(allTagsQuery).catch(() => [] as string[]),
+    getAllEntryIdsFromDb(2000).catch(() => [] as string[]),
   ])
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -38,11 +40,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/rankings?deporte=${deporte}`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.7 }
   ))
 
-  const rankingDetailRoutes: MetadataRoute.Sitemap = getAllRankingEntries().map(e => ({
-    url: `${BASE_URL}/rankings/${e.id}`,
+  // Combina entradas estáticas curadas + entradas auto-generadas de DB (top 2000)
+  const staticIds = new Set(getAllRankingEntries().map(e => e.id))
+  const allRankingIds = [
+    ...getAllRankingEntries().map(e => e.id),
+    ...dbIds.filter(id => !staticIds.has(id)),
+  ]
+  const rankingDetailRoutes: MetadataRoute.Sitemap = allRankingIds.map(id => ({
+    url: `${BASE_URL}/rankings/${id}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
-    priority: 0.6,
+    priority: staticIds.has(id) ? 0.7 : 0.55,  // curados tienen mayor prioridad
   }))
 
   const sportRoutes: MetadataRoute.Sitemap = Object.keys(SLUG_TO_LABEL).map(slug => ({
