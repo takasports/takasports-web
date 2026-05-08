@@ -76,6 +76,27 @@ function dateRangeParam(daysAhead: number): string {
   return `${fmt(now)}-${fmt(end)}`
 }
 
+function dateRangePastParam(daysBack: number): string {
+  const now = new Date()
+  const start = new Date(now)
+  start.setDate(now.getDate() - daysBack)
+  const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
+  return `${fmt(start)}-${fmt(now)}`
+}
+
+function parseScore(v: unknown): number | null {
+  if (v == null) return null
+  if (typeof v === 'number') return v
+  if (typeof v === 'object') {
+    const val = (v as Record<string, unknown>).value
+    if (typeof val === 'number') return val
+  }
+  if (typeof v === 'string') { const n = parseFloat(v); return isNaN(n) ? null : n }
+  return null
+}
+
+const FINAL_STATUSES = new Set(['STATUS_FINAL', 'STATUS_FULL_TIME', 'STATUS_ENDED'])
+
 interface RawEvent {
   isoDate: string
   event: SportEvent
@@ -264,5 +285,105 @@ export async function fetchEspnEvents(): Promise<SportEvent[]> {
   }
 
   raw.sort((a, b) => a.isoDate.localeCompare(b.isoDate))
+  return raw.map(r => r.event)
+}
+
+// ── Past results (last N days) ────────────────────────────────────────────
+async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEvent[]> {
+  const { accent } = getSportStyle(source.sport)
+  const url = `https://site.api.espn.com/apis/site/v2/sports/${source.slug}/scoreboard?dates=${dateRangePastParam(daysBack)}&limit=50`
+
+  let json: Record<string, unknown>
+  try {
+    const res = await fetch(url, { next: { revalidate: 300 } })
+    if (!res.ok) return []
+    json = await res.json()
+  } catch {
+    return []
+  }
+
+  const results: RawEvent[] = []
+  const espnEvents = (json.events as unknown[]) ?? []
+
+  for (const raw of espnEvents) {
+    const ev = raw as Record<string, unknown>
+    const isoDate = ev.date as string | undefined
+    if (!isoDate) continue
+
+    const comp = ((ev.competitions as unknown[]) ?? [])[0] as Record<string, unknown> | undefined
+    if (!comp) continue
+
+    const statusName = ((comp.status as Record<string, unknown>)?.type as Record<string, unknown>)?.name as string | undefined
+    if (!statusName || !FINAL_STATUSES.has(statusName)) continue
+
+    const competitors = (comp.competitors as Record<string, unknown>[]) ?? []
+    let home: string
+    let away: string | null = null
+    let homeLogo: string | undefined
+    let awayLogo: string | undefined
+    let homeAbbr: string | undefined
+    let awayAbbr: string | undefined
+    let homeScore: number | null = null
+    let awayScore: number | null = null
+
+    if (source.teamSport && competitors.length >= 2) {
+      const homeComp = competitors.find(c => c.homeAway === 'home') ?? competitors[0]
+      const awayComp = competitors.find(c => c.homeAway === 'away') ?? competitors[1]
+      const homeTeamObj = homeComp.team as Record<string, unknown>
+      const awayTeamObj = awayComp.team as Record<string, unknown>
+      home      = (homeTeamObj?.displayName as string) ?? ''
+      away      = (awayTeamObj?.displayName as string) ?? null
+      homeAbbr  = homeTeamObj?.abbreviation as string | undefined
+      awayAbbr  = awayTeamObj?.abbreviation as string | undefined
+      homeLogo  = (homeTeamObj?.logoDark ?? homeTeamObj?.logo) as string | undefined
+      awayLogo  = (awayTeamObj?.logoDark ?? awayTeamObj?.logo) as string | undefined
+      homeScore = parseScore(homeComp.score)
+      awayScore = parseScore(awayComp.score)
+    } else {
+      home = (ev.name as string) ?? (ev.shortName as string) ?? source.sport
+    }
+
+    if (!home) continue
+
+    const venue    = ((comp.venue as Record<string, unknown>)?.fullName as string) ?? undefined
+    const matchRef = `${source.slug.replace('/', '_')}_${ev.id as string}`
+
+    results.push({
+      isoDate,
+      event: {
+        id:        `espn-past-${source.slug.replace(/\//g, '-')}-${ev.id as string}`,
+        home,
+        away,
+        sport:     source.sport,
+        comp:      source.comp,
+        date:      toDateLabel(isoDate),
+        time:      toTimeStr(isoDate),
+        accent,
+        isoDate,
+        venue,
+        homeLogo,
+        awayLogo,
+        homeAbbr,
+        awayAbbr,
+        matchRef,
+        homeScore,
+        awayScore,
+        isPast:    true,
+        source:    'espn' as const,
+      },
+    })
+  }
+
+  return results
+}
+
+export async function fetchEspnPastEvents(): Promise<SportEvent[]> {
+  const leagueResults = await Promise.allSettled(SOURCES.map(s => fetchLeaguePast(s, 10)))
+  const raw: RawEvent[] = []
+  for (const r of leagueResults) {
+    if (r.status === 'fulfilled') raw.push(...r.value)
+  }
+  // Most recent first
+  raw.sort((a, b) => b.isoDate.localeCompare(a.isoDate))
   return raw.map(r => r.event)
 }

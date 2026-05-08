@@ -69,6 +69,10 @@ export interface SportEvent {
   awayPhoto?: string
   matchRef?: string       // "{sport}_{league}_{espnId}" for detail page URL
   source?: 'espn' | 'sanity' | 'padel'
+  // Scores for completed past events
+  homeScore?: number | null
+  awayScore?: number | null
+  isPast?: boolean
 }
 
 // Evento desde Sanity (futuro)

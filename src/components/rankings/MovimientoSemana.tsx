@@ -19,13 +19,7 @@ function getStaticMovers(limit: number): { movers: MoverEntry[]; fallers: MoverE
     ...RANKING_CREADORES, ...RANKING_PERIODISTAS, ...RANKING_CREADORES_WWE,
   ]
   const withPrev = allEntries.filter(e => e.scorePrev !== undefined)
-  if (withPrev.length < limit * 2) return { movers: [], fallers: [] }
-
-  const sorted = [...withPrev].sort((a, b) => {
-    const da = getDisplayScore(a) - a.scorePrev!
-    const db = getDisplayScore(b) - b.scorePrev!
-    return db - da
-  })
+  if (!withPrev.length) return { movers: [], fallers: [] }
 
   const toMover = (e: RankingEntry): MoverEntry => ({
     id:          e.id,
@@ -40,9 +34,10 @@ function getStaticMovers(limit: number): { movers: MoverEntry[]; fallers: MoverE
     delta:       Math.round((getDisplayScore(e) - e.scorePrev!) * 10) / 10,
   })
 
+  const sorted = [...withPrev].map(toMover).sort((a, b) => b.delta - a.delta)
   return {
-    movers:  sorted.slice(0, limit).map(toMover),
-    fallers: sorted.slice(-limit).reverse().map(toMover),
+    movers:  sorted.filter(e => e.delta >= 1).slice(0, limit),
+    fallers: sorted.filter(e => e.delta <= -1).slice(-limit).reverse(),
   }
 }
 
@@ -89,20 +84,22 @@ interface Props {
 
 export default function MovimientoSemana({ movers: propMovers, fallers: propFallers }: Props) {
   const limit = 3
-  const hasPropData = (propMovers?.length ?? 0) >= limit && (propFallers?.length ?? 0) >= limit
-
+  // Si el servidor envió datos (aunque sea un array vacío) los usamos; si no vino nada usamos estático
+  const hasPropData = propMovers !== undefined || propFallers !== undefined
   const { movers, fallers } = hasPropData
-    ? { movers: propMovers!, fallers: propFallers! }
+    ? { movers: propMovers ?? [], fallers: propFallers ?? [] }
     : getStaticMovers(limit)
 
-  if (movers.length < limit && fallers.length < limit) return null
+  if (!movers.length && !fallers.length) return null
+
+  const panels = [
+    { list: movers,  label: 'Mayores subidas', color: '#22c55e', icon: '↑↑' },
+    { list: fallers, label: 'Mayores caídas',  color: '#f87171', icon: '↓↓' },
+  ].filter(p => p.list.length > 0)
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-      {([
-        { list: movers,  label: 'Mayores subidas', color: '#22c55e', icon: '↑↑' },
-        { list: fallers, label: 'Mayores caídas',  color: '#f87171', icon: '↓↓' },
-      ] as const).map(({ list, label, color, icon }) => (
+      {panels.map(({ list, label, color, icon }) => (
         <div key={label} className="px-4 py-3 rounded-xl"
           style={{ background: `${color}08`, border: `1px solid ${color}18` }}>
           <p className="text-[9px] font-black uppercase tracking-widest mb-1.5"

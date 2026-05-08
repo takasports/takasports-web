@@ -304,8 +304,8 @@ export async function getTopMovers(limit = 3): Promise<{ movers: MoverEntry[]; f
 
     const sorted = [...entries].sort((a, b) => b.delta - a.delta)
     return {
-      movers:  sorted.slice(0, limit),
-      fallers: sorted.slice(-limit).reverse(),
+      movers:  sorted.filter(e => e.delta >= 1).slice(0, limit),
+      fallers: sorted.filter(e => e.delta <= -1).slice(-limit).reverse(),
     }
   } catch {
     return { movers: [], fallers: [] }

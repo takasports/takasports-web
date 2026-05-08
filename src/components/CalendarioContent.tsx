@@ -908,10 +908,93 @@ function DayChips({ days, value, onChange }: {
   )
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────
-type ViewType = 'destacados' | 'todos' | 'en-vivo' | 'recordatorios'
+// ── Past result row (compact, for resultados tab) ─────────────────────────
+function PastMatchRow({ event, isFav, onToggleFav }: {
+  event: SportEvent
+  isFav?: boolean
+  onToggleFav?: () => void
+}) {
+  const compColor = getCompAccent(event.comp, event.accent)
+  const hs = event.homeScore
+  const as_ = event.awayScore
+  const hasScore = hs !== null && hs !== undefined && as_ !== null && as_ !== undefined
 
-export default function CalendarioContent({ events }: { events: SportEvent[] }) {
+  const inner = (
+    <div
+      className="grid items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:brightness-125"
+      style={{
+        gridTemplateColumns: '92px 1fr auto auto',
+        background: 'rgba(255,255,255,0.025)',
+        borderLeft: `3px solid ${compColor}`,
+      }}
+    >
+      {/* Sport / comp / date */}
+      <div className="flex flex-col gap-0.5 min-w-0">
+        <span className="text-[8px] font-black uppercase tracking-wider truncate" style={{ color: compColor, fontFamily: 'var(--font-sport)' }}>
+          {event.sport.slice(0, 3)}
+        </span>
+        <span className="text-[8.5px] font-semibold truncate" style={{ color: '#9090A8', fontFamily: 'var(--font-sport)' }}>
+          {event.comp}
+        </span>
+        <span className="text-[8px] truncate" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+          {event.date}
+        </span>
+      </div>
+
+      {/* Teams */}
+      <div className="flex flex-col gap-1 min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <TeamLogo logo={event.homeLogo} name={event.home} size={16} sport={event.sport} />
+          <span className="text-[11px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+            {event.home}
+          </span>
+        </div>
+        {event.away && (
+          <div className="flex items-center gap-1.5 min-w-0">
+            <TeamLogo logo={event.awayLogo} name={event.away} size={16} sport={event.sport} />
+            <span className="text-[11px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+              {event.away}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Score */}
+      <div className="flex flex-col items-end gap-0.5 flex-shrink-0 min-w-[44px]">
+        {hasScore ? (
+          <>
+            <span className="text-[14px] font-black tabular-nums leading-none" style={{ color: '#E0E0F4', fontFamily: 'var(--font-display)' }}>
+              {hs}
+            </span>
+            <span className="text-[14px] font-black tabular-nums leading-none" style={{ color: '#E0E0F4', fontFamily: 'var(--font-display)' }}>
+              {as_}
+            </span>
+          </>
+        ) : (
+          <span className="text-[11px] font-bold" style={{ color: '#5A5A6A', fontFamily: 'var(--font-display)' }}>–</span>
+        )}
+      </div>
+
+      {/* FT badge + fav */}
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase"
+          style={{ background: 'rgba(255,255,255,0.06)', color: '#6A6A80', fontFamily: 'var(--font-sport)' }}>
+          FT
+        </span>
+        {onToggleFav && <FavoriteHeart active={!!isFav} onClick={onToggleFav} />}
+      </div>
+    </div>
+  )
+
+  if (event.matchRef)
+    return <Link href={`/partido/${event.matchRef}`} className="block no-underline">{inner}</Link>
+  return inner
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────
+type ViewType = 'destacados' | 'todos' | 'en-vivo' | 'resultados' | 'recordatorios'
+
+export default function CalendarioContent({ events, pastEvents = [] }: { events: SportEvent[]; pastEvents?: SportEvent[] }) {
   const [view, setView] = useState<ViewType>('destacados')
   const [tz, setTz] = useState<string>(SOURCE_TZ)
   const [search, setSearch] = useState('')
@@ -951,7 +1034,7 @@ export default function CalendarioContent({ events }: { events: SportEvent[] }) 
       const savedView  = (localStorage.getItem('ts_cal_view') as ViewType | null)
       const savedSport = localStorage.getItem('ts_cal_sport')
 
-      if (urlView && ['destacados','todos','en-vivo','recordatorios'].includes(urlView)) {
+      if (urlView && ['destacados','todos','en-vivo','resultados','recordatorios'].includes(urlView)) {
         setView(urlView)
       } else if (savedView) {
         setView(savedView)
@@ -1084,7 +1167,7 @@ export default function CalendarioContent({ events }: { events: SportEvent[] }) 
     })
   }, [requestNotifPermission, scheduleNotif])
 
-  const sports = ['Todo', ...new Set(events.map(e => e.sport)).values()]
+  const sports = ['Todo', ...new Set([...events, ...pastEvents].map(e => e.sport)).values()]
 
   const filtered = useMemo(() => {
     const matchesSearch = (e: SportEvent) =>
@@ -1191,6 +1274,31 @@ export default function CalendarioContent({ events }: { events: SportEvent[] }) 
     [events, reminders]
   )
 
+  // Filtered past events (sport + search aware)
+  const filteredPast = useMemo(() => {
+    const matchesSearch = (e: SportEvent) =>
+      !search || namesMatch(e.home, search) || (e.away ? namesMatch(e.away, search) : false)
+    const matchesSport = (e: SportEvent) =>
+      activeFilter === 'Todo' || e.sport === activeFilter
+    return pastEvents.filter(e => matchesSport(e) && matchesSearch(e))
+  }, [pastEvents, search, activeFilter])
+
+  // Past events grouped by date (most-recent first)
+  const pastGrouped = useMemo(() => {
+    const groups: Record<string, SportEvent[]> = {}
+    for (const e of filteredPast) {
+      const k = e.isoDate ? isoToLocalDate(e.isoDate) : e.date
+      if (!groups[k]) groups[k] = []
+      groups[k].push(e)
+    }
+    return groups
+  }, [filteredPast])
+
+  const pastOrderedDates = useMemo(
+    () => Object.keys(pastGrouped).sort((a, b) => b.localeCompare(a)),
+    [pastGrouped]
+  )
+
   // UFC events for modal
   const ufcEventsForDate = useMemo(() => {
     if (!selectedUFCDate) return []
@@ -1291,15 +1399,17 @@ export default function CalendarioContent({ events }: { events: SportEvent[] }) 
 
         {/* Tabs */}
         <div className="flex items-center gap-2 flex-wrap">
-          {(['destacados', 'todos', 'en-vivo', 'recordatorios'] as const).map(tab => {
+          {(['destacados', 'todos', 'en-vivo', 'resultados', 'recordatorios'] as const).map(tab => {
             const isActive = view === tab
             const isLiveTab = tab === 'en-vivo'
             const isRemTab = tab === 'recordatorios'
+            const isPastTab = tab === 'resultados'
             const hasLive = liveCount > 0
             const liveDot = isLiveTab && hasLive
             const greenStyle = isActive && isLiveTab && hasLive
             const remCount = remindedEvents.length
             const remStyle = isActive && isRemTab
+            const pastStyle = isActive && isPastTab
 
             return (
               <button
@@ -1308,18 +1418,18 @@ export default function CalendarioContent({ events }: { events: SportEvent[] }) 
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all"
                 style={{
                   background: isActive
-                    ? (greenStyle ? 'rgba(74,222,128,0.18)' : remStyle ? 'rgba(251,191,36,0.14)' : 'rgba(124,58,237,0.18)')
+                    ? (greenStyle ? 'rgba(74,222,128,0.18)' : remStyle ? 'rgba(251,191,36,0.14)' : pastStyle ? 'rgba(239,68,68,0.14)' : 'rgba(124,58,237,0.18)')
                     : 'rgba(255,255,255,0.04)',
                   color: isActive
-                    ? (greenStyle ? '#4ade80' : remStyle ? '#FBBF24' : '#C4B5FD')
+                    ? (greenStyle ? '#4ade80' : remStyle ? '#FBBF24' : pastStyle ? '#FCA5A5' : '#C4B5FD')
                     : '#7A7A8E',
                   border: isActive
-                    ? (greenStyle ? '1px solid rgba(74,222,128,0.45)' : remStyle ? '1px solid rgba(251,191,36,0.3)' : '1px solid rgba(124,58,237,0.45)')
+                    ? (greenStyle ? '1px solid rgba(74,222,128,0.45)' : remStyle ? '1px solid rgba(251,191,36,0.3)' : pastStyle ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(124,58,237,0.45)')
                     : '1px solid rgba(255,255,255,0.06)',
                   fontFamily: 'var(--font-sport)',
                   cursor: 'pointer',
                   boxShadow: isActive
-                    ? (greenStyle ? '0 0 14px rgba(74,222,128,0.18)' : remStyle ? 'none' : '0 0 14px rgba(124,58,237,0.18)')
+                    ? (greenStyle ? '0 0 14px rgba(74,222,128,0.18)' : remStyle || pastStyle ? 'none' : '0 0 14px rgba(124,58,237,0.18)')
                     : 'none',
                 }}>
                 {liveDot && (
@@ -1328,6 +1438,7 @@ export default function CalendarioContent({ events }: { events: SportEvent[] }) 
                 {tab === 'destacados' && 'Destacados'}
                 {tab === 'todos' && 'Todos'}
                 {tab === 'en-vivo' && `En Vivo${liveCount > 0 ? ` · ${liveCount}` : ''}`}
+                {tab === 'resultados' && `Resultados${pastEvents.length > 0 ? ` · ${pastEvents.length}` : ''}`}
                 {tab === 'recordatorios' && (
                   <>🔔 {remCount > 0 ? `· ${remCount}` : ''}</>
                 )}
@@ -1338,7 +1449,7 @@ export default function CalendarioContent({ events }: { events: SportEvent[] }) 
       </div>
 
       {/* Day chips + Toolbar (sticky on scroll) */}
-      {view !== 'en-vivo' && view !== 'recordatorios' && (
+      {view !== 'en-vivo' && view !== 'recordatorios' && view !== 'resultados' && (
         <div
           className="mb-4 -mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-6 xl:px-10 pt-2 pb-3"
           style={{
@@ -1662,6 +1773,76 @@ export default function CalendarioContent({ events }: { events: SportEvent[] }) 
                 })}
               </div>
             </section>
+          )}
+        </div>
+      )}
+
+      {view === 'resultados' && (
+        <div className="space-y-5">
+          {/* Compact sport + search toolbar */}
+          <div
+            className="-mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-6 xl:px-10 pt-2 pb-3 mb-1"
+            style={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 30,
+              background: 'linear-gradient(180deg, rgba(10,10,18,0.96) 0%, rgba(10,10,18,0.88) 80%, rgba(10,10,18,0) 100%)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            }}
+          >
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+              <SearchInput value={search} onChange={setSearch} />
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+                {sports.map(sport => (
+                  <button
+                    key={sport}
+                    onClick={() => setActiveFilter(sport)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+                    style={{
+                      background: activeFilter === sport ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                      color: activeFilter === sport ? '#E0E0F0' : '#5A5A6A',
+                      border: activeFilter === sport ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.06)',
+                      fontFamily: 'var(--font-sport)',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}>
+                    {SPORT_EMOJI[sport] || '🏆'} {sport}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {pastOrderedDates.length === 0 ? (
+            <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
+              <p className="text-[28px] mb-2" style={{ filter: 'grayscale(0.3) opacity(0.6)' }}>📋</p>
+              <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
+                No hay resultados recientes
+              </p>
+              <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>Los resultados de los últimos 10 días aparecen aquí</p>
+            </div>
+          ) : (
+            pastOrderedDates.map(dateKey => (
+              <section key={dateKey}>
+                <SectionHeader
+                  icon="📋"
+                  label={formatDateLabel(dateKey)}
+                  color="#FCA5A5"
+                  count={pastGrouped[dateKey]?.length || 0}
+                />
+                <div className="space-y-1.5">
+                  {pastGrouped[dateKey]?.map(event => (
+                    <PastMatchRow
+                      key={event.id}
+                      event={event}
+                      isFav={eventHasFavorite(favorites, event)}
+                      onToggleFav={() => toggleFavorite(event.home)}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))
           )}
         </div>
       )}
