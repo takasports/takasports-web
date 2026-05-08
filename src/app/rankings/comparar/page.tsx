@@ -70,11 +70,12 @@ function EntryPicker({
   }, [open])
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
+    const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    const q = norm(query.trim())
     let base = q
       ? allEntries.filter(e =>
-          e.name.toLowerCase().includes(q) ||
-          e.subtitle.toLowerCase().includes(q) ||
+          norm(e.name).includes(q) ||
+          norm(e.subtitle).includes(q) ||
           e.id.includes(q)
         )
       : allEntries

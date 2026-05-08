@@ -393,11 +393,12 @@ export default function RankingsClient({
       }).map((e, i) => ({ ...e, rank: i + 1 }))
     : entries
 
-  // Filtros UI: badge + búsqueda por nombre
-  const q = searchQuery.trim().toLowerCase()
+  // Filtros UI: badge + búsqueda por nombre (sin acentos)
+  const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  const q = norm(searchQuery.trim())
   const finalEntries = sortedEntries
     .filter(e => !badgeFilter || e.badge === badgeFilter)
-    .filter(e => !q || e.name.toLowerCase().includes(q) || e.subtitle.toLowerCase().includes(q))
+    .filter(e => !q || norm(e.name).includes(q) || norm(e.subtitle).includes(q))
 
   // Slices del listado
   const top1       = finalEntries[0]
