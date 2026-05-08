@@ -118,7 +118,7 @@ export default async function Home({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       <Header />
-      <BreakingNewsBar items={articles.slice(0, 8).map((a: { title: string; sport?: string; category?: string }) => ({ title: a.title, sport: a.sport || a.category }))} />
+      <BreakingNewsBar items={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
       <LiveStrip />
       <HomeContent articles={articles} reels={reels} events={events} initialSport={initialSport} />
       <Footer />

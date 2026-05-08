@@ -259,8 +259,9 @@ function ReelCard({ reel, onClick }: { reel: Reel; onClick: () => void }) {
         padding: 0,
       }}
     >
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.9) 0%,rgba(0,0,0,0.1) 50%,transparent 70%)' }} />
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,0.28) 0%,transparent 30%)' }} />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.15) 45%,transparent 65%)' }} />
+      {/* Gradiente superior más fuerte para tapar texto bakeado en thumbnails de Instagram */}
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.35) 30%,transparent 55%)' }} />
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: `${accent}14` }} />
 
       {/* Overlay "Reproducir" — visible en hover */}
@@ -289,14 +290,7 @@ function ReelCard({ reel, onClick }: { reel: Reel; onClick: () => void }) {
       </div>
 
       <div className="absolute inset-0 flex flex-col justify-between p-3.5">
-        <div className="flex items-start justify-between">
-          <div
-            className="flex items-center gap-1.5 px-2 py-1 rounded-full"
-            style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}
-          >
-            <IGIcon size={11} />
-            <span className="text-[9px] font-black uppercase tracking-widest text-white opacity-80">Reels</span>
-          </div>
+        <div className="flex items-start justify-end">
           <PlayBtn />
         </div>
 

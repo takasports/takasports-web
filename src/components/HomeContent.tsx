@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import HeroBlock from '@/components/HeroBlock'
 import ReelsSection from '@/components/ReelsSection'
 import LiveEventsSection from '@/components/LiveEventsSection'
@@ -64,6 +65,95 @@ interface SanityReel {
   category?: string
   title?: string
   publishedAt?: string
+}
+
+// ── Sección Juegos ──────────────────────────────────────────────
+const GAMES = [
+  {
+    href: '/crackquiz',
+    emoji: '🧠',
+    name: 'CrackQuiz',
+    desc: 'Demuestra tus conocimientos',
+    accent: '#FCD34D',
+    bg: 'rgba(252,211,77,0.07)',
+    border: 'rgba(252,211,77,0.18)',
+  },
+  {
+    href: '/quiniela',
+    emoji: '🎯',
+    name: 'Quiniela',
+    desc: 'Predice los resultados',
+    accent: '#7C3AED',
+    bg: 'rgba(124,58,237,0.07)',
+    border: 'rgba(124,58,237,0.2)',
+  },
+  {
+    href: '/sopa-cracks',
+    emoji: '🔤',
+    name: 'Sopa de Cracks',
+    desc: 'Encuentra los jugadores',
+    accent: '#6EE7B7',
+    bg: 'rgba(110,231,183,0.07)',
+    border: 'rgba(110,231,183,0.18)',
+  },
+  {
+    href: '/mionce',
+    emoji: '⚽',
+    name: 'Mi Once',
+    desc: 'Arma tu equipo ideal',
+    accent: '#22c55e',
+    bg: 'rgba(34,197,94,0.07)',
+    border: 'rgba(34,197,94,0.18)',
+  },
+]
+
+function GamesSection() {
+  return (
+    <section className="mt-8">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="section-accent" />
+          <h2 className="section-label">Juegos</h2>
+        </div>
+        <Link
+          href="/juegos"
+          className="text-[11px] font-semibold transition-opacity hover:opacity-70"
+          style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
+        >
+          Ver todos →
+        </Link>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {GAMES.map(game => (
+          <Link
+            key={game.href}
+            href={game.href}
+            className="group flex flex-col items-center gap-2.5 p-4 rounded-2xl transition-all hover:-translate-y-1 hover:brightness-110"
+            style={{
+              background: game.bg,
+              border: `1px solid ${game.border}`,
+              textDecoration: 'none',
+            }}
+          >
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl transition-transform group-hover:scale-110"
+              style={{ background: `${game.accent}15`, border: `1px solid ${game.accent}30` }}
+            >
+              {game.emoji}
+            </div>
+            <div className="text-center">
+              <p className="text-[12px] font-black" style={{ color: game.accent, fontFamily: 'var(--font-sport)' }}>
+                {game.name}
+              </p>
+              <p className="text-[10px] mt-0.5 leading-tight" style={{ color: '#686884' }}>
+                {game.desc}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
 }
 
 function SectionCTA({ href, label }: { href: string; label: string }) {
@@ -136,7 +226,7 @@ export default function HomeContent({
   const feedHasMore = displayCount < filteredArticles.length
 
   return (
-    <main className="max-w-[1440px] mx-auto pb-16">
+    <main className="max-w-[1440px] mx-auto pb-6">
 
       {/* ── FILTRO GLOBAL — sticky bajo el header ───────────────── */}
       <div
@@ -219,8 +309,11 @@ export default function HomeContent({
           <ReelsSection reels={filteredReels} initialSport={activeSlug} />
         </div>
 
+        {/* ── 3.5 JUEGOS ─────────────────────────────────────────── */}
+        <GamesSection />
+
         {/* ── 4. FEED + SIDEBAR ──────────────────────────────────── */}
-        <div className="flex gap-8 mt-10 items-start">
+        <div className="flex gap-8 mt-10 items-start min-h-0">
 
         <div className="flex-1 min-w-0">
           <NewsFeed

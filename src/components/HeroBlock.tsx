@@ -35,7 +35,15 @@ function CompactStripItem({ art }: { art: Article }) {
           <Image src={imgUrl} alt={art.title} fill className="object-cover" onError={() => setImgFailed(true)} />
         </div>
       ) : (
-        <div style={{ width: 48, height: 48, borderRadius: 7, flexShrink: 0, background: `linear-gradient(135deg, ${accent}18, #09090F)` }} />
+        <div style={{
+          width: 48, height: 48, borderRadius: 7, flexShrink: 0,
+          background: `linear-gradient(135deg, ${accent}28, ${accent}08)`,
+          border: `1px solid ${accent}25`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 20,
+        }}>
+          {label === 'Fútbol' ? '⚽' : label === 'NBA' ? '🏀' : label === 'F1' ? '🏎️' : label === 'Tenis' ? '🎾' : label === 'UFC' ? '🥊' : label === 'WWE' ? '🎭' : '🏆'}
+        </div>
       )}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1 mb-0.5">
@@ -348,6 +356,12 @@ function SmallCard({
           {article.title}
         </h3>
 
+        {article.short_summary && (
+          <p className="text-[10px] leading-snug line-clamp-1 mt-1" style={{ color: '#686884' }}>
+            {article.short_summary}
+          </p>
+        )}
+
         {article.publishedAt && (
           <p className="text-[10px] mt-1" style={{ color: '#3D3D58' }}>
             {timeAgo(article.publishedAt)}
@@ -480,8 +494,8 @@ export default function HeroBlock({ articles }: { articles: Article[] }) {
 
           <div className="flex items-center gap-2">
             <span
-              className="text-[10px] font-black tabular-nums"
-              style={{ color: '#38384A', fontFamily: 'var(--font-sport)' }}
+              className="text-[11px] font-black tabular-nums"
+              style={{ color: '#6B6B8A', fontFamily: 'var(--font-sport)' }}
             >
               {String((offset % len) + 1).padStart(2, '0')} / {String(len).padStart(2, '0')}
             </span>
@@ -490,21 +504,21 @@ export default function HeroBlock({ articles }: { articles: Article[] }) {
                 <button
                   onClick={() => advance(-1)}
                   aria-label="Artículo anterior"
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-opacity opacity-35 hover:opacity-75"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-60 hover:opacity-100 hover:scale-105"
+                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)' }}
                 >
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M6.5 2L3 5l3.5 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+                    <path d="M6.5 2L3 5l3.5 3" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
                 <button
                   onClick={() => advance(1)}
                   aria-label="Artículo siguiente"
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-opacity opacity-35 hover:opacity-75"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-60 hover:opacity-100 hover:scale-105"
+                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)' }}
                 >
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M3.5 2L7 5l-3.5 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+                    <path d="M3.5 2L7 5l-3.5 3" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
               </div>
@@ -541,14 +555,15 @@ export default function HeroBlock({ articles }: { articles: Article[] }) {
                 onClick={() => goTo(i)}
                 aria-label={`Ir al artículo ${i + 1}`}
                 style={{
-                  width: i === offset % len ? 20 : 6,
-                  height: 6,
-                  borderRadius: 3,
-                  background: i === offset % len ? '#7C3AED' : 'rgba(255,255,255,0.12)',
+                  width: i === offset % len ? 24 : 8,
+                  height: 8,
+                  borderRadius: 4,
+                  background: i === offset % len ? '#7C3AED' : 'rgba(255,255,255,0.2)',
                   border: 'none',
                   cursor: 'pointer',
                   padding: 0,
                   transition: 'width 250ms ease, background 250ms ease',
+                  boxShadow: i === offset % len ? '0 0 8px rgba(124,58,237,0.5)' : 'none',
                 }}
               />
             ))}

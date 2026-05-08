@@ -159,6 +159,8 @@ async function fetchMatchesFromLeague(slug: string, comp: string): Promise<Quini
 function buildJornadaLabel(matches: QuinielaMatch[]): string {
   if (matches.length === 0) return 'Esta semana'
   const comps = [...new Set(matches.map(m => m.comp))]
+  // Si hay más de 2 ligas distintas, usar label genérico evitando confundir al usuario
+  if (comps.length > 2) return `${matches.length} partidos`
   return comps.slice(0, 2).join(' · ')
 }
 

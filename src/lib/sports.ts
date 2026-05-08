@@ -11,6 +11,11 @@ export const SLUG_TO_LABEL: Record<string, string> = {
   tenis:      'Tenis',
   ufc:        'UFC',
   rugby:      'Rugby',
+  // Competiciones específicas de baloncesto no-NBA
+  nba:        'NBA',
+  bcl:        'BCL',
+  euroliga:   'Euroliga',
+  acb:        'ACB',
 }
 
 // Label visual → slug (inverso, para filtros y URLs)
@@ -48,8 +53,13 @@ export function getSportStyle(sport?: string, category?: string) {
   return { bg: 'linear-gradient(145deg,#1a1a2e,#09090F)', accent: '#7C3AED' }
 }
 
-// Label para mostrar — normaliza slug o label a su forma canónica
+// Label para mostrar — normaliza slug o label a su forma canónica.
+// La categoría puede dar más detalle que el deporte (ej: 'bcl' en vez de 'baloncesto' → 'BCL' en vez de 'NBA').
 export function getSportLabel(sport?: string, category?: string): string {
+  if (category) {
+    const catLabel = SLUG_TO_LABEL[category.toLowerCase()]
+    if (catLabel) return catLabel
+  }
   const raw = sport ?? category ?? ''
   return SLUG_TO_LABEL[raw.toLowerCase()] ?? raw
 }

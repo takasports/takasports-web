@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import QuinielaModule from './QuinielaModule'
 import { HOME_EVENTS } from '@/lib/events'
+import { RANKING_JUGADORES } from '@/lib/rankings'
 
 function SectionHeader({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
@@ -14,9 +15,86 @@ function SectionHeader({ children, action }: { children: React.ReactNode; action
   )
 }
 
+const TOP_PLAYERS = RANKING_JUGADORES.slice(0, 5)
+
+const TREND_COLOR: Record<string, string> = { up: '#4ade80', down: '#f87171', stable: '#6B6B8A' }
+const TREND_ICON: Record<string, string> = { up: '↑', down: '↓', stable: '—' }
+
 export default function Sidebar() {
   return (
     <div className="flex flex-col gap-7 pt-1">
+
+      {/* ── Índice Taka — Rankings ───────────────────── */}
+      <div>
+        <SectionHeader
+          action={
+            <Link
+              href="/rankings"
+              className="text-[10px] font-semibold transition-opacity hover:opacity-70"
+              style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}
+            >
+              Ver ranking →
+            </Link>
+          }
+        >
+          Índice Taka
+        </SectionHeader>
+        <div className="flex flex-col gap-1">
+          {TOP_PLAYERS.map((player, i) => (
+            <Link
+              key={player.id}
+              href={`/rankings?tab=jugadores`}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all hover:brightness-110"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                textDecoration: 'none',
+              }}
+            >
+              {/* Posición */}
+              <span
+                className="text-[11px] font-black tabular-nums w-4 flex-shrink-0 text-center"
+                style={{ color: i < 3 ? '#A78BFA' : '#3A3A52', fontFamily: 'var(--font-sport)' }}
+              >
+                {i + 1}
+              </span>
+              {/* Avatar */}
+              {player.image ? (
+                <img
+                  src={player.image}
+                  alt={player.name}
+                  width={28}
+                  height={28}
+                  style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                />
+              ) : (
+                <div
+                  className="flex-shrink-0 flex items-center justify-center text-base"
+                  style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }}
+                >
+                  {player.emoji ?? '👤'}
+                </div>
+              )}
+              {/* Nombre */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-bold truncate" style={{ color: '#D0D0E0', fontFamily: 'var(--font-display)' }}>
+                  {player.name}
+                </p>
+                <p className="text-[9px] truncate" style={{ color: '#4A4A6A' }}>{player.subtitle}</p>
+              </div>
+              {/* Score + trend */}
+              <div className="flex-shrink-0 text-right">
+                <p className="text-[12px] font-black tabular-nums" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
+                  {player.score}
+                </p>
+                <p className="text-[9px] font-bold" style={{ color: TREND_COLOR[player.trend] ?? '#6B6B8A' }}>
+                  {TREND_ICON[player.trend] ?? '—'}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* ── Quiniela ────────────────────────────────── */}
       <div>

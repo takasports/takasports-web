@@ -1,8 +1,13 @@
+'use client'
+
+import { useRef, useState, useEffect } from 'react'
+import Link from 'next/link'
 import { getSportEmoji, getSportLabel } from '@/lib/sports'
 
 interface TickerItem {
   title: string
   sport?: string
+  slug?: string
 }
 
 const FALLBACK_ITEMS: TickerItem[] = [
@@ -13,14 +18,6 @@ const FALLBACK_ITEMS: TickerItem[] = [
   { title: 'UFC 302: Makhachev retiene el cinturón peso ligero con TKO', sport: 'ufc' },
   { title: 'Lewis Hamilton debuta en rojo: primer test oficial con Ferrari', sport: 'formula1' },
 ]
-
-function buildText(items: TickerItem[]): string {
-  return items.map(item => {
-    const label = item.sport ? getSportLabel(item.sport) : null
-    const emoji = label ? getSportEmoji(label) : null
-    return emoji ? `${emoji} ${item.title}` : item.title
-  }).join('   ·   ')
-}
 
 export default function BreakingNewsBar({
   items,
@@ -36,8 +33,19 @@ export default function BreakingNewsBar({
         ? titles.map(t => ({ title: t }))
         : FALLBACK_ITEMS
 
-  const text = buildText(resolved)
-  const doubled = `${text}   ·   ${text}`
+  // Duplicate items so the ticker scrolls seamlessly
+  const doubled = [...resolved, ...resolved]
+
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [paused, setPaused] = useState(false)
+
+  // Reset animation on mount so SSR/hydration don't misalign
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    el.style.animation = 'none'
+    requestAnimationFrame(() => { el.style.animation = '' })
+  }, [])
 
   return (
     <div
@@ -60,14 +68,41 @@ export default function BreakingNewsBar({
           </span>
         </div>
 
-        {/* Ticker */}
-        <div className="flex-1 overflow-hidden">
-          <span
-            className="inline-block whitespace-nowrap text-xs animate-ticker"
-            style={{ color: '#B4B4C8' }}
+        {/* Ticker — items individuales y clicables */}
+        <div
+          className="flex-1 overflow-hidden"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
+          <div
+            ref={trackRef}
+            className="flex items-center gap-0 whitespace-nowrap animate-ticker"
+            style={{ animationPlayState: paused ? 'paused' : 'running' }}
           >
-            {doubled}
-          </span>
+            {doubled.map((item, i) => {
+              const label = item.sport ? getSportLabel(item.sport) : null
+              const emoji = label ? getSportEmoji(label) : null
+              const href = item.slug ? `/noticias/${item.slug}` : null
+              const content = (
+                <span
+                  className="inline-flex items-center gap-1.5 text-xs transition-colors hover:text-white"
+                  style={{ color: '#B4B4C8' }}
+                >
+                  {emoji && <span>{emoji}</span>}
+                  {item.title}
+                </span>
+              )
+              return (
+                <span key={i} className="inline-flex items-center">
+                  {href
+                    ? <Link href={href} style={{ textDecoration: 'none' }}>{content}</Link>
+                    : content
+                  }
+                  <span className="inline-block mx-4 opacity-25" style={{ color: '#B4B4C8' }}>·</span>
+                </span>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>
