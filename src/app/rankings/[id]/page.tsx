@@ -10,6 +10,7 @@ import { findEntryById, getEntrySources, getAllRankingEntries } from '@/lib/rank
 import { findEntryByIdFromDb, getAllEntryIdsFromDb } from '@/lib/rankings-data'
 import { getSportStyle } from '@/lib/sports'
 import ShareButton from './ShareButton'
+import PlayerAvatar from '@/components/rankings/PlayerAvatar'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 // ── Helpers compartidos ───────────────────────────────────────────
@@ -223,10 +224,7 @@ export default async function EntryDetailPage(
                   background: `${sportAccent}14`,
                   border: `1px solid ${sportAccent}28`,
                 }}>
-                {entry.image
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  ? <img src={entry.image} alt={entry.name} className="w-full h-full rounded-2xl object-cover" />
-                  : avatar}
+                <PlayerAvatar src={entry.image} alt={entry.name} fallback={avatar} size={72} rounded="2xl" />
               </div>
               {entry.country && (
                 <span className="absolute -bottom-1 -right-1 text-base leading-none">{entry.country}</span>
