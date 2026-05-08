@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { findEntryById } from '@/lib/rankings-search'
+import { findEntryByIdFromDb } from '@/lib/rankings-data'
 import { calcScore, type RankingEntry } from '@/lib/rankings'
 import { getSportStyle } from '@/lib/sports'
 
@@ -27,7 +28,8 @@ function scoreColor(score: number): string {
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const entry = findEntryById(id)
+  // DB primero (entries ESPN tienen datos frescos), fallback al estático
+  const entry = (await findEntryByIdFromDb(id)) ?? findEntryById(id)
   const score = entry ? getDisplayScore(entry) : 0
   const accent = entry?.sport ? getSportStyle(entry.sport).accent : '#7C3AED'
   const sportEmoji = entry?.sport ? SPORT_EMOJI[entry.sport] ?? '🏅' : '🏅'
