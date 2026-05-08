@@ -169,6 +169,7 @@ function rowToEntry(row: any): RankingEntry {
     factors:      row.factors ?? undefined,
     editorialBoost: row.editorial_boost !== null ? Number(row.editorial_boost) : undefined,
     editorialNote:  row.editorial_note ?? undefined,
+    category:       row.category ?? undefined,
   }
 }
 

@@ -170,13 +170,18 @@ export default async function EntryDetailPage(
   const sources = getEntrySources(id)
   const factors = entry.factors
 
-  // JSON-LD por entry
+  // JSON-LD por entry — tipo correcto según categoría
+  const cat = entry.category ?? (sources.length > 0 ? sources[0] : '')
+  const schemaType = cat.includes('club')
+    ? 'SportsTeam'
+    : 'Person'
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Person',
+    '@type': schemaType,
     name: entry.name,
     description: entry.insight ?? entry.subtitle,
     url: `${SITE_URL}/rankings/${id}`,
+    ...(entry.sport && { sport: entry.sport }),
     aggregateRating: {
       '@type': 'AggregateRating',
       ratingValue: ds,
