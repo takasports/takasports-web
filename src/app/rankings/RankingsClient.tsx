@@ -206,6 +206,13 @@ export default function RankingsClient({
   const isFemenino = gender === 'f' && (activeSport === 'futbol' || activeSport === 'ufc' || activeSport === 'tenis')
 
   // ── Bases filtradas por deporte ───────────────────────────────────
+  // Helper: filtra por deporte, cae a estático si la DB no tiene entradas para ese deporte
+  const dbSportFilter = (cat: string, fallback: RankingEntry[], sport: string): RankingEntry[] => {
+    const fromDb = db(cat, fallback).filter(e => e.sport === sport)
+    if (fromDb.length > 0) return fromDb
+    return fallback.filter(e => e.sport === sport)
+  }
+
   const jugadoresBase = isFemenino
     ? activeSport === 'ufc'
       ? db('luchadoras_ufc', RANKING_LUCHADORAS_UFC)
@@ -213,12 +220,12 @@ export default function RankingsClient({
         ? db('jugadoras', RANKING_JUGADORAS).filter(e => e.sport === 'tenis')
         : db('jugadoras', RANKING_JUGADORAS)
     : activeSport
-      ? db('jugadores', RANKING_JUGADORES).filter(e => e.sport === activeSport)
+      ? dbSportFilter('jugadores', RANKING_JUGADORES, activeSport)
       : db('jugadores', RANKING_JUGADORES)
   const clubesBase = isFemenino
     ? db('clubes_femenino', RANKING_CLUBES_FEMENINO)
     : activeSport
-      ? db('clubes', RANKING_CLUBES).filter(e => e.sport === activeSport)
+      ? dbSportFilter('clubes', RANKING_CLUBES, activeSport)
       : db('clubes', RANKING_CLUBES)
 
   // ── Resolver entries ──────────────────────────────────────────────
@@ -230,8 +237,7 @@ export default function RankingsClient({
       entries = db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => !e.featured)
       featuredEntries = db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => e.featured)
     } else {
-      const wweBase = db('jugadores', RANKING_JUGADORES)
-        .filter(e => e.sport === 'wwe')
+      const wweBase = dbSportFilter('jugadores', RANKING_JUGADORES, 'wwe')
         .sort((a, b) => getDisplayScore(b) - getDisplayScore(a))
       if (subEntity === 'total') entries = wweBase
       else if (subEntity === 'masculino') entries = wweBase.filter(e => e.position === 'masculino')
