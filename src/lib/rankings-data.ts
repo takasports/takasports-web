@@ -72,8 +72,43 @@ function getReadClient() {
   )
 }
 
+// Normaliza slugs de liga heredados de versiones anteriores del ingest
+const LEAGUE_SLUG_MAP: Record<string, string> = {
+  premierleague: 'premier',
+  d1arkema:      'div1f',
+}
+function normalizeLeague(l: string | undefined): string | undefined {
+  if (!l) return undefined
+  return LEAGUE_SLUG_MAP[l] ?? l
+}
+
+// Normaliza posiciones con caracteres especiales o variantes antiguas
+const POSITION_MAP: Record<string, string> = {
+  'ala-pívot': 'ala-pivote',
+}
+function normalizePosition(p: string | undefined): string | undefined {
+  if (!p) return undefined
+  return POSITION_MAP[p] ?? p
+}
+
+// Deriva el país del club desde el slug de liga cuando country es null en la DB
+const LEAGUE_COUNTRY_MAP: Record<string, string> = {
+  laliga:        'spain',
+  premier:       'england',
+  premierleague: 'england',
+  bundesliga:    'germany',
+  seriea:        'italy',
+  ligue1:        'france',
+  mls:           'usa',
+}
+function deriveCountry(league: string | undefined, country: string | undefined): string | undefined {
+  if (country) return country
+  return league ? LEAGUE_COUNTRY_MAP[league] : undefined
+}
+
 // Mapea fila de la vista `ranking_view` → RankingEntry
 function rowToEntry(row: any): RankingEntry {
+  const league = normalizeLeague(row.league ?? undefined)
   return {
     id:           row.id,
     rank:         row.rank ?? 0,
@@ -87,9 +122,9 @@ function rowToEntry(row: any): RankingEntry {
     image:        row.image_url ?? undefined,
     badge:        row.badge ?? undefined,
     region:       row.region ?? undefined,
-    country:      row.country ?? undefined,
-    league:       row.league ?? undefined,
-    position:     row.position ?? undefined,
+    country:      deriveCountry(league, row.country ?? undefined),
+    league,
+    position:     normalizePosition(row.position ?? undefined),
     gender:       row.gender ?? undefined,
     featured:     row.featured ?? undefined,
     scorePrev:    row.score_prev !== null ? Number(row.score_prev) : undefined,
@@ -102,12 +137,20 @@ function rowToEntry(row: any): RankingEntry {
   }
 }
 
+// Categorías que tienen datos en Supabase (las demás siempre usan el estático)
+const DB_CATEGORIES: RankingCategory[] = [
+  'jugadores', 'jugadoras', 'sub21', 'latam', 'concacaf', 'clubes', 'entrenadores',
+]
+// Máximo de filas por categoría. Supabase limita a 1000 por defecto si no se especifica range.
+const MAX_ROWS_PER_CAT = 800
+
 /**
  * Obtiene un ranking por categoría.
  * Si Supabase falla o no está configurado, devuelve el array estático.
  */
 export async function getRanking(category: RankingCategory): Promise<RankingEntry[]> {
   if (!supabaseConfigured()) return STATIC_FALLBACK[category] ?? []
+  if (!DB_CATEGORIES.includes(category)) return STATIC_FALLBACK[category] ?? []
 
   try {
     const sb = getReadClient()
@@ -116,9 +159,9 @@ export async function getRanking(category: RankingCategory): Promise<RankingEntr
       .select('*')
       .eq('category', category)
       .order('rank', { ascending: true })
+      .range(0, MAX_ROWS_PER_CAT - 1)
 
     if (error || !data || data.length === 0) {
-      // Sin datos en DB todavía → fallback al estático (primera carga / pre-cron)
       return STATIC_FALLBACK[category] ?? []
     }
     return data.map(rowToEntry)
@@ -128,32 +171,34 @@ export async function getRanking(category: RankingCategory): Promise<RankingEntr
 }
 
 /**
- * Carga TODAS las categorías de un golpe (para la página principal).
- * Una sola query a Supabase → mapeo en memoria.
+ * Carga TODAS las categorías en paralelo (para la página principal).
+ * Cada categoría con Supabase data se fetcha por separado para evitar
+ * el límite de 1000 filas de Supabase en una query única.
  */
 export async function getAllRankings(): Promise<Record<RankingCategory, RankingEntry[]>> {
   if (!supabaseConfigured()) return STATIC_FALLBACK
 
   try {
     const sb = getReadClient()
-    const { data, error } = await sb
-      .from('ranking_view')
-      .select('*')
-      .order('category')
-      .order('rank', { ascending: true })
 
-    if (error || !data || data.length === 0) return STATIC_FALLBACK
+    // Fetch en paralelo — una query por categoría, top MAX_ROWS_PER_CAT
+    const fetches = DB_CATEGORIES.map(cat =>
+      sb
+        .from('ranking_view')
+        .select('*')
+        .eq('category', cat)
+        .order('rank', { ascending: true })
+        .range(0, MAX_ROWS_PER_CAT - 1)
+        .then(({ data, error }) => ({ cat, rows: (!error && data) ? data : null }))
+    )
+    const results = await Promise.all(fetches)
 
-    const grouped: Record<string, RankingEntry[]> = {}
-    for (const row of data) {
-      const cat = row.category as RankingCategory
-      if (!grouped[cat]) grouped[cat] = []
-      grouped[cat].push(rowToEntry(row))
-    }
-    // Rellena con estático las categorías que la DB no tenga aún
+    // Parte del fallback estático — las categorías sin DB quedan intactas
     const result = { ...STATIC_FALLBACK } as Record<RankingCategory, RankingEntry[]>
-    for (const cat of Object.keys(grouped) as RankingCategory[]) {
-      result[cat] = grouped[cat]
+    for (const { cat, rows } of results) {
+      if (rows && rows.length > 0) {
+        result[cat] = rows.map(rowToEntry)
+      }
     }
     return result
   } catch {
@@ -278,7 +323,7 @@ export async function getLastIngestTime(): Promise<string | null> {
  * generar miles de páginas estáticas en build time.
  * El resto se generan on-demand via ISR (dynamicParams = true).
  */
-export async function getAllEntryIdsFromDb(limit = 500): Promise<string[]> {
+export async function getAllEntryIdsFromDb(limit = 1000): Promise<string[]> {
   if (!supabaseConfigured()) return []
   try {
     const sb = getReadClient()

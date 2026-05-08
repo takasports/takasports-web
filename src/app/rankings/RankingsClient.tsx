@@ -741,11 +741,10 @@ export default function RankingsClient({
               <span className="w-5 flex-shrink-0" />
             </div>
 
-            {top1 && <div className="mb-2"><TopOneRow entry={top1} showSportEmoji={!activeSport && !isContenido} /></div>}
-
-            {rank2to10.length > 0 && (
-              <div className="flex flex-col gap-2 mb-4">
-                {rank2to10.map((entry) => (
+            {/* Con búsqueda activa: lista plana con ranks reales, sin rearrancar en hero */}
+            {q ? (
+              <div className="flex flex-col gap-2 mb-8">
+                {finalEntries.map((entry) => (
                   <RankRow
                     key={entry.id} entry={entry}
                     showSportEmoji={!activeSport && !isContenido}
@@ -753,15 +752,31 @@ export default function RankingsClient({
                   />
                 ))}
               </div>
-            )}
+            ) : (
+              <>
+                {top1 && <div className="mb-2"><TopOneRow entry={top1} showSportEmoji={!activeSport && !isContenido} /></div>}
 
-            <div className="mb-8">
-              <RankBlock label="Posiciones 11 – 25" entries={rank11to25} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} defaultOpen />
-              <RankBlock label="Posiciones 26 – 50" entries={rank26to50} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} />
-              {rank51on.length > 0 && (
-                <RankBlock label="Posiciones 51+" entries={rank51on} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} />
-              )}
-            </div>
+                {rank2to10.length > 0 && (
+                  <div className="flex flex-col gap-2 mb-4">
+                    {rank2to10.map((entry) => (
+                      <RankRow
+                        key={entry.id} entry={entry}
+                        showSportEmoji={!activeSport && !isContenido}
+                        typeTag={typeTagFn?.(entry)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                <div className="mb-8">
+                  <RankBlock label="Posiciones 11 – 25" entries={rank11to25} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} defaultOpen />
+                  <RankBlock label="Posiciones 26 – 50" entries={rank26to50} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} />
+                  {rank51on.length > 0 && (
+                    <RankBlock label="Posiciones 51+" entries={rank51on} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} />
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
 
