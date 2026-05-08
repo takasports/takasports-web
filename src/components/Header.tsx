@@ -219,7 +219,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                     {/* Score + badge */}
                     <div className="flex-shrink-0 flex flex-col items-end gap-0.5">
                       <span className="text-[11px] font-black tabular-nums" style={{ color: accent }}>
-                        {player.score}
+                        {Number(player.score).toFixed(1)}
                       </span>
                       <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
                         style={{ background: `${accent}15`, color: accent }}>
