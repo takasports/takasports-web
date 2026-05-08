@@ -173,8 +173,9 @@ function GridCard({ article, priority = false }: { article: Article; priority?: 
 }
 
 export default function NoticiasPortada({ articles }: { articles: Article[] }) {
-  if (articles.length === 0) return null
-  const items = articles.slice(0, 6)
+  const safeArticles = articles.filter(Boolean)
+  if (safeArticles.length === 0) return null
+  const items = safeArticles.slice(0, 6)
   const bottomRowRef = useScrollReveal({ threshold: 0.05, rootMargin: '0px 0px -30px 0px' })
 
   return (
@@ -206,14 +207,20 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
             <BigCard article={items[0]} />
           </div>
           {/* Side column: 2 stacked cards */}
-          <div className="flex flex-col gap-3 flex-shrink-0" style={{ width: '34%' }}>
-            <div className="flex-1">
-              <GridCard article={items[1]} priority />
+          {(items[1] || items[2]) && (
+            <div className="flex flex-col gap-3 flex-shrink-0" style={{ width: '34%' }}>
+              {items[1] && (
+                <div className="flex-1">
+                  <GridCard article={items[1]} priority />
+                </div>
+              )}
+              {items[2] && (
+                <div className="flex-1">
+                  <GridCard article={items[2]} />
+                </div>
+              )}
             </div>
-            <div className="flex-1">
-              <GridCard article={items[2]} />
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Bottom row: 3 equal cards — reveal al scrollear */}

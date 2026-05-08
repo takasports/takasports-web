@@ -81,9 +81,12 @@ export default async function SportPage({
     ? allRankings.filter((e: { sport?: string }) => e.sport === sportSlug).slice(0, 5)
     : allRankings.slice(0, 5)
 
+  // Filter out any null/undefined entries (Sanity can return nulls for broken references)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const safeArticles = (articles as any[]).filter(Boolean)
   const igReels = (reels as unknown[]).length > 0 ? reels : reelsData
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sportEvents = (upcomingEvents as any[]) ?? []
+  const sportEvents = ((upcomingEvents as any[]) ?? []).filter(Boolean)
 
   const collectionJsonLd = {
     '@context': 'https://schema.org',
@@ -104,7 +107,7 @@ export default async function SportPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <Header />
       <BreakingNewsBar
-        items={articles.slice(0, 8).map(
+        items={safeArticles.slice(0, 8).map(
           (a: { title: string; sport?: string; category?: string }) => ({
             title: a.title,
             sport: a.sport || a.category,
@@ -121,7 +124,7 @@ export default async function SportPage({
 
       <main className="max-w-[1440px] mx-auto pb-24">
         <NoticiasContent
-          articles={articles}
+          articles={safeArticles}
           reels={igReels as typeof reels}
           initialCategory={label}
         />
