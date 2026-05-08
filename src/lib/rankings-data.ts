@@ -249,6 +249,8 @@ export async function getTopMovers(limit = 3): Promise<{ movers: MoverEntry[]; f
       .from('ranking_view')
       .select('id,name,subtitle,sport,emoji,country,trend_reason,score,score_prev')
       .not('score_prev', 'is', null)
+      .in('category', ['jugadores', 'jugadoras', 'sub21', 'latam', 'concacaf', 'clubes', 'entrenadores'])
+      .range(0, 999)
     if (error || !data || data.length === 0) return { movers: [], fallers: [] }
 
     const entries: MoverEntry[] = data.map((r: any) => ({
