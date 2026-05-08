@@ -175,7 +175,7 @@ function rowToEntry(row: any): RankingEntry {
 
 // Categorías que tienen datos en Supabase (las demás siempre usan el estático)
 const DB_CATEGORIES: RankingCategory[] = [
-  'jugadores', 'jugadoras', 'sub21', 'latam', 'concacaf', 'clubes', 'entrenadores',
+  'jugadores', 'jugadoras', 'sub21', 'latam', 'concacaf', 'clubes', 'clubes_femenino', 'entrenadores',
 ]
 // Máximo de filas por categoría. Supabase limita a 1000 por defecto si no se especifica range.
 const MAX_ROWS_PER_CAT = 800

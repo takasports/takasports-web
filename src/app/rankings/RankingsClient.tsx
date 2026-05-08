@@ -289,10 +289,15 @@ export default function RankingsClient({
       if (!paisClubes) {
         entries = clubesBase
       } else if (paisClubes === 'other') {
-        const main = ['spain', 'england', 'italy', 'germany', 'france', 'usa']
-        entries = clubesBase.filter(e => !e.country || !main.includes(e.country))
+        const mainSlugs  = ['spain', 'england', 'italy', 'germany', 'france', 'usa']
+        const mainEmojis = ['🇪🇸', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', '🇮🇹', '🇩🇪', '🇫🇷', '🇺🇸']
+        entries = clubesBase.filter(e => !e.country || (!mainSlugs.includes(e.country) && !mainEmojis.includes(e.country)))
       } else {
-        entries = clubesBase.filter(e => e.country === paisClubes)
+        const SLUG_TO_FLAG: Record<string, string> = {
+          spain: '🇪🇸', england: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', italy: '🇮🇹', germany: '🇩🇪', france: '🇫🇷', usa: '🇺🇸',
+        }
+        const flagEquiv = SLUG_TO_FLAG[paisClubes] ?? paisClubes
+        entries = clubesBase.filter(e => e.country === paisClubes || e.country === flagEquiv)
       }
     }
   } else if (activeTab === 'entrenadores') {
