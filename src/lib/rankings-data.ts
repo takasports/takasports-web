@@ -376,3 +376,23 @@ export async function getAllEntryIdsFromDb(limit = 1000): Promise<string[]> {
     return []
   }
 }
+
+/**
+ * Top N entries de la DB para el comparador — más ligero que getAllRankings().
+ * Solo devuelve los campos mínimos para el picker + radar del comparador.
+ */
+export async function getTopEntriesForCompare(limit = 600): Promise<RankingEntry[]> {
+  if (!supabaseConfigured()) return []
+  try {
+    const sb = getReadClient()
+    const { data, error } = await sb
+      .from('ranking_view')
+      .select('id,name,subtitle,sport,emoji,country,score,score_prev,factors,editorial_boost,editorial_note,trend,badge,image_url,position,gender,region,league,category')
+      .order('score', { ascending: false })
+      .limit(limit)
+    if (error || !data) return []
+    return data.map(rowToEntry)
+  } catch {
+    return []
+  }
+}

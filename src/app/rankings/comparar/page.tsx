@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { getAllRankings } from '@/lib/rankings-data'
+import { getTopEntriesForCompare } from '@/lib/rankings-data'
 import CompararClient from './CompararClient'
 
 export const revalidate = 3600
@@ -12,10 +12,9 @@ export const metadata: Metadata = {
 }
 
 export default async function CompararPage() {
-  // Pre-fetch DB entries so the client picker can search them immediately.
-  // Falls back gracefully if Supabase is unavailable (getAllRankings returns static).
-  const dbData = await getAllRankings()
-  const dbEntries = Object.values(dbData).flat()
+  // Pre-fetch top DB entries (top 600 por score) para que el picker incluya
+  // entries de la DB además de los estáticos. Ligero: 1 sola query sin joins.
+  const dbEntries = await getTopEntriesForCompare(600)
 
   return (
     <Suspense>
