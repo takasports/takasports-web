@@ -13,6 +13,7 @@ export default function RankRow({
   entry: RankingEntry; showSportEmoji?: boolean; typeTag?: string
 }) {
   const [showInsight, setShowInsight] = useState(false)
+  const [imgOk, setImgOk] = useState(true)
   const displayScore = getDisplayScore(entry)
   const trend = trendIcon(getEffectiveTrend(entry))
   const scoreDiff = entry.scorePrev !== undefined ? displayScore - entry.scorePrev : null
@@ -48,9 +49,9 @@ export default function RankRow({
         <div className="relative flex-shrink-0">
           <div className="flex items-center justify-center rounded-xl text-lg overflow-hidden"
             style={{ width: 36, height: 36, background: `${sportAccent}12`, border: `1px solid ${sportAccent}20` }}>
-            {entry.image
+            {entry.image && imgOk
               /* eslint-disable-next-line @next/next/no-img-element */
-              ? <img src={entry.image} alt={entry.name} className="w-full h-full object-cover" />
+              ? <img src={entry.image} alt={entry.name} className="w-full h-full object-cover" onError={() => setImgOk(false)} />
               : avatarEmoji}
           </div>
           {entry.country && (

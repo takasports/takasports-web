@@ -203,11 +203,15 @@ export default function RankingsClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbData])
 
-  const isFemenino = gender === 'f' && (activeSport === 'futbol' || activeSport === 'ufc')
+  const isFemenino = gender === 'f' && (activeSport === 'futbol' || activeSport === 'ufc' || activeSport === 'tenis')
 
   // ── Bases filtradas por deporte ───────────────────────────────────
   const jugadoresBase = isFemenino
-    ? activeSport === 'ufc' ? db('luchadoras_ufc', RANKING_LUCHADORAS_UFC) : db('jugadoras', RANKING_JUGADORAS)
+    ? activeSport === 'ufc'
+      ? db('luchadoras_ufc', RANKING_LUCHADORAS_UFC)
+      : activeSport === 'tenis'
+        ? db('jugadoras', RANKING_JUGADORAS).filter(e => e.sport === 'tenis')
+        : db('jugadoras', RANKING_JUGADORAS)
     : activeSport
       ? db('jugadores', RANKING_JUGADORES).filter(e => e.sport === activeSport)
       : db('jugadores', RANKING_JUGADORES)
@@ -502,8 +506,8 @@ export default function RankingsClient({
           />
         )}
 
-        {/* ── Toggle Femenino — solo Fútbol ────────────────────── */}
-        {(activeSport === 'futbol' || activeSport === 'ufc') && !isSpecialSport && (
+        {/* ── Toggle Femenino — Fútbol, UFC y Tenis ───────────── */}
+        {(activeSport === 'futbol' || activeSport === 'ufc' || activeSport === 'tenis') && !isSpecialSport && (
           <div className="flex items-center gap-1.5 mt-3 mb-1">
             {(['m', 'f'] as const).map(g => {
               const isActive = gender === g
@@ -516,7 +520,9 @@ export default function RankingsClient({
                     border: isActive ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.07)',
                     cursor: 'pointer', fontFamily: 'var(--font-sport)',
                   }}>
-                  {g === 'm' ? '♂ Masculino' : '♀ Femenino'}
+                  {activeSport === 'tenis'
+                    ? (g === 'm' ? '🎾 ATP' : '🎾 WTA')
+                    : (g === 'm' ? '♂ Masculino' : '♀ Femenino')}
                 </button>
               )
             })}

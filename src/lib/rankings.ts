@@ -1606,10 +1606,11 @@ export const JUGADORES_LIGA_FILTERS = [
 export const JUGADORAS_LIGA_FILTERS = [
   { label: 'Todas',        slug: '' },
   { label: 'Liga F',       slug: 'ligaf' },
-  { label: 'Champions F',  slug: 'championsf' },
   { label: 'WSL',          slug: 'wsl' },
-  { label: 'Frauen-BL',    slug: 'frauenbl' },
+  { label: 'NWSL',         slug: 'nwsl' },
   { label: 'Division 1 F', slug: 'div1f' },
+  { label: 'Champions F',  slug: 'championsf' },
+  { label: 'Frauen-BL',    slug: 'frauenbl' },
 ]
 
 export const CLUBES_LIGA_FILTERS = [
@@ -1650,13 +1651,17 @@ export const JUGADORES_PAIS_REGIONS: { id: string; label: string; emoji: string 
 
 export const JUGADORES_POSITION_FILTERS = [
   { label: 'Todas',          slug: '' },
+  // Fútbol
   { label: 'Delantero',      slug: 'delantero' },
   { label: 'Extremo',        slug: 'extremo' },
   { label: 'Mediapunta',     slug: 'mediapunta' },
   { label: 'Centrocampista', slug: 'centrocampista' },
-  { label: 'Pivote',         slug: 'pivote' },
   { label: 'Defensa',        slug: 'defensa' },
+  { label: 'Portero',        slug: 'portero' },
+  // NBA
   { label: 'Base',           slug: 'base' },
+  { label: 'Escolta',        slug: 'escolta' },
   { label: 'Alero',          slug: 'alero' },
   { label: 'Ala-Pívot',      slug: 'ala-pivote' },
+  { label: 'Pívot',          slug: 'pivote' },
 ]
