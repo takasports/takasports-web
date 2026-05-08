@@ -1,11 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import type { RankingEntry } from '@/lib/rankings'
 import { getDisplayScore, getEffectiveTrend, trendIcon, scoreColor, SPORT_EMOJI } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
 import BadgePill from './BadgePill'
 
 export default function TopOneRow({ entry, showSportEmoji = false }: { entry: RankingEntry; showSportEmoji?: boolean }) {
+  const [imgOk, setImgOk] = useState(true)
   const displayScore = getDisplayScore(entry)
   const trend = trendIcon(getEffectiveTrend(entry))
   const scoreDiff = entry.scorePrev !== undefined ? displayScore - entry.scorePrev : null
@@ -36,9 +38,9 @@ export default function TopOneRow({ entry, showSportEmoji = false }: { entry: Ra
         <div className="relative flex-shrink-0">
           <div className="flex items-center justify-center rounded-2xl text-2xl overflow-hidden"
             style={{ width: 52, height: 52, background: `${sportAccent}18`, border: `2px solid ${sportAccent}35`, boxShadow: `0 4px 20px ${sportAccent}28` }}>
-            {entry.image
+            {entry.image && imgOk
               /* eslint-disable-next-line @next/next/no-img-element */
-              ? <img src={entry.image} alt={entry.name} className="w-full h-full object-cover" />
+              ? <img src={entry.image} alt={entry.name} className="w-full h-full object-cover" onError={() => setImgOk(false)} />
               : avatarEmoji}
           </div>
           {entry.country && (
