@@ -319,35 +319,40 @@ export default async function NoticiaPage({
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1400).height(600).url() : null)
   const canonical = `${SITE_URL}/noticias/${article.slug ?? id}`
 
-  type LDArticle = {
-    '@context': string
-    '@type': string
-    headline: string
-    description?: string
-    image?: string[]
-    datePublished?: string
-    dateModified?: string
-    inLanguage: string
-    mainEntityOfPage: { '@type': string; '@id': string }
-    keywords?: string
-    articleSection?: string
-    author: { '@type': string; name: string; url: string }
-    publisher: { '@type': string; name: string; logo: { '@type': string; url: string } }
+  function bodyWordCount(): number | undefined {
+    if (article.bodyText) return article.bodyText.trim().split(/\s+/).length
+    if (article.bodyPortable && article.bodyPortable.length > 0) {
+      const text = article.bodyPortable
+        .filter((b) => b._type === 'block' && Array.isArray(b.children))
+        .flatMap((b) => (b.children as Array<{ _type: string; text?: string }>))
+        .filter((c) => c._type === 'span')
+        .map((c) => c.text ?? '')
+        .join(' ')
+      return text.trim().split(/\s+/).length
+    }
+    return undefined
   }
-  const articleJsonLd: LDArticle = {
+
+  const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'NewsArticle',
     headline: article.title,
     description: article.short_summary ?? undefined,
     image: imgUrl ? [imgUrl] : undefined,
     datePublished: article.publishedAt,
-    dateModified: article.publishedAt,
+    dateModified: article._updatedAt ?? article.publishedAt,
     inLanguage: 'es-ES',
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
     keywords: [article.focusKeyword, ...(article.secondaryKeywords ?? []), ...(article.tags ?? [])]
       .filter(Boolean)
       .join(', ') || undefined,
     articleSection: article.category ?? undefined,
+    wordCount: bodyWordCount(),
+    isAccessibleForFree: true,
+    speakable: {
+      '@type': 'SpeakableSpecification',
+      cssSelector: ['h1', '[aria-label="Claves rápidas"]'],
+    },
     author: { '@type': 'Organization', name: 'TakaSports', url: SITE_URL },
     publisher: {
       '@type': 'Organization',

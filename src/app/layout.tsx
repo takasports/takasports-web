@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
   },
-  alternates: { canonical: SITE_URL },
+  alternates: { canonical: SITE_URL, languages: { 'es-ES': SITE_URL, 'x-default': SITE_URL } },
   verification: { google: 'uciwyOWZbwp-GK4G0jKLxu6_FMuP5ZeptYObbCQxbJM' },
   manifest: '/manifest.json',
   appleWebApp: {
