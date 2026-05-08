@@ -14,7 +14,7 @@ function escapeXml(str: string | null | undefined): string {
 }
 
 export async function GET() {
-  const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+  const twoDaysAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
 
   const articles = await sanityClient
     .fetch<Array<{ slug: string; title: string; publishedAt: string }>>(
