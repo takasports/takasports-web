@@ -28,6 +28,7 @@ interface SourceRef { name?: string; url?: string }
 
 interface Article {
   _id: string
+  _updatedAt?: string
   slug?: string
   title: string
   subtitle?: string

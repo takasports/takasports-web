@@ -106,6 +106,41 @@ function deriveCountry(league: string | undefined, country: string | undefined):
   return league ? LEAGUE_COUNTRY_MAP[league] : undefined
 }
 
+// Convierte nombre de país o slug a emoji de bandera (para jugadores auto-generados de ESPN)
+const COUNTRY_FLAG_MAP: Record<string, string> = {
+  // Nombres en inglés (ESPN)
+  'spain': '🇪🇸', 'france': '🇫🇷', 'germany': '🇩🇪', 'england': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'italy': '🇮🇹', 'portugal': '🇵🇹', 'brazil': '🇧🇷', 'argentina': '🇦🇷',
+  'netherlands': '🇳🇱', 'belgium': '🇧🇪', 'croatia': '🇭🇷', 'serbia': '🇷🇸',
+  'austria': '🇦🇹', 'switzerland': '🇨🇭', 'poland': '🇵🇱', 'czech republic': '🇨🇿',
+  'denmark': '🇩🇰', 'sweden': '🇸🇪', 'norway': '🇳🇴', 'scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  'wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿', 'republic of ireland': '🇮🇪', 'ireland': '🇮🇪',
+  'nigeria': '🇳🇬', 'senegal': '🇸🇳', 'ivory coast': '🇨🇮', 'cameroon': '🇨🇲',
+  'ghana': '🇬🇭', 'morocco': '🇲🇦', 'egypt': '🇪🇬', 'algeria': '🇩🇿',
+  'mexico': '🇲🇽', 'colombia': '🇨🇴', 'uruguay': '🇺🇾', 'chile': '🇨🇱',
+  'ecuador': '🇪🇨', 'peru': '🇵🇪', 'venezuela': '🇻🇪', 'paraguay': '🇵🇾',
+  'united states': '🇺🇸', 'usa': '🇺🇸', 'canada': '🇨🇦', 'japan': '🇯🇵',
+  'south korea': '🇰🇷', 'australia': '🇦🇺', 'turkey': '🇹🇷', 'ukraine': '🇺🇦',
+  'russia': '🇷🇺', 'greece': '🇬🇷', 'slovakia': '🇸🇰', 'hungary': '🇭🇺',
+  'romania': '🇷🇴', 'bulgaria': '🇧🇬', 'finland': '🇫🇮', 'kosovo': '🇽🇰',
+  'north macedonia': '🇲🇰', 'albania': '🇦🇱', 'slovenia': '🇸🇮', 'estonia': '🇪🇪',
+  'latvia': '🇱🇻', 'lithuania': '🇱🇹', 'bosnia and herzegovina': '🇧🇦',
+  'mali': '🇲🇱', 'guinea': '🇬🇳', 'guinea-bissau': '🇬🇼', 'gabon': '🇬🇦',
+  'republic of congo': '🇨🇬', 'dr congo': '🇨🇩', 'togo': '🇹🇬', 'benin': '🇧🇯',
+  'cape verde': '🇨🇻', 'angola': '🇦🇴', 'zambia': '🇿🇲', 'zimbabwe': '🇿🇼',
+  'qatar': '🇶🇦', 'saudi arabia': '🇸🇦', 'iran': '🇮🇷',
+  // UK
+  'united kingdom': '🇬🇧', 'great britain': '🇬🇧',
+  // Slugs (LEAGUE_COUNTRY_MAP → flag)
+}
+function countryToFlag(country: string | undefined): string | undefined {
+  if (!country) return undefined
+  // Si ya es un emoji (empieza con \uD83C), devolverlo tal cual
+  if (/^\p{Emoji}/u.test(country) || country.startsWith('🏴')) return country
+  const key = country.toLowerCase().trim()
+  return COUNTRY_FLAG_MAP[key] ?? undefined
+}
+
 // Mapea fila de la vista `ranking_view` → RankingEntry
 function rowToEntry(row: any): RankingEntry {
   const league = normalizeLeague(row.league ?? undefined)
@@ -122,7 +157,7 @@ function rowToEntry(row: any): RankingEntry {
     image:        row.image_url ?? undefined,
     badge:        row.badge ?? undefined,
     region:       row.region ?? undefined,
-    country:      deriveCountry(league, row.country ?? undefined),
+    country:      countryToFlag(deriveCountry(league, row.country ?? undefined)),
     league,
     position:     normalizePosition(row.position ?? undefined),
     gender:       row.gender ?? undefined,
@@ -259,7 +294,7 @@ export async function getTopMovers(limit = 3): Promise<{ movers: MoverEntry[]; f
       subtitle:    r.subtitle ?? '',
       sport:       r.sport ?? undefined,
       emoji:       r.emoji ?? undefined,
-      country:     r.country ?? undefined,
+      country:     countryToFlag(r.country ?? undefined),
       trendReason: r.trend_reason ?? undefined,
       score:       Number(r.score),
       scorePrev:   Number(r.score_prev),

@@ -56,6 +56,7 @@ export const articlesAllQuery = `*[_type == "article"] | order(publishedAt desc)
 // Artículo detalle — normaliza ambos schemas + campos SEO long-form (tldr, faq, focusKeyword, imageAlt, sourceUrls)
 export const articleDetailQuery = `*[_type == "article" && (slug.current == $id || _id == $id)][0] {
   _id,
+  _updatedAt,
   "slug": slug.current,
   "title": select(defined(headline) => headline, title),
   "subtitle": select(defined(headline) => null, subtitle),
