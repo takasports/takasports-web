@@ -269,7 +269,7 @@ export default function NoticiasContent({
               <NewsPageFeed
                 articles={filteredArticles}
                 initialCategory={activeCategory}
-                featuredCount={5}
+                featuredCount={7}
                 hideFilter={true}
               />
 

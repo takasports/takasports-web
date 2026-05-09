@@ -8,8 +8,10 @@ import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 
 const ROTATION_MS = 5000
+const SWIPE_THRESHOLD = 50
 
 const OVERLAY = 'linear-gradient(to top, rgba(3,3,10,0.97) 0%, rgba(3,3,10,0.55) 38%, rgba(3,3,10,0.08) 72%, transparent 100%)'
+const CARD_BG = '#06060F'
 
 interface Article {
   _id: string
@@ -48,7 +50,7 @@ function BigCard({ article }: { article: Article }) {
     <Link
       href={href}
       className="group relative block overflow-hidden rounded-2xl"
-      style={{ height: 340, textDecoration: 'none' }}
+      style={{ height: 340, textDecoration: 'none', background: CARD_BG }}
     >
       {imgUrl ? (
         <Image
@@ -118,7 +120,7 @@ function StripCard({ article }: { article: Article }) {
     <Link
       href={href}
       className="group relative block overflow-hidden rounded-xl"
-      style={{ height: 200, textDecoration: 'none' }}
+      style={{ height: 200, textDecoration: 'none', background: CARD_BG }}
     >
       {imgUrl ? (
         <Image
@@ -171,6 +173,7 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
   const [pairIdx, setPairIdx] = useState(0)
   const [visible, setVisible] = useState(true)
   const pausedRef = useRef(false)
+  const touchStartX = useRef<number | null>(null)
 
   const MAX_PAIRS = 5
   const totalPairs = Math.min(MAX_PAIRS, Math.max(1, Math.floor(safe.length / 2)))
@@ -193,6 +196,25 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
     setTimeout(() => { setPairIdx(i); setVisible(true) }, 400)
   }
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    pausedRef.current = true
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return
+    const diff = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > SWIPE_THRESHOLD) {
+      if (diff > 0) {
+        goTo((pairIdx + 1) % totalPairs)
+      } else {
+        goTo((pairIdx - 1 + totalPairs) % totalPairs)
+      }
+    }
+    touchStartX.current = null
+    pausedRef.current = false
+  }
+
   const base = (pairIdx * 2) % safe.length
   const big  = [safe[base], safe[(base + 1) % safe.length]].filter(Boolean)
   const strip = safe.slice(2, 7)
@@ -206,10 +228,12 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
 
       <div className="mb-6">
 
-        {/* ── 2 GRANDES ROTANTES (pausa en hover) ── */}
+        {/* ── 2 GRANDES ROTANTES (pausa en hover, swipe en táctil) ── */}
         <div
           onMouseEnter={() => { pausedRef.current = true }}
           onMouseLeave={() => { pausedRef.current = false }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           <div
             className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-0"
@@ -218,7 +242,7 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
             {big.map(a => <BigCard key={a._id} article={a} />)}
           </div>
 
-          {/* Barra de progreso + dots */}
+          {/* Barra de progreso + contador + dots */}
           {totalPairs > 1 && (
             <div className="flex items-center gap-3 mt-2.5 mb-3 px-1">
               {/* Barra */}
