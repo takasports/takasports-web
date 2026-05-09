@@ -521,7 +521,8 @@ export default function SopaCracksPage() {
               style={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${puzzle.size}, minmax(0,1fr))`,
-                gap: 4,
+                gap: 3,
+                width: '100%',
                 maxWidth: puzzle.size * 38,
                 touchAction: 'none',
               }}
@@ -555,7 +556,7 @@ export default function SopaCracksPage() {
                             : '1px solid rgba(255,255,255,0.04)',
                         borderRadius: 6,
                         fontFamily: 'var(--font-display)',
-                        fontSize: 'clamp(11px, 1.6vw, 16px)',
+                        fontSize: 'clamp(12px, 3.2vw, 16px)',
                         userSelect: 'none',
                       }}
                     >

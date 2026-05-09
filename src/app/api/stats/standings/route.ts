@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SOCCER_LEAGUES, EUROPEAN_CUPS } from '@/lib/stats-leagues'
+import { FIFA_RANKING, FIFA_RANKING_AS_OF, UFC_P4P, UFC_P4P_AS_OF, COACH_CONFIG, type StandingRow } from '@/lib/stats-editorial'
+export type { StandingRow } from '@/lib/stats-editorial'
+import { withStaleFallback } from '@/lib/stats-cache'
 
-export interface StandingRow {
-  rank: number
-  name: string
-  abbr: string
-  value: string
-  sub: string
-  trend: 'up' | 'down' | 'flat'
-  extra: Record<string, string>
-  flag?: string
-}
+const staleSet = new Set<string>()
 
 export interface LeagueStandings {
   id: string
@@ -87,37 +81,41 @@ function sv(stats: RawStat[], name: string): number {
 
 async function fetchFootball(slug: string, id: string, label: string): Promise<LeagueStandings> {
   const fallback: LeagueStandings = { id, label, rows: [] }
-  try {
-    const res = await fetch(`${BASE}/${slug}/standings`, { next: { revalidate: 1800 } })
-    if (!res.ok) return fallback
-    const json = await res.json()
-    const firstChild = ((json?.children as Record<string, unknown>[] | undefined)?.[0]) as Record<string, unknown> | undefined
-    const standings  = firstChild?.standings as Record<string, unknown> | undefined
-    const entries: Record<string, unknown>[] = (standings?.entries as Record<string, unknown>[] | undefined) ?? []
-    if (!entries.length) return fallback
+  const result = await withStaleFallback<LeagueStandings>(
+    `football:${slug}`,
+    30 * 60_000,
+    async () => {
+      const res = await fetch(`${BASE}/${slug}/standings`, { next: { revalidate: 1800 } })
+      if (!res.ok) throw new Error(`espn ${res.status}`)
+      const json = await res.json()
+      const firstChild = ((json?.children as Record<string, unknown>[] | undefined)?.[0]) as Record<string, unknown> | undefined
+      const standings  = firstChild?.standings as Record<string, unknown> | undefined
+      const entries: Record<string, unknown>[] = (standings?.entries as Record<string, unknown>[] | undefined) ?? []
+      if (!entries.length) return null
 
-    const rows: StandingRow[] = entries.map((e, i) => {
-      const team  = e.team as Record<string, unknown>
-      const stats = (e.stats as RawStat[]) ?? []
-      const w = sv(stats, 'wins'); const d = sv(stats, 'ties'); const l = sv(stats, 'losses')
-      const pts = sv(stats, 'points'); const gd = sv(stats, 'pointDifferential')
-      const gf  = sv(stats, 'pointsFor'); const gc = sv(stats, 'pointsAgainst')
-      const gp  = w + d + l
-      return {
-        rank:  i + 1,
-        name:  (team?.displayName as string) ?? '—',
-        abbr:  (team?.abbreviation as string) ?? '',
-        value: String(Math.round(pts)),
-        sub:   `${gp} PJ · ${gd >= 0 ? '+' : ''}${Math.round(gd)}`,
-        trend: 'flat' as const,
-        extra: { V: String(w), E: String(d), D: String(l), GF: String(Math.round(gf)), GC: String(Math.round(gc)) },
-      }
-    })
-    return { id, label, rows }
-  } catch (err) {
-    console.error(`[standings] Football failed for ${slug}:`, err)
-    return fallback
-  }
+      const rows: StandingRow[] = entries.map((e, i) => {
+        const team  = e.team as Record<string, unknown>
+        const stats = (e.stats as RawStat[]) ?? []
+        const w = sv(stats, 'wins'); const d = sv(stats, 'ties'); const l = sv(stats, 'losses')
+        const pts = sv(stats, 'points'); const gd = sv(stats, 'pointDifferential')
+        const gf  = sv(stats, 'pointsFor'); const gc = sv(stats, 'pointsAgainst')
+        const gp  = w + d + l
+        return {
+          rank:  i + 1,
+          name:  (team?.displayName as string) ?? '—',
+          abbr:  (team?.abbreviation as string) ?? '',
+          value: String(Math.round(pts)),
+          sub:   `${gp} PJ · ${gd >= 0 ? '+' : ''}${Math.round(gd)}`,
+          trend: 'flat' as const,
+          extra: { V: String(w), E: String(d), D: String(l), GF: String(Math.round(gf)), GC: String(Math.round(gc)) },
+        }
+      })
+      return { id, label, rows }
+    },
+    fallback,
+  )
+  if (result.stale) staleSet.add(id)
+  return result.data
 }
 
 // ── F1 via Jolpica/Ergast (more accurate + dynamic season) ────────────────────
@@ -247,12 +245,15 @@ async function fetchF1FastestLaps(season: string): Promise<StandingRow[]> {
 // ── NBA via ESPN ──────────────────────────────────────────────────────────────
 
 async function fetchNBA(): Promise<{ east: StandingRow[]; west: StandingRow[] }> {
-  const fallback = { east: [], west: [] }
-  try {
-    const res = await fetch(`${BASE}/basketball/nba/standings`, { next: { revalidate: 1800 } })
-    if (!res.ok) return fallback
-    const json = await res.json()
-    const children = (json?.children as Record<string, unknown>[]) ?? []
+  const fallback = { east: [] as StandingRow[], west: [] as StandingRow[] }
+  const result = await withStaleFallback<{ east: StandingRow[]; west: StandingRow[] }>(
+    'nba:standings',
+    30 * 60_000,
+    async () => {
+      const res = await fetch(`${BASE}/basketball/nba/standings`, { next: { revalidate: 1800 } })
+      if (!res.ok) throw new Error(`espn ${res.status}`)
+      const json = await res.json()
+      const children = (json?.children as Record<string, unknown>[]) ?? []
 
     const parse = (child: Record<string, unknown>, confLabel: string): StandingRow[] => {
       const entries = (child?.standings as Record<string, unknown>)?.entries as Record<string, unknown>[] ?? []
@@ -273,11 +274,12 @@ async function fetchNBA(): Promise<{ east: StandingRow[]; west: StandingRow[] }>
       }))
     }
 
-    return { east: parse(children[0] as Record<string, unknown>, 'Este'), west: parse(children[1] as Record<string, unknown>, 'Oeste') }
-  } catch (err) {
-    console.error('[standings] NBA failed:', err)
-    return fallback
-  }
+      return { east: parse(children[0] as Record<string, unknown>, 'Este'), west: parse(children[1] as Record<string, unknown>, 'Oeste') }
+    },
+    fallback,
+  )
+  if (result.stale) { staleSet.add('nbaEast'); staleSet.add('nbaWest') }
+  return result.data
 }
 
 // ── NBA Player Leaders via NBA.com ────────────────────────────────────────────
@@ -342,25 +344,9 @@ async function fetchNBALeaders(season: string): Promise<{ scoring: StandingRow[]
 }
 
 // ── UFC P4P — curated snapshot (no public API available) ─────────────────────
-// ESPN endpoint dead since ~2022. Hardcoded from official UFC rankings (May 2026).
-// Key changes since May-2025: Merab Dvalishvili beat O'Malley (Sep 2024) for BW belt;
-// Magomed Ankalaev beat Pereira (Jan 2026) for LHW belt.
-
-const UFC_P4P_AS_OF = 'May-2026'
+// Data lives in @/lib/stats-editorial.ts. Update there + bump UFC_P4P_AS_OF.
 function fetchUFCP4P(): Promise<StandingRow[]> {
-  const rows: StandingRow[] = [
-    { rank: 1, name: 'Islam Makhachev',   abbr: 'LW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Ligero',      Estado: 'Campeón' } },
-    { rank: 2, name: 'Jon Jones',         abbr: 'HW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Pesado',       Estado: 'Campeón' } },
-    { rank: 3, name: 'Ilia Topuria',      abbr: 'FW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Pluma',        Estado: 'Campeón' } },
-    { rank: 4, name: 'Dricus du Plessis', abbr: 'MW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Medio',         Estado: 'Campeón' } },
-    { rank: 5, name: 'Alex Pereira',      abbr: 'LHW', value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'down', extra: { División: 'Semi-pesado',   Estado: 'Ex-campeón' } },
-    { rank: 6, name: 'Merab Dvalishvili', abbr: 'BW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Gallo',         Estado: 'Campeón' } },
-    { rank: 7, name: 'Belal Muhammad',    abbr: 'WW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Wélter',        Estado: 'Campeón' } },
-    { rank: 8, name: 'Tom Aspinall',      abbr: 'HW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Pesado (Int.)', Estado: 'Campeón Int.' } },
-    { rank: 9, name: 'Alexandre Pantoja', abbr: 'FLW', value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Mosca',         Estado: 'Campeón' } },
-    { rank: 10,name: 'Charles Oliveira',  abbr: 'LW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Ligero',        Estado: 'Contendiente' } },
-  ]
-  return Promise.resolve(rows)
+  return Promise.resolve(UFC_P4P)
 }
 
 // ── Women's Liga F via ESPN ───────────────────────────────────────────────────
@@ -438,21 +424,8 @@ async function fetchTennis(): Promise<{ atp: StandingRow[]; wta: StandingRow[] }
   return atp.length || wta.length ? { atp, wta } : fallback
 }
 
-// ── FIFA Ranking (manually maintained snapshot) ───────────────────────────────
-
-const FIFA_RANKING_AS_OF = '2026-04'
-const FIFA_RANKING: StandingRow[] = [
-  { rank: 1,  name: 'Francia',        abbr: 'FRA', value: '1877', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'up',   extra: { Pts: '1877.32' } },
-  { rank: 2,  name: 'España',         abbr: 'ESP', value: '1876', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'down', extra: { Pts: '1876.40' } },
-  { rank: 3,  name: 'Argentina',      abbr: 'ARG', value: '1875', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'down', extra: { Pts: '1874.82' } },
-  { rank: 4,  name: 'Inglaterra',     abbr: 'ENG', value: '1826', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'flat', extra: { Pts: '1825.97' } },
-  { rank: 5,  name: 'Portugal',       abbr: 'POR', value: '1764', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'up',   extra: { Pts: '1763.83' } },
-  { rank: 6,  name: 'Brasil',         abbr: 'BRA', value: '1761', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'down', extra: { Pts: '1761.16' } },
-  { rank: 7,  name: 'Países Bajos',   abbr: 'NED', value: '1758', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'flat', extra: { Pts: '1757.87' } },
-  { rank: 8,  name: 'Marruecos',      abbr: 'MAR', value: '1757', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'up',   extra: { Pts: '1756.80' } },
-  { rank: 9,  name: 'Bélgica',        abbr: 'BEL', value: '1735', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'down', extra: { Pts: '1734.72' } },
-  { rank: 10, name: 'Alemania',       abbr: 'GER', value: '1730', sub: `Snapshot ${FIFA_RANKING_AS_OF}`, trend: 'up',   extra: { Pts: '1730.37' } },
-]
+// FIFA ranking & UFC P4P snapshots live in @/lib/stats-editorial.ts so editors
+// can update one file. Future: cron pulls from Supabase Storage and overwrites.
 
 // ── UEFA Nations League via ESPN ──────────────────────────────────────────────
 
@@ -557,18 +530,28 @@ async function fetchPGA(): Promise<PGAResult> {
 
 // ── FedEx Cup via ESPN statistics endpoint ────────────────────────────────────
 
+// ESPN's PGA statistics endpoint returns ~11 MB (every PGA member's full stat
+// history). Next.js Data Cache rejects bodies > 2 MB so every hit was a fresh
+// 11 MB roundtrip. Read the response as a stream, slim it to the FedEx Cup
+// category only, and cache the trimmed shape ourselves.
+let fedExCupCache: { data: StandingRow[]; expiresAt: number } | null = null
+const FEDEX_TTL_MS = 60 * 60 * 1000
+
 async function fetchFedExCup(): Promise<StandingRow[]> {
+  if (fedExCupCache && Date.now() < fedExCupCache.expiresAt) return fedExCupCache.data
   try {
-    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/statistics', { next: { revalidate: 3600 } })
-    if (!res.ok) return []
+    // `cache: 'no-store'` → bypass Next.js Data Cache entirely (the 11 MB body
+    // would just trigger the >2 MB warning every time).
+    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/statistics', { cache: 'no-store' })
+    if (!res.ok) return fedExCupCache?.data ?? []
     const d = await res.json()
     const stats = d.stats as Record<string, unknown>
     const cats = (stats?.categories as Record<string, unknown>[]) ?? []
     const fedex = cats.find(c => (c as Record<string, unknown>).name === 'cupPoints') as Record<string, unknown> | undefined
-    if (!fedex) return []
+    if (!fedex) return fedExCupCache?.data ?? []
     const season = (d.season as Record<string, unknown>)?.year ?? ''
     const leaders = (fedex.leaders as Record<string, unknown>[]) ?? []
-    return leaders.slice(0, 10).map((l, i) => {
+    const rows = leaders.slice(0, 10).map((l, i) => {
       const ath = l.athlete as Record<string, unknown>
       return {
         rank:  i + 1,
@@ -580,24 +563,28 @@ async function fetchFedExCup(): Promise<StandingRow[]> {
         extra: { Pts: String(Math.round((l.value as number) ?? 0)) },
       }
     })
+    fedExCupCache = { data: rows, expiresAt: Date.now() + FEDEX_TTL_MS }
+    return rows
   } catch (err) {
     console.error('[standings] FedEx Cup failed:', err)
-    return []
+    return fedExCupCache?.data ?? []
   }
 }
 
 // ── Coaches win-rate via ESPN team records ────────────────────────────────────
 // Update coach names here when managers change. Win% auto-fetches from ESPN.
 
-const COACH_CONFIG = [
-  { name: 'Hansi Flick',     team: 'FC Barcelona',  flag: '🇩🇪', league: 'esp.1', teamId: '83'   },
-  { name: 'Vincent Kompany', team: 'Bayern Munich', flag: '🇧🇪', league: 'ger.1', teamId: '132'  },
-  { name: 'Luis Enrique',    team: 'PSG',           flag: '🇪🇸', league: 'fra.1', teamId: '160'  },
-  { name: 'Pep Guardiola',   team: 'Man City',      flag: '🇪🇸', league: 'eng.1', teamId: '382'  },
-  { name: 'Mikel Arteta',    team: 'Arsenal',       flag: '🇪🇸', league: 'eng.1', teamId: '359'  },
-  { name: 'Diego Simeone',   team: 'Atlético',      flag: '🇦🇷', league: 'esp.1', teamId: '1068' },
-  { name: 'Arne Slot',       team: 'Liverpool',     flag: '🇳🇱', league: 'eng.1', teamId: '364'  },
-]
+// COACH_CONFIG lives in @/lib/stats-editorial.ts — update there when sackings happen.
+
+// European seasons run Aug→May. Aug-Dec → "yy/yy+1"; Jan-Jul → "yy-1/yy".
+function soccerSeasonShort(): string {
+  const now = new Date()
+  const y = now.getUTCFullYear()
+  const startYear = now.getUTCMonth() >= 7 ? y : y - 1
+  const a = String(startYear % 100).padStart(2, '0')
+  const b = String((startYear + 1) % 100).padStart(2, '0')
+  return `${a}/${b}`
+}
 
 async function fetchCoachRecords(): Promise<StandingRow[]> {
   const results = await Promise.allSettled(
@@ -627,7 +614,7 @@ async function fetchCoachRecords(): Promise<StandingRow[]> {
         abbr:  coach.team,
         flag:  coach.flag,
         value: `${winPct}%`,
-        sub:   `Temp. 25/26 · ${gpFull} PJ`,
+        sub:   `Temp. ${soccerSeasonShort()} · ${gpFull} PJ`,
         trend: 'flat' as const,
         extra: { GF: (gf / gpFull).toFixed(2), GC: (gc / gpFull).toFixed(2), Club: coach.team },
       } satisfies StandingRow
@@ -944,20 +931,23 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     .filter(Boolean) as LeagueStandings[]
 
   const now = new Date().toISOString()
-  const live    = (source: string): BlockMeta => ({ status: 'live',        source, fetchedAt: now })
+  const stale   = (source: string): BlockMeta => ({ status: 'stale', source, fetchedAt: now, asOf: 'caché reciente' })
+  const live    = (source: string, key?: string): BlockMeta =>
+    (key && staleSet.has(key)) ? stale(source) : ({ status: 'live', source, fetchedAt: now })
   const unavail = (source: string): BlockMeta => ({ status: 'unavailable', source, fetchedAt: now })
   const histor  = (source: string, asOf: string): BlockMeta => ({ status: 'historical', source, fetchedAt: now, asOf })
 
   const wcStarted = worldCup.some(g => g.rows.some(r => r.sub !== 'Sin jugar'))
 
   const meta: Record<string, BlockMeta> = {
+    // football meta is populated per-league below (each tabla- id can be stale independently)
     football:        live('ESPN'),
     f1Drivers:       f1.drivers.length      ? live(`Jolpica · ${f1.season} R${f1.round}`) : unavail('Jolpica'),
     f1Constructors:  f1.constructors.length ? live(`Jolpica · ${f1.season} R${f1.round}`) : unavail('Jolpica'),
     f1Poles:         f1.poles.length        ? live(`Jolpica · ${f1.season}`)              : unavail('Jolpica'),
     f1FastestLaps:   f1.fastestLaps.length  ? live(`Jolpica · ${f1.season}`)              : unavail('Jolpica'),
-    nbaEast:         nba.east.length        ? live('ESPN')          : unavail('ESPN'),
-    nbaWest:         nba.west.length        ? live('ESPN')          : unavail('ESPN'),
+    nbaEast:         nba.east.length        ? live('ESPN', 'nbaEast') : unavail('ESPN'),
+    nbaWest:         nba.west.length        ? live('ESPN', 'nbaWest') : unavail('ESPN'),
     nbaScoring:      nbaLeaders.scoring.length    ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
     nbaRebounds:     nbaLeaders.rebounds.length   ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
     nbaAssists:      nbaLeaders.assists.length    ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
@@ -999,6 +989,15 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     ueclFixtures: ueclFixtures.length
       ? ueclFixtures.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · UEFA Conference League') : ({ status: 'stale', source: 'ESPN · UECL', fetchedAt: now, asOf: 'Fase KO' } satisfies BlockMeta)
       : unavail('ESPN'),
+  }
+
+  // Per-football-league meta — lets the UI surface stale-fallback per tabla-* block.
+  for (const league of football) {
+    if (staleSet.has(league.id)) {
+      meta[league.id] = { status: 'stale', source: 'ESPN · caché reciente', fetchedAt: now, asOf: 'fallback' }
+    } else if (league.rows.length) {
+      meta[league.id] = { status: 'live', source: 'ESPN', fetchedAt: now }
+    }
   }
 
   return {

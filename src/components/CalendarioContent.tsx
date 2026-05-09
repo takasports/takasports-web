@@ -1393,12 +1393,14 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
           </p>
         </div>
 
-        <div className="flex items-center gap-3 mb-5 flex-wrap">
-          <TimezoneSelector value={tz} onChange={(newTz) => { setTz(newTz); setStoredTZ(newTz) }} />
+        {/* Timezone — compacto en mobile, completo en sm+ */}
+        <div className="flex items-center gap-3 mb-3 sm:mb-5">
+          <TimezoneSelector value={tz} onChange={(newTz) => { setTz(newTz); setStoredTZ(newTz) }} compact />
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Tabs — scroll horizontal en mobile, wrap en sm+ */}
+        <div className="flex items-center gap-2 overflow-x-auto sm:flex-wrap scrollbar-hide pb-1"
+          style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
           {(['destacados', 'todos', 'en-vivo', 'resultados', 'recordatorios'] as const).map(tab => {
             const isActive = view === tab
             const isLiveTab = tab === 'en-vivo'
@@ -1415,8 +1417,9 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
               <button
                 key={tab}
                 onClick={() => setView(tab)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all flex-shrink-0"
                 style={{
+                  scrollSnapAlign: 'start',
                   background: isActive
                     ? (greenStyle ? 'rgba(74,222,128,0.18)' : remStyle ? 'rgba(251,191,36,0.14)' : pastStyle ? 'rgba(239,68,68,0.14)' : 'rgba(124,58,237,0.18)')
                     : 'rgba(255,255,255,0.04)',

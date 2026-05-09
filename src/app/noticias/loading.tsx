@@ -4,8 +4,9 @@ export default function NoticiasLoading() {
       {/* LiveStrip skeleton */}
       <div className="rounded-xl mb-5" style={{ height: 40, background: 'rgba(255,255,255,0.04)' }} />
 
-      {/* Hero 2-col */}
-      <div className="grid gap-1 mb-4" style={{ gridTemplateColumns: '2fr 1fr', height: 320 }}>
+      {/* Hero — full-width en mobile, 2-col en sm+ */}
+      <div className="rounded-2xl mb-2 sm:hidden" style={{ height: 220, background: 'rgba(255,255,255,0.06)' }} />
+      <div className="hidden sm:grid gap-1 mb-4" style={{ gridTemplateColumns: '2fr 1fr', height: 320 }}>
         <div className="rounded-2xl" style={{ background: 'rgba(255,255,255,0.06)' }} />
         <div className="flex flex-col gap-1">
           <div className="flex-1 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)' }} />

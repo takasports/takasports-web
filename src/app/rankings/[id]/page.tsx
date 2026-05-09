@@ -222,20 +222,36 @@ export default async function EntryDetailPage(
             border: '1px solid var(--border)',
             borderTop: `3px solid ${sportAccent}`,
           }}>
-          <div className="flex items-start gap-4 sm:gap-6">
-            {/* Avatar */}
-            <div className="relative flex-shrink-0">
-              <div className="flex items-center justify-center rounded-2xl text-3xl sm:text-4xl"
-                style={{
-                  width: 72, height: 72,
-                  background: `${sportAccent}14`,
-                  border: `1px solid ${sportAccent}28`,
-                }}>
-                <PlayerAvatar src={entry.image} alt={entry.name} fallback={avatar} size={72} rounded="2xl" />
+          {/* Mobile: avatar + score en fila, nombre debajo. Desktop: todo en fila */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+
+            {/* Avatar + score inline en mobile */}
+            <div className="flex items-center gap-4 sm:contents">
+              <div className="relative flex-shrink-0">
+                <div className="flex items-center justify-center rounded-2xl"
+                  style={{
+                    width: 72, height: 72,
+                    background: `${sportAccent}14`,
+                    border: `1px solid ${sportAccent}28`,
+                  }}>
+                  <PlayerAvatar src={entry.image} alt={entry.name} fallback={avatar} size={72} rounded="2xl" />
+                </div>
+                {entry.country && (
+                  <span className="absolute -bottom-1 -right-1 text-base leading-none">{entry.country}</span>
+                )}
               </div>
-              {entry.country && (
-                <span className="absolute -bottom-1 -right-1 text-base leading-none">{entry.country}</span>
-              )}
+
+              {/* Score — visible inline solo en mobile */}
+              <div className="sm:hidden">
+                <span className="block font-black tabular-nums leading-none"
+                  style={{ color: scoreColor(ds), fontFamily: 'var(--font-display)', fontSize: '2.8rem' }}>
+                  {ds.toFixed(1)}
+                </span>
+                <span className="block text-[9px] font-black uppercase tracking-widest"
+                  style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
+                  / 100
+                </span>
+              </div>
             </div>
 
             <div className="flex-1 min-w-0">
@@ -259,8 +275,8 @@ export default async function EntryDetailPage(
               )}
             </div>
 
-            {/* Score */}
-            <div className="text-right flex-shrink-0">
+            {/* Score — solo en desktop */}
+            <div className="hidden sm:block text-right flex-shrink-0">
               <span className="block font-black tabular-nums leading-none"
                 style={{
                   color: scoreColor(ds),

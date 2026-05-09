@@ -10,8 +10,9 @@ export default function Loading() {
         style={{ height: 40, background: 'rgba(255,255,255,0.04)' }}
       />
 
-      {/* HeroBlock skeleton — grid 2/3 + 1/3 */}
-      <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: '2fr 1fr', height: 340 }}>
+      {/* HeroBlock skeleton — full-width en mobile, 2-col en sm+ */}
+      <div className="rounded-2xl mb-2 sm:hidden" style={{ height: 240, background: 'rgba(255,255,255,0.06)' }} />
+      <div className="hidden sm:grid gap-1 mb-1" style={{ gridTemplateColumns: '2fr 1fr', height: 340 }}>
         <div className="rounded-2xl" style={{ background: 'rgba(255,255,255,0.06)' }} />
         <div className="flex flex-col gap-1">
           <div className="flex-1 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)' }} />
@@ -19,8 +20,8 @@ export default function Loading() {
         </div>
       </div>
 
-      {/* CompactStrip skeleton */}
-      <div className="grid gap-1 mb-6" style={{ gridTemplateColumns: 'repeat(5,1fr)', height: 52 }}>
+      {/* CompactStrip skeleton — solo sm+ */}
+      <div className="hidden sm:grid gap-1 mb-6" style={{ gridTemplateColumns: 'repeat(5,1fr)', height: 52 }}>
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }} />
         ))}

@@ -8,7 +8,7 @@ interface Props {
 export default function ViewToggle({ view, onToggle }: Props) {
   return (
     <div
-      className="flex items-center gap-0.5 p-1 rounded-xl"
+      className="hidden sm:flex items-center gap-0.5 p-1 rounded-xl"
       style={{ background: 'rgba(255,255,255,0.05)' }}
     >
       {/* List */}

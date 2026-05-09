@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { LogoMark } from './Logo'
 
@@ -14,6 +14,17 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   const [email, setEmail] = useState('')
   const [emailSent, setEmailSent] = useState(false)
   const supabase = createClient()
+
+  // Swipe-down to close (mobile)
+  const touchStartY = useRef<number | null>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
+  function onTouchStart(e: React.TouchEvent) { touchStartY.current = e.touches[0].clientY }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartY.current === null) return
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    if (dy > 80) onClose()
+    touchStartY.current = null
+  }
 
   async function signInWith(provider: 'google' | 'facebook') {
     if (!supabase) { setError('Auth no configurado'); return }
@@ -59,9 +70,12 @@ export default function AuthModal({ onClose }: AuthModalProps) {
       onClick={onClose}
     >
       <div
+        ref={modalRef}
         className="relative w-full"
         style={{ maxWidth: 400, borderRadius: 24 }}
         onClick={e => e.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         {/* Glow */}
         <div
@@ -77,6 +91,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             overflow: 'hidden',
           }}
         >
+          {/* Drag handle — visible en mobile */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-8 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+          </div>
           {/* Header */}
           <div className="px-6 pt-6 pb-5 flex items-start justify-between">
             <div>

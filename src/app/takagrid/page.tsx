@@ -724,7 +724,7 @@ export default function TakaGridPage() {
       <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-4 sm:px-6 xl:px-10 pb-24">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
         {/* Breadcrumb */}
         <div className="pt-6 sm:pt-8">
           <Link href="/juegos" className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-colors hover:text-white" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
@@ -779,10 +779,10 @@ export default function TakaGridPage() {
           {hydrated && (
             <div className="w-full" style={{ maxWidth: 560 }}>
               {/* Column headers */}
-              <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: '80px 1fr 1fr 1fr' }}>
+              <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: 'clamp(56px,18vw,80px) 1fr 1fr 1fr' }}>
                 <div />
                 {puzzle.cols.map((col, c) => (
-                  <div key={c} className="rounded-xl px-2 py-2 flex flex-col items-center justify-center text-center gap-0.5 min-h-[56px]"
+                  <div key={c} className="rounded-xl px-1 py-2 flex flex-col items-center justify-center text-center gap-0.5 min-h-[56px]"
                     style={{ background: `${ACCENT_DIM}12`, border: `1px solid ${ACCENT_DIM}25` }}>
                     <span className="text-base leading-none">{col.emoji}</span>
                     <span className="text-[9px] font-black uppercase tracking-widest leading-tight" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
@@ -794,9 +794,9 @@ export default function TakaGridPage() {
 
               {/* Rows */}
               {puzzle.rows.map((row, r) => (
-                <div key={r} className="grid gap-2 mb-2" style={{ gridTemplateColumns: '80px 1fr 1fr 1fr' }}>
+                <div key={r} className="grid gap-2 mb-2" style={{ gridTemplateColumns: 'clamp(56px,18vw,80px) 1fr 1fr 1fr' }}>
                   {/* Row header */}
-                  <div className="rounded-xl px-2 py-2 flex flex-col items-center justify-center text-center gap-0.5 min-h-[90px]"
+                  <div className="rounded-xl px-1 py-2 flex flex-col items-center justify-center text-center gap-0.5 min-h-[90px]"
                     style={{ background: `${ACCENT_DIM}12`, border: `1px solid ${ACCENT_DIM}25` }}>
                     <span className="text-base leading-none">{row.emoji}</span>
                     <span className="text-[9px] font-black uppercase tracking-widest leading-tight" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
@@ -823,7 +823,7 @@ export default function TakaGridPage() {
               <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 Jugadores posibles por celda
               </p>
-              <div className="grid gap-1.5" style={{ gridTemplateColumns: '80px 1fr 1fr 1fr' }}>
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'clamp(56px,18vw,80px) 1fr 1fr 1fr' }}>
                 <div />
                 {puzzle.cols.map((col, c) => (
                   <div key={c} className="text-center">

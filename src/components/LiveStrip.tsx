@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { SPORT_EMOJI, getSportColor, getLiveLabel } from '@/lib/competitions'
 
@@ -64,7 +64,9 @@ function short(name: string | null | undefined, abbr?: string): string {
 export default function LiveStrip() {
   const [liveFixtures, setLiveFixtures] = useState<LiveFixture[]>([])
   const [upcoming, setUpcoming]         = useState<UpcomingEvent[]>([])
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [hidden, setHidden]             = useState(false)
+  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
+  const lastYRef   = useRef(0)
 
   const fetchLive = useCallback(async () => {
     try {
@@ -95,6 +97,19 @@ export default function LiveStrip() {
     fetchUpcoming()
   }, [fetchLive, fetchUpcoming])
 
+  // Ocultar en scroll-down, mostrar en scroll-up (solo mobile)
+  useEffect(() => {
+    const onScroll = () => {
+      if (window.innerWidth >= 1024) { setHidden(false); return }
+      const y = window.scrollY
+      if (y < 40) { setHidden(false); lastYRef.current = y; return }
+      setHidden(y > lastYRef.current + 4)
+      lastYRef.current = y
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   const isLiveRef = useRef(false)
   useEffect(() => {
     const wasLive = isLiveRef.current
@@ -111,8 +126,14 @@ export default function LiveStrip() {
 
   return (
     <div
-      className="w-full"
-      style={{ background: 'rgba(9,9,15,0.92)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      className="w-full transition-all duration-300"
+      style={{
+        background: 'rgba(9,9,15,0.92)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        maxHeight: hidden ? 0 : 48,
+        overflow: 'hidden',
+        opacity: hidden ? 0 : 1,
+      }}
     >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10">
         <div className="flex items-center h-10 gap-4 overflow-x-auto snap-strip" style={{ scrollbarWidth: 'none' }}>

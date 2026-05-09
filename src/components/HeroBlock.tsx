@@ -227,7 +227,7 @@ function BigCard({
           className="font-black leading-tight mb-2"
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(1.75rem, 2.9vw, 3rem)',
+            fontSize: 'clamp(1.45rem, 2.9vw, 3rem)',
             color: '#F8F8FF',
             letterSpacing: '-0.018em',
             textShadow: '0 2px 32px rgba(0,0,0,0.7)',
