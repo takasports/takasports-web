@@ -1,13 +1,13 @@
 // Convención oficial de deportes — slugs canónicos alineados con Sanity:
 // - `sport` en Sanity = slug: 'futbol', 'wwe', 'baloncesto', 'formula1', 'tenis', 'ufc', 'rugby'
-// - Labels visuales: 'Fútbol', 'WWE', 'NBA', 'F1', 'Tenis', 'UFC', 'Rugby'
+// - Labels visuales: 'Fútbol', 'WWE', 'Baloncesto', 'F1', 'Tenis', 'UFC', 'Rugby'
 
 // Slug → label visual (fuente de verdad)
 export const SLUG_TO_LABEL: Record<string, string> = {
   futbol:     'Fútbol',
   wwe:        'WWE',
   formula1:   'F1',
-  baloncesto: 'NBA',
+  baloncesto: 'Baloncesto',
   tenis:      'Tenis',
   ufc:        'UFC',
   rugby:      'Rugby',
@@ -26,7 +26,7 @@ export const CATEGORY_TO_SLUG: Record<string, string> = Object.fromEntries(
 )
 
 // Categorías principales del filtro global (Home / Noticias)
-export const HOME_SPORT_CATEGORIES = ['Todo', 'Fútbol', 'WWE', 'F1', 'NBA', 'Tenis', 'UFC']
+export const HOME_SPORT_CATEGORIES = ['Todo', 'Fútbol', 'WWE', 'F1', 'Baloncesto', 'Tenis', 'UFC']
 
 // Categorías extra para el dropdown "Más"
 export const MORE_SPORT_CATEGORIES = ['Rugby']
@@ -88,7 +88,7 @@ export const SPORT_TABS = [
   { label: 'Fútbol', slug: 'futbol',     href: '/?sport=futbol' },
   { label: 'WWE',    slug: 'wwe',        href: '/?sport=wwe' },
   { label: 'UFC',    slug: 'ufc',        href: '/?sport=ufc' },
-  { label: 'NBA',    slug: 'baloncesto', href: '/?sport=baloncesto' },
+  { label: 'Baloncesto', slug: 'baloncesto', href: '/?sport=baloncesto' },
   { label: 'F1',     slug: 'formula1',   href: '/?sport=formula1' },
   { label: 'Tenis',  slug: 'tenis',      href: '/?sport=tenis' },
   { label: 'Rugby',  slug: 'rugby',      href: '/?sport=rugby' },

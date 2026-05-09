@@ -9,7 +9,7 @@ const SPORT_META: Record<string, { emoji: string; accent: string }> = {
   'Fútbol':  { emoji: '⚽', accent: '#22c55e' },
   'WWE':     { emoji: '🎤', accent: '#facc15' },
   'F1':      { emoji: '🏎️', accent: '#ef4444' },
-  'NBA':     { emoji: '🏀', accent: '#f59e0b' },
+  'Baloncesto': { emoji: '🏀', accent: '#f59e0b' },
   'Tenis':   { emoji: '🎾', accent: '#d97706' },
   'UFC':     { emoji: '🥊', accent: '#f97316' },
   'Rugby':   { emoji: '🏉', accent: '#a78bfa' },
