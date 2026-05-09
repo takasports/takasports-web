@@ -10,6 +10,19 @@ import CalendarioContent from '@/components/CalendarioContent'
 
 export const revalidate = 300
 
+/** Normalize a team name for duplicate detection: lowercase, strip accents,
+ *  collapse whitespace, strip common suffixes (CF, FC, SL, SAD…). */
+function norm(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\b(fc|cf|sl|sad|sc|afc|fk|ac|as|ss|rc|rcd|ud|sd|cd|rv)\b/g, '')
+    .replace(/[^a-z0-9]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export default async function CalendarioPage() {
   const [espnEvents, rawSanity, padelEvents, espnPast] = await Promise.allSettled([
     fetchEspnEvents(),
@@ -26,11 +39,41 @@ export default async function CalendarioPage() {
   const padel  = padelEvents.status === 'fulfilled' ? padelEvents.value : []
   const past   = espnPast.status === 'fulfilled'    ? espnPast.value    : []
 
-  // Merge: Sanity events (curated) first, ESPN + Padel fill the rest
-  const sanityIds = new Set(sanityEvents.map(e => `${e.home}|${e.away}`))
-  const espnFiltered  = espn.filter(e => !sanityIds.has(`${e.home}|${e.away}`))
-  const padelFiltered = padel.filter(e => !sanityIds.has(`${e.home}|${e.away}`))
-  const events = [...sanityEvents, ...espnFiltered, ...padelFiltered]
+  // Build a set of match fingerprints from curated Sanity events.
+  // Key = normalized(home)|normalized(away)|YYYY-MM-DD  (or date string)
+  const sanityFingerprints = new Set(
+    sanityEvents.map(e => {
+      const day = e.isoDate?.slice(0, 10) ?? e.date
+      return `${norm(e.home)}|${norm(e.away ?? '')}|${day}`
+    })
+  )
+
+  function hasSanityDupe(home: string, away: string | null, isoDate?: string, date?: string): boolean {
+    if (!away) return false   // non-team events are never blocked by Sanity
+    const day = isoDate?.slice(0, 10) ?? date ?? ''
+    return sanityFingerprints.has(`${norm(home)}|${norm(away)}|${day}`)
+  }
+
+  const espnFiltered  = espn.filter(e  => !hasSanityDupe(e.home, e.away, e.isoDate, e.date))
+  const padelFiltered = padel.filter(e => !hasSanityDupe(e.home, e.away, e.isoDate, e.date))
+
+  // Final merge + dedup: Sanity first (curated), then ESPN, then Padel.
+  // Dedup passes: 1) by id  2) by match fingerprint (team sports)
+  const seenIds          = new Set<string>()
+  const seenFingerprints = new Set<string>()
+
+  const events = [...sanityEvents, ...espnFiltered, ...padelFiltered].filter(e => {
+    if (seenIds.has(e.id)) return false
+    seenIds.add(e.id)
+
+    if (e.away) {
+      const day = e.isoDate?.slice(0, 10) ?? e.date
+      const fp  = `${norm(e.home)}|${norm(e.away)}|${day}`
+      if (seenFingerprints.has(fp)) return false
+      seenFingerprints.add(fp)
+    }
+    return true
+  })
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>

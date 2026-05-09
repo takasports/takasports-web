@@ -286,7 +286,27 @@ export async function fetchEspnEvents(): Promise<SportEvent[]> {
   }
 
   raw.sort((a, b) => a.isoDate.localeCompare(b.isoDate))
-  return raw.map(r => r.event)
+
+  // ── Dedup ─────────────────────────────────────────────────────────────────
+  // For non-team sports (F1, UFC) ESPN returns multiple sessions per event
+  // (FP1, Qualifying, Race…) with the same name. Keep only the first/earliest.
+  const seenIds       = new Set<string>()
+  const seenNonTeam   = new Set<string>()   // sport|home → earliest session
+
+  return raw
+    .map(r => r.event)
+    .filter(ev => {
+      if (seenIds.has(ev.id)) return false
+      seenIds.add(ev.id)
+
+      if (ev.away === null) {
+        // Non-team: deduplicate by sport+name, keep the earliest (already sorted)
+        const key = `${ev.sport}|${ev.home}`
+        if (seenNonTeam.has(key)) return false
+        seenNonTeam.add(key)
+      }
+      return true
+    })
 }
 
 // ── Past results (last N days) ────────────────────────────────────────────
