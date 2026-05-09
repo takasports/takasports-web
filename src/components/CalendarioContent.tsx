@@ -411,6 +411,21 @@ function SkeletonRow() {
   )
 }
 
+// ─── Competition sub-header ───────────────────────────────────────────────
+function CompGroupHeader({ comp, accent, count }: { comp: string; accent: string; count: number }) {
+  return (
+    <div className="flex items-center gap-2 px-1 pt-3 pb-1">
+      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: accent }} />
+      <span className="text-[10px] font-black uppercase tracking-widest truncate flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+        {comp}
+      </span>
+      <span className="text-[9px] tabular-nums flex-shrink-0" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+        {count}
+      </span>
+    </div>
+  )
+}
+
 // ─── Compact list row (non-live or in TODOS) ──────────────────────────────
 function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, onToggleFav }: {
   event: SportEvent
@@ -439,7 +454,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
       className={`grid items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:brightness-125 ${flashing ? 'ts-flash' : ''}`}
       style={{
         gridTemplateColumns: '92px 1fr auto auto',
-        background: isLive ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.025)',
+        background: isLive ? 'rgba(74,222,128,0.10)' : 'rgba(255,255,255,0.025)',
         borderLeft: `3px solid ${accent}`,
       }}
     >
@@ -459,7 +474,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
 
       <div className="flex flex-col gap-1 min-w-0">
         <div className="flex items-center gap-1.5 min-w-0">
-          <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={16} sport={event.sport} />
+          <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={24} sport={event.sport} />
           <span className="text-[11px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {event.home}
           </span>
@@ -467,7 +482,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
         </div>
         {event.away && (
           <div className="flex items-center gap-1.5 min-w-0">
-            <TeamLogo logo={event.awayLogo} photo={event.awayPhoto} name={event.away} size={16} sport={event.sport} />
+            <TeamLogo logo={event.awayLogo} photo={event.awayPhoto} name={event.away} size={24} sport={event.sport} />
             <span className="text-[11px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
               {event.away}
             </span>
@@ -489,11 +504,11 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
                   {liveScore.clock ? liveScore.clock : 'Sets'}
                 </span>
               )}
-              <span className="text-[12px] font-black tabular-nums leading-none"
+              <span className="text-[16px] font-black tabular-nums leading-none"
                 style={{ color: isLive ? '#4ade80' : '#C0C0D8', fontFamily: 'var(--font-display)' }}>
                 {liveScore.homeGoals ?? 0}
               </span>
-              <span className="text-[12px] font-black tabular-nums leading-none"
+              <span className="text-[16px] font-black tabular-nums leading-none"
                 style={{ color: isLive ? '#4ade80' : '#C0C0D8', fontFamily: 'var(--font-display)' }}>
                 {liveScore.awayGoals ?? 0}
               </span>
@@ -517,9 +532,9 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
 
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {isLive && liveScore && (
-          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase"
-            style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', fontFamily: 'var(--font-sport)' }}>
-            <span className="w-1 h-1 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
+          <span className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wide"
+            style={{ background: 'rgba(74,222,128,0.18)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.30)', fontFamily: 'var(--font-sport)' }}>
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
             {getLiveLabel(liveScore.status, liveScore.elapsed, {
               sport: event.sport,
               homeScore: liveScore.homeGoals,
@@ -944,14 +959,14 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
       {/* Teams */}
       <div className="flex flex-col gap-1 min-w-0">
         <div className="flex items-center gap-1.5 min-w-0">
-          <TeamLogo logo={event.homeLogo} name={event.home} size={16} sport={event.sport} />
+          <TeamLogo logo={event.homeLogo} name={event.home} size={24} sport={event.sport} />
           <span className="text-[11px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {event.home}
           </span>
         </div>
         {event.away && (
           <div className="flex items-center gap-1.5 min-w-0">
-            <TeamLogo logo={event.awayLogo} name={event.away} size={16} sport={event.sport} />
+            <TeamLogo logo={event.awayLogo} name={event.away} size={24} sport={event.sport} />
             <span className="text-[11px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
               {event.away}
             </span>
@@ -1710,31 +1725,50 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
               )}
             </div>
           ) : (
-            orderedDates.map(dateKey => (
-              <section key={dateKey}>
-                <SectionHeader
-                  icon="📅"
-                  label={formatDateLabel(dateKey)}
-                  color="#C4B5FD"
-                  count={grouped[dateKey]?.length || 0}
-                />
-                <div className="space-y-1.5">
-                  {grouped[dateKey]?.map(event => (
-                    <MatchRow
-                      key={event.id}
-                      event={event}
-                      liveScore={liveScores.get(event.id)}
-                      isReminded={reminders.has(event.id)}
-                      onToggleReminder={() => toggleReminder(event.id)}
-                      onClickUFC={setSelectedUFCDate}
-                      flashing={flashIds.has(event.id)}
-                      isFav={eventHasFavorite(favorites, event)}
-                      onToggleFav={() => toggleFavorite(event.home)}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))
+            orderedDates.map(dateKey => {
+              const dayEvents = grouped[dateKey] ?? []
+              // Group by competition, preserving order of first appearance
+              const compOrder: string[] = []
+              const byComp: Record<string, typeof dayEvents> = {}
+              for (const ev of dayEvents) {
+                if (!byComp[ev.comp]) { byComp[ev.comp] = []; compOrder.push(ev.comp) }
+                byComp[ev.comp].push(ev)
+              }
+              return (
+                <section key={dateKey}>
+                  <SectionHeader
+                    icon="📅"
+                    label={formatDateLabel(dateKey)}
+                    color="#C4B5FD"
+                    count={dayEvents.length}
+                  />
+                  {compOrder.map(comp => {
+                    const compEvents = byComp[comp]
+                    const accent = getCompAccent(comp, compEvents[0]?.accent)
+                    return (
+                      <div key={comp} className="mb-2">
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} />
+                        <div className="space-y-1.5">
+                          {compEvents.map(event => (
+                            <MatchRow
+                              key={event.id}
+                              event={event}
+                              liveScore={liveScores.get(event.id)}
+                              isReminded={reminders.has(event.id)}
+                              onToggleReminder={() => toggleReminder(event.id)}
+                              onClickUFC={setSelectedUFCDate}
+                              flashing={flashIds.has(event.id)}
+                              isFav={eventHasFavorite(favorites, event)}
+                              onToggleFav={() => toggleFavorite(event.home)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </section>
+              )
+            })
           )}
         </div>
       )}
@@ -1826,26 +1860,44 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
               <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>Los resultados de los últimos 10 días aparecen aquí</p>
             </div>
           ) : (
-            pastOrderedDates.map(dateKey => (
-              <section key={dateKey}>
-                <SectionHeader
-                  icon="📋"
-                  label={formatDateLabel(dateKey)}
-                  color="#FCA5A5"
-                  count={pastGrouped[dateKey]?.length || 0}
-                />
-                <div className="space-y-1.5">
-                  {pastGrouped[dateKey]?.map(event => (
-                    <PastMatchRow
-                      key={event.id}
-                      event={event}
-                      isFav={eventHasFavorite(favorites, event)}
-                      onToggleFav={() => toggleFavorite(event.home)}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))
+            pastOrderedDates.map(dateKey => {
+              const dayEvents = pastGrouped[dateKey] ?? []
+              const compOrder: string[] = []
+              const byComp: Record<string, typeof dayEvents> = {}
+              for (const ev of dayEvents) {
+                if (!byComp[ev.comp]) { byComp[ev.comp] = []; compOrder.push(ev.comp) }
+                byComp[ev.comp].push(ev)
+              }
+              return (
+                <section key={dateKey}>
+                  <SectionHeader
+                    icon="📋"
+                    label={formatDateLabel(dateKey)}
+                    color="#FCA5A5"
+                    count={dayEvents.length}
+                  />
+                  {compOrder.map(comp => {
+                    const compEvents = byComp[comp]
+                    const accent = getCompAccent(comp, compEvents[0]?.accent)
+                    return (
+                      <div key={comp} className="mb-2">
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} />
+                        <div className="space-y-1.5">
+                          {compEvents.map(event => (
+                            <PastMatchRow
+                              key={event.id}
+                              event={event}
+                              isFav={eventHasFavorite(favorites, event)}
+                              onToggleFav={() => toggleFavorite(event.home)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </section>
+              )
+            })
           )}
         </div>
       )}
