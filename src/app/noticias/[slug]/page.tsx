@@ -26,6 +26,18 @@ function readingTime(body?: string | null): number | null {
 interface FaqItem { q: string; a: string }
 interface SourceRef { name?: string; url?: string }
 
+interface RelatedArticle {
+  _id: string
+  slug?: string
+  title: string
+  publishedAt?: string
+  sport?: string
+  category?: string
+  takaStatus?: string | null
+  image?: { asset: { _ref: string } } | null
+  imageUrl?: string | null
+}
+
 interface Article {
   _id: string
   _updatedAt?: string
@@ -39,6 +51,8 @@ interface Article {
   imageUrl?: string | null
   imageAlt?: string | null
   isTaka?: boolean
+  author?: string | null
+  takaStatus?: string | null
   category?: string
   sport?: string
   tags?: string[]
@@ -50,17 +64,7 @@ interface Article {
   focusKeyword?: string | null
   secondaryKeywords?: string[] | null
   sourceUrls?: SourceRef[] | null
-}
-
-interface RelatedArticle {
-  _id: string
-  slug?: string
-  title: string
-  publishedAt?: string
-  sport?: string
-  category?: string
-  image?: { asset: { _ref: string } } | null
-  imageUrl?: string | null
+  editorialRelated?: RelatedArticle[] | null
 }
 
 export async function generateMetadata({
@@ -127,6 +131,31 @@ function renderBodyBlock(text: string, i: number) {
   )
 }
 
+function StatusBadge({ status, accent }: { status: string; accent: string }) {
+  if (status === 'breaking') {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full animate-pulse"
+        style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.35)', fontFamily: 'var(--font-sport)' }}
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+        Breaking
+      </span>
+    )
+  }
+  if (status === 'featured') {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+        style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}35`, fontFamily: 'var(--font-sport)' }}
+      >
+        ⭐ Destacado
+      </span>
+    )
+  }
+  return null
+}
+
 function ArticleSidebar({
   article,
   badgeColor,
@@ -166,6 +195,16 @@ function ArticleSidebar({
                   {timeAgo(article.publishedAt)}
                 </p>
               </div>
+            </div>
+          )}
+
+          {article.author && (
+            <div className="flex items-center gap-2.5">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ opacity: 0.4, flexShrink: 0 }}>
+                <circle cx="6.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3" />
+                <path d="M1.5 11.5c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+              </svg>
+              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{article.author}</p>
             </div>
           )}
 
@@ -299,14 +338,17 @@ export default async function NoticiaPage({
   const article = await sanityClient.fetch<Article>(articleDetailQuery, { id })
   if (!article) return notFound()
 
+  // Usar picks editoriales si existen; si no, query dinámica por sport/category
   const [relatedFinal, nextArticle] = await Promise.all([
-    sanityClient
-      .fetch<RelatedArticle[]>(relatedArticlesQuery, {
-        id,
-        sport: article.sport ?? '',
-        category: article.category ?? '',
-      })
-      .catch(() => [] as RelatedArticle[]),
+    article.editorialRelated && article.editorialRelated.length > 0
+      ? Promise.resolve(article.editorialRelated)
+      : sanityClient
+          .fetch<RelatedArticle[]>(relatedArticlesQuery, {
+            id,
+            sport: article.sport ?? '',
+            category: article.category ?? '',
+          })
+          .catch(() => [] as RelatedArticle[]),
     article.publishedAt
       ? sanityClient
           .fetch<RelatedArticle & { short_summary?: string }>(nextArticleQuery, {
@@ -333,6 +375,8 @@ export default async function NoticiaPage({
     return undefined
   }
 
+  const articleAuthor = article.author ?? 'Redacción TakaSports'
+
   const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'NewsArticle',
@@ -353,7 +397,11 @@ export default async function NoticiaPage({
       '@type': 'SpeakableSpecification',
       cssSelector: ['h1', '[aria-label="Claves rápidas"]'],
     },
-    author: { '@type': 'Organization', name: 'TakaSports', url: SITE_URL },
+    author: {
+      '@type': 'Person',
+      name: articleAuthor,
+      worksFor: { '@type': 'Organization', name: 'TakaSports', url: SITE_URL },
+    },
     publisher: {
       '@type': 'Organization',
       name: 'TakaSports',
@@ -443,6 +491,9 @@ export default async function NoticiaPage({
 
             <div className="flex items-center justify-between gap-2 mb-4 lg:hidden">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
+                {article.takaStatus && article.takaStatus !== 'normal' && (
+                  <StatusBadge status={article.takaStatus} accent={badgeColor} />
+                )}
                 {(article.sport || article.category) && (
                   <span
                     className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full flex-shrink-0"
@@ -469,6 +520,9 @@ export default async function NoticiaPage({
             </div>
 
             <div className="hidden lg:flex items-center gap-3 mb-4">
+              {article.takaStatus && article.takaStatus !== 'normal' && (
+                <StatusBadge status={article.takaStatus} accent={badgeColor} />
+              )}
               {(article.sport || article.category) && (
                 <span
                   className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full"
@@ -572,6 +626,30 @@ export default async function NoticiaPage({
                 <PortableText
                   value={article.bodyPortable}
                   components={{
+                    types: {
+                      image: ({ value }) => {
+                        const src = value?.asset ? urlFor(value).width(700).url() : null
+                        if (!src) return null
+                        return (
+                          <figure style={{ margin: '2rem 0' }}>
+                            <div style={{ borderRadius: '0.75rem', overflow: 'hidden' }}>
+                              <Image
+                                src={src}
+                                alt={value?.alt ?? ''}
+                                width={700}
+                                height={420}
+                                className="w-full h-auto object-cover"
+                              />
+                            </div>
+                            {value?.caption && (
+                              <figcaption style={{ fontSize: '0.8rem', color: '#6A6A8A', marginTop: '0.5rem', textAlign: 'center', fontStyle: 'italic' }}>
+                                {value.caption}
+                              </figcaption>
+                            )}
+                          </figure>
+                        )
+                      },
+                    },
                     block: {
                       normal: ({ children }) => (
                         <p style={{ color: '#B8B8D0', fontSize: '1.125rem', lineHeight: 1.8, marginBottom: '1.5rem' }}>{children}</p>
@@ -632,8 +710,17 @@ export default async function NoticiaPage({
                   ))}
                 </div>
               )}
+              {article.author && (
+                <div className="mt-6 pt-6 flex items-center gap-2" style={{ borderTop: '1px solid var(--border)' }}>
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ opacity: 0.35, flexShrink: 0 }}>
+                    <circle cx="6.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3" />
+                    <path d="M1.5 11.5c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{article.author}</p>
+                </div>
+              )}
               {article.source_name && (
-                <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border)' }}>
+                <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                     Fuente:{' '}
                     {article.source_url ? (
@@ -781,7 +868,6 @@ export default async function NoticiaPage({
           </div>
         )}
 
-        {/* Más sobre [sport] — internal link */}
         {sportSlug && sportLabel && (
           <div className="mx-auto mt-10 mb-4" style={{ maxWidth: 1160 }}>
             <Link

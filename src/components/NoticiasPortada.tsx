@@ -16,6 +16,7 @@ interface Article {
   publishedAt?: string
   category?: string
   sport?: string
+  takaStatus?: string | null
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
 }
@@ -74,6 +75,23 @@ function BigCard({ article }: { article: Article }) {
 
       <div className="relative p-5 lg:p-6">
         <div className="flex items-center gap-2 mb-2.5">
+          {article.takaStatus === 'breaking' && (
+            <span
+              className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded animate-pulse"
+              style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', fontFamily: 'var(--font-sport)' }}
+            >
+              <span className="w-1 h-1 rounded-full bg-red-500" />
+              Breaking
+            </span>
+          )}
+          {article.takaStatus === 'featured' && (
+            <span
+              className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+              style={{ background: `${accent}25`, color: accent, border: `1px solid ${accent}40`, fontFamily: 'var(--font-sport)' }}
+            >
+              ⭐ Destacado
+            </span>
+          )}
           <SportChip sport={article.sport} category={article.category} />
         </div>
         <h2
@@ -149,7 +167,18 @@ function GridCard({ article, priority = false }: { article: Article; priority?: 
       />
 
       <div className="relative p-3 lg:p-4">
-        <SportChip sport={article.sport} category={article.category} />
+        <div className="flex items-center gap-1.5 mb-1">
+          {article.takaStatus === 'breaking' && (
+            <span
+              className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded animate-pulse"
+              style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', fontFamily: 'var(--font-sport)' }}
+            >
+              <span className="w-1 h-1 rounded-full bg-red-500" />
+              Breaking
+            </span>
+          )}
+          <SportChip sport={article.sport} category={article.category} />
+        </div>
         <h3
           className="font-black leading-snug mt-1.5 line-clamp-2"
           style={{

@@ -16,9 +16,8 @@ export function urlFor(source: SanityImageSource) {
 
 // ── Articles ──────────────────────────────────────────────────
 
-// Feed principal — normaliza artículos viejos (status=="publicado") + nuevos de Taka System (tienen headline)
-// Los dos usan _type=="article" pero campos diferentes; se mapean a forma común aquí.
-export const articlesQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...40] {
+// Fragmento de campos comunes de listing (evita repetición en queries)
+const LISTING_FIELDS = `
   _id,
   "slug": slug.current,
   "title": select(defined(headline) => headline, title),
@@ -28,23 +27,20 @@ export const articlesQuery = `*[_type == "article" && (status == "publicado" || 
   publishedAt,
   sport,
   "category": select(defined(headline) => competition, category),
-  "priority": select(defined(headline) => "destacado", priority),
-  "isTaka": defined(headline)
+  "isTaka": defined(headline),
+  "takaStatus": select(defined(headline) => status, null)
+`
+
+// Feed principal — normaliza artículos viejos (status=="publicado") + nuevos de Taka System (tienen headline)
+export const articlesQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...40] {
+  ${LISTING_FIELDS},
+  "priority": select(defined(headline) => "destacado", priority)
 }`
 
 // Feed por deporte — para páginas /[sport]: solo ese deporte, más artículos
 export const articlesBySportQuery = `*[_type == "article" && sport == $sport && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...40] {
-  _id,
-  "slug": slug.current,
-  "title": select(defined(headline) => headline, title),
-  "short_summary": select(defined(headline) => metaDescription, short_summary),
-  "imageUrl": select(defined(headline) => imageUrl, null),
-  "image": select(defined(headline) => mainImage, image),
-  publishedAt,
-  sport,
-  "category": select(defined(headline) => competition, category),
-  "priority": select(defined(headline) => "destacado", priority),
-  "isTaka": defined(headline)
+  ${LISTING_FIELDS},
+  "priority": select(defined(headline) => "destacado", priority)
 }`
 
 // Feed sin filtro de status — para preview/editor (usar con token)
@@ -53,7 +49,8 @@ export const articlesAllQuery = `*[_type == "article"] | order(publishedAt desc)
   sport, type, priority, status, category, image
 }`
 
-// Artículo detalle — normaliza ambos schemas + campos SEO long-form (tldr, faq, focusKeyword, imageAlt, sourceUrls)
+// Artículo detalle — normaliza ambos schemas + campos SEO long-form
+// Incluye: author, takaStatus, editorialRelated (picks editoriales, expande referencias)
 export const articleDetailQuery = `*[_type == "article" && (slug.current == $id || _id == $id)][0] {
   _id,
   _updatedAt,
@@ -67,6 +64,8 @@ export const articleDetailQuery = `*[_type == "article" && (slug.current == $id 
   "bodyPortable": select(defined(headline) => body, null),
   "bodyText": select(!defined(headline) => body, null),
   "isTaka": defined(headline),
+  "author": select(defined(headline) => author, null),
+  "takaStatus": select(defined(headline) => status, null),
   sport,
   "category": select(defined(headline) => competition, category),
   tags,
@@ -77,10 +76,21 @@ export const articleDetailQuery = `*[_type == "article" && (slug.current == $id 
   "faq": select(defined(headline) => faq, null),
   "focusKeyword": select(defined(headline) => focusKeyword, null),
   "secondaryKeywords": select(defined(headline) => secondaryKeywords, null),
-  "sourceUrls": select(defined(headline) => sourceUrls, null)
+  "sourceUrls": select(defined(headline) => sourceUrls, null),
+  "editorialRelated": select(defined(headline) => relatedArticles[!(_id in path('drafts.**'))]->{
+    _id,
+    "slug": slug.current,
+    "title": headline,
+    "imageUrl": imageUrl,
+    "image": mainImage,
+    publishedAt,
+    sport,
+    "category": competition,
+    "takaStatus": status
+  }, null)
 }`
 
-// Artículos relacionados — incluye ambos schemas
+// Artículos relacionados — fallback dinámico cuando editorialRelated está vacío
 export const relatedArticlesQuery = `*[_type == "article" && _id != $id && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && (sport == $sport || category == $category)] | order(publishedAt desc)[0...3] {
   _id, "slug": slug.current,
   "title": select(defined(headline) => headline, title),
@@ -88,7 +98,8 @@ export const relatedArticlesQuery = `*[_type == "article" && _id != $id && (stat
   "image": select(defined(headline) => mainImage, image),
   publishedAt,
   sport,
-  "category": select(defined(headline) => competition, category)
+  "category": select(defined(headline) => competition, category),
+  "takaStatus": select(defined(headline) => status, null)
 }`
 
 // Siguiente artículo — incluye ambos schemas
@@ -117,25 +128,24 @@ export const searchArticlesQuery = `*[_type == "article" && (status == "publicad
 
 // Feed por tag — para páginas /tag/[tag]
 export const articlesByTagQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && $tag in coalesce(tags, [])] | order(publishedAt desc)[0...40] {
-  _id,
-  "slug": slug.current,
-  "title": select(defined(headline) => headline, title),
-  "short_summary": select(defined(headline) => metaDescription, short_summary),
-  "imageUrl": select(defined(headline) => imageUrl, null),
-  "image": select(defined(headline) => mainImage, image),
-  publishedAt,
-  sport,
-  "category": select(defined(headline) => competition, category),
-  "priority": select(defined(headline) => "destacado", priority),
-  "isTaka": defined(headline)
+  ${LISTING_FIELDS},
+  "priority": select(defined(headline) => "destacado", priority)
 }`
 
 // Todos los tags únicos — para el sitemap
 export const allTagsQuery = `array::unique(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(tags)].tags[])`
 
-// Breaking — para LiveStrip (últimas 6h, tipo breaking; solo artículos viejos)
-export const breakingQuery = `*[_type == "article" && status == "publicado" && type == "breaking" && publishedAt > $since] | order(publishedAt desc)[0...5] {
-  _id, "slug": slug.current, title, sport, publishedAt
+// Breaking — ticker de últimas horas
+// Cubre: artículos viejos con type=="breaking" + artículos Taka con status=="breaking"
+export const breakingQuery = `*[_type == "article" && publishedAt > $since && (
+  (status == "publicado" && type == "breaking") ||
+  (defined(headline) && !(_id in path('drafts.**')) && status == "breaking")
+)] | order(publishedAt desc)[0...5] {
+  _id,
+  "slug": slug.current,
+  "title": select(defined(headline) => headline, title),
+  sport,
+  publishedAt
 }`
 
 // ── Reels ─────────────────────────────────────────────────────
@@ -165,7 +175,6 @@ export const eventDetailQuery = `*[_type == "event" && _id == $id][0] {
 }`
 
 // Artículos relacionados a un evento — mismo deporte, ventana temporal ±7/+2 días
-// Prioriza artículos que mencionan los equipos/participantes ($home, $away) en el título
 export const relatedByEventQuery = `*[
   _type == "article" &&
   (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) &&

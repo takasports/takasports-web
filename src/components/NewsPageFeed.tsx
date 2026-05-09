@@ -20,6 +20,7 @@ interface Article {
   publishedAt?: string
   category?: string
   sport?: string
+  takaStatus?: string | null
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
 }
