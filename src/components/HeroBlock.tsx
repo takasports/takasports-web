@@ -5,7 +5,7 @@ import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel } from '@/lib/sports'
+import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
 import { useTilt } from '@/hooks/useTilt'
 
 // ── Tira compacta inferior — 5 artículos ───────────────────────
@@ -42,7 +42,7 @@ function CompactStripItem({ art }: { art: Article }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 20,
         }}>
-          {label === 'Fútbol' ? '⚽' : label === 'NBA' || label === 'Baloncesto' ? '🏀' : label === 'F1' ? '🏎️' : label === 'Tenis' ? '🎾' : label === 'UFC' ? '🥊' : label === 'WWE' ? '🎭' : '🏆'}
+          {getSportEmoji(label)}
         </div>
       )}
       <div className="min-w-0 flex-1">
@@ -161,6 +161,7 @@ function BigCard({
       className="group relative flex flex-col justify-end overflow-hidden rounded-2xl h-full"
       style={{
         textDecoration: 'none',
+        background: '#06060F',
         opacity: visible ? 1 : 0,
         transform: visible ? 'scale(1) translateY(0)' : 'scale(0.984) translateY(8px)',
         transition: `opacity ${visible ? FADE_IN : FADE_OUT}ms ease, transform ${visible ? FADE_IN : FADE_OUT}ms ease`,
@@ -170,10 +171,12 @@ function BigCard({
       {imgUrl ? (
         <KenBurnsImage key={animKey} src={imgUrl} alt={article.title} animKey={animKey} priority onError={() => setImgFailed(true)} />
       ) : (
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(135deg,#1e1040 0%,#0f0825 45%,#090912 100%)' }}
-        />
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ background: getSportStyle(article.sport, article.category).bg }}>
+          <div style={{ fontSize: '10rem', lineHeight: 1, opacity: 0.1, userSelect: 'none', filter: 'blur(2px)' }}>
+            {getSportEmoji(getSportLabel(article.sport, article.category))}
+          </div>
+          <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${getSportStyle(article.sport, article.category).accent}15 0%, transparent 70%)` }} />
+        </div>
       )}
 
       {/* Overlays */}
@@ -294,6 +297,7 @@ function SmallCard({
       className="group relative h-full flex flex-col justify-end overflow-hidden rounded-xl"
       style={{
         textDecoration: 'none',
+        background: '#06060F',
         borderLeft: `3px solid ${accent}`,
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(-5px)',
@@ -310,10 +314,12 @@ function SmallCard({
           onError={() => setImgFailed(true)}
         />
       ) : (
-        <div
-          className="absolute inset-0"
-          style={{ background: `linear-gradient(135deg, ${accent}18, #09090F)` }}
-        />
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ background: getSportStyle(article.sport, article.category).bg }}>
+          <div style={{ fontSize: '5rem', lineHeight: 1, opacity: 0.12, userSelect: 'none', filter: 'blur(1px)' }}>
+            {getSportEmoji(getSportLabel(article.sport, article.category))}
+          </div>
+          <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${accent}18 0%, transparent 70%)` }} />
+        </div>
       )}
 
       {/* Overlay — más imagen visible en la parte alta */}
@@ -527,17 +533,14 @@ export default function HeroBlock({ articles }: { articles: Article[] }) {
         </div>
 
         {/* ── Grid hero ─────────────────────────────────────── */}
-        <div
-          className="flex flex-col lg:flex-row gap-3"
-          style={{ height: 'clamp(400px, 52vw, 620px)' }}
-        >
+        <div className="flex flex-col lg:flex-row gap-3 hero-h">
           {/* Artículo grande — izquierda */}
           <div style={{ flex: '0 0 62%' }}>
             <BigCard article={big} visible={visible} animKey={offset % len} />
           </div>
 
-          {/* Artículos pequeños — derecha apilados */}
-          <div className="flex lg:flex-col gap-3 flex-1">
+          {/* Artículos pequeños — derecha apilados (ocultos en mobile) */}
+          <div className="hidden sm:flex lg:flex-col gap-3 flex-1">
             {len > 1 && <SmallCard article={s1} visible={visible} delay={60} />}
             {len > 2 && <SmallCard article={s2} visible={visible} delay={120} />}
           </div>
