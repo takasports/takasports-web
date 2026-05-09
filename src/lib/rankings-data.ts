@@ -144,6 +144,23 @@ function countryToFlag(country: string | undefined): string | undefined {
 // Mapea fila de la vista `ranking_view` → RankingEntry
 function rowToEntry(row: any): RankingEntry {
   const league = normalizeLeague(row.league ?? undefined)
+
+  // La vista devuelve `factors` como JSONB con posibles valores null si la entrada
+  // es editorial (creadores, periodistas) y no tiene datos de ingest.
+  // Solo usamos el objeto si al menos un valor es numérico para evitar NaN en calcScore.
+  const rawF = row.factors
+  const factors: RankingEntry['factors'] = rawF && (
+    rawF.rendimiento !== null || rawF.contexto !== null ||
+    rawF.mediatico   !== null || rawF.narrativa !== null
+  )
+    ? {
+      rendimiento: Number(rawF.rendimiento ?? 0),
+      contexto:    Number(rawF.contexto    ?? 0),
+      mediatico:   Number(rawF.mediatico   ?? 0),
+      narrativa:   Number(rawF.narrativa   ?? 0),
+    }
+    : undefined
+
   return {
     id:           row.id,
     rank:         row.rank ?? 0,
@@ -166,7 +183,7 @@ function rowToEntry(row: any): RankingEntry {
     scoreSport:   row.score_sport !== null && row.score_sport !== undefined ? Number(row.score_sport) : undefined,
     rankSport:    row.rank_sport  !== null && row.rank_sport  !== undefined ? Number(row.rank_sport)  : undefined,
     trendReason:  row.trend_reason ?? undefined,
-    factors:      row.factors ?? undefined,
+    factors,
     editorialBoost: row.editorial_boost !== null ? Number(row.editorial_boost) : undefined,
     editorialNote:  row.editorial_note ?? undefined,
     category:       row.category ?? undefined,
@@ -178,7 +195,7 @@ const DB_CATEGORIES: RankingCategory[] = [
   'jugadores', 'jugadoras', 'sub21', 'latam', 'concacaf', 'clubes', 'clubes_femenino', 'entrenadores',
 ]
 // Máximo de filas por categoría. Supabase limita a 1000 por defecto si no se especifica range.
-const MAX_ROWS_PER_CAT = 800
+const MAX_ROWS_PER_CAT = 1000
 
 /**
  * Obtiene un ranking por categoría.

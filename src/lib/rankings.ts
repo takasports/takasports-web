@@ -75,14 +75,14 @@ export function calcTrend(score: number, scorePrev: number): Trend {
 }
 
 // Calcula el Índice Taka desde factores objetivos + ajuste editorial subjetivo
-// Fórmula: rendimiento×0.35 + contexto×0.25 + mediático×0.25 + narrativa×0.15 + editorialBoost
+// Fórmula v5: rendimiento×0.40 + contexto×0.20 + mediático×0.25 + narrativa×0.15 + editorialBoost
 export function calcScore(
   factors: NonNullable<RankingEntry['factors']>,
   editorialBoost?: number
 ): number {
   const base =
-    factors.rendimiento * 0.35 +
-    factors.contexto    * 0.25 +
+    factors.rendimiento * 0.40 +
+    factors.contexto    * 0.20 +
     factors.mediatico   * 0.25 +
     factors.narrativa   * 0.15
   const total = base + (editorialBoost ?? 0)
@@ -1395,101 +1395,90 @@ export const RANKING_ENTRENADORES: RankingEntry[] = [
 
 // ── CREADORES — por deporte ───────────────────────────────────────
 // Datos verificados mayo 2026. Fuentes: TwitchTracker, YouTube público, ATP Creator Network.
-// Score = rendimiento×0.35 + contexto×0.25 + mediático×0.25 + narrativa×0.15
+// Score = followersScore(total_seguidores) × 0.70 + actividadScore(videos/mes) × 0.30
+// Actualizado automáticamente cada semana por ingest-creadores.mjs (WF-13).
 export const RANKING_CREADORES: RankingEntry[] = [
-  // ── Multideporte / Entretenimiento ────────────────────────────
-  {
-    id: 'ibai', rank: 1, name: 'Ibai Llanos', subtitle: 'Entretenimiento Deportivo · Twitch / YouTube',
-    sport: 'futbol', score: 93.7, trend: 'up',
-    insight: 'Twitch 19M + YouTube 14M. La Velada del Año V, Kings League, Ronin Orix. El mayor productor de eventos deportivos en español.',
-    emoji: '🎙️',
-    scorePrev: 92.0, trendReason: 'La Velada del Año V en solitario (9.3M espectadores simultáneos) + Kings League + club Ronin Orix',
-    factors: { rendimiento: 92, contexto: 94, mediatico: 96, narrativa: 93 },
-  },
   // ── Fútbol ────────────────────────────────────────────────────
   {
-    id: 'djmariio', rank: 2, name: 'DjMariio', subtitle: 'Fútbol Virtual · YouTube / Twitch',
-    sport: 'futbol', score: 90.7, trend: 'up',
-    insight: 'YouTube 10M + Twitch 2M. El rey indiscutible del fútbol virtual en español y propietario del Ultimate Móstoles en Kings League.',
-    emoji: '🎮',
-    scorePrev: 90.0, trendReason: 'YouTube supera los 10M suscriptores — referente #1 del fútbol virtual en español',
-    factors: { rendimiento: 91, contexto: 90, mediatico: 92, narrativa: 89 },
+    id: 'ibai', rank: 1, name: 'Ibai Llanos', subtitle: 'Entretenimiento Deportivo · Twitch / YouTube',
+    sport: 'futbol', score: 95.0, trend: 'up',
+    insight: 'Twitch 19M + YouTube 14M. La Velada del Año V, Kings League, Ronin Orix. El mayor productor de eventos deportivos en español.',
+    emoji: '🎙️', featured: true,
+    scorePrev: 92.0,
   },
   {
-    id: 'thegrefg', rank: 3, name: 'TheGrefg', subtitle: 'Gaming & Deporte · Twitch / YouTube',
-    sport: 'futbol', score: 88.3, trend: 'flat',
-    insight: 'Twitch 12.2M. Propietario de Saiyans FC en Kings League. El mayor crossover gaming-deporte del ecosistema hispanohablante.',
+    id: 'thegrefg', rank: 2, name: 'TheGrefg', subtitle: 'Gaming & Deporte · Twitch / YouTube',
+    sport: 'futbol', score: 89.9, trend: 'up',
+    insight: 'Twitch 12.2M + YouTube 4M. Propietario de Saiyans FC en Kings League. Mayor crossover gaming-deporte hispanohablante.',
     emoji: '🃏',
-    scorePrev: 88.0, trendReason: 'Twitch 12.2M consolidados + Kings League propietario — crossover gaming-deporte estable',
-    factors: { rendimiento: 87, contexto: 87, mediatico: 92, narrativa: 87 },
+    scorePrev: 88.0,
   },
   {
-    id: 'gerardromero', rank: 4, name: 'Gerard Romero', subtitle: 'Jijantes FC · Periodismo Digital',
-    sport: 'futbol', score: 81.9, trend: 'up', badge: 'Revelación',
-    insight: 'Fundador de Jijantes. Las primicias del Barça y el mercado llegan antes a su canal. El periodismo deportivo digital reimaginado.',
-    emoji: '📲',
-    scorePrev: 79.5, trendReason: 'Jijantes FC consolida como media digital independiente — referente del breaking news en fútbol',
-    factors: { rendimiento: 84, contexto: 80, mediatico: 79, narrativa: 85 },
+    id: 'djmariio', rank: 3, name: 'DjMariio', subtitle: 'Fútbol Virtual · YouTube / Twitch',
+    sport: 'futbol', score: 87.1, trend: 'flat',
+    insight: 'YouTube 10M + Twitch 2M. El rey del fútbol virtual en español y propietario del Ultimate Móstoles en Kings League.',
+    emoji: '🎮',
+    scorePrev: 87.5,
+  },
+  {
+    id: 'memoriasfutbol', rank: 4, name: 'Memorias de Fútbol', subtitle: 'Historia del Fútbol · YouTube',
+    sport: 'futbol', score: 72.2, trend: 'flat',
+    insight: 'El archivo más completo de fútbol histórico en YouTube en español. Nostalgia e historia intergeneracional.',
+    emoji: '📼',
+    scorePrev: 71.5,
   },
   {
     id: 'postunited', rank: 5, name: 'Post United', subtitle: 'Fútbol · YouTube',
-    sport: 'futbol', score: 79.8, trend: 'flat',
-    insight: 'Uno de los canales de debate y análisis de fútbol con mayor audiencia en YouTube en español. Debates, reacciones y actualidad.',
+    sport: 'futbol', score: 71.0, trend: 'flat',
+    insight: 'Canal de debate y análisis de fútbol con mayor audiencia en YouTube en español.',
     emoji: '⚽',
-    scorePrev: 79.5, trendReason: 'Canal de fútbol YouTube consolidado en español — audiencia masiva en debates y reacciones',
-    factors: { rendimiento: 80, contexto: 78, mediatico: 83, narrativa: 77 },
+    scorePrev: 71.0,
   },
   {
-    id: 'memoriasfutbol', rank: 6, name: 'Memorias de Fútbol', subtitle: 'Historia del Fútbol · YouTube',
-    sport: 'futbol', score: 77.0, trend: 'flat',
-    insight: 'El archivo más completo de fútbol histórico en YouTube en español. Nostalgia e historia que engancha a todas las generaciones.',
-    emoji: '📼',
-    scorePrev: 76.5, trendReason: 'Referente del fútbol histórico en YouTube — contenido atemporal y audiencia fiel intergeneracional',
-    factors: { rendimiento: 77, contexto: 74, mediatico: 80, narrativa: 77 },
+    id: 'gerardromero', rank: 6, name: 'Gerard Romero', subtitle: 'Jijantes FC · Periodismo Digital',
+    sport: 'futbol', score: 65.0, trend: 'up', badge: 'Revelación',
+    insight: 'Fundador de Jijantes. Las primicias del Barça y el mercado llegan antes a su canal.',
+    emoji: '📲',
+    scorePrev: 62.0,
+  },
+  {
+    id: 'mundimaldini', rank: 7, name: 'Mundo Maldini', subtitle: 'Análisis de Fútbol · YouTube',
+    sport: 'futbol', score: 59.6, trend: 'flat', featured: true,
+    insight: 'Análisis táctico y fútbol europeo. Audiencia nicho fiel al análisis editorial de calidad.',
+    emoji: '📊',
+    scorePrev: 59.0,
   },
   // ── NBA / Baloncesto ──────────────────────────────────────────
   {
     id: 'demas6basket', rank: 1, name: 'demas6Basket', subtitle: 'NBA en Español · YouTube',
-    sport: 'baloncesto', score: 83.5, trend: 'up',
-    insight: 'El referente del contenido NBA en español en YouTube. Análisis y cobertura del anillo Oklahoma Thunder y la era SGA.',
+    sport: 'baloncesto', score: 66.8, trend: 'up',
+    insight: 'El referente del contenido NBA en español. Cobertura del anillo Oklahoma Thunder y la era SGA.',
     emoji: '🏀',
-    scorePrev: 82.5, trendReason: 'Cobertura del anillo Thunder 2025 + era SGA — referente #1 NBA en español',
-    factors: { rendimiento: 85, contexto: 84, mediatico: 80, narrativa: 85 },
+    scorePrev: 64.0,
   },
   // ── Fórmula 1 ─────────────────────────────────────────────────
   {
     id: 'efeuno', rank: 1, name: 'Efeuno (Víctor Abad)', subtitle: 'F1 · YouTube / Twitch',
-    sport: 'formula1', score: 81.5, trend: 'up',
-    insight: 'El creador independiente de F1 más importante en español. Ex-DAZN, volvió al canal propio. Lanzó la revista física FIUM en 2025.',
+    sport: 'formula1', score: 66.8, trend: 'up',
+    insight: 'El creador independiente de F1 más importante en español. Ex-DAZN, volvió al canal propio. Revista FIUM (2025).',
     emoji: '🏎️',
-    scorePrev: 79.5, trendReason: 'Vuelta al canal propio tras DAZN + revista FIUM — referente independiente de F1 en español',
-    factors: { rendimiento: 85, contexto: 82, mediatico: 72, narrativa: 88 },
+    scorePrev: 64.0,
   },
   // ── Tenis ─────────────────────────────────────────────────────
   {
     id: 'rafaelescrig', rank: 1, name: 'Rafael Escrig', subtitle: 'Tenis · TikTok / Instagram',
-    sport: 'tenis', score: 79.0, trend: 'up', badge: 'Revelación',
-    insight: 'Seleccionado para la ATP TikTok Tennis Creator Network (nov 2025). Representa a Madrid en la red global de 25M de seguidores.',
+    sport: 'tenis', score: 56.6, trend: 'up', badge: 'Revelación',
+    insight: 'ATP TikTok Tennis Creator Network (nov 2025). Referente del tenis digital en español.',
     emoji: '🎾',
-    scorePrev: 76.5, trendReason: 'Seleccionado por ATP Tennis Creator Network — referente del tenis digital en TikTok en español',
-    factors: { rendimiento: 81, contexto: 78, mediatico: 74, narrativa: 84 },
+    scorePrev: 54.0,
   },
-  // ── Destacados ────────────────────────────────────────────────
+  // ── UFC / MMA ─────────────────────────────────────────────────
   {
-    id: 'mundimaldini', rank: 0, name: 'Mundo Maldini', subtitle: 'Análisis de Fútbol · YouTube',
-    sport: 'futbol', score: 75.1, trend: 'flat', featured: true,
-    insight: 'Canal de análisis táctico y fútbol europeo en español. Audiencia nicho muy fiel del análisis editorial de calidad.',
-    emoji: '📊',
-    scorePrev: 74.5, trendReason: 'Canal de análisis táctico consolidado — audiencia nicho fiel al fútbol europeo',
-    factors: { rendimiento: 76, contexto: 73, mediatico: 74, narrativa: 78 },
-  },
-  {
-    id: 'generacionmma', rank: 0, name: 'Generación MMA', subtitle: 'UFC & MMA · Podcast / Digital',
-    sport: 'ufc', score: 71.6, trend: 'up', featured: true,
-    insight: 'El programa semanal de MMA en español más completo. Crecimiento exponencial desde el campeonato de Ilia Topuria en UFC.',
+    id: 'generacionmma', rank: 1, name: 'Generación MMA', subtitle: 'UFC & MMA · Podcast / Digital',
+    sport: 'ufc', score: 55.4, trend: 'up', featured: true,
+    insight: 'MMA en español más completo. Boom de audiencia con Topuria campeón UFC lightweight.',
     emoji: '🥊',
-    scorePrev: 68.5, trendReason: 'Auge del MMA en España con Topuria campeón UFC lightweight — boom de audiencia',
-    factors: { rendimiento: 73, contexto: 70, mediatico: 68, narrativa: 77 },
+    scorePrev: 50.0,
   },
 ]
 

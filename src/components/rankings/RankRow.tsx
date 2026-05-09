@@ -148,8 +148,8 @@ export default function RankRow({
           </p>
           <div className="flex flex-col gap-1.5">
             {([
-              { key: 'rendimiento', label: 'Rendimiento', pct: '35%', color: '#22c55e' },
-              { key: 'contexto',    label: 'Contexto',    pct: '25%', color: '#60a5fa' },
+              { key: 'rendimiento', label: 'Rendimiento', pct: '40%', color: '#22c55e' },
+              { key: 'contexto',    label: 'Contexto',    pct: '20%', color: '#60a5fa' },
               { key: 'mediatico',   label: 'Mediático',   pct: '25%', color: '#f59e0b' },
               { key: 'narrativa',   label: 'Narrativa',   pct: '15%', color: '#c084fc' },
             ] as const).map(({ key, label, pct, color }) => {
@@ -174,8 +174,8 @@ export default function RankRow({
           <div className="mt-2.5 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
             {(() => {
               const base = Math.round((
-                entry.factors!.rendimiento * 0.35 +
-                entry.factors!.contexto    * 0.25 +
+                entry.factors!.rendimiento * 0.40 +
+                entry.factors!.contexto    * 0.20 +
                 entry.factors!.mediatico   * 0.25 +
                 entry.factors!.narrativa   * 0.15
               ) * 10) / 10

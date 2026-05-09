@@ -720,7 +720,7 @@ export default function RankingsClient({
               style={{ color: '#A78BFA', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)', fontFamily: 'var(--font-sport)' }}>
               {jugadoresScope === 'liga'     && `Liga: ${jugadoresLigaFilters.find(f => f.slug === ligaFilter)?.label}`}
               {jugadoresScope === 'posicion' && `Posición: ${JUGADORES_POSITION_FILTERS.find(f => f.slug === positionFilter)?.label}`}
-              {jugadoresScope === 'sub21'    && '⭐ Sub-25'}
+              {jugadoresScope === 'sub21'    && '⭐ Sub-21'}
               {jugadoresScope === 'pais'     && `${JUGADORES_PAIS_REGIONS.find(r => r.id === paisJugadores)?.emoji} ${JUGADORES_PAIS_REGIONS.find(r => r.id === paisJugadores)?.label}`}
             </span>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />

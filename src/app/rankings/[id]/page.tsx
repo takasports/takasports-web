@@ -31,8 +31,8 @@ const SPORT_EMOJI: Record<string, string> = {
   ufc: '🥊', wwe: '🤼', contenido: '✍️',
 }
 const FACTOR_DEFS = [
-  { key: 'rendimiento', label: 'Rendimiento', pct: 35, color: '#22c55e' },
-  { key: 'contexto',    label: 'Contexto',    pct: 25, color: '#60a5fa' },
+  { key: 'rendimiento', label: 'Rendimiento', pct: 40, color: '#22c55e' },
+  { key: 'contexto',    label: 'Contexto',    pct: 20, color: '#60a5fa' },
   { key: 'mediatico',   label: 'Mediático',   pct: 25, color: '#f59e0b' },
   { key: 'narrativa',   label: 'Narrativa',   pct: 15, color: '#c084fc' },
 ] as const
@@ -375,7 +375,7 @@ export default async function EntryDetailPage(
           <span className="text-sm flex-shrink-0 mt-0.5">ℹ️</span>
           <p className="text-[11px] leading-relaxed"
             style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
-            El <span style={{ color: '#9B7CF6' }}>Índice Taka</span> pondera rendimiento reciente (35 %), contexto competitivo (25 %), influencia mediática (25 %) y narrativa pública (15 %). Las tendencias reflejan el movimiento respecto al período anterior.
+            El <span style={{ color: '#9B7CF6' }}>Índice Taka</span> pondera rendimiento reciente (40 %), contexto competitivo (20 %), influencia mediática (25 %) y narrativa pública (15 %). Las tendencias reflejan el movimiento respecto al período anterior.
           </p>
         </div>
 

@@ -34,11 +34,11 @@ export function trendIcon(trend: Trend) {
 }
 
 export function scoreColor(score: number): string {
-  if (score >= 95) return '#22c55e'
-  if (score >= 90) return '#86efac'
-  if (score >= 85) return '#f59e0b'
-  if (score >= 80) return '#f97316'
-  if (score >= 75) return '#fb923c'
+  if (score >= 93) return '#22c55e'
+  if (score >= 87) return '#86efac'
+  if (score >= 82) return '#f59e0b'
+  if (score >= 76) return '#f97316'
+  if (score >= 70) return '#fb923c'
   return '#f87171'
 }
 
