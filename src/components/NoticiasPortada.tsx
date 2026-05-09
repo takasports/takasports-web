@@ -1,10 +1,13 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
+
+const ROTATION_MS = 5000
 
 interface Article {
   _id: string
@@ -164,20 +167,65 @@ function StripCard({ article }: { article: Article }) {
 // ── Componente principal ───────────────────────────────────────
 export default function NoticiasPortada({ articles }: { articles: Article[] }) {
   const safe = articles.filter(Boolean)
-  if (safe.length === 0) return null
+  const [pairIdx, setPairIdx] = useState(0)
+  const [visible, setVisible] = useState(true)
 
-  const big   = safe.slice(0, 2)   // 2 grandes iguales
-  const strip = safe.slice(2, 7)   // hasta 5 en tira
+  // Máximo 5 pares (10 artículos) en rotación — el resto lo cubre el feed de archivo
+  const MAX_PAIRS = 5
+  const totalPairs = Math.min(MAX_PAIRS, Math.max(1, Math.floor(safe.length / 2)))
+
+  useEffect(() => {
+    if (safe.length <= 2) return
+    const timer = setInterval(() => {
+      setVisible(false)
+      setTimeout(() => {
+        setPairIdx(i => (i + 1) % totalPairs)
+        setVisible(true)
+      }, 400)
+    }, ROTATION_MS)
+    return () => clearInterval(timer)
+  }, [safe.length, totalPairs])
+
+  const base  = (pairIdx * 2) % safe.length
+  const big   = [safe[base], safe[(base + 1) % safe.length]].filter(Boolean)
+  const strip = safe.slice(2, 7)
+
+  if (safe.length === 0) return null
 
   return (
     <div className="mb-6">
 
-      {/* ── 2 GRANDES IGUALES ── */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
+      {/* ── 2 GRANDES ROTANTES ── */}
+      <div
+        className="grid grid-cols-2 gap-3 mb-3"
+        style={{ opacity: visible ? 1 : 0, transition: 'opacity 400ms ease' }}
+      >
         {big.map(a => <BigCard key={a._id} article={a} />)}
       </div>
 
-      {/* ── TIRA DE 5 ── */}
+      {/* Dots de navegación */}
+      {totalPairs > 1 && (
+        <div className="flex items-center justify-center gap-1.5 mb-3">
+          {Array.from({ length: totalPairs }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { setVisible(false); setTimeout(() => { setPairIdx(i); setVisible(true) }, 400) }}
+              style={{
+                width: i === pairIdx ? 18 : 6,
+                height: 6,
+                borderRadius: 3,
+                background: i === pairIdx ? '#7C3AED' : 'rgba(255,255,255,0.15)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 300ms ease',
+                padding: 0,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── TIRA DE 5 (fija) ── */}
       {strip.length > 0 && (
         <div
           className="grid gap-3"
