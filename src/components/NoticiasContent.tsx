@@ -262,7 +262,7 @@ export default function NoticiasContent({
           </div>
 
           {/* ── ARCHIVO — LAYOUT 2 COLS ── */}
-          <SectionHeader label="Archivo de noticias" sub={`${filteredArticles.length} ${filteredArticles.length === 1 ? 'artículo' : 'artículos'}`} />
+          <SectionHeader label="Archivo de noticias" sub={(() => { const n = Math.max(0, filteredArticles.length - 7); return `${n} ${n === 1 ? 'artículo' : 'artículos'}` })()} />
 
           <div className="flex gap-8 items-start">
             <div className="flex-1 min-w-0">

@@ -5,7 +5,7 @@ import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel } from '@/lib/sports'
+import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
 
 const ROTATION_MS = 5000
 const SWIPE_THRESHOLD = 50
@@ -40,6 +40,22 @@ function Badge({ sport, category }: { sport?: string; category?: string }) {
   )
 }
 
+function SportPlaceholder({ sport, category, size = 'big' }: { sport?: string; category?: string; size?: 'big' | 'strip' }) {
+  const { bg, accent } = getSportStyle(sport, category)
+  const label = getSportLabel(sport, category)
+  const emoji = getSportEmoji(label)
+  const emojiSize = size === 'big' ? '7rem' : '4rem'
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ background: bg }}>
+      <div style={{ fontSize: emojiSize, lineHeight: 1, opacity: 0.12, userSelect: 'none', filter: 'blur(1px)' }}>
+        {emoji}
+      </div>
+      {/* subtle radial glow */}
+      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${accent}18 0%, transparent 70%)` }} />
+    </div>
+  )
+}
+
 // ── Card grande (top 2) ────────────────────────────────────────
 function BigCard({ article }: { article: Article }) {
   const href = `/noticias/${article.slug ?? article._id}`
@@ -62,7 +78,7 @@ function BigCard({ article }: { article: Article }) {
           priority
         />
       ) : (
-        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}35, #06060F)` }} />
+        <SportPlaceholder sport={article.sport} category={article.category} size="big" />
       )}
 
       <div className="absolute inset-0" style={{ background: OVERLAY }} />
@@ -132,7 +148,7 @@ function StripCard({ article }: { article: Article }) {
           loading="lazy"
         />
       ) : (
-        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}30, #06060F)` }} />
+        <SportPlaceholder sport={article.sport} category={article.category} size="strip" />
       )}
 
       <div className="absolute inset-0" style={{ background: OVERLAY }} />
@@ -172,11 +188,15 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
   const safe = articles.filter(Boolean)
   const [pairIdx, setPairIdx] = useState(0)
   const [visible, setVisible] = useState(true)
+  const [isPaused, setIsPaused] = useState(false)
   const pausedRef = useRef(false)
   const touchStartX = useRef<number | null>(null)
 
   const MAX_PAIRS = 5
   const totalPairs = Math.min(MAX_PAIRS, Math.max(1, Math.floor(safe.length / 2)))
+
+  const pause = () => { pausedRef.current = true; setIsPaused(true) }
+  const resume = () => { pausedRef.current = false; setIsPaused(false) }
 
   useEffect(() => {
     if (safe.length <= 2) return
@@ -198,7 +218,7 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
-    pausedRef.current = true
+    pause()
   }
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -212,7 +232,7 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
       }
     }
     touchStartX.current = null
-    pausedRef.current = false
+    resume()
   }
 
   const base = (pairIdx * 2) % safe.length
@@ -223,15 +243,14 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
 
   return (
     <>
-      {/* keyframe para la barra de progreso */}
       <style>{`@keyframes progressFill { from { transform: scaleX(0) } to { transform: scaleX(1) } }`}</style>
 
       <div className="mb-6">
 
-        {/* ── 2 GRANDES ROTANTES (pausa en hover, swipe en táctil) ── */}
+        {/* ── 2 GRANDES ROTANTES ── */}
         <div
-          onMouseEnter={() => { pausedRef.current = true }}
-          onMouseLeave={() => { pausedRef.current = false }}
+          onMouseEnter={pause}
+          onMouseLeave={resume}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
@@ -245,7 +264,6 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
           {/* Barra de progreso + contador + dots */}
           {totalPairs > 1 && (
             <div className="flex items-center gap-3 mt-2.5 mb-3 px-1">
-              {/* Barra */}
               <div className="flex-1 h-[3px] rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
                 <div
                   key={`bar-${pairIdx}`}
@@ -255,17 +273,15 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
                     background: 'linear-gradient(to right, #7C3AED, #A78BFA)',
                     transformOrigin: 'left center',
                     animation: `progressFill ${ROTATION_MS}ms linear forwards`,
-                    animationPlayState: pausedRef.current ? 'paused' : 'running',
+                    animationPlayState: isPaused ? 'paused' : 'running',
                   }}
                 />
               </div>
 
-              {/* Contador */}
               <span className="flex-shrink-0 text-[10px] tabular-nums" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
                 {pairIdx + 1} / {totalPairs}
               </span>
 
-              {/* Dots */}
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 {Array.from({ length: totalPairs }).map((_, i) => (
                   <button
