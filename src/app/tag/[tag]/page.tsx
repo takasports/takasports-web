@@ -72,19 +72,45 @@ export default async function TagPage({
 
   if (articles.length === 0) notFound()
 
+  const tagUrl = `${SITE_URL}/tag/${tag}`
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
       { '@type': 'ListItem', position: 2, name: 'Noticias', item: `${SITE_URL}/noticias` },
-      { '@type': 'ListItem', position: 3, name: `#${decoded}`, item: `${SITE_URL}/tag/${tag}` },
+      { '@type': 'ListItem', position: 3, name: `#${decoded}`, item: tagUrl },
     ],
+  }
+  const collectionJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `#${decoded} — TakaSports`,
+    description: `Todos los artículos etiquetados con #${decoded} en TakaSports.`,
+    url: tagUrl,
+    inLanguage: 'es-ES',
+    publisher: { '@type': 'Organization', name: 'TakaSports', url: SITE_URL },
+  }
+  const itemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Artículos con la etiqueta #${decoded}`,
+    itemListOrder: 'https://schema.org/ItemListOrderDescending',
+    numberOfItems: Math.min(articles.length, 20),
+    itemListElement: articles.slice(0, 20).map((a, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: a.slug ? `${SITE_URL}/noticias/${a.slug}` : undefined,
+      name: a.title,
+      image: a.imageUrl ?? (a.image?.asset ? urlFor(a.image).width(1200).height(630).url() : undefined),
+    })),
   }
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       <Header />
       <LiveStrip />
 

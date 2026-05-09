@@ -41,12 +41,12 @@ const barlowSemiCondensed = Barlow_Semi_Condensed({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'TakaSports — Noticias deportivas',
     template: '%s | TakaSports',
   },
   description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario, rankings y juegos. Actualizado cada hora.',
-  keywords: ['noticias deportivas', 'fútbol', 'NBA', 'F1', 'UFC', 'tenis', 'LaLiga', 'Premier League', 'TakaSports', 'resultados en vivo', 'calendario deportivo'],
   authors: [{ name: 'TakaSports', url: SITE_URL }],
   creator: 'TakaSports',
   publisher: 'TakaSports',
@@ -55,7 +55,10 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
   },
-  alternates: { canonical: SITE_URL, languages: { 'es-ES': SITE_URL, 'x-default': SITE_URL } },
+  alternates: {
+    canonical: SITE_URL,
+    languages: { 'es-ES': SITE_URL, es: SITE_URL, 'x-default': SITE_URL },
+  },
   verification: { google: ['LkOObyh0JeHucGf6NTELFcAQxFSMJrd2-9QoWVMM1g4', 'uciwyOWZbwp-GK4G0jKLxu6_FMuP5ZeptYObbCQxbJM'] },
   manifest: '/manifest.json',
   appleWebApp: {
@@ -70,7 +73,6 @@ export const metadata: Metadata = {
     locale: 'es_ES',
     type: 'website',
     url: SITE_URL,
-    images: [{ url: `${SITE_URL}/opengraph-image.png`, width: 1200, height: 630, alt: 'TakaSports — Noticias deportivas' }],
   },
   twitter: {
     card: 'summary_large_image',

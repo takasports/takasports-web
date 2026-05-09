@@ -17,6 +17,19 @@ import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const revalidate = 3600
 
+// Pre-build los 50 artículos más recientes para LCP/INP estables en CrUX.
+// Los demás se generan ISR on-demand.
+export async function generateStaticParams() {
+  const slugs = await sanityClient
+    .fetch<Array<{ slug: string }>>(
+      `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(slug.current)] | order(publishedAt desc)[0...50] {
+        "slug": slug.current
+      }`,
+    )
+    .catch(() => [] as Array<{ slug: string }>)
+  return slugs.filter(s => s.slug).map(s => ({ slug: s.slug }))
+}
+
 function readingTime(body?: string | null): number | null {
   if (!body || body.trim().length === 0) return null
   const words = body.trim().split(/\s+/).length
@@ -361,6 +374,19 @@ export default async function NoticiaPage({
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1400).height(600).url() : null)
   const canonical = `${SITE_URL}/noticias/${article.slug ?? id}`
 
+  // Google News / Top Stories prioriza artículos con imágenes en 16:9, 4:3 y 1:1
+  function multiRatioImages(): string[] | undefined {
+    if (article.image?.asset) {
+      return [
+        urlFor(article.image).width(1200).height(675).url(), // 16:9
+        urlFor(article.image).width(1200).height(900).url(), // 4:3
+        urlFor(article.image).width(1200).height(1200).url(), // 1:1
+      ]
+    }
+    return imgUrl ? [imgUrl] : undefined
+  }
+  const articleImages = multiRatioImages()
+
   function bodyWordCount(): number | undefined {
     if (article.bodyText) return article.bodyText.trim().split(/\s+/).length
     if (article.bodyPortable && article.bodyPortable.length > 0) {
@@ -382,7 +408,7 @@ export default async function NoticiaPage({
     '@type': 'NewsArticle',
     headline: article.title,
     description: article.short_summary ?? undefined,
-    image: imgUrl ? [imgUrl] : undefined,
+    image: articleImages,
     datePublished: article.publishedAt,
     dateModified: article._updatedAt ?? article.publishedAt,
     inLanguage: 'es-ES',

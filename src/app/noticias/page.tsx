@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { sanityClient, articlesQuery, reelsQuery } from '@/lib/sanity'
+import { sanityClient, articlesQuery, reelsQuery, urlFor } from '@/lib/sanity'
 import { SLUG_TO_LABEL } from '@/lib/sports'
 import reelsData from '@/lib/reels-data.json'
 import Header from '@/components/Header'
@@ -8,9 +8,9 @@ import LiveStrip from '@/components/LiveStrip'
 import NoticiasContent from '@/components/NoticiasContent'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
-import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
+import { SITE_URL } from '@/lib/constants'
 
-export const revalidate = 60
+export const revalidate = 300
 
 export const metadata: Metadata = {
   title: 'Noticias deportivas en tiempo real',
@@ -41,8 +41,34 @@ export default async function NoticiasPage({
 
   const igReels = (reels as unknown[]).length > 0 ? reels : reelsData
 
+  type ListArticle = { _id: string; slug?: string; title: string; imageUrl?: string | null; image?: { asset: { _ref: string } } | null }
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Noticias', item: `${SITE_URL}/noticias` },
+    ],
+  }
+  const itemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Noticias deportivas — TakaSports',
+    itemListOrder: 'https://schema.org/ItemListOrderDescending',
+    numberOfItems: Math.min((articles as ListArticle[]).length, 20),
+    itemListElement: (articles as ListArticle[]).slice(0, 20).map((a, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: a.slug ? `${SITE_URL}/noticias/${a.slug}` : undefined,
+      name: a.title,
+      image: a.imageUrl ?? (a.image?.asset ? urlFor(a.image).width(1200).height(630).url() : undefined),
+    })),
+  }
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       <Header />
       <BreakingNewsBar items={[
         ...articles.filter((a: { takaStatus?: string | null }) => a.takaStatus === 'breaking'),

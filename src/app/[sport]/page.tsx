@@ -11,9 +11,10 @@ import NoticiasContent from '@/components/NoticiasContent'
 import SportHubHeader from '@/components/SportHubHeader'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
-import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
+import { urlFor } from '@/lib/sanity'
+import { SITE_URL } from '@/lib/constants'
 
-export const revalidate = 60
+export const revalidate = 300
 
 export function generateStaticParams() {
   return Object.keys(SLUG_TO_LABEL).map(sport => ({ sport }))
@@ -88,12 +89,14 @@ export default async function SportPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sportEvents = ((upcomingEvents as any[]) ?? []).filter(Boolean)
 
+  const sportUrl = `${SITE_URL}/${sport}`
+
   const collectionJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: `${label} — TakaSports`,
     description: `Últimas noticias de ${label}: resultados, fichajes, partidos en vivo y análisis en profundidad.`,
-    url: `${SITE_URL}/${sport}`,
+    url: sportUrl,
     inLanguage: 'es-ES',
     publisher: {
       '@type': 'Organization',
@@ -102,9 +105,37 @@ export default async function SportPage({
     },
   }
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Noticias', item: `${SITE_URL}/noticias` },
+      { '@type': 'ListItem', position: 3, name: label, item: sportUrl },
+    ],
+  }
+
+  type SportArticle = { _id: string; slug?: string; title: string; imageUrl?: string | null; image?: { asset: { _ref: string } } | null }
+  const itemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Últimas noticias de ${label}`,
+    itemListOrder: 'https://schema.org/ItemListOrderDescending',
+    numberOfItems: Math.min(safeArticles.length, 20),
+    itemListElement: (safeArticles as SportArticle[]).slice(0, 20).map((a, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: a.slug ? `${SITE_URL}/noticias/${a.slug}` : undefined,
+      name: a.title,
+      image: a.imageUrl ?? (a.image?.asset ? urlFor(a.image).width(1200).height(630).url() : undefined),
+    })),
+  }
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       <Header />
       <BreakingNewsBar
         items={safeArticles.slice(0, 8).map(
