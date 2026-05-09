@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SOCCER_LEAGUES, EUROPEAN_CUPS } from '@/lib/stats-leagues'
-import { FIFA_RANKING, FIFA_RANKING_AS_OF, UFC_P4P, UFC_P4P_AS_OF, COACH_CONFIG, type StandingRow } from '@/lib/stats-editorial'
+import {
+  FIFA_RANKING, FIFA_RANKING_AS_OF, UFC_P4P, UFC_P4P_AS_OF, COACH_CONFIG,
+  MOTOGP_RIDERS, MOTOGP_CONSTRUCTORS, MOTOGP_AS_OF,
+  CYCLING_UCI, CYCLING_GRAND_TOURS, CYCLING_AS_OF,
+  PGA_OWGR, LIV_RANKING, PGA_MAJORS_2026, GOLF_AS_OF,
+  UFC_NEXT_CARD, UFC_STREAKS, UFC_NEXT_EVENT_AS_OF,
+  TENNIS_SLAMS_2026, WTA_SURFACES,
+  NBA_ROOKIE_NAMES,
+  type StandingRow,
+} from '@/lib/stats-editorial'
 export type { StandingRow } from '@/lib/stats-editorial'
 import { withStaleFallback } from '@/lib/stats-cache'
+import { espnStandingsSchema, jolpicaDriverStandingsSchema, safeParse } from '@/lib/stats-schemas'
 
 const staleSet = new Set<string>()
 
@@ -55,6 +65,22 @@ export interface StatsStandingsResponse {
   uclFixtures: StandingRow[]
   uelFixtures: StandingRow[]
   ueclFixtures: StandingRow[]
+  // ── nuevos automatizados ────────────────────────────────────────────
+  f1Calendar: StandingRow[]
+  nbaMvpRace: StandingRow[]
+  nbaRookieRace: StandingRow[]
+  worldCupQualified: StandingRow[]
+  motogpRiders: StandingRow[]
+  motogpConstructors: StandingRow[]
+  cyclingUci: StandingRow[]
+  cyclingGrandTours: StandingRow[]
+  pgaOwgr: StandingRow[]
+  livRanking: StandingRow[]
+  pgaMajors: StandingRow[]
+  ufcCard: StandingRow[]
+  ufcStreaks: StandingRow[]
+  tennisSlams: StandingRow[]
+  wtaSurfaces: StandingRow[]
   meta: Record<string, BlockMeta>
   updatedAt: string
 }
@@ -88,22 +114,22 @@ async function fetchFootball(slug: string, id: string, label: string): Promise<L
       const res = await fetch(`${BASE}/${slug}/standings`, { next: { revalidate: 1800 } })
       if (!res.ok) throw new Error(`espn ${res.status}`)
       const json = await res.json()
-      const firstChild = ((json?.children as Record<string, unknown>[] | undefined)?.[0]) as Record<string, unknown> | undefined
-      const standings  = firstChild?.standings as Record<string, unknown> | undefined
-      const entries: Record<string, unknown>[] = (standings?.entries as Record<string, unknown>[] | undefined) ?? []
+      const parsed = safeParse(espnStandingsSchema, json, `football:${slug}`)
+      const firstChild = parsed?.children?.[0]
+      const entries = firstChild?.standings?.entries ?? []
       if (!entries.length) return null
 
       const rows: StandingRow[] = entries.map((e, i) => {
-        const team  = e.team as Record<string, unknown>
-        const stats = (e.stats as RawStat[]) ?? []
+        const team  = e.team
+        const stats: RawStat[] = (e.stats as RawStat[] | undefined) ?? []
         const w = sv(stats, 'wins'); const d = sv(stats, 'ties'); const l = sv(stats, 'losses')
         const pts = sv(stats, 'points'); const gd = sv(stats, 'pointDifferential')
         const gf  = sv(stats, 'pointsFor'); const gc = sv(stats, 'pointsAgainst')
         const gp  = w + d + l
         return {
           rank:  i + 1,
-          name:  (team?.displayName as string) ?? '—',
-          abbr:  (team?.abbreviation as string) ?? '',
+          name:  team?.displayName ?? '—',
+          abbr:  team?.abbreviation ?? '',
           value: String(Math.round(pts)),
           sub:   `${gp} PJ · ${gd >= 0 ? '+' : ''}${Math.round(gd)}`,
           trend: 'flat' as const,
@@ -144,12 +170,13 @@ async function fetchF1All(): Promise<F1Result> {
     const dr = await fetch('https://api.jolpi.ca/ergast/f1/current/driverstandings.json', { next: { revalidate: 3600 } })
     if (!dr.ok) return empty
     const dj = await dr.json()
-    const list = dj.MRData?.StandingsTable?.StandingsLists?.[0]
+    const validated = safeParse(jolpicaDriverStandingsSchema, dj, 'f1:drivers')
+    const list = validated?.MRData?.StandingsTable?.StandingsLists?.[0]
     const season = String(list?.season ?? '')
     const round  = String(list?.round  ?? '')
-    const drivers: StandingRow[] = (list?.DriverStandings ?? []).slice(0, 10).map((d: Record<string, unknown>, i: number) => {
-      const driver = d.Driver as JolpicaDriver
-      const ctor = ((d.Constructors as JolpicaCtor[]) ?? [])[0]
+    const drivers: StandingRow[] = (list?.DriverStandings ?? []).slice(0, 10).map((d, i: number) => {
+      const driver = d.Driver
+      const ctor = (d.Constructors ?? [])[0]
       const team = ctor?.name ?? ''
       return {
         rank: Number(d.position ?? i + 1),
@@ -886,20 +913,152 @@ async function fetchWorldCupScorers(): Promise<StandingRow[]> {
   } catch { return [] }
 }
 
+// ── F1 Calendar ───────────────────────────────────────────────────────────────
+
+async function fetchF1Calendar(season: string): Promise<StandingRow[]> {
+  if (!season) return []
+  try {
+    const res = await fetch(`https://api.jolpi.ca/ergast/f1/${season}.json`, { next: { revalidate: 86400 } })
+    if (!res.ok) return []
+    const json = await res.json()
+    const races = (json.MRData?.RaceTable?.Races ?? []) as Record<string, unknown>[]
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const upcoming = races
+      .filter(r => new Date(String(r.date)).getTime() >= today.getTime())
+      .slice(0, 8)
+    if (!upcoming.length) return []
+    return upcoming.map((r, i) => {
+      const d = new Date(String(r.date))
+      const fmt = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+      const circuit = r.Circuit as Record<string, unknown> | undefined
+      const circuitName = (circuit?.circuitName as string) ?? ''
+      return {
+        rank: i + 1,
+        name: `${r.raceName as string} · ${(circuit?.Location as Record<string, unknown> | undefined)?.country ?? ''}`,
+        abbr: '',
+        value: fmt,
+        sub: `R${r.round as string} · ${circuitName}`,
+        trend: 'flat' as const,
+        extra: {},
+      }
+    })
+  } catch { return [] }
+}
+
+// ── NBA MVP Race + Rookie Race (auto-derivado) ────────────────────────────────
+
+function buildNbaMvpRace(scoring: StandingRow[], east: StandingRow[], west: StandingRow[]): StandingRow[] {
+  if (!scoring.length || (!east.length && !west.length)) return []
+  // team → win % from standings (extra has W-L in 'value' like "60-22")
+  const winPct: Record<string, number> = {}
+  for (const team of [...east, ...west]) {
+    const m = team.value.match(/(\d+)-(\d+)/)
+    if (!m) continue
+    const w = parseInt(m[1]); const l = parseInt(m[2])
+    if (w + l === 0) continue
+    const pct = w / (w + l)
+    // map abbr (KEY) — standings rows expose team abbr in `abbr`
+    if (team.abbr) winPct[team.abbr] = pct
+  }
+  // score = PPG * (0.5 + 0.5 * winPct)  → rewards top scorers in good teams
+  const scored = scoring.map(p => {
+    const ppg = parseFloat(p.value) || 0
+    const teamAbbr = p.abbr || ''
+    const w = winPct[teamAbbr] ?? 0.5
+    return { ...p, mvpScore: ppg * (0.5 + 0.5 * w) }
+  })
+  scored.sort((a, b) => b.mvpScore - a.mvpScore)
+  return scored.slice(0, 7).map((p, i) => ({
+    rank: i + 1, name: p.name, abbr: p.abbr,
+    value: `#${i + 1}`,
+    sub: `${p.value} PPG · W% ${Math.round((winPct[p.abbr ?? ''] ?? 0) * 100)}%`,
+    flag: p.flag,
+    trend: 'flat' as const,
+    extra: { PPG: p.value, Equipo: p.abbr ?? '' },
+  }))
+}
+
+function buildNbaRookieRace(scoring: StandingRow[], rebounds: StandingRow[], assists: StandingRow[], rookies: Set<string>): StandingRow[] {
+  // Pull rookies from scoring + rebounds + assists (combined unique pool)
+  const pool = new Map<string, { name: string; team: string; flag?: string; ppg: number; rpg: number; apg: number }>()
+  const upsert = (row: StandingRow, kind: 'ppg' | 'rpg' | 'apg') => {
+    if (!rookies.has(row.name)) return
+    const v = parseFloat(row.value) || 0
+    const cur = pool.get(row.name) ?? { name: row.name, team: row.abbr ?? '', flag: row.flag, ppg: 0, rpg: 0, apg: 0 }
+    cur[kind] = v
+    if (!cur.team && row.abbr) cur.team = row.abbr
+    if (!cur.flag && row.flag) cur.flag = row.flag
+    pool.set(row.name, cur)
+  }
+  scoring.forEach(r => upsert(r, 'ppg'))
+  rebounds.forEach(r => upsert(r, 'rpg'))
+  assists.forEach(r => upsert(r, 'apg'))
+  if (!pool.size) return []
+  // Composite score: PPG + RPG + 1.5*APG  (assists weighted higher per ROY tradition)
+  const arr = Array.from(pool.values())
+    .map(r => ({ ...r, score: r.ppg + r.rpg + r.apg * 1.5 }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 7)
+  return arr.map((r, i) => ({
+    rank: i + 1, name: r.name, abbr: r.team,
+    value: `#${i + 1}`,
+    sub: `${r.ppg} PPG · ${r.rpg} RPG · ${r.apg} APG`,
+    flag: r.flag,
+    trend: 'flat' as const,
+    extra: { PPG: String(r.ppg), Equipo: r.team },
+  }))
+}
+
+// ── World Cup qualified (derivado de FIFA ranking + anfitriones) ──────────────
+
+const FIFA_FLAG: Record<string, string> = {
+  'Francia': '🇫🇷', 'España': '🇪🇸', 'Argentina': '🇦🇷', 'Inglaterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'Portugal': '🇵🇹', 'Brasil': '🇧🇷', 'Países Bajos': '🇳🇱', 'Marruecos': '🇲🇦',
+  'Bélgica': '🇧🇪', 'Alemania': '🇩🇪',
+}
+const FIFA_CONFED: Record<string, string> = {
+  'Francia': 'UEFA', 'España': 'UEFA', 'Argentina': 'CONMEBOL', 'Inglaterra': 'UEFA',
+  'Portugal': 'UEFA', 'Brasil': 'CONMEBOL', 'Países Bajos': 'UEFA', 'Marruecos': 'CAF',
+  'Bélgica': 'UEFA', 'Alemania': 'UEFA',
+}
+
+function buildWorldCupQualified(): StandingRow[] {
+  const hosts: StandingRow[] = [
+    { rank: 1, name: 'EEUU',    abbr: 'USA', value: 'Anfitrión', sub: 'Co-anfitrión',  flag: '🇺🇸', trend: 'flat', extra: { Confed: 'CONCACAF' } },
+    { rank: 2, name: 'México',   abbr: 'MEX', value: 'Anfitrión', sub: 'Co-anfitrión',  flag: '🇲🇽', trend: 'flat', extra: { Confed: 'CONCACAF' } },
+    { rank: 3, name: 'Canadá',   abbr: 'CAN', value: 'Anfitrión', sub: 'Co-anfitrión',  flag: '🇨🇦', trend: 'flat', extra: { Confed: 'CONCACAF' } },
+  ]
+  const champion: StandingRow = { rank: 4, name: 'Argentina', abbr: 'ARG', value: 'Campeona', sub: 'Defiende título 2022', flag: '🇦🇷', trend: 'flat', extra: { Confed: 'CONMEBOL' } }
+  const fifaTop = FIFA_RANKING
+    .filter(r => r.name !== 'Argentina')
+    .slice(0, 8)
+    .map((r, i) => ({
+      rank: 5 + i, name: r.name, abbr: r.abbr,
+      value: 'Top FIFA', sub: r.sub,
+      flag: FIFA_FLAG[r.name] ?? '',
+      trend: r.trend,
+      extra: { Confed: FIFA_CONFED[r.name] ?? '—', Pts: r.extra?.Pts ?? '' },
+    } as StandingRow))
+  return [...hosts, champion, ...fifaTop]
+}
+
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   futbol: ['football', 'uclFixtures', 'uelFixtures', 'ueclFixtures'],
   football: ['football'],
-  nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaPlayoffSeries'],
-  f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps'],
-  tenis: ['atpRanking', 'wtaRanking'],
-  tennis: ['atpRanking', 'wtaRanking'],
-  ufc: ['ufcP4P'],
+  nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaPlayoffSeries', 'nbaMvpRace', 'nbaRookieRace'],
+  f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps', 'f1Calendar'],
+  tenis: ['atpRanking', 'wtaRanking', 'tennisSlams', 'wtaSurfaces'],
+  tennis: ['atpRanking', 'wtaRanking', 'tennisSlams', 'wtaSurfaces'],
+  ufc: ['ufcP4P', 'ufcCard', 'ufcStreaks'],
   selecciones: ['fifaRanking', 'nationsLeague'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
-  golf: ['pgaTourLeaderboard', 'pgaFedExCup'],
-  mundial: ['worldCup', 'worldCupScorers', 'worldCupKnockout'],
+  golf: ['pgaTourLeaderboard', 'pgaFedExCup', 'pgaOwgr', 'livRanking', 'pgaMajors'],
+  mundial: ['worldCup', 'worldCupScorers', 'worldCupKnockout', 'worldCupQualified'],
+  motogp: ['motogpRiders', 'motogpConstructors'],
+  ciclismo: ['cyclingUci', 'cyclingGrandTours'],
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
@@ -925,10 +1084,16 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchEuropeanCupFixtures('soccer/uefa.conference'),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
+  const f1Calendar = f1.season ? await fetchF1Calendar(f1.season) : []
 
   const football = footballResults
     .map(r => r.status === 'fulfilled' ? r.value : null)
     .filter(Boolean) as LeagueStandings[]
+
+  // Derived blocks
+  const nbaMvpRace = buildNbaMvpRace(nbaLeaders.scoring, nba.east, nba.west)
+  const nbaRookieRace = buildNbaRookieRace(nbaLeaders.scoring, nbaLeaders.rebounds, nbaLeaders.assists, NBA_ROOKIE_NAMES)
+  const worldCupQualified = buildWorldCupQualified()
 
   const now = new Date().toISOString()
   const stale   = (source: string): BlockMeta => ({ status: 'stale', source, fetchedAt: now, asOf: 'caché reciente' })
@@ -989,6 +1154,22 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     ueclFixtures: ueclFixtures.length
       ? ueclFixtures.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · UEFA Conference League') : ({ status: 'stale', source: 'ESPN · UECL', fetchedAt: now, asOf: 'Fase KO' } satisfies BlockMeta)
       : unavail('ESPN'),
+    // ── Nuevos automatizados ────────────────────────────────────────────
+    f1Calendar:        f1Calendar.length    ? live(`Jolpica · ${f1.season}`) : unavail('Jolpica'),
+    nbaMvpRace:        nbaMvpRace.length    ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
+    nbaRookieRace:     nbaRookieRace.length ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
+    worldCupQualified: live('Auto · FIFA + anfitriones'),
+    motogpRiders:        histor('MotoGP.com', MOTOGP_AS_OF),
+    motogpConstructors:  histor('MotoGP.com', MOTOGP_AS_OF),
+    cyclingUci:          histor('UCI', CYCLING_AS_OF),
+    cyclingGrandTours:   histor('UCI · calendario', CYCLING_AS_OF),
+    pgaOwgr:             histor('OWGR', GOLF_AS_OF),
+    livRanking:          histor('LIV Golf', GOLF_AS_OF),
+    pgaMajors:           histor('PGA · calendario', GOLF_AS_OF),
+    ufcCard:             histor('UFC', UFC_NEXT_EVENT_AS_OF),
+    ufcStreaks:          histor('UFC Stats', UFC_P4P_AS_OF),
+    tennisSlams:         histor('ATP/WTA · calendario', '2026'),
+    wtaSurfaces:         histor('WTA', '2024-25'),
   }
 
   // Per-football-league meta — lets the UI surface stale-fallback per tabla-* block.
@@ -1033,8 +1214,23 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     uclFixtures,
     uelFixtures,
     ueclFixtures,
+    f1Calendar,
+    nbaMvpRace,
+    nbaRookieRace,
+    worldCupQualified,
+    motogpRiders:       MOTOGP_RIDERS,
+    motogpConstructors: MOTOGP_CONSTRUCTORS,
+    cyclingUci:         CYCLING_UCI,
+    cyclingGrandTours:  CYCLING_GRAND_TOURS,
+    pgaOwgr:            PGA_OWGR,
+    livRanking:         LIV_RANKING,
+    pgaMajors:          PGA_MAJORS_2026,
+    ufcCard:            UFC_NEXT_CARD,
+    ufcStreaks:         UFC_STREAKS,
+    tennisSlams:        TENNIS_SLAMS_2026,
+    wtaSurfaces:        WTA_SURFACES,
     meta,
-    updatedAt:           now,
+    updatedAt:          now,
   }
 }
 

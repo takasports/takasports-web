@@ -61,3 +61,20 @@ export function trackSearch(query: string) {
 export function trackSportFilter(sport: string) {
   track('sport_filter', { sport_name: sport })
 }
+
+// ── Estadísticas ──────────────────────────────────────────────────
+
+export function trackStatsBlockOpen(params: {
+  block_id: string
+  sport?: string
+  section?: string
+}) {
+  track('stats_block_open', params)
+}
+
+export function trackStatsGroupOpen(params: {
+  group_id: string
+  sport?: string
+}) {
+  track('stats_group_open', params)
+}

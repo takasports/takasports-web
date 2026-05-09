@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "rankings:sync": "tsx scripts/sync-rankings-from-db.ts",
     "rankings:seed": "tsx scripts/seed-rankings-to-db.ts",
     "rankings:seed:dry": "tsx scripts/seed-rankings-to-db.ts --dry-run"
@@ -27,8 +29,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/ui": "^4.1.5",
     "dotenv": "^17.4.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.5",
+    "zod": "^4.4.3"
   }
 }

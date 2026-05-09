@@ -6,6 +6,9 @@ import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
+import { StatBlockBoundary } from '@/components/StatBlockBoundary'
+import { trackStatsBlockOpen, trackStatsGroupOpen, trackSearch } from '@/lib/analytics'
+import { StatsSearchModal, type SearchableRow } from '@/components/StatsSearchModal'
 
 // ─────────────────────────────────────────────────────────────────
 // DATOS EN VIVO — resumen de fuentes y limitaciones
@@ -83,69 +86,36 @@ interface SportConfig {
 // ─────────────────────────────────────────────────────────────────
 const LEAGUE_FILTERS   = ['General', 'LaLiga', 'Premier League', 'Bundesliga', 'Serie A', 'Ligue 1']
 
-const TEAM_LEAGUE: Record<string, string> = {
-  // LaLiga
-  'FC Barcelona': 'LaLiga',   'Barcelona': 'LaLiga',      'Real Madrid': 'LaLiga',
-  'Atlético': 'LaLiga',       'Atlético Madrid': 'LaLiga','Athletic Club': 'LaLiga',
-  'Villarreal': 'LaLiga',     'Real Sociedad': 'LaLiga',  'Real Betis': 'LaLiga',
-  'Betis': 'LaLiga',          'Rayo': 'LaLiga',           'Rayo Vallecano': 'LaLiga',
-  'Valencia': 'LaLiga',       'Osasuna': 'LaLiga',        'Getafe': 'LaLiga',
-  'Celta Vigo': 'LaLiga',     'Girona': 'LaLiga',         'Las Palmas': 'LaLiga',
-  'Alavés': 'LaLiga',         'Leganés': 'LaLiga',        'Espanyol': 'LaLiga',
-  'Valladolid': 'LaLiga',     'Sevilla': 'LaLiga',        'Mallorca': 'LaLiga',
-  'Elche': 'LaLiga',          'Levante': 'LaLiga',        'Real Oviedo': 'LaLiga',
-  // Premier League
-  'Man City': 'Premier League','Manchester City': 'Premier League',
-  'Arsenal': 'Premier League','Liverpool': 'Premier League',
-  'Aston Villa': 'Premier League','Chelsea': 'Premier League',
-  'Tottenham': 'Premier League','Tottenham Hotspur': 'Premier League',
-  'Newcastle': 'Premier League','Newcastle United': 'Premier League',
-  'Man United': 'Premier League','Manchester United': 'Premier League',
-  'Brighton': 'Premier League','Brighton & Hove Albion': 'Premier League',
-  'West Ham': 'Premier League','West Ham United': 'Premier League',
-  'Nottingham Forest': 'Premier League','Fulham': 'Premier League',
-  'Bournemouth': 'Premier League','AFC Bournemouth': 'Premier League',
-  'Crystal Palace': 'Premier League','Everton': 'Premier League',
-  'Brentford': 'Premier League','Wolves': 'Premier League',
-  'Wolverhampton': 'Premier League','Leicester': 'Premier League',
-  'Ipswich': 'Premier League','Southampton': 'Premier League',
-  'Sunderland': 'Premier League','Leeds United': 'Premier League',
-  'Burnley': 'Premier League',
-  // Bundesliga
-  'Bayern Munich': 'Bundesliga','Bayern': 'Bundesliga',
-  'Leverkusen': 'Bundesliga', 'Bayer Leverkusen': 'Bundesliga',
-  'Borussia Dortmund': 'Bundesliga','Dortmund': 'Bundesliga',
-  'RB Leipzig': 'Bundesliga', 'Stuttgart': 'Bundesliga',  'VfB Stuttgart': 'Bundesliga',
-  'Eintracht Frankfurt': 'Bundesliga','Freiburg': 'Bundesliga','SC Freiburg': 'Bundesliga',
-  'Hoffenheim': 'Bundesliga', 'TSG Hoffenheim': 'Bundesliga',
-  'Augsburg': 'Bundesliga',   'FC Augsburg': 'Bundesliga',
-  'Wolfsburg': 'Bundesliga',  'VfL Wolfsburg': 'Bundesliga',
-  'Mainz': 'Bundesliga',      'Werder Bremen': 'Bundesliga',
-  'Borussia Mönchengladbach': 'Bundesliga',
-  'Union Berlin': 'Bundesliga','1. FC Union Berlin': 'Bundesliga',
-  'FC Cologne': 'Bundesliga', 'St. Pauli': 'Bundesliga',  'Hamburg SV': 'Bundesliga',
-  // Serie A
-  'Inter Milán': 'Serie A',   'Inter Milan': 'Serie A',   'Internazionale': 'Serie A',
-  'AC Milan': 'Serie A',      'Juventus': 'Serie A',      'Atalanta': 'Serie A',
-  'Napoli': 'Serie A',        'Roma': 'Serie A',          'AS Roma': 'Serie A',
-  'Lazio': 'Serie A',         'Fiorentina': 'Serie A',    'Torino': 'Serie A',
-  'Bologna': 'Serie A',       'Udinese': 'Serie A',       'Como': 'Serie A',
-  'Parma': 'Serie A',         'Cagliari': 'Serie A',      'Genoa': 'Serie A',
-  'Venezia': 'Serie A',       'Empoli': 'Serie A',        'Lecce': 'Serie A',
-  'Monza': 'Serie A',         'Cremonese': 'Serie A',     'Sassuolo': 'Serie A',
-  'Hellas Verona': 'Serie A', 'Pisa': 'Serie A',          'Salernitana': 'Serie A',
-  // Ligue 1
-  'Paris Saint-Germain': 'Ligue 1','PSG': 'Ligue 1',
-  'Monaco': 'Ligue 1',        'AS Monaco': 'Ligue 1',
-  'Marseille': 'Ligue 1',     'Olympique Marseille': 'Ligue 1',
-  'Lyon': 'Ligue 1',          'Olympique Lyonnais': 'Ligue 1',
-  'Lens': 'Ligue 1',          'Brest': 'Ligue 1',         'Lille': 'Ligue 1',
-  'Nice': 'Ligue 1',          'Rennes': 'Ligue 1',        'Stade Rennais': 'Ligue 1',
-  'Strasbourg': 'Ligue 1',    'Reims': 'Ligue 1',         'Toulouse': 'Ligue 1',
-  'Nantes': 'Ligue 1',        'Angers': 'Ligue 1',        'Saint-Étienne': 'Ligue 1',
-  'Montpellier': 'Ligue 1',   'Auxerre': 'Ligue 1',       'AJ Auxerre': 'Ligue 1',
-  'Le Havre': 'Ligue 1',      'Le Havre AC': 'Ligue 1',   'Lorient': 'Ligue 1',
-  'Metz': 'Ligue 1',          'Paris FC': 'Ligue 1',
+// Short-name aliases that don't appear in ESPN's standings response.
+// Used for tables (goleadores, etc.) where the player's `team` field comes
+// from a different source (api-sports, editorial) and uses a casual nickname.
+const TEAM_ALIASES: Record<string, string> = {
+  'Barcelona': 'LaLiga',           'Atlético': 'LaLiga',          'Betis': 'LaLiga',
+  'Rayo': 'LaLiga',                'Celta Vigo': 'LaLiga',
+  'Man City': 'Premier League',    'Man United': 'Premier League','Tottenham': 'Premier League',
+  'Newcastle': 'Premier League',   'Brighton': 'Premier League',  'West Ham': 'Premier League',
+  'Bournemouth': 'Premier League', 'Wolves': 'Premier League',    'Wolverhampton': 'Premier League',
+  'Bayern': 'Bundesliga',          'Leverkusen': 'Bundesliga',    'Dortmund': 'Bundesliga',
+  'Stuttgart': 'Bundesliga',       'Freiburg': 'Bundesliga',
+  'Inter Milan': 'Serie A',        'Inter Milán': 'Serie A',      'Internazionale': 'Serie A',
+  'Roma': 'Serie A',
+  'PSG': 'Ligue 1',                'Marseille': 'Ligue 1',        'Lyon': 'Ligue 1',
+}
+
+// Live dictionary populated from liveData.football. Aliases above are merged
+// in so partial names ("Bayern", "Tottenham") still resolve. Empty until first
+// fetch returns; the league filter just won't kick in until then.
+const TeamLeagueContext = React.createContext<Record<string, string>>(TEAM_ALIASES)
+
+function buildTeamLeague(football: { label: string; rows: { name: string; abbr?: string }[] }[]): Record<string, string> {
+  const out: Record<string, string> = { ...TEAM_ALIASES }
+  for (const league of football) {
+    for (const r of league.rows) {
+      if (r.name) out[r.name] = league.label
+      if (r.abbr) out[r.abbr] = league.label
+    }
+  }
+  return out
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -1201,39 +1171,18 @@ const SECTION_BLOCK_COUNT = new Map(
 // ─────────────────────────────────────────────────────────────────
 // COMPONENTES UI
 // ─────────────────────────────────────────────────────────────────
-function seededRng(seed: string) {
-  let h = 0
-  for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0
-  return () => { h ^= h << 13; h ^= h >> 17; h ^= h << 5; return (h >>> 0) / 4294967296 }
-}
-
-function Sparkline({ trend, seed = '', width = 44, height = 16 }: {
-  trend?: 'up' | 'down' | 'flat'; seed?: string; width?: number; height?: number
-}) {
-  const rng = seededRng(seed || 'x')
-  const n = 6
-  const pts: number[] = []
-  let v = 30 + rng() * 40
-  for (let i = 0; i < n; i++) {
-    const bias = trend === 'up' ? 9 / n : trend === 'down' ? -9 / n : 0
-    v = Math.max(5, Math.min(95, v + (rng() - 0.5) * 18 + bias))
-    pts.push(v)
-  }
-  const min = Math.min(...pts), max = Math.max(...pts), range = max - min || 1
-  const pad = 2
-  const coords = pts.map((val, i) => [
-    (i / (n - 1)) * (width - pad * 2) + pad,
-    height - pad - ((val - min) / range) * (height - pad * 2),
-  ])
-  const points = coords.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
-  const color = trend === 'up' ? '#4ade80' : trend === 'down' ? '#f87171' : '#3A3A52'
-  const [lx, ly] = coords[n - 1]
+// Tendencia honesta: solo flecha cuando el dato lo justifica
+// (la sparkline anterior usaba seededRng — pseudoaleatoria, engañosa).
+function TrendArrow({ trend }: { trend?: 'up' | 'down' | 'flat' }) {
+  if (!trend || trend === 'flat') return <span className="inline-block w-4" aria-hidden />
+  const color = trend === 'up' ? '#4ade80' : '#f87171'
+  const arrow = trend === 'up' ? '▲' : '▼'
   return (
-    <svg width={width} height={height} className="flex-shrink-0">
-      <polyline points={points} fill="none" stroke={color} strokeWidth="1.5"
-        strokeLinecap="round" strokeLinejoin="round" opacity="0.75" />
-      <circle cx={lx.toFixed(1)} cy={ly.toFixed(1)} r="1.8" fill={color} />
-    </svg>
+    <span className="inline-block text-[10px] font-black w-4 text-center leading-none"
+      style={{ color }}
+      aria-label={trend === 'up' ? 'Tendencia al alza' : 'Tendencia a la baja'}>
+      {arrow}
+    </span>
   )
 }
 
@@ -1539,17 +1488,32 @@ function PlayoffSeriesCard({ block, accent, isLive, meta }: {
   )
 }
 
-function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive, meta }: {
+function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive, meta, isFav, onToggleFav }: {
   block: StatBlock; accent: string; expanded: boolean; onToggle: () => void; leagueFilter?: string; isLive?: boolean; meta?: BlockMeta
+  isFav?: boolean; onToggleFav?: () => void
 }) {
   if (block.placeholder) return <PlaceholderBlockCard block={block} accent={accent} />
 
+  const teamLeague = React.useContext(TeamLeagueContext)
   const filteredRows = leagueFilter && leagueFilter !== 'General'
-    ? block.rows.filter(r => TEAM_LEAGUE[r.team ?? ''] === leagueFilter)
+    ? block.rows.filter(r => teamLeague[r.team ?? ''] === leagueFilter)
     : block.rows
   const displayRows = expanded ? filteredRows : filteredRows.slice(0, 5)
   const hasExtra = filteredRows[0]?.extra && Object.keys(filteredRows[0].extra).length > 0
   const extraKeys = hasExtra ? Object.keys(filteredRows[0]!.extra!) : []
+
+  const onShare = async () => {
+    const url = typeof window !== 'undefined' ? `${window.location.origin}/estadisticas#${block.id}` : `#${block.id}`
+    const top = displayRows.slice(0, 3).map(r => `${r.rank}. ${r.name}${r.team ? ` (${r.team})` : ''} — ${r.value}`).join('\n')
+    const text = `${block.title}\n${top}\n\nVía TakaSports`
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: block.title, text, url })
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(`${text}\n${url}`)
+      }
+    } catch { /* user cancelled */ }
+  }
 
   return (
     <section id={block.id} aria-labelledby={`${block.id}-title`} className="rounded-2xl overflow-hidden scroll-mt-24" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
@@ -1561,9 +1525,23 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
           </h3>
           <FreshnessBadge isLive={isLive} meta={meta} />
         </div>
-        <span className="text-[11px] font-black uppercase tracking-widest flex-shrink-0" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
-          {block.metric}
-        </span>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {onToggleFav && (
+            <button onClick={onToggleFav} aria-label={isFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+              className="text-[13px] leading-none px-1.5 py-1 rounded transition-opacity hover:opacity-80"
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: isFav ? '#fbbf24' : '#3A3A52' }}>
+              {isFav ? '★' : '☆'}
+            </button>
+          )}
+          <button onClick={onShare} aria-label="Compartir bloque"
+            className="text-[12px] leading-none px-1.5 py-1 rounded transition-opacity hover:opacity-80"
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#5A5A72' }}>
+            ⤴
+          </button>
+          <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+            {block.metric}
+          </span>
+        </div>
       </div>
 
       <div className="px-5 pt-2 pb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
@@ -1574,7 +1552,7 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
           <span key={k} className="hidden lg:block w-14 text-right">{k}</span>
         ))}
         <span className="w-14 text-right">{block.metric}</span>
-        <span className="w-11 flex-shrink-0" />
+        <span className="w-5 flex-shrink-0" />
       </div>
 
       <div className="flex flex-col">
@@ -1630,8 +1608,8 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
               style={{ color: row.rank <= 3 ? accent : '#8080A0', fontFamily: 'var(--font-display)', fontSize: row.rank === 1 ? 16 : 14 }}>
               {row.value}
             </span>
-            <div className="w-11 flex-shrink-0 flex items-center justify-end">
-              <Sparkline trend={row.trend} seed={row.name} />
+            <div className="w-5 flex-shrink-0 flex items-center justify-end">
+              <TrendArrow trend={row.trend} />
             </div>
           </div>
         ))}
@@ -1723,16 +1701,17 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
       {expanded && (
         <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
           {liveVisibleBlocks.map(({ block, isLive }) => (
-            <StatBlockCard
-              key={block.id}
-              block={block}
-              accent={accent}
-              expanded={!!expandedBlocks[block.id]}
-              onToggle={() => onToggleBlock(block.id)}
-              leagueFilter={leagueFilter}
-              isLive={isLive}
-              meta={getBlockMeta(block.id, liveMeta)}
-            />
+            <StatBlockBoundary key={block.id} blockId={block.id}>
+              <StatBlockCard
+                block={block}
+                accent={accent}
+                expanded={!!expandedBlocks[block.id]}
+                onToggle={() => onToggleBlock(block.id)}
+                leagueFilter={leagueFilter}
+                isLive={isLive}
+                meta={getBlockMeta(block.id, liveMeta)}
+              />
+            </StatBlockBoundary>
           ))}
         </div>
       )}
@@ -1747,11 +1726,12 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
 const LIVE_BLOCK_IDS = new Set([
   'tabla-laliga', 'tabla-premier', 'tabla-serie-a', 'tabla-bundesliga', 'tabla-ligue1', 'tabla-ucl', 'tabla-uel', 'tabla-uecl',
   'nba-este', 'nba-oeste',
-  'f1-campeonato', 'f1-constructores', 'f1-poles',
+  'f1-campeonato', 'f1-constructores', 'f1-poles', 'f1-calendario',
   'atp-ranking', 'wta-ranking',
   'goles-equipo', 'menos-goles',
   'ranking-fifa',
   'nba-scoring', 'nba-rebounds', 'nba-assists', 'nba-blocks', 'nba-steals', 'nba-efficiency', 'nba-3pt',
+  'nba-mvp-race', 'nba-rookie-race',
   'f-ligaf-tabla', 'f-goleadoras', 'f-asistencias',
   'pga-leaderboard', 'pga-fedex',
   'nations-a1', 'nations-a2', 'nations-a3', 'nations-a4',
@@ -1763,8 +1743,15 @@ const LIVE_BLOCK_IDS = new Set([
   'wc-group-i', 'wc-group-j', 'wc-group-k', 'wc-group-l',
   'wc-scorers',
   'wc-knockout',
+  'wc-qualified',
   // NBA Playoffs
   'nba-playoffs',
+  // Editorial automatizados (snapshots con asOf)
+  'motogp-pilotos', 'motogp-constructores',
+  'ciclismo-uci', 'ciclismo-tour',
+  'pga-owgr', 'liv-ranking', 'pga-major',
+  'ufc-card', 'ufc-streaks',
+  'tenis-slams', 'wta-wins-surface',
 ])
 
 interface LiveStandingRow {
@@ -1800,6 +1787,22 @@ interface LiveStandingsData {
   uclFixtures?: LiveStandingRow[]
   uelFixtures?: LiveStandingRow[]
   ueclFixtures?: LiveStandingRow[]
+  // Nuevos automatizados
+  f1Calendar?: LiveStandingRow[]
+  nbaMvpRace?: LiveStandingRow[]
+  nbaRookieRace?: LiveStandingRow[]
+  worldCupQualified?: LiveStandingRow[]
+  motogpRiders?: LiveStandingRow[]
+  motogpConstructors?: LiveStandingRow[]
+  cyclingUci?: LiveStandingRow[]
+  cyclingGrandTours?: LiveStandingRow[]
+  pgaOwgr?: LiveStandingRow[]
+  livRanking?: LiveStandingRow[]
+  pgaMajors?: LiveStandingRow[]
+  ufcCard?: LiveStandingRow[]
+  ufcStreaks?: LiveStandingRow[]
+  tennisSlams?: LiveStandingRow[]
+  wtaSurfaces?: LiveStandingRow[]
   meta?: Record<string, BlockMeta>
   updatedAt?: string
 }
@@ -1827,7 +1830,22 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'wc-group-j': 'worldCup', 'wc-group-k': 'worldCup', 'wc-group-l': 'worldCup',
   'wc-scorers':  'worldCupScorers',
   'wc-knockout': 'worldCupKnockout',
+  'wc-qualified': 'worldCupQualified',
   'nba-playoffs': 'nbaPlayoffSeries',
+  'f1-calendario': 'f1Calendar',
+  'nba-mvp-race': 'nbaMvpRace',
+  'nba-rookie-race': 'nbaRookieRace',
+  'motogp-pilotos': 'motogpRiders',
+  'motogp-constructores': 'motogpConstructors',
+  'ciclismo-uci': 'cyclingUci',
+  'ciclismo-tour': 'cyclingGrandTours',
+  'pga-owgr': 'pgaOwgr',
+  'liv-ranking': 'livRanking',
+  'pga-major': 'pgaMajors',
+  'ufc-card': 'ufcCard',
+  'ufc-streaks': 'ufcStreaks',
+  'tenis-slams': 'tennisSlams',
+  'wta-wins-surface': 'wtaSurfaces',
 }
 
 // Blocks with API-Sports 2024 data (free tier): show as historical, not live
@@ -1839,11 +1857,7 @@ const STATIC_STALE_BLOCK_IDS = new Set([
   'minutos', 'partidos-titular',
   'promesas-nota', 'promesas-goles',
   'goleadores-selecciones', 'dt-trofeos',
-  'atp-wins-surface', 'ufc-ko', 'ufc-campeones', 'ufc-streaks',
-  'nba-mvp-race', 'nba-rookie-race',
-  'pga-owgr', 'liv-ranking',
-  'motogp-pilotos', 'motogp-constructores',
-  'ciclismo-uci', 'ciclismo-tour',
+  'atp-wins-surface', 'ufc-ko', 'ufc-campeones',
 ])
 
 const FIXTURE_META_KEY: Record<string, string> = {
@@ -2024,6 +2038,28 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   const [lastUpdated, setLastUpdated]         = useState<Date | null>(initialData ? new Date() : null)
   const [fetchError, setFetchError]           = useState<string | null>(null)
   const [refreshing, setRefreshing]           = useState(false)
+  const [updatedFlash, setUpdatedFlash]       = useState(false)
+  const [searchOpen, setSearchOpen]           = useState(false)
+  const [favorites, setFavorites]             = useState<Set<string>>(() => new Set())
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+
+  // Load favorites from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('ts_stats_favorites')
+      if (raw) setFavorites(new Set(JSON.parse(raw)))
+    } catch { /* ignore */ }
+  }, [])
+
+  const toggleFav = React.useCallback((blockId: string) => {
+    setFavorites(prev => {
+      const next = new Set(prev)
+      if (next.has(blockId)) next.delete(blockId)
+      else next.add(blockId)
+      try { localStorage.setItem('ts_stats_favorites', JSON.stringify([...next])) } catch { /* ignore */ }
+      return next
+    })
+  }, [])
 
   const POLL_MS = 5 * 60_000
 
@@ -2039,7 +2075,15 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
       try {
         const standings = await fetch('/api/stats/standings').then(r => r.ok ? r.json() : Promise.reject(new Error(`standings ${r.status}`)))
         if (cancelled) return
-        if (standings) setLiveData(standings)
+        if (standings) {
+          // Show flash only if this isn't the very first hydration
+          const isUpdate = !!liveData && standings.updatedAt !== liveData.updatedAt
+          setLiveData(standings)
+          if (isUpdate) {
+            setUpdatedFlash(true)
+            setTimeout(() => setUpdatedFlash(false), 2200)
+          }
+        }
         setLastUpdated(new Date())
         setFetchError(null)
       } catch (err) {
@@ -2161,6 +2205,23 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           return { ...block, rows: toStatRows(liveData.worldCupKnockout), placeholder: false }
         if (block.id === 'nba-playoffs' && liveData.nbaPlayoffSeries?.length)
           return { ...block, rows: toStatRows(liveData.nbaPlayoffSeries), placeholder: false }
+
+        // ── Nuevos automatizados ────────────────────────────────────────
+        if (block.id === 'f1-calendario'    && liveData.f1Calendar?.length)        return { ...block, rows: toStatRows(liveData.f1Calendar) }
+        if (block.id === 'nba-mvp-race'     && liveData.nbaMvpRace?.length)        return { ...block, rows: toStatRows(liveData.nbaMvpRace) }
+        if (block.id === 'nba-rookie-race'  && liveData.nbaRookieRace?.length)     return { ...block, rows: toStatRows(liveData.nbaRookieRace) }
+        if (block.id === 'wc-qualified'     && liveData.worldCupQualified?.length) return { ...block, rows: toStatRows(liveData.worldCupQualified) }
+        if (block.id === 'motogp-pilotos'        && liveData.motogpRiders?.length)        return { ...block, rows: toStatRows(liveData.motogpRiders, 'Escudería') }
+        if (block.id === 'motogp-constructores'  && liveData.motogpConstructors?.length)  return { ...block, rows: toStatRows(liveData.motogpConstructors) }
+        if (block.id === 'ciclismo-uci'          && liveData.cyclingUci?.length)          return { ...block, rows: toStatRows(liveData.cyclingUci, 'Equipo') }
+        if (block.id === 'ciclismo-tour'         && liveData.cyclingGrandTours?.length)   return { ...block, rows: toStatRows(liveData.cyclingGrandTours) }
+        if (block.id === 'pga-owgr'              && liveData.pgaOwgr?.length)             return { ...block, rows: toStatRows(liveData.pgaOwgr) }
+        if (block.id === 'liv-ranking'           && liveData.livRanking?.length)          return { ...block, rows: toStatRows(liveData.livRanking, 'Equipo') }
+        if (block.id === 'pga-major'             && liveData.pgaMajors?.length)           return { ...block, rows: toStatRows(liveData.pgaMajors) }
+        if (block.id === 'ufc-card'              && liveData.ufcCard?.length)             return { ...block, rows: toStatRows(liveData.ufcCard) }
+        if (block.id === 'ufc-streaks'           && liveData.ufcStreaks?.length)          return { ...block, rows: toStatRows(liveData.ufcStreaks) }
+        if (block.id === 'tenis-slams'           && liveData.tennisSlams?.length)         return { ...block, rows: toStatRows(liveData.tennisSlams) }
+        if (block.id === 'wta-wins-surface'      && liveData.wtaSurfaces?.length)         return { ...block, rows: toStatRows(liveData.wtaSurfaces) }
       }
       // Player stats data
       if (livePlayerData && LIVE_PLAYER_BLOCK_IDS.has(block.id)) {
@@ -2216,10 +2277,75 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
     ? flatBlocks.filter(b => !b.league || b.league === leagueFilter)
     : flatBlocks
 
-  const toggleBlock = (id: string) => setExpandedBlocks(prev => ({ ...prev, [id]: !prev[id] }))
-  const toggleGroup = (id: string) => setExpandedGroups(prev => ({ ...prev, [id]: !prev[id] }))
+  const toggleBlock = (id: string) => {
+    setExpandedBlocks(prev => {
+      const next = !prev[id]
+      if (next) trackStatsBlockOpen({ block_id: id, sport: sportId, section: sectionId })
+      return { ...prev, [id]: next }
+    })
+  }
+  const toggleGroup = (id: string) => {
+    setExpandedGroups(prev => {
+      const next = !prev[id]
+      if (next) trackStatsGroupOpen({ group_id: id, sport: sportId })
+      return { ...prev, [id]: next }
+    })
+  }
+
+  const teamLeague = React.useMemo(
+    () => buildTeamLeague(liveData?.football ?? []),
+    [liveData?.football],
+  )
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setSearchOpen(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const searchableRows = React.useMemo<SearchableRow[]>(() => {
+    const out: SearchableRow[] = []
+    const collect = (blocks: StatBlock[]) => {
+      for (const b of applyLive(blocks)) {
+        if (b.placeholder || !b.rows.length) continue
+        for (const r of b.rows) {
+          out.push({ blockId: b.id, blockTitle: b.title, rowName: r.name, rowTeam: r.team, rowValue: r.value, metric: b.metric })
+        }
+      }
+    }
+    for (const sec of sport.sections) {
+      if (sec.blocks) collect(sec.blocks)
+      if (sec.groups) for (const g of sec.groups) collect(g.blocks)
+    }
+    return out
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sport, liveData, livePlayerData, leagueFilter])
+
+  const handleSearchPick = (blockId: string) => {
+    trackSearch(`stats:${blockId}`)
+    setExpandedBlocks(prev => ({ ...prev, [blockId]: true }))
+    for (const sec of sport.sections) {
+      const group = sec.groups?.find(g => g.blocks.some(b => b.id === blockId))
+      if (group) {
+        setExpandedGroups(prev => ({ ...prev, [group.id]: true }))
+        break
+      }
+    }
+    requestAnimationFrame(() => {
+      const el = document.getElementById(blockId)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      else window.location.hash = `#${blockId}`
+    })
+  }
 
   return (
+    <TeamLeagueContext.Provider value={teamLeague}>
+    <StatsSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} rows={searchableRows} onPick={handleSearchPick} />
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />
       <LiveStrip />
@@ -2260,12 +2386,18 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                   ⚠ Algunos datos no se han podido actualizar ({fetchError})
                 </span>
               )}
+              {updatedFlash && (
+                <span aria-live="polite" className="text-[11px] inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full"
+                  style={{ background: 'rgba(74,222,128,0.14)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.32)', fontFamily: 'var(--font-sport)', animation: 'fadeOut 2.2s forwards' }}>
+                  ● Datos actualizados
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         {/* ── NAVEGACIÓN STICKY (deporte + sección) ─── */}
-        <div className="sticky z-30 -mx-6 xl:-mx-10 px-4 sm:px-6 xl:px-10"
+        <div className="sticky z-30 -mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-6 xl:px-10"
           style={{ top: 56, background: 'var(--bg-base)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
 
           {/* TAB 1: DEPORTE */}
@@ -2370,7 +2502,9 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         {isFemenino && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
             {applyLive(FUTBOL_FEMENINO_BLOCKS).map(block => (
-              <StatBlockCard key={block.id} block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={LIVE_BLOCK_IDS.has(block.id) && !!liveData} meta={getBlockMeta(block.id, liveData?.meta)} />
+              <StatBlockBoundary key={block.id} blockId={block.id}>
+                <StatBlockCard block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={LIVE_BLOCK_IDS.has(block.id) && !!liveData} meta={getBlockMeta(block.id, liveData?.meta)} />
+              </StatBlockBoundary>
             ))}
           </div>
         )}
@@ -2419,22 +2553,24 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
               {filteredFlatBlocks.map(block => {
                 const blockMeta = getBlockMeta(block.id, liveData?.meta, block.cardType)
                 const live = isBlockLive(block)
+                let inner: React.ReactNode
                 if (block.id.startsWith('wc-group-'))
-                  return <WorldCupGroupCard key={block.id} block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
-                if (block.id === 'nba-playoffs' || block.id === 'wc-knockout' || block.cardType === 'fixtures')
-                  return <PlayoffSeriesCard key={block.id} block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
-                return (
-                  <StatBlockCard
-                    key={block.id}
-                    block={block}
-                    accent={sport.accent}
-                    expanded={!!expandedBlocks[block.id]}
-                    onToggle={() => toggleBlock(block.id)}
-                    leagueFilter={leagueFilter}
-                    isLive={live}
-                    meta={blockMeta}
-                  />
-                )
+                  inner = <WorldCupGroupCard block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
+                else if (block.id === 'nba-playoffs' || block.id === 'wc-knockout' || block.cardType === 'fixtures')
+                  inner = <PlayoffSeriesCard block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
+                else
+                  inner = (
+                    <StatBlockCard
+                      block={block}
+                      accent={sport.accent}
+                      expanded={!!expandedBlocks[block.id]}
+                      onToggle={() => toggleBlock(block.id)}
+                      leagueFilter={leagueFilter}
+                      isLive={live}
+                      meta={blockMeta}
+                    />
+                  )
+                return <StatBlockBoundary key={block.id} blockId={block.id}>{inner}</StatBlockBoundary>
               })}
             </div>
             {filteredFlatBlocks.length === 0 && (
@@ -2481,5 +2617,6 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
       <Footer />
       <ScrollToTop />
     </div>
+    </TeamLeagueContext.Provider>
   )
 }
