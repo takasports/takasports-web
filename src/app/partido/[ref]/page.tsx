@@ -14,6 +14,7 @@ import { LeagueTableBlock } from './LeagueTable'
 import { LiveRefresh } from './LiveRefresh'
 import { ShareButton } from '@/components/ShareButton'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
+import { isSplitBroadcast } from '@/lib/broadcasts'
 
 export const revalidate = 30
 
@@ -157,7 +158,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
         {match.homeTeamId ? (
           <Link href={`/equipo/${match.leagueSlug.replace('/', '_')}_${match.homeTeamId}`}
             className="flex flex-col items-center gap-2 flex-1 hover:opacity-80 transition-opacity">
-            <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={52} />
+            <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={68} />
             <p className="text-center font-black text-sm leading-tight"
               style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
               {match.homeAbbr ?? match.homeTeam}
@@ -165,7 +166,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
           </Link>
         ) : (
           <div className="flex flex-col items-center gap-2 flex-1">
-            <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={52} />
+            <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={68} />
             <p className="text-center font-black text-sm leading-tight"
               style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
               {match.homeAbbr ?? match.homeTeam}
@@ -194,7 +195,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
         {match.awayTeamId ? (
           <Link href={`/equipo/${match.leagueSlug.replace('/', '_')}_${match.awayTeamId}`}
             className="flex flex-col items-center gap-2 flex-1 hover:opacity-80 transition-opacity">
-            <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={52} />
+            <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={68} />
             <p className="text-center font-black text-sm leading-tight"
               style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
               {match.awayAbbr ?? match.awayTeam}
@@ -202,7 +203,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
           </Link>
         ) : (
           <div className="flex flex-col items-center gap-2 flex-1">
-            <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={52} />
+            <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={68} />
             <p className="text-center font-black text-sm leading-tight"
               style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
               {match.awayAbbr ?? match.awayTeam}
@@ -228,13 +229,28 @@ function InfoRow({ match }: { match: MatchDetail }) {
           <span className="text-[10px]" style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>{match.venue}</span>
         </div>
       )}
-      {match.broadcast && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <span className="text-[10px]">📺</span>
-          <span className="text-[10px]" style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>{match.broadcast}</span>
-        </div>
-      )}
+      {match.broadcast && (() => {
+        const split = isSplitBroadcast(match.broadcast)
+        return (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+            style={{
+              background: split ? 'rgba(251,191,36,0.07)' : 'rgba(99,102,241,0.08)',
+              border: split ? '1px solid rgba(251,191,36,0.22)' : '1px solid rgba(99,102,241,0.20)',
+            }}
+            title={split ? 'Los derechos están repartidos entre varios canales — consulta LaLiga.com para el canal exacto' : undefined}>
+            <span className="text-[10px]">📺</span>
+            <span className="text-[10px] font-bold"
+              style={{ color: split ? '#D4A017' : '#A5B4FC', fontFamily: 'var(--font-sport)' }}>
+              {match.broadcast}
+            </span>
+            {split && (
+              <span className="text-[9px]" style={{ color: '#A07C10', fontFamily: 'var(--font-sport)' }}>
+                ⚠
+              </span>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }

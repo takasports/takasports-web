@@ -1547,26 +1547,48 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
               <DayChips days={availableDays} value={selectedDate} onChange={setSelectedDate} />
             </div>
           )}
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <SearchInput value={search} onChange={setSearch} />
+          {/* Toolbar — single scrollable row on mobile, two-row layout on sm+ */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+            <SearchInput value={search} onChange={setSearch} />
+            {/* Divider */}
+            <div className="flex-shrink-0 w-px h-4" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            <button
+              onClick={() => setOnlyLive(v => !v)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+              style={{
+                background: onlyLive ? 'rgba(74,222,128,0.18)' : 'rgba(255,255,255,0.04)',
+                color: onlyLive ? '#4ade80' : '#7A7A8E',
+                border: onlyLive ? '1px solid rgba(74,222,128,0.45)' : '1px solid rgba(255,255,255,0.06)',
+                fontFamily: 'var(--font-sport)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                boxShadow: onlyLive ? '0 0 12px rgba(74,222,128,0.18)' : 'none',
+              }}
+            >
+              {onlyLive && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />}
+              En vivo
+            </button>
+            {/* Divider */}
+            <div className="flex-shrink-0 w-px h-4" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            {sports.map(sport => (
               <button
-                onClick={() => setOnlyLive(v => !v)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+                key={sport}
+                onClick={() => setActiveFilter(sport)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
                 style={{
-                  background: onlyLive ? 'rgba(74,222,128,0.18)' : 'rgba(255,255,255,0.04)',
-                  color: onlyLive ? '#4ade80' : '#7A7A8E',
-                  border: onlyLive ? '1px solid rgba(74,222,128,0.45)' : '1px solid rgba(255,255,255,0.06)',
+                  background: activeFilter === sport ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                  color: activeFilter === sport ? '#E0E0F0' : '#5A5A6A',
+                  border: activeFilter === sport ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.06)',
                   fontFamily: 'var(--font-sport)',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
-                  boxShadow: onlyLive ? '0 0 12px rgba(74,222,128,0.18)' : 'none',
-                }}
-              >
-                {onlyLive && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />}
-                Solo en vivo
+                }}>
+                {SPORT_EMOJI[sport] || '🏆'} {sport}
               </button>
-              {hasActiveFilters && (
+            ))}
+            {hasActiveFilters && (
+              <>
+                <div className="flex-shrink-0 w-px h-4" style={{ background: 'rgba(255,255,255,0.08)' }} />
                 <button
                   onClick={clearFilters}
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
@@ -1581,26 +1603,8 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                 >
                   ✕ Limpiar
                 </button>
-              )}
-            </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
-              {sports.map(sport => (
-                <button
-                  key={sport}
-                  onClick={() => setActiveFilter(sport)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
-                  style={{
-                    background: activeFilter === sport ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-                    color: activeFilter === sport ? '#E0E0F0' : '#5A5A6A',
-                    border: activeFilter === sport ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.06)',
-                    fontFamily: 'var(--font-sport)',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}>
-                  {SPORT_EMOJI[sport] || '🏆'} {sport}
-                </button>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         </div>
       )}

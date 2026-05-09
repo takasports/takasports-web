@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getZone } from '@/lib/league-zones'
 import type { StandingZone } from '@/lib/league-zones'
+import { getSpanishBroadcast } from '@/lib/broadcasts'
 export type { StandingZone }
 
 export type SportKind = 'soccer' | 'basketball' | 'mma' | 'racing' | 'tennis' | 'golf' | 'other'
@@ -714,7 +715,7 @@ export async function GET(
     const clock      = asString(statusObj?.displayClock)
 
     const venue     = asString(asObj(comp.venue)?.fullName) ?? asString(asObj(asObj(json.gameInfo)?.venue)?.fullName)
-    const broadcast = asString(asArr(asArr(comp.broadcasts)[0] ? asObj(asArr(comp.broadcasts)[0])?.names : undefined)[0])
+    const broadcast = getSpanishBroadcast(leagueLabel, sport) ?? undefined
 
     const detail: MatchDetail = {
       id:          eventId,
