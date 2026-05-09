@@ -76,7 +76,7 @@ export default async function BuscarPage({
       )}
       <Header />
 
-      <main className="max-w-[1440px] mx-auto px-6 xl:px-10 py-10 pb-24" style={{ maxWidth: 900 }}>
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 py-10 pb-24" style={{ maxWidth: 900 }}>
         <h1
           className="font-black mb-2"
           style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: '#F8F8FF', letterSpacing: '-0.015em' }}

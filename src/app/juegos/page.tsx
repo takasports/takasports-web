@@ -775,7 +775,7 @@ export default function JuegosPage() {
       <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-24">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
         {/* ── HERO ────────────────────────────────────────── */}
         <div className="relative pt-10 pb-8">

@@ -56,7 +56,7 @@ export default function BreakingNewsBar({
         borderBottom: '1px solid rgba(255,255,255,0.05)',
       }}
     >
-      <div className="max-w-[1440px] mx-auto px-6 xl:px-10 w-full flex items-center gap-3 overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 w-full flex items-center gap-3 overflow-hidden">
         {/* Badge */}
         <div
           className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-0.5 rounded"

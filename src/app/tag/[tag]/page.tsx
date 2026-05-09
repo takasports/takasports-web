@@ -88,7 +88,7 @@ export default async function TagPage({
       <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-20">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20">
 
         {/* Header */}
         <div className="pt-10 pb-8">

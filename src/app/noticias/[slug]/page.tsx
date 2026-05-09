@@ -468,7 +468,7 @@ export default async function NoticiaPage({
       }} />
       <Header />
 
-      <main className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-20">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20">
         <div className="lg:grid lg:gap-12 lg:items-start mx-auto" style={{ gridTemplateColumns: 'minmax(0,1fr) 268px', maxWidth: 1160 }}>
 
           <div className="pt-6 pb-5 lg:col-span-2 flex items-center gap-3">

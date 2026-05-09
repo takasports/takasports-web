@@ -1368,7 +1368,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
   }, [liveEventsInList, orphanFixtures, reminders, liveScores])
 
   return (
-    <main className="max-w-[1280px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+    <main className="max-w-[1280px] mx-auto px-4 sm:px-4 sm:px-6 xl:px-10 pb-24">
       {/* Header */}
       <div className="relative pt-6 pb-5">
         <div className="absolute -top-8 left-0 w-80 h-48 pointer-events-none"
@@ -1451,7 +1451,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
       {/* Day chips + Toolbar (sticky on scroll) */}
       {view !== 'en-vivo' && view !== 'recordatorios' && view !== 'resultados' && (
         <div
-          className="mb-4 -mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-6 xl:px-10 pt-2 pb-3"
+          className="mb-4 -mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-4 sm:px-6 xl:px-10 pt-2 pb-3"
           style={{
             position: 'sticky',
             top: 0,
@@ -1781,7 +1781,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
         <div className="space-y-5">
           {/* Compact sport + search toolbar */}
           <div
-            className="-mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-6 xl:px-10 pt-2 pb-3 mb-1"
+            className="-mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-4 sm:px-6 xl:px-10 pt-2 pb-3 mb-1"
             style={{
               position: 'sticky',
               top: 0,

@@ -1,7 +1,7 @@
 export default function Loading() {
   return (
     <div
-      className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-16 animate-pulse"
+      className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-16 animate-pulse"
       style={{ paddingTop: 12 }}
     >
       {/* LiveStrip skeleton */}

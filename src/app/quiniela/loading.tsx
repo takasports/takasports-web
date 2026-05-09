@@ -1,6 +1,6 @@
 export default function QuinielaLoading() {
   return (
-    <div className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-24 animate-pulse" style={{ paddingTop: 40 }}>
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24 animate-pulse" style={{ paddingTop: 40 }}>
       {/* Title */}
       <div className="rounded-xl mb-2" style={{ width: 220, height: 36, background: 'rgba(255,255,255,0.07)' }} />
       <div className="rounded-lg mb-8" style={{ width: 300, height: 18, background: 'rgba(255,255,255,0.04)' }} />

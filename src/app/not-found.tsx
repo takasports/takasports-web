@@ -8,7 +8,7 @@ export default function NotFound() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Header />
 
-      <main className="max-w-[1440px] mx-auto px-6 xl:px-10 flex-1">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 flex-1">
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-6">
 
           {/* Number */}

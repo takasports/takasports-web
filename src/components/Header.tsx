@@ -14,7 +14,7 @@ import dynamic from 'next/dynamic'
 
 const AuthModal = dynamic(() => import('./AuthModal'), { ssr: false })
 
-const INNER = 'max-w-[1440px] mx-auto px-6 xl:px-10'
+const INNER = 'max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10'
 
 const NAV_LINKS = [
   { label: 'Inicio',       href: '/'              },
@@ -201,7 +201,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                   >
                     {/* Avatar */}
                     <div className="flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center text-base"
-                      style={{ width: 34, height: 34, background: `${accent}18`, border: `1px solid ${accent}30` }}>
+                      style={{ width: 38, height: 38, background: `${accent}18`, border: `1px solid ${accent}30` }}>
                       {player.photo
                         ? <Image src={player.photo} alt={player.name} width={34} height={34} className="w-full h-full object-cover" />
                         : <span>{player.emoji ?? '👤'}</span>
@@ -414,7 +414,7 @@ export default function Header() {
               aria-label="Buscar"
               onClick={openSearch}
               className="xl:hidden flex items-center justify-center rounded-lg flex-shrink-0"
-              style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#7A7A8E' }}
+              style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#7A7A8E' }}
             >
               <SearchIcon />
             </button>
@@ -424,7 +424,7 @@ export default function Header() {
                 href="/perfil"
                 aria-label="Mi perfil"
                 className="profile-btn flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden"
-                style={{ width: 34, height: 34, background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.4)', textDecoration: 'none' }}
+                style={{ width: 38, height: 38, background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.4)', textDecoration: 'none' }}
               >
                 {user.user_metadata?.avatar_url ? (
                   <Image
@@ -449,7 +449,7 @@ export default function Header() {
                 onClick={() => setAuthOpen(true)}
                 aria-label="Iniciar sesión"
                 className="profile-btn flex items-center justify-center rounded-full flex-shrink-0"
-                style={{ width: 34, height: 34, background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.22)', color: '#9B7CF6', cursor: 'pointer' }}
+                style={{ width: 38, height: 38, background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.22)', color: '#9B7CF6', cursor: 'pointer' }}
               >
                 <ProfileIcon />
               </button>
@@ -461,7 +461,7 @@ export default function Header() {
               aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
               onClick={() => setMenuOpen((v) => !v)}
               className="lg:hidden flex items-center justify-center rounded-lg flex-shrink-0"
-              style={{ width: 34, height: 34, background: menuOpen ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ width: 38, height: 38, background: menuOpen ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               {menuOpen ? (
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

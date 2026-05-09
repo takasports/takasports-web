@@ -102,7 +102,7 @@ export default function Footer() {
         style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(124,58,237,0.35) 30%, rgba(124,58,237,0.35) 70%, transparent)' }}
       />
 
-      <div className="max-w-[1440px] mx-auto px-6 xl:px-10 pt-14 pb-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pt-14 pb-10">
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-10 mb-12">
 

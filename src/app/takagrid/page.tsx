@@ -724,7 +724,7 @@ export default function TakaGridPage() {
       <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-4 sm:px-6 xl:px-10 pb-24">
         {/* Breadcrumb */}
         <div className="pt-6 sm:pt-8">
           <Link href="/juegos" className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-colors hover:text-white" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>

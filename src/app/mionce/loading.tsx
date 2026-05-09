@@ -1,6 +1,6 @@
 export default function MiOnceLoading() {
   return (
-    <div className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-24 animate-pulse" style={{ paddingTop: 40 }}>
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24 animate-pulse" style={{ paddingTop: 40 }}>
       <div className="rounded-xl mb-2" style={{ width: 320, height: 40, background: 'rgba(147,197,253,0.07)' }} />
       <div className="rounded-lg mb-10" style={{ width: 420, height: 18, background: 'rgba(255,255,255,0.04)' }} />
 

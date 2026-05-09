@@ -3133,7 +3133,7 @@ export default function QuinielaClient() {
       <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-24">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
         {/* ── BANNER: unirse a liga por link ─────────── */}
         {ligaParam && ligaName && !ligaJoined && (

@@ -154,7 +154,7 @@ export default function NoticiasContent({
   return (
     <>
       {/* CABECERA */}
-      <div className="px-6 xl:px-10 pt-6 pb-0">
+      <div className="px-4 sm:px-6 xl:px-10 pt-6 pb-0">
         <div className="flex items-baseline justify-between gap-4">
           <h1
             className="font-black leading-none"
@@ -175,7 +175,7 @@ export default function NoticiasContent({
 
       {/* ── FILTRO DEPORTE — sticky ── */}
       <div
-        className="sticky z-40 px-6 xl:px-10 pt-3 pb-0"
+        className="sticky z-40 px-4 sm:px-6 xl:px-10 pt-3 pb-0"
         style={{
           top: 56,
           background: 'rgba(9,9,15,0.96)',
@@ -193,7 +193,7 @@ export default function NoticiasContent({
 
       {/* ── Contenido con fade ── */}
       <div
-        className="px-6 xl:px-10"
+        className="px-4 sm:px-6 xl:px-10"
         style={{ opacity: contentVisible ? 1 : 0, transition: 'opacity 110ms ease' }}
       >
 

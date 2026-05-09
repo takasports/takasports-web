@@ -114,7 +114,7 @@ export default function LiveStrip() {
       className="w-full"
       style={{ background: 'rgba(9,9,15,0.92)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
     >
-      <div className="max-w-[1440px] mx-auto px-6 xl:px-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10">
         <div className="flex items-center h-10 gap-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
 
           {/* Label pill */}

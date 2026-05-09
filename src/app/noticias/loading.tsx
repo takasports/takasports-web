@@ -1,6 +1,6 @@
 export default function NoticiasLoading() {
   return (
-    <div className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-16 animate-pulse" style={{ paddingTop: 16 }}>
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-16 animate-pulse" style={{ paddingTop: 16 }}>
       {/* LiveStrip skeleton */}
       <div className="rounded-xl mb-5" style={{ height: 40, background: 'rgba(255,255,255,0.04)' }} />
 

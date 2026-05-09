@@ -2310,7 +2310,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
       <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-24">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
         {/* ── HERO ──────────────────────────────────────── */}
         <div className="relative pt-8 pb-6">
@@ -2351,7 +2351,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         </div>
 
         {/* ── NAVEGACIÓN STICKY (deporte + sección) ─── */}
-        <div className="sticky z-30 -mx-6 xl:-mx-10 px-6 xl:px-10"
+        <div className="sticky z-30 -mx-6 xl:-mx-10 px-4 sm:px-6 xl:px-10"
           style={{ top: 56, background: 'var(--bg-base)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
 
           {/* TAB 1: DEPORTE */}

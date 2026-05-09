@@ -537,7 +537,7 @@ export default function CrackQuizPage() {
     <>
       <Header />
       <LiveStrip />
-      <main className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-24" style={{ paddingTop: 40 }}>
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24" style={{ paddingTop: 40 }}>
         {/* Page header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1">

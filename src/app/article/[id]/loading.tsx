@@ -1,6 +1,6 @@
 export default function ArticleLoading() {
   return (
-    <div className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-20 animate-pulse">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20 animate-pulse">
       <div className="lg:grid lg:gap-12" style={{ gridTemplateColumns: 'minmax(0,1fr) 268px', maxWidth: 1160, margin: '0 auto' }}>
 
         {/* Back button skeleton */}

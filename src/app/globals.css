@@ -32,6 +32,11 @@
 
 html {
   background: var(--bg-base);
+  overflow-x: clip;
+}
+
+body {
+  overflow-x: clip;
 }
 
 /* Grain editorial — textura sutil sobre toda la página */
