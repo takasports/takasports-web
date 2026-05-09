@@ -3,8 +3,8 @@ import { sanityClient, articlesQuery, reelsQuery, eventsQuery } from '@/lib/sani
 import { SLUG_TO_LABEL } from '@/lib/sports'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents } from '@/lib/espn'
+import { fetchPublicReels } from '@/lib/instagram-public'
 import { SEED_REELS } from '@/lib/seed-reels'
-import reelsData from '@/lib/reels-data.json'
 import Header from '@/components/Header'
 import BreakingNewsBar from '@/components/BreakingNewsBar'
 import LiveStrip from '@/components/LiveStrip'
@@ -72,20 +72,21 @@ export default async function Home({
   searchParams: Promise<{ sport?: string }>
 }) {
   const { sport } = await searchParams
-  const [rawArticles, sanityReels, rawEvents, espnEvents] = await Promise.all([
+  const [rawArticles, sanityReels, rawEvents, espnEvents, igReels] = await Promise.all([
     sanityClient.fetch<HomeArticle[]>(articlesQuery),
     sanityClient.fetch(reelsQuery),
     sanityClient.fetch(eventsQuery).catch(() => []),
     fetchEspnEvents().catch(() => []),
+    fetchPublicReels().catch(() => []),
   ])
 
   const articles = sortForHome(rawArticles)
 
-  // SSR: Sanity reels → reels-data.json estático → seed. Los thumbnails reales eliminan el flash
+  // SSR: Sanity reels → live Instagram API → seed placeholders
   const reels = (sanityReels as unknown[]).length > 0
     ? sanityReels
-    : (reelsData as unknown[]).length > 0
-      ? reelsData
+    : igReels.length > 0
+      ? igReels
       : SEED_REELS
 
   const sanityEvents = Array.isArray(rawEvents) && rawEvents.length > 0

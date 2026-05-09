@@ -11,6 +11,8 @@ export const SLUG_TO_LABEL: Record<string, string> = {
   tenis:      'Tenis',
   ufc:        'UFC',
   rugby:      'Rugby',
+  // Alias de wrestling detectado en captions de Instagram
+  wrestling:  'WWE',
   // Competiciones específicas de baloncesto no-NBA
   nba:        'NBA',
   bcl:        'BCL',
