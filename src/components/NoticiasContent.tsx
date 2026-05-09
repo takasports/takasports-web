@@ -153,50 +153,23 @@ export default function NoticiasContent({
 
   return (
     <>
-      {/* ── MASTHEAD PERIÓDICO ── */}
-      <div className="px-6 xl:px-10 pt-7 pb-0">
-        {/* Línea doble superior — marca de periódico */}
-        <div style={{ borderTop: '3px solid #F2F2FA', borderBottom: '1px solid #F2F2FA', padding: '3px 0', marginBottom: 10 }} />
-
-        {/* Cabecera: fecha — título — contador */}
+      {/* CABECERA */}
+      <div className="px-6 xl:px-10 pt-6 pb-0">
         <div className="flex items-baseline justify-between gap-4">
-          <p
-            className="text-[10px] font-semibold uppercase tracking-[0.12em] flex-shrink-0"
-            style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}
-          >
-            {editorialDate()}
-          </p>
-
           <h1
-            className="font-black text-center flex-1 leading-none"
+            className="font-black leading-none"
             style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(2.2rem, 5vw, 3.6rem)',
+              fontSize: 'clamp(2rem, 4vw, 3rem)',
               color: '#F2F2FA',
-              letterSpacing: '-0.03em',
+              letterSpacing: '-0.028em',
             }}
           >
             Noticias
           </h1>
-
-          <p
-            className="text-[10px] font-semibold text-right flex-shrink-0"
-            style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}
-          >
-            {filteredArticles.length > 0 ? `${filteredArticles.length} historias` : ' '}
+          <p className="text-[10px] flex-shrink-0" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
+            {editorialDate()}{filteredArticles.length > 0 ? ` · ${filteredArticles.length} historias` : ''}
           </p>
-        </div>
-
-        {/* Línea inferior con deporte activo como subtítulo */}
-        <div className="flex items-center gap-3 mt-2 mb-0">
-          <div style={{ flex: 1, height: 1, background: '#F2F2FA22' }} />
-          <span
-            className="text-[9px] font-black uppercase tracking-[0.2em] flex-shrink-0"
-            style={{ color: '#2E2E46', fontFamily: 'var(--font-sport)' }}
-          >
-            {activeCategory === 'Todo' ? 'Todas las disciplinas' : activeCategory}
-          </span>
-          <div style={{ flex: 1, height: 1, background: '#F2F2FA22' }} />
         </div>
       </div>
 
