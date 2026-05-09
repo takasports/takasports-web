@@ -89,7 +89,8 @@ export default async function TagPage({
     description: `Todos los artículos etiquetados con #${decoded} en TakaSports.`,
     url: tagUrl,
     inLanguage: 'es-ES',
-    publisher: { '@type': 'Organization', name: 'TakaSports', url: SITE_URL },
+    isPartOf: { '@id': `${SITE_URL}/#website` },
+    publisher: { '@id': `${SITE_URL}/#organization` },
   }
   const itemListJsonLd = {
     '@context': 'https://schema.org',

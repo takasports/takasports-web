@@ -436,16 +436,15 @@ export default async function NoticiaPage({
       '@type': 'SpeakableSpecification',
       cssSelector: ['h1', '[aria-label="Claves rápidas"]'],
     },
+    isPartOf: { '@id': `${SITE_URL}/#website` },
     author: {
       '@type': 'Person',
       name: articleAuthor,
-      worksFor: { '@type': 'Organization', name: 'TakaSports', url: SITE_URL },
+      worksFor: { '@id': `${SITE_URL}/#organization` },
     },
-    publisher: {
-      '@type': 'Organization',
-      name: 'TakaSports',
-      logo: { '@type': 'ImageObject', url: ICON_URL },
-    },
+    publisher: { '@id': `${SITE_URL}/#organization` },
+    copyrightHolder: { '@id': `${SITE_URL}/#organization` },
+    copyrightYear: article.publishedAt ? new Date(article.publishedAt).getFullYear() : new Date().getFullYear(),
   }
 
   const sportSlug = article.sport ?? null

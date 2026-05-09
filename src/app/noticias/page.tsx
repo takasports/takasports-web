@@ -56,6 +56,7 @@ export default async function NoticiasPage({
     name: 'Noticias deportivas — TakaSports',
     itemListOrder: 'https://schema.org/ItemListOrderDescending',
     numberOfItems: Math.min((articles as ListArticle[]).length, 20),
+    isPartOf: { '@id': `${SITE_URL}/#website` },
     itemListElement: (articles as ListArticle[]).slice(0, 20).map((a, i) => ({
       '@type': 'ListItem',
       position: i + 1,

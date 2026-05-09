@@ -1038,6 +1038,7 @@ export default async function MatchPage({
       homeTeam: { '@type': 'SportsTeam', name: match.homeTeam, score: match.homeScore },
       awayTeam: { '@type': 'SportsTeam', name: match.awayTeam, score: match.awayScore },
     }),
+    isPartOf: { '@id': `${SITE_URL}/#website` },
   }
 
   const breadcrumbJsonLd = {

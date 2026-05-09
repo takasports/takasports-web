@@ -104,6 +104,7 @@ export default async function Home({
     name: 'Últimas noticias — TakaSports',
     itemListOrder: 'https://schema.org/ItemListOrderDescending',
     numberOfItems: Math.min(articles.length, 20),
+    isPartOf: { '@id': `${SITE_URL}/#website` },
     itemListElement: articles.slice(0, 20).map((a, i) => ({
       '@type': 'ListItem',
       position: i + 1,
