@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { SOCCER_LEAGUES } from '@/lib/stats-leagues'
 
 export interface PlayerLeader {
   name: string
@@ -21,22 +22,28 @@ export interface LeaguePlayerData {
 
 export interface PlayersResponse {
   leagues: LeaguePlayerData[]
+  season: string
   updatedAt: string
 }
 
-const LEAGUES = [
-  { id: 'esp.1', label: 'LaLiga',     slug: 'soccer/esp.1', apiId: 140 },
-  { id: 'eng.1', label: 'Premier',    slug: 'soccer/eng.1', apiId: 39  },
-  { id: 'ger.1', label: 'Bundesliga', slug: 'soccer/ger.1', apiId: 78  },
-  { id: 'ita.1', label: 'Serie A',    slug: 'soccer/ita.1', apiId: 135 },
-  { id: 'fra.1', label: 'Ligue 1',    slug: 'soccer/fra.1', apiId: 61  },
-]
+const LEAGUES = SOCCER_LEAGUES.map(l => ({ id: l.id, label: l.label, slug: l.espnSlug, apiId: l.apiSportsId }))
 
 // API-Sports free tier: only covers up to season 2024.
-// To unlock 2025-26 data (cards, shots, goals per 90) upgrade to Pro (~€12/mes)
-// and change SEASON to 2025.
-const SEASON = 2024
+// Pro (~€12/mes) unlocks current seasons.
+// Season detection: European leagues run Aug → May. Aug-Dec → that year; Jan-Jul → year-1.
+// Override via API_SPORTS_SEASON env var (e.g. "2025" if Pro tier is active).
+function soccerSeason(): number {
+  const env = Number(process.env.API_SPORTS_SEASON)
+  if (Number.isFinite(env) && env > 2000) return env
+  // Without Pro, the highest season the free tier can resolve is 2024.
+  if (!process.env.API_SPORTS_PRO) return 2024
+  const now = new Date()
+  return now.getUTCMonth() >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
+}
+const SEASON = soccerSeason()
+const SEASON_LABEL = `${SEASON}-${String((SEASON + 1) % 100).padStart(2, '0')}`
 
+// Player tables update slowly; ESPN goals/assists at 30 min, API-Sports cards at 24 h.
 export const revalidate = 1800
 
 // ── ESPN ──────────────────────────────────────────────────────────────────────
@@ -193,5 +200,5 @@ export async function GET() {
     ...(apiFootyData[l.id] ?? { yellowCards: [], redCards: [], shots: [], goalsPerGame: [] }),
   }))
 
-  return NextResponse.json({ leagues, updatedAt: new Date().toISOString() } satisfies PlayersResponse)
+  return NextResponse.json({ leagues, season: SEASON_LABEL, updatedAt: new Date().toISOString() } satisfies PlayersResponse)
 }

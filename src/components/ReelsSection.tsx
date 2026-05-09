@@ -480,7 +480,7 @@ export default function ReelsSection({
       <div className="relative -mx-6 xl:-mx-10" style={{ background: 'var(--bg-base)' }}>
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 pt-1"
+          className="flex gap-3 overflow-x-auto scrollbar-hide snap-strip pb-2 pt-1"
           style={{ paddingLeft: 'max(24px, calc((100vw - 1440px) / 2 + 40px))', background: 'var(--bg-base)' }}
         >
           {showSkeleton

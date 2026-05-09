@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { SOCCER_LEAGUES, EUROPEAN_CUPS } from '@/lib/stats-leagues'
 
 export interface StandingRow {
   rank: number
@@ -64,21 +65,16 @@ export interface StatsStandingsResponse {
   updatedAt: string
 }
 
-// Fetch-level caching (next: { revalidate }) persists across serverless invocations
-// via Next.js Data Cache. No module-level cache needed.
-export const revalidate = 1800
+// Page-level revalidate kept low so live blocks (NBA playoffs at 60s, WC knockout at 300s,
+// UCL/UEL/UECL fixtures at 300s) can refresh on schedule. Slow blocks
+// (FedEx Cup, FIFA ranking) carry their own longer fetch-level revalidate.
+export const revalidate = 300
 
 const BASE = 'https://site.web.api.espn.com/apis/v2/sports'
 
 const FOOTBALL_LEAGUES = [
-  { slug: 'soccer/esp.1',         id: 'tabla-laliga',     label: 'LaLiga' },
-  { slug: 'soccer/eng.1',         id: 'tabla-premier',    label: 'Premier League' },
-  { slug: 'soccer/ita.1',         id: 'tabla-serie-a',    label: 'Serie A' },
-  { slug: 'soccer/ger.1',         id: 'tabla-bundesliga', label: 'Bundesliga' },
-  { slug: 'soccer/fra.1',         id: 'tabla-ligue1',     label: 'Ligue 1' },
-  { slug: 'soccer/uefa.champions',   id: 'tabla-ucl',  label: 'Champions League' },
-  { slug: 'soccer/uefa.europa',      id: 'tabla-uel',  label: 'Europa League' },
-  { slug: 'soccer/uefa.conference',  id: 'tabla-uecl', label: 'Conference League' },
+  ...SOCCER_LEAGUES.map(l => ({ slug: l.espnSlug, id: l.blockId, label: l.label })),
+  ...EUROPEAN_CUPS.map(l => ({ slug: l.espnSlug, id: l.id, label: l.label })),
 ]
 
 type RawStat = { name: string; value?: number; displayValue?: string }

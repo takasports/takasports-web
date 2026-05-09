@@ -1405,12 +1405,44 @@ function PlaceholderBlockCard({ block, accent }: { block: StatBlock; accent: str
   )
 }
 
+function formatFetchedAt(iso?: string): string {
+  if (!iso) return ''
+  try {
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return ''
+    return d.toLocaleString('es-ES', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short', timeZone: 'Europe/Madrid' })
+  } catch { return '' }
+}
+
+function BlockJsonLd({ block, rows }: { block: StatBlock; rows: StatRow[] }) {
+  // Emit a structured ItemList per stats block so search engines can parse rankings.
+  // Only produce schema for blocks with real data and where ranks are meaningful.
+  if (!rows.length || block.placeholder) return null
+  const json = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: block.title,
+    numberOfItems: rows.length,
+    itemListOrder: 'https://schema.org/ItemListOrderAscending',
+    itemListElement: rows.slice(0, 10).map(r => ({
+      '@type': 'ListItem',
+      position: r.rank,
+      name: `${r.name}${r.team ? ` (${r.team})` : ''}`,
+    })),
+  }
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(json) }} />
+}
+
 function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: BlockMeta }) {
   // Priority: 1) live → green  2) stale → amber  3) historical → grey  4) unavailable → red  5) no info → nothing
   const base = 'text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded'
+  const fetchedAt = formatFetchedAt(meta?.fetchedAt)
+  const sourceTitle = meta?.source ? `Fuente: ${meta.source}${fetchedAt ? ` · Actualizado ${fetchedAt}` : ''}` : ''
   if (isLive) {
     return (
-      <span className={base} title={meta?.source ? `Fuente: ${meta.source}` : 'Datos en vivo'}
+      <span className={base} title={sourceTitle || 'Datos en vivo'}
+        role="status"
+        aria-label={`Datos en vivo${meta?.source ? ` desde ${meta.source}` : ''}${fetchedAt ? `, actualizados ${fetchedAt}` : ''}`}
         style={{ background: 'rgba(74,222,128,0.14)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.32)', fontFamily: 'var(--font-sport)' }}>
         ● LIVE
       </span>
@@ -1418,7 +1450,9 @@ function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: BlockMeta }
   }
   if (meta?.status === 'stale') {
     return (
-      <span className={base} title={meta.source ? `Fuente: ${meta.source}` : ''}
+      <span className={base} title={sourceTitle}
+        role="status"
+        aria-label={`Datos del día${meta.asOf ? `, ${meta.asOf}` : ''}${fetchedAt ? `, actualizados ${fetchedAt}` : ''}`}
         style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.30)', fontFamily: 'var(--font-sport)' }}>
         Hoy · {meta.asOf ?? '—'}
       </span>
@@ -1426,7 +1460,9 @@ function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: BlockMeta }
   }
   if (meta?.status === 'historical') {
     return (
-      <span className={base} title={meta.source ? `Fuente: ${meta.source}` : ''}
+      <span className={base} title={sourceTitle}
+        role="status"
+        aria-label={`Datos históricos${meta.asOf ? ` ${meta.asOf}` : ''}${meta.source ? ` desde ${meta.source}` : ''}`}
         style={{ background: 'rgba(148,163,184,0.10)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.25)', fontFamily: 'var(--font-sport)' }}>
         Hist · {meta.asOf ?? '—'}
       </span>
@@ -1434,7 +1470,9 @@ function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: BlockMeta }
   }
   if (meta?.status === 'unavailable') {
     return (
-      <span className={base} title={meta.source}
+      <span className={base} title={sourceTitle || meta.source}
+        role="status"
+        aria-label={`Datos no disponibles${meta.source ? ` (${meta.source})` : ''}`}
         style={{ background: 'rgba(248,113,113,0.10)', color: '#f87171', border: '1px solid rgba(248,113,113,0.28)', fontFamily: 'var(--font-sport)' }}>
         No disponible
       </span>
@@ -1642,12 +1680,12 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
   const extraKeys = hasExtra ? Object.keys(filteredRows[0]!.extra!) : []
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+    <section id={block.id} aria-labelledby={`${block.id}-title`} className="rounded-2xl overflow-hidden scroll-mt-24" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
       <div className="px-5 py-4 flex items-center justify-between gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2.5 flex-wrap min-w-0">
           <span className="section-accent" style={{ background: accent }} />
-          <h3 className="font-black text-sm truncate" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
-            {block.title}
+          <h3 id={`${block.id}-title`} className="font-black text-sm truncate" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
+            <a href={`#${block.id}`} className="hover:underline focus:underline outline-none" aria-label={`Enlazar a ${block.title}`}>{block.title}</a>
           </h3>
           <FreshnessBadge isLive={isLive} meta={meta} />
         </div>
@@ -1669,9 +1707,23 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
 
       <div className="flex flex-col">
         {displayRows.length === 0 && (
-          <p className="px-5 py-6 text-center text-[11px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
-            Sin datos para {leagueFilter}
-          </p>
+          <div className="px-5 py-6 text-center" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-[12px] font-semibold mb-1">
+              {meta?.status === 'unavailable'
+                ? 'Datos no disponibles ahora'
+                : leagueFilter && leagueFilter !== 'General'
+                ? `Sin datos para ${leagueFilter}`
+                : 'Sin datos disponibles'}
+            </p>
+            {meta?.fetchedAt && (
+              <p className="text-[10px]" style={{ color: '#3A3A52' }}>
+                Última comprobación: {formatFetchedAt(meta.fetchedAt)}
+              </p>
+            )}
+            {meta?.source && (
+              <p className="text-[10px] mt-0.5" style={{ color: '#3A3A52' }}>{meta.source}</p>
+            )}
+          </div>
         )}
         {displayRows.map((row, i) => (
           <div key={row.rank}
@@ -1691,7 +1743,7 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
                 </span>
               </div>
               {(row.team || row.sub) && (
-                <span className="text-[11px]" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
+                <span className="block text-[11px] truncate" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
                   {row.team}{row.team && row.sub ? ' · ' : ''}{row.sub}
                 </span>
               )}
@@ -1720,7 +1772,8 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
           {expanded ? 'Ver menos ↑' : `Ver todos (${filteredRows.length}) ↓`}
         </button>
       )}
-    </div>
+      <BlockJsonLd block={block} rows={displayRows} />
+    </section>
   )
 }
 
@@ -1736,9 +1789,13 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
   livePlayerData?: LivePlayerData | null
   liveMeta?: Record<string, BlockMeta>
 }) {
-  const visibleBlocks = positionFilter && positionFilter !== 'Todos'
+  const positionFiltered = positionFilter && positionFilter !== 'Todos'
     ? group.blocks.filter(b => !b.positions || b.positions.includes(positionFilter))
     : group.blocks
+
+  // Hide pure placeholder blocks (no live data injected, no rows). These were
+  // showing year-round "próximamente" copy for competitions out of season.
+  const visibleBlocks = positionFiltered.filter(b => !b.placeholder || b.rows.length > 0)
 
   if (visibleBlocks.length === 0) return null
 

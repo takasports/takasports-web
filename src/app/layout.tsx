@@ -3,6 +3,7 @@ import { Geist } from 'next/font/google'
 import { Barlow_Condensed, Bebas_Neue, Barlow_Semi_Condensed } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
+import BottomNav from '@/components/BottomNav'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
@@ -134,6 +135,7 @@ export default function RootLayout({
           }) }}
         />
         {children}
+        <BottomNav />
         <script
           dangerouslySetInnerHTML={{
             __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}) }) }`,

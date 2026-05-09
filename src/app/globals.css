@@ -39,6 +39,34 @@ body {
   overflow-x: clip;
 }
 
+/* ── Safe-area insets (iOS notch / home indicator) ── */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-top    { padding-top:    env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-left   { padding-left:   env(safe-area-inset-left); }
+  .safe-right  { padding-right:  env(safe-area-inset-right); }
+}
+
+/* ── Mobile base typography slightly tighter for density ── */
+@media (max-width: 640px) {
+  html { font-size: 15px; }
+}
+
+/* ── Reserve space at page bottom on mobile for the bottom nav ── */
+@media (max-width: 1023px) {
+  body {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── Horizontal snap utility for chip strips ── */
+.snap-strip {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-inline: 16px;
+}
+.snap-strip > * { scroll-snap-align: start; }
+
 /* Grain editorial — textura sutil sobre toda la página */
 body::after {
   content: '';

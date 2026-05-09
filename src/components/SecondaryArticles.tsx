@@ -69,7 +69,7 @@ export default function SecondaryArticles({ articles }: { articles: Article[] })
             {/* Thumbnail or sport gradient */}
             <div className="absolute inset-0 z-0">
               {imgUrl ? (
-                <Image src={imgUrl} alt={article.title} fill className="object-cover" />
+                <Image src={imgUrl} alt={article.title} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 320px" className="object-cover" />
               ) : (
                 <div
                   style={{

@@ -17,8 +17,9 @@ export default function ScrollToTop() {
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       aria-label="Volver arriba"
-      className="fixed bottom-6 right-6 z-50 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+      className="fixed right-4 sm:right-6 z-[45] w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
       style={{
+        bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
         background: 'rgba(124,58,237,0.85)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',

@@ -62,7 +62,7 @@ export default function CategoriesFilter({
         style={{ background: 'linear-gradient(to left, var(--bg-base, #09090f) 40%, transparent)' }}
       />
 
-      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-0.5 pr-8">
+      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide snap-strip pb-0.5 pr-8">
 
         {categories.map((sport) => {
           const isActive = sport === active
