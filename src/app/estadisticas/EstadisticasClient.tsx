@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
@@ -768,6 +769,16 @@ const SPORTS: SportConfig[] = [
         })),
       },
       {
+        id: 'eliminatoria', label: 'Eliminatoria', icon: '⚔️',
+        blocks: [{
+          id: 'wc-knockout',
+          title: 'Fase eliminatoria · Mundial 2026',
+          metric: 'Resultado',
+          placeholder: true,
+          rows: [],
+        }],
+      },
+      {
         id: 'goleadores', label: 'Goleadores', icon: '⚽',
         blocks: [{
           id: 'wc-scorers',
@@ -1432,6 +1443,44 @@ function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: BlockMeta }
   )
 }
 
+const WC_START = new Date('2026-06-11T17:00:00Z')
+
+function WorldCupCountdown() {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  const diff = WC_START.getTime() - now.getTime()
+  if (diff <= 0) return (
+    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full"
+      style={{ background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
+      ● EN CURSO
+    </span>
+  )
+  const days    = Math.floor(diff / 86400000)
+  const hours   = Math.floor((diff % 86400000) / 3600000)
+  const minutes = Math.floor((diff % 3600000)  / 60000)
+  const seconds = Math.floor((diff % 60000)    / 1000)
+  return (
+    <div className="flex gap-3">
+      {([['días', days], ['h', hours], ['min', minutes], ['seg', seconds]] as [string, number][]).map(([l, v]) => (
+        <div key={l} className="text-center min-w-[2rem]">
+          <div className="text-2xl font-black tabular-nums leading-none"
+            style={{ fontFamily: 'var(--font-sport)', color: '#f59e0b' }}>
+            {String(v).padStart(2, '0')}
+          </div>
+          <div className="text-[9px] uppercase tracking-widest mt-0.5"
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+            {l}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function WorldCupGroupCard({ block, accent, isLive, meta }: {
   block: StatBlock; accent: string; isLive?: boolean; meta?: BlockMeta
 }) {
@@ -1791,6 +1840,7 @@ const LIVE_BLOCK_IDS = new Set([
   'wc-group-e', 'wc-group-f', 'wc-group-g', 'wc-group-h',
   'wc-group-i', 'wc-group-j', 'wc-group-k', 'wc-group-l',
   'wc-scorers',
+  'wc-knockout',
   // NBA Playoffs
   'nba-playoffs',
 ])
@@ -1823,6 +1873,7 @@ interface LiveStandingsData {
   coachesWinRate?: LiveStandingRow[]
   worldCup?: LiveLeague[]
   worldCupScorers?: LiveStandingRow[]
+  worldCupKnockout?: LiveStandingRow[]
   nbaPlayoffSeries?: LiveStandingRow[]
   meta?: Record<string, BlockMeta>
   updatedAt?: string
@@ -1849,7 +1900,8 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'wc-group-d': 'worldCup', 'wc-group-e': 'worldCup', 'wc-group-f': 'worldCup',
   'wc-group-g': 'worldCup', 'wc-group-h': 'worldCup', 'wc-group-i': 'worldCup',
   'wc-group-j': 'worldCup', 'wc-group-k': 'worldCup', 'wc-group-l': 'worldCup',
-  'wc-scorers': 'worldCupScorers',
+  'wc-scorers':  'worldCupScorers',
+  'wc-knockout': 'worldCupKnockout',
   'nba-playoffs': 'nbaPlayoffSeries',
 }
 
@@ -1987,8 +2039,19 @@ function toStatRows(rows: LiveStandingRow[], teamKey?: string): StatRow[] {
 }
 
 export default function EstadisticasClient({ initialData }: { initialData?: LiveStandingsData | null }) {
-  const [sportId, setSportId]                 = useState('futbol')
-  const [sectionId, setSectionId]             = useState('jugadores')
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  const [sportId, setSportId] = useState<string>(() => {
+    const sp = searchParams.get('sport') ?? ''
+    return SPORTS.find(s => s.id === sp) ? sp : 'futbol'
+  })
+  const [sectionId, setSectionId] = useState<string>(() => {
+    const sp = searchParams.get('sport') ?? 'futbol'
+    const sec = searchParams.get('section') ?? ''
+    const sport = SPORTS.find(s => s.id === sp) ?? SPORTS[1]
+    return sport.sections.find(s => s.id === sec) ? sec : sport.sections[0].id
+  })
   const [expandedBlocks, setExpandedBlocks]   = useState<Record<string, boolean>>({})
   const [expandedGroups, setExpandedGroups]   = useState<Record<string, boolean>>(() => {
     const firstGroupId = SPORTS[0].sections[0].groups?.[0]?.id
@@ -2005,7 +2068,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
 
   const POLL_MS = 5 * 60_000
 
-  const refreshOnceRef = React.useRef<() => void>(() => {})
+  const refreshOnceRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     let cancelled = false
@@ -2112,6 +2175,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         }
         if (block.id === 'wc-scorers' && liveData.worldCupScorers?.length)
           return { ...block, rows: toStatRows(liveData.worldCupScorers), placeholder: false }
+        if (block.id === 'wc-knockout' && liveData.worldCupKnockout?.length)
+          return { ...block, rows: toStatRows(liveData.worldCupKnockout), placeholder: false }
         if (block.id === 'nba-playoffs' && liveData.nbaPlayoffSeries?.length)
           return { ...block, rows: toStatRows(liveData.nbaPlayoffSeries), placeholder: false }
       }
@@ -2145,6 +2210,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
     setExpandedGroups(firstSection?.groups ? { [firstSection.groups[0]?.id ?? '']: true } : {})
     setPositionFilter('Todos')
     setLeagueFilter('General')
+    router.push(`/estadisticas?sport=${id}`, { scroll: false })
   }
 
   const handleSectionChange = (id: string) => {
@@ -2154,6 +2220,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
     setExpandedGroups(sec?.groups ? { [sec.groups[0]?.id ?? '']: true } : {})
     setPositionFilter('Todos')
     setLeagueFilter('General')
+    router.push(`/estadisticas?sport=${sportId}&section=${id}`, { scroll: false })
   }
 
   const section = sport.sections.find(s => s.id === sectionId) ?? sport.sections[0]
@@ -2218,72 +2285,90 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           </div>
         </div>
 
-        {/* ── TAB 1: DEPORTE ──────────────────────────── */}
-        <div className="flex gap-1 mb-6 overflow-x-auto scrollbar-hide pb-0.5"
-          style={{ borderBottom: '1px solid var(--border)' }}>
-          {SPORTS.map(s => (
-            <button key={s.id} onClick={() => handleSportChange(s.id)}
-              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
-              style={{
-                fontFamily: 'var(--font-sport)',
-                color: sportId === s.id ? s.accent : s.id === 'mundial' ? '#f59e0b' : 'var(--text-muted)',
-                background: s.id === 'mundial' && sportId !== 'mundial' ? 'rgba(245,158,11,0.08)' : 'none',
-                border: 'none',
-                borderBottom: sportId === s.id ? `2px solid ${s.accent}` : s.id === 'mundial' ? '2px solid rgba(245,158,11,0.35)' : '2px solid transparent',
-                borderRadius: s.id === 'mundial' && sportId !== 'mundial' ? '6px 6px 0 0' : undefined,
-                marginBottom: -1, cursor: 'pointer',
-              }}>
-              <span className="text-sm leading-none">{s.emoji}</span>
-              {s.label}
-              {s.id === 'mundial' && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.2)', color: '#f59e0b', letterSpacing: '0.05em' }}>🔜</span>}
-            </button>
-          ))}
+        {/* ── NAVEGACIÓN STICKY (deporte + sección) ─── */}
+        <div className="sticky z-30 -mx-6 xl:-mx-10 px-6 xl:px-10"
+          style={{ top: 56, background: 'var(--bg-base)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+
+          {/* TAB 1: DEPORTE */}
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-0"
+            style={{ borderBottom: '1px solid var(--border)' }}>
+            {SPORTS.map(s => (
+              <button key={s.id} onClick={() => handleSportChange(s.id)}
+                className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
+                style={{
+                  fontFamily: 'var(--font-sport)',
+                  color: sportId === s.id ? s.accent : s.id === 'mundial' ? '#f59e0b' : 'var(--text-muted)',
+                  background: s.id === 'mundial' && sportId !== 'mundial' ? 'rgba(245,158,11,0.08)' : 'none',
+                  border: 'none',
+                  borderBottom: sportId === s.id ? `2px solid ${s.accent}` : s.id === 'mundial' ? '2px solid rgba(245,158,11,0.35)' : '2px solid transparent',
+                  borderRadius: s.id === 'mundial' && sportId !== 'mundial' ? '6px 6px 0 0' : undefined,
+                  marginBottom: -1, cursor: 'pointer',
+                }}>
+                <span className="text-sm leading-none">{s.emoji}</span>
+                {s.label}
+                {s.id === 'mundial' && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.2)', color: '#f59e0b', letterSpacing: '0.05em' }}>🔜</span>}
+              </button>
+            ))}
+          </div>
+
+          {/* TAB 2: SECCIÓN */}
+          {!isFemenino && sport.sections.length > 1 && (
+            <div className="py-2.5 flex items-center gap-1 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-1 p-1 rounded-xl"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                {sport.sections.map(sec => (
+                  <button key={sec.id}
+                    onClick={() => handleSectionChange(sec.id)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                    style={{
+                      background: sectionId === sec.id ? `${sport.accent}18` : 'transparent',
+                      color: sectionId === sec.id ? sport.accent : '#4A4A6A',
+                      border: sectionId === sec.id ? `1px solid ${sport.accent}35` : '1px solid transparent',
+                      fontFamily: 'var(--font-sport)', cursor: 'pointer',
+                    }}>
+                    <span className="text-xs">{sec.icon}</span>
+                    {sec.label}
+                    <span className="text-[8px] px-1 py-0.5 rounded font-black ml-0.5"
+                      style={{ background: sectionId === sec.id ? `${sport.accent}20` : 'rgba(255,255,255,0.05)', color: sectionId === sec.id ? sport.accent : '#3A3A52' }}>
+                      {SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`) ?? 0}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Banner Mundial 2026 ─────────────────────── */}
-        {sportId === 'mundial' && (() => {
-          const start = new Date('2026-06-11T17:00:00Z')
-          const now   = new Date()
-          const diff  = start.getTime() - now.getTime()
-          const started = diff <= 0
-          const days  = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)))
-          const hours = Math.max(0, Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
-          return (
-            <div className="mb-6 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(239,68,68,0.08) 100%)', border: '1px solid rgba(245,158,11,0.3)' }}>
-              <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span style={{ fontSize: 22 }}>🏆</span>
-                    <span className="font-black text-sm uppercase tracking-widest" style={{ fontFamily: 'var(--font-sport)', color: '#f59e0b' }}>
-                      FIFA World Cup 2026
-                    </span>
-                    {started
-                      ? <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>● EN CURSO</span>
-                      : <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>PRÓXIMO</span>
-                    }
-                  </div>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {started ? 'Grupos en juego · Datos en vivo desde ESPN' : '11 jun – 19 jul 2026 · USA, Canadá, México · 48 selecciones · 12 grupos'}
-                  </p>
+        {sportId === 'mundial' && (
+          <div className="mt-5 mb-6 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(239,68,68,0.08) 100%)', border: '1px solid rgba(245,158,11,0.3)' }}>
+            <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span style={{ fontSize: 22 }}>🏆</span>
+                  <span className="font-black text-sm uppercase tracking-widest" style={{ fontFamily: 'var(--font-sport)', color: '#f59e0b' }}>
+                    FIFA World Cup 2026
+                  </span>
+                  {WC_START.getTime() - Date.now() <= 0
+                    ? null
+                    : <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>PRÓXIMO</span>
+                  }
                 </div>
-                {!started && (
-                  <div className="flex gap-3">
-                    {[{ v: days, l: 'días' }, { v: hours, l: 'horas' }].map(({ v, l }) => (
-                      <div key={l} className="text-center">
-                        <div className="text-2xl font-black" style={{ fontFamily: 'var(--font-sport)', color: '#f59e0b', lineHeight: 1 }}>{v}</div>
-                        <div className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{l}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {WC_START.getTime() - Date.now() <= 0
+                    ? 'Grupos en juego · Datos en vivo desde ESPN'
+                    : '11 jun – 19 jul 2026 · USA, Canadá, México · 48 selecciones · 12 grupos'
+                  }
+                </p>
               </div>
+              <WorldCupCountdown />
             </div>
-          )
-        })()}
+          </div>
+        )}
 
         {/* ── Toggle Femenino — solo Fútbol ────────────── */}
         {sportId === 'futbol' && (
-          <div className="flex items-center gap-1.5 mb-5">
+          <div className="flex items-center gap-1.5 mt-5 mb-5">
             {(['m', 'f'] as const).map(g => {
               const isActive = gender === g
               return (
@@ -2309,31 +2394,6 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
               <StatBlockCard key={block.id} block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={LIVE_BLOCK_IDS.has(block.id) && !!liveData} meta={liveData?.meta?.[BLOCK_TO_META_KEY[block.id]]} />
             ))}
           </div>
-        )}
-
-        {/* ── TAB 2: SECCIÓN ──────────────────────────── */}
-        {!isFemenino && (
-        <div className="flex items-center gap-1 mb-5 p-1 rounded-xl w-fit"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-          {sport.sections.map(sec => (
-            <button key={sec.id}
-              onClick={() => handleSectionChange(sec.id)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
-              style={{
-                background: sectionId === sec.id ? `${sport.accent}18` : 'transparent',
-                color: sectionId === sec.id ? sport.accent : '#4A4A6A',
-                border: sectionId === sec.id ? `1px solid ${sport.accent}35` : '1px solid transparent',
-                fontFamily: 'var(--font-sport)', cursor: 'pointer',
-              }}>
-              <span className="text-xs">{sec.icon}</span>
-              {sec.label}
-              <span className="text-[8px] px-1 py-0.5 rounded font-black ml-0.5"
-                style={{ background: sectionId === sec.id ? `${sport.accent}20` : 'rgba(255,255,255,0.05)', color: sectionId === sec.id ? sport.accent : '#3A3A52' }}>
-                {SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`) ?? 0}
-              </span>
-            </button>
-          ))}
-        </div>
         )}
 
         {isFutbolJugadores && !isFemenino && (
@@ -2430,7 +2490,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                 const live = isBlockLive(block)
                 if (block.id.startsWith('wc-group-'))
                   return <WorldCupGroupCard key={block.id} block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
-                if (block.id === 'nba-playoffs')
+                if (block.id === 'nba-playoffs' || block.id === 'wc-knockout')
                   return <PlayoffSeriesCard key={block.id} block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
                 return (
                   <StatBlockCard

@@ -55,6 +55,7 @@ export interface StatsStandingsResponse {
   coachesWinRate: StandingRow[]
   worldCup: LeagueStandings[]
   worldCupScorers: StandingRow[]
+  worldCupKnockout: StandingRow[]
   nbaPlayoffSeries: StandingRow[]
   meta: Record<string, BlockMeta>
   updatedAt: string
@@ -678,6 +679,72 @@ async function fetchWorldCup(): Promise<LeagueStandings[]> {
   }
 }
 
+// ── World Cup 2026 knockout phase via ESPN scoreboard ────────────────────────
+// Returns empty array before tournament starts (Jun 11, 2026); auto-activates.
+
+async function fetchWorldCupKnockout(): Promise<StandingRow[]> {
+  try {
+    const res = await fetch(
+      'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
+      { next: { revalidate: 300 } },
+    )
+    if (!res.ok) return []
+    const json = await res.json()
+    const events = (json.events as Record<string, unknown>[]) ?? []
+    const rows: StandingRow[] = []
+
+    for (const event of events) {
+      const comp = ((event.competitions as Record<string, unknown>[])?.[0]) as Record<string, unknown> | undefined
+      if (!comp) continue
+      const notes = (comp.notes as Record<string, unknown>[]) ?? []
+      const roundNote = ((notes[0]?.headline ?? notes[0]?.text) as string) ?? ''
+      // Skip group-stage games (headline contains "Group")
+      if (roundNote.toLowerCase().includes('group')) continue
+
+      const competitors = (comp.competitors as Record<string, unknown>[]) ?? []
+      const home = competitors.find(c => (c as Record<string, unknown>).homeAway === 'home') as Record<string, unknown> | undefined
+      const away = competitors.find(c => (c as Record<string, unknown>).homeAway === 'away') as Record<string, unknown> | undefined
+      if (!home || !away) continue
+
+      const homeAbbr = ((home.team as Record<string, unknown>)?.abbreviation as string) ?? '?'
+      const awayAbbr = ((away.team as Record<string, unknown>)?.abbreviation as string) ?? '?'
+      const homeScore = (home.score as string) ?? ''
+      const awayScore = (away.score as string) ?? ''
+
+      const status = comp.status as Record<string, unknown>
+      const state = ((status?.type as Record<string, unknown>)?.state as string) ?? 'pre'
+
+      let matchup: string, statusStr: string, estado: string
+      if (state === 'in') {
+        matchup = `${awayAbbr} ${awayScore}–${homeScore} ${homeAbbr}`
+        statusStr = `En juego · ${(status?.displayClock as string) ?? ''}`
+        estado = 'En juego'
+      } else if (state === 'post') {
+        matchup = `${awayAbbr} ${awayScore}–${homeScore} ${homeAbbr}`
+        statusStr = 'Final'
+        estado = 'Final'
+      } else {
+        matchup = `${awayAbbr} vs ${homeAbbr}`
+        const d = (event.date as string) ?? ''
+        statusStr = d ? new Date(d).toLocaleString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }) : 'Por confirmar'
+        estado = 'Programado'
+      }
+
+      rows.push({
+        rank: rows.length + 1, name: matchup,
+        abbr: roundNote.slice(0, 14),
+        value: state !== 'pre' ? `${awayScore}-${homeScore}` : 'vs',
+        sub: statusStr, trend: 'flat' as const,
+        extra: { Ronda: roundNote || 'Fase eliminatoria', Estado: estado },
+      })
+    }
+    return rows
+  } catch (err) {
+    console.error('[standings] WC knockout failed:', err)
+    return []
+  }
+}
+
 // ── NBA Playoff Series via ESPN scoreboard ────────────────────────────────────
 
 async function fetchNBAPlayoffSeries(): Promise<StandingRow[]> {
@@ -780,11 +847,11 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   selecciones: ['fifaRanking', 'nationsLeague'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
   golf: ['pgaTourLeaderboard', 'pgaFedExCup'],
-  mundial: ['worldCup', 'worldCupScorers'],
+  mundial: ['worldCup', 'worldCupScorers', 'worldCupKnockout'],
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
-  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga, nationsLeague, fedExCup, coaches, worldCup, nbaPlayoffSeries, worldCupScorers] = await Promise.all([
+  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga, nationsLeague, fedExCup, coaches, worldCup, nbaPlayoffSeries, worldCupScorers, worldCupKnockout] = await Promise.all([
     Promise.allSettled(FOOTBALL_LEAGUES.map(l => fetchFootball(l.slug, l.id, l.label))),
     fetchF1All(),
     fetchNBA(),
@@ -800,6 +867,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchWorldCup(),
     fetchNBAPlayoffSeries(),
     fetchWorldCupScorers(),
+    fetchWorldCupKnockout(),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
 
@@ -848,6 +916,9 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
       ? wcStarted ? live('ESPN · FIFA World Cup 2026') : ({ status: 'stale', source: 'ESPN · FIFA World Cup 2026', fetchedAt: now, asOf: 'Grupos confirmados — torneo inicia 11 jun 2026' } satisfies BlockMeta)
       : unavail('ESPN'),
     worldCupScorers:  worldCupScorers.length ? live('ESPN · FIFA World Cup 2026') : unavail('ESPN · Torneo no iniciado'),
+    worldCupKnockout: worldCupKnockout.length
+      ? worldCupKnockout.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · FIFA World Cup 2026') : ({ status: 'stale', source: 'ESPN · FIFA World Cup 2026', fetchedAt: now, asOf: 'Partidos del día' } satisfies BlockMeta)
+      : unavail('ESPN · Fase eliminatoria no iniciada'),
     nbaPlayoffSeries: nbaPlayoffSeries.length
       ? nbaPlayoffSeries.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · NBA Playoffs') : ({ status: 'stale', source: 'ESPN · NBA Playoffs', fetchedAt: now, asOf: 'Juegos del día' } satisfies BlockMeta)
       : unavail('ESPN'),
@@ -881,6 +952,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     coachesWinRate:      coaches,
     worldCup,
     worldCupScorers,
+    worldCupKnockout,
     nbaPlayoffSeries,
     meta,
     updatedAt:           now,
