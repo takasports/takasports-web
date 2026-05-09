@@ -300,6 +300,17 @@ export default function NoticiasContent({
         </>
       )}
       </div>{/* end fade wrapper */}
+
+      {/* Paginación — link crawlable a página 2 */}
+      <div className="flex justify-end px-4 sm:px-6 xl:px-10 pb-8 pt-2">
+        <a
+          href="/noticias/pagina/2"
+          className="px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)', textDecoration: 'none' }}
+        >
+          Más noticias →
+        </a>
+      </div>
     </>
   )
 }

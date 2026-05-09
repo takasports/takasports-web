@@ -18,6 +18,7 @@ const PLATFORM_LINKS = [
   { label: 'Rankings',     href: '/rankings' },
   { label: 'Calendario',   href: '/calendario' },
   { label: 'Juegos',       href: '/juegos' },
+  { label: 'Sobre TakaSports', href: '/sobre' },
 ]
 const LEGAL_LINKS = [
   { label: 'Privacidad', href: '#' },
