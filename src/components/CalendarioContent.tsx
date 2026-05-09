@@ -1010,6 +1010,12 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set())
   const [hasLoaded, setHasLoaded] = useState(false)
+  // Histórico extendido (pestaña Resultados) — busca/pagina contra /api/events/past
+  const [pastRange, setPastRange] = useState<'10d' | '30d' | '90d' | 'all'>('10d')
+  const [extraPast, setExtraPast] = useState<SportEvent[]>([])
+  const [pastNextCursor, setPastNextCursor] = useState<string | null>(null)
+  const [pastLoading, setPastLoading] = useState(false)
+  const [pastError, setPastError] = useState<string | null>(null)
   const notifTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
   const prevScoresRef = useRef<Map<string, string>>(new Map())
 
@@ -1277,14 +1283,85 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
     [events, reminders]
   )
 
+  // Histórico: 10d usa lo que entró por SSR; rangos mayores cargan desde la API.
+  const useExtendedPast = pastRange !== '10d'
+  const pastSource = useExtendedPast ? extraPast : pastEvents
+
+  // Fetch del histórico extendido cuando cambia rango / deporte / búsqueda.
+  useEffect(() => {
+    if (!useExtendedPast) {
+      setExtraPast([])
+      setPastNextCursor(null)
+      setPastError(null)
+      return
+    }
+    let cancelled = false
+    const ctrl = new AbortController()
+    const debounce = setTimeout(async () => {
+      const params = new URLSearchParams()
+      const days = pastRange === '30d' ? 30 : pastRange === '90d' ? 90 : 365 * 3
+      const fromDate = new Date(Date.now() - days * 86_400_000)
+      params.set('from', fromDate.toISOString())
+      params.set('limit', '60')
+      if (activeFilter && activeFilter !== 'Todo') params.set('sport', activeFilter)
+      if (search.trim()) params.set('q', search.trim())
+      setPastLoading(true)
+      setPastError(null)
+      try {
+        const res = await fetch(`/api/events/past?${params.toString()}`, { signal: ctrl.signal })
+        if (!res.ok) throw new Error(String(res.status))
+        const data = await res.json() as { events: SportEvent[]; nextCursor: string | null }
+        if (cancelled) return
+        setExtraPast(data.events ?? [])
+        setPastNextCursor(data.nextCursor ?? null)
+      } catch (err) {
+        if (cancelled || (err as Error).name === 'AbortError') return
+        setPastError('No se pudo cargar el histórico')
+        setExtraPast([])
+        setPastNextCursor(null)
+      } finally {
+        if (!cancelled) setPastLoading(false)
+      }
+    }, 250)
+    return () => { cancelled = true; ctrl.abort(); clearTimeout(debounce) }
+  }, [useExtendedPast, pastRange, activeFilter, search])
+
+  const loadMorePast = useCallback(async () => {
+    if (!pastNextCursor || pastLoading) return
+    const params = new URLSearchParams()
+    const days = pastRange === '30d' ? 30 : pastRange === '90d' ? 90 : 365 * 3
+    const fromDate = new Date(Date.now() - days * 86_400_000)
+    params.set('from', fromDate.toISOString())
+    params.set('cursor', pastNextCursor)
+    params.set('limit', '60')
+    if (activeFilter && activeFilter !== 'Todo') params.set('sport', activeFilter)
+    if (search.trim()) params.set('q', search.trim())
+    setPastLoading(true)
+    try {
+      const res = await fetch(`/api/events/past?${params.toString()}`)
+      if (!res.ok) throw new Error(String(res.status))
+      const data = await res.json() as { events: SportEvent[]; nextCursor: string | null }
+      setExtraPast(prev => {
+        const seen = new Set(prev.map(e => e.id))
+        const fresh = (data.events ?? []).filter(e => !seen.has(e.id))
+        return [...prev, ...fresh]
+      })
+      setPastNextCursor(data.nextCursor ?? null)
+    } catch {
+      setPastError('No se pudo cargar más')
+    } finally {
+      setPastLoading(false)
+    }
+  }, [pastNextCursor, pastLoading, pastRange, activeFilter, search])
+
   // Filtered past events (sport + search aware)
   const filteredPast = useMemo(() => {
     const matchesSearch = (e: SportEvent) =>
       !search || namesMatch(e.home, search) || (e.away ? namesMatch(e.away, search) : false)
     const matchesSport = (e: SportEvent) =>
       activeFilter === 'Todo' || e.sport === activeFilter
-    return pastEvents.filter(e => matchesSport(e) && matchesSearch(e))
-  }, [pastEvents, search, activeFilter])
+    return pastSource.filter(e => matchesSport(e) && matchesSearch(e))
+  }, [pastSource, search, activeFilter])
 
   // Past events grouped by date (most-recent first)
   const pastGrouped = useMemo(() => {
@@ -1444,7 +1521,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                 {tab === 'destacados' && 'Destacados'}
                 {tab === 'todos' && 'Todos'}
                 {tab === 'en-vivo' && `En Vivo${liveCount > 0 ? ` · ${liveCount}` : ''}`}
-                {tab === 'resultados' && `Resultados${pastEvents.length > 0 ? ` · ${pastEvents.length}` : ''}`}
+                {tab === 'resultados' && `Resultados${pastSource.length > 0 ? ` · ${pastSource.length}` : ''}`}
                 {tab === 'recordatorios' && <>🔔 Alertas{remCount > 0 ? ` · ${remCount}` : ''}</>}
               </button>
             )
@@ -1835,15 +1912,59 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                 ))}
               </div>
             </div>
+            {/* Rango temporal */}
+            <div className="flex items-center gap-2 mt-2.5 overflow-x-auto pb-0.5 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+              <span className="text-[9px] font-black uppercase tracking-widest flex-shrink-0" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+                Rango
+              </span>
+              {([
+                { id: '10d', label: '10 días' },
+                { id: '30d', label: '1 mes' },
+                { id: '90d', label: '3 meses' },
+                { id: 'all', label: 'Histórico' },
+              ] as const).map(opt => {
+                const active = pastRange === opt.id
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setPastRange(opt.id)}
+                    className="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+                    style={{
+                      background: active ? 'rgba(252,165,165,0.14)' : 'rgba(255,255,255,0.03)',
+                      color: active ? '#FCA5A5' : '#5A5A6A',
+                      border: active ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                      fontFamily: 'var(--font-sport)',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}>
+                    {opt.label}
+                  </button>
+                )
+              })}
+              {pastLoading && (
+                <span className="text-[9px] flex-shrink-0" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+                  cargando…
+                </span>
+              )}
+            </div>
+            {pastError && (
+              <p className="text-[10px] mt-1.5" style={{ color: '#FCA5A5', fontFamily: 'var(--font-sport)' }}>
+                {pastError}
+              </p>
+            )}
           </div>
 
           {pastOrderedDates.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
               <p className="text-[28px] mb-2" style={{ filter: 'grayscale(0.3) opacity(0.6)' }}>📋</p>
               <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
-                No hay resultados recientes
+                {pastLoading ? 'Buscando resultados…' : 'No se encontraron resultados'}
               </p>
-              <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>Los resultados de los últimos 10 días aparecen aquí</p>
+              <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>
+                {search || activeFilter !== 'Todo'
+                  ? 'Prueba a cambiar la búsqueda, el deporte o ampliar el rango'
+                  : 'Selecciona un rango temporal para ver más histórico'}
+              </p>
             </div>
           ) : (
             pastOrderedDates.map(dateKey => {
@@ -1884,6 +2005,25 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                 </section>
               )
             })
+          )}
+
+          {useExtendedPast && pastNextCursor && (
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={loadMorePast}
+                disabled={pastLoading}
+                className="px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all"
+                style={{
+                  background: 'rgba(124,58,237,0.14)',
+                  color: '#C4B5FD',
+                  border: '1px solid rgba(124,58,237,0.35)',
+                  fontFamily: 'var(--font-sport)',
+                  cursor: pastLoading ? 'wait' : 'pointer',
+                  opacity: pastLoading ? 0.6 : 1,
+                }}>
+                {pastLoading ? 'Cargando…' : 'Cargar más resultados'}
+              </button>
+            </div>
           )}
         </div>
       )}
