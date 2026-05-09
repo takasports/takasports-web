@@ -1366,8 +1366,13 @@ function WorldCupGroupCard({ block, accent, isLive, meta }: {
           style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.015)' }}>
           <span className="w-5 flex-shrink-0" />
           <span className="flex-1">Selección</span>
+          {/* Mobile: solo PJ, GD, PTS */}
+          <span className="w-6 text-center sm:hidden">PJ</span>
+          <span className="w-7 text-center sm:hidden">GD</span>
+          <span className="w-7 text-center sm:hidden">PTS</span>
+          {/* Desktop: las 6 columnas */}
           {WC_COLS.map(col => (
-            <span key={col} className="w-6 text-center">{col}</span>
+            <span key={col} className="w-6 text-center hidden sm:block">{col}</span>
           ))}
         </div>
       )}
@@ -1401,8 +1406,13 @@ function WorldCupGroupCard({ block, accent, isLive, meta }: {
               </span>
               {wcStarted ? (
                 <>
+                  {/* Mobile: PJ, GD, PTS */}
+                  <span className="w-6 text-center text-[11px] tabular-nums font-semibold sm:hidden" style={{ color: '#5A5A82', fontFamily: 'var(--font-display)' }}>{pj}</span>
+                  <span className="w-7 text-center text-[11px] tabular-nums font-semibold sm:hidden" style={{ color: '#5A5A82', fontFamily: 'var(--font-display)' }}>{gdNum >= 0 ? '+' : ''}{gdNum}</span>
+                  <span className="w-7 text-center text-[11px] tabular-nums font-black sm:hidden" style={{ color: parseInt(pts) > 0 ? accent : '#7A7A92', fontFamily: 'var(--font-display)' }}>{pts}</span>
+                  {/* Desktop: 6 columnas */}
                   {[pj, v, e, d, `${gdNum >= 0 ? '+' : ''}${gdNum}`, pts].map((val, j) => (
-                    <span key={j} className="w-6 text-center text-[11px] tabular-nums font-semibold"
+                    <span key={j} className="w-6 text-center text-[11px] tabular-nums font-semibold hidden sm:block"
                       style={{ color: j === 5 ? (parseInt(pts) > 0 ? accent : '#7A7A92') : '#5A5A82', fontFamily: 'var(--font-display)' }}>
                       {val}
                     </span>
@@ -2277,9 +2287,12 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   const hasGroups = !!(section?.groups && section.groups.length > 0)
 
   const flatBlocks = applyLive(section?.blocks ?? [])
-  const filteredFlatBlocks = (sectionId === 'competiciones' && leagueFilter !== 'General')
+  const leagueFilteredBlocks = (sectionId === 'competiciones' && leagueFilter !== 'General')
     ? flatBlocks.filter(b => !b.league || b.league === leagueFilter)
     : flatBlocks
+  const filteredFlatBlocks = showFavoritesOnly
+    ? leagueFilteredBlocks.filter(b => favorites.has(b.id))
+    : leagueFilteredBlocks
 
   const toggleBlock = (id: string) => {
     setExpandedBlocks(prev => {
@@ -2385,6 +2398,26 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                 style={{ background: 'rgba(34,197,94,0.08)', color: '#86efac', border: '1px solid rgba(34,197,94,0.2)', fontFamily: 'var(--font-sport)', cursor: refreshing ? 'wait' : 'pointer' }}>
                 {refreshing ? 'Refrescando…' : 'Refrescar'}
               </button>
+              <button onClick={() => setSearchOpen(true)}
+                className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
+                style={{ background: 'rgba(255,255,255,0.04)', color: '#9090B0', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
+                aria-label="Buscar (⌘K)">
+                🔍 Buscar
+                <kbd className="text-[9px] font-mono px-1 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: '#5A5A72' }}>⌘K</kbd>
+              </button>
+              {favorites.size > 0 && (
+                <button onClick={() => setShowFavoritesOnly(v => !v)}
+                  className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
+                  style={{
+                    background: showFavoritesOnly ? 'rgba(251,191,36,0.14)' : 'rgba(255,255,255,0.04)',
+                    color: showFavoritesOnly ? '#fbbf24' : '#9090B0',
+                    border: showFavoritesOnly ? '1px solid rgba(251,191,36,0.32)' : '1px solid rgba(255,255,255,0.08)',
+                    fontFamily: 'var(--font-sport)', cursor: 'pointer',
+                  }}>
+                  {showFavoritesOnly ? '★' : '☆'} Favoritos
+                  <span className="text-[9px] font-mono px-1 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)' }}>{favorites.size}</span>
+                </button>
+              )}
               {fetchError && (
                 <span className="text-[11px]" style={{ color: '#f87171', fontFamily: 'var(--font-sport)' }}>
                   ⚠ Algunos datos no se han podido actualizar ({fetchError})
@@ -2544,6 +2577,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                 leagueFilter={leagueFilter}
                 livePlayerData={livePlayerData}
                 liveMeta={liveData?.meta}
+                favorites={favorites}
+                onToggleFav={toggleFav}
               />
             ))}
           </div>
@@ -2572,6 +2607,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                       leagueFilter={leagueFilter}
                       isLive={live}
                       meta={blockMeta}
+                      isFav={favorites.has(block.id)}
+                      onToggleFav={() => toggleFav(block.id)}
                     />
                   )
                 return <StatBlockBoundary key={block.id} blockId={block.id}>{inner}</StatBlockBoundary>
