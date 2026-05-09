@@ -127,6 +127,7 @@ function StripCard({ article }: { article: Article }) {
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+          loading="lazy"
         />
       ) : (
         <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}30, #06060F)` }} />
@@ -149,8 +150,8 @@ function StripCard({ article }: { article: Article }) {
       <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
         <Badge sport={article.sport} category={article.category} />
         <h3
-          className="font-bold leading-snug line-clamp-2 transition-colors group-hover:text-white"
-          style={{ fontFamily: 'var(--font-display)', fontSize: '0.82rem', color: '#DCDCF0', letterSpacing: '-0.01em' }}
+          className="font-bold leading-snug line-clamp-3 sm:line-clamp-2 transition-colors group-hover:text-white"
+          style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(0.88rem, 1.5vw, 0.9rem)', color: '#DCDCF0', letterSpacing: '-0.01em' }}
         >
           {article.title}
         </h3>
@@ -234,6 +235,11 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
                   }}
                 />
               </div>
+
+              {/* Contador */}
+              <span className="flex-shrink-0 text-[10px] tabular-nums" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
+                {pairIdx + 1} / {totalPairs}
+              </span>
 
               {/* Dots */}
               <div className="flex items-center gap-1.5 flex-shrink-0">
