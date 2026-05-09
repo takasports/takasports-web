@@ -1,6 +1,7 @@
 import type { SportEvent } from './types'
 import { getSportStyle } from './sports'
 import { SOURCE_TZ } from './timezone'
+import { getSpanishBroadcast } from './broadcasts'
 
 interface EspnSource {
   slug: string
@@ -161,8 +162,7 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
     if (!home) continue
 
     const venue  = ((comp.venue as Record<string, unknown>)?.fullName as string) ?? undefined
-    const broads = (comp.broadcasts as Record<string, unknown>[]) ?? []
-    const broadcast = ((broads[0]?.names as string[]) ?? [])[0] ?? undefined
+    const broadcast = getSpanishBroadcast(source.comp, source.sport)
     const matchRef  = `${source.slug.replace('/', '_')}_${ev.id as string}`
 
     results.push({
@@ -249,17 +249,18 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
         results.push({
           isoDate,
           event: {
-            id:       `espn-${slug.replace(/\//g, '-')}-${matchId}`,
+            id:        `espn-${slug.replace(/\//g, '-')}-${matchId}`,
             home,
             away,
-            sport:    'Tenis',
-            comp:     tournamentName,
-            date:     dateLabel,
-            time:     toTimeStr(isoDate),
+            sport:     'Tenis',
+            comp:      tournamentName,
+            date:      dateLabel,
+            time:      toTimeStr(isoDate),
             accent,
             isoDate,
+            broadcast: getSpanishBroadcast(tournamentName, 'Tenis'),
             matchRef,
-            source:   'espn' as const,
+            source:    'espn' as const,
           },
         })
       }
