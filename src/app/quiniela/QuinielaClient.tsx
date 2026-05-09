@@ -3246,10 +3246,10 @@ export default function QuinielaClient() {
                   transition: 'all 0.4s ease',
                 }}>
                   <span className="font-black tabular-nums leading-none" style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: streak.current > 0 ? '#fb923c' : '#fbbf24', letterSpacing: '-0.02em' }}>
-                    {streak.current > 0 ? streak.current : (apiMatches.length || '—')}
+                    {streak.current > 0 ? streak.current : (streak.best || '—')}
                   </span>
                   <span className="text-[9px] font-semibold mt-1 uppercase tracking-widest" style={{ color: streak.current > 0 ? '#6A3010' : '#6A5020', fontFamily: 'var(--font-sport)' }}>
-                    {streak.current > 0 ? '🔥 racha' : 'partidos'}
+                    {streak.current > 0 ? '🔥 racha' : 'mejor racha'}
                   </span>
                 </div>
               </div>
