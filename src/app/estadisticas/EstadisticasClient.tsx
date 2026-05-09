@@ -1627,7 +1627,7 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
   )
 }
 
-function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlocks, onToggleBlock, leagueFilter, livePlayerData, liveMeta }: {
+function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlocks, onToggleBlock, leagueFilter, livePlayerData, liveMeta, favorites, onToggleFav }: {
   group: MetricGroup
   accent: string
   expanded: boolean
@@ -1637,6 +1637,8 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
   leagueFilter?: string
   livePlayerData?: LivePlayerData | null
   liveMeta?: Record<string, BlockMeta>
+  favorites?: Set<string>
+  onToggleFav?: (id: string) => void
 }) {
   // Hide pure placeholder blocks (no live data injected, no rows).
   const visibleBlocks = group.blocks.filter(b => !b.placeholder || b.rows.length > 0)
@@ -1710,6 +1712,8 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
                 leagueFilter={leagueFilter}
                 isLive={isLive}
                 meta={getBlockMeta(block.id, liveMeta)}
+                isFav={favorites?.has(block.id)}
+                onToggleFav={onToggleFav ? () => onToggleFav(block.id) : undefined}
               />
             </StatBlockBoundary>
           ))}
@@ -2503,7 +2507,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
             {applyLive(FUTBOL_FEMENINO_BLOCKS).map(block => (
               <StatBlockBoundary key={block.id} blockId={block.id}>
-                <StatBlockCard block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={LIVE_BLOCK_IDS.has(block.id) && !!liveData} meta={getBlockMeta(block.id, liveData?.meta)} />
+                <StatBlockCard block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={LIVE_BLOCK_IDS.has(block.id) && !!liveData} meta={getBlockMeta(block.id, liveData?.meta)} isFav={favorites.has(block.id)} onToggleFav={() => toggleFav(block.id)} />
               </StatBlockBoundary>
             ))}
           </div>

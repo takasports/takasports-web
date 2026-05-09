@@ -59,6 +59,11 @@ body {
   }
 }
 
+/* ── Hero height — sólo lg+, mobile queda auto ── */
+@media (min-width: 1024px) {
+  .hero-h { height: clamp(400px, 52vw, 620px); }
+}
+
 /* ── Horizontal snap utility for chip strips ── */
 .snap-strip {
   scroll-snap-type: x mandatory;

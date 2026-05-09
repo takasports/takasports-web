@@ -485,7 +485,7 @@ export default function Header() {
           <div className="drawer-backdrop" onClick={() => setMenuOpen(false)} aria-hidden="true" />
           <nav className="drawer-panel" aria-label="Menú de navegación">
             <div style={{ background: 'rgba(13,13,20,0.98)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="px-6 py-4 flex flex-col gap-1">
+              <div className="px-4 sm:px-6 py-4 flex flex-col gap-1">
 
                 {/* Search */}
                 <button

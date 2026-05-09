@@ -58,11 +58,11 @@ export default function CategoriesFilter({
       />
       {/* Fade derecho */}
       <div
-        className="pointer-events-none absolute right-0 top-0 bottom-8 w-16 z-10"
+        className="pointer-events-none absolute right-0 top-0 bottom-8 w-12 sm:w-16 z-10"
         style={{ background: 'linear-gradient(to left, var(--bg-base, #09090f) 40%, transparent)' }}
       />
 
-      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide snap-strip pb-0.5 pr-8">
+      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide snap-strip pb-0.5 pr-6 sm:pr-8">
 
         {categories.map((sport) => {
           const isActive = sport === active

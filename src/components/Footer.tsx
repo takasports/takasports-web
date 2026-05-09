@@ -104,7 +104,7 @@ export default function Footer() {
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pt-14 pb-10">
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-10 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 sm:gap-x-8 gap-y-10 mb-12">
 
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">

@@ -235,7 +235,7 @@ export default function PerfilPage() {
             }}
           />
 
-          <div className="relative flex items-start gap-5">
+          <div className="relative flex items-start gap-3 sm:gap-5">
             {/* Avatar */}
             <div
               className="flex-shrink-0 select-none flex items-center justify-center rounded-2xl overflow-hidden"
