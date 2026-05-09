@@ -44,7 +44,10 @@ export default async function NoticiasPage({
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />
-      <BreakingNewsBar items={articles.slice(0, 8).map((a: { title: string; sport?: string; category?: string }) => ({ title: a.title, sport: a.sport || a.category }))} />
+      <BreakingNewsBar items={[
+        ...articles.filter((a: { takaStatus?: string | null }) => a.takaStatus === 'breaking'),
+        ...articles.filter((a: { takaStatus?: string | null }) => a.takaStatus !== 'breaking'),
+      ].slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
       <LiveStrip />
 
       <main className="max-w-[1440px] mx-auto pb-24">

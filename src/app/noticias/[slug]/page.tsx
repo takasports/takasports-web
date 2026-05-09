@@ -443,7 +443,8 @@ export default async function NoticiaPage({
     ? article.bodyText.split('\n').filter((p) => p.trim().length > 0)
     : []
 
-  const minRead = readingTime(article.bodyText)
+  const wc = bodyWordCount()
+  const minRead = wc ? Math.max(1, Math.round(wc / 200)) : readingTime(article.bodyText)
   const { accent } = getSportStyle(article.sport, article.category)
   const badgeColor = accent
   const badgeBg = `${badgeColor}18`

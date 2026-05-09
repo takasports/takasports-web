@@ -30,7 +30,8 @@ function buildQuery(start: number, end: number, sport?: string) {
     sport,
     "category": select(defined(headline) => competition, category),
     "priority": select(defined(headline) => "destacado", priority),
-    "isTaka": defined(headline)
+    "isTaka": defined(headline),
+    "takaStatus": select(defined(headline) => status, null)
   }`
 }
 
