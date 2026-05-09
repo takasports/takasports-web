@@ -418,15 +418,19 @@ function SkeletonRow() {
 }
 
 // ─── Competition sub-header ───────────────────────────────────────────────
-function CompGroupHeader({ comp, accent, count }: { comp: string; accent: string; count: number }) {
+function CompGroupHeader({ comp, accent, count, first }: { comp: string; accent: string; count: number; first?: boolean }) {
   return (
-    <div className="flex items-center gap-2 px-1 pt-3 pb-1">
-      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: accent }} />
+    <div className={`flex items-center gap-2 px-1 pb-1.5 ${first ? 'pt-1' : 'pt-4'}`}>
+      {!first && (
+        <div className="absolute left-0 right-0 h-px" style={{ background: 'rgba(255,255,255,0.04)' }} />
+      )}
+      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: accent, boxShadow: `0 0 4px ${accent}88` }} />
       <span className="text-[10px] font-black uppercase tracking-widest truncate flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
         {comp}
       </span>
-      <span className="text-[9px] tabular-nums flex-shrink-0" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
-        {count} {count === 1 ? 'partido' : 'partidos'}
+      <span className="text-[8px] font-black tabular-nums px-1.5 py-0.5 rounded-full flex-shrink-0"
+        style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
+        {count}
       </span>
     </div>
   )
@@ -481,13 +485,9 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           </div>
         )}
         {event.broadcast && (
-          <span
-            className="text-[9px] flex items-center gap-1 ml-8 mt-0.5"
-            style={{ color: isSplitBroadcast(event.broadcast) ? '#A07C10' : '#4A4A6A', fontFamily: 'var(--font-sport)' }}
-            title={isSplitBroadcast(event.broadcast) ? 'Derechos repartidos — consulta el canal exacto en LaLiga.com' : undefined}
-          >
-            📺 {event.broadcast}
-          </span>
+          <div className="ml-8 mt-0.5">
+            <BroadcastChip broadcast={event.broadcast} />
+          </div>
         )}
       </div>
 
@@ -574,24 +574,35 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
 
 function SearchInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div className="relative flex items-center flex-1" style={{ maxWidth: 280 }}>
-      <svg className="absolute left-3 pointer-events-none" width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.3" opacity="0.5" />
-        <path d="M8.5 8.5l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.5" />
+    <div className="relative flex items-center flex-1" style={{ maxWidth: 220, minWidth: 100 }}>
+      <svg className="absolute left-2.5 pointer-events-none" width="11" height="11" viewBox="0 0 12 12" fill="none">
+        <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.3" opacity="0.4" />
+        <path d="M8.5 8.5l2 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.4" />
       </svg>
       <input
         type="text"
-        placeholder="Buscar equipo..."
+        placeholder="Buscar…"
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-full pl-8 pr-3 py-2 rounded-lg text-[11px] font-medium outline-none"
+        className="w-full pl-7 py-1.5 rounded-lg text-[11px] font-medium outline-none"
         style={{
+          paddingRight: value ? 28 : 8,
           background: value ? 'rgba(124,58,237,0.08)' : 'rgba(255,255,255,0.04)',
           border: value ? '1px solid rgba(124,58,237,0.25)' : '1px solid rgba(255,255,255,0.06)',
           color: '#D0D0E8',
           transition: 'all 0.15s ease',
         }}
       />
+      {value && (
+        <button
+          onClick={() => onChange('')}
+          className="absolute right-2 flex items-center justify-center w-4 h-4 rounded-full transition-opacity hover:opacity-70"
+          style={{ background: 'rgba(255,255,255,0.12)', color: '#A0A0B8', border: 'none', cursor: 'pointer', fontSize: 9 }}
+          aria-label="Limpiar búsqueda"
+        >
+          ✕
+        </button>
+      )}
     </div>
   )
 }
@@ -1000,6 +1011,7 @@ type ViewType = 'destacados' | 'todos' | 'en-vivo' | 'resultados' | 'recordatori
 export default function CalendarioContent({ events, pastEvents = [] }: { events: SportEvent[]; pastEvents?: SportEvent[] }) {
   const [view, setView] = useState<ViewType>('destacados')
   const [tz, setTz] = useState<string>(SOURCE_TZ)
+  const [searchRaw, setSearchRaw] = useState('')
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('Todo')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)   // YYYY-MM-DD or null for all
@@ -1072,6 +1084,12 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
       window.history.replaceState(null, '', newUrl)
     } catch { /* ignore */ }
   }, [view, activeFilter, selectedDate])
+
+  // Debounce search input — avoid filtering on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchRaw), 220)
+    return () => clearTimeout(t)
+  }, [searchRaw])
 
   // Mark first liveScores arrival so we can hide skeletons
   useEffect(() => {
@@ -1207,10 +1225,11 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
       .slice(0, 8)
   }, [events, favorites])
 
-  const hasActiveFilters = !!selectedDate || activeFilter !== 'Todo' || !!search || onlyLive
+  const hasActiveFilters = !!selectedDate || activeFilter !== 'Todo' || !!searchRaw || onlyLive
   const clearFilters = useCallback(() => {
     setSelectedDate(null)
     setActiveFilter('Todo')
+    setSearchRaw('')
     setSearch('')
     setOnlyLive(false)
   }, [])
@@ -1549,7 +1568,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
           )}
           {/* Toolbar — single scrollable row on mobile, two-row layout on sm+ */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
-            <SearchInput value={search} onChange={setSearch} />
+            <SearchInput value={searchRaw} onChange={setSearchRaw} />
             {/* Divider */}
             <div className="flex-shrink-0 w-px h-4" style={{ background: 'rgba(255,255,255,0.08)' }} />
             <button
@@ -1809,12 +1828,12 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                     color="#C4B5FD"
                     count={dayEvents.length}
                   />
-                  {compOrder.map(comp => {
+                  {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     const accent = getCompAccent(comp, compEvents[0]?.accent)
                     return (
-                      <div key={comp} className="mb-2">
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} />
+                      <div key={comp} className="mb-2 relative">
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <MatchRow
@@ -1896,7 +1915,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
             }}
           >
             <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-              <SearchInput value={search} onChange={setSearch} />
+              <SearchInput value={searchRaw} onChange={setSearchRaw} />
               <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
                 {sports.map(sport => (
                   <button
@@ -1987,12 +2006,12 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                     color="#FCA5A5"
                     count={dayEvents.length}
                   />
-                  {compOrder.map(comp => {
+                  {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     const accent = getCompAccent(comp, compEvents[0]?.accent)
                     return (
-                      <div key={comp} className="mb-2">
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} />
+                      <div key={comp} className="mb-2 relative">
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <PastMatchRow

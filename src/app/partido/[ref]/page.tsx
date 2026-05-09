@@ -176,18 +176,20 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
         <div className="flex flex-col items-center gap-1 flex-shrink-0">
           {hasScore ? (
             <p className="font-black tabular-nums"
-              style={{ color: live ? '#4ade80' : '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 42, letterSpacing: '0.04em', lineHeight: 1 }}>
+              style={{ color: live ? '#4ade80' : '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 'clamp(28px, 7vw, 42px)', letterSpacing: '0.04em', lineHeight: 1 }}>
               {match.homeScore} – {match.awayScore}
             </p>
           ) : (
-            <p className="font-black" style={{ color: '#3A3A5A', fontFamily: 'var(--font-display)', fontSize: 28 }}>vs</p>
+            <p className="font-black" style={{ color: '#3A3A5A', fontFamily: 'var(--font-display)', fontSize: 'clamp(20px, 5vw, 28px)' }}>vs</p>
           )}
-          <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+          <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
             style={{
-              color: live ? '#4ade80' : '#5A5A6A',
-              background: live ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.04)',
+              color:      live ? '#4ade80' : '#5A5A6A',
+              background: live ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.04)',
+              border:     live ? '1px solid rgba(74,222,128,0.25)' : '1px solid rgba(255,255,255,0.06)',
               fontFamily: 'var(--font-sport)',
             }}>
+            {live && <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ background: '#4ade80' }} />}
             {match.statusLabel}
           </span>
         </div>
@@ -695,7 +697,7 @@ function BenchSection({ home, away, homeTeam, awayTeam }: {
 }) {
   if (!home.bench.length && !away.bench.length) return null
   return (
-    <div className="mt-4 grid grid-cols-2 gap-3">
+    <div className="mt-4 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
       {[
         { lineup: away, label: awayTeam ?? 'Visitante', color: '#f59e0b' },
         { lineup: home, label: homeTeam ?? 'Local',     color: '#818cf8' },
@@ -829,16 +831,22 @@ function MatchContent({ match }: { match: MatchDetail }) {
     : match.leagueLabel
 
   const backLink = (
-    <div className="py-5 flex items-center justify-between">
+    <div className="pt-4 pb-3 flex items-center justify-between">
       <Link
         href="/calendario"
-        className="inline-flex items-center gap-1.5 text-[11px] font-semibold transition-opacity hover:opacity-70"
-        style={{ color: '#5A5A6A', textDecoration: 'none', fontFamily: 'var(--font-sport)' }}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:brightness-125"
+        style={{
+          color: '#8080A0',
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          textDecoration: 'none',
+          fontFamily: 'var(--font-sport)',
+        }}
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M7.5 2L3 6l4.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        Volver
+        Calendario
       </Link>
       <ShareButton title={shareTitle} />
     </div>
