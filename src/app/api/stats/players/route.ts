@@ -37,16 +37,7 @@ const LEAGUES = [
 // and change SEASON to 2025.
 const SEASON = 2024
 
-// ESPN cache: 30 min
-type EspnCache = { data: Pick<LeaguePlayerData, 'id' | 'label' | 'goals' | 'assists'>[]; ts: number }
-let espnCache: EspnCache | null = null
-const ESPN_TTL = 30 * 60_000
-
-// API-Football cache: 24 h
-type ApiFootyData = Record<string, Pick<LeaguePlayerData, 'yellowCards' | 'redCards' | 'shots' | 'goalsPerGame'>>
-type ApiFootyCache = { data: ApiFootyData; ts: number }
-let apiFootyCache: ApiFootyCache | null = null
-const APIFOOTY_TTL = 24 * 60 * 60_000
+export const revalidate = 1800
 
 // ── ESPN ──────────────────────────────────────────────────────────────────────
 
@@ -184,37 +175,23 @@ async function fetchApiFootyLeague(
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 export async function GET() {
-  const now = Date.now()
+  const [espnData, apiFootyResults] = await Promise.all([
+    Promise.all(LEAGUES.map(fetchEspnLeague)),
+    Promise.allSettled(LEAGUES.map(fetchApiFootyLeague)),
+  ])
 
-  // ESPN data (30 min cache)
-  let espnData: EspnCache['data']
-  if (espnCache && now - espnCache.ts < ESPN_TTL) {
-    espnData = espnCache.data
-  } else {
-    espnData = await Promise.all(LEAGUES.map(fetchEspnLeague))
-    espnCache = { data: espnData, ts: now }
-  }
-
-  // API-Football data (24 h cache)
-  let apiFootyData: ApiFootyData
-  if (apiFootyCache && now - apiFootyCache.ts < APIFOOTY_TTL) {
-    apiFootyData = apiFootyCache.data
-  } else {
-    const results = await Promise.allSettled(LEAGUES.map(fetchApiFootyLeague))
-    apiFootyData = {}
-    LEAGUES.forEach((league, i) => {
-      const r = results[i]
-      apiFootyData[league.id] = r.status === 'fulfilled'
-        ? r.value
-        : { yellowCards: [], redCards: [], shots: [], goalsPerGame: [] }
-    })
-    apiFootyCache = { data: apiFootyData, ts: now }
-  }
+  const apiFootyData: Record<string, Pick<LeaguePlayerData, 'yellowCards' | 'redCards' | 'shots' | 'goalsPerGame'>> = {}
+  LEAGUES.forEach((league, i) => {
+    const r = apiFootyResults[i]
+    apiFootyData[league.id] = r.status === 'fulfilled'
+      ? r.value
+      : { yellowCards: [], redCards: [], shots: [], goalsPerGame: [] }
+  })
 
   const leagues: LeaguePlayerData[] = espnData.map(l => ({
     ...l,
     ...(apiFootyData[l.id] ?? { yellowCards: [], redCards: [], shots: [], goalsPerGame: [] }),
   }))
 
-  return NextResponse.json({ leagues, updatedAt: new Date(now).toISOString() } satisfies PlayersResponse)
+  return NextResponse.json({ leagues, updatedAt: new Date().toISOString() } satisfies PlayersResponse)
 }

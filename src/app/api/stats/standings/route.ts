@@ -53,13 +53,14 @@ export interface StatsStandingsResponse {
   pgaFedExCup: StandingRow[]
   nationsLeague: LeagueStandings[]
   coachesWinRate: StandingRow[]
+  worldCup: LeagueStandings[]
   meta: Record<string, BlockMeta>
   updatedAt: string
 }
 
-interface CacheEntry { data: StatsStandingsResponse; ts: number }
-let cache: CacheEntry | null = null
-const CACHE_TTL = 30 * 60_000
+// Fetch-level caching (next: { revalidate }) persists across serverless invocations
+// via Next.js Data Cache. No module-level cache needed.
+export const revalidate = 1800
 
 const BASE = 'https://site.web.api.espn.com/apis/v2/sports'
 
@@ -338,13 +339,24 @@ async function fetchNBALeaders(season: string): Promise<{ scoring: StandingRow[]
   return { scoring, rebounds, assists, blocks, steals, efficiency, threePt }
 }
 
-// ── UFC: ESPN endpoint is dead (Usman/Ngannou). Returning empty + historical flag ──
+// ── UFC P4P — curated snapshot (no public API available) ─────────────────────
+// ESPN endpoint dead since ~2022. Hardcoded from official UFC rankings (May 2025).
 
-async function fetchUFCP4P(): Promise<StandingRow[]> {
-  // ESPN's /mma/ufc/rankings has not been updated since ~2022 (returns Kamaru Usman as #1).
-  // Until we wire a working source, we return empty so the UI renders an "Histórico no disponible"
-  // state instead of misleading data.
-  return []
+const UFC_P4P_AS_OF = 'May-2025'
+function fetchUFCP4P(): Promise<StandingRow[]> {
+  const rows: StandingRow[] = [
+    { rank: 1, name: 'Islam Makhachev',    abbr: 'LW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Ligero' } },
+    { rank: 2, name: 'Jon Jones',          abbr: 'HW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Pesado' } },
+    { rank: 3, name: 'Alex Pereira',       abbr: 'LHW', value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Semi-pesado' } },
+    { rank: 4, name: 'Dricus du Plessis',  abbr: 'MW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Medio' } },
+    { rank: 5, name: 'Ilia Topuria',       abbr: 'FW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Pluma' } },
+    { rank: 6, name: 'Sean O\'Malley',     abbr: 'BW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Gallo' } },
+    { rank: 7, name: 'Tom Aspinall',       abbr: 'HW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Pesado (I)' } },
+    { rank: 8, name: 'Merab Dvalishvili',  abbr: 'BW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Gallo' } },
+    { rank: 9, name: 'Belal Muhammad',     abbr: 'WW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Wélter' } },
+    { rank: 10,name: 'Alexandre Pantoja',  abbr: 'FLW', value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Mosca' } },
+  ]
+  return Promise.resolve(rows)
 }
 
 // ── Women's Liga F via ESPN ───────────────────────────────────────────────────
@@ -624,6 +636,46 @@ async function fetchCoachRecords(): Promise<StandingRow[]> {
     .map((r, i) => ({ ...r!, rank: i + 1 })) as StandingRow[]
 }
 
+// ── World Cup 2026 via ESPN ───────────────────────────────────────────────────
+
+async function fetchWorldCup(): Promise<LeagueStandings[]> {
+  try {
+    const res = await fetch(`${BASE}/soccer/fifa.world/standings`, { next: { revalidate: 1800 } })
+    if (!res.ok) return []
+    const json = await res.json()
+    const children = (json.children as Record<string, unknown>[]) ?? []
+    const results: LeagueStandings[] = []
+    for (const child of children) {
+      const name = (child.name as string) ?? ''
+      if (!name.startsWith('Group ')) continue
+      const groupLetter = name.replace('Group ', '')
+      const entries = (child.standings as Record<string, unknown>)?.entries as Record<string, unknown>[] ?? []
+      const rows: StandingRow[] = entries.map((e, i) => {
+        const team  = e.team as Record<string, unknown>
+        const stats = (e.stats as RawStat[]) ?? []
+        const pj = sv(stats, 'gamesPlayed') || sv(stats, 'wins') + sv(stats, 'ties') + sv(stats, 'losses')
+        const w  = sv(stats, 'wins'); const d = sv(stats, 'ties'); const l = sv(stats, 'losses')
+        const pts = sv(stats, 'points'); const gd = sv(stats, 'pointDifferential')
+        const gf  = sv(stats, 'pointsFor'); const gc = sv(stats, 'pointsAgainst')
+        return {
+          rank: i + 1,
+          name: (team?.displayName as string) ?? '—',
+          abbr: (team?.abbreviation as string) ?? '',
+          value: String(Math.round(pts)),
+          sub:   pj > 0 ? `${pj} PJ · ${gd >= 0 ? '+' : ''}${Math.round(gd)}` : 'Sin jugar',
+          trend: 'flat' as const,
+          extra: { PJ: String(Math.round(pj)), V: String(w), E: String(d), D: String(l), GF: String(Math.round(gf)), GC: String(Math.round(gc)) },
+        }
+      })
+      results.push({ id: `wc-group-${groupLetter.toLowerCase()}`, label: `Grupo ${groupLetter}`, rows })
+    }
+    return results
+  } catch (err) {
+    console.error('[standings] World Cup failed:', err)
+    return []
+  }
+}
+
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
@@ -637,10 +689,11 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   selecciones: ['fifaRanking', 'nationsLeague'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
   golf: ['pgaTourLeaderboard', 'pgaFedExCup'],
+  mundial: ['worldCup'],
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
-  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga, nationsLeague, fedExCup, coaches] = await Promise.all([
+  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga, nationsLeague, fedExCup, coaches, worldCup] = await Promise.all([
     Promise.allSettled(FOOTBALL_LEAGUES.map(l => fetchFootball(l.slug, l.id, l.label))),
     fetchF1All(),
     fetchNBA(),
@@ -653,6 +706,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchNationsLeague(),
     fetchFedExCup(),
     fetchCoachRecords(),
+    fetchWorldCup(),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
 
@@ -661,9 +715,11 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     .filter(Boolean) as LeagueStandings[]
 
   const now = new Date().toISOString()
-  const live = (source: string): BlockMeta => ({ status: 'live', source, fetchedAt: now })
+  const live    = (source: string): BlockMeta => ({ status: 'live',        source, fetchedAt: now })
   const unavail = (source: string): BlockMeta => ({ status: 'unavailable', source, fetchedAt: now })
-  const histor = (source: string, asOf: string): BlockMeta => ({ status: 'historical', source, fetchedAt: now, asOf })
+  const histor  = (source: string, asOf: string): BlockMeta => ({ status: 'historical', source, fetchedAt: now, asOf })
+
+  const wcStarted = worldCup.some(g => g.rows.some(r => r.sub !== 'Sin jugar'))
 
   const meta: Record<string, BlockMeta> = {
     football:        live('ESPN'),
@@ -683,7 +739,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     atpRanking:      tennis.atp.length ? live('ESPN') : unavail('ESPN'),
     wtaRanking:      tennis.wta.length ? live('ESPN') : unavail('ESPN'),
     fifaRanking:     histor('FIFA', FIFA_RANKING_AS_OF),
-    ufcP4P:              unavail('ESPN (endpoint obsoleto)'),
+    ufcP4P:          histor('UFC Rankings', UFC_P4P_AS_OF),
     womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
     womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
     womenAssists:        womenStats.assists.length     ? live('ESPN') : unavail('ESPN'),
@@ -692,9 +748,12 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
       : pga.isCompleted ? ({ status: 'stale', source: `ESPN · ${pga.tournamentName}`, fetchedAt: now, asOf: 'Final' } satisfies BlockMeta)
       :                   unavail('ESPN')
       : unavail('ESPN'),
-    pgaFedExCup:         fedExCup.length ? live('ESPN') : unavail('ESPN'),
-    nationsLeague:       nationsLeague.length ? live('ESPN · UEFA Nations League') : unavail('ESPN · Nations League no iniciada'),
-    coachesWinRate:      coaches.length ? live('ESPN') : unavail('ESPN'),
+    pgaFedExCup:      fedExCup.length ? live('ESPN') : unavail('ESPN'),
+    nationsLeague:    nationsLeague.length ? live('ESPN · UEFA Nations League') : unavail('ESPN · Nations League no iniciada'),
+    coachesWinRate:   coaches.length ? live('ESPN') : unavail('ESPN'),
+    worldCup:         worldCup.length
+      ? wcStarted ? live('ESPN · FIFA World Cup 2026') : ({ status: 'stale', source: 'ESPN · FIFA World Cup 2026', fetchedAt: now, asOf: 'Grupos confirmados — torneo inicia 11 jun 2026' } satisfies BlockMeta)
+      : unavail('ESPN'),
   }
 
   return {
@@ -723,17 +782,14 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     pgaFedExCup:         fedExCup,
     nationsLeague,
     coachesWinRate:      coaches,
+    worldCup,
     meta,
     updatedAt:           now,
   }
 }
 
 export async function getStandingsData(): Promise<StatsStandingsResponse> {
-  const now = Date.now()
-  if (cache && now - cache.ts < CACHE_TTL) return cache.data
-  const data = await buildPayload()
-  cache = { data, ts: now }
-  return data
+  return buildPayload()
 }
 
 export async function GET(req: NextRequest) {

@@ -736,7 +736,39 @@ const FUTBOL_FEMENINO_BLOCKS: StatBlock[] = [
 // ─────────────────────────────────────────────────────────────────
 // DATOS — SPORTS COMPLETO
 // ─────────────────────────────────────────────────────────────────
+const WC_GROUPS_FALLBACK = [
+  { id: 'wc-group-a', label: 'Grupo A', teams: ['México', 'Chequia', 'Corea del Sur', 'Sudáfrica'] },
+  { id: 'wc-group-b', label: 'Grupo B', teams: ['Canadá', 'Bosnia-Herzegovina', 'Suiza', 'Qatar'] },
+  { id: 'wc-group-c', label: 'Grupo C', teams: ['Brasil', 'Escocia', 'Haití', 'Marruecos'] },
+  { id: 'wc-group-d', label: 'Grupo D', teams: ['Paraguay', 'Turquía', 'Australia', 'Estados Unidos'] },
+  { id: 'wc-group-e', label: 'Grupo E', teams: ['Ecuador', 'Alemania', 'Costa de Marfil', 'Curazao'] },
+  { id: 'wc-group-f', label: 'Grupo F', teams: ['Países Bajos', 'Suecia', 'Japón', 'Túnez'] },
+  { id: 'wc-group-g', label: 'Grupo G', teams: ['Bélgica', 'Irán', 'Egipto', 'Nueva Zelanda'] },
+  { id: 'wc-group-h', label: 'Grupo H', teams: ['España', 'Uruguay', 'Arabia Saudita', 'Cabo Verde'] },
+  { id: 'wc-group-i', label: 'Grupo I', teams: ['Noruega', 'Francia', 'Senegal', 'Irak'] },
+  { id: 'wc-group-j', label: 'Grupo J', teams: ['Argentina', 'Austria', 'Argelia', 'Jordania'] },
+  { id: 'wc-group-k', label: 'Grupo K', teams: ['Colombia', 'Portugal', 'Uzbekistán', 'Congo RD'] },
+  { id: 'wc-group-l', label: 'Grupo L', teams: ['Inglaterra', 'Croacia', 'Panamá', 'Ghana'] },
+]
+
 const SPORTS: SportConfig[] = [
+  {
+    id: 'mundial', label: 'Mundial 2026', emoji: '🌍', accent: '#f59e0b',
+    sections: [
+      {
+        id: 'grupos', label: 'Grupos', icon: '🏆',
+        blocks: WC_GROUPS_FALLBACK.map(g => ({
+          id: g.id,
+          title: g.label,
+          metric: 'Pts',
+          rows: g.teams.map((name, i) => ({
+            rank: i + 1, name, value: '0', sub: 'Sin jugar', trend: 'flat' as const,
+            extra: { PJ: '0', V: '0', E: '0', D: '0', GF: '0', GC: '0' },
+          })),
+        })),
+      },
+    ],
+  },
   {
     id: 'futbol', label: 'Fútbol', emoji: '⚽', accent: '#22c55e',
     sections: [
@@ -892,43 +924,19 @@ const SPORTS: SportConfig[] = [
             ],
           },
           {
-            id: 'nations-a1', title: 'Nations League · Grupo A1', metric: 'Pts',
-            rows: [
-              { rank: 1, name: 'Italia',    value: '—', sub: 'Por jugar', flag: '🇮🇹', trend: 'flat' as const, extra: {} },
-              { rank: 2, name: 'Bélgica',   value: '—', sub: 'Por jugar', flag: '🇧🇪', trend: 'flat' as const, extra: {} },
-              { rank: 3, name: 'Francia',   value: '—', sub: 'Por jugar', flag: '🇫🇷', trend: 'flat' as const, extra: {} },
-              { rank: 4, name: 'Croacia',   value: '—', sub: 'Por jugar', flag: '🇭🇷', trend: 'flat' as const, extra: {} },
-            ],
+            id: 'nations-a1', title: 'Nations League · Grupo A1 (Ed. 2026-27, sep 2026)', metric: 'Pts', placeholder: true,
+            rows: [],
           },
           {
-            id: 'nations-a2', title: 'Nations League · Grupo A2', metric: 'Pts',
-            rows: [
-              { rank: 1, name: 'Países Bajos', value: '—', sub: 'Por jugar', flag: '🇳🇱', trend: 'flat' as const, extra: {} },
-              { rank: 2, name: 'Grecia',        value: '—', sub: 'Por jugar', flag: '🇬🇷', trend: 'flat' as const, extra: {} },
-              { rank: 3, name: 'Finlandia',     value: '—', sub: 'Por jugar', flag: '🇫🇮', trend: 'flat' as const, extra: {} },
-              { rank: 4, name: 'Polonia',        value: '—', sub: 'Por jugar', flag: '🇵🇱', trend: 'flat' as const, extra: {} },
-            ],
+            id: 'nations-a2', title: 'Nations League · Grupo A2 (Ed. 2026-27, sep 2026)', metric: 'Pts', placeholder: true,
+            rows: [],
           },
           {
-            id: 'nations-a3', title: 'Nations League · Grupo A3', metric: 'Pts',
-            rows: [
-              { rank: 1, name: 'España',      value: '—', sub: 'Por jugar', flag: '🇪🇸', trend: 'flat' as const, extra: {} },
-              { rank: 2, name: 'Inglaterra',   value: '—', sub: 'Por jugar', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'flat' as const, extra: {} },
-              { rank: 3, name: 'Alemania',     value: '—', sub: 'Por jugar', flag: '🇩🇪', trend: 'flat' as const, extra: {} },
-              { rank: 4, name: 'Portugal',     value: '—', sub: 'Por jugar', flag: '🇵🇹', trend: 'flat' as const, extra: {} },
-            ],
+            id: 'nations-a3', title: 'Nations League · Grupo A3 (Ed. 2026-27, sep 2026)', metric: 'Pts', placeholder: true,
+            rows: [],
           },
           {
-            id: 'nations-a4', title: 'Nations League · Grupo A4', metric: 'Pts',
-            rows: [
-              { rank: 1, name: 'Noruega',    value: '—', sub: 'Por jugar', flag: '🇳🇴', trend: 'flat' as const, extra: {} },
-              { rank: 2, name: 'Dinamarca',  value: '—', sub: 'Por jugar', flag: '🇩🇰', trend: 'flat' as const, extra: {} },
-              { rank: 3, name: 'Serbia',     value: '—', sub: 'Por jugar', flag: '🇷🇸', trend: 'flat' as const, extra: {} },
-              { rank: 4, name: 'Escocia',    value: '—', sub: 'Por jugar', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', trend: 'flat' as const, extra: {} },
-            ],
-          },
-          {
-            id: 'mundial-2026', title: 'Mundial 2026 · Grupos & Tabla', metric: 'Pts', placeholder: true,
+            id: 'nations-a4', title: 'Nations League · Grupo A4 (Ed. 2026-27, sep 2026)', metric: 'Pts', placeholder: true,
             rows: [],
           },
           {
@@ -1205,13 +1213,16 @@ const SPORTS: SportConfig[] = [
           {
             id: 'ufc-p4p', title: 'Pound for Pound (Top 10)', metric: 'Pos.',
             rows: [
-              { rank: 1, name: 'Jon Jones',           team: 'Peso completo', value: '#1',  sub: '29-1-0', flag: '🇺🇸', trend: 'flat' },
-              { rank: 2, name: 'Islam Makhachev',     team: 'Ligero',        value: '#2',  sub: '26-1-0', flag: '🇷🇺', trend: 'flat' },
-              { rank: 3, name: 'Magomed Ankalaev',     team: 'Semipesado',    value: '#3',  sub: '20-0-0', flag: '🇷🇺', trend: 'up' },
-              { rank: 4, name: 'Ilia Topuria',        team: 'Pluma',         value: '#4',  sub: '16-0-0', flag: '🇬🇪', trend: 'up' },
-              { rank: 5, name: 'Dricus du Plessis',   team: 'Medio',         value: '#5',  sub: '22-2-0', flag: '🇿🇦', trend: 'up' },
-              { rank: 6, name: 'Belal Muhammad',      team: 'Wélter',        value: '#6',  sub: '23-3-0', flag: '🇺🇸', trend: 'up' },
-              { rank: 7, name: 'Alexander Volkanovski', team: 'Pluma',        value: '#7',  sub: '26-4-0', flag: '🇦🇺', trend: 'down' },
+              { rank: 1,  name: 'Islam Makhachev',   team: 'Ligero',        value: '#1',  sub: 'Ref. May-2025', flag: '🇷🇺', trend: 'flat' },
+              { rank: 2,  name: 'Jon Jones',          team: 'Peso completo', value: '#2',  sub: 'Ref. May-2025', flag: '🇺🇸', trend: 'flat' },
+              { rank: 3,  name: 'Alex Pereira',       team: 'Semi-pesado',   value: '#3',  sub: 'Ref. May-2025', flag: '🇧🇷', trend: 'up' },
+              { rank: 4,  name: 'Dricus du Plessis',  team: 'Medio',         value: '#4',  sub: 'Ref. May-2025', flag: '🇿🇦', trend: 'up' },
+              { rank: 5,  name: 'Ilia Topuria',       team: 'Pluma',         value: '#5',  sub: 'Ref. May-2025', flag: '🇬🇪', trend: 'up' },
+              { rank: 6,  name: "Sean O'Malley",      team: 'Gallo',         value: '#6',  sub: 'Ref. May-2025', flag: '🇺🇸', trend: 'flat' },
+              { rank: 7,  name: 'Tom Aspinall',       team: 'Pesado (I)',    value: '#7',  sub: 'Ref. May-2025', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up' },
+              { rank: 8,  name: 'Merab Dvalishvili',  team: 'Gallo',         value: '#8',  sub: 'Ref. May-2025', flag: '🇬🇪', trend: 'up' },
+              { rank: 9,  name: 'Belal Muhammad',     team: 'Wélter',        value: '#9',  sub: 'Ref. May-2025', flag: '🇺🇸', trend: 'flat' },
+              { rank: 10, name: 'Alexandre Pantoja',  team: 'Mosca',         value: '#10', sub: 'Ref. May-2025', flag: '🇧🇷', trend: 'flat' },
             ],
           },
           {
@@ -1604,6 +1615,11 @@ const LIVE_BLOCK_IDS = new Set([
   'pga-leaderboard', 'pga-fedex',
   'nations-a1', 'nations-a2', 'nations-a3', 'nations-a4',
   'stats-dt',
+  'ufc-p4p',
+  // World Cup 2026 — grupos A-L
+  'wc-group-a', 'wc-group-b', 'wc-group-c', 'wc-group-d',
+  'wc-group-e', 'wc-group-f', 'wc-group-g', 'wc-group-h',
+  'wc-group-i', 'wc-group-j', 'wc-group-k', 'wc-group-l',
 ])
 
 interface LiveStandingRow {
@@ -1632,6 +1648,7 @@ interface LiveStandingsData {
   pgaFedExCup?: LiveStandingRow[]
   nationsLeague?: LiveLeague[]
   coachesWinRate?: LiveStandingRow[]
+  worldCup?: LiveLeague[]
   meta?: Record<string, BlockMeta>
   updatedAt?: string
 }
@@ -1648,13 +1665,15 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'f1-poles': 'f1Poles', 'f1-vueltas-rapidas': 'f1FastestLaps',
   'atp-ranking': 'atpRanking', 'wta-ranking': 'wtaRanking',
   'ranking-fifa': 'fifaRanking',
-  // ufc-p4p intentionally NOT mapped: ESPN's endpoint is dead so the live source is unavailable,
-  // but the hardcoded P4P list is curated/current. Falling back to the generic "Ref. 24/25" badge
-  // is more honest than tagging it "No disponible".
+  'ufc-p4p': 'ufcP4P',
   'f-ligaf-tabla': 'womenLigaF', 'f-goleadoras': 'womenGoals', 'f-asistencias': 'womenAssists',
   'pga-leaderboard': 'pgaTourLeaderboard', 'pga-fedex': 'pgaFedExCup',
   'nations-a1': 'nationsLeague', 'nations-a2': 'nationsLeague', 'nations-a3': 'nationsLeague', 'nations-a4': 'nationsLeague',
   'stats-dt': 'coachesWinRate',
+  'wc-group-a': 'worldCup', 'wc-group-b': 'worldCup', 'wc-group-c': 'worldCup',
+  'wc-group-d': 'worldCup', 'wc-group-e': 'worldCup', 'wc-group-f': 'worldCup',
+  'wc-group-g': 'worldCup', 'wc-group-h': 'worldCup', 'wc-group-i': 'worldCup',
+  'wc-group-j': 'worldCup', 'wc-group-k': 'worldCup', 'wc-group-l': 'worldCup',
 }
 
 // ── Player stats types (from /api/stats/players) ──────────────────
@@ -1906,6 +1925,14 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
             trend: 'flat' as const,
           }))}
         }
+
+        if (block.id === 'ufc-p4p' && liveData.ufcP4P?.length)
+          return { ...block, rows: toStatRows(liveData.ufcP4P) }
+
+        if (block.id.startsWith('wc-group-') && liveData.worldCup?.length) {
+          const group = liveData.worldCup.find(g => g.id === block.id)
+          if (group?.rows.length) return { ...block, rows: toStatRows(group.rows) }
+        }
       }
       // Player stats data
       if (livePlayerData && LIVE_PLAYER_BLOCK_IDS.has(block.id)) {
@@ -2018,16 +2045,60 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
               className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
               style={{
                 fontFamily: 'var(--font-sport)',
-                color: sportId === s.id ? s.accent : 'var(--text-muted)',
-                background: 'none', border: 'none',
-                borderBottom: sportId === s.id ? `2px solid ${s.accent}` : '2px solid transparent',
+                color: sportId === s.id ? s.accent : s.id === 'mundial' ? '#f59e0b' : 'var(--text-muted)',
+                background: s.id === 'mundial' && sportId !== 'mundial' ? 'rgba(245,158,11,0.08)' : 'none',
+                border: 'none',
+                borderBottom: sportId === s.id ? `2px solid ${s.accent}` : s.id === 'mundial' ? '2px solid rgba(245,158,11,0.35)' : '2px solid transparent',
+                borderRadius: s.id === 'mundial' && sportId !== 'mundial' ? '6px 6px 0 0' : undefined,
                 marginBottom: -1, cursor: 'pointer',
               }}>
               <span className="text-sm leading-none">{s.emoji}</span>
               {s.label}
+              {s.id === 'mundial' && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.2)', color: '#f59e0b', letterSpacing: '0.05em' }}>🔜</span>}
             </button>
           ))}
         </div>
+
+        {/* ── Banner Mundial 2026 ─────────────────────── */}
+        {sportId === 'mundial' && (() => {
+          const start = new Date('2026-06-11T17:00:00Z')
+          const now   = new Date()
+          const diff  = start.getTime() - now.getTime()
+          const started = diff <= 0
+          const days  = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)))
+          const hours = Math.max(0, Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
+          return (
+            <div className="mb-6 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(239,68,68,0.08) 100%)', border: '1px solid rgba(245,158,11,0.3)' }}>
+              <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span style={{ fontSize: 22 }}>🏆</span>
+                    <span className="font-black text-sm uppercase tracking-widest" style={{ fontFamily: 'var(--font-sport)', color: '#f59e0b' }}>
+                      FIFA World Cup 2026
+                    </span>
+                    {started
+                      ? <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>● EN CURSO</span>
+                      : <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>PRÓXIMO</span>
+                    }
+                  </div>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {started ? 'Grupos en juego · Datos en vivo desde ESPN' : '11 jun – 19 jul 2026 · USA, Canadá, México · 48 selecciones · 12 grupos'}
+                  </p>
+                </div>
+                {!started && (
+                  <div className="flex gap-3">
+                    {[{ v: days, l: 'días' }, { v: hours, l: 'horas' }].map(({ v, l }) => (
+                      <div key={l} className="text-center">
+                        <div className="text-2xl font-black" style={{ fontFamily: 'var(--font-sport)', color: '#f59e0b', lineHeight: 1 }}>{v}</div>
+                        <div className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Toggle Femenino — solo Fútbol ────────────── */}
         {sportId === 'futbol' && (
