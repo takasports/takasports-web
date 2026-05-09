@@ -153,57 +153,51 @@ export default function NoticiasContent({
 
   return (
     <>
-      {/* ── MASTHEAD EDITORIAL ── */}
-      <div className="relative px-6 xl:px-10 pt-8 pb-0 overflow-hidden">
-        {/* Glow de fondo */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'radial-gradient(ellipse 70% 120% at 20% 50%, rgba(124,58,237,0.08) 0%, transparent 70%)',
-          }}
-        />
-        <div style={{ height: 2, background: 'linear-gradient(to right, #7C3AED44, var(--border), transparent)', marginBottom: 18 }} />
+      {/* ── MASTHEAD PERIÓDICO ── */}
+      <div className="px-6 xl:px-10 pt-7 pb-0">
+        {/* Línea doble superior — marca de periódico */}
+        <div style={{ borderTop: '3px solid #F2F2FA', borderBottom: '1px solid #F2F2FA', padding: '3px 0', marginBottom: 10 }} />
 
-        <div className="relative flex items-end justify-between gap-4 mb-3 flex-wrap">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <span
-                className="w-1.5 h-1.5 rounded-full animate-pulse"
-                style={{ background: '#7C3AED', boxShadow: '0 0 8px #7C3AED' }}
-              />
-              <p
-                className="text-[10px] font-black uppercase tracking-[0.14em]"
-                style={{ color: '#7C5CB8', fontFamily: 'var(--font-sport)' }}
-              >
-                Actualidad deportiva al minuto
-              </p>
-            </div>
-            <h1
-              className="font-black leading-none"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(2.4rem, 5vw, 4rem)',
-                color: '#F2F2FA',
-                letterSpacing: '-0.028em',
-              }}
-            >
-              Noticias
-            </h1>
-          </div>
+        {/* Cabecera: fecha — título — contador */}
+        <div className="flex items-baseline justify-between gap-4">
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.12em] flex-shrink-0"
+            style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}
+          >
+            {editorialDate()}
+          </p>
 
-          <div className="text-right flex-shrink-0">
-            <p className="text-[11px] font-semibold" style={{ color: '#52527A', fontFamily: 'var(--font-sport)' }}>
-              {editorialDate()}
-            </p>
-            {filteredArticles.length > 0 && (
-              <p className="text-[10px] mt-0.5" style={{ color: '#32324A', fontFamily: 'var(--font-sport)' }}>
-                {filteredArticles.length} {filteredArticles.length === 1 ? 'artículo' : 'artículos'}
-              </p>
-            )}
-          </div>
+          <h1
+            className="font-black text-center flex-1 leading-none"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(2.2rem, 5vw, 3.6rem)',
+              color: '#F2F2FA',
+              letterSpacing: '-0.03em',
+            }}
+          >
+            Noticias
+          </h1>
+
+          <p
+            className="text-[10px] font-semibold text-right flex-shrink-0"
+            style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}
+          >
+            {filteredArticles.length > 0 ? `${filteredArticles.length} historias` : ' '}
+          </p>
         </div>
 
-        <div style={{ height: 1, background: 'linear-gradient(to right, rgba(124,58,237,0.3), var(--border), transparent)', marginBottom: 0 }} />
+        {/* Línea inferior con deporte activo como subtítulo */}
+        <div className="flex items-center gap-3 mt-2 mb-0">
+          <div style={{ flex: 1, height: 1, background: '#F2F2FA22' }} />
+          <span
+            className="text-[9px] font-black uppercase tracking-[0.2em] flex-shrink-0"
+            style={{ color: '#2E2E46', fontFamily: 'var(--font-sport)' }}
+          >
+            {activeCategory === 'Todo' ? 'Todas las disciplinas' : activeCategory}
+          </span>
+          <div style={{ flex: 1, height: 1, background: '#F2F2FA22' }} />
+        </div>
       </div>
 
       {/* ── FILTRO DEPORTE — sticky ── */}
