@@ -2403,7 +2403,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                 style={{ background: 'rgba(255,255,255,0.04)', color: '#9090B0', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
                 aria-label="Buscar (⌘K)">
                 🔍 Buscar
-                <kbd className="text-[9px] font-mono px-1 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: '#5A5A72' }}>⌘K</kbd>
+                <kbd className="hidden sm:inline text-[9px] font-mono px-1 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: '#5A5A72' }}>⌘K</kbd>
               </button>
               {favorites.size > 0 && (
                 <button onClick={() => setShowFavoritesOnly(v => !v)}

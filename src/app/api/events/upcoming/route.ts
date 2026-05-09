@@ -18,7 +18,9 @@ export interface UpcomingEvent {
 
 interface CacheEntry { data: UpcomingEvent[]; ts: number }
 let cache: CacheEntry | null = null
-const CACHE_TTL = 5 * 60_000 // 5 min
+let staleCache: CacheEntry | null = null
+const CACHE_TTL  = 5 * 60_000  // 5 min fresh
+const STALE_MAX  = 30 * 60_000 // serve stale up to 30 min after expiry
 
 // Ordered by display priority
 const SOURCES = [
@@ -144,27 +146,45 @@ export async function GET() {
     return NextResponse.json(cache.data)
   }
 
-  const settled = await Promise.allSettled(
-    SOURCES.map(s => fetchUpcomingFromLeague(s.slug, s.sport, s.comp))
-  )
+  try {
+    const settled = await Promise.allSettled(
+      SOURCES.map(s => fetchUpcomingFromLeague(s.slug, s.sport, s.comp))
+    )
 
-  // Collect all upcoming events, keeping source priority order
-  const all: UpcomingEvent[] = []
-  for (const r of settled) {
-    if (r.status === 'fulfilled') all.push(...r.value)
+    // Collect all upcoming events, keeping source priority order
+    const all: UpcomingEvent[] = []
+    for (const r of settled) {
+      if (r.status === 'fulfilled') all.push(...r.value)
+    }
+
+    // If every source returned empty (total ESPN outage) fall back to stale
+    if (all.length === 0 && staleCache && now - staleCache.ts < STALE_MAX) {
+      return NextResponse.json(staleCache.data, {
+        headers: { 'X-Cache': 'STALE' },
+      })
+    }
+
+    // Sort: today first, then by time, capped at 8 events
+    const today    = all.filter(e => e.dateLabel === 'Hoy').slice(0, 5)
+    const tomorrow = all.filter(e => e.dateLabel === 'Mañana').slice(0, 3)
+    const rest     = all.filter(e => e.dateLabel !== 'Hoy' && e.dateLabel !== 'Mañana').slice(0, 3)
+
+    const data = today.length > 0
+      ? today.slice(0, 8)
+      : tomorrow.length > 0
+        ? [...tomorrow, ...rest].slice(0, 8)
+        : rest.slice(0, 8)
+
+    cache = { data, ts: now }
+    staleCache = cache
+    return NextResponse.json(data)
+  } catch (err) {
+    console.error('[upcoming] Unexpected error:', err)
+    if (staleCache && now - staleCache.ts < STALE_MAX) {
+      return NextResponse.json(staleCache.data, {
+        headers: { 'X-Cache': 'STALE' },
+      })
+    }
+    return NextResponse.json([])
   }
-
-  // Sort: today first, then by time, capped at 8 events
-  const today = all.filter(e => e.dateLabel === 'Hoy').slice(0, 5)
-  const tomorrow = all.filter(e => e.dateLabel === 'Mañana').slice(0, 3)
-  const rest = all.filter(e => e.dateLabel !== 'Hoy' && e.dateLabel !== 'Mañana').slice(0, 3)
-
-  const data = today.length > 0
-    ? today.slice(0, 8)
-    : tomorrow.length > 0
-      ? [...tomorrow, ...rest].slice(0, 8)
-      : rest.slice(0, 8)
-
-  cache = { data, ts: now }
-  return NextResponse.json(data)
 }

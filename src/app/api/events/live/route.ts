@@ -493,7 +493,7 @@ export async function GET() {
   } catch (err) {
     console.error('[live] Unexpected error fetching live scores:', err)
     if (staleCache && now - staleCache.ts < STALE_MAX) {
-      return NextResponse.json(staleCache.data)
+      return NextResponse.json(staleCache.data, { headers: { 'X-Cache': 'STALE' } })
     }
     return NextResponse.json([])
   }

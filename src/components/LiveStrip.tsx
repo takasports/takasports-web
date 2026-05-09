@@ -61,10 +61,28 @@ function short(name: string | null | undefined, abbr?: string): string {
   return name.split(' ')[0].slice(0, 4)
 }
 
+function useRelativeTime(ts: number | null): string {
+  const [label, setLabel] = useState('')
+  useEffect(() => {
+    if (!ts) { setLabel(''); return }
+    const update = () => {
+      const diff = Math.floor((Date.now() - ts) / 1000)
+      if (diff < 60)       setLabel(`hace ${diff}s`)
+      else if (diff < 3600) setLabel(`hace ${Math.floor(diff / 60)}m`)
+      else                  setLabel(`hace ${Math.floor(diff / 3600)}h`)
+    }
+    update()
+    const id = setInterval(update, 15_000)
+    return () => clearInterval(id)
+  }, [ts])
+  return label
+}
+
 export default function LiveStrip() {
   const [liveFixtures, setLiveFixtures] = useState<LiveFixture[]>([])
   const [upcoming, setUpcoming]         = useState<UpcomingEvent[]>([])
   const [hidden, setHidden]             = useState(false)
+  const [fetchedAt, setFetchedAt]       = useState<number | null>(null)
   const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastYRef   = useRef(0)
 
@@ -81,6 +99,7 @@ export default function LiveStrip() {
         seen.add(k)
         return true
       }))
+      setFetchedAt(Date.now())
     } catch { /* ignore */ }
   }, [])
 
@@ -122,7 +141,8 @@ export default function LiveStrip() {
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [liveFixtures.length, fetchLive, fetchUpcoming])
 
-  const isLive = liveFixtures.length > 0
+  const isLive    = liveFixtures.length > 0
+  const ageLabel  = useRelativeTime(fetchedAt)
 
   return (
     <div
@@ -226,8 +246,17 @@ export default function LiveStrip() {
             }
           </div>
 
-          {/* CTA */}
-          <div className="ml-auto flex-shrink-0">
+          {/* CTA + freshness */}
+          <div className="ml-auto flex-shrink-0 flex items-center gap-2">
+            {ageLabel && (
+              <span
+                className="hidden md:block text-[8px] tabular-nums"
+                style={{ color: '#2A2A40', fontFamily: 'var(--font-sport)' }}
+                title="Última actualización de marcadores"
+              >
+                {ageLabel}
+              </span>
+            )}
             <Link href="/calendario" className="flex items-center gap-1 transition-opacity hover:opacity-70" style={{ textDecoration: 'none' }}>
               <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
                 Ver agenda
