@@ -31,6 +31,7 @@ import MovimientoSemana from '@/components/rankings/MovimientoSemana'
 import type { MoverEntry } from '@/lib/rankings-data'
 import SportSelector from '@/components/rankings/SportSelector'
 import EntityTabBar from '@/components/rankings/EntityTabBar'
+import GlobalSearchResults from '@/components/rankings/GlobalSearchResults'
 
 // ── Config por deporte ────────────────────────────────────────────────
 const ENTITY_CONFIG: Record<string, { id: RankingTab; label: string }[]> = {
@@ -437,7 +438,7 @@ export default function RankingsClient({
       <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-6 xl:px-10 pb-24">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
         {/* ── HERO ─────────────────────────────────────────────── */}
         <div className="relative pt-6 pb-4 overflow-hidden">
@@ -548,7 +549,7 @@ export default function RankingsClient({
               style={{ color: '#5A5A72' }}>🔍</span>
             <input
               type="text"
-              placeholder="Buscar por nombre o equipo..."
+              placeholder="Buscar en TODOS los rankings (ej: Messi, Ferrari, Pedrerol)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-9 py-2 rounded-full text-xs font-semibold transition-all focus:outline-none"
@@ -725,6 +726,11 @@ export default function RankingsClient({
             </span>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
+        )}
+
+        {/* ── BÚSQUEDA GLOBAL (cross-categoría) ────────────────── */}
+        {searchQuery.trim().length >= 2 && (
+          <GlobalSearchResults query={searchQuery} />
         )}
 
         {/* ── SIN RESULTADOS ───────────────────────────────────── */}

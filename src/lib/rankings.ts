@@ -75,7 +75,13 @@ export function calcTrend(score: number, scorePrev: number): Trend {
 }
 
 // Calcula el Índice Taka desde factores objetivos + ajuste editorial subjetivo
-// Fórmula v5: rendimiento×0.40 + contexto×0.20 + mediático×0.25 + narrativa×0.15 + editorialBoost
+// Fórmula v6: rendimiento×0.40 + contexto×0.20 + mediático×0.25 + narrativa×0.15 + editorialBoost
+// v6 (2026-05-09):
+//   · Curva suave de bonus por posición de equipo (Top-1 +8 ↔ último -6) en lugar del binario v5.
+//   · Penalty por falta de stats individuales reducido (9→4) — el proxy del equipo cubre.
+//   · CAP sin-stats subido (62→72): pros legítimos sin endpoint /statistics no quedan bloqueados.
+//   · YouthNarr: bonus narrativa (+4) para jóvenes ≤21 con stats reales.
+//   · enrich-photos universal: cubre todos los deportes (TheSportsDB + Wikipedia fallback).
 export function calcScore(
   factors: NonNullable<RankingEntry['factors']>,
   editorialBoost?: number

@@ -4,6 +4,7 @@ import type { RankingEntry } from '@/lib/rankings'
 import { trendIcon } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
 import BadgePill from './BadgePill'
+import PlayerAvatar from './PlayerAvatar'
 
 export default function FeaturedCard({ entry }: { entry: RankingEntry }) {
   const trend = trendIcon(entry.trend)
@@ -15,9 +16,9 @@ export default function FeaturedCard({ entry }: { entry: RankingEntry }) {
         border: `1px solid ${sportAccent}20`,
         borderLeft: `2px solid ${sportAccent}60`,
       }}>
-      <div className="flex-shrink-0 flex items-center justify-center rounded-xl text-base"
+      <div className="flex-shrink-0 flex items-center justify-center rounded-xl text-base overflow-hidden"
         style={{ width: 34, height: 34, background: `${sportAccent}10`, border: `1px solid ${sportAccent}20` }}>
-        {entry.emoji ?? '⭐'}
+        <PlayerAvatar src={entry.image} alt={entry.name} fallback={entry.emoji ?? '⭐'} size={34} rounded="xl" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5 flex-wrap">

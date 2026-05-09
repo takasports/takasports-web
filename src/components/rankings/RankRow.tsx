@@ -6,6 +6,7 @@ import type { RankingEntry } from '@/lib/rankings'
 import { getDisplayScore, getEffectiveTrend, trendIcon, scoreColor, SPORT_EMOJI } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
 import BadgePill from './BadgePill'
+import PlayerAvatar from './PlayerAvatar'
 
 export default function RankRow({
   entry, showSportEmoji = false, typeTag,
@@ -13,7 +14,6 @@ export default function RankRow({
   entry: RankingEntry; showSportEmoji?: boolean; typeTag?: string
 }) {
   const [showInsight, setShowInsight] = useState(false)
-  const [imgOk, setImgOk] = useState(true)
   const displayScore = getDisplayScore(entry)
   const trend = trendIcon(getEffectiveTrend(entry))
   const scoreDiff = entry.scorePrev !== undefined ? displayScore - entry.scorePrev : null
@@ -49,10 +49,7 @@ export default function RankRow({
         <div className="relative flex-shrink-0">
           <div className="flex items-center justify-center rounded-xl text-lg overflow-hidden"
             style={{ width: 36, height: 36, background: `${sportAccent}12`, border: `1px solid ${sportAccent}20` }}>
-            {entry.image && imgOk
-              /* eslint-disable-next-line @next/next/no-img-element */
-              ? <img src={entry.image} alt={entry.name} className="w-full h-full object-cover" onError={() => setImgOk(false)} />
-              : avatarEmoji}
+            <PlayerAvatar src={entry.image} alt={entry.name} fallback={avatarEmoji} size={36} rounded="xl" />
           </div>
           {entry.country && (
             <span className="absolute -bottom-1 -right-1 text-[11px] leading-none">{entry.country}</span>
