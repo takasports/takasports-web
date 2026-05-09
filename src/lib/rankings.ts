@@ -1599,13 +1599,13 @@ export const RANKING_TABS: { id: RankingTab; label: string }[] = [
   { id: 'periodistas',  label: 'Periodistas'  },
 ]
 
-// ── Scope tabs ────────────────────────────────────────────────────
+// ── Scope tabs ─────────────────────────────────────────────────────
 export const JUGADORES_SCOPE_TABS: { id: JugadoresScope; label: string }[] = [
-  { id: 'global',   label: 'Global'       },
-  { id: 'liga',     label: 'Por liga'     },
-  { id: 'posicion', label: 'Por posición' },
-  { id: 'sub21',    label: 'Sub-21'       },
-  { id: 'pais',     label: 'Por país'     },
+  { id: 'global',   label: 'Global'        },
+  { id: 'liga',     label: 'Por liga'      },
+  { id: 'posicion', label: 'Por posición'  },
+  { id: 'sub21',    label: 'Sub-21'        },
+  { id: 'pais',     label: 'Por país'      },
 ]
 
 export const CLUBES_SCOPE_TABS: { id: ClubesScope; label: string }[] = [
