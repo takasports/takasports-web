@@ -5,8 +5,6 @@ import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
-import { useTilt } from '@/hooks/useTilt'
-import { useScrollReveal } from '@/hooks/useScrollReveal'
 
 interface Article {
   _id: string
@@ -21,250 +19,286 @@ interface Article {
   imageUrl?: string | null
 }
 
-function SportChip({ sport, category }: { sport?: string; category?: string }) {
-  const { accent } = getSportStyle(sport, category)
-  const label = getSportLabel(sport, category)
-  if (!label) return null
-  return (
-    <span
-      className="text-[9px] font-black uppercase tracking-[0.14em] px-2 py-1 rounded"
-      style={{
-        background: `${accent}20`,
-        color: accent,
-        border: `1px solid ${accent}35`,
-        fontFamily: 'var(--font-sport)',
-        backdropFilter: 'blur(8px)',
-      }}
-    >
-      {label}
-    </span>
-  )
-}
-
-function BigCard({ article }: { article: Article }) {
+// ── Lead story (izquierda) ─────────────────────────────────────
+function LeadStory({ article }: { article: Article }) {
   const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
-  const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(900).height(640).url() : null)
-  const { elRef, glareRef } = useTilt({ max: 7, scale: 1.02, glare: true })
+  const label = getSportLabel(article.sport, article.category)
+  const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(860).height(540).url() : null)
 
   return (
-    <div ref={elRef} className="h-full">
     <Link
       href={href}
-      className="group relative flex flex-col justify-end rounded-2xl overflow-hidden h-full"
+      className="group block"
       style={{ textDecoration: 'none' }}
     >
-      {imgUrl ? (
-        <Image
-          src={imgUrl}
-          alt={article.title}
-          fill
-          sizes="(max-width: 1024px) 100vw, 65vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-          priority
-        />
-      ) : (
-        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}25 0%, #09090F 100%)` }} />
-      )}
-
+      {/* Imagen — altura fija para que el título quede visible en el viewport inicial */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(5,5,12,0.96) 0%, rgba(5,5,12,0.55) 40%, rgba(5,5,12,0.15) 68%, transparent 100%)' }}
-      />
-      <div ref={glareRef} className="absolute inset-0 pointer-events-none" />
+        className="rounded-xl overflow-hidden mb-4"
+        style={{ position: 'relative', width: '100%', height: 'clamp(220px, 28vw, 370px)' }}
+      >
+        {imgUrl ? (
+          <Image
+            src={imgUrl}
+            alt={article.title}
+            fill
+            sizes="(max-width: 1024px) 100vw, 58vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            priority
+          />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(135deg, ${accent}40, #0d0d1a)` }}
+          />
+        )}
 
-      <div className="relative p-5 lg:p-6">
-        <div className="flex items-center gap-2 mb-2.5">
-          {article.takaStatus === 'breaking' && (
+        {/* Badge breaking — único overlay permitido */}
+        {article.takaStatus === 'breaking' && (
+          <div className="absolute top-3 left-3">
             <span
-              className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded animate-pulse"
-              style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', fontFamily: 'var(--font-sport)' }}
+              className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded animate-pulse"
+              style={{ background: 'rgba(9,9,15,0.85)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.5)', backdropFilter: 'blur(8px)', fontFamily: 'var(--font-sport)' }}
             >
-              <span className="w-1 h-1 rounded-full bg-red-500" />
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
               Breaking
             </span>
-          )}
-          {article.takaStatus === 'featured' && (
+          </div>
+        )}
+        {article.takaStatus === 'featured' && (
+          <div className="absolute top-3 left-3">
             <span
-              className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
-              style={{ background: `${accent}25`, color: accent, border: `1px solid ${accent}40`, fontFamily: 'var(--font-sport)' }}
+              className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded"
+              style={{ background: 'rgba(9,9,15,0.85)', color: accent, border: `1px solid ${accent}60`, backdropFilter: 'blur(8px)', fontFamily: 'var(--font-sport)' }}
             >
               ⭐ Destacado
             </span>
-          )}
-          <SportChip sport={article.sport} category={article.category} />
-        </div>
+          </div>
+        )}
+      </div>
+
+      {/* Texto — fuera de la imagen, completamente legible */}
+      <div>
+        {label && (
+          <span
+            className="inline-block text-[10px] font-black uppercase tracking-[0.15em] mb-2"
+            style={{ color: accent, fontFamily: 'var(--font-sport)' }}
+          >
+            {label}
+          </span>
+        )}
+
         <h2
-          className="font-black leading-[1.07]"
+          className="font-black leading-[1.1] mb-3 transition-colors group-hover:text-white"
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(1.25rem, 2.4vw, 2rem)',
-            color: '#F2F2FA',
-            letterSpacing: '-0.02em',
+            fontSize: 'clamp(1.35rem, 2.2vw, 1.85rem)',
+            color: '#EEEEF8',
+            letterSpacing: '-0.018em',
           }}
         >
           {article.title}
         </h2>
+
         {article.short_summary && (
           <p
-            className="hidden lg:block text-[13px] leading-relaxed mt-2 line-clamp-2"
-            style={{ color: 'rgba(200,200,220,0.6)' }}
+            className="leading-relaxed line-clamp-3 mb-3"
+            style={{ fontSize: '0.9rem', color: '#7070A0', lineHeight: 1.65 }}
           >
             {article.short_summary}
           </p>
         )}
-        <div className="flex items-center gap-3 mt-3">
+
+        <div className="flex items-center gap-3">
           {article.publishedAt && (
-            <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.28)', fontFamily: 'var(--font-sport)' }}>
+            <span className="text-[11px]" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
               {timeAgo(article.publishedAt)}
             </span>
           )}
           <span
-            className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all duration-200 group-hover:gap-2.5"
+            className="text-[11px] font-semibold flex items-center gap-1 transition-all group-hover:gap-2"
             style={{ color: accent, fontFamily: 'var(--font-sport)' }}
           >
             Leer
-            <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-              <path d="M1.5 4.5h6M4 2l2.5 2.5L4 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M1.5 5h7M5.5 2L8.5 5l-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
         </div>
       </div>
     </Link>
-    </div>
   )
 }
 
-function GridCard({ article, priority = false }: { article: Article; priority?: boolean }) {
+// ── Artículo secundario (columna derecha) ──────────────────────
+function SecondaryStory({ article, showDivider }: { article: Article; showDivider: boolean }) {
   const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
-  const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(500).height(380).url() : null)
-  const { elRef } = useTilt({ max: 4, scale: 1.025 })
+  const label = getSportLabel(article.sport, article.category)
+  const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(180).height(120).url() : null)
 
   return (
-    <div ref={elRef} className="h-full">
-    <Link
-      href={href}
-      className="group relative flex flex-col justify-end rounded-xl overflow-hidden h-full"
-      style={{ textDecoration: 'none' }}
-    >
-      {imgUrl ? (
-        <Image
-          src={imgUrl}
-          alt={article.title}
-          fill
-          sizes="(max-width: 1024px) 50vw, 22vw"
-          className="object-cover transition-transform duration-600 group-hover:scale-[1.05]"
-          priority={priority}
-        />
-      ) : (
-        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}20 0%, #09090F 100%)` }} />
+    <>
+      {showDivider && (
+        <div style={{ height: 1, background: 'var(--border)', margin: '0 0 14px 0' }} />
       )}
-
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(5,5,12,0.92) 0%, rgba(5,5,12,0.3) 50%, transparent 80%)' }}
-      />
-
-      <div className="relative p-3 lg:p-4">
-        <div className="flex items-center gap-1.5 mb-1">
-          {article.takaStatus === 'breaking' && (
+      <Link
+        href={href}
+        className="group flex gap-3 items-start"
+        style={{ textDecoration: 'none', marginBottom: 14 }}
+      >
+        {/* Texto — izquierda (convención periódico: texto primario) */}
+        <div className="flex-1 min-w-0">
+          {label && (
             <span
-              className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded animate-pulse"
-              style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', fontFamily: 'var(--font-sport)' }}
+              className="inline-block text-[9px] font-black uppercase tracking-[0.14em] mb-1"
+              style={{ color: accent, fontFamily: 'var(--font-sport)' }}
             >
-              <span className="w-1 h-1 rounded-full bg-red-500" />
-              Breaking
+              {label}
             </span>
           )}
-          <SportChip sport={article.sport} category={article.category} />
+          <h3
+            className="font-bold leading-snug line-clamp-2 mb-1 transition-colors group-hover:text-white"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(0.82rem, 1.1vw, 0.93rem)',
+              color: '#CCCCE0',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {article.takaStatus === 'breaking' && (
+              <span style={{ color: '#ef4444', marginRight: 4 }}>●</span>
+            )}
+            {article.title}
+          </h3>
+          {article.short_summary && (
+            <p className="line-clamp-1 mb-1" style={{ fontSize: '0.75rem', color: '#48485E', lineHeight: 1.55 }}>
+              {article.short_summary}
+            </p>
+          )}
+          {article.publishedAt && (
+            <span className="text-[9px]" style={{ color: '#2E2E46', fontFamily: 'var(--font-sport)' }}>
+              {timeAgo(article.publishedAt)}
+            </span>
+          )}
         </div>
+
+        {/* Miniatura — derecha (imagen como soporte, no protagonista) */}
+        {imgUrl && (
+          <div
+            className="flex-shrink-0 rounded-lg overflow-hidden"
+            style={{ width: 72, height: 52, marginTop: 2 }}
+          >
+            <Image
+              src={imgUrl}
+              alt={article.title}
+              width={72}
+              height={52}
+              className="w-full h-full object-cover transition-opacity group-hover:opacity-80"
+            />
+          </div>
+        )}
+      </Link>
+    </>
+  )
+}
+
+// ── Artículo de la fila inferior (horizontal) ──────────────────
+function BottomStory({ article }: { article: Article }) {
+  const href = `/noticias/${article.slug ?? article._id}`
+  const { accent } = getSportStyle(article.sport, article.category)
+  const label = getSportLabel(article.sport, article.category)
+  const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(300).height(180).url() : null)
+
+  return (
+    <Link
+      href={href}
+      className="group flex gap-3 items-start rounded-xl p-3 transition-all hover:brightness-110"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none' }}
+    >
+      {imgUrl && (
+        <div className="flex-shrink-0 rounded-lg overflow-hidden" style={{ width: 80, height: 58 }}>
+          <Image
+            src={imgUrl}
+            alt={article.title}
+            width={80}
+            height={58}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        {label && (
+          <span className="text-[8px] font-black uppercase tracking-[0.14em]" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+            {label}
+          </span>
+        )}
         <h3
-          className="font-black leading-snug mt-1.5 line-clamp-2"
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(0.82rem, 1.2vw, 1.05rem)',
-            color: '#F0F0FA',
-            letterSpacing: '-0.01em',
-          }}
+          className="font-bold leading-snug line-clamp-2 mt-0.5 transition-colors group-hover:text-white"
+          style={{ fontFamily: 'var(--font-display)', fontSize: '0.8rem', color: '#B0B0C8', letterSpacing: '-0.01em' }}
         >
           {article.title}
         </h3>
         {article.publishedAt && (
-          <p className="text-[9px] mt-1.5" style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[9px] mt-1" style={{ color: '#2E2E46', fontFamily: 'var(--font-sport)' }}>
             {timeAgo(article.publishedAt)}
           </p>
         )}
       </div>
     </Link>
-    </div>
   )
 }
 
+// ── Componente principal ───────────────────────────────────────
 export default function NoticiasPortada({ articles }: { articles: Article[] }) {
-  const safeArticles = articles.filter(Boolean)
-  if (safeArticles.length === 0) return null
-  const items = safeArticles.slice(0, 6)
-  const bottomRowRef = useScrollReveal({ threshold: 0.05, rootMargin: '0px 0px -30px 0px' })
+  const safe = articles.filter(Boolean)
+  if (safe.length === 0) return null
+
+  const lead = safe[0]
+  const secondary = safe.slice(1, 5)   // 4 en columna derecha
+  const bottom = safe.slice(5, 9)      // hasta 4 en fila inferior
 
   return (
-    <div className="mb-10">
+    <div className="mb-8">
 
-      {/* ── MOBILE layout: col-2 grid ── */}
-      <div className="lg:hidden grid grid-cols-2 gap-2">
-        <div className="col-span-2" style={{ height: 230 }}>
-          <BigCard article={items[0]} />
+      {/* ── GRID PRINCIPAL ── */}
+      <div className="grid grid-cols-1 gap-0 items-start lg:grid-cols-[58%_1px_1fr]">
+
+        {/* Columna izquierda: lead story */}
+        <div className="lg:pr-7 pb-6 lg:pb-0">
+          <LeadStory article={lead} />
         </div>
-        {items.slice(1, 5).map((a, i) => (
-          <div key={a._id} style={{ height: 145 }}>
-            <GridCard article={a} priority={i < 2} />
-          </div>
-        ))}
-        {items[5] && (
-          <div className="col-span-2" style={{ height: 120 }}>
-            <GridCard article={items[5]} />
+
+        {/* Separador vertical desktop */}
+        <div
+          className="hidden lg:block self-stretch"
+          style={{ background: 'var(--border)', width: 1 }}
+        />
+
+        {/* Columna derecha: 4 secundarios */}
+        {secondary.length > 0 && (
+          <div className="lg:pl-7 pt-6 lg:pt-0">
+            {secondary.map((article, i) => (
+              <SecondaryStory key={article._id} article={article} showDivider={i > 0} />
+            ))}
           </div>
         )}
       </div>
 
-      {/* ── DESKTOP layout: magazine grid ── */}
-      <div className="hidden lg:block">
-        {/* Top section: big (65%) + side column (35%) */}
-        <div className="flex gap-3 mb-3" style={{ height: 'clamp(340px, 38vw, 430px)' }}>
-          {/* Big card */}
-          <div className="flex-1">
-            <BigCard article={items[0]} />
-          </div>
-          {/* Side column: 2 stacked cards */}
-          {(items[1] || items[2]) && (
-            <div className="flex flex-col gap-3 flex-shrink-0" style={{ width: '34%' }}>
-              {items[1] && (
-                <div className="flex-1">
-                  <GridCard article={items[1]} priority />
-                </div>
-              )}
-              {items[2] && (
-                <div className="flex-1">
-                  <GridCard article={items[2]} />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Bottom row: 3 equal cards — reveal al scrollear */}
+      {/* ── FILA INFERIOR ── */}
+      {bottom.length > 0 && (
         <div
-          ref={bottomRowRef}
-          className="grid grid-cols-3 gap-3"
-          style={{ height: 'clamp(150px, 16vw, 190px)' }}
+          className="mt-4 pt-4 grid gap-2"
+          style={{
+            borderTop: '1px solid var(--border)',
+            gridTemplateColumns: `repeat(${Math.min(bottom.length, 4)}, 1fr)`,
+          }}
         >
-          {items.slice(3, 6).map((a) => (
-            <div key={a._id} data-reveal className="h-full">
-              <GridCard article={a} />
-            </div>
+          {bottom.map((article) => (
+            <BottomStory key={article._id} article={article} />
           ))}
         </div>
-      </div>
+      )}
 
     </div>
   )
