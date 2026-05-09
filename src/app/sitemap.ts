@@ -51,6 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/sopa-cracks`, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly', priority: 0.65 },
     { url: `${BASE_URL}/mionce`, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly', priority: 0.65 },
     { url: `${BASE_URL}/takagrid`, lastModified: STATIC_LASTMOD, changeFrequency: 'daily', priority: 0.65 },
+    { url: `${BASE_URL}/sobre`, lastModified: STATIC_LASTMOD, changeFrequency: 'monthly', priority: 0.5 },
   ]
 
   // Rankings filtrados — title dinámico ya cubre el SEO en la misma URL

@@ -59,10 +59,10 @@ export async function generateMetadata({
       siteName: 'TakaSports',
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description,
-      images: [ogImage],
+      site: '@takasportsx',
     },
   }
 }
@@ -976,8 +976,68 @@ export default async function MatchPage({
   const match   = await fetchMatchDetail(ref)
   if (!match) notFound()
 
+  const STATUS_MAP: Record<string, string> = {
+    STATUS_FINAL: 'https://schema.org/EventCompleted',
+    STATUS_FULL_TIME: 'https://schema.org/EventCompleted',
+    STATUS_IN_PROGRESS: 'https://schema.org/EventScheduled',
+    STATUS_HALFTIME: 'https://schema.org/EventScheduled',
+    STATUS_SECOND_HALF: 'https://schema.org/EventScheduled',
+    STATUS_END_PERIOD: 'https://schema.org/EventScheduled',
+    STATUS_OVERTIME: 'https://schema.org/EventScheduled',
+    STATUS_CANCELED: 'https://schema.org/EventCancelled',
+    STATUS_POSTPONED: 'https://schema.org/EventPostponed',
+  }
+
+  const sportsEventJsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: match.homeTeam && match.awayTeam
+      ? `${match.homeTeam} vs ${match.awayTeam}`
+      : match.leagueLabel,
+    description: match.homeTeam && match.awayTeam
+      ? `${match.statusLabel} · ${match.homeTeam} vs ${match.awayTeam}${match.venue ? ` en ${match.venue}` : ''}`
+      : match.statusLabel,
+    url: `${SITE_URL}/partido/${ref}`,
+    inLanguage: 'es-ES',
+    eventStatus: STATUS_MAP[match.status] ?? 'https://schema.org/EventScheduled',
+    organizer: { '@type': 'SportsOrganization', name: match.leagueLabel },
+    ...(match.venue && {
+      location: { '@type': 'Place', name: match.venue },
+    }),
+    ...(match.homeTeam && match.awayTeam && {
+      competitor: [
+        {
+          '@type': 'SportsTeam',
+          name: match.homeTeam,
+          ...(match.homeLogo && { image: match.homeLogo }),
+        },
+        {
+          '@type': 'SportsTeam',
+          name: match.awayTeam,
+          ...(match.awayLogo && { image: match.awayLogo }),
+        },
+      ],
+    }),
+    ...(match.homeScore != null && match.awayScore != null && {
+      homeTeam: { '@type': 'SportsTeam', name: match.homeTeam, score: match.homeScore },
+      awayTeam: { '@type': 'SportsTeam', name: match.awayTeam, score: match.awayScore },
+    }),
+  }
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: match.leagueLabel, item: `${SITE_URL}/calendario` },
+      { '@type': 'ListItem', position: 3, name: sportsEventJsonLd.name as string, item: `${SITE_URL}/partido/${ref}` },
+    ],
+  }
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }} className="flex flex-col">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEventJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <Header />
       <LiveStrip />
       <main className="flex-1">

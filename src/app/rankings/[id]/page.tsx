@@ -183,7 +183,10 @@ export default async function EntryDetailPage(
     name: entry.name,
     description: entry.insight ?? entry.subtitle,
     url: `${SITE_URL}/rankings/${id}`,
-    ...(entry.sport && { sport: entry.sport }),
+    ...(entry.image && { image: entry.image }),
+    ...(entry.country && schemaType === 'Person' && { nationality: { '@type': 'Country', name: entry.country } }),
+    ...(entry.sport && schemaType === 'Person' && { knowsAbout: entry.sport }),
+    ...(entry.sport && schemaType === 'SportsTeam' && { sport: entry.sport }),
     aggregateRating: {
       '@type': 'AggregateRating',
       ratingValue: ds,
@@ -193,13 +196,20 @@ export default async function EntryDetailPage(
     },
   }
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Rankings', item: `${SITE_URL}/rankings` },
+      { '@type': 'ListItem', position: 3, name: entry.name, item: `${SITE_URL}/rankings/${id}` },
+    ],
+  }
+
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
-      <script
-        type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <Header />
       <LiveStrip />
 

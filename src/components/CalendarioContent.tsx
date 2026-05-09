@@ -384,23 +384,19 @@ function SkeletonRow() {
     <div
       className="grid items-center gap-3 px-3 py-2.5 rounded-lg animate-pulse"
       style={{
-        gridTemplateColumns: '92px 1fr auto auto',
+        gridTemplateColumns: '1fr auto auto',
         background: 'rgba(255,255,255,0.025)',
         borderLeft: '3px solid rgba(255,255,255,0.06)',
       }}
     >
-      <div className="flex flex-col gap-1">
-        <div style={{ height: 8, width: 36, background: 'rgba(255,255,255,0.08)', borderRadius: 3 }} />
-        <div style={{ height: 8, width: 60, background: 'rgba(255,255,255,0.05)', borderRadius: 3 }} />
-      </div>
       <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-1.5">
-          <div style={{ width: 16, height: 16, background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
-          <div style={{ height: 10, width: '60%', background: 'rgba(255,255,255,0.07)', borderRadius: 3 }} />
+        <div className="flex items-center gap-2">
+          <div style={{ width: 24, height: 24, background: 'rgba(255,255,255,0.08)', borderRadius: '50%', flexShrink: 0 }} />
+          <div style={{ height: 11, width: '55%', background: 'rgba(255,255,255,0.07)', borderRadius: 3 }} />
         </div>
-        <div className="flex items-center gap-1.5">
-          <div style={{ width: 16, height: 16, background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
-          <div style={{ height: 10, width: '50%', background: 'rgba(255,255,255,0.07)', borderRadius: 3 }} />
+        <div className="flex items-center gap-2">
+          <div style={{ width: 24, height: 24, background: 'rgba(255,255,255,0.08)', borderRadius: '50%', flexShrink: 0 }} />
+          <div style={{ height: 11, width: '45%', background: 'rgba(255,255,255,0.07)', borderRadius: 3 }} />
         </div>
       </div>
       <div className="flex flex-col items-end gap-1">
@@ -453,7 +449,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
     <div
       className={`grid items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:brightness-125 ${flashing ? 'ts-flash' : ''}`}
       style={{
-        gridTemplateColumns: '92px 1fr auto auto',
+        gridTemplateColumns: '1fr auto auto',
         background: isLive ? 'rgba(74,222,128,0.10)' : 'rgba(255,255,255,0.025)',
         borderLeft: `3px solid ${accent}`,
       }}
