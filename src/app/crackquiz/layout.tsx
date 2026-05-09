@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'CrackQuiz — trivia deportiva diaria',
     description: '¿Cuánto sabes de fútbol? Trivia deportiva diaria.',
-    site: '@takasports',
+    site: '@takasportsx',
   },
 }
 

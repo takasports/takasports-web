@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     locale: 'es_ES',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Calendario deportivo — partidos hoy | TakaSports', site: '@takasports' },
+  twitter: { card: 'summary_large_image', title: 'Calendario deportivo — partidos hoy | TakaSports', site: '@takasportsx' },
 }
 
 export default function CalendarioLayout({ children }: { children: React.ReactNode }) {

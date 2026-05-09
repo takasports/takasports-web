@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Sopa de Cracks — sopa de letras futbolera | TakaSports',
     description: 'Sopa de letras futbolera semanal.',
-    site: '@takasports',
+    site: '@takasportsx',
   },
 }
 

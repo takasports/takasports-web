@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'TakaGrid — el grid de fútbol diario | TakaSports',
     description: 'El reto diario de fútbol: conecta jugadores con sus clubes.',
-    site: '@takasports',
+    site: '@takasportsx',
   },
 }
 

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     locale: 'es_ES',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Estadísticas deportivas — TakaSports', site: '@takasports' },
+  twitter: { card: 'summary_large_image', title: 'Estadísticas deportivas — TakaSports', site: '@takasportsx' },
 }
 
 const jsonLd = {

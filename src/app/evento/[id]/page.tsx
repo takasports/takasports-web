@@ -114,7 +114,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     description,
     alternates: { canonical: `${SITE_URL}/evento/${id}` },
     openGraph: { title, description, type: 'website', url: `${SITE_URL}/evento/${id}`, siteName: 'TakaSports', locale: 'es_ES' },
-    twitter:   { card: 'summary_large_image', title, description, site: '@takasports', creator: '@takasports' },
+    twitter:   { card: 'summary_large_image', title, description, site: '@takasportsx', creator: '@takasportsx' },
   }
 }
 

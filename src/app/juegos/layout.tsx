@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     locale: 'es_ES',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Juegos deportivos — quiniela, trivia y fantasy | TakaSports', site: '@takasports' },
+  twitter: { card: 'summary_large_image', title: 'Juegos deportivos — quiniela, trivia y fantasy | TakaSports', site: '@takasportsx' },
 }
 
 const jsonLd = {

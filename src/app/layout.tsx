@@ -78,8 +78,8 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'TakaSports — Noticias deportivas en tiempo real',
     description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario y juegos.',
-    site: '@takasports',
-    creator: '@takasports',
+    site: '@takasportsx',
+    creator: '@takasportsx',
   },
 }
 
@@ -117,7 +117,7 @@ export default function RootLayout({
                 name: 'TakaSports',
                 url: SITE_URL,
                 logo: { '@type': 'ImageObject', url: LOGO_URL, width: 512, height: 512 },
-                sameAs: ['https://www.instagram.com/takasportsmedia', 'https://twitter.com/takasports'],
+                sameAs: ['https://www.instagram.com/takasportsmedia', 'https://x.com/takasportsx'],
               },
               {
                 '@type': 'WebSite',

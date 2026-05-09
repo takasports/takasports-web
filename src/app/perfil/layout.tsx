@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     locale: 'es_ES',
     type: 'website',
   },
-  twitter: { card: 'summary', title: 'Mi Perfil | TakaSports', site: '@takasports' },
+  twitter: { card: 'summary', title: 'Mi Perfil | TakaSports', site: '@takasportsx' },
 }
 
 export default function PerfilLayout({ children }: { children: React.ReactNode }) {

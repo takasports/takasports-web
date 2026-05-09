@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     locale: 'es_ES',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Rankings deportivos — TakaSports', site: '@takasports' },
+  twitter: { card: 'summary_large_image', title: 'Rankings deportivos — TakaSports', site: '@takasportsx' },
 }
 
 export default function RankingsLayout({ children }: { children: React.ReactNode }) {

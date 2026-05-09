@@ -128,7 +128,7 @@ export async function generateMetadata(
     description,
     alternates: { canonical: `${SITE_URL}${canonicalPath}` },
     openGraph: { title, description, type: 'website', url: `${SITE_URL}${canonicalPath}`, siteName: 'TakaSports', locale: 'es_ES' },
-    twitter: { card: 'summary_large_image', title, description, site: '@takasports' },
+    twitter: { card: 'summary_large_image', title, description, site: '@takasportsx' },
   }
 }
 

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Mi Once — arma tu once ideal | TakaSports',
     description: 'Alinea tu once ideal: 4 formaciones, 400+ jugadores.',
-    site: '@takasports',
+    site: '@takasportsx',
   },
 }
 

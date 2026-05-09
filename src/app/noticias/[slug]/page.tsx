@@ -111,8 +111,8 @@ export async function generateMetadata({
       title: article.title,
       description: article.short_summary ?? article.subtitle,
       images: imgUrl ? [imgUrl] : [],
-      site: '@takasports',
-      creator: '@takasports',
+      site: '@takasportsx',
+      creator: '@takasportsx',
     },
   }
 }

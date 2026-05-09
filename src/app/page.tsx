@@ -31,8 +31,8 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'TakaSports — Noticias deportivas en tiempo real',
     description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario y juegos.',
-    site: '@takasports',
-    creator: '@takasports',
+    site: '@takasportsx',
+    creator: '@takasportsx',
   },
 }
 
