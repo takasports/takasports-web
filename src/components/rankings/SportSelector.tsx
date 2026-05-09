@@ -5,7 +5,7 @@ import { getSportStyle } from '@/lib/sports'
 const SPORT_OPTIONS = [
   { slug: '',           label: 'Todos',     emoji: '🏅' },
   { slug: 'futbol',     label: 'Fútbol',    emoji: '⚽' },
-  { slug: 'baloncesto', label: 'NBA',       emoji: '🏀' },
+  { slug: 'baloncesto', label: 'Baloncesto', emoji: '🏀' },
   { slug: 'formula1',   label: 'F1',        emoji: '🏎️' },
   { slug: 'tenis',      label: 'Tenis',     emoji: '🎾' },
   { slug: 'ufc',        label: 'UFC',       emoji: '🥊' },

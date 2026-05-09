@@ -264,7 +264,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
 
 // ── Client-side upcoming refresh ───────────────────────────────────
 const SPORT_LABELS: Record<string, string> = {
-  soccer: 'Fútbol', basketball: 'NBA', racing: 'F1', mma: 'UFC', tennis: 'Tenis',
+  soccer: 'Fútbol', basketball: 'Baloncesto', racing: 'F1', mma: 'UFC', tennis: 'Tenis',
 }
 const SPORT_ACCENTS: Record<string, string> = {
   soccer: '#22c55e', basketball: '#f59e0b', racing: '#ef4444', mma: '#f97316', tennis: '#d97706',

@@ -80,7 +80,7 @@ const SUB_ENTITY_TABS: Record<string, { id: string; label: string }[]> = {
 const SPORT_FILTERS_CONTENIDO = [
   { label: 'Todos',  slug: '' },
   { label: 'Fútbol', slug: 'futbol' },
-  { label: 'NBA',    slug: 'baloncesto' },
+  { label: 'Baloncesto', slug: 'baloncesto' },
   { label: 'F1',     slug: 'formula1' },
   { label: 'Tenis',  slug: 'tenis' },
   { label: 'UFC',    slug: 'ufc' },

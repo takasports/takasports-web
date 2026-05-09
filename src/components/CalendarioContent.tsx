@@ -1249,7 +1249,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
 
   const orphanFixtures = useMemo(() => {
     const LIVE_TO_SPORT: Record<string, string> = {
-      soccer: 'Fútbol', basketball: 'NBA', mma: 'UFC',
+      soccer: 'Fútbol', basketball: 'Baloncesto', mma: 'UFC',
       racing: 'F1', tennis: 'Tenis', padel: 'Pádel',
     }
     return liveFixtures.filter(f => {

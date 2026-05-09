@@ -24,7 +24,7 @@ interface Props {
 
 const SPORT_DESCRIPTIONS: Record<string, string> = {
   futbol:     'Noticias, fichajes, resultados de LaLiga, Premier, Champions y más. Índice Taka: los mejores del mundo en tiempo real.',
-  baloncesto: 'Todo sobre la NBA: traspasos, resultados, estadísticas y el ranking de los mejores jugadores según el Índice Taka.',
+  baloncesto: 'NBA, Euroliga, ACB y más: traspasos, resultados, estadísticas y el ranking de los mejores jugadores según el Índice Taka.',
   formula1:   'Resultados de cada GP, clasificaciones, noticias de los equipos y el análisis Taka de los pilotos del momento.',
   tenis:      'ATP, WTA, Grand Slams y Ryder Cup. Resultados, rankings y análisis de los tenistas más influyentes.',
   ufc:        'Carteleras UFC y MMA: resultados de peleas, noticias de fichajes y el ranking Taka de los luchadores del momento.',
@@ -97,7 +97,7 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
   const dynamicFaqs = top5.length > 0
     ? [
         {
-          q: `¿Quién es el mejor ${label === 'NBA' ? 'jugador de baloncesto' : label === 'F1' ? 'piloto de F1' : `jugador de ${label.toLowerCase()}`} del mundo ahora mismo?`,
+          q: `¿Quién es el mejor ${label === 'Baloncesto' || label === 'NBA' ? 'jugador de baloncesto' : label === 'F1' ? 'piloto de F1' : `jugador de ${label.toLowerCase()}`} del mundo ahora mismo?`,
           a: `Según el Índice Taka, ${top5[0].name} es actualmente el número 1 con una puntuación de ${top5[0].score.toFixed(1)}/100. ${top5[0].trendReason ?? `Ocupa el puesto #1 en el ranking global de ${label}.`}`,
         },
         ...baseFaqs,

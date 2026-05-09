@@ -24,7 +24,7 @@ const REMINDERS_KEY = 'ts_reminders'
 const PROFILE_NAME_KEY = 'ts_profile_name'
 
 const SPORT_ICONS: Record<string, string> = {
-  Fútbol: '⚽', NBA: '🏀', F1: '🏎️', Tenis: '🎾', UFC: '🥊',
+  Fútbol: '⚽', NBA: '🏀', Baloncesto: '🏀', F1: '🏎️', Tenis: '🎾', UFC: '🥊',
 }
 
 const PICK_LABEL: Record<string, string> = { '1': 'Local', X: 'Empate', '2': 'Visitante' }

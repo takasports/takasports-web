@@ -977,7 +977,7 @@ const SPORTS: SportConfig[] = [
     ],
   },
   {
-    id: 'baloncesto', label: 'NBA', emoji: '🏀', accent: '#f59e0b',
+    id: 'baloncesto', label: 'Baloncesto', emoji: '🏀', accent: '#f59e0b',
     sections: [
       {
         id: 'jugadores', label: 'Jugadores', icon: '👤',

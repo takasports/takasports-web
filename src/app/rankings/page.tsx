@@ -15,7 +15,7 @@ import {
 
 // ── Etiquetas humanas para metadatos ───────────────────────────────
 const SPORT_LABELS: Record<string, string> = {
-  futbol: 'Fútbol', baloncesto: 'NBA', formula1: 'F1', tenis: 'Tenis',
+  futbol: 'Fútbol', baloncesto: 'Baloncesto', formula1: 'F1', tenis: 'Tenis',
   ufc: 'UFC', wwe: 'WWE', contenido: 'Contenido',
 }
 const TAB_LABELS: Record<string, string> = {

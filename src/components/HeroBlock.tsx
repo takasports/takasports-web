@@ -42,7 +42,7 @@ function CompactStripItem({ art }: { art: Article }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 20,
         }}>
-          {label === 'Fútbol' ? '⚽' : label === 'NBA' ? '🏀' : label === 'F1' ? '🏎️' : label === 'Tenis' ? '🎾' : label === 'UFC' ? '🥊' : label === 'WWE' ? '🎭' : '🏆'}
+          {label === 'Fútbol' ? '⚽' : label === 'NBA' || label === 'Baloncesto' ? '🏀' : label === 'F1' ? '🏎️' : label === 'Tenis' ? '🎾' : label === 'UFC' ? '🥊' : label === 'WWE' ? '🎭' : '🏆'}
         </div>
       )}
       <div className="min-w-0 flex-1">

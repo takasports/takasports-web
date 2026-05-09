@@ -87,7 +87,7 @@ export default function Image() {
         <div style={{ display: 'flex', gap: 12, marginTop: 44, zIndex: 1 }}>
           {[
             { emoji: '⚽', label: 'Fútbol', color: '#22c55e' },
-            { emoji: '🏀', label: 'NBA', color: '#f97316' },
+            { emoji: '🏀', label: 'Baloncesto', color: '#f97316' },
             { emoji: '🏎️', label: 'F1', color: '#ef4444' },
             { emoji: '🥊', label: 'UFC', color: '#7C3AED' },
             { emoji: '🎾', label: 'Tenis', color: '#eab308' },

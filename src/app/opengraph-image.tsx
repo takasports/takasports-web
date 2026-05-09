@@ -89,7 +89,7 @@ export default function Image() {
             zIndex: 1,
           }}
         >
-          Fútbol · NBA · F1 · UFC · Tenis · Rugby
+          Fútbol · Baloncesto · F1 · UFC · Tenis · Rugby
         </div>
 
         {/* Sport pills row */}
@@ -103,7 +103,7 @@ export default function Image() {
         >
           {[
             { emoji: '⚽', label: 'LaLiga', color: '#22c55e' },
-            { emoji: '🏀', label: 'NBA', color: '#f97316' },
+            { emoji: '🏀', label: 'Baloncesto', color: '#f97316' },
             { emoji: '🏎️', label: 'F1', color: '#ef4444' },
             { emoji: '🥊', label: 'UFC', color: '#7C3AED' },
             { emoji: '🎾', label: 'Tenis', color: '#eab308' },

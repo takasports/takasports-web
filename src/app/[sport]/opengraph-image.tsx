@@ -7,7 +7,7 @@ export const contentType = 'image/png'
 
 const SPORT_CONFIG: Record<string, { label: string; emoji: string; color: string }> = {
   futbol:     { label: 'FÚTBOL',  emoji: '⚽', color: '#22c55e' },
-  baloncesto: { label: 'NBA',     emoji: '🏀', color: '#f97316' },
+  baloncesto: { label: 'BALONCESTO', emoji: '🏀', color: '#f97316' },
   formula1:   { label: 'F1',      emoji: '🏎️', color: '#ef4444' },
   ufc:        { label: 'UFC',     emoji: '🥊', color: '#7C3AED' },
   tenis:      { label: 'TENIS',   emoji: '🎾', color: '#eab308' },

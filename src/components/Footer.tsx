@@ -4,7 +4,7 @@ import { LogoFull } from './Logo'
 
 const SPORTS_LINKS = [
   { label: 'Fútbol',     href: '/futbol' },
-  { label: 'NBA',        href: '/baloncesto' },
+  { label: 'Baloncesto', href: '/baloncesto' },
   { label: 'F1',         href: '/formula1' },
   { label: 'UFC',        href: '/ufc' },
   { label: 'Tenis',      href: '/tenis' },

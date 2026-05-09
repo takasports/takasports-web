@@ -16,7 +16,7 @@ import type { SportEvent } from '@/lib/types'
 const HOME_PAGE_SIZE = 8
 
 // Sport priority for the home event preview: guarantees diversity
-const EVENT_SPORT_PRIORITY = ['Fútbol', 'NBA', 'F1', 'Tenis', 'UFC']
+const EVENT_SPORT_PRIORITY = ['Fútbol', 'Baloncesto', 'F1', 'Tenis', 'UFC']
 
 function pickTopEvents(events: SportEvent[], n = 4): SportEvent[] {
   // Group by sport keeping date order within each group
