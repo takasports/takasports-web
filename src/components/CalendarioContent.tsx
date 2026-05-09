@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
 import { getCompAccent, getLeagueScore, SPORT_EMOJI, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
+import { isSplitBroadcast } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
 import { getStoredTZ, setStoredTZ, SOURCE_TZ } from '@/lib/timezone'
 import TimezoneSelector from '@/components/TimezoneSelector'
@@ -369,11 +370,20 @@ function FavoriteHeart({ active, onClick, size = 14 }: {
 // ─── Broadcast chip (where to watch) ──────────────────────────────────────
 function BroadcastChip({ broadcast }: { broadcast?: string }) {
   if (!broadcast) return null
+  const split = isSplitBroadcast(broadcast)
   return (
-    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wide"
-      style={{ background: 'rgba(99,102,241,0.10)', color: '#A5B4FC', border: '1px solid rgba(99,102,241,0.20)', fontFamily: 'var(--font-sport)' }}>
+    <span
+      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wide"
+      style={{
+        background: split ? 'rgba(251,191,36,0.08)' : 'rgba(99,102,241,0.10)',
+        color:      split ? '#D4A017'               : '#A5B4FC',
+        border:     split ? '1px solid rgba(251,191,36,0.22)' : '1px solid rgba(99,102,241,0.20)',
+        fontFamily: 'var(--font-sport)',
+      }}
+      title={split ? 'Los derechos de emisión están repartidos entre varios canales' : undefined}
+    >
       <span>📺</span>
-      <span className="truncate max-w-[80px]">{broadcast}</span>
+      <span className="truncate max-w-[110px]">{broadcast}</span>
     </span>
   )
 }
@@ -471,7 +481,11 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           </div>
         )}
         {event.broadcast && (
-          <span className="text-[9px] flex items-center gap-1 ml-8 mt-0.5" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>
+          <span
+            className="text-[9px] flex items-center gap-1 ml-8 mt-0.5"
+            style={{ color: isSplitBroadcast(event.broadcast) ? '#A07C10' : '#4A4A6A', fontFamily: 'var(--font-sport)' }}
+            title={isSplitBroadcast(event.broadcast) ? 'Derechos repartidos — consulta el canal exacto en LaLiga.com' : undefined}
+          >
             📺 {event.broadcast}
           </span>
         )}

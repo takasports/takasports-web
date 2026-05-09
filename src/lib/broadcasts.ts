@@ -1,79 +1,130 @@
 /**
- * Derechos de emisión en España por competición.
- * La API de ESPN devuelve canales del mercado US (NBC, ESPN+, Peacock, etc.)
- * que son irrelevantes para el usuario español. Este mapa los sobreescribe.
+ * Derechos de emisión en España — temporada 2024-25.
  *
- * Fuente: temporada 2024-25
+ * Criterio:
+ *  · Canal único   → derechos exclusivos para esa competición en España.
+ *  · "A / B"       → derechos compartidos; no podemos saber a qué canal
+ *                    corresponde un partido concreto sin una API de pago.
+ *
+ * La API de ESPN devuelve canales del mercado US (ESPN+, NBC, Peacock…),
+ * irrelevantes para usuarios españoles. Este mapa los sustituye.
  */
 
 const SPAIN_BROADCAST: Record<string, string> = {
-  // ── Fútbol – ligas domésticas ───────────────────────────────────────────
-  LaLiga:             'DAZN',
-  'La Liga':          'DAZN',
-  Premier:            'DAZN',
-  'Premier League':   'DAZN',
-  'Serie A':          'DAZN',
-  Bundesliga:         'DAZN',
-  'Ligue 1':          'DAZN',
-  'Liga Portugal':    'DAZN',
-  Eredivisie:         'DAZN',
-  'Copa del Rey':     'DAZN',
-  Supercopa:          'DAZN',
-  'Segunda División': 'DAZN',
-  'La Liga 2':        'DAZN',
 
-  // ── Fútbol – UEFA ───────────────────────────────────────────────────────
+  // ── Fútbol · Ligas nacionales ────────────────────────────────────────────
+  //   LaLiga: DAZN (~4-5 partidos/semana) + M+ LaLiga (~1-2).  No es posible
+  //   determinar canal exacto sin consultar el cuadro semanal de LaLiga.
+  LaLiga:              'DAZN / Movistar+',
+  'La Liga':           'DAZN / Movistar+',
+  'LaLiga EA Sports':  'DAZN / Movistar+',
+  'Segunda División':  'DAZN',
+  'La Liga 2':         'DAZN',
+
+  //   Premier, Serie A, Bundesliga, Ligue 1 → DAZN exclusivo en España
+  Premier:             'DAZN',
+  'Premier League':    'DAZN',
+  'Serie A':           'DAZN',
+  Bundesliga:          'DAZN',
+  'Ligue 1':           'DAZN',
+  'Liga Portugal':     'DAZN',
+  Eredivisie:          'DAZN',
+  'Primeira Liga':     'DAZN',
+  'Scottish Prem':     'DAZN',
+
+  //   Copa del Rey: DAZN (mayoría) + RTVE (algunos partidos en abierto)
+  'Copa del Rey':      'DAZN / TVE',
+  //   Supercopa: RTVE en abierto
+  Supercopa:           'RTVE',
+  'Supercopa de España': 'RTVE',
+
+  // ── Fútbol · UEFA ────────────────────────────────────────────────────────
+  //   Champions, Europa y Conference → Movistar+ exclusivo (acuerdo 2024-27)
   'Champions League':       'Movistar+',
   'UEFA Champions League':  'Movistar+',
+  'UCL':                    'Movistar+',
   'Europa League':          'Movistar+',
   'UEFA Europa League':     'Movistar+',
-  'Conference League':      'DAZN',
-  'UEFA Conference League': 'DAZN',
+  'Conference League':      'Movistar+',
+  'UEFA Conference League': 'Movistar+',
+  'UEFA Nations League':    'DAZN',
+  'Nations League':         'DAZN',
 
-  // ── Selecciones ─────────────────────────────────────────────────────────
-  'Nations League':   'DAZN',
-  Eliminatorias:      'RTVE',
-  'Eurocopa':         'RTVE',
+  // ── Fútbol · Selecciones ─────────────────────────────────────────────────
+  Eliminatorias:       'RTVE',
+  'World Cup':         'RTVE',
+  'Copa del Mundo':    'RTVE',
+  Eurocopa:            'RTVE',
+  'Euro 2024':         'RTVE',
 
-  // ── Baloncesto ──────────────────────────────────────────────────────────
+  // ── Baloncesto ───────────────────────────────────────────────────────────
   NBA:             'Movistar+',
   'NBA Playoffs':  'Movistar+',
   'NBA Finals':    'Movistar+',
+  'In-Season Tournament': 'Movistar+',
   EuroLeague:      'DAZN',
+  'Eurocup':       'DAZN',
   ACB:             'Movistar+',
+  'Liga ACB':      'Movistar+',
 
-  // ── Tenis ───────────────────────────────────────────────────────────────
+  // ── Tenis ────────────────────────────────────────────────────────────────
+  //   Grand Slams → Eurosport (retransmisiones principales en España)
   'Roland Garros':    'Eurosport',
   'French Open':      'Eurosport',
   Wimbledon:          'Eurosport',
   'Australian Open':  'Eurosport',
   'US Open':          'Eurosport',
+  //   Masters 1000 y resto del circuito → Movistar+ (derechos ATP/WTA globales)
   ATP:                'Movistar+',
   WTA:                'Movistar+',
+  'ATP Tour':         'Movistar+',
+  'WTA Tour':         'Movistar+',
   'Davis Cup':        'DAZN',
+  'Copa Davis':       'DAZN',
+  'Billie Jean King': 'DAZN',
 
-  // ── Fórmula 1 ───────────────────────────────────────────────────────────
-  'Fórmula 1': 'DAZN F1',
-  'Formula 1': 'DAZN F1',
-  F1:          'DAZN F1',
-  MotoGP:      'DAZN',
+  // ── Motor ────────────────────────────────────────────────────────────────
+  'Fórmula 1':  'DAZN F1',
+  'Formula 1':  'DAZN F1',
+  F1:           'DAZN F1',
+  MotoGP:       'DAZN',
+  'Moto2':      'DAZN',
+  'Moto3':      'DAZN',
+  WSBK:         'DAZN',
+  WRC:          'DAZN',
 
-  // ── UFC / Artes marciales ────────────────────────────────────────────────
-  UFC:          'DAZN',
+  // ── UFC / Combate ────────────────────────────────────────────────────────
+  UFC:               'DAZN',
   'UFC Fight Night': 'DAZN',
-  'Boxeo':      'DAZN',
-  WWE:          'DAZN',
+  Boxeo:             'DAZN',
+  WWE:               'DAZN',
+  'WWE Raw':         'DAZN',
+  'WWE SmackDown':   'DAZN',
 
-  // ── Pádel ───────────────────────────────────────────────────────────────
+  // ── Pádel ────────────────────────────────────────────────────────────────
   'Premier Padel':    'Movistar+',
   'World Padel Tour': 'DAZN',
   WPT:                'DAZN',
+
+  // ── Rugby ────────────────────────────────────────────────────────────────
+  'Six Nations':      'DAZN',
+  'Top 14':           'DAZN',
+  'Premiership Rugby': 'DAZN',
+  'United Rugby':     'DAZN',
+  'Champions Cup':    'DAZN',
 }
 
+// ─── API pública ──────────────────────────────────────────────────────────
+
 /**
- * Devuelve el canal de emisión en España para una competición dada.
- * La búsqueda es case-insensitive y también intenta match parcial
- * (ej. "Roland Garros Masters" → "Eurosport").
+ * Devuelve el canal (o canales) de emisión en España para una competición.
+ *
+ * Estrategia de búsqueda:
+ *  1. Exacto                       → "LaLiga" → "DAZN / Movistar+"
+ *  2. Case-insensitive exacto      → "laliga" → idem
+ *  3. La clave está contenida en comp (substring)
+ *     → "Roland Garros Masters 1000" → "Eurosport"
+ *  4. Fallback por deporte
  */
 export function getSpanishBroadcast(comp: string, sport?: string): string | undefined {
   // 1. Exact match
@@ -85,24 +136,32 @@ export function getSpanishBroadcast(comp: string, sport?: string): string | unde
     if (key.toLowerCase() === lower) return val
   }
 
-  // 3. Substring: comp contains key (e.g. "Roland Garros Masters 1000")
+  // 3. Key is substring of comp name
   for (const [key, val] of Object.entries(SPAIN_BROADCAST)) {
     if (lower.includes(key.toLowerCase())) return val
   }
 
-  // 4. Sport fallback
-  if (sport) {
-    const sportFallbacks: Record<string, string> = {
-      'Fútbol':     'DAZN',
-      'NBA':        'Movistar+',
-      'Tenis':      'Eurosport',
-      'F1':         'DAZN F1',
-      'UFC':        'DAZN',
-      'Rugby':      'DAZN',
-      'Baloncesto': 'DAZN',
-    }
-    if (sportFallbacks[sport]) return sportFallbacks[sport]
+  // 4. Sport-level fallback
+  const sportFallbacks: Record<string, string> = {
+    Fútbol:      'DAZN',
+    NBA:         'Movistar+',
+    Tenis:       'Eurosport',
+    F1:          'DAZN F1',
+    UFC:         'DAZN',
+    Rugby:       'DAZN',
+    Baloncesto:  'DAZN',
+    MotoGP:      'DAZN',
+    Pádel:       'DAZN',
   }
+  if (sport && sportFallbacks[sport]) return sportFallbacks[sport]
 
   return undefined
+}
+
+/**
+ * Indica si el canal es un reparto de derechos entre varios operadores,
+ * en cuyo caso no podemos garantizar cuál emite el partido concreto.
+ */
+export function isSplitBroadcast(broadcast: string): boolean {
+  return broadcast.includes(' / ')
 }
