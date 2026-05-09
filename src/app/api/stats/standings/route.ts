@@ -57,6 +57,9 @@ export interface StatsStandingsResponse {
   worldCupScorers: StandingRow[]
   worldCupKnockout: StandingRow[]
   nbaPlayoffSeries: StandingRow[]
+  uclFixtures: StandingRow[]
+  uelFixtures: StandingRow[]
+  ueclFixtures: StandingRow[]
   meta: Record<string, BlockMeta>
   updatedAt: string
 }
@@ -745,6 +748,70 @@ async function fetchWorldCupKnockout(): Promise<StandingRow[]> {
   }
 }
 
+// ── European cup fixtures via ESPN scoreboard (fallback when no standings) ────
+// Used during knockout phase when standings endpoint returns empty rows.
+
+async function fetchEuropeanCupFixtures(slug: string): Promise<StandingRow[]> {
+  try {
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
+      { next: { revalidate: 300 } },
+    )
+    if (!res.ok) return []
+    const json = await res.json()
+    const events = (json.events as Record<string, unknown>[]) ?? []
+    const rows: StandingRow[] = []
+
+    for (const event of events) {
+      const comp = ((event.competitions as Record<string, unknown>[])?.[0]) as Record<string, unknown> | undefined
+      if (!comp) continue
+      const notes = (comp.notes as Record<string, unknown>[]) ?? []
+      const roundNote = ((notes[0]?.headline ?? notes[0]?.text) as string) ?? ''
+
+      const competitors = (comp.competitors as Record<string, unknown>[]) ?? []
+      const home = competitors.find(c => (c as Record<string, unknown>).homeAway === 'home') as Record<string, unknown> | undefined
+      const away = competitors.find(c => (c as Record<string, unknown>).homeAway === 'away') as Record<string, unknown> | undefined
+      if (!home || !away) continue
+
+      const homeAbbr = ((home.team as Record<string, unknown>)?.abbreviation as string) ?? '?'
+      const awayAbbr = ((away.team as Record<string, unknown>)?.abbreviation as string) ?? '?'
+      const homeScore = (home.score as string) ?? ''
+      const awayScore = (away.score as string) ?? ''
+
+      const status = comp.status as Record<string, unknown>
+      const state = ((status?.type as Record<string, unknown>)?.state as string) ?? 'pre'
+
+      let matchup: string, statusStr: string, estado: string
+      if (state === 'in') {
+        matchup = `${awayAbbr} ${awayScore}–${homeScore} ${homeAbbr}`
+        statusStr = `En juego · ${(status?.displayClock as string) ?? ''}`
+        estado = 'En juego'
+      } else if (state === 'post') {
+        matchup = `${awayAbbr} ${awayScore}–${homeScore} ${homeAbbr}`
+        statusStr = 'Final'
+        estado = 'Final'
+      } else {
+        matchup = `${awayAbbr} vs ${homeAbbr}`
+        const d = (event.date as string) ?? ''
+        statusStr = d ? new Date(d).toLocaleString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }) : 'Por confirmar'
+        estado = 'Programado'
+      }
+
+      rows.push({
+        rank: rows.length + 1, name: matchup,
+        abbr: roundNote.slice(0, 14),
+        value: state !== 'pre' ? `${awayScore}-${homeScore}` : 'vs',
+        sub: statusStr, trend: 'flat' as const,
+        extra: { Ronda: roundNote || (slug.split('/').pop() ?? 'Europea'), Estado: estado },
+      })
+    }
+    return rows.slice(0, 16)
+  } catch (err) {
+    console.error(`[standings] European cup fixtures failed for ${slug}:`, err)
+    return []
+  }
+}
+
 // ── NBA Playoff Series via ESPN scoreboard ────────────────────────────────────
 
 async function fetchNBAPlayoffSeries(): Promise<StandingRow[]> {
@@ -837,7 +904,7 @@ async function fetchWorldCupScorers(): Promise<StandingRow[]> {
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
-  futbol: ['football'],
+  futbol: ['football', 'uclFixtures', 'uelFixtures', 'ueclFixtures'],
   football: ['football'],
   nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaPlayoffSeries'],
   f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps'],
@@ -851,7 +918,7 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
-  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga, nationsLeague, fedExCup, coaches, worldCup, nbaPlayoffSeries, worldCupScorers, worldCupKnockout] = await Promise.all([
+  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga, nationsLeague, fedExCup, coaches, worldCup, nbaPlayoffSeries, worldCupScorers, worldCupKnockout, uclFixtures, uelFixtures, ueclFixtures] = await Promise.all([
     Promise.allSettled(FOOTBALL_LEAGUES.map(l => fetchFootball(l.slug, l.id, l.label))),
     fetchF1All(),
     fetchNBA(),
@@ -868,6 +935,9 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchNBAPlayoffSeries(),
     fetchWorldCupScorers(),
     fetchWorldCupKnockout(),
+    fetchEuropeanCupFixtures('soccer/uefa.champions'),
+    fetchEuropeanCupFixtures('soccer/uefa.europa'),
+    fetchEuropeanCupFixtures('soccer/uefa.conference'),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
 
@@ -922,6 +992,15 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     nbaPlayoffSeries: nbaPlayoffSeries.length
       ? nbaPlayoffSeries.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · NBA Playoffs') : ({ status: 'stale', source: 'ESPN · NBA Playoffs', fetchedAt: now, asOf: 'Juegos del día' } satisfies BlockMeta)
       : unavail('ESPN'),
+    uclFixtures: uclFixtures.length
+      ? uclFixtures.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · UEFA Champions League') : ({ status: 'stale', source: 'ESPN · UCL', fetchedAt: now, asOf: 'Fase KO' } satisfies BlockMeta)
+      : unavail('ESPN'),
+    uelFixtures: uelFixtures.length
+      ? uelFixtures.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · UEFA Europa League') : ({ status: 'stale', source: 'ESPN · UEL', fetchedAt: now, asOf: 'Fase KO' } satisfies BlockMeta)
+      : unavail('ESPN'),
+    ueclFixtures: ueclFixtures.length
+      ? ueclFixtures.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · UEFA Conference League') : ({ status: 'stale', source: 'ESPN · UECL', fetchedAt: now, asOf: 'Fase KO' } satisfies BlockMeta)
+      : unavail('ESPN'),
   }
 
   return {
@@ -954,6 +1033,9 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     worldCupScorers,
     worldCupKnockout,
     nbaPlayoffSeries,
+    uclFixtures,
+    uelFixtures,
+    ueclFixtures,
     meta,
     updatedAt:           now,
   }

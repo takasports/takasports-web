@@ -52,6 +52,7 @@ interface StatBlock {
   placeholder?: boolean   // si true, muestra estado "próximamente"
   positions?: string[]
   league?: string
+  cardType?: string       // 'fixtures' → render with PlayoffSeriesCard
 }
 
 interface MetricGroup {
@@ -1742,18 +1743,17 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
 
   if (visibleBlocks.length === 0) return null
 
-  // Apply live player data to group blocks
+  // Apply live player data to group blocks, preserving isLive per block
   const liveVisibleBlocks = visibleBlocks.map(b => {
     if (livePlayerData && LIVE_PLAYER_BLOCK_IDS.has(b.id)) {
-      const { block: updated } = applyLivePlayerToBlock(b, livePlayerData, leagueFilter)
-      return updated
+      return applyLivePlayerToBlock(b, livePlayerData, leagueFilter)
     }
-    return b
+    return { block: b, isLive: false }
   })
 
-  const dataCount  = liveVisibleBlocks.filter(b => !b.placeholder).length
-  const soonCount  = liveVisibleBlocks.filter(b => b.placeholder).length
-  const liveCount  = livePlayerData ? liveVisibleBlocks.filter(b => LIVE_PLAYER_BLOCK_IDS.has(b.id) && b.rows.length > 0).length : 0
+  const dataCount = liveVisibleBlocks.filter(({ block: b }) => !b.placeholder).length
+  const soonCount = liveVisibleBlocks.filter(({ block: b }) => b.placeholder).length
+  const liveCount = liveVisibleBlocks.filter(({ isLive }) => isLive).length
 
   return (
     <div className="mb-3">
@@ -1800,7 +1800,7 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
 
       {expanded && (
         <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {liveVisibleBlocks.map(block => (
+          {liveVisibleBlocks.map(({ block, isLive }) => (
             <StatBlockCard
               key={block.id}
               block={block}
@@ -1808,8 +1808,8 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
               expanded={!!expandedBlocks[block.id]}
               onToggle={() => onToggleBlock(block.id)}
               leagueFilter={leagueFilter}
-              isLive={!!livePlayerData && LIVE_PLAYER_BLOCK_IDS.has(block.id) && block.rows.length > 0}
-              meta={liveMeta?.[BLOCK_TO_META_KEY[block.id]]}
+              isLive={isLive}
+              meta={getBlockMeta(block.id, liveMeta)}
             />
           ))}
         </div>
@@ -1875,6 +1875,9 @@ interface LiveStandingsData {
   worldCupScorers?: LiveStandingRow[]
   worldCupKnockout?: LiveStandingRow[]
   nbaPlayoffSeries?: LiveStandingRow[]
+  uclFixtures?: LiveStandingRow[]
+  uelFixtures?: LiveStandingRow[]
+  ueclFixtures?: LiveStandingRow[]
   meta?: Record<string, BlockMeta>
   updatedAt?: string
 }
@@ -1903,6 +1906,33 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'wc-scorers':  'worldCupScorers',
   'wc-knockout': 'worldCupKnockout',
   'nba-playoffs': 'nbaPlayoffSeries',
+}
+
+// Blocks with API-Sports 2024 data (free tier): show as historical, not live
+const HISTORICAL_PLAYER_BLOCK_IDS = new Set(['tarjetas-amarillas', 'tarjetas-rojas', 'tiros-puerta', 'goles-90'])
+
+// Fully static/estimated blocks with no live API source
+const STATIC_STALE_BLOCK_IDS = new Set([
+  'xg-ranking', 'toques-area', 'regates', 'contribucion-90',
+  'pases-clave', 'precision-pases', 'progresion', 'presiones', 'duelos-centrocampistas',
+  'defensores', 'recuperaciones', 'duelos-aereos', 'intercepciones', 'despejes',
+  'pases-progresivos-def', 'bloqueos',
+  'porteria', 'porcentaje-paradas', 'goles-encajados', 'porteros-nota',
+  'psxg-ga', 'sweeper', 'distribucion-portero',
+  'minutos', 'partidos-titular',
+  'promesas-nota', 'promesas-goles',
+  'goleadores-selecciones', 'dt-trofeos',
+])
+
+const STALE_META: BlockMeta    = { status: 'historical', source: 'Estimado',    fetchedAt: '', asOf: 'Temp. 24/25' }
+const HIST_PLAYER_META: BlockMeta = { status: 'historical', source: 'API-Sports', fetchedAt: '', asOf: 'Temp. 24/25' }
+
+function getBlockMeta(blockId: string, liveMeta?: Record<string, BlockMeta>): BlockMeta | undefined {
+  const key = BLOCK_TO_META_KEY[blockId]
+  if (key && liveMeta?.[key]) return liveMeta[key]
+  if (HISTORICAL_PLAYER_BLOCK_IDS.has(blockId)) return HIST_PLAYER_META
+  if (STATIC_STALE_BLOCK_IDS.has(blockId)) return STALE_META
+  return undefined
 }
 
 // ── Player stats types (from /api/stats/players) ──────────────────
@@ -2069,19 +2099,17 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   const POLL_MS = 5 * 60_000
 
   const refreshOnceRef = useRef<() => void>(() => {})
+  const hasLoadedPlayersRef = useRef(false)
 
+  // Main polling — standings only (always active)
   useEffect(() => {
     let cancelled = false
-    const fetchData = async () => {
+    const fetchStandings = async () => {
       setRefreshing(true)
       try {
-        const [standings, players] = await Promise.all([
-          fetch('/api/stats/standings').then(r => r.ok ? r.json() : Promise.reject(new Error(`standings ${r.status}`))),
-          fetch('/api/stats/players').then(r => r.ok ? r.json() : Promise.reject(new Error(`players ${r.status}`))),
-        ])
+        const standings = await fetch('/api/stats/standings').then(r => r.ok ? r.json() : Promise.reject(new Error(`standings ${r.status}`)))
         if (cancelled) return
         if (standings) setLiveData(standings)
-        if (players)   setLivePlayerData(players)
         setLastUpdated(new Date())
         setFetchError(null)
       } catch (err) {
@@ -2091,12 +2119,29 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (!cancelled) setRefreshing(false)
       }
     }
-    refreshOnceRef.current = fetchData
-    if (!initialData) fetchData()
-    const interval = setInterval(fetchData, POLL_MS)
+    refreshOnceRef.current = fetchStandings
+    if (!initialData) fetchStandings()
+    const interval = setInterval(fetchStandings, POLL_MS)
     return () => { cancelled = true; clearInterval(interval) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Lazy players — only fetched when viewing fútbol masculino jugadores
+  useEffect(() => {
+    if (sportId !== 'futbol' || gender !== 'm') return
+    let cancelled = false
+    const fetchPlayers = async () => {
+      try {
+        const players = await fetch('/api/stats/players').then(r => r.ok ? r.json() : Promise.reject(new Error(`players ${r.status}`)))
+        if (cancelled) return
+        if (players) { setLivePlayerData(players); hasLoadedPlayersRef.current = true }
+      } catch { /* non-critical, silent */ }
+    }
+    if (!hasLoadedPlayersRef.current) fetchPlayers()
+    const interval = setInterval(fetchPlayers, POLL_MS)
+    return () => { cancelled = true; clearInterval(interval) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sportId, gender])
 
   function applyLive(blocks: StatBlock[]): StatBlock[] {
     return blocks.map(block => {
@@ -2104,6 +2149,13 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
       if (liveData) {
         const league = liveData.football.find(l => l.id === block.id)
         if (league?.rows.length) return { ...block, rows: toStatRows(league.rows), placeholder: false }
+        // Knockout phase: standings empty → fallback to live fixtures
+        if (block.id === 'tabla-ucl' && liveData.uclFixtures?.length)
+          return { ...block, title: 'Champions League · Fase KO', rows: toStatRows(liveData.uclFixtures), placeholder: false, cardType: 'fixtures' }
+        if (block.id === 'tabla-uel' && liveData.uelFixtures?.length)
+          return { ...block, title: 'Europa League · Fase KO', rows: toStatRows(liveData.uelFixtures), placeholder: false, cardType: 'fixtures' }
+        if (block.id === 'tabla-uecl' && liveData.ueclFixtures?.length)
+          return { ...block, title: 'Conference League · Fase KO', rows: toStatRows(liveData.ueclFixtures), placeholder: false, cardType: 'fixtures' }
         if (block.id === 'nba-este'        && liveData.nbaEast.length)         return { ...block, rows: toStatRows(liveData.nbaEast) }
         if (block.id === 'nba-oeste'       && liveData.nbaWest.length)         return { ...block, rows: toStatRows(liveData.nbaWest) }
         if (block.id === 'f1-campeonato'   && liveData.f1Drivers.length)       return { ...block, rows: toStatRows(liveData.f1Drivers, 'Escudería') }
@@ -2391,7 +2443,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         {isFemenino && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
             {applyLive(FUTBOL_FEMENINO_BLOCKS).map(block => (
-              <StatBlockCard key={block.id} block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={LIVE_BLOCK_IDS.has(block.id) && !!liveData} meta={liveData?.meta?.[BLOCK_TO_META_KEY[block.id]]} />
+              <StatBlockCard key={block.id} block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={LIVE_BLOCK_IDS.has(block.id) && !!liveData} meta={getBlockMeta(block.id, liveData?.meta)} />
             ))}
           </div>
         )}
@@ -2447,7 +2499,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                       onToggle={() => toggleBlock(block.id)}
                       leagueFilter={leagueFilter}
                       isLive={resolved.isLive}
-                      meta={liveData?.meta?.[BLOCK_TO_META_KEY[block.id]]}
+                      meta={getBlockMeta(block.id, liveData?.meta)}
                     />
                   )
                 })}
@@ -2486,11 +2538,11 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                 : 'grid-cols-1 lg:grid-cols-2'
             }`}>
               {filteredFlatBlocks.map(block => {
-                const blockMeta = liveData?.meta?.[BLOCK_TO_META_KEY[block.id]]
+                const blockMeta = getBlockMeta(block.id, liveData?.meta)
                 const live = isBlockLive(block)
                 if (block.id.startsWith('wc-group-'))
                   return <WorldCupGroupCard key={block.id} block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
-                if (block.id === 'nba-playoffs' || block.id === 'wc-knockout')
+                if (block.id === 'nba-playoffs' || block.id === 'wc-knockout' || block.cardType === 'fixtures')
                   return <PlayoffSeriesCard key={block.id} block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
                 return (
                   <StatBlockCard
