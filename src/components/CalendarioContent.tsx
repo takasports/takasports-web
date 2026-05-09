@@ -416,7 +416,7 @@ function CompGroupHeader({ comp, accent, count }: { comp: string; accent: string
         {comp}
       </span>
       <span className="text-[9px] tabular-nums flex-shrink-0" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
-        {count}
+        {count} {count === 1 ? 'partido' : 'partidos'}
       </span>
     </div>
   )
@@ -454,35 +454,26 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
         borderLeft: `3px solid ${accent}`,
       }}
     >
-      <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-[8px] font-black uppercase tracking-wider truncate" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
-          {event.sport.slice(0, 3)}
-        </span>
-        <span className="text-[8.5px] font-semibold truncate" style={{ color: '#9090A8', fontFamily: 'var(--font-sport)' }}>
-          {event.comp}
-        </span>
-        {event.broadcast && (
-          <span className="text-[7.5px] truncate flex items-center gap-0.5" style={{ color: '#A5B4FC', fontFamily: 'var(--font-sport)' }}>
-            <span>📺</span>{event.broadcast}
-          </span>
-        )}
-      </div>
-
       <div className="flex flex-col gap-1 min-w-0">
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={24} sport={event.sport} />
-          <span className="text-[11px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {event.home}
           </span>
-          {isFav && <span className="text-[9px]" style={{ color: '#F472B6' }}>♥</span>}
+          {isFav && <span className="text-[9px] flex-shrink-0" style={{ color: '#F472B6' }}>♥</span>}
         </div>
         {event.away && (
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
             <TeamLogo logo={event.awayLogo} photo={event.awayPhoto} name={event.away} size={24} sport={event.sport} />
-            <span className="text-[11px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+            <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
               {event.away}
             </span>
           </div>
+        )}
+        {event.broadcast && (
+          <span className="text-[9px] flex items-center gap-1 ml-8 mt-0.5" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>
+            📺 {event.broadcast}
+          </span>
         )}
       </div>
 
@@ -934,36 +925,23 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
     <div
       className="grid items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:brightness-125"
       style={{
-        gridTemplateColumns: '92px 1fr auto auto',
+        gridTemplateColumns: '1fr auto auto',
         background: 'rgba(255,255,255,0.025)',
         borderLeft: `3px solid ${compColor}`,
       }}
     >
-      {/* Sport / comp / date */}
-      <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-[8px] font-black uppercase tracking-wider truncate" style={{ color: compColor, fontFamily: 'var(--font-sport)' }}>
-          {event.sport.slice(0, 3)}
-        </span>
-        <span className="text-[8.5px] font-semibold truncate" style={{ color: '#9090A8', fontFamily: 'var(--font-sport)' }}>
-          {event.comp}
-        </span>
-        <span className="text-[8px] truncate" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
-          {event.date}
-        </span>
-      </div>
-
       {/* Teams */}
       <div className="flex flex-col gap-1 min-w-0">
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <TeamLogo logo={event.homeLogo} name={event.home} size={24} sport={event.sport} />
-          <span className="text-[11px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {event.home}
           </span>
         </div>
         {event.away && (
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
             <TeamLogo logo={event.awayLogo} name={event.away} size={24} sport={event.sport} />
-            <span className="text-[11px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+            <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
               {event.away}
             </span>
           </div>
@@ -1453,9 +1431,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                 {tab === 'todos' && 'Todos'}
                 {tab === 'en-vivo' && `En Vivo${liveCount > 0 ? ` · ${liveCount}` : ''}`}
                 {tab === 'resultados' && `Resultados${pastEvents.length > 0 ? ` · ${pastEvents.length}` : ''}`}
-                {tab === 'recordatorios' && (
-                  <>🔔 {remCount > 0 ? `· ${remCount}` : ''}</>
-                )}
+                {tab === 'recordatorios' && <>🔔 Alertas{remCount > 0 ? ` · ${remCount}` : ''}</>}
               </button>
             )
           })}
