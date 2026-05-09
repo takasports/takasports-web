@@ -454,6 +454,26 @@ const SPORTS: SportConfig[] = [
         }],
       },
       {
+        id: 'clasificados', label: 'Clasificados', icon: '✅',
+        blocks: [{
+          id: 'wc-qualified', title: 'Selecciones clasificadas (Top 16 ranking FIFA)', metric: 'Pos.',
+          rows: [
+            { rank: 1,  name: 'Argentina',     team: 'CONMEBOL',   value: 'Campeona', sub: 'Defiende título 2022',   flag: '🇦🇷', trend: 'flat' },
+            { rank: 2,  name: 'Francia',       team: 'UEFA',       value: 'Top FIFA', sub: 'Subcampeona 2022',       flag: '🇫🇷', trend: 'up' },
+            { rank: 3,  name: 'España',        team: 'UEFA',       value: 'Top FIFA', sub: 'Campeona Eurocopa 2024', flag: '🇪🇸', trend: 'up' },
+            { rank: 4,  name: 'Inglaterra',    team: 'UEFA',       value: 'Top FIFA', sub: 'Subcampeona Eurocopa 2024', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'flat' },
+            { rank: 5,  name: 'Portugal',      team: 'UEFA',       value: 'Top FIFA', sub: 'Campeona Nations League', flag: '🇵🇹', trend: 'up' },
+            { rank: 6,  name: 'Brasil',        team: 'CONMEBOL',   value: 'Top FIFA', sub: '5 títulos mundiales',    flag: '🇧🇷', trend: 'down' },
+            { rank: 7,  name: 'Países Bajos',  team: 'UEFA',       value: 'Top FIFA', sub: 'Cuartos 2022',           flag: '🇳🇱', trend: 'flat' },
+            { rank: 8,  name: 'Alemania',      team: 'UEFA',       value: 'Top FIFA', sub: 'Anfitriona Euro 2024',   flag: '🇩🇪', trend: 'up' },
+            { rank: 9,  name: 'EEUU',           team: 'CONCACAF',  value: 'Anfitrión', sub: 'Co-anfitrión',          flag: '🇺🇸', trend: 'flat' },
+            { rank: 10, name: 'México',         team: 'CONCACAF',  value: 'Anfitrión', sub: 'Co-anfitrión',          flag: '🇲🇽', trend: 'flat' },
+            { rank: 11, name: 'Canadá',         team: 'CONCACAF',  value: 'Anfitrión', sub: 'Co-anfitrión',          flag: '🇨🇦', trend: 'flat' },
+            { rank: 12, name: 'Marruecos',      team: 'CAF',       value: 'Top FIFA', sub: 'Semifinalista 2022',     flag: '🇲🇦', trend: 'up' },
+          ],
+        }],
+      },
+      {
         id: 'goleadores', label: 'Goleadores', icon: '⚽',
         blocks: [{
           id: 'wc-scorers',
@@ -855,15 +875,20 @@ const SPORTS: SportConfig[] = [
               { rank: 3, name: 'Max Verstappen',  team: 'Red Bull',  value: '1', sub: 'Temp. 2026 · R4', flag: '🇳🇱', trend: 'flat' },
             ],
           },
-          {
-            id: 'f1-vueltas-rapidas', title: 'Vueltas rápidas', metric: 'VR',
-            rows: [
-              { rank: 1, name: 'Kimi Antonelli',  team: 'Mercedes',  value: '2', sub: 'Temp. 2026 · R4', flag: '🇮🇹', trend: 'up' },
-              { rank: 2, name: 'Max Verstappen',  team: 'Red Bull',  value: '1', sub: 'Temp. 2026 · R4', flag: '🇳🇱', trend: 'flat' },
-              { rank: 3, name: 'Lando Norris',    team: 'McLaren',   value: '1', sub: 'Temp. 2026 · R4', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'flat' },
-            ],
-          },
         ],
+      },
+      {
+        id: 'calendario-f1', label: 'Calendario', icon: '📅',
+        blocks: [{
+          id: 'f1-calendario', title: 'Próximos GP · Temporada 2026', metric: 'Fecha',
+          rows: [
+            { rank: 1, name: 'GP de Mónaco · Mónaco',          value: '24 may', sub: 'R5 · Circuit de Monaco', trend: 'up' },
+            { rank: 2, name: 'GP de España · Barcelona',       value: '7 jun',  sub: 'R6 · Catalunya',          trend: 'flat' },
+            { rank: 3, name: 'GP de Canadá · Montreal',        value: '14 jun', sub: 'R7 · Gilles Villeneuve',  trend: 'flat' },
+            { rank: 4, name: 'GP de Austria · Spielberg',      value: '28 jun', sub: 'R8 · Red Bull Ring',      trend: 'flat' },
+            { rank: 5, name: 'GP de Gran Bretaña · Silverstone',value: '5 jul',  sub: 'R9 · Silverstone',        trend: 'flat' },
+          ],
+        }],
       },
       {
         id: 'constructores', label: 'Constructores', icon: '🏗️',
@@ -929,7 +954,29 @@ const SPORTS: SportConfig[] = [
               { rank: 7, name: 'Mirra Andreeva',  value: '4181',  sub: '0 Grand Slams', flag: '🇷🇺', trend: 'up',   extra: { GS: '0', Torneos: '3' } },
             ],
           },
+          {
+            id: 'wta-wins-surface', title: 'Victorias por superficie (WTA)', metric: '% Vic.',
+            rows: [
+              { rank: 1, name: 'Iga Swiatek',     value: '86%', sub: 'Tierra · 2024-25', flag: '🇵🇱', trend: 'up',   extra: { Dura: '72%', Hierba: '64%' } },
+              { rank: 2, name: 'Aryna Sabalenka', value: '84%', sub: 'Dura · 2024-25',   flag: '🇧🇾', trend: 'up',   extra: { Dura: '84%', Tierra: '68%' } },
+              { rank: 3, name: 'Elena Rybakina',  value: '78%', sub: 'Hierba · 2024-25', flag: '🇰🇿', trend: 'up',   extra: { Dura: '74%', Hierba: '78%' } },
+              { rank: 4, name: 'Coco Gauff',      value: '74%', sub: 'Dura · 2024-25',   flag: '🇺🇸', trend: 'flat', extra: { Dura: '74%', Tierra: '70%' } },
+              { rank: 5, name: 'Jessica Pegula',  value: '71%', sub: 'Dura · 2024-25',   flag: '🇺🇸', trend: 'flat', extra: { Dura: '71%', Hierba: '62%' } },
+            ],
+          },
         ],
+      },
+      {
+        id: 'grand-slams', label: 'Grand Slams', icon: '🏆',
+        blocks: [{
+          id: 'tenis-slams', title: 'Calendario Grand Slams 2026', metric: 'Fecha',
+          rows: [
+            { rank: 1, name: 'Australian Open · Melbourne',  value: '19 ene – 1 feb', sub: 'Pista dura · Completado',  trend: 'flat' },
+            { rank: 2, name: 'Roland Garros · París',         value: '24 may – 7 jun', sub: 'Tierra batida · Próximo',  trend: 'up' },
+            { rank: 3, name: 'Wimbledon · Londres',           value: '29 jun – 12 jul', sub: 'Hierba',                  trend: 'flat' },
+            { rank: 4, name: 'US Open · Nueva York',          value: '24 ago – 6 sep', sub: 'Pista dura',               trend: 'flat' },
+          ],
+        }],
       },
     ],
   },
@@ -1019,6 +1066,9 @@ const SPORTS: SportConfig[] = [
               { rank: 3, name: 'Collin Morikawa',     value: '-8',  sub: 'Completado', flag: '🇺🇸', trend: 'flat' },
               { rank: 4, name: 'Xander Schauffele',   value: '-7',  sub: 'Completado', flag: '🇺🇸', trend: 'flat' },
               { rank: 5, name: 'Jon Rahm',            value: '-6',  sub: 'Completado', flag: '🇪🇸', trend: 'flat' },
+              { rank: 6, name: 'Ludvig Åberg',        value: '-5',  sub: 'Completado', flag: '🇸🇪', trend: 'up' },
+              { rank: 7, name: 'Viktor Hovland',      value: '-4',  sub: 'Completado', flag: '🇳🇴', trend: 'flat' },
+              { rank: 8, name: 'Justin Thomas',       value: '-3',  sub: 'Completado', flag: '🇺🇸', trend: 'down' },
             ],
           },
           {
@@ -1029,9 +1079,113 @@ const SPORTS: SportConfig[] = [
               { rank: 3, name: 'Collin Morikawa',     value: '2110', sub: 'Puntos FedEx', flag: '🇺🇸', trend: 'flat' },
               { rank: 4, name: 'Xander Schauffele',   value: '1980', sub: 'Puntos FedEx', flag: '🇺🇸', trend: 'flat' },
               { rank: 5, name: 'Jon Rahm',            value: '1720', sub: 'Puntos FedEx', flag: '🇪🇸', trend: 'flat' },
+              { rank: 6, name: 'Ludvig Åberg',        value: '1540', sub: 'Puntos FedEx', flag: '🇸🇪', trend: 'up' },
+              { rank: 7, name: 'Viktor Hovland',      value: '1395', sub: 'Puntos FedEx', flag: '🇳🇴', trend: 'flat' },
+              { rank: 8, name: 'Patrick Cantlay',     value: '1280', sub: 'Puntos FedEx', flag: '🇺🇸', trend: 'flat' },
+            ],
+          },
+          {
+            id: 'pga-owgr', title: 'Ranking Mundial Oficial (OWGR)', metric: 'Pts',
+            rows: [
+              { rank: 1, name: 'Scottie Scheffler',  value: '14.62', sub: 'OWGR · #1 mundial',  flag: '🇺🇸', trend: 'flat' },
+              { rank: 2, name: 'Rory McIlroy',        value: '8.54',  sub: 'OWGR',               flag: '🇬🇧', trend: 'up' },
+              { rank: 3, name: 'Xander Schauffele',   value: '7.89',  sub: 'OWGR',               flag: '🇺🇸', trend: 'flat' },
+              { rank: 4, name: 'Collin Morikawa',     value: '6.95',  sub: 'OWGR',               flag: '🇺🇸', trend: 'up' },
+              { rank: 5, name: 'Ludvig Åberg',        value: '6.21',  sub: 'OWGR',               flag: '🇸🇪', trend: 'up' },
+              { rank: 6, name: 'Viktor Hovland',      value: '5.47',  sub: 'OWGR',               flag: '🇳🇴', trend: 'flat' },
+              { rank: 7, name: 'Tommy Fleetwood',     value: '5.12',  sub: 'OWGR',               flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up' },
+              { rank: 8, name: 'Hideki Matsuyama',    value: '4.98',  sub: 'OWGR',               flag: '🇯🇵', trend: 'flat' },
+            ],
+          },
+          {
+            id: 'pga-major', title: 'Próximo Major · The Masters', metric: 'Estado',
+            rows: [
+              { rank: 1, name: 'The Masters · Augusta National', value: '9-12 abr', sub: 'Major #1 del año',      trend: 'up' },
+              { rank: 2, name: 'PGA Championship · Quail Hollow', value: '14-17 may', sub: 'Major #2 del año',     trend: 'flat' },
+              { rank: 3, name: 'US Open · Oakmont',               value: '11-14 jun', sub: 'Major #3 del año',     trend: 'flat' },
+              { rank: 4, name: 'The Open · Royal Portrush',       value: '16-19 jul', sub: 'Major #4 del año',     trend: 'flat' },
             ],
           },
         ],
+      },
+      {
+        id: 'liv', label: 'LIV Golf', icon: '⚡',
+        blocks: [
+          {
+            id: 'liv-ranking', title: 'LIV Golf · Clasificación individual', metric: 'Pts',
+            rows: [
+              { rank: 1, name: 'Joaquin Niemann',   team: 'Torque GC',     value: '198.5', sub: '8 torneos', flag: '🇨🇱', trend: 'up' },
+              { rank: 2, name: 'Jon Rahm',          team: 'Legion XIII',   value: '184.2', sub: '8 torneos', flag: '🇪🇸', trend: 'flat' },
+              { rank: 3, name: 'Bryson DeChambeau', team: 'Crushers GC',   value: '162.0', sub: '8 torneos', flag: '🇺🇸', trend: 'up' },
+              { rank: 4, name: 'Sergio García',     team: 'Fireballs GC',  value: '142.8', sub: '8 torneos', flag: '🇪🇸', trend: 'flat' },
+              { rank: 5, name: 'Dean Burmester',    team: 'Stinger GC',    value: '128.5', sub: '8 torneos', flag: '🇿🇦', trend: 'up' },
+              { rank: 6, name: 'Cameron Smith',     team: 'Rippers GC',    value: '115.0', sub: '8 torneos', flag: '🇦🇺', trend: 'flat' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'motogp', label: 'MotoGP', emoji: '🏍️', accent: '#dc2626',
+    sections: [
+      {
+        id: 'pilotos-motogp', label: 'Pilotos', icon: '🧑‍✈️',
+        blocks: [{
+          id: 'motogp-pilotos', title: 'Campeonato MotoGP', metric: 'Pts',
+          rows: [
+            { rank: 1, name: 'Marc Márquez',    team: 'Ducati Lenovo',     value: '171', sub: 'Temp. 2026 · R5', flag: '🇪🇸', trend: 'up',   extra: { Vic: '4', Podios: '5' } },
+            { rank: 2, name: 'Pecco Bagnaia',   team: 'Ducati Lenovo',     value: '120', sub: 'Temp. 2026 · R5', flag: '🇮🇹', trend: 'flat', extra: { Vic: '1', Podios: '3' } },
+            { rank: 3, name: 'Álex Márquez',    team: 'Gresini Ducati',    value: '108', sub: 'Temp. 2026 · R5', flag: '🇪🇸', trend: 'up',   extra: { Vic: '0', Podios: '4' } },
+            { rank: 4, name: 'Jorge Martín',    team: 'Aprilia Racing',    value: '79',  sub: 'Temp. 2026 · R5', flag: '🇪🇸', trend: 'up',   extra: { Vic: '0', Podios: '2' } },
+            { rank: 5, name: 'Pedro Acosta',    team: 'KTM Factory',       value: '72',  sub: 'Temp. 2026 · R5', flag: '🇪🇸', trend: 'up',   extra: { Vic: '0', Podios: '2' } },
+            { rank: 6, name: 'Marco Bezzecchi', team: 'Aprilia Racing',    value: '64',  sub: 'Temp. 2026 · R5', flag: '🇮🇹', trend: 'flat', extra: { Vic: '0', Podios: '1' } },
+            { rank: 7, name: 'Fabio Quartararo', team: 'Yamaha Factory',   value: '48',  sub: 'Temp. 2026 · R5', flag: '🇫🇷', trend: 'flat', extra: { Vic: '0', Podios: '0' } },
+          ],
+        }],
+      },
+      {
+        id: 'constructores-motogp', label: 'Constructores', icon: '🏗️',
+        blocks: [{
+          id: 'motogp-constructores', title: 'Campeonato Constructores', metric: 'Pts',
+          rows: [
+            { rank: 1, name: 'Ducati',  value: '291', sub: 'Temp. 2026 · R5', trend: 'up' },
+            { rank: 2, name: 'Aprilia', value: '143', sub: 'Temp. 2026 · R5', trend: 'up' },
+            { rank: 3, name: 'KTM',     value: '95',  sub: 'Temp. 2026 · R5', trend: 'flat' },
+            { rank: 4, name: 'Yamaha',  value: '54',  sub: 'Temp. 2026 · R5', trend: 'down' },
+            { rank: 5, name: 'Honda',   value: '38',  sub: 'Temp. 2026 · R5', trend: 'down' },
+          ],
+        }],
+      },
+    ],
+  },
+  {
+    id: 'ciclismo', label: 'Ciclismo', emoji: '🚴', accent: '#0891b2',
+    sections: [
+      {
+        id: 'uci', label: 'UCI', icon: '🌐',
+        blocks: [{
+          id: 'ciclismo-uci', title: 'Ranking UCI World Tour', metric: 'Pts',
+          rows: [
+            { rank: 1, name: 'Tadej Pogačar',     team: 'UAE Team Emirates', value: '7820', sub: 'UCI · 2026',  flag: '🇸🇮', trend: 'flat' },
+            { rank: 2, name: 'Jonas Vingegaard',  team: 'Visma–Lease a Bike', value: '5280', sub: 'UCI · 2026', flag: '🇩🇰', trend: 'up' },
+            { rank: 3, name: 'Remco Evenepoel',   team: 'Soudal Quick-Step', value: '4710', sub: 'UCI · 2026',  flag: '🇧🇪', trend: 'up' },
+            { rank: 4, name: 'Mathieu van der Poel',team: 'Alpecin–Deceuninck',value: '3950', sub: 'UCI · 2026',flag: '🇳🇱', trend: 'flat' },
+            { rank: 5, name: 'Wout van Aert',     team: 'Visma–Lease a Bike', value: '3540', sub: 'UCI · 2026', flag: '🇧🇪', trend: 'up' },
+            { rank: 6, name: 'Primož Roglič',     team: 'Red Bull–BORA',     value: '3210', sub: 'UCI · 2026',  flag: '🇸🇮', trend: 'flat' },
+          ],
+        }],
+      },
+      {
+        id: 'grandes-vueltas', label: 'Grandes Vueltas', icon: '🏆',
+        blocks: [{
+          id: 'ciclismo-tour', title: 'Calendario Grandes Vueltas 2026', metric: 'Fecha',
+          rows: [
+            { rank: 1, name: 'Giro d\'Italia · Italia',   value: '8 may – 31 may', sub: 'Maglia rosa',     trend: 'up' },
+            { rank: 2, name: 'Tour de France · Francia',  value: '4 jul – 26 jul', sub: 'Maillot jaune',   trend: 'flat' },
+            { rank: 3, name: 'La Vuelta · España',         value: '22 ago – 13 sep', sub: 'Jersey rojo',    trend: 'flat' },
+          ],
+        }],
       },
     ],
   },
@@ -1593,7 +1747,7 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
 const LIVE_BLOCK_IDS = new Set([
   'tabla-laliga', 'tabla-premier', 'tabla-serie-a', 'tabla-bundesliga', 'tabla-ligue1', 'tabla-ucl', 'tabla-uel', 'tabla-uecl',
   'nba-este', 'nba-oeste',
-  'f1-campeonato', 'f1-constructores', 'f1-poles', 'f1-vueltas-rapidas',
+  'f1-campeonato', 'f1-constructores', 'f1-poles',
   'atp-ranking', 'wta-ranking',
   'goles-equipo', 'menos-goles',
   'ranking-fifa',
@@ -1659,7 +1813,7 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'nba-scoring': 'nbaScoring', 'nba-rebounds': 'nbaRebounds', 'nba-assists': 'nbaAssists',
   'nba-blocks': 'nbaBlocks', 'nba-steals': 'nbaSteals', 'nba-efficiency': 'nbaEfficiency', 'nba-3pt': 'nba3ptMade',
   'f1-campeonato': 'f1Drivers', 'f1-constructores': 'f1Constructors',
-  'f1-poles': 'f1Poles', 'f1-vueltas-rapidas': 'f1FastestLaps',
+  'f1-poles': 'f1Poles',
   'atp-ranking': 'atpRanking', 'wta-ranking': 'wtaRanking',
   'ranking-fifa': 'fifaRanking',
   'ufc-p4p': 'ufcP4P',
@@ -1940,7 +2094,6 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (block.id === 'atp-ranking'       && liveData.atpRanking?.length)     return { ...block, rows: toStatRows(liveData.atpRanking) }
         if (block.id === 'wta-ranking'       && liveData.wtaRanking?.length)     return { ...block, rows: toStatRows(liveData.wtaRanking) }
         if (block.id === 'f1-poles'          && liveData.f1Poles?.length)        return { ...block, rows: toStatRows(liveData.f1Poles, 'Escudería') }
-        if (block.id === 'f1-vueltas-rapidas'&& liveData.f1FastestLaps?.length)  return { ...block, rows: toStatRows(liveData.f1FastestLaps, 'Escudería') }
         if (block.id === 'ranking-fifa'      && liveData.fifaRanking?.length)    return { ...block, rows: toStatRows(liveData.fifaRanking) }
         if (block.id === 'nba-scoring'       && liveData.nbaScoring?.length)     return { ...block, rows: toStatRows(liveData.nbaScoring) }
         if (block.id === 'nba-rebounds'      && liveData.nbaRebounds?.length)    return { ...block, rows: toStatRows(liveData.nbaRebounds) }
