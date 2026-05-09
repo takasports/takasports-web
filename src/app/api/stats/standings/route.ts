@@ -346,21 +346,23 @@ async function fetchNBALeaders(season: string): Promise<{ scoring: StandingRow[]
 }
 
 // ── UFC P4P — curated snapshot (no public API available) ─────────────────────
-// ESPN endpoint dead since ~2022. Hardcoded from official UFC rankings (May 2025).
+// ESPN endpoint dead since ~2022. Hardcoded from official UFC rankings (May 2026).
+// Key changes since May-2025: Merab Dvalishvili beat O'Malley (Sep 2024) for BW belt;
+// Magomed Ankalaev beat Pereira (Jan 2026) for LHW belt.
 
-const UFC_P4P_AS_OF = 'May-2025'
+const UFC_P4P_AS_OF = 'May-2026'
 function fetchUFCP4P(): Promise<StandingRow[]> {
   const rows: StandingRow[] = [
-    { rank: 1, name: 'Islam Makhachev',    abbr: 'LW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Ligero' } },
-    { rank: 2, name: 'Jon Jones',          abbr: 'HW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Pesado' } },
-    { rank: 3, name: 'Alex Pereira',       abbr: 'LHW', value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Semi-pesado' } },
-    { rank: 4, name: 'Dricus du Plessis',  abbr: 'MW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Medio' } },
-    { rank: 5, name: 'Ilia Topuria',       abbr: 'FW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Pluma' } },
-    { rank: 6, name: 'Sean O\'Malley',     abbr: 'BW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Gallo' } },
-    { rank: 7, name: 'Tom Aspinall',       abbr: 'HW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Pesado (I)' } },
-    { rank: 8, name: 'Merab Dvalishvili',  abbr: 'BW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Gallo' } },
-    { rank: 9, name: 'Belal Muhammad',     abbr: 'WW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Wélter' } },
-    { rank: 10,name: 'Alexandre Pantoja',  abbr: 'FLW', value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Mosca' } },
+    { rank: 1, name: 'Islam Makhachev',   abbr: 'LW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Ligero',      Estado: 'Campeón' } },
+    { rank: 2, name: 'Jon Jones',         abbr: 'HW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Pesado',       Estado: 'Campeón' } },
+    { rank: 3, name: 'Ilia Topuria',      abbr: 'FW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Pluma',        Estado: 'Campeón' } },
+    { rank: 4, name: 'Dricus du Plessis', abbr: 'MW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Medio',         Estado: 'Campeón' } },
+    { rank: 5, name: 'Alex Pereira',      abbr: 'LHW', value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'down', extra: { División: 'Semi-pesado',   Estado: 'Ex-campeón' } },
+    { rank: 6, name: 'Merab Dvalishvili', abbr: 'BW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Gallo',         Estado: 'Campeón' } },
+    { rank: 7, name: 'Belal Muhammad',    abbr: 'WW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Wélter',        Estado: 'Campeón' } },
+    { rank: 8, name: 'Tom Aspinall',      abbr: 'HW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Pesado (Int.)', Estado: 'Campeón Int.' } },
+    { rank: 9, name: 'Alexandre Pantoja', abbr: 'FLW', value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'flat', extra: { División: 'Mosca',         Estado: 'Campeón' } },
+    { rank: 10,name: 'Charles Oliveira',  abbr: 'LW',  value: '—', sub: `Ref. ${UFC_P4P_AS_OF}`, trend: 'up',   extra: { División: 'Ligero',        Estado: 'Contendiente' } },
   ]
   return Promise.resolve(rows)
 }

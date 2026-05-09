@@ -1247,16 +1247,16 @@ const SPORTS: SportConfig[] = [
           {
             id: 'ufc-p4p', title: 'Pound for Pound (Top 10)', metric: 'Pos.',
             rows: [
-              { rank: 1,  name: 'Islam Makhachev',   team: 'Ligero',        value: '#1',  sub: 'Ref. May-2025', flag: '🇷🇺', trend: 'flat' },
-              { rank: 2,  name: 'Jon Jones',          team: 'Peso completo', value: '#2',  sub: 'Ref. May-2025', flag: '🇺🇸', trend: 'flat' },
-              { rank: 3,  name: 'Alex Pereira',       team: 'Semi-pesado',   value: '#3',  sub: 'Ref. May-2025', flag: '🇧🇷', trend: 'up' },
-              { rank: 4,  name: 'Dricus du Plessis',  team: 'Medio',         value: '#4',  sub: 'Ref. May-2025', flag: '🇿🇦', trend: 'up' },
-              { rank: 5,  name: 'Ilia Topuria',       team: 'Pluma',         value: '#5',  sub: 'Ref. May-2025', flag: '🇬🇪', trend: 'up' },
-              { rank: 6,  name: "Sean O'Malley",      team: 'Gallo',         value: '#6',  sub: 'Ref. May-2025', flag: '🇺🇸', trend: 'flat' },
-              { rank: 7,  name: 'Tom Aspinall',       team: 'Pesado (I)',    value: '#7',  sub: 'Ref. May-2025', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up' },
-              { rank: 8,  name: 'Merab Dvalishvili',  team: 'Gallo',         value: '#8',  sub: 'Ref. May-2025', flag: '🇬🇪', trend: 'up' },
-              { rank: 9,  name: 'Belal Muhammad',     team: 'Wélter',        value: '#9',  sub: 'Ref. May-2025', flag: '🇺🇸', trend: 'flat' },
-              { rank: 10, name: 'Alexandre Pantoja',  team: 'Mosca',         value: '#10', sub: 'Ref. May-2025', flag: '🇧🇷', trend: 'flat' },
+              { rank: 1,  name: 'Islam Makhachev',   team: 'Ligero',        value: '#1',  sub: 'Ref. May-2026', flag: '🇷🇺', trend: 'flat' },
+              { rank: 2,  name: 'Jon Jones',          team: 'Peso completo', value: '#2',  sub: 'Ref. May-2026', flag: '🇺🇸', trend: 'flat' },
+              { rank: 3,  name: 'Ilia Topuria',       team: 'Pluma',         value: '#3',  sub: 'Ref. May-2026', flag: '🇬🇪', trend: 'up' },
+              { rank: 4,  name: 'Dricus du Plessis',  team: 'Medio',         value: '#4',  sub: 'Ref. May-2026', flag: '🇿🇦', trend: 'flat' },
+              { rank: 5,  name: 'Alex Pereira',       team: 'Semi-pesado',   value: '#5',  sub: 'Ref. May-2026', flag: '🇧🇷', trend: 'down' },
+              { rank: 6,  name: 'Merab Dvalishvili',  team: 'Gallo',         value: '#6',  sub: 'Ref. May-2026', flag: '🇬🇪', trend: 'up' },
+              { rank: 7,  name: 'Belal Muhammad',     team: 'Wélter',        value: '#7',  sub: 'Ref. May-2026', flag: '🇺🇸', trend: 'up' },
+              { rank: 8,  name: 'Tom Aspinall',       team: 'Pesado (I)',    value: '#8',  sub: 'Ref. May-2026', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'flat' },
+              { rank: 9,  name: 'Alexandre Pantoja',  team: 'Mosca',         value: '#9',  sub: 'Ref. May-2026', flag: '🇧🇷', trend: 'flat' },
+              { rank: 10, name: 'Charles Oliveira',   team: 'Ligero',        value: '#10', sub: 'Ref. May-2026', flag: '🇧🇷', trend: 'up' },
             ],
           },
           {
@@ -1406,17 +1406,21 @@ function PlaceholderBlockCard({ block, accent }: { block: StatBlock; accent: str
 }
 
 function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: BlockMeta }) {
-  // Order of priority:
-  //  1) live override active in client → LIVE green
-  //  2) meta.status === 'historical' → HIST · {asOf} grey
-  //  3) meta.status === 'unavailable' → NO DISPONIBLE neutral red
-  //  4) default fallback → "Ref. 24/25" silenced
+  // Priority: 1) live → green  2) stale → amber  3) historical → grey  4) unavailable → red  5) no info → nothing
   const base = 'text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded'
   if (isLive) {
     return (
       <span className={base} title={meta?.source ? `Fuente: ${meta.source}` : 'Datos en vivo'}
         style={{ background: 'rgba(74,222,128,0.14)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.32)', fontFamily: 'var(--font-sport)' }}>
         ● LIVE
+      </span>
+    )
+  }
+  if (meta?.status === 'stale') {
+    return (
+      <span className={base} title={meta.source ? `Fuente: ${meta.source}` : ''}
+        style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.30)', fontFamily: 'var(--font-sport)' }}>
+        Hoy · {meta.asOf ?? '—'}
       </span>
     )
   }
@@ -1436,12 +1440,7 @@ function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: BlockMeta }
       </span>
     )
   }
-  return (
-    <span className={base}
-      style={{ background: 'rgba(255,255,255,0.04)', color: '#6A6A82', border: '1px solid rgba(255,255,255,0.07)', fontFamily: 'var(--font-sport)' }}>
-      Ref. 24/25
-    </span>
-  )
+  return null
 }
 
 const WC_START = new Date('2026-06-11T17:00:00Z')
@@ -1922,16 +1921,25 @@ const STATIC_STALE_BLOCK_IDS = new Set([
   'minutos', 'partidos-titular',
   'promesas-nota', 'promesas-goles',
   'goleadores-selecciones', 'dt-trofeos',
+  'atp-wins-surface', 'ufc-ko', 'ufc-campeones',
 ])
 
-const STALE_META: BlockMeta    = { status: 'historical', source: 'Estimado',    fetchedAt: '', asOf: 'Temp. 24/25' }
-const HIST_PLAYER_META: BlockMeta = { status: 'historical', source: 'API-Sports', fetchedAt: '', asOf: 'Temp. 24/25' }
+const FIXTURE_META_KEY: Record<string, string> = {
+  'tabla-ucl': 'uclFixtures', 'tabla-uel': 'uelFixtures', 'tabla-uecl': 'ueclFixtures',
+}
 
-function getBlockMeta(blockId: string, liveMeta?: Record<string, BlockMeta>): BlockMeta | undefined {
+const STATIC_HIST_META: BlockMeta  = { status: 'historical', source: 'Estimado',    fetchedAt: '', asOf: 'Temp. 24/25' }
+const HIST_PLAYER_META: BlockMeta  = { status: 'historical', source: 'API-Sports',  fetchedAt: '', asOf: 'Temp. 24/25' }
+
+function getBlockMeta(blockId: string, liveMeta?: Record<string, BlockMeta>, cardType?: string): BlockMeta | undefined {
+  if (cardType === 'fixtures') {
+    const fKey = FIXTURE_META_KEY[blockId]
+    if (fKey && liveMeta?.[fKey]) return liveMeta[fKey]
+  }
   const key = BLOCK_TO_META_KEY[blockId]
   if (key && liveMeta?.[key]) return liveMeta[key]
   if (HISTORICAL_PLAYER_BLOCK_IDS.has(blockId)) return HIST_PLAYER_META
-  if (STATIC_STALE_BLOCK_IDS.has(blockId)) return STALE_META
+  if (STATIC_STALE_BLOCK_IDS.has(blockId)) return STATIC_HIST_META
   return undefined
 }
 
@@ -2098,7 +2106,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
 
   const POLL_MS = 5 * 60_000
 
-  const refreshOnceRef = useRef<() => void>(() => {})
+  const refreshOnceRef    = useRef<() => void>(() => {})
+  const fetchPlayersRef   = useRef<() => void>(() => {})
   const hasLoadedPlayersRef = useRef(false)
 
   // Main polling — standings only (always active)
@@ -2126,7 +2135,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Lazy players — only fetched when viewing fútbol masculino jugadores
+  // Lazy players — only fetched when viewing fútbol masculino
   useEffect(() => {
     if (sportId !== 'futbol' || gender !== 'm') return
     let cancelled = false
@@ -2137,6 +2146,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (players) { setLivePlayerData(players); hasLoadedPlayersRef.current = true }
       } catch { /* non-critical, silent */ }
     }
+    fetchPlayersRef.current = fetchPlayers
     if (!hasLoadedPlayersRef.current) fetchPlayers()
     const interval = setInterval(fetchPlayers, POLL_MS)
     return () => { cancelled = true; clearInterval(interval) }
@@ -2242,8 +2252,11 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   }
 
   function isBlockLive(block: StatBlock): boolean {
-    const meta = liveData?.meta?.[BLOCK_TO_META_KEY[block.id]]
-    if (meta?.status === 'unavailable') return false
+    const metaKey = block.cardType === 'fixtures'
+      ? ({ 'tabla-ucl': 'uclFixtures', 'tabla-uel': 'uelFixtures', 'tabla-uecl': 'ueclFixtures' } as Record<string, string>)[block.id] ?? BLOCK_TO_META_KEY[block.id]
+      : BLOCK_TO_META_KEY[block.id]
+    const meta = liveData?.meta?.[metaKey]
+    if (meta?.status === 'unavailable' || meta?.status === 'stale') return false
     if (liveData && LIVE_BLOCK_IDS.has(block.id) && block.rows.length > 0) return true
     if (livePlayerData && LIVE_PLAYER_BLOCK_IDS.has(block.id) && block.rows.length > 0) return true
     return false
@@ -2323,7 +2336,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                   Última actualización: {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
-              <button onClick={() => refreshOnceRef.current()} disabled={refreshing}
+              <button onClick={() => { refreshOnceRef.current(); fetchPlayersRef.current() }} disabled={refreshing}
                 className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-opacity hover:opacity-80 disabled:opacity-40"
                 style={{ background: 'rgba(34,197,94,0.08)', color: '#86efac', border: '1px solid rgba(34,197,94,0.2)', fontFamily: 'var(--font-sport)', cursor: refreshing ? 'wait' : 'pointer' }}>
                 {refreshing ? 'Refrescando…' : 'Refrescar'}
@@ -2538,7 +2551,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                 : 'grid-cols-1 lg:grid-cols-2'
             }`}>
               {filteredFlatBlocks.map(block => {
-                const blockMeta = getBlockMeta(block.id, liveData?.meta)
+                const blockMeta = getBlockMeta(block.id, liveData?.meta, block.cardType)
                 const live = isBlockLive(block)
                 if (block.id.startsWith('wc-group-'))
                   return <WorldCupGroupCard key={block.id} block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
