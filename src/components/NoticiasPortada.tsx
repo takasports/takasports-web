@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
@@ -8,6 +8,8 @@ import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 
 const ROTATION_MS = 5000
+
+const OVERLAY = 'linear-gradient(to top, rgba(3,3,10,0.97) 0%, rgba(3,3,10,0.55) 38%, rgba(3,3,10,0.08) 72%, transparent 100%)'
 
 interface Article {
   _id: string
@@ -21,8 +23,6 @@ interface Article {
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
 }
-
-const OVERLAY = 'linear-gradient(to top, rgba(3,3,10,0.97) 0%, rgba(3,3,10,0.55) 38%, rgba(3,3,10,0.08) 72%, transparent 100%)'
 
 function Badge({ sport, category }: { sport?: string; category?: string }) {
   const { accent } = getSportStyle(sport, category)
@@ -108,7 +108,7 @@ function BigCard({ article }: { article: Article }) {
   )
 }
 
-// ── Card de tira (strip inferior) ─────────────────────────────
+// ── Card de tira ───────────────────────────────────────────────
 function StripCard({ article }: { article: Article }) {
   const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
@@ -125,7 +125,7 @@ function StripCard({ article }: { article: Article }) {
           src={imgUrl}
           alt={article.title}
           fill
-          sizes="(max-width: 768px) 50vw, 20vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
         />
       ) : (
@@ -169,14 +169,15 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
   const safe = articles.filter(Boolean)
   const [pairIdx, setPairIdx] = useState(0)
   const [visible, setVisible] = useState(true)
+  const pausedRef = useRef(false)
 
-  // Máximo 5 pares (10 artículos) en rotación — el resto lo cubre el feed de archivo
   const MAX_PAIRS = 5
   const totalPairs = Math.min(MAX_PAIRS, Math.max(1, Math.floor(safe.length / 2)))
 
   useEffect(() => {
     if (safe.length <= 2) return
     const timer = setInterval(() => {
+      if (pausedRef.current) return
       setVisible(false)
       setTimeout(() => {
         setPairIdx(i => (i + 1) % totalPairs)
@@ -186,55 +187,85 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
     return () => clearInterval(timer)
   }, [safe.length, totalPairs])
 
-  const base  = (pairIdx * 2) % safe.length
-  const big   = [safe[base], safe[(base + 1) % safe.length]].filter(Boolean)
+  const goTo = (i: number) => {
+    setVisible(false)
+    setTimeout(() => { setPairIdx(i); setVisible(true) }, 400)
+  }
+
+  const base = (pairIdx * 2) % safe.length
+  const big  = [safe[base], safe[(base + 1) % safe.length]].filter(Boolean)
   const strip = safe.slice(2, 7)
 
   if (safe.length === 0) return null
 
   return (
-    <div className="mb-6">
+    <>
+      {/* keyframe para la barra de progreso */}
+      <style>{`@keyframes progressFill { from { transform: scaleX(0) } to { transform: scaleX(1) } }`}</style>
 
-      {/* ── 2 GRANDES ROTANTES ── */}
-      <div
-        className="grid grid-cols-2 gap-3 mb-3"
-        style={{ opacity: visible ? 1 : 0, transition: 'opacity 400ms ease' }}
-      >
-        {big.map(a => <BigCard key={a._id} article={a} />)}
-      </div>
+      <div className="mb-6">
 
-      {/* Dots de navegación */}
-      {totalPairs > 1 && (
-        <div className="flex items-center justify-center gap-1.5 mb-3">
-          {Array.from({ length: totalPairs }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => { setVisible(false); setTimeout(() => { setPairIdx(i); setVisible(true) }, 400) }}
-              style={{
-                width: i === pairIdx ? 18 : 6,
-                height: 6,
-                borderRadius: 3,
-                background: i === pairIdx ? '#7C3AED' : 'rgba(255,255,255,0.15)',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 300ms ease',
-                padding: 0,
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* ── TIRA DE 5 (fija) ── */}
-      {strip.length > 0 && (
+        {/* ── 2 GRANDES ROTANTES (pausa en hover) ── */}
         <div
-          className="grid gap-3"
-          style={{ gridTemplateColumns: `repeat(${Math.min(strip.length, 5)}, 1fr)` }}
+          onMouseEnter={() => { pausedRef.current = true }}
+          onMouseLeave={() => { pausedRef.current = false }}
         >
-          {strip.map(a => <StripCard key={a._id} article={a} />)}
-        </div>
-      )}
+          <div
+            className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-0"
+            style={{ opacity: visible ? 1 : 0, transition: 'opacity 400ms ease' }}
+          >
+            {big.map(a => <BigCard key={a._id} article={a} />)}
+          </div>
 
-    </div>
+          {/* Barra de progreso + dots */}
+          {totalPairs > 1 && (
+            <div className="flex items-center gap-3 mt-2.5 mb-3 px-1">
+              {/* Barra */}
+              <div className="flex-1 h-[3px] rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <div
+                  key={`bar-${pairIdx}`}
+                  style={{
+                    height: '100%',
+                    borderRadius: 9999,
+                    background: 'linear-gradient(to right, #7C3AED, #A78BFA)',
+                    transformOrigin: 'left center',
+                    animation: `progressFill ${ROTATION_MS}ms linear forwards`,
+                    animationPlayState: pausedRef.current ? 'paused' : 'running',
+                  }}
+                />
+              </div>
+
+              {/* Dots */}
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {Array.from({ length: totalPairs }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => goTo(i)}
+                    style={{
+                      width: i === pairIdx ? 16 : 6,
+                      height: 6,
+                      borderRadius: 3,
+                      background: i === pairIdx ? '#7C3AED' : 'rgba(255,255,255,0.15)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 300ms ease',
+                      padding: 0,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── TIRA (2 cols mobile → 5 cols desktop) ── */}
+        {strip.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {strip.map(a => <StripCard key={a._id} article={a} />)}
+          </div>
+        )}
+
+      </div>
+    </>
   )
 }
