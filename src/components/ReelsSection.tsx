@@ -400,7 +400,18 @@ export default function ReelsSection({
   useEffect(() => {
     fetch('/api/instagram/reels')
       .then(r => r.json())
-      .then((data: SanityReel[]) => { if (data?.length) setLiveReels(data) })
+      .then((data: SanityReel[]) => {
+        if (data?.length) {
+          setLiveReels(data)
+          // The IntersectionObserver fires while skeletons are showing (no data-reveal children),
+          // then unobserves. Reveal cards manually after live data is set.
+          setTimeout(() => {
+            document.getElementById('reels')?.querySelectorAll('[data-reveal]').forEach((el, i) => {
+              setTimeout(() => el.classList.add('revealed'), i * 60)
+            })
+          }, 50)
+        }
+      })
       .catch(() => {})
       .finally(() => setLoadingLive(false))
   }, [])
@@ -432,7 +443,7 @@ export default function ReelsSection({
   const visible = activeSport ? reels.filter(r => r.sport === activeSport) : reels
 
   return (
-    <section ref={containerRef} className="pt-5 pb-0" id="reels" style={{ background: 'var(--bg-base)' }}>
+    <section ref={containerRef as unknown as (el: HTMLElement | null) => void} className="pt-5 pb-0" id="reels" style={{ background: 'var(--bg-base)' }}>
 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
