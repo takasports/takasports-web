@@ -767,6 +767,16 @@ const SPORTS: SportConfig[] = [
           })),
         })),
       },
+      {
+        id: 'goleadores', label: 'Goleadores', icon: '⚽',
+        blocks: [{
+          id: 'wc-scorers',
+          title: 'Goleadores del Mundial 2026',
+          metric: 'Goles',
+          placeholder: true,
+          rows: [],
+        }],
+      },
     ],
   },
   {
@@ -987,6 +997,18 @@ const SPORTS: SportConfig[] = [
   {
     id: 'baloncesto', label: 'Baloncesto', emoji: '🏀', accent: '#f59e0b',
     sections: [
+      {
+        id: 'playoffs', label: 'Playoffs', icon: '🏆',
+        blocks: [{
+          id: 'nba-playoffs',
+          title: 'Series de Playoffs NBA',
+          metric: 'Serie',
+          rows: [
+            { rank: 1, name: 'PHI @ NYK', value: '2-1', sub: 'Game 4 · 7:30 PM ET', trend: 'flat' as const, extra: { Serie: 'NY leads series 2-1', Estado: 'Programado' } },
+            { rank: 2, name: 'MIN @ SA',  value: '1-1', sub: 'Game 3 · 9:30 PM ET', trend: 'flat' as const, extra: { Serie: 'Series tied 1-1',    Estado: 'Programado' } },
+          ],
+        }],
+      },
       {
         id: 'jugadores', label: 'Jugadores', icon: '👤',
         blocks: [
@@ -1410,6 +1432,154 @@ function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: BlockMeta }
   )
 }
 
+function WorldCupGroupCard({ block, accent, isLive, meta }: {
+  block: StatBlock; accent: string; isLive?: boolean; meta?: BlockMeta
+}) {
+  const wcStarted = block.rows.some(r => r.sub !== 'Sin jugar')
+  const WC_COLS = ['PJ', 'V', 'E', 'D', 'GD', 'PTS']
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <div className="px-4 py-3 flex items-center justify-between gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="section-accent" style={{ background: accent }} />
+          <h3 className="font-black text-sm" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
+            {block.title}
+          </h3>
+          <FreshnessBadge isLive={isLive} meta={meta} />
+        </div>
+        {wcStarted && (
+          <span className="text-[10px] font-black uppercase tracking-widest flex-shrink-0" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>PTS</span>
+        )}
+      </div>
+
+      {wcStarted && (
+        <div className="px-4 pt-1.5 pb-1 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest"
+          style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.015)' }}>
+          <span className="w-5 flex-shrink-0" />
+          <span className="flex-1">Selección</span>
+          {WC_COLS.map(col => (
+            <span key={col} className="w-6 text-center">{col}</span>
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-col">
+        {block.rows.map((row, i) => {
+          const pj = row.extra?.PJ ?? '0'
+          const v  = row.extra?.V  ?? '0'
+          const e  = row.extra?.E  ?? '0'
+          const d  = row.extra?.D  ?? '0'
+          const gf = parseInt(row.extra?.GF ?? '0')
+          const gc = parseInt(row.extra?.GC ?? '0')
+          const gdNum = gf - gc
+          const pts = row.value
+          const isPromoted = i < 2
+
+          return (
+            <div key={row.rank}
+              className="flex items-center gap-1 px-4 py-2.5 transition-colors hover:bg-white/[0.025]"
+              style={{
+                borderBottom: i < block.rows.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+                background: isPromoted ? `${accent}06` : 'transparent',
+                borderLeft: isPromoted ? `3px solid ${accent}50` : '3px solid transparent',
+              }}>
+              <span className="w-5 flex-shrink-0 text-[10px] font-black tabular-nums"
+                style={{ color: isPromoted ? accent : '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                {row.rank}
+              </span>
+              <span className="flex-1 min-w-0 text-[12px] font-semibold truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
+                {row.name}
+              </span>
+              {wcStarted ? (
+                <>
+                  {[pj, v, e, d, `${gdNum >= 0 ? '+' : ''}${gdNum}`, pts].map((val, j) => (
+                    <span key={j} className="w-6 text-center text-[11px] tabular-nums font-semibold"
+                      style={{ color: j === 5 ? (parseInt(pts) > 0 ? accent : '#7A7A92') : '#5A5A82', fontFamily: 'var(--font-display)' }}>
+                      {val}
+                    </span>
+                  ))}
+                </>
+              ) : (
+                <span className="text-[10px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>Sin jugar</span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function PlayoffSeriesCard({ block, accent, isLive, meta }: {
+  block: StatBlock; accent: string; isLive?: boolean; meta?: BlockMeta
+}) {
+  if (block.placeholder) return <PlaceholderBlockCard block={block} accent={accent} />
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <div className="px-5 py-4 flex items-center justify-between gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="section-accent" style={{ background: accent }} />
+          <h3 className="font-black text-sm" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
+            {block.title}
+          </h3>
+          <FreshnessBadge isLive={isLive} meta={meta} />
+        </div>
+        <span className="text-[11px] font-black uppercase tracking-widest flex-shrink-0" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+          SERIE
+        </span>
+      </div>
+
+      <div className="flex flex-col">
+        {block.rows.length === 0 && (
+          <p className="px-5 py-8 text-center text-[11px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+            Sin partidos de playoffs activos
+          </p>
+        )}
+        {block.rows.map((row, i) => {
+          const isActive = row.extra?.Estado === 'En juego'
+          const serieText = row.extra?.Serie ?? ''
+          return (
+            <div key={i}
+              className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/[0.025]"
+              style={{
+                borderBottom: i < block.rows.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+                background: isActive ? `${accent}06` : 'transparent',
+                borderLeft: isActive ? `3px solid ${accent}50` : '3px solid transparent',
+              }}>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-[13px]" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
+                  {row.name}
+                </div>
+                <div className="text-[10px] mt-0.5" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
+                  {serieText}
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0 flex items-center gap-2">
+                <div>
+                  <div className="font-black text-sm tabular-nums" style={{ color: isActive ? accent : '#8080A0', fontFamily: 'var(--font-display)' }}>
+                    {row.value}
+                  </div>
+                  <div className="text-[10px]" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                    {row.sub}
+                  </div>
+                </div>
+                {isActive && (
+                  <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full"
+                    style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)', fontFamily: 'var(--font-sport)' }}>
+                    LIVE
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive, meta }: {
   block: StatBlock; accent: string; expanded: boolean; onToggle: () => void; leagueFilter?: string; isLive?: boolean; meta?: BlockMeta
 }) {
@@ -1616,10 +1786,13 @@ const LIVE_BLOCK_IDS = new Set([
   'nations-a1', 'nations-a2', 'nations-a3', 'nations-a4',
   'stats-dt',
   'ufc-p4p',
-  // World Cup 2026 — grupos A-L
+  // World Cup 2026 — grupos A-L + goleadores
   'wc-group-a', 'wc-group-b', 'wc-group-c', 'wc-group-d',
   'wc-group-e', 'wc-group-f', 'wc-group-g', 'wc-group-h',
   'wc-group-i', 'wc-group-j', 'wc-group-k', 'wc-group-l',
+  'wc-scorers',
+  // NBA Playoffs
+  'nba-playoffs',
 ])
 
 interface LiveStandingRow {
@@ -1649,6 +1822,8 @@ interface LiveStandingsData {
   nationsLeague?: LiveLeague[]
   coachesWinRate?: LiveStandingRow[]
   worldCup?: LiveLeague[]
+  worldCupScorers?: LiveStandingRow[]
+  nbaPlayoffSeries?: LiveStandingRow[]
   meta?: Record<string, BlockMeta>
   updatedAt?: string
 }
@@ -1674,6 +1849,8 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'wc-group-d': 'worldCup', 'wc-group-e': 'worldCup', 'wc-group-f': 'worldCup',
   'wc-group-g': 'worldCup', 'wc-group-h': 'worldCup', 'wc-group-i': 'worldCup',
   'wc-group-j': 'worldCup', 'wc-group-k': 'worldCup', 'wc-group-l': 'worldCup',
+  'wc-scorers': 'worldCupScorers',
+  'nba-playoffs': 'nbaPlayoffSeries',
 }
 
 // ── Player stats types (from /api/stats/players) ──────────────────
@@ -1933,6 +2110,10 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           const group = liveData.worldCup.find(g => g.id === block.id)
           if (group?.rows.length) return { ...block, rows: toStatRows(group.rows) }
         }
+        if (block.id === 'wc-scorers' && liveData.worldCupScorers?.length)
+          return { ...block, rows: toStatRows(liveData.worldCupScorers), placeholder: false }
+        if (block.id === 'nba-playoffs' && liveData.nbaPlayoffSeries?.length)
+          return { ...block, rows: toStatRows(liveData.nbaPlayoffSeries), placeholder: false }
       }
       // Player stats data
       if (livePlayerData && LIVE_PLAYER_BLOCK_IDS.has(block.id)) {
@@ -2239,19 +2420,31 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           )
         ) : (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {filteredFlatBlocks.map(block => (
-                <StatBlockCard
-                  key={block.id}
-                  block={block}
-                  accent={sport.accent}
-                  expanded={!!expandedBlocks[block.id]}
-                  onToggle={() => toggleBlock(block.id)}
-                  leagueFilter={leagueFilter}
-                  isLive={isBlockLive(block)}
-                  meta={liveData?.meta?.[BLOCK_TO_META_KEY[block.id]]}
-                />
-              ))}
+            <div className={`grid gap-5 ${
+              sportId === 'mundial' && sectionId === 'grupos'
+                ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
+                : 'grid-cols-1 lg:grid-cols-2'
+            }`}>
+              {filteredFlatBlocks.map(block => {
+                const blockMeta = liveData?.meta?.[BLOCK_TO_META_KEY[block.id]]
+                const live = isBlockLive(block)
+                if (block.id.startsWith('wc-group-'))
+                  return <WorldCupGroupCard key={block.id} block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
+                if (block.id === 'nba-playoffs')
+                  return <PlayoffSeriesCard key={block.id} block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
+                return (
+                  <StatBlockCard
+                    key={block.id}
+                    block={block}
+                    accent={sport.accent}
+                    expanded={!!expandedBlocks[block.id]}
+                    onToggle={() => toggleBlock(block.id)}
+                    leagueFilter={leagueFilter}
+                    isLive={live}
+                    meta={blockMeta}
+                  />
+                )
+              })}
             </div>
             {filteredFlatBlocks.length === 0 && (
               <div className="py-16 text-center">
