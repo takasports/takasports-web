@@ -1598,7 +1598,7 @@ export const JUGADORES_SCOPE_TABS: { id: JugadoresScope; label: string }[] = [
   { id: 'global',   label: 'Global'       },
   { id: 'liga',     label: 'Por liga'     },
   { id: 'posicion', label: 'Por posición' },
-  { id: 'sub21',    label: 'Sub-25'       },
+  { id: 'sub21',    label: 'Sub-21'       },
   { id: 'pais',     label: 'Por país'     },
 ]
 
