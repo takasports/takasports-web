@@ -419,7 +419,7 @@ export default async function NoticiaPage({
     articleSection: article.category ?? undefined,
     wordCount: bodyWordCount(),
     articleBody: (() => {
-      if (article.bodyText) return article.bodyText.slice(0, 500) || undefined
+      if (article.bodyText) return article.bodyText || undefined
       if (article.bodyPortable) {
         const text = article.bodyPortable
           .filter((b) => b._type === 'block' && Array.isArray(b.children))
@@ -427,10 +427,11 @@ export default async function NoticiaPage({
           .filter((c) => c._type === 'span')
           .map((c) => c.text ?? '')
           .join(' ')
-        return text.slice(0, 500) || undefined
+        return text || undefined
       }
       return undefined
     })(),
+    thumbnailUrl: article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(320).height(180).url() : undefined),
     isAccessibleForFree: true,
     speakable: {
       '@type': 'SpeakableSpecification',

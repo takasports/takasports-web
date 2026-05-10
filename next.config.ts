@@ -3,6 +3,13 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   async redirects() {
     return [
+      // Canonical domain: non-www → www (permanent 301 for SEO link equity)
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'takasportsmedia.com' }],
+        destination: 'https://www.takasportsmedia.com/:path*',
+        permanent: true,
+      },
       {
         source: '/article/:slug',
         destination: '/noticias/:slug',

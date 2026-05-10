@@ -1,5 +1,5 @@
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://takasportsmedia.com'
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.takasportsmedia.com'
 
 export const SITE_NAME = 'TakaSports'
 export const TWITTER_HANDLE = '@takasportsx'

@@ -13,17 +13,36 @@ function escapeXml(str: string | null | undefined): string {
     .replace(/'/g, '&apos;')
 }
 
-export async function GET() {
-  const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+const ARTICLE_QUERY = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && publishedAt > $since] | order(publishedAt desc)[0...1000] {
+  "slug": slug.current, title, publishedAt
+}`
 
-  const articles = await sanityClient
+// Fallback: when no articles fall within the time window, include the most
+// recent ones anyway so Google News always has content to index.
+const FALLBACK_QUERY = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(slug.current) && defined(title) && defined(publishedAt)] | order(publishedAt desc)[0...50] {
+  "slug": slug.current, title, publishedAt
+}`
+
+export async function GET() {
+  // Google News allows articles up to 2 days old — use 72h to avoid edge cases
+  // near the cache TTL boundary (revalidate = 3600, so a stale cache could miss
+  // articles published close to the 48h mark).
+  const since = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
+
+  let articles = await sanityClient
     .fetch<Array<{ slug: string; title: string; publishedAt: string }>>(
-      `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && publishedAt > $since] | order(publishedAt desc)[0...1000] {
-        "slug": slug.current, title, publishedAt
-      }`,
-      { since: twoDaysAgo },
+      ARTICLE_QUERY,
+      { since },
     )
     .catch(() => [] as Array<{ slug: string; title: string; publishedAt: string }>)
+
+  // Fallback: if the 72h window is empty (e.g. publishing gap or date mismatch),
+  // include the last 50 articles so the sitemap is never empty.
+  if (articles.length === 0) {
+    articles = await sanityClient
+      .fetch<Array<{ slug: string; title: string; publishedAt: string }>>(FALLBACK_QUERY)
+      .catch(() => [])
+  }
 
   const urls = articles
     .filter(a => a.slug && a.title && a.publishedAt)
