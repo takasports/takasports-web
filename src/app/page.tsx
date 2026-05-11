@@ -118,6 +118,7 @@ export default async function Home({
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       <Header />
+      <h1 className="sr-only">TakaSports — Noticias deportivas en tiempo real</h1>
       <BreakingNewsBar items={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
       <LiveStrip />
       <HomeContent articles={articles} reels={reels} events={events} initialSport={initialSport} />

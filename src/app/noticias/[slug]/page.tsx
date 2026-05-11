@@ -199,11 +199,11 @@ function ArticleSidebar({
                 <path d="M4 1v2M9 1v2M1 5h11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
               </svg>
               <div>
-                <p className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                <time dateTime={article.publishedAt} className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)', display: 'block' }}>
                   {new Date(article.publishedAt).toLocaleDateString('es-ES', {
                     day: 'numeric', month: 'long', year: 'numeric',
                   })}
-                </p>
+                </time>
                 <p className="text-[10px]" style={{ color: 'var(--text-faint)' }}>
                   {timeAgo(article.publishedAt)}
                 </p>
@@ -543,9 +543,9 @@ export default async function NoticiaPage({
                   </span>
                 )}
                 {article.publishedAt && (
-                  <span className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                  <time dateTime={article.publishedAt} className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
                     {timeAgo(article.publishedAt)}
-                  </span>
+                  </time>
                 )}
                 {minRead && (
                   <span
