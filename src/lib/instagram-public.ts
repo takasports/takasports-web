@@ -58,7 +58,11 @@ function detectSport(caption: string): string {
   if (!caption) return ''
   const text = caption.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   for (const [sport, keywords] of SPORT_KEYWORDS) {
-    if (keywords.some(kw => text.includes(kw))) return sport
+    if (keywords.some(kw =>
+      kw.length <= 4
+        ? new RegExp(`\\b${kw}\\b`).test(text)
+        : text.includes(kw)
+    )) return sport
   }
   return ''
 }

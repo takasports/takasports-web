@@ -15,11 +15,23 @@ const STORAGE_URL =
 // Aliases de slugs no canónicos → slug canónico Sanity
 const SPORT_ALIASES: Record<string, string> = { wrestling: 'wwe' }
 
+// Señales inequívocas de WWE — sobrescriben clasificaciones incorrectas del almacén
+const WWE_OVERRIDE_SIGNALS = [
+  'becky lynch', 'roman reigns', 'cody rhodes', 'seth rollins', 'cm punk',
+  'undertaker', 'danhausen', 'tiffany stratton', 'jacob fatu', 'iyo sky',
+  'liv morgan', 'sami zayn', 'trick williams', 'wrestlemania', 'smackdown',
+  'raw ', ' raw', 'samoano', 'wwe', 'aew', 'lucha libre',
+]
+
 function normalizeReel(item: PublicReel): PublicReel {
-  const text = [item.caption, item.title].filter(Boolean).join(' ')
-  const sport = item.sport
+  const text = [item.caption, item.title].filter(Boolean).join(' ').toLowerCase()
+  let sport = item.sport
     ? (SPORT_ALIASES[item.sport] ?? item.sport)
     : detectSportPublic(text)
+  // Corregir clasificaciones erróneas cuando hay señales inequívocas de WWE
+  if (sport !== 'wwe' && WWE_OVERRIDE_SIGNALS.some(s => text.includes(s))) {
+    sport = 'wwe'
+  }
   const title = item.title || extractTitlePublic(item.caption ?? '')
   return { ...item, sport, title }
 }
