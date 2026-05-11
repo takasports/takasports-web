@@ -10,6 +10,7 @@ const SPORT_KEYWORDS: Array<[string, string[]]> = [
     'yamal', 'vinicius', 'bellingham', 'pedri', 'lewandowski', 'modric', 'haaland',
     'mbapp', 'salah', 'ancelotti', 'mourinho', 'guardiola', 'portero', 'delantero',
     'neymar', 'florentino', 'derbi', 'derby', 'praga', 'rashford', 'ascenso', 'serie a',
+    'mendy', 'carrera de', 'vestuario', 'fichaje', 'portería', 'delantero', 'atacante',
   ]],
   ['baloncesto', [
     'nba', 'baloncesto', 'basketball', 'basket', 'lakers', 'celtics', 'bulls',
@@ -32,16 +33,26 @@ const SPORT_KEYWORDS: Array<[string, string[]]> = [
     'jones', 'makhachev', 'poirier', 'adesanya', 'mcgregor', 'ngannou', 'strickland',
     'combate', 'cinturon', 'cinturón', 'campeon', 'campeón',
   ]],
-  ['wrestling', [
+  ['wwe', [
     'wwe', 'wrestling', 'lucha libre', 'aew', 'raw', 'smackdown', 'wrestlemania',
     'royal rumble', 'summerslam', 'survivor series', 'samoano', 'samoanos',
     'roman reigns', 'cody rhodes', 'cm punk', 'seth rollins', 'undertaker',
+    'backlash', 'judgment day', 'liv morgan', 'iyo sky', 'jacob fatu', 'becky lynch',
+    'danhausen', 'tiffany stratton', 'giulia', 'sami zayn', 'trick williams',
   ]],
   ['rugby', [
     'rugby', 'rugbi', 'six nations', 'sixnations', 'world cup rugby',
     'all blacks', 'premiership rugby', 'top 14', 'try', 'scrum',
   ]],
 ]
+
+export function detectSportPublic(caption: string): string {
+  return detectSport(caption)
+}
+
+export function extractTitlePublic(caption: string): string {
+  return extractTitle(caption)
+}
 
 function detectSport(caption: string): string {
   if (!caption) return ''

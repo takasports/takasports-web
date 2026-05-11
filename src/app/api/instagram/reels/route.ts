@@ -2,7 +2,7 @@
 // Fuente: bucket público en Supabase Storage (lo refresca cada 6h el WF-10 de n8n).
 // Fallbacks: live IG public API → JSON estático en repo.
 
-import { fetchPublicReels, type PublicReel } from '@/lib/instagram-public'
+import { fetchPublicReels, type PublicReel, detectSportPublic, extractTitlePublic } from '@/lib/instagram-public'
 import reelsData from '@/lib/reels-data.json'
 
 export const runtime = 'nodejs'
@@ -11,6 +11,18 @@ export const dynamic  = 'force-dynamic'
 const STORAGE_URL =
   (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '') +
   '/storage/v1/object/public/reels/reels.json'
+
+// Aliases de slugs no canónicos → slug canónico Sanity
+const SPORT_ALIASES: Record<string, string> = { wrestling: 'wwe' }
+
+function normalizeReel(item: PublicReel): PublicReel {
+  const text = [item.caption, item.title].filter(Boolean).join(' ')
+  const sport = item.sport
+    ? (SPORT_ALIASES[item.sport] ?? item.sport)
+    : detectSportPublic(text)
+  const title = item.title || extractTitlePublic(item.caption ?? '')
+  return { ...item, sport, title }
+}
 
 interface CacheEntry { data: PublicReel[]; ts: number }
 const CACHE_TTL = 5 * 60 * 1000
@@ -25,7 +37,8 @@ async function fetchFromStorage(): Promise<PublicReel[] | null> {
     })
     if (!res.ok) return null
     const data = await res.json()
-    return Array.isArray(data) && data.length > 0 ? data : null
+    if (!Array.isArray(data) || data.length === 0) return null
+    return data.map(normalizeReel)
   } catch {
     return null
   }

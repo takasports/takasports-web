@@ -21,9 +21,13 @@ export const SLUG_TO_LABEL: Record<string, string> = {
 }
 
 // Label visual → slug (inverso, para filtros y URLs)
-export const CATEGORY_TO_SLUG: Record<string, string> = Object.fromEntries(
-  Object.entries(SLUG_TO_LABEL).map(([slug, label]) => [label, slug])
-)
+// Override manual para que el slug canónico gane sobre aliases (wrestling → wwe)
+export const CATEGORY_TO_SLUG: Record<string, string> = {
+  ...Object.fromEntries(
+    Object.entries(SLUG_TO_LABEL).map(([slug, label]) => [label, slug])
+  ),
+  'WWE': 'wwe',
+}
 
 // Categorías principales del filtro global (Home / Noticias)
 export const HOME_SPORT_CATEGORIES = ['Todo', 'Fútbol', 'WWE', 'F1', 'Baloncesto', 'Tenis', 'UFC']
