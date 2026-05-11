@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT = join(__dirname, '../src/lib/reels-data.json')
 
 const SPORT_KEYWORDS = {
-  futbol:     ['futbol','football','laliga','champions','premier','gol','messi','ronaldo','madrid','barca','copa','neymar','mourinho','florentino','mbapp','bellingham','vinicius','rochdale','portero','delantero'],
+  futbol:     ['futbol','football','laliga','champions','premier','gol','messi','ronaldo','madrid','barca','copa','neymar','mourinho','florentino','mbapp','bellingham','vinicius','rochdale','portero','delantero','derbi','derby','praga','rashford','ascenso','serie a'],
   wrestling:  ['wwe','wrestling','lucha','aew','raw','smackdown','wrestlemania','samoano','judgment day','liv morgan','iyo sky','jacob fatu','roman reigns','becky','stephanie vaquer','undertaker','cody','seth rollins'],
   baloncesto: ['nba','baloncesto','basketball','basket','lakers','celtics','curry','lebron','doncic','jokic','euroleague','acb'],
   formula1:   ['formula 1','formula1','f1','verstappen','hamilton','ferrari','mclaren','monaco','grand prix','alonso','norris','leclerc','sainz'],

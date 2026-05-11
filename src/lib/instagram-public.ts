@@ -9,7 +9,7 @@ const SPORT_KEYWORDS: Array<[string, string[]]> = [
     'athletic', 'atletico', 'sevilla', 'villarreal', 'betis', 'copa', 'eurocopa',
     'yamal', 'vinicius', 'bellingham', 'pedri', 'lewandowski', 'modric', 'haaland',
     'mbapp', 'salah', 'ancelotti', 'mourinho', 'guardiola', 'portero', 'delantero',
-    'neymar', 'florentino',
+    'neymar', 'florentino', 'derbi', 'derby', 'praga', 'rashford', 'ascenso', 'serie a',
   ]],
   ['baloncesto', [
     'nba', 'baloncesto', 'basketball', 'basket', 'lakers', 'celtics', 'bulls',

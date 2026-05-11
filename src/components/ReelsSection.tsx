@@ -397,12 +397,20 @@ export default function ReelsSection({
   const isSeed = rawReels.every(r => !r.thumbnail_url)
   const showSkeleton = isSeed && loadingLive
 
+  // Sync activeSport when parent changes initialSport (e.g. noticias category change)
+  useEffect(() => {
+    setActiveSport(initialSport)
+  }, [initialSport])
+
   useEffect(() => {
     fetch('/api/instagram/reels')
       .then(r => r.json())
       .then((data: SanityReel[]) => {
         if (data?.length) {
           setLiveReels(data)
+          // Reset sport filter if the live data no longer includes the selected sport
+          const liveSports = new Set(data.map((r, i) => normalize(r, i).sport).filter(Boolean))
+          setActiveSport(prev => (prev && !liveSports.has(prev)) ? '' : prev)
           // The IntersectionObserver fires while skeletons are showing (no data-reveal children),
           // then unobserves. Reveal cards manually after live data is set.
           setTimeout(() => {
