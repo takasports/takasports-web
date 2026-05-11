@@ -408,11 +408,12 @@ export default function ReelsSection({
       .then((data: SanityReel[]) => {
         if (data?.length) {
           setLiveReels(data)
-          // Reset sport filter if the live data no longer includes the selected sport
-          const liveSports = new Set(data.map((r, i) => normalize(r, i).sport).filter(Boolean))
-          setActiveSport(prev => (prev && !liveSports.has(prev)) ? '' : prev)
-          // The IntersectionObserver fires while skeletons are showing (no data-reveal children),
-          // then unobserves. Reveal cards manually after live data is set.
+          // If the current sport filter yields 0 reels in live data, reset to show all
+          setActiveSport(prev => {
+            if (!prev) return prev
+            const hasMatch = data.some((r, i) => normalize(r, i).sport === prev)
+            return hasMatch ? prev : ''
+          })
           setTimeout(() => {
             document.getElementById('reels')?.querySelectorAll('[data-reveal]').forEach((el, i) => {
               setTimeout(() => el.classList.add('revealed'), i * 60)
