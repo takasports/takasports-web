@@ -39,7 +39,7 @@ const nextConfig: NextConfig = {
       // Tailwind/inline styles
       "style-src 'self' 'unsafe-inline'",
       // Imágenes: CDNs conocidos + data URIs (favicons, placeholders)
-      "img-src 'self' data: blob: https://cdn.sanity.io https://*.cdninstagram.com https://*.fbcdn.net https://*.espncdn.com https://media.api-sports.io https://*.cloudfront.net https://*.twimg.com https://upload.wikimedia.org",
+      "img-src 'self' data: blob: https:",
       // Fuentes locales
       "font-src 'self' data:",
       // API calls: Supabase, Sanity, ESPN, api-sports, Instagram, Odds
