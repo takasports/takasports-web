@@ -123,10 +123,21 @@ export async function generateMetadata(
   if (tab && tab !== 'jugadores') params.set('tab', tab)
   const canonicalPath = params.toString() ? `/rankings?${params}` : '/rankings'
 
+  // Parámetros que no forman parte del canonical — si están presentes la URL
+  // real difiere del canonical, Google la marca como "alternativa con canonical
+  // adecuado" y no la indexa. Añadimos noindex explícito para evitar esos reportes.
+  const EXTRA_PARAMS = ['liga', 'scope', 'gender', 'posicion', 'badge']
+  const hasExtraParams = EXTRA_PARAMS.some(p => !!pickStr(sp, p))
+  // tab=jugadores es el valor por defecto y se excluye del canonical, por lo que
+  // /rankings?tab=jugadores tendría un canonical distinto (/rankings).
+  const hasRedundantTab = tab === 'jugadores'
+  const noindex = hasExtraParams || hasRedundantTab
+
   return {
     title,
     description,
     alternates: { canonical: `${SITE_URL}${canonicalPath}` },
+    ...(noindex ? { robots: { index: false, follow: false } } : {}),
     openGraph: { title, description, type: 'website', url: `${SITE_URL}${canonicalPath}`, siteName: 'TakaSports', locale: 'es_ES' },
     twitter: { card: 'summary_large_image', title, description, site: '@takasportsx' },
   }

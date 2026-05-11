@@ -10,11 +10,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/perfil/', '/admin/', '/buscar', '/buscar/'],
       },
     ],
-    sitemap: [
-      `${SITE_URL}/sitemap.xml`,
-      `${SITE_URL}/news-sitemap.xml`,
-      `${SITE_URL}/image-sitemap.xml`,
-      `${SITE_URL}/video-sitemap.xml`,
-    ],
+    sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }

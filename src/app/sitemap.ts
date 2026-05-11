@@ -54,13 +54,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/sobre`, lastModified: STATIC_LASTMOD, changeFrequency: 'monthly', priority: 0.5 },
   ]
 
-  // Rankings filtrados — title dinámico ya cubre el SEO en la misma URL
-  const RANKINGS_FILTERED: MetadataRoute.Sitemap = [
-    'futbol', 'baloncesto', 'formula1', 'tenis', 'ufc', 'wwe', 'contenido',
-  ].map(deporte => (
-    { url: `${BASE_URL}/rankings?deporte=${deporte}`, lastModified: RANKINGS_LASTMOD, changeFrequency: 'weekly' as const, priority: 0.7 }
-  ))
-
   // Combina entradas estáticas curadas + entradas auto-generadas de DB (top 2000)
   const staticIds = new Set(getAllRankingEntries().map(e => e.id))
   const allRankingIds = [
@@ -107,5 +100,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     }))
 
-  return [...staticRoutes, ...sportRoutes, ...RANKINGS_FILTERED, ...rankingDetailRoutes, ...articleRoutes, ...tagRoutes]
+  return [...staticRoutes, ...sportRoutes, ...rankingDetailRoutes, ...articleRoutes, ...tagRoutes]
 }
