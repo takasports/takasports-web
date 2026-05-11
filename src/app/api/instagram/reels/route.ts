@@ -40,6 +40,8 @@ interface CacheEntry { data: PublicReel[]; ts: number }
 const CACHE_TTL = 5 * 60 * 1000
 let cache: CacheEntry | null = null
 
+const STORAGE_MAX_AGE_MS = 12 * 60 * 60 * 1000 // 12h — si Supabase está más viejo, usar feed live
+
 async function fetchFromStorage(): Promise<PublicReel[] | null> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null
   try {
@@ -50,6 +52,12 @@ async function fetchFromStorage(): Promise<PublicReel[] | null> {
     if (!res.ok) return null
     const data = await res.json()
     if (!Array.isArray(data) || data.length === 0) return null
+    // Comprobar frescura: si el reel más reciente tiene >12h, ignorar Supabase
+    const newestTs = data.reduce((max: number, r: PublicReel) => {
+      const ts = r.timestamp ? new Date(r.timestamp).getTime() || (Number(r.timestamp) * 1000) : 0
+      return ts > max ? ts : max
+    }, 0)
+    if (newestTs > 0 && Date.now() - newestTs > STORAGE_MAX_AGE_MS) return null
     return data.map(normalizeReel)
   } catch {
     return null
