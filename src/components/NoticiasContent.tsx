@@ -271,27 +271,10 @@ export default function NoticiasContent({
                 initialCategory={activeCategory}
                 featuredCount={7}
                 hideFilter={true}
+                onLoadMore={loadMore}
+                hasMore={hasMore && timeFilter === 'todo'}
+                loadingMore={loadingMore}
               />
-
-              {/* ── CARGAR MÁS ── */}
-              {hasMore && timeFilter === 'todo' && (
-                <div className="flex justify-center mt-8 mb-4">
-                  <button
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all"
-                    style={{
-                      background: loadingMore ? 'rgba(255,255,255,0.04)' : 'rgba(124,58,237,0.12)',
-                      color: loadingMore ? '#3A3A52' : '#C4B5FD',
-                      border: loadingMore ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(124,58,237,0.3)',
-                      fontFamily: 'var(--font-sport)',
-                      cursor: loadingMore ? 'default' : 'pointer',
-                    }}
-                  >
-                    {loadingMore ? 'Cargando…' : 'Cargar más noticias'}
-                  </button>
-                </div>
-              )}
             </div>
             <aside className="hidden lg:block w-[272px] xl:w-[300px] flex-shrink-0 sticky top-24">
               <NewsSidebar articles={allArticles} />

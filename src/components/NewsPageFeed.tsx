@@ -89,12 +89,18 @@ export default function NewsPageFeed({
   baseRoute = '/noticias',
   featuredCount = 1,
   hideFilter = false,
+  onLoadMore,
+  hasMore = false,
+  loadingMore = false,
 }: {
   articles: Article[]
   initialCategory?: string
   baseRoute?: string
   featuredCount?: number
   hideFilter?: boolean
+  onLoadMore?: () => void | Promise<void>
+  hasMore?: boolean
+  loadingMore?: boolean
 }) {
   const router = useRouter()
   const [category, setCategory] = useState(initialCategory)
@@ -326,6 +332,32 @@ export default function NewsPageFeed({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── VER MÁS ── trae histórico vía API */}
+      {hasMore && onLoadMore && (
+        <div className="mt-6 flex items-center gap-4">
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <button
+            onClick={() => { void onLoadMore() }}
+            disabled={loadingMore}
+            className="flex items-center gap-2.5 px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs transition-all hover:brightness-110 hover:-translate-y-px active:translate-y-0"
+            style={{
+              background: 'rgba(124,58,237,0.1)',
+              color: '#C4B5FD',
+              border: '1px solid rgba(124,58,237,0.25)',
+              fontFamily: 'var(--font-sport)',
+              cursor: loadingMore ? 'default' : 'pointer',
+              boxShadow: '0 4px 20px rgba(124,58,237,0.1)',
+            }}
+          >
+            {loadingMore ? 'Cargando…' : 'Ver más noticias'}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 2v8M2.5 7.5L6 11l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
         </div>
       )}
 
