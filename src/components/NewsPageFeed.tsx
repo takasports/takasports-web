@@ -83,8 +83,6 @@ function DateSeparator({ label }: { label: DateGroup }) {
   )
 }
 
-const PAGE_SIZE = 8
-
 export default function NewsPageFeed({
   articles,
   initialCategory = 'Todo',
@@ -101,14 +99,12 @@ export default function NewsPageFeed({
   const router = useRouter()
   const [category, setCategory] = useState(initialCategory)
   const [view, setView] = useState<'list' | 'grid'>('list')
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const listRef = useScrollReveal({ threshold: 0.15 })
   const gridRef = useScrollReveal({ threshold: 0.15 })
 
   const handleCategorySelect = useCallback(
     (cat: string) => {
       setCategory(cat)
-      setVisibleCount(PAGE_SIZE)
       const slug = CATEGORY_TO_SLUG[cat]
       if (slug) {
         router.replace(`${baseRoute}?sport=${slug}`, { scroll: false })
@@ -131,11 +127,10 @@ export default function NewsPageFeed({
           return sportSlug === activeSlug || catSlug === activeSlug
         })
 
-  // Skip artículos ya mostrados en hero/grid
+  // Skip artículos ya mostrados en hero/grid — render TODO el feed,
+  // la paginación de histórico la maneja el botón "Cargar más" del padre.
   const feedArticles = filtered.slice(featuredCount)
-  const visibleArticles = feedArticles.slice(0, visibleCount)
-  const hasMore = visibleCount < feedArticles.length
-  const remaining = feedArticles.length - visibleCount
+  const visibleArticles = feedArticles
   const groups = groupByDate(visibleArticles)
 
   return (
@@ -334,41 +329,6 @@ export default function NewsPageFeed({
         </div>
       )}
 
-      {/* ── VER MÁS ── */}
-      {hasMore && (
-        <div className="mt-6 flex items-center gap-4">
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <button
-            onClick={() => setVisibleCount(feedArticles.length)}
-            className="flex items-center gap-2.5 px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs transition-all hover:brightness-110 hover:-translate-y-px active:translate-y-0"
-            style={{
-              background: 'rgba(124,58,237,0.1)',
-              color: '#C4B5FD',
-              border: '1px solid rgba(124,58,237,0.25)',
-              fontFamily: 'var(--font-sport)',
-              cursor: 'pointer',
-              boxShadow: '0 4px 20px rgba(124,58,237,0.1)',
-            }}
-          >
-            Ver más noticias
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M6 2v8M2.5 7.5L6 11l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-        </div>
-      )}
-
-      {/* Fin del feed */}
-      {!hasMore && feedArticles.length > PAGE_SIZE && (
-        <div className="mt-8 flex items-center gap-4">
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
-            Has visto todo · {feedArticles.length} noticias
-          </span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-        </div>
-      )}
     </div>
   )
 }
