@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel } from '@/lib/sports'
+import { getSportStyle, getSportLabel, HOME_SPORT_CATEGORIES, CATEGORY_TO_SLUG } from '@/lib/sports'
 import { useTilt } from '@/hooks/useTilt'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 
@@ -348,6 +348,57 @@ function ReelPlaceholder({ accent, emoji, label }: { accent: string; emoji: stri
   )
 }
 
+// ── CTA "Ver más" — siempre al final del carrusel; lleva al perfil de IG ─
+function MoreReelsCard({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | null> }) {
+  // Si hay más reels a la derecha (el carrusel desborda), el botón scrollea
+  // dentro del carrusel; si ya estamos al final, abre Instagram.
+  const handleClick = () => {
+    const el = scrollRef.current
+    if (!el) return
+    const max = el.scrollWidth - el.clientWidth
+    const atEnd = max <= 0 || el.scrollLeft >= max - 4
+    if (atEnd) {
+      window.open('https://www.instagram.com/taka.sports', '_blank', 'noopener,noreferrer')
+    } else {
+      el.scrollBy({ left: el.clientWidth * 0.85, behavior: 'smooth' })
+    }
+  }
+  return (
+    <button
+      onClick={handleClick}
+      aria-label="Ver más reels en Instagram"
+      className="relative flex-shrink-0 flex flex-col items-center justify-center gap-3 group transition-transform hover:scale-[1.02]"
+      style={{
+        width: 180, height: 300, borderRadius: 16,
+        background: 'linear-gradient(160deg, rgba(131,58,180,0.22) 0%, rgba(193,53,132,0.16) 50%, rgba(14,12,28,0.98) 100%)',
+        boxShadow: '0 0 0 1.5px rgba(193,53,132,0.35), 0 8px 28px rgba(131,58,180,0.18)',
+        border: '1.5px solid rgba(193,53,132,0.35)',
+        cursor: 'pointer',
+        padding: 0,
+      }}
+    >
+      <div className="absolute inset-0 pointer-events-none" style={{ borderRadius: 16, background: 'radial-gradient(ellipse at 50% 30%, rgba(193,53,132,0.18) 0%, transparent 65%)' }} />
+      <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-full" style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)' }}>
+        <IGIcon size={9} />
+        <span className="text-[8px] font-black uppercase tracking-widest text-white opacity-70">@taka.sports</span>
+      </div>
+      <div
+        className="w-14 h-14 rounded-2xl flex items-center justify-center relative z-10 transition-transform group-hover:translate-x-1"
+        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(193,53,132,0.4)' }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M5 12h14M13 5l7 7-7 7" stroke="#D4A0C8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <div className="text-center px-4 relative z-10">
+        <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#D4A0C8', fontFamily: 'var(--font-sport)' }}>Ver más reels</p>
+        <p className="text-[8px] font-black uppercase tracking-widest mt-1.5" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-sport)' }}>Seguir scroll · Instagram</p>
+      </div>
+      <div className="absolute bottom-3 left-3.5 right-3.5" style={{ height: 2, borderRadius: 2, background: 'linear-gradient(to right, rgba(193,53,132,0.9), rgba(131,58,180,0.2))' }} />
+    </button>
+  )
+}
+
 // ── Filtro por deporte ──────────────────────────────────────────
 function SportTabs({ sports, active, onChange }: { sports: string[]; active: string; onChange: (s: string) => void }) {
   const tabs = [{ slug: '', label: 'Todos' }, ...sports.map(s => ({ slug: s, label: getSportLabel(s) || s }))]
@@ -444,7 +495,18 @@ export default function ReelsSection({
 
   const hasReels = reels.length > 0
 
-  const availableSports = Array.from(new Set(reels.map(r => r.sport).filter(Boolean))) as string[]
+  // Mostrar tabs para todos los deportes del filtro global (Todo / Fútbol / WWE / F1 / ...),
+  // así WWE u otros no "desaparecen" cuando momentáneamente no hay reels de esa categoría.
+  // Se ordenan primero los que tienen reels actualmente.
+  const reelsBySport = new Set(reels.map(r => r.sport).filter(Boolean) as string[])
+  const allTabSlugs = HOME_SPORT_CATEGORIES
+    .filter(c => c !== 'Todo')
+    .map(c => CATEGORY_TO_SLUG[c])
+    .filter((s): s is string => Boolean(s))
+  const availableSports = [
+    ...allTabSlugs.filter(s => reelsBySport.has(s)),
+    ...allTabSlugs.filter(s => !reelsBySport.has(s)),
+  ]
   const visible = activeSport ? reels.filter(r => r.sport === activeSport) : reels
 
   return (
@@ -491,18 +553,26 @@ export default function ReelsSection({
           {showSkeleton
             ? Array.from({ length: 6 }).map((_, i) => <ReelSkeleton key={i} />)
             : hasReels && visible.length > 0
-              ? visible.map(reel => <div key={reel.key}><ReelCard reel={reel} onClick={() => setActiveReel(reel)} /></div>)
+              ? (
+                <>
+                  {visible.map(reel => <div key={reel.key}><ReelCard reel={reel} onClick={() => setActiveReel(reel)} /></div>)}
+                  <MoreReelsCard scrollRef={scrollRef} />
+                </>
+              )
               : hasReels && visible.length === 0
                 ? (
-                  <div
-                    className="flex flex-col items-center justify-center gap-2 flex-shrink-0"
-                    style={{ width: '100%', minHeight: 200, color: '#3A3A52' }}
-                  >
-                    <span style={{ fontSize: 28 }}>📭</span>
-                    <p className="text-[11px] font-black uppercase tracking-widest" style={{ fontFamily: 'var(--font-sport)' }}>
-                      Sin reels en esta categoría
-                    </p>
-                  </div>
+                  <>
+                    <div
+                      className="flex flex-col items-center justify-center gap-2 flex-shrink-0"
+                      style={{ width: 360, minHeight: 200, color: '#3A3A52' }}
+                    >
+                      <span style={{ fontSize: 28 }}>📭</span>
+                      <p className="text-[11px] font-black uppercase tracking-widest" style={{ fontFamily: 'var(--font-sport)' }}>
+                        Sin reels en esta categoría
+                      </p>
+                    </div>
+                    <MoreReelsCard scrollRef={scrollRef} />
+                  </>
                 )
                 : REEL_PLACEHOLDERS.map((p, i) => <div key={p.sport} className="reel-enter" style={{ animationDelay: `${i * 60}ms` }}><ReelPlaceholder accent={p.accent} emoji={p.emoji} label={p.label} /></div>)
           }
