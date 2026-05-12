@@ -190,12 +190,19 @@ export default function HomeContent({
   const [activeSport, setActiveSport] = useState<string>(initialSport || 'Todo')
   const [displayCount, setDisplayCount] = useState(HOME_PAGE_SIZE)
   const [contentVisible, setContentVisible] = useState(true)
+  const [extraArticles, setExtraArticles] = useState<Article[]>([])
+  const [nextApiPage, setNextApiPage] = useState(3)
+  const [apiHasMore, setApiHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   const handleSportChange = useCallback((cat: string) => {
     setContentVisible(false)
     setTimeout(() => {
       setActiveSport(cat)
       setDisplayCount(HOME_PAGE_SIZE)
+      setExtraArticles([])
+      setNextApiPage(3)
+      setApiHasMore(true)
       setContentVisible(true)
       const slug = CATEGORY_TO_SLUG[cat]
       if (slug) {
@@ -225,9 +232,40 @@ export default function HomeContent({
       })
 
   const heroArticles = filteredArticles.slice(0, 8)
-  const feedSource = filteredArticles.slice(heroArticles.length)
+  const localFeed = filteredArticles.slice(heroArticles.length)
+  const feedSource = [...localFeed, ...extraArticles]
   const feedDisplayed = feedSource.slice(0, displayCount)
-  const feedHasMore = displayCount < feedSource.length
+  const feedHasMore = displayCount < feedSource.length || apiHasMore
+
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore) return
+    if (displayCount < feedSource.length) {
+      setDisplayCount(feedSource.length)
+      return
+    }
+    if (!apiHasMore) return
+    setLoadingMore(true)
+    try {
+      const slug = CATEGORY_TO_SLUG[activeSport]?.toLowerCase() ?? ''
+      const url = slug
+        ? `/api/articles?page=${nextApiPage}&sport=${slug}`
+        : `/api/articles?page=${nextApiPage}`
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        const fetched: Article[] = data.articles ?? []
+        const seen = new Set([...filteredArticles, ...extraArticles].map(a => a._id))
+        const fresh = fetched.filter(a => !seen.has(a._id))
+        if (fresh.length > 0) {
+          setExtraArticles(prev => [...prev, ...fresh])
+          setDisplayCount(prev => prev + fresh.length)
+        }
+        setNextApiPage(p => p + 1)
+        setApiHasMore(Boolean(data.hasMore))
+      }
+    } catch { /* silencio: el botón seguirá visible para reintentar */ }
+    finally { setLoadingMore(false) }
+  }, [loadingMore, displayCount, feedSource.length, apiHasMore, activeSport, nextApiPage, filteredArticles, extraArticles])
 
   return (
     <main className="max-w-[1440px] mx-auto pb-6">
@@ -331,7 +369,8 @@ export default function HomeContent({
             <div className="mt-6 flex items-center gap-4">
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
               <button
-                onClick={() => setDisplayCount(feedSource.length)}
+                onClick={handleLoadMore}
+                disabled={loadingMore}
                 className="flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:brightness-110 hover:-translate-y-px active:translate-y-0"
                 style={{
                   background: 'rgba(124,58,237,0.1)',
@@ -342,7 +381,7 @@ export default function HomeContent({
                   boxShadow: '0 4px 16px rgba(124,58,237,0.1)',
                 }}
               >
-                Ver más noticias
+                {loadingMore ? 'Cargando…' : 'Ver más noticias'}
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path d="M6 2v8M2.5 7.5L6 11l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
