@@ -9,17 +9,30 @@ const sanity = createClient({
   useCdn: true,
 })
 
-const PAGE_SIZE = 20
+const DEFAULT_PAGE_SIZE = 20
+const MAX_PAGE_SIZE = 50
 
 // Base filter: public articles from both schemas
 const BASE_FILTER = `_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))`
 
-function buildQuery(start: number, end: number, sport?: string) {
-  const sportFilter = sport
-    ? ` && (sport == $sport || competition == $sport)`
-    : ''
+interface Filters {
+  sport?: string
+  from?: string // ISO date YYYY-MM-DD inclusive
+  to?: string   // ISO date YYYY-MM-DD inclusive
+  q?: string    // free-text search
+}
 
-  return `*[${BASE_FILTER}${sportFilter}] | order(publishedAt desc)[${start}...${end}] {
+function buildFilterClause(f: Filters): string {
+  const parts: string[] = [BASE_FILTER]
+  if (f.sport) parts.push(`(sport == $sport || competition == $sport)`)
+  if (f.from) parts.push(`publishedAt >= $from`)
+  if (f.to) parts.push(`publishedAt <= $to`)
+  if (f.q) parts.push(`(title match $q || headline match $q || short_summary match $q || metaDescription match $q)`)
+  return parts.join(' && ')
+}
+
+function buildQuery(start: number, end: number, f: Filters) {
+  return `*[${buildFilterClause(f)}] | order(publishedAt desc)[${start}...${end}] {
     _id,
     "slug": slug.current,
     "title": select(defined(headline) => headline, title),
@@ -35,32 +48,66 @@ function buildQuery(start: number, end: number, sport?: string) {
   }`
 }
 
-function buildCountQuery(sport?: string) {
-  const sportFilter = sport
-    ? ` && (sport == $sport || competition == $sport)`
-    : ''
-  return `count(*[${BASE_FILTER}${sportFilter}])`
+function buildCountQuery(f: Filters) {
+  return `count(*[${buildFilterClause(f)}])`
+}
+
+// Normaliza un YYYY-MM-DD del usuario a ISO; rangos inclusivos día completo.
+function toIsoStart(date?: string | null): string | undefined {
+  if (!date) return undefined
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+  if (!m) return undefined
+  return `${date}T00:00:00.000Z`
+}
+function toIsoEnd(date?: string | null): string | undefined {
+  if (!date) return undefined
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+  if (!m) return undefined
+  return `${date}T23:59:59.999Z`
+}
+
+// Sanitiza la query de búsqueda: limita longitud, elimina chars conflictivos
+// de GROQ match (* y ? son comodines válidos pero los recortamos por simplicidad).
+function sanitizeQuery(raw?: string | null): string | undefined {
+  if (!raw) return undefined
+  const cleaned = raw.replace(/[*?"\\]/g, ' ').trim().slice(0, 80)
+  if (!cleaned) return undefined
+  // GROQ match con prefix wildcard: `messi*` matchea palabras que empiezan por messi.
+  return `${cleaned}*`
 }
 
 export async function GET(req: NextRequest) {
-  const page = Math.max(1, Number(req.nextUrl.searchParams.get('page') ?? '1'))
-  const sport = req.nextUrl.searchParams.get('sport') ?? undefined
-  const start = (page - 1) * PAGE_SIZE
-  const end = start + PAGE_SIZE
+  const sp = req.nextUrl.searchParams
+  const page = Math.max(1, Number(sp.get('page') ?? '1'))
+  const pageSizeRaw = Number(sp.get('pageSize') ?? DEFAULT_PAGE_SIZE)
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.isFinite(pageSizeRaw) ? pageSizeRaw : DEFAULT_PAGE_SIZE))
+  const sport = sp.get('sport') || undefined
+  const from = toIsoStart(sp.get('from'))
+  const to = toIsoEnd(sp.get('to'))
+  const q = sanitizeQuery(sp.get('q'))
+
+  const filters: Filters = { sport, from, to, q }
+  const start = (page - 1) * pageSize
+  const end = start + pageSize
 
   try {
-    const params = sport ? { sport } : {}
+    const params: Record<string, string> = {}
+    if (sport) params.sport = sport
+    if (from) params.from = from
+    if (to) params.to = to
+    if (q) params.q = q
+
     const [articles, total] = await Promise.all([
-      sanity.fetch(buildQuery(start, end, sport), params),
-      sanity.fetch<number>(buildCountQuery(sport), params),
+      sanity.fetch(buildQuery(start, end, filters), params),
+      sanity.fetch<number>(buildCountQuery(filters), params),
     ])
 
     return NextResponse.json(
-      { articles, total, page, pageSize: PAGE_SIZE, hasMore: end < total },
+      { articles, total, page, pageSize, hasMore: end < total },
       { headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' } }
     )
   } catch (err) {
-    captureException(err, { route: '/api/articles', page, sport })
+    captureException(err, { route: '/api/articles', page, sport, from, to, q })
     return NextResponse.json({ error: 'Failed to fetch articles' }, { status: 500 })
   }
 }
