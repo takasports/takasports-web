@@ -225,8 +225,9 @@ export default function HomeContent({
       })
 
   const heroArticles = filteredArticles.slice(0, 8)
-  const feedDisplayed = filteredArticles.slice(0, displayCount)
-  const feedHasMore = displayCount < filteredArticles.length
+  const feedSource = filteredArticles.slice(heroArticles.length)
+  const feedDisplayed = feedSource.slice(0, displayCount)
+  const feedHasMore = displayCount < feedSource.length
 
   return (
     <main className="max-w-[1440px] mx-auto pb-6">
