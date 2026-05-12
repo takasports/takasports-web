@@ -331,7 +331,7 @@ export default function HomeContent({
             <div className="mt-6 flex items-center gap-4">
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
               <button
-                onClick={() => setDisplayCount(prev => prev + HOME_PAGE_SIZE)}
+                onClick={() => setDisplayCount(feedSource.length)}
                 className="flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:brightness-110 hover:-translate-y-px active:translate-y-0"
                 style={{
                   background: 'rgba(124,58,237,0.1)',

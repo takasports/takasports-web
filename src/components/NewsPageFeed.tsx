@@ -339,7 +339,7 @@ export default function NewsPageFeed({
         <div className="mt-6 flex items-center gap-4">
           <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           <button
-            onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
+            onClick={() => setVisibleCount(feedArticles.length)}
             className="flex items-center gap-2.5 px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs transition-all hover:brightness-110 hover:-translate-y-px active:translate-y-0"
             style={{
               background: 'rgba(124,58,237,0.1)',
