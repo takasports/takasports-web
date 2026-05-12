@@ -105,8 +105,8 @@ export default function NewsPageFeed({
   const router = useRouter()
   const [category, setCategory] = useState(initialCategory)
   const [view, setView] = useState<'list' | 'grid'>('list')
-  const listRef = useScrollReveal({ threshold: 0, rootMargin: '0px 0px 400px 0px' })
-  const gridRef = useScrollReveal({ threshold: 0, rootMargin: '0px 0px 400px 0px' })
+  const listRef = useScrollReveal({ threshold: 0, rootMargin: '0px 0px 180px 0px' })
+  const gridRef = useScrollReveal({ threshold: 0, rootMargin: '0px 0px 180px 0px' })
 
   const handleCategorySelect = useCallback(
     (cat: string) => {
