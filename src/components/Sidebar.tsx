@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import QuinielaModule from './QuinielaModule'
 import { HOME_EVENTS } from '@/lib/events'
-import { RANKING_JUGADORES } from '@/lib/rankings'
+import { RANKING_JUGADORES, type RankingEntry } from '@/lib/rankings'
 
 function SectionHeader({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
@@ -15,12 +15,16 @@ function SectionHeader({ children, action }: { children: React.ReactNode; action
   )
 }
 
-const TOP_PLAYERS = RANKING_JUGADORES.slice(0, 5)
+const TREND_COLOR: Record<string, string> = {
+  up2: '#22c55e', up: '#4ade80', flat: '#6B6B8A', down: '#f87171', down2: '#ef4444',
+}
+const TREND_ICON: Record<string, string> = {
+  up2: '↑↑', up: '↑', flat: '—', down: '↓', down2: '↓↓',
+}
 
-const TREND_COLOR: Record<string, string> = { up: '#4ade80', down: '#f87171', stable: '#6B6B8A' }
-const TREND_ICON: Record<string, string> = { up: '↑', down: '↓', stable: '—' }
+export default function Sidebar({ topPlayers }: { topPlayers?: RankingEntry[] }) {
+  const TOP_PLAYERS = (topPlayers && topPlayers.length > 0 ? topPlayers : RANKING_JUGADORES).slice(0, 5)
 
-export default function Sidebar() {
   return (
     <div className="flex flex-col gap-7 pt-1">
 
@@ -87,8 +91,8 @@ export default function Sidebar() {
                 <p className="text-[12px] font-black tabular-nums" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
                   {player.score}
                 </p>
-                <p className="text-[9px] font-bold" style={{ color: TREND_COLOR[player.trend] ?? '#6B6B8A' }}>
-                  {TREND_ICON[player.trend] ?? '—'}
+                <p className="text-[9px] font-bold" style={{ color: TREND_COLOR[player.trend as string] ?? '#6B6B8A' }}>
+                  {TREND_ICON[player.trend as string] ?? '—'}
                 </p>
               </div>
             </Link>

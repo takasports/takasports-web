@@ -4,6 +4,7 @@ import { SLUG_TO_LABEL } from '@/lib/sports'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents } from '@/lib/espn'
 import { fetchPublicReels } from '@/lib/instagram-public'
+import { getRanking } from '@/lib/rankings-data'
 import { SEED_REELS } from '@/lib/seed-reels'
 import Header from '@/components/Header'
 import BreakingNewsBar from '@/components/BreakingNewsBar'
@@ -72,12 +73,13 @@ export default async function Home({
   searchParams: Promise<{ sport?: string }>
 }) {
   const { sport } = await searchParams
-  const [rawArticles, sanityReels, rawEvents, espnEvents, igReels] = await Promise.all([
+  const [rawArticles, sanityReels, rawEvents, espnEvents, igReels, topPlayers] = await Promise.all([
     sanityClient.fetch<HomeArticle[]>(articlesQuery),
     sanityClient.fetch(reelsQuery),
     sanityClient.fetch(eventsQuery).catch(() => []),
     fetchEspnEvents().catch(() => []),
     fetchPublicReels().catch(() => []),
+    getRanking('jugadores').catch(() => []),
   ])
 
   const articles = sortForHome(rawArticles)
@@ -121,7 +123,7 @@ export default async function Home({
       <h1 className="sr-only">TakaSports — Noticias deportivas en tiempo real</h1>
       <BreakingNewsBar items={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
       <LiveStrip />
-      <HomeContent articles={articles} reels={reels} events={events} initialSport={initialSport} />
+      <HomeContent articles={articles} reels={reels} events={events} initialSport={initialSport} topPlayers={topPlayers} />
       <Footer />
     </div>
   )

@@ -8,6 +8,7 @@ import ReelsSection from '@/components/ReelsSection'
 import LiveEventsSection from '@/components/LiveEventsSection'
 import NewsFeed from '@/components/NewsFeed'
 import Sidebar from '@/components/Sidebar'
+import type { RankingEntry } from '@/lib/rankings'
 import QuinielaModule from '@/components/QuinielaModule'
 import CategoriesFilter from '@/components/CategoriesFilter'
 import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
@@ -177,11 +178,13 @@ export default function HomeContent({
   reels,
   events,
   initialSport = '',
+  topPlayers,
 }: {
   articles: Article[]
   reels: SanityReel[]
   events: SportEvent[]
   initialSport?: string
+  topPlayers?: RankingEntry[]
 }) {
   const router = useRouter()
   const [activeSport, setActiveSport] = useState<string>(initialSport || 'Todo')
@@ -362,7 +365,7 @@ export default function HomeContent({
 
         {/* Sidebar — solo desktop */}
         <aside className="w-72 xl:w-80 flex-shrink-0 hidden lg:block sticky top-20 self-start pt-6">
-          <Sidebar />
+          <Sidebar topPlayers={topPlayers} />
         </aside>
 
       </div>
