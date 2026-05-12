@@ -85,8 +85,10 @@ export default function NoticiasContent({
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('todo')
   const [contentVisible, setContentVisible] = useState(true)
   const [allArticles, setAllArticles] = useState<Article[]>(articles)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(articles.length === 20)
+  // SSR ya carga 40 artículos (pages 1+2 del API con pageSize 20).
+  // La siguiente carga del histórico arranca en page 3.
+  const [page, setPage] = useState(2)
+  const [hasMore, setHasMore] = useState(articles.length >= 20)
   const [loadingMore, setLoadingMore] = useState(false)
   const activeSportRef = useRef('')
 
