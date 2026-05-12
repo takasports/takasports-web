@@ -85,71 +85,110 @@ export interface PublicReel {
   title: string
 }
 
-interface MediaNode {
+interface FeedItem {
   id: string
-  shortcode: string
-  __typename: string
-  is_video: boolean
-  product_type?: string
-  thumbnail_src: string
-  video_url?: string
-  taken_at_timestamp: number
-  edge_media_to_caption: { edges: Array<{ node: { text: string } }> }
+  pk: string | number
+  code: string
+  media_type: number // 1=image, 2=video, 8=carousel
+  taken_at: number
+  caption?: { text?: string } | null
+  image_versions2?: { candidates?: Array<{ url: string; width: number }> }
+  video_versions?: Array<{ url: string; width: number; height: number; type: number }>
 }
 
-export async function fetchPublicReels(username = 'taka.sports'): Promise<PublicReel[]> {
-  try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 8000)
+interface FeedResponse {
+  items?: FeedItem[]
+  more_available?: boolean
+  next_max_id?: string
+}
 
+function igHeaders(username: string) {
+  return {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'X-IG-App-ID': '936619743392459',
+    'Accept': 'application/json',
+    'Accept-Language': 'es-ES,es;q=0.9',
+    // El feed paginado (api/v1/feed/user/{id}/) devuelve 401 si el Referer
+    // no apunta al perfil; con la URL del perfil pasamos el anti-abuse.
+    'Referer': `https://www.instagram.com/${username}/`,
+  } as const
+}
+
+async function resolveUserId(username: string): Promise<string | null> {
+  try {
     const res = await fetch(
       `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`,
-      {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'X-IG-App-ID': '936619743392459',
-          'Accept': 'application/json',
-          'Accept-Language': 'es-ES,es;q=0.9',
-          'Referer': 'https://www.instagram.com/',
-        },
-        signal: controller.signal,
-        cache: 'no-store',
-      }
-    ).finally(() => clearTimeout(timeout))
-
-    if (!res.ok) {
-      console.error('[Instagram public] HTTP', res.status)
-      return []
-    }
-
+      { headers: igHeaders(username), signal: AbortSignal.timeout(6000), cache: 'no-store' },
+    )
+    if (!res.ok) return null
     const data = await res.json()
-    const edges: Array<{ node: MediaNode }> =
-      data?.data?.user?.edge_owner_to_timeline_media?.edges ?? []
-
-    return edges
-      .filter(e => e.node.is_video)
-      .map(e => {
-        const node = e.node
-        const caption = node.edge_media_to_caption?.edges?.[0]?.node?.text ?? ''
-        const rawThumb = node.thumbnail_src ?? null
-        const rawVideo = node.video_url ?? null
-        return {
-          id:            node.id,
-          instagram_url: `https://www.instagram.com/reel/${node.shortcode}/`,
-          thumbnail_url: rawThumb
-            ? `/api/instagram/thumbnail?url=${encodeURIComponent(rawThumb)}`
-            : null,
-          video_url:     rawVideo
-            ? `/api/instagram/video?url=${encodeURIComponent(rawVideo)}`
-            : null,
-          timestamp:     new Date(node.taken_at_timestamp * 1000).toISOString(),
-          caption,
-          sport:         detectSport(caption),
-          title:         extractTitle(caption),
-        }
-      })
-  } catch (err) {
-    console.error('[Instagram public] error:', err)
-    return []
+    return data?.data?.user?.id ?? null
+  } catch {
+    return null
   }
+}
+
+function mapItem(item: FeedItem): PublicReel | null {
+  if (item.media_type !== 2) return null
+  const caption = item.caption?.text ?? ''
+  const thumb = item.image_versions2?.candidates?.[0]?.url ?? null
+  const video = item.video_versions?.[0]?.url ?? null
+  return {
+    id:            String(item.pk ?? item.id),
+    instagram_url: `https://www.instagram.com/reel/${item.code}/`,
+    thumbnail_url: thumb ? `/api/instagram/thumbnail?url=${encodeURIComponent(thumb)}` : null,
+    video_url:     video ? `/api/instagram/video?url=${encodeURIComponent(video)}`  : null,
+    timestamp:     new Date(item.taken_at * 1000).toISOString(),
+    caption,
+    sport:         detectSport(caption),
+    title:         extractTitle(caption),
+  }
+}
+
+// Pagina el feed de IG hasta MAX_PAGES o hasta agotar contenido.
+// IG limita cada página a 12 items independientemente del count solicitado.
+const MAX_PAGES = 6 // hasta ~72 items, suficiente para muchos videos recientes
+
+export async function fetchPublicReels(username = 'taka.sports'): Promise<PublicReel[]> {
+  const userId = await resolveUserId(username)
+  if (!userId) return []
+
+  const reels: PublicReel[] = []
+  let maxId: string | undefined
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    if (page > 0) {
+      // Delay para evitar rate-limit/anti-abuse de IG (devuelve 401 si se piden
+      // varias páginas anónimas sin pausa).
+      await new Promise(r => setTimeout(r, 350 + Math.random() * 250))
+    }
+    const url = new URL(`https://www.instagram.com/api/v1/feed/user/${userId}/`)
+    url.searchParams.set('count', '12')
+    if (maxId) url.searchParams.set('max_id', maxId)
+
+    try {
+      const res = await fetch(url.toString(), {
+        headers: igHeaders(username),
+        signal: AbortSignal.timeout(7000),
+        cache: 'no-store',
+      })
+      if (!res.ok) {
+        console.error('[Instagram public] HTTP', res.status, 'page', page)
+        break
+      }
+      const data: FeedResponse = await res.json()
+      const items = data.items ?? []
+      for (const it of items) {
+        const r = mapItem(it)
+        if (r) reels.push(r)
+      }
+      if (!data.more_available || !data.next_max_id) break
+      maxId = data.next_max_id
+    } catch (err) {
+      console.error('[Instagram public] page', page, 'error:', err)
+      break
+    }
+  }
+
+  return reels
 }
