@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { CATEGORY_TO_SLUG, SLUG_TO_LABEL } from '@/lib/sports'
+import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
 import type { DateRangePreset } from '@/lib/archivo'
 
 export type { DateRangePreset } from '@/lib/archivo'
@@ -15,12 +15,12 @@ export interface ArchivoFilterState {
   to: string
 }
 
+// Sólo deportes (no ligas/competiciones). Reusa la lista canónica del header.
 const SPORT_PILLS: { slug: string; label: string }[] = [
   { slug: '', label: 'Todos' },
-  ...Object.entries(SLUG_TO_LABEL)
-    // dedupe: aliases (wrestling→WWE, nba/bcl/euroliga/acb) los omitimos del filtro principal
-    .filter(([slug]) => CATEGORY_TO_SLUG[SLUG_TO_LABEL[slug]] === slug)
-    .map(([slug, label]) => ({ slug, label })),
+  ...[...HOME_SPORT_CATEGORIES, ...MORE_SPORT_CATEGORIES]
+    .filter(label => label !== 'Todo')
+    .map(label => ({ slug: CATEGORY_TO_SLUG[label] ?? '', label })),
 ]
 
 const DATE_PRESETS: { key: DateRangePreset; label: string }[] = [
