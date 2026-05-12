@@ -91,11 +91,15 @@ export async function generateMetadata({
 
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1200).height(630).url() : undefined)
   const canonical = `${SITE_URL}/noticias/${article.slug ?? slug}`
+  const keywordList = [article.focusKeyword, ...(article.secondaryKeywords ?? []), ...(article.tags ?? [])]
+    .filter((k): k is string => Boolean(k))
 
   return {
     title: article.title,
     description: article.short_summary ?? article.subtitle,
     alternates: { canonical },
+    keywords: keywordList.length > 0 ? keywordList : undefined,
+    other: keywordList.length > 0 ? { news_keywords: keywordList.slice(0, 10).join(', ') } : undefined,
     openGraph: {
       title: article.title,
       description: article.short_summary ?? article.subtitle,
@@ -103,6 +107,7 @@ export async function generateMetadata({
       images: imgUrl ? [{ url: imgUrl, width: 1200, height: 630 }] : [],
       type: 'article',
       publishedTime: article.publishedAt,
+      modifiedTime: article._updatedAt ?? article.publishedAt,
       siteName: 'TakaSports',
       locale: 'es_ES',
     },
