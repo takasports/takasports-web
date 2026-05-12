@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import HeroBlock from '@/components/HeroBlock'
@@ -189,19 +189,11 @@ export default function HomeContent({
   const router = useRouter()
   const [activeSport, setActiveSport] = useState<string>(initialSport || 'Todo')
   const [contentVisible, setContentVisible] = useState(true)
-  const [extraArticles, setExtraArticles] = useState<Article[]>([])
-  const [nextApiPage, setNextApiPage] = useState(3)
-  const [apiHasMore, setApiHasMore] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const loadMoreAnchorRef = useRef<HTMLDivElement | null>(null)
 
   const handleSportChange = useCallback((cat: string) => {
     setContentVisible(false)
     setTimeout(() => {
       setActiveSport(cat)
-      setExtraArticles([])
-      setNextApiPage(3)
-      setApiHasMore(true)
       setContentVisible(true)
       const slug = CATEGORY_TO_SLUG[cat]
       if (slug) {
@@ -231,39 +223,7 @@ export default function HomeContent({
       })
 
   const heroArticles = filteredArticles.slice(0, 8)
-  const localFeed = filteredArticles.slice(heroArticles.length)
-  const feedDisplayed = [...localFeed, ...extraArticles]
-  const feedHasMore = apiHasMore
-
-  const handleLoadMore = useCallback(async () => {
-    if (loadingMore || !apiHasMore) return
-    setLoadingMore(true)
-    const anchorTop = loadMoreAnchorRef.current?.getBoundingClientRect().top ?? 0
-    try {
-      const slug = CATEGORY_TO_SLUG[activeSport]?.toLowerCase() ?? ''
-      const url = slug
-        ? `/api/articles?page=${nextApiPage}&sport=${slug}`
-        : `/api/articles?page=${nextApiPage}`
-      const res = await fetch(url)
-      if (res.ok) {
-        const data = await res.json()
-        const fetched: Article[] = data.articles ?? []
-        const seen = new Set([...filteredArticles, ...extraArticles].map(a => a._id))
-        const fresh = fetched.filter(a => !seen.has(a._id))
-        if (fresh.length > 0) {
-          setExtraArticles(prev => [...prev, ...fresh])
-          // Tras el render, mantener el botón visible en la misma posición de viewport
-          requestAnimationFrame(() => {
-            const newTop = loadMoreAnchorRef.current?.getBoundingClientRect().top ?? 0
-            window.scrollBy({ top: newTop - anchorTop, behavior: 'instant' as ScrollBehavior })
-          })
-        }
-        setNextApiPage(p => p + 1)
-        setApiHasMore(Boolean(data.hasMore))
-      }
-    } catch { /* silencio: el botón seguirá visible para reintentar */ }
-    finally { setLoadingMore(false) }
-  }, [loadingMore, apiHasMore, activeSport, nextApiPage, filteredArticles, extraArticles])
+  const feedDisplayed = filteredArticles.slice(heroArticles.length)
 
   return (
     <main className="max-w-[1440px] mx-auto pb-6">
@@ -362,31 +322,29 @@ export default function HomeContent({
             hideFilter={true}
           />
 
-          {/* Load more inline */}
-          {feedHasMore && (
-            <div ref={loadMoreAnchorRef} className="mt-6 flex items-center gap-4">
-              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              <button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:brightness-110 hover:-translate-y-px active:translate-y-0"
-                style={{
-                  background: 'rgba(124,58,237,0.1)',
-                  color: '#C4B5FD',
-                  border: '1px solid rgba(124,58,237,0.25)',
-                  fontFamily: 'var(--font-sport)',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 16px rgba(124,58,237,0.1)',
-                }}
-              >
-                {loadingMore ? 'Cargando…' : 'Ver más noticias'}
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M6 2v8M2.5 7.5L6 11l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-            </div>
-          )}
+          {/* Abrir histórico completo en /noticias */}
+          <div className="mt-6 flex items-center gap-4">
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            <Link
+              href={activeSport === 'Todo' ? '/noticias' : `/noticias?sport=${CATEGORY_TO_SLUG[activeSport] ?? ''}`}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:brightness-110 hover:-translate-y-px active:translate-y-0"
+              style={{
+                background: 'rgba(124,58,237,0.1)',
+                color: '#C4B5FD',
+                border: '1px solid rgba(124,58,237,0.25)',
+                fontFamily: 'var(--font-sport)',
+                cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(124,58,237,0.1)',
+                textDecoration: 'none',
+              }}
+            >
+              Ver histórico completo
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2.5 6h7M6 2.5L9.5 6 6 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
 
           {/* Quiniela — solo mobile */}
           <div className="lg:hidden mt-10">
