@@ -1,5 +1,5 @@
-// TakaSports Service Worker — push notifications + offline shell (v3)
-const CACHE_NAME = 'takasports-v3'
+// TakaSports Service Worker — push notifications + offline shell (v4)
+const CACHE_NAME = 'takasports-v4'
 const SHELL_URLS = ['/', '/quiniela', '/calendario', '/noticias']
 
 // Install: pre-cache app shell (best-effort)
