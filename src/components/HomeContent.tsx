@@ -326,7 +326,7 @@ export default function HomeContent({
           <div className="mt-6 flex items-center gap-4">
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             <Link
-              href={activeSport === 'Todo' ? '/noticias' : `/noticias?sport=${CATEGORY_TO_SLUG[activeSport] ?? ''}`}
+              href={activeSport === 'Todo' ? '/archivo' : `/archivo?sport=${CATEGORY_TO_SLUG[activeSport] ?? ''}`}
               className="flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:brightness-110 hover:-translate-y-px active:translate-y-0"
               style={{
                 background: 'rgba(124,58,237,0.1)',

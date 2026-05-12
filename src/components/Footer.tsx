@@ -14,6 +14,7 @@ const SPORTS_LINKS = [
 const PLATFORM_LINKS = [
   { label: 'Inicio',       href: '/' },
   { label: 'Noticias',     href: '/noticias' },
+  { label: 'Archivo de noticias', href: '/archivo' },
   { label: 'Estadísticas', href: '/estadisticas' },
   { label: 'Rankings',     href: '/rankings' },
   { label: 'Calendario',   href: '/calendario' },

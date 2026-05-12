@@ -277,6 +277,17 @@ export default function NoticiasContent({
                 hasMore={hasMore && timeFilter === 'todo'}
                 loadingMore={loadingMore}
               />
+
+              {/* CTA secundario: buscar en archivo histórico */}
+              <div className="mt-4 mb-2 flex justify-center">
+                <a
+                  href={`/archivo${CATEGORY_TO_SLUG[activeCategory] ? `?sport=${CATEGORY_TO_SLUG[activeCategory]}` : ''}`}
+                  className="text-[11px] font-semibold tracking-wider transition-opacity hover:opacity-70"
+                  style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
+                >
+                  Buscar en el archivo →
+                </a>
+              </div>
             </div>
             <aside className="hidden lg:block w-[272px] xl:w-[300px] flex-shrink-0 sticky top-24">
               <NewsSidebar articles={allArticles} />

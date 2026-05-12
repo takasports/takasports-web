@@ -34,8 +34,8 @@ const nextConfig: NextConfig = {
   async headers() {
     const csp = [
       "default-src 'self'",
-      // Next.js inline scripts + HMR en dev
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      // Next.js inline scripts + HMR en dev; GA y Clarity
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.clarity.ms",
       // Tailwind/inline styles
       "style-src 'self' 'unsafe-inline'",
       // Imágenes: CDNs conocidos + data URIs (favicons, placeholders)
@@ -43,7 +43,7 @@ const nextConfig: NextConfig = {
       // Fuentes locales
       "font-src 'self' data:",
       // API calls: Supabase, Sanity, ESPN, api-sports, Instagram, Odds
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.sanity.io https://cdn.sanity.io https://site.api.espn.com https://v3.football.api-sports.io https://v2.nba.api-sports.io https://v1.formula-1.api-sports.io https://v1.tennis.api-sports.io https://v1.mma.api-sports.io https://v1.rugby.api-sports.io https://api.the-odds-api.com https://graph.instagram.com https://api.instagram.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.sanity.io https://cdn.sanity.io https://site.api.espn.com https://v3.football.api-sports.io https://v2.nba.api-sports.io https://v1.formula-1.api-sports.io https://v1.tennis.api-sports.io https://v1.mma.api-sports.io https://v1.rugby.api-sports.io https://api.the-odds-api.com https://graph.instagram.com https://api.instagram.com https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.clarity.ms",
       // Web Push service worker
       "worker-src 'self'",
       // No iframes de terceros
