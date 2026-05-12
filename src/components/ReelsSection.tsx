@@ -414,11 +414,6 @@ export default function ReelsSection({
             const hasMatch = data.some((r, i) => normalize(r, i).sport === prev)
             return hasMatch ? prev : ''
           })
-          setTimeout(() => {
-            document.getElementById('reels')?.querySelectorAll('[data-reveal]').forEach((el, i) => {
-              setTimeout(() => el.classList.add('revealed'), i * 60)
-            })
-          }, 50)
         }
       })
       .catch(() => {})
@@ -448,6 +443,7 @@ export default function ReelsSection({
   }, [activeSport])
 
   const hasReels = reels.length > 0
+
   const availableSports = Array.from(new Set(reels.map(r => r.sport).filter(Boolean))) as string[]
   const visible = activeSport ? reels.filter(r => r.sport === activeSport) : reels
 
@@ -495,7 +491,7 @@ export default function ReelsSection({
           {showSkeleton
             ? Array.from({ length: 6 }).map((_, i) => <ReelSkeleton key={i} />)
             : hasReels && visible.length > 0
-              ? visible.map(reel => <div key={reel.key} data-reveal><ReelCard reel={reel} onClick={() => setActiveReel(reel)} /></div>)
+              ? visible.map(reel => <div key={reel.key}><ReelCard reel={reel} onClick={() => setActiveReel(reel)} /></div>)
               : hasReels && visible.length === 0
                 ? (
                   <div
@@ -508,7 +504,7 @@ export default function ReelsSection({
                     </p>
                   </div>
                 )
-                : REEL_PLACEHOLDERS.map(p => <div key={p.sport} data-reveal><ReelPlaceholder accent={p.accent} emoji={p.emoji} label={p.label} /></div>)
+                : REEL_PLACEHOLDERS.map((p, i) => <div key={p.sport} className="reel-enter" style={{ animationDelay: `${i * 60}ms` }}><ReelPlaceholder accent={p.accent} emoji={p.emoji} label={p.label} /></div>)
           }
           <div className="flex-shrink-0 w-6 xl:w-10" />
         </div>
