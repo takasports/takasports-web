@@ -40,28 +40,49 @@ interface CacheEntry { data: PublicReel[]; ts: number }
 const CACHE_TTL = 5 * 60 * 1000
 let cache: CacheEntry | null = null
 
-const STORAGE_MAX_AGE_MS = 12 * 60 * 60 * 1000 // 12h — si Supabase está más viejo, usar feed live
+// Reels: ventana de 7 días (la actualidad estricta de 3d aplica a noticias,
+// no a contenido social donde la rotación es más lenta).
+const FRESHNESS_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
-async function fetchFromStorage(): Promise<PublicReel[] | null> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null
+function tsToMs(ts: string | undefined | null): number {
+  if (!ts) return 0
+  const asNum = Number(ts)
+  if (Number.isFinite(asNum) && asNum > 0) return asNum * 1000
+  const parsed = new Date(ts).getTime()
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+async function fetchFromStorage(): Promise<PublicReel[]> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return []
   try {
     const res = await fetch(STORAGE_URL, {
       next: { revalidate: 300 },
       signal: AbortSignal.timeout(6000),
     })
-    if (!res.ok) return null
+    if (!res.ok) return []
     const data = await res.json()
-    if (!Array.isArray(data) || data.length === 0) return null
-    // Comprobar frescura: si el reel más reciente tiene >12h, ignorar Supabase
-    const newestTs = data.reduce((max: number, r: PublicReel) => {
-      const ts = r.timestamp ? new Date(r.timestamp).getTime() || (Number(r.timestamp) * 1000) : 0
-      return ts > max ? ts : max
-    }, 0)
-    if (newestTs > 0 && Date.now() - newestTs > STORAGE_MAX_AGE_MS) return null
+    if (!Array.isArray(data)) return []
     return data.map(normalizeReel)
   } catch {
-    return null
+    return []
   }
+}
+
+// Funde reels de varias fuentes (Supabase + live IG + estático) dedupando por id
+// y filtrando por la ventana de actualidad (≤3 días). Maximiza la cantidad de
+// reels visibles sin depender de que una sola fuente esté completa.
+function merge(...sources: PublicReel[][]): PublicReel[] {
+  const seen = new Map<string, PublicReel>()
+  const now = Date.now()
+  for (const src of sources) {
+    for (const r of src) {
+      if (!r?.id || seen.has(r.id)) continue
+      const ms = tsToMs(r.timestamp)
+      if (ms > 0 && now - ms > FRESHNESS_MAX_AGE_MS) continue
+      seen.set(r.id, r)
+    }
+  }
+  return Array.from(seen.values()).sort((a, b) => tsToMs(b.timestamp) - tsToMs(a.timestamp))
 }
 
 export async function GET() {
@@ -70,22 +91,16 @@ export async function GET() {
     return Response.json(cache.data)
   }
 
-  const fromStorage = await fetchFromStorage()
-  if (fromStorage) {
-    cache = { data: fromStorage, ts: now }
-    return Response.json(fromStorage)
-  }
+  // En paralelo: storage + live IG. Mezclamos resultados para maximizar diversidad.
+  const [fromStorage, live] = await Promise.all([
+    fetchFromStorage(),
+    fetchPublicReels().catch(() => []),
+  ])
 
-  const live = await fetchPublicReels().catch(() => [])
-  if (live.length > 0) {
-    cache = { data: live, ts: now }
-    return Response.json(live)
-  }
-
-  const staticReels = reelsData as PublicReel[]
-  if (staticReels.length > 0) {
-    cache = { data: staticReels, ts: now }
-    return Response.json(staticReels)
+  const merged = merge(fromStorage, live, reelsData as PublicReel[])
+  if (merged.length > 0) {
+    cache = { data: merged, ts: now }
+    return Response.json(merged)
   }
 
   return Response.json([])

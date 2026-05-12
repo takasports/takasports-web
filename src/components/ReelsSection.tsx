@@ -3,7 +3,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel, HOME_SPORT_CATEGORIES, CATEGORY_TO_SLUG } from '@/lib/sports'
+import { getSportStyle, getSportLabel } from '@/lib/sports'
+
+// Categorías que aparecen siempre en los tabs de Reels (independiente de si
+// hay contenido en este instante). Se ordenan: las que tienen reels primero.
+const REELS_TAB_SLUGS = ['futbol', 'wwe', 'ufc']
 import { useTilt } from '@/hooks/useTilt'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 
@@ -495,17 +499,11 @@ export default function ReelsSection({
 
   const hasReels = reels.length > 0
 
-  // Mostrar tabs para todos los deportes del filtro global (Todo / Fútbol / WWE / F1 / ...),
-  // así WWE u otros no "desaparecen" cuando momentáneamente no hay reels de esa categoría.
-  // Se ordenan primero los que tienen reels actualmente.
+  // Tabs fijos: Fútbol, WWE, UFC. Los que tienen reels actualmente van primero.
   const reelsBySport = new Set(reels.map(r => r.sport).filter(Boolean) as string[])
-  const allTabSlugs = HOME_SPORT_CATEGORIES
-    .filter(c => c !== 'Todo')
-    .map(c => CATEGORY_TO_SLUG[c])
-    .filter((s): s is string => Boolean(s))
   const availableSports = [
-    ...allTabSlugs.filter(s => reelsBySport.has(s)),
-    ...allTabSlugs.filter(s => !reelsBySport.has(s)),
+    ...REELS_TAB_SLUGS.filter(s => reelsBySport.has(s)),
+    ...REELS_TAB_SLUGS.filter(s => !reelsBySport.has(s)),
   ]
   const visible = activeSport ? reels.filter(r => r.sport === activeSport) : reels
 
