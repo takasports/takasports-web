@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import HeroBlock from '@/components/HeroBlock'
@@ -188,18 +188,17 @@ export default function HomeContent({
 }) {
   const router = useRouter()
   const [activeSport, setActiveSport] = useState<string>(initialSport || 'Todo')
-  const [displayCount, setDisplayCount] = useState(HOME_PAGE_SIZE)
   const [contentVisible, setContentVisible] = useState(true)
   const [extraArticles, setExtraArticles] = useState<Article[]>([])
   const [nextApiPage, setNextApiPage] = useState(3)
   const [apiHasMore, setApiHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const loadMoreAnchorRef = useRef<HTMLDivElement | null>(null)
 
   const handleSportChange = useCallback((cat: string) => {
     setContentVisible(false)
     setTimeout(() => {
       setActiveSport(cat)
-      setDisplayCount(HOME_PAGE_SIZE)
       setExtraArticles([])
       setNextApiPage(3)
       setApiHasMore(true)
@@ -233,18 +232,13 @@ export default function HomeContent({
 
   const heroArticles = filteredArticles.slice(0, 8)
   const localFeed = filteredArticles.slice(heroArticles.length)
-  const feedSource = [...localFeed, ...extraArticles]
-  const feedDisplayed = feedSource.slice(0, displayCount)
-  const feedHasMore = displayCount < feedSource.length || apiHasMore
+  const feedDisplayed = [...localFeed, ...extraArticles]
+  const feedHasMore = apiHasMore
 
   const handleLoadMore = useCallback(async () => {
-    if (loadingMore) return
-    if (displayCount < feedSource.length) {
-      setDisplayCount(feedSource.length)
-      return
-    }
-    if (!apiHasMore) return
+    if (loadingMore || !apiHasMore) return
     setLoadingMore(true)
+    const anchorTop = loadMoreAnchorRef.current?.getBoundingClientRect().top ?? 0
     try {
       const slug = CATEGORY_TO_SLUG[activeSport]?.toLowerCase() ?? ''
       const url = slug
@@ -258,14 +252,18 @@ export default function HomeContent({
         const fresh = fetched.filter(a => !seen.has(a._id))
         if (fresh.length > 0) {
           setExtraArticles(prev => [...prev, ...fresh])
-          setDisplayCount(prev => prev + fresh.length)
+          // Tras el render, mantener el botón visible en la misma posición de viewport
+          requestAnimationFrame(() => {
+            const newTop = loadMoreAnchorRef.current?.getBoundingClientRect().top ?? 0
+            window.scrollBy({ top: newTop - anchorTop, behavior: 'instant' as ScrollBehavior })
+          })
         }
         setNextApiPage(p => p + 1)
         setApiHasMore(Boolean(data.hasMore))
       }
     } catch { /* silencio: el botón seguirá visible para reintentar */ }
     finally { setLoadingMore(false) }
-  }, [loadingMore, displayCount, feedSource.length, apiHasMore, activeSport, nextApiPage, filteredArticles, extraArticles])
+  }, [loadingMore, apiHasMore, activeSport, nextApiPage, filteredArticles, extraArticles])
 
   return (
     <main className="max-w-[1440px] mx-auto pb-6">
@@ -366,7 +364,7 @@ export default function HomeContent({
 
           {/* Load more inline */}
           {feedHasMore && (
-            <div className="mt-6 flex items-center gap-4">
+            <div ref={loadMoreAnchorRef} className="mt-6 flex items-center gap-4">
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
               <button
                 onClick={handleLoadMore}
