@@ -7,6 +7,7 @@ import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import SportPlaceholder from '@/components/SportPlaceholder'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
+import { SearchIcon } from '@/components/icons/GameIcons'
 
 interface Article {
   _id: string
@@ -55,10 +56,10 @@ export default function ArchivoResults({
     return (
       <div className="px-4 sm:px-6 xl:px-10 py-16 flex flex-col items-center gap-4 text-center">
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-          style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}
+          className="w-14 h-14 rounded-2xl flex items-center justify-center"
+          style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)', color: '#A78BFA' }}
         >
-          🔎
+          <SearchIcon size={26} />
         </div>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
           No hay noticias que coincidan con estos filtros.

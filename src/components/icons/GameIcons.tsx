@@ -259,6 +259,187 @@ export function WWEIcon({ size = 32, className }: IconProps) {
   )
 }
 
+// ── UI generales ──────────────────────────────────────────────
+
+export function SearchIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <circle cx="14" cy="14" r="8" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M20 20l7 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function CalendarIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <rect x="4" y="7" width="24" height="21" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M4 13h24" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M11 4v6M21 4v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="10" cy="19" r="1.2" fill="currentColor" />
+      <circle cx="16" cy="19" r="1.2" fill="currentColor" />
+      <circle cx="22" cy="19" r="1.2" fill="currentColor" />
+      <circle cx="10" cy="24" r="1.2" fill="currentColor" />
+      <circle cx="16" cy="24" r="1.2" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function TvIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <rect x="3" y="7" width="26" height="17" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M11 28h10M16 24v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M11 4l5 4 5-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function BellIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M9 22V14a7 7 0 0 1 14 0v8l2 3H7l2-3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M14 25a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="16" cy="6" r="1.5" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function MicrophoneIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <rect x="12" y="4" width="8" height="15" rx="4" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M7 15c0 5 4 9 9 9s9-4 9-9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M16 24v4M12 28h8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function PersonIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <circle cx="16" cy="11" r="5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M5 28c1-6 5-9 11-9s10 3 11 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function CrownIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M5 22l-1-12 6 5 6-9 6 9 6-5-1 12H5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M5 22h22v3H5z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <circle cx="16" cy="9" r="1.2" fill="currentColor" />
+      <circle cx="4" cy="10" r="1.2" fill="currentColor" />
+      <circle cx="28" cy="10" r="1.2" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function TargetIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <circle cx="16" cy="16" r="11" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="16" cy="16" r="6.5" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="16" cy="16" r="2" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function LockIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <rect x="6" y="14" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M10 14V10a6 6 0 0 1 12 0v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="16" cy="21" r="1.5" fill="currentColor" />
+      <path d="M16 22v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function PinIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M16 4c4 0 7 3 7 7 0 6-7 17-7 17s-7-11-7-17c0-4 3-7 7-7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <circle cx="16" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
+export function GlobeIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <circle cx="16" cy="16" r="11" stroke="currentColor" strokeWidth="1.6" />
+      <ellipse cx="16" cy="16" rx="5" ry="11" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5 16h22" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  )
+}
+
+export function ClipboardIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <rect x="7" y="6" width="18" height="22" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="11" y="3" width="10" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M11 14h10M11 18h10M11 22h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.55" />
+    </svg>
+  )
+}
+
+export function DiamondIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M16 4l10 8-10 16L6 12l10-8Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M6 12h20M11 4l-3 8 8 16M21 4l3 8-8 16" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" opacity="0.55" />
+    </svg>
+  )
+}
+
+export function LightbulbIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M16 4a8 8 0 0 0-5 14c1 1 2 2 2 4v2h6v-2c0-2 1-3 2-4a8 8 0 0 0-5-14Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M12 26h8M13 29h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function MedalIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M10 3l4 10M22 3l-4 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="16" cy="20" r="8" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="16" cy="20" r="4" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  )
+}
+
+export function HomeIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M4 15l12-10 12 10v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V15Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M13 29v-8h6v8" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function LiveDotIcon({ size = 12, className }: IconProps) {
+  return (
+    <span
+      className={className}
+      style={{
+        display: 'inline-block',
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: '#ef4444',
+        boxShadow: '0 0 0 0 rgba(239,68,68,0.7)',
+        animation: 'live-pulse 1.6s infinite',
+      }}
+    />
+  )
+}
+
 export function StadiumIcon({ size = 32, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>

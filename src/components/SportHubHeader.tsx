@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { RankingEntry } from '@/lib/rankings'
 import { getSportEmoji, getSportStyle } from '@/lib/sports'
 import { SITE_URL } from '@/lib/constants'
+import { CalendarIcon, LiveDotIcon } from '@/components/icons/GameIcons'
 
 interface SportEvent {
   _id: string
@@ -281,10 +282,12 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
                         className="flex items-center gap-2.5 group"
                       >
                         <span
-                          className="text-xs font-bold shrink-0 w-20 text-right"
+                          className="text-xs font-bold shrink-0 w-20 text-right inline-flex items-center justify-end gap-1"
                           style={{ color: ev.status === 'en_vivo' ? '#ef4444' : `${accent}cc` }}
                         >
-                          {ev.status === 'en_vivo' ? '🔴 EN VIVO' : formatEventDate(ev.date)}
+                          {ev.status === 'en_vivo'
+                            ? (<><LiveDotIcon size={7} /> EN VIVO</>)
+                            : formatEventDate(ev.date)}
                         </span>
                         <span
                           className="text-sm font-semibold truncate group-hover:underline"
@@ -313,7 +316,7 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
                   border: `1px dashed ${accent}18`,
                 }}
               >
-                <span style={{ fontSize: 32 }}>📅</span>
+                <span style={{ color: `${accent}aa` }}><CalendarIcon size={34} /></span>
                 <span className="text-sm" style={{ color: '#5a5a7a' }}>Sin eventos próximos</span>
                 <Link
                   href="/calendario"

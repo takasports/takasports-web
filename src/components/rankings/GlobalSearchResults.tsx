@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { scoreColor } from '@/lib/rankings-ui'
 import PlayerAvatar from './PlayerAvatar'
+import { SearchIcon } from '@/components/icons/GameIcons'
 
 export type SearchHit = {
   id: string
@@ -73,9 +74,9 @@ export default function GlobalSearchResults({ query }: { query: string }) {
       style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.18)' }}>
       <div className="flex items-center justify-between px-4 py-2.5"
         style={{ borderBottom: '1px solid rgba(124,58,237,0.12)' }}>
-        <span className="text-[9px] font-black uppercase tracking-[0.18em]"
+        <span className="text-[9px] font-black uppercase tracking-[0.18em] inline-flex items-center gap-1.5"
           style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
-          🔍 Resultados globales · todos los rankings
+          <SearchIcon size={10} /> Resultados globales · todos los rankings
         </span>
         <span className="text-[9px] tabular-nums" style={{ color: '#5A5A72', fontFamily: 'var(--font-display)' }}>
           {loading ? 'buscando…' : hits ? `${hits.length} ${hits.length === 1 ? 'coincidencia' : 'coincidencias'}` : ''}

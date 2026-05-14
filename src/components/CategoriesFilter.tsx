@@ -2,21 +2,21 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, getSportStyle } from '@/lib/sports'
+import { FootballIcon, BasketballIcon, F1Icon, TennisIcon, UFCIcon, RugbyIcon, WWEIcon } from '@/components/icons/GameIcons'
 
-// Emoji + accent por categoría
-const SPORT_META: Record<string, { emoji: string; accent: string }> = {
-  'Todo':    { emoji: '✦',  accent: '#7C3AED' },
-  'Fútbol':  { emoji: '⚽', accent: '#22c55e' },
-  'WWE':     { emoji: '🎤', accent: '#facc15' },
-  'F1':      { emoji: '🏎️', accent: '#ef4444' },
-  'Baloncesto': { emoji: '🏀', accent: '#f59e0b' },
-  'Tenis':   { emoji: '🎾', accent: '#d97706' },
-  'UFC':     { emoji: '🥊', accent: '#f97316' },
-  'Rugby':   { emoji: '🏉', accent: '#a78bfa' },
+const SPORT_META: Record<string, { accent: string; Icon: React.ComponentType<{ size?: number }> | null }> = {
+  'Todo':    { accent: '#7C3AED', Icon: null },
+  'Fútbol':  { accent: '#22c55e', Icon: FootballIcon },
+  'WWE':     { accent: '#facc15', Icon: WWEIcon },
+  'F1':      { accent: '#ef4444', Icon: F1Icon },
+  'Baloncesto': { accent: '#f59e0b', Icon: BasketballIcon },
+  'Tenis':   { accent: '#d97706', Icon: TennisIcon },
+  'UFC':     { accent: '#f97316', Icon: UFCIcon },
+  'Rugby':   { accent: '#a78bfa', Icon: RugbyIcon },
 }
 
 function getMeta(label: string) {
-  return SPORT_META[label] ?? { emoji: '·', accent: '#7C3AED' }
+  return SPORT_META[label] ?? { accent: '#7C3AED', Icon: null }
 }
 
 interface Props {
@@ -66,7 +66,7 @@ export default function CategoriesFilter({
 
         {categories.map((sport) => {
           const isActive = sport === active
-          const { emoji, accent } = getMeta(sport)
+          const { accent, Icon } = getMeta(sport)
 
           return (
             <button
@@ -87,10 +87,12 @@ export default function CategoriesFilter({
               }}
             >
               <span
-                className="text-sm leading-none flex-shrink-0"
-                style={{ opacity: isActive ? 1 : 0.45, transition: 'opacity 200ms', fontSize: sport === 'Todo' ? 8 : 13 }}
+                className="leading-none flex-shrink-0 inline-flex items-center justify-center"
+                style={{ opacity: isActive ? 1 : 0.5, transition: 'opacity 200ms', color: isActive ? accent : '#7A7A8E' }}
               >
-                {emoji}
+                {Icon ? <Icon size={14} /> : (
+                  <span className="block rounded-full" style={{ width: 6, height: 6, background: 'currentColor' }} />
+                )}
               </span>
               <span
                 className="text-[11px] font-bold leading-none whitespace-nowrap"
@@ -167,7 +169,7 @@ export default function CategoriesFilter({
                   }
                 `}</style>
                 {moreCategories.map((cat) => {
-                  const { emoji, accent } = getMeta(cat)
+                  const { accent, Icon } = getMeta(cat)
                   const isSel = active === cat
                   return (
                     <button
@@ -176,7 +178,9 @@ export default function CategoriesFilter({
                       className="w-full flex items-center gap-2.5 px-3.5 py-2.5 transition-colors hover:bg-white/[0.04]"
                       style={{ cursor: 'pointer' }}
                     >
-                      <span className="text-sm leading-none">{emoji}</span>
+                      <span className="leading-none inline-flex items-center" style={{ color: isSel ? accent : '#8E8E9E' }}>
+                        {Icon ? <Icon size={14} /> : <span className="block rounded-full" style={{ width: 6, height: 6, background: 'currentColor' }} />}
+                      </span>
                       <span
                         className="text-[11px] font-bold"
                         style={{ fontFamily: 'var(--font-sport)', color: isSel ? accent : '#8E8E9E', letterSpacing: '0.03em' }}

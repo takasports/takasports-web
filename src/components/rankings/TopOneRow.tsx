@@ -5,6 +5,7 @@ import { getDisplayScore, getEffectiveTrend, trendIcon, scoreColor, SPORT_EMOJI 
 import { getSportStyle } from '@/lib/sports'
 import BadgePill from './BadgePill'
 import PlayerAvatar from './PlayerAvatar'
+import { CrownIcon } from '@/components/icons/GameIcons'
 
 export default function TopOneRow({ entry, showSportEmoji = false }: { entry: RankingEntry; showSportEmoji?: boolean }) {
   const displayScore = getDisplayScore(entry)
@@ -32,7 +33,7 @@ export default function TopOneRow({ entry, showSportEmoji = false }: { entry: Ra
             style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: '#facc15', opacity: 0.9 }}>
             1
           </span>
-          <span className="text-sm leading-none" style={{ marginTop: -2 }}>👑</span>
+          <span className="leading-none inline-flex" style={{ marginTop: -2, color: '#facc15' }}><CrownIcon size={16} /></span>
         </div>
         <div className="relative flex-shrink-0">
           <div className="flex items-center justify-center rounded-2xl text-2xl overflow-hidden"

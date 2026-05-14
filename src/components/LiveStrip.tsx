@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { SPORT_EMOJI, getSportColor, getLiveLabel } from '@/lib/competitions'
+import { SportIcon } from '@/components/icons/GameIcons'
 
 interface LiveFixture {
   id: string
@@ -224,7 +225,7 @@ export default function LiveStrip() {
                     <div key={ev.id} className="flex items-center gap-3 flex-shrink-0">
                       {i > 0 && <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.07)', flexShrink: 0, display: 'inline-block' }} />}
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs">{SPORT_EMOJI[ev.sport] ?? '🏆'}</span>
+                        <span style={{ color: col }}><SportIcon sport={ev.sport} size={13} /></span>
                         <TeamLogo logo={ev.homeLogo} name={ev.homeTeam} size={13} />
                         <span className="text-[10px] font-semibold" style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
                           {ev.awayTeam

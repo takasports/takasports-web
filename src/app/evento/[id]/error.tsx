@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { captureException } from '@/lib/monitoring'
+import { CalendarIcon } from '@/components/icons/GameIcons'
 
 export default function EventoError({
   error,
@@ -18,10 +19,10 @@ export default function EventoError({
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] px-6 text-center gap-6">
       <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-        style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+        className="w-14 h-14 rounded-2xl flex items-center justify-center"
+        style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#EF4444' }}
       >
-        📅
+        <CalendarIcon size={26} />
       </div>
       <div className="flex flex-col gap-2">
         <h2

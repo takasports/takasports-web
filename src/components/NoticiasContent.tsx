@@ -8,6 +8,7 @@ import NewsSidebar from '@/components/NewsSidebar'
 import ReelsSection from '@/components/ReelsSection'
 import CategoriesFilter from '@/components/CategoriesFilter'
 import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
+import { SearchIcon } from '@/components/icons/GameIcons'
 
 interface Article {
   _id: string
@@ -228,10 +229,10 @@ export default function NoticiasContent({
       {filteredArticles.length === 0 && (
         <div className="py-20 flex flex-col items-center gap-4 text-center">
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-            style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}
+            className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)', color: '#A78BFA' }}
           >
-            🔍
+            <SearchIcon size={26} />
           </div>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             No hay noticias de <span style={{ color: '#C4B5FD' }}>{activeCategory}</span> todavía.

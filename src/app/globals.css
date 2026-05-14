@@ -280,6 +280,11 @@ a[href^="/noticias/"]:visited .news-title {
   0%,100% { box-shadow: 0 8px 36px rgba(124,58,237,0.55), inset 0 1px 0 rgba(255,255,255,0.12); }
   50%     { box-shadow: 0 8px 50px rgba(124,58,237,0.80), inset 0 1px 0 rgba(255,255,255,0.18); }
 }
+@keyframes live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+  70%  { box-shadow: 0 0 0 5px rgba(239,68,68,0); }
+  100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
 @keyframes chipPop {
   0%   { transform: scale(1.22) translateY(-2px); }
   55%  { transform: scale(0.96) translateY(0); }

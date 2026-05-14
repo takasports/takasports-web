@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
 import { getCompAccent, getLiveLabel } from '@/lib/competitions'
 import { formatDateLabel, isoToLocalDate } from '@/lib/calendar'
+import { ClipboardIcon } from '@/components/icons/GameIcons'
 
 interface LiveScore {
   homeGoals: number | null
@@ -122,8 +123,8 @@ export default function UFCCardModal({
         <div className="sticky top-0 px-5 py-4 border-b" style={{ borderColor: 'rgba(212,175,55,0.15)' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#D4AF37', fontFamily: 'var(--font-sport)' }}>
-                📋 Cartelera UFC
+              <p className="text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-1.5" style={{ color: '#D4AF37', fontFamily: 'var(--font-sport)' }}>
+                <ClipboardIcon size={12} /> Cartelera UFC
               </p>
               <h2 className="text-lg font-black leading-tight mt-1" style={{ color: '#F8F8FF', fontFamily: 'var(--font-display)' }}>
                 {dateLabel}

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import QuinielaModule from './QuinielaModule'
 import { HOME_EVENTS } from '@/lib/events'
 import { RANKING_JUGADORES, type RankingEntry } from '@/lib/rankings'
+import { PersonIcon } from '@/components/icons/GameIcons'
 
 function SectionHeader({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
@@ -73,10 +74,10 @@ export default function Sidebar({ topPlayers }: { topPlayers?: RankingEntry[] })
                 />
               ) : (
                 <div
-                  className="flex-shrink-0 flex items-center justify-center text-base"
-                  style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }}
+                  className="flex-shrink-0 flex items-center justify-center"
+                  style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)', color: '#A78BFA' }}
                 >
-                  {player.emoji ?? '👤'}
+                  {player.emoji ?? <PersonIcon size={16} />}
                 </div>
               )}
               {/* Nombre */}

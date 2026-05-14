@@ -7,6 +7,7 @@ import { getDisplayScore, getEffectiveTrend, trendIcon, scoreColor, SPORT_EMOJI 
 import { getSportStyle } from '@/lib/sports'
 import BadgePill from './BadgePill'
 import PlayerAvatar from './PlayerAvatar'
+import { SportIcon, PinIcon } from '@/components/icons/GameIcons'
 
 export default function RankRow({
   entry, showSportEmoji = false, typeTag,
@@ -65,8 +66,10 @@ export default function RankRow({
             >
               {entry.name}
             </Link>
-            {showSportEmoji && sportEmoji && (
-              <span className="text-xs leading-none flex-shrink-0" title={entry.sport ?? ''}>{sportEmoji}</span>
+            {showSportEmoji && entry.sport && (
+              <span className="leading-none flex-shrink-0 inline-flex items-center" title={entry.sport} style={{ color: sportAccent }}>
+                <SportIcon sport={entry.sport} size={13} />
+              </span>
             )}
             {typeTag && (
               <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded flex-shrink-0"
@@ -191,9 +194,9 @@ export default function RankRow({
                   </div>
                   {boost !== 0 && (
                     <div className="flex justify-between items-start gap-2">
-                      <span className="text-[9px] leading-snug flex-1"
+                      <span className="text-[9px] leading-snug flex-1 inline-flex items-start gap-1"
                         style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
-                        📌 Ajuste editorial
+                        <PinIcon size={10} /> Ajuste editorial
                         {entry.editorialNote && (
                           <span className="block" style={{ color: '#2A2A42' }}>&ldquo;{entry.editorialNote}&rdquo;</span>
                         )}

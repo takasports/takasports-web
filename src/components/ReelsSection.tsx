@@ -10,6 +10,7 @@ import { getSportStyle, getSportLabel } from '@/lib/sports'
 const REELS_TAB_SLUGS = ['futbol', 'wwe', 'ufc']
 import { useTilt } from '@/hooks/useTilt'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
+import { SportIcon } from '@/components/icons/GameIcons'
 
 // ── Tipo de entrada — compatible con Sanity y con Instagram API ─
 interface SanityReel {
@@ -108,12 +109,12 @@ function ReelSkeleton() {
 
 // ── Placeholders ────────────────────────────────────────────────
 const REEL_PLACEHOLDERS = [
-  { sport: 'futbol',     accent: '#22c55e', emoji: '⚽', label: 'Fútbol' },
-  { sport: 'baloncesto', accent: '#f59e0b', emoji: '🏀', label: 'Baloncesto' },
-  { sport: 'formula1',   accent: '#ef4444', emoji: '🏎️', label: 'F1' },
-  { sport: 'tenis',      accent: '#d97706', emoji: '🎾', label: 'Tenis' },
-  { sport: 'ufc',        accent: '#f97316', emoji: '🥊', label: 'UFC' },
-  { sport: 'rugby',      accent: '#a78bfa', emoji: '🏉', label: 'Rugby' },
+  { sport: 'futbol',     accent: '#22c55e', label: 'Fútbol' },
+  { sport: 'baloncesto', accent: '#f59e0b', label: 'Baloncesto' },
+  { sport: 'formula1',   accent: '#ef4444', label: 'F1' },
+  { sport: 'tenis',      accent: '#d97706', label: 'Tenis' },
+  { sport: 'ufc',        accent: '#f97316', label: 'UFC' },
+  { sport: 'rugby',      accent: '#a78bfa', label: 'Rugby' },
 ]
 
 // Extrae el shortcode de una URL de reel/post de Instagram
@@ -347,7 +348,7 @@ function ReelCard({ reel, onClick }: { reel: Reel; onClick: () => void }) {
 }
 
 // ── Placeholder ─────────────────────────────────────────────────
-function ReelPlaceholder({ accent, emoji, label }: { accent: string; emoji: string; label: string }) {
+function ReelPlaceholder({ accent, sport, label }: { accent: string; sport: string; label: string }) {
   return (
     <div
       className="relative flex-shrink-0 flex flex-col items-center justify-center gap-3"
@@ -363,8 +364,8 @@ function ReelPlaceholder({ accent, emoji, label }: { accent: string; emoji: stri
         <IGIcon size={9} />
         <span className="text-[8px] font-black uppercase tracking-widest text-white opacity-60">Reels</span>
       </div>
-      <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl relative z-10" style={{ background: `${accent}20`, border: `1px solid ${accent}35` }}>
-        {emoji}
+      <div className="w-12 h-12 rounded-2xl flex items-center justify-center relative z-10" style={{ background: `${accent}20`, border: `1px solid ${accent}35`, color: accent }}>
+        <SportIcon sport={sport} size={24} />
       </div>
       <div className="text-center px-4 relative z-10">
         <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>{label}</p>
@@ -587,7 +588,10 @@ export default function ReelsSection({
                       className="flex flex-col items-center justify-center gap-2 flex-shrink-0"
                       style={{ width: 360, minHeight: 200, color: '#3A3A52' }}
                     >
-                      <span style={{ fontSize: 28 }}>📭</span>
+                      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <path d="M4 17l5-9h14l5 9v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                        <path d="M4 17h7l2 3h6l2-3h7" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                      </svg>
                       <p className="text-[11px] font-black uppercase tracking-widest" style={{ fontFamily: 'var(--font-sport)' }}>
                         Sin reels en esta categoría
                       </p>
@@ -595,7 +599,7 @@ export default function ReelsSection({
                     <MoreReelsCard scrollRef={scrollRef} />
                   </>
                 )
-                : REEL_PLACEHOLDERS.map((p, i) => <div key={p.sport} className="reel-enter" style={{ animationDelay: `${i * 60}ms` }}><ReelPlaceholder accent={p.accent} emoji={p.emoji} label={p.label} /></div>)
+                : REEL_PLACEHOLDERS.map((p, i) => <div key={p.sport} className="reel-enter" style={{ animationDelay: `${i * 60}ms` }}><ReelPlaceholder accent={p.accent} sport={p.sport} label={p.label} /></div>)
           }
           <div className="flex-shrink-0 w-6 xl:w-10" />
         </div>

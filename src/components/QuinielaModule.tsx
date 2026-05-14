@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { CalendarIcon } from '@/components/icons/GameIcons'
 
 export interface QuinielaMatch {
   home: string
@@ -312,7 +313,7 @@ export default function QuinielaModule() {
             </div>
           )) : loaded ? (
             <div className="py-5 flex flex-col items-center gap-1.5">
-              <span className="text-2xl">📅</span>
+              <span style={{ color: '#4A4A6A' }}><CalendarIcon size={26} /></span>
               <p className="text-xs font-black" style={{ color: '#4A4A6A', fontFamily: 'var(--font-display)' }}>Sin partidos esta semana</p>
               <p className="text-[10px]" style={{ color: '#3A3A58' }}>Vuelve cuando haya jornada activa</p>
             </div>

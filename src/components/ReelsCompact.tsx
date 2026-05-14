@@ -5,6 +5,7 @@ import Image from '@/components/DynamicImage'
 import { urlFor } from '@/lib/sanity'
 import { getSportStyle } from '@/lib/sports'
 import ReelsSection from './ReelsSection'
+import { SportIcon } from '@/components/icons/GameIcons'
 
 interface Reel {
   _id: string
@@ -33,23 +34,23 @@ function toEmbedUrl(url?: string): string | null {
 }
 
 const REEL_SPORTS = [
-  { sport: 'Fútbol',     accent: '#22c55e', emoji: '⚽' },
-  { sport: 'Baloncesto', accent: '#f59e0b', emoji: '🏀' },
-  { sport: 'F1',         accent: '#ef4444', emoji: '🏎️' },
-  { sport: 'Tenis',      accent: '#d97706', emoji: '🎾' },
+  { sport: 'Fútbol',     accent: '#22c55e' },
+  { sport: 'Baloncesto', accent: '#f59e0b' },
+  { sport: 'F1',         accent: '#ef4444' },
+  { sport: 'Tenis',      accent: '#d97706' },
 ]
 
 function MiniReelCard({
   reel,
   accent,
   label,
-  emoji,
+  sport,
   onClick,
 }: {
   reel?: Reel
   accent: string
   label: string
-  emoji?: string
+  sport: string
   onClick: () => void
 }) {
   const imgUrl = reel?.thumbnail?.asset
@@ -95,7 +96,7 @@ function MiniReelCard({
       <div
         className="absolute inset-0 flex items-center justify-center opacity-70 group-hover:opacity-100 transition-opacity"
       >
-        {!imgUrl && <span className="text-xl">{emoji}</span>}
+        {!imgUrl && <span style={{ color: accent }}><SportIcon sport={sport} size={26} /></span>}
         {imgUrl && (
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center"
@@ -163,6 +164,7 @@ export default function ReelsCompact({ reels }: { reels: Reel[] }) {
                     reel={reel}
                     accent={accent}
                     label={reel.title ?? reel.category ?? 'Reel'}
+                    sport={reel.category ?? 'futbol'}
                     onClick={() => setModalReel(reel)}
                   />
                 )
@@ -172,7 +174,7 @@ export default function ReelsCompact({ reels }: { reels: Reel[] }) {
                   key={s.sport}
                   accent={s.accent}
                   label={s.sport}
-                  emoji={s.emoji}
+                  sport={s.sport}
                   onClick={() => {}}
                 />
               ))

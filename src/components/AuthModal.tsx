@@ -198,7 +198,13 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             {/* Magic link */}
             {emailSent ? (
               <div className="rounded-2xl px-4 py-4 text-center flex flex-col gap-1.5" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
-                <span style={{ fontSize: 22 }}>📬</span>
+                <span style={{ display: 'inline-flex', justifyContent: 'center', color: '#4ade80' }}>
+                  <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+                    <path d="M5 11l11 7 11-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    <rect x="4" y="8" width="24" height="17" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+                    <path d="M14 8V5h4v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </span>
                 <p className="text-xs font-black" style={{ color: '#4ade80', fontFamily: 'var(--font-display)' }}>Enlace enviado</p>
                 <p className="text-[10px]" style={{ color: '#2A5A3A', fontFamily: 'var(--font-sport)' }}>Revisa tu bandeja de entrada en {email}</p>
               </div>

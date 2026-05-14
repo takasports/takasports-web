@@ -20,6 +20,7 @@ import {
 } from '@/lib/rankings'
 import { getDisplayScore, getSportScore } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
+import { SearchIcon, CrownIcon, FireIcon, TennisIcon, StarIcon } from '@/components/icons/GameIcons'
 import RankRow from '@/components/rankings/RankRow'
 import TopOneRow from '@/components/rankings/TopOneRow'
 import RankBlock from '@/components/rankings/RankBlock'
@@ -534,7 +535,7 @@ export default function RankingsClient({
                     cursor: 'pointer', fontFamily: 'var(--font-sport)',
                   }}>
                   {activeSport === 'tenis'
-                    ? (g === 'm' ? '🎾 ATP' : '🎾 WTA')
+                    ? (<><TennisIcon size={11} /> {g === 'm' ? 'ATP' : 'WTA'}</>)
                     : (g === 'm' ? '♂ Masculino' : '♀ Femenino')}
                 </button>
               )
@@ -545,8 +546,8 @@ export default function RankingsClient({
         {/* ── BÚSQUEDA + FILTRO BADGE ──────────────────────────── */}
         <div className="flex flex-col sm:flex-row gap-2 mb-3">
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none"
-              style={{ color: '#5A5A72' }}>🔍</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none inline-flex items-center"
+              style={{ color: '#5A5A72' }}><SearchIcon size={13} /></span>
             <input
               type="text"
               placeholder="Buscar en TODOS los rankings (ej: Messi, Ferrari, Pedrerol)..."
@@ -572,22 +573,22 @@ export default function RankingsClient({
           </div>
           <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
             {([
-              { id: '',           label: 'Todos',      color: '#8E8E9E' },
-              { id: 'Histórico',  label: '👑 Histórico', color: '#facc15' },
-              { id: 'Revelación', label: '⭐ Revelación', color: '#22c55e' },
-              { id: 'Nuevo',      label: '🆕 Nuevo',    color: '#60a5fa' },
+              { id: '',           label: 'Todos',      color: '#8E8E9E', Icon: null },
+              { id: 'Histórico',  label: 'Histórico',  color: '#facc15', Icon: CrownIcon },
+              { id: 'Revelación', label: 'Revelación', color: '#22c55e', Icon: StarIcon },
+              { id: 'Nuevo',      label: 'Nuevo',      color: '#60a5fa', Icon: null },
             ] as const).map(b => {
               const isActive = badgeFilter === b.id
               return (
                 <button key={b.id} onClick={() => setBadgeFilter(b.id)}
-                  className="flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all"
+                  className="flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all inline-flex items-center gap-1.5"
                   style={{
                     background: isActive ? `${b.color}18` : 'rgba(255,255,255,0.04)',
                     color: isActive ? b.color : '#5A5A72',
                     border: isActive ? `1px solid ${b.color}40` : '1px solid rgba(255,255,255,0.06)',
                     cursor: 'pointer', fontFamily: 'var(--font-sport)',
                   }}>
-                  {b.label}
+                  {b.Icon && <b.Icon size={11} />}{b.label}
                 </button>
               )
             })}
@@ -609,7 +610,7 @@ export default function RankingsClient({
                 border: sortMode === 'hot' ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.06)',
                 cursor: 'pointer', fontFamily: 'var(--font-sport)',
               }}>
-              🔥 Hot now
+              <FireIcon size={11} /> Hot now
             </button>
           )}
         </div>
@@ -704,7 +705,7 @@ export default function RankingsClient({
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             <span className="text-[9px] font-black uppercase tracking-[0.18em] px-3 py-1 rounded-full flex-shrink-0"
               style={{ color: sportAccent, background: `${sportAccent}10`, border: `1px solid ${sportAccent}25`, fontFamily: 'var(--font-sport)' }}>
-              {subEntity === 'masculino' ? '♂ Masculino' : subEntity === 'femenino' ? '♀ Femenino' : '🎬 Creadores'}
+              {subEntity === 'masculino' ? '♂ Masculino' : subEntity === 'femenino' ? '♀ Femenino' : 'Creadores'}
             </span>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
@@ -736,7 +737,7 @@ export default function RankingsClient({
         {/* ── SIN RESULTADOS ───────────────────────────────────── */}
         {finalEntries.length === 0 && (
           <div className="py-16 text-center flex flex-col items-center gap-2">
-            <span className="text-2xl">🔍</span>
+            <span style={{ color: '#5A5A72' }}><SearchIcon size={28} /></span>
             <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               {q || badgeFilter ? 'Sin coincidencias' : 'Sin datos para esta combinación'}
             </p>

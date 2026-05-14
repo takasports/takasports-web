@@ -10,6 +10,7 @@ import { timeAgo } from '@/lib/timeAgo'
 import { createClient } from '@/lib/supabase'
 import { trackSearch } from '@/lib/analytics'
 import type { User } from '@supabase/supabase-js'
+import { PersonIcon } from '@/components/icons/GameIcons'
 import dynamic from 'next/dynamic'
 
 const AuthModal = dynamic(() => import('./AuthModal'), { ssr: false })
@@ -204,7 +205,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                       style={{ width: 38, height: 38, background: `${accent}18`, border: `1px solid ${accent}30` }}>
                       {player.photo
                         ? <Image src={player.photo} alt={player.name} width={34} height={34} className="w-full h-full object-cover" />
-                        : <span>{player.emoji ?? '👤'}</span>
+                        : <span style={{ color: accent }}>{player.emoji ?? <PersonIcon size={20} />}</span>
                       }
                     </div>
                     {/* Info */}

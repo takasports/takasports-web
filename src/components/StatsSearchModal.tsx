@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { SearchIcon } from '@/components/icons/GameIcons'
 
 interface SearchableRow {
   blockId: string
@@ -65,7 +66,7 @@ export function StatsSearchModal({ open, onClose, rows, onPick }: Props) {
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 18px 48px rgba(0,0,0,0.5)' }}
         onClick={e => e.stopPropagation()}>
         <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
-          <span className="text-xs" aria-hidden>🔎</span>
+          <span aria-hidden style={{ color: '#5A5A72' }}><SearchIcon size={14} /></span>
           <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)}
             placeholder="Busca jugador o equipo..."
             className="flex-1 bg-transparent outline-none text-sm"

@@ -31,7 +31,21 @@ export default function ShareButton({ title }: { title: string }) {
         fontFamily: 'var(--font-sport)',
       }}
     >
-      {copied ? '✓ Link copiado' : '🔗 Compartir'}
+      <span className="inline-flex items-center gap-1.5">
+        {copied ? (
+          <>
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3.5 3L13 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            Link copiado
+          </>
+        ) : (
+          <>
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+              <path d="M6 10l4-4M5.5 11l-1 1a2.5 2.5 0 1 1-3.5-3.5l1-1M10.5 5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            Compartir
+          </>
+        )}
+      </span>
     </button>
   )
 }
