@@ -13,6 +13,13 @@ import QuinielaModule from '@/components/QuinielaModule'
 import CategoriesFilter from '@/components/CategoriesFilter'
 import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
 import type { SportEvent } from '@/lib/types'
+import {
+  IconQuiniela,
+  IconCrackQuiz,
+  IconMiOnce,
+  IconSopaCracks,
+  PreviewQuiniela,
+} from '@/components/games/GameVisuals'
 
 const HOME_PAGE_SIZE = 8
 
@@ -133,46 +140,39 @@ interface SanityReel {
 }
 
 // ── Sección Juegos ──────────────────────────────────────────────
-const GAMES = [
-  {
-    href: '/quiniela',
-    emoji: '🎯',
-    name: 'Quiniela',
-    desc: 'Predice los resultados',
-    accent: '#7C3AED',
-    bg: 'rgba(124,58,237,0.07)',
-    border: 'rgba(124,58,237,0.2)',
-    featured: true,
-  },
+const FEATURED_GAME = {
+  href: '/quiniela',
+  name: 'Quiniela',
+  tagline: 'Predice. Acumula. Domina.',
+  cta: 'Jugar jornada',
+  accent: '#A78BFA',
+  accentDim: '#7C3AED',
+}
+
+const SECONDARY_GAMES = [
   {
     href: '/crackquiz',
-    emoji: '🧠',
     name: 'CrackQuiz',
-    desc: 'Demuestra tus conocimientos',
+    desc: 'Trivia deportiva',
+    Icon: IconCrackQuiz,
     accent: '#FCD34D',
-    bg: 'rgba(252,211,77,0.07)',
-    border: 'rgba(252,211,77,0.18)',
-    featured: false,
+    accentDim: '#D97706',
   },
   {
     href: '/sopa-cracks',
-    emoji: '🔤',
     name: 'Sopa de Cracks',
-    desc: 'Encuentra los jugadores',
+    desc: 'Encuentra los nombres',
+    Icon: IconSopaCracks,
     accent: '#6EE7B7',
-    bg: 'rgba(110,231,183,0.07)',
-    border: 'rgba(110,231,183,0.18)',
-    featured: false,
+    accentDim: '#059669',
   },
   {
     href: '/mionce',
-    emoji: '⚽',
     name: 'Mi Once',
-    desc: 'Arma tu equipo ideal',
-    accent: '#22c55e',
-    bg: 'rgba(34,197,94,0.07)',
-    border: 'rgba(34,197,94,0.18)',
-    featured: false,
+    desc: 'Tu equipo ideal',
+    Icon: IconMiOnce,
+    accent: '#93C5FD',
+    accentDim: '#2563EB',
   },
 ]
 
@@ -192,40 +192,135 @@ function GamesSection() {
           Ver todos →
         </Link>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        {GAMES.map(game => (
-          <Link
-            key={game.href}
-            href={game.href}
-            className={`group flex items-center gap-3 p-3 rounded-2xl transition-all hover:-translate-y-0.5 hover:brightness-110 ${game.featured ? 'col-span-2' : ''}`}
-            style={{
-              background: game.featured
-                ? `linear-gradient(135deg, ${game.accent}1f 0%, ${game.accent}0a 100%)`
-                : game.bg,
-              border: `1px solid ${game.featured ? `${game.accent}55` : game.border}`,
-              boxShadow: game.featured ? `0 0 24px -8px ${game.accent}66` : 'none',
-              textDecoration: 'none',
-            }}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        {/* Featured: Quiniela */}
+        <Link
+          href={FEATURED_GAME.href}
+          className="group relative overflow-hidden rounded-2xl p-4 md:p-5 md:col-span-2 transition-all hover:-translate-y-0.5"
+          style={{
+            background: `linear-gradient(135deg, ${FEATURED_GAME.accentDim}38 0%, ${FEATURED_GAME.accentDim}10 55%, rgba(0,0,0,0.2) 100%)`,
+            border: `1px solid ${FEATURED_GAME.accent}55`,
+            boxShadow: `0 0 32px -12px ${FEATURED_GAME.accent}80, inset 0 1px 0 ${FEATURED_GAME.accent}25`,
+            textDecoration: 'none',
+          }}
+        >
+          {/* Decorative big icon */}
+          <div
+            className="absolute -right-6 -bottom-6 opacity-[0.07] pointer-events-none transition-transform group-hover:scale-110"
+            style={{ color: FEATURED_GAME.accent }}
           >
-            <div
-              className={`flex-shrink-0 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${game.featured ? 'w-12 h-12 text-2xl' : 'w-10 h-10 text-xl'}`}
-              style={{ background: `${game.accent}20`, border: `1px solid ${game.accent}40` }}
-            >
-              {game.emoji}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p
-                className={`font-black truncate ${game.featured ? 'text-[13px]' : 'text-[12px]'}`}
-                style={{ color: game.accent, fontFamily: 'var(--font-sport)' }}
+            <IconQuiniela size={160} />
+          </div>
+          <div className="relative flex flex-col h-full gap-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: `${FEATURED_GAME.accent}25`,
+                    border: `1px solid ${FEATURED_GAME.accent}50`,
+                    color: FEATURED_GAME.accent,
+                  }}
+                >
+                  <IconQuiniela size={22} />
+                </div>
+                <div>
+                  <p
+                    className="text-[10px] font-black tracking-widest"
+                    style={{ color: FEATURED_GAME.accent, fontFamily: 'var(--font-sport)' }}
+                  >
+                    DESTACADO
+                  </p>
+                  <h3
+                    className="text-[18px] font-black leading-tight"
+                    style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}
+                  >
+                    {FEATURED_GAME.name}
+                  </h3>
+                </div>
+              </div>
+              <span
+                className="hidden md:inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-full whitespace-nowrap"
+                style={{
+                  background: `${FEATURED_GAME.accent}20`,
+                  color: FEATURED_GAME.accent,
+                  border: `1px solid ${FEATURED_GAME.accent}40`,
+                  fontFamily: 'var(--font-sport)',
+                }}
               >
-                {game.name}
-              </p>
-              <p className="text-[10px] mt-0.5 leading-tight truncate" style={{ color: '#9090a8' }}>
-                {game.desc}
-              </p>
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: FEATURED_GAME.accent }} />
+                JORNADA ABIERTA
+              </span>
             </div>
-          </Link>
-        ))}
+            <p className="text-[12px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              {FEATURED_GAME.tagline}
+            </p>
+            <div className="mt-auto">
+              <PreviewQuiniela accent={FEATURED_GAME.accent} accentDim={FEATURED_GAME.accentDim} />
+            </div>
+            <div
+              className="inline-flex items-center self-start gap-1.5 text-[11px] font-black px-3 py-1.5 rounded-lg transition-transform group-hover:translate-x-0.5"
+              style={{
+                background: FEATURED_GAME.accent,
+                color: '#1a0b2e',
+                fontFamily: 'var(--font-sport)',
+              }}
+            >
+              {FEATURED_GAME.cta}
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M1.5 5h7M5.5 2L8.5 5l-3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          </div>
+        </Link>
+
+        {/* Secondary games stacked into 3 cols */}
+        <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {SECONDARY_GAMES.map(game => {
+            const { Icon } = game
+            return (
+              <Link
+                key={game.href}
+                href={game.href}
+                className="group relative overflow-hidden rounded-2xl p-4 transition-all hover:-translate-y-0.5"
+                style={{
+                  background: `linear-gradient(160deg, ${game.accentDim}22 0%, rgba(0,0,0,0.18) 100%)`,
+                  border: `1px solid ${game.accent}30`,
+                  textDecoration: 'none',
+                  minHeight: 124,
+                }}
+              >
+                <div
+                  className="absolute -right-3 -bottom-3 opacity-[0.09] pointer-events-none transition-transform group-hover:scale-110 group-hover:opacity-[0.14]"
+                  style={{ color: game.accent }}
+                >
+                  <Icon size={90} />
+                </div>
+                <div className="relative flex flex-col h-full">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-105"
+                    style={{
+                      background: `${game.accent}20`,
+                      border: `1px solid ${game.accent}45`,
+                      color: game.accent,
+                    }}
+                  >
+                    <Icon size={22} />
+                  </div>
+                  <p
+                    className="text-[13px] font-black leading-tight"
+                    style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}
+                  >
+                    {game.name}
+                  </p>
+                  <p className="text-[10.5px] mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    {game.desc}
+                  </p>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
       </div>
     </section>
   )
