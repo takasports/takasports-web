@@ -1802,35 +1802,28 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
             )}
           </div>
 
-          {/* Sport categories — fila dedicada, chips grandes con icono y contador */}
-          <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+          {/* Sport categories — tabs de texto plano, subrayado púrpura al activo */}
+          <div className="mt-3 flex items-center gap-1 overflow-x-auto pb-px -mx-1 px-1 scrollbar-hide"
+            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             {sports.map(sport => {
               const active = activeFilter === sport
-              const count = sportCounts[sport] ?? 0
               return (
                 <button
                   key={sport}
                   onClick={() => setActiveFilter(sport)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.08em] transition-all flex-shrink-0"
+                  className="relative px-3 py-2.5 text-[13px] font-semibold transition-colors flex-shrink-0"
                   style={{
-                    background: active ? 'rgba(124,58,237,0.16)' : 'rgba(255,255,255,0.025)',
-                    color: active ? '#C4B5FD' : '#9090A4',
-                    border: active ? '1px solid rgba(124,58,237,0.42)' : '1px solid rgba(255,255,255,0.05)',
+                    color: active ? '#F0F0FA' : '#7A7A8E',
                     fontFamily: 'var(--font-sport)',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
-                    boxShadow: active ? '0 0 14px rgba(124,58,237,0.14)' : 'none',
+                    background: 'transparent',
+                    border: 'none',
                   }}>
-                  <SportIcon sport={sport} size={14} />
-                  <span>{sport}</span>
-                  {count > 0 && (
-                    <span className="text-[9px] tabular-nums font-black px-1.5 py-0.5 rounded-full"
-                      style={{
-                        background: active ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.05)',
-                        color: active ? '#C4B5FD' : '#6A6A80',
-                      }}>
-                      {count}
-                    </span>
+                  {sport}
+                  {active && (
+                    <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full"
+                      style={{ background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
                   )}
                 </button>
               )
