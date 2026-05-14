@@ -47,7 +47,6 @@ export default function CategoriesFilter({
   }, [moreOpen])
 
   const activeIsMore = moreCategories.includes(active)
-  const { accent: activeAccent } = getMeta(active)
 
   return (
     <div className="relative" style={{ isolation: 'isolate' }}>
@@ -62,7 +61,7 @@ export default function CategoriesFilter({
         style={{ background: 'linear-gradient(to left, var(--bg-base, #09090f) 40%, transparent)' }}
       />
 
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide snap-strip pb-0.5 pr-6 sm:pr-8">
+      <div className="flex items-end gap-1 overflow-x-auto scrollbar-hide snap-strip pr-6 sm:pr-8">
 
         {categories.map((sport) => {
           const isActive = sport === active
@@ -72,27 +71,20 @@ export default function CategoriesFilter({
             <button
               key={sport}
               onClick={() => { onSelect(sport); setMoreOpen(false) }}
-              className="group flex-shrink-0 flex items-center gap-1.5 transition-all duration-200 hover:-translate-y-px"
+              className="group flex-shrink-0 flex items-center gap-1.5 relative transition-colors duration-200"
               style={{
-                padding: '7px 14px 7px 12px',
-                borderRadius: 999,
-                background: isActive
-                  ? accent
-                  : `${accent}1A`, // ~10% alpha tint del color del deporte
-                border: isActive
-                  ? `1px solid ${accent}`
-                  : `1px solid ${accent}55`,
-                boxShadow: isActive
-                  ? `0 4px 16px ${accent}66`
-                  : 'none',
+                padding: '10px 14px 10px 12px',
+                background: 'transparent',
+                border: 'none',
                 cursor: 'pointer',
               }}
             >
               <span
                 className="leading-none flex-shrink-0 inline-flex items-center justify-center"
                 style={{
-                  color: isActive ? '#fff' : accent,
-                  transition: 'color 200ms',
+                  color: accent,
+                  opacity: isActive ? 1 : 0.85,
+                  transition: 'opacity 200ms',
                 }}
               >
                 {Icon ? <Icon size={14} /> : (
@@ -100,17 +92,29 @@ export default function CategoriesFilter({
                 )}
               </span>
               <span
-                className="text-[11.5px] font-black leading-none whitespace-nowrap"
+                className="text-[12px] leading-none whitespace-nowrap"
                 style={{
                   fontFamily: 'var(--font-sport)',
-                  color: isActive ? '#fff' : accent,
+                  fontWeight: isActive ? 900 : 600,
+                  color: isActive ? '#fff' : 'rgba(255,255,255,0.62)',
                   letterSpacing: '0.04em',
-                  transition: 'color 200ms',
-                  textShadow: isActive ? '0 1px 2px rgba(0,0,0,0.3)' : 'none',
+                  transition: 'color 200ms, font-weight 200ms',
                 }}
               >
                 {sport}
               </span>
+              {/* Underline del tab activo */}
+              <span
+                aria-hidden
+                className="absolute left-2 right-2 -bottom-px h-[2.5px] rounded-full"
+                style={{
+                  background: isActive
+                    ? `linear-gradient(to right, ${accent}, ${accent}cc)`
+                    : 'transparent',
+                  boxShadow: isActive ? `0 0 12px ${accent}88` : 'none',
+                  transition: 'background 200ms, box-shadow 200ms',
+                }}
+              />
             </button>
           )
         })}
@@ -120,33 +124,22 @@ export default function CategoriesFilter({
           <div className="relative flex-shrink-0" ref={dropdownRef}>
             <button
               onClick={() => setMoreOpen((v) => !v)}
-              className="flex items-center gap-1.5 transition-all duration-200 hover:-translate-y-px"
+              className="flex items-center gap-1.5 relative transition-colors duration-200"
               style={{
-                padding: '7px 12px',
-                borderRadius: 999,
-                background: activeIsMore
-                  ? getMeta(active).accent
-                  : moreOpen
-                  ? 'rgba(124,58,237,0.22)'
-                  : 'rgba(124,58,237,0.10)',
-                border: activeIsMore
-                  ? `1px solid ${getMeta(active).accent}`
-                  : moreOpen
-                  ? '1px solid rgba(124,58,237,0.6)'
-                  : '1px solid rgba(124,58,237,0.35)',
-                boxShadow: activeIsMore
-                  ? `0 4px 16px ${getMeta(active).accent}66`
-                  : 'none',
+                padding: '10px 12px',
+                background: 'transparent',
+                border: 'none',
                 cursor: 'pointer',
               }}
             >
               <span
-                className="text-[11.5px] font-black leading-none"
+                className="text-[12px] leading-none"
                 style={{
                   fontFamily: 'var(--font-sport)',
-                  color: activeIsMore ? '#fff' : '#C4B5FD',
+                  fontWeight: activeIsMore ? 900 : 600,
+                  color: activeIsMore ? '#fff' : moreOpen ? '#C4B5FD' : 'rgba(255,255,255,0.62)',
                   letterSpacing: '0.04em',
-                  textShadow: activeIsMore ? '0 1px 2px rgba(0,0,0,0.3)' : 'none',
+                  transition: 'color 200ms',
                 }}
               >
                 {activeIsMore ? active : 'Más'}
@@ -156,9 +149,21 @@ export default function CategoriesFilter({
                 style={{ transform: moreOpen ? 'rotate(180deg)' : 'none', transition: 'transform 160ms ease', flexShrink: 0 }}
               >
                 <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ color: activeIsMore ? '#fff' : '#C4B5FD' }}
+                  style={{ color: activeIsMore ? '#fff' : moreOpen ? '#C4B5FD' : 'rgba(255,255,255,0.62)' }}
                 />
               </svg>
+              {/* Underline cuando "Más" tiene un deporte activo */}
+              <span
+                aria-hidden
+                className="absolute left-2 right-2 -bottom-px h-[2.5px] rounded-full"
+                style={{
+                  background: activeIsMore
+                    ? `linear-gradient(to right, ${getMeta(active).accent}, ${getMeta(active).accent}cc)`
+                    : 'transparent',
+                  boxShadow: activeIsMore ? `0 0 12px ${getMeta(active).accent}88` : 'none',
+                  transition: 'background 200ms, box-shadow 200ms',
+                }}
+              />
             </button>
 
             {moreOpen && (
@@ -206,14 +211,10 @@ export default function CategoriesFilter({
         )}
       </div>
 
-      {/* Underline accent indicator — muy sutil, no cuadrado */}
+      {/* Baseline sutil sobre la que se monta el underline del tab activo */}
       <div
-        className="mt-2 h-px"
-        style={{
-          background: `linear-gradient(to right, transparent 5%, ${activeAccent}28 30%, ${activeAccent}40 50%, ${activeAccent}28 70%, transparent 95%)`,
-          transition: 'background 400ms ease',
-          opacity: 0.8,
-        }}
+        className="h-px"
+        style={{ background: 'rgba(255,255,255,0.08)' }}
       />
     </div>
   )
