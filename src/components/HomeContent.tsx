@@ -9,7 +9,7 @@ import LiveEventsSection from '@/components/LiveEventsSection'
 import NewsFeed from '@/components/NewsFeed'
 import Sidebar from '@/components/Sidebar'
 import type { RankingEntry } from '@/lib/rankings'
-import QuinielaModule from '@/components/QuinielaModule'
+import QuinielaTeaser from '@/components/QuinielaTeaser'
 import CategoriesFilter from '@/components/CategoriesFilter'
 import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
 import type { SportEvent } from '@/lib/types'
@@ -178,8 +178,8 @@ function GamesSection() {
           Ver todos →
         </Link>
       </div>
-      {/* Quiniela inline — la jornada activa como contenido vivo */}
-      <QuinielaModule />
+      {/* Quiniela teaser — 3 partidos destacados como preview */}
+      <QuinielaTeaser />
 
       {/* Otros juegos: tira fina como atajo de navegación */}
       <div className="mt-3 grid grid-cols-3 gap-2">
