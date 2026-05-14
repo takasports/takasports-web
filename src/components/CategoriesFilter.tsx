@@ -77,14 +77,14 @@ export default function CategoriesFilter({
                 padding: '7px 14px 7px 12px',
                 borderRadius: 999,
                 background: isActive
-                  ? `linear-gradient(135deg, ${accent}, ${accent}d0)`
-                  : 'rgba(255,255,255,0.06)',
+                  ? accent
+                  : `${accent}1A`, // ~10% alpha tint del color del deporte
                 border: isActive
                   ? `1px solid ${accent}`
-                  : '1px solid rgba(255,255,255,0.12)',
+                  : `1px solid ${accent}55`,
                 boxShadow: isActive
-                  ? `0 6px 20px ${accent}55, inset 0 1px 0 rgba(255,255,255,0.25)`
-                  : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                  ? `0 4px 16px ${accent}66`
+                  : 'none',
                 cursor: 'pointer',
               }}
             >
@@ -103,10 +103,10 @@ export default function CategoriesFilter({
                 className="text-[11.5px] font-black leading-none whitespace-nowrap"
                 style={{
                   fontFamily: 'var(--font-sport)',
-                  color: isActive ? '#fff' : '#E5E5EC',
+                  color: isActive ? '#fff' : accent,
                   letterSpacing: '0.04em',
                   transition: 'color 200ms',
-                  textShadow: isActive ? '0 1px 2px rgba(0,0,0,0.25)' : 'none',
+                  textShadow: isActive ? '0 1px 2px rgba(0,0,0,0.3)' : 'none',
                 }}
               >
                 {sport}
@@ -125,18 +125,18 @@ export default function CategoriesFilter({
                 padding: '7px 12px',
                 borderRadius: 999,
                 background: activeIsMore
-                  ? `linear-gradient(135deg, ${getMeta(active).accent}, ${getMeta(active).accent}d0)`
+                  ? getMeta(active).accent
                   : moreOpen
-                  ? 'rgba(124,58,237,0.18)'
-                  : 'rgba(255,255,255,0.06)',
+                  ? 'rgba(124,58,237,0.22)'
+                  : 'rgba(124,58,237,0.10)',
                 border: activeIsMore
                   ? `1px solid ${getMeta(active).accent}`
                   : moreOpen
-                  ? '1px solid rgba(124,58,237,0.5)'
-                  : '1px solid rgba(255,255,255,0.12)',
+                  ? '1px solid rgba(124,58,237,0.6)'
+                  : '1px solid rgba(124,58,237,0.35)',
                 boxShadow: activeIsMore
-                  ? `0 6px 20px ${getMeta(active).accent}55, inset 0 1px 0 rgba(255,255,255,0.25)`
-                  : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                  ? `0 4px 16px ${getMeta(active).accent}66`
+                  : 'none',
                 cursor: 'pointer',
               }}
             >
@@ -144,9 +144,9 @@ export default function CategoriesFilter({
                 className="text-[11.5px] font-black leading-none"
                 style={{
                   fontFamily: 'var(--font-sport)',
-                  color: activeIsMore ? '#fff' : moreOpen ? '#C4B5FD' : '#E5E5EC',
+                  color: activeIsMore ? '#fff' : '#C4B5FD',
                   letterSpacing: '0.04em',
-                  textShadow: activeIsMore ? '0 1px 2px rgba(0,0,0,0.25)' : 'none',
+                  textShadow: activeIsMore ? '0 1px 2px rgba(0,0,0,0.3)' : 'none',
                 }}
               >
                 {activeIsMore ? active : 'Más'}
@@ -156,7 +156,7 @@ export default function CategoriesFilter({
                 style={{ transform: moreOpen ? 'rotate(180deg)' : 'none', transition: 'transform 160ms ease', flexShrink: 0 }}
               >
                 <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ color: activeIsMore ? '#fff' : moreOpen ? '#C4B5FD' : '#E5E5EC' }}
+                  style={{ color: activeIsMore ? '#fff' : '#C4B5FD' }}
                 />
               </svg>
             </button>
