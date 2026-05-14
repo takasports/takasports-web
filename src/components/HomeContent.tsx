@@ -14,7 +14,6 @@ import CategoriesFilter from '@/components/CategoriesFilter'
 import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
 import type { SportEvent } from '@/lib/types'
 import {
-  IconQuiniela,
   IconCrackQuiz,
   IconMiOnce,
   IconSopaCracks,
@@ -140,34 +139,26 @@ interface SanityReel {
 }
 
 // ── Sección Juegos ──────────────────────────────────────────────
-const GAMES = [
-  {
-    href: '/quiniela',
-    name: 'Quiniela',
-    Icon: IconQuiniela,
-    accent: '#A78BFA',
-    accentDim: '#5B21B6',
-  },
+// La Quiniela se embebe en vivo (es el "contenido" del bloque).
+// Los otros 3 juegos viven en una tira fina como atajo de navegación.
+const SECONDARY_GAMES = [
   {
     href: '/crackquiz',
     name: 'CrackQuiz',
     Icon: IconCrackQuiz,
     accent: '#FCD34D',
-    accentDim: '#92400E',
   },
   {
     href: '/sopa-cracks',
     name: 'Sopa de Cracks',
     Icon: IconSopaCracks,
     accent: '#6EE7B7',
-    accentDim: '#065F46',
   },
   {
     href: '/mionce',
     name: 'Mi Once',
     Icon: IconMiOnce,
     accent: '#93C5FD',
-    accentDim: '#1E3A8A',
   },
 ]
 
@@ -187,69 +178,52 @@ function GamesSection() {
           Ver todos →
         </Link>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {GAMES.map(game => {
+      {/* Quiniela inline — la jornada activa como contenido vivo */}
+      <QuinielaModule />
+
+      {/* Otros juegos: tira fina como atajo de navegación */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {SECONDARY_GAMES.map(game => {
           const { Icon } = game
           return (
             <Link
               key={game.href}
               href={game.href}
-              className="group relative overflow-hidden transition-all hover:-translate-y-1"
+              className="group flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all hover:-translate-y-0.5"
               style={{
-                aspectRatio: '5 / 4',
-                borderRadius: 16,
-                background: `linear-gradient(160deg, ${game.accent}18, #09090F 75%)`,
-                border: `1.5px solid ${game.accent}22`,
-                boxShadow: `0 12px 36px rgba(0,0,0,0.55), 0 0 0 1.5px ${game.accent}28`,
+                background: `linear-gradient(140deg, ${game.accent}10, rgba(9,9,15,0.9))`,
+                border: `1px solid ${game.accent}22`,
                 textDecoration: 'none',
               }}
             >
-              {/* Big decorative icon, accent tint, anchored bottom-right */}
               <div
-                className="absolute -right-5 -bottom-5 pointer-events-none transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3"
-                style={{ color: game.accent, opacity: 0.22 }}
+                className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110"
+                style={{
+                  background: `${game.accent}14`,
+                  border: `1px solid ${game.accent}35`,
+                  color: game.accent,
+                }}
               >
-                <Icon size={140} />
+                <Icon size={16} />
               </div>
-              {/* Soft radial accent glow from top-left */}
-              <div
-                className="absolute inset-0 pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity"
-                style={{
-                  background: `radial-gradient(circle at 0% 0%, ${game.accent}24 0%, transparent 55%)`,
-                }}
-              />
-              {/* Vignette for text legibility */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.1) 45%, transparent 70%)',
-                }}
-              />
-              {/* Content */}
-              <div className="relative h-full p-4 flex flex-col justify-between">
-                <span
-                  className="inline-flex items-center justify-center w-7 h-7 rounded-full transition-transform group-hover:translate-x-0.5"
-                  style={{
-                    background: `${game.accent}14`,
-                    border: `1px solid ${game.accent}35`,
-                    color: game.accent,
-                  }}
-                >
-                  <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
-                    <path d="M1.5 5h7M5.5 2L8.5 5l-3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <h3
-                  className="text-[16px] sm:text-[18px] font-black leading-[1.05] tracking-tight"
-                  style={{
-                    color: '#fff',
-                    fontFamily: 'var(--font-sport)',
-                    textShadow: '0 2px 12px rgba(0,0,0,0.55)',
-                  }}
+              <div className="min-w-0 flex-1">
+                <p
+                  className="text-[12px] font-black truncate"
+                  style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}
                 >
                   {game.name}
-                </h3>
+                </p>
               </div>
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                fill="none"
+                className="flex-shrink-0 transition-transform group-hover:translate-x-0.5"
+                style={{ color: game.accent }}
+              >
+                <path d="M1.5 5h7M5.5 2L8.5 5l-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </Link>
           )
         })}
@@ -478,17 +452,6 @@ export default function HomeContent({
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
 
-          {/* Quiniela — solo mobile */}
-          <div className="lg:hidden mt-10">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="section-accent" />
-                <h2 className="section-label">Quiniela</h2>
-              </div>
-              <SectionCTA href="/quiniela" label="Ver quiniela" />
-            </div>
-            <QuinielaModule />
-          </div>
         </div>
 
         {/* Sidebar — solo desktop */}

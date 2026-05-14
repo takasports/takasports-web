@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import QuinielaModule from './QuinielaModule'
 import { HOME_EVENTS } from '@/lib/events'
 import { RANKING_JUGADORES, type RankingEntry } from '@/lib/rankings'
 import { PersonIcon } from '@/components/icons/GameIcons'
@@ -99,12 +98,6 @@ export default function Sidebar({ topPlayers }: { topPlayers?: RankingEntry[] })
             </Link>
           ))}
         </div>
-      </div>
-
-      {/* ── Quiniela ────────────────────────────────── */}
-      <div>
-        <SectionHeader>Quiniela</SectionHeader>
-        <QuinielaModule />
       </div>
 
       {/* ── Próximos ────────────────────────────────── */}
