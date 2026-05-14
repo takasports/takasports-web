@@ -19,6 +19,7 @@ import {
   IconMiOnce,
   IconSopaCracks,
 } from '@/components/games/GameVisuals'
+import { SearchIcon } from '@/components/icons/GameIcons'
 
 const HOME_PAGE_SIZE = 8
 
@@ -193,35 +194,45 @@ function GamesSection() {
             <Link
               key={game.href}
               href={game.href}
-              className="group relative overflow-hidden rounded-2xl transition-all hover:-translate-y-1 hover:shadow-2xl"
+              className="group relative overflow-hidden transition-all hover:-translate-y-1"
               style={{
                 aspectRatio: '5 / 4',
-                background: `linear-gradient(135deg, ${game.accent} 0%, ${game.accentDim} 55%, #0a0a14 100%)`,
+                borderRadius: 16,
+                background: `linear-gradient(160deg, ${game.accent}18, #09090F 75%)`,
+                border: `1.5px solid ${game.accent}22`,
+                boxShadow: `0 12px 36px rgba(0,0,0,0.55), 0 0 0 1.5px ${game.accent}28`,
                 textDecoration: 'none',
               }}
             >
-              {/* Big decorative icon, anchored bottom-right */}
+              {/* Big decorative icon, accent tint, anchored bottom-right */}
               <div
-                className="absolute -right-4 -bottom-4 pointer-events-none transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3"
-                style={{ color: '#fff', opacity: 0.18 }}
+                className="absolute -right-5 -bottom-5 pointer-events-none transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3"
+                style={{ color: game.accent, opacity: 0.22 }}
               >
                 <Icon size={140} />
               </div>
-              {/* Subtle inner highlight */}
+              {/* Soft radial accent glow from top-left */}
               <div
-                className="absolute inset-0 pointer-events-none rounded-2xl"
+                className="absolute inset-0 pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity"
                 style={{
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18), inset 0 0 0 1px rgba(255,255,255,0.06)',
+                  background: `radial-gradient(circle at 0% 0%, ${game.accent}24 0%, transparent 55%)`,
                 }}
               />
-              {/* Title */}
+              {/* Vignette for text legibility */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.1) 45%, transparent 70%)',
+                }}
+              />
+              {/* Content */}
               <div className="relative h-full p-4 flex flex-col justify-between">
                 <span
-                  className="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-black"
+                  className="inline-flex items-center justify-center w-7 h-7 rounded-full transition-transform group-hover:translate-x-0.5"
                   style={{
-                    background: 'rgba(0,0,0,0.28)',
-                    color: '#fff',
-                    backdropFilter: 'blur(6px)',
+                    background: `${game.accent}14`,
+                    border: `1px solid ${game.accent}35`,
+                    color: game.accent,
                   }}
                 >
                   <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
@@ -229,11 +240,11 @@ function GamesSection() {
                   </svg>
                 </span>
                 <h3
-                  className="text-[17px] sm:text-[19px] font-black leading-[1.05] tracking-tight"
+                  className="text-[16px] sm:text-[18px] font-black leading-[1.05] tracking-tight"
                   style={{
                     color: '#fff',
                     fontFamily: 'var(--font-sport)',
-                    textShadow: '0 2px 12px rgba(0,0,0,0.35)',
+                    textShadow: '0 2px 12px rgba(0,0,0,0.55)',
                   }}
                 >
                   {game.name}
@@ -386,10 +397,10 @@ export default function HomeContent({
         {heroArticles.length === 0 && activeSport !== 'Todo' && (
           <div className="mt-12 py-16 flex flex-col items-center gap-4 text-center">
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-              style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}
+              className="w-14 h-14 rounded-2xl flex items-center justify-center"
+              style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)', color: '#A78BFA' }}
             >
-              🔍
+              <SearchIcon size={26} />
             </div>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
               No hay noticias de <span style={{ color: '#C4B5FD' }}>{activeSport}</span> todavía.
