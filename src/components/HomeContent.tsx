@@ -140,39 +140,34 @@ interface SanityReel {
 }
 
 // ── Sección Juegos ──────────────────────────────────────────────
-const FEATURED_GAME = {
-  href: '/quiniela',
-  name: 'Quiniela',
-  tagline: 'Predice. Acumula. Domina.',
-  cta: 'Jugar jornada',
-  accent: '#A78BFA',
-  accentDim: '#7C3AED',
-}
-
-const SECONDARY_GAMES = [
+const GAMES = [
+  {
+    href: '/quiniela',
+    name: 'Quiniela',
+    Icon: IconQuiniela,
+    accent: '#A78BFA',
+    accentDim: '#5B21B6',
+  },
   {
     href: '/crackquiz',
     name: 'CrackQuiz',
-    desc: 'Trivia deportiva',
     Icon: IconCrackQuiz,
     accent: '#FCD34D',
-    accentDim: '#D97706',
+    accentDim: '#92400E',
   },
   {
     href: '/sopa-cracks',
     name: 'Sopa de Cracks',
-    desc: 'Encuentra los nombres',
     Icon: IconSopaCracks,
     accent: '#6EE7B7',
-    accentDim: '#059669',
+    accentDim: '#065F46',
   },
   {
     href: '/mionce',
     name: 'Mi Once',
-    desc: 'Tu equipo ideal',
     Icon: IconMiOnce,
     accent: '#93C5FD',
-    accentDim: '#2563EB',
+    accentDim: '#1E3A8A',
   },
 ]
 
@@ -192,135 +187,62 @@ function GamesSection() {
           Ver todos →
         </Link>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-        {/* Featured: Quiniela */}
-        <Link
-          href={FEATURED_GAME.href}
-          className="group relative overflow-hidden rounded-2xl p-4 md:p-5 md:col-span-2 transition-all hover:-translate-y-0.5"
-          style={{
-            background: `linear-gradient(135deg, ${FEATURED_GAME.accentDim}38 0%, ${FEATURED_GAME.accentDim}10 55%, rgba(0,0,0,0.2) 100%)`,
-            border: `1px solid ${FEATURED_GAME.accent}55`,
-            boxShadow: `0 0 32px -12px ${FEATURED_GAME.accent}80, inset 0 1px 0 ${FEATURED_GAME.accent}25`,
-            textDecoration: 'none',
-          }}
-        >
-          {/* Decorative big icon */}
-          <div
-            className="absolute -right-6 -bottom-6 opacity-[0.07] pointer-events-none transition-transform group-hover:scale-110"
-            style={{ color: FEATURED_GAME.accent }}
-          >
-            <IconQuiniela size={160} />
-          </div>
-          <div className="relative flex flex-col h-full gap-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{
-                    background: `${FEATURED_GAME.accent}25`,
-                    border: `1px solid ${FEATURED_GAME.accent}50`,
-                    color: FEATURED_GAME.accent,
-                  }}
-                >
-                  <IconQuiniela size={22} />
-                </div>
-                <div>
-                  <p
-                    className="text-[10px] font-black tracking-widest"
-                    style={{ color: FEATURED_GAME.accent, fontFamily: 'var(--font-sport)' }}
-                  >
-                    DESTACADO
-                  </p>
-                  <h3
-                    className="text-[18px] font-black leading-tight"
-                    style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}
-                  >
-                    {FEATURED_GAME.name}
-                  </h3>
-                </div>
-              </div>
-              <span
-                className="hidden md:inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-full whitespace-nowrap"
-                style={{
-                  background: `${FEATURED_GAME.accent}20`,
-                  color: FEATURED_GAME.accent,
-                  border: `1px solid ${FEATURED_GAME.accent}40`,
-                  fontFamily: 'var(--font-sport)',
-                }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: FEATURED_GAME.accent }} />
-                JORNADA ABIERTA
-              </span>
-            </div>
-            <p className="text-[12px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
-              {FEATURED_GAME.tagline}
-            </p>
-            <div className="mt-auto">
-              <PreviewQuiniela accent={FEATURED_GAME.accent} accentDim={FEATURED_GAME.accentDim} />
-            </div>
-            <div
-              className="inline-flex items-center self-start gap-1.5 text-[11px] font-black px-3 py-1.5 rounded-lg transition-transform group-hover:translate-x-0.5"
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {GAMES.map(game => {
+          const { Icon } = game
+          return (
+            <Link
+              key={game.href}
+              href={game.href}
+              className="group relative overflow-hidden rounded-2xl transition-all hover:-translate-y-1 hover:shadow-2xl"
               style={{
-                background: FEATURED_GAME.accent,
-                color: '#1a0b2e',
-                fontFamily: 'var(--font-sport)',
+                aspectRatio: '5 / 4',
+                background: `linear-gradient(135deg, ${game.accent} 0%, ${game.accentDim} 55%, #0a0a14 100%)`,
+                textDecoration: 'none',
               }}
             >
-              {FEATURED_GAME.cta}
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <path d="M1.5 5h7M5.5 2L8.5 5l-3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-          </div>
-        </Link>
-
-        {/* Secondary games stacked into 3 cols */}
-        <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {SECONDARY_GAMES.map(game => {
-            const { Icon } = game
-            return (
-              <Link
-                key={game.href}
-                href={game.href}
-                className="group relative overflow-hidden rounded-2xl p-4 transition-all hover:-translate-y-0.5"
-                style={{
-                  background: `linear-gradient(160deg, ${game.accentDim}22 0%, rgba(0,0,0,0.18) 100%)`,
-                  border: `1px solid ${game.accent}30`,
-                  textDecoration: 'none',
-                  minHeight: 124,
-                }}
+              {/* Big decorative icon, anchored bottom-right */}
+              <div
+                className="absolute -right-4 -bottom-4 pointer-events-none transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3"
+                style={{ color: '#fff', opacity: 0.18 }}
               >
-                <div
-                  className="absolute -right-3 -bottom-3 opacity-[0.09] pointer-events-none transition-transform group-hover:scale-110 group-hover:opacity-[0.14]"
-                  style={{ color: game.accent }}
+                <Icon size={140} />
+              </div>
+              {/* Subtle inner highlight */}
+              <div
+                className="absolute inset-0 pointer-events-none rounded-2xl"
+                style={{
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18), inset 0 0 0 1px rgba(255,255,255,0.06)',
+                }}
+              />
+              {/* Title */}
+              <div className="relative h-full p-4 flex flex-col justify-between">
+                <span
+                  className="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-black"
+                  style={{
+                    background: 'rgba(0,0,0,0.28)',
+                    color: '#fff',
+                    backdropFilter: 'blur(6px)',
+                  }}
                 >
-                  <Icon size={90} />
-                </div>
-                <div className="relative flex flex-col h-full">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-105"
-                    style={{
-                      background: `${game.accent}20`,
-                      border: `1px solid ${game.accent}45`,
-                      color: game.accent,
-                    }}
-                  >
-                    <Icon size={22} />
-                  </div>
-                  <p
-                    className="text-[13px] font-black leading-tight"
-                    style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}
-                  >
-                    {game.name}
-                  </p>
-                  <p className="text-[10.5px] mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    {game.desc}
-                  </p>
-                </div>
-              </Link>
-            )
-          })}
-        </div>
+                  <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+                    <path d="M1.5 5h7M5.5 2L8.5 5l-3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <h3
+                  className="text-[17px] sm:text-[19px] font-black leading-[1.05] tracking-tight"
+                  style={{
+                    color: '#fff',
+                    fontFamily: 'var(--font-sport)',
+                    textShadow: '0 2px 12px rgba(0,0,0,0.35)',
+                  }}
+                >
+                  {game.name}
+                </h3>
+              </div>
+            </Link>
+          )
+        })}
       </div>
     </section>
   )
@@ -342,18 +264,29 @@ function SectionCTA({ href, label }: { href: string; label: string }) {
 }
 
 
+// Aliases: deportes que en Sanity pueden venir con un slug equivalente al
+// canónico del filtro (ej. NBA tagged como categoría dentro de Baloncesto,
+// "wrestling" llegando vía captions de Instagram, F1 abreviado).
+const SLUG_ALIASES: Record<string, string[]> = {
+  baloncesto: ['nba', 'euroliga', 'bcl', 'acb'],
+  wwe: ['wrestling'],
+  formula1: ['f1'],
+}
+
 export default function HomeContent({
   articles,
   reels,
   events,
   initialSport = '',
   topPlayers,
+  featuredBySport = {},
 }: {
   articles: Article[]
   reels: SanityReel[]
   events: SportEvent[]
   initialSport?: string
   topPlayers?: RankingEntry[]
+  featuredBySport?: Record<string, Article[]>
 }) {
   const router = useRouter()
   const [activeSport, setActiveSport] = useState<string>(initialSport || 'Todo')
@@ -373,23 +306,33 @@ export default function HomeContent({
     }, 110)
   }, [router])
 
-  // Filtrar artículos por deporte activo
+  // Filtrar artículos por deporte activo (con aliases: nba→baloncesto, wrestling→wwe, f1→formula1)
   const activeSlug = CATEGORY_TO_SLUG[activeSport]?.toLowerCase() ?? ''
-  const filteredArticles = activeSport === 'Todo' || !activeSlug
+  const acceptedSlugs = activeSlug
+    ? new Set<string>([activeSlug, ...(SLUG_ALIASES[activeSlug] ?? [])])
+    : new Set<string>()
+
+  const matchesActive = (s?: string, c?: string) => {
+    const ss = s?.toLowerCase() ?? ''
+    const cc = c?.toLowerCase() ?? ''
+    return acceptedSlugs.has(ss) || acceptedSlugs.has(cc)
+  }
+
+  const directFiltered = activeSport === 'Todo' || !activeSlug
     ? articles
-    : articles.filter((a) => {
-        const s = a.sport?.toLowerCase() ?? ''
-        const c = a.category?.toLowerCase() ?? ''
-        return s === activeSlug || c === activeSlug
-      })
+    : articles.filter((a) => matchesActive(a.sport, a.category))
+
+  // Fallback: si no hay nada entre las 40 últimas, usar las destacadas
+  // del deporte que el servidor prefetcheó. Así nunca aparece vacío.
+  const fallback = featuredBySport[activeSlug] ?? []
+  const filteredArticles = directFiltered.length > 0 || activeSport === 'Todo'
+    ? directFiltered
+    : fallback
 
   // Filtrar reels (ReelsSection tiene su propio estado, pasamos initialSport vacío y reels ya filtrados)
   const filteredReels = activeSport === 'Todo' || !activeSlug
     ? reels
-    : reels.filter((r) => {
-        const s = r.sport?.toLowerCase() ?? r.category?.toLowerCase() ?? ''
-        return s === activeSlug
-      })
+    : reels.filter((r) => matchesActive(r.sport, r.category))
 
   const heroArticles = filteredArticles.slice(0, 8)
   const feedDisplayed = filteredArticles.slice(heroArticles.length)
