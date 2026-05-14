@@ -135,15 +135,6 @@ interface SanityReel {
 // ── Sección Juegos ──────────────────────────────────────────────
 const GAMES = [
   {
-    href: '/crackquiz',
-    emoji: '🧠',
-    name: 'CrackQuiz',
-    desc: 'Demuestra tus conocimientos',
-    accent: '#FCD34D',
-    bg: 'rgba(252,211,77,0.07)',
-    border: 'rgba(252,211,77,0.18)',
-  },
-  {
     href: '/quiniela',
     emoji: '🎯',
     name: 'Quiniela',
@@ -151,6 +142,17 @@ const GAMES = [
     accent: '#7C3AED',
     bg: 'rgba(124,58,237,0.07)',
     border: 'rgba(124,58,237,0.2)',
+    featured: true,
+  },
+  {
+    href: '/crackquiz',
+    emoji: '🧠',
+    name: 'CrackQuiz',
+    desc: 'Demuestra tus conocimientos',
+    accent: '#FCD34D',
+    bg: 'rgba(252,211,77,0.07)',
+    border: 'rgba(252,211,77,0.18)',
+    featured: false,
   },
   {
     href: '/sopa-cracks',
@@ -160,6 +162,7 @@ const GAMES = [
     accent: '#6EE7B7',
     bg: 'rgba(110,231,183,0.07)',
     border: 'rgba(110,231,183,0.18)',
+    featured: false,
   },
   {
     href: '/mionce',
@@ -169,6 +172,7 @@ const GAMES = [
     accent: '#22c55e',
     bg: 'rgba(34,197,94,0.07)',
     border: 'rgba(34,197,94,0.18)',
+    featured: false,
   },
 ]
 
@@ -188,29 +192,35 @@ function GamesSection() {
           Ver todos →
         </Link>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {GAMES.map(game => (
           <Link
             key={game.href}
             href={game.href}
-            className="group flex flex-col items-center gap-2.5 p-4 rounded-2xl transition-all hover:-translate-y-1 hover:brightness-110"
+            className={`group flex items-center gap-3 p-3 rounded-2xl transition-all hover:-translate-y-0.5 hover:brightness-110 ${game.featured ? 'col-span-2' : ''}`}
             style={{
-              background: game.bg,
-              border: `1px solid ${game.border}`,
+              background: game.featured
+                ? `linear-gradient(135deg, ${game.accent}1f 0%, ${game.accent}0a 100%)`
+                : game.bg,
+              border: `1px solid ${game.featured ? `${game.accent}55` : game.border}`,
+              boxShadow: game.featured ? `0 0 24px -8px ${game.accent}66` : 'none',
               textDecoration: 'none',
             }}
           >
             <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl transition-transform group-hover:scale-110"
-              style={{ background: `${game.accent}15`, border: `1px solid ${game.accent}30` }}
+              className={`flex-shrink-0 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${game.featured ? 'w-12 h-12 text-2xl' : 'w-10 h-10 text-xl'}`}
+              style={{ background: `${game.accent}20`, border: `1px solid ${game.accent}40` }}
             >
               {game.emoji}
             </div>
-            <div className="text-center">
-              <p className="text-[12px] font-black" style={{ color: game.accent, fontFamily: 'var(--font-sport)' }}>
+            <div className="min-w-0 flex-1">
+              <p
+                className={`font-black truncate ${game.featured ? 'text-[13px]' : 'text-[12px]'}`}
+                style={{ color: game.accent, fontFamily: 'var(--font-sport)' }}
+              >
                 {game.name}
               </p>
-              <p className="text-[10px] mt-0.5 leading-tight" style={{ color: '#686884' }}>
+              <p className="text-[10px] mt-0.5 leading-tight truncate" style={{ color: '#9090a8' }}>
                 {game.desc}
               </p>
             </div>
