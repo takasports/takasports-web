@@ -932,112 +932,6 @@ function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect }: {
 }
 
 // Horizontal chips strip to filter by day
-// Horizontal date strip — -2 days to +14 days. Tap any day to filter the list.
-// Days with events show a small event-count badge below the date number.
-function DateStrip({ days, value, onChange }: {
-  days: { key: string; label: string; count: number }[]
-  value: string | null
-  onChange: (k: string | null) => void
-}) {
-  const today = isoToLocalDate(new Date().toISOString())
-  const dayShort = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
-  const eventCount = useMemo(() => {
-    const m = new Map<string, number>()
-    for (const d of days) m.set(d.key, d.count)
-    return m
-  }, [days])
-
-  // Build a 17-day window: -2 .. +14
-  const window: { key: string; weekday: string; day: number; isToday: boolean; count: number }[] = []
-  const base = new Date(today + 'T12:00:00Z')
-  for (let i = -2; i <= 14; i++) {
-    const d = new Date(base)
-    d.setUTCDate(d.getUTCDate() + i)
-    const key = d.toISOString().split('T')[0]
-    window.push({
-      key,
-      weekday: dayShort[d.getUTCDay()],
-      day: d.getUTCDate(),
-      isToday: key === today,
-      count: eventCount.get(key) ?? 0,
-    })
-  }
-
-  const stripRef = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    // Auto-center today on mount
-    if (!stripRef.current) return
-    const todayEl = stripRef.current.querySelector<HTMLElement>('[data-today="1"]')
-    if (todayEl) {
-      todayEl.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' })
-    }
-  }, [])
-
-  return (
-    <div ref={stripRef} className="flex items-stretch gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide" style={{ scrollSnapType: 'x mandatory' }}>
-      <button
-        onClick={() => onChange(null)}
-        className="flex-shrink-0 flex flex-col items-center justify-center px-3 py-1.5 rounded-lg transition-all"
-        style={{
-          background: value === null ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.025)',
-          border: value === null ? '1px solid rgba(124,58,237,0.42)' : '1px solid rgba(255,255,255,0.05)',
-          color: value === null ? '#C4B5FD' : '#7A7A8E',
-          minWidth: 52,
-          scrollSnapAlign: 'start',
-          fontFamily: 'var(--font-sport)',
-        }}
-      >
-        <span className="text-[8px] font-black uppercase tracking-[0.14em] leading-none mb-1">Todos</span>
-        <span className="text-[14px] font-black leading-none">∞</span>
-      </button>
-      {window.map(d => {
-        const active = value === d.key
-        const accent = d.isToday ? '#C4B5FD' : active ? '#C4B5FD' : '#9090A4'
-        return (
-          <button
-            key={d.key}
-            data-today={d.isToday ? '1' : undefined}
-            onClick={() => onChange(d.key)}
-            className="flex-shrink-0 flex flex-col items-center justify-center px-2.5 py-1.5 rounded-lg transition-all relative"
-            style={{
-              background: active
-                ? 'rgba(124,58,237,0.18)'
-                : d.isToday
-                  ? 'rgba(124,58,237,0.08)'
-                  : 'rgba(255,255,255,0.025)',
-              border: active
-                ? '1px solid rgba(124,58,237,0.5)'
-                : d.isToday
-                  ? '1px solid rgba(124,58,237,0.28)'
-                  : '1px solid rgba(255,255,255,0.05)',
-              color: accent,
-              minWidth: 48,
-              scrollSnapAlign: 'start',
-              fontFamily: 'var(--font-sport)',
-              boxShadow: active ? '0 0 12px rgba(124,58,237,0.18)' : 'none',
-            }}
-          >
-            <span className="text-[8px] font-black uppercase tracking-[0.14em] leading-none mb-0.5">
-              {d.isToday ? 'Hoy' : d.weekday}
-            </span>
-            <span className="text-[16px] font-black leading-none tabular-nums">{d.day}</span>
-            {d.count > 0 && (
-              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[16px] h-[14px] px-1 rounded-full text-[8px] font-black tabular-nums"
-                style={{
-                  background: active || d.isToday ? '#7C3AED' : 'rgba(124,58,237,0.55)',
-                  color: '#fff',
-                  border: '1px solid var(--bg-base)',
-                }}>
-                {d.count}
-              </span>
-            )}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 function DayChips({ days, value, onChange }: {
   days: { key: string; label: string; count: number }[]
   value: string | null
@@ -1757,9 +1651,11 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
             WebkitBackdropFilter: 'blur(8px)',
           }}
         >
-          <div className="mb-2.5">
-            <DateStrip days={availableDays} value={selectedDate} onChange={setSelectedDate} />
-          </div>
+          {availableDays.length > 0 && (
+            <div className="mb-2.5">
+              <DayChips days={availableDays} value={selectedDate} onChange={setSelectedDate} />
+            </div>
+          )}
           {/* Toolbar — single scrollable row on mobile, two-row layout on sm+ */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
             <SearchInput value={searchRaw} onChange={setSearchRaw} />
