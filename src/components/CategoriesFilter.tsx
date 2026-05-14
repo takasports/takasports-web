@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, getSportStyle } from '@/lib/sports'
+import { HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
 import { FootballIcon, BasketballIcon, F1Icon, TennisIcon, UFCIcon, RugbyIcon, WWEIcon } from '@/components/icons/GameIcons'
 
 const SPORT_META: Record<string, { accent: string; Icon: React.ComponentType<{ size?: number }> | null }> = {
@@ -50,12 +50,7 @@ export default function CategoriesFilter({
 
   return (
     <div className="relative" style={{ isolation: 'isolate' }}>
-      {/* Fade izquierdo */}
-      <div
-        className="pointer-events-none absolute left-0 top-0 bottom-8 w-4 z-10"
-        style={{ background: 'linear-gradient(to right, var(--bg-base, #09090f) 20%, transparent)' }}
-      />
-      {/* Fade derecho */}
+      {/* Fade derecho — solo donde hay overflow horizontal */}
       <div
         className="pointer-events-none absolute right-0 top-0 bottom-8 w-12 sm:w-16 z-10"
         style={{ background: 'linear-gradient(to left, var(--bg-base, #09090f) 40%, transparent)' }}

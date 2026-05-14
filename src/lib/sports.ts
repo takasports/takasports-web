@@ -30,10 +30,10 @@ export const CATEGORY_TO_SLUG: Record<string, string> = {
 }
 
 // Categorías principales del filtro global (Home / Noticias)
-export const HOME_SPORT_CATEGORIES = ['Todo', 'Fútbol', 'WWE', 'F1', 'Baloncesto', 'Tenis', 'UFC']
+export const HOME_SPORT_CATEGORIES = ['Todo', 'Fútbol', 'WWE', 'F1', 'Baloncesto', 'Tenis', 'UFC', 'Rugby']
 
-// Categorías extra para el dropdown "Más"
-export const MORE_SPORT_CATEGORIES = ['Rugby']
+// Categorías extra para el dropdown "Más" (vacío: ya no se muestra)
+export const MORE_SPORT_CATEGORIES: string[] = []
 
 // Lista completa (compatibilidad interna)
 export const SPORT_CATEGORIES = ['Todo', ...Object.values(SLUG_TO_LABEL)]
