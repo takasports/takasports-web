@@ -11,6 +11,7 @@ import { getStoredTZ, setStoredTZ, SOURCE_TZ } from '@/lib/timezone'
 import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
+import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, TrophyIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
 
 // ── Favorites helpers ──────────────────────────────────────────
 function isFavorite(favorites: Set<string>, name: string | null | undefined): boolean {
@@ -261,7 +262,7 @@ function LiveHeroCard(p: HeroProps) {
             <span className="w-1 h-1 rounded-full animate-pulse" style={{ background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
             EN VIVO
           </span>
-          {tennis && <span className="text-[10px]">🎾</span>}
+          {tennis && <span style={{ color: '#d97706' }}><TennisIcon size={10} /></span>}
           <span className="text-[8.5px] font-bold uppercase tracking-wider truncate"
             style={{ color: compColor, fontFamily: 'var(--font-sport)', maxWidth: 140 }}>
             {p.comp}
@@ -287,9 +288,9 @@ function LiveHeroCard(p: HeroProps) {
         <div className="flex flex-col items-center justify-center flex-shrink-0 px-1 gap-0.5">
           {racing ? (
             <div className="flex flex-col items-center gap-1">
-              <span className="text-[9px] font-black uppercase tracking-[0.15em]"
+              <span className="text-[9px] font-black uppercase tracking-[0.15em] inline-flex items-center gap-1"
                 style={{ color: '#4ade80', fontFamily: 'var(--font-sport)' }}>
-                🏎 EN CARRERA
+                <F1Icon size={11} /> EN CARRERA
               </span>
               <span className="text-[11px] font-bold text-center"
                 style={{ color: '#C0C0D4', fontFamily: 'var(--font-sport)', maxWidth: 80 }}>
@@ -382,7 +383,7 @@ function BroadcastChip({ broadcast }: { broadcast?: string }) {
       }}
       title={split ? 'Los derechos de emisión están repartidos entre varios canales' : undefined}
     >
-      <span>📺</span>
+      <span className="inline-flex items-center"><TvIcon size={11} /></span>
       <span className="truncate max-w-[110px]">{broadcast}</span>
     </span>
   )
@@ -608,11 +609,11 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
 }
 
 function SectionHeader({ icon, label, color, count, hint }: {
-  icon: string; label: string; color: string; count?: number; hint?: string
+  icon: React.ReactNode; label: string; color: string; count?: number; hint?: string
 }) {
   return (
     <div className="flex items-center gap-2 mb-3 px-1">
-      <span className="text-[12px]">{icon}</span>
+      <span className="inline-flex items-center" style={{ color }}>{icon}</span>
       <span className="text-[10px] font-black uppercase tracking-[0.18em]"
         style={{ color, fontFamily: 'var(--font-sport)' }}>
         {label}
@@ -917,7 +918,7 @@ function DayChips({ days, value, onChange }: {
         >
           {isCalActive && value && value !== today && value !== tomorrow
             ? (() => { const d = new Date(value + 'T12:00:00Z'); return `${d.getUTCDate()}/${d.getUTCMonth() + 1}` })()
-            : '📅 Calendario'
+            : (<><CalendarIcon size={11} /> Calendario</>)
           }
         </button>
 
@@ -1541,7 +1542,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                 {tab === 'todos' && 'Todos'}
                 {tab === 'en-vivo' && `En Vivo${liveCount > 0 ? ` · ${liveCount}` : ''}`}
                 {tab === 'resultados' && `Resultados${pastSource.length > 0 ? ` · ${pastSource.length}` : ''}`}
-                {tab === 'recordatorios' && <>🔔 Alertas{remCount > 0 ? ` · ${remCount}` : ''}</>}
+                {tab === 'recordatorios' && <span className="inline-flex items-center gap-1.5"><BellIcon size={11} /> Alertas{remCount > 0 ? ` · ${remCount}` : ''}</span>}
               </button>
             )
           })}
@@ -1593,7 +1594,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
               <button
                 key={sport}
                 onClick={() => setActiveFilter(sport)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
                 style={{
                   background: activeFilter === sport ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
                   color: activeFilter === sport ? '#E0E0F0' : '#5A5A6A',
@@ -1602,7 +1603,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
                 }}>
-                {SPORT_EMOJI[sport] || '🏆'} {sport}
+                <SportIcon sport={sport} size={11} /> {sport}
               </button>
             ))}
             {hasActiveFilters && (
@@ -1635,7 +1636,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
           {liveCount > 0 && (
             <section>
               <SectionHeader
-                icon="🔴"
+                icon={<LiveDotIcon size={8} />}
                 label="En Vivo Ahora"
                 color="#4ade80"
                 count={liveCount}
@@ -1738,8 +1739,12 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
 
           {filtered.length === 0 && liveCount === 0 && (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="text-[28px] mb-2" style={{ filter: 'grayscale(0.3) opacity(0.6)' }}>
-                {search ? '🔍' : activeFilter !== 'Todo' ? (SPORT_EMOJI[activeFilter] || '🏆') : '📅'}
+              <p className="mb-2 flex justify-center" style={{ color: '#5A5A6A' }}>
+                {search
+                  ? <SearchIcon size={32} />
+                  : activeFilter !== 'Todo'
+                    ? <SportIcon sport={activeFilter} size={32} />
+                    : <CalendarIcon size={32} />}
               </p>
               <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
                 {search
@@ -1763,7 +1768,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
         <div>
           {liveCount === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="text-[24px] mb-2" style={{ filter: 'grayscale(0.4) opacity(0.7)' }}>📺</p>
+              <p className="mb-2 flex justify-center" style={{ color: '#5A5A6A' }}><TvIcon size={28} /></p>
               <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
                 No hay partidos en vivo ahora
               </p>
@@ -1786,15 +1791,19 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
           {/* Live strip at top of TODOS view */}
           {liveCount > 0 && !selectedDate && (
             <section>
-              <SectionHeader icon="🔴" label="En Vivo" color="#4ade80" count={liveCount} hint={liveCount > 3 ? '← desliza →' : undefined} />
+              <SectionHeader icon={<LiveDotIcon size={8} />} label="En Vivo" color="#4ade80" count={liveCount} hint={liveCount > 3 ? '← desliza →' : undefined} />
               <LiveHeroStrip items={liveHeroCards} />
             </section>
           )}
 
           {orderedDates.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="text-[28px] mb-2" style={{ filter: 'grayscale(0.3) opacity(0.6)' }}>
-                {search ? '🔍' : activeFilter !== 'Todo' ? (SPORT_EMOJI[activeFilter] || '🏆') : '📅'}
+              <p className="mb-2 flex justify-center" style={{ color: '#5A5A6A' }}>
+                {search
+                  ? <SearchIcon size={32} />
+                  : activeFilter !== 'Todo'
+                    ? <SportIcon sport={activeFilter} size={32} />
+                    : <CalendarIcon size={32} />}
               </p>
               <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
                 {search
@@ -1823,7 +1832,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
               return (
                 <section key={dateKey}>
                   <SectionHeader
-                    icon="📅"
+                    icon={<CalendarIcon size={12} />}
                     label={formatDateLabel(dateKey)}
                     color="#C4B5FD"
                     count={dayEvents.length}
@@ -1863,17 +1872,17 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
         <div className="space-y-5">
           {remindedEvents.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="text-[28px] mb-3" style={{ filter: 'opacity(0.5)' }}>🔔</p>
+              <p className="mb-3 flex justify-center" style={{ color: '#FBBF24', opacity: 0.6 }}><BellIcon size={32} /></p>
               <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
                 No tienes recordatorios activos
               </p>
-              <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>
-                Pulsa 🔔 en cualquier partido para recordarlo
+              <p className="text-[10px] mt-1.5 flex items-center justify-center gap-1" style={{ color: '#4A4A5A' }}>
+                Pulsa <BellIcon size={10} /> en cualquier partido para recordarlo
               </p>
             </div>
           ) : (
             <section>
-              <SectionHeader icon="🔔" label="Mis Recordatorios" color="#FBBF24" count={remindedEvents.length} />
+              <SectionHeader icon={<BellIcon size={12} />} label="Mis Recordatorios" color="#FBBF24" count={remindedEvents.length} />
               <div className="space-y-1.5">
                 {remindedEvents.map(event => {
                   const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
@@ -1921,7 +1930,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                   <button
                     key={sport}
                     onClick={() => setActiveFilter(sport)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
                     style={{
                       background: activeFilter === sport ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
                       color: activeFilter === sport ? '#E0E0F0' : '#5A5A6A',
@@ -1930,7 +1939,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
                     }}>
-                    {SPORT_EMOJI[sport] || '🏆'} {sport}
+                    <SportIcon sport={sport} size={11} /> {sport}
                   </button>
                 ))}
               </div>
@@ -1979,7 +1988,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
 
           {pastOrderedDates.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="text-[28px] mb-2" style={{ filter: 'grayscale(0.3) opacity(0.6)' }}>📋</p>
+              <p className="mb-2 flex justify-center" style={{ color: '#5A5A6A' }}><ClipboardIcon size={32} /></p>
               <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
                 {pastLoading ? 'Buscando resultados…' : 'No se encontraron resultados'}
               </p>
@@ -2001,7 +2010,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
               return (
                 <section key={dateKey}>
                   <SectionHeader
-                    icon="📋"
+                    icon={<ClipboardIcon size={12} />}
                     label={formatDateLabel(dateKey)}
                     color="#FCA5A5"
                     count={dayEvents.length}

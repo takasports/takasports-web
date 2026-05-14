@@ -9,6 +9,7 @@ import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { searchPlayers, getPlayerById, type Player, type PlayerPosition } from '@/lib/players-catalog'
 import { getWeeklyChallenge, type FormationId, type Challenge } from '@/lib/mionce-challenges'
+import { CountryFlag } from '@/components/icons/GameIcons'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -91,30 +92,6 @@ interface StoredState {
   slots: Record<string, string>  // slotId -> playerId
 }
 
-// ── Country flags (emoji) ────────────────────────────────────────
-
-const FLAG: Record<string, string> = {
-  'España': '🇪🇸', 'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Francia': '🇫🇷',
-  'Alemania': '🇩🇪', 'Italia': '🇮🇹', 'Inglaterra': '🇬🇧', 'Portugal': '🇵🇹',
-  'Países Bajos': '🇳🇱', 'Bélgica': '🇧🇪', 'Croacia': '🇭🇷', 'Uruguay': '🇺🇾',
-  'Colombia': '🇨🇴', 'Chile': '🇨🇱', 'México': '🇲🇽', 'Estados Unidos': '🇺🇸',
-  'Polonia': '🇵🇱', 'Noruega': '🇳🇴', 'Suecia': '🇸🇪', 'Dinamarca': '🇩🇰',
-  'Suiza': '🇨🇭', 'Austria': '🇦🇹', 'Hungría': '🇭🇺', 'Chequia': '🇨🇿',
-  'Serbia': '🇷🇸', 'Ucrania': '🇺🇦', 'Rusia': '🇷🇺', 'Turquía': '🇹🇷',
-  'Marruecos': '🇲🇦', 'Senegal': '🇸🇳', 'Egipto': '🇪🇬', 'Nigeria': '🇳🇬',
-  'Camerún': '🇨🇲', 'Ghana': '🇬🇭', 'Costa de Marfil': '🇨🇮', 'Mali': '🇲🇱',
-  'Liberia': '🇱🇷', 'Gabón': '🇬🇦', 'Burkina Faso': '🇧🇫', 'RD del Congo': '🇨🇩',
-  'Mozambique': '🇲🇿', 'Corea del Sur': '🇰🇷', 'Japón': '🇯🇵', 'Irán': '🇮🇷',
-  'Costa Rica': '🇨🇷', 'Paraguay': '🇵🇾', 'Perú': '🇵🇪', 'Ecuador': '🇪🇨',
-  'Bolivia': '🇧🇴', 'Venezuela': '🇻🇪', 'Bulgaria': '🇧🇬', 'Rumanía': '🇷🇴',
-  'Eslovaquia': '🇸🇰', 'Eslovenia': '🇸🇮', 'Escocia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'Irlanda': '🇮🇪',
-  'Armenia': '🇦🇲', 'Georgia': '🇬🇪', 'Guinea': '🇬🇳', 'Canadá': '🇨🇦',
-  'Montenegro': '🇲🇪',
-}
-
-function flag(country: string): string {
-  return FLAG[country] ?? '🏳️'
-}
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -563,8 +540,9 @@ function PlayerSearchModal({ slot, challenge, excludeIds, onSelect, onClose }: S
                       {p.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black truncate" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
-                        <span className="mr-1.5">{flag(p.country)}</span>{p.name}
+                      <p className="text-sm font-black truncate flex items-center gap-1.5" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+                        <CountryFlag country={p.country} width={16} />
+                        <span className="truncate">{p.name}</span>
                       </p>
                       <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
                         {p.club}
@@ -625,7 +603,7 @@ function PitchSlot({ slot, player, onClick, onClear }: PitchSlotProps) {
               {player.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
             </div>
             <div
-              className="px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-black whitespace-nowrap max-w-[90px] sm:max-w-[110px] truncate"
+              className="px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-black whitespace-nowrap max-w-[90px] sm:max-w-[110px] truncate inline-flex items-center gap-1"
               style={{
                 background: 'rgba(0,0,0,0.7)',
                 color: '#F0F0F5',
@@ -633,8 +611,8 @@ function PitchSlot({ slot, player, onClick, onClear }: PitchSlotProps) {
                 fontFamily: 'var(--font-display)',
               }}
             >
-              <span className="mr-1">{flag(player.country)}</span>
-              {player.name.split(' ').slice(-1)[0]}
+              <CountryFlag country={player.country} width={11} />
+              <span className="truncate">{player.name.split(' ').slice(-1)[0]}</span>
             </div>
           </button>
           <button
@@ -1139,8 +1117,9 @@ export default function MiOncePage() {
                         </span>
                         {p ? (
                           <div className="flex-1 min-w-0">
-                            <p className="text-[12px] font-black truncate" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
-                              {flag(p.country)} {p.name}
+                            <p className="text-[12px] font-black truncate flex items-center gap-1.5" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+                              <CountryFlag country={p.country} width={13} />
+                              <span className="truncate">{p.name}</span>
                             </p>
                             <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
                               {p.club}

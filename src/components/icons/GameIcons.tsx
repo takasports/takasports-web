@@ -45,6 +45,24 @@ import GA from 'country-flag-icons/react/3x2/GA'
 import BF from 'country-flag-icons/react/3x2/BF'
 import CA from 'country-flag-icons/react/3x2/CA'
 import IE from 'country-flag-icons/react/3x2/IE'
+import BE from 'country-flag-icons/react/3x2/BE'
+import HU from 'country-flag-icons/react/3x2/HU'
+import CZ from 'country-flag-icons/react/3x2/CZ'
+import RU from 'country-flag-icons/react/3x2/RU'
+import ML from 'country-flag-icons/react/3x2/ML'
+import CD from 'country-flag-icons/react/3x2/CD'
+import MZ from 'country-flag-icons/react/3x2/MZ'
+import IR from 'country-flag-icons/react/3x2/IR'
+import PE from 'country-flag-icons/react/3x2/PE'
+import EC from 'country-flag-icons/react/3x2/EC'
+import BO from 'country-flag-icons/react/3x2/BO'
+import VE from 'country-flag-icons/react/3x2/VE'
+import RO from 'country-flag-icons/react/3x2/RO'
+import SK from 'country-flag-icons/react/3x2/SK'
+import SI from 'country-flag-icons/react/3x2/SI'
+import AM from 'country-flag-icons/react/3x2/AM'
+import GN from 'country-flag-icons/react/3x2/GN'
+import ME from 'country-flag-icons/react/3x2/ME'
 
 type IconProps = { size?: number; className?: string }
 
@@ -60,6 +78,11 @@ const COUNTRY_TO_FLAG: Record<string, React.ComponentType<{ title?: string }>> =
   'Costa Rica': CR, 'Paraguay': PY, 'Bulgaria': BG, 'Escocia': GB_SCT,
   'Georgia': GE, 'Turquía': TR, 'Austria': AT, 'Liberia': LR,
   'Gabón': GA, 'Burkina Faso': BF, 'Canadá': CA, 'Irlanda': IE,
+  'Bélgica': BE, 'Hungría': HU, 'Chequia': CZ, 'Rusia': RU,
+  'Mali': ML, 'RD del Congo': CD, 'Mozambique': MZ, 'Irán': IR,
+  'Perú': PE, 'Ecuador': EC, 'Bolivia': BO, 'Venezuela': VE,
+  'Rumanía': RO, 'Eslovaquia': SK, 'Eslovenia': SI,
+  'Armenia': AM, 'Guinea': GN, 'Montenegro': ME,
 }
 
 export function CountryFlag({ country, width = 18, className }: { country: string; width?: number; className?: string }) {
