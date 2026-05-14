@@ -16,30 +16,94 @@ import type { SportEvent } from '@/lib/types'
 
 const HOME_PAGE_SIZE = 8
 
-// Sport priority for the home event preview: guarantees diversity
-const EVENT_SPORT_PRIORITY = ['Fútbol', 'Baloncesto', 'F1', 'Tenis', 'UFC']
+// ── Home calendar picker ─────────────────────────────────────
+// Filtra a una ventana de actualidad (hoy + próximas ~36h) y
+// puntúa cada evento por relevancia editorial. La diversidad
+// por deporte deja de ser obligatoria: si el día está cargado
+// de fútbol grande, ganará fútbol; si hay un GP o un Major,
+// entrará por mérito propio. Cap blando de 2 por deporte para
+// evitar que la sección se monopolice un día flojo.
+const WINDOW_HOURS = 36
+const MAX_PER_SPORT = 2
+
+// Palabras clave en el nombre de la competición → peso de relevancia
+const TIER_S = [
+  'champions', 'final', 'mundial', 'world cup', 'clásico', 'clasico',
+  'super bowl', 'playoffs', 'play-off', 'eliminator',
+  'roland garros', 'wimbledon', 'us open', 'australian open', 'grand slam',
+  'masters', 'ryder cup', 'the open',
+  'gp ', ' gp', 'grand prix', 'fórmula 1', 'formula 1', 'f1',
+]
+const TIER_A = [
+  'laliga', 'la liga', 'premier league', 'serie a', 'bundesliga', 'ligue 1',
+  'copa del rey', 'copa america', 'eurocopa', 'europa league', 'conference',
+  'nba', 'euroliga', 'euroleague',
+  'atp', 'wta', 'atp 1000', 'atp 500',
+  'ufc',
+  'pga', 'liv golf',
+]
+
+function tierScore(comp: string): number {
+  const c = (comp ?? '').toLowerCase()
+  if (TIER_S.some(k => c.includes(k))) return 100
+  if (TIER_A.some(k => c.includes(k))) return 60
+  return 25
+}
 
 function pickTopEvents(events: SportEvent[], n = 4): SportEvent[] {
-  // Group by sport keeping date order within each group
-  const byPriority = new Map<string, SportEvent[]>()
+  const now = Date.now()
+  const windowEnd = now + WINDOW_HOURS * 3600_000
+
+  // 1) Ventana temporal: descartar pasados y muy lejanos
+  const inWindow: { ev: SportEvent; score: number; ts: number }[] = []
+  const fallback: { ev: SportEvent; score: number; ts: number }[] = []
   for (const ev of events) {
-    const key = EVENT_SPORT_PRIORITY.includes(ev.sport) ? ev.sport : 'other'
-    if (!byPriority.has(key)) byPriority.set(key, [])
-    byPriority.get(key)!.push(ev)
+    if (ev.isPast) continue
+    const ts = ev.isoDate ? new Date(ev.isoDate).getTime() : NaN
+    const base = tierScore(ev.comp)
+    if (!Number.isFinite(ts)) {
+      fallback.push({ ev, score: base, ts: Number.POSITIVE_INFINITY })
+      continue
+    }
+    if (ts < now - 2 * 3600_000) continue          // ya terminó hace rato
+    let score = base
+    if (ts <= windowEnd) {
+      // Bonus si es hoy mismo (próximas 24h)
+      if (ts <= now + 24 * 3600_000) score += 20
+      inWindow.push({ ev, score, ts })
+    } else {
+      fallback.push({ ev, score: base, ts })
+    }
   }
+
+  // 2) Orden por score desc, desempate por fecha asc
+  const ranked = inWindow.sort((a, b) => b.score - a.score || a.ts - b.ts)
+
+  // 3) Selección con cap blando por deporte
+  const perSport = new Map<string, number>()
   const result: SportEvent[] = []
-  // First pass: 1 event per sport in priority order
-  for (const sport of EVENT_SPORT_PRIORITY) {
+  for (const { ev } of ranked) {
     if (result.length >= n) break
-    const list = byPriority.get(sport) ?? []
-    if (list.length > 0) result.push(list[0])
+    const used = perSport.get(ev.sport) ?? 0
+    if (used >= MAX_PER_SPORT) continue
+    perSport.set(ev.sport, used + 1)
+    result.push(ev)
   }
-  // Second pass: fill remaining slots with the next football match (most popular)
+
+  // 4) Si la ventana estaba flojita, completar con lo siguiente más relevante
   if (result.length < n) {
-    const football = byPriority.get('Fútbol') ?? []
-    for (let i = 1; i < football.length && result.length < n; i++) result.push(football[i])
+    const pool = [
+      ...ranked.filter(r => !result.includes(r.ev)),
+      ...fallback.sort((a, b) => b.score - a.score || a.ts - b.ts),
+    ]
+    for (const { ev } of pool) {
+      if (result.length >= n) break
+      if (result.includes(ev)) continue
+      result.push(ev)
+    }
   }
-  // Re-sort by date so cards appear chronologically
+
+  // 5) Reordenar cronológicamente para mostrar
   return result
     .sort((a, b) => (a.isoDate ?? '').localeCompare(b.isoDate ?? ''))
     .slice(0, n)
