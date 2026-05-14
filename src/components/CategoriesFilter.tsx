@@ -62,7 +62,7 @@ export default function CategoriesFilter({
         style={{ background: 'linear-gradient(to left, var(--bg-base, #09090f) 40%, transparent)' }}
       />
 
-      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide snap-strip pb-0.5 pr-6 sm:pr-8">
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide snap-strip pb-0.5 pr-6 sm:pr-8">
 
         {categories.map((sport) => {
           const isActive = sport === active
@@ -72,35 +72,41 @@ export default function CategoriesFilter({
             <button
               key={sport}
               onClick={() => { onSelect(sport); setMoreOpen(false) }}
-              className="group flex-shrink-0 flex items-center gap-1.5 transition-all duration-200"
+              className="group flex-shrink-0 flex items-center gap-1.5 transition-all duration-200 hover:-translate-y-px"
               style={{
-                padding: '5px 12px 5px 10px',
+                padding: '7px 14px 7px 12px',
                 borderRadius: 999,
                 background: isActive
-                  ? `linear-gradient(135deg, ${accent}22, ${accent}10)`
-                  : 'transparent',
+                  ? `linear-gradient(135deg, ${accent}, ${accent}d0)`
+                  : 'rgba(255,255,255,0.06)',
                 border: isActive
-                  ? `1px solid ${accent}45`
-                  : '1px solid rgba(255,255,255,0.07)',
-                boxShadow: isActive ? `0 0 0 1px ${accent}20, 0 2px 12px ${accent}18` : 'none',
+                  ? `1px solid ${accent}`
+                  : '1px solid rgba(255,255,255,0.12)',
+                boxShadow: isActive
+                  ? `0 6px 20px ${accent}55, inset 0 1px 0 rgba(255,255,255,0.25)`
+                  : 'inset 0 1px 0 rgba(255,255,255,0.04)',
                 cursor: 'pointer',
               }}
             >
               <span
                 className="leading-none flex-shrink-0 inline-flex items-center justify-center"
-                style={{ opacity: isActive ? 1 : 0.5, transition: 'opacity 200ms', color: isActive ? accent : '#7A7A8E' }}
+                style={{
+                  color: isActive ? '#fff' : accent,
+                  transition: 'color 200ms',
+                }}
               >
                 {Icon ? <Icon size={14} /> : (
                   <span className="block rounded-full" style={{ width: 6, height: 6, background: 'currentColor' }} />
                 )}
               </span>
               <span
-                className="text-[11px] font-bold leading-none whitespace-nowrap"
+                className="text-[11.5px] font-black leading-none whitespace-nowrap"
                 style={{
                   fontFamily: 'var(--font-sport)',
-                  color: isActive ? accent : '#7A7A8E',
-                  letterSpacing: '0.03em',
+                  color: isActive ? '#fff' : '#E5E5EC',
+                  letterSpacing: '0.04em',
                   transition: 'color 200ms',
+                  textShadow: isActive ? '0 1px 2px rgba(0,0,0,0.25)' : 'none',
                 }}
               >
                 {sport}
@@ -114,29 +120,33 @@ export default function CategoriesFilter({
           <div className="relative flex-shrink-0" ref={dropdownRef}>
             <button
               onClick={() => setMoreOpen((v) => !v)}
-              className="flex items-center gap-1.5 transition-all duration-200"
+              className="flex items-center gap-1.5 transition-all duration-200 hover:-translate-y-px"
               style={{
-                padding: '5px 10px 5px 10px',
+                padding: '7px 12px',
                 borderRadius: 999,
                 background: activeIsMore
-                  ? `linear-gradient(135deg, ${getMeta(active).accent}22, ${getMeta(active).accent}10)`
+                  ? `linear-gradient(135deg, ${getMeta(active).accent}, ${getMeta(active).accent}d0)`
                   : moreOpen
-                  ? 'rgba(124,58,237,0.1)'
-                  : 'transparent',
+                  ? 'rgba(124,58,237,0.18)'
+                  : 'rgba(255,255,255,0.06)',
                 border: activeIsMore
-                  ? `1px solid ${getMeta(active).accent}45`
+                  ? `1px solid ${getMeta(active).accent}`
                   : moreOpen
-                  ? '1px solid rgba(124,58,237,0.3)'
-                  : '1px solid rgba(255,255,255,0.07)',
+                  ? '1px solid rgba(124,58,237,0.5)'
+                  : '1px solid rgba(255,255,255,0.12)',
+                boxShadow: activeIsMore
+                  ? `0 6px 20px ${getMeta(active).accent}55, inset 0 1px 0 rgba(255,255,255,0.25)`
+                  : 'inset 0 1px 0 rgba(255,255,255,0.04)',
                 cursor: 'pointer',
               }}
             >
               <span
-                className="text-[11px] font-bold leading-none"
+                className="text-[11.5px] font-black leading-none"
                 style={{
                   fontFamily: 'var(--font-sport)',
-                  color: activeIsMore ? getMeta(active).accent : moreOpen ? '#C4B5FD' : '#7A7A8E',
-                  letterSpacing: '0.03em',
+                  color: activeIsMore ? '#fff' : moreOpen ? '#C4B5FD' : '#E5E5EC',
+                  letterSpacing: '0.04em',
+                  textShadow: activeIsMore ? '0 1px 2px rgba(0,0,0,0.25)' : 'none',
                 }}
               >
                 {activeIsMore ? active : 'Más'}
@@ -145,8 +155,8 @@ export default function CategoriesFilter({
                 width="8" height="8" viewBox="0 0 8 8" fill="none"
                 style={{ transform: moreOpen ? 'rotate(180deg)' : 'none', transition: 'transform 160ms ease', flexShrink: 0 }}
               >
-                <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ color: activeIsMore ? getMeta(active).accent : moreOpen ? '#C4B5FD' : '#7A7A8E' }}
+                <path d="M1 2.5L4 5.5L7 2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ color: activeIsMore ? '#fff' : moreOpen ? '#C4B5FD' : '#E5E5EC' }}
                 />
               </svg>
             </button>
