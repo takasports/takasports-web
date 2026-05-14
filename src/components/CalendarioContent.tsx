@@ -631,6 +631,54 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
   )
 }
 
+function formatDateSubtitle(localDate: string): string {
+  if (localDate === 'unknown') return ''
+  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+  const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+  const d = new Date(localDate + 'T12:00:00Z')
+  return `${days[d.getUTCDay()]}, ${d.getUTCDate()} de ${months[d.getUTCMonth()]}`
+}
+
+// Day separator — prominent header for each date in the events list.
+function DaySeparator({ dateKey, count, tone = 'upcoming' }: {
+  dateKey: string
+  count: number
+  tone?: 'upcoming' | 'past'
+}) {
+  const today = isoToLocalDate(new Date().toISOString())
+  const isToday = dateKey === today
+  const accent = tone === 'past' ? '#FCA5A5' : isToday ? '#C4B5FD' : '#7C3AED'
+  const subtitle = formatDateSubtitle(dateKey)
+  const label = formatDateLabel(dateKey)
+
+  return (
+    <div className="relative pt-5 pb-3 mb-2">
+      {/* Top hairline */}
+      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+      <div className="flex items-end justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="block flex-shrink-0 rounded-sm" style={{ width: 4, height: 28, background: accent, boxShadow: `0 0 12px ${accent}55` }} />
+          <div className="min-w-0">
+            <h2 className="font-black leading-none uppercase tracking-[0.02em]"
+              style={{ fontFamily: 'var(--font-headline)', fontSize: 28, color: '#F8F8FF' }}>
+              {label}
+            </h2>
+            {subtitle && (
+              <p className="text-[11px] mt-1 capitalize" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+        <span className="flex items-center justify-center min-w-[26px] h-[22px] px-2 rounded-full text-[10px] font-black tabular-nums flex-shrink-0"
+          style={{ background: `${accent}1a`, color: accent, border: `1px solid ${accent}33`, fontFamily: 'var(--font-sport)' }}>
+          {count}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 function SectionHeader({ icon, label, color, count, hint }: {
   icon: React.ReactNode; label: string; color: string; count?: number; hint?: string
 }) {
@@ -1227,6 +1275,17 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
 
   const sports = ['Todo', ...new Set([...events, ...pastEvents].map(e => e.sport)).values()]
 
+  // Count events per sport for the current view (upcoming events). Used in the
+  // sport filter chips so the user sees how many events each category has.
+  const sportCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const ev of events) {
+      counts[ev.sport] = (counts[ev.sport] ?? 0) + 1
+    }
+    counts['Todo'] = events.length
+    return counts
+  }, [events])
+
   const filtered = useMemo(() => {
     const matchesSearch = (e: SportEvent) =>
       !search || namesMatch(e.home, search) || (e.away ? namesMatch(e.away, search) : false)
@@ -1618,24 +1677,6 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
               {onlyLive && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />}
               En vivo
             </button>
-            {/* Divider */}
-            <div className="flex-shrink-0 w-px h-4" style={{ background: 'rgba(255,255,255,0.08)' }} />
-            {sports.map(sport => (
-              <button
-                key={sport}
-                onClick={() => setActiveFilter(sport)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
-                style={{
-                  background: activeFilter === sport ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-                  color: activeFilter === sport ? '#E0E0F0' : '#5A5A6A',
-                  border: activeFilter === sport ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.06)',
-                  fontFamily: 'var(--font-sport)',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}>
-                <SportIcon sport={sport} size={11} /> {sport}
-              </button>
-            ))}
             {hasActiveFilters && (
               <>
                 <div className="flex-shrink-0 w-px h-4" style={{ background: 'rgba(255,255,255,0.08)' }} />
@@ -1655,6 +1696,41 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                 </button>
               </>
             )}
+          </div>
+
+          {/* Sport categories — fila dedicada, chips grandes con icono y contador */}
+          <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+            {sports.map(sport => {
+              const active = activeFilter === sport
+              const count = sportCounts[sport] ?? 0
+              return (
+                <button
+                  key={sport}
+                  onClick={() => setActiveFilter(sport)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-[0.08em] transition-all flex-shrink-0"
+                  style={{
+                    background: active ? 'rgba(124,58,237,0.16)' : 'rgba(255,255,255,0.025)',
+                    color: active ? '#C4B5FD' : '#9090A4',
+                    border: active ? '1px solid rgba(124,58,237,0.42)' : '1px solid rgba(255,255,255,0.05)',
+                    fontFamily: 'var(--font-sport)',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    boxShadow: active ? '0 0 14px rgba(124,58,237,0.14)' : 'none',
+                  }}>
+                  <SportIcon sport={sport} size={14} />
+                  <span>{sport}</span>
+                  {count > 0 && (
+                    <span className="text-[9px] tabular-nums font-black px-1.5 py-0.5 rounded-full"
+                      style={{
+                        background: active ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.05)',
+                        color: active ? '#C4B5FD' : '#6A6A80',
+                      }}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -1861,12 +1937,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
               }
               return (
                 <section key={dateKey}>
-                  <SectionHeader
-                    icon={<CalendarIcon size={12} />}
-                    label={formatDateLabel(dateKey)}
-                    color="#C4B5FD"
-                    count={dayEvents.length}
-                  />
+                  <DaySeparator dateKey={dateKey} count={dayEvents.length} />
                   {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     const accent = getCompAccent(comp, compEvents[0]?.accent)
@@ -2039,12 +2110,7 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
               }
               return (
                 <section key={dateKey}>
-                  <SectionHeader
-                    icon={<ClipboardIcon size={12} />}
-                    label={formatDateLabel(dateKey)}
-                    color="#FCA5A5"
-                    count={dayEvents.length}
-                  />
+                  <DaySeparator dateKey={dateKey} count={dayEvents.length} tone="past" />
                   {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     const accent = getCompAccent(comp, compEvents[0]?.accent)
