@@ -142,7 +142,7 @@ function ReelModal({ reel, onClose }: { reel: Reel; onClose: () => void }) {
         className="relative flex flex-col"
         style={{
           width: '100%',
-          maxWidth: 360,
+          maxWidth: 420,
           borderRadius: 20,
           overflow: 'hidden',
           boxShadow: `0 32px 72px rgba(0,0,0,0.8), 0 0 0 1px ${accent}30`,
@@ -220,25 +220,21 @@ function ReelModal({ reel, onClose }: { reel: Reel; onClose: () => void }) {
             }}
           />
         ) : igCode ? (
-          <div style={{ background: '#000', display: 'flex', justifyContent: 'center' }}>
-            <iframe
-              src={`https://www.instagram.com/reel/${igCode}/embed/captioned/`}
-              title={reel.title}
-              loading="lazy"
-              allow="autoplay; encrypted-media; picture-in-picture; web-share"
-              allowFullScreen
-              scrolling="no"
-              style={{
-                width: '100%',
-                maxWidth: 360,
-                height: '75vh',
-                maxHeight: 640,
-                border: 0,
-                background: '#000',
-                display: 'block',
-              }}
-            />
-          </div>
+          <iframe
+            src={`https://www.instagram.com/p/${igCode}/embed/`}
+            title={reel.title}
+            loading="lazy"
+            allow="autoplay; encrypted-media; picture-in-picture; web-share; clipboard-write"
+            allowFullScreen
+            scrolling="no"
+            style={{
+              width: '100%',
+              height: 'min(720px, 78vh)',
+              border: 0,
+              background: '#000',
+              display: 'block',
+            }}
+          />
         ) : (
           <div
             className="flex flex-col items-center justify-center gap-4 py-16 px-8 text-center"
