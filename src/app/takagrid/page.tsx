@@ -8,7 +8,7 @@ import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { searchPlayers, getPlayerById, type Player } from '@/lib/players-catalog'
 import { getDailyPuzzle, isValidAnswer, getValidAnswers, type CellCoord, type GridPuzzle } from '@/lib/takagrid-puzzles'
-import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon } from '@/components/icons/GameIcons'
+import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag } from '@/components/icons/GameIcons'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -229,22 +229,6 @@ function countSolved(grid: GridState): number {
   return grid.flat().filter(c => c.playerId !== null).length
 }
 
-const FLAG: Record<string, string> = {
-  'España': '🇪🇸', 'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Francia': '🇫🇷',
-  'Alemania': '🇩🇪', 'Italia': '🇮🇹', 'Inglaterra': '🇬🇧', 'Portugal': '🇵🇹',
-  'Países Bajos': '🇳🇱', 'Croacia': '🇭🇷', 'Uruguay': '🇺🇾', 'Colombia': '🇨🇴',
-  'Chile': '🇨🇱', 'México': '🇲🇽', 'Estados Unidos': '🇺🇸', 'Polonia': '🇵🇱',
-  'Noruega': '🇳🇴', 'Suecia': '🇸🇪', 'Dinamarca': '🇩🇰', 'Suiza': '🇨🇭',
-  'Serbia': '🇷🇸', 'Ucrania': '🇺🇦', 'Marruecos': '🇲🇦', 'Senegal': '🇸🇳',
-  'Egipto': '🇪🇬', 'Nigeria': '🇳🇬', 'Camerún': '🇨🇲', 'Ghana': '🇬🇭',
-  'Costa de Marfil': '🇨🇮', 'Corea del Sur': '🇰🇷', 'Japón': '🇯🇵',
-  'Costa Rica': '🇨🇷', 'Paraguay': '🇵🇾', 'Bulgaria': '🇧🇬', 'Escocia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
-  'Georgia': '🇬🇪', 'Turquía': '🇹🇷', 'Austria': '🇦🇹', 'Liberia': '🇱🇷',
-  'Gabón': '🇬🇦', 'Burkina Faso': '🇧🇫', 'Canadá': '🇨🇦', 'Irlanda': '🇮🇪',
-}
-
-function flag(c: string) { return FLAG[c] ?? '🏳️' }
-
 // ── Icons ────────────────────────────────────────────────────────
 
 function IconClose() {
@@ -377,8 +361,9 @@ function SearchModal({ cell, puzzle, usedIds, validCount, onSelect, onClose }: S
                       {p.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black truncate" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
-                        <span className="mr-1">{flag(p.country)}</span>{p.name}
+                      <p className="text-sm font-black truncate flex items-center gap-1.5" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+                        <CountryFlag country={p.country} width={16} />
+                        <span className="truncate">{p.name}</span>
                       </p>
                       <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>{p.club}</p>
                     </div>
@@ -422,8 +407,9 @@ function GridCell({ cell, onClick, isFinished }: GridCellProps) {
           style={{ background: `linear-gradient(135deg, ${ACCENT_DIM}, #9a3412)`, color: '#fff', fontFamily: 'var(--font-display)' }}>
           {player.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
         </div>
-        <p className="text-[10px] font-black leading-tight" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
-          {flag(player.country)} {player.name.split(' ').slice(-1)[0]}
+        <p className="text-[10px] font-black leading-tight flex items-center justify-center gap-1" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+          <CountryFlag country={player.country} width={12} />
+          <span>{player.name.split(' ').slice(-1)[0]}</span>
         </p>
         <span className="text-[8px]" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
           <IconCheck />
@@ -610,8 +596,9 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
                           ) : (
                             <ul className="flex flex-col gap-0.5">
                               {examples.map(p => (
-                                <li key={p.id} className="text-[9px] font-black truncate" style={{ color: solved ? '#F0F0F5' : 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-display)' }}>
-                                  {flag(p.country)} {p.name}
+                                <li key={p.id} className="text-[9px] font-black truncate flex items-center gap-1" style={{ color: solved ? '#F0F0F5' : 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-display)' }}>
+                                  <CountryFlag country={p.country} width={11} />
+                                  <span className="truncate">{p.name}</span>
                                 </li>
                               ))}
                               {validAnswers[r][c].length > 3 && (

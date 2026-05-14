@@ -141,6 +141,11 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
   const matchRef   = event.matchRef
   const showLogos  = !!event.away && !!(homeLogo || awayLogo)
 
+  // Countdown: tic-tac client-side cuando faltan <12h y no está en directo
+  const countdown = useCountdown(event.isoDate, isLive)
+  // Píldoras secundarias: stage (jornada/ronda) y broadcast (canal)
+  const hasMeta = !!(event.stage || event.broadcast)
+
   const card = (
     <div
       className="flex-shrink-0 overflow-hidden transition-all hover:scale-[1.012] hover:shadow-lg"
