@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { SOURCE_TZ } from '@/lib/timezone'
+import { getSpanishBroadcast } from '@/lib/broadcasts'
 
 export interface UpcomingEvent {
   id: string
@@ -14,6 +15,8 @@ export interface UpcomingEvent {
   awayLogo?: string
   homeAbbr?: string
   awayAbbr?: string
+  isoDate?: string   // ISO-8601 — para countdown client-side
+  broadcast?: string // canal TV (si está mapeado)
 }
 
 interface CacheEntry { data: UpcomingEvent[]; ts: number }
@@ -123,6 +126,8 @@ async function fetchUpcomingFromLeague(
         awayLogo,
         homeAbbr,
         awayAbbr,
+        isoDate,
+        broadcast: getSpanishBroadcast(comp, sport) ?? undefined,
       })
     }
 

@@ -13,6 +13,7 @@ import { MatchTabs } from './MatchTabs'
 import { LeagueTableBlock } from './LeagueTable'
 import { LiveRefresh } from './LiveRefresh'
 import { ShareButton } from '@/components/ShareButton'
+import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import { isSplitBroadcast } from '@/lib/broadcasts'
 import { GoalIcon, YellowCardIcon, RedCardIcon } from '@/components/icons/GameIcons'
@@ -834,6 +835,12 @@ function MatchContent({ match }: { match: MatchDetail }) {
     ? `${match.homeTeam} vs ${match.awayTeam} · ${match.leagueLabel}`
     : match.leagueLabel
 
+  // Solo ofrece "Añadir a calendario" si el partido aún no ha terminado
+  // y conocemos la fecha exacta de inicio.
+  const finishedStatus = match.status === 'STATUS_FINAL' || match.status === 'STATUS_FULL_TIME'
+    || match.status === 'STATUS_CANCELED' || match.status === 'STATUS_POSTPONED'
+  const showAddToCalendar = !!match.startDate && !finishedStatus
+
   const backLink = (
     <div className="pt-4 pb-3 flex items-center justify-between">
       <Link
@@ -852,7 +859,18 @@ function MatchContent({ match }: { match: MatchDetail }) {
         </svg>
         Calendario
       </Link>
-      <ShareButton title={shareTitle} />
+      <div className="flex items-center gap-2">
+        {showAddToCalendar && (
+          <AddToCalendarButton
+            title={shareTitle}
+            isoDate={match.startDate!}
+            location={match.venue}
+            description={`${match.leagueLabel}${match.broadcast ? ` · ${match.broadcast}` : ''}`}
+            uid={`${match.id}@takasportsmedia.com`}
+          />
+        )}
+        <ShareButton title={shareTitle} />
+      </div>
     </div>
   )
 

@@ -95,6 +95,30 @@ function TeamLogo({ logo, name, size = 22 }: { logo?: string; name: string; size
   )
 }
 
+// Countdown legible "en 2h 15m" / "en 45m" / "en 12s" cuando falta poco.
+// Devuelve null si no aplica (sin fecha, faltan >12h, ya empezó, o en directo).
+function useCountdown(isoDate: string | undefined, isLive: boolean): string | null {
+  const [label, setLabel] = useState<string | null>(null)
+  useEffect(() => {
+    if (!isoDate || isLive) { setLabel(null); return }
+    const target = new Date(isoDate).getTime()
+    if (!Number.isFinite(target)) { setLabel(null); return }
+    const compute = () => {
+      const diff = target - Date.now()
+      if (diff <= 0 || diff > 12 * 3600_000) { setLabel(null); return }
+      const h = Math.floor(diff / 3600_000)
+      const m = Math.floor((diff % 3600_000) / 60_000)
+      if (h > 0) setLabel(`en ${h}h ${m}m`)
+      else if (m > 0) setLabel(`en ${m}m`)
+      else setLabel(`en ${Math.max(1, Math.floor(diff / 1000))}s`)
+    }
+    compute()
+    const t = setInterval(compute, 60_000)
+    return () => clearInterval(t)
+  }, [isoDate, isLive])
+  return label
+}
+
 // ── EventCard ──────────────────────────────────────────────────────
 function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveScore }) {
   const [reminded, setReminded] = useState(() => {
@@ -216,6 +240,37 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
           </div>
         )}
 
+        {/* Meta secundaria: stage + broadcast */}
+        {hasMeta && !isLive && (
+          <div className="flex items-center gap-1.5 flex-wrap -mt-0.5">
+            {event.stage && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  color: '#8A8AA0',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  fontFamily: 'var(--font-sport)',
+                  letterSpacing: '0.02em',
+                }}>
+                {event.stage}
+              </span>
+            )}
+            {event.broadcast && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1 truncate max-w-full"
+                style={{
+                  background: 'rgba(99,102,241,0.07)',
+                  color: '#A5B4FC',
+                  border: '1px solid rgba(99,102,241,0.18)',
+                  fontFamily: 'var(--font-sport)',
+                }}
+                title={event.broadcast}>
+                <span aria-hidden style={{ fontSize: 8 }}>📺</span>
+                <span className="truncate">{event.broadcast}</span>
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Score / time row */}
         {isLive && scoreStr ? (
           <div className="flex items-center justify-between rounded-lg px-2.5 py-1.5 transition-colors duration-700"
@@ -243,12 +298,21 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
           <div className="flex items-center justify-between rounded-lg px-2.5 py-1.5"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)' }}>
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold" style={{ color: '#7A7A8E' }}>{event.date}</span>
-              <span className="text-[9px]" style={{ color: '#3A3A4A' }}>·</span>
-              <span className="font-black"
-                style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)', fontSize: 15, letterSpacing: '0.03em' }}>
-                {event.time}
-              </span>
+              {countdown ? (
+                <span className="text-[10px] font-black uppercase tracking-wider"
+                  style={{ color: event.accent, fontFamily: 'var(--font-sport)' }}>
+                  {countdown}
+                </span>
+              ) : (
+                <>
+                  <span className="text-[10px] font-semibold" style={{ color: '#7A7A8E' }}>{event.date}</span>
+                  <span className="text-[9px]" style={{ color: '#3A3A4A' }}>·</span>
+                  <span className="font-black"
+                    style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)', fontSize: 15, letterSpacing: '0.03em' }}>
+                    {event.time}
+                  </span>
+                </>
+              )}
             </div>
             <button onClick={toggleReminder} title={reminded ? 'Quitar recordatorio' : 'Recordar evento'}
               className="flex items-center justify-center w-6 h-6 rounded-md transition-all"
@@ -279,6 +343,7 @@ interface UpcomingRaw {
   id: string; homeTeam: string; awayTeam: string | null; time: string; dateLabel: string
   sport: string; comp: string; matchRef?: string
   homeLogo?: string; awayLogo?: string; homeAbbr?: string; awayAbbr?: string
+  isoDate?: string; broadcast?: string
 }
 
 function convertUpcoming(items: UpcomingRaw[]): SportEvent[] {
@@ -296,6 +361,8 @@ function convertUpcoming(items: UpcomingRaw[]): SportEvent[] {
     awayLogo: ev.awayLogo,
     homeAbbr: ev.homeAbbr,
     awayAbbr: ev.awayAbbr,
+    isoDate: ev.isoDate,
+    broadcast: ev.broadcast,
   }))
 }
 

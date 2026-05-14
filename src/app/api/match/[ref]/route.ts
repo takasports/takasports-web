@@ -96,6 +96,7 @@ export interface MatchDetail {
   statusLabel: string
   venue?: string
   broadcast?: string
+  startDate?: string   // ISO-8601 UTC — para countdown y export .ics
 
   // Team-sport common (soccer, basketball)
   homeTeam?: string
@@ -738,6 +739,7 @@ export async function GET(
       statusLabel: mapStatusLabel(statusName, period, clock, sport),
       venue,
       broadcast,
+      startDate:   asString(comp.date) ?? asString(header?.date),
     }
 
     if (sport === 'soccer') {
