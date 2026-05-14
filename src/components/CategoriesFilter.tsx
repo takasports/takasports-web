@@ -82,13 +82,12 @@ export default function CategoriesFilter({
               <span
                 className="leading-none flex-shrink-0 inline-flex items-center justify-center"
                 style={{
-                  color: accent,
-                  opacity: isActive ? 1 : 0.85,
-                  transition: 'opacity 200ms',
+                  color: isActive ? accent : 'rgba(255,255,255,0.45)',
+                  transition: 'color 200ms',
                 }}
               >
-                {Icon ? <Icon size={14} /> : (
-                  <span className="block rounded-full" style={{ width: 6, height: 6, background: 'currentColor' }} />
+                {Icon ? <Icon size={12} /> : (
+                  <span className="block rounded-full" style={{ width: 5, height: 5, background: 'currentColor' }} />
                 )}
               </span>
               <span
