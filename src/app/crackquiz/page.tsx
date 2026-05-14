@@ -8,6 +8,7 @@ import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { getDailyQuestions, todayKey, type QuizQuestion } from '@/lib/crackquiz-questions'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
+import { TrophyIcon, FireIcon, ClapIcon, FlexIcon } from '@/components/icons/GameIcons'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -223,7 +224,9 @@ function IdleScreen({
 
   return (
     <div className="max-w-lg mx-auto text-center py-12 px-4">
-      <div className="text-5xl mb-4" role="img" aria-label="trofeo">🏆</div>
+      <div className="mb-4 flex justify-center" style={{ color: '#FCD34D' }} aria-label="trofeo">
+        <TrophyIcon size={64} />
+      </div>
       <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: '#FCD34D' }}>
         CrackQuiz
       </h2>
@@ -234,7 +237,7 @@ function IdleScreen({
       {stored && (
         <div className="grid grid-cols-4 gap-3 mb-6">
           <StatBox label="Mejor score" value={stored.bestScore} accent="#FCD34D" />
-          <StatBox label="Racha" value={stored.streak} suffix="🔥" accent="#F59E0B" />
+          <StatBox label="Racha" value={stored.streak} suffixIcon={<FireIcon size={14} />} accent="#F59E0B" />
           <StatBox label="Récord racha" value={stored.bestStreak ?? stored.streak} suffix="días" accent="#FB923C" />
           <StatBox label="Aciertos" value={stored.totalCorrect} accent="#86EFAC" />
         </div>
@@ -244,7 +247,7 @@ function IdleScreen({
       {streakAtRisk && (
         <div className="rounded-2xl p-4 mb-6 flex items-center gap-3 text-left"
           style={{ background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.25)' }}>
-          <span className="text-2xl flex-shrink-0">🔥</span>
+          <span className="flex-shrink-0" style={{ color: '#FB923C' }}><FireIcon size={28} /></span>
           <div>
             <p className="text-sm font-bold" style={{ color: '#FB923C' }}>¡Racha en riesgo!</p>
             <p className="text-xs" style={{ color: 'rgba(251,146,60,0.7)' }}>
@@ -264,7 +267,7 @@ function IdleScreen({
             </p>
           )}
           {stored && stored.streak > 1 && (
-            <p className="mt-1 text-xs" style={{ color: '#F59E0B' }}>🔥 Racha activa: {stored.streak} días</p>
+            <p className="mt-1 text-xs flex items-center justify-center gap-1.5" style={{ color: '#F59E0B' }}><FireIcon size={14} /> Racha activa: {stored.streak} días</p>
           )}
         </div>
       ) : (
@@ -285,12 +288,12 @@ function IdleScreen({
   )
 }
 
-function StatBox({ label, value, suffix, accent }: { label: string; value: number; suffix?: string; accent: string }) {
+function StatBox({ label, value, suffix, suffixIcon, accent }: { label: string; value: number; suffix?: string; suffixIcon?: React.ReactNode; accent: string }) {
   return (
     <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
       <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
-      <p className="text-xl font-bold" style={{ color: accent }}>
-        {value}{suffix ? ` ${suffix}` : ''}
+      <p className="text-xl font-bold inline-flex items-center gap-1" style={{ color: accent }}>
+        {value}{suffixIcon ? <span className="inline-flex items-center">{suffixIcon}</span> : suffix ? ` ${suffix}` : ''}
       </p>
     </div>
   )
@@ -320,8 +323,8 @@ function ResultScreen({
     <div className="max-w-lg mx-auto py-8 px-4">
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="text-4xl mb-3" role="img" aria-label="resultado">
-          {pct >= 0.8 ? '🔥' : pct >= 0.5 ? '👏' : '💪'}
+        <div className="mb-3 flex justify-center" aria-label="resultado" style={{ color: pct >= 0.8 ? '#FB923C' : pct >= 0.5 ? '#FCD34D' : '#86EFAC' }}>
+          {pct >= 0.8 ? <FireIcon size={52} /> : pct >= 0.5 ? <ClapIcon size={52} /> : <FlexIcon size={52} />}
         </div>
         <h2 className="text-2xl font-bold mb-1" style={{ fontFamily: 'var(--font-display)', color: '#FCD34D' }}>
           {pct >= 0.8 ? '¡Crack total!' : pct >= 0.5 ? '¡Buen juego!' : '¡Sigue practicando!'}
@@ -335,7 +338,7 @@ function ResultScreen({
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>puntos</p>
         {isNewBest && <p className="mt-2 text-xs font-semibold" style={{ color: '#86EFAC' }}>✦ Nuevo récord personal</p>}
         {stored && stored.streak > 1 && (
-          <p className="mt-1 text-xs" style={{ color: '#FCD34D' }}>🔥 Racha de {stored.streak} días</p>
+          <p className="mt-1 text-xs flex items-center justify-center gap-1.5" style={{ color: '#FCD34D' }}><FireIcon size={14} /> Racha de {stored.streak} días</p>
         )}
       </div>
 

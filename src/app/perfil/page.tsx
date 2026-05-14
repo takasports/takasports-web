@@ -19,13 +19,10 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { getStoredTZ, setStoredTZ, getTZOption, getTZOffset } from '@/lib/timezone'
 import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
+import { SportIcon, FireIcon, FootballIcon, StadiumIcon } from '@/components/icons/GameIcons'
 
 const REMINDERS_KEY = 'ts_reminders'
 const PROFILE_NAME_KEY = 'ts_profile_name'
-
-const SPORT_ICONS: Record<string, string> = {
-  Fútbol: '⚽', NBA: '🏀', Baloncesto: '🏀', F1: '🏎️', Tenis: '🎾', UFC: '🥊',
-}
 
 const PICK_LABEL: Record<string, string> = { '1': 'Local', X: 'Empate', '2': 'Visitante' }
 const PICK_COLOR: Record<string, string> = { '1': '#22c55e', X: '#f59e0b', '2': '#ef4444' }
@@ -382,8 +379,8 @@ export default function PerfilPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-lg">🧠</span>
                         {quizStats.streak > 1 && (
-                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(251,146,60,0.12)', color: '#FB923C', border: '1px solid rgba(251,146,60,0.25)', fontFamily: 'var(--font-sport)' }}>
-                            🔥 {quizStats.streak}
+                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full inline-flex items-center gap-1" style={{ background: 'rgba(251,146,60,0.12)', color: '#FB923C', border: '1px solid rgba(251,146,60,0.25)', fontFamily: 'var(--font-sport)' }}>
+                            <FireIcon size={10} /> {quizStats.streak}
                           </span>
                         )}
                       </div>
@@ -401,7 +398,7 @@ export default function PerfilPage() {
                     <Link href="/takagrid" className="rounded-2xl p-4 flex flex-col gap-2 transition-all hover:translate-y-[-2px]"
                       style={{ background: 'var(--bg-card)', border: '1px solid rgba(253,186,116,0.18)' }}>
                       <div className="flex items-center justify-between">
-                        <span className="text-lg">⚽</span>
+                        <span style={{ color: '#FDBA74' }}><FootballIcon size={20} /></span>
                         {gridStats.finished && (
                           <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(253,186,116,0.12)', color: '#FDBA74', border: '1px solid rgba(253,186,116,0.25)', fontFamily: 'var(--font-sport)' }}>
                             {gridStats.solved}/9 hoy
@@ -427,7 +424,7 @@ export default function PerfilPage() {
                     <Link href="/mionce" className="rounded-2xl p-4 flex flex-col gap-2 transition-all hover:translate-y-[-2px]"
                       style={{ background: 'var(--bg-card)', border: '1px solid rgba(147,197,253,0.18)' }}>
                       <div className="flex items-center justify-between">
-                        <span className="text-lg">🏟️</span>
+                        <span style={{ color: '#93C5FD' }}><StadiumIcon size={20} /></span>
                         <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(147,197,253,0.12)', color: '#93C5FD', border: '1px solid rgba(147,197,253,0.25)', fontFamily: 'var(--font-sport)' }}>
                           {miOnceStats.filled}/11
                         </span>
@@ -712,7 +709,7 @@ export default function PerfilPage() {
                           className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
                           style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
                         >
-                          <span className="text-sm flex-shrink-0">{SPORT_ICONS[sport] ?? '🏅'}</span>
+                          <span className="flex-shrink-0" style={{ color: '#9B7CF6' }}><SportIcon sport={sport} size={18} /></span>
                           <span className="flex-1 text-xs font-semibold" style={{ color: '#D0D0E0', fontFamily: 'var(--font-sport)' }}>
                             {sport}
                           </span>

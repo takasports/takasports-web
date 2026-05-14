@@ -8,6 +8,7 @@ import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { searchPlayers, getPlayerById, type Player } from '@/lib/players-catalog'
 import { getDailyPuzzle, isValidAnswer, getValidAnswers, type CellCoord, type GridPuzzle } from '@/lib/takagrid-puzzles'
+import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon } from '@/components/icons/GameIcons'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -476,7 +477,8 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
 }) {
   const [tab, setTab] = useState<'result' | 'reveal'>('result')
   const [sharingImg, setSharingImg] = useState(false)
-  const emoji = solved === 9 ? '🏆' : solved >= 6 ? '⭐' : solved >= 3 ? '👏' : '💪'
+  const ResultIcon = solved === 9 ? TrophyIcon : solved >= 6 ? StarIcon : solved >= 3 ? ClapIcon : FlexIcon
+  const resultColor = solved === 9 ? '#FCD34D' : solved >= 6 ? '#FDBA74' : solved >= 3 ? '#FB923C' : '#86EFAC'
   const msg = solved === 9 ? '¡Perfecto! 9/9' : solved >= 6 ? `Muy bien! ${solved}/9` : solved >= 3 ? `Bien! ${solved}/9` : `${solved}/9 — ¡Mañana mejor!`
 
   const handleShare = async () => {
@@ -534,7 +536,7 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
         <div className="overflow-y-auto flex-1">
           {tab === 'result' ? (
             <div className="p-6 flex flex-col items-center gap-4 text-center">
-              <div className="text-5xl">{emoji}</div>
+              <div className="flex justify-center" style={{ color: resultColor }}><ResultIcon size={64} /></div>
               <div>
                 <h2 className="font-black text-2xl" style={{ fontFamily: 'var(--font-display)', color: '#F0F0F5' }}>{msg}</h2>
                 <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>TakaGrid · {dayKey}</p>
@@ -553,7 +555,7 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
               {streak >= 2 && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-xl w-full justify-center"
                   style={{ background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.2)' }}>
-                  <span>🔥</span>
+                  <span style={{ color: '#FB923C' }}><FireIcon size={16} /></span>
                   <span className="text-[11px] font-black" style={{ color: '#FB923C', fontFamily: 'var(--font-sport)' }}>
                     ¡Racha de {streak} días!
                   </span>
@@ -761,7 +763,7 @@ export default function TakaGridPage() {
             {streakState.streak >= 2 && (
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl"
                 style={{ background: 'rgba(251,146,60,0.10)', border: '1px solid rgba(251,146,60,0.25)' }}>
-                <span style={{ fontSize: 14 }}>🔥</span>
+                <span style={{ color: '#FB923C' }}><FireIcon size={14} /></span>
                 <span className="text-[11px] font-black" style={{ color: '#FB923C', fontFamily: 'var(--font-sport)' }}>
                   {streakState.streak} días
                 </span>

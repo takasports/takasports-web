@@ -15,6 +15,7 @@ import { LiveRefresh } from './LiveRefresh'
 import { ShareButton } from '@/components/ShareButton'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import { isSplitBroadcast } from '@/lib/broadcasts'
+import { GoalIcon, YellowCardIcon, RedCardIcon } from '@/components/icons/GameIcons'
 
 export const revalidate = 30
 
@@ -283,14 +284,17 @@ function StatBar({ stat }: { stat: MatchStat }) {
 // ── Soccer blocks ──────────────────────────────────────────────────
 function ScoringTimeline({ events, homeTeam, awayTeam }: { events: ScoringEvent[]; homeTeam: string; awayTeam: string }) {
   if (events.length === 0) return null
-  const ICONS: Record<string, string> = {
-    goal: '⚽', 'own-goal': '⚽', penalty: '⚽', yellow: '🟨', red: '🟥',
+  const iconFor = (type: string) => {
+    if (type === 'yellow') return <YellowCardIcon size={16} />
+    if (type === 'red') return <RedCardIcon size={16} />
+    if (type === 'goal' || type === 'own-goal' || type === 'penalty') return <span style={{ color: '#86EFAC' }}><GoalIcon size={16} /></span>
+    return <span>•</span>
   }
   return (
     <div className="flex flex-col gap-2">
       {events.map((ev, i) => (
         <div key={i} className={`flex items-center gap-2 ${ev.team === 'home' ? 'flex-row' : 'flex-row-reverse'}`}>
-          <span className="text-sm">{ICONS[ev.type] ?? '•'}</span>
+          <span className="inline-flex items-center">{iconFor(ev.type)}</span>
           <div className={`flex flex-col ${ev.team === 'away' ? 'items-end' : ''}`}>
             <span className="text-[11px] font-semibold" style={{ color: '#D0D0E8', fontFamily: 'var(--font-sport)' }}>
               {ev.player ?? (ev.team === 'home' ? homeTeam : awayTeam)}
