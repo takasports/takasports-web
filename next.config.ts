@@ -46,8 +46,8 @@ const nextConfig: NextConfig = {
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.sanity.io https://cdn.sanity.io https://site.api.espn.com https://v3.football.api-sports.io https://v2.nba.api-sports.io https://v1.formula-1.api-sports.io https://v1.tennis.api-sports.io https://v1.mma.api-sports.io https://v1.rugby.api-sports.io https://api.the-odds-api.com https://graph.instagram.com https://api.instagram.com https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.clarity.ms",
       // Web Push service worker
       "worker-src 'self'",
-      // No iframes de terceros
-      "frame-src 'none'",
+      // Iframes: solo embed oficial de Instagram (reels)
+      "frame-src https://www.instagram.com",
       "frame-ancestors 'none'",
       "object-src 'none'",
       "base-uri 'self'",
