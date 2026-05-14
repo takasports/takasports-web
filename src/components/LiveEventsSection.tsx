@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { getCompAccent, getLiveLabel } from '@/lib/competitions'
+import { TvIcon } from '@/components/icons/GameIcons'
 
 // ── Live scores ────────────────────────────────────────────────────
 interface LiveScore {
@@ -167,6 +168,18 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
 
   // Countdown: tic-tac client-side cuando faltan <12h y no está en directo
   const countdown = useCountdown(event.isoDate, isLive)
+  // Versión para lectores de pantalla: "Empieza en 2 horas y 15 minutos"
+  const countdownAria = (() => {
+    if (!countdown) return null
+    const h = countdown.match(/(\d+)h/)?.[1]
+    const m = countdown.match(/(\d+)m\b/)?.[1]
+    const s = countdown.match(/(\d+)s\b/)?.[1]
+    const parts: string[] = []
+    if (h) parts.push(`${h} ${h === '1' ? 'hora' : 'horas'}`)
+    if (m) parts.push(`${m} ${m === '1' ? 'minuto' : 'minutos'}`)
+    if (s) parts.push(`${s} ${s === '1' ? 'segundo' : 'segundos'}`)
+    return parts.length ? `Empieza en ${parts.join(' y ')}` : null
+  })()
   // Píldoras secundarias: stage (jornada/ronda) y broadcast (canal)
   const hasMeta = !!(event.stage || event.broadcast)
 
@@ -264,7 +277,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
                   fontFamily: 'var(--font-sport)',
                 }}
                 title={event.broadcast}>
-                <span aria-hidden style={{ fontSize: 8 }}>📺</span>
+                <span aria-hidden style={{ color: '#A5B4FC' }}><TvIcon size={10} /></span>
                 <span className="truncate">{event.broadcast}</span>
               </span>
             )}
@@ -300,6 +313,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
             <div className="flex items-center gap-1.5">
               {countdown ? (
                 <span className="text-[10px] font-black uppercase tracking-wider"
+                  aria-label={countdownAria ?? undefined}
                   style={{ color: event.accent, fontFamily: 'var(--font-sport)' }}>
                   {countdown}
                 </span>
@@ -409,10 +423,14 @@ export default function LiveEventsSection({
             </svg>
             <h2 className="section-label" style={{ color: '#8E8E9E', fontSize: 13 }}>Calendario</h2>
           </div>
-          <span className="text-[10px]" style={{ color: '#3A3A4A' }}>·</span>
-          <span className="text-[11px]" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
-            {events.length} próximos eventos
-          </span>
+          {events.length > 0 && (
+            <>
+              <span className="text-[10px]" style={{ color: '#3A3A4A' }}>·</span>
+              <span className="text-[11px]" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+                {events.length} próximos eventos
+              </span>
+            </>
+          )}
         </div>
         {preview && (
           <Link href="/calendario" className="text-[11px] font-semibold transition-opacity hover:opacity-70"
@@ -422,7 +440,43 @@ export default function LiveEventsSection({
         )}
       </div>
 
-      {/* Carril full-bleed */}
+      {/* Empty state cuando no hay eventos próximos */}
+      {events.length === 0 ? (
+        <div className="rounded-2xl px-5 py-6 flex items-center justify-between gap-4"
+          style={{ background: 'rgba(124,58,237,0.04)', border: '1px dashed rgba(124,58,237,0.18)' }}>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center rounded-full w-10 h-10 flex-shrink-0"
+              style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.22)' }}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect x="2.5" y="3.5" width="13" height="12" rx="1.5" stroke="#7C3AED" strokeWidth="1.3" />
+                <path d="M2.5 7h13" stroke="#7C3AED" strokeWidth="1.3" />
+                <path d="M6 1.5v3M12 1.5v3" stroke="#7C3AED" strokeWidth="1.3" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <p className="font-black text-[13px]" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
+                Sin eventos próximos
+              </p>
+              <p className="text-[11px]" style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>
+                Vuelve pronto — los partidos asoman día a día.
+              </p>
+            </div>
+          </div>
+          {preview && (
+            <Link href="/calendario"
+              className="flex-shrink-0 text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
+              style={{
+                color: '#7C3AED',
+                background: 'rgba(124,58,237,0.08)',
+                border: '1px solid rgba(124,58,237,0.25)',
+                fontFamily: 'var(--font-sport)',
+                textDecoration: 'none',
+              }}>
+              Ver calendario →
+            </Link>
+          )}
+        </div>
+      ) : (
       <div className="relative -mx-6 xl:-mx-10" style={{ background: 'var(--bg-base)' }}>
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 pt-1"
           style={{ paddingLeft: 'max(24px, calc((100vw - 1440px) / 2 + 40px))', paddingRight: 24, background: 'var(--bg-base)' }}>
@@ -454,6 +508,7 @@ export default function LiveEventsSection({
         <div className="absolute right-0 top-0 bottom-2 w-28 pointer-events-none z-10"
           style={{ background: 'linear-gradient(to right,transparent,var(--bg-base))' }} />
       </div>
+      )}
     </section>
   )
 }
