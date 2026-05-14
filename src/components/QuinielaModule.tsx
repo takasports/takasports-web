@@ -269,15 +269,13 @@ export default function QuinielaModule() {
         id="quiniela"
         className="rounded-2xl overflow-hidden relative"
         style={{
-          background: 'linear-gradient(150deg,#1A0030 0%,#120025 40%,#08000F 100%)',
-          border: '1px solid rgba(124,58,237,0.28)',
+          background: 'rgba(124,58,237,0.04)',
+          border: '1px solid rgba(124,58,237,0.14)',
         }}
       >
-        <div className="absolute -top-10 -right-10 w-44 h-44 blur-3xl opacity-20 pointer-events-none" style={{ background: '#7C3AED' }} />
-
-        <div className="px-4 pt-4 pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(124,58,237,0.1)' }}>
+        <div className="px-4 pt-3.5 pb-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.28)' }}>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.22)' }}>
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                 <rect x="1" y="1" width="5" height="5" rx="1" stroke="#A78BFA" strokeWidth="1.3" />
                 <rect x="8" y="1" width="5" height="5" rx="1" stroke="#A78BFA" strokeWidth="1.3" />
@@ -286,13 +284,13 @@ export default function QuinielaModule() {
               </svg>
             </div>
             <div>
-              <p className="text-xs font-black uppercase tracking-wider" style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>Quiniela</p>
-              <p className="text-[10px]" style={{ color: '#5A4878' }}>{jornada}</p>
+              <p className="text-[13px] font-black" style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}>Quiniela</p>
+              <p className="text-[10px]" style={{ color: '#7a7a92' }}>{jornada}</p>
             </div>
           </div>
           {MATCH_STATUS === 'open' && (
-            <span className="text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-widest flex-shrink-0 flex items-center gap-1" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', fontFamily: 'var(--font-sport)' }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block animate-pulse" />
+            <span className="text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1" style={{ background: 'rgba(124,58,237,0.12)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.25)', fontFamily: 'var(--font-sport)' }}>
+              <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#A78BFA' }} />
               Abierta
             </span>
           )}
@@ -335,14 +333,14 @@ export default function QuinielaModule() {
           ) : matches.length === 0 ? null : (
             <button
               onClick={() => setShowModal(true)}
-              className="w-full py-2.5 rounded-xl font-black uppercase tracking-widest transition-opacity hover:opacity-85"
+              className="w-full py-2.5 rounded-xl font-black transition-colors hover:bg-purple-500/15"
               style={{
-                background: 'linear-gradient(135deg,#7C3AED,#5B21B6)',
-                color: '#fff',
+                background: 'rgba(124,58,237,0.10)',
+                color: '#A78BFA',
                 fontSize: 11,
                 fontFamily: 'var(--font-sport)',
-                letterSpacing: '0.08em',
-                boxShadow: '0 4px 18px rgba(124,58,237,0.32)',
+                letterSpacing: '0.05em',
+                border: '1px solid rgba(124,58,237,0.28)',
               }}
             >
               Hacer predicción →
