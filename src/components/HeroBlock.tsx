@@ -13,7 +13,7 @@ function CompactStripItem({ art }: { art: Article }) {
   const href = `/noticias/${art.slug ?? art._id}`
   const { accent } = getSportStyle(art.sport, art.category)
   const label = getSportLabel(art.sport, art.category)
-  const rawImgUrl = art.imageUrl ?? (art.image?.asset ? urlFor(art.image).width(160).height(100).url() : null)
+  const rawImgUrl = art.imageUrl ?? (art.image?.asset ? urlFor(art.image).width(480).height(270).url() : null)
   const [imgFailed, setImgFailed] = useState(false)
   const imgUrl = imgFailed ? null : rawImgUrl
   const fresh = isNew(art.publishedAt)
@@ -21,46 +21,82 @@ function CompactStripItem({ art }: { art: Article }) {
   return (
     <Link
       href={href}
-      className="group flex items-start gap-2.5 rounded-xl transition-all hover:brightness-110 hover:-translate-y-px"
+      className="group flex flex-col rounded-xl overflow-hidden transition-all hover:brightness-110 hover:-translate-y-0.5"
       style={{
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
-        padding: '10px',
         textDecoration: 'none',
-        borderLeft: `3px solid ${accent}70`,
+        boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset',
       }}
     >
-      {imgUrl ? (
-        <div style={{ position: 'relative', width: 48, height: 48, borderRadius: 7, flexShrink: 0, overflow: 'hidden' }}>
-          <Image src={imgUrl} alt={art.title} fill className="object-cover" onError={() => setImgFailed(true)} />
-        </div>
-      ) : (
-        <div style={{
-          width: 48, height: 48, borderRadius: 7, flexShrink: 0,
-          background: `linear-gradient(135deg, ${accent}28, ${accent}08)`,
-          border: `1px solid ${accent}25`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 20,
-        }}>
-          {getSportEmoji(label)}
-        </div>
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1 mb-0.5">
-          {fresh && (
-            <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#10B981', display: 'inline-block', flexShrink: 0 }} />
-          )}
-          {label && (
-            <span className="text-[8px] font-black uppercase tracking-widest truncate" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+      <div className="relative w-full" style={{ aspectRatio: '16 / 9', background: '#06060F' }}>
+        {imgUrl ? (
+          <Image
+            src={imgUrl}
+            alt={art.title}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 18vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ background: `linear-gradient(135deg, ${accent}22, ${accent}06)` }}
+          >
+            <div style={{ fontSize: '2.6rem', opacity: 0.35 }}>{getSportEmoji(label)}</div>
+          </div>
+        )}
+        {/* sutil oscurecido inferior para que el borde pegue con la card */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-8 pointer-events-none"
+          style={{ background: 'linear-gradient(to bottom, transparent, rgba(9,9,15,0.55))' }}
+        />
+        {/* badge deporte sobre la imagen */}
+        {label && (
+          <div className="absolute top-2 left-2 flex items-center gap-1.5">
+            {fresh && (
+              <span
+                style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: '#10B981',
+                  boxShadow: '0 0 6px rgba(16,185,129,0.7)',
+                  display: 'inline-block',
+                }}
+              />
+            )}
+            <span
+              className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+              style={{
+                background: `${accent}26`,
+                color: accent,
+                border: `1px solid ${accent}45`,
+                backdropFilter: 'blur(6px)',
+                fontFamily: 'var(--font-sport)',
+              }}
+            >
               {label}
             </span>
-          )}
-        </div>
-        <p className="text-[11px] font-bold leading-snug line-clamp-2 transition-colors group-hover:text-white" style={{ color: '#A0A0BE', fontFamily: 'var(--font-display)' }}>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 flex flex-col p-3">
+        <h3
+          className="font-bold leading-snug line-clamp-3 transition-colors group-hover:text-white"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '13px',
+            color: '#D8D8F0',
+            letterSpacing: '-0.005em',
+          }}
+        >
           {art.title}
-        </p>
+        </h3>
         {art.publishedAt && (
-          <p className="text-[9px] mt-1" style={{ color: '#30304A' }}>{timeAgo(art.publishedAt)}</p>
+          <p className="text-[10px] mt-2" style={{ color: '#52527A', fontFamily: 'var(--font-sport)' }}>
+            {timeAgo(art.publishedAt)}
+          </p>
         )}
       </div>
     </Link>
@@ -70,7 +106,7 @@ function CompactStripItem({ art }: { art: Article }) {
 function CompactStrip({ articles }: { articles: Article[] }) {
   if (articles.length === 0) return null
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-4">
       {articles.map((art) => <CompactStripItem key={art._id} art={art} />)}
     </div>
   )
