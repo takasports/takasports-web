@@ -116,10 +116,17 @@ const REEL_PLACEHOLDERS = [
   { sport: 'rugby',      accent: '#a78bfa', emoji: '🏉', label: 'Rugby' },
 ]
 
+// Extrae el shortcode de una URL de reel/post de Instagram
+function extractIGCode(url: string): string | null {
+  const m = url.match(/instagram\.com\/(?:reel|p|tv)\/([A-Za-z0-9_-]+)/)
+  return m ? m[1] : null
+}
+
 // ── Modal ───────────────────────────────────────────────────────
 function ReelModal({ reel, onClose }: { reel: Reel; onClose: () => void }) {
   const { accent } = getSportStyle(reel.sport)
   const label = getSportLabel(reel.sport)
+  const igCode = reel.instagram_url ? extractIGCode(reel.instagram_url) : null
 
   return (
     <div
@@ -195,7 +202,7 @@ function ReelModal({ reel, onClose }: { reel: Reel; onClose: () => void }) {
           </div>
         </div>
 
-        {/* Player — video nativo con proxy, sin depender de Instagram */}
+        {/* Player — video nativo con proxy si está disponible; si no, embed oficial IG */}
         {reel.videoUrl ? (
           <video
             src={reel.videoUrl}
@@ -212,6 +219,26 @@ function ReelModal({ reel, onClose }: { reel: Reel; onClose: () => void }) {
               objectFit: 'contain',
             }}
           />
+        ) : igCode ? (
+          <div style={{ background: '#000', display: 'flex', justifyContent: 'center' }}>
+            <iframe
+              src={`https://www.instagram.com/reel/${igCode}/embed/captioned/`}
+              title={reel.title}
+              loading="lazy"
+              allow="autoplay; encrypted-media; picture-in-picture; web-share"
+              allowFullScreen
+              scrolling="no"
+              style={{
+                width: '100%',
+                maxWidth: 360,
+                height: '75vh',
+                maxHeight: 640,
+                border: 0,
+                background: '#000',
+                display: 'block',
+              }}
+            />
+          </div>
         ) : (
           <div
             className="flex flex-col items-center justify-center gap-4 py-16 px-8 text-center"
