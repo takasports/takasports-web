@@ -18,7 +18,6 @@ import {
   IconCrackQuiz,
   IconMiOnce,
   IconSopaCracks,
-  PreviewQuiniela,
 } from '@/components/games/GameVisuals'
 
 const HOME_PAGE_SIZE = 8

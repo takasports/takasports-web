@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { sanityClient, articlesQuery, reelsQuery, eventsQuery } from '@/lib/sanity'
-import { SLUG_TO_LABEL } from '@/lib/sports'
+import { sanityClient, articlesQuery, articlesBySportQuery, reelsQuery, eventsQuery } from '@/lib/sanity'
+import { SLUG_TO_LABEL, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, CATEGORY_TO_SLUG } from '@/lib/sports'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents } from '@/lib/espn'
 import { fetchPublicReels } from '@/lib/instagram-public'
@@ -73,16 +73,40 @@ export default async function Home({
   searchParams: Promise<{ sport?: string }>
 }) {
   const { sport } = await searchParams
-  const [rawArticles, sanityReels, rawEvents, espnEvents, igReels, topPlayers] = await Promise.all([
+
+  // Slugs canónicos de las categorías visibles en el home (incluye el "Más")
+  const HOME_SPORT_SLUGS = Array.from(
+    new Set(
+      [...HOME_SPORT_CATEGORIES, ...MORE_SPORT_CATEGORIES]
+        .map(c => CATEGORY_TO_SLUG[c])
+        .filter((s): s is string => Boolean(s))
+    )
+  )
+
+  const [rawArticles, sanityReels, rawEvents, espnEvents, igReels, topPlayers, perSportRaw] = await Promise.all([
     sanityClient.fetch<HomeArticle[]>(articlesQuery),
     sanityClient.fetch(reelsQuery),
     sanityClient.fetch(eventsQuery).catch(() => []),
     fetchEspnEvents().catch(() => []),
     fetchPublicReels().catch(() => []),
     getRanking('jugadores').catch(() => []),
+    Promise.all(
+      HOME_SPORT_SLUGS.map(slug =>
+        sanityClient
+          .fetch<HomeArticle[]>(articlesBySportQuery, { sport: slug })
+          .catch(() => [] as HomeArticle[])
+      )
+    ),
   ])
 
   const articles = sortForHome(rawArticles)
+
+  // Fallback de destacadas por deporte: si el filtro del home no encuentra
+  // nada entre las 40 más recientes, mostramos las top-N de ese deporte.
+  const featuredBySport: Record<string, HomeArticle[]> = {}
+  HOME_SPORT_SLUGS.forEach((slug, i) => {
+    featuredBySport[slug] = sortForHome(perSportRaw[i] ?? []).slice(0, 8)
+  })
 
   // SSR: Sanity reels → live Instagram API → seed placeholders
   const reels = (sanityReels as unknown[]).length > 0
@@ -123,7 +147,7 @@ export default async function Home({
       <h1 className="sr-only">TakaSports — Noticias deportivas en tiempo real</h1>
       <BreakingNewsBar items={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
       <LiveStrip />
-      <HomeContent articles={articles} reels={reels} events={events} initialSport={initialSport} topPlayers={topPlayers} />
+      <HomeContent articles={articles} reels={reels} events={events} initialSport={initialSport} topPlayers={topPlayers} featuredBySport={featuredBySport} />
       <Footer />
     </div>
   )
