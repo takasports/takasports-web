@@ -43,6 +43,17 @@ export const articlesBySportQuery = `*[_type == "article" && sport == $sport && 
   "priority": select(defined(headline) => "destacado", priority)
 }`
 
+// Feed por conjunto de slugs (canónico + aliases) — para destacadas del home.
+// Mira tanto `sport` como `category`/`competition` para no perder artículos
+// que solo tengan el alias (ej. F1 guardado como sport='f1' o category='formula1').
+export const articlesBySlugsQuery = `*[_type == "article"
+  && (sport in $slugs || category in $slugs || competition in $slugs)
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+] | order(publishedAt desc)[0...20] {
+  ${LISTING_FIELDS},
+  "priority": select(defined(headline) => "destacado", priority)
+}`
+
 // Feed sin filtro de status — para preview/editor (usar con token)
 export const articlesAllQuery = `*[_type == "article"] | order(publishedAt desc) {
   _id, "slug": slug.current, title, short_summary, publishedAt,

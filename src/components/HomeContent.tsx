@@ -332,12 +332,22 @@ export default function HomeContent({
     ? articles
     : articles.filter((a) => matchesActive(a.sport, a.category))
 
-  // Fallback: si no hay nada entre las 40 últimas, usar las destacadas
-  // del deporte que el servidor prefetcheó. Así nunca aparece vacío.
+  // Combinar las recientes filtradas con las destacadas prefetcheadas del
+  // servidor, deduplicado por _id. Así, aunque solo haya 1 noticia reciente
+  // de un deporte en las 40 últimas, el hero se completa con sus destacadas.
   const fallback = featuredBySport[activeSlug] ?? []
-  const filteredArticles = directFiltered.length > 0 || activeSport === 'Todo'
+  const filteredArticles = activeSport === 'Todo' || !activeSlug
     ? directFiltered
-    : fallback
+    : (() => {
+        const seen = new Set<string>()
+        const merged: Article[] = []
+        for (const a of [...directFiltered, ...fallback]) {
+          if (seen.has(a._id)) continue
+          seen.add(a._id)
+          merged.push(a)
+        }
+        return merged
+      })()
 
   // Filtrar reels (ReelsSection tiene su propio estado, pasamos initialSport vacío y reels ya filtrados)
   const filteredReels = activeSport === 'Todo' || !activeSlug

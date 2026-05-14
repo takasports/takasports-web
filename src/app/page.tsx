@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { sanityClient, articlesQuery, articlesBySportQuery, reelsQuery, eventsQuery } from '@/lib/sanity'
+import { sanityClient, articlesQuery, articlesBySlugsQuery, reelsQuery, eventsQuery } from '@/lib/sanity'
 import { SLUG_TO_LABEL, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, CATEGORY_TO_SLUG } from '@/lib/sports'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents } from '@/lib/espn'
@@ -74,7 +74,14 @@ export default async function Home({
 }) {
   const { sport } = await searchParams
 
-  // Slugs canónicos de las categorías visibles en el home (incluye el "Más")
+  // Slugs canónicos de las categorías visibles en el home (incluye el "Más").
+  // Para cada uno, también enviamos los aliases que pueden aparecer en Sanity
+  // (en `sport`, `category` o `competition`) para no perder artículos.
+  const HOME_SLUG_ALIASES: Record<string, string[]> = {
+    baloncesto: ['nba', 'euroliga', 'bcl', 'acb'],
+    wwe: ['wrestling'],
+    formula1: ['f1'],
+  }
   const HOME_SPORT_SLUGS = Array.from(
     new Set(
       [...HOME_SPORT_CATEGORIES, ...MORE_SPORT_CATEGORIES]
@@ -91,11 +98,12 @@ export default async function Home({
     fetchPublicReels().catch(() => []),
     getRanking('jugadores').catch(() => []),
     Promise.all(
-      HOME_SPORT_SLUGS.map(slug =>
-        sanityClient
-          .fetch<HomeArticle[]>(articlesBySportQuery, { sport: slug })
+      HOME_SPORT_SLUGS.map(slug => {
+        const slugs = Array.from(new Set([slug, ...(HOME_SLUG_ALIASES[slug] ?? [])]))
+        return sanityClient
+          .fetch<HomeArticle[]>(articlesBySlugsQuery, { slugs })
           .catch(() => [] as HomeArticle[])
-      )
+      })
     ),
   ])
 
