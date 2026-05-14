@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TakaSports — Calendario v2 (mockup)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Sistema oficial Taka */
+    --bg-base:#09090F;
+    --bg-surface:#111118;
+    --bg-card:#13131A;
+    --bg-card-2:#16161F;
+
+    --purple:#7C3AED;
+    --purple-light:#8B5CF6;
+
+    --text-primary:#EBEBF5;
+    --text-secondary:#9090A4;
+    --text-muted:#5A5A6A;
+    --text-faint:#38384A;
+
+    --border:rgba(255,255,255,0.06);
+    --border-subtle:rgba(255,255,255,0.04);
+    --border-hover:rgba(124,58,237,0.28);
+
+    --live:#EF4444;
+    --win:#22C55E;
+    --draw:#EAB308;
+    --loss:#EF4444;
+
+    --radius-card:12px;
+    --radius-lg:16px;
+
+    --font-display:"Inter",ui-sans-serif,system-ui;
+    --font-headline:"Bebas Neue",ui-sans-serif,system-ui;
+    --font-sport:"Oswald",ui-sans-serif,system-ui;
+  }
+  html{background:var(--bg-base);overflow-x:clip;}
+  body{
+    background:var(--bg-base);
+    background-image:
+      radial-gradient(ellipse 100% 55% at 50% -2%, rgba(124,58,237,0.08) 0%, transparent 65%),
+      radial-gradient(ellipse 55% 40% at 88% 90%, rgba(20,10,60,0.14) 0%, transparent 60%);
+    background-attachment:fixed;
+    color:var(--text-primary);
+    font-family:var(--font-display);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:clip;
+  }
+  /* Grano editorial — idéntico a globals.css */
+  body::after{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.028;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:300px 300px;
+  }
+
+  .tnum{font-variant-numeric:tabular-nums;}
+  .font-headline{font-family:var(--font-headline);letter-spacing:.06em;line-height:1;}
+  .font-sport{font-family:var(--font-sport);letter-spacing:.01em;}
+
+  /* Section label system (idem globals.css) */
+  .section-label{
+    font-family:var(--font-sport);
+    font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.09em;color:var(--text-secondary);line-height:1;
+  }
+  .section-accent{
+    display:block;width:3px;height:15px;background:var(--purple);border-radius:2px;flex-shrink:0;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:rgba(124,58,237,0.3);border-radius:999px;}
+  .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none;}
+  .scrollbar-hide::-webkit-scrollbar{display:none;}
+
+  /* Chips */
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:3px 8px;border-radius:9999px;font-size:11px;font-weight:600;
+    letter-spacing:.02em;line-height:1;
+  }
+  .chip-ghost{
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--border);
+    color:var(--text-secondary);
+  }
+  .chip-active{
+    background:rgba(124,58,237,0.14);
+    border:1px solid rgba(124,58,237,0.32);
+    color:#C4B5FD;
+  }
+
+  /* Match card hover — sutil, no transform agresivo */
+  .match-card{
+    transition:background .18s ease, border-color .18s ease;
+    cursor:pointer;
+  }
+  .match-card:hover{
+    background:var(--bg-card-2);
+    border-color:var(--border-hover) !important;
+  }
+
+  /* Live pulse */
+  @keyframes live-pulse{
+    0%{box-shadow:0 0 0 0 rgba(239,68,68,0.6);}
+    70%{box-shadow:0 0 0 5px rgba(239,68,68,0);}
+    100%{box-shadow:0 0 0 0 rgba(239,68,68,0);}
+  }
+  .live-dot{animation:live-pulse 1.6s ease-out infinite;background:var(--live);}
+
+  /* Card grouping — header de liga con barra acento purpura */
+  .league-section{
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-card);
+    overflow:hidden;
+  }
+  .league-divider{border-top:1px solid var(--border-subtle);}
+
+  /* Date pill activo (hoy) */
+  .date-pill-active{
+    background:rgba(124,58,237,0.14);
+    border:1px solid rgba(124,58,237,0.4);
+    color:#E8E8F8;
+  }
+</style>
+</head>
+<body class="min-h-screen relative">
+
+<!-- Top nav -->
+<header class="sticky top-0 z-30 backdrop-blur-md bg-[color:var(--bg-base)]/85 border-b border-[color:var(--border)] relative">
+  <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="size-7 rounded-md grid place-items-center font-black text-white" style="background:var(--purple)">T</div>
+      <div class="font-headline text-2xl">TAKA<span style="color:var(--purple-light)">SPORTS</span></div>
+    </div>
+    <div class="flex items-center gap-3 text-[color:var(--text-secondary)] text-sm">
+      <button class="hover:text-[color:var(--text-primary)] transition">⌕</button>
+      <button class="hover:text-[color:var(--text-primary)] transition">★</button>
+      <div class="size-7 rounded-full grid place-items-center text-[10px] font-bold" style="background:var(--bg-card-2);border:1px solid var(--border)">KH</div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-3xl mx-auto px-4 pb-24 relative" style="z-index:1">
+
+  <!-- Title -->
+  <div class="pt-8 pb-4 flex items-end justify-between">
+    <div>
+      <div class="flex items-center gap-2 mb-3">
+        <span class="section-accent"></span>
+        <span class="section-label">Sección</span>
+      </div>
+      <h1 class="font-headline text-5xl text-[color:var(--text-primary)]">CALENDARIO</h1>
+    </div>
+    <div class="text-[11px] text-[color:var(--text-muted)] tnum text-right">
+      <div>Madrid</div><div>GMT+2</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <nav class="flex items-center gap-2 mb-3 overflow-x-auto scrollbar-hide">
+    <button class="chip chip-active shrink-0">
+      <span class="size-1.5 rounded-full live-dot"></span>
+      En vivo
+      <span class="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] tnum font-bold" style="background:var(--live);color:#fff">7</span>
+    </button>
+    <button class="chip chip-ghost shrink-0">Hoy</button>
+    <button class="chip chip-ghost shrink-0">Mañana</button>
+    <button class="chip chip-ghost shrink-0">Mis equipos <span style="color:var(--purple-light)">★</span></button>
+    <button class="chip chip-ghost shrink-0">Resultados</button>
+  </nav>
+
+  <!-- Sticky date scroller -->
+  <div class="sticky top-14 z-20 -mx-4 px-4 py-2.5 backdrop-blur-md border-b border-[color:var(--border-subtle)]" style="background:rgba(9,9,15,0.88)">
+    <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+      <button class="shrink-0 px-2 py-2 rounded-lg text-xs text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)] transition" style="border:1px solid var(--border)">‹</button>
+      <button class="shrink-0 w-12 py-1.5 rounded-lg text-center text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition" style="border:1px solid var(--border)">
+        <div class="text-[9px] uppercase tracking-wider">Mié</div><div class="font-sport text-base tnum mt-0.5">13</div>
+      </button>
+      <button class="shrink-0 w-12 py-1.5 rounded-lg text-center text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition" style="border:1px solid var(--border)">
+        <div class="text-[9px] uppercase tracking-wider">Jue</div><div class="font-sport text-base tnum mt-0.5">14</div>
+      </button>
+      <button class="shrink-0 w-14 py-1.5 rounded-lg text-center date-pill-active">
+        <div class="text-[9px] uppercase tracking-wider font-bold" style="color:var(--purple-light)">Hoy</div>
+        <div class="font-sport text-lg tnum mt-0.5">15</div>
+      </button>
+      <button class="shrink-0 w-12 py-1.5 rounded-lg text-center text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition" style="border:1px solid var(--border)">
+        <div class="text-[9px] uppercase tracking-wider">Vie</div><div class="font-sport text-base tnum mt-0.5">16</div>
+      </button>
+      <button class="shrink-0 w-12 py-1.5 rounded-lg text-center text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition" style="border:1px solid var(--border)">
+        <div class="text-[9px] uppercase tracking-wider">Sáb</div><div class="font-sport text-base tnum mt-0.5">17</div>
+      </button>
+      <button class="shrink-0 w-12 py-1.5 rounded-lg text-center text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition" style="border:1px solid var(--border)">
+        <div class="text-[9px] uppercase tracking-wider">Dom</div><div class="font-sport text-base tnum mt-0.5">18</div>
+      </button>
+      <button class="shrink-0 w-12 py-1.5 rounded-lg text-center text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition" style="border:1px solid var(--border)">
+        <div class="text-[9px] uppercase tracking-wider">Lun</div><div class="font-sport text-base tnum mt-0.5">19</div>
+      </button>
+      <button class="shrink-0 px-2 py-2 rounded-lg text-xs text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)] transition" style="border:1px solid var(--border)">›</button>
+    </div>
+  </div>
+
+  <!-- Sport filter chips -->
+  <div class="flex items-center gap-2 mt-4 mb-5 overflow-x-auto scrollbar-hide">
+    <button class="chip chip-active shrink-0">Todos <span class="tnum opacity-70">28</span></button>
+    <button class="chip chip-ghost shrink-0">Fútbol <span class="tnum opacity-60">12</span></button>
+    <button class="chip chip-ghost shrink-0">NBA <span class="tnum opacity-60">5</span></button>
+    <button class="chip chip-ghost shrink-0">Tenis <span class="tnum opacity-60">8</span></button>
+    <button class="chip chip-ghost shrink-0">F1</button>
+    <button class="chip chip-ghost shrink-0">UFC</button>
+  </div>
+
+  <!-- Group label -->
+  <div class="flex items-center gap-2 mb-3">
+    <span class="section-accent"></span>
+    <span class="section-label">Hoy · Jueves 15 de mayo</span>
+  </div>
+
+
+  <!-- ====== LIGA 1: LaLiga ====== -->
+  <section class="league-section mb-4">
+    <header class="px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="size-7 rounded-md grid place-items-center text-[10px] font-black" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-secondary)">LL</div>
+        <div>
+          <div class="text-[13px] font-semibold leading-tight text-[color:var(--text-primary)]">LaLiga EA Sports</div>
+          <div class="section-label mt-1" style="font-size:10px">España · Jornada 36</div>
+        </div>
+      </div>
+      <button class="text-[11px] text-[color:var(--text-secondary)] hover:text-[color:var(--purple-light)] transition flex items-center gap-1">
+        Tabla <span>›</span>
+      </button>
+    </header>
+
+    <!-- Match: LIVE -->
+    <article class="match-card league-divider px-4 py-3.5 grid grid-cols-[1fr_auto_1fr] items-center gap-3" style="border-color:transparent">
+      <div class="flex items-center gap-3 justify-end text-right">
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">Real Madrid</div>
+          <div class="mt-1.5 flex justify-end gap-1">
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--draw)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--loss)"></span>
+          </div>
+        </div>
+        <div class="size-10 rounded-full grid place-items-center font-black text-black shrink-0" style="background:#FEFEFE">RM</div>
+      </div>
+      <div class="text-center min-w-[120px]">
+        <div class="flex items-center justify-center gap-1.5 mb-1">
+          <span class="inline-block size-1.5 rounded-full live-dot"></span>
+          <span class="text-[10px] font-bold tracking-wider tnum" style="color:var(--live)">67'</span>
+        </div>
+        <div class="font-sport text-3xl tnum leading-none text-[color:var(--text-primary)]">2 <span style="color:var(--text-faint)">·</span> 1</div>
+        <div class="mt-2.5 flex h-[3px] rounded-full overflow-hidden" style="background:rgba(255,255,255,0.05)">
+          <div style="background:var(--purple-light);width:58%"></div>
+          <div style="background:var(--text-faint);width:42%"></div>
+        </div>
+        <div class="mt-1 flex justify-between text-[9px] tnum" style="color:var(--text-muted)">
+          <span>58%</span><span class="uppercase tracking-wider">Posesión</span><span>42%</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="size-10 rounded-full grid place-items-center font-black text-white shrink-0" style="background:#A50044">FCB</div>
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">Barcelona</div>
+          <div class="mt-1.5 flex gap-1">
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--draw)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Match: scheduled -->
+    <article class="match-card league-divider px-4 py-3.5 grid grid-cols-[1fr_auto_1fr] items-center gap-3" style="border-color:transparent">
+      <div class="flex items-center gap-3 justify-end text-right">
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">Atlético Madrid</div>
+          <div class="mt-1.5 flex justify-end gap-1">
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--draw)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--loss)"></span>
+          </div>
+        </div>
+        <div class="size-10 rounded-full grid place-items-center font-black text-white shrink-0" style="background:#C8102E">ATM</div>
+      </div>
+      <div class="text-center min-w-[120px]">
+        <div class="section-label" style="font-size:10px">Hoy</div>
+        <div class="font-sport text-2xl tnum mt-0.5 text-[color:var(--text-primary)]">21:00</div>
+        <div class="mt-2 flex items-center justify-center">
+          <span class="chip chip-ghost text-[10px]">📺 Movistar</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="size-10 rounded-full grid place-items-center font-black text-black shrink-0" style="background:#FFE100">VAL</div>
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">Valencia CF</div>
+          <div class="mt-1.5 flex gap-1">
+            <span class="size-2 rounded-sm" style="background:var(--loss)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--draw)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--loss)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--draw)"></span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Match: scheduled 2 -->
+    <article class="match-card league-divider px-4 py-3.5 grid grid-cols-[1fr_auto_1fr] items-center gap-3" style="border-color:transparent">
+      <div class="flex items-center gap-3 justify-end text-right">
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">Real Betis</div>
+          <div class="mt-1.5 flex justify-end gap-1">
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--draw)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--loss)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+          </div>
+        </div>
+        <div class="size-10 rounded-full grid place-items-center font-black text-white shrink-0" style="background:#00954C">BET</div>
+      </div>
+      <div class="text-center min-w-[120px]">
+        <div class="section-label" style="font-size:10px">Hoy</div>
+        <div class="font-sport text-2xl tnum mt-0.5 text-[color:var(--text-primary)]">22:30</div>
+        <div class="mt-2 flex items-center justify-center">
+          <span class="chip chip-ghost text-[10px]">📺 DAZN</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="size-10 rounded-full grid place-items-center font-black text-white shrink-0" style="background:#EE2737">SEV</div>
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">Sevilla FC</div>
+          <div class="mt-1.5 flex gap-1">
+            <span class="size-2 rounded-sm" style="background:var(--loss)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--loss)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--draw)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--win)"></span>
+            <span class="size-2 rounded-sm" style="background:var(--draw)"></span>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+
+  <!-- ====== LIGA 2: NBA Playoffs ====== -->
+  <section class="league-section mb-4">
+    <header class="px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="size-7 rounded-md grid place-items-center text-[10px] font-black" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-secondary)">NBA</div>
+        <div>
+          <div class="text-[13px] font-semibold leading-tight text-[color:var(--text-primary)]">NBA · Playoffs</div>
+          <div class="section-label mt-1" style="font-size:10px">Conference Finals · Game 4</div>
+        </div>
+      </div>
+      <span class="text-[11px] text-[color:var(--text-muted)] tnum">2 partidos</span>
+    </header>
+
+    <!-- NBA Live -->
+    <article class="match-card league-divider px-4 py-3.5 grid grid-cols-[1fr_auto_1fr] items-center gap-3" style="border-color:transparent">
+      <div class="flex items-center gap-3 justify-end text-right">
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">Boston Celtics</div>
+          <div class="text-[10px] mt-1 tnum" style="color:var(--text-muted)">Serie 2-1</div>
+        </div>
+        <div class="size-10 rounded-full grid place-items-center font-black text-white shrink-0" style="background:#007A33">BOS</div>
+      </div>
+      <div class="text-center min-w-[120px]">
+        <div class="flex items-center justify-center gap-1.5 mb-1">
+          <span class="inline-block size-1.5 rounded-full live-dot"></span>
+          <span class="text-[10px] font-bold tracking-wider tnum" style="color:var(--live)">Q3 · 4:12</span>
+        </div>
+        <div class="font-sport text-3xl tnum leading-none text-[color:var(--text-primary)]">78 <span style="color:var(--text-faint)">·</span> 71</div>
+        <div class="mt-1.5 text-[10px]" style="color:var(--text-muted)">Tatum 24 · Brunson 19</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="size-10 rounded-full grid place-items-center font-black text-white shrink-0" style="background:#F58426">NYK</div>
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">New York Knicks</div>
+          <div class="text-[10px] mt-1 tnum" style="color:var(--text-muted)">Serie 1-2</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- NBA scheduled -->
+    <article class="match-card league-divider px-4 py-3.5 grid grid-cols-[1fr_auto_1fr] items-center gap-3" style="border-color:transparent">
+      <div class="flex items-center gap-3 justify-end text-right">
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">Denver Nuggets</div>
+          <div class="text-[10px] mt-1 tnum" style="color:var(--text-muted)">Serie 1-2</div>
+        </div>
+        <div class="size-10 rounded-full grid place-items-center font-black text-white shrink-0" style="background:#0E2240">DEN</div>
+      </div>
+      <div class="text-center min-w-[120px]">
+        <div class="section-label" style="font-size:10px">Mañana</div>
+        <div class="font-sport text-2xl tnum mt-0.5 text-[color:var(--text-primary)]">03:00</div>
+        <div class="mt-1.5 text-[10px]" style="color:var(--text-muted)">Ball Arena</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="size-10 rounded-full grid place-items-center font-black text-white shrink-0" style="background:#1D428A">MIN</div>
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">Minnesota T'wolves</div>
+          <div class="text-[10px] mt-1 tnum" style="color:var(--text-muted)">Serie 2-1</div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+
+  <!-- ====== LIGA 3: Roland Garros ====== -->
+  <section class="league-section mb-4">
+    <header class="px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="size-7 rounded-md grid place-items-center text-[10px] font-black" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-secondary)">RG</div>
+        <div>
+          <div class="text-[13px] font-semibold leading-tight text-[color:var(--text-primary)]">Roland Garros</div>
+          <div class="section-label mt-1" style="font-size:10px">Cuartos · Pista Philippe Chatrier</div>
+        </div>
+      </div>
+      <span class="text-[11px] tnum flex items-center gap-1.5" style="color:var(--live)">
+        <span class="size-1.5 rounded-full live-dot"></span> 1 en vivo
+      </span>
+    </header>
+
+    <article class="match-card league-divider px-4 py-3.5 grid grid-cols-[1fr_auto_1fr] items-center gap-3" style="border-color:transparent">
+      <div class="flex items-center gap-3 justify-end text-right">
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">🇪🇸 Carlos Alcaraz</div>
+          <div class="text-[10px] mt-1 flex items-center gap-1.5 justify-end" style="color:var(--text-muted)">
+            <span class="tnum">N°3</span><span>·</span><span>🎾 saque</span>
+          </div>
+        </div>
+        <div class="size-10 rounded-full grid place-items-center font-black text-black shrink-0" style="background:#E5FF38">CA</div>
+      </div>
+      <div class="text-center min-w-[140px]">
+        <div class="flex items-center justify-center gap-1.5 mb-1">
+          <span class="inline-block size-1.5 rounded-full live-dot"></span>
+          <span class="text-[10px] font-bold tracking-wider tnum" style="color:var(--live)">SET 3 · 4-3</span>
+        </div>
+        <div class="font-sport tnum text-xl leading-none flex items-center justify-center gap-3 text-[color:var(--text-primary)]">
+          <span>6 7 <span style="color:var(--purple-light)">4</span></span>
+          <span style="color:var(--text-faint)">·</span>
+          <span style="color:var(--text-secondary)">4 6 3</span>
+        </div>
+        <div class="mt-1.5 text-[10px] tnum" style="color:var(--text-muted)">BP 2/5 · Aces 8</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="size-10 rounded-full grid place-items-center font-black text-white shrink-0" style="background:#27408B">JS</div>
+        <div class="min-w-0">
+          <div class="font-semibold leading-tight truncate text-[color:var(--text-primary)]">🇮🇹 Jannik Sinner</div>
+          <div class="text-[10px] mt-1 tnum" style="color:var(--text-muted)">N°1</div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+
+  <!-- ====== LIGA 4: F1 ====== -->
+  <section class="league-section mb-4">
+    <header class="px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="size-7 rounded-md grid place-items-center text-[10px] font-black" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-secondary)">F1</div>
+        <div>
+          <div class="text-[13px] font-semibold leading-tight text-[color:var(--text-primary)]">Fórmula 1</div>
+          <div class="section-label mt-1" style="font-size:10px">GP Emilia-Romagna · Imola</div>
+        </div>
+      </div>
+      <span class="text-[11px] text-[color:var(--text-muted)]">Domingo 18</span>
+    </header>
+
+    <article class="match-card league-divider px-4 py-3.5 flex items-center gap-4" style="border-color:transparent">
+      <div class="size-12 rounded-lg grid place-items-center text-xl shrink-0" style="background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.25)">🏁</div>
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold text-[color:var(--text-primary)]">Carrera principal</div>
+        <div class="text-[12px] flex items-center gap-2 mt-0.5" style="color:var(--text-secondary)">
+          <span class="truncate">Autodromo Enzo e Dino Ferrari</span>
+          <span style="color:var(--text-faint)">·</span>
+          <span class="tnum shrink-0">63 vueltas</span>
+        </div>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="chip chip-ghost">Pole: Verstappen 1:14.746</span>
+          <span class="chip chip-ghost">📺 DAZN F1</span>
+        </div>
+      </div>
+      <div class="text-right shrink-0">
+        <div class="section-label" style="font-size:10px">Domingo</div>
+        <div class="font-sport text-2xl tnum mt-0.5 text-[color:var(--text-primary)]">15:00</div>
+      </div>
+    </article>
+  </section>
+
+  <!-- Footer hint -->
+  <div class="text-center text-[11px] pt-4 pb-8" style="color:var(--text-muted)">
+    Cargar más fechas ↓
+  </div>
+
+</main>
+
+<!-- Floating note -->
+<aside class="fixed bottom-4 right-4 max-w-xs text-[11px] rounded-xl p-3 shadow-2xl z-40" style="background:var(--bg-card-2);border:1px solid var(--border);color:var(--text-secondary)">
+  <div class="font-bold text-[color:var(--text-primary)] mb-1 flex items-center gap-2">
+    <span class="section-accent"></span>
+    <span class="section-label">Mockup v2</span>
+  </div>
+  Estética Taka: fondo púrpura ambient, grano editorial, acento <span style="color:var(--purple-light)">#7C3AED</span>, Bebas Neue en labels, Oswald en marcadores.
+</aside>
+
+</body>
+</html>

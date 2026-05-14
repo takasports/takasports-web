@@ -421,15 +421,12 @@ function SkeletonRow() {
 // ─── Competition sub-header ───────────────────────────────────────────────
 function CompGroupHeader({ comp, accent, count, first }: { comp: string; accent: string; count: number; first?: boolean }) {
   return (
-    <div className={`flex items-center gap-2 px-1 pb-1.5 ${first ? 'pt-1' : 'pt-4'}`}>
-      {!first && (
-        <div className="absolute left-0 right-0 h-px" style={{ background: 'rgba(255,255,255,0.04)' }} />
-      )}
-      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: accent, boxShadow: `0 0 4px ${accent}88` }} />
-      <span className="text-[10px] font-black uppercase tracking-widest truncate flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+    <div className={`flex items-center gap-2.5 px-1 pb-2 ${first ? 'pt-1' : 'pt-4'}`}>
+      <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 14, background: accent, boxShadow: `0 0 8px ${accent}66` }} />
+      <span className="text-[11px] font-bold uppercase tracking-[0.12em] truncate flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
         {comp}
       </span>
-      <span className="text-[8px] font-black tabular-nums px-1.5 py-0.5 rounded-full flex-shrink-0"
+      <span className="text-[9px] font-bold tabular-nums px-2 py-0.5 rounded-full flex-shrink-0"
         style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
         {count}
       </span>
@@ -460,99 +457,125 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   const eventDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
   const countdown = !isLive && !isFinal ? timeUntilLabel(event.isoDate) : null
 
+  const hasVs = !!event.away
+  const liveLabel = isLive && liveScore ? getLiveLabel(liveScore.status, liveScore.elapsed, {
+    sport: event.sport,
+    homeScore: liveScore.homeGoals,
+    awayScore: liveScore.awayGoals,
+  }) : ''
+
+  const scoreBlock = (
+    <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 min-w-[88px] px-2">
+      {showScore && liveScore ? (
+        racing ? (
+          <span className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: isLive ? '#EF4444' : '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+            {isLive ? 'LIVE' : 'FIN'}
+          </span>
+        ) : (
+          <>
+            {isLive ? (
+              <span className="flex items-center gap-1.5 leading-none">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] tabular-nums" style={{ color: '#EF4444', fontFamily: 'var(--font-sport)' }}>
+                  {liveLabel || 'LIVE'}
+                </span>
+              </span>
+            ) : (
+              <span className="text-[9px] font-black uppercase tracking-[0.14em] leading-none" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+                Final
+              </span>
+            )}
+            {tennis && liveScore.clock && (
+              <span className="text-[8px] font-bold uppercase tracking-[0.16em] leading-none"
+                style={{ color: isLive ? '#FBBF24' : '#9090A8', fontFamily: 'var(--font-sport)' }}>
+                {liveScore.clock}
+              </span>
+            )}
+            <span className="flex items-center gap-2 leading-none tabular-nums font-black"
+              style={{ fontSize: 24, color: isLive ? '#EBEBF5' : '#C0C0D8', fontFamily: 'var(--font-sport)' }}>
+              <span>{liveScore.homeGoals ?? 0}</span>
+              <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
+              <span>{liveScore.awayGoals ?? 0}</span>
+            </span>
+          </>
+        )
+      ) : (
+        <>
+          {dateLabel && (
+            <span className="text-[9px] font-black uppercase tracking-[0.14em] leading-none"
+              style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+              {dateLabel}
+            </span>
+          )}
+          <span className="text-[20px] font-bold tabular-nums leading-none"
+            style={{ color: countdown ? '#C4B5FD' : '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+            {countdown ?? event.time}
+          </span>
+          {hasVs && (
+            <span className="text-[9px] font-bold uppercase tracking-[0.18em] leading-none" style={{ color: '#38384A', fontFamily: 'var(--font-sport)' }}>vs</span>
+          )}
+        </>
+      )}
+      {event.broadcast && (
+        <div className="mt-0.5"><BroadcastChip broadcast={event.broadcast} /></div>
+      )}
+    </div>
+  )
+
+  const actions = (
+    <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+      {onToggleFav && <FavoriteHeart active={!!isFav} onClick={onToggleFav} />}
+      <ReminderButton active={isReminded} onClick={onToggleReminder} color={event.accent} />
+    </div>
+  )
+
   const inner = (
     <div
-      className={`grid items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:brightness-125 ${flashing ? 'ts-flash' : ''}`}
+      className={`relative grid items-center gap-2 px-3 py-3 rounded-lg transition-all ${flashing ? 'ts-flash' : ''}`}
       style={{
-        gridTemplateColumns: '1fr auto auto',
-        background: isLive ? 'rgba(74,222,128,0.10)' : 'rgba(255,255,255,0.025)',
+        gridTemplateColumns: hasVs ? 'minmax(0,1fr) auto minmax(0,1fr)' : 'minmax(0,1fr) auto',
+        background: isLive ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.025)',
         borderLeft: `3px solid ${accent}`,
+        border: '1px solid rgba(255,255,255,0.04)',
+        borderLeftWidth: 3,
+        borderLeftColor: accent,
       }}
     >
-      <div className="flex flex-col gap-1 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={24} sport={event.sport} />
-          <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-            {event.home}
-          </span>
-          {isFav && <span className="text-[9px] flex-shrink-0" style={{ color: '#F472B6' }}>♥</span>}
+      {actions}
+      {hasVs ? (
+        <div className="flex items-center gap-2.5 min-w-0 justify-end text-right pr-1">
+          <div className="min-w-0 flex flex-col items-end">
+            <span className="text-[13px] font-bold truncate max-w-full" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+              {event.home}
+            </span>
+            {isFav && <span className="text-[9px] mt-0.5" style={{ color: '#F472B6' }}>♥</span>}
+          </div>
+          <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={32} sport={event.sport} />
         </div>
-        {event.away && (
-          <div className="flex items-center gap-2 min-w-0">
-            <TeamLogo logo={event.awayLogo} photo={event.awayPhoto} name={event.away} size={24} sport={event.sport} />
-            <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+      ) : (
+        <div className="flex items-center gap-2.5 min-w-0">
+          <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={32} sport={event.sport} />
+          <div className="min-w-0">
+            <span className="text-[13px] font-bold truncate block" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+              {event.home}
+            </span>
+            {isFav && <span className="text-[9px]" style={{ color: '#F472B6' }}>♥</span>}
+          </div>
+        </div>
+      )}
+
+      {scoreBlock}
+
+      {hasVs && (
+        <div className="flex items-center gap-2.5 min-w-0 pl-1">
+          <TeamLogo logo={event.awayLogo} photo={event.awayPhoto} name={event.away!} size={32} sport={event.sport} />
+          <div className="min-w-0">
+            <span className="text-[13px] font-bold truncate block" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
               {event.away}
             </span>
           </div>
-        )}
-        {event.broadcast && (
-          <div className="ml-8 mt-0.5">
-            <BroadcastChip broadcast={event.broadcast} />
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-col items-end gap-0.5 flex-shrink-0 min-w-[52px]">
-        {showScore && liveScore ? (
-          racing ? (
-            <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: '#4ade80', fontFamily: 'var(--font-sport)' }}>
-              {isLive ? 'LIVE' : 'FIN'}
-            </span>
-          ) : (
-            <>
-              {tennis && (
-                <span className="text-[7px] font-black uppercase tracking-[0.2em] leading-none"
-                  style={{ color: isFinal ? '#9090A8' : '#FBBF24', fontFamily: 'var(--font-sport)' }}>
-                  {liveScore.clock ? liveScore.clock : 'Sets'}
-                </span>
-              )}
-              <span className="text-[16px] font-black tabular-nums leading-none"
-                style={{ color: isLive ? '#4ade80' : '#C0C0D8', fontFamily: 'var(--font-display)' }}>
-                {liveScore.homeGoals ?? 0}
-              </span>
-              <span className="text-[16px] font-black tabular-nums leading-none"
-                style={{ color: isLive ? '#4ade80' : '#C0C0D8', fontFamily: 'var(--font-display)' }}>
-                {liveScore.awayGoals ?? 0}
-              </span>
-            </>
-          )
-        ) : (
-          <>
-            {dateLabel && (
-              <span className="text-[8px] font-black uppercase tracking-wider leading-none"
-                style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-                {dateLabel}
-              </span>
-            )}
-            <span className="text-[11px] font-bold tabular-nums leading-none"
-              style={{ color: countdown ? '#4ade80' : '#B0B0C8', fontFamily: 'var(--font-display)' }}>
-              {countdown ?? event.time}
-            </span>
-          </>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        {isLive && liveScore && (
-          <span className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wide"
-            style={{ background: 'rgba(74,222,128,0.18)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.30)', fontFamily: 'var(--font-sport)' }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
-            {getLiveLabel(liveScore.status, liveScore.elapsed, {
-              sport: event.sport,
-              homeScore: liveScore.homeGoals,
-              awayScore: liveScore.awayGoals,
-            })}
-          </span>
-        )}
-        {isFinal && (
-          <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase"
-            style={{ background: 'rgba(255,255,255,0.06)', color: '#6A6A80', fontFamily: 'var(--font-sport)' }}>
-            Final
-          </span>
-        )}
-        {onToggleFav && <FavoriteHeart active={!!isFav} onClick={onToggleFav} />}
-        <ReminderButton active={isReminded} onClick={onToggleReminder} color={event.accent} />
-      </div>
+        </div>
+      )}
     </div>
   )
 
@@ -947,57 +970,64 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
   const as_ = event.awayScore
   const hasScore = hs !== null && hs !== undefined && as_ !== null && as_ !== undefined
 
+  const hasVs = !!event.away
   const inner = (
     <div
-      className="grid items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:brightness-125"
+      className="relative grid items-center gap-2 px-3 py-3 rounded-lg transition-all"
       style={{
-        gridTemplateColumns: '1fr auto auto',
+        gridTemplateColumns: hasVs ? 'minmax(0,1fr) auto minmax(0,1fr)' : 'minmax(0,1fr) auto',
         background: 'rgba(255,255,255,0.025)',
-        borderLeft: `3px solid ${compColor}`,
+        border: '1px solid rgba(255,255,255,0.04)',
+        borderLeftWidth: 3,
+        borderLeftColor: compColor,
       }}
     >
-      {/* Teams */}
-      <div className="flex flex-col gap-1 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <TeamLogo logo={event.homeLogo} name={event.home} size={24} sport={event.sport} />
+      <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+        {onToggleFav && <FavoriteHeart active={!!isFav} onClick={onToggleFav} />}
+      </div>
+
+      {hasVs ? (
+        <div className="flex items-center gap-2.5 min-w-0 justify-end text-right pr-1">
+          <div className="min-w-0 flex flex-col items-end">
+            <span className="text-[13px] font-bold truncate max-w-full" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+              {event.home}
+            </span>
+          </div>
+          <TeamLogo logo={event.homeLogo} name={event.home} size={32} sport={event.sport} />
+        </div>
+      ) : (
+        <div className="flex items-center gap-2.5 min-w-0">
+          <TeamLogo logo={event.homeLogo} name={event.home} size={32} sport={event.sport} />
           <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {event.home}
           </span>
         </div>
-        {event.away && (
-          <div className="flex items-center gap-2 min-w-0">
-            <TeamLogo logo={event.awayLogo} name={event.away} size={24} sport={event.sport} />
-            <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-              {event.away}
-            </span>
-          </div>
-        )}
-      </div>
+      )}
 
-      {/* Score */}
-      <div className="flex flex-col items-end gap-0.5 flex-shrink-0 min-w-[44px]">
-        {hasScore ? (
-          <>
-            <span className="text-[14px] font-black tabular-nums leading-none" style={{ color: '#E0E0F4', fontFamily: 'var(--font-display)' }}>
-              {hs}
-            </span>
-            <span className="text-[14px] font-black tabular-nums leading-none" style={{ color: '#E0E0F4', fontFamily: 'var(--font-display)' }}>
-              {as_}
-            </span>
-          </>
-        ) : (
-          <span className="text-[11px] font-bold" style={{ color: '#5A5A6A', fontFamily: 'var(--font-display)' }}>–</span>
-        )}
-      </div>
-
-      {/* FT badge + fav */}
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase"
-          style={{ background: 'rgba(255,255,255,0.06)', color: '#6A6A80', fontFamily: 'var(--font-sport)' }}>
+      <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 min-w-[88px] px-2">
+        <span className="text-[9px] font-black uppercase tracking-[0.18em] leading-none" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
           FT
         </span>
-        {onToggleFav && <FavoriteHeart active={!!isFav} onClick={onToggleFav} />}
+        {hasScore ? (
+          <span className="flex items-center gap-2 leading-none tabular-nums font-black"
+            style={{ fontSize: 22, color: '#C0C0D8', fontFamily: 'var(--font-sport)' }}>
+            <span>{hs}</span>
+            <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
+            <span>{as_}</span>
+          </span>
+        ) : (
+          <span className="text-[14px] font-bold" style={{ color: '#5A5A6A' }}>–</span>
+        )}
       </div>
+
+      {hasVs && (
+        <div className="flex items-center gap-2.5 min-w-0 pl-1">
+          <TeamLogo logo={event.awayLogo} name={event.away!} size={32} sport={event.sport} />
+          <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+            {event.away}
+          </span>
+        </div>
+      )}
     </div>
   )
 
