@@ -7,23 +7,25 @@ import { getDisplayScore, getEffectiveTrend, trendIcon, scoreColor, SPORT_EMOJI 
 import { getSportStyle } from '@/lib/sports'
 import BadgePill from './BadgePill'
 import PlayerAvatar from './PlayerAvatar'
-import { SportIcon, PinIcon } from '@/components/icons/GameIcons'
+import ScoreBreakdown from './ScoreBreakdown'
+import ScoreSparkline from './ScoreSparkline'
+import { SportIcon } from '@/components/icons/GameIcons'
 
 export default function RankRow({
   entry, showSportEmoji = false, typeTag,
 }: {
   entry: RankingEntry; showSportEmoji?: boolean; typeTag?: string
 }) {
-  const [showInsight, setShowInsight] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const displayScore = getDisplayScore(entry)
   const trend = trendIcon(getEffectiveTrend(entry))
   const scoreDiff = entry.scorePrev !== undefined ? displayScore - entry.scorePrev : null
   const sc = scoreColor(displayScore)
   const sportAccent = entry.sport ? getSportStyle(entry.sport).accent : '#7C3AED'
-  const sportEmoji = entry.sport ? SPORT_EMOJI[entry.sport] : null
   const avatarEmoji = (entry.emoji && entry.emoji !== entry.country)
     ? entry.emoji
     : (entry.sport ? (SPORT_EMOJI[entry.sport] ?? '🏅') : '🏅')
+  const canExpand = !!entry.factors || !!entry.insight
 
   return (
     <div
@@ -31,8 +33,8 @@ export default function RankRow({
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderLeft: `3px solid ${sportAccent}` }}
     >
       <div
-        className="flex items-center gap-3 px-4 py-2.5 cursor-pointer"
-        onClick={() => entry.insight && setShowInsight(s => !s)}
+        className={`flex items-center gap-3 px-4 py-2.5 ${canExpand ? 'cursor-pointer' : ''}`}
+        onClick={() => canExpand && setExpanded(s => !s)}
       >
         <div className="flex flex-col items-center w-7 flex-shrink-0">
           <span className="font-black tabular-nums text-sm leading-none"
@@ -84,10 +86,16 @@ export default function RankRow({
           </p>
         </div>
         {entry.insight && (
-          <p className="hidden xl:block text-[11px] flex-shrink-0 max-w-[260px] line-clamp-1"
+          <p className="hidden xl:block text-[11px] flex-shrink-0 max-w-[220px] line-clamp-1"
             style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
             {entry.insight}
           </p>
+        )}
+        {/* Sparkline siempre visible cuando hay scorePrev */}
+        {scoreDiff !== null && (
+          <div className="hidden sm:flex flex-shrink-0" title={`Anterior: ${entry.scorePrev?.toFixed(1)} → Ahora: ${displayScore.toFixed(1)}`}>
+            <ScoreSparkline prev={entry.scorePrev} now={displayScore} />
+          </div>
         )}
         <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
           <div className="flex flex-col items-end">
@@ -116,6 +124,23 @@ export default function RankRow({
               </div>
             )}
           </div>
+          {canExpand && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setExpanded(s => !s) }}
+              className="hidden sm:flex items-center justify-center w-6 h-6 rounded-md transition-all hover:brightness-150"
+              style={{
+                background: expanded ? `${sportAccent}22` : 'rgba(255,255,255,0.04)',
+                color: expanded ? sportAccent : '#5A5A72',
+                border: `1px solid ${expanded ? sportAccent + '40' : 'rgba(255,255,255,0.07)'}`,
+                fontFamily: 'var(--font-sport)',
+                fontSize: 10,
+              }}
+              title={expanded ? 'Ocultar desglose' : 'Ver desglose del score'}
+              aria-label={expanded ? 'Ocultar desglose' : 'Ver desglose del score'}
+            >
+              {expanded ? '▴' : '▾'}
+            </button>
+          )}
           <Link
             href={`/rankings/comparar?a=${entry.id}`}
             onClick={e => e.stopPropagation()}
@@ -133,105 +158,16 @@ export default function RankRow({
           </Link>
         </div>
       </div>
-      {showInsight && entry.insight && (
-        <div className="xl:hidden px-4 pb-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <p className="text-[11px] leading-relaxed pt-2.5" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+      {expanded && entry.insight && (
+        <div className="xl:hidden px-4 pb-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <p className="text-[11px] leading-relaxed pt-2.5" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
             {entry.insight}
           </p>
         </div>
       )}
-      {showInsight && entry.factors && (
-        <div className="px-4 pb-3 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-          <p className="text-[8px] font-black uppercase tracking-[0.15em] mb-2 pt-2"
-            style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
-            Desglose Índice Taka
-          </p>
-          <div className="flex flex-col gap-1.5">
-            {([
-              { key: 'rendimiento', label: 'Rendimiento', pct: '40%', color: '#22c55e' },
-              { key: 'contexto',    label: 'Contexto',    pct: '20%', color: '#60a5fa' },
-              { key: 'mediatico',   label: 'Mediático',   pct: '25%', color: '#f59e0b' },
-              { key: 'narrativa',   label: 'Narrativa',   pct: '15%', color: '#c084fc' },
-            ] as const).map(({ key, label, pct, color }) => {
-              const val = entry.factors![key]
-              return (
-                <div key={key} className="flex items-center gap-2">
-                  <span className="text-[9px] w-[72px] flex-shrink-0 leading-none"
-                    style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
-                    {label} <span style={{ color: '#3A3A4A' }}>{pct}</span>
-                  </span>
-                  <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                    <div className="h-1 rounded-full" style={{ width: `${val}%`, background: color, opacity: 0.75 }} />
-                  </div>
-                  <span className="text-[9px] tabular-nums w-6 text-right flex-shrink-0"
-                    style={{ color: '#5A5A72', fontFamily: 'var(--font-display)' }}>
-                    {val}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-          <div className="mt-2.5 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-            {(() => {
-              const base = Math.round((
-                entry.factors!.rendimiento * 0.40 +
-                entry.factors!.contexto    * 0.20 +
-                entry.factors!.mediatico   * 0.25 +
-                entry.factors!.narrativa   * 0.15
-              ) * 10) / 10
-              const boost = entry.editorialBoost ?? 0
-              const total = Math.round(Math.max(0, Math.min(100, base + boost)) * 10) / 10
-              return (
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
-                      Base objetiva
-                    </span>
-                    <span className="text-[9px] tabular-nums font-bold"
-                      style={{ color: '#5A5A72', fontFamily: 'var(--font-display)' }}>
-                      {base.toFixed(1)}
-                    </span>
-                  </div>
-                  {boost !== 0 && (
-                    <div className="flex justify-between items-start gap-2">
-                      <span className="text-[9px] leading-snug flex-1 inline-flex items-start gap-1"
-                        style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
-                        <PinIcon size={10} /> Ajuste editorial
-                        {entry.editorialNote && (
-                          <span className="block" style={{ color: '#2A2A42' }}>&ldquo;{entry.editorialNote}&rdquo;</span>
-                        )}
-                      </span>
-                      <span className="text-[9px] tabular-nums font-bold flex-shrink-0"
-                        style={{ color: boost > 0 ? '#22c55e' : '#f87171', fontFamily: 'var(--font-display)' }}>
-                        {boost > 0 ? '+' : ''}{boost.toFixed(1)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center pt-1"
-                    style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                    <span className="text-[9px] font-black uppercase tracking-wider"
-                      style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
-                      Índice Taka
-                    </span>
-                    <span className="text-[10px] tabular-nums font-black"
-                      style={{ color: scoreColor(total), fontFamily: 'var(--font-display)' }}>
-                      {total.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-              )
-            })()}
-          </div>
-          <div className="mt-3 pt-2 flex justify-end" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-            <Link
-              href={`/rankings/${entry.id}`}
-              onClick={e => e.stopPropagation()}
-              className="text-[10px] font-black uppercase tracking-widest transition-all hover:brightness-150"
-              style={{ color: '#9B7CF6', fontFamily: 'var(--font-sport)' }}
-            >
-              Ver perfil →
-            </Link>
-          </div>
+      {expanded && entry.factors && (
+        <div className="px-4 pb-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+          <ScoreBreakdown entry={entry} />
         </div>
       )}
     </div>

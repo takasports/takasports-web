@@ -33,6 +33,7 @@ import type { MoverEntry } from '@/lib/rankings-data'
 import SportSelector from '@/components/rankings/SportSelector'
 import EntityTabBar from '@/components/rankings/EntityTabBar'
 import GlobalSearchResults from '@/components/rankings/GlobalSearchResults'
+import AppliedFiltersBar, { type AppliedFilter } from '@/components/rankings/AppliedFiltersBar'
 
 // ── Config por deporte ────────────────────────────────────────────────
 const ENTITY_CONFIG: Record<string, { id: RankingTab; label: string }[]> = {
@@ -699,35 +700,128 @@ export default function RankingsClient({
           />
         )}
 
-        {/* ── Etiqueta contexto WWE sub-entity ─────────────────── */}
-        {activeSport === 'wwe' && subEntity !== 'total' && (
-          <div className="flex items-center gap-3 mb-5">
-            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-            <span className="text-[9px] font-black uppercase tracking-[0.18em] px-3 py-1 rounded-full flex-shrink-0"
-              style={{ color: sportAccent, background: `${sportAccent}10`, border: `1px solid ${sportAccent}25`, fontFamily: 'var(--font-sport)' }}>
-              {subEntity === 'masculino' ? '♂ Masculino' : subEntity === 'femenino' ? '♀ Femenino' : 'Creadores'}
-            </span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          </div>
-        )}
-
-        {/* ── Etiqueta contexto jugadores (solo cuando hay filtro activo) ── */}
-        {!isSpecialSport && activeTab === 'jugadores' && jugadoresScope !== 'global' &&
-          (jugadoresScope === 'sub21' || jugadoresScope === 'pais' ||
-           (jugadoresScope === 'liga' && ligaFilter) ||
-           (jugadoresScope === 'posicion' && positionFilter)) && (
-          <div className="flex items-center gap-3 mb-5">
-            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-            <span className="text-[9px] font-black uppercase tracking-[0.18em] px-3 py-1 rounded-full flex-shrink-0"
-              style={{ color: '#A78BFA', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)', fontFamily: 'var(--font-sport)' }}>
-              {jugadoresScope === 'liga'     && `Liga: ${jugadoresLigaFilters.find(f => f.slug === ligaFilter)?.label}`}
-              {jugadoresScope === 'posicion' && `Posición: ${JUGADORES_POSITION_FILTERS.find(f => f.slug === positionFilter)?.label}`}
-              {jugadoresScope === 'sub21'    && '⭐ Sub-21'}
-              {jugadoresScope === 'pais'     && `${JUGADORES_PAIS_REGIONS.find(r => r.id === paisJugadores)?.emoji} ${JUGADORES_PAIS_REGIONS.find(r => r.id === paisJugadores)?.label}`}
-            </span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          </div>
-        )}
+        {/* ── BARRA DE FILTROS APLICADOS ──────────────────────── */}
+        {(() => {
+          const applied: AppliedFilter[] = []
+          const sportLabel: Record<string, string> = {
+            futbol: '⚽ Fútbol', baloncesto: '🏀 Baloncesto', formula1: '🏎️ F1',
+            tenis: '🎾 Tenis', ufc: '🥊 UFC', wwe: '🤼 WWE', contenido: '✍️ Contenido',
+          }
+          if (activeSport) applied.push({
+            key: 'sport',
+            label: sportLabel[activeSport] ?? activeSport,
+            color: sportAccent,
+            onClear: () => handleSportChange(''),
+          })
+          if (!isSpecialSport && activeTab !== 'jugadores') {
+            const ent = availableEntities.find(e => e.id === activeTab)
+            if (ent) applied.push({
+              key: 'entity', label: ent.label, color: sportAccent,
+              onClear: () => handleEntityChange('jugadores'),
+            })
+          }
+          if (gender === 'f' && (activeSport === 'futbol' || activeSport === 'ufc' || activeSport === 'tenis')) {
+            applied.push({
+              key: 'gender',
+              label: activeSport === 'tenis' ? 'WTA' : '♀ Femenino',
+              color: '#22c55e',
+              onClear: () => { setGender('m'); resetFilters() },
+            })
+          }
+          if (!isSpecialSport && activeTab === 'jugadores' && jugadoresScope !== 'global') {
+            const scopeLabel: Record<string, string> = {
+              liga: 'Por liga', posicion: 'Por posición', sub21: '⭐ Sub-21', pais: 'Por país',
+            }
+            applied.push({
+              key: 'jscope',
+              label: scopeLabel[jugadoresScope] ?? jugadoresScope,
+              onClear: () => handleJugadoresScopeChange('global'),
+            })
+          }
+          if (!isSpecialSport && activeTab === 'clubes' && clubesScope !== 'global') {
+            const scopeLabel: Record<string, string> = { liga: 'Por liga', pais: 'Por país' }
+            applied.push({
+              key: 'cscope',
+              label: scopeLabel[clubesScope] ?? clubesScope,
+              onClear: () => handleClubesScopeChange('global'),
+            })
+          }
+          if (ligaFilter) {
+            const ligaList = activeTab === 'clubes' ? clubesLigaFilters : jugadoresLigaFilters
+            const ligaLabel = ligaList.find(f => f.slug === ligaFilter)?.label ?? ligaFilter
+            applied.push({
+              key: 'liga', label: `Liga: ${ligaLabel}`, color: '#C4B5FD',
+              onClear: () => setLigaFilter(''),
+            })
+          }
+          if (positionFilter) {
+            const posLabel = JUGADORES_POSITION_FILTERS.find(f => f.slug === positionFilter)?.label ?? positionFilter
+            applied.push({
+              key: 'pos', label: `Posición: ${posLabel}`, color: '#86efac',
+              onClear: () => setPositionFilter(''),
+            })
+          }
+          if (!isSpecialSport && activeTab === 'jugadores' && jugadoresScope === 'pais' && paisJugadores !== 'europa') {
+            const r = JUGADORES_PAIS_REGIONS.find(x => x.id === paisJugadores)
+            if (r) applied.push({
+              key: 'region', label: `${r.emoji} ${r.label}`, color: '#A78BFA',
+              onClear: () => setPaisJugadores('europa'),
+            })
+          }
+          if (!isSpecialSport && activeTab === 'clubes' && clubesScope === 'pais' && paisClubes) {
+            const c = CLUBES_PAIS_FILTERS.find(x => x.slug === paisClubes)
+            if (c) applied.push({
+              key: 'pais', label: c.label, color: '#fbbf24',
+              onClear: () => setPaisClubes(''),
+            })
+          }
+          if (activeSport === 'wwe' && subEntity !== 'total') {
+            const sLabel: Record<string, string> = {
+              masculino: '♂ Masculino', femenino: '♀ Femenino', creadores: 'Creadores',
+            }
+            applied.push({
+              key: 'wwe-sub', label: sLabel[subEntity] ?? subEntity, color: sportAccent,
+              onClear: () => setSubEntity('total'),
+            })
+          }
+          if (isContenido && subEntity !== 'total') {
+            const sLabel: Record<string, string> = { creadores: 'Creadores', periodistas: 'Periodistas' }
+            applied.push({
+              key: 'cont-sub', label: sLabel[subEntity] ?? subEntity, color: '#f59e0b',
+              onClear: () => setSubEntity('total'),
+            })
+          }
+          if (isContenido && contenidoSport) {
+            applied.push({
+              key: 'cont-sport',
+              label: sportLabel[contenidoSport] ?? contenidoSport,
+              color: '#f59e0b',
+              onClear: () => setContenidoSport(''),
+            })
+          }
+          if (badgeFilter) {
+            const badgeColor: Record<string, string> = {
+              'Histórico': '#facc15', 'Revelación': '#22c55e', 'Nuevo': '#60a5fa',
+            }
+            applied.push({
+              key: 'badge', label: badgeFilter, color: badgeColor[badgeFilter],
+              onClear: () => setBadgeFilter(''),
+            })
+          }
+          return (
+            <AppliedFiltersBar
+              filters={applied}
+              accent={sportAccent}
+              onClearAll={() => {
+                setBadgeFilter('')
+                setGender('m')
+                resetFilters()
+                setSubEntity('total')
+                setContenidoSport('')
+              }}
+            />
+          )
+        })()}
 
         {/* ── BÚSQUEDA GLOBAL (cross-categoría) ────────────────── */}
         {searchQuery.trim().length >= 2 && (
@@ -825,23 +919,61 @@ export default function RankingsClient({
         )}
 
         {/* ── NOTA METODOLÓGICA ────────────────────────────────── */}
-        <div className="mt-10 rounded-2xl p-5 flex gap-4"
+        <div className="mt-10 rounded-2xl p-5"
           style={{ background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.12)' }}>
-          <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-sm mt-0.5"
-            style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }}>
-            ℹ️
+          <div className="flex gap-4 mb-4">
+            <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-sm mt-0.5"
+              style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }}>
+              ℹ️
+            </div>
+            <div>
+              <p className="text-xs font-bold mb-1" style={{ color: '#9B7CF6', fontFamily: 'var(--font-sport)' }}>
+                Cómo funciona el Índice Taka
+              </p>
+              <p className="text-xs leading-relaxed" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
+                Cada deportista recibe una puntuación de 0 a 100 ponderada en cuatro dimensiones. Toca el
+                botón <span className="font-bold" style={{ color: '#C4B5FD' }}>▾ Desglose</span> de cualquier
+                fila para ver los valores reales y el ajuste editorial (si lo hay).
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-bold mb-1" style={{ color: '#9B7CF6', fontFamily: 'var(--font-sport)' }}>
-              Sobre el Índice Taka
-            </p>
-            <p className="text-xs leading-relaxed" style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
-              Las puntuaciones combinan datos públicos de rendimiento, estadísticas oficiales, métricas de alcance
-              mediático e indicadores de percepción en redes sociales. El índice es editorial por naturaleza —
-              refleja nuestra lectura del momento, no verdades absolutas. Se actualiza periódicamente.
-              Las tendencias (↑↓) indican movimiento respecto al período anterior.
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {([
+              { label: 'Rendimiento', pct: '40%', color: '#22c55e',
+                desc: 'Stats reales del deporte: goles, asistencias, PPG, victorias, podios. Es el peso principal.' },
+              { label: 'Contexto', pct: '20%', color: '#60a5fa',
+                desc: 'Nivel de la competición y posición de su equipo en la tabla. Jugar en Top-4 pesa más.' },
+              { label: 'Mediático', pct: '25%', color: '#f59e0b',
+                desc: 'Alcance en redes sociales, búsquedas en Google y menciones en prensa especializada.' },
+              { label: 'Narrativa', pct: '15%', color: '#c084fc',
+                desc: 'Momento de carrera, hitos históricos y peso simbólico. Lectura editorial transparente.' },
+            ] as const).map(f => (
+              <div key={f.label} className="rounded-xl px-3 py-2.5"
+                style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${f.color}1F` }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider"
+                    style={{ color: f.color, fontFamily: 'var(--font-sport)' }}>
+                    {f.label}
+                  </span>
+                  <span className="text-[10px] font-black tabular-nums"
+                    style={{ color: f.color, fontFamily: 'var(--font-display)' }}>
+                    {f.pct}
+                  </span>
+                </div>
+                <p className="text-[10px] leading-relaxed"
+                  style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
+                  {f.desc}
+                </p>
+              </div>
+            ))}
           </div>
+          <p className="text-[10px] leading-relaxed mt-3"
+            style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
+            El índice se recalcula cada domingo con datos oficiales de ESPN, ATP/WTA, Jolpica F1 y otras fuentes
+            públicas. Las tendencias <span style={{ color: '#22c55e' }}>↑</span> /{' '}
+            <span style={{ color: '#f87171' }}>↓</span> comparan con la edición anterior. El ajuste editorial
+            (máx ±15) es siempre visible y justificado en el desglose.
+          </p>
         </div>
 
       </main>

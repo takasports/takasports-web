@@ -2304,6 +2304,29 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   const isFutbolJugadores = isFutbol && sectionId === 'jugadores'
   const hasGroups = !!(section?.groups && section.groups.length > 0)
 
+  // Cuenta de bloques con datos verificables por deporte (meta != 'unavailable').
+  // Permite mostrar un badge en cada pestaña de deporte y dimear los vacíos.
+  const liveMeta = liveData?.meta
+  const sportAvailableCounts = React.useMemo<Record<string, number>>(() => {
+    const out: Record<string, number> = {}
+    for (const sp of SPORTS) {
+      let n = 0
+      for (const sec of sp.sections) {
+        const blocks: StatBlock[] = sec.groups
+          ? sec.groups.flatMap(g => g.blocks)
+          : (sec.blocks ?? [])
+        for (const b of blocks) {
+          if (b.placeholder && b.rows.length === 0) continue
+          const m = getBlockMeta(b.id, liveMeta, b.cardType)
+          if (m?.status === 'unavailable') continue
+          n++
+        }
+      }
+      out[sp.id] = n
+    }
+    return out
+  }, [liveMeta])
+
   const flatBlocks = applyLive(section?.blocks ?? [])
   const leagueFilteredBlocks = (sectionId === 'competiciones' && leagueFilter !== 'General')
     ? flatBlocks.filter(b => !b.league || b.league === leagueFilter)
@@ -2480,23 +2503,46 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           {/* TAB 1: DEPORTE */}
           <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-0"
             style={{ borderBottom: '1px solid var(--border)' }}>
-            {SPORTS.map(s => (
-              <button key={s.id} onClick={() => handleSportChange(s.id)}
-                className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
-                style={{
-                  fontFamily: 'var(--font-sport)',
-                  color: sportId === s.id ? s.accent : s.id === 'mundial' ? '#f59e0b' : 'var(--text-muted)',
-                  background: s.id === 'mundial' && sportId !== 'mundial' ? 'rgba(245,158,11,0.08)' : 'none',
-                  border: 'none',
-                  borderBottom: sportId === s.id ? `2px solid ${s.accent}` : s.id === 'mundial' ? '2px solid rgba(245,158,11,0.35)' : '2px solid transparent',
-                  borderRadius: s.id === 'mundial' && sportId !== 'mundial' ? '6px 6px 0 0' : undefined,
-                  marginBottom: -1, cursor: 'pointer',
-                }}>
-                <span className="text-sm leading-none">{s.emoji}</span>
-                {s.label}
-                {s.id === 'mundial' && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.2)', color: '#f59e0b', letterSpacing: '0.05em' }}>🔜</span>}
-              </button>
-            ))}
+            {SPORTS.map(s => {
+              const count = sportAvailableCounts[s.id] ?? 0
+              const isEmpty = count === 0 && s.id !== 'mundial'
+              const isActive = sportId === s.id
+              return (
+                <button key={s.id} onClick={() => handleSportChange(s.id)}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
+                  style={{
+                    fontFamily: 'var(--font-sport)',
+                    color: isActive ? s.accent : s.id === 'mundial' ? '#f59e0b' : 'var(--text-muted)',
+                    background: s.id === 'mundial' && !isActive ? 'rgba(245,158,11,0.08)' : 'none',
+                    border: 'none',
+                    borderBottom: isActive ? `2px solid ${s.accent}` : s.id === 'mundial' ? '2px solid rgba(245,158,11,0.35)' : '2px solid transparent',
+                    borderRadius: s.id === 'mundial' && !isActive ? '6px 6px 0 0' : undefined,
+                    marginBottom: -1, cursor: 'pointer',
+                    opacity: isEmpty && !isActive ? 0.45 : 1,
+                  }}
+                  title={isEmpty ? `${s.label}: sin datos verificables hoy` : `${s.label}: ${count} bloques con datos`}>
+                  <span className="text-sm leading-none">{s.emoji}</span>
+                  {s.label}
+                  {s.id === 'mundial' && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.2)', color: '#f59e0b', letterSpacing: '0.05em' }}>🔜</span>}
+                  {s.id !== 'mundial' && count > 0 && (
+                    <span className="text-[9px] font-black tabular-nums px-1.5 py-0.5 rounded-full"
+                      style={{
+                        background: isActive ? `${s.accent}1f` : 'rgba(74,222,128,0.10)',
+                        color: isActive ? s.accent : '#4ade80',
+                        border: `1px solid ${isActive ? s.accent + '40' : 'rgba(74,222,128,0.25)'}`,
+                      }}>
+                      {count}
+                    </span>
+                  )}
+                  {s.id !== 'mundial' && isEmpty && (
+                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                      style={{ background: 'rgba(248,113,113,0.10)', color: '#f87171', border: '1px solid rgba(248,113,113,0.25)' }}>
+                      —
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
 
           {/* TAB 2: SECCIÓN */}

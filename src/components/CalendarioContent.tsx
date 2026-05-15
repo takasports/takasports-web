@@ -164,8 +164,8 @@ function initials(name: string): string {
 function ReminderButton({ active, onClick, color = '#7C3AED', size = 'md' }: {
   active: boolean; onClick: () => void; color?: string; size?: 'sm' | 'md'
 }) {
-  const dim = size === 'sm' ? 24 : 28
-  const icon = size === 'sm' ? 11 : 13
+  const dim = size === 'sm' ? 28 : 34
+  const icon = size === 'sm' ? 12 : 14
   return (
     <button
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick() }}
@@ -348,7 +348,7 @@ function LiveHeroCard(p: HeroProps) {
 }
 
 // ─── Favorite heart (toggles team in localStorage favorites) ──────────────
-function FavoriteHeart({ active, onClick, size = 14 }: {
+function FavoriteHeart({ active, onClick, size = 16 }: {
   active: boolean
   onClick: () => void
   size?: number
@@ -357,7 +357,7 @@ function FavoriteHeart({ active, onClick, size = 14 }: {
     <button
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick() }}
       className="flex items-center justify-center transition-all flex-shrink-0"
-      style={{ width: size + 8, height: size + 8, cursor: 'pointer', background: 'transparent', border: 'none' }}
+      style={{ width: 34, height: 34, cursor: 'pointer', background: 'transparent', border: 'none' }}
       aria-label={active ? 'Quitar de favoritos' : 'Añadir a favoritos'}
     >
       <svg width={size} height={size} viewBox="0 0 16 16" fill={active ? '#F472B6' : 'none'}>
@@ -451,7 +451,7 @@ function FormStrip({ form, align = 'start' }: { form: ('W'|'D'|'L')[]; align?: '
 }
 
 // ─── Compact list row (non-live or in TODOS) ──────────────────────────────
-function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, onToggleFav, formHome, formAway }: {
+function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, onToggleFav, formHome, formAway, showComp }: {
   event: SportEvent
   liveScore?: LiveScore
   isReminded: boolean
@@ -463,6 +463,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   onToggleFav?: () => void
   formHome?: ('W'|'D'|'L')[]
   formAway?: ('W'|'D'|'L')[]
+  showComp?: boolean
 }) {
   const isLive  = !!liveScore && !FINISHED.has(liveScore.status)
   const isFinal = !!liveScore && (liveScore.status === 'FT' || liveScore.status === 'Final' || liveScore.status === 'STATUS_FINAL') && liveScore.homeGoals !== null
@@ -484,6 +485,12 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
 
   const scoreBlock = (
     <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 min-w-[88px] px-2">
+      {showComp && event.comp && (
+        <span className="text-[8px] font-black uppercase tracking-[0.16em] truncate max-w-[110px] mb-0.5"
+          style={{ color: compColor, fontFamily: 'var(--font-sport)' }}>
+          {event.comp}
+        </span>
+      )}
       {showScore && liveScore ? (
         racing ? (
           <span className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: isLive ? '#EF4444' : '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
@@ -1823,6 +1830,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                       onToggleFav={() => toggleFavorite(event.home)}
                       formHome={recentForms[event.home]}
                       formAway={event.away ? recentForms[event.away] : undefined}
+                      showComp
                     />
                   )
                 })}
@@ -1857,6 +1865,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                       flashing={flashIds.has(event.id)}
                       isFav={fav}
                       onToggleFav={() => toggleFavorite(event.home)}
+                      formHome={recentForms[event.home]}
+                      formAway={event.away ? recentForms[event.away] : undefined}
+                      showComp
                     />
                   )
                 })}
@@ -2049,23 +2060,31 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           >
             <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
               <SearchInput value={searchRaw} onChange={setSearchRaw} />
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
-                {sports.map(sport => (
-                  <button
-                    key={sport}
-                    onClick={() => setActiveFilter(sport)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
-                    style={{
-                      background: activeFilter === sport ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-                      color: activeFilter === sport ? '#E0E0F0' : '#5A5A6A',
-                      border: activeFilter === sport ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.06)',
-                      fontFamily: 'var(--font-sport)',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                    }}>
-                    <SportIcon sport={sport} size={11} /> {sport}
-                  </button>
-                ))}
+              <div className="flex items-center gap-1 overflow-x-auto pb-px -mx-1 px-1 scrollbar-hide"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                {sports.map(sport => {
+                  const active = activeFilter === sport
+                  return (
+                    <button
+                      key={sport}
+                      onClick={() => setActiveFilter(sport)}
+                      className="relative px-3 py-2.5 text-[13px] font-semibold transition-colors flex-shrink-0"
+                      style={{
+                        color: active ? '#F0F0FA' : '#7A7A8E',
+                        fontFamily: 'var(--font-sport)',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        background: 'transparent',
+                        border: 'none',
+                      }}>
+                      {sport}
+                      {active && (
+                        <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full"
+                          style={{ background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </div>
             {/* Rango temporal */}
@@ -2114,13 +2133,32 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
               <p className="mb-2 flex justify-center" style={{ color: '#5A5A6A' }}><ClipboardIcon size={32} /></p>
               <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
-                {pastLoading ? 'Buscando resultados…' : 'No se encontraron resultados'}
+                {pastLoading
+                  ? 'Buscando resultados…'
+                  : search
+                    ? `Sin resultados para "${search}"`
+                    : activeFilter !== 'Todo'
+                      ? `Sin ${activeFilter} en los últimos ${pastRange === '10d' ? '10 días' : pastRange === '30d' ? '30 días' : pastRange === '90d' ? '90 días' : '3 años'}`
+                      : `Sin resultados en los últimos ${pastRange === '10d' ? '10 días' : pastRange === '30d' ? '30 días' : pastRange === '90d' ? '90 días' : '3 años'}`}
               </p>
-              <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>
-                {search || activeFilter !== 'Todo'
-                  ? 'Prueba a cambiar la búsqueda, el deporte o ampliar el rango'
-                  : 'Selecciona un rango temporal para ver más histórico'}
-              </p>
+              {!pastLoading && (
+                <div className="mt-3 flex flex-col gap-1.5 items-center">
+                  {pastRange !== 'all' && (
+                    <button onClick={() => setPastRange('all')}
+                      className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full"
+                      style={{ background: 'rgba(124,58,237,0.12)', color: '#C4B5FD', border: '1px solid rgba(124,58,237,0.32)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}>
+                      Ampliar a histórico completo
+                    </button>
+                  )}
+                  {(search || activeFilter !== 'Todo') && (
+                    <button onClick={clearFilters}
+                      className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full"
+                      style={{ background: 'rgba(255,255,255,0.04)', color: '#7A7A8E', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}>
+                      ✕ Quitar filtros
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             pastOrderedDates.map(dateKey => {

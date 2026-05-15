@@ -1,13 +1,17 @@
 'use client'
 
+import { useState } from 'react'
 import type { RankingEntry } from '@/lib/rankings'
 import { getDisplayScore, getEffectiveTrend, trendIcon, scoreColor, SPORT_EMOJI } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
 import BadgePill from './BadgePill'
 import PlayerAvatar from './PlayerAvatar'
+import ScoreBreakdown from './ScoreBreakdown'
+import ScoreSparkline from './ScoreSparkline'
 import { CrownIcon } from '@/components/icons/GameIcons'
 
 export default function TopOneRow({ entry, showSportEmoji = false }: { entry: RankingEntry; showSportEmoji?: boolean }) {
+  const [expanded, setExpanded] = useState(false)
   const displayScore = getDisplayScore(entry)
   const trend = trendIcon(getEffectiveTrend(entry))
   const scoreDiff = entry.scorePrev !== undefined ? displayScore - entry.scorePrev : null
@@ -17,9 +21,10 @@ export default function TopOneRow({ entry, showSportEmoji = false }: { entry: Ra
   const avatarEmoji = (entry.emoji && entry.emoji !== entry.country)
     ? entry.emoji
     : (entry.sport ? (SPORT_EMOJI[entry.sport] ?? '🏅') : '🏅')
+  const canExpand = !!entry.factors
 
   return (
-    <div className="relative rounded-2xl overflow-hidden transition-all hover:brightness-105"
+    <div className="relative rounded-2xl overflow-hidden transition-all"
       style={{
         background: `linear-gradient(135deg, ${sportAccent}14 0%, rgba(9,9,15,0.95) 60%)`,
         border: `1px solid ${sportAccent}35`,
@@ -63,6 +68,11 @@ export default function TopOneRow({ entry, showSportEmoji = false }: { entry: Ra
             </p>
           )}
         </div>
+        {scoreDiff !== null && (
+          <div className="hidden md:flex flex-shrink-0" title={`Anterior: ${entry.scorePrev?.toFixed(1)} → Ahora: ${displayScore.toFixed(1)}`}>
+            <ScoreSparkline prev={entry.scorePrev} now={displayScore} width={56} height={22} />
+          </div>
+        )}
         <div className="flex-shrink-0 flex flex-col items-end gap-1">
           <span className="font-black tabular-nums"
             style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: sc, letterSpacing: '-0.03em', lineHeight: 1 }}>
@@ -89,8 +99,30 @@ export default function TopOneRow({ entry, showSportEmoji = false }: { entry: Ra
               )}
             </div>
           </div>
+          {canExpand && (
+            <button
+              onClick={() => setExpanded(s => !s)}
+              className="mt-1 px-2 py-0.5 rounded-md transition-all hover:brightness-150"
+              style={{
+                background: expanded ? `${sportAccent}22` : 'rgba(255,255,255,0.04)',
+                color: expanded ? sportAccent : '#7A7A92',
+                border: `1px solid ${expanded ? sportAccent + '40' : 'rgba(255,255,255,0.08)'}`,
+                fontFamily: 'var(--font-sport)',
+                fontSize: 9,
+                letterSpacing: '0.1em',
+              }}
+              aria-expanded={expanded}
+            >
+              {expanded ? '▴ DESGLOSE' : '▾ DESGLOSE'}
+            </button>
+          )}
         </div>
       </div>
+      {expanded && entry.factors && (
+        <div className="px-5 pb-4" style={{ borderTop: `1px solid ${sportAccent}1A` }}>
+          <ScoreBreakdown entry={entry} />
+        </div>
+      )}
     </div>
   )
 }
