@@ -705,9 +705,9 @@ function DaySeparator({ dateKey, count, tone = 'upcoming' }: {
   const label = formatDateLabel(dateKey)
 
   return (
-    <div className="relative pt-5 pb-3 mb-2">
-      {/* Top hairline */}
-      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+    <div className="relative pt-7 pb-4 mb-3">
+      {/* Top divider — grueso para marcar bien el cambio de día */}
+      <div className="absolute top-0 left-0 right-0" style={{ height: 2, background: 'linear-gradient(90deg, rgba(124,58,237,0.32) 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.04) 100%)' }} />
       <div className="flex items-end justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <span className="block flex-shrink-0 rounded-sm" style={{ width: 4, height: 28, background: accent, boxShadow: `0 0 12px ${accent}55` }} />
@@ -1991,7 +1991,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       )}
 
       {view === 'todos' && (
-        <div className="space-y-5">
+        <div className="space-y-10">
           {/* Live strip at top of TODOS view */}
           {liveCount > 0 && !selectedDate && (
             <section>
@@ -2111,7 +2111,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       )}
 
       {view === 'resultados' && (
-        <div className="space-y-5">
+        <div className="space-y-10">
           {/* Compact sport + search toolbar */}
           <div
             className="-mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-4 sm:px-6 xl:px-10 pt-2 pb-3 mb-1"
