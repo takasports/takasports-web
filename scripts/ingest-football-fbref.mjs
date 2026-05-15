@@ -1,26 +1,20 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────
-// ingest-football-fbref.mjs
+// ingest-football-fbref.mjs  (fuente: understat.com)
 //
 // Mejora el factor `rendimiento_auto` de los jugadores de fútbol
-// usando xG (expected goals) + xA (expected assists) de FBref —
-// las métricas de calidad de tiro/pase más fiables disponibles.
+// usando xG + xA de Understat a través de su API interna.
 //
-// Score basado en xGI90 = (xG + xA) / 90s jugados:
-//   xGI90 ≥ 0.80 → 92-99  (élite ofensiva: Mbappé, Salah, Haaland)
+// Score basado en xGI90 = (xG + xA) / (minutos / 90):
+//   xGI90 ≥ 0.80 → 92-99  (élite: Mbappé, Salah, Haaland)
 //   xGI90 ≥ 0.60 → 85-92  (All-Star ofensivo)
 //   xGI90 ≥ 0.45 → 78-85  (muy bueno)
 //   xGI90 ≥ 0.30 → 68-78  (buen mediocampista/extremo)
 //   xGI90 ≥ 0.18 → 57-68  (rotación)
-//   xGI90 ≥ 0.08 → 45-57  (suplente / centrocampista defensivo)
-//   xGI90 <  0.08 → 35-45 (defensa/portero — se omite si < MIN_MINUTES)
+//   xGI90 ≥ 0.08 → 45-57  (suplente / CDM)
+//   xGI90 <  0.08 → 35-45 (defensa/portero — omitido si sin historial)
 //
-// Fuente: fbref.com — pública, sin auth, actualizada semanalmente.
-// Ligas hombres: LaLiga·12, Premier·9, Bundesliga·20, Serie A·11, Ligue 1·13
-// Ligas mujeres: WSL·189, Liga F·230, D1 Arkema·193, Frauen-BL·183, SAF·208
-//
-// IDs DB: slugs tipo 'yamal', 'mbappe', 'salah' (no IDs ESPN)
-// Matching: nombre normalizado (sin tildes, minúsculas, sin espacios)
+// Ligas: LaLiga, Premier, Bundesliga, Serie A, Ligue 1
 //
 // Uso:
 //   node scripts/ingest-football-fbref.mjs              # DRY RUN
@@ -46,26 +40,53 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
   process.exit(1)
 }
 
-const USER_AGENT = 'takasports-rankings/1.0 (+https://takasportsmedia.com)'
-const MIN_MINUTES = 450  // ~5 partidos completos
+const MIN_MINUTES = 450   // ~5 partidos completos
+const MIN_PREV_REND = 65  // umbral para actualizar defensas/GK de bajo xGI
 
-const MEN_LEAGUES = [
-  { name: 'LaLiga',         compId: 12  },
-  { name: 'Premier League', compId: 9   },
-  { name: 'Bundesliga',     compId: 20  },
-  { name: 'Serie A',        compId: 11  },
-  { name: 'Ligue 1',        compId: 13  },
+// Temporada: agosto comienza nueva temporada. En mayo 2026 → temporada 2025 (2025-26)
+const SEASON = new Date().getMonth() >= 7 ? new Date().getFullYear() : new Date().getFullYear() - 1
+
+const LEAGUES = [
+  { name: 'LaLiga',         slug: 'La_liga'    },
+  { name: 'Premier League', slug: 'EPL'        },
+  { name: 'Bundesliga',     slug: 'Bundesliga' },
+  { name: 'Serie A',        slug: 'Serie_A'    },
+  { name: 'Ligue 1',        slug: 'Ligue_1'    },
 ]
 
-const WOMEN_LEAGUES = [
-  { name: 'WSL',             compId: 189 },
-  { name: 'Liga F',          compId: 230 },
-  { name: 'D1 Arkema',       compId: 193 },
-  { name: 'Frauen-Bundesliga', compId: 183 },
-  { name: 'Serie A Femm.',   compId: 208 },
-]
+// Understat usa nombres legales completos que pueden diferir del apodo conocido.
+// Este mapa cubre los casos más comunes.
+const NAME_ALIASES = {
+  'kylianbappelottin': 'kylianmbappe',
+  'kylianbapppelottin': 'kylianmbappe',
+  'viniciusjunior': 'vinicius',
+  'viniciusjr': 'vinicius',
+  'rodrygogoesdenascimento': 'rodrygo',
+  'rodrygosilvadenascimento': 'rodrygo',
+  'ferrantoressans': 'ferrantorres',
+  'luisalbertomorantelopez': 'luisalberto',
+  'anthonyelanga': 'elanga',
+  'pedrorodriguezledesma': 'pedri',
+  'gallenopedro': 'pedro',
+}
 
-// xGI90 → rendimiento score 0-100
+function normalize(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '')
+           .toLowerCase().replace(/[^a-z]/g, '')
+}
+
+// Genera variantes de búsqueda para un nombre de Understat:
+// 1. Nombre completo normalizado
+// 2. Primeros dos tokens (cubre apellidos compuestos con guión)
+function nameVariants(rawName) {
+  const full = normalize(rawName)
+  const alias = NAME_ALIASES[full]
+  const tokens = rawName.split(/[\s-]+/).filter(Boolean)
+  const twoToken = tokens.length >= 2 ? normalize(tokens[0] + tokens[1]) : full
+  const variants = [...new Set([full, twoToken, ...(alias ? [alias] : [])])]
+  return variants
+}
+
 function xgiToScore(xgi90) {
   let s
   if      (xgi90 >= 0.80) s = 92 + Math.min(7, (xgi90 - 0.80) * 35)
@@ -78,88 +99,32 @@ function xgiToScore(xgi90) {
   return Math.round(Math.min(99, Math.max(0, s)) * 10) / 10
 }
 
-function normalize(s) {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '')
-           .toLowerCase().replace(/[^a-z]/g, '')
-}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
-// Extrae el bloque HTML que contiene la tabla stats_standard_{compId}.
-// FBref a veces la envuelve en un comentario HTML para carga diferida JS.
-function findTableSection(html, compId) {
-  const needle = `id="stats_standard_${compId}"`
-  if (html.includes(needle)) return html
-
-  let pos = 0
-  while (true) {
-    const start = html.indexOf('<!--', pos)
-    if (start === -1) break
-    const end = html.indexOf('-->', start + 4)
-    if (end === -1) break
-    const chunk = html.slice(start + 4, end)
-    if (chunk.includes(needle)) return chunk
-    pos = end + 3
-  }
-  return null
-}
-
-function parsePlayerRow(rowHtml) {
-  // Solo filas con link de jugador (no cabeceras ni totales de equipo)
-  const playerM = /data-stat="player"[^>]*><a href="(\/en\/players\/([a-f0-9]+)\/[^"]*)"[^>]*>([^<]+)<\/a>/.exec(rowHtml)
-  if (!playerM) return null
-
-  const name  = playerM[3].replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim()
-  const fbrefId = playerM[2]
-
-  const getVal = (stat) => {
-    const m = new RegExp(`data-stat="${stat}"[^>]*>([^<]*)`, 'i').exec(rowHtml)
-    return m ? m[1].trim() : ''
-  }
-
-  const minutes  = parseInt(getVal('minutes').replace(/,/g, '')) || 0
-  const xg       = parseFloat(getVal('xg'))       || 0
-  const xga      = parseFloat(getVal('xg_assist')) || 0
-  const position = getVal('position')
-  const nineties = minutes / 90
-
-  return { name, fbrefId, position, minutes, nineties, xg, xga }
-}
-
-function parseTable(sectionHtml) {
-  const players = []
-  const rowRe = /<tr\b[^>]*>([\s\S]*?)<\/tr>/gi
-  let m
-  while ((m = rowRe.exec(sectionHtml)) !== null) {
-    const p = parsePlayerRow(m[1])
-    if (p && p.minutes >= MIN_MINUTES) players.push(p)
-  }
+async function fetchLeague(league) {
+  const res = await fetch('https://understat.com/main/getPlayersStats/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-Requested-With': 'XMLHttpRequest',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Referer': `https://understat.com/league/${league.slug}/${SEASON}`,
+    },
+    body: `league=${league.slug}&season=${SEASON}`,
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const json = await res.json()
+  if (!json.success) throw new Error('API returned success:false')
+  const players = (json.players ?? []).filter(p => parseInt(p.time) >= MIN_MINUTES)
+  console.log(`  ${league.name}: ${players.length} jugadores (≥${MIN_MINUTES} min) de ${(json.players ?? []).length} totales`)
   return players
 }
 
-async function fetchLeague(compId, leagueName) {
-  const url = `https://fbref.com/en/comps/${compId}/stats/`
-  const r = await fetch(url, {
-    headers: { 'User-Agent': USER_AGENT },
-    redirect: 'follow',
-  })
-  if (!r.ok) throw new Error(`FBref ${leagueName} → HTTP ${r.status}`)
-  const html = await r.text()
-  const section = findTableSection(html, compId)
-  if (!section) {
-    console.warn(`  ⚠ tabla stats_standard_${compId} no encontrada en ${leagueName}`)
-    return []
-  }
-  const rows = parseTable(section)
-  console.log(`  ${leagueName}: ${rows.length} jugadores (≥${MIN_MINUTES} min)`)
-  return rows
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
-
 async function main() {
-  console.log(`Mode: ${APPLY ? 'APPLY' : 'DRY RUN'}`)
+  console.log(`Mode: ${APPLY ? 'APPLY' : 'DRY RUN'} · Temporada ${SEASON}-${SEASON + 1}`)
+
   const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
 
-  // Cargar todas las entradas de fútbol de la DB
   console.log('\nLoading DB football entries...')
   const { data: entries, error } = await sb
     .from('ranking_entries')
@@ -168,7 +133,7 @@ async function main() {
   if (error) throw error
   console.log(`  ${entries.length} entradas de fútbol`)
 
-  // Índice por nombre normalizado (múltiples categorías → mismo nombre posible)
+  // Índice DB por nombre normalizado (todas las variantes)
   const byNorm = new Map()
   for (const e of entries) {
     const key = normalize(e.name)
@@ -176,56 +141,53 @@ async function main() {
     byNorm.get(key).push(e)
   }
 
-  // Índice para evitar duplicados: una sola actualización por entry_id
-  // (si el jugador aparece en dos ligas, la primera gana)
-  const bestByEntry = new Map()  // entry.id → { fbref_player, score }
+  // Primera liga que matchea un entry gana (evita doble update de transferidos)
+  const bestByEntry = new Map()
+  console.log('\nFetching Understat leagues...')
 
-  // Fetch leagues — hombres primero, luego mujeres
-  const allLeagues = [...MEN_LEAGUES, ...WOMEN_LEAGUES]
-  console.log('\nFetching FBref leagues...')
-  for (const league of allLeagues) {
+  for (const league of LEAGUES) {
     let players
     try {
-      players = await fetchLeague(league.compId, league.name)
+      players = await fetchLeague(league)
     } catch (err) {
       console.error(`  ERROR ${league.name}: ${err.message}`)
       players = []
     }
 
     for (const p of players) {
-      if (p.nineties < 1) continue
-      const xgi90 = (p.xg + p.xga) / p.nineties
-      const score = xgiToScore(xgi90)
+      const minutes = parseInt(p.time) || 0
+      if (minutes < MIN_MINUTES) continue
+      const nineties = minutes / 90
+      const xg  = parseFloat(p.xG) || 0
+      const xga = parseFloat(p.xA) || 0
+      const xgi90 = (xg + xga) / nineties
 
-      // Para DF/GK con xGI muy bajo, solo actualizar si tienen historial relevante
-      // (el filtro real se aplica en el loop de updates más abajo)
-      const key = normalize(p.name)
-      const matched = byNorm.get(key) ?? []
-      for (const e of matched) {
-        if (bestByEntry.has(e.id)) continue  // primera liga gana
-        bestByEntry.set(e.id, {
-          entryId: e.id, category: e.category, name: e.name,
-          fbrefName: p.name, league: league.name,
-          position: p.position, minutes: p.minutes,
-          xg: p.xg, xga: p.xga, xgi90,
-          prev: e.rendimiento_auto !== null ? Number(e.rendimiento_auto) : null,
-          newScore: score,
-        })
+      for (const variant of nameVariants(p.player_name)) {
+        const matched = byNorm.get(variant) ?? []
+        for (const e of matched) {
+          if (bestByEntry.has(e.id)) continue
+          bestByEntry.set(e.id, {
+            entryId: e.id, category: e.category, name: e.name,
+            ustName: p.player_name, league: league.name,
+            position: p.position, minutes,
+            xg, xga, xgi90,
+            prev: e.rendimiento_auto !== null ? Number(e.rendimiento_auto) : null,
+            newScore: xgiToScore(xgi90),
+          })
+        }
       }
     }
 
-    // Respetar límite FBref: ~1 req/s
-    await sleep(1200)
+    await sleep(800)
   }
 
-  // Separar actualizaciones: defensas/porteros puros con xGI muy bajo
-  // solo se actualiza si tienen historial relevante (≥65) — evita bajar score
-  // a CB que no generan xG pero tienen buen contexto/narrativa.
+  // Filtrar defensas/porteros con xGI muy bajo y sin historial relevante
   const updates = []
   const skipped = []
   for (const u of bestByEntry.values()) {
-    const isDefensive = /^(DF|GK)/.test(u.position ?? '')
-    if (isDefensive && u.xgi90 < 0.08 && (u.prev === null || u.prev < 65)) {
+    const pos = (u.position ?? '').toUpperCase()
+    const isDefensive = pos.startsWith('D') || pos === 'GK'
+    if (isDefensive && u.xgi90 < 0.08 && (u.prev === null || u.prev < MIN_PREV_REND)) {
       skipped.push(u)
       continue
     }
@@ -240,25 +202,26 @@ async function main() {
     const delta = u.prev !== null ? u.newScore - u.prev : null
     const dlt = delta !== null ? `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}` : 'NEW'
     console.log(
-      `  xGI90=${u.xgi90.toFixed(3)} xG=${u.xg.toFixed(1)} xA=${u.xga.toFixed(1)}` +
-      `  ${u.fbrefName.padEnd(26)} [${(u.position ?? '??').padEnd(4)}] ` +
-      `${(u.league ?? '').padEnd(15)} rend: ${prev} → ${u.newScore.toFixed(1).padStart(5)} (${dlt})`
+      `  xGI=${u.xgi90.toFixed(3)} (${u.xg.toFixed(1)}g+${u.xga.toFixed(1)}a)` +
+      `  ${u.ustName.padEnd(26)} [${(u.position ?? '??').padEnd(4)}]` +
+      `  ${(u.league ?? '').padEnd(14)} ${prev} → ${u.newScore.toFixed(1).padStart(5)} (${dlt})`
     )
   })
 
   if (skipped.length > 0 && VERBOSE) {
-    console.log(`\nSkipped defensivos con xGI90 bajo:`)
-    skipped.forEach(s => console.log(`  ${s.fbrefName.padEnd(28)} ${s.position} xGI90=${s.xgi90.toFixed(3)} prev=${s.prev ?? '?'}`))
+    console.log(`\nSkipped (defensivos bajo xGI sin historial relevante):`)
+    skipped.forEach(s => console.log(`  ${s.ustName.padEnd(28)} ${(s.position ?? '??').padEnd(4)} xGI90=${s.xgi90.toFixed(3)} prev=${s.prev ?? '?'}`))
   }
 
-  console.log(`\nMatched: ${updates.length + skipped.length} (updates: ${updates.length}, skipped: ${skipped.length})`)
-  console.log(`Unmatched DB entries: ${entries.length - (updates.length + skipped.length)}`)
+  const totalMatched = updates.length + skipped.length
+  console.log(`\nMatched: ${totalMatched} (updates: ${updates.length}, skipped: ${skipped.length})`)
+  console.log(`Sin datos FBref: ${entries.length - totalMatched}`)
 
   if (VERBOSE) {
-    const matchedIds = new Set([...updates, ...skipped].map(u => u.entryId))
-    const unmatched = entries.filter(e => !matchedIds.has(e.id))
-    if (unmatched.length > 0) {
-      console.log('Unmatched (primeros 30):', unmatched.slice(0, 30).map(e => `${e.name} [${e.category}]`).join(', '))
+    const matched = new Set([...updates, ...skipped].map(u => u.entryId))
+    const unm = entries.filter(e => !matched.has(e.id))
+    if (unm.length > 0) {
+      console.log('\nNo matcheados (primeros 40):', unm.slice(0, 40).map(e => `${e.name} [${e.category}]`).join(', '))
     }
   }
 
