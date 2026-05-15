@@ -46,6 +46,8 @@ run() {
   run "Fútbol — posición liga (contexto)" scripts/ingest-football-context.mjs; FCTX_RC=$?
   run "NBA — seed conferencia (contexto)" scripts/ingest-nba-context.mjs;      NCTX_RC=$?
   run "Tenis — ranking ATP/WTA (contexto)" scripts/ingest-tennis-context.mjs;  TCTX_RC=$?
+  run "F1 — posición campeonato (contexto)" scripts/ingest-f1-context.mjs;     F1CTX_RC=$?
+  run "UFC — rankings división (rend+ctx)" scripts/ingest-ufc-rankings.mjs;    UFC_RC=$?
 
   # ── MEDIÁTICO (factor 25%) ────────────────────────
   run "Wikipedia pageviews (mediático)"   scripts/ingest-wikipedia-views.mjs;  MEDIA_RC=$?
@@ -59,7 +61,7 @@ run() {
   echo "================================================"
   echo "  Finished: $(date '+%Y-%m-%d %H:%M:%S')"
   echo "  rendimiento: tenis=$TENIS_RC f1=$F1_RC nba=$NBA_RC futbol=$FUTBOL_RC"
-  echo "  contexto:    futbol=$FCTX_RC nba=$NCTX_RC tenis=$TCTX_RC"
+  echo "  contexto:    futbol=$FCTX_RC nba=$NCTX_RC tenis=$TCTX_RC f1=$F1CTX_RC ufc=$UFC_RC"
   echo "  mediático:   wikipedia=$MEDIA_RC"
   echo "  narrativa:   decay=$NARR_RC"
   echo "  snapshot:    $SNAP_RC"
