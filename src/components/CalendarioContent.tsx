@@ -1167,9 +1167,11 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       const savedView  = (localStorage.getItem('ts_cal_view') as ViewType | null)
       const savedSport = localStorage.getItem('ts_cal_sport')
 
-      if (urlView && ['destacados','todos','en-vivo','resultados','recordatorios'].includes(urlView)) {
-        setView(urlView)
-      } else if (savedView) {
+      // Legacy aliases: 'en-vivo' tab fue absorbida por Inicio (destacados).
+      const normalizedView: ViewType | null = urlView === 'en-vivo' ? 'destacados' : urlView
+      if (normalizedView && ['destacados','todos','resultados','recordatorios'].includes(normalizedView)) {
+        setView(normalizedView)
+      } else if (savedView && savedView !== ('en-vivo' as ViewType)) {
         setView(savedView)
       }
 
@@ -1620,54 +1622,78 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           <TimezoneSelector value={tz} onChange={(newTz) => { setTz(newTz); setStoredTZ(newTz) }} compact />
         </div>
 
-        {/* Tabs — scroll horizontal en mobile, wrap en sm+ */}
-        <div className="flex items-center gap-2 overflow-x-auto sm:flex-wrap scrollbar-hide pb-1"
-          style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
-          {(['destacados', 'todos', 'en-vivo', 'resultados', 'recordatorios'] as const).map(tab => {
-            const isActive = view === tab
-            const isLiveTab = tab === 'en-vivo'
-            const isRemTab = tab === 'recordatorios'
-            const isPastTab = tab === 'resultados'
-            const hasLive = liveCount > 0
-            const liveDot = isLiveTab && hasLive
-            const greenStyle = isActive && isLiveTab && hasLive
+        {/* Tabs — 3 principales + botón de alertas */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
+            style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
+            {(['destacados', 'todos', 'resultados'] as const).map(tab => {
+              const isActive = view === tab
+              const isPastTab = tab === 'resultados'
+              const pastStyle = isActive && isPastTab
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setView(tab)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all flex-shrink-0"
+                  style={{
+                    scrollSnapAlign: 'start',
+                    background: isActive
+                      ? (pastStyle ? 'rgba(239,68,68,0.14)' : 'rgba(124,58,237,0.18)')
+                      : 'rgba(255,255,255,0.04)',
+                    color: isActive
+                      ? (pastStyle ? '#FCA5A5' : '#C4B5FD')
+                      : '#7A7A8E',
+                    border: isActive
+                      ? (pastStyle ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(124,58,237,0.45)')
+                      : '1px solid rgba(255,255,255,0.06)',
+                    fontFamily: 'var(--font-sport)',
+                    cursor: 'pointer',
+                    boxShadow: isActive && !pastStyle ? '0 0 14px rgba(124,58,237,0.18)' : 'none',
+                  }}>
+                  {tab === 'destacados' && (
+                    <>
+                      Inicio
+                      {liveCount > 0 && (
+                        <span className="inline-flex items-center gap-1 ml-1">
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
+                          <span className="tabular-nums" style={{ color: isActive ? '#FCA5A5' : '#EF4444' }}>{liveCount}</span>
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {tab === 'todos' && 'Calendario'}
+                  {tab === 'resultados' && `Resultados${pastSource.length > 0 ? ` · ${pastSource.length}` : ''}`}
+                </button>
+              )
+            })}
+          </div>
+          {/* Alertas — botón icono auxiliar */}
+          {(() => {
+            const isActive = view === 'recordatorios'
             const remCount = remindedEvents.length
-            const remStyle = isActive && isRemTab
-            const pastStyle = isActive && isPastTab
-
             return (
               <button
-                key={tab}
-                onClick={() => setView(tab)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all flex-shrink-0"
+                onClick={() => setView(isActive ? 'destacados' : 'recordatorios')}
+                aria-label="Alertas"
+                title="Mis recordatorios"
+                className="relative flex items-center justify-center rounded-full flex-shrink-0 transition-all"
                 style={{
-                  scrollSnapAlign: 'start',
-                  background: isActive
-                    ? (greenStyle ? 'rgba(74,222,128,0.18)' : remStyle ? 'rgba(251,191,36,0.14)' : pastStyle ? 'rgba(239,68,68,0.14)' : 'rgba(124,58,237,0.18)')
-                    : 'rgba(255,255,255,0.04)',
-                  color: isActive
-                    ? (greenStyle ? '#4ade80' : remStyle ? '#FBBF24' : pastStyle ? '#FCA5A5' : '#C4B5FD')
-                    : '#7A7A8E',
-                  border: isActive
-                    ? (greenStyle ? '1px solid rgba(74,222,128,0.45)' : remStyle ? '1px solid rgba(251,191,36,0.3)' : pastStyle ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(124,58,237,0.45)')
-                    : '1px solid rgba(255,255,255,0.06)',
-                  fontFamily: 'var(--font-sport)',
+                  width: 36, height: 36,
+                  background: isActive ? 'rgba(251,191,36,0.16)' : 'rgba(255,255,255,0.04)',
+                  border: isActive ? '1px solid rgba(251,191,36,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                  color: isActive ? '#FBBF24' : '#7A7A8E',
                   cursor: 'pointer',
-                  boxShadow: isActive
-                    ? (greenStyle ? '0 0 14px rgba(74,222,128,0.18)' : remStyle || pastStyle ? 'none' : '0 0 14px rgba(124,58,237,0.18)')
-                    : 'none',
                 }}>
-                {liveDot && (
-                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
+                <BellIcon size={14} />
+                {remCount > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center text-[9px] font-black tabular-nums rounded-full"
+                    style={{ minWidth: 16, height: 16, padding: '0 4px', background: '#FBBF24', color: '#0a0a12', border: '1px solid var(--bg-base)', fontFamily: 'var(--font-sport)' }}>
+                    {remCount}
+                  </span>
                 )}
-                {tab === 'destacados' && 'Destacados'}
-                {tab === 'todos' && 'Todos'}
-                {tab === 'en-vivo' && `En Vivo${liveCount > 0 ? ` · ${liveCount}` : ''}`}
-                {tab === 'resultados' && `Resultados${pastSource.length > 0 ? ` · ${pastSource.length}` : ''}`}
-                {tab === 'recordatorios' && <span className="inline-flex items-center gap-1.5"><BellIcon size={11} /> Alertas{remCount > 0 ? ` · ${remCount}` : ''}</span>}
               </button>
             )
-          })}
+          })()}
         </div>
       </div>
 
