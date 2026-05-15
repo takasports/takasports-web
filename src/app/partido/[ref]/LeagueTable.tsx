@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import type { LeagueTableRow, StandingZone } from '@/app/api/match/[ref]/route'
@@ -8,7 +9,7 @@ const ZONE_COLOR: Record<StandingZone, string> = {
   champions:          '#3b82f6',
   europa:             '#f97316',
   conference:         '#10b981',
-  relegation_playoff: '#f59e0b',
+  relegation_playoff: '#F59E0B',
   relegation:         '#ef4444',
 }
 
@@ -43,13 +44,16 @@ export function LeagueTableBlock({
   leagueSlug: string
 }) {
   const router = useRouter()
+  const [expanded, setExpanded] = useState(false)
 
   const highlightedIdxs = rows.reduce<number[]>((acc, r, i) => {
     if (r.highlight) acc.push(i)
     return acc
   }, [])
-  const minI = highlightedIdxs.length ? Math.max(0, Math.min(...highlightedIdxs) - 3) : 0
-  const maxI = highlightedIdxs.length ? Math.min(rows.length - 1, Math.max(...highlightedIdxs) + 3) : rows.length - 1
+  const minI = expanded ? 0
+    : highlightedIdxs.length ? Math.max(0, Math.min(...highlightedIdxs) - 3) : 0
+  const maxI = expanded ? rows.length - 1
+    : highlightedIdxs.length ? Math.min(rows.length - 1, Math.max(...highlightedIdxs) + 3) : rows.length - 1
   const visible = rows.slice(minI, maxI + 1)
   const showAll = visible.length >= rows.length
 
@@ -59,18 +63,18 @@ export function LeagueTableBlock({
         {rows.filter(r => r.highlight).map(r => (
           <div key={r.name} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
             style={{
-              background: r.highlight === 'home' ? 'rgba(129,140,248,0.10)' : 'rgba(245,158,11,0.10)',
-              border: `1px solid ${r.highlight === 'home' ? 'rgba(129,140,248,0.25)' : 'rgba(245,158,11,0.25)'}`,
+              background: r.highlight === 'home' ? 'rgba(167,139,250,0.12)' : 'rgba(245,158,11,0.10)',
+              border: `1px solid ${r.highlight === 'home' ? 'rgba(167,139,250,0.32)' : 'rgba(245,158,11,0.25)'}`,
             }}>
             {r.logo && (
               <Image src={r.logo} alt={r.name} width={16} height={16} unoptimized style={{ objectFit: 'contain' }} />
             )}
             <span className="text-[10px] font-black"
-              style={{ color: r.highlight === 'home' ? '#A78BFA' : '#f59e0b', fontFamily: 'var(--font-sport)' }}>
+              style={{ color: r.highlight === 'home' ? '#A78BFA' : '#F59E0B', fontFamily: 'var(--font-sport)' }}>
               {r.abbr || r.name}
             </span>
             <span className="text-[10px] font-black"
-              style={{ color: r.highlight === 'home' ? '#A78BFA' : '#f59e0b', fontFamily: 'var(--font-display)' }}>
+              style={{ color: r.highlight === 'home' ? '#A78BFA' : '#F59E0B', fontFamily: 'var(--font-display)' }}>
               {r.rank}º · {r.pts} pts
             </span>
           </div>
@@ -152,6 +156,26 @@ export function LeagueTableBlock({
           </tbody>
         </table>
       </div>
+      {!showAll && (
+        <div className="flex justify-center mt-3">
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all"
+            style={{
+              color: '#C4B5FD',
+              background: 'rgba(124,58,237,0.12)',
+              border: '1px solid rgba(124,58,237,0.32)',
+              fontFamily: 'var(--font-sport)',
+              cursor: 'pointer',
+            }}
+          >
+            {expanded ? 'Ver menos' : `Ver tabla completa · ${rows.length} equipos`}
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }}>
+              <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+      )}
       {/* Zone legend */}
       {(() => {
         const usedZones = [...new Set(rows.map(r => r.zone).filter(Boolean))] as StandingZone[]
