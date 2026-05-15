@@ -11,6 +11,7 @@ import { findEntryByIdFromDb, getAllEntryIdsFromDb } from '@/lib/rankings-data'
 import { getSportStyle } from '@/lib/sports'
 import ShareButton from './ShareButton'
 import PlayerAvatar from '@/components/rankings/PlayerAvatar'
+import ScoreHistoryChart from '@/components/rankings/ScoreHistoryChart'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 // ── Helpers compartidos ───────────────────────────────────────────
@@ -350,25 +351,18 @@ export default async function EntryDetailPage(
           </div>
         )}
 
-        {/* Histórico */}
-        {entry.scorePrev !== undefined && (
-          <div className="rounded-2xl p-5 sm:p-6 mb-6"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-4"
-              style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
-              Histórico · período anterior vs actual
-            </p>
-            <div className="flex flex-col items-center gap-3">
-              <HistoryChart score={ds} scorePrev={entry.scorePrev} />
-              {entry.trendReason && (
-                <p className="text-[11px] text-center max-w-md"
-                  style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
-                  &ldquo;{entry.trendReason}&rdquo;
-                </p>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Histórico semanal */}
+        <div className="rounded-2xl p-5 sm:p-6 mb-6"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <ScoreHistoryChart
+            entryId={id}
+            category={entry.category}
+            current={ds}
+            prev={entry.scorePrev}
+            trendReason={entry.trendReason}
+            weeks={12}
+          />
+        </div>
 
         {/* Apariciones en otros rankings */}
         {sources.length > 1 && (

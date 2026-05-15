@@ -558,7 +558,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
     <div
       className={`relative grid items-center gap-2 px-3 py-3 rounded-lg transition-all ${flashing ? 'ts-flash' : ''}`}
       style={{
-        gridTemplateColumns: hasVs ? 'minmax(0,1fr) auto minmax(0,1fr)' : 'minmax(0,1fr) auto',
+        gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)',
         background: isLive ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.025)',
         borderLeft: `3px solid ${accent}`,
         border: '1px solid rgba(255,255,255,0.04)',
@@ -567,32 +567,23 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
       }}
     >
       {actions}
-      {hasVs ? (
-        <div className="flex items-center gap-2.5 min-w-0 justify-end text-right pr-1">
-          <div className="min-w-0 flex flex-col items-end">
-            <span className="text-[13px] font-bold truncate max-w-full" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-              {event.home}
-            </span>
-            {isFav && <span className="text-[9px] mt-0.5" style={{ color: '#F472B6' }}>♥</span>}
-            {formHome && <FormStrip form={formHome} align="end" />}
-          </div>
-          <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={32} sport={event.sport} />
+
+      {/* Home (or solo entity) */}
+      <div className="flex items-center gap-2.5 min-w-0 justify-end text-right pr-1">
+        <div className="min-w-0 flex flex-col items-end">
+          <span className="text-[13px] font-bold truncate max-w-full" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+            {event.home}
+          </span>
+          {isFav && <span className="text-[9px] mt-0.5" style={{ color: '#F472B6' }}>♥</span>}
+          {hasVs && formHome && <FormStrip form={formHome} align="end" />}
         </div>
-      ) : (
-        <div className="flex items-center gap-2.5 min-w-0">
-          <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={32} sport={event.sport} />
-          <div className="min-w-0">
-            <span className="text-[13px] font-bold truncate block" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-              {event.home}
-            </span>
-            {isFav && <span className="text-[9px]" style={{ color: '#F472B6' }}>♥</span>}
-          </div>
-        </div>
-      )}
+        <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={32} sport={event.sport} />
+      </div>
 
       {scoreBlock}
 
-      {hasVs && (
+      {/* Away (vs match) or sport vignette (solo event) — mantiene la simetría */}
+      {hasVs ? (
         <div className="flex items-center gap-2.5 min-w-0 pl-1">
           <TeamLogo logo={event.awayLogo} photo={event.awayPhoto} name={event.away!} size={32} sport={event.sport} />
           <div className="min-w-0">
@@ -600,6 +591,25 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
               {event.away}
             </span>
             {formAway && <FormStrip form={formAway} align="start" />}
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 min-w-0 pl-1 opacity-60">
+          <span className="inline-flex items-center justify-center rounded-full flex-shrink-0"
+            style={{ width: 32, height: 32, background: `${compColor}14`, border: `1px solid ${compColor}28`, color: compColor }}>
+            {racing ? <F1Icon size={16} /> : tennis ? <TennisIcon size={16} /> : <SportIcon sport={event.sport} size={16} />}
+          </span>
+          <div className="min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] truncate block"
+              style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+              {racing ? 'Carrera' : tennis ? 'Individual' : combat ? 'Cartelera' : 'Evento'}
+            </span>
+            {event.comp && (
+              <span className="text-[9px] truncate block mt-0.5"
+                style={{ color: compColor, fontFamily: 'var(--font-sport)' }}>
+                {event.comp}
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -1046,11 +1056,14 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
   const hasScore = hs !== null && hs !== undefined && as_ !== null && as_ !== undefined
 
   const hasVs = !!event.away
+  const racing = isRacing(event.sport)
+  const tennis = isTennis(event.sport)
+  const combat = isCombat(event.sport)
   const inner = (
     <div
       className="relative grid items-center gap-2 px-3 py-3 rounded-lg transition-all"
       style={{
-        gridTemplateColumns: hasVs ? 'minmax(0,1fr) auto minmax(0,1fr)' : 'minmax(0,1fr) auto',
+        gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)',
         background: 'rgba(255,255,255,0.025)',
         border: '1px solid rgba(255,255,255,0.04)',
         borderLeftWidth: 3,
@@ -1061,23 +1074,15 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
         {onToggleFav && <FavoriteHeart active={!!isFav} onClick={onToggleFav} />}
       </div>
 
-      {hasVs ? (
-        <div className="flex items-center gap-2.5 min-w-0 justify-end text-right pr-1">
-          <div className="min-w-0 flex flex-col items-end">
-            <span className="text-[13px] font-bold truncate max-w-full" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-              {event.home}
-            </span>
-          </div>
-          <TeamLogo logo={event.homeLogo} name={event.home} size={32} sport={event.sport} />
-        </div>
-      ) : (
-        <div className="flex items-center gap-2.5 min-w-0">
-          <TeamLogo logo={event.homeLogo} name={event.home} size={32} sport={event.sport} />
-          <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+      {/* Home (or solo entity) */}
+      <div className="flex items-center gap-2.5 min-w-0 justify-end text-right pr-1">
+        <div className="min-w-0 flex flex-col items-end">
+          <span className="text-[13px] font-bold truncate max-w-full" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {event.home}
           </span>
         </div>
-      )}
+        <TeamLogo logo={event.homeLogo} name={event.home} size={32} sport={event.sport} />
+      </div>
 
       <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 min-w-[88px] px-2">
         <span className="text-[9px] font-black uppercase tracking-[0.18em] leading-none" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
@@ -1095,12 +1100,31 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
         )}
       </div>
 
-      {hasVs && (
+      {hasVs ? (
         <div className="flex items-center gap-2.5 min-w-0 pl-1">
           <TeamLogo logo={event.awayLogo} name={event.away!} size={32} sport={event.sport} />
           <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {event.away}
           </span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 min-w-0 pl-1 opacity-60">
+          <span className="inline-flex items-center justify-center rounded-full flex-shrink-0"
+            style={{ width: 32, height: 32, background: `${compColor}14`, border: `1px solid ${compColor}28`, color: compColor }}>
+            {racing ? <F1Icon size={16} /> : tennis ? <TennisIcon size={16} /> : <SportIcon sport={event.sport} size={16} />}
+          </span>
+          <div className="min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] truncate block"
+              style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+              {racing ? 'Carrera' : tennis ? 'Individual' : combat ? 'Cartelera' : 'Evento'}
+            </span>
+            {event.comp && (
+              <span className="text-[9px] truncate block mt-0.5"
+                style={{ color: compColor, fontFamily: 'var(--font-sport)' }}>
+                {event.comp}
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>
