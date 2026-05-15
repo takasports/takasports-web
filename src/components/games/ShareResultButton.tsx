@@ -6,6 +6,7 @@
 
 import { useState } from 'react'
 import { shareResult } from '@/lib/share'
+import { trackGameEvent } from '@/lib/games-telemetry'
 import type { GamePlay } from '@/lib/games-store'
 
 interface Props {
@@ -22,6 +23,9 @@ export default function ShareResultButton({ play, accent = '#A78BFA', label = 'C
     if (state === 'busy') return
     setState('busy')
     const res = await shareResult(play)
+    if (res !== 'failed') {
+      trackGameEvent({ gameId: play.game_id, event: 'shared', period: play.period, meta: { via: res } })
+    }
     setState(res === 'failed' ? 'failed' : res)
     setTimeout(() => setState('idle'), 2500)
   }

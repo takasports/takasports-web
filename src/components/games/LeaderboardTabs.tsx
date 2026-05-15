@@ -4,10 +4,11 @@
 // Cada tab usa el periodo "actual" según games-periods (daily / weekly /
 // jornada). Striker Rush queda fuera (cadence 'none').
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Leaderboard from './Leaderboard'
 import { getGamePeriod } from '@/lib/games-periods'
+import { trackGameEvent } from '@/lib/games-telemetry'
 import type { GameId } from '@/lib/games-store'
 
 interface TabSpec {
@@ -38,6 +39,11 @@ export default function LeaderboardTabs({ quinielaJornada }: Props) {
     [active, quinielaJornada],
   )
   const accent = TABS.find(t => t.id === active)?.accent ?? '#A78BFA'
+
+  useEffect(() => {
+    if (!period) return
+    trackGameEvent({ gameId: active, event: 'leaderboard_view', period })
+  }, [active, period])
 
   return (
     <section className="mb-12">
