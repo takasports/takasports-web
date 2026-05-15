@@ -1331,11 +1331,13 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   recentForms?: Record<string, FormResult[]>
   initialTz?: string
 }) {
-  const [view, setView] = useState<ViewType>('destacados')
+  // Default tab = Calendario (todos): entras a la lista con separadores por
+  // día. Default chip = 'Destacados': filtra la lista a los top 4 por día.
+  const [view, setView] = useState<ViewType>('todos')
   const [tz, setTz] = useState<string>(initialTz)
   const [searchRaw, setSearchRaw] = useState('')
   const [search, setSearch] = useState('')
-  const [activeFilter, setActiveFilter] = useState('Todo')
+  const [activeFilter, setActiveFilter] = useState('Destacados')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)   // YYYY-MM-DD or null for all
   const [selectedUFCDate, setSelectedUFCDate] = useState<string | null>(null) // UFC modal date
   const [reminders, setReminders] = useState<Set<string>>(new Set())
@@ -1518,7 +1520,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     })
   }, [requestNotifPermission, scheduleNotif])
 
-  const sports = ['Todo', ...new Set([...events, ...pastEvents].map(e => e.sport)).values()]
+  // Destacados es un chip especial — no es un deporte sino un modo curado
+  // que limita a los top 4 partidos por día por prestigio de liga + favoritos.
+  const sports = ['Destacados', 'Todo', ...new Set([...events, ...pastEvents].map(e => e.sport)).values()]
 
   // Count events per sport for the current view (upcoming events). Used in the
   // sport filter chips so the user sees how many events each category has.
@@ -1539,7 +1543,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         || namesMatch(e.comp, search)
         || namesMatch(e.sport, search)
     const matchesSport = (e: SportEvent) =>
-      activeFilter === 'Todo' || e.sport === activeFilter
+      activeFilter === 'Todo' || activeFilter === 'Destacados' || e.sport === activeFilter
     const matchesDate = (e: SportEvent) => {
       if (!selectedDate) return true
       if (!e.isoDate) return false
@@ -1582,7 +1586,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         || namesMatch(e.comp, search)
         || namesMatch(e.sport, search)
     const matchesSport = (e: SportEvent) =>
-      activeFilter === 'Todo' || e.sport === activeFilter
+      activeFilter === 'Todo' || activeFilter === 'Destacados' || e.sport === activeFilter
     const counts: Record<string, number> = {}
     for (const e of events) {
       if (!matchesSport(e) || !matchesSearch(e) || !e.isoDate) continue
@@ -1681,7 +1685,35 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     })
   }, [liveFixtures, liveEventsInList, activeFilter])
 
-  const grouped = useMemo(() => groupEventsByDate(filtered), [filtered])
+  // Si el chip Destacados está activo, en la vista Calendario se muestran
+  // solo los top 4 partidos por día (orden: favoritos primero, luego prestigio
+  // de liga, luego hora). Para Todo y filtros por deporte la lista va completa.
+  const filteredForGrouping = useMemo(() => {
+    if (activeFilter !== 'Destacados') return filtered
+    const byDay = new Map<string, SportEvent[]>()
+    for (const ev of filtered) {
+      const day = ev.isoDate ? isoToLocalDate(ev.isoDate) : 'unknown'
+      const arr = byDay.get(day) ?? []
+      arr.push(ev)
+      byDay.set(day, arr)
+    }
+    const out: SportEvent[] = []
+    for (const evs of byDay.values()) {
+      const sorted = [...evs].sort((a, b) => {
+        const aFav = eventHasFavorite(favorites, a) ? 1 : 0
+        const bFav = eventHasFavorite(favorites, b) ? 1 : 0
+        if (aFav !== bFav) return bFav - aFav
+        const sA = getLeagueScore(a.comp)
+        const sB = getLeagueScore(b.comp)
+        if (sA !== sB) return sB - sA
+        return (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
+      })
+      out.push(...sorted.slice(0, 4))
+    }
+    return out
+  }, [filtered, activeFilter, favorites])
+
+  const grouped = useMemo(() => groupEventsByDate(filteredForGrouping), [filteredForGrouping])
   const orderedDates = useMemo(() => orderedDateKeys(grouped), [grouped])
 
   const liveCount = liveEventsInList.length + orphanFixtures.length
@@ -1771,7 +1803,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         || namesMatch(e.comp, search)
         || namesMatch(e.sport, search)
     const matchesSport = (e: SportEvent) =>
-      activeFilter === 'Todo' || e.sport === activeFilter
+      activeFilter === 'Todo' || activeFilter === 'Destacados' || e.sport === activeFilter
     return pastSource.filter(e => matchesSport(e) && matchesSearch(e))
   }, [pastSource, search, activeFilter])
 
@@ -2273,21 +2305,21 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               <p className="mb-2 flex justify-center" style={{ color: '#5A5A6A' }}>
                 {search
                   ? <SearchIcon size={32} />
-                  : activeFilter !== 'Todo'
+                  : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')
                     ? <SportIcon sport={activeFilter} size={32} />
                     : <CalendarIcon size={32} />}
               </p>
               <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
                 {search
                   ? `Sin resultados para "${search}"`
-                  : activeFilter !== 'Todo'
+                  : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')
                     ? `No hay eventos de ${activeFilter} en los próximos días`
                     : 'No se encontraron eventos'}
               </p>
               {search && (
                 <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>Prueba con el nombre del equipo o la competición</p>
               )}
-              {!search && activeFilter !== 'Todo' && (
+              {!search && (activeFilter !== 'Todo' && activeFilter !== 'Destacados') && (
                 <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>Prueba seleccionando otra fecha o cambia el filtro</p>
               )}
             </div>
@@ -2334,6 +2366,31 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 </section>
               )
             })
+          )}
+
+          {/* CTA — invitar a ver toda la agenda cuando estamos en modo Destacados */}
+          {activeFilter === 'Destacados' && orderedDates.length > 0 && filtered.length > filteredForGrouping.length && (
+            <div className="flex flex-col items-center gap-1.5 pt-2">
+              <p className="text-[11px]" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+                Mostrando los 4 más destacados por día
+              </p>
+              <button
+                onClick={() => setActiveFilter('Todo')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.16em] transition-all"
+                style={{
+                  color: '#C4B5FD',
+                  background: 'rgba(124,58,237,0.12)',
+                  border: '1px solid rgba(124,58,237,0.32)',
+                  fontFamily: 'var(--font-sport)',
+                  cursor: 'pointer',
+                }}
+              >
+                Ver toda la agenda ({filtered.length})
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                  <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
           )}
         </div>
       )}

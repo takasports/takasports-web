@@ -1,18 +1,16 @@
 #!/bin/bash
 # run-weekly-rankings-update.sh
 #
-# Ejecuta los 3 scripts de ingesta avanzada (Tenis Elo, F1 DPC, NBA PER)
-# y luego graba un snapshot histórico semanal.
+# Pipeline completo semanal del Índice Taka.
+# Orden: rendimiento (4 deportes) → contexto (3 deportes) → mediático → decay → snapshot
 #
 # Programado por launchd (~/Library/LaunchAgents/com.taka.weekly-rankings-update.plist)
 # para domingo 23:45 — después de que WF-11 (22:00) y WF-12 (23:15) hayan corrido.
 #
 # Logs: /tmp/taka-rankings-weekly-YYYYMMDD.log
-# Salida también va a stdout/stderr (capturada por launchd).
 
 set -uo pipefail
 
-# Resolver el directorio del script aunque se llame con symlinks
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
@@ -20,47 +18,50 @@ cd "$PROJECT_DIR"
 LOG="/tmp/taka-rankings-weekly-$(date +%Y%m%d-%H%M%S).log"
 NODE_BIN="$(command -v node || echo /opt/homebrew/bin/node)"
 
+run() {
+  local label="$1"; shift
+  echo "▶ ${label}..."
+  "$NODE_BIN" "$@" --apply
+  local rc=$?
+  echo "  → exit ${rc}"
+  echo
+  return $rc
+}
+
 {
   echo "================================================"
   echo "  Taka rankings weekly update"
   echo "  Started: $(date '+%Y-%m-%d %H:%M:%S')"
-  echo "  PWD: $PROJECT_DIR"
   echo "  Node: $NODE_BIN ($("$NODE_BIN" --version))"
   echo "================================================"
   echo
 
-  echo "▶ Tenis (Elo)..."
-  "$NODE_BIN" scripts/ingest-tennis-elo.mjs --apply
-  TENIS_RC=$?
-  echo "  → exit $TENIS_RC"
-  echo
+  # ── RENDIMIENTO (factor 40%) ──────────────────────
+  run "Tenis — Elo (rendimiento)"         scripts/ingest-tennis-elo.mjs;    TENIS_RC=$?
+  run "F1 — DPC (rendimiento)"            scripts/ingest-f1-dpc.mjs;        F1_RC=$?
+  run "NBA — PER (rendimiento)"           scripts/ingest-nba-per.mjs;       NBA_RC=$?
+  run "Fútbol — xG+xA Understat (rend.)" scripts/ingest-football-fbref.mjs; FUTBOL_RC=$?
 
-  echo "▶ F1 (DPC)..."
-  "$NODE_BIN" scripts/ingest-f1-dpc.mjs --apply
-  F1_RC=$?
-  echo "  → exit $F1_RC"
-  echo
+  # ── CONTEXTO (factor 20%) ─────────────────────────
+  run "Fútbol — posición liga (contexto)" scripts/ingest-football-context.mjs; FCTX_RC=$?
+  run "NBA — seed conferencia (contexto)" scripts/ingest-nba-context.mjs;      NCTX_RC=$?
+  run "Tenis — ranking ATP/WTA (contexto)" scripts/ingest-tennis-context.mjs;  TCTX_RC=$?
 
-  echo "▶ NBA (PER)..."
-  "$NODE_BIN" scripts/ingest-nba-per.mjs --apply
-  NBA_RC=$?
-  echo "  → exit $NBA_RC"
-  echo
+  # ── MEDIÁTICO (factor 25%) ────────────────────────
+  run "Wikipedia pageviews (mediático)"   scripts/ingest-wikipedia-views.mjs;  MEDIA_RC=$?
 
-  echo "▶ Fútbol (xG+xA FBref)..."
-  "$NODE_BIN" scripts/ingest-football-fbref.mjs --apply
-  FUTBOL_RC=$?
-  echo "  → exit $FUTBOL_RC"
-  echo
+  # ── NARRATIVA — decay temporal (factor 15%) ───────
+  run "Narrativa decay"                   scripts/ingest-narrativa-decay.mjs;  NARR_RC=$?
 
-  echo "▶ Snapshot histórico..."
-  "$NODE_BIN" scripts/capture-score-snapshot.mjs
-  SNAP_RC=$?
-  echo "  → exit $SNAP_RC"
-  echo
+  # ── SNAPSHOT histórico ────────────────────────────
+  run "Snapshot histórico"                scripts/capture-score-snapshot.mjs;  SNAP_RC=$?
 
   echo "================================================"
   echo "  Finished: $(date '+%Y-%m-%d %H:%M:%S')"
-  echo "  Exit codes: tenis=$TENIS_RC f1=$F1_RC nba=$NBA_RC futbol=$FUTBOL_RC snapshot=$SNAP_RC"
+  echo "  rendimiento: tenis=$TENIS_RC f1=$F1_RC nba=$NBA_RC futbol=$FUTBOL_RC"
+  echo "  contexto:    futbol=$FCTX_RC nba=$NCTX_RC tenis=$TCTX_RC"
+  echo "  mediático:   wikipedia=$MEDIA_RC"
+  echo "  narrativa:   decay=$NARR_RC"
+  echo "  snapshot:    $SNAP_RC"
   echo "================================================"
 } 2>&1 | tee "$LOG"
