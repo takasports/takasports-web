@@ -602,7 +602,7 @@ const SPORTS: SportConfig[] = [
         id: 'selecciones', label: 'Selecciones', icon: '🌍',
         blocks: [
           {
-            id: 'ranking-fifa', title: 'Ranking FIFA (Top 10)', metric: 'Puntos',
+            id: 'ranking-fifa', title: 'Ranking Mundial · Elo', metric: 'Pts',
             rows: [
               { rank: 1,  name: 'Francia',        value: '1877.3', sub: 'pts FIFA', flag: '🇫🇷', trend: 'up' },
               { rank: 2,  name: 'España',         value: '1876.4', sub: 'pts FIFA', flag: '🇪🇸', trend: 'down' },

@@ -1105,6 +1105,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     return { rows: fallback, snap: null }
   }
   const ufcP4PR          = resolveSnapshot('ufc-p4p',             ufcP4P,              'UFC Rankings', UFC_P4P_AS_OF)
+  const fifaR            = resolveSnapshot('ranking-fifa',        FIFA_RANKING,        'FIFA',         FIFA_RANKING_AS_OF)
   const motogpRidersR    = resolveSnapshot('motogp-pilotos',      MOTOGP_RIDERS,       'MotoGP.com', MOTOGP_AS_OF)
   const motogpConstructR = resolveSnapshot('motogp-constructores',MOTOGP_CONSTRUCTORS, 'MotoGP.com', MOTOGP_AS_OF)
   const cyclingUciR      = resolveSnapshot('ciclismo-uci',        CYCLING_UCI,         'UCI',         CYCLING_AS_OF)
@@ -1145,7 +1146,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     nba3ptMade:      nbaLeaders.threePt.length    ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
     atpRanking:      tennis.atp.length ? live('ESPN') : unavail('ESPN'),
     wtaRanking:      tennis.wta.length ? live('ESPN') : unavail('ESPN'),
-    fifaRanking:     histor('FIFA', FIFA_RANKING_AS_OF),
+    fifaRanking:     fifaR.snap ? live(fifaR.snap.source) : histor('FIFA', FIFA_RANKING_AS_OF),
     ufcP4P:          ufcP4PR.snap ? live(ufcP4PR.snap.source) : histor('UFC Rankings', UFC_P4P_AS_OF),
     womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
     womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
@@ -1221,7 +1222,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     nba3ptMade:     nbaLeaders.threePt,
     atpRanking:     tennis.atp,
     wtaRanking:     tennis.wta,
-    fifaRanking:    FIFA_RANKING,
+    fifaRanking:    fifaR.rows,
     ufcP4P:         ufcP4PR.rows,
     womenLigaF,
     womenGoals:          womenStats.goals,
