@@ -10,6 +10,8 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { searchPlayers, getPlayerById, type Player, type PlayerPosition } from '@/lib/players-catalog'
 import { getWeeklyChallenge, type FormationId, type Challenge } from '@/lib/mionce-challenges'
 import { CountryFlag } from '@/components/icons/GameIcons'
+import { recordPlay, currentWeekISO } from '@/lib/games-store'
+import { trackGameEvent } from '@/lib/games-telemetry'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -768,11 +770,27 @@ export default function MiOncePage() {
 
   const prevFilledRef = useRef(0)
   useEffect(() => {
-    if (prevFilledRef.current === 0 && filledCount === 1) trackGameStart('mi_once')
+    const period = currentWeekISO()
+    if (prevFilledRef.current === 0 && filledCount === 1) {
+      trackGameStart('mi_once')
+      trackGameEvent({ gameId: 'mionce', event: 'started', period })
+    }
     if (!prevFilledRef.current || prevFilledRef.current < 11) {
-      if (filledCount === 11) trackGameComplete({ game: 'mi_once', correct: 11, total: 11 })
+      if (filledCount === 11) {
+        trackGameComplete({ game: 'mi_once', correct: 11, total: 11 })
+        // Sync con games-store. Score = filled * 10 (max 110); payload
+        // guarda formación y nº alineados para encoder de share.
+        void recordPlay({
+          gameId:  'mionce',
+          period,
+          score:   filledCount * 10,
+          payload: { formation, filled: filledCount },
+        })
+        trackGameEvent({ gameId: 'mionce', event: 'completed', period, meta: { formation, filled: filledCount } })
+      }
     }
     prevFilledRef.current = filledCount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filledCount])
 
   const usedPlayerIds = useMemo(() => Object.values(slots).filter(Boolean), [slots])

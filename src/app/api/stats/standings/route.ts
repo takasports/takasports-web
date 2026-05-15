@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { SOCCER_LEAGUES, EUROPEAN_CUPS } from '@/lib/stats-leagues'
 import {
   FIFA_RANKING, FIFA_RANKING_AS_OF, UFC_P4P, UFC_P4P_AS_OF, COACH_CONFIG,
-  MOTOGP_RIDERS, MOTOGP_CONSTRUCTORS, MOTOGP_AS_OF,
   TENNIS_SLAMS_2026,
   NBA_ROOKIE_NAMES,
   type StandingRow,
@@ -1077,8 +1076,10 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   const ufcP4PR          = resolveSnapshot('ufc-p4p',             ufcP4P,              'UFC Rankings', UFC_P4P_AS_OF)
   const ufcChampionsR    = resolveSnapshot('ufc-campeones',       [],                  'UFC',          UFC_P4P_AS_OF)
   const fifaR            = resolveSnapshot('ranking-fifa',        FIFA_RANKING,        'FIFA',         FIFA_RANKING_AS_OF)
-  const motogpRidersR    = resolveSnapshot('motogp-pilotos',      MOTOGP_RIDERS,       'MotoGP.com', MOTOGP_AS_OF)
-  const motogpConstructR = resolveSnapshot('motogp-constructores',MOTOGP_CONSTRUCTORS, 'MotoGP.com', MOTOGP_AS_OF)
+  // MotoGP solo tiene datos vía cron Vercel → snapshot Supabase. Si snapshot
+  // ausente, devuelve [] y meta='unavailable' (UI lo oculta con toggle).
+  const motogpRidersR    = resolveSnapshot('motogp-pilotos',       [], 'motogp.com', '')
+  const motogpConstructR = resolveSnapshot('motogp-constructores', [], 'motogp.com', '')
 
   // Derived blocks
   const nbaMvpRace = buildNbaMvpRace(nbaLeaders.scoring, nba.east, nba.west)

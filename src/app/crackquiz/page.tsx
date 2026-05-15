@@ -9,6 +9,9 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { getDailyQuestions, todayKey, type QuizQuestion } from '@/lib/crackquiz-questions'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import { TrophyIcon, FireIcon, ClapIcon, FlexIcon } from '@/components/icons/GameIcons'
+import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
+import { trackGameEvent } from '@/lib/games-telemetry'
+import ShareResultButton from '@/components/games/ShareResultButton'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -375,6 +378,21 @@ function ResultScreen({
         })}
       </div>
 
+      {/* Compartir resultado */}
+      <div className="mb-3">
+        <ShareResultButton
+          accent="#FCD34D"
+          fullWidth
+          play={{
+            game_id:     'crackquiz',
+            period:      currentDayISO(),
+            score,
+            payload:     { correct, total: QUESTIONS_PER_ROUND, streak: stored?.streak ?? 0 },
+            duration_ms: null,
+          } as GamePlay}
+        />
+      </div>
+
       <button
         onClick={onHome}
         className="w-full py-3.5 rounded-2xl font-semibold transition-opacity hover:opacity-80"
@@ -450,6 +468,7 @@ export default function CrackQuizPage() {
   // ── Start game ─────────────────────────────────────────────────
   const handleStart = useCallback(() => {
     trackGameStart('crackquiz')
+    trackGameEvent({ gameId: 'crackquiz', event: 'started', period: currentDayISO() })
     const qs = getDailyQuestions(QUESTIONS_PER_ROUND)
     setQuestions(qs)
     setCurrentIndex(0)
@@ -517,6 +536,16 @@ export default function CrackQuizPage() {
     }
     trackGameComplete({ game: 'crackquiz', score, correct, total: QUESTIONS_PER_ROUND })
     saveStored(next)
+
+    // Sync con backend unificado (games-store). No bloqueante.
+    const period = currentDayISO()
+    void recordPlay({
+      gameId:  'crackquiz',
+      period,
+      score,
+      payload: { correct, total: QUESTIONS_PER_ROUND, streak: newStreak },
+    })
+    trackGameEvent({ gameId: 'crackquiz', event: 'completed', period, meta: { score, correct, total: QUESTIONS_PER_ROUND } })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 

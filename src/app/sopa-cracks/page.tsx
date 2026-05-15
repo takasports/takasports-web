@@ -7,6 +7,9 @@ import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
+import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
+import { trackGameEvent } from '@/lib/games-telemetry'
+import ShareResultButton from '@/components/games/ShareResultButton'
 
 // ── Tipos y datos ─────────────────────────────────────────────
 
@@ -333,6 +336,18 @@ export default function SopaCracksPage() {
         const next = prev == null ? seconds : Math.min(prev, seconds)
         return next
       })
+
+      // Sync con games-store. Score = palabras * 10 (mayor mejor);
+      // duration_ms guarda el tiempo para desempate en leaderboard.
+      const period = currentWeekISO()
+      void recordPlay({
+        gameId:     'sopacracks',
+        period,
+        score:      puzzle.words.length * 10,
+        payload:    { found: puzzle.words.length, total: puzzle.words.length, seconds },
+        durationMs: seconds * 1000,
+      })
+      trackGameEvent({ gameId: 'sopacracks', event: 'completed', period, meta: { seconds } })
     }
   }, [allFound, seconds, hydrated])
 
@@ -355,7 +370,11 @@ export default function SopaCracksPage() {
         setFound(prev => [...prev, p.word])
         setJustFound(p.word)
         setTimeout(() => setJustFound(null), 1400)
-        if (!running && !allFound) { trackGameStart('sopa_cracks'); setRunning(true) }
+        if (!running && !allFound) {
+          trackGameStart('sopa_cracks')
+          trackGameEvent({ gameId: 'sopacracks', event: 'started', period: currentWeekISO() })
+          setRunning(true)
+        }
         return true
       }
     }

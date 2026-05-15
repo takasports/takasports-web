@@ -59,6 +59,21 @@ export async function POST(req: NextRequest) {
           p_context: { jornada: body.jornada, hits: breakdown.hits, exacts: breakdown.exacts, pleno: breakdown.pleno },
         })
       }
+
+      // Registrar también en game_plays para el ranking cross-game unificado.
+      // Score = aciertos (hits). Payload con picks + results para el share encoder.
+      await sb.rpc('record_game_play', {
+        p_game_id: 'quiniela',
+        p_period:  body.jornada,
+        p_score:   breakdown.hits,
+        p_payload: {
+          picks:   body.picks.map(p => p.pick ?? null),
+          results: results.map(r => r.outcome ?? null),
+          exacts:  breakdown.exacts,
+          pleno:   breakdown.pleno,
+        },
+        p_duration_ms: null,
+      })
     }
 
     return NextResponse.json({ breakdown, evaluated: results.length })

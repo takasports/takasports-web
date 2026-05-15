@@ -1,7 +1,11 @@
-// Editorial snapshots for blocks without a public API.
-// Update these objects + bump `asOf` when the underlying source publishes.
-// A future cron (n8n) can replace these inlines with reads from Supabase
-// Storage; the route only depends on the exported shape.
+// Solo constantes editoriales que SIGUEN en uso post-limpieza:
+// - FIFA_RANKING + UFC_P4P: fallback inicial si Supabase snapshot no responde.
+//   En cuanto el cron actualice, se sobrescriben.
+// - COACH_CONFIG: identidad estática (mapping name → teamId ESPN), se
+//   actualiza cuando hay cambios de banquillo.
+// - TENNIS_SLAMS_2026: calendario fijo anual.
+// - NBA_ROOKIE_NAMES: lista del draft de la temporada en curso (actualizar cada año).
+// - WC_HOSTS: anfitriones Mundial 2026 (siempre clasificados).
 
 export interface StandingRow {
   rank: number
@@ -60,55 +64,13 @@ export const COACH_CONFIG: CoachEntry[] = [
   { name: 'Arne Slot',       team: 'Liverpool',     flag: '🇳🇱', league: 'eng.1', teamId: '364'  },
 ]
 
-// ─── MotoGP ────────────────────────────────────────────────────────────────
-// Sin fuente gratuita verificable. Ranking de pilotos/constructores deshabilitado.
-// Para reactivar: integrar scraping semanal motogp.com (n8n) → Supabase.
-export const MOTOGP_AS_OF = ''
-export const MOTOGP_RIDERS: StandingRow[] = []
-export const MOTOGP_CONSTRUCTORS: StandingRow[] = []
-
-// ─── Ciclismo ──────────────────────────────────────────────────────────────
-// UCI ranking sin API gratuita verificable. Calendario sí se conserva.
-export const CYCLING_AS_OF = ''
-export const CYCLING_UCI: StandingRow[] = []
-export const CYCLING_GRAND_TOURS: StandingRow[] = [
-  { rank: 1, name: "Giro d'Italia · Italia",   abbr: '🇮🇹', value: '8 may – 31 may',  sub: 'Maglia rosa',   trend: 'up',   extra: {} },
-  { rank: 2, name: 'Tour de France · Francia',  abbr: '🇫🇷', value: '4 jul – 26 jul',  sub: 'Maillot jaune', trend: 'flat', extra: {} },
-  { rank: 3, name: 'La Vuelta · España',         abbr: '🇪🇸', value: '22 ago – 13 sep', sub: 'Jersey rojo',   trend: 'flat', extra: {} },
-]
-
-// ─── Golf OWGR + LIV ───────────────────────────────────────────────────────
-// OWGR/LIV sin API gratuita verificable. Solo se mantiene el calendario de Majors.
-export const GOLF_AS_OF = ''
-export const PGA_OWGR: StandingRow[] = []
-export const LIV_RANKING: StandingRow[] = []
-export const PGA_MAJORS_2026: StandingRow[] = [
-  { rank: 1, name: 'The Masters · Augusta National', abbr: '⛳', value: '9-12 abr',  sub: 'Major #1',         trend: 'flat', extra: {} },
-  { rank: 2, name: 'PGA Championship · Quail Hollow', abbr: '⛳', value: '14-17 may', sub: 'Major #2',         trend: 'up',   extra: {} },
-  { rank: 3, name: 'US Open · Oakmont',                abbr: '⛳', value: '11-14 jun', sub: 'Major #3',         trend: 'flat', extra: {} },
-  { rank: 4, name: 'The Open · Royal Portrush',        abbr: '⛳', value: '16-19 jul', sub: 'Major #4',         trend: 'flat', extra: {} },
-]
-
-// ─── UFC ───────────────────────────────────────────────────────────────────
-export const UFC_NEXT_EVENT_AS_OF = 'May-2026'
-export const UFC_NEXT_CARD: StandingRow[] = [
-  { rank: 1, name: 'Pereira vs Ankalaev 2',     abbr: 'Title',    value: 'Main',     sub: `UFC 320 · ${UFC_NEXT_EVENT_AS_OF}`, trend: 'up',   extra: { División: 'Semi-pesado' } },
-  { rank: 2, name: 'Dvalishvili vs Sandhagen',  abbr: 'Title',    value: 'Co-main',  sub: `UFC 320 · ${UFC_NEXT_EVENT_AS_OF}`, trend: 'up',   extra: { División: 'Gallo' } },
-  { rank: 3, name: 'Hill vs Rountree',          abbr: 'Main card',value: '3rd',      sub: `UFC 320 · ${UFC_NEXT_EVENT_AS_OF}`, trend: 'flat', extra: { División: 'Semi-pesado' } },
-  { rank: 4, name: 'Ulberg vs Reyes',           abbr: 'Main card',value: '4th',      sub: `UFC 320 · ${UFC_NEXT_EVENT_AS_OF}`, trend: 'flat', extra: { División: 'Semi-pesado' } },
-]
-// Rachas UFC sin fuente verificable mantenible.
-export const UFC_STREAKS: StandingRow[] = []
-
-// ─── Tenis ─────────────────────────────────────────────────────────────────
+// ─── Tenis · calendario Grand Slams 2026 ──────────────────────────────────
 export const TENNIS_SLAMS_2026: StandingRow[] = [
   { rank: 1, name: 'Australian Open · Melbourne', abbr: '🇦🇺', value: '19 ene – 1 feb', sub: 'Pista dura',       trend: 'flat', extra: {} },
   { rank: 2, name: 'Roland Garros · París',        abbr: '🇫🇷', value: '24 may – 7 jun', sub: 'Tierra batida',    trend: 'up',   extra: {} },
   { rank: 3, name: 'Wimbledon · Londres',          abbr: '🇬🇧', value: '29 jun – 12 jul', sub: 'Hierba',          trend: 'flat', extra: {} },
   { rank: 4, name: 'US Open · Nueva York',         abbr: '🇺🇸', value: '24 ago – 6 sep', sub: 'Pista dura',       trend: 'flat', extra: {} },
 ]
-// % de victorias por superficie WTA: sin API gratuita verificable.
-export const WTA_SURFACES: StandingRow[] = []
 
 // ─── NBA Rookie metadata (para el cálculo automático del ROY race) ────────
 // IMPORTANTE: actualizar cada año con el draft de la temporada en curso.

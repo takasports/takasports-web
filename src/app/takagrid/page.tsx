@@ -9,6 +9,9 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { searchPlayers, getPlayerById, type Player } from '@/lib/players-catalog'
 import { getDailyPuzzle, isValidAnswer, getValidAnswers, type CellCoord, type GridPuzzle } from '@/lib/takagrid-puzzles'
 import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag } from '@/components/icons/GameIcons'
+import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
+import { trackGameEvent } from '@/lib/games-telemetry'
+import ShareResultButton from '@/components/games/ShareResultButton'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -476,6 +479,7 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
     try {
       if (navigator.share) await navigator.share({ title: 'TakaGrid', text })
       else await navigator.clipboard.writeText(text)
+      trackGameEvent({ gameId: 'takagrid', event: 'shared', period: dayKey, meta: { via: 'text' } })
     } catch { await navigator.clipboard.writeText(text).catch(() => {}) }
   }
 
@@ -652,6 +656,7 @@ export default function TakaGridPage() {
     }
     setStreakState(loadStreak())
     setHydrated(true)
+    trackGameEvent({ gameId: 'takagrid', event: 'started', period: dayKey.key })
   }, [dayKey.key])
 
   // Persist grid
@@ -688,6 +693,18 @@ export default function TakaGridPage() {
         setFinished(true)
         // Update streak
         const solvedCount = current.flat().filter(c => c.playerId !== null).length
+
+        // Sync con backend unificado. payload.solved = bool[9] row-major.
+        const solvedArr = current.flat().map(c => c.playerId !== null)
+        const period = currentDayISO()
+        void recordPlay({
+          gameId:  'takagrid',
+          period,
+          score:   solvedCount * 10,
+          payload: { solved: solvedArr },
+        })
+        trackGameEvent({ gameId: 'takagrid', event: 'completed', period, meta: { solved: solvedCount } })
+
         const prev = loadStreak()
         const alreadyToday = prev.lastFinishedDate === dayKey.key
         if (!alreadyToday) {

@@ -23,6 +23,7 @@ import StreakChip from '@/components/games/StreakChip'
 import GameStatusBadge from '@/components/games/GameStatusBadge'
 import LeaderboardTabs from '@/components/games/LeaderboardTabs'
 import GamesFilterBar from '@/components/games/GamesFilterBar'
+import GuestRankingHint from '@/components/games/GuestRankingHint'
 import { useGamesFilter } from '@/hooks/useGamesFilter'
 import { getGamePeriod } from '@/lib/games-periods'
 import type { GameId } from '@/lib/games-store'
@@ -549,6 +550,7 @@ function ComingGameCard({ game }: { game: Game }) {
 export default function JuegosPageClient() {
   const [voted, setVoted] = useState(false)
   const [quinielaMatches, setQuinielaMatches] = useState(QUINIELA_MATCHES)
+  const [quinielaJornada, setQuinielaJornada] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     try {
@@ -561,7 +563,10 @@ export default function JuegosPageClient() {
 
     fetch('/api/quiniela')
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.matches?.length) setQuinielaMatches(data.matches) })
+      .then(data => {
+        if (data?.matches?.length) setQuinielaMatches(data.matches)
+        if (typeof data?.jornada === 'string') setQuinielaJornada(data.jornada)
+      })
       .catch(() => { /* use fallback */ })
   }, [])
 
@@ -611,6 +616,9 @@ export default function JuegosPageClient() {
             </div>
           </div>
         </div>
+
+        {/* ── HINT INVITADOS ──────────────────────────────── */}
+        <GuestRankingHint />
 
         {/* ── JUEGO ACTIVO ─────────────────────────────────── */}
         <section className="mb-12">
@@ -662,7 +670,7 @@ export default function JuegosPageClient() {
         )}
 
         {/* ── RANKINGS ──────────────────────────────────────── */}
-        <LeaderboardTabs />
+        <LeaderboardTabs quinielaJornada={quinielaJornada} />
 
         {/* ── PRÓXIMOS JUEGOS ──────────────────────────────── */}
         {comingGames.length > 0 && (
