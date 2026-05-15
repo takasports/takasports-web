@@ -113,49 +113,6 @@ function FactorBar({ value, color, label, pct }: {
   )
 }
 
-function HistoryChart({ score, scorePrev }: { score: number; scorePrev: number }) {
-  // SVG simple: dos puntos conectados, eje horizontal "actual" vs "previo"
-  const w = 320, h = 120, padX = 30, padY = 16
-  const max = Math.max(score, scorePrev) + 4
-  const min = Math.min(score, scorePrev) - 4
-  const range = Math.max(1, max - min)
-  const x0 = padX, x1 = w - padX
-  const y = (v: number) => padY + (1 - (v - min) / range) * (h - padY * 2)
-  const trend = score >= scorePrev ? '#22c55e' : '#f87171'
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full max-w-[420px] h-auto">
-      {/* baseline */}
-      <line x1={padX} y1={h - padY} x2={w - padX} y2={h - padY}
-        stroke="rgba(255,255,255,0.06)" strokeWidth={1} />
-      {/* línea */}
-      <line x1={x0} y1={y(scorePrev)} x2={x1} y2={y(score)}
-        stroke={trend} strokeWidth={2.5} strokeLinecap="round" />
-      {/* puntos */}
-      <circle cx={x0} cy={y(scorePrev)} r={5} fill="#3A3A52" stroke={trend} strokeWidth={2} />
-      <circle cx={x1} cy={y(score)}     r={6} fill={trend} />
-      {/* labels */}
-      <text x={x0} y={y(scorePrev) - 12} textAnchor="middle"
-        fontFamily="var(--font-display)" fontSize="11" fontWeight="800" fill="#A0A0B8">
-        {scorePrev.toFixed(1)}
-      </text>
-      <text x={x1} y={y(score) - 12} textAnchor="middle"
-        fontFamily="var(--font-display)" fontSize="13" fontWeight="900" fill={trend}>
-        {score.toFixed(1)}
-      </text>
-      <text x={x0} y={h - 2} textAnchor="middle"
-        fontFamily="var(--font-sport)" fontSize="9" fontWeight="700" fill="#5A5A72"
-        style={{ letterSpacing: '0.12em' }}>
-        ANTERIOR
-      </text>
-      <text x={x1} y={h - 2} textAnchor="middle"
-        fontFamily="var(--font-sport)" fontSize="9" fontWeight="700" fill="#5A5A72"
-        style={{ letterSpacing: '0.12em' }}>
-        ACTUAL
-      </text>
-    </svg>
-  )
-}
-
 // ── Página detalle ────────────────────────────────────────────────
 export default async function EntryDetailPage(
   { params }: { params: Promise<{ id: string }> }

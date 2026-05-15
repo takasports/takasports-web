@@ -533,11 +533,27 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
             </span>
           )}
           <span className="text-[20px] font-bold tabular-nums leading-none"
-            style={{ color: countdown ? '#C4B5FD' : '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-            {countdown ?? event.time}
+            style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+            {event.time}
           </span>
           {hasVs && (
             <span className="text-[9px] font-bold uppercase tracking-[0.18em] leading-none" style={{ color: '#38384A', fontFamily: 'var(--font-sport)' }}>vs</span>
+          )}
+          {isFav && countdown && (
+            <span className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-black tabular-nums uppercase tracking-wider"
+              style={{
+                background: 'rgba(244,114,182,0.12)',
+                color: '#F472B6',
+                border: '1px solid rgba(244,114,182,0.3)',
+                fontFamily: 'var(--font-sport)',
+              }}
+              title="Tu equipo juega pronto">
+              <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
+                <circle cx="6" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M6 4v2.5l1.5 1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+              {countdown}
+            </span>
           )}
         </>
       )}
