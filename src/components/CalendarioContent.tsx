@@ -1391,11 +1391,14 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       const savedView  = v3Migrated ? (localStorage.getItem('ts_cal_view') as ViewType | null) : null
       const savedSport = v3Migrated ? localStorage.getItem('ts_cal_sport') : null
 
-      // Legacy aliases: 'en-vivo' tab fue absorbida por Inicio (destacados).
-      const normalizedView: ViewType | null = urlView === 'en-vivo' ? 'destacados' : urlView
-      if (normalizedView && ['destacados','todos','resultados','recordatorios'].includes(normalizedView)) {
+      // Legacy aliases: 'en-vivo' e 'destacados' (Inicio) fueron absorbidos
+      // por el chip Destacados dentro del tab Calendario. Cualquier URL o
+      // localStorage que apunte a esos valores cae a 'todos' (Calendario).
+      const normalizedView: ViewType | null =
+        (urlView === 'en-vivo' || urlView === 'destacados') ? 'todos' : urlView
+      if (normalizedView && ['todos','resultados','recordatorios'].includes(normalizedView)) {
         setView(normalizedView)
-      } else if (savedView && savedView !== ('en-vivo' as ViewType)) {
+      } else if (savedView && savedView !== ('en-vivo' as ViewType) && savedView !== ('destacados' as ViewType)) {
         setView(savedView)
       }
 
@@ -1945,7 +1948,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
             style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
-            {(['destacados', 'todos', 'resultados'] as const).map(tab => {
+            {/* Inicio eliminado: el chip 'Destacados' dentro de Calendario
+                cumple su rol. Solo quedan Calendario y Resultados. */}
+            {(['todos', 'resultados'] as const).map(tab => {
               const isActive = view === tab
               const isPastTab = tab === 'resultados'
               const pastStyle = isActive && isPastTab
@@ -1969,9 +1974,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     cursor: 'pointer',
                     boxShadow: isActive && !pastStyle ? '0 0 14px rgba(124,58,237,0.18)' : 'none',
                   }}>
-                  {tab === 'destacados' && (
+                  {tab === 'todos' && (
                     <>
-                      Inicio
+                      Calendario
                       {liveCount > 0 && (
                         <span className="inline-flex items-center gap-1 ml-1">
                           <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
@@ -1980,7 +1985,6 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                       )}
                     </>
                   )}
-                  {tab === 'todos' && 'Calendario'}
                   {tab === 'resultados' && `Resultados${pastSource.length > 0 ? ` · ${pastSource.length}` : ''}`}
                 </button>
               )
