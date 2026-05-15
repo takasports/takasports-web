@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/stat-snapshots?sport=motogp",
+      "schedule": "30 6 * * 1"
+    }
+  ]
+}

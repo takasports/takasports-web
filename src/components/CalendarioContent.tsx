@@ -456,7 +456,7 @@ function FormStrip({ form, align = 'start' }: { form: ('W'|'D'|'L')[]; align?: '
 // lists collapse to 8 by default with a "Ver más" toggle.
 function FavoritesSection({
   favoriteEvents, favorites, liveScores, reminders, flashIds, recentForms, tz,
-  toggleReminder, toggleFavorite, setSelectedUFCDate, onEdit,
+  toggleReminder, toggleFavorite, setSelectedUFCDate, onEdit, filterActive,
 }: {
   favoriteEvents: SportEvent[]
   favorites: Set<string>
@@ -469,12 +469,16 @@ function FavoritesSection({
   toggleFavorite: (name: string) => void
   setSelectedUFCDate: (d: string | null) => void
   onEdit: () => void
+  filterActive: boolean
 }) {
   const [expanded, setExpanded] = useState(false)
   const VISIBLE = 8
 
   // For each favorite team find their next upcoming event (favoriteEvents
   // is already sorted by isoDate ascending — see useMemo upstream).
+  // Cuando hay un filtro activo (deporte/búsqueda), ocultamos los equipos
+  // que no tienen ningún partido en el filtro actual: no tiene sentido
+  // mostrar 'Sin partidos' para un equipo de NBA cuando filtras Fútbol.
   const teamNext = useMemo(() => {
     const out: Array<{ team: string; next: SportEvent | null }> = []
     for (const team of favorites) {
@@ -483,6 +487,7 @@ function FavoritesSection({
         ev.home.toLowerCase().includes(lower)
         || (ev.away?.toLowerCase().includes(lower) ?? false)
       ) ?? null
+      if (filterActive && !match) continue
       out.push({ team, next: match })
     }
     // Sort: teams with a next match first (closest first), then no-match teams.
@@ -492,7 +497,7 @@ function FavoritesSection({
       if (a.next && b.next) return (a.next.isoDate ?? '').localeCompare(b.next.isoDate ?? '')
       return a.team.localeCompare(b.team)
     })
-  }, [favorites, favoriteEvents])
+  }, [favorites, favoriteEvents, filterActive])
 
   const visibleEvents = expanded ? favoriteEvents : favoriteEvents.slice(0, VISIBLE)
 
@@ -2047,6 +2052,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               toggleFavorite={toggleFavorite}
               setSelectedUFCDate={setSelectedUFCDate}
               onEdit={() => setShowOnboarding(true)}
+              filterActive={activeFilter !== 'Todo' || !!search}
             />
           )}
 

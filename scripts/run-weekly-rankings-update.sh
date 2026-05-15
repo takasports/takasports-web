@@ -47,6 +47,12 @@ NODE_BIN="$(command -v node || echo /opt/homebrew/bin/node)"
   echo "  → exit $NBA_RC"
   echo
 
+  echo "▶ Fútbol (xG+xA FBref)..."
+  "$NODE_BIN" scripts/ingest-football-fbref.mjs --apply
+  FUTBOL_RC=$?
+  echo "  → exit $FUTBOL_RC"
+  echo
+
   echo "▶ Snapshot histórico..."
   "$NODE_BIN" scripts/capture-score-snapshot.mjs
   SNAP_RC=$?
@@ -55,6 +61,6 @@ NODE_BIN="$(command -v node || echo /opt/homebrew/bin/node)"
 
   echo "================================================"
   echo "  Finished: $(date '+%Y-%m-%d %H:%M:%S')"
-  echo "  Exit codes: tenis=$TENIS_RC f1=$F1_RC nba=$NBA_RC snapshot=$SNAP_RC"
+  echo "  Exit codes: tenis=$TENIS_RC f1=$F1_RC nba=$NBA_RC futbol=$FUTBOL_RC snapshot=$SNAP_RC"
   echo "================================================"
 } 2>&1 | tee "$LOG"

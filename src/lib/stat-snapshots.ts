@@ -53,3 +53,41 @@ export async function loadAllSnapshots(): Promise<Map<string, StatSnapshot>> {
 export function getSnapshot(map: Map<string, StatSnapshot>, blockId: string): StatSnapshot | null {
   return map.get(blockId) ?? null
 }
+
+// Invalidación manual del cache (después de un upsert para que el siguiente
+// request lo vea sin esperar 5 min).
+export function invalidateSnapshotsCache(): void {
+  _cache = null
+}
+
+export interface UpsertResult {
+  ok: boolean
+  blockId: string
+  rows: number
+  error?: string
+}
+
+// Upsert de un snapshot. Requiere SUPABASE_SERVICE_ROLE_KEY.
+// Llamado por /api/cron/stat-snapshots tras scraping.
+export async function upsertSnapshot(
+  blockId: string,
+  rows: StandingRow[],
+  source: string,
+  asOf: string,
+): Promise<UpsertResult> {
+  const sb = adminSupabase()
+  if (!sb) return { ok: false, blockId, rows: 0, error: 'supabase_not_configured' }
+  try {
+    const { error } = await sb
+      .from(TABLE)
+      .upsert(
+        { block_id: blockId, rows, source, as_of: asOf, updated_at: new Date().toISOString() },
+        { onConflict: 'block_id' },
+      )
+    if (error) return { ok: false, blockId, rows: 0, error: error.message }
+    invalidateSnapshotsCache()
+    return { ok: true, blockId, rows: rows.length }
+  } catch (e) {
+    return { ok: false, blockId, rows: 0, error: e instanceof Error ? e.message : 'unknown' }
+  }
+}
