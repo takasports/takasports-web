@@ -862,40 +862,60 @@ function formatDateSubtitle(localDate: string): string {
 }
 
 // Day separator — prominent header for each date in the events list.
-function DaySeparator({ dateKey, count, tone = 'upcoming' }: {
+function DaySeparator({ dateKey, count, tone = 'upcoming', onClick, active = false }: {
   dateKey: string
   count: number
   tone?: 'upcoming' | 'past'
+  onClick?: () => void
+  active?: boolean
 }) {
   const today = isoToLocalDate(new Date().toISOString())
   const isToday = dateKey === today
   const accent = tone === 'past' ? '#FCA5A5' : isToday ? '#C4B5FD' : '#7C3AED'
   const subtitle = formatDateSubtitle(dateKey)
   const label = formatDateLabel(dateKey)
+  const interactive = !!onClick
+
+  const content = (
+    <span className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full"
+      style={{
+        background: active ? `${accent}22` : 'rgba(255,255,255,0.04)',
+        border: `1px solid ${active ? accent + '55' : 'rgba(255,255,255,0.06)'}`,
+        boxShadow: active ? `0 0 12px ${accent}33` : 'none',
+        transition: 'all 180ms ease',
+      }}>
+      <span className="text-[11px] font-black uppercase tracking-[0.18em]"
+        style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+        {label}
+      </span>
+      {subtitle && (
+        <span className="text-[10px] font-bold capitalize hidden sm:inline"
+          style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+          · {subtitle}
+        </span>
+      )}
+      <span className="flex items-center justify-center min-w-[20px] h-[18px] px-1.5 rounded-full text-[10px] font-black tabular-nums"
+        style={{ background: `${accent}1a`, color: accent, border: `1px solid ${accent}33`, fontFamily: 'var(--font-sport)' }}>
+        {count}
+      </span>
+    </span>
+  )
 
   return (
-    <div className="relative pt-7 pb-4 mb-3">
-      {/* Top divider — grueso para marcar bien el cambio de día */}
-      <div className="absolute top-0 left-0 right-0" style={{ height: 2, background: 'linear-gradient(90deg, rgba(124,58,237,0.32) 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.04) 100%)' }} />
-      <div className="flex items-end justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="block flex-shrink-0 rounded-sm" style={{ width: 4, height: 28, background: accent, boxShadow: `0 0 12px ${accent}55` }} />
-          <div className="min-w-0">
-            <h2 className="font-black leading-none uppercase tracking-[0.02em]"
-              style={{ fontFamily: 'var(--font-headline)', fontSize: 28, color: '#F8F8FF' }}>
-              {label}
-            </h2>
-            {subtitle && (
-              <p className="text-[11px] mt-1 capitalize" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-                {subtitle}
-              </p>
-            )}
-          </div>
-        </div>
-        <span className="flex items-center justify-center min-w-[26px] h-[22px] px-2 rounded-full text-[10px] font-black tabular-nums flex-shrink-0"
-          style={{ background: `${accent}1a`, color: accent, border: `1px solid ${accent}33`, fontFamily: 'var(--font-sport)' }}>
-          {count}
-        </span>
+    <div className="relative pt-7 pb-4 mb-3 flex justify-center">
+      {/* Línea horizontal de fondo que ayuda a separar visualmente */}
+      <div className="absolute left-0 right-0" style={{ top: '50%', transform: 'translateY(-50%)', height: 1, background: 'rgba(255,255,255,0.04)', zIndex: 0 }} />
+      <div className="relative" style={{ zIndex: 1, background: 'var(--bg-base)', padding: '0 4px' }}>
+        {interactive ? (
+          <button
+            onClick={onClick}
+            aria-label={`Filtrar por ${label}`}
+            title={active ? 'Quitar filtro de fecha' : `Mostrar solo ${label.toLowerCase()}`}
+            style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+          >
+            {content}
+          </button>
+        ) : content}
       </div>
     </div>
   )
@@ -2303,7 +2323,12 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               }
               return (
                 <section key={dateKey}>
-                  <DaySeparator dateKey={dateKey} count={dayEvents.length} />
+                  <DaySeparator
+                    dateKey={dateKey}
+                    count={dayEvents.length}
+                    onClick={() => setSelectedDate(selectedDate === dateKey ? null : dateKey)}
+                    active={selectedDate === dateKey}
+                  />
                   {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     const accent = getCompAccent(comp, compEvents[0]?.accent)
@@ -2509,7 +2534,13 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               }
               return (
                 <section key={dateKey}>
-                  <DaySeparator dateKey={dateKey} count={dayEvents.length} tone="past" />
+                  <DaySeparator
+                    dateKey={dateKey}
+                    count={dayEvents.length}
+                    tone="past"
+                    onClick={() => setSelectedDate(selectedDate === dateKey ? null : dateKey)}
+                    active={selectedDate === dateKey}
+                  />
                   {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     const accent = getCompAccent(comp, compEvents[0]?.accent)
