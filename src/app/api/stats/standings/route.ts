@@ -63,6 +63,7 @@ export interface StatsStandingsResponse {
   ueclFixtures: StandingRow[]
   // ── nuevos automatizados ────────────────────────────────────────────
   f1Calendar: StandingRow[]
+  f1Sprints: StandingRow[]
   nbaMvpRace: StandingRow[]
   nbaDpoyRace: StandingRow[]
   nbaRookieRace: StandingRow[]
@@ -881,6 +882,57 @@ async function fetchF1Calendar(season: string): Promise<StandingRow[]> {
   } catch { return [] }
 }
 
+// ── F1 Sprints — leaderboard de victorias en sprint (vía Jolpica) ────────────
+
+async function fetchF1Sprints(season: string): Promise<StandingRow[]> {
+  if (!season) return []
+  try {
+    const res = await fetch(`https://api.jolpi.ca/ergast/f1/${season}/sprint.json?limit=100`, {
+      next: { revalidate: 86400 },
+    })
+    if (!res.ok) return []
+    const json = await res.json()
+    const races = (json.MRData?.RaceTable?.Races ?? []) as Record<string, unknown>[]
+    if (!races.length) return []
+
+    // Agregamos por piloto: victorias + podios en sprint.
+    type Acc = { wins: number; podiums: number; lastDate: string; flag?: string; constructor?: string }
+    const byDriver = new Map<string, Acc>()
+    for (const race of races) {
+      const results = (race.SprintResults ?? []) as Record<string, unknown>[]
+      const date = String(race.date ?? '')
+      for (const r of results) {
+        const pos = parseInt(String(r.position))
+        if (!Number.isFinite(pos) || pos > 3) continue
+        const driver = r.Driver as Record<string, unknown>
+        const constructor = (r.Constructor as Record<string, unknown> | undefined)?.name as string | undefined
+        const name = `${driver.givenName} ${driver.familyName}`
+        const cur = byDriver.get(name) ?? { wins: 0, podiums: 0, lastDate: '', constructor }
+        if (pos === 1) cur.wins++
+        cur.podiums++
+        if (date > cur.lastDate) cur.lastDate = date
+        if (!cur.constructor && constructor) cur.constructor = constructor
+        byDriver.set(name, cur)
+      }
+    }
+
+    const rows = Array.from(byDriver.entries())
+      .filter(([, v]) => v.podiums > 0)
+      .sort((a, b) => b[1].wins - a[1].wins || b[1].podiums - a[1].podiums)
+      .slice(0, 10)
+      .map(([name, v], i) => ({
+        rank: i + 1,
+        name,
+        abbr: v.constructor ?? '',
+        value: String(v.wins),
+        sub: `${v.podiums} podio${v.podiums !== 1 ? 's' : ''} · Temp. ${season}`,
+        trend: 'flat' as const,
+        extra: { Vic: String(v.wins), Podios: String(v.podiums) },
+      }))
+    return rows
+  } catch { return [] }
+}
+
 // ── NBA MVP Race + Rookie Race (auto-derivado) ────────────────────────────────
 
 function buildNbaMvpRace(scoring: StandingRow[], east: StandingRow[], west: StandingRow[]): StandingRow[] {
@@ -1015,7 +1067,7 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   futbol: ['football', 'uclFixtures', 'uelFixtures', 'ueclFixtures', 'uclScorers', 'uelScorers', 'ueclScorers', 'uclAssists', 'uelAssists', 'ueclAssists'],
   football: ['football', 'uclScorers', 'uelScorers', 'ueclScorers', 'uclAssists', 'uelAssists', 'ueclAssists'],
   nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaPlayoffSeries', 'nbaMvpRace', 'nbaDpoyRace', 'nbaRookieRace'],
-  f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps', 'f1Calendar'],
+  f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps', 'f1Calendar', 'f1Sprints'],
   tenis: ['atpRanking', 'wtaRanking', 'tennisSlams'],
   tennis: ['atpRanking', 'wtaRanking', 'tennisSlams'],
   ufc: ['ufcP4P', 'ufcChampions'],
@@ -1054,7 +1106,9 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchEuropeanCupLeaders('soccer/uefa.conference', 'assists'),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
-  const f1Calendar = f1.season ? await fetchF1Calendar(f1.season) : []
+  const [f1Calendar, f1Sprints] = f1.season
+    ? await Promise.all([fetchF1Calendar(f1.season), fetchF1Sprints(f1.season)])
+    : [[], []] as [StandingRow[], StandingRow[]]
   const snapshots = await loadAllSnapshots()
 
   const football = footballResults
@@ -1143,6 +1197,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
       : unavail('ESPN'),
     // ── Nuevos automatizados ────────────────────────────────────────────
     f1Calendar:        f1Calendar.length    ? live(`Jolpica · ${f1.season}`) : unavail('Jolpica'),
+    f1Sprints:         f1Sprints.length     ? live(`Jolpica · sprints ${f1.season}`) : unavail('Jolpica · sin sprints aún'),
     nbaMvpRace:        nbaMvpRace.length    ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
     nbaDpoyRace:       nbaDpoyRace.length   ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
     nbaRookieRace:     nbaRookieRace.length ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
@@ -1200,6 +1255,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     uelFixtures,
     ueclFixtures,
     f1Calendar,
+    f1Sprints,
     nbaMvpRace,
     nbaDpoyRace,
     nbaRookieRace,

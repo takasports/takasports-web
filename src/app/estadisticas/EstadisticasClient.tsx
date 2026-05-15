@@ -692,13 +692,14 @@ const SPORTS: SportConfig[] = [
         id: 'calendario-f1', label: 'Calendario', icon: '📅',
         blocks: [{
           id: 'f1-calendario', title: 'Próximos GP · Temporada 2026', metric: 'Fecha',
-          rows: [
-            { rank: 1, name: 'GP de Mónaco · Mónaco',          value: '24 may', sub: 'R5 · Circuit de Monaco', trend: 'up' },
-            { rank: 2, name: 'GP de España · Barcelona',       value: '7 jun',  sub: 'R6 · Catalunya',          trend: 'flat' },
-            { rank: 3, name: 'GP de Canadá · Montreal',        value: '14 jun', sub: 'R7 · Gilles Villeneuve',  trend: 'flat' },
-            { rank: 4, name: 'GP de Austria · Spielberg',      value: '28 jun', sub: 'R8 · Red Bull Ring',      trend: 'flat' },
-            { rank: 5, name: 'GP de Gran Bretaña · Silverstone',value: '5 jul',  sub: 'R9 · Silverstone',        trend: 'flat' },
-          ],
+          rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'Jolpica · calendario', trend: 'flat' as const }],
+        }],
+      },
+      {
+        id: 'sprints-f1', label: 'Sprints', icon: '⚡',
+        blocks: [{
+          id: 'f1-sprints', title: 'Sprint Wins · Temporada 2026', metric: 'Vic',
+          rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'Jolpica · sprints temp.', trend: 'flat' as const }],
         }],
       },
       {
@@ -1400,7 +1401,7 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
 const LIVE_BLOCK_IDS = new Set([
   'tabla-laliga', 'tabla-premier', 'tabla-serie-a', 'tabla-bundesliga', 'tabla-ligue1', 'tabla-ucl', 'tabla-uel', 'tabla-uecl',
   'nba-este', 'nba-oeste',
-  'f1-campeonato', 'f1-constructores', 'f1-poles', 'f1-calendario',
+  'f1-campeonato', 'f1-constructores', 'f1-poles', 'f1-calendario', 'f1-sprints',
   'atp-ranking', 'wta-ranking',
   'goles-equipo', 'menos-goles',
   'ranking-fifa',
@@ -1459,6 +1460,7 @@ interface LiveStandingsData {
   ueclFixtures?: LiveStandingRow[]
   // Nuevos automatizados
   f1Calendar?: LiveStandingRow[]
+  f1Sprints?: LiveStandingRow[]
   nbaMvpRace?: LiveStandingRow[]
   nbaDpoyRace?: LiveStandingRow[]
   nbaRookieRace?: LiveStandingRow[]
@@ -1502,6 +1504,7 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'wc-qualified': 'worldCupQualified',
   'nba-playoffs': 'nbaPlayoffSeries',
   'f1-calendario': 'f1Calendar',
+  'f1-sprints': 'f1Sprints',
   'nba-mvp-race': 'nbaMvpRace',
   'nba-dpoy-race': 'nbaDpoyRace',
   'nba-rookie-race': 'nbaRookieRace',
@@ -2143,6 +2146,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
 
         // ── Nuevos automatizados ────────────────────────────────────────
         if (block.id === 'f1-calendario'    && liveData.f1Calendar?.length)        return { ...block, rows: toStatRows(liveData.f1Calendar) }
+        if (block.id === 'f1-sprints'       && liveData.f1Sprints?.length)         return { ...block, rows: toStatRows(liveData.f1Sprints, 'Escudería') }
         if (block.id === 'nba-mvp-race'     && liveData.nbaMvpRace?.length)        return { ...block, rows: toStatRows(liveData.nbaMvpRace) }
         if (block.id === 'nba-dpoy-race'    && liveData.nbaDpoyRace?.length)       return { ...block, rows: toStatRows(liveData.nbaDpoyRace) }
         if (block.id === 'nba-rookie-race'  && liveData.nbaRookieRace?.length)     return { ...block, rows: toStatRows(liveData.nbaRookieRace) }
