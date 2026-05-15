@@ -1798,6 +1798,19 @@ function buildSummaryCards(
     })
   }
 
+  // 🏎️ F1 Sprint Wins (si hay sprints en el calendario)
+  if (liveData?.f1Sprints?.length) {
+    cards.push({
+      sportId: 'f1', sportLabel: 'F1', emoji: '🏎️', accent: '#f97316',
+      title: 'F1 · Sprint Wins', metric: 'Vic',
+      rows: liveData.f1Sprints.slice(0, 3).map(r => ({
+        rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
+      })),
+      meta: meta.f1Sprints,
+      sectionTarget: 'sprints-f1',
+    })
+  }
+
   // 🏍️ MotoGP: pilotos top 3
   if (liveData?.motogpRiders?.length) {
     cards.push({
