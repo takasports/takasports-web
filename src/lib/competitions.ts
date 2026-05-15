@@ -32,21 +32,22 @@ export function getCompAccent(comp: string, fallback = '#7C3AED'): string {
   return fallback
 }
 
-// League importance for "Destacados" ranking (higher = more important)
+// League importance for "Destacados" ranking (higher = more important).
+// Escala 0-12 dejando margen para boosts (marquee +2, stage +3, live +1.5).
 export const LEAGUE_IMPORTANCE: Record<string, number> = {
-  'Champions': 10,
-  'UCL': 10,
-  'Premier': 9,
-  'LaLiga': 9,
-  'NBA': 9,
-  'Serie A': 8,
-  'Bundesliga': 8,
-  'F1': 8,
-  'Fórmula 1': 8,
-  'UEFA': 8,
-  'UFC': 7,
-  'Ligue 1': 7,
-  'Copa Rey': 6,
+  'Champions': 12,
+  'UCL': 12,
+  'Premier': 11,
+  'LaLiga': 11,
+  'NBA': 11,
+  'Serie A': 10,
+  'Bundesliga': 10,
+  'F1': 9,
+  'Fórmula 1': 9,
+  'UEFA': 9,
+  'UFC': 8,
+  'Ligue 1': 8,
+  'Copa Rey': 7,
   'Tenis': 6,
   'ATP': 6,
   'WTA': 6,
@@ -54,7 +55,7 @@ export const LEAGUE_IMPORTANCE: Record<string, number> = {
   'Premier Padel': 6,
   'WPT': 6,
   'Pádel': 5,
-  'Europa': 5,
+  'Europa': 6,
 }
 
 export function getLeagueScore(comp: string): number {
@@ -62,6 +63,70 @@ export function getLeagueScore(comp: string): number {
     if (comp.toLowerCase().includes(key.toLowerCase())) return score
   }
   return 4
+}
+
+// Equipos / atletas "marquee" — siempre boost en Destacados aunque la liga
+// sea menor. Coincide por substring contra home/away (lowercased).
+const MARQUEE_TEAMS = [
+  // Fútbol — top clubes globales
+  'real madrid', 'barcelona', 'atlético madrid', 'atletico madrid',
+  'manchester city', 'manchester united', 'liverpool', 'arsenal', 'chelsea',
+  'bayern', 'borussia dortmund', 'psg', 'paris saint',
+  'juventus', 'inter', 'milan', 'napoli', 'roma',
+  // NBA — franquicias top
+  'lakers', 'celtics', 'warriors', 'bulls', 'heat', 'nuggets',
+  'thunder', 'mavericks', 'bucks', '76ers', 'suns', 'knicks',
+  // Tenis — top atletas
+  'alcaraz', 'sinner', 'djokovic', 'medvedev', 'zverev',
+  'swiatek', 'sabalenka', 'gauff',
+  // F1
+  'verstappen', 'hamilton', 'leclerc', 'norris', 'sainz', 'alonso', 'piastri',
+  // UFC marquee
+  'mcgregor', 'pereira', 'topuria', 'jones', 'aspinall', 'edwards',
+]
+
+function isMarquee(name: string | null | undefined): boolean {
+  if (!name) return false
+  const n = name.toLowerCase()
+  return MARQUEE_TEAMS.some(t => n.includes(t))
+}
+
+// Detecta fases finales en el nombre de competición o stage del evento.
+function stageBoost(comp: string, stage?: string): number {
+  const txt = `${comp} ${stage ?? ''}`.toLowerCase()
+  if (/\bfinal\b|gran final/.test(txt)) return 4
+  if (/semifinal|semis/.test(txt)) return 3
+  if (/cuartos|quarterfinal|qf/.test(txt)) return 2
+  if (/octavos|round of 16|r16/.test(txt)) return 1.5
+  return 0
+}
+
+// Score completo usado por el modo Destacados para rankear un evento.
+// Combina liga + boosts (marquee, fase, en vivo, prime time).
+export function getEventHighlightScore(args: {
+  comp: string
+  home?: string
+  away?: string | null
+  stage?: string
+  isoDate?: string
+  isLive?: boolean
+}): number {
+  let score = getLeagueScore(args.comp)
+  if (isMarquee(args.home) || isMarquee(args.away)) score += 2
+  score += stageBoost(args.comp, args.stage)
+  if (args.isLive) score += 1.5
+  // Prime time 18:00–23:00 hora Madrid: +0.5 para que un Real Madrid 21h
+  // gane a un partido menor a las 13h dentro de la misma liga.
+  if (args.isoDate) {
+    try {
+      const d = new Date(args.isoDate)
+      const h = parseInt(new Intl.DateTimeFormat('en', {
+        timeZone: 'Europe/Madrid', hour: '2-digit', hour12: false,
+      }).format(d), 10)
+      if (h >= 18 && h <= 23) score += 0.5
+    } catch { /* ignore */ }
+  }
+  return score
 }
 
 // Sport emoji and colors — keys match event.sport labels (Spanish)

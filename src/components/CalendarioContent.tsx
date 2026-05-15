@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
-import { getCompAccent, getLeagueScore, SPORT_EMOJI, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
+import { getCompAccent, getLeagueScore, getEventHighlightScore, SPORT_EMOJI, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
 import { isSplitBroadcast } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
 import { getStoredTZ, setStoredTZ, SOURCE_TZ, convertEventTime } from '@/lib/timezone'
@@ -1701,8 +1701,12 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   }, [liveFixtures, liveEventsInList, activeFilter])
 
   // Si el chip Destacados está activo, en la vista Calendario se muestran
-  // solo los top 4 partidos por día (orden: favoritos primero, luego prestigio
-  // de liga, luego hora). Para Todo y filtros por deporte la lista va completa.
+  // solo los top 4 partidos por día. Criterio combinado:
+  //   1. Favoritos del usuario primero (siempre)
+  //   2. Highlight score: prestigio de liga + boost por marquee team
+  //      (+2), fase final/semifinal/cuartos (+4/+3/+2), live (+1.5),
+  //      prime time 18-23h Madrid (+0.5)
+  //   3. Empate → hora más temprana
   const filteredForGrouping = useMemo(() => {
     if (activeFilter !== 'Destacados') return filtered
     const byDay = new Map<string, SportEvent[]>()
@@ -1712,21 +1716,32 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       arr.push(ev)
       byDay.set(day, arr)
     }
+    const scoreFor = (ev: SportEvent) => {
+      const live = liveScores.has(ev.id) && !FINISHED.has(liveScores.get(ev.id)?.status ?? '')
+      return getEventHighlightScore({
+        comp: ev.comp,
+        home: ev.home,
+        away: ev.away,
+        stage: ev.stage,
+        isoDate: ev.isoDate,
+        isLive: live,
+      })
+    }
     const out: SportEvent[] = []
     for (const evs of byDay.values()) {
       const sorted = [...evs].sort((a, b) => {
         const aFav = eventHasFavorite(favorites, a) ? 1 : 0
         const bFav = eventHasFavorite(favorites, b) ? 1 : 0
         if (aFav !== bFav) return bFav - aFav
-        const sA = getLeagueScore(a.comp)
-        const sB = getLeagueScore(b.comp)
+        const sA = scoreFor(a)
+        const sB = scoreFor(b)
         if (sA !== sB) return sB - sA
         return (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
       })
       out.push(...sorted.slice(0, 4))
     }
     return out
-  }, [filtered, activeFilter, favorites])
+  }, [filtered, activeFilter, favorites, liveScores])
 
   const grouped = useMemo(() => groupEventsByDate(filteredForGrouping), [filteredForGrouping])
   const orderedDates = useMemo(() => orderedDateKeys(grouped), [grouped])
