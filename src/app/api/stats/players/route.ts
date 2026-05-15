@@ -162,7 +162,9 @@ async function fetchApiFootyLeague(
 ): Promise<Pick<LeaguePlayerData, 'yellowCards' | 'redCards' | 'shots' | 'goalsPerGame'>> {
   const empty = { yellowCards: [], redCards: [], shots: [], goalsPerGame: [] }
   const key = process.env.API_SPORTS_KEY
-  if (!key) return empty
+  // API-Sports free tier solo da temporada 2024 (datos obsoletos) y se agota a 100 req/día.
+  // Solo lanzamos las fetches si el plan Pro está activo (API_SPORTS_PRO=1 + season actual).
+  if (!key || !process.env.API_SPORTS_PRO) return empty
 
   const base = `league=${league.apiId}&season=${SEASON}`
   const [scorers, yellows, reds] = await Promise.allSettled([

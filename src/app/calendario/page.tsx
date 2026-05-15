@@ -2,6 +2,7 @@ import { sanityClient, eventsQuery } from '@/lib/sanity'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents, fetchEspnPastEvents } from '@/lib/espn'
 import { fetchPadelEvents } from '@/lib/padel'
+import { fetchRecentFormByTeams } from '@/lib/past-events'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
@@ -75,11 +76,19 @@ export default async function CalendarioPage() {
     return true
   })
 
+  // Recent form (last 5 W/D/L) for every team that appears in the upcoming
+  // events list. One bulk query to past_events; missing teams or unconfigured
+  // Supabase result in empty arrays — UI degrades gracefully.
+  const teamNames = Array.from(new Set(
+    events.flatMap(e => [e.home, e.away].filter(Boolean) as string[])
+  ))
+  const recentForms = (await fetchRecentFormByTeams(teamNames, 5)) ?? {}
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />
       <LiveStrip />
-      <CalendarioContent events={events} pastEvents={past} />
+      <CalendarioContent events={events} pastEvents={past} recentForms={recentForms} />
       <Footer />
       <ScrollToTop />
     </div>

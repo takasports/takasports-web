@@ -61,34 +61,16 @@ export const COACH_CONFIG: CoachEntry[] = [
 ]
 
 // ─── MotoGP ────────────────────────────────────────────────────────────────
-export const MOTOGP_AS_OF = '2026-04 · R5 Jerez'
-export const MOTOGP_RIDERS: StandingRow[] = [
-  { rank: 1, name: 'Marc Márquez',     abbr: 'Ducati Lenovo',     value: '171', sub: 'Temp. 2026', flag: '🇪🇸', trend: 'up',   extra: { Vic: '4', Podios: '5' } },
-  { rank: 2, name: 'Pecco Bagnaia',    abbr: 'Ducati Lenovo',     value: '120', sub: 'Temp. 2026', flag: '🇮🇹', trend: 'flat', extra: { Vic: '1', Podios: '3' } },
-  { rank: 3, name: 'Álex Márquez',     abbr: 'Gresini Ducati',    value: '108', sub: 'Temp. 2026', flag: '🇪🇸', trend: 'up',   extra: { Vic: '0', Podios: '4' } },
-  { rank: 4, name: 'Jorge Martín',     abbr: 'Aprilia Racing',    value: '79',  sub: 'Temp. 2026', flag: '🇪🇸', trend: 'up',   extra: { Vic: '0', Podios: '2' } },
-  { rank: 5, name: 'Pedro Acosta',     abbr: 'KTM Factory',       value: '72',  sub: 'Temp. 2026', flag: '🇪🇸', trend: 'up',   extra: { Vic: '0', Podios: '2' } },
-  { rank: 6, name: 'Marco Bezzecchi',  abbr: 'Aprilia Racing',    value: '64',  sub: 'Temp. 2026', flag: '🇮🇹', trend: 'flat', extra: { Vic: '0', Podios: '1' } },
-  { rank: 7, name: 'Fabio Quartararo', abbr: 'Yamaha Factory',    value: '48',  sub: 'Temp. 2026', flag: '🇫🇷', trend: 'flat', extra: { Vic: '0', Podios: '0' } },
-]
-export const MOTOGP_CONSTRUCTORS: StandingRow[] = [
-  { rank: 1, name: 'Ducati',  abbr: 'DUC', value: '291', sub: 'Temp. 2026', trend: 'up',   extra: {} },
-  { rank: 2, name: 'Aprilia', abbr: 'APR', value: '143', sub: 'Temp. 2026', trend: 'up',   extra: {} },
-  { rank: 3, name: 'KTM',     abbr: 'KTM', value: '95',  sub: 'Temp. 2026', trend: 'flat', extra: {} },
-  { rank: 4, name: 'Yamaha',  abbr: 'YAM', value: '54',  sub: 'Temp. 2026', trend: 'down', extra: {} },
-  { rank: 5, name: 'Honda',   abbr: 'HON', value: '38',  sub: 'Temp. 2026', trend: 'down', extra: {} },
-]
+// Sin fuente gratuita verificable. Ranking de pilotos/constructores deshabilitado.
+// Para reactivar: integrar scraping semanal motogp.com (n8n) → Supabase.
+export const MOTOGP_AS_OF = ''
+export const MOTOGP_RIDERS: StandingRow[] = []
+export const MOTOGP_CONSTRUCTORS: StandingRow[] = []
 
 // ─── Ciclismo ──────────────────────────────────────────────────────────────
-export const CYCLING_AS_OF = '2026-04'
-export const CYCLING_UCI: StandingRow[] = [
-  { rank: 1, name: 'Tadej Pogačar',       abbr: 'UAE Team Emirates',     value: '7820', sub: `UCI · ${CYCLING_AS_OF}`, flag: '🇸🇮', trend: 'flat', extra: {} },
-  { rank: 2, name: 'Jonas Vingegaard',    abbr: 'Visma–Lease a Bike',    value: '5280', sub: `UCI · ${CYCLING_AS_OF}`, flag: '🇩🇰', trend: 'up',   extra: {} },
-  { rank: 3, name: 'Remco Evenepoel',     abbr: 'Soudal Quick-Step',     value: '4710', sub: `UCI · ${CYCLING_AS_OF}`, flag: '🇧🇪', trend: 'up',   extra: {} },
-  { rank: 4, name: 'Mathieu van der Poel',abbr: 'Alpecin–Deceuninck',    value: '3950', sub: `UCI · ${CYCLING_AS_OF}`, flag: '🇳🇱', trend: 'flat', extra: {} },
-  { rank: 5, name: 'Wout van Aert',       abbr: 'Visma–Lease a Bike',    value: '3540', sub: `UCI · ${CYCLING_AS_OF}`, flag: '🇧🇪', trend: 'up',   extra: {} },
-  { rank: 6, name: 'Primož Roglič',       abbr: 'Red Bull–BORA',         value: '3210', sub: `UCI · ${CYCLING_AS_OF}`, flag: '🇸🇮', trend: 'flat', extra: {} },
-]
+// UCI ranking sin API gratuita verificable. Calendario sí se conserva.
+export const CYCLING_AS_OF = ''
+export const CYCLING_UCI: StandingRow[] = []
 export const CYCLING_GRAND_TOURS: StandingRow[] = [
   { rank: 1, name: "Giro d'Italia · Italia",   abbr: '🇮🇹', value: '8 may – 31 may',  sub: 'Maglia rosa',   trend: 'up',   extra: {} },
   { rank: 2, name: 'Tour de France · Francia',  abbr: '🇫🇷', value: '4 jul – 26 jul',  sub: 'Maillot jaune', trend: 'flat', extra: {} },
@@ -96,25 +78,10 @@ export const CYCLING_GRAND_TOURS: StandingRow[] = [
 ]
 
 // ─── Golf OWGR + LIV ───────────────────────────────────────────────────────
-export const GOLF_AS_OF = '2026-04'
-export const PGA_OWGR: StandingRow[] = [
-  { rank: 1, name: 'Scottie Scheffler', abbr: 'USA', value: '14.62', sub: `OWGR · ${GOLF_AS_OF}`, flag: '🇺🇸', trend: 'flat', extra: {} },
-  { rank: 2, name: 'Rory McIlroy',       abbr: 'NIR', value: '8.54',  sub: `OWGR · ${GOLF_AS_OF}`, flag: '🇬🇧', trend: 'up',   extra: {} },
-  { rank: 3, name: 'Xander Schauffele',  abbr: 'USA', value: '7.89',  sub: `OWGR · ${GOLF_AS_OF}`, flag: '🇺🇸', trend: 'flat', extra: {} },
-  { rank: 4, name: 'Collin Morikawa',    abbr: 'USA', value: '6.95',  sub: `OWGR · ${GOLF_AS_OF}`, flag: '🇺🇸', trend: 'up',   extra: {} },
-  { rank: 5, name: 'Ludvig Åberg',       abbr: 'SWE', value: '6.21',  sub: `OWGR · ${GOLF_AS_OF}`, flag: '🇸🇪', trend: 'up',   extra: {} },
-  { rank: 6, name: 'Viktor Hovland',     abbr: 'NOR', value: '5.47',  sub: `OWGR · ${GOLF_AS_OF}`, flag: '🇳🇴', trend: 'flat', extra: {} },
-  { rank: 7, name: 'Tommy Fleetwood',    abbr: 'ENG', value: '5.12',  sub: `OWGR · ${GOLF_AS_OF}`, flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up',  extra: {} },
-  { rank: 8, name: 'Hideki Matsuyama',   abbr: 'JPN', value: '4.98',  sub: `OWGR · ${GOLF_AS_OF}`, flag: '🇯🇵', trend: 'flat', extra: {} },
-]
-export const LIV_RANKING: StandingRow[] = [
-  { rank: 1, name: 'Joaquin Niemann',    abbr: 'Torque GC',     value: '198.5', sub: '8 torneos', flag: '🇨🇱', trend: 'up',   extra: {} },
-  { rank: 2, name: 'Jon Rahm',            abbr: 'Legion XIII',   value: '184.2', sub: '8 torneos', flag: '🇪🇸', trend: 'flat', extra: {} },
-  { rank: 3, name: 'Bryson DeChambeau',   abbr: 'Crushers GC',   value: '162.0', sub: '8 torneos', flag: '🇺🇸', trend: 'up',   extra: {} },
-  { rank: 4, name: 'Sergio García',       abbr: 'Fireballs GC',  value: '142.8', sub: '8 torneos', flag: '🇪🇸', trend: 'flat', extra: {} },
-  { rank: 5, name: 'Dean Burmester',      abbr: 'Stinger GC',    value: '128.5', sub: '8 torneos', flag: '🇿🇦', trend: 'up',   extra: {} },
-  { rank: 6, name: 'Cameron Smith',       abbr: 'Rippers GC',    value: '115.0', sub: '8 torneos', flag: '🇦🇺', trend: 'flat', extra: {} },
-]
+// OWGR/LIV sin API gratuita verificable. Solo se mantiene el calendario de Majors.
+export const GOLF_AS_OF = ''
+export const PGA_OWGR: StandingRow[] = []
+export const LIV_RANKING: StandingRow[] = []
 export const PGA_MAJORS_2026: StandingRow[] = [
   { rank: 1, name: 'The Masters · Augusta National', abbr: '⛳', value: '9-12 abr',  sub: 'Major #1',         trend: 'flat', extra: {} },
   { rank: 2, name: 'PGA Championship · Quail Hollow', abbr: '⛳', value: '14-17 may', sub: 'Major #2',         trend: 'up',   extra: {} },
@@ -130,14 +97,8 @@ export const UFC_NEXT_CARD: StandingRow[] = [
   { rank: 3, name: 'Hill vs Rountree',          abbr: 'Main card',value: '3rd',      sub: `UFC 320 · ${UFC_NEXT_EVENT_AS_OF}`, trend: 'flat', extra: { División: 'Semi-pesado' } },
   { rank: 4, name: 'Ulberg vs Reyes',           abbr: 'Main card',value: '4th',      sub: `UFC 320 · ${UFC_NEXT_EVENT_AS_OF}`, trend: 'flat', extra: { División: 'Semi-pesado' } },
 ]
-export const UFC_STREAKS: StandingRow[] = [
-  { rank: 1, name: 'Islam Makhachev',     abbr: 'LW',  value: '15', sub: 'Sin derrotas desde 2015', flag: '🇷🇺', trend: 'up', extra: {} },
-  { rank: 2, name: 'Merab Dvalishvili',   abbr: 'BW',  value: '12', sub: 'Campeón actual',          flag: '🇬🇪', trend: 'up', extra: {} },
-  { rank: 3, name: 'Belal Muhammad',      abbr: 'WW',  value: '10', sub: 'Sin derrotas desde 2019', flag: '🇺🇸', trend: 'up', extra: {} },
-  { rank: 4, name: 'Movsar Evloev',       abbr: 'FW',  value: '9',  sub: 'Invicto en UFC',          flag: '🇷🇺', trend: 'up', extra: {} },
-  { rank: 5, name: 'Ilia Topuria',        abbr: 'FW',  value: '8',  sub: 'Invicto profesional',     flag: '🇬🇪', trend: 'up', extra: {} },
-  { rank: 6, name: 'Tom Aspinall',        abbr: 'HW',  value: '6',  sub: 'Campeón interino',        flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up', extra: {} },
-]
+// Rachas UFC sin fuente verificable mantenible.
+export const UFC_STREAKS: StandingRow[] = []
 
 // ─── Tenis ─────────────────────────────────────────────────────────────────
 export const TENNIS_SLAMS_2026: StandingRow[] = [
@@ -146,13 +107,8 @@ export const TENNIS_SLAMS_2026: StandingRow[] = [
   { rank: 3, name: 'Wimbledon · Londres',          abbr: '🇬🇧', value: '29 jun – 12 jul', sub: 'Hierba',          trend: 'flat', extra: {} },
   { rank: 4, name: 'US Open · Nueva York',         abbr: '🇺🇸', value: '24 ago – 6 sep', sub: 'Pista dura',       trend: 'flat', extra: {} },
 ]
-export const WTA_SURFACES: StandingRow[] = [
-  { rank: 1, name: 'Iga Swiatek',     abbr: 'POL', value: '86%', sub: 'Tierra · 2024-25', flag: '🇵🇱', trend: 'up',   extra: { Dura: '72%', Hierba: '64%' } },
-  { rank: 2, name: 'Aryna Sabalenka', abbr: 'BLR', value: '84%', sub: 'Dura · 2024-25',   flag: '🇧🇾', trend: 'up',   extra: { Dura: '84%', Tierra: '68%' } },
-  { rank: 3, name: 'Elena Rybakina',  abbr: 'KAZ', value: '78%', sub: 'Hierba · 2024-25', flag: '🇰🇿', trend: 'up',   extra: { Dura: '74%', Hierba: '78%' } },
-  { rank: 4, name: 'Coco Gauff',      abbr: 'USA', value: '74%', sub: 'Dura · 2024-25',   flag: '🇺🇸', trend: 'flat', extra: { Dura: '74%', Tierra: '70%' } },
-  { rank: 5, name: 'Jessica Pegula',  abbr: 'USA', value: '71%', sub: 'Dura · 2024-25',   flag: '🇺🇸', trend: 'flat', extra: { Dura: '71%', Hierba: '62%' } },
-]
+// % de victorias por superficie WTA: sin API gratuita verificable.
+export const WTA_SURFACES: StandingRow[] = []
 
 // ─── NBA Rookie metadata (para el cálculo automático del ROY race) ────────
 export const NBA_ROOKIE_NAMES = new Set<string>([

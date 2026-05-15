@@ -249,3 +249,54 @@ export async function fetchH2H(
 function escapeOr(s: string): string {
   return s.replace(/[(),]/g, m => `\\${m}`)
 }
+
+export type FormResult = 'W' | 'D' | 'L'
+
+// Fetch the last N results for each team in the list. Returns a map from
+// team name → array of 'W' | 'D' | 'L' in chronological order (most recent
+// first). Teams not in the cache get an empty array. Single Supabase query
+// for all teams, then grouped client-side. Returns null if Supabase not
+// configured (callers should treat as "no form available").
+export async function fetchRecentFormByTeams(
+  teams: string[],
+  limit = 5
+): Promise<Record<string, FormResult[]> | null> {
+  const sb = readClient()
+  if (!sb) return null
+  if (teams.length === 0) return {}
+
+  // Dedup + cap at 200 names per call to keep URL length reasonable.
+  const uniq = Array.from(new Set(teams)).slice(0, 200)
+  const orFilter = uniq
+    .flatMap(t => [`home.eq.${escapeOr(t)}`, `away.eq.${escapeOr(t)}`])
+    .join(',')
+
+  // Pull a generous slice — newest 600 rows max. With ~200 teams and a few
+  // games each per month this covers comfortably.
+  const { data, error } = await sb
+    .from('past_events')
+    .select('home,away,home_score,away_score,iso_date')
+    .or(orFilter)
+    .order('iso_date', { ascending: false })
+    .limit(600)
+
+  if (error || !data) return null
+
+  const teamSet = new Set(uniq)
+  const out: Record<string, FormResult[]> = {}
+  for (const t of uniq) out[t] = []
+
+  for (const r of data as Array<{ home: string; away: string | null; home_score: number | null; away_score: number | null }>) {
+    if (r.home_score == null || r.away_score == null) continue
+    const hs = r.home_score, as = r.away_score
+
+    if (teamSet.has(r.home) && out[r.home].length < limit) {
+      out[r.home].push(hs > as ? 'W' : hs < as ? 'L' : 'D')
+    }
+    if (r.away && teamSet.has(r.away) && out[r.away].length < limit) {
+      out[r.away].push(as > hs ? 'W' : as < hs ? 'L' : 'D')
+    }
+  }
+
+  return out
+}

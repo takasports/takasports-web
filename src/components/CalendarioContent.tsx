@@ -434,8 +434,24 @@ function CompGroupHeader({ comp, accent, count, first }: { comp: string; accent:
   )
 }
 
+// Inline strip of 5 W/D/L chips for a team's recent form. Renders nothing
+// if the list is empty.
+function FormStrip({ form, align = 'start' }: { form: ('W'|'D'|'L')[]; align?: 'start' | 'end' }) {
+  if (!form || form.length === 0) return null
+  const color = (r: 'W'|'D'|'L') => r === 'W' ? '#22C55E' : r === 'D' ? '#EAB308' : '#EF4444'
+  // Show in chronological order: oldest first → most recent on the side closest to the logo.
+  const ordered = align === 'end' ? [...form].reverse() : [...form].reverse()
+  return (
+    <div className={`mt-1.5 flex gap-1 ${align === 'end' ? 'justify-end' : ''}`}>
+      {ordered.map((r, i) => (
+        <span key={i} className="size-2 rounded-sm" style={{ background: color(r) }} title={r} />
+      ))}
+    </div>
+  )
+}
+
 // ─── Compact list row (non-live or in TODOS) ──────────────────────────────
-function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, onToggleFav }: {
+function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, onToggleFav, formHome, formAway }: {
   event: SportEvent
   liveScore?: LiveScore
   isReminded: boolean
@@ -445,6 +461,8 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   flashing?: boolean
   isFav?: boolean
   onToggleFav?: () => void
+  formHome?: ('W'|'D'|'L')[]
+  formAway?: ('W'|'D'|'L')[]
 }) {
   const isLive  = !!liveScore && !FINISHED.has(liveScore.status)
   const isFinal = !!liveScore && (liveScore.status === 'FT' || liveScore.status === 'Final' || liveScore.status === 'STATUS_FINAL') && liveScore.homeGoals !== null
@@ -549,6 +567,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
               {event.home}
             </span>
             {isFav && <span className="text-[9px] mt-0.5" style={{ color: '#F472B6' }}>♥</span>}
+            {formHome && <FormStrip form={formHome} align="end" />}
           </div>
           <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={32} sport={event.sport} />
         </div>
@@ -573,6 +592,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
             <span className="text-[13px] font-bold truncate block" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
               {event.away}
             </span>
+            {formAway && <FormStrip form={formAway} align="start" />}
           </div>
         </div>
       )}
@@ -1087,7 +1107,13 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
 // ─── Main ─────────────────────────────────────────────────────────────────
 type ViewType = 'destacados' | 'todos' | 'en-vivo' | 'resultados' | 'recordatorios'
 
-export default function CalendarioContent({ events, pastEvents = [] }: { events: SportEvent[]; pastEvents?: SportEvent[] }) {
+type FormResult = 'W' | 'D' | 'L'
+
+export default function CalendarioContent({ events, pastEvents = [], recentForms = {} }: {
+  events: SportEvent[]
+  pastEvents?: SportEvent[]
+  recentForms?: Record<string, FormResult[]>
+}) {
   const [view, setView] = useState<ViewType>('destacados')
   const [tz, setTz] = useState<string>(SOURCE_TZ)
   const [searchRaw, setSearchRaw] = useState('')
@@ -1795,6 +1821,8 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                       flashing={flashIds.has(event.id)}
                       isFav={true}
                       onToggleFav={() => toggleFavorite(event.home)}
+                      formHome={recentForms[event.home]}
+                      formAway={event.away ? recentForms[event.away] : undefined}
                     />
                   )
                 })}
@@ -1994,6 +2022,8 @@ export default function CalendarioContent({ events, pastEvents = [] }: { events:
                       flashing={flashIds.has(event.id)}
                       isFav={eventHasFavorite(favorites, event)}
                       onToggleFav={() => toggleFavorite(event.home)}
+                      formHome={recentForms[event.home]}
+                      formAway={event.away ? recentForms[event.away] : undefined}
                     />
                   )
                 })}
