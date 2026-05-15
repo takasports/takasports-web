@@ -5,8 +5,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 
-// Fallback in-memory si Supabase no está disponible
+// Fallback in-memory si Supabase no está disponible o la tabla no existe
 const memChat = new Map<string, Array<{ id: string; nickname: string; message: string; created_at: string }>>()
+
+// Detecta errores que significan "la tabla quiniela_league_chat no existe":
+// - 42P01: Postgres "undefined_table"
+// - PGRST200/PGRST205: PostgREST schema cache (común al desplegar antes de la migración)
+// - PGRST106: PostgREST nominal "table not found"
+function isMissingTable(err: { code?: string | null; message?: string } | null): boolean {
+  if (!err) return false
+  const code = err.code ?? ''
+  if (code === '42P01' || code.startsWith('PGRST')) return true
+  return /(could not find the table|relation .* does not exist|schema cache)/i.test(err.message ?? '')
+}
 
 export async function GET(req: NextRequest) {
   const liga  = req.nextUrl.searchParams.get('liga')?.toUpperCase()
@@ -22,8 +33,10 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(limit)
     if (error) {
-      // tabla puede no existir todavía — devolver vacío
-      if (error.code === '42P01') return NextResponse.json([])
+      // Si la tabla no existe (migración no aplicada), fallback a memoria
+      if (isMissingTable(error)) {
+        return NextResponse.json((memChat.get(liga) ?? []).slice(-limit))
+      }
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
     return NextResponse.json((data ?? []).reverse())
@@ -50,7 +63,7 @@ export async function POST(req: NextRequest) {
         message: msg,
       })
       if (error) {
-        if (error.code === '42P01') {
+        if (isMissingTable(error)) {
           // tabla no creada aún, usar memoria
         } else {
           return NextResponse.json({ error: error.message }, { status: 500 })
