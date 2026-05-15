@@ -3,10 +3,7 @@ import { SOCCER_LEAGUES, EUROPEAN_CUPS } from '@/lib/stats-leagues'
 import {
   FIFA_RANKING, FIFA_RANKING_AS_OF, UFC_P4P, UFC_P4P_AS_OF, COACH_CONFIG,
   MOTOGP_RIDERS, MOTOGP_CONSTRUCTORS, MOTOGP_AS_OF,
-  CYCLING_UCI, CYCLING_GRAND_TOURS, CYCLING_AS_OF,
-  PGA_OWGR, LIV_RANKING, PGA_MAJORS_2026, GOLF_AS_OF,
-  UFC_NEXT_CARD, UFC_STREAKS, UFC_NEXT_EVENT_AS_OF,
-  TENNIS_SLAMS_2026, WTA_SURFACES,
+  TENNIS_SLAMS_2026,
   NBA_ROOKIE_NAMES,
   type StandingRow,
 } from '@/lib/stats-editorial'
@@ -81,15 +78,7 @@ export interface StatsStandingsResponse {
   worldCupQualified: StandingRow[]
   motogpRiders: StandingRow[]
   motogpConstructors: StandingRow[]
-  cyclingUci: StandingRow[]
-  cyclingGrandTours: StandingRow[]
-  pgaOwgr: StandingRow[]
-  livRanking: StandingRow[]
-  pgaMajors: StandingRow[]
-  ufcCard: StandingRow[]
-  ufcStreaks: StandingRow[]
   tennisSlams: StandingRow[]
-  wtaSurfaces: StandingRow[]
   meta: Record<string, BlockMeta>
   updatedAt: string
 }
@@ -1129,15 +1118,14 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   football: ['football', 'uclScorers', 'uelScorers', 'ueclScorers', 'uclAssists', 'uelAssists', 'ueclAssists'],
   nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaPlayoffSeries', 'nbaMvpRace', 'nbaDpoyRace', 'nbaRookieRace'],
   f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps', 'f1Calendar'],
-  tenis: ['atpRanking', 'wtaRanking', 'tennisSlams', 'wtaSurfaces'],
-  tennis: ['atpRanking', 'wtaRanking', 'tennisSlams', 'wtaSurfaces'],
-  ufc: ['ufcP4P', 'ufcCard', 'ufcStreaks', 'ufcChampions'],
+  tenis: ['atpRanking', 'wtaRanking', 'tennisSlams'],
+  tennis: ['atpRanking', 'wtaRanking', 'tennisSlams'],
+  ufc: ['ufcP4P', 'ufcChampions'],
   selecciones: ['fifaRanking', 'nationsLeague'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
-  golf: ['pgaTourLeaderboard', 'pgaFedExCup', 'pgaOwgr', 'livRanking', 'pgaMajors'],
+  golf: ['pgaTourLeaderboard', 'pgaFedExCup'],
   mundial: ['worldCup', 'worldCupScorers', 'worldCupKnockout', 'worldCupQualified'],
   motogp: ['motogpRiders', 'motogpConstructors'],
-  ciclismo: ['cyclingUci', 'cyclingGrandTours'],
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
@@ -1195,11 +1183,6 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   const fifaR            = resolveSnapshot('ranking-fifa',        FIFA_RANKING,        'FIFA',         FIFA_RANKING_AS_OF)
   const motogpRidersR    = resolveSnapshot('motogp-pilotos',      MOTOGP_RIDERS,       'MotoGP.com', MOTOGP_AS_OF)
   const motogpConstructR = resolveSnapshot('motogp-constructores',MOTOGP_CONSTRUCTORS, 'MotoGP.com', MOTOGP_AS_OF)
-  const cyclingUciR      = resolveSnapshot('ciclismo-uci',        CYCLING_UCI,         'UCI',         CYCLING_AS_OF)
-  const pgaOwgrR         = resolveSnapshot('pga-owgr',            PGA_OWGR,            'OWGR',        GOLF_AS_OF)
-  const livRankingR      = resolveSnapshot('liv-ranking',         LIV_RANKING,         'LIV Golf',    GOLF_AS_OF)
-  const ufcStreaksR      = resolveSnapshot('ufc-streaks',         UFC_STREAKS,         'UFC Stats',   UFC_P4P_AS_OF)
-  const wtaSurfacesR     = resolveSnapshot('wta-wins-surface',    WTA_SURFACES,        'WTA',         '2024-25')
 
   // Derived blocks
   const nbaMvpRace = buildNbaMvpRace(nbaLeaders.scoring, nba.east, nba.west)
@@ -1279,17 +1262,9 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     uelAssists:        uelAssists.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
     ueclAssists:       ueclAssists.length   ? live('ESPN · UEFA Conference')       : unavail('ESPN'),
     worldCupQualified: live('Auto · FIFA + anfitriones'),
-    motogpRiders:        motogpRidersR.rows.length    ? histor(motogpRidersR.snap?.source ?? 'MotoGP.com', motogpRidersR.snap?.asOf ?? MOTOGP_AS_OF) : unavail('Sin fuente gratuita verificable'),
-    motogpConstructors:  motogpConstructR.rows.length ? histor(motogpConstructR.snap?.source ?? 'MotoGP.com', motogpConstructR.snap?.asOf ?? MOTOGP_AS_OF) : unavail('Sin fuente gratuita verificable'),
-    cyclingUci:          cyclingUciR.rows.length      ? histor(cyclingUciR.snap?.source ?? 'UCI', cyclingUciR.snap?.asOf ?? CYCLING_AS_OF) : unavail('Sin fuente gratuita verificable'),
-    cyclingGrandTours:   CYCLING_GRAND_TOURS.length   ? histor('UCI · calendario', '2026') : unavail('Calendario no disponible'),
-    pgaOwgr:             pgaOwgrR.rows.length         ? histor(pgaOwgrR.snap?.source ?? 'OWGR', pgaOwgrR.snap?.asOf ?? GOLF_AS_OF) : unavail('Sin fuente gratuita verificable'),
-    livRanking:          livRankingR.rows.length      ? histor(livRankingR.snap?.source ?? 'LIV Golf', livRankingR.snap?.asOf ?? GOLF_AS_OF) : unavail('Sin fuente gratuita verificable'),
-    pgaMajors:           PGA_MAJORS_2026.length       ? histor('PGA · calendario', '2026') : unavail('Calendario no disponible'),
-    ufcCard:             UFC_NEXT_CARD.length         ? histor('UFC', UFC_NEXT_EVENT_AS_OF): unavail('Próxima cartelera no disponible'),
-    ufcStreaks:          ufcStreaksR.rows.length      ? histor(ufcStreaksR.snap?.source ?? 'UFC Stats', ufcStreaksR.snap?.asOf ?? UFC_P4P_AS_OF) : unavail('Sin fuente gratuita verificable'),
+    motogpRiders:        motogpRidersR.rows.length    ? live(motogpRidersR.snap?.source ?? 'MotoGP.com') : unavail('Sin snapshot — ejecutar cron MotoGP'),
+    motogpConstructors:  motogpConstructR.rows.length ? live(motogpConstructR.snap?.source ?? 'MotoGP.com') : unavail('Sin snapshot — ejecutar cron MotoGP'),
     tennisSlams:         TENNIS_SLAMS_2026.length     ? histor('ATP/WTA · calendario', '2026') : unavail('Calendario no disponible'),
-    wtaSurfaces:         wtaSurfacesR.rows.length     ? histor(wtaSurfacesR.snap?.source ?? 'WTA', wtaSurfacesR.snap?.asOf ?? '2024-25') : unavail('Sin fuente gratuita verificable'),
   }
 
   // Per-football-league meta — lets the UI surface stale-fallback per tabla-* block.
@@ -1348,15 +1323,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     worldCupQualified,
     motogpRiders:       motogpRidersR.rows,
     motogpConstructors: motogpConstructR.rows,
-    cyclingUci:         cyclingUciR.rows,
-    cyclingGrandTours:  CYCLING_GRAND_TOURS,
-    pgaOwgr:            pgaOwgrR.rows,
-    livRanking:         livRankingR.rows,
-    pgaMajors:          PGA_MAJORS_2026,
-    ufcCard:            UFC_NEXT_CARD,
-    ufcStreaks:         ufcStreaksR.rows,
     tennisSlams:        TENNIS_SLAMS_2026,
-    wtaSurfaces:        wtaSurfacesR.rows,
     meta,
     updatedAt:          now,
   }

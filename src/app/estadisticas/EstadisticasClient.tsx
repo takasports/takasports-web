@@ -935,16 +935,6 @@ const SPORTS: SportConfig[] = [
               { rank: 7, name: 'Taylor Fritz',            value: '3770',  sub: '0 Grand Slams',  flag: '🇺🇸', trend: 'flat', extra: { GS: '0',  Torneos: '4' } },
             ],
           },
-          {
-            id: 'atp-wins-surface', title: 'Victorias por superficie (ATP)', metric: '% Vic.',
-            rows: [
-              { rank: 1, name: 'Carlos Alcaraz', value: '88%', sub: 'Tierra · 2024-25', flag: '🇪🇸', trend: 'up',   extra: { Dura: '74%', Hierba: '82%' } },
-              { rank: 2, name: 'Jannik Sinner',  value: '86%', sub: 'Dura · 2024-25',   flag: '🇮🇹', trend: 'up',   extra: { Dura: '86%', Tierra: '71%' } },
-              { rank: 3, name: 'Novak Djokovic', value: '84%', sub: 'Global · 2024-25', flag: '🇷🇸', trend: 'flat', extra: { Dura: '82%', Tierra: '85%' } },
-              { rank: 4, name: 'Alexander Zverev', value: '76%', sub: 'Tierra · 2024-25', flag: '🇩🇪', trend: 'up',   extra: { Dura: '68%', Tierra: '76%' } },
-              { rank: 5, name: 'Daniil Medvedev', value: '79%', sub: 'Dura · 2024-25',   flag: '🇷🇺', trend: 'flat', extra: { Dura: '79%', Tierra: '60%' } },
-            ],
-          },
         ],
       },
       {
@@ -960,16 +950,6 @@ const SPORTS: SportConfig[] = [
               { rank: 5, name: 'Jessica Pegula',  value: '6136',  sub: '0 Grand Slams', flag: '🇺🇸', trend: 'up',   extra: { GS: '0', Torneos: '4' } },
               { rank: 6, name: 'Amanda Anisimova',value: '5985',  sub: '0 Grand Slams', flag: '🇺🇸', trend: 'up',   extra: { GS: '0', Torneos: '4' } },
               { rank: 7, name: 'Mirra Andreeva',  value: '4181',  sub: '0 Grand Slams', flag: '🇷🇺', trend: 'up',   extra: { GS: '0', Torneos: '3' } },
-            ],
-          },
-          {
-            id: 'wta-wins-surface', title: 'Victorias por superficie (WTA)', metric: '% Vic.',
-            rows: [
-              { rank: 1, name: 'Iga Swiatek',     value: '86%', sub: 'Tierra · 2024-25', flag: '🇵🇱', trend: 'up',   extra: { Dura: '72%', Hierba: '64%' } },
-              { rank: 2, name: 'Aryna Sabalenka', value: '84%', sub: 'Dura · 2024-25',   flag: '🇧🇾', trend: 'up',   extra: { Dura: '84%', Tierra: '68%' } },
-              { rank: 3, name: 'Elena Rybakina',  value: '78%', sub: 'Hierba · 2024-25', flag: '🇰🇿', trend: 'up',   extra: { Dura: '74%', Hierba: '78%' } },
-              { rank: 4, name: 'Coco Gauff',      value: '74%', sub: 'Dura · 2024-25',   flag: '🇺🇸', trend: 'flat', extra: { Dura: '74%', Tierra: '70%' } },
-              { rank: 5, name: 'Jessica Pegula',  value: '71%', sub: 'Dura · 2024-25',   flag: '🇺🇸', trend: 'flat', extra: { Dura: '71%', Hierba: '62%' } },
             ],
           },
         ],
@@ -992,69 +972,17 @@ const SPORTS: SportConfig[] = [
     id: 'ufc', label: 'UFC', emoji: '🥊', accent: '#f97316',
     sections: [
       {
-        id: 'proximo-ufc', label: 'Próximo evento', icon: '📅',
-        blocks: [{
-          id: 'ufc-card', title: 'Cartelera próximo UFC', metric: 'Pelea',
-          rows: [
-            { rank: 1, name: 'Pereira vs Ankalaev 2', team: 'Title · Semi-pesado', value: 'Main',  sub: 'UFC 320 · 5 hr', trend: 'up' },
-            { rank: 2, name: 'Dvalishvili vs Sandhagen', team: 'Title · Gallo',    value: 'Co-main', sub: 'UFC 320 · 4 hr', trend: 'up' },
-            { rank: 3, name: 'Hill vs Rountree',      team: 'Semi-pesado',         value: '3rd',   sub: 'UFC 320 · 3 hr', trend: 'flat' },
-            { rank: 4, name: 'Ulberg vs Reyes',        team: 'Semi-pesado',        value: '4th',   sub: 'UFC 320 · 3 hr', trend: 'flat' },
-          ],
-        }],
-      },
-      {
         id: 'ranking-ufc', label: 'Rankings', icon: '🏆',
         blocks: [
           {
             id: 'ufc-p4p', title: 'Pound for Pound (Top 10)', metric: 'Pos.',
             rows: [
-              { rank: 1,  name: 'Islam Makhachev',   team: 'Ligero',        value: '#1',  sub: 'Ref. May-2026', flag: '🇷🇺', trend: 'flat' },
-              { rank: 2,  name: 'Jon Jones',          team: 'Peso completo', value: '#2',  sub: 'Ref. May-2026', flag: '🇺🇸', trend: 'flat' },
-              { rank: 3,  name: 'Ilia Topuria',       team: 'Pluma',         value: '#3',  sub: 'Ref. May-2026', flag: '🇬🇪', trend: 'up' },
-              { rank: 4,  name: 'Dricus du Plessis',  team: 'Medio',         value: '#4',  sub: 'Ref. May-2026', flag: '🇿🇦', trend: 'flat' },
-              { rank: 5,  name: 'Alex Pereira',       team: 'Semi-pesado',   value: '#5',  sub: 'Ref. May-2026', flag: '🇧🇷', trend: 'down' },
-              { rank: 6,  name: 'Merab Dvalishvili',  team: 'Gallo',         value: '#6',  sub: 'Ref. May-2026', flag: '🇬🇪', trend: 'up' },
-              { rank: 7,  name: 'Belal Muhammad',     team: 'Wélter',        value: '#7',  sub: 'Ref. May-2026', flag: '🇺🇸', trend: 'up' },
-              { rank: 8,  name: 'Tom Aspinall',       team: 'Pesado (I)',    value: '#8',  sub: 'Ref. May-2026', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'flat' },
-              { rank: 9,  name: 'Alexandre Pantoja',  team: 'Mosca',         value: '#9',  sub: 'Ref. May-2026', flag: '🇧🇷', trend: 'flat' },
-              { rank: 10, name: 'Charles Oliveira',   team: 'Ligero',        value: '#10', sub: 'Ref. May-2026', flag: '🇧🇷', trend: 'up' },
-            ],
-          },
-          {
-            id: 'ufc-ko', title: 'Más KO/TKO en activo', metric: 'KOs',
-            rows: [
-              { rank: 1, name: 'Derrick Lewis',     value: '14', sub: '28 victorias', flag: '🇺🇸', trend: 'flat' },
-              { rank: 2, name: 'Jon Jones',         value: '11', sub: '18 victorias', flag: '🇺🇸', trend: 'flat' },
-              { rank: 3, name: 'Francis Ngannou',   value: '10', sub: '17 victorias', flag: '🇨🇲', trend: 'flat' },
-              { rank: 4, name: 'Israel Adesanya',   value: '10', sub: '24 victorias', flag: '🇳🇬', trend: 'down' },
-              { rank: 5, name: 'Max Holloway',      value: '9',  sub: '26 victorias', flag: '🇺🇸', trend: 'up' },
-              { rank: 6, name: 'Ciryl Gane',        value: '8',  sub: '13 victorias', flag: '🇫🇷', trend: 'flat' },
-            ],
-          },
-          {
-            id: 'ufc-streaks', title: 'Rachas de victorias activas', metric: 'Vic. seguidas',
-            rows: [
-              { rank: 1, name: 'Islam Makhachev',     team: 'Ligero',     value: '15', sub: 'Sin derrotas desde 2015',  flag: '🇷🇺', trend: 'up' },
-              { rank: 2, name: 'Merab Dvalishvili',   team: 'Gallo',      value: '12', sub: 'Campeón actual',           flag: '🇬🇪', trend: 'up' },
-              { rank: 3, name: 'Belal Muhammad',      team: 'Wélter',     value: '10', sub: 'Sin derrotas desde 2019',  flag: '🇺🇸', trend: 'up' },
-              { rank: 4, name: 'Movsar Evloev',       team: 'Pluma',      value: '9',  sub: 'Invicto en UFC',           flag: '🇷🇺', trend: 'up' },
-              { rank: 5, name: 'Ilia Topuria',        team: 'Pluma',      value: '8',  sub: 'Invicto profesional',      flag: '🇬🇪', trend: 'up' },
-              { rank: 6, name: 'Tom Aspinall',        team: 'Pesado',     value: '6',  sub: 'Campeón interino',         flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up' },
+              { rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const },
             ],
           },
           {
             id: 'ufc-campeones', title: 'Campeones actuales por división', metric: 'División',
-            rows: [
-              { rank: 1, name: 'Jon Jones',           team: 'Peso completo',   value: 'Campeón', flag: '🇺🇸', trend: 'flat' },
-              { rank: 2, name: 'Magomed Ankalaev',    team: 'Semipesado',      value: 'Campeón', flag: '🇷🇺', trend: 'up' },
-              { rank: 3, name: 'Dricus du Plessis',   team: 'Medio',           value: 'Campeón', flag: '🇿🇦', trend: 'up' },
-              { rank: 4, name: 'Belal Muhammad',      team: 'Wélter',          value: 'Campeón', flag: '🇺🇸', trend: 'up' },
-              { rank: 5, name: 'Islam Makhachev',     team: 'Ligero',          value: 'Campeón', flag: '🇷🇺', trend: 'flat' },
-              { rank: 6, name: 'Ilia Topuria',        team: 'Pluma',           value: 'Campeón', flag: '🇬🇪', trend: 'up' },
-              { rank: 7, name: 'Alexandre Pantoja',   team: 'Mosca',           value: 'Campeón', flag: '🇧🇷', trend: 'flat' },
-              { rank: 8, name: 'Merab Dvalishvili',   team: 'Gallo',           value: 'Campeón', flag: '🇬🇪', trend: 'up' },
-            ],
+            rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }],
           },
         ],
       },
@@ -1092,44 +1020,6 @@ const SPORTS: SportConfig[] = [
               { rank: 8, name: 'Patrick Cantlay',     value: '1280', sub: 'Puntos FedEx', flag: '🇺🇸', trend: 'flat' },
             ],
           },
-          {
-            id: 'pga-owgr', title: 'Ranking Mundial Oficial (OWGR)', metric: 'Pts',
-            rows: [
-              { rank: 1, name: 'Scottie Scheffler',  value: '14.62', sub: 'OWGR · #1 mundial',  flag: '🇺🇸', trend: 'flat' },
-              { rank: 2, name: 'Rory McIlroy',        value: '8.54',  sub: 'OWGR',               flag: '🇬🇧', trend: 'up' },
-              { rank: 3, name: 'Xander Schauffele',   value: '7.89',  sub: 'OWGR',               flag: '🇺🇸', trend: 'flat' },
-              { rank: 4, name: 'Collin Morikawa',     value: '6.95',  sub: 'OWGR',               flag: '🇺🇸', trend: 'up' },
-              { rank: 5, name: 'Ludvig Åberg',        value: '6.21',  sub: 'OWGR',               flag: '🇸🇪', trend: 'up' },
-              { rank: 6, name: 'Viktor Hovland',      value: '5.47',  sub: 'OWGR',               flag: '🇳🇴', trend: 'flat' },
-              { rank: 7, name: 'Tommy Fleetwood',     value: '5.12',  sub: 'OWGR',               flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up' },
-              { rank: 8, name: 'Hideki Matsuyama',    value: '4.98',  sub: 'OWGR',               flag: '🇯🇵', trend: 'flat' },
-            ],
-          },
-          {
-            id: 'pga-major', title: 'Próximo Major · The Masters', metric: 'Estado',
-            rows: [
-              { rank: 1, name: 'The Masters · Augusta National', value: '9-12 abr', sub: 'Major #1 del año',      trend: 'up' },
-              { rank: 2, name: 'PGA Championship · Quail Hollow', value: '14-17 may', sub: 'Major #2 del año',     trend: 'flat' },
-              { rank: 3, name: 'US Open · Oakmont',               value: '11-14 jun', sub: 'Major #3 del año',     trend: 'flat' },
-              { rank: 4, name: 'The Open · Royal Portrush',       value: '16-19 jul', sub: 'Major #4 del año',     trend: 'flat' },
-            ],
-          },
-        ],
-      },
-      {
-        id: 'liv', label: 'LIV Golf', icon: '⚡',
-        blocks: [
-          {
-            id: 'liv-ranking', title: 'LIV Golf · Clasificación individual', metric: 'Pts',
-            rows: [
-              { rank: 1, name: 'Joaquin Niemann',   team: 'Torque GC',     value: '198.5', sub: '8 torneos', flag: '🇨🇱', trend: 'up' },
-              { rank: 2, name: 'Jon Rahm',          team: 'Legion XIII',   value: '184.2', sub: '8 torneos', flag: '🇪🇸', trend: 'flat' },
-              { rank: 3, name: 'Bryson DeChambeau', team: 'Crushers GC',   value: '162.0', sub: '8 torneos', flag: '🇺🇸', trend: 'up' },
-              { rank: 4, name: 'Sergio García',     team: 'Fireballs GC',  value: '142.8', sub: '8 torneos', flag: '🇪🇸', trend: 'flat' },
-              { rank: 5, name: 'Dean Burmester',    team: 'Stinger GC',    value: '128.5', sub: '8 torneos', flag: '🇿🇦', trend: 'up' },
-              { rank: 6, name: 'Cameron Smith',     team: 'Rippers GC',    value: '115.0', sub: '8 torneos', flag: '🇦🇺', trend: 'flat' },
-            ],
-          },
         ],
       },
     ],
@@ -1162,36 +1052,6 @@ const SPORTS: SportConfig[] = [
             { rank: 3, name: 'KTM',     value: '95',  sub: 'Temp. 2026 · R5', trend: 'flat' },
             { rank: 4, name: 'Yamaha',  value: '54',  sub: 'Temp. 2026 · R5', trend: 'down' },
             { rank: 5, name: 'Honda',   value: '38',  sub: 'Temp. 2026 · R5', trend: 'down' },
-          ],
-        }],
-      },
-    ],
-  },
-  {
-    id: 'ciclismo', label: 'Ciclismo', emoji: '🚴', accent: '#0891b2',
-    sections: [
-      {
-        id: 'uci', label: 'UCI', icon: '🌐',
-        blocks: [{
-          id: 'ciclismo-uci', title: 'Ranking UCI World Tour', metric: 'Pts',
-          rows: [
-            { rank: 1, name: 'Tadej Pogačar',     team: 'UAE Team Emirates', value: '7820', sub: 'UCI · 2026',  flag: '🇸🇮', trend: 'flat' },
-            { rank: 2, name: 'Jonas Vingegaard',  team: 'Visma–Lease a Bike', value: '5280', sub: 'UCI · 2026', flag: '🇩🇰', trend: 'up' },
-            { rank: 3, name: 'Remco Evenepoel',   team: 'Soudal Quick-Step', value: '4710', sub: 'UCI · 2026',  flag: '🇧🇪', trend: 'up' },
-            { rank: 4, name: 'Mathieu van der Poel',team: 'Alpecin–Deceuninck',value: '3950', sub: 'UCI · 2026',flag: '🇳🇱', trend: 'flat' },
-            { rank: 5, name: 'Wout van Aert',     team: 'Visma–Lease a Bike', value: '3540', sub: 'UCI · 2026', flag: '🇧🇪', trend: 'up' },
-            { rank: 6, name: 'Primož Roglič',     team: 'Red Bull–BORA',     value: '3210', sub: 'UCI · 2026',  flag: '🇸🇮', trend: 'flat' },
-          ],
-        }],
-      },
-      {
-        id: 'grandes-vueltas', label: 'Grandes Vueltas', icon: '🏆',
-        blocks: [{
-          id: 'ciclismo-tour', title: 'Calendario Grandes Vueltas 2026', metric: 'Fecha',
-          rows: [
-            { rank: 1, name: 'Giro d\'Italia · Italia',   value: '8 may – 31 may', sub: 'Maglia rosa',     trend: 'up' },
-            { rank: 2, name: 'Tour de France · Francia',  value: '4 jul – 26 jul', sub: 'Maillot jaune',   trend: 'flat' },
-            { rank: 3, name: 'La Vuelta · España',         value: '22 ago – 13 sep', sub: 'Jersey rojo',    trend: 'flat' },
           ],
         }],
       },
@@ -1809,12 +1669,9 @@ const LIVE_BLOCK_IDS = new Set([
   'wc-qualified',
   // NBA Playoffs
   'nba-playoffs',
-  // Editorial automatizados (snapshots con asOf)
+  // Snapshots auto-actualizados (cron Vercel)
   'motogp-pilotos', 'motogp-constructores',
-  'ciclismo-uci', 'ciclismo-tour',
-  'pga-owgr', 'liv-ranking', 'pga-major',
-  'ufc-card', 'ufc-streaks',
-  'tenis-slams', 'wta-wins-surface',
+  'tenis-slams',
 ])
 
 interface LiveStandingRow {
@@ -1865,15 +1722,7 @@ interface LiveStandingsData {
   worldCupQualified?: LiveStandingRow[]
   motogpRiders?: LiveStandingRow[]
   motogpConstructors?: LiveStandingRow[]
-  cyclingUci?: LiveStandingRow[]
-  cyclingGrandTours?: LiveStandingRow[]
-  pgaOwgr?: LiveStandingRow[]
-  livRanking?: LiveStandingRow[]
-  pgaMajors?: LiveStandingRow[]
-  ufcCard?: LiveStandingRow[]
-  ufcStreaks?: LiveStandingRow[]
   tennisSlams?: LiveStandingRow[]
-  wtaSurfaces?: LiveStandingRow[]
   meta?: Record<string, BlockMeta>
   updatedAt?: string
 }
@@ -1912,15 +1761,7 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'ucl-assists': 'uclAssists', 'uel-assists': 'uelAssists', 'uecl-assists': 'ueclAssists',
   'motogp-pilotos': 'motogpRiders',
   'motogp-constructores': 'motogpConstructors',
-  'ciclismo-uci': 'cyclingUci',
-  'ciclismo-tour': 'cyclingGrandTours',
-  'pga-owgr': 'pgaOwgr',
-  'liv-ranking': 'livRanking',
-  'pga-major': 'pgaMajors',
-  'ufc-card': 'ufcCard',
-  'ufc-streaks': 'ufcStreaks',
   'tenis-slams': 'tennisSlams',
-  'wta-wins-surface': 'wtaSurfaces',
 }
 
 // Blocks with API-Sports 2024 data (free tier): show as historical, not live
@@ -1932,7 +1773,6 @@ const STATIC_STALE_BLOCK_IDS = new Set([
   'minutos', 'partidos-titular',
   'promesas-nota', 'promesas-goles',
   'goleadores-selecciones', 'dt-trofeos',
-  'atp-wins-surface', 'ufc-ko',
 ])
 
 const FIXTURE_META_KEY: Record<string, string> = {
@@ -2541,15 +2381,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (block.id === 'wc-qualified'     && liveData.worldCupQualified?.length) return { ...block, rows: toStatRows(liveData.worldCupQualified) }
         if (block.id === 'motogp-pilotos'        && liveData.motogpRiders?.length)        return { ...block, rows: toStatRows(liveData.motogpRiders, 'Escudería') }
         if (block.id === 'motogp-constructores'  && liveData.motogpConstructors?.length)  return { ...block, rows: toStatRows(liveData.motogpConstructors) }
-        if (block.id === 'ciclismo-uci'          && liveData.cyclingUci?.length)          return { ...block, rows: toStatRows(liveData.cyclingUci, 'Equipo') }
-        if (block.id === 'ciclismo-tour'         && liveData.cyclingGrandTours?.length)   return { ...block, rows: toStatRows(liveData.cyclingGrandTours) }
-        if (block.id === 'pga-owgr'              && liveData.pgaOwgr?.length)             return { ...block, rows: toStatRows(liveData.pgaOwgr) }
-        if (block.id === 'liv-ranking'           && liveData.livRanking?.length)          return { ...block, rows: toStatRows(liveData.livRanking, 'Equipo') }
-        if (block.id === 'pga-major'             && liveData.pgaMajors?.length)           return { ...block, rows: toStatRows(liveData.pgaMajors) }
-        if (block.id === 'ufc-card'              && liveData.ufcCard?.length)             return { ...block, rows: toStatRows(liveData.ufcCard) }
-        if (block.id === 'ufc-streaks'           && liveData.ufcStreaks?.length)          return { ...block, rows: toStatRows(liveData.ufcStreaks) }
         if (block.id === 'tenis-slams'           && liveData.tennisSlams?.length)         return { ...block, rows: toStatRows(liveData.tennisSlams) }
-        if (block.id === 'wta-wins-surface'      && liveData.wtaSurfaces?.length)         return { ...block, rows: toStatRows(liveData.wtaSurfaces) }
       }
       // Player stats data
       if (livePlayerData && LIVE_PLAYER_BLOCK_IDS.has(block.id)) {
