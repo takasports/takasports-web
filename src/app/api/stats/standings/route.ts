@@ -52,6 +52,7 @@ export interface StatsStandingsResponse {
   wtaRanking: StandingRow[]
   fifaRanking: StandingRow[]
   ufcP4P: StandingRow[]
+  ufcChampions: StandingRow[]
   womenLigaF: StandingRow[]
   womenGoals: StandingRow[]
   womenAssists: StandingRow[]
@@ -1053,7 +1054,7 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps', 'f1Calendar'],
   tenis: ['atpRanking', 'wtaRanking', 'tennisSlams', 'wtaSurfaces'],
   tennis: ['atpRanking', 'wtaRanking', 'tennisSlams', 'wtaSurfaces'],
-  ufc: ['ufcP4P', 'ufcCard', 'ufcStreaks'],
+  ufc: ['ufcP4P', 'ufcCard', 'ufcStreaks', 'ufcChampions'],
   selecciones: ['fifaRanking', 'nationsLeague'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
   golf: ['pgaTourLeaderboard', 'pgaFedExCup', 'pgaOwgr', 'livRanking', 'pgaMajors'],
@@ -1105,6 +1106,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     return { rows: fallback, snap: null }
   }
   const ufcP4PR          = resolveSnapshot('ufc-p4p',             ufcP4P,              'UFC Rankings', UFC_P4P_AS_OF)
+  const ufcChampionsR    = resolveSnapshot('ufc-campeones',       [],                  'UFC',          UFC_P4P_AS_OF)
   const fifaR            = resolveSnapshot('ranking-fifa',        FIFA_RANKING,        'FIFA',         FIFA_RANKING_AS_OF)
   const motogpRidersR    = resolveSnapshot('motogp-pilotos',      MOTOGP_RIDERS,       'MotoGP.com', MOTOGP_AS_OF)
   const motogpConstructR = resolveSnapshot('motogp-constructores',MOTOGP_CONSTRUCTORS, 'MotoGP.com', MOTOGP_AS_OF)
@@ -1148,6 +1150,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     wtaRanking:      tennis.wta.length ? live('ESPN') : unavail('ESPN'),
     fifaRanking:     fifaR.snap ? live(fifaR.snap.source) : histor('FIFA', FIFA_RANKING_AS_OF),
     ufcP4P:          ufcP4PR.snap ? live(ufcP4PR.snap.source) : histor('UFC Rankings', UFC_P4P_AS_OF),
+    ufcChampions:    ufcChampionsR.snap ? live(ufcChampionsR.snap.source) : unavail('Sin snapshot — ejecutar cron UFC'),
     womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
     womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
     womenAssists:        womenStats.assists.length     ? live('ESPN') : unavail('ESPN'),
@@ -1224,6 +1227,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     wtaRanking:     tennis.wta,
     fifaRanking:    fifaR.rows,
     ufcP4P:         ufcP4PR.rows,
+    ufcChampions:   ufcChampionsR.rows,
     womenLigaF,
     womenGoals:          womenStats.goals,
     womenAssists:        womenStats.assists,

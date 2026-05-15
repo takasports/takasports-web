@@ -1760,6 +1760,7 @@ const LIVE_BLOCK_IDS = new Set([
   'atp-ranking', 'wta-ranking',
   'goles-equipo', 'menos-goles',
   'ranking-fifa',
+  'ufc-p4p', 'ufc-campeones',
   'nba-scoring', 'nba-rebounds', 'nba-assists', 'nba-blocks', 'nba-steals', 'nba-efficiency', 'nba-3pt',
   'nba-mvp-race', 'nba-rookie-race',
   'f-ligaf-tabla', 'f-goleadoras', 'f-asistencias',
@@ -1804,6 +1805,7 @@ interface LiveStandingsData {
   atpRanking: LiveStandingRow[]; wtaRanking: LiveStandingRow[]
   fifaRanking: LiveStandingRow[]
   ufcP4P: LiveStandingRow[]
+  ufcChampions?: LiveStandingRow[]
   womenLigaF: LiveStandingRow[]
   womenGoals: LiveStandingRow[]; womenAssists: LiveStandingRow[]
   pgaTourLeaderboard?: LiveStandingRow[]
@@ -1850,6 +1852,7 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'atp-ranking': 'atpRanking', 'wta-ranking': 'wtaRanking',
   'ranking-fifa': 'fifaRanking',
   'ufc-p4p': 'ufcP4P',
+  'ufc-campeones': 'ufcChampions',
   'f-ligaf-tabla': 'womenLigaF', 'f-goleadoras': 'womenGoals', 'f-asistencias': 'womenAssists',
   'pga-leaderboard': 'pgaTourLeaderboard', 'pga-fedex': 'pgaFedExCup',
   'nations-a1': 'nationsLeague', 'nations-a2': 'nationsLeague', 'nations-a3': 'nationsLeague', 'nations-a4': 'nationsLeague',
@@ -1887,7 +1890,7 @@ const STATIC_STALE_BLOCK_IDS = new Set([
   'minutos', 'partidos-titular',
   'promesas-nota', 'promesas-goles',
   'goleadores-selecciones', 'dt-trofeos',
-  'atp-wins-surface', 'ufc-ko', 'ufc-campeones',
+  'atp-wins-surface', 'ufc-ko',
 ])
 
 const FIXTURE_META_KEY: Record<string, string> = {
@@ -2467,6 +2470,9 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
 
         if (block.id === 'ufc-p4p' && liveData.ufcP4P?.length)
           return { ...block, rows: toStatRows(liveData.ufcP4P) }
+
+        if (block.id === 'ufc-campeones' && liveData.ufcChampions?.length)
+          return { ...block, rows: toStatRows(liveData.ufcChampions, 'División') }
 
         if (block.id.startsWith('wc-group-') && liveData.worldCup?.length) {
           const group = liveData.worldCup.find(g => g.id === block.id)

@@ -105,3 +105,63 @@ export async function fetchUfcP4P(): Promise<ScrapeResult | null> {
     asOf: new Date().toISOString().slice(0, 10),
   }
 }
+
+// Orden canónico de divisiones (peso descendente). Los nombres deben coincidir
+// con lo que devuelve ufc.com/rankings ('Heavyweight', 'Light Heavyweight'…).
+const DIVISION_ORDER_MEN: Array<{ name: string; es: string }> = [
+  { name: 'Heavyweight',          es: 'Peso pesado'      },
+  { name: 'Light Heavyweight',    es: 'Semipesado'       },
+  { name: 'Middleweight',         es: 'Peso medio'       },
+  { name: 'Welterweight',         es: 'Wélter'           },
+  { name: 'Lightweight',          es: 'Ligero'           },
+  { name: 'Featherweight',        es: 'Pluma'            },
+  { name: 'Bantamweight',         es: 'Gallo'            },
+  { name: 'Flyweight',            es: 'Mosca'            },
+]
+const DIVISION_ORDER_WOMEN: Array<{ name: string; es: string }> = [
+  { name: "Women's Bantamweight", es: 'Gallo (F)'        },
+  { name: "Women's Flyweight",    es: 'Mosca (F)'        },
+  { name: "Women's Strawweight",  es: 'Paja (F)'         },
+]
+
+export async function fetchUfcChampions(): Promise<ScrapeResult | null> {
+  let html: string
+  try {
+    const res = await fetch(URL_RANKINGS, {
+      headers: { 'User-Agent': UA, Accept: 'text/html' },
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    html = await res.text()
+  } catch { return null }
+
+  const blocks = parseUfcRankings(html)
+  if (!blocks.length) return null
+
+  // Mapear nombre de división (en) → bloque
+  const byName = new Map(blocks.map(b => [b.name, b]))
+
+  const rows: StandingRow[] = []
+  let rank = 1
+  for (const div of [...DIVISION_ORDER_MEN, ...DIVISION_ORDER_WOMEN]) {
+    const b = byName.get(div.name)
+    if (!b || !b.champion) continue
+    rows.push({
+      rank,
+      name: b.champion,
+      abbr: div.es,
+      value: 'Campeón',
+      sub: div.es,
+      trend: 'flat',
+      extra: { División: div.es },
+    })
+    rank++
+  }
+
+  if (rows.length === 0) return null
+  return {
+    rows,
+    source: 'ufc.com/rankings · campeones',
+    asOf: new Date().toISOString().slice(0, 10),
+  }
+}

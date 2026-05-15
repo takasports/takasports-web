@@ -12,7 +12,7 @@
 import { NextResponse } from 'next/server'
 import { upsertSnapshot, type UpsertResult } from '@/lib/stat-snapshots'
 import { fetchMotogpRiders, fetchMotogpConstructors, type ScrapeResult } from '@/lib/motogp-scraper'
-import { fetchUfcP4P } from '@/lib/ufc-scraper'
+import { fetchUfcP4P, fetchUfcChampions } from '@/lib/ufc-scraper'
 import { fetchEloWorldRanking } from '@/lib/elo-scraper'
 
 export const dynamic = 'force-dynamic'
@@ -29,7 +29,8 @@ const JOBS_BY_SPORT: Record<string, ScraperJob[]> = {
     { blockId: 'motogp-constructores', fetcher: fetchMotogpConstructors },
   ],
   ufc: [
-    { blockId: 'ufc-p4p', fetcher: fetchUfcP4P },
+    { blockId: 'ufc-p4p',       fetcher: fetchUfcP4P },
+    { blockId: 'ufc-campeones', fetcher: fetchUfcChampions },
   ],
   // 'fifa' = ranking mundial selecciones (Elo, ya que la FIFA bloquea su API).
   // Bloque mantiene id legacy 'ranking-fifa' por estabilidad de URLs/favoritos.
