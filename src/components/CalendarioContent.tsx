@@ -769,7 +769,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
 
       {/* Away (vs match) or sport vignette (solo event) — mantiene la simetría */}
       {hasVs ? (
-        <div className="flex items-center gap-2.5 min-w-0 pl-1">
+        <div className="flex items-center gap-2.5 min-w-0 pl-1 pr-[72px] sm:pr-1">
           <TeamLogo logo={event.awayLogo} photo={event.awayPhoto} name={event.away!} size={32} sport={event.sport} />
           <div className="min-w-0">
             <span className="text-[13px] font-bold truncate block" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
@@ -779,7 +779,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-2 min-w-0 pl-1 opacity-60">
+        <div className="flex items-center gap-2 min-w-0 pl-1 pr-[72px] sm:pr-1 opacity-60">
           <span className="inline-flex items-center justify-center rounded-full flex-shrink-0"
             style={{ width: 32, height: 32, background: `${compColor}14`, border: `1px solid ${compColor}28`, color: compColor }}>
             {racing ? <F1Icon size={16} /> : tennis ? <TennisIcon size={16} /> : <SportIcon sport={event.sport} size={16} />}
@@ -1286,14 +1286,14 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
       </div>
 
       {hasVs ? (
-        <div className="flex items-center gap-2.5 min-w-0 pl-1">
+        <div className="flex items-center gap-2.5 min-w-0 pl-1 pr-10 sm:pr-1">
           <TeamLogo logo={event.awayLogo} name={event.away!} size={32} sport={event.sport} />
           <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {event.away}
           </span>
         </div>
       ) : (
-        <div className="flex items-center gap-2 min-w-0 pl-1 opacity-60">
+        <div className="flex items-center gap-2 min-w-0 pl-1 pr-10 sm:pr-1 opacity-60">
           <span className="inline-flex items-center justify-center rounded-full flex-shrink-0"
             style={{ width: 32, height: 32, background: `${compColor}14`, border: `1px solid ${compColor}28`, color: compColor }}>
             {racing ? <F1Icon size={16} /> : tennis ? <TennisIcon size={16} /> : <SportIcon sport={event.sport} size={16} />}
@@ -2096,9 +2096,14 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           </div>
 
           {/* Sport categories — Destacados es una pastilla resaltada,
-              el resto tabs de texto plano con subrayado púrpura al activo */}
+              el resto tabs de texto plano con subrayado púrpura al activo.
+              Mask en el borde derecho indica que hay scroll horizontal. */}
           <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-px -mx-1 px-1 scrollbar-hide"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            style={{
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              maskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%)',
+            }}>
             {sports.map(sport => {
               const active = activeFilter === sport
               const isDestacados = sport === 'Destacados'

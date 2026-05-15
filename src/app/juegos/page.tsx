@@ -19,6 +19,11 @@ import {
   PreviewMiOnce,
   PreviewSopaCracks,
 } from '@/components/games/GameVisuals'
+import StreakChip from '@/components/games/StreakChip'
+import GameStatusBadge from '@/components/games/GameStatusBadge'
+import LeaderboardTabs from '@/components/games/LeaderboardTabs'
+import { getGamePeriod } from '@/lib/games-periods'
+import type { GameId } from '@/lib/games-store'
 
 // (iconos y previews movidos a src/components/games/GameVisuals.tsx)
 
@@ -357,13 +362,7 @@ function LiveGameCard({ game }: { game: Game }) {
             {game.icon}
           </div>
           <div className="flex flex-col items-end gap-1">
-            <span
-              className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1.5"
-              style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)', fontFamily: 'var(--font-sport)' }}
-            >
-              <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse inline-block" />
-              Disponible
-            </span>
+            <GameStatusBadge gameId={game.id as GameId} period={getGamePeriod(game.id as GameId)} variant="live" />
             <span
               className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
               style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A5A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
@@ -601,6 +600,9 @@ export default function JuegosPage() {
             <p className="text-sm" style={{ color: 'var(--text-muted)', maxWidth: 460 }}>
               Predicciones, trivia, fantasy y arcade. Compite cada semana y sube en el ranking.
             </p>
+            <div className="mt-4">
+              <StreakChip />
+            </div>
           </div>
         </div>
 
@@ -643,6 +645,9 @@ export default function JuegosPage() {
             </div>
           </section>
         )}
+
+        {/* ── RANKINGS ──────────────────────────────────────── */}
+        <LeaderboardTabs />
 
         {/* ── PRÓXIMOS JUEGOS ──────────────────────────────── */}
         <section>
