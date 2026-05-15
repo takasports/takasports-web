@@ -473,12 +473,11 @@ export default function HeroBlock({ articles }: { articles: Article[] }) {
     }, FADE_OUT + 40)
   }, [])
 
-  // Autoplay
-  useEffect(() => {
-    if (paused || len < 2) return
-    timerRef.current = setInterval(() => advance(1), INTERVAL)
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [advance, paused, len])
+  // Autoplay desactivado a propósito: la rotación automática creaba
+  // sensación de bug y competía con el feed por la atención. La
+  // navegación queda manual (flechas, dots, swipe). timerRef y paused
+  // se conservan porque goTo() limpia el ref si existiera y setPaused
+  // sigue exponiéndose para pausas futuras (hover/touch).
 
   // Teclado — flechas izq/der
   useEffect(() => {
@@ -582,8 +581,8 @@ export default function HeroBlock({ articles }: { articles: Article[] }) {
           </div>
         </div>
 
-        {/* ── Barra de progreso ─────────────────────────────── */}
-        <ProgressBar offset={offset % len} paused={paused} />
+        {/* Barra de progreso eliminada con el autoplay — los dots de abajo
+            indican la posición actual sin animación intrusiva. */}
 
         {/* ── Dots de posición ──────────────────────────────── */}
         {len >= 3 && (
