@@ -7,7 +7,7 @@ import type { SportEvent } from '@/lib/types'
 import { getCompAccent, getLeagueScore, SPORT_EMOJI, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
 import { isSplitBroadcast } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
-import { getStoredTZ, setStoredTZ, SOURCE_TZ } from '@/lib/timezone'
+import { getStoredTZ, setStoredTZ, SOURCE_TZ, convertEventTime } from '@/lib/timezone'
 import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
@@ -451,7 +451,7 @@ function FormStrip({ form, align = 'start' }: { form: ('W'|'D'|'L')[]; align?: '
 }
 
 // ─── Compact list row (non-live or in TODOS) ──────────────────────────────
-function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, onToggleFav, formHome, formAway, showComp }: {
+function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, onToggleFav, formHome, formAway, showComp, tz }: {
   event: SportEvent
   liveScore?: LiveScore
   isReminded: boolean
@@ -464,7 +464,12 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   formHome?: ('W'|'D'|'L')[]
   formAway?: ('W'|'D'|'L')[]
   showComp?: boolean
+  tz?: string
 }) {
+  // Convert event time (Madrid source) to user's selected timezone. If tz is
+  // not provided or matches source, returns the original string. Falls back
+  // gracefully on parse errors inside the helper.
+  const displayTime = tz && tz !== SOURCE_TZ ? convertEventTime(event.time, tz) : event.time
   const isLive  = !!liveScore && !FINISHED.has(liveScore.status)
   const isFinal = !!liveScore && (liveScore.status === 'FT' || liveScore.status === 'Final' || liveScore.status === 'STATUS_FINAL') && liveScore.homeGoals !== null
   const showScore = isLive || isFinal
@@ -534,7 +539,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           )}
           <span className="text-[20px] font-bold tabular-nums leading-none"
             style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-            {event.time}
+            {displayTime}
           </span>
           {hasVs && (
             <span className="text-[9px] font-bold uppercase tracking-[0.18em] leading-none" style={{ color: '#38384A', fontFamily: 'var(--font-sport)' }}>vs</span>
@@ -1897,6 +1902,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                       formHome={recentForms[event.home]}
                       formAway={event.away ? recentForms[event.away] : undefined}
                       showComp
+                      tz={tz}
                     />
                   )
                 })}
@@ -1934,6 +1940,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                       formHome={recentForms[event.home]}
                       formAway={event.away ? recentForms[event.away] : undefined}
                       showComp
+                      tz={tz}
                     />
                   )
                 })}
@@ -2054,6 +2061,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                               flashing={flashIds.has(event.id)}
                               isFav={eventHasFavorite(favorites, event)}
                               onToggleFav={() => toggleFavorite(event.home)}
+                              formHome={recentForms[event.home]}
+                              formAway={event.away ? recentForms[event.away] : undefined}
+                              tz={tz}
                             />
                           ))}
                         </div>
@@ -2101,6 +2111,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                       onToggleFav={() => toggleFavorite(event.home)}
                       formHome={recentForms[event.home]}
                       formAway={event.away ? recentForms[event.away] : undefined}
+                      tz={tz}
                     />
                   )
                 })}
