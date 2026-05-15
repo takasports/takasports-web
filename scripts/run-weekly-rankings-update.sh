@@ -37,10 +37,11 @@ run() {
   echo
 
   # ── RENDIMIENTO (factor 40%) ──────────────────────
-  run "Tenis — Elo (rendimiento)"         scripts/ingest-tennis-elo.mjs;    TENIS_RC=$?
-  run "F1 — DPC (rendimiento)"            scripts/ingest-f1-dpc.mjs;        F1_RC=$?
-  run "NBA — PER (rendimiento)"           scripts/ingest-nba-per.mjs;       NBA_RC=$?
-  run "Fútbol — xG+xA Understat (rend.)" scripts/ingest-football-fbref.mjs; FUTBOL_RC=$?
+  run "Tenis — Elo (rendimiento)"              scripts/ingest-tennis-elo.mjs;                   TENIS_RC=$?
+  run "F1 — DPC (rendimiento)"                 scripts/ingest-f1-dpc.mjs;                        F1_RC=$?
+  run "NBA — PER (rendimiento)"                scripts/ingest-nba-per.mjs;                       NBA_RC=$?
+  run "Fútbol — xG+xA Understat (rend.)"      scripts/ingest-football-fbref.mjs;                FUTBOL_RC=$?
+  run "Fútbol femenino — xG+xA FBref (rend.)" scripts/ingest-football-women-rendimiento.mjs;    FUTBOLW_RC=$?
 
   # ── CONTEXTO (factor 20%) ─────────────────────────
   run "Fútbol — posición liga (contexto)" scripts/ingest-football-context.mjs; FCTX_RC=$?
@@ -58,16 +59,17 @@ run() {
   # ── SNAPSHOT histórico ────────────────────────────
   run "Snapshot histórico"                scripts/capture-score-snapshot.mjs;  SNAP_RC=$?
 
-  # ── CURACIÓN active (top-N por score) ─────────────
-  run "Curación active entries"           scripts/curate-active-entries.mjs;   CURA_RC=$?
+  # ── CURACIÓN active (top-N por score) + deduplicación ───
+  run "Deduplicar entradas activas"        scripts/fix-duplicates-and-categories.mjs; DEDUP_RC=$?
+  run "Curación active entries"            scripts/curate-active-entries.mjs;         CURA_RC=$?
 
   echo "================================================"
   echo "  Finished: $(date '+%Y-%m-%d %H:%M:%S')"
-  echo "  rendimiento: tenis=$TENIS_RC f1=$F1_RC nba=$NBA_RC futbol=$FUTBOL_RC"
+  echo "  rendimiento: tenis=$TENIS_RC f1=$F1_RC nba=$NBA_RC futbol=$FUTBOL_RC futbolW=$FUTBOLW_RC"
   echo "  contexto:    futbol=$FCTX_RC nba=$NCTX_RC tenis=$TCTX_RC f1=$F1CTX_RC ufc=$UFC_RC"
   echo "  mediático:   wikipedia=$MEDIA_RC"
   echo "  narrativa:   decay=$NARR_RC"
   echo "  snapshot:    $SNAP_RC"
-  echo "  curación:    $CURA_RC"
+  echo "  curación:    dedup=$DEDUP_RC active=$CURA_RC"
   echo "================================================"
 } 2>&1 | tee "$LOG"
