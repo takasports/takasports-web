@@ -185,7 +185,7 @@ function ResultRow({ r, teamId }: { r: TeamResult; teamId: string }) {
           >
             {isUpcoming
               ? r.date ? new Date(r.date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '–:––'
-              : `${r.homeScore ?? '?'} – ${r.awayScore ?? '?'}`
+              : `${r.homeScore ?? '?'} · ${r.awayScore ?? '?'}`
             }
           </div>
 
@@ -374,7 +374,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
             </span>
             <div className="flex gap-1.5">
               {form.map((r, i) => {
-                const color = r.result === 'W' ? '#22c55e' : r.result === 'L' ? '#ef4444' : '#f59e0b'
+                const color = r.result === 'W' ? '#22C55E' : r.result === 'L' ? '#EF4444' : '#EAB308'
                 return (
                   <div
                     key={i}

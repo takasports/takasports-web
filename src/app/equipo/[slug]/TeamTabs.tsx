@@ -19,10 +19,15 @@ export function TeamTabs({
   return (
     <div>
       <div
-        className="flex gap-0 mb-5 overflow-x-auto"
+        className="sticky z-30 flex gap-0 overflow-x-auto -mx-4 px-4"
         style={{
+          top: 56,
           borderBottom: '1px solid rgba(255,255,255,0.07)',
           scrollbarWidth: 'none',
+          background: 'rgba(9,9,15,0.92)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          marginBottom: 20,
         }}
       >
         {tabs.map((tab, i) => {
