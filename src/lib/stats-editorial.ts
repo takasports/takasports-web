@@ -111,19 +111,26 @@ export const TENNIS_SLAMS_2026: StandingRow[] = [
 export const WTA_SURFACES: StandingRow[] = []
 
 // ─── NBA Rookie metadata (para el cálculo automático del ROY race) ────────
+// IMPORTANTE: actualizar cada año con el draft de la temporada en curso.
+// Temporada 2025-26 → Draft 2025 (top picks + rotation contributors).
 export const NBA_ROOKIE_NAMES = new Set<string>([
-  'Stephon Castle',
-  'Jaylen Wells',
-  'Zach Edey',
-  'Zaccharie Risacher',
-  'Alex Sarr',
-  'Donovan Clingan',
-  'Reed Sheppard',
-  'Matas Buzelis',
-  'Rob Dillingham',
-  'Bub Carrington',
-  'Yves Missi',
-  'Ron Holland',
+  'Cooper Flagg',
+  'Dylan Harper',
+  'VJ Edgecombe',
+  'Kon Knueppel',
+  'Ace Bailey',
+  'Tre Johnson',
+  'Jeremiah Fears',
+  'Egor Demin',
+  'Collin Murray-Boyles',
+  'Khaman Maluach',
+  'Carter Bryant',
+  'Derik Queen',
+  'Asa Newell',
+  'Cedric Coward',
+  'Yang Hansen',
+  'Nique Clifford',
+  'Noa Essengue',
 ])
 
 // ─── Mundial 2026 — anfitriones (siempre clasificados) ────────────────────

@@ -1838,6 +1838,45 @@ function buildSummaryCards(
     })
   }
 
+  // 🏍️ MotoGP: pilotos top 3
+  if (liveData?.motogpRiders?.length) {
+    cards.push({
+      sportId: 'motogp', sportLabel: 'MotoGP', emoji: '🏍️', accent: '#dc2626',
+      title: 'MotoGP · Mundial Pilotos', metric: 'Pts',
+      rows: liveData.motogpRiders.slice(0, 3).map(r => ({
+        rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
+      })),
+      meta: meta.motogpRiders,
+      sectionTarget: 'pilotos-motogp',
+    })
+  }
+
+  // 🥊 UFC P4P top 3
+  if (liveData?.ufcP4P?.length) {
+    cards.push({
+      sportId: 'ufc', sportLabel: 'UFC', emoji: '🥊', accent: '#f97316',
+      title: 'UFC · Pound for Pound', metric: 'Pos.',
+      rows: liveData.ufcP4P.slice(0, 3).map(r => ({
+        rank: r.rank, name: r.name, sub: r.sub, value: `#${r.rank}`, flag: r.flag,
+      })),
+      meta: meta.ufcP4P,
+      sectionTarget: 'ranking-ufc',
+    })
+  }
+
+  // 🌍 Ranking Mundial Elo (selecciones)
+  if (liveData?.fifaRanking?.length) {
+    cards.push({
+      sportId: 'futbol', sportLabel: 'Selecciones', emoji: '🌍', accent: '#3b82f6',
+      title: 'Ranking Mundial · Elo', metric: 'Pts',
+      rows: liveData.fifaRanking.slice(0, 3).map(r => ({
+        rank: r.rank, name: r.name, sub: r.sub, value: r.value, flag: r.flag,
+      })),
+      meta: meta.fifaRanking,
+      sectionTarget: 'selecciones',
+    })
+  }
+
   return cards
 }
 
