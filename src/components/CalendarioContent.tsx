@@ -1644,21 +1644,28 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           style={{ background: 'radial-gradient(ellipse at 20% 40%, rgba(124,58,237,0.07) 0%, transparent 70%)', filter: 'blur(16px)' }} />
 
         <div className="relative mb-5">
-          <div className="flex items-center gap-2.5 mb-2">
-            <span className="w-2 h-2 rounded-full" style={{ background: '#7C3AED' }} />
-            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
-              Calendario
+          <div className="flex items-center gap-2.5 mb-3">
+            <span className="block rounded-sm" style={{ width: 3, height: 14, background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
+            <span className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
+              Sección
             </span>
           </div>
-          <div className="flex items-baseline justify-between gap-4 mb-1">
-            <h1 className="font-black leading-none"
-              style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', color: '#F8F8FF', letterSpacing: '-0.02em' }}>
-              Eventos Deportivos
-            </h1>
-          </div>
-          <p className="text-[11px]" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-            {filtered.length} evento{filtered.length !== 1 ? 's' : ''}
-            {liveCount > 0 && <span style={{ color: '#4ade80' }}> · {liveCount} en vivo</span>}
+          <h1 className="font-black leading-none uppercase tracking-[0.02em]"
+            style={{ fontFamily: 'var(--font-headline)', fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', color: '#F8F8FF' }}>
+            Calendario
+          </h1>
+          <p className="text-[11px] mt-2 flex items-center gap-1.5 flex-wrap" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+            <span className="tabular-nums">{filtered.length}</span>
+            <span>evento{filtered.length !== 1 ? 's' : ''}</span>
+            {liveCount > 0 && (
+              <>
+                <span style={{ color: '#38384A' }}>·</span>
+                <span className="inline-flex items-center gap-1 tabular-nums" style={{ color: '#EF4444' }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
+                  {liveCount} en vivo
+                </span>
+              </>
+            )}
           </p>
         </div>
 

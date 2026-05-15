@@ -1,11 +1,10 @@
 // GET /api/rankings/[id]/history?category=jugadores&weeks=12
 //
-// Devuelve los últimos N snapshots semanales del Índice Taka para una entrada.
-// Si Supabase no está configurado o la tabla `ranking_snapshots` aún no existe
-// (migración 016 sin aplicar), devuelve [] sin error — el componente cliente
-// renderiza solo el sparkline prev→now en ese caso.
+// Devuelve los ultimos N snapshots semanales del Indice Taka para una entrada,
+// desde la tabla `ranking_score_history`. Si la migracion no esta aplicada o
+// Supabase no esta configurado, devuelve [] sin error.
 //
-// Cache HTTP 1h: el dato cambia como mucho una vez por semana tras el ingest.
+// Cache HTTP 1h.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
@@ -38,8 +37,8 @@ export async function GET(
   )
 
   let q = sb
-    .from('ranking_snapshots')
-    .select('week_start, score, rank, rendimiento, contexto, mediatico, narrativa, editorial_boost')
+    .from('ranking_score_history')
+    .select('week_start, score, rank')
     .eq('entry_id', id)
     .order('week_start', { ascending: false })
     .limit(weeks)
@@ -47,22 +46,14 @@ export async function GET(
 
   const { data, error } = await q
   if (error) {
-    // Migración no aplicada o RLS — degradar silenciosamente
     return NextResponse.json({ points: [], warning: error.message })
   }
 
-  // Devolver en orden cronológico ascendente para que el chart lo dibuje izquierda→derecha
+  // Orden cronologico ascendente para el chart (izquierda -> derecha)
   const points = (data ?? []).slice().reverse().map(row => ({
     week: row.week_start,
     score: Number(row.score),
     rank: row.rank,
-    factors: {
-      rendimiento: row.rendimiento !== null ? Number(row.rendimiento) : null,
-      contexto:    row.contexto    !== null ? Number(row.contexto)    : null,
-      mediatico:   row.mediatico   !== null ? Number(row.mediatico)   : null,
-      narrativa:   row.narrativa   !== null ? Number(row.narrativa)   : null,
-    },
-    editorialBoost: row.editorial_boost !== null ? Number(row.editorial_boost) : null,
   }))
 
   return NextResponse.json({ points })
