@@ -456,7 +456,7 @@ function FormStrip({ form, align = 'start' }: { form: ('W'|'D'|'L')[]; align?: '
 // lists collapse to 8 by default with a "Ver más" toggle.
 function FavoritesSection({
   favoriteEvents, favorites, liveScores, reminders, flashIds, recentForms, tz,
-  toggleReminder, toggleFavorite, setSelectedUFCDate, onEdit, filterActive,
+  toggleReminder, toggleFavorite, setSelectedUFCDate, onEdit, filterActive, chipsOnly,
 }: {
   favoriteEvents: SportEvent[]
   favorites: Set<string>
@@ -470,6 +470,7 @@ function FavoritesSection({
   setSelectedUFCDate: (d: string | null) => void
   onEdit: () => void
   filterActive: boolean
+  chipsOnly?: boolean
 }) {
   const [expanded, setExpanded] = useState(false)
   const VISIBLE = 8
@@ -559,51 +560,55 @@ function FavoritesSection({
         })}
       </div>
 
-      <div className="space-y-1.5">
-        {visibleEvents.map(event => {
-          const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
-          const today = isoToLocalDate(new Date().toISOString())
-          const dateLabel = evDate && evDate !== today ? formatDateLabel(evDate) : undefined
-          return (
-            <MatchRow
-              key={`fav-${event.id}`}
-              event={event}
-              liveScore={liveScores.get(event.id)}
-              isReminded={reminders.has(event.id)}
-              onToggleReminder={() => toggleReminder(event.id)}
-              dateLabel={dateLabel}
-              onClickUFC={setSelectedUFCDate}
-              flashing={flashIds.has(event.id)}
-              isFav={true}
-              onToggleFav={() => toggleFavorite(event.home)}
-              formHome={recentForms[event.home]}
-              formAway={event.away ? recentForms[event.away] : undefined}
-              showComp
-              tz={tz}
-            />
-          )
-        })}
-      </div>
+      {!chipsOnly && (
+        <>
+          <div className="space-y-1.5">
+            {visibleEvents.map(event => {
+              const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
+              const today = isoToLocalDate(new Date().toISOString())
+              const dateLabel = evDate && evDate !== today ? formatDateLabel(evDate) : undefined
+              return (
+                <MatchRow
+                  key={`fav-${event.id}`}
+                  event={event}
+                  liveScore={liveScores.get(event.id)}
+                  isReminded={reminders.has(event.id)}
+                  onToggleReminder={() => toggleReminder(event.id)}
+                  dateLabel={dateLabel}
+                  onClickUFC={setSelectedUFCDate}
+                  flashing={flashIds.has(event.id)}
+                  isFav={true}
+                  onToggleFav={() => toggleFavorite(event.home)}
+                  formHome={recentForms[event.home]}
+                  formAway={event.away ? recentForms[event.away] : undefined}
+                  showComp
+                  tz={tz}
+                />
+              )
+            })}
+          </div>
 
-      {favoriteEvents.length > VISIBLE && (
-        <div className="flex justify-center mt-3">
-          <button
-            onClick={() => setExpanded(v => !v)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all"
-            style={{
-              color: '#F472B6',
-              background: 'rgba(244,114,182,0.10)',
-              border: '1px solid rgba(244,114,182,0.28)',
-              fontFamily: 'var(--font-sport)',
-              cursor: 'pointer',
-            }}
-          >
-            {expanded ? 'Ver menos' : `Ver ${favoriteEvents.length - VISIBLE} más`}
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }}>
-              <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
+          {favoriteEvents.length > VISIBLE && (
+            <div className="flex justify-center mt-3">
+              <button
+                onClick={() => setExpanded(v => !v)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all"
+                style={{
+                  color: '#F472B6',
+                  background: 'rgba(244,114,182,0.10)',
+                  border: '1px solid rgba(244,114,182,0.28)',
+                  fontFamily: 'var(--font-sport)',
+                  cursor: 'pointer',
+                }}
+              >
+                {expanded ? 'Ver menos' : `Ver ${favoriteEvents.length - VISIBLE} más`}
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }}>
+                  <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </>
       )}
     </section>
   )
@@ -1627,38 +1632,37 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     return set
   }, [events, favorites, activeFilter])
 
-  // Para cada deporte favorito, los próximos 5 partidos (en orden de
-  // prestigio liga + fecha) excluyendo eventos en vivo y partidos que
-  // YA aparecen en la sección Tus equipos para no repetir.
-  const personalizedBySport = useMemo(() => {
-    if (favoriteSports.size === 0) return [] as { sport: string; events: SportEvent[] }[]
+  // Listado único de destacados para la pestaña Inicio.
+  // Mezcla en una sola lista corta priorizando: favoritos del usuario →
+  // top de sus deportes favoritos → top general. Sin duplicar IDs y
+  // excluyendo lo que ya está en vivo (que vive en la franja superior).
+  // El cap (~12) evita la sensación de scroll infinito al entrar.
+  const destacadosFeed = useMemo(() => {
+    if (selectedDate) return topUpcoming
     const liveIds = new Set(liveEventsInList.map(e => e.id))
-    const favIds = new Set(favoriteEvents.map(e => e.id))
-    const out: { sport: string; events: SportEvent[] }[] = []
-    for (const sport of favoriteSports) {
-      const list = filtered
-        .filter(e => e.sport === sport && !liveIds.has(e.id) && !favIds.has(e.id))
-        .sort((a, b) => {
-          const sA = getLeagueScore(a.comp)
-          const sB = getLeagueScore(b.comp)
-          if (sA !== sB) return sB - sA
-          return (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
-        })
-        .slice(0, 5)
-      if (list.length > 0) out.push({ sport, events: list })
+    const seen = new Set<string>()
+    const out: SportEvent[] = []
+    const CAP = 12
+    const add = (events: SportEvent[], maxN: number) => {
+      let n = 0
+      for (const ev of events) {
+        if (out.length >= CAP || n >= maxN) break
+        if (seen.has(ev.id) || liveIds.has(ev.id)) continue
+        seen.add(ev.id)
+        out.push(ev)
+        n++
+      }
     }
+    // 1. Favoritos primero (proximidad temporal)
+    add(favoriteEvents, 4)
+    // 2. Top de cada deporte favorito (2 por deporte)
+    for (const sport of favoriteSports) {
+      add(topUpcoming.filter(e => e.sport === sport), 2)
+    }
+    // 3. Top general — rellenar hasta el cap
+    add(topUpcoming, CAP - out.length)
     return out
-  }, [filtered, liveEventsInList, favoriteEvents, favoriteSports])
-
-  // El "otros destacados" resta lo que ya mostramos en las secciones
-  // personalizadas, para no duplicar al usuario.
-  const otrosDestacados = useMemo(() => {
-    const used = new Set<string>([
-      ...favoriteEvents.map(e => e.id),
-      ...personalizedBySport.flatMap(g => g.events.map(e => e.id)),
-    ])
-    return topUpcoming.filter(e => !used.has(e.id)).slice(0, 12)
-  }, [topUpcoming, favoriteEvents, personalizedBySport])
+  }, [favoriteEvents, favoriteSports, topUpcoming, liveEventsInList, selectedDate])
 
   const orphanFixtures = useMemo(() => {
     const LIVE_TO_SPORT: Record<string, string> = {
@@ -2123,8 +2127,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             </section>
           )}
 
-          {/* 3. Tus equipos — sección enriquecida con chips + lista */}
-          {favoriteEvents.length > 0 && !onlyLive && !selectedDate && (
+          {/* 3. Estado de tus equipos — solo los chips para tener visibilidad
+              rápida; los partidos se mezclan en el feed unificado de abajo. */}
+          {favorites.size > 0 && !onlyLive && !selectedDate && (
             <FavoritesSection
               favoriteEvents={favoriteEvents}
               favorites={favorites}
@@ -2138,61 +2143,25 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               setSelectedUFCDate={setSelectedUFCDate}
               onEdit={() => setShowOnboarding(true)}
               filterActive={activeFilter !== 'Todo' || !!search}
+              chipsOnly
             />
           )}
 
-          {/* 4. Por tus deportes — agrupado por deportes derivados de favoritos */}
-          {personalizedBySport.length > 0 && !selectedDate && (
-            personalizedBySport.map(({ sport, events: evs }) => (
-              <section key={`sport-${sport}`}>
-                <SectionHeader
-                  icon={<SportIcon sport={sport} size={11} />}
-                  label={`Tu ${sport}`}
-                  color="#C4B5FD"
-                  count={evs.length}
-                />
-                <div className="space-y-1.5">
-                  {evs.map(event => {
-                    const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
-                    const today = isoToLocalDate(new Date().toISOString())
-                    const dateLabel = evDate && evDate !== today ? formatDateLabel(evDate) : undefined
-                    return (
-                      <MatchRow
-                        key={`${sport}-${event.id}`}
-                        event={event}
-                        liveScore={liveScores.get(event.id)}
-                        isReminded={reminders.has(event.id)}
-                        onToggleReminder={() => toggleReminder(event.id)}
-                        dateLabel={dateLabel}
-                        onClickUFC={setSelectedUFCDate}
-                        flashing={flashIds.has(event.id)}
-                        isFav={eventHasFavorite(favorites, event)}
-                        onToggleFav={() => toggleFavorite(event.home)}
-                        formHome={recentForms[event.home]}
-                        formAway={event.away ? recentForms[event.away] : undefined}
-                        showComp
-                        tz={tz}
-                      />
-                    )
-                  })}
-                </div>
-              </section>
-            ))
-          )}
-
-          {/* 5. Otros destacados — el resto (no duplica lo de arriba) */}
-          {(selectedDate ? topUpcoming.length > 0 : otrosDestacados.length > 0) && (
+          {/* 4. Partidos destacados — listado único curado, máximo 12 */}
+          {destacadosFeed.length > 0 && (
             <section>
               <SectionHeader
                 icon="⭐"
                 label={selectedDate
                   ? `Partidos · ${formatDateLabel(selectedDate)}`
-                  : (favorites.size > 0 || personalizedBySport.length > 0 ? 'Otros destacados' : 'Próximos destacados')}
+                  : favorites.size > 0
+                    ? 'Para ti'
+                    : 'Partidos destacados'}
                 color="#C4B5FD"
-                count={selectedDate ? topUpcoming.length : otrosDestacados.length}
+                count={destacadosFeed.length}
               />
               <div className="space-y-1.5">
-                {(selectedDate ? topUpcoming : otrosDestacados).map(event => {
+                {destacadosFeed.map(event => {
                   const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
                   const today = isoToLocalDate(new Date().toISOString())
                   const dateLabel = !selectedDate && evDate && evDate !== today ? formatDateLabel(evDate) : undefined
@@ -2217,6 +2186,26 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                   )
                 })}
               </div>
+              {!selectedDate && (
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={() => setView('todos')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.16em] transition-all"
+                    style={{
+                      color: '#C4B5FD',
+                      background: 'rgba(124,58,237,0.12)',
+                      border: '1px solid rgba(124,58,237,0.32)',
+                      fontFamily: 'var(--font-sport)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Ver toda la agenda
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                      <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </section>
           )}
 
