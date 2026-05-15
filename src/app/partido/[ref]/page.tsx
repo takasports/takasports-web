@@ -18,6 +18,7 @@ import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import { isSplitBroadcast } from '@/lib/broadcasts'
 import { GoalIcon, YellowCardIcon, RedCardIcon } from '@/components/icons/GameIcons'
+import { fetchH2H, type H2HResult } from '@/lib/past-events'
 
 export const revalidate = 30
 
@@ -919,8 +920,127 @@ function LineupField({ lineups, homeTeam, awayTeam }: {
   )
 }
 
+// ── Head-to-head block ─────────────────────────────────────────────
+function H2HBlock({ h2h, homeTeam, awayTeam }: { h2h: H2HResult; homeTeam: string; awayTeam: string }) {
+  if (h2h.matches.length === 0) {
+    return <EmptyState message="Sin enfrentamientos previos registrados" />
+  }
+
+  const total = h2h.wins + h2h.draws + h2h.losses || 1
+  const pctH = (h2h.wins / total) * 100
+  const pctD = (h2h.draws / total) * 100
+  const pctA = (h2h.losses / total) * 100
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso)
+    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+    return `${d.getUTCDate()} ${months[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(2)}`
+  }
+
+  return (
+    <>
+      <Section title={`Balance · últimos ${h2h.matches.length}`}>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex flex-col items-start">
+            <span className="text-[10px] uppercase tracking-widest" style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
+              {homeTeam}
+            </span>
+            <span className="text-[28px] font-black tabular-nums leading-none"
+              style={{ color: '#A78BFA', fontFamily: 'var(--font-headline)' }}>
+              {h2h.wins}
+            </span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] uppercase tracking-widest" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+              Empates
+            </span>
+            <span className="text-[28px] font-black tabular-nums leading-none"
+              style={{ color: '#9090A4', fontFamily: 'var(--font-headline)' }}>
+              {h2h.draws}
+            </span>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] uppercase tracking-widest" style={{ color: '#F59E0B', fontFamily: 'var(--font-sport)' }}>
+              {awayTeam}
+            </span>
+            <span className="text-[28px] font-black tabular-nums leading-none"
+              style={{ color: '#F59E0B', fontFamily: 'var(--font-headline)' }}>
+              {h2h.losses}
+            </span>
+          </div>
+        </div>
+        <div className="flex rounded-full overflow-hidden h-1.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div style={{ width: `${pctH}%`, background: '#A78BFA' }} />
+          <div style={{ width: `${pctD}%`, background: '#5A5A6A' }} />
+          <div style={{ width: `${pctA}%`, background: '#F59E0B' }} />
+        </div>
+      </Section>
+
+      <Section title="Histórico">
+        <div className="flex flex-col gap-1.5">
+          {h2h.matches.map(m => {
+            const aIsHome = m.home === homeTeam
+            const left = aIsHome ? m.homeScore : m.awayScore
+            const right = aIsHome ? m.awayScore : m.homeScore
+            let result: 'W' | 'D' | 'L' | '?' = '?'
+            if (left != null && right != null) {
+              result = left > right ? 'W' : left < right ? 'L' : 'D'
+            }
+            const resultColor = result === 'W' ? '#86EFAC' : result === 'L' ? '#FCA5A5' : result === 'D' ? '#FBBF24' : '#5A5A6A'
+            const row = (
+              <div className="grid items-center gap-2 px-3 py-2 rounded-lg transition-colors hover:brightness-110"
+                style={{
+                  background: 'rgba(255,255,255,0.025)',
+                  border: '1px solid rgba(255,255,255,0.04)',
+                  gridTemplateColumns: 'auto minmax(0,1fr) auto minmax(0,1fr) auto',
+                }}>
+                <span className="text-[9px] font-bold tabular-nums uppercase tracking-wider"
+                  style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', minWidth: 50 }}>
+                  {formatDate(m.isoDate)}
+                </span>
+                <span className="text-[12px] font-bold truncate text-right pr-1"
+                  style={{ color: aIsHome ? '#E8E8F4' : '#9090A4', fontFamily: 'var(--font-sport)' }}>
+                  {m.homeAbbr ?? m.home}
+                </span>
+                <span className="flex items-center gap-1.5 tabular-nums font-black px-2"
+                  style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)', fontSize: 14 }}>
+                  <span>{m.homeScore ?? '-'}</span>
+                  <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
+                  <span>{m.awayScore ?? '-'}</span>
+                </span>
+                <span className="text-[12px] font-bold truncate pl-1"
+                  style={{ color: !aIsHome ? '#E8E8F4' : '#9090A4', fontFamily: 'var(--font-sport)' }}>
+                  {m.awayAbbr ?? m.away}
+                </span>
+                <span className="inline-flex items-center justify-center font-black tabular-nums text-[10px]"
+                  style={{
+                    width: 18, height: 18, borderRadius: 4,
+                    background: `${resultColor}22`,
+                    color: resultColor,
+                    border: `1px solid ${resultColor}40`,
+                    fontFamily: 'var(--font-sport)',
+                  }}>
+                  {result}
+                </span>
+              </div>
+            )
+            return m.matchRef ? (
+              <Link key={m.id} href={`/partido/${m.matchRef}`} className="block no-underline">{row}</Link>
+            ) : (
+              <div key={m.id}>{row}</div>
+            )
+          })}
+        </div>
+        <p className="text-[10px] mt-3 text-center" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+          W = victoria local · L = victoria visitante · D = empate
+        </p>
+      </Section>
+    </>
+  )
+}
+
 // ── Main match content ─────────────────────────────────────────────
-function MatchContent({ match }: { match: MatchDetail }) {
+function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | null }) {
   const live       = isLive(match.status)
   const isSoccer   = match.sport === 'soccer'
   const isBasket   = match.sport === 'basketball'
@@ -932,6 +1052,7 @@ function MatchContent({ match }: { match: MatchDetail }) {
   const hasSoccerScoring  = isSoccer && (match.soccer?.scoring.length ?? 0) > 0
   const hasStats   = hasSoccerStats || hasBasketStats
   const hasTable   = (match.leagueTable?.length ?? 0) > 0
+  const hasH2H     = (h2h?.matches.length ?? 0) > 0
 
   const shareTitle = match.homeTeam && match.awayTeam
     ? `${match.homeTeam} vs ${match.awayTeam} · ${match.leagueLabel}`
@@ -1011,6 +1132,7 @@ function MatchContent({ match }: { match: MatchDetail }) {
     { id: 'resumen',      label: 'Resumen',       available: true },
     { id: 'alineacion',   label: 'Alineación',    available: hasLineups },
     { id: 'estadisticas', label: 'Estadísticas',  available: hasStats },
+    { id: 'h2h',          label: 'H2H',           available: hasH2H },
     { id: 'clasificacion',label: 'Clasificación', available: hasTable },
   ]
 
@@ -1117,7 +1239,16 @@ function MatchContent({ match }: { match: MatchDetail }) {
           {!hasStats && <EmptyState message="Estadísticas no disponibles" />}
         </div>
 
-        {/* ── Tab 3: Clasificación ─────────────────────── */}
+        {/* ── Tab 3: H2H ───────────────────────────────── */}
+        <div>
+          {hasH2H && match.homeTeam && match.awayTeam ? (
+            <H2HBlock h2h={h2h!} homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
+          ) : (
+            <EmptyState message="Sin enfrentamientos previos registrados" />
+          )}
+        </div>
+
+        {/* ── Tab 4: Clasificación ─────────────────────── */}
         <div>
           {hasTable ? (
             <LeagueTableBlock rows={match.leagueTable!} leagueLabel={match.leagueLabel} leagueSlug={match.leagueSlug} />
@@ -1140,6 +1271,14 @@ export default async function MatchPage({
   const { ref } = await params
   const match   = await fetchMatchDetail(ref)
   if (!match) notFound()
+
+  // H2H: last meetings between the two teams (soccer team sports only). Pulled
+  // from our own past_events cache so it's free and fast. If Supabase isn't
+  // configured the function returns null and the tab is hidden.
+  const h2h = (match.sport === 'soccer' || match.sport === 'basketball')
+    && match.homeTeam && match.awayTeam
+      ? await fetchH2H(match.homeTeam, match.awayTeam, { limit: 5, excludeId: match.id })
+      : null
 
   const STATUS_MAP: Record<string, string> = {
     STATUS_FINAL: 'https://schema.org/EventCompleted',
@@ -1208,7 +1347,7 @@ export default async function MatchPage({
       <LiveStrip />
       <main className="flex-1">
         <Suspense>
-          <MatchContent match={match} />
+          <MatchContent match={match} h2h={h2h} />
         </Suspense>
       </main>
       <Footer />

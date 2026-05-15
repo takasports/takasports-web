@@ -164,3 +164,88 @@ export async function upsertPastEvents(events: SportEvent[]): Promise<number> {
 export function pastEventsConfigured(): boolean {
   return readClient() !== null
 }
+
+export interface H2HMatch {
+  id: string
+  isoDate: string
+  comp: string
+  home: string
+  away: string
+  homeScore: number | null
+  awayScore: number | null
+  homeLogo?: string
+  awayLogo?: string
+  homeAbbr?: string
+  awayAbbr?: string
+  matchRef?: string
+}
+
+export interface H2HResult {
+  matches: H2HMatch[]
+  // Counted from the perspective of `teamA`.
+  wins: number
+  draws: number
+  losses: number
+}
+
+// Returns the last N matches between two teams in any order, ordered by date desc.
+// Excludes the current match (caller can filter by `excludeId`).
+export async function fetchH2H(
+  teamA: string,
+  teamB: string,
+  opts: { limit?: number; excludeId?: string } = {}
+): Promise<H2HResult | null> {
+  const sb = readClient()
+  if (!sb) return null
+  const limit = Math.min(Math.max(opts.limit ?? 5, 1), 20)
+
+  // Either (home=A AND away=B) OR (home=B AND away=A). PostgREST `or` syntax
+  // requires both clauses inside one filter expression with `and()` groups.
+  const filter = `and(home.eq.${escapeOr(teamA)},away.eq.${escapeOr(teamB)}),and(home.eq.${escapeOr(teamB)},away.eq.${escapeOr(teamA)})`
+
+  const { data, error } = await sb
+    .from('past_events')
+    .select('id,iso_date,comp,home,away,home_score,away_score,home_logo,away_logo,home_abbr,away_abbr,match_ref')
+    .or(filter)
+    .order('iso_date', { ascending: false })
+    .limit(limit + (opts.excludeId ? 1 : 0))
+
+  if (error || !data) return null
+
+  const rows = (data as PastEventRow[])
+    .filter(r => !opts.excludeId || r.id !== opts.excludeId)
+    .slice(0, limit)
+
+  let wins = 0, draws = 0, losses = 0
+  for (const r of rows) {
+    if (r.home_score == null || r.away_score == null) continue
+    const aIsHome = r.home === teamA
+    const aScore = aIsHome ? r.home_score : r.away_score
+    const bScore = aIsHome ? r.away_score : r.home_score
+    if (aScore > bScore) wins++
+    else if (aScore < bScore) losses++
+    else draws++
+  }
+
+  const matches: H2HMatch[] = rows.map(r => ({
+    id: r.id,
+    isoDate: r.iso_date,
+    comp: r.comp,
+    home: r.home,
+    away: r.away ?? '',
+    homeScore: r.home_score,
+    awayScore: r.away_score,
+    homeLogo: r.home_logo ?? undefined,
+    awayLogo: r.away_logo ?? undefined,
+    homeAbbr: r.home_abbr ?? undefined,
+    awayAbbr: r.away_abbr ?? undefined,
+    matchRef: r.match_ref ?? undefined,
+  }))
+
+  return { matches, wins, draws, losses }
+}
+
+// Escape commas and parens for PostgREST `or` clause values.
+function escapeOr(s: string): string {
+  return s.replace(/[(),]/g, m => `\\${m}`)
+}
