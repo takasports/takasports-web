@@ -450,6 +450,160 @@ function FormStrip({ form, align = 'start' }: { form: ('W'|'D'|'L')[]; align?: '
   )
 }
 
+// Renders the upgraded "Tus equipos" section: a horizontal row of team
+// chips (each with the team's next match countdown), an editable header,
+// and the full list of upcoming events involving any favorited team. Long
+// lists collapse to 8 by default with a "Ver más" toggle.
+function FavoritesSection({
+  favoriteEvents, favorites, liveScores, reminders, flashIds, recentForms, tz,
+  toggleReminder, toggleFavorite, setSelectedUFCDate, onEdit,
+}: {
+  favoriteEvents: SportEvent[]
+  favorites: Set<string>
+  liveScores: Map<string, LiveScore>
+  reminders: Set<string>
+  flashIds: Set<string>
+  recentForms: Record<string, ('W'|'D'|'L')[]>
+  tz: string
+  toggleReminder: (id: string) => void
+  toggleFavorite: (name: string) => void
+  setSelectedUFCDate: (d: string | null) => void
+  onEdit: () => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const VISIBLE = 8
+
+  // For each favorite team find their next upcoming event (favoriteEvents
+  // is already sorted by isoDate ascending — see useMemo upstream).
+  const teamNext = useMemo(() => {
+    const out: Array<{ team: string; next: SportEvent | null }> = []
+    for (const team of favorites) {
+      const lower = team.toLowerCase()
+      const match = favoriteEvents.find(ev =>
+        ev.home.toLowerCase().includes(lower)
+        || (ev.away?.toLowerCase().includes(lower) ?? false)
+      ) ?? null
+      out.push({ team, next: match })
+    }
+    // Sort: teams with a next match first (closest first), then no-match teams.
+    return out.sort((a, b) => {
+      if (a.next && !b.next) return -1
+      if (!a.next && b.next) return 1
+      if (a.next && b.next) return (a.next.isoDate ?? '').localeCompare(b.next.isoDate ?? '')
+      return a.team.localeCompare(b.team)
+    })
+  }, [favorites, favoriteEvents])
+
+  const visibleEvents = expanded ? favoriteEvents : favoriteEvents.slice(0, VISIBLE)
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-2">
+          <span className="text-[12px]" style={{ color: '#F472B6' }}>♥</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.18em]"
+            style={{ color: '#F472B6', fontFamily: 'var(--font-sport)' }}>
+            Tus equipos
+          </span>
+          <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-black tabular-nums"
+            style={{ background: 'rgba(244,114,182,0.18)', color: '#F472B6', fontFamily: 'var(--font-sport)' }}>
+            {favoriteEvents.length}
+          </span>
+        </div>
+        <button
+          onClick={onEdit}
+          className="text-[9px] font-bold uppercase tracking-widest transition-opacity hover:opacity-70"
+          style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
+        >
+          Editar
+        </button>
+      </div>
+
+      {/* Team chips: cada equipo favorito con su próximo partido o estado */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 mb-3 scrollbar-hide">
+        {teamNext.map(({ team, next }) => {
+          const countdown = next?.isoDate ? timeUntilLabel(next.isoDate) : null
+          const nextDate = next?.isoDate ? isoToLocalDate(next.isoDate) : null
+          const today = isoToLocalDate(new Date().toISOString())
+          const isToday = nextDate === today
+          const subtitle = next
+            ? (countdown ?? (isToday ? `Hoy · ${next.time}` : formatDateLabel(nextDate ?? '') + ' · ' + next.time))
+            : 'Sin partidos'
+          return (
+            <div
+              key={team}
+              className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl"
+              style={{
+                background: next ? 'rgba(244,114,182,0.08)' : 'rgba(255,255,255,0.025)',
+                border: next ? '1px solid rgba(244,114,182,0.22)' : '1px solid rgba(255,255,255,0.05)',
+              }}
+              title={team}
+            >
+              <div className="flex flex-col">
+                <span className="text-[11px] font-bold leading-tight truncate max-w-[120px]"
+                  style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+                  {team}
+                </span>
+                <span className="text-[9px] tabular-nums mt-0.5 truncate max-w-[120px]"
+                  style={{ color: next ? '#F472B6' : '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+                  {subtitle}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="space-y-1.5">
+        {visibleEvents.map(event => {
+          const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
+          const today = isoToLocalDate(new Date().toISOString())
+          const dateLabel = evDate && evDate !== today ? formatDateLabel(evDate) : undefined
+          return (
+            <MatchRow
+              key={`fav-${event.id}`}
+              event={event}
+              liveScore={liveScores.get(event.id)}
+              isReminded={reminders.has(event.id)}
+              onToggleReminder={() => toggleReminder(event.id)}
+              dateLabel={dateLabel}
+              onClickUFC={setSelectedUFCDate}
+              flashing={flashIds.has(event.id)}
+              isFav={true}
+              onToggleFav={() => toggleFavorite(event.home)}
+              formHome={recentForms[event.home]}
+              formAway={event.away ? recentForms[event.away] : undefined}
+              showComp
+              tz={tz}
+            />
+          )
+        })}
+      </div>
+
+      {favoriteEvents.length > VISIBLE && (
+        <div className="flex justify-center mt-3">
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all"
+            style={{
+              color: '#F472B6',
+              background: 'rgba(244,114,182,0.10)',
+              border: '1px solid rgba(244,114,182,0.28)',
+              fontFamily: 'var(--font-sport)',
+              cursor: 'pointer',
+            }}
+          >
+            {expanded ? 'Ver menos' : `Ver ${favoriteEvents.length - VISIBLE} más`}
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }}>
+              <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </section>
+  )
+}
+
 // ─── Compact list row (non-live or in TODOS) ──────────────────────────────
 function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, onToggleFav, formHome, formAway, showComp, tz }: {
   event: SportEvent
@@ -1368,7 +1522,11 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
   const filtered = useMemo(() => {
     const matchesSearch = (e: SportEvent) =>
-      !search || namesMatch(e.home, search) || (e.away ? namesMatch(e.away, search) : false)
+      !search
+        || namesMatch(e.home, search)
+        || (e.away ? namesMatch(e.away, search) : false)
+        || namesMatch(e.comp, search)
+        || namesMatch(e.sport, search)
     const matchesSport = (e: SportEvent) =>
       activeFilter === 'Todo' || e.sport === activeFilter
     const matchesDate = (e: SportEvent) => {
@@ -1407,7 +1565,11 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // Days available with events (for the chip strip) — sport+search aware, not date-filtered
   const availableDays = useMemo(() => {
     const matchesSearch = (e: SportEvent) =>
-      !search || namesMatch(e.home, search) || (e.away ? namesMatch(e.away, search) : false)
+      !search
+        || namesMatch(e.home, search)
+        || (e.away ? namesMatch(e.away, search) : false)
+        || namesMatch(e.comp, search)
+        || namesMatch(e.sport, search)
     const matchesSport = (e: SportEvent) =>
       activeFilter === 'Todo' || e.sport === activeFilter
     const counts: Record<string, number> = {}
@@ -1546,7 +1708,11 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // Filtered past events (sport + search aware)
   const filteredPast = useMemo(() => {
     const matchesSearch = (e: SportEvent) =>
-      !search || namesMatch(e.home, search) || (e.away ? namesMatch(e.away, search) : false)
+      !search
+        || namesMatch(e.home, search)
+        || (e.away ? namesMatch(e.away, search) : false)
+        || namesMatch(e.comp, search)
+        || namesMatch(e.sport, search)
     const matchesSport = (e: SportEvent) =>
       activeFilter === 'Todo' || e.sport === activeFilter
     return pastSource.filter(e => matchesSport(e) && matchesSearch(e))
@@ -1868,53 +2034,19 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
           {/* Tus equipos favoritos */}
           {favoriteEvents.length > 0 && !onlyLive && !selectedDate && (
-            <section>
-              <div className="flex items-center justify-between mb-3 px-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px]">♥</span>
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em]"
-                    style={{ color: '#F472B6', fontFamily: 'var(--font-sport)' }}>
-                    Tus equipos
-                  </span>
-                  <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black"
-                    style={{ background: 'rgba(244,114,182,0.18)', color: '#F472B6', fontFamily: 'var(--font-display)' }}>
-                    {favoriteEvents.length}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setShowOnboarding(true)}
-                  className="text-[9px] font-bold uppercase tracking-widest transition-opacity hover:opacity-70"
-                  style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
-                >
-                  Editar
-                </button>
-              </div>
-              <div className="space-y-1.5">
-                {favoriteEvents.slice(0, 5).map(event => {
-                  const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
-                  const today = isoToLocalDate(new Date().toISOString())
-                  const dateLabel = evDate && evDate !== today ? formatDateLabel(evDate) : undefined
-                  return (
-                    <MatchRow
-                      key={`fav-${event.id}`}
-                      event={event}
-                      liveScore={liveScores.get(event.id)}
-                      isReminded={reminders.has(event.id)}
-                      onToggleReminder={() => toggleReminder(event.id)}
-                      dateLabel={dateLabel}
-                      onClickUFC={setSelectedUFCDate}
-                      flashing={flashIds.has(event.id)}
-                      isFav={true}
-                      onToggleFav={() => toggleFavorite(event.home)}
-                      formHome={recentForms[event.home]}
-                      formAway={event.away ? recentForms[event.away] : undefined}
-                      showComp
-                      tz={tz}
-                    />
-                  )
-                })}
-              </div>
-            </section>
+            <FavoritesSection
+              favoriteEvents={favoriteEvents}
+              favorites={favorites}
+              liveScores={liveScores}
+              reminders={reminders}
+              flashIds={flashIds}
+              recentForms={recentForms}
+              tz={tz}
+              toggleReminder={toggleReminder}
+              toggleFavorite={toggleFavorite}
+              setSelectedUFCDate={setSelectedUFCDate}
+              onEdit={() => setShowOnboarding(true)}
+            />
           )}
 
           {/* Lista de Próximos */}
