@@ -1,46 +1,71 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
+
+// Logos vía ESPN CDN (escudos para equipos, headshots para individuales).
+// Fallback al icono emoji si la imagen falla en runtime.
+const ESPN_SOCCER = (id: number) => `https://a.espncdn.com/i/teamlogos/soccer/500/${id}.png`
+const ESPN_NBA = (abbr: string) => `https://a.espncdn.com/i/teamlogos/nba/500/${abbr}.png`
 
 // Curated list of popular teams/athletes per sport. Names match what appears in the
 // SportEvent.home/away strings from ESPN/Sanity data.
-const POPULAR_TEAMS: { name: string; sport: string; icon: string }[] = [
+const POPULAR_TEAMS: { name: string; sport: string; icon: string; logo?: string }[] = [
   // Fútbol
-  { name: 'Real Madrid',          sport: 'Fútbol', icon: '⚪' },
-  { name: 'Barcelona',            sport: 'Fútbol', icon: '🔵' },
-  { name: 'Atlético Madrid',      sport: 'Fútbol', icon: '🔴' },
-  { name: 'Manchester City',      sport: 'Fútbol', icon: '🩵' },
-  { name: 'Liverpool',            sport: 'Fútbol', icon: '🔴' },
-  { name: 'Arsenal',              sport: 'Fútbol', icon: '🔴' },
-  { name: 'Manchester United',    sport: 'Fútbol', icon: '🔴' },
-  { name: 'Chelsea',              sport: 'Fútbol', icon: '🔵' },
-  { name: 'Bayern',               sport: 'Fútbol', icon: '🔴' },
-  { name: 'PSG',                  sport: 'Fútbol', icon: '🔵' },
-  { name: 'Juventus',             sport: 'Fútbol', icon: '⚫' },
-  { name: 'Inter',                sport: 'Fútbol', icon: '🔵' },
+  { name: 'Real Madrid',          sport: 'Fútbol', icon: '⚪', logo: ESPN_SOCCER(86)   },
+  { name: 'Barcelona',            sport: 'Fútbol', icon: '🔵', logo: ESPN_SOCCER(83)   },
+  { name: 'Atlético Madrid',      sport: 'Fútbol', icon: '🔴', logo: ESPN_SOCCER(1068) },
+  { name: 'Manchester City',      sport: 'Fútbol', icon: '🩵', logo: ESPN_SOCCER(382)  },
+  { name: 'Liverpool',            sport: 'Fútbol', icon: '🔴', logo: ESPN_SOCCER(364)  },
+  { name: 'Arsenal',              sport: 'Fútbol', icon: '🔴', logo: ESPN_SOCCER(359)  },
+  { name: 'Manchester United',    sport: 'Fútbol', icon: '🔴', logo: ESPN_SOCCER(360)  },
+  { name: 'Chelsea',              sport: 'Fútbol', icon: '🔵', logo: ESPN_SOCCER(363)  },
+  { name: 'Bayern',               sport: 'Fútbol', icon: '🔴', logo: ESPN_SOCCER(132)  },
+  { name: 'PSG',                  sport: 'Fútbol', icon: '🔵', logo: ESPN_SOCCER(160)  },
+  { name: 'Juventus',             sport: 'Fútbol', icon: '⚫', logo: ESPN_SOCCER(111)  },
+  { name: 'Inter',                sport: 'Fútbol', icon: '🔵', logo: ESPN_SOCCER(110)  },
   // NBA
-  { name: 'Lakers',               sport: 'NBA', icon: '🟣' },
-  { name: 'Celtics',              sport: 'NBA', icon: '🟢' },
-  { name: 'Warriors',             sport: 'NBA', icon: '🔵' },
-  { name: 'Bulls',                sport: 'NBA', icon: '🔴' },
-  { name: 'Heat',                 sport: 'NBA', icon: '🔥' },
-  { name: 'Nuggets',              sport: 'NBA', icon: '🟡' },
-  // Tenis
-  { name: 'Alcaraz',              sport: 'Tenis', icon: '🎾' },
-  { name: 'Sinner',               sport: 'Tenis', icon: '🎾' },
-  { name: 'Djokovic',             sport: 'Tenis', icon: '🎾' },
-  { name: 'Swiatek',              sport: 'Tenis', icon: '🎾' },
-  { name: 'Sabalenka',            sport: 'Tenis', icon: '🎾' },
-  // F1
-  { name: 'Verstappen',           sport: 'F1', icon: '🏎️' },
-  { name: 'Hamilton',             sport: 'F1', icon: '🏎️' },
-  { name: 'Leclerc',              sport: 'F1', icon: '🏎️' },
-  { name: 'Norris',               sport: 'F1', icon: '🏎️' },
-  // UFC / MMA
-  { name: 'McGregor',             sport: 'UFC', icon: '🥊' },
-  { name: 'Pereira',              sport: 'UFC', icon: '🥊' },
-  { name: 'Topuria',              sport: 'UFC', icon: '🥊' },
+  { name: 'Lakers',               sport: 'NBA',    icon: '🟣', logo: ESPN_NBA('lal')   },
+  { name: 'Celtics',              sport: 'NBA',    icon: '🟢', logo: ESPN_NBA('bos')   },
+  { name: 'Warriors',             sport: 'NBA',    icon: '🔵', logo: ESPN_NBA('gs')    },
+  { name: 'Bulls',                sport: 'NBA',    icon: '🔴', logo: ESPN_NBA('chi')   },
+  { name: 'Heat',                 sport: 'NBA',    icon: '🔥', logo: ESPN_NBA('mia')   },
+  { name: 'Nuggets',              sport: 'NBA',    icon: '🟡', logo: ESPN_NBA('den')   },
+  // Tenis — sin logo de equipo, emoji se mantiene
+  { name: 'Alcaraz',              sport: 'Tenis',  icon: '🎾' },
+  { name: 'Sinner',               sport: 'Tenis',  icon: '🎾' },
+  { name: 'Djokovic',             sport: 'Tenis',  icon: '🎾' },
+  { name: 'Swiatek',              sport: 'Tenis',  icon: '🎾' },
+  { name: 'Sabalenka',            sport: 'Tenis',  icon: '🎾' },
+  // F1 — sin logo de equipo, emoji se mantiene
+  { name: 'Verstappen',           sport: 'F1',     icon: '🏎️' },
+  { name: 'Hamilton',             sport: 'F1',     icon: '🏎️' },
+  { name: 'Leclerc',              sport: 'F1',     icon: '🏎️' },
+  { name: 'Norris',               sport: 'F1',     icon: '🏎️' },
+  // UFC / MMA — sin logo de equipo, emoji se mantiene
+  { name: 'McGregor',             sport: 'UFC',    icon: '🥊' },
+  { name: 'Pereira',              sport: 'UFC',    icon: '🥊' },
+  { name: 'Topuria',              sport: 'UFC',    icon: '🥊' },
 ]
+
+// Pequeño componente con fallback a emoji si la imagen del escudo falla.
+function TeamIcon({ logo, fallback, name, active }: { logo?: string; fallback: string; name: string; active: boolean }) {
+  const [failed, setFailed] = useState(false)
+  if (logo && !failed) {
+    return (
+      <Image
+        src={logo}
+        alt={name}
+        width={36}
+        height={36}
+        unoptimized
+        style={{ objectFit: 'contain', filter: active ? 'none' : 'brightness(0.92)' }}
+        onError={() => setFailed(true)}
+      />
+    )
+  }
+  return <span className="text-[22px]">{fallback}</span>
+}
 
 interface Props {
   onClose: () => void
@@ -147,15 +172,17 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
               <button
                 key={team.name}
                 onClick={() => toggle(team.name)}
-                className="flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-all"
+                className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg transition-all"
                 style={{
                   background: active ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.03)',
                   border: active ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.06)',
                   cursor: 'pointer',
-                  minHeight: 64,
+                  minHeight: 76,
                 }}
               >
-                <span className="text-[18px]">{team.icon}</span>
+                <div className="flex items-center justify-center" style={{ width: 36, height: 36 }}>
+                  <TeamIcon logo={team.logo} fallback={team.icon} name={team.name} active={active} />
+                </div>
                 <span className="text-[9.5px] font-black text-center leading-tight"
                   style={{
                     color: active ? '#E0D0FF' : '#C0C0D8',

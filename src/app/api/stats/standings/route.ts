@@ -981,6 +981,37 @@ function buildNbaMvpRace(scoring: StandingRow[], east: StandingRow[], west: Stan
   }))
 }
 
+function buildNbaDpoyRace(blocks: StandingRow[], steals: StandingRow[]): StandingRow[] {
+  // Pool combinado de líderes en bloqueos + robos.
+  // Score defensivo = bloqueos*1.5 + robos. Pondera bloqueos un 50% más
+  // (alineado con peso histórico DPOY: tradicionalmente premia rim protection).
+  const pool = new Map<string, { name: string; team: string; flag?: string; bpg: number; spg: number }>()
+  const upsert = (row: StandingRow, kind: 'bpg' | 'spg') => {
+    const v = parseFloat(row.value) || 0
+    const cur = pool.get(row.name) ?? { name: row.name, team: row.abbr ?? '', flag: row.flag, bpg: 0, spg: 0 }
+    cur[kind] = v
+    if (!cur.team && row.abbr) cur.team = row.abbr
+    if (!cur.flag && row.flag) cur.flag = row.flag
+    pool.set(row.name, cur)
+  }
+  blocks.forEach(r => upsert(r, 'bpg'))
+  steals.forEach(r => upsert(r, 'spg'))
+  if (!pool.size) return []
+  const arr = Array.from(pool.values())
+    .map(r => ({ ...r, score: r.bpg * 1.5 + r.spg }))
+    .filter(r => r.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 7)
+  return arr.map((r, i) => ({
+    rank: i + 1, name: r.name, abbr: r.team,
+    value: `#${i + 1}`,
+    sub: `${r.bpg.toFixed(1)} BPG · ${r.spg.toFixed(1)} SPG`,
+    flag: r.flag,
+    trend: 'flat' as const,
+    extra: { BPG: r.bpg.toFixed(1), SPG: r.spg.toFixed(1), Equipo: r.team },
+  }))
+}
+
 function buildNbaRookieRace(scoring: StandingRow[], rebounds: StandingRow[], assists: StandingRow[], rookies: Set<string>): StandingRow[] {
   // Pull rookies from scoring + rebounds + assists (combined unique pool)
   const pool = new Map<string, { name: string; team: string; flag?: string; ppg: number; rpg: number; apg: number }>()
