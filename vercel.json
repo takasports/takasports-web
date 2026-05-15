@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/stat-snapshots?sport=motogp",
       "schedule": "30 6 * * 1"
+    },
+    {
+      "path": "/api/cron/stat-snapshots?sport=ufc",
+      "schedule": "45 6 * * 1"
     }
   ]
 }

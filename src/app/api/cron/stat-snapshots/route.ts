@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server'
 import { upsertSnapshot, type UpsertResult } from '@/lib/stat-snapshots'
 import { fetchMotogpRiders, fetchMotogpConstructors, type ScrapeResult } from '@/lib/motogp-scraper'
+import { fetchUfcP4P } from '@/lib/ufc-scraper'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -25,6 +26,9 @@ const JOBS_BY_SPORT: Record<string, ScraperJob[]> = {
   motogp: [
     { blockId: 'motogp-pilotos',       fetcher: fetchMotogpRiders },
     { blockId: 'motogp-constructores', fetcher: fetchMotogpConstructors },
+  ],
+  ufc: [
+    { blockId: 'ufc-p4p', fetcher: fetchUfcP4P },
   ],
 }
 
