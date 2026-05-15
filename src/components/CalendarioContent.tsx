@@ -1613,6 +1613,53 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     return selectedDate ? list : list.slice(0, 20)
   }, [filtered, liveEventsInList, selectedDate])
 
+  // Inferimos los deportes que le interesan al usuario a partir de sus
+  // equipos favoritos: cada deporte donde aparece al menos un evento
+  // con un equipo favorito. Si el usuario filtró por deporte, respetamos
+  // el filtro y solo devolvemos ese.
+  const favoriteSports = useMemo(() => {
+    if (activeFilter !== 'Todo') return new Set<string>([activeFilter])
+    if (favorites.size === 0) return new Set<string>()
+    const set = new Set<string>()
+    for (const ev of events) {
+      if (eventHasFavorite(favorites, ev)) set.add(ev.sport)
+    }
+    return set
+  }, [events, favorites, activeFilter])
+
+  // Para cada deporte favorito, los próximos 5 partidos (en orden de
+  // prestigio liga + fecha) excluyendo eventos en vivo y partidos que
+  // YA aparecen en la sección Tus equipos para no repetir.
+  const personalizedBySport = useMemo(() => {
+    if (favoriteSports.size === 0) return [] as { sport: string; events: SportEvent[] }[]
+    const liveIds = new Set(liveEventsInList.map(e => e.id))
+    const favIds = new Set(favoriteEvents.map(e => e.id))
+    const out: { sport: string; events: SportEvent[] }[] = []
+    for (const sport of favoriteSports) {
+      const list = filtered
+        .filter(e => e.sport === sport && !liveIds.has(e.id) && !favIds.has(e.id))
+        .sort((a, b) => {
+          const sA = getLeagueScore(a.comp)
+          const sB = getLeagueScore(b.comp)
+          if (sA !== sB) return sB - sA
+          return (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
+        })
+        .slice(0, 5)
+      if (list.length > 0) out.push({ sport, events: list })
+    }
+    return out
+  }, [filtered, liveEventsInList, favoriteEvents, favoriteSports])
+
+  // El "otros destacados" resta lo que ya mostramos en las secciones
+  // personalizadas, para no duplicar al usuario.
+  const otrosDestacados = useMemo(() => {
+    const used = new Set<string>([
+      ...favoriteEvents.map(e => e.id),
+      ...personalizedBySport.flatMap(g => g.events.map(e => e.id)),
+    ])
+    return topUpcoming.filter(e => !used.has(e.id)).slice(0, 12)
+  }, [topUpcoming, favoriteEvents, personalizedBySport])
+
   const orphanFixtures = useMemo(() => {
     const LIVE_TO_SPORT: Record<string, string> = {
       soccer: 'Fútbol', basketball: 'Baloncesto', mma: 'UFC',
@@ -2014,13 +2061,13 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       {/* Content */}
       {view === 'destacados' && (
         <div className="space-y-7">
-          {/* Hero strip de En Vivo */}
+          {/* 1. En Vivo Ahora — siempre arriba si hay vivos */}
           {liveCount > 0 && (
             <section>
               <SectionHeader
                 icon={<LiveDotIcon size={8} />}
                 label="En Vivo Ahora"
-                color="#4ade80"
+                color="#EF4444"
                 count={liveCount}
                 hint={liveCount > 3 ? '← desliza →' : undefined}
               />
@@ -2038,7 +2085,45 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             </section>
           )}
 
-          {/* Tus equipos favoritos */}
+          {/* 2. CTA para usuarios nuevos sin favoritos */}
+          {favorites.size === 0 && filtered.length > 0 && !onlyLive && (
+            <section
+              className="rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4"
+              style={{
+                background: 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(244,114,182,0.08) 100%)',
+                border: '1px solid rgba(124,58,237,0.28)',
+              }}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em]"
+                    style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
+                    Personaliza tu Inicio
+                  </span>
+                </div>
+                <p className="text-[14px] leading-snug font-bold mb-1" style={{ color: '#F0F0FA', fontFamily: 'var(--font-sport)' }}>
+                  Elige tus equipos favoritos y verás aquí sus próximos partidos, formaciones recientes y aviso cuando estén por jugar.
+                </p>
+                <p className="text-[11px]" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
+                  Lleva 30 segundos · puedes cambiarlo cuando quieras.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowOnboarding(true)}
+                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[11px] font-black uppercase tracking-[0.16em] transition-all"
+                style={{
+                  background: '#7C3AED', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  fontFamily: 'var(--font-sport)', cursor: 'pointer',
+                  boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
+                }}
+              >
+                ♥ Elegir equipos
+              </button>
+            </section>
+          )}
+
+          {/* 3. Tus equipos — sección enriquecida con chips + lista */}
           {favoriteEvents.length > 0 && !onlyLive && !selectedDate && (
             <FavoritesSection
               favoriteEvents={favoriteEvents}
@@ -2056,17 +2141,58 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             />
           )}
 
-          {/* Lista de Próximos */}
-          {topUpcoming.length > 0 && (
+          {/* 4. Por tus deportes — agrupado por deportes derivados de favoritos */}
+          {personalizedBySport.length > 0 && !selectedDate && (
+            personalizedBySport.map(({ sport, events: evs }) => (
+              <section key={`sport-${sport}`}>
+                <SectionHeader
+                  icon={<SportIcon sport={sport} size={11} />}
+                  label={`Tu ${sport}`}
+                  color="#C4B5FD"
+                  count={evs.length}
+                />
+                <div className="space-y-1.5">
+                  {evs.map(event => {
+                    const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
+                    const today = isoToLocalDate(new Date().toISOString())
+                    const dateLabel = evDate && evDate !== today ? formatDateLabel(evDate) : undefined
+                    return (
+                      <MatchRow
+                        key={`${sport}-${event.id}`}
+                        event={event}
+                        liveScore={liveScores.get(event.id)}
+                        isReminded={reminders.has(event.id)}
+                        onToggleReminder={() => toggleReminder(event.id)}
+                        dateLabel={dateLabel}
+                        onClickUFC={setSelectedUFCDate}
+                        flashing={flashIds.has(event.id)}
+                        isFav={eventHasFavorite(favorites, event)}
+                        onToggleFav={() => toggleFavorite(event.home)}
+                        formHome={recentForms[event.home]}
+                        formAway={event.away ? recentForms[event.away] : undefined}
+                        showComp
+                        tz={tz}
+                      />
+                    )
+                  })}
+                </div>
+              </section>
+            ))
+          )}
+
+          {/* 5. Otros destacados — el resto (no duplica lo de arriba) */}
+          {(selectedDate ? topUpcoming.length > 0 : otrosDestacados.length > 0) && (
             <section>
               <SectionHeader
                 icon="⭐"
-                label={selectedDate ? `Partidos · ${formatDateLabel(selectedDate)}` : 'Próximos Destacados'}
+                label={selectedDate
+                  ? `Partidos · ${formatDateLabel(selectedDate)}`
+                  : (favorites.size > 0 || personalizedBySport.length > 0 ? 'Otros destacados' : 'Próximos destacados')}
                 color="#C4B5FD"
-                count={topUpcoming.length}
+                count={selectedDate ? topUpcoming.length : otrosDestacados.length}
               />
               <div className="space-y-1.5">
-                {topUpcoming.map(event => {
+                {(selectedDate ? topUpcoming : otrosDestacados).map(event => {
                   const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
                   const today = isoToLocalDate(new Date().toISOString())
                   const dateLabel = !selectedDate && evDate && evDate !== today ? formatDateLabel(evDate) : undefined
