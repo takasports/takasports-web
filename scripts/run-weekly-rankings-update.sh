@@ -58,6 +58,9 @@ run() {
   # ── SNAPSHOT histórico ────────────────────────────
   run "Snapshot histórico"                scripts/capture-score-snapshot.mjs;  SNAP_RC=$?
 
+  # ── CURACIÓN active (top-N por score) ─────────────
+  run "Curación active entries"           scripts/curate-active-entries.mjs;   CURA_RC=$?
+
   echo "================================================"
   echo "  Finished: $(date '+%Y-%m-%d %H:%M:%S')"
   echo "  rendimiento: tenis=$TENIS_RC f1=$F1_RC nba=$NBA_RC futbol=$FUTBOL_RC"
@@ -65,5 +68,6 @@ run() {
   echo "  mediático:   wikipedia=$MEDIA_RC"
   echo "  narrativa:   decay=$NARR_RC"
   echo "  snapshot:    $SNAP_RC"
+  echo "  curación:    $CURA_RC"
   echo "================================================"
 } 2>&1 | tee "$LOG"
