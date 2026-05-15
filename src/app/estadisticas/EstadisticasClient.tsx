@@ -399,6 +399,13 @@ const WC_GROUPS_FALLBACK = [
 
 const SPORTS: SportConfig[] = [
   {
+    // Pseudo-deporte: landing cross-sport con lo más relevante de cada deporte
+    // sin que el usuario tenga que navegar. Renderizado especial via <ResumenView/>
+    // (no usa sections.blocks).
+    id: 'resumen', label: 'Resumen', emoji: '⚡', accent: '#22c55e',
+    sections: [{ id: 'home', label: 'Hoy', icon: '⚡', blocks: [] }],
+  },
+  {
     id: 'mundial', label: 'Mundial 2026', emoji: '🌍', accent: '#f59e0b',
     sections: [
       {
@@ -2035,18 +2042,252 @@ function toStatRows(rows: LiveStandingRow[], teamKey?: string): StatRow[] {
   }))
 }
 
+// ─────────────────────────────────────────────────────────────────
+// RESUMEN — landing cross-sport con lo más relevante de cada deporte
+// ─────────────────────────────────────────────────────────────────
+interface SummaryCard {
+  sportId: string
+  sportLabel: string
+  emoji: string
+  accent: string
+  title: string
+  metric: string
+  rows: { rank: number; name: string; sub: string; value: string; flag?: string }[]
+  meta?: BlockMeta
+  sectionTarget?: string
+}
+
+function buildSummaryCards(
+  liveData: LiveStandingsData | null,
+  livePlayerData: LivePlayerData | null,
+): SummaryCard[] {
+  const cards: SummaryCard[] = []
+  const meta = liveData?.meta ?? {}
+
+  // ⚽ Goleadores LaLiga (ESPN, vivo)
+  const laliga = livePlayerData?.leagues.find(l => l.id === 'laliga')
+  if (laliga && laliga.goals.length) {
+    cards.push({
+      sportId: 'futbol', sportLabel: 'LaLiga', emoji: '⚽', accent: '#22c55e',
+      title: 'Goleadores LaLiga', metric: 'Goles',
+      rows: laliga.goals.slice(0, 3).map((p, i) => ({
+        rank: i + 1, name: p.name, sub: p.team, value: String(p.value),
+      })),
+      meta: { status: 'live', source: 'ESPN · LaLiga', fetchedAt: liveData?.updatedAt ?? '' },
+      sectionTarget: 'jugadores',
+    })
+  }
+
+  // ⚽ Clasificación LaLiga
+  const laligaTable = liveData?.football?.find(f => f.id === 'tabla-laliga')
+  if (laligaTable && laligaTable.rows.length) {
+    cards.push({
+      sportId: 'futbol', sportLabel: 'LaLiga', emoji: '⚽', accent: '#22c55e',
+      title: 'Clasificación LaLiga', metric: 'Pts',
+      rows: laligaTable.rows.slice(0, 3).map(r => ({
+        rank: r.rank, name: r.name, sub: r.sub, value: r.value,
+      })),
+      meta: meta['tabla-laliga'] ?? meta['football'],
+      sectionTarget: 'competiciones',
+    })
+  }
+
+  // 🏀 NBA scoring leaders
+  if (liveData?.nbaScoring?.length) {
+    cards.push({
+      sportId: 'baloncesto', sportLabel: 'NBA', emoji: '🏀', accent: '#ef4444',
+      title: 'NBA · Anotadores', metric: 'PPP',
+      rows: liveData.nbaScoring.slice(0, 3).map(r => ({
+        rank: r.rank, name: r.name, sub: r.abbr, value: r.value,
+      })),
+      meta: meta.nbaScoring,
+      sectionTarget: 'jugadores',
+    })
+  }
+
+  // 🏀 NBA Conferencia Este
+  if (liveData?.nbaEast?.length) {
+    cards.push({
+      sportId: 'baloncesto', sportLabel: 'NBA Este', emoji: '🏀', accent: '#ef4444',
+      title: 'NBA · Conferencia Este', metric: 'V-D',
+      rows: liveData.nbaEast.slice(0, 3).map(r => ({
+        rank: r.rank, name: r.name, sub: r.sub, value: r.value,
+      })),
+      meta: meta.nbaEast,
+      sectionTarget: 'conferencias',
+    })
+  }
+
+  // 🏎️ F1 pilotos
+  if (liveData?.f1Drivers?.length) {
+    cards.push({
+      sportId: 'f1', sportLabel: 'Fórmula 1', emoji: '🏎️', accent: '#f97316',
+      title: 'F1 · Mundial Pilotos', metric: 'Pts',
+      rows: liveData.f1Drivers.slice(0, 3).map(r => ({
+        rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
+      })),
+      meta: meta.f1Drivers,
+      sectionTarget: 'campeonato',
+    })
+  }
+
+  // 🎾 ATP top
+  if (liveData?.atpRanking?.length) {
+    cards.push({
+      sportId: 'tenis', sportLabel: 'ATP', emoji: '🎾', accent: '#84cc16',
+      title: 'Tenis · ATP Ranking', metric: 'Pts',
+      rows: liveData.atpRanking.slice(0, 3).map(r => ({
+        rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
+      })),
+      meta: meta.atpRanking,
+      sectionTarget: 'ranking',
+    })
+  }
+
+  // 🌍 Mundial 2026: clasificados destacados
+  if (liveData?.worldCupQualified?.length) {
+    cards.push({
+      sportId: 'mundial', sportLabel: 'Mundial 2026', emoji: '🌍', accent: '#f59e0b',
+      title: 'Mundial 2026 · Top selecciones', metric: 'Ranking',
+      rows: liveData.worldCupQualified.slice(0, 3).map(r => ({
+        rank: r.rank, name: r.name, sub: r.sub, value: r.value, flag: r.flag,
+      })),
+      meta: meta.worldCupQualified,
+      sectionTarget: 'clasificados',
+    })
+  }
+
+  // ⚽ Femenino: goleadoras
+  if (liveData?.womenGoals?.length) {
+    cards.push({
+      sportId: 'futbol', sportLabel: 'Liga F', emoji: '⚽', accent: '#ec4899',
+      title: 'Liga F · Goleadoras', metric: 'Goles',
+      rows: liveData.womenGoals.slice(0, 3).map(r => ({
+        rank: r.rank, name: r.name, sub: r.abbr, value: r.value,
+      })),
+      meta: meta.womenGoals,
+      sectionTarget: 'femenino',
+    })
+  }
+
+  return cards
+}
+
+function ResumenCard({ card, onOpen }: { card: SummaryCard; onOpen: () => void }) {
+  return (
+    <button onClick={onOpen}
+      className="text-left rounded-2xl p-4 transition-all hover:brightness-110 active:scale-[0.99]"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'pointer' }}>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-base leading-none">{card.emoji}</span>
+          <h3 className="font-black text-[13px] truncate"
+            style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
+            {card.title}
+          </h3>
+        </div>
+        <FreshnessBadge isLive={card.meta?.status === 'live'} meta={card.meta} />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {card.rows.map(r => (
+          <div key={r.rank} className="flex items-center gap-2 py-1"
+            style={{ borderBottom: r.rank < 3 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+            <div className="w-6 flex-shrink-0"><MedalBadge rank={r.rank} /></div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                {r.flag && <span className="text-[11px] leading-none flex-shrink-0">{r.flag}</span>}
+                <span className="font-semibold text-[12px] truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
+                  {r.name}
+                </span>
+              </div>
+              {r.sub && (
+                <span className="block text-[10px] truncate" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
+                  {r.sub}
+                </span>
+              )}
+            </div>
+            <span className="font-black tabular-nums text-[13px] flex-shrink-0"
+              style={{ color: r.rank === 1 ? card.accent : '#8080A0', fontFamily: 'var(--font-display)' }}>
+              {r.value}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-right"
+        style={{ color: card.accent, fontFamily: 'var(--font-sport)' }}>
+        Ver {card.sportLabel} →
+      </div>
+    </button>
+  )
+}
+
+function ResumenView({
+  liveData, livePlayerData, lastUpdated, onPickSport,
+}: {
+  liveData: LiveStandingsData | null
+  livePlayerData: LivePlayerData | null
+  lastUpdated: Date | null
+  onPickSport: (sportId: string, sectionId?: string) => void
+}) {
+  const cards = React.useMemo(
+    () => buildSummaryCards(liveData, livePlayerData),
+    [liveData, livePlayerData],
+  )
+  const liveCount = cards.filter(c => c.meta?.status === 'live').length
+  const histCount = cards.filter(c => c.meta?.status === 'historical').length
+
+  if (!liveData) {
+    return (
+      <div className="py-16 text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+        Cargando datos en vivo…
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="mb-4 px-1 flex flex-wrap items-center gap-3 text-[11px]"
+        style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
+          <strong style={{ color: '#86efac' }}>{liveCount}</strong> en vivo
+        </span>
+        {histCount > 0 && (
+          <span>· <strong style={{ color: '#94a3b8' }}>{histCount}</strong> snapshot</span>
+        )}
+        {lastUpdated && (
+          <span>· última carga {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+        )}
+      </div>
+
+      {cards.length === 0 ? (
+        <div className="py-12 text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          Aún no hay datos cargados. Refresca en unos segundos.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {cards.map((c, i) => (
+            <ResumenCard key={`${c.sportId}-${c.title}-${i}`} card={c}
+              onOpen={() => onPickSport(c.sportId, c.sectionTarget)} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function EstadisticasClient({ initialData }: { initialData?: LiveStandingsData | null }) {
   const searchParams = useSearchParams()
   const router = useRouter()
 
   const [sportId, setSportId] = useState<string>(() => {
     const sp = searchParams.get('sport') ?? ''
-    return SPORTS.find(s => s.id === sp) ? sp : 'futbol'
+    return SPORTS.find(s => s.id === sp) ? sp : 'resumen'
   })
   const [sectionId, setSectionId] = useState<string>(() => {
-    const sp = searchParams.get('sport') ?? 'futbol'
+    const sp = searchParams.get('sport') ?? 'resumen'
     const sec = searchParams.get('section') ?? ''
-    const sport = SPORTS.find(s => s.id === sp) ?? SPORTS[1]
+    const sport = SPORTS.find(s => s.id === sp) ?? SPORTS[0]
     return sport.sections.find(s => s.id === sec) ? sec : sport.sections[0].id
   })
   const [expandedBlocks, setExpandedBlocks]   = useState<Record<string, boolean>>({})
@@ -2278,16 +2519,19 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   const sport = SPORTS.find(s => s.id === sportId) ?? SPORTS[0]
   const isFemenino = gender === 'f' && sportId === 'futbol'
 
-  const handleSportChange = (id: string) => {
-    const firstSport = SPORTS.find(s => s.id === id)
-    const firstSection = firstSport?.sections[0]
+  const handleSportChange = (id: string, targetSection?: string) => {
+    const nextSport = SPORTS.find(s => s.id === id)
+    const sec = (targetSection && nextSport?.sections.find(s => s.id === targetSection))
+      ? nextSport.sections.find(s => s.id === targetSection)!
+      : nextSport?.sections[0]
     setSportId(id)
     setGender('m')
-    setSectionId(firstSection?.id ?? 'jugadores')
+    setSectionId(sec?.id ?? 'jugadores')
     setExpandedBlocks({})
-    setExpandedGroups(firstSection?.groups ? { [firstSection.groups[0]?.id ?? '']: true } : {})
+    setExpandedGroups(sec?.groups ? { [sec.groups[0]?.id ?? '']: true } : {})
     setLeagueFilter('General')
-    router.push(`/estadisticas?sport=${id}`, { scroll: false })
+    const qs = sec ? `?sport=${id}&section=${sec.id}` : `?sport=${id}`
+    router.push(`/estadisticas${qs}`, { scroll: false })
   }
 
   const handleSectionChange = (id: string) => {
@@ -2573,6 +2817,18 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           )}
         </div>
 
+        {/* ── RESUMEN — landing cross-sport ───────────── */}
+        {sportId === 'resumen' ? (
+          <div className="mt-5">
+            <ResumenView
+              liveData={liveData}
+              livePlayerData={livePlayerData}
+              lastUpdated={lastUpdated}
+              onPickSport={handleSportChange}
+            />
+          </div>
+        ) : null}
+
         {/* ── Banner Mundial 2026 ─────────────────────── */}
         {sportId === 'mundial' && (
           <div className="mt-5 mb-6 rounded-xl overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(239,68,68,0.08) 100%)', border: '1px solid rgba(245,158,11,0.3)' }}>
@@ -2632,7 +2888,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           </div>
         )}
 
-        {!isFemenino && (isFutbolJugadores || (isFutbol && sectionId === 'competiciones')) && (
+        {sportId !== 'resumen' && !isFemenino && (isFutbolJugadores || (isFutbol && sectionId === 'competiciones')) && (
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 mb-5">
             {LEAGUE_FILTERS.map(liga => (
               <button key={liga} onClick={() => setLeagueFilter(liga)}
@@ -2649,7 +2905,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           </div>
         )}
 
-        {!isFemenino && hasGroups && section.groups ? (
+        {sportId !== 'resumen' && !isFemenino && hasGroups && section.groups ? (
           <div className="flex flex-col gap-1">
             {section.groups.map(group => (
               <MetricGroupAccordion
@@ -2669,7 +2925,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
               />
             ))}
           </div>
-        ) : (
+        ) : sportId === 'resumen' ? null : (
           <>
             <div className={`grid gap-5 ${
               sportId === 'mundial' && sectionId === 'grupos'

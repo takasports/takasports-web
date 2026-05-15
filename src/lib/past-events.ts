@@ -3,6 +3,7 @@
 // - Escritura solo desde service role (cron / job de sync).
 // - Si Supabase no está configurado, las funciones devuelven [] / 0 sin reventar.
 
+import { unstable_cache } from 'next/cache'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { SportEvent } from './types'
 import { adminSupabase } from './supabase-admin'
@@ -190,7 +191,7 @@ export interface H2HResult {
 
 // Returns the last N matches between two teams in any order, ordered by date desc.
 // Excludes the current match (caller can filter by `excludeId`).
-export async function fetchH2H(
+async function _fetchH2HUncached(
   teamA: string,
   teamB: string,
   opts: { limit?: number; excludeId?: string } = {}
@@ -257,7 +258,7 @@ export type FormResult = 'W' | 'D' | 'L'
 // first). Teams not in the cache get an empty array. Single Supabase query
 // for all teams, then grouped client-side. Returns null if Supabase not
 // configured (callers should treat as "no form available").
-export async function fetchRecentFormByTeams(
+async function _fetchRecentFormByTeamsUncached(
   teams: string[],
   limit = 5
 ): Promise<Record<string, FormResult[]> | null> {
@@ -300,3 +301,18 @@ export async function fetchRecentFormByTeams(
 
   return out
 }
+
+// ── Cached wrappers — TTL 5 min, alineado con revalidate del calendario ──
+// La cache key se deriva de los argumentos (Next serializa). Cada combo
+// equipos×limit / par×opts se memoiza por 300s. Limpieza global via tag.
+export const fetchH2H = unstable_cache(
+  _fetchH2HUncached,
+  ['past-events:h2h'],
+  { revalidate: 300, tags: ['past-events'] }
+)
+
+export const fetchRecentFormByTeams = unstable_cache(
+  _fetchRecentFormByTeamsUncached,
+  ['past-events:form'],
+  { revalidate: 300, tags: ['past-events'] }
+)

@@ -1315,13 +1315,14 @@ type ViewType = 'destacados' | 'todos' | 'en-vivo' | 'resultados' | 'recordatori
 
 type FormResult = 'W' | 'D' | 'L'
 
-export default function CalendarioContent({ events, pastEvents = [], recentForms = {} }: {
+export default function CalendarioContent({ events, pastEvents = [], recentForms = {}, initialTz = SOURCE_TZ }: {
   events: SportEvent[]
   pastEvents?: SportEvent[]
   recentForms?: Record<string, FormResult[]>
+  initialTz?: string
 }) {
   const [view, setView] = useState<ViewType>('destacados')
-  const [tz, setTz] = useState<string>(SOURCE_TZ)
+  const [tz, setTz] = useState<string>(initialTz)
   const [searchRaw, setSearchRaw] = useState('')
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('Todo')

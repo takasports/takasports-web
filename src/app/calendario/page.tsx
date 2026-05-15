@@ -1,8 +1,10 @@
+import { cookies } from 'next/headers'
 import { sanityClient, eventsQuery } from '@/lib/sanity'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents, fetchEspnPastEvents } from '@/lib/espn'
 import { fetchPadelEvents } from '@/lib/padel'
 import { fetchRecentFormByTeams } from '@/lib/past-events'
+import { TZ_KEY, SOURCE_TZ } from '@/lib/timezone'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
@@ -84,11 +86,21 @@ export default async function CalendarioPage() {
   ))
   const recentForms = (await fetchRecentFormByTeams(teamNames, 5)) ?? {}
 
+  // Read TZ preference from cookie so the very first render already uses it
+  // and we avoid the hydration flash from Madrid → browser TZ on mount.
+  const cookieStore = await cookies()
+  const initialTz = cookieStore.get(TZ_KEY)?.value || SOURCE_TZ
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />
       <LiveStrip />
-      <CalendarioContent events={events} pastEvents={past} recentForms={recentForms} />
+      <CalendarioContent
+        events={events}
+        pastEvents={past}
+        recentForms={recentForms}
+        initialTz={initialTz}
+      />
       <Footer />
       <ScrollToTop />
     </div>
