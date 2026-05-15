@@ -1,102 +1,107 @@
-// Scraper UFC rankings vía ESPN core API (sports.core.api.espn.com).
-// Devuelve top 10 P4P con nombre, país, división y trend.
-// Sin coste, sin auth.
+// Scraper UFC rankings vía ufc.com/rankings (HTML scrape, sin auth, sin coste).
+// ESPN tiene los rankings de UFC desactualizados desde que UFC y ESPN no son
+// socios; ufc.com es la fuente oficial canónica.
 import type { StandingRow } from './stats-editorial'
 import type { ScrapeResult } from './motogp-scraper'
 
-const UA = 'TakaSports/1.0 (+https://takasportsmedia.com)'
+const URL_RANKINGS = 'https://www.ufc.com/rankings'
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
 
-interface EspnRank {
-  current: number
-  trend?: string
-  athlete?: { $ref?: string }
-  defenses?: number
-  hasAccolade?: boolean
-}
-interface EspnRankingsResp { ranks?: EspnRank[]; name?: string; note?: string }
-interface EspnAthlete {
-  fullName?: string
-  displayName?: string
-  citizenship?: string
-  citizenshipCountry?: { alt?: string; href?: string }
-  weight?: { text?: string; shortName?: string }
+interface DivisionBlock {
+  name: string                    // "Men's Pound-for-Pound", "Lightweight", etc.
+  champion: string | null         // current champ
+  contenders: { rank: number; name: string }[]
 }
 
-async function getJson<T>(url: string): Promise<T | null> {
-  try {
-    const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' }, cache: 'no-store' })
-    if (!res.ok) return null
-    return await res.json() as T
-  } catch { return null }
+const DECODE: Array<[RegExp, string]> = [
+  [/&#039;/g, "'"], [/&amp;/g, '&'], [/&quot;/g, '"'],
+  [/&lt;/g, '<'],   [/&gt;/g, '>'], [/&nbsp;/g, ' '],
+]
+function decodeEntities(s: string): string {
+  let out = s
+  for (const [re, ch] of DECODE) out = out.replace(re, ch)
+  return out
 }
 
-function trendOf(t?: string): 'up' | 'down' | 'flat' {
-  if (!t) return 'flat'
-  if (t.startsWith('+') || t === 'up')   return 'up'
-  if (t.startsWith('-') && t !== '-')    return 'down'
-  if (t === 'down')                       return 'down'
-  return 'flat'
+function parseUfcRankings(html: string): DivisionBlock[] {
+  // Cada división empieza con `<div class="view-grouping-header">{NAME}</div>`
+  const segments = html.split('<div class="view-grouping-header">').slice(1)
+  const out: DivisionBlock[] = []
+  for (const seg of segments) {
+    const nameMatch = seg.match(/^\s*([^<]+)</)
+    if (!nameMatch) continue
+    const name = decodeEntities(nameMatch[1].trim())
+
+    const champMatch = seg.match(/<h5[^>]*>\s*<a [^>]*>([^<]+)<\/a>/)
+    const champion = champMatch ? decodeEntities(champMatch[1].trim()) : null
+
+    const rowRe = /<td class="views-field views-field-weight-class-rank">\s*(\d+)\s*<\/td>\s*<td class="views-field views-field-title">\s*<a [^>]*>([^<]+)<\/a>/g
+    const seenRanks = new Set<number>()
+    const contenders: { rank: number; name: string }[] = []
+    let m: RegExpExecArray | null
+    while ((m = rowRe.exec(seg)) !== null) {
+      const rank = parseInt(m[1])
+      const fname = decodeEntities(m[2].trim())
+      // Skip duplicate rank (UFC HTML a veces repite rows con #2 cuando hay tied)
+      if (seenRanks.has(rank) && contenders.length >= 10) continue
+      seenRanks.add(rank)
+      contenders.push({ rank, name: fname })
+      if (contenders.length >= 15) break
+    }
+
+    out.push({ name, champion, contenders })
+  }
+  return out
 }
 
-// ESPN devuelve country como /countries/500/ngr.png — extraemos iso-3 → iso-2.
-const ISO3_TO_2: Record<string, string> = {
-  USA: 'US', BRA: 'BR', RUS: 'RU', NGA: 'NG', NGR: 'NG', GEO: 'GE', AUS: 'AU',
-  CAN: 'CA', NZL: 'NZ', GBR: 'GB', IRL: 'IE', JPN: 'JP', KAZ: 'KZ', MEX: 'MX',
-  ESP: 'ES', POL: 'PL', CHI: 'CL', CHN: 'CN', UKR: 'UA', SRB: 'RS', RSA: 'ZA',
-  CMR: 'CM', NLD: 'NL', NED: 'NL', GER: 'DE', FRA: 'FR', ITA: 'IT', POR: 'PT',
-  CHE: 'CH', SUI: 'CH', SWE: 'SE', NOR: 'NO', DEN: 'DK', BEL: 'BE', AUT: 'AT',
-  COL: 'CO', ARG: 'AR', PER: 'PE', VEN: 'VE', URY: 'UY', PRY: 'PY',
-  KOR: 'KR', PRK: 'KP', THA: 'TH', PHL: 'PH', VNM: 'VN', IDN: 'ID', IND: 'IN',
-}
-function isoToFlag(iso2: string): string | undefined {
-  if (!iso2 || iso2.length !== 2) return undefined
-  const cp = (s: string) => 0x1f1e6 + (s.toUpperCase().charCodeAt(0) - 65)
-  return String.fromCodePoint(cp(iso2[0])) + String.fromCodePoint(cp(iso2[1]))
-}
-function citizenshipFlag(href?: string): string | undefined {
-  if (!href) return undefined
-  // .../countries/500/ngr.png
-  const m = href.match(/\/countries\/[^/]+\/([a-z]{3})\.png$/i)
-  if (!m) return undefined
-  const iso2 = ISO3_TO_2[m[1].toUpperCase()]
-  return iso2 ? isoToFlag(iso2) : undefined
+// Construye name → división de campeonato (para P4P enriquecimiento)
+function buildChampionDivisionMap(blocks: DivisionBlock[]): Map<string, string> {
+  const m = new Map<string, string>()
+  for (const b of blocks) {
+    // Skip P4P (no es una división física)
+    if (/pound-for-pound|p4p/i.test(b.name)) continue
+    if (b.champion) m.set(b.champion, b.name)
+  }
+  return m
 }
 
 export async function fetchUfcP4P(): Promise<ScrapeResult | null> {
-  const ranking = await getJson<EspnRankingsResp>(
-    'https://sports.core.api.espn.com/v2/sports/mma/leagues/ufc/rankings/pound-for-pound'
-  )
-  if (!ranking || !Array.isArray(ranking.ranks) || !ranking.ranks.length) return null
+  let html: string
+  try {
+    const res = await fetch(URL_RANKINGS, {
+      headers: { 'User-Agent': UA, Accept: 'text/html' },
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    html = await res.text()
+  } catch { return null }
 
-  // Resolver datos de cada peleador en paralelo (top 10).
-  const top = ranking.ranks.slice(0, 10)
-  const athletes = await Promise.all(
-    top.map(async r => r.athlete?.$ref ? await getJson<EspnAthlete>(r.athlete.$ref) : null)
-  )
+  const blocks = parseUfcRankings(html)
+  if (!blocks.length) return null
 
-  const rows: StandingRow[] = top.map((r, i) => {
-    const a = athletes[i]
-    const name = a?.displayName ?? a?.fullName ?? `#${r.current}`
-    const division = a?.weight?.text ?? a?.weight?.shortName ?? '—'
-    const flag = citizenshipFlag(a?.citizenshipCountry?.href)
+  const p4pBlock = blocks.find(b => /men.{0,3}pound-for-pound/i.test(b.name))
+  if (!p4pBlock || !p4pBlock.contenders.length) return null
+
+  const champDivision = buildChampionDivisionMap(blocks)
+
+  const rows: StandingRow[] = p4pBlock.contenders.slice(0, 10).map((c, i) => {
+    const division = champDivision.get(c.name)
     return {
-      rank: r.current,
-      name,
-      abbr: division.slice(0, 4).toUpperCase(),
+      rank: c.rank ?? i + 1,
+      name: c.name,
+      abbr: division ? division.slice(0, 4).toUpperCase() : 'P4P',
       value: '—',
-      sub: r.hasAccolade ? `Campeón · ${division}` : division,
-      trend: trendOf(r.trend),
-      flag,
-      extra: {
-        División: division,
-        ...(typeof r.defenses === 'number' && r.defenses > 0 ? { Defensas: String(r.defenses) } : {}),
-      },
+      sub: division ? `Campeón · ${division}` : 'Pound-for-Pound',
+      trend: 'flat' as const,
+      extra: (division
+        ? { División: division, Estado: 'Campeón' }
+        : { División: 'Cross-weight' }) as Record<string, string>,
     }
   })
 
   return {
     rows,
-    source: 'ESPN UFC Rankings',
-    asOf: `Semana ${new Date().toISOString().slice(0, 10)}`,
+    source: 'ufc.com/rankings',
+    asOf: new Date().toISOString().slice(0, 10),
   }
 }
