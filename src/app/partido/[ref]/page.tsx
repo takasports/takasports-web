@@ -1019,21 +1019,27 @@ function MatchContent({ match }: { match: MatchDetail }) {
       <LiveRefresh isLive={live} />
       {backLink}
       {leaguePills}
-      <TeamScoreboard match={match} />
+      <div data-match-hero>
+        <TeamScoreboard match={match} />
+      </div>
       <InfoRow match={match} />
-      <StickyScoreBar
-        homeLogo={match.homeLogo}
-        awayLogo={match.awayLogo}
-        homeAbbr={match.homeAbbr ?? match.homeTeam}
-        awayAbbr={match.awayAbbr ?? match.awayTeam}
-        homeScore={match.homeScore}
-        awayScore={match.awayScore}
-        statusLabel={match.statusLabel}
-        live={live}
-        hasScore={match.homeScore != null && match.awayScore != null}
-      />
 
-      <MatchTabs tabs={tabs}>
+      <MatchTabs
+        tabs={tabs}
+        topSlot={
+          <StickyScoreBar
+            homeLogo={match.homeLogo}
+            awayLogo={match.awayLogo}
+            homeAbbr={match.homeAbbr ?? match.homeTeam}
+            awayAbbr={match.awayAbbr ?? match.awayTeam}
+            homeScore={match.homeScore}
+            awayScore={match.awayScore}
+            statusLabel={match.statusLabel}
+            live={live}
+            hasScore={match.homeScore != null && match.awayScore != null}
+          />
+        }
+      >
         {/* ── Tab 0: Resumen ───────────────────────────── */}
         <div>
           {hasSoccerScoring && (
