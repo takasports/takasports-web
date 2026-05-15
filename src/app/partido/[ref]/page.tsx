@@ -105,7 +105,7 @@ function TeamLogo({ logo, name, size = 56 }: { logo?: string; name: string; size
   )
 }
 
-function Pill({ children, color = '#818cf8', bg, border }: { children: React.ReactNode; color?: string; bg?: string; border?: string }) {
+function Pill({ children, color = '#A78BFA', bg, border }: { children: React.ReactNode; color?: string; bg?: string; border?: string }) {
   return (
     <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full"
       style={{
@@ -151,9 +151,9 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
     <div className="rounded-2xl p-6 mb-5"
       style={{
         background: live
-          ? 'linear-gradient(135deg, rgba(74,222,128,0.06) 0%, rgba(9,9,15,0.8) 60%)'
-          : 'rgba(255,255,255,0.03)',
-        border: live ? '1px solid rgba(74,222,128,0.18)' : '1px solid rgba(255,255,255,0.07)',
+          ? 'linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(9,9,15,0.85) 60%)'
+          : 'rgba(255,255,255,0.025)',
+        border: live ? '1px solid rgba(239,68,68,0.22)' : '1px solid rgba(255,255,255,0.06)',
       }}>
       <div className="flex items-center justify-between gap-4">
         {/* Home team */}
@@ -161,55 +161,69 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
           <Link href={`/equipo/${match.leagueSlug.replace('/', '_')}_${match.homeTeamId}`}
             className="flex flex-col items-center gap-2 flex-1 hover:opacity-80 transition-opacity">
             <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={68} />
-            <p className="text-center font-black text-sm leading-tight"
-              style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-center font-bold text-sm leading-tight"
+              style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
               {match.homeAbbr ?? match.homeTeam}
             </p>
           </Link>
         ) : (
           <div className="flex flex-col items-center gap-2 flex-1">
             <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={68} />
-            <p className="text-center font-black text-sm leading-tight"
-              style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-center font-bold text-sm leading-tight"
+              style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
               {match.homeAbbr ?? match.homeTeam}
             </p>
           </div>
         )}
-        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+        <div className="flex flex-col items-center gap-2 flex-shrink-0">
+          {live && (
+            <span className="flex items-center gap-1.5 leading-none">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
+              <span className="text-[10px] font-black uppercase tracking-[0.14em] tabular-nums" style={{ color: '#EF4444', fontFamily: 'var(--font-sport)' }}>
+                {match.statusLabel}
+              </span>
+            </span>
+          )}
           {hasScore ? (
-            <p className="font-black tabular-nums"
-              style={{ color: live ? '#4ade80' : '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 'clamp(28px, 7vw, 42px)', letterSpacing: '0.04em', lineHeight: 1 }}>
-              {match.homeScore} – {match.awayScore}
+            <p className="font-black tabular-nums flex items-center gap-3 leading-none"
+              style={{ color: '#F0F0FA', fontFamily: 'var(--font-headline)', fontSize: 'clamp(38px, 9vw, 56px)' }}>
+              <span>{match.homeScore}</span>
+              <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
+              <span>{match.awayScore}</span>
             </p>
           ) : (
-            <p className="font-black" style={{ color: '#3A3A5A', fontFamily: 'var(--font-display)', fontSize: 'clamp(20px, 5vw, 28px)' }}>vs</p>
+            <p className="font-black uppercase tracking-[0.12em]"
+              style={{ color: '#38384A', fontFamily: 'var(--font-headline)', fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1 }}>
+              vs
+            </p>
           )}
-          <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
-            style={{
-              color:      live ? '#4ade80' : '#5A5A6A',
-              background: live ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.04)',
-              border:     live ? '1px solid rgba(74,222,128,0.25)' : '1px solid rgba(255,255,255,0.06)',
-              fontFamily: 'var(--font-sport)',
-            }}>
-            {live && <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ background: '#4ade80' }} />}
-            {match.statusLabel}
-          </span>
+          {!live && (
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] px-2 py-0.5 rounded"
+              style={{
+                color: '#7A7A8E',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                fontFamily: 'var(--font-sport)',
+              }}>
+              {match.statusLabel}
+            </span>
+          )}
         </div>
         {/* Away team */}
         {match.awayTeamId ? (
           <Link href={`/equipo/${match.leagueSlug.replace('/', '_')}_${match.awayTeamId}`}
             className="flex flex-col items-center gap-2 flex-1 hover:opacity-80 transition-opacity">
             <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={68} />
-            <p className="text-center font-black text-sm leading-tight"
-              style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-center font-bold text-sm leading-tight"
+              style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
               {match.awayAbbr ?? match.awayTeam}
             </p>
           </Link>
         ) : (
           <div className="flex flex-col items-center gap-2 flex-1">
             <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={68} />
-            <p className="text-center font-black text-sm leading-tight"
-              style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-center font-bold text-sm leading-tight"
+              style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
               {match.awayAbbr ?? match.awayTeam}
             </p>
           </div>
@@ -274,8 +288,8 @@ function StatBar({ stat }: { stat: MatchStat }) {
       </div>
       {!isNaN(homePct) && (
         <div className="flex rounded-full overflow-hidden h-1" style={{ background: 'rgba(255,255,255,0.06)' }}>
-          <div style={{ width: `${homePct}%`, background: '#6366f1', transition: 'width 0.8s ease' }} />
-          <div style={{ flex: 1, background: '#f59e0b' }} />
+          <div style={{ width: `${homePct}%`, background: '#7C3AED', transition: 'width 0.8s ease' }} />
+          <div style={{ flex: 1, background: '#F59E0B' }} />
         </div>
       )}
     </div>
@@ -330,12 +344,12 @@ function QuarterTable({ home, away, homeAbbr, awayAbbr }: {
         </thead>
         <tbody>
           <tr style={{ color: '#D0D0E8' }}>
-            <td className="font-black py-1" style={{ color: '#818cf8' }}>{homeAbbr}</td>
+            <td className="font-black py-1" style={{ color: '#A78BFA' }}>{homeAbbr}</td>
             {Array.from({ length: len }).map((_, i) => <td key={i} className="text-center tabular-nums">{home[i] ?? '—'}</td>)}
             <td className="text-center font-black tabular-nums" style={{ color: '#F0F0F8' }}>{sum(home) || '—'}</td>
           </tr>
           <tr style={{ color: '#D0D0E8' }}>
-            <td className="font-black py-1" style={{ color: '#f59e0b' }}>{awayAbbr}</td>
+            <td className="font-black py-1" style={{ color: '#F59E0B' }}>{awayAbbr}</td>
             {Array.from({ length: len }).map((_, i) => <td key={i} className="text-center tabular-nums">{away[i] ?? '—'}</td>)}
             <td className="text-center font-black tabular-nums" style={{ color: '#F0F0F8' }}>{sum(away) || '—'}</td>
           </tr>
@@ -346,7 +360,7 @@ function QuarterTable({ home, away, homeAbbr, awayAbbr }: {
 }
 
 function LeaderCard({ leader }: { leader: BasketballLeader }) {
-  const accent = leader.team === 'home' ? '#818cf8' : '#f59e0b'
+  const accent = leader.team === 'home' ? '#A78BFA' : '#F59E0B'
   return (
     <div className="flex items-center gap-3 p-2.5 rounded-lg"
       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -395,7 +409,7 @@ function TennisBlock({ match }: { match: MatchDetail }) {
                   <span key={i} className="w-7 h-7 flex items-center justify-center rounded-md font-black tabular-nums text-sm"
                     style={{
                       background: 'rgba(255,255,255,0.05)',
-                      color: side === 'home' ? '#818cf8' : '#f59e0b',
+                      color: side === 'home' ? '#A78BFA' : '#F59E0B',
                       fontFamily: 'var(--font-display)',
                     }}>
                     {sets[i] ?? '—'}
@@ -563,7 +577,7 @@ function GolfBlock({ match }: { match: MatchDetail }) {
                 <p className="flex-1 text-[12px] font-black truncate"
                   style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>{row.player}</p>
                 <span className="text-[11px] font-black tabular-nums"
-                  style={{ color: '#818cf8', fontFamily: 'var(--font-display)' }}>{row.score}</span>
+                  style={{ color: '#A78BFA', fontFamily: 'var(--font-display)' }}>{row.score}</span>
                 {row.today && (
                   <span className="text-[10px] tabular-nums" style={{ color: '#6A6A7A' }}>{row.today}</span>
                 )}
@@ -611,7 +625,7 @@ function PlayerDot({ player, x, y, side }: {
   y: number
   side: 'home' | 'away'
 }) {
-  const color  = side === 'home' ? '#818cf8' : '#f59e0b'
+  const color  = side === 'home' ? '#A78BFA' : '#F59E0B'
   const label  = playerDisplayName(player)
   const jersey = player.jersey ?? label.slice(0, 2).toUpperCase()
 
@@ -704,8 +718,8 @@ function BenchSection({ home, away, homeTeam, awayTeam }: {
   return (
     <div className="mt-4 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-3">
       {[
-        { lineup: away, label: awayTeam ?? 'Visitante', color: '#f59e0b' },
-        { lineup: home, label: homeTeam ?? 'Local',     color: '#818cf8' },
+        { lineup: away, label: awayTeam ?? 'Visitante', color: '#F59E0B' },
+        { lineup: home, label: homeTeam ?? 'Local',     color: '#A78BFA' },
       ].map(({ lineup, label, color }) => (
         <div key={label} className="rounded-xl p-3"
           style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -751,10 +765,10 @@ function LineupField({ lineups, homeTeam, awayTeam }: {
       {/* Formation header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex flex-col items-start gap-0.5">
-          <span className="text-[9px] uppercase tracking-widest" style={{ color: '#f59e0b', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[9px] uppercase tracking-widest" style={{ color: '#F59E0B', fontFamily: 'var(--font-sport)' }}>
             {awayTeam ?? 'Visitante'}
           </span>
-          <span className="text-[14px] font-black tabular-nums" style={{ color: '#f59e0b', fontFamily: 'var(--font-display)' }}>
+          <span className="text-[14px] font-black tabular-nums" style={{ color: '#F59E0B', fontFamily: 'var(--font-display)' }}>
             {lineups.away.formation ?? '—'}
           </span>
         </div>
@@ -762,10 +776,10 @@ function LineupField({ lineups, homeTeam, awayTeam }: {
           Formaciones
         </span>
         <div className="flex flex-col items-end gap-0.5">
-          <span className="text-[9px] uppercase tracking-widest" style={{ color: '#818cf8', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[9px] uppercase tracking-widest" style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
             {homeTeam ?? 'Local'}
           </span>
-          <span className="text-[14px] font-black tabular-nums" style={{ color: '#818cf8', fontFamily: 'var(--font-display)' }}>
+          <span className="text-[14px] font-black tabular-nums" style={{ color: '#A78BFA', fontFamily: 'var(--font-display)' }}>
             {lineups.home.formation ?? '—'}
           </span>
         </div>
@@ -876,13 +890,13 @@ function MatchContent({ match }: { match: MatchDetail }) {
 
   const leaguePills = (
     <div className="flex items-center gap-2 mb-5 flex-wrap">
-      <Pill>{match.leagueLabel}</Pill>
+      <Pill color="#C4B5FD">{match.leagueLabel}</Pill>
       {live && (
         <span
           className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
-          style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
+          style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.28)', fontFamily: 'var(--font-sport)' }}
         >
-          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
           En Vivo
         </span>
       )}
@@ -976,8 +990,8 @@ function MatchContent({ match }: { match: MatchDetail }) {
           {hasSoccerStats && (
             <Section title="Estadísticas del partido">
               <div className="flex items-center justify-between text-[10px] font-black mb-4" style={{ fontFamily: 'var(--font-sport)' }}>
-                <span style={{ color: '#818cf8' }}>{match.homeAbbr ?? match.homeTeam}</span>
-                <span style={{ color: '#f59e0b' }}>{match.awayAbbr ?? match.awayTeam}</span>
+                <span style={{ color: '#A78BFA' }}>{match.homeAbbr ?? match.homeTeam}</span>
+                <span style={{ color: '#F59E0B' }}>{match.awayAbbr ?? match.awayTeam}</span>
               </div>
               <div className="flex flex-col gap-3">
                 {match.soccer!.stats.map((s, i) => <StatBar key={i} stat={s} />)}
@@ -987,8 +1001,8 @@ function MatchContent({ match }: { match: MatchDetail }) {
           {hasBasketStats && (
             <Section title="Estadísticas de equipo">
               <div className="flex items-center justify-between text-[10px] font-black mb-4" style={{ fontFamily: 'var(--font-sport)' }}>
-                <span style={{ color: '#818cf8' }}>{match.homeAbbr ?? match.homeTeam}</span>
-                <span style={{ color: '#f59e0b' }}>{match.awayAbbr ?? match.awayTeam}</span>
+                <span style={{ color: '#A78BFA' }}>{match.homeAbbr ?? match.homeTeam}</span>
+                <span style={{ color: '#F59E0B' }}>{match.awayAbbr ?? match.awayTeam}</span>
               </div>
               <div className="flex flex-col gap-3">
                 {match.basketball!.stats.map((s, i) => <StatBar key={i} stat={s} />)}

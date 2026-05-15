@@ -66,11 +66,11 @@ export function LeagueTableBlock({
               <Image src={r.logo} alt={r.name} width={16} height={16} unoptimized style={{ objectFit: 'contain' }} />
             )}
             <span className="text-[10px] font-black"
-              style={{ color: r.highlight === 'home' ? '#818cf8' : '#f59e0b', fontFamily: 'var(--font-sport)' }}>
+              style={{ color: r.highlight === 'home' ? '#A78BFA' : '#f59e0b', fontFamily: 'var(--font-sport)' }}>
               {r.abbr || r.name}
             </span>
             <span className="text-[10px] font-black"
-              style={{ color: r.highlight === 'home' ? '#818cf8' : '#f59e0b', fontFamily: 'var(--font-display)' }}>
+              style={{ color: r.highlight === 'home' ? '#A78BFA' : '#f59e0b', fontFamily: 'var(--font-display)' }}>
               {r.rank}º · {r.pts} pts
             </span>
           </div>
@@ -101,7 +101,7 @@ export function LeagueTableBlock({
             {visible.map((row) => {
               const isHome = row.highlight === 'home'
               const isAway = row.highlight === 'away'
-              const accent = isHome ? '#818cf8' : isAway ? '#f59e0b' : undefined
+              const accent = isHome ? '#A78BFA' : isAway ? '#f59e0b' : undefined
               const teamHref = row.teamId ? `/equipo/${leagueSlug.replace('/', '_')}_${row.teamId}` : undefined
               return (
                 <tr
