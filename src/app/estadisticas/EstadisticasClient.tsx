@@ -167,151 +167,6 @@ const FUTBOL_JUGADORES_GROUPS: MetricGroup[] = [
           { rank: 12, name: 'Nicolo Barella',  team: 'Inter Milán',  value: '6',  sub: '25 PJ', flag: '🇮🇹', trend: 'up' },
         ],
       },
-      {
-        id: 'tiros-puerta', title: 'Tiros a puerta / partido', metric: 'T/PJ',
-        rows: [
-          { rank: 1, name: 'Erling Haaland',    team: 'Man City',     value: '3.8', sub: '30 PJ', flag: '🇳🇴', trend: 'up' },
-          { rank: 2, name: 'Kylian Mbappé',     team: 'Real Madrid',  value: '3.4', sub: '28 PJ', flag: '🇫🇷', trend: 'flat' },
-          { rank: 3, name: 'Mohamed Salah',     team: 'Liverpool',    value: '3.1', sub: '27 PJ', flag: '🇪🇬', trend: 'up' },
-          { rank: 4, name: 'Lautaro Martínez',  team: 'Inter Milán',  value: '2.9', sub: '27 PJ', flag: '🇦🇷', trend: 'up' },
-          { rank: 5, name: 'Harry Kane',         team: 'Bayern Munich',value: '2.8', sub: '26 PJ', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'down' },
-          { rank: 6, name: 'Vinicius Jr',        team: 'Real Madrid',  value: '2.7', sub: '27 PJ', flag: '🇧🇷', trend: 'flat' },
-        ],
-      },
-      {
-        id: 'goles-90', title: 'Goles por 90 minutos', metric: 'G/90',
-        rows: [
-          { rank: 1, name: 'Erling Haaland',    team: 'Man City',     value: '1.08', sub: '30 PJ · 2250 min', flag: '🇳🇴', trend: 'up' },
-          { rank: 2, name: 'Kylian Mbappé',     team: 'Real Madrid',  value: '0.94', sub: '28 PJ · 2300 min', flag: '🇫🇷', trend: 'flat' },
-          { rank: 3, name: 'Lautaro Martínez',  team: 'Inter Milán',  value: '0.86', sub: '27 PJ · 2160 min', flag: '🇦🇷', trend: 'up' },
-          { rank: 4, name: 'Vinicius Jr',       team: 'Real Madrid',  value: '0.84', sub: '27 PJ · 2090 min', flag: '🇧🇷', trend: 'flat' },
-          { rank: 5, name: 'Antoine Griezmann', team: 'Atlético',     value: '0.72', sub: '27 PJ · 1950 min', flag: '🇫🇷', trend: 'up' },
-          { rank: 6, name: 'Lamine Yamal',      team: 'FC Barcelona', value: '0.68', sub: '30 PJ · 2390 min', flag: '🇪🇸', trend: 'up' },
-          { rank: 7, name: 'Robert Lewandowski',team: 'FC Barcelona', value: '0.66', sub: '28 PJ · 2200 min', flag: '🇵🇱', trend: 'flat' },
-          { rank: 8, name: 'Harry Kane',        team: 'Bayern Munich',value: '0.58', sub: '26 PJ · 2160 min', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'down' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'porteros',
-    label: 'Porteros',
-    icon: '🧤',
-    description: 'Porterías a cero',
-    blocks: [
-      {
-        id: 'porteria', title: 'Porterías a cero', metric: 'P/0',
-        rows: [
-          { rank: 1, name: 'Thibaut Courtois',      team: 'Real Madrid',  value: '14', sub: '30 PJ', flag: '🇧🇪', trend: 'up',   extra: { GE: '18', Min: '2700' } },
-          { rank: 2, name: 'Ederson',               team: 'Man City',     value: '13', sub: '29 PJ', flag: '🇧🇷', trend: 'flat', extra: { GE: '19', Min: '2610' } },
-          { rank: 3, name: 'Alisson Becker',        team: 'Liverpool',    value: '11', sub: '28 PJ', flag: '🇧🇷', trend: 'up',   extra: { GE: '22', Min: '2520' } },
-          { rank: 4, name: 'David Raya',            team: 'Arsenal',      value: '10', sub: '28 PJ', flag: '🇪🇸', trend: 'up',   extra: { GE: '20', Min: '2520' } },
-          { rank: 5, name: 'Mike Maignan',          team: 'AC Milan',     value: '10', sub: '27 PJ', flag: '🇫🇷', trend: 'flat', extra: { GE: '24', Min: '2430' } },
-          { rank: 6, name: 'Yann Sommer',           team: 'Inter Milán',  value: '9',  sub: '26 PJ', flag: '🇨🇭', trend: 'up',   extra: { GE: '23', Min: '2340' } },
-          { rank: 7, name: 'Gianluigi Donnarumma', team: 'PSG', value: '8',  sub: '29 PJ', flag: '🇮🇹', trend: 'flat', extra: { GE: '21', Min: '2610' } },
-          { rank: 8, name: 'Gregor Kobel',          team: 'Dortmund',     value: '8',  sub: '24 PJ', flag: '🇨🇭', trend: 'up',   extra: { GE: '26', Min: '2160' } },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'presencia',
-    label: 'Presencia & Regularidad',
-    icon: '📅',
-    description: 'Minutos, partidos jugados y titularidades',
-    blocks: [
-      {
-        id: 'minutos', title: 'Minutos jugados', metric: 'Min',
-        rows: [
-          { rank: 1, name: 'Thibaut Courtois',       team: 'Real Madrid',  value: '2700', sub: '30 PJ', flag: '🇧🇪', trend: 'flat' },
-          { rank: 2, name: 'Gianluigi Donnarumma',    team: 'PSG',          value: '2610', sub: '29 PJ', flag: '🇮🇹', trend: 'flat' },
-          { rank: 3, name: 'Declan Rice',             team: 'Arsenal',      value: '2520', sub: '28 PJ', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'flat' },
-          { rank: 4, name: 'Alisson',                team: 'Liverpool',    value: '2520', sub: '28 PJ', flag: '🇧🇷', trend: 'up' },
-          { rank: 5, name: 'Virgil van Dijk',        team: 'Liverpool',    value: '2500', sub: '28 PJ', flag: '🇳🇱', trend: 'flat' },
-          { rank: 6, name: 'Trent Alexander-Arnold', team: 'Real Madrid',  value: '2480', sub: '28 PJ', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up' },
-          { rank: 7, name: 'Dani Carvajal',          team: 'Real Madrid',  value: '2450', sub: '27 PJ', flag: '🇪🇸', trend: 'flat' },
-          { rank: 8, name: 'Joshua Kimmich',         team: 'Bayern',       value: '2420', sub: '27 PJ', flag: '🇩🇪', trend: 'flat' },
-          { rank: 9, name: 'Lamine Yamal',           team: 'FC Barcelona', value: '2390', sub: '30 PJ', flag: '🇪🇸', trend: 'up' },
-          { rank: 10, name: 'Jules Koundé',          team: 'FC Barcelona', value: '2360', sub: '26 PJ', flag: '🇫🇷', trend: 'flat' },
-        ],
-      },
-      {
-        id: 'partidos-titular', title: 'Partidos de titular', metric: 'Titular',
-        rows: [
-          { rank: 1, name: 'Thibaut Courtois',  team: 'Real Madrid',  value: '30', sub: '30 PJ', flag: '🇧🇪', trend: 'flat' },
-          { rank: 2, name: 'Lamine Yamal',      team: 'FC Barcelona', value: '29', sub: '30 PJ', flag: '🇪🇸', trend: 'up' },
-          { rank: 3, name: 'Rodri',             team: 'Man City',     value: '28', sub: '28 PJ', flag: '🇪🇸', trend: 'flat' },
-          { rank: 4, name: 'Virgil van Dijk',   team: 'Liverpool',    value: '28', sub: '28 PJ', flag: '🇳🇱', trend: 'flat' },
-          { rank: 5, name: 'Dani Carvajal',     team: 'Real Madrid',  value: '27', sub: '27 PJ', flag: '🇪🇸', trend: 'flat' },
-          { rank: 6, name: 'Joshua Kimmich',    team: 'Bayern',       value: '27', sub: '27 PJ', flag: '🇩🇪', trend: 'flat' },
-          { rank: 7, name: 'Erling Haaland',    team: 'Man City',     value: '27', sub: '30 PJ', flag: '🇳🇴', trend: 'up' },
-          { rank: 8, name: 'William Saliba',    team: 'Arsenal',      value: '26', sub: '27 PJ', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'disciplina',
-    label: 'Disciplina',
-    icon: '🟨',
-    description: 'Tarjetas, faltas y suspensiones',
-    blocks: [
-      {
-        id: 'tarjetas-amarillas', title: 'Tarjetas amarillas', metric: 'TA',
-        rows: [
-          { rank: 1, name: 'Casemiro',       team: 'Man United',    value: '12', sub: '29 PJ', flag: '🇧🇷', trend: 'flat' },
-          { rank: 2, name: 'Sandro Tonali',  team: 'Newcastle',     value: '11', sub: '28 PJ', flag: '🇮🇹', trend: 'down' },
-          { rank: 3, name: 'Tchouaméni',     team: 'Real Madrid',   value: '10', sub: '27 PJ', flag: '🇫🇷', trend: 'flat' },
-          { rank: 4, name: 'Marcos Llorente',team: 'Atlético',      value: '9',  sub: '26 PJ', flag: '🇪🇸', trend: 'up' },
-          { rank: 5, name: 'Granit Xhaka',   team: 'Leverkusen',    value: '9',  sub: '27 PJ', flag: '🇨🇭', trend: 'flat' },
-          { rank: 6, name: 'Dani Parejo',    team: 'Villarreal',    value: '9',  sub: '27 PJ', flag: '🇪🇸', trend: 'flat' },
-          { rank: 7, name: 'Rodri',           team: 'Man City',     value: '7',  sub: '28 PJ', flag: '🇪🇸', trend: 'flat' },
-        ],
-      },
-      {
-        id: 'tarjetas-rojas', title: 'Tarjetas rojas', metric: 'TR',
-        rows: [
-          { rank: 1, name: 'Casemiro',         team: 'Man United',  value: '3', sub: '29 PJ', flag: '🇧🇷', trend: 'flat' },
-          { rank: 2, name: 'Marcos Llorente',  team: 'Atlético',    value: '2', sub: '26 PJ', flag: '🇪🇸', trend: 'flat' },
-          { rank: 3, name: 'Sandro Tonali',    team: 'Newcastle',   value: '2', sub: '28 PJ', flag: '🇮🇹', trend: 'down' },
-          { rank: 4, name: 'Granit Xhaka',     team: 'Leverkusen',  value: '2', sub: '27 PJ', flag: '🇨🇭', trend: 'flat' },
-          { rank: 5, name: 'Tchouaméni',       team: 'Real Madrid', value: '1', sub: '27 PJ', flag: '🇫🇷', trend: 'flat' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'promesas',
-    label: 'Promesas Sub-21',
-    icon: '🌟',
-    description: 'Los mejores talentos menores de 21 años',
-    blocks: [
-      {
-        id: 'promesas-nota', title: 'Promesas Sub-21 · Nota media', metric: 'Nota',
-        rows: [
-          { rank: 1, name: 'Lamine Yamal',  team: 'FC Barcelona', value: '9.4', sub: '24 PJ', flag: '🇪🇸', trend: 'up', extra: { Edad: '17', Goles: '18' } },
-          { rank: 2, name: 'Pau Cubarsí',   team: 'FC Barcelona', value: '8.6', sub: '20 PJ', flag: '🇪🇸', trend: 'up',  extra: { Edad: '17', Goles: '1' } },
-          { rank: 3, name: 'Gavi',          team: 'FC Barcelona', value: '8.4', sub: '19 PJ', flag: '🇪🇸', trend: 'up',  extra: { Edad: '20', Goles: '4' } },
-          { rank: 4, name: 'Jude Bellingham',team: 'Real Madrid', value: '8.3', sub: '22 PJ', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'flat', extra: { Edad: '21', Goles: '12' } },
-          { rank: 5, name: 'Kenan Yıldız',  team: 'Juventus',     value: '8.1', sub: '22 PJ', flag: '🇹🇷', trend: 'up',  extra: { Edad: '19', Goles: '7' } },
-          { rank: 6, name: 'Endrick',       team: 'Real Madrid',  value: '7.9', sub: '15 PJ', flag: '🇧🇷', trend: 'up',  extra: { Edad: '18', Goles: '4' } },
-          { rank: 7, name: 'Florian Wirtz', team: 'Leverkusen',   value: '7.8', sub: '26 PJ', flag: '🇩🇪', trend: 'up', extra: { Edad: '21', Goles: '11' } },
-          { rank: 8, name: 'Warren Zaïre-Emery', team: 'PSG',     value: '7.6', sub: '18 PJ', flag: '🇫🇷', trend: 'up',  extra: { Edad: '18', Goles: '3' } },
-          { rank: 9, name: 'Julio Enciso',  team: 'Brighton',     value: '7.3', sub: '14 PJ', flag: '🇵🇾', trend: 'up',  extra: { Edad: '20', Goles: '5' } },
-          { rank: 10, name: 'Mauro Icardi', team: 'Sub-21',       value: '7.1', sub: 'Demo',  flag: '🌐', trend: 'flat', extra: { Edad: '21', Goles: '—' } },
-        ],
-      },
-      {
-        id: 'promesas-goles', title: 'Promesas · Goles en liga', metric: 'Goles',
-        rows: [
-          { rank: 1, name: 'Lamine Yamal',  team: 'LaLiga',        value: '18', sub: '30 PJ', flag: '🇪🇸', trend: 'up',  extra: { Edad: '17' } },
-          { rank: 2, name: 'Florian Wirtz', team: 'Bundesliga',    value: '11', sub: '26 PJ', flag: '🇩🇪', trend: 'up', extra: { Edad: '21' } },
-          { rank: 3, name: 'Jude Bellingham',team: 'LaLiga',       value: '12', sub: '22 PJ', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'flat', extra: { Edad: '21' } },
-          { rank: 4, name: 'Kenan Yıldız',  team: 'Serie A',       value: '7',  sub: '22 PJ', flag: '🇹🇷', trend: 'up',  extra: { Edad: '19' } },
-          { rank: 5, name: 'Gavi',          team: 'LaLiga',        value: '4',  sub: '19 PJ', flag: '🇪🇸', trend: 'up',  extra: { Edad: '20' } },
-          { rank: 6, name: 'Endrick',       team: 'LaLiga',        value: '4',  sub: '15 PJ', flag: '🇧🇷', trend: 'up',  extra: { Edad: '18' } },
-        ],
-      },
     ],
   },
 ]
@@ -657,19 +512,6 @@ const SPORTS: SportConfig[] = [
             id: 'nations-a4', title: 'Nations League · Grupo A4 (Ed. 2026-27, sep 2026)', metric: 'Pts', placeholder: true,
             rows: [],
           },
-          {
-            id: 'goleadores-selecciones', title: 'Máximos goleadores internacionales (activos)', metric: 'Goles',
-            rows: [
-              { rank: 1, name: 'Cristiano Ronaldo',  team: 'Portugal',  value: '135', sub: 'Récord mundial', flag: '🇵🇹', trend: 'flat' },
-              { rank: 2, name: 'Lionel Messi',       team: 'Argentina', value: '112', sub: 'Campeón del Mundo', flag: '🇦🇷', trend: 'flat' },
-              { rank: 3, name: 'Sunil Chhetri',      team: 'India',     value: '94',  flag: '🇮🇳', trend: 'flat' },
-              { rank: 4, name: 'Ali Mabkhout',       team: 'Emiratos',  value: '88',  flag: '🇦🇪', trend: 'flat' },
-              { rank: 5, name: 'Romelu Lukaku',      team: 'Bélgica',   value: '87',  flag: '🇧🇪', trend: 'flat' },
-              { rank: 6, name: 'Robert Lewandowski', team: 'Polonia',   value: '82',  flag: '🇵🇱', trend: 'up' },
-              { rank: 7, name: 'Neymar',             team: 'Brasil',    value: '79',  flag: '🇧🇷', trend: 'down' },
-              { rank: 8, name: 'Harry Kane',         team: 'Inglaterra',value: '72',  flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up' },
-            ],
-          },
         ],
       },
       {
@@ -685,17 +527,6 @@ const SPORTS: SportConfig[] = [
               { rank: 5, name: 'Vincent Kompany',     team: 'Bayern Munich',value: '61%', sub: 'Temp. 25/26', flag: '🇧🇪', trend: 'up',   extra: { GF: '2.31', GC: '0.98' } },
               { rank: 6, name: 'Diego Simeone',       team: 'Atlético',     value: '58%', sub: 'Temp. 25/26', flag: '🇦🇷', trend: 'flat', extra: { GF: '1.82', GC: '0.91' } },
               { rank: 7, name: 'Arne Slot',           team: 'Liverpool',    value: '53%', sub: 'Temp. 25/26', flag: '🇳🇱', trend: 'flat', extra: { GF: '1.74', GC: '1.12' } },
-            ],
-          },
-          {
-            id: 'dt-trofeos', title: 'DT con más trofeos activos', metric: 'Trofeos',
-            rows: [
-              { rank: 1, name: 'Pep Guardiola',  team: 'Man City',     value: '40', sub: 'en activo', flag: '🇪🇸', trend: 'up' },
-              { rank: 2, name: 'Carlo Ancelotti', team: 'Brasil',       value: '28', sub: 'en activo', flag: '🇮🇹', trend: 'flat' },
-              { rank: 3, name: 'José Mourinho',   team: 'Benfica',      value: '26', sub: 'en activo',  flag: '🇵🇹', trend: 'flat' },
-              { rank: 4, name: 'Diego Simeone',   team: 'Atlético',     value: '13', sub: 'en activo', flag: '🇦🇷', trend: 'flat' },
-              { rank: 5, name: 'Hansi Flick',     team: 'FC Barcelona', value: '11', sub: 'en activo', flag: '🇩🇪', trend: 'up' },
-              { rank: 6, name: 'Xabi Alonso',     team: 'Sin equipo',   value: '3',  sub: 'en activo', flag: '🇪🇸', trend: 'flat' },
             ],
           },
         ],
@@ -1764,16 +1595,9 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'tenis-slams': 'tennisSlams',
 }
 
-// Blocks with API-Sports 2024 data (free tier): show as historical, not live
-const HISTORICAL_PLAYER_BLOCK_IDS = new Set(['tarjetas-amarillas', 'tarjetas-rojas', 'tiros-puerta', 'goles-90'])
-
-// Fully static/estimated blocks with no live API source
-const STATIC_STALE_BLOCK_IDS = new Set([
-  'porteria',
-  'minutos', 'partidos-titular',
-  'promesas-nota', 'promesas-goles',
-  'goleadores-selecciones', 'dt-trofeos',
-])
+// (Histórico/estimated block sets removidos: la web ya no muestra bloques editoriales.)
+const HISTORICAL_PLAYER_BLOCK_IDS = new Set<string>()
+const STATIC_STALE_BLOCK_IDS = new Set<string>()
 
 const FIXTURE_META_KEY: Record<string, string> = {
   'tabla-ucl': 'uclFixtures', 'tabla-uel': 'uelFixtures', 'tabla-uecl': 'ueclFixtures',
@@ -1804,10 +1628,9 @@ interface LeaguePlayerData {
 }
 interface LivePlayerData { leagues: LeaguePlayerData[] }
 
-// IDs of blocks that get player-stats live data
+// IDs of blocks that get player-stats live data (ESPN /statistics)
 const LIVE_PLAYER_BLOCK_IDS = new Set([
   'pichichi-laliga', 'bota-oro', 'goleadores', 'asistencias',
-  'tarjetas-amarillas', 'tarjetas-rojas', 'tiros-puerta', 'goles-90',
 ])
 
 const LEAGUE_FILTER_TO_ID: Record<string, string> = {
