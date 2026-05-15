@@ -1637,7 +1637,7 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
   )
 }
 
-function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlocks, onToggleBlock, leagueFilter, livePlayerData, liveMeta, favorites, onToggleFav }: {
+function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlocks, onToggleBlock, leagueFilter, livePlayerData, liveMeta, favorites, onToggleFav, hideUnavailable }: {
   group: MetricGroup
   accent: string
   expanded: boolean
@@ -1649,9 +1649,18 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
   liveMeta?: Record<string, BlockMeta>
   favorites?: Set<string>
   onToggleFav?: (id: string) => void
+  hideUnavailable?: boolean
 }) {
   // Hide pure placeholder blocks (no live data injected, no rows).
-  const visibleBlocks = group.blocks.filter(b => !b.placeholder || b.rows.length > 0)
+  // When hideUnavailable is on, also drop blocks whose meta says 'unavailable'.
+  const visibleBlocks = group.blocks.filter(b => {
+    if (b.placeholder && b.rows.length === 0) return false
+    if (hideUnavailable) {
+      const m = getBlockMeta(b.id, liveMeta)
+      if (m?.status === 'unavailable') return false
+    }
+    return true
+  })
 
   if (visibleBlocks.length === 0) return null
 
@@ -2056,14 +2065,23 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   const [searchOpen, setSearchOpen]           = useState(false)
   const [favorites, setFavorites]             = useState<Set<string>>(() => new Set())
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [hideUnavailable, setHideUnavailable] = useState(true)
 
-  // Load favorites from localStorage on mount
+  // Load favorites + ocultar-vacíos preference from localStorage on mount
   useEffect(() => {
     try {
       const raw = localStorage.getItem('ts_stats_favorites')
       if (raw) setFavorites(new Set(JSON.parse(raw)))
     } catch { /* ignore */ }
+    try {
+      const raw = localStorage.getItem('ts_stats_hide_unavailable')
+      if (raw === '0') setHideUnavailable(false)
+    } catch { /* ignore */ }
   }, [])
+
+  useEffect(() => {
+    try { localStorage.setItem('ts_stats_hide_unavailable', hideUnavailable ? '1' : '0') } catch { /* ignore */ }
+  }, [hideUnavailable])
 
   const toggleFav = React.useCallback((blockId: string) => {
     setFavorites(prev => {
@@ -2290,9 +2308,19 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   const leagueFilteredBlocks = (sectionId === 'competiciones' && leagueFilter !== 'General')
     ? flatBlocks.filter(b => !b.league || b.league === leagueFilter)
     : flatBlocks
-  const filteredFlatBlocks = showFavoritesOnly
+  const favoriteFilteredBlocks = showFavoritesOnly
     ? leagueFilteredBlocks.filter(b => favorites.has(b.id))
     : leagueFilteredBlocks
+  // Auto-ocultar bloques marcados como "unavailable" cuando el toggle está activo.
+  // Conserva los favoritos aunque estén unavailable: si el usuario lo guardó, lo verá.
+  const filteredFlatBlocks = hideUnavailable
+    ? favoriteFilteredBlocks.filter(b => {
+        if (favorites.has(b.id)) return true
+        const m = getBlockMeta(b.id, liveData?.meta, b.cardType)
+        return m?.status !== 'unavailable'
+      })
+    : favoriteFilteredBlocks
+  const hiddenFlatCount = favoriteFilteredBlocks.length - filteredFlatBlocks.length
 
   const toggleBlock = (id: string) => {
     setExpandedBlocks(prev => {
@@ -2418,6 +2446,18 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                   <span className="text-[9px] font-mono px-1 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)' }}>{favorites.size}</span>
                 </button>
               )}
+              <button onClick={() => setHideUnavailable(v => !v)}
+                className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
+                style={{
+                  background: hideUnavailable ? 'rgba(255,255,255,0.04)' : 'rgba(248,113,113,0.10)',
+                  color: hideUnavailable ? '#9090B0' : '#f87171',
+                  border: hideUnavailable ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(248,113,113,0.28)',
+                  fontFamily: 'var(--font-sport)', cursor: 'pointer',
+                }}
+                title={hideUnavailable ? 'Mostrar también bloques sin datos' : 'Ocultar bloques sin datos'}
+                aria-pressed={!hideUnavailable}>
+                {hideUnavailable ? '⊘ Ocultar vacíos' : '⊕ Ver todos'}
+              </button>
               {fetchError && (
                 <span className="text-[11px]" style={{ color: '#f87171', fontFamily: 'var(--font-sport)' }}>
                   ⚠ Algunos datos no se han podido actualizar ({fetchError})
@@ -2579,6 +2619,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                 liveMeta={liveData?.meta}
                 favorites={favorites}
                 onToggleFav={toggleFav}
+                hideUnavailable={hideUnavailable}
               />
             ))}
           </div>
@@ -2615,10 +2656,26 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
               })}
             </div>
             {filteredFlatBlocks.length === 0 && (
-              <div className="py-16 text-center">
-                <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-                  No hay datos disponibles para esta combinación.
-                </p>
+              <div className="py-16 text-center max-w-md mx-auto">
+                {hideUnavailable && hiddenFlatCount > 0 ? (
+                  <>
+                    <p className="text-sm mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                      Esta sección no tiene datos verificables en vivo todavía.
+                    </p>
+                    <p className="text-[11px] mb-4" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                      Hay {hiddenFlatCount} bloque{hiddenFlatCount !== 1 ? 's' : ''} ocult{hiddenFlatCount !== 1 ? 'os' : 'o'} por falta de fuente gratuita confiable.
+                    </p>
+                    <button onClick={() => setHideUnavailable(false)}
+                      className="text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full transition-opacity hover:opacity-80"
+                      style={{ background: 'rgba(248,113,113,0.10)', color: '#f87171', border: '1px solid rgba(248,113,113,0.28)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}>
+                      ⊕ Ver bloques ocultos
+                    </button>
+                  </>
+                ) : (
+                  <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                    No hay datos disponibles para esta combinación.
+                  </p>
+                )}
               </div>
             )}
           </>
