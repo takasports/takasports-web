@@ -1376,8 +1376,20 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       const urlSport  = params.get('sport')
       const urlDate   = params.get('d')
 
-      const savedView  = (localStorage.getItem('ts_cal_view') as ViewType | null)
-      const savedSport = localStorage.getItem('ts_cal_sport')
+      // Migración v3: la primera vez que un usuario carga después del
+      // rediseño con chip Destacados, forzamos los nuevos defaults para
+      // que vea realmente la nueva entrada. Si no hacemos esto, su antiguo
+      // ts_cal_view='destacados' (Inicio) o ts_cal_sport='Todo' los llevan
+      // al estado viejo y nunca ven el chip nuevo.
+      const v3Migrated = localStorage.getItem('ts_cal_v3_chip') === '1'
+      if (!v3Migrated) {
+        localStorage.removeItem('ts_cal_view')
+        localStorage.removeItem('ts_cal_sport')
+        localStorage.setItem('ts_cal_v3_chip', '1')
+      }
+
+      const savedView  = v3Migrated ? (localStorage.getItem('ts_cal_view') as ViewType | null) : null
+      const savedSport = v3Migrated ? localStorage.getItem('ts_cal_sport') : null
 
       // Legacy aliases: 'en-vivo' tab fue absorbida por Inicio (destacados).
       const normalizedView: ViewType | null = urlView === 'en-vivo' ? 'destacados' : urlView
@@ -2064,11 +2076,36 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             )}
           </div>
 
-          {/* Sport categories — tabs de texto plano, subrayado púrpura al activo */}
-          <div className="mt-3 flex items-center gap-1 overflow-x-auto pb-px -mx-1 px-1 scrollbar-hide"
+          {/* Sport categories — Destacados es una pastilla resaltada,
+              el resto tabs de texto plano con subrayado púrpura al activo */}
+          <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-px -mx-1 px-1 scrollbar-hide"
             style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             {sports.map(sport => {
               const active = activeFilter === sport
+              const isDestacados = sport === 'Destacados'
+              if (isDestacados) {
+                return (
+                  <button
+                    key={sport}
+                    onClick={() => setActiveFilter(sport)}
+                    className="relative flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-black uppercase tracking-[0.12em] transition-all flex-shrink-0"
+                    style={{
+                      color: active ? '#fff' : '#C4B5FD',
+                      background: active ? '#7C3AED' : 'rgba(124,58,237,0.16)',
+                      border: active ? '1px solid #A78BFA' : '1px solid rgba(124,58,237,0.4)',
+                      fontFamily: 'var(--font-sport)',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      boxShadow: active ? '0 0 16px rgba(124,58,237,0.5)' : 'none',
+                      marginBottom: 6,
+                    }}>
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+                      <path d="M6 1l1.5 3.2 3.5.5-2.5 2.4.6 3.4L6 8.9 2.9 10.5l.6-3.4L1 4.7l3.5-.5L6 1z" />
+                    </svg>
+                    {sport}
+                  </button>
+                )
+              }
               return (
                 <button
                   key={sport}
