@@ -2500,8 +2500,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         <div className="sticky z-30 -mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-6 xl:px-10"
           style={{ top: 56, background: 'var(--bg-base)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
 
-          {/* TAB 1: DEPORTE */}
-          <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-0"
+          {/* TAB 1: DEPORTE — wrap a 2 filas en móvil, scroll horizontal en desktop */}
+          <div className="flex flex-wrap sm:flex-nowrap gap-1 sm:overflow-x-auto scrollbar-hide pb-0"
             style={{ borderBottom: '1px solid var(--border)' }}>
             {SPORTS.map(s => {
               const count = sportAvailableCounts[s.id] ?? 0
