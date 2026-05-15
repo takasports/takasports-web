@@ -70,7 +70,14 @@ export interface StatsStandingsResponse {
   // ── nuevos automatizados ────────────────────────────────────────────
   f1Calendar: StandingRow[]
   nbaMvpRace: StandingRow[]
+  nbaDpoyRace: StandingRow[]
   nbaRookieRace: StandingRow[]
+  uclScorers: StandingRow[]
+  uelScorers: StandingRow[]
+  ueclScorers: StandingRow[]
+  uclAssists: StandingRow[]
+  uelAssists: StandingRow[]
+  ueclAssists: StandingRow[]
   worldCupQualified: StandingRow[]
   motogpRiders: StandingRow[]
   motogpConstructors: StandingRow[]
@@ -826,6 +833,45 @@ async function fetchEuropeanCupFixtures(slug: string): Promise<StandingRow[]> {
   }
 }
 
+// ── European cups: top scorers & assists vía ESPN /statistics ────────────────
+// Funciona para uefa.champions, uefa.europa, uefa.conference. Devuelve top 10
+// goleadores (o asistentes según `kind`).
+interface EspnLeader {
+  displayValue?: string
+  value?: number
+  athlete?: { displayName?: string; team?: { displayName?: string; abbreviation?: string } }
+}
+interface EspnStatCat { name?: string; displayName?: string; leaders?: EspnLeader[] }
+
+async function fetchEuropeanCupLeaders(
+  slug: string,
+  kind: 'goals' | 'assists',
+): Promise<StandingRow[]> {
+  try {
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/${slug}/statistics`,
+      { next: { revalidate: 1800 } },
+    )
+    if (!res.ok) return []
+    const json = await res.json() as { stats?: EspnStatCat[] }
+    const cats = json.stats ?? []
+    const target = kind === 'goals' ? 'Goals' : 'Assists'
+    const cat = cats.find(c => c.displayName === target || c.name === kind)
+    const leaders = cat?.leaders ?? []
+    return leaders.slice(0, 10).map((l, i) => ({
+      rank: i + 1,
+      name: l.athlete?.displayName ?? '—',
+      abbr: l.athlete?.team?.abbreviation ?? l.athlete?.team?.displayName ?? '',
+      value: String(Math.round(l.value ?? 0)),
+      sub: l.athlete?.team?.displayName ?? '',
+      trend: 'flat' as const,
+      extra: {},
+    }))
+  } catch {
+    return []
+  }
+}
+
 // ── NBA Playoff Series via ESPN scoreboard ────────────────────────────────────
 
 async function fetchNBAPlayoffSeries(): Promise<StandingRow[]> {
@@ -1079,9 +1125,9 @@ function buildWorldCupQualified(): StandingRow[] {
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
-  futbol: ['football', 'uclFixtures', 'uelFixtures', 'ueclFixtures'],
-  football: ['football'],
-  nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaPlayoffSeries', 'nbaMvpRace', 'nbaRookieRace'],
+  futbol: ['football', 'uclFixtures', 'uelFixtures', 'ueclFixtures', 'uclScorers', 'uelScorers', 'ueclScorers', 'uclAssists', 'uelAssists', 'ueclAssists'],
+  football: ['football', 'uclScorers', 'uelScorers', 'ueclScorers', 'uclAssists', 'uelAssists', 'ueclAssists'],
+  nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaPlayoffSeries', 'nbaMvpRace', 'nbaDpoyRace', 'nbaRookieRace'],
   f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps', 'f1Calendar'],
   tenis: ['atpRanking', 'wtaRanking', 'tennisSlams', 'wtaSurfaces'],
   tennis: ['atpRanking', 'wtaRanking', 'tennisSlams', 'wtaSurfaces'],
@@ -1116,6 +1162,14 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchEuropeanCupFixtures('soccer/uefa.europa'),
     fetchEuropeanCupFixtures('soccer/uefa.conference'),
   ])
+  const [uclScorers, uelScorers, ueclScorers, uclAssists, uelAssists, ueclAssists] = await Promise.all([
+    fetchEuropeanCupLeaders('soccer/uefa.champions',  'goals'),
+    fetchEuropeanCupLeaders('soccer/uefa.europa',     'goals'),
+    fetchEuropeanCupLeaders('soccer/uefa.conference', 'goals'),
+    fetchEuropeanCupLeaders('soccer/uefa.champions',  'assists'),
+    fetchEuropeanCupLeaders('soccer/uefa.europa',     'assists'),
+    fetchEuropeanCupLeaders('soccer/uefa.conference', 'assists'),
+  ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
   const f1Calendar = f1.season ? await fetchF1Calendar(f1.season) : []
   const snapshots = await loadAllSnapshots()
@@ -1149,6 +1203,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
 
   // Derived blocks
   const nbaMvpRace = buildNbaMvpRace(nbaLeaders.scoring, nba.east, nba.west)
+  const nbaDpoyRace = buildNbaDpoyRace(nbaLeaders.blocks, nbaLeaders.steals)
   const nbaRookieRace = buildNbaRookieRace(nbaLeaders.scoring, nbaLeaders.rebounds, nbaLeaders.assists, NBA_ROOKIE_NAMES)
   const worldCupQualified = buildWorldCupQualified()
 
@@ -1215,7 +1270,14 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     // ── Nuevos automatizados ────────────────────────────────────────────
     f1Calendar:        f1Calendar.length    ? live(`Jolpica · ${f1.season}`) : unavail('Jolpica'),
     nbaMvpRace:        nbaMvpRace.length    ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
+    nbaDpoyRace:       nbaDpoyRace.length   ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
     nbaRookieRace:     nbaRookieRace.length ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
+    uclScorers:        uclScorers.length    ? live('ESPN · UEFA Champions League') : unavail('ESPN'),
+    uelScorers:        uelScorers.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
+    ueclScorers:       ueclScorers.length   ? live('ESPN · UEFA Conference')       : unavail('ESPN'),
+    uclAssists:        uclAssists.length    ? live('ESPN · UEFA Champions League') : unavail('ESPN'),
+    uelAssists:        uelAssists.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
+    ueclAssists:       ueclAssists.length   ? live('ESPN · UEFA Conference')       : unavail('ESPN'),
     worldCupQualified: live('Auto · FIFA + anfitriones'),
     motogpRiders:        motogpRidersR.rows.length    ? histor(motogpRidersR.snap?.source ?? 'MotoGP.com', motogpRidersR.snap?.asOf ?? MOTOGP_AS_OF) : unavail('Sin fuente gratuita verificable'),
     motogpConstructors:  motogpConstructR.rows.length ? histor(motogpConstructR.snap?.source ?? 'MotoGP.com', motogpConstructR.snap?.asOf ?? MOTOGP_AS_OF) : unavail('Sin fuente gratuita verificable'),
@@ -1275,7 +1337,14 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     ueclFixtures,
     f1Calendar,
     nbaMvpRace,
+    nbaDpoyRace,
     nbaRookieRace,
+    uclScorers,
+    uelScorers,
+    ueclScorers,
+    uclAssists,
+    uelAssists,
+    ueclAssists,
     worldCupQualified,
     motogpRiders:       motogpRidersR.rows,
     motogpConstructors: motogpConstructR.rows,

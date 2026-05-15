@@ -553,6 +553,30 @@ const SPORTS: SportConfig[] = [
             ],
           },
           {
+            id: 'ucl-scorers', title: 'Champions · Goleadores', metric: 'Goles',
+            rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN', trend: 'flat' as const }],
+          },
+          {
+            id: 'ucl-assists', title: 'Champions · Asistencias', metric: 'Asist.',
+            rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN', trend: 'flat' as const }],
+          },
+          {
+            id: 'uel-scorers', title: 'Europa League · Goleadores', metric: 'Goles',
+            rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN', trend: 'flat' as const }],
+          },
+          {
+            id: 'uel-assists', title: 'Europa League · Asistencias', metric: 'Asist.',
+            rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN', trend: 'flat' as const }],
+          },
+          {
+            id: 'uecl-scorers', title: 'Conference · Goleadores', metric: 'Goles',
+            rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN', trend: 'flat' as const }],
+          },
+          {
+            id: 'uecl-assists', title: 'Conference · Asistencias', metric: 'Asist.',
+            rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN', trend: 'flat' as const }],
+          },
+          {
             id: 'goles-equipo', title: 'Equipos más goleadores', metric: 'Goles',
             rows: [
               { rank: 1, name: 'Manchester City', value: '82', sub: '29 PJ · 2.83/PJ', trend: 'flat' },
@@ -764,6 +788,12 @@ const SPORTS: SportConfig[] = [
               { rank: 3, name: 'Giannis Antetokounmpo', team: 'MIL', value: '#3', sub: '30.4 PPG · 11.9 RPG', flag: '🇬🇷', trend: 'flat' },
               { rank: 4, name: 'Jayson Tatum',          team: 'BOS', value: '#4', sub: 'Líder Este', flag: '🇺🇸', trend: 'up' },
               { rank: 5, name: 'Anthony Edwards',       team: 'MIN', value: '#5', sub: '27.6 PPG', flag: '🇺🇸', trend: 'up' },
+            ],
+          },
+          {
+            id: 'nba-dpoy-race', title: 'DPOY Race · Editorial Taka', metric: 'Pos.',
+            rows: [
+              { rank: 1, name: 'Cargando…', value: '—', sub: 'Auto desde NBA.com', trend: 'flat' },
             ],
           },
           {
@@ -1763,7 +1793,8 @@ const LIVE_BLOCK_IDS = new Set([
   'ranking-fifa',
   'ufc-p4p', 'ufc-campeones',
   'nba-scoring', 'nba-rebounds', 'nba-assists', 'nba-blocks', 'nba-steals', 'nba-efficiency', 'nba-3pt',
-  'nba-mvp-race', 'nba-rookie-race',
+  'nba-mvp-race', 'nba-dpoy-race', 'nba-rookie-race',
+  'ucl-scorers', 'uel-scorers', 'uecl-scorers', 'ucl-assists', 'uel-assists', 'uecl-assists',
   'f-ligaf-tabla', 'f-goleadoras', 'f-asistencias',
   'pga-leaderboard', 'pga-fedex',
   'nations-a1', 'nations-a2', 'nations-a3', 'nations-a4',
@@ -1823,7 +1854,14 @@ interface LiveStandingsData {
   // Nuevos automatizados
   f1Calendar?: LiveStandingRow[]
   nbaMvpRace?: LiveStandingRow[]
+  nbaDpoyRace?: LiveStandingRow[]
   nbaRookieRace?: LiveStandingRow[]
+  uclScorers?: LiveStandingRow[]
+  uelScorers?: LiveStandingRow[]
+  ueclScorers?: LiveStandingRow[]
+  uclAssists?: LiveStandingRow[]
+  uelAssists?: LiveStandingRow[]
+  ueclAssists?: LiveStandingRow[]
   worldCupQualified?: LiveStandingRow[]
   motogpRiders?: LiveStandingRow[]
   motogpConstructors?: LiveStandingRow[]
@@ -1868,7 +1906,10 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'nba-playoffs': 'nbaPlayoffSeries',
   'f1-calendario': 'f1Calendar',
   'nba-mvp-race': 'nbaMvpRace',
+  'nba-dpoy-race': 'nbaDpoyRace',
   'nba-rookie-race': 'nbaRookieRace',
+  'ucl-scorers': 'uclScorers', 'uel-scorers': 'uelScorers', 'uecl-scorers': 'ueclScorers',
+  'ucl-assists': 'uclAssists', 'uel-assists': 'uelAssists', 'uecl-assists': 'ueclAssists',
   'motogp-pilotos': 'motogpRiders',
   'motogp-constructores': 'motogpConstructors',
   'ciclismo-uci': 'cyclingUci',
@@ -2489,7 +2530,14 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         // ── Nuevos automatizados ────────────────────────────────────────
         if (block.id === 'f1-calendario'    && liveData.f1Calendar?.length)        return { ...block, rows: toStatRows(liveData.f1Calendar) }
         if (block.id === 'nba-mvp-race'     && liveData.nbaMvpRace?.length)        return { ...block, rows: toStatRows(liveData.nbaMvpRace) }
+        if (block.id === 'nba-dpoy-race'    && liveData.nbaDpoyRace?.length)       return { ...block, rows: toStatRows(liveData.nbaDpoyRace) }
         if (block.id === 'nba-rookie-race'  && liveData.nbaRookieRace?.length)     return { ...block, rows: toStatRows(liveData.nbaRookieRace) }
+        if (block.id === 'ucl-scorers'      && liveData.uclScorers?.length)        return { ...block, rows: toStatRows(liveData.uclScorers) }
+        if (block.id === 'uel-scorers'      && liveData.uelScorers?.length)        return { ...block, rows: toStatRows(liveData.uelScorers) }
+        if (block.id === 'uecl-scorers'     && liveData.ueclScorers?.length)       return { ...block, rows: toStatRows(liveData.ueclScorers) }
+        if (block.id === 'ucl-assists'      && liveData.uclAssists?.length)        return { ...block, rows: toStatRows(liveData.uclAssists) }
+        if (block.id === 'uel-assists'      && liveData.uelAssists?.length)        return { ...block, rows: toStatRows(liveData.uelAssists) }
+        if (block.id === 'uecl-assists'     && liveData.ueclAssists?.length)       return { ...block, rows: toStatRows(liveData.ueclAssists) }
         if (block.id === 'wc-qualified'     && liveData.worldCupQualified?.length) return { ...block, rows: toStatRows(liveData.worldCupQualified) }
         if (block.id === 'motogp-pilotos'        && liveData.motogpRiders?.length)        return { ...block, rows: toStatRows(liveData.motogpRiders, 'Escudería') }
         if (block.id === 'motogp-constructores'  && liveData.motogpConstructors?.length)  return { ...block, rows: toStatRows(liveData.motogpConstructors) }
