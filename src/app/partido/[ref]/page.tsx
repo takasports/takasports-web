@@ -299,27 +299,114 @@ function StatBar({ stat }: { stat: MatchStat }) {
 // ── Soccer blocks ──────────────────────────────────────────────────
 function ScoringTimeline({ events, homeTeam, awayTeam }: { events: ScoringEvent[]; homeTeam: string; awayTeam: string }) {
   if (events.length === 0) return null
+
   const iconFor = (type: string) => {
-    if (type === 'yellow') return <YellowCardIcon size={16} />
-    if (type === 'red') return <RedCardIcon size={16} />
-    if (type === 'goal' || type === 'own-goal' || type === 'penalty') return <span style={{ color: '#86EFAC' }}><GoalIcon size={16} /></span>
+    if (type === 'yellow') return <YellowCardIcon size={14} />
+    if (type === 'red')    return <RedCardIcon size={14} />
+    if (type === 'goal' || type === 'penalty')
+      return <span style={{ color: '#86EFAC', display: 'inline-flex' }}><GoalIcon size={14} /></span>
+    if (type === 'own-goal')
+      return <span style={{ color: '#FCA5A5', display: 'inline-flex' }}><GoalIcon size={14} /></span>
     return <span>•</span>
   }
+
+  const typeLabel = (type: string): string | null => {
+    if (type === 'penalty') return 'Penalti'
+    if (type === 'own-goal') return 'En propia'
+    if (type === 'yellow') return 'Amarilla'
+    if (type === 'red') return 'Roja'
+    return null
+  }
+
+  const accentFor = (type: string) =>
+    type === 'goal' || type === 'penalty' ? '#86EFAC'
+    : type === 'own-goal' ? '#FCA5A5'
+    : type === 'yellow' ? '#FBBF24'
+    : type === 'red' ? '#EF4444'
+    : '#7A7A8E'
+
   return (
-    <div className="flex flex-col gap-2">
-      {events.map((ev, i) => (
-        <div key={i} className={`flex items-center gap-2 ${ev.team === 'home' ? 'flex-row' : 'flex-row-reverse'}`}>
-          <span className="inline-flex items-center">{iconFor(ev.type)}</span>
-          <div className={`flex flex-col ${ev.team === 'away' ? 'items-end' : ''}`}>
-            <span className="text-[11px] font-semibold" style={{ color: '#D0D0E8', fontFamily: 'var(--font-sport)' }}>
-              {ev.player ?? (ev.team === 'home' ? homeTeam : awayTeam)}
-            </span>
-            {ev.clock && (
-              <span className="text-[10px]" style={{ color: '#5A5A6A' }}>{ev.clock}</span>
-            )}
-          </div>
-        </div>
-      ))}
+    <div className="relative">
+      {/* Center rail */}
+      <div
+        aria-hidden
+        className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 pointer-events-none"
+        style={{ width: 1, background: 'linear-gradient(180deg, transparent 0%, rgba(124,58,237,0.18) 8%, rgba(124,58,237,0.18) 92%, transparent 100%)' }}
+      />
+      <div className="flex flex-col gap-3">
+        {events.map((ev, i) => {
+          const isHome = ev.team === 'home'
+          const accent = accentFor(ev.type)
+          const sub = typeLabel(ev.type)
+          return (
+            <div key={i} className="relative grid items-center gap-2"
+              style={{ gridTemplateColumns: '1fr 44px 1fr' }}>
+              {/* Home side */}
+              <div className={`flex items-center gap-2 ${isHome ? 'justify-end text-right pr-1' : 'opacity-0 pointer-events-none'}`}>
+                {isHome && (
+                  <>
+                    <div className="min-w-0 flex flex-col items-end">
+                      <span className="text-[12px] font-bold leading-tight truncate"
+                        style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+                        {ev.player ?? homeTeam}
+                      </span>
+                      {sub && (
+                        <span className="text-[9px] uppercase tracking-wider mt-0.5"
+                          style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+                          {sub}
+                        </span>
+                      )}
+                    </div>
+                    <span className="inline-flex items-center justify-center flex-shrink-0"
+                      style={{ width: 22, height: 22, borderRadius: 999, background: `${accent}1a`, border: `1px solid ${accent}33` }}>
+                      {iconFor(ev.type)}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Minute pill (center rail) */}
+              <div className="flex justify-center">
+                <span
+                  className="inline-flex items-center justify-center px-2 py-0.5 rounded-full tabular-nums text-[10px] font-black"
+                  style={{
+                    minWidth: 36,
+                    color: '#C4B5FD',
+                    background: 'var(--bg-base)',
+                    border: '1px solid rgba(124,58,237,0.35)',
+                    fontFamily: 'var(--font-sport)',
+                  }}>
+                  {ev.clock ?? '—'}
+                </span>
+              </div>
+
+              {/* Away side */}
+              <div className={`flex items-center gap-2 ${!isHome ? 'pl-1' : 'opacity-0 pointer-events-none'}`}>
+                {!isHome && (
+                  <>
+                    <span className="inline-flex items-center justify-center flex-shrink-0"
+                      style={{ width: 22, height: 22, borderRadius: 999, background: `${accent}1a`, border: `1px solid ${accent}33` }}>
+                      {iconFor(ev.type)}
+                    </span>
+                    <div className="min-w-0 flex flex-col">
+                      <span className="text-[12px] font-bold leading-tight truncate"
+                        style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+                        {ev.player ?? awayTeam}
+                      </span>
+                      {sub && (
+                        <span className="text-[9px] uppercase tracking-wider mt-0.5"
+                          style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+                          {sub}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
