@@ -879,14 +879,14 @@ function DaySeparator({ dateKey, count, tone = 'upcoming' }: {
       <div className="absolute top-0 left-0 right-0" style={{ height: 2, background: 'linear-gradient(90deg, rgba(124,58,237,0.32) 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.04) 100%)' }} />
       <div className="flex items-end justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="block flex-shrink-0 rounded-sm" style={{ width: 4, height: 28, background: accent, boxShadow: `0 0 12px ${accent}55` }} />
+          <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 18, background: accent, boxShadow: `0 0 10px ${accent}55` }} />
           <div className="min-w-0">
-            <h2 className="font-black leading-none uppercase tracking-[0.02em]"
-              style={{ fontFamily: 'var(--font-headline)', fontSize: 28, color: '#F8F8FF' }}>
+            <h2 className="font-black leading-none uppercase tracking-[0.18em]"
+              style={{ fontFamily: 'var(--font-sport)', fontSize: 14, color: '#F0F0FA' }}>
               {label}
             </h2>
             {subtitle && (
-              <p className="text-[11px] mt-1 capitalize" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[10px] mt-1 capitalize tracking-wide" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
                 {subtitle}
               </p>
             )}

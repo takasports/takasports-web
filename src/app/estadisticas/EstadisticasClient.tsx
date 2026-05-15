@@ -401,9 +401,10 @@ const SPORTS: SportConfig[] = [
   {
     // Pseudo-deporte: landing cross-sport con lo más relevante de cada deporte
     // sin que el usuario tenga que navegar. Renderizado especial via <ResumenView/>
-    // (no usa sections.blocks).
-    id: 'resumen', label: 'Resumen', emoji: '⚡', accent: '#22c55e',
-    sections: [{ id: 'home', label: 'Hoy', icon: '⚡', blocks: [] }],
+    // (no usa sections.blocks). Id se mantiene 'resumen' para no romper URLs
+    // guardadas; el label es 'Destacados' alineado con la pastilla del calendario.
+    id: 'resumen', label: 'Destacados', emoji: '⭐', accent: '#7C3AED',
+    sections: [{ id: 'home', label: 'Hoy', icon: '⭐', blocks: [] }],
   },
   {
     id: 'mundial', label: 'Mundial 2026', emoji: '🌍', accent: '#f59e0b',

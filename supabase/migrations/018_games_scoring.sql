@@ -16,6 +16,17 @@
 -- Idempotente: usa "if not exists" / "or replace" donde aplica.
 -- ─────────────────────────────────────────────────────────────────
 
+-- ── Función handle_updated_at (defensiva, idempotente) ──────────
+-- Schema base la define, pero la incluimos aquí para que esta
+-- migración sea self-contained y aplicable en cualquier proyecto.
+create or replace function public.handle_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 -- ── GAME_PLAYS ───────────────────────────────────────────────────
 -- Una fila por (usuario × juego × periodo). El "periodo" es texto
 -- libre que cada juego elige: "2026-W20" (semanal), "2026-05-15"

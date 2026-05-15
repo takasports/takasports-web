@@ -162,7 +162,7 @@ export function getLiveLabel(
 
   if (status === 'OT') return elapsed != null ? `Prórr. ${elapsed}'` : 'Prórroga'
   if (status.startsWith('Q')) return elapsed != null ? `${status} · ${elapsed}'` : status
-  if (status === '2H') return elapsed != null ? `2H ${elapsed}'` : '2T'
-  if (status === '1H') return elapsed != null ? `${elapsed}'` : '1T'
+  // 1H y 2H: solo mostramos el minuto; la mitad se infiere por el número.
+  if (status === '2H' || status === '1H') return elapsed != null ? `${elapsed}'` : (status === '2H' ? '2T' : '1T')
   return elapsed != null ? `${elapsed}'` : 'EN VIVO'
 }
