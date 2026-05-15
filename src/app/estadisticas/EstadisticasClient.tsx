@@ -820,42 +820,6 @@ const SPORTS: SportConfig[] = [
     ],
   },
   {
-    id: 'golf', label: 'Golf', emoji: '⛳', accent: '#84cc16',
-    sections: [
-      {
-        id: 'pga', label: 'PGA Tour', icon: '🏌️',
-        blocks: [
-          {
-            id: 'pga-leaderboard', title: 'Leaderboard torneo activo', metric: 'Score',
-            rows: [
-              { rank: 1, name: 'Scottie Scheffler',  value: '-12', sub: 'Completado', flag: '🇺🇸', trend: 'up' },
-              { rank: 2, name: 'Rory McIlroy',        value: '-10', sub: 'Completado', flag: '🇬🇧', trend: 'up' },
-              { rank: 3, name: 'Collin Morikawa',     value: '-8',  sub: 'Completado', flag: '🇺🇸', trend: 'flat' },
-              { rank: 4, name: 'Xander Schauffele',   value: '-7',  sub: 'Completado', flag: '🇺🇸', trend: 'flat' },
-              { rank: 5, name: 'Jon Rahm',            value: '-6',  sub: 'Completado', flag: '🇪🇸', trend: 'flat' },
-              { rank: 6, name: 'Ludvig Åberg',        value: '-5',  sub: 'Completado', flag: '🇸🇪', trend: 'up' },
-              { rank: 7, name: 'Viktor Hovland',      value: '-4',  sub: 'Completado', flag: '🇳🇴', trend: 'flat' },
-              { rank: 8, name: 'Justin Thomas',       value: '-3',  sub: 'Completado', flag: '🇺🇸', trend: 'down' },
-            ],
-          },
-          {
-            id: 'pga-fedex', title: 'FedEx Cup (clasificación)', metric: 'Puntos',
-            rows: [
-              { rank: 1, name: 'Scottie Scheffler',  value: '2850', sub: 'Puntos FedEx', flag: '🇺🇸', trend: 'up' },
-              { rank: 2, name: 'Rory McIlroy',        value: '2340', sub: 'Puntos FedEx', flag: '🇬🇧', trend: 'up' },
-              { rank: 3, name: 'Collin Morikawa',     value: '2110', sub: 'Puntos FedEx', flag: '🇺🇸', trend: 'flat' },
-              { rank: 4, name: 'Xander Schauffele',   value: '1980', sub: 'Puntos FedEx', flag: '🇺🇸', trend: 'flat' },
-              { rank: 5, name: 'Jon Rahm',            value: '1720', sub: 'Puntos FedEx', flag: '🇪🇸', trend: 'flat' },
-              { rank: 6, name: 'Ludvig Åberg',        value: '1540', sub: 'Puntos FedEx', flag: '🇸🇪', trend: 'up' },
-              { rank: 7, name: 'Viktor Hovland',      value: '1395', sub: 'Puntos FedEx', flag: '🇳🇴', trend: 'flat' },
-              { rank: 8, name: 'Patrick Cantlay',     value: '1280', sub: 'Puntos FedEx', flag: '🇺🇸', trend: 'flat' },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
     id: 'motogp', label: 'MotoGP', emoji: '🏍️', accent: '#dc2626',
     sections: [
       {
@@ -1487,7 +1451,6 @@ const LIVE_BLOCK_IDS = new Set([
   'nba-mvp-race', 'nba-dpoy-race', 'nba-rookie-race',
   'ucl-scorers', 'uel-scorers', 'uecl-scorers', 'ucl-assists', 'uel-assists', 'uecl-assists',
   'f-ligaf-tabla', 'f-goleadoras', 'f-asistencias',
-  'pga-leaderboard', 'pga-fedex',
   'nations-a1', 'nations-a2', 'nations-a3', 'nations-a4',
   'stats-dt',
   'ufc-p4p',
@@ -1528,8 +1491,6 @@ interface LiveStandingsData {
   ufcChampions?: LiveStandingRow[]
   womenLigaF: LiveStandingRow[]
   womenGoals: LiveStandingRow[]; womenAssists: LiveStandingRow[]
-  pgaTourLeaderboard?: LiveStandingRow[]
-  pgaFedExCup?: LiveStandingRow[]
   nationsLeague?: LiveLeague[]
   coachesWinRate?: LiveStandingRow[]
   worldCup?: LiveLeague[]
@@ -1573,7 +1534,6 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'ufc-p4p': 'ufcP4P',
   'ufc-campeones': 'ufcChampions',
   'f-ligaf-tabla': 'womenLigaF', 'f-goleadoras': 'womenGoals', 'f-asistencias': 'womenAssists',
-  'pga-leaderboard': 'pgaTourLeaderboard', 'pga-fedex': 'pgaFedExCup',
   'nations-a1': 'nationsLeague', 'nations-a2': 'nationsLeague', 'nations-a3': 'nationsLeague', 'nations-a4': 'nationsLeague',
   'stats-dt': 'coachesWinRate',
   'wc-group-a': 'worldCup', 'wc-group-b': 'worldCup', 'wc-group-c': 'worldCup',
@@ -2130,11 +2090,6 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (block.id === 'f-ligaf-tabla'     && liveData.womenLigaF?.length)          return { ...block, rows: toStatRows(liveData.womenLigaF),          placeholder: false }
         if (block.id === 'f-goleadoras'      && liveData.womenGoals?.length)          return { ...block, rows: toStatRows(liveData.womenGoals),           placeholder: false }
         if (block.id === 'f-asistencias'     && liveData.womenAssists?.length)        return { ...block, rows: toStatRows(liveData.womenAssists),         placeholder: false }
-        if (block.id === 'pga-leaderboard'   && liveData.pgaTourLeaderboard?.length) {
-          const tournamentName = liveData.pgaTourLeaderboard![0]?.extra?.Torneo ?? ''
-          return { ...block, title: tournamentName || 'Leaderboard PGA Tour', rows: toStatRows(liveData.pgaTourLeaderboard!) }
-        }
-        if (block.id === 'pga-fedex'         && liveData.pgaFedExCup?.length)         return { ...block, rows: toStatRows(liveData.pgaFedExCup!) }
         if (block.id === 'stats-dt'          && liveData.coachesWinRate?.length)      return { ...block, rows: toStatRows(liveData.coachesWinRate!, 'Club') }
         if (block.id.startsWith('nations-') && liveData.nationsLeague?.length) {
           const group = liveData.nationsLeague.find(g => g.id === block.id)

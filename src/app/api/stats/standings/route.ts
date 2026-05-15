@@ -53,8 +53,6 @@ export interface StatsStandingsResponse {
   womenLigaF: StandingRow[]
   womenGoals: StandingRow[]
   womenAssists: StandingRow[]
-  pgaTourLeaderboard: StandingRow[]
-  pgaFedExCup: StandingRow[]
   nationsLeague: LeagueStandings[]
   coachesWinRate: StandingRow[]
   worldCup: LeagueStandings[]
@@ -494,105 +492,6 @@ async function fetchNationsLeague(): Promise<LeagueStandings[]> {
   } catch (err) {
     console.error('[standings] Nations League failed:', err)
     return []
-  }
-}
-
-// ── PGA Tour via ESPN ─────────────────────────────────────────────────────────
-
-interface PGAResult {
-  leaderboard: StandingRow[]
-  fedExCup: StandingRow[]
-  tournamentName: string
-  isCompleted: boolean
-  isLive: boolean
-}
-
-async function fetchPGA(): Promise<PGAResult> {
-  const empty: PGAResult = { leaderboard: [], fedExCup: [], tournamentName: '', isCompleted: false, isLive: false }
-  try {
-    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard', { next: { revalidate: 1800 } })
-    if (!res.ok) return empty
-    const sb = await res.json()
-    const event = (sb.events as Record<string, unknown>[] | undefined)?.[0]
-    if (!event) return empty
-
-    const tournamentName = (event.name as string) ?? 'PGA Tour'
-    const eventStatus = (event.status as Record<string, unknown>)?.type as Record<string, unknown>
-    const isCompleted = eventStatus?.state === 'post'
-    const isLive      = eventStatus?.state === 'in'
-
-    const comp = (event.competitions as Record<string, unknown>[] | undefined)?.[0]
-    const competitors = (comp?.competitors as Record<string, unknown>[]) ?? []
-
-    const leaderboard = competitors
-      .map(c => {
-        const ath = c.athlete as Record<string, unknown>
-        const scoreRaw = c.score as string | number | null
-        const scoreNum = scoreRaw !== null && scoreRaw !== undefined ? Number(scoreRaw) : null
-        const scoreStr = scoreNum === null ? 'E' : scoreNum === 0 ? 'E' : scoreNum > 0 ? `+${scoreNum}` : String(scoreNum)
-        const country = (ath?.flag as Record<string, unknown>)?.alt as string ?? ''
-        const subLabel = isCompleted ? 'Final' : isLive ? 'En juego' : 'Próximo'
-        return {
-          rank: Number(c.order ?? 99),
-          name: (ath?.displayName as string) ?? '—',
-          abbr: country.slice(0, 3).toUpperCase(),
-          value: scoreStr,
-          sub: subLabel,
-          trend: 'flat' as const,
-          extra: { Torneo: tournamentName, País: country },
-        }
-      })
-      .sort((a, b) => a.rank - b.rank)
-      .slice(0, 10)
-      .map((r, i) => ({ ...r, rank: i + 1 }))
-
-    return { leaderboard, fedExCup: [], tournamentName, isCompleted, isLive }
-  } catch (err) {
-    console.error('[standings] PGA failed:', err)
-    return empty
-  }
-}
-
-// ── FedEx Cup via ESPN statistics endpoint ────────────────────────────────────
-
-// ESPN's PGA statistics endpoint returns ~11 MB (every PGA member's full stat
-// history). Next.js Data Cache rejects bodies > 2 MB so every hit was a fresh
-// 11 MB roundtrip. Read the response as a stream, slim it to the FedEx Cup
-// category only, and cache the trimmed shape ourselves.
-let fedExCupCache: { data: StandingRow[]; expiresAt: number } | null = null
-const FEDEX_TTL_MS = 60 * 60 * 1000
-
-async function fetchFedExCup(): Promise<StandingRow[]> {
-  if (fedExCupCache && Date.now() < fedExCupCache.expiresAt) return fedExCupCache.data
-  try {
-    // `cache: 'no-store'` → bypass Next.js Data Cache entirely (the 11 MB body
-    // would just trigger the >2 MB warning every time).
-    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/statistics', { cache: 'no-store' })
-    if (!res.ok) return fedExCupCache?.data ?? []
-    const d = await res.json()
-    const stats = d.stats as Record<string, unknown>
-    const cats = (stats?.categories as Record<string, unknown>[]) ?? []
-    const fedex = cats.find(c => (c as Record<string, unknown>).name === 'cupPoints') as Record<string, unknown> | undefined
-    if (!fedex) return fedExCupCache?.data ?? []
-    const season = (d.season as Record<string, unknown>)?.year ?? ''
-    const leaders = (fedex.leaders as Record<string, unknown>[]) ?? []
-    const rows = leaders.slice(0, 10).map((l, i) => {
-      const ath = l.athlete as Record<string, unknown>
-      return {
-        rank:  i + 1,
-        name:  (ath?.displayName as string) ?? '—',
-        abbr:  '',
-        value: String(Math.round((l.value as number) ?? 0)),
-        sub:   `Temp. ${season}`,
-        trend: 'flat' as const,
-        extra: { Pts: String(Math.round((l.value as number) ?? 0)) },
-      }
-    })
-    fedExCupCache = { data: rows, expiresAt: Date.now() + FEDEX_TTL_MS }
-    return rows
-  } catch (err) {
-    console.error('[standings] FedEx Cup failed:', err)
-    return fedExCupCache?.data ?? []
   }
 }
 
@@ -1123,13 +1022,12 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   ufc: ['ufcP4P', 'ufcChampions'],
   selecciones: ['fifaRanking', 'nationsLeague'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
-  golf: ['pgaTourLeaderboard', 'pgaFedExCup'],
   mundial: ['worldCup', 'worldCupScorers', 'worldCupKnockout', 'worldCupQualified'],
   motogp: ['motogpRiders', 'motogpConstructors'],
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
-  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, pga, nationsLeague, fedExCup, coaches, worldCup, nbaPlayoffSeries, worldCupScorers, worldCupKnockout, uclFixtures, uelFixtures, ueclFixtures] = await Promise.all([
+  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, nationsLeague, coaches, worldCup, nbaPlayoffSeries, worldCupScorers, worldCupKnockout, uclFixtures, uelFixtures, ueclFixtures] = await Promise.all([
     Promise.allSettled(FOOTBALL_LEAGUES.map(l => fetchFootball(l.slug, l.id, l.label))),
     fetchF1All(),
     fetchNBA(),
@@ -1138,9 +1036,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchUFCP4P(),
     fetchWomenLigaF(),
     fetchWomenStats(),
-    fetchPGA(),
     fetchNationsLeague(),
-    fetchFedExCup(),
     fetchCoachRecords(),
     fetchWorldCup(),
     fetchNBAPlayoffSeries(),
@@ -1223,12 +1119,6 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
     womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
     womenAssists:        womenStats.assists.length     ? live('ESPN') : unavail('ESPN'),
-    pgaTourLeaderboard:  pga.leaderboard.length
-      ? pga.isLive      ? live(`ESPN · ${pga.tournamentName}`)
-      : pga.isCompleted ? ({ status: 'stale', source: `ESPN · ${pga.tournamentName}`, fetchedAt: now, asOf: 'Final' } satisfies BlockMeta)
-      :                   unavail('ESPN')
-      : unavail('ESPN'),
-    pgaFedExCup:      fedExCup.length ? live('ESPN') : unavail('ESPN'),
     nationsLeague:    nationsLeague.length ? live('ESPN · UEFA Nations League') : unavail('ESPN · Nations League no iniciada'),
     coachesWinRate:   coaches.length ? live('ESPN') : unavail('ESPN'),
     worldCup:         worldCup.length
@@ -1299,8 +1189,6 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     womenLigaF,
     womenGoals:          womenStats.goals,
     womenAssists:        womenStats.assists,
-    pgaTourLeaderboard:  pga.leaderboard,
-    pgaFedExCup:         fedExCup,
     nationsLeague,
     coachesWinRate:      coaches,
     worldCup,
