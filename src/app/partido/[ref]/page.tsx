@@ -12,6 +12,7 @@ import Footer from '@/components/Footer'
 import { MatchTabs } from './MatchTabs'
 import { LeagueTableBlock } from './LeagueTable'
 import { LiveRefresh } from './LiveRefresh'
+import { StickyScoreBar } from './StickyScoreBar'
 import { ShareButton } from '@/components/ShareButton'
 import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
@@ -1020,6 +1021,17 @@ function MatchContent({ match }: { match: MatchDetail }) {
       {leaguePills}
       <TeamScoreboard match={match} />
       <InfoRow match={match} />
+      <StickyScoreBar
+        homeLogo={match.homeLogo}
+        awayLogo={match.awayLogo}
+        homeAbbr={match.homeAbbr ?? match.homeTeam}
+        awayAbbr={match.awayAbbr ?? match.awayTeam}
+        homeScore={match.homeScore}
+        awayScore={match.awayScore}
+        statusLabel={match.statusLabel}
+        live={live}
+        hasScore={match.homeScore != null && match.awayScore != null}
+      />
 
       <MatchTabs tabs={tabs}>
         {/* ── Tab 0: Resumen ───────────────────────────── */}
