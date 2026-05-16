@@ -19,316 +19,20 @@ import type { Confidence } from '@/lib/quiniela'
 import { CONFIDENCE_LABELS } from '@/lib/quiniela'
 import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
-
-// ─────────────────────────────────────────────────────────────────
-// Hook: push notification subscription
-// ─────────────────────────────────────────────────────────────────
-function usePushSubscription() {
-  const [status, setStatus] = useState<'idle' | 'subscribed' | 'denied' | 'unsupported'>('idle')
-
-  useEffect(() => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setStatus('unsupported'); return
-    }
-    if (Notification.permission === 'denied') { setStatus('denied'); return }
-    navigator.serviceWorker.getRegistration('/sw.js').then(reg => {
-      if (!reg) return
-      reg.pushManager.getSubscription().then(sub => {
-        if (sub) setStatus('subscribed')
-      })
-    })
-  }, [])
-
-  const subscribe = async () => {
-    if (!('serviceWorker' in navigator)) return
-    try {
-      let reg = await navigator.serviceWorker.getRegistration('/sw.js')
-      if (!reg) reg = await navigator.serviceWorker.register('/sw.js')
-      await navigator.serviceWorker.ready
-
-      const permission = await Notification.requestPermission()
-      if (permission !== 'granted') { setStatus('denied'); return }
-
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-      })
-      await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(sub.toJSON()),
-      })
-      setStatus('subscribed')
-    } catch { setStatus('denied') }
-  }
-
-  const unsubscribe = async () => {
-    const reg = await navigator.serviceWorker.getRegistration('/sw.js')
-    if (!reg) return
-    const sub = await reg.pushManager.getSubscription()
-    if (sub) {
-      await fetch('/api/push/subscribe', {
-        method: 'DELETE',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ endpoint: sub.endpoint }),
-      })
-      await sub.unsubscribe()
-    }
-    setStatus('idle')
-  }
-
-  return { status, subscribe, unsubscribe }
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Hook: countdown + estado por partido
-// ─────────────────────────────────────────────────────────────────
-function useMatchCountdown(isoDate?: string) {
-  const [diff, setDiff] = useState(() =>
-    isoDate ? new Date(isoDate).getTime() - Date.now() : Infinity
-  )
-  useEffect(() => {
-    if (!isoDate) return
-    const update = () => setDiff(new Date(isoDate).getTime() - Date.now())
-    update()
-    const t = setInterval(update, 1000)
-    return () => clearInterval(t)
-  }, [isoDate])
-
-  if (diff <= 0) return { started: true, soon: false, label: null }
-  if (diff < 3_600_000) {
-    const m = Math.floor(diff / 60_000)
-    const s = Math.floor((diff % 60_000) / 1000)
-    return { started: false, soon: true, label: `${m}:${String(s).padStart(2, '0')}` }
-  }
-  if (diff < 6 * 3_600_000) {
-    const h = Math.floor(diff / 3_600_000)
-    const m = Math.floor((diff % 3_600_000) / 60_000)
-    return { started: false, soon: true, label: `${h}h ${m}m` }
-  }
-  return { started: false, soon: false, label: null }
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Constantes de picks
-// ─────────────────────────────────────────────────────────────────
-const PICK_COLOR: Record<Pick, string>  = { '1': '#22c55e', '1X': '#6ee7b7', X: '#f59e0b', 'X2': '#fb923c', '2': '#ef4444' }
-const PICK_BG: Record<Pick, string>     = { '1': 'rgba(34,197,94,0.12)',  '1X': 'rgba(110,231,183,0.1)',  X: 'rgba(245,158,11,0.12)',  'X2': 'rgba(251,146,60,0.1)',  '2': 'rgba(239,68,68,0.12)' }
-const PICK_BORDER: Record<Pick, string> = { '1': 'rgba(34,197,94,0.38)',  '1X': 'rgba(110,231,183,0.3)',  X: 'rgba(245,158,11,0.38)',  'X2': 'rgba(251,146,60,0.3)',  '2': 'rgba(239,68,68,0.38)' }
-const PICK_GLOW: Record<Pick, string>   = { '1': 'rgba(34,197,94,0.18)',  '1X': 'rgba(110,231,183,0.12)', X: 'rgba(245,158,11,0.18)',  'X2': 'rgba(251,146,60,0.12)', '2': 'rgba(239,68,68,0.18)' }
-
-function getISOWeek(date: Date = new Date()): string {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  const day = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - day)
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
-  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
-}
-
-function computeStreak(submitted: Set<string>): { current: number; best: number } {
-  const today = new Date()
-  let current = 0
-  for (let i = 0; i < 52; i++) {
-    const d = new Date(today); d.setDate(d.getDate() - i * 7)
-    if (submitted.has(getISOWeek(d))) current++
-    else break
-  }
-  // Best streak: scan all submitted weeks sorted
-  const sorted = [...submitted].sort()
-  let best = 0, run = 0, prev = ''
-  for (const w of sorted) {
-    if (!prev) { run = 1 }
-    else {
-      const [py, pn] = prev.split('-W').map(Number)
-      const [cy, cn] = w.split('-W').map(Number)
-      const consecutive = (cy === py && cn === pn + 1) || (cy === py + 1 && pn >= 52 && cn === 1)
-      run = consecutive ? run + 1 : 1
-    }
-    if (run > best) best = run
-    prev = w
-  }
-  return { current, best: Math.max(best, current) }
-}
-
-function isCorrect(pick: Pick, outcome: '1' | 'X' | '2'): boolean {
-  if (pick === outcome) return true
-  if (pick === '1X') return outcome === '1' || outcome === 'X'
-  if (pick === 'X2') return outcome === 'X' || outcome === '2'
-  return false
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Forma reciente del equipo — últimos 5 partidos (determinista)
-// ─────────────────────────────────────────────────────────────────
-function teamForm(name: string): ('W' | 'D' | 'L')[] {
-  const seed = name.split('').reduce((s, c, i) => s + c.charCodeAt(0) * (i + 3), 0)
-  return Array.from({ length: 5 }, (_, i) => {
-    const v = (seed * (i + 7) * 31 + i * 13) % 10
-    return v < 4 ? 'W' : v < 7 ? 'D' : 'L'
-  })
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Tendencia de picks — cambia cada 3 min, combinada con match seed
-// ─────────────────────────────────────────────────────────────────
-function communityTrend(match: QuinielaMatch, tick: number): { d1: number; dX: number; d2: number } {
-  const s = (match.home.charCodeAt(0) * 11 + match.away.charCodeAt(0) * 7 + tick * 3) % 30 - 15
-  return { d1: Math.round(s * 0.4), dX: Math.round(-s * 0.2), d2: Math.round(-s * 0.3) }
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Badge system
-// ─────────────────────────────────────────────────────────────────
-const BADGES_KEY = 'ts_quiniela_badges'
-
-// ─────────────────────────────────────────────────────────────────
-// Sistema de monedas internas
-// ─────────────────────────────────────────────────────────────────
-const COINS_KEY     = 'ts_quiniela_coins'
-const COINS_TXN_KEY = 'ts_quiniela_coins_txn'
-const COINS_INITIAL = 100
-
-interface CoinTxn { amount: number; reason: string; ts: number }
-
-function getCoins(): number {
-  try {
-    const v = localStorage.getItem(COINS_KEY)
-    if (v !== null) return parseInt(v, 10)
-    localStorage.setItem(COINS_KEY, String(COINS_INITIAL))
-    return COINS_INITIAL
-  } catch { return 0 }
-}
-
-function addCoins(amount: number, reason: string): number {
-  try {
-    const next = Math.max(0, getCoins() + amount)
-    localStorage.setItem(COINS_KEY, String(next))
-    const txns: CoinTxn[] = JSON.parse(localStorage.getItem(COINS_TXN_KEY) ?? '[]')
-    txns.unshift({ amount, reason, ts: Date.now() })
-    localStorage.setItem(COINS_TXN_KEY, JSON.stringify(txns.slice(0, 20)))
-    return next
-  } catch { return 0 }
-}
-
-function computeCoinRewards(
-  picks: Array<{ pick: string; exactHome?: number; exactAway?: number }>,
-  results: MatchResult[],
-  captainIdx: number | undefined,
-): { perPick: number[]; exact: number[]; captainBonus: number; plenoBonus: number; total: number } {
-  const perPick: number[] = []
-  const exact: number[] = []
-  let plenoCount = 0
-
-  picks.forEach((p, i) => {
-    const r = results[i]
-    if (!r) { perPick.push(0); exact.push(0); return }
-    const hit = isCorrect(p.pick as Pick, r.outcome)
-    const base = hit ? (captainIdx === i ? 20 : 10) : 0
-    perPick.push(base)
-    const exactHit =
-      hit &&
-      p.exactHome != null && p.exactAway != null &&
-      p.exactHome === r.homeGoals && p.exactAway === r.awayGoals
-    exact.push(exactHit ? 50 : 0)
-    if (hit) plenoCount++
-  })
-
-  const captainBonus = 0
-  const plenoBonus = plenoCount === picks.length && picks.length > 0 ? 100 : 0
-  const total = perPick.reduce((a, b) => a + b, 0) + exact.reduce((a, b) => a + b, 0) + plenoBonus
-  return { perPick, exact, captainBonus, plenoBonus, total }
-}
-
-const BADGE_DEFS = [
-  { id: 'pleno',         emoji: '🎯', name: 'Pleno',          desc: 'Acertaste todos los picks de una jornada' },
-  { id: 'contra_ia',    emoji: '🤖', name: 'Contra la IA',   desc: 'Acertaste yendo contra la sugerencia de IA' },
-  { id: 'empate_guru',  emoji: '🤝', name: 'Gurú del empate', desc: 'Acertaste 2 empates en la misma jornada' },
-  { id: 'racha5',       emoji: '🔥', name: 'En racha x5',    desc: '5 semanas consecutivas participando' },
-  { id: 'veterano',     emoji: '⭐', name: 'Veterano',        desc: '10 jornadas completadas' },
-  { id: 'pick_dificil', emoji: '💎', name: 'Pick difícil',   desc: 'Acertaste un resultado con cuota > 3.0' },
-] as const
-
-type BadgeId = typeof BADGE_DEFS[number]['id']
-
-function computeNewBadges(
-  picks: Array<{ home: string; away: string; pick: string; result?: { outcome: '1'|'X'|'2'; homeGoals: number; awayGoals: number }; odds?: { home: number; draw: number; away: number } }>,
-  scored: number,
-  total: number,
-  streak: number,
-  totalJornadas: number,
-  existing: BadgeId[]
-): BadgeId[] {
-  const earned: BadgeId[] = []
-  const add = (id: BadgeId) => { if (!existing.includes(id) && !earned.includes(id)) earned.push(id) }
-
-  if (scored === total && total > 0) add('pleno')
-  if (streak >= 5) add('racha5')
-  if (totalJornadas >= 10) add('veterano')
-
-  const empatesCorrect = picks.filter(p => {
-    const o = p.result?.outcome
-    return o === 'X' && isCorrect(p.pick as Pick, 'X')
-  }).length
-  if (empatesCorrect >= 2) add('empate_guru')
-
-  const hasContraIA = picks.some(p => {
-    if (!p.odds || !p.result) return false
-    const ai = aiSuggest(p.odds).pick
-    const correct = isCorrect(p.pick as Pick, p.result.outcome)
-    const disagreed = p.pick !== ai && !(ai === '1X' && (p.pick === '1' || p.pick === 'X')) && !(ai === 'X2' && (p.pick === 'X' || p.pick === '2'))
-    return correct && disagreed
-  })
-  if (hasContraIA) add('contra_ia')
-
-  const hasDificil = picks.some(p => {
-    if (!p.odds || !p.result) return false
-    const o = p.result.outcome
-    const cuota = o === '1' ? p.odds.home : o === 'X' ? p.odds.draw : p.odds.away
-    return isCorrect(p.pick as Pick, o) && cuota > 3.0
-  })
-  if (hasDificil) add('pick_dificil')
-
-  return earned
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Leaderboard semanal — generado deterministamente por jornada
-// ─────────────────────────────────────────────────────────────────
-const LEADERBOARD_NAMES = [
-  'Carlos M.','Laura P.','Javi G.','María R.','Álex T.',
-  'Sergio F.','Ana L.','Pablo S.','Marta D.','Diego C.',
-  'Elena V.','Rubén A.','Cristina H.','Iván N.','Sofía B.',
-  'Marcos J.','Patricia O.','Daniel E.','Carmen U.','Adrián M.',
-]
-
-function communityLeaderboard(jornada: string, totalMatches: number) {
-  const seed = jornada.split('').reduce((s, c, i) => s + c.charCodeAt(0) * (i + 2), 0)
-  return LEADERBOARD_NAMES.map((name, i) => {
-    const raw = (seed * (i + 5) * 13 + i * 97) % 100
-    const score = Math.round((raw / 100) * totalMatches)
-    return { name, score }
-  }).sort((a, b) => b.score - a.score)
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Consenso de comunidad — derivado de cuotas + ruido determinista
-// ─────────────────────────────────────────────────────────────────
-function communityConsensus(match: QuinielaMatch): { p1: number; pX: number; p2: number } {
-  if (match.odds) {
-    const impl = (o: number) => 1 / o
-    const ih = impl(match.odds.home), id = impl(match.odds.draw), ia = impl(match.odds.away)
-    const sum = ih + id + ia
-    const noise = ((match.home.charCodeAt(0) || 65) * 7 + (match.away.charCodeAt(0) || 65) * 3) % 19 - 9
-    let p1 = Math.round((ih / sum) * 100 + noise * 0.5)
-    let pX = Math.round((id / sum) * 100 - noise * 0.2)
-    p1 = Math.max(8, Math.min(80, p1))
-    pX = Math.max(5, Math.min(40, pX))
-    const p2 = Math.max(8, Math.min(80, 100 - p1 - pX))
-    return { p1, pX, p2 }
-  }
-  return { p1: 38, pX: 27, p2: 35 }
-}
+import {
+  PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW,
+  BADGES_KEY, COINS_KEY, COINS_TXN_KEY, COINS_INITIAL,
+  STREAK_KEY, TUTORED_KEY, LEAGUES_KEY, ONBOARDING_STEPS,
+} from './lib/constants'
+import type { BadgeId, CoinTxn, League, MatchResult } from './lib/types'
+import { BADGE_DEFS } from './lib/types'
+import {
+  getISOWeek, computeStreak, isCorrect, teamForm, communityTrend,
+  getCoins, addCoins, computeCoinRewards, computeNewBadges,
+  communityLeaderboard, communityConsensus, aiSuggest, scorelinesFor,
+  getMatchContext, getDivision, scoreForMember,
+} from './lib/helpers'
+import { usePushSubscription, useMatchCountdown } from './lib/hooks'
 
 function ConsensusBar({ match, userPick }: { match: QuinielaMatch; userPick: Pick | undefined }) {
   const [tick, setTick] = useState(() => Math.floor(Date.now() / 180_000))
@@ -387,26 +91,6 @@ function ConsensusBar({ match, userPick }: { match: QuinielaMatch; userPick: Pic
       )}
     </div>
   )
-}
-
-// ─────────────────────────────────────────────────────────────────
-// AI pick suggestion — derived from implied probabilities
-// ─────────────────────────────────────────────────────────────────
-function aiSuggest(odds: { home: number; draw: number; away: number }): { pick: Pick; confidence: number } {
-  const impl = (o: number) => 1 / o
-  const ih = impl(odds.home), id = impl(odds.draw), ia = impl(odds.away)
-  const sum = ih + id + ia
-  const ph = ih / sum, px = id / sum, pa = ia / sum
-
-  if (ph >= pa && ph >= px) {
-    if (ph < 0.52 && px > 0.17) return { pick: '1X', confidence: Math.round((ph + px) * 100) }
-    return { pick: '1', confidence: Math.round(ph * 100) }
-  }
-  if (pa >= ph && pa >= px) {
-    if (pa < 0.52 && px > 0.17) return { pick: 'X2', confidence: Math.round((pa + px) * 100) }
-    return { pick: '2', confidence: Math.round(pa * 100) }
-  }
-  return { pick: 'X', confidence: Math.round(px * 100) }
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -495,27 +179,6 @@ function ShieldIcon({ name, size = 44 }: { name: string; size?: number }) {
       <text x="20" y="27" textAnchor="middle" dominantBaseline="middle" fontSize="13" fontWeight="900" fill="rgba(255,255,255,0.92)" fontFamily="system-ui,sans-serif" letterSpacing="-0.5">{initials}</text>
     </svg>
   )
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Línea de contexto por partido — generada desde cuotas
-// ─────────────────────────────────────────────────────────────────
-function getMatchContext(home: string, away: string, odds?: { home: number; draw: number; away: number }): string {
-  if (!odds) return ''
-  const { home: h, draw: d, away: a } = odds
-  const spread = Math.abs(h - a)
-  if (spread < 0.25) return `Partido muy igualado · Cuotas casi idénticas`
-  if (h < 1.55) return `${home} gran favorito en casa · Cuota de ${h.toFixed(2)}`
-  if (a < 1.55) return `${away} favorito · Sorpresa si gana el local`
-  if (d < h && d < a) return `El empate tiene mucha probabilidad · Cuota ${d.toFixed(2)}`
-  if (h > 3.2 && a < 2.2) return `${away} visitante favorito · Pick trampa`
-  const seed = (home.charCodeAt(0) + away.charCodeAt(0)) % 4
-  return [
-    `${spread > 1 ? (h < a ? home : away) : home} parte favorito · Decisión ajustada`,
-    `Duelo europeo de alto nivel · Cualquier resultado posible`,
-    `${h < a ? home : away} con ventaja · ${d.toFixed(2)} el empate`,
-    `Historial igualado · La cuota del empate invita a pensarlo`,
-  ][seed]
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -910,15 +573,6 @@ function ProgressBar({ done, total }: { done: number; total: number }) {
 // ─────────────────────────────────────────────────────────────────
 // Formulario — picks de la quiniela oficial
 // ─────────────────────────────────────────────────────────────────
-const STREAK_KEY = 'ts_quiniela_streak'
-const TUTORED_KEY = 'ts_quiniela_tutored'
-
-// Scoreline chips per outcome
-function scorelinesFor(pick: Pick): [number, number][] {
-  if (pick === '1') return [[1,0],[2,0],[2,1],[3,0],[3,1],[3,2]]
-  if (pick === '2') return [[0,1],[0,2],[1,2],[0,3],[1,3],[2,3]]
-  return [[0,0],[1,1],[2,2],[3,3]]
-}
 
 // ─────────────────────────────────────────────────────────────────
 // Info tooltip — accesible, tap/hover, cierra con Esc o click fuera
@@ -1089,12 +743,6 @@ function StickyBetslip({ done, total, allDone, captainSet, onSubmit, urgent }: {
 // ─────────────────────────────────────────────────────────────────
 // Onboarding bottom-sheet (4 pasos swipeable + skippable)
 // ─────────────────────────────────────────────────────────────────
-const ONBOARDING_STEPS: { emoji: string; title: string; body: string; hint?: string }[] = [
-  { emoji: '🎯', title: 'Predice cada partido', body: 'Toca 1 (gana local), X (empate) o 2 (gana visitante). Cada acierto = +10🪙.', hint: 'La IA te sugiere una opción usando las cuotas reales.' },
-  { emoji: '👑', title: 'Elige tu capitán', body: 'Marca un partido con la corona. Si aciertas ese, los puntos se doblan (+20🪙). Si fallas, no pasa nada.', hint: 'Úsalo en el partido donde más seguro estés.' },
-  { emoji: '🪙', title: 'Gana monedas y pleno', body: 'Acierto = +10 · Capitán acertado = +20 · Acertar todos los partidos = +100 de bonus.', hint: 'Las monedas desbloquean comodines durante la jornada.' },
-  { emoji: '🏆', title: 'Compite con amigos', body: 'Crea una liga privada con código y compartilo. Compite cada semana en un ranking propio.', hint: 'También puedes unirte con un enlace de invitación.' },
-]
 function OnboardingSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [step, setStep] = useState(0)
   useEffect(() => {
@@ -1534,7 +1182,6 @@ function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0 }: { matches:
 // ─────────────────────────────────────────────────────────────────
 // Resumen picks enviados
 // ─────────────────────────────────────────────────────────────────
-interface MatchResult { home: string; away: string; outcome: '1' | 'X' | '2'; homeGoals: number; awayGoals: number; espnId?: string }
 
 // ─────────────────────────────────────────────────────────────────
 // Ceremonia de revelación — pantalla fullscreen dramática
@@ -2132,26 +1779,8 @@ function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved }: {
 // ─────────────────────────────────────────────────────────────────
 // Ligas guardadas (localStorage)
 // ─────────────────────────────────────────────────────────────────
-const LEAGUES_KEY = 'ts_quiniela_leagues'
-
-interface League {
-  id: string
-  name: string
-  competitionId: string
-  matchIds: number[]
-  picks: Record<number, Pick>
-  submitted: boolean
-  createdAt: string
-}
 
 interface ServerMember { nickname: string; picks: Record<number, string> }
-
-function scoreForMember(picks: Record<number, string>, results: MatchResult[]): number {
-  return Object.values(picks).filter((p, i) => {
-    const r = results[i]
-    return r && isCorrect(p as Pick, r.outcome)
-  }).length
-}
 
 interface ChatMessage { id: string; nickname: string; message: string; created_at: string }
 
@@ -3040,17 +2669,6 @@ function GoogleSignInButton({ onClose }: { onClose?: () => void }) {
       {loading ? 'Redirigiendo…' : 'Continuar con Google'}
     </button>
   )
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Division helper
-// ─────────────────────────────────────────────────────────────────
-function getDivision(history: { correct: number; total: number }[]): { name: string; color: string; bg: string; border: string; emoji: string } {
-  if (!history.length) return { name: 'Rookie', color: '#9090A4', bg: 'rgba(144,144,164,0.08)', border: 'rgba(144,144,164,0.2)', emoji: '🌱' }
-  const avg = history.reduce((s, h) => s + (h.total ? h.correct / h.total : 0), 0) / history.length
-  if (avg >= 0.65) return { name: 'Oro', color: '#fbbf24', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', emoji: '🏆' }
-  if (avg >= 0.45) return { name: 'Plata', color: '#C4B5FD', bg: 'rgba(124,58,237,0.08)', border: 'rgba(124,58,237,0.2)', emoji: '⭐' }
-  return { name: 'Bronce', color: '#fb923c', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)', emoji: '🔶' }
 }
 
 // ─────────────────────────────────────────────────────────────────
