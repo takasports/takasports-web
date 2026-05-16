@@ -1068,7 +1068,16 @@ function buildWorldCupQualified(): StandingRow[] {
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
-  futbol: ['football', 'uclFixtures', 'uelFixtures', 'ueclFixtures', 'uclScorers', 'uelScorers', 'ueclScorers', 'uclAssists', 'uelAssists', 'ueclAssists'],
+  // Fútbol incluye TODAS las sub-secciones del sport (competiciones, selecciones, entrenadores, femenino).
+  futbol: [
+    'football',
+    'uclFixtures', 'uelFixtures', 'ueclFixtures',
+    'uclScorers', 'uelScorers', 'ueclScorers',
+    'uclAssists', 'uelAssists', 'ueclAssists',
+    'fifaRanking', 'nationsLeague',
+    'coachesWinRate',
+    'womenLigaF', 'womenGoals', 'womenAssists',
+  ],
   football: ['football', 'uclScorers', 'uelScorers', 'ueclScorers', 'uclAssists', 'uelAssists', 'ueclAssists'],
   nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaPlayoffSeries', 'nbaMvpRace', 'nbaDpoyRace', 'nbaRookieRace'],
   f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps', 'f1Calendar', 'f1Sprints'],
