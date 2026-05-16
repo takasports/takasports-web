@@ -3,7 +3,6 @@ import { SOCCER_LEAGUES, EUROPEAN_CUPS } from '@/lib/stats-leagues'
 import {
   FIFA_RANKING, FIFA_RANKING_AS_OF, UFC_P4P, UFC_P4P_AS_OF, COACH_CONFIG,
   TENNIS_SLAMS_2026,
-  NBA_ROOKIE_NAMES,
   type StandingRow,
 } from '@/lib/stats-editorial'
 export type { StandingRow } from '@/lib/stats-editorial'
@@ -320,10 +319,10 @@ function nbaSeasonLabel(): string {
   return `${startYear}-${yy}`
 }
 
-async function fetchNBAStatCategory(stat: string, season: string): Promise<StandingRow[]> {
+async function fetchNBAStatCategory(stat: string, season: string, scope: 'S' | 'Rookies' = 'S'): Promise<StandingRow[]> {
   try {
     const res = await fetch(
-      `https://stats.nba.com/stats/leagueleaders?LeagueID=00&PerMode=PerGame&Scope=S&Season=${season}&SeasonType=Regular+Season&StatCategory=${stat}`,
+      `https://stats.nba.com/stats/leagueleaders?LeagueID=00&PerMode=PerGame&Scope=${scope}&Season=${season}&SeasonType=Regular+Season&StatCategory=${stat}`,
       {
         headers: {
           'Referer': 'https://www.nba.com',
@@ -1001,35 +1000,38 @@ function buildNbaDpoyRace(blocks: StandingRow[], steals: StandingRow[]): Standin
   }))
 }
 
-function buildNbaRookieRace(scoring: StandingRow[], rebounds: StandingRow[], assists: StandingRow[], rookies: Set<string>): StandingRow[] {
-  // Pull rookies from scoring + rebounds + assists (combined unique pool)
-  const pool = new Map<string, { name: string; team: string; flag?: string; ppg: number; rpg: number; apg: number }>()
+// ROY Race: ahora usa NBA.com con Scope=Rookies (filtrado server-side, no
+// dependemos de mantener un Set hardcoded de nombres del Draft cada año).
+async function fetchNbaRookieRace(season: string): Promise<StandingRow[]> {
+  const [scoring, rebounds, assists] = await Promise.all([
+    fetchNBAStatCategory('PTS', season, 'Rookies'),
+    fetchNBAStatCategory('REB', season, 'Rookies'),
+    fetchNBAStatCategory('AST', season, 'Rookies'),
+  ])
+  if (!scoring.length) return []
+  const pool = new Map<string, { name: string; team: string; ppg: number; rpg: number; apg: number }>()
   const upsert = (row: StandingRow, kind: 'ppg' | 'rpg' | 'apg') => {
-    if (!rookies.has(row.name)) return
     const v = parseFloat(row.value) || 0
-    const cur = pool.get(row.name) ?? { name: row.name, team: row.abbr ?? '', flag: row.flag, ppg: 0, rpg: 0, apg: 0 }
+    const cur = pool.get(row.name) ?? { name: row.name, team: row.abbr ?? '', ppg: 0, rpg: 0, apg: 0 }
     cur[kind] = v
     if (!cur.team && row.abbr) cur.team = row.abbr
-    if (!cur.flag && row.flag) cur.flag = row.flag
     pool.set(row.name, cur)
   }
   scoring.forEach(r => upsert(r, 'ppg'))
   rebounds.forEach(r => upsert(r, 'rpg'))
   assists.forEach(r => upsert(r, 'apg'))
-  if (!pool.size) return []
-  // Composite score: PPG + RPG + 1.5*APG  (assists weighted higher per ROY tradition)
-  const arr = Array.from(pool.values())
+  // Composite score: PPG + RPG + 1.5*APG (assists weighted higher per ROY tradition).
+  return Array.from(pool.values())
     .map(r => ({ ...r, score: r.ppg + r.rpg + r.apg * 1.5 }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 7)
-  return arr.map((r, i) => ({
-    rank: i + 1, name: r.name, abbr: r.team,
-    value: `#${i + 1}`,
-    sub: `${r.ppg} PPG · ${r.rpg} RPG · ${r.apg} APG`,
-    flag: r.flag,
-    trend: 'flat' as const,
-    extra: { PPG: String(r.ppg), Equipo: r.team },
-  }))
+    .map((r, i) => ({
+      rank: i + 1, name: r.name, abbr: r.team,
+      value: `#${i + 1}`,
+      sub: `${r.ppg} PPG · ${r.rpg} RPG · ${r.apg} APG`,
+      trend: 'flat' as const,
+      extra: { PPG: String(r.ppg), Equipo: r.team },
+    }))
 }
 
 // ── World Cup qualified (derivado de FIFA ranking + anfitriones) ──────────────
@@ -1156,7 +1158,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   // Derived blocks
   const nbaMvpRace = buildNbaMvpRace(nbaLeaders.scoring, nba.east, nba.west)
   const nbaDpoyRace = buildNbaDpoyRace(nbaLeaders.blocks, nbaLeaders.steals)
-  const nbaRookieRace = buildNbaRookieRace(nbaLeaders.scoring, nbaLeaders.rebounds, nbaLeaders.assists, NBA_ROOKIE_NAMES)
+  const nbaRookieRace = await fetchNbaRookieRace(nbaSeason)
   const worldCupQualified = buildWorldCupQualified()
 
   const now = new Date().toISOString()

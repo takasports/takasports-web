@@ -72,28 +72,5 @@ export const TENNIS_SLAMS_2026: StandingRow[] = [
   { rank: 4, name: 'US Open · Nueva York',         abbr: '🇺🇸', value: '24 ago – 6 sep', sub: 'Pista dura',       trend: 'flat', extra: {} },
 ]
 
-// ─── NBA Rookie metadata (para el cálculo automático del ROY race) ────────
-// IMPORTANTE: actualizar cada año con el draft de la temporada en curso.
-// Temporada 2025-26 → Draft 2025 (top picks + rotation contributors).
-export const NBA_ROOKIE_NAMES = new Set<string>([
-  'Cooper Flagg',
-  'Dylan Harper',
-  'VJ Edgecombe',
-  'Kon Knueppel',
-  'Ace Bailey',
-  'Tre Johnson',
-  'Jeremiah Fears',
-  'Egor Demin',
-  'Collin Murray-Boyles',
-  'Khaman Maluach',
-  'Carter Bryant',
-  'Derik Queen',
-  'Asa Newell',
-  'Cedric Coward',
-  'Yang Hansen',
-  'Nique Clifford',
-  'Noa Essengue',
-])
-
 // ─── Mundial 2026 — anfitriones (siempre clasificados) ────────────────────
 export const WC_HOSTS = new Set<string>(['Estados Unidos', 'EEUU', 'USA', 'Canadá', 'Canada', 'México', 'Mexico'])
