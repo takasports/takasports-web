@@ -8,6 +8,7 @@
 // SEO: títulos correctos, OG image, structured data indexable.
 
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import JuegosPageClient from './JuegosPageClient'
 
 const SITE_URL = 'https://takasportsmedia.com'
@@ -59,7 +60,11 @@ export default function JuegosPage() {
         // Serialización confiable: el objeto está controlado server-side.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
-      <JuegosPageClient />
+      {/* Suspense: aísla useSearchParams() del filtro para que Next.js
+          pueda mantener el shell estático sin warnings en build. */}
+      <Suspense fallback={null}>
+        <JuegosPageClient />
+      </Suspense>
     </>
   )
 }

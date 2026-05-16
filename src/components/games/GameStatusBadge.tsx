@@ -45,8 +45,11 @@ export default function GameStatusBadge({ gameId, period, variant = 'live' }: Pr
     return <DotBadge live={isLive} label="Disponible" />
   }
 
+  // Durante la primera hidratación, skeleton neutro. Evita el flicker
+  // verde "Disponible" → "Jugado · 87 pts · #142" que se veía como
+  // recarga visible.
   if (status === 'loading') {
-    return <DotBadge live={isLive} label="Disponible" />
+    return <SkeletonBadge />
   }
 
   if (status === 'played' && play) {
@@ -84,6 +87,25 @@ export default function GameStatusBadge({ gameId, period, variant = 'live' }: Pr
     >
       <span className="w-1 h-1 rounded-full bg-purple-300 animate-pulse inline-block" />
       Cierra en {cd}
+    </span>
+  )
+}
+
+function SkeletonBadge() {
+  return (
+    <span
+      className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full inline-flex items-center gap-1.5"
+      style={{
+        background: 'rgba(255,255,255,0.04)',
+        border:     '1px solid rgba(255,255,255,0.06)',
+        color:      'transparent',
+        // ancho fijo para que el layout no se desplace al hidratar
+        minWidth: 90,
+      }}
+      aria-hidden
+    >
+      <span className="w-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.10)' }} />
+      <span style={{ opacity: 0 }}>Cargando</span>
     </span>
   )
 }
