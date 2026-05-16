@@ -20,6 +20,7 @@ import { getStoredTZ, setStoredTZ, getTZOption, getTZOffset } from '@/lib/timezo
 import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import { SportIcon, FireIcon, FootballIcon, StadiumIcon } from '@/components/icons/GameIcons'
+import MyGamesActivity from '@/components/games/MyGamesActivity'
 
 const REMINDERS_KEY = 'ts_reminders'
 const PROFILE_NAME_KEY = 'ts_profile_name'
@@ -850,6 +851,9 @@ export default function PerfilPage() {
                 ))}
               </div>
             </section>
+
+            {/* Tu actividad en TakaSports (datos Supabase, failsafe si no hay) */}
+            <MyGamesActivity />
 
           </div>
         </div>
