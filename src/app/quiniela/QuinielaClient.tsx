@@ -738,20 +738,27 @@ function MatchCard({
           )
         })()}
 
+        <WinProbabilityBar odds={odds} userPick={pick} />
+
         {/* Botones Local / Empate / Visitante */}
-        <div className="grid grid-cols-3 gap-2 mt-1">
+        <div className="grid grid-cols-3 gap-2 mt-1" role="radiogroup" aria-label={`Predicción para ${match.home} vs ${match.away}`}>
           {(['1', 'X', '2'] as Pick[]).map((opt) => {
             const selected = pick === opt
             const label = opt === '1' ? (match.homeShort ?? match.home) : opt === '2' ? (match.awayShort ?? match.away) : 'Empate'
             const sublabel = opt === '1' ? 'local' : opt === '2' ? 'visitante' : 'empate'
             const odd = opt === '1' ? odds?.home ?? null : opt === 'X' ? odds?.draw ?? null : odds?.away ?? null
+            const aria = opt === '1' ? `Gana local ${match.home}` : opt === '2' ? `Gana visitante ${match.away}` : `Empate entre ${match.home} y ${match.away}`
             return (
               <button
                 key={opt}
+                role="radio"
+                aria-checked={selected}
+                aria-label={aria}
                 onClick={() => { if (!locked) { onPick(opt); setAnimPick(opt); setTimeout(() => setAnimPick(p => p === opt ? null : p), 350) } }}
                 disabled={locked}
-                className="rounded-2xl flex flex-col items-center justify-center gap-0.5 px-2 py-3"
+                className="rounded-2xl flex flex-col items-center justify-center gap-0.5 px-2"
                 style={{
+                  minHeight: 48, paddingTop: 10, paddingBottom: 10,
                   background: selected ? PICK_BG[opt] : 'rgba(255,255,255,0.04)',
                   color: selected ? PICK_COLOR[opt] : '#60607A',
                   border: selected ? `1.5px solid ${PICK_BORDER[opt]}` : '1.5px solid rgba(255,255,255,0.09)',
@@ -913,7 +920,243 @@ function scorelinesFor(pick: Pick): [number, number][] {
   return [[0,0],[1,1],[2,2],[3,3]]
 }
 
-function PicksForm({ matches, jornada, onSubmit }: { matches: QuinielaMatch[]; jornada: string; onSubmit: (s: QuinielaSaved) => void }) {
+// ─────────────────────────────────────────────────────────────────
+// Info tooltip — accesible, tap/hover, cierra con Esc o click fuera
+// ─────────────────────────────────────────────────────────────────
+function InfoTip({ label, text, size = 12 }: { label: string; text: string; size?: number }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey) }
+  }, [open])
+  return (
+    <span ref={ref} className="relative inline-flex items-center" style={{ lineHeight: 0 }}>
+      <button
+        type="button"
+        aria-label={`Información: ${label}`}
+        aria-expanded={open}
+        onClick={(e) => { e.stopPropagation(); setOpen(v => !v) }}
+        className="rounded-full inline-flex items-center justify-center transition-opacity"
+        style={{ width: size + 4, height: size + 4, background: 'rgba(255,255,255,0.06)', color: '#7C7CA0', border: 'none', cursor: 'pointer', opacity: open ? 1 : 0.7 }}
+      >
+        <svg width={size - 2} height={size - 2} viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.1" /><path d="M6 5.4v2.4M6 4v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
+      </button>
+      {open && (
+        <span role="tooltip" className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 px-3 py-2 rounded-lg text-[10px] leading-snug shadow-xl" style={{ top: '100%', minWidth: 180, maxWidth: 240, background: '#1a0a2e', border: '1px solid rgba(124,58,237,0.35)', color: '#E0D5F8', fontFamily: 'var(--font-sport)', fontWeight: 600 }}>
+          <span className="block font-black mb-1" style={{ color: '#C4B5FD', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
+          {text}
+        </span>
+      )}
+    </span>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Win probability bar (derivada de odds, no sintética)
+// ─────────────────────────────────────────────────────────────────
+function WinProbabilityBar({ odds, userPick }: { odds?: { home: number; draw: number; away: number }; userPick?: Pick }) {
+  if (!odds || !odds.home || !odds.draw || !odds.away) return null
+  const invH = 1 / odds.home, invD = 1 / odds.draw, invA = 1 / odds.away
+  const sum = invH + invD + invA
+  const pH = Math.round((invH / sum) * 100)
+  const pD = Math.round((invD / sum) * 100)
+  const pA = 100 - pH - pD
+  const seg = (color: string, value: number, active: boolean) => (
+    <div style={{ flex: value, height: 4, background: color, opacity: active ? 1 : 0.55, transition: 'opacity 0.2s' }} />
+  )
+  return (
+    <div className="mt-2 mb-2.5">
+      <div className="flex w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.04)' }}>
+        {seg('#22c55e', pH, !userPick || userPick === '1' || userPick === '1X')}
+        {seg('#f59e0b', pD, !userPick || userPick === 'X' || userPick === '1X' || userPick === 'X2')}
+        {seg('#ef4444', pA, !userPick || userPick === '2' || userPick === 'X2')}
+      </div>
+      <div className="flex justify-between mt-1 tabular-nums" style={{ fontSize: 8, fontFamily: 'var(--font-sport)', fontWeight: 800, letterSpacing: '0.04em' }}>
+        <span style={{ color: '#16a34a' }}>{pH}%</span>
+        <span style={{ color: '#d97706' }}>{pD}%</span>
+        <span style={{ color: '#dc2626' }}>{pA}%</span>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Quick-pick IA — autocompleta picks pendientes con la sugerencia
+// ─────────────────────────────────────────────────────────────────
+function QuickPickIA({ matches, picks, onApply }: { matches: QuinielaMatch[]; picks: Record<number, Pick>; onApply: (next: Record<number, Pick>) => void }) {
+  const pendientes = matches.reduce((n, m, i) => (picks[i] === undefined && (!m.isoDate || new Date(m.isoDate).getTime() > Date.now()) ? n + 1 : n), 0)
+  if (pendientes === 0) return null
+  const handle = () => {
+    const next = { ...picks }
+    matches.forEach((m, i) => {
+      if (next[i] !== undefined) return
+      if (m.isoDate && new Date(m.isoDate).getTime() <= Date.now()) return
+      if (!m.odds) { next[i] = 'X'; return }
+      const { pick } = aiSuggest(m.odds)
+      next[i] = pick === '1X' ? '1' : pick === 'X2' ? '2' : pick
+    })
+    onApply(next)
+  }
+  return (
+    <button
+      onClick={handle}
+      className="w-full rounded-xl px-4 py-2.5 flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+      style={{ background: 'rgba(124,58,237,0.08)', border: '1px dashed rgba(124,58,237,0.35)', color: '#C4B5FD', fontFamily: 'var(--font-sport)', fontWeight: 900, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', minHeight: 44 }}
+    >
+      <span style={{ fontSize: 14 }}>🤖</span>
+      Rellena los {pendientes} restantes con la IA
+      <span style={{ fontSize: 9, opacity: 0.7, marginLeft: 4 }}>(editable)</span>
+    </button>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Streak hero — Duolingo-style si racha ≥ 2
+// ─────────────────────────────────────────────────────────────────
+function StreakHero({ current }: { current: number }) {
+  if (current < 2) return null
+  return (
+    <div className="rounded-2xl px-4 py-3 flex items-center gap-3" style={{ background: 'linear-gradient(135deg,rgba(251,146,60,0.14),rgba(239,68,68,0.08))', border: '1px solid rgba(251,146,60,0.35)' }}>
+      <span style={{ fontSize: 28, filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.6))' }}>🔥</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-black leading-none" style={{ color: '#fb923c', fontFamily: 'var(--font-display)' }}>
+          {current} semana{current !== 1 ? 's' : ''} seguida{current !== 1 ? 's' : ''}
+        </p>
+        <p className="text-[10px] mt-1" style={{ color: '#7A4530', fontFamily: 'var(--font-sport)' }}>
+          Manda tus picks antes del cierre para no perderla
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Sticky betslip — footer fijo con progreso y CTA
+// ─────────────────────────────────────────────────────────────────
+function StickyBetslip({ done, total, allDone, captainSet, onSubmit, urgent }: { done: number; total: number; allDone: boolean; captainSet: boolean; onSubmit: () => void; urgent: boolean }) {
+  const potential = done * 10 + (captainSet ? 10 : 0) + (allDone ? 100 : 0)
+  const cta = allDone
+    ? captainSet ? 'Siguiente: ajusta marcadores →' : 'Siguiente: elige capitán →'
+    : `Te quedan ${total - done} partido${total - done !== 1 ? 's' : ''}`
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0
+  return (
+    <div className="sticky bottom-0 left-0 right-0 z-30 -mx-1 pt-3 pb-3" style={{ background: 'linear-gradient(to top, #060010 0%, #060010 60%, transparent 100%)' }}>
+      <div className="rounded-2xl px-4 py-3" style={{ background: 'rgba(10,2,20,0.96)', backdropFilter: 'blur(16px)', border: '1px solid rgba(124,58,237,0.28)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
+        <div className="flex items-center gap-3 mb-2.5">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-black tabular-nums" style={{ fontSize: 18, color: '#F8F8FF', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>{done}/{total}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>picks</span>
+            </div>
+            <div className="mt-1.5 w-full rounded-full overflow-hidden" style={{ height: 3, background: 'rgba(255,255,255,0.06)' }}>
+              <div style={{ width: `${pct}%`, height: '100%', background: allDone ? 'linear-gradient(90deg,#22c55e,#16a34a)' : 'linear-gradient(90deg,#7C3AED,#A78BFA)', transition: 'width 0.3s' }} />
+            </div>
+          </div>
+          <div className="flex flex-col items-end flex-shrink-0">
+            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Si aciertas todo</span>
+            <span className="font-black tabular-nums" style={{ fontSize: 16, color: '#fbbf24', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
+              {potential}🪙
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={onSubmit}
+          disabled={!allDone}
+          aria-label={cta}
+          className="w-full rounded-xl font-black uppercase tracking-widest transition-opacity"
+          style={{
+            minHeight: 48, fontSize: 12, fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
+            background: allDone ? 'linear-gradient(135deg,#7C3AED 0%,#5B21B6 100%)' : 'rgba(255,255,255,0.04)',
+            color: allDone ? '#fff' : '#3A3A50',
+            border: allDone ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.05)',
+            boxShadow: allDone ? '0 6px 22px rgba(124,58,237,0.35)' : 'none',
+            cursor: allDone ? 'pointer' : 'not-allowed',
+            animation: allDone && urgent ? 'quinielaPulse 0.85s ease-in-out infinite' : 'none',
+          }}
+        >
+          {cta}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Onboarding bottom-sheet (4 pasos swipeable + skippable)
+// ─────────────────────────────────────────────────────────────────
+const ONBOARDING_STEPS: { emoji: string; title: string; body: string; hint?: string }[] = [
+  { emoji: '🎯', title: 'Predice cada partido', body: 'Toca 1 (gana local), X (empate) o 2 (gana visitante). Cada acierto = +10🪙.', hint: 'La IA te sugiere una opción usando las cuotas reales.' },
+  { emoji: '👑', title: 'Elige tu capitán', body: 'Marca un partido con la corona. Si aciertas ese, los puntos se doblan (+20🪙). Si fallas, no pasa nada.', hint: 'Úsalo en el partido donde más seguro estés.' },
+  { emoji: '🪙', title: 'Gana monedas y pleno', body: 'Acierto = +10 · Capitán acertado = +20 · Acertar todos los partidos = +100 de bonus.', hint: 'Las monedas desbloquean comodines durante la jornada.' },
+  { emoji: '🏆', title: 'Compite con amigos', body: 'Crea una liga privada con código y compartilo. Compite cada semana en un ranking propio.', hint: 'También puedes unirte con un enlace de invitación.' },
+]
+function OnboardingSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [step, setStep] = useState(0)
+  useEffect(() => {
+    if (!open) return
+    setStep(0)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowRight') setStep(s => Math.min(s + 1, ONBOARDING_STEPS.length - 1))
+      if (e.key === 'ArrowLeft') setStep(s => Math.max(s - 1, 0))
+    }
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
+  }, [open, onClose])
+  if (!open) return null
+  const isLast = step === ONBOARDING_STEPS.length - 1
+  const s = ONBOARDING_STEPS[step]
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Cómo jugar a la Quiniela" className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center" style={{ background: 'rgba(3,0,9,0.85)', backdropFilter: 'blur(12px)', animation: 'fadeIn 0.2s ease both' }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 sm:p-7 relative" style={{ background: 'linear-gradient(160deg,#13002A 0%,#08000F 100%)', border: '1px solid rgba(124,58,237,0.3)', boxShadow: '0 -24px 60px rgba(0,0,0,0.6)', animation: 'sealPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+        <button aria-label="Cerrar" onClick={onClose} className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)', color: '#9090B0', border: 'none', cursor: 'pointer' }}>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+        </button>
+        <div className="flex items-center gap-1.5 mb-5">
+          {ONBOARDING_STEPS.map((_, i) => (
+            <div key={i} aria-current={i === step} style={{ width: i === step ? 24 : 6, height: 4, borderRadius: 2, background: i <= step ? '#7C3AED' : 'rgba(255,255,255,0.1)', transition: 'width 0.25s, background 0.25s' }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 56, lineHeight: 1, marginBottom: 16 }}>{s.emoji}</div>
+        <h2 className="font-black mb-3" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.6rem,4.4vw,2rem)', color: '#F8F8FF', letterSpacing: '-0.02em', lineHeight: 1.05 }}>{s.title}</h2>
+        <p className="text-sm leading-relaxed mb-3" style={{ color: '#B8B0D0', fontFamily: 'var(--font-sport)' }}>{s.body}</p>
+        {s.hint && (
+          <div className="rounded-xl px-3 py-2.5 flex items-start gap-2 mb-5" style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.18)' }}>
+            <span style={{ fontSize: 13, lineHeight: 1 }}>💡</span>
+            <p className="text-[11px] leading-snug" style={{ color: '#9080C0', fontFamily: 'var(--font-sport)' }}>{s.hint}</p>
+          </div>
+        )}
+        <div className="flex items-center gap-3 mt-2">
+          {step > 0 && (
+            <button onClick={() => setStep(s => s - 1)} className="px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest" style={{ background: 'rgba(255,255,255,0.05)', color: '#9090B0', border: '1px solid rgba(255,255,255,0.06)', minHeight: 48, fontFamily: 'var(--font-sport)', cursor: 'pointer' }}>
+              ←
+            </button>
+          )}
+          <button
+            onClick={() => { if (isLast) onClose(); else setStep(s => s + 1) }}
+            className="flex-1 rounded-xl text-xs font-black uppercase tracking-widest transition-opacity hover:opacity-90"
+            style={{ minHeight: 48, background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', color: '#fff', border: '1px solid rgba(124,58,237,0.5)', fontFamily: 'var(--font-sport)', letterSpacing: '0.1em', boxShadow: '0 6px 22px rgba(124,58,237,0.35)', cursor: 'pointer' }}
+          >
+            {isLast ? '¡A jugar! 🎯' : `Siguiente · ${step + 2}/${ONBOARDING_STEPS.length}`}
+          </button>
+        </div>
+        {!isLast && (
+          <button onClick={onClose} className="w-full mt-3 text-[10px] font-black uppercase tracking-widest" style={{ color: '#4A4A6A', background: 'none', border: 'none', fontFamily: 'var(--font-sport)', cursor: 'pointer', minHeight: 36 }}>
+            Saltar tutorial
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0 }: { matches: QuinielaMatch[]; jornada: string; onSubmit: (s: QuinielaSaved) => void; streakCurrent?: number }) {
   const [picks, setPicks]             = useState<Record<number, Pick>>({})
   const [captainIdx, setCaptainIdx]   = useState<number | null>(null)
   const [exactScores, setExactScores] = useState<Record<number, { home: number; away: number }>>({})
@@ -924,6 +1167,12 @@ function PicksForm({ matches, jornada, onSubmit }: { matches: QuinielaMatch[]; j
   const [tutored, setTutored]         = useState(() => {
     try { return typeof window !== 'undefined' && !!localStorage.getItem(TUTORED_KEY) } catch { return true }
   })
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try { if (!localStorage.getItem(TUTORED_KEY)) setShowOnboarding(true) } catch { /* */ }
+  }, [])
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1_000)
@@ -987,16 +1236,27 @@ function PicksForm({ matches, jornada, onSubmit }: { matches: QuinielaMatch[]; j
   if (matches.length === 0) {
     return (
       <div className="py-14 flex flex-col items-center gap-5 text-center px-4">
+        <OnboardingSheet open={showOnboarding} onClose={() => { setShowOnboarding(false); setTutored(true); try { localStorage.setItem(TUTORED_KEY, '1') } catch {/* */} }} />
         <div style={{ fontSize: 56, lineHeight: 1 }}>📅</div>
         <div>
           <p className="font-black text-base mb-1" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>Sin partidos esta semana</p>
-          <p className="text-xs" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>La próxima jornada se activa automáticamente</p>
+          <p className="text-xs" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>La próxima jornada se activa automáticamente cuando haya partidos</p>
         </div>
-        <div className="w-full rounded-2xl px-5 py-4 flex items-center gap-4" style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.15)' }}>
-          <span style={{ fontSize: 24 }}>🎯</span>
-          <div className="text-left">
-            <p className="text-xs font-black mb-0.5" style={{ color: '#9080C0', fontFamily: 'var(--font-display)' }}>Mientras tanto, explora ligas privadas</p>
-            <p className="text-[10px]" style={{ color: '#4A3A60', fontFamily: 'var(--font-sport)' }}>Crea una liga con amigos y compite sin esperar la jornada oficial</p>
+        <div className="flex flex-col gap-3 w-full max-w-md">
+          <button onClick={() => setShowOnboarding(true)} className="w-full rounded-2xl px-5 py-4 flex items-center gap-4 text-left transition-opacity hover:opacity-90" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.22)', cursor: 'pointer', minHeight: 64 }}>
+            <span style={{ fontSize: 24 }}>💡</span>
+            <div className="flex-1">
+              <p className="text-xs font-black mb-0.5" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>Aprende a jugar en 1 minuto</p>
+              <p className="text-[10px]" style={{ color: '#7060A0', fontFamily: 'var(--font-sport)' }}>Tutorial rápido para no perderte nada</p>
+            </div>
+            <span style={{ fontSize: 14, color: '#C4B5FD' }}>→</span>
+          </button>
+          <div className="w-full rounded-2xl px-5 py-4 flex items-center gap-4" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.18)' }}>
+            <span style={{ fontSize: 24 }}>🎯</span>
+            <div className="text-left">
+              <p className="text-xs font-black mb-0.5" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>Crea una liga privada</p>
+              <p className="text-[10px]" style={{ color: '#3a6a4a', fontFamily: 'var(--font-sport)' }}>Compite con amigos sin esperar la jornada oficial</p>
+            </div>
           </div>
         </div>
       </div>
@@ -1015,31 +1275,27 @@ function PicksForm({ matches, jornada, onSubmit }: { matches: QuinielaMatch[]; j
               <p className="font-black leading-none mb-3" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem,5vw,2.8rem)', color: '#F8F8FF', letterSpacing: '-0.03em' }}>
                 ¡Predicción sellada!
               </p>
-              <p className="text-sm" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Suerte esta jornada 🤞</p>
+              <p className="text-sm mb-2" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Suerte esta jornada 🤞</p>
+              <p className="text-xs font-black inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}>
+                Si aciertas todo: hasta {matches.length * 10 + (captainIdx != null ? 10 : 0) + 100}🪙
+              </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* First-visit tutorial */}
-      {!tutored && (
-        <div className="rounded-2xl px-4 py-3.5 flex items-start gap-3" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.22)' }}>
-          <span style={{ fontSize: 20, flexShrink: 0 }}>💡</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-black mb-1.5" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>¿Cómo funciona?</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
-              <span className="text-[10px] font-black" style={{ color: '#22c55e', fontFamily: 'var(--font-sport)' }}>🏠 Local = equipo de casa gana</span>
-              <span className="text-[10px] font-black" style={{ color: '#f59e0b', fontFamily: 'var(--font-sport)' }}>🤝 Empate = sin ganador</span>
-              <span className="text-[10px] font-black" style={{ color: '#ef4444', fontFamily: 'var(--font-sport)' }}>✈️ Visitante = equipo de fuera gana</span>
-            </div>
-            <p className="text-[9px] mt-1.5" style={{ color: '#4A3A60', fontFamily: 'var(--font-sport)' }}>Acertar = +10🪙 · Capitán = +20🪙 · Pleno = +100🪙 extra</p>
-          </div>
-          <button onClick={() => { setTutored(true); try { localStorage.setItem(TUTORED_KEY, '1') } catch {/* */} }}
-            className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.06)', color: '#5A5A6A' }}>
-            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+      <OnboardingSheet open={showOnboarding} onClose={() => { setShowOnboarding(false); setTutored(true); try { localStorage.setItem(TUTORED_KEY, '1') } catch {/* */} }} />
+
+      {tutored && (
+        <div className="flex justify-end -mb-1">
+          <button onClick={() => setShowOnboarding(true)} className="text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ color: '#7C7CA0', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)', cursor: 'pointer', minHeight: 32 }}>
+            <span style={{ fontSize: 11 }}>💡</span> Cómo se juega
           </button>
         </div>
       )}
+
+      <StreakHero current={streakCurrent} />
+      <QuickPickIA matches={matches} picks={picks} onApply={(next) => { setPicks(next); if (!tutored) { setTutored(true); try { localStorage.setItem(TUTORED_KEY, '1') } catch {/* */} } }} />
 
       {/* Urgency: <30min to first match */}
       {urgent && (
@@ -1084,22 +1340,7 @@ function PicksForm({ matches, jornada, onSubmit }: { matches: QuinielaMatch[]; j
         </div>
       ))}
 
-      <button
-        onClick={() => allDone && setStep('bonus')}
-        disabled={!allDone}
-        className="w-full rounded-2xl font-black uppercase tracking-widest transition-all mt-1"
-        style={{
-          minHeight: 56, fontSize: 13, fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
-          background: allDone ? 'linear-gradient(135deg,#7C3AED 0%,#5B21B6 100%)' : 'rgba(255,255,255,0.03)',
-          color: allDone ? '#fff' : '#252535',
-          border: allDone ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.05)',
-          boxShadow: allDone ? '0 8px 28px rgba(124,58,237,0.38), inset 0 1px 0 rgba(255,255,255,0.1)' : 'none',
-          cursor: allDone ? 'pointer' : 'not-allowed',
-          animation: allDone && urgent ? 'quinielaPulse 0.85s ease-in-out infinite' : 'none',
-        }}
-      >
-        {allDone ? 'Continuar →' : `Elige ${total - done} partido${total - done !== 1 ? 's' : ''} más`}
-      </button>
+      <StickyBetslip done={done} total={total} allDone={allDone} captainSet={false} urgent={urgent} onSubmit={() => allDone && setStep('bonus')} />
     </div>
   )
 
@@ -1114,7 +1355,10 @@ function PicksForm({ matches, jornada, onSubmit }: { matches: QuinielaMatch[]; j
               <p className="font-black leading-none mb-3" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem,5vw,2.8rem)', color: '#F8F8FF', letterSpacing: '-0.03em' }}>
                 ¡Predicción sellada!
               </p>
-              <p className="text-sm" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Suerte esta jornada 🤞</p>
+              <p className="text-sm mb-2" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Suerte esta jornada 🤞</p>
+              <p className="text-xs font-black inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}>
+                Si aciertas todo: hasta {matches.length * 10 + (captainIdx != null ? 10 : 0) + 100}🪙
+              </p>
             </div>
           </div>
         </div>
@@ -1129,8 +1373,11 @@ function PicksForm({ matches, jornada, onSubmit }: { matches: QuinielaMatch[]; j
       <div className="rounded-2xl p-4" style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.18)' }}>
         <div className="flex items-center gap-2 mb-3">
           <span style={{ fontSize: 18 }}>👑</span>
-          <div>
-            <p className="text-xs font-black" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>Capitán · pick que más te convences</p>
+          <div className="flex-1">
+            <p className="text-xs font-black flex items-center gap-1.5" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
+              Capitán · pick que más te convence
+              <InfoTip label="Capitán" text="Marca el partido del que más seguro estés. Si aciertas ese pick, sus puntos se doblan. Si fallas, no descuenta. Solo 1 capitán por jornada." />
+            </p>
             <p className="text-[9px]" style={{ color: '#4A3A10', fontFamily: 'var(--font-sport)' }}>Si aciertas, ganas el doble: +20🪙 en vez de +10🪙</p>
           </div>
         </div>
@@ -1278,7 +1525,7 @@ function PicksForm({ matches, jornada, onSubmit }: { matches: QuinielaMatch[]; j
           animation: 'quinielaPulse 0.85s ease-in-out infinite',
         }}
       >
-        🎯 Confirmar predicción →
+        🎯 Sellar predicción · gana hasta {matches.length * 10 + (captainIdx != null ? 10 : 0) + 100}🪙
       </button>
     </div>
   )
@@ -3353,7 +3600,7 @@ export default function QuinielaClient() {
                       })
                     }}
                   />
-                : <PicksForm matches={apiMatches} jornada={apiJornada} onSubmit={(s) => { setSaved(s); if (!user) setTimeout(() => setShowAuthBanner(true), 2000) }} />
+                : <PicksForm matches={apiMatches} jornada={apiJornada} streakCurrent={streak.current} onSubmit={(s) => { setSaved(s); if (!user) setTimeout(() => setShowAuthBanner(true), 2000) }} />
             )}
             {/* Banner de auth — aparece 2s después de enviar picks sin sesión */}
             {showAuthBanner && !user && (
