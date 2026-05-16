@@ -10,6 +10,7 @@ export function LeagueChat({ leagueId }: { leagueId: string }) {
   const [nick, setNick]       = useState(() => { try { return localStorage.getItem('ts_quiniela_nickname') ?? '' } catch { return '' } })
   const [sending, setSending] = useState(false)
   const [showNick, setShowNick] = useState(false)
+  const [error, setError]     = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const loadMsgs = useCallback(() => {
@@ -21,23 +22,51 @@ export function LeagueChat({ leagueId }: { leagueId: string }) {
 
   useEffect(() => { loadMsgs(); const t = setInterval(loadMsgs, 15_000); return () => clearInterval(t) }, [loadMsgs])
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs])
+  useEffect(() => {
+    if (!error) return
+    const t = setTimeout(() => setError(null), 4000)
+    return () => clearTimeout(t)
+  }, [error])
 
   const send = async () => {
     const msg = input.trim()
     const nickname = nick.trim() || 'Anon'
     if (!msg || sending) return
     setSending(true)
+    setError(null)
     try {
       localStorage.setItem('ts_quiniela_nickname', nickname)
-      await fetch('/api/quiniela/chat', {
+      const res = await fetch('/api/quiniela/chat', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ liga: leagueId, message: msg, nickname }),
       })
-      setInput('')
-      loadMsgs()
-    } catch { /* ignore */ }
+      if (res.status === 429) {
+        const j = await res.json().catch(() => ({})) as { error?: string; retryMs?: number }
+        const secs = Math.ceil((j.retryMs ?? 4000) / 1000)
+        setError(`${j.error ?? 'rate limit'} (${secs}s)`)
+      } else if (!res.ok) {
+        setError('No se pudo enviar')
+      } else {
+        setInput('')
+        loadMsgs()
+      }
+    } catch { setError('Sin conexión') }
     setSending(false)
+  }
+
+  const remove = async (id: string) => {
+    if (!confirm('¿Borrar este mensaje?')) return
+    try {
+      const res = await fetch(`/api/quiniela/chat?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+      if (res.ok) {
+        setMsgs(prev => prev.filter(m => m.id !== id))
+      } else if (res.status === 403 || res.status === 401) {
+        setError('Solo el autor o el owner puede borrar')
+      } else {
+        setError('No se pudo borrar')
+      }
+    } catch { setError('Sin conexión') }
   }
 
   return (
@@ -54,17 +83,32 @@ export function LeagueChat({ leagueId }: { leagueId: string }) {
           </p>
         )}
         {msgs.map(m => (
-          <div key={m.id} className="flex flex-col gap-0.5">
+          <div key={m.id} className="group flex flex-col gap-0.5 relative">
             <span className="text-[9px] font-black" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>
               {m.nickname} · {new Date(m.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
             </span>
-            <p className="text-[11px] px-2.5 py-1.5 rounded-xl inline-block max-w-full break-words" style={{ background: 'rgba(255,255,255,0.04)', color: '#C0C0D8', fontFamily: 'var(--font-display)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-[11px] px-2.5 py-1.5 rounded-xl inline-block max-w-full break-words pr-7" style={{ background: 'rgba(255,255,255,0.04)', color: '#C0C0D8', fontFamily: 'var(--font-display)', border: '1px solid rgba(255,255,255,0.06)' }}>
               {m.message}
             </p>
+            <button
+              type="button"
+              aria-label="Borrar mensaje"
+              onClick={() => remove(m.id)}
+              className="absolute bottom-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-70 focus:opacity-100 transition-opacity"
+              style={{ background: 'rgba(239,68,68,0.12)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.25)', cursor: 'pointer' }}
+            >
+              <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+            </button>
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
+
+      {error && (
+        <div role="alert" className="text-[10px] mb-1.5 px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.2)', fontFamily: 'var(--font-sport)' }}>
+          {error}
+        </div>
+      )}
 
       {/* Nickname prompt */}
       {showNick && (

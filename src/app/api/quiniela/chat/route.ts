@@ -1,12 +1,39 @@
 // Chat de ligas — mensajes sencillos por liga.
-// GET  /api/quiniela/chat?liga=XXXX&limit=30   → últimos N mensajes
-// POST /api/quiniela/chat                       → enviar mensaje
+// GET    /api/quiniela/chat?liga=XXXX&limit=30   → últimos N mensajes
+// POST   /api/quiniela/chat                       → enviar mensaje (rate-limited)
+// DELETE /api/quiniela/chat?id=...                → borrar mensaje (autor o owner liga)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 
 // Fallback in-memory si Supabase no está disponible o la tabla no existe
-const memChat = new Map<string, Array<{ id: string; nickname: string; message: string; created_at: string }>>()
+const memChat = new Map<string, Array<{ id: string; nickname: string; message: string; created_at: string; user_id?: string | null }>>()
+
+// ── Rate limit en memoria (ventana móvil) ───────────────────────
+// Single-instance: suficiente para Vercel free tier; multi-region
+// requeriría Redis. Cap por key (user_id o IP cuando no hay auth).
+const RATE_WINDOW_MS = 60_000
+const RATE_MAX = 8
+const RATE_MIN_GAP_MS = 4_000
+const rateBuckets = new Map<string, number[]>()
+function rateLimit(key: string): { ok: true } | { ok: false; retryMs: number; reason: 'gap' | 'burst' } {
+  const now = Date.now()
+  const arr = (rateBuckets.get(key) ?? []).filter(t => now - t < RATE_WINDOW_MS)
+  if (arr.length > 0 && now - arr[arr.length - 1] < RATE_MIN_GAP_MS) {
+    return { ok: false, retryMs: RATE_MIN_GAP_MS - (now - arr[arr.length - 1]), reason: 'gap' }
+  }
+  if (arr.length >= RATE_MAX) {
+    return { ok: false, retryMs: RATE_WINDOW_MS - (now - arr[0]), reason: 'burst' }
+  }
+  arr.push(now)
+  rateBuckets.set(key, arr)
+  return { ok: true }
+}
+function clientKey(req: NextRequest, userId: string | null): string {
+  if (userId) return `u:${userId}`
+  const fwd = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  return `ip:${fwd ?? 'unknown'}`
+}
 
 // Detecta errores que significan "la tabla quiniela_league_chat no existe":
 // - 42P01: Postgres "undefined_table"
@@ -55,6 +82,13 @@ export async function POST(req: NextRequest) {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const sb = await createServerSupabaseClient()
       const { data: { user } } = await sb.auth.getUser()
+      const rl = rateLimit(`${clientKey(req, user?.id ?? null)}:${ligaId}`)
+      if (!rl.ok) {
+        return NextResponse.json(
+          { error: rl.reason === 'gap' ? 'demasiado rápido — espera unos segundos' : 'demasiados mensajes — calma', retryMs: rl.retryMs },
+          { status: 429, headers: { 'retry-after': String(Math.ceil(rl.retryMs / 1000)) } },
+        )
+      }
       const nickname = (rawNick ?? user?.email?.split('@')[0] ?? 'Anon').slice(0, 24)
       const { error } = await sb.from('quiniela_league_chat').insert({
         league_id: ligaId,
@@ -74,6 +108,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Fallback in-memory
+    const rl = rateLimit(`${clientKey(req, null)}:${ligaId}`)
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: 'demasiado rápido — espera unos segundos', retryMs: rl.retryMs },
+        { status: 429, headers: { 'retry-after': String(Math.ceil(rl.retryMs / 1000)) } },
+      )
+    }
     const nickname = (rawNick ?? 'Anon').slice(0, 24)
     const msgs = memChat.get(ligaId) ?? []
     msgs.push({ id: Date.now().toString(), nickname, message: msg, created_at: new Date().toISOString() })
@@ -83,4 +124,34 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 400 })
   }
+}
+
+export async function DELETE(req: NextRequest) {
+  const id = req.nextUrl.searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    const sb = await createServerSupabaseClient()
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
+    // RLS hace el control: solo autor del mensaje o owner de la liga puede borrar.
+    const { error, count } = await sb
+      .from('quiniela_league_chat')
+      .delete({ count: 'exact' })
+      .eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if ((count ?? 0) === 0) return NextResponse.json({ error: 'forbidden or not found' }, { status: 403 })
+    return NextResponse.json({ ok: true })
+  }
+
+  // Fallback in-memory: cualquiera puede borrar (no hay auth) — solo dev/local
+  for (const [liga, msgs] of memChat) {
+    const idx = msgs.findIndex(m => m.id === id)
+    if (idx >= 0) {
+      msgs.splice(idx, 1)
+      memChat.set(liga, msgs)
+      return NextResponse.json({ ok: true })
+    }
+  }
+  return NextResponse.json({ error: 'not found' }, { status: 404 })
 }

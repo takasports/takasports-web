@@ -5,11 +5,13 @@ import { COMPETITIONS } from '@/lib/clubs'
 import { LEAGUES_KEY } from '../../lib/constants'
 import type { League, MatchResult } from '../../lib/types'
 import { LeagueExpanded } from './LeagueExpanded'
+import { LeagueShareModal } from './LeagueShareModal'
 
 export function MyLeagues({ onCreate }: { onCreate: () => void }) {
   const [leagues, setLeagues] = useState<League[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [results, setResults] = useState<MatchResult[]>([])
+  const [shareLeague, setShareLeague] = useState<League | null>(null)
 
   useEffect(() => {
     try {
@@ -80,6 +82,10 @@ export function MyLeagues({ onCreate }: { onCreate: () => void }) {
         </button>
       </div>
 
+      {shareLeague && (
+        <LeagueShareModal leagueId={shareLeague.id} leagueName={shareLeague.name} onClose={() => setShareLeague(null)} />
+      )}
+
       {leagues.map((l) => {
         const comp = COMPETITIONS.find(c => c.id === l.competitionId)
         const picksCount = Object.keys(l.picks).length
@@ -129,17 +135,18 @@ export function MyLeagues({ onCreate }: { onCreate: () => void }) {
                     Ver picks
                   </button>
                   <button
-                    onClick={() => {
-                      const text = `${window.location.origin}/quiniela?liga=${l.id}`
-                      navigator.clipboard?.writeText(text).catch(() => {})
-                    }}
+                    onClick={() => setShareLeague(l)}
+                    aria-label={`Compartir liga ${l.name}`}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black transition-opacity hover:opacity-80"
-                    style={{ background: 'rgba(255,255,255,0.04)', color: '#5A5A7A', border: '1px solid rgba(255,255,255,0.07)', fontFamily: 'var(--font-sport)' }}
+                    style={{ background: 'rgba(124,58,237,0.08)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.22)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
                   >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path d="M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V7M8 1h3v3M5 7l6-6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                      <rect x="2" y="2" width="4" height="4" stroke="currentColor" strokeWidth="1.4" />
+                      <rect x="8" y="2" width="4" height="4" stroke="currentColor" strokeWidth="1.4" />
+                      <rect x="2" y="8" width="4" height="4" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M8 8h2M8 11h2M11 8v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                     </svg>
-                    Compartir
+                    Compartir · QR
                   </button>
                 </div>
               </div>
