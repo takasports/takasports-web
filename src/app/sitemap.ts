@@ -44,6 +44,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/noticias`, lastModified: hubLastMod, changeFrequency: 'hourly', priority: 0.9 },
     { url: `${BASE_URL}/calendario`, lastModified: STATIC_LASTMOD, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE_URL}/estadisticas`, lastModified: STATIC_LASTMOD, changeFrequency: 'hourly', priority: 0.8 },
+    // Una entrada por deporte para que Google indexe cada vista por separado
+    // (cada una tiene su propio título, description, OG image dinámica y canonical).
+    { url: `${BASE_URL}/estadisticas?sport=futbol`,     lastModified: STATIC_LASTMOD, changeFrequency: 'hourly',  priority: 0.85 },
+    { url: `${BASE_URL}/estadisticas?sport=baloncesto`, lastModified: STATIC_LASTMOD, changeFrequency: 'hourly',  priority: 0.8 },
+    { url: `${BASE_URL}/estadisticas?sport=f1`,         lastModified: STATIC_LASTMOD, changeFrequency: 'daily',   priority: 0.75 },
+    { url: `${BASE_URL}/estadisticas?sport=tenis`,      lastModified: STATIC_LASTMOD, changeFrequency: 'hourly',  priority: 0.7 },
+    { url: `${BASE_URL}/estadisticas?sport=motogp`,     lastModified: STATIC_LASTMOD, changeFrequency: 'weekly',  priority: 0.7 },
+    { url: `${BASE_URL}/estadisticas?sport=ufc`,        lastModified: STATIC_LASTMOD, changeFrequency: 'weekly',  priority: 0.7 },
+    { url: `${BASE_URL}/estadisticas?sport=mundial`,    lastModified: STATIC_LASTMOD, changeFrequency: 'daily',   priority: 0.85 },
     { url: `${BASE_URL}/rankings`, lastModified: RANKINGS_LASTMOD, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE_URL}/juegos`, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly', priority: 0.75 },
     { url: `${BASE_URL}/quiniela`, lastModified: STATIC_LASTMOD, changeFrequency: 'daily', priority: 0.7 },

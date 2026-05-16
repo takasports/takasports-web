@@ -1298,23 +1298,39 @@ export async function getStandingsData(): Promise<StatsStandingsResponse> {
   return buildPayload()
 }
 
+// Shard de la respuesta para un solo sport (reduce tamaño SSR ~80%).
+// Reutilizado por GET y por page.tsx en initialData cuando se entra a
+// un /estadisticas?sport=X (links de redes/SEO).
+export function shardStandingsForSport(
+  data: StatsStandingsResponse,
+  sport: string,
+): Partial<StatsStandingsResponse> & { updatedAt: string; meta: Record<string, BlockMeta> } {
+  const keys = SPORT_KEYS[sport]
+  if (!keys) return data
+  const meta: Record<string, BlockMeta> = {}
+  for (const k of keys) if (data.meta[k as string]) meta[k as string] = data.meta[k as string]
+  // También copiamos meta de los blockIds que se manejan por blockId directo
+  // (ej. divisiones UFC ufc-hw, ufc-lhw…). Filtramos por prefijo del sport.
+  const sportPrefix = sport === 'ufc' ? 'ufc-' : sport === 'futbol' ? 'tabla-' : ''
+  if (sportPrefix) {
+    for (const k of Object.keys(data.meta)) {
+      if (k.startsWith(sportPrefix)) meta[k] = data.meta[k]
+    }
+  }
+  const shard: Partial<StatsStandingsResponse> & { updatedAt: string; meta: Record<string, BlockMeta> } = {
+    meta, updatedAt: data.updatedAt,
+  }
+  for (const k of keys) {
+    ;(shard as Record<string, unknown>)[k as string] = (data as unknown as Record<string, unknown>)[k as string]
+  }
+  return shard
+}
+
 export async function GET(req: NextRequest) {
   const data = await getStandingsData()
-
-  // Optional sport sharding via ?sport=
   const sport = req.nextUrl.searchParams.get('sport')?.toLowerCase()
   if (sport && SPORT_KEYS[sport]) {
-    const keys = SPORT_KEYS[sport]
-    const meta: Record<string, BlockMeta> = {}
-    for (const k of keys) if (data.meta[k as string]) meta[k as string] = data.meta[k as string]
-    const shard: Partial<StatsStandingsResponse> & { updatedAt: string; meta: Record<string, BlockMeta> } = {
-      meta, updatedAt: data.updatedAt,
-    }
-    for (const k of keys) {
-      ;(shard as Record<string, unknown>)[k as string] = (data as unknown as Record<string, unknown>)[k as string]
-    }
-    return NextResponse.json(shard)
+    return NextResponse.json(shardStandingsForSport(data, sport))
   }
-
   return NextResponse.json(data)
 }

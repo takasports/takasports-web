@@ -1,6 +1,6 @@
 import dynamic from 'next/dynamic'
 import type { Metadata } from 'next'
-import { getStandingsData } from '@/app/api/stats/standings/route'
+import { getStandingsData, shardStandingsForSport } from '@/app/api/stats/standings/route'
 import { SITE_URL } from '@/lib/constants'
 import EstadisticasLoading from './loading'
 
@@ -67,10 +67,22 @@ export async function generateMetadata({
   }
 }
 
-export default async function EstadisticasPage() {
+export default async function EstadisticasPage({
+  searchParams,
+}: { searchParams: Promise<{ sport?: string }> }) {
   let initialData = null
   try {
-    initialData = await getStandingsData()
+    const full = await getStandingsData()
+    const sp = await searchParams
+    const sport = (sp?.sport ?? '').toLowerCase()
+    // Si vienen a un sport específico (link compartido / SEO), shardear el
+    // payload SSR a solo ese sport. Reduce HTML ~80% (320KB → ~50KB).
+    // El cliente hará un fetch full en background tras hidratar.
+    if (sport && sport !== 'resumen') {
+      initialData = shardStandingsForSport(full, sport) as typeof full
+    } else {
+      initialData = full
+    }
   } catch (err) {
     console.error('[estadisticas] SSR data fetch failed:', err)
   }
