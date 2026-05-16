@@ -1,54 +1,30 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
-import {
-  QUINIELA_PICKS_KEY,
-} from '@/components/QuinielaModule'
+import { QUINIELA_PICKS_KEY } from '@/components/QuinielaModule'
 import type { QuinielaMatch, QuinielaSaved, Pick } from '@/components/QuinielaModule'
-import { getClubColors, COMPETITIONS } from '@/lib/clubs'
-import type { Competition } from '@/lib/clubs'
 import { nameMatch } from '@/lib/quiniela'
-import type { Confidence } from '@/lib/quiniela'
-import { CONFIDENCE_LABELS } from '@/lib/quiniela'
 import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import {
-  PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW,
-  BADGES_KEY, COINS_KEY, COINS_TXN_KEY, COINS_INITIAL,
-  STREAK_KEY, TUTORED_KEY, LEAGUES_KEY, ONBOARDING_STEPS,
+  BADGES_KEY, COINS_TXN_KEY, COINS_INITIAL,
+  STREAK_KEY, LEAGUES_KEY,
 } from './lib/constants'
-import type { BadgeId, CoinTxn, League, MatchResult } from './lib/types'
-import { BADGE_DEFS } from './lib/types'
+import type { BadgeId, CoinTxn, League } from './lib/types'
 import {
-  getISOWeek, computeStreak, isCorrect, teamForm, communityTrend,
-  getCoins, addCoins, computeCoinRewards, computeNewBadges,
-  communityLeaderboard, communityConsensus, aiSuggest, scorelinesFor,
-  getMatchContext, getDivision, scoreForMember,
+  computeStreak, isCorrect,
+  getCoins, addCoins, computeNewBadges,
+  getDivision,
 } from './lib/helpers'
-import { usePushSubscription, useMatchCountdown } from './lib/hooks'
-import { InfoTip } from './components/atoms/InfoTip'
-import { ProgressBar } from './components/atoms/ProgressBar'
-import { WinProbabilityBar } from './components/atoms/WinProbabilityBar'
-import { ConfettiPiece } from './components/atoms/ConfettiPiece'
-import { TeamBadge, JerseyIcon } from './components/atoms/TeamBadge'
-import { GoogleSignInButton } from './components/atoms/GoogleSignInButton'
-import { MatchCard } from './components/match/MatchCard'
-import { ConsensusBar } from './components/match/ConsensusBar'
-import { ResultToast } from './components/match/ResultToast'
+import { usePushSubscription } from './lib/hooks'
 import { PicksForm } from './components/picks/PicksForm'
 import { PicksSummary } from './components/picks/PicksSummary'
-import { OnboardingSheet } from './components/picks/OnboardingSheet'
-import { StickyBetslip } from './components/picks/StickyBetslip'
-import { StreakHero } from './components/picks/StreakHero'
-import { QuickPickIA } from './components/picks/QuickPickIA'
-import { RevealCeremony } from './components/picks/RevealCeremony'
 import { MyLeagues } from './components/leagues/MyLeagues'
 import { CreateLeagueModal } from './components/leagues/CreateLeagueModal'
 import { BadgesPanel } from './components/panels/BadgesPanel'
@@ -56,10 +32,6 @@ import { CoinWallet } from './components/panels/CoinWallet'
 import { LeaderboardPanel } from './components/panels/LeaderboardPanel'
 import { SeasonPanel } from './components/panels/SeasonPanel'
 import { Rules } from './components/panels/Rules'
-
-// ─────────────────────────────────────────────────────────────────
-// Formulario — picks de la quiniela oficial
-// ─────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────
 // Page
