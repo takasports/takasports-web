@@ -13,16 +13,15 @@ import { nameMatch } from '@/lib/quiniela'
 import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import {
-  BADGES_KEY, COINS_TXN_KEY, COINS_INITIAL,
+  BADGES_KEY,
   STREAK_KEY, LEAGUES_KEY,
 } from './lib/constants'
-import type { BadgeId, CoinTxn, League } from './lib/types'
+import type { BadgeId, League } from './lib/types'
 import {
-  computeStreak, isCorrect,
-  getCoins, addCoins, computeNewBadges,
+  computeStreak, isCorrect, computeNewBadges,
   getDivision,
 } from './lib/helpers'
-import { usePushSubscription } from './lib/hooks'
+import { usePushSubscription, useCoins } from './lib/hooks'
 import { PicksForm } from './components/picks/PicksForm'
 import { PicksSummary } from './components/picks/PicksSummary'
 import { MyLeagues } from './components/leagues/MyLeagues'
@@ -55,10 +54,9 @@ export default function QuinielaClient() {
   const [streak, setStreak]       = useState<{ current: number; best: number }>({ current: 0, best: 0 })
   const [badges, setBadges]       = useState<BadgeId[]>([])
   const [myScore, setMyScore]     = useState<number | undefined>(undefined)
-  const [coinBalance, setCoinBalance] = useState<number>(COINS_INITIAL)
-  const [coinTxns, setCoinTxns]   = useState<CoinTxn[]>([])
   const [user, setUser]           = useState<User | null>(null)
   const [showAuthBanner, setShowAuthBanner] = useState(false)
+  const coins = useCoins(user)
   const push = usePushSubscription()
 
   useEffect(() => {
@@ -105,11 +103,6 @@ export default function QuinielaClient() {
       const raw = localStorage.getItem(BADGES_KEY)
       if (raw) setBadges(JSON.parse(raw))
     } catch { /* ignore */ }
-    setCoinBalance(getCoins())
-    try {
-      const raw = localStorage.getItem(COINS_TXN_KEY)
-      if (raw) setCoinTxns(JSON.parse(raw))
-    } catch { /* ignore */ }
   }, [])
 
   // ── Auth: escucha sesión Supabase + migra localStorage en primer login ──
@@ -124,13 +117,16 @@ export default function QuinielaClient() {
       // Si acaba de hacer login, migrar datos localStorage → Supabase
       if (nextUser && !prevUser) {
         try {
-          const coinBal = getCoins()
+          // Lee el balance local (legacy localStorage) y se lo manda al server
+          // para que migre como una sola transacción de monedas (audit RPC).
+          const raw = localStorage.getItem('ts_quiniela_coins')
+          const coinBal = raw ? parseInt(raw, 10) : 0
           const badgeList: string[] = JSON.parse(localStorage.getItem(BADGES_KEY) ?? '[]')
           fetch('/api/quiniela/migrate', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ coinBalance: coinBal, badges: badgeList }),
-          }).catch(() => {})
+          }).then(() => coins.refresh()).catch(() => {})
         } catch { /* ignore */ }
         setShowAuthBanner(false)
       }
@@ -334,13 +330,13 @@ export default function QuinielaClient() {
                     matches={apiMatches}
                     onReset={handleReset}
                     onUpdateSaved={(s) => setSaved(s)}
-                    onScore={(correct, total, results) => {
+                    coins={coins}
+                    onScore={async (correct, total, results) => {
                       setMyScore(correct)
                       setHistory(prev => {
                         if (prev.some(h => h.jornada === saved!.jornada)) return prev
                         const next = [...prev, { jornada: saved!.jornada, correct, total }]
                         try { localStorage.setItem('ts_quiniela_history', JSON.stringify(next)) } catch { /* ignore */ }
-                        // Compute new badges
                         setBadges(existing => {
                           const picksWithData = saved!.picks.map(p => ({
                             ...p,
@@ -352,43 +348,48 @@ export default function QuinielaClient() {
                           try { localStorage.setItem(BADGES_KEY, JSON.stringify(merged)) } catch { /* ignore */ }
                           return merged
                         })
-                        // Award coins — capitán requiere comparar contra el resultado REAL del partido del capitán
-                        const base = correct * 10
-                        let captainBonus = 0
-                        if (saved!.captainIdx != null) {
-                          const capPick = saved!.picks[saved!.captainIdx]
-                          if (capPick) {
-                            const capResult = results.find(r => nameMatch(r.home, capPick.home) && nameMatch(r.away, capPick.away))
-                            if (capResult && isCorrect(capPick.pick as Pick, capResult.outcome)) {
-                              captainBonus = 10 // duplica los 10 que ya dio "base" para ese pick
+                        return next
+                      })
+                      // Server es la fuente única para coins. Calcula breakdown
+                      // autoritativo y, si hay sesión, sube monedas vía RPC.
+                      // Si no hay sesión, replicamos en localStorage con el
+                      // breakdown oficial (no cálculo local).
+                      try {
+                        const res = await fetch('/api/quiniela/score', {
+                          method: 'POST',
+                          headers: { 'content-type': 'application/json' },
+                          body: JSON.stringify({
+                            jornada: saved!.jornada,
+                            picks: saved!.picks,
+                            captainIdx: saved!.captainIdx,
+                          }),
+                        })
+                        if (res.ok) {
+                          const json = await res.json() as { breakdown?: { totalCoins: number; hits: number; pleno: boolean } }
+                          if (json.breakdown && json.breakdown.totalCoins > 0) {
+                            if (user) {
+                              // Server ya escribió via RPC: refresca balance/txns
+                              await coins.refresh()
+                            } else {
+                              // Invitado: replicamos en localStorage usando breakdown autoritativo
+                              const reasonParts = [`${json.breakdown.hits} aciertos`]
+                              if (json.breakdown.pleno) reasonParts.push('¡PLENO!')
+                              await coins.add(json.breakdown.totalCoins, `Quiniela ${saved!.jornada}: ${reasonParts.join(' · ')}`)
                             }
                           }
                         }
-                        const pleno = correct === total && total > 0 ? 100 : 0
-                        const earned = base + captainBonus + pleno
-                        if (earned > 0) {
-                          const reasons = [`${correct} picks correctos (×10)`]
-                          if (captainBonus) reasons.push('Capitán acertado +10')
-                          if (pleno) reasons.push('¡Pleno! +100')
-                          const newBal = addCoins(earned, reasons.join(' · '))
-                          setCoinBalance(newBal)
-                          setCoinTxns(JSON.parse(localStorage.getItem(COINS_TXN_KEY) ?? '[]'))
-                          // Sincroniza al servidor (audit + RPC add_coins) — opcional, falla silenciosamente
-                          fetch('/api/quiniela/score', {
-                            method: 'POST',
-                            headers: { 'content-type': 'application/json' },
-                            body: JSON.stringify({
-                              jornada: saved!.jornada,
-                              picks: saved!.picks,
-                              captainIdx: saved!.captainIdx,
-                            }),
-                          }).catch(() => { /* offline / sin sesión, OK */ })
-                        }
-                        return next
-                      })
+                      } catch { /* offline OK */ }
+                      // Suprime `results` warn — lo deja disponible por si onScore se extiende
+                      void results
                     }}
                   />
-                : <PicksForm matches={apiMatches} jornada={apiJornada} streakCurrent={streak.current} onSubmit={(s) => { setSaved(s); if (!user) setTimeout(() => setShowAuthBanner(true), 2000) }} />
+                : <PicksForm
+                    matches={apiMatches}
+                    jornada={apiJornada}
+                    streakCurrent={streak.current}
+                    onParticipation={(j) => { void coins.add(5, `Participación ${j}`) }}
+                    onSubmit={(s) => { setSaved(s); if (!user) setTimeout(() => setShowAuthBanner(true), 2000) }}
+                  />
             )}
             {/* Banner de auth — aparece 2s después de enviar picks sin sesión */}
             {showAuthBanner && !user && (
@@ -440,7 +441,7 @@ export default function QuinielaClient() {
           <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 flex flex-col gap-5">
 
             {/* Monedas wallet */}
-            <CoinWallet balance={coinBalance} txns={coinTxns} />
+            <CoinWallet balance={coins.balance} txns={coins.txns} />
 
             {/* División del jugador */}
             {(() => {

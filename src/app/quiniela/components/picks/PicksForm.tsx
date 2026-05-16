@@ -8,7 +8,7 @@ import type { Confidence } from '@/lib/quiniela'
 import { CONFIDENCE_LABELS } from '@/lib/quiniela'
 import { PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW, TUTORED_KEY, LEAGUES_KEY, STREAK_KEY } from '../../lib/constants'
 import type { League } from '../../lib/types'
-import { getISOWeek, addCoins, scorelinesFor } from '../../lib/helpers'
+import { getISOWeek, scorelinesFor } from '../../lib/helpers'
 import { InfoTip } from '../atoms/InfoTip'
 import { ProgressBar } from '../atoms/ProgressBar'
 import { TeamBadge } from '../atoms/TeamBadge'
@@ -19,7 +19,7 @@ import { StreakHero } from './StreakHero'
 import { QuickPickIA } from './QuickPickIA'
 import { StickyBetslip } from './StickyBetslip'
 
-export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0 }: { matches: QuinielaMatch[]; jornada: string; onSubmit: (s: QuinielaSaved) => void; streakCurrent?: number }) {
+export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onParticipation }: { matches: QuinielaMatch[]; jornada: string; onSubmit: (s: QuinielaSaved) => void; streakCurrent?: number; onParticipation?: (jornada: string) => void }) {
   const [picks, setPicks]             = useState<Record<number, Pick>>({})
   const [captainIdx, setCaptainIdx]   = useState<number | null>(null)
   const [exactScores, setExactScores] = useState<Record<number, { home: number; away: number }>>({})
@@ -92,7 +92,7 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0 }: { m
         localStorage.setItem(STREAK_KEY, JSON.stringify([...weeks, thisWeek]))
       }
     } catch { /* ignore */ }
-    addCoins(5, `Participación ${jornada}`)
+    onParticipation?.(jornada)
     setTimeout(() => { setSubmitting(false); onSubmit(saved) }, 1800)
   }
 
@@ -199,7 +199,7 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0 }: { m
             odds={m.odds}
             isoDate={m.isoDate}
           />
-          {done >= 3 && <ConsensusBar match={m} userPick={picks[i]} />}
+          {done >= 3 && <ConsensusBar match={m} userPick={picks[i]} jornada={jornada} />}
         </div>
       ))}
 

@@ -1,7 +1,6 @@
 import type { Pick } from '@/components/QuinielaModule'
 import type { QuinielaMatch } from '@/components/QuinielaModule'
-import { COINS_KEY, COINS_TXN_KEY, COINS_INITIAL } from './constants'
-import type { CoinTxn, BadgeId, MatchResult } from './types'
+import type { BadgeId, MatchResult } from './types'
 
 // ─────────────────────────────────────────────────────────────────
 // ISO week helper
@@ -67,27 +66,9 @@ export function communityTrend(match: QuinielaMatch, tick: number): { d1: number
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Sistema de monedas internas
+// Sistema de monedas internas — ahora vive en `useCoins` (./hooks).
+// Estas funciones legacy se eliminaron; usar el hook en componentes.
 // ─────────────────────────────────────────────────────────────────
-export function getCoins(): number {
-  try {
-    const v = localStorage.getItem(COINS_KEY)
-    if (v !== null) return parseInt(v, 10)
-    localStorage.setItem(COINS_KEY, String(COINS_INITIAL))
-    return COINS_INITIAL
-  } catch { return 0 }
-}
-
-export function addCoins(amount: number, reason: string): number {
-  try {
-    const next = Math.max(0, getCoins() + amount)
-    localStorage.setItem(COINS_KEY, String(next))
-    const txns: CoinTxn[] = JSON.parse(localStorage.getItem(COINS_TXN_KEY) ?? '[]')
-    txns.unshift({ amount, reason, ts: Date.now() })
-    localStorage.setItem(COINS_TXN_KEY, JSON.stringify(txns.slice(0, 20)))
-    return next
-  } catch { return 0 }
-}
 
 export function computeCoinRewards(
   picks: Array<{ pick: string; exactHome?: number; exactAway?: number }>,

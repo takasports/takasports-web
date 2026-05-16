@@ -1,6 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { createClient } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
+import { COINS_KEY, COINS_TXN_KEY, COINS_INITIAL } from './constants'
+import type { CoinTxn } from './types'
 
 // ─────────────────────────────────────────────────────────────────
 // Hook: push notification subscription
@@ -89,4 +93,112 @@ export function useMatchCountdown(isoDate?: string) {
     return { started: false, soon: true, label: `${h}h ${m}m` }
   }
   return { started: false, soon: false, label: null }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Hook: monedas — fuente única (BD si auth, localStorage si invitado)
+//
+// Server side es la fuente de verdad cuando hay sesión: el balance se
+// lee de la vista `quiniela_coin_balance` y las transacciones se
+// graban vía RPC `add_coins` (cap server + audit). Sin sesión se
+// mantiene el comportamiento legacy con localStorage para no romper
+// el modo invitado.
+// ─────────────────────────────────────────────────────────────────
+export interface UseCoinsApi {
+  balance: number
+  txns: CoinTxn[]
+  ready: boolean
+  source: 'db' | 'local'
+  /** Suma (o resta) monedas. En modo BD, llama al RPC y refresca. */
+  add: (amount: number, reason: string, context?: Record<string, unknown>) => Promise<number>
+  refresh: () => Promise<void>
+}
+
+function readLocalBalance(): number {
+  try {
+    const v = localStorage.getItem(COINS_KEY)
+    if (v !== null) return parseInt(v, 10)
+    localStorage.setItem(COINS_KEY, String(COINS_INITIAL))
+    return COINS_INITIAL
+  } catch { return 0 }
+}
+function readLocalTxns(): CoinTxn[] {
+  try { return JSON.parse(localStorage.getItem(COINS_TXN_KEY) ?? '[]') } catch { return [] }
+}
+function writeLocal(balance: number, txn: CoinTxn) {
+  try {
+    localStorage.setItem(COINS_KEY, String(Math.max(0, balance)))
+    const txns = readLocalTxns()
+    txns.unshift(txn)
+    localStorage.setItem(COINS_TXN_KEY, JSON.stringify(txns.slice(0, 20)))
+  } catch { /* ignore */ }
+}
+
+export function useCoins(user: User | null): UseCoinsApi {
+  const [balance, setBalance] = useState<number>(COINS_INITIAL)
+  const [txns, setTxns] = useState<CoinTxn[]>([])
+  const [ready, setReady] = useState(false)
+  const source: 'db' | 'local' = user ? 'db' : 'local'
+  const fetching = useRef(false)
+
+  const refresh = useCallback(async () => {
+    if (!user) {
+      setBalance(readLocalBalance())
+      setTxns(readLocalTxns())
+      setReady(true)
+      return
+    }
+    if (fetching.current) return
+    fetching.current = true
+    try {
+      const res = await fetch('/api/quiniela/coins', { cache: 'no-store' })
+      if (res.ok) {
+        const json = await res.json() as { balance: number | null; txns: Array<{ amount: number; reason: string; context?: Record<string, unknown>; created_at: string }> }
+        setBalance(json.balance ?? 0)
+        setTxns((json.txns ?? []).map(t => ({ amount: t.amount, reason: t.reason, ts: new Date(t.created_at).getTime() })))
+      }
+    } catch { /* keep current */ }
+    finally {
+      fetching.current = false
+      setReady(true)
+    }
+  }, [user])
+
+  useEffect(() => { void refresh() }, [refresh])
+
+  const add = useCallback(async (amount: number, reason: string, context?: Record<string, unknown>): Promise<number> => {
+    if (amount === 0) return balance
+    // Modo invitado: localStorage como antes (sin BD)
+    if (!user) {
+      const next = Math.max(0, readLocalBalance() + amount)
+      writeLocal(next, { amount, reason, ts: Date.now() })
+      setBalance(next)
+      setTxns(readLocalTxns())
+      return next
+    }
+    // Modo auth: RPC server (audit + cap). Reflejamos optimistamente.
+    const sb = createClient()
+    if (!sb) return balance
+    const optimistic = Math.max(0, balance + amount)
+    setBalance(optimistic)
+    setTxns(prev => [{ amount, reason, ts: Date.now() }, ...prev].slice(0, 50))
+    try {
+      const { error } = await sb.rpc('add_coins', {
+        p_amount: amount,
+        p_reason: reason,
+        p_context: context ?? {},
+      })
+      if (error) {
+        // Rollback optimistic update y refresca
+        await refresh()
+        return balance
+      }
+    } catch {
+      await refresh()
+      return balance
+    }
+    return optimistic
+  }, [user, balance, refresh])
+
+  return { balance, txns, ready, source, add, refresh }
 }

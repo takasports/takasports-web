@@ -4,9 +4,10 @@ import { useState, useEffect, useRef } from 'react'
 import { QUINIELA_PICKS_KEY } from '@/components/QuinielaModule'
 import type { QuinielaMatch, QuinielaSaved, Pick } from '@/components/QuinielaModule'
 import { nameMatch } from '@/lib/quiniela'
-import { LEAGUES_KEY, COINS_INITIAL } from '../../lib/constants'
+import { LEAGUES_KEY } from '../../lib/constants'
 import type { League, MatchResult } from '../../lib/types'
-import { isCorrect, getCoins, addCoins } from '../../lib/helpers'
+import { isCorrect } from '../../lib/helpers'
+import type { UseCoinsApi } from '../../lib/hooks'
 import { MatchCard } from '../match/MatchCard'
 import { ConsensusBar } from '../match/ConsensusBar'
 import { ResultToast } from '../match/ResultToast'
@@ -14,12 +15,13 @@ import { RevealCeremony } from './RevealCeremony'
 
 interface ServerMember { nickname: string; picks: Record<number, string> }
 
-export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved }: {
+export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, coins }: {
   saved: QuinielaSaved
   matches: QuinielaMatch[]
   onReset: () => void
   onScore?: (correct: number, total: number, results: MatchResult[]) => void
   onUpdateSaved?: (s: QuinielaSaved) => void
+  coins: UseCoinsApi
 }) {
   const [confirmReset, setConfirmReset] = useState(false)
   const [results, setResults] = useState<MatchResult[]>([])
@@ -44,9 +46,7 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved }
     try { return typeof window !== 'undefined' && !!localStorage.getItem(COMODIN_KEY) } catch { return false }
   })
   const [comodinTarget, setComodinTarget] = useState<number | null>(null)
-  const [coinBalance, setCoinBalance] = useState(() => {
-    try { return typeof window !== 'undefined' ? getCoins() : COINS_INITIAL } catch { return COINS_INITIAL }
-  })
+  const coinBalance = coins.balance
 
   useEffect(() => {
     // Load friend picks from first joined league
@@ -149,8 +149,7 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved }
     const newSaved = { ...saved, picks: newPicks }
     try { localStorage.setItem(QUINIELA_PICKS_KEY, JSON.stringify(newSaved)) } catch {}
     onUpdateSaved?.(newSaved)
-    const newBalance = addCoins(-COMODIN_COST, 'Comodín usado')
-    setCoinBalance(newBalance)
+    void coins.add(-COMODIN_COST, 'Comodín usado')
     setComodinUsed(true)
     setComodinTarget(null)
     try { localStorage.setItem(COMODIN_KEY, '1') } catch {}
@@ -306,7 +305,7 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved }
               />
             </div>
             {/* Consenso de la comunidad */}
-            <ConsensusBar match={matchData} userPick={p.pick as Pick} />
+            <ConsensusBar match={matchData} userPick={p.pick as Pick} jornada={saved.jornada} />
           </div>
         )
       })}

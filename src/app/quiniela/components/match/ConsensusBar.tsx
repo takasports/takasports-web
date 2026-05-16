@@ -3,16 +3,58 @@
 import { useState, useEffect } from 'react'
 import type { QuinielaMatch, Pick } from '@/components/QuinielaModule'
 import { communityConsensus, communityTrend } from '../../lib/helpers'
+import { nameMatch } from '@/lib/quiniela'
 
-export function ConsensusBar({ match, userPick }: { match: QuinielaMatch; userPick: Pick | undefined }) {
+interface ConsensusRow { home: string; away: string; p1: number; px: number; p2: number; total: number }
+
+// Cache por jornada — un fetch por sesión, compartido entre cards
+const cache = new Map<string, Promise<ConsensusRow[]>>()
+function loadConsensus(jornada: string): Promise<ConsensusRow[]> {
+  const cached = cache.get(jornada)
+  if (cached) return cached
+  const p = fetch(`/api/quiniela/consensus?jornada=${encodeURIComponent(jornada)}`, { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : { rows: [] })
+    .then(j => (j.rows ?? []) as ConsensusRow[])
+    .catch(() => [] as ConsensusRow[])
+  cache.set(jornada, p)
+  return p
+}
+
+// Mínimo de votos para mostrar datos reales; por debajo, fallback heurístico
+const REAL_MIN_VOTES = 5
+
+export function ConsensusBar({ match, userPick, jornada }: { match: QuinielaMatch; userPick: Pick | undefined; jornada?: string }) {
   const [tick, setTick] = useState(() => Math.floor(Date.now() / 180_000))
+  const [real, setReal] = useState<ConsensusRow | null>(null)
+
   useEffect(() => {
     const t = setInterval(() => setTick(Math.floor(Date.now() / 180_000)), 30_000)
     return () => clearInterval(t)
   }, [])
 
-  const { p1, pX, p2 } = communityConsensus(match)
-  const { d1, dX, d2 } = communityTrend(match, tick)
+  useEffect(() => {
+    if (!jornada) return
+    let cancelled = false
+    loadConsensus(jornada).then(rows => {
+      if (cancelled) return
+      const found = rows.find(r => nameMatch(r.home, match.home) && nameMatch(r.away, match.away))
+      if (found && found.total >= REAL_MIN_VOTES) setReal(found)
+    })
+    return () => { cancelled = true }
+  }, [jornada, match.home, match.away])
+
+  const useReal = real !== null
+  let p1: number, pX: number, p2: number
+  if (useReal && real) {
+    const tot = real.p1 + real.px + real.p2 || 1
+    p1 = Math.round((real.p1 / tot) * 100)
+    pX = Math.round((real.px / tot) * 100)
+    p2 = 100 - p1 - pX
+  } else {
+    const c = communityConsensus(match)
+    p1 = c.p1; pX = c.pX; p2 = c.p2
+  }
+  const { d1, dX, d2 } = useReal ? { d1: 0, dX: 0, d2: 0 } : communityTrend(match, tick)
   const segs: { key: Pick; pct: number; color: string; delta: number }[] = [
     { key: '1', pct: p1, color: '#22c55e', delta: d1 },
     { key: 'X', pct: pX, color: '#f59e0b', delta: dX },
@@ -23,12 +65,17 @@ export function ConsensusBar({ match, userPick }: { match: QuinielaMatch; userPi
     <div className="rounded-b-2xl px-5 pb-3.5 pt-2.5" style={{ background: 'rgba(255,255,255,0.012)', border: '1px solid rgba(255,255,255,0.06)', borderTop: 'none' }}>
       <div className="flex items-center justify-between mb-2">
         <p className="text-[7.5px] font-black uppercase tracking-widest" style={{ color: '#252538', fontFamily: 'var(--font-sport)' }}>
-          Comunidad
+          {useReal ? `Comunidad · ${real!.total} votos` : 'Comunidad'}
         </p>
-        <span className="text-[7px] font-black px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.15)', fontFamily: 'var(--font-sport)' }}>
-          <span className="w-1 h-1 rounded-full bg-red-400 inline-block animate-pulse mr-0.5" />
-          EN VIVO
-        </span>
+        {useReal ? (
+          <span className="text-[7px] font-black px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.08)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.18)', fontFamily: 'var(--font-sport)' }}>
+            REAL
+          </span>
+        ) : (
+          <span className="text-[7px] font-black px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.08)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.18)', fontFamily: 'var(--font-sport)' }}>
+            ESTIMADO
+          </span>
+        )}
       </div>
       <div className="flex rounded overflow-hidden mb-1.5" style={{ height: 5, gap: 1 }}>
         {segs.map(s => (
