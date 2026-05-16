@@ -10,6 +10,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import ShareResultButton from '@/components/games/ShareResultButton'
+import PostGameResultModal from '@/components/games/PostGameResultModal'
 
 // ── Tipos y datos ─────────────────────────────────────────────
 
@@ -718,6 +719,23 @@ export default function SopaCracksPage() {
           </aside>
         </div>
       </main>
+
+      {allFound && (
+        <PostGameResultModal
+          gameId="sopacracks"
+          period={currentWeekISO()}
+          accent="#6EE7B7"
+          leaderboardSlug="sopacracks"
+          onClose={() => { /* abre una vez por semana */ }}
+          play={{
+            game_id:     'sopacracks',
+            period:      currentWeekISO(),
+            score:       puzzle.words.length * 10,
+            payload:     { found: puzzle.words.length, total: puzzle.words.length, seconds },
+            duration_ms: seconds * 1000,
+          } as GamePlay}
+        />
+      )}
 
       <Footer />
       <ScrollToTop />

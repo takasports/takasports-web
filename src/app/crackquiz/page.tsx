@@ -12,6 +12,7 @@ import { TrophyIcon, FireIcon, ClapIcon, FlexIcon } from '@/components/icons/Gam
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import ShareResultButton from '@/components/games/ShareResultButton'
+import PostGameResultModal from '@/components/games/PostGameResultModal'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -677,14 +678,33 @@ export default function CrackQuizPage() {
         )}
 
         {phase === 'result' && (
-          <ResultScreen
-            score={score}
-            correct={answers.filter((a, i) => questions[i] && a.selected === questions[i].correctIndex).length}
-            answers={answers}
-            questions={questions}
-            stored={stored}
-            onHome={() => setPhase('idle')}
-          />
+          <>
+            <ResultScreen
+              score={score}
+              correct={answers.filter((a, i) => questions[i] && a.selected === questions[i].correctIndex).length}
+              answers={answers}
+              questions={questions}
+              stored={stored}
+              onHome={() => setPhase('idle')}
+            />
+            <PostGameResultModal
+              gameId="crackquiz"
+              period={currentDayISO()}
+              accent="#FCD34D"
+              onClose={() => { /* el modal solo se abre una vez por periodo */ }}
+              play={{
+                game_id:     'crackquiz',
+                period:      currentDayISO(),
+                score,
+                payload:     {
+                  correct: answers.filter((a, i) => questions[i] && a.selected === questions[i].correctIndex).length,
+                  total:   QUESTIONS_PER_ROUND,
+                  streak:  stored?.streak ?? 0,
+                },
+                duration_ms: null,
+              } as GamePlay}
+            />
+          </>
         )}
       </main>
       <Footer />

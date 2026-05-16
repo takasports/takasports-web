@@ -12,6 +12,7 @@ import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag } from 
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import ShareResultButton from '@/components/games/ShareResultButton'
+import MyPositionBanner from '@/components/games/MyPositionBanner'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -551,6 +552,8 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
                   </span>
                 </div>
               )}
+
+              <MyPositionBanner gameId="takagrid" period={dayKey} accent={ACCENT} />
 
               <div className="grid grid-cols-3 gap-2 w-full">
                 <button onClick={handleShare} className="py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5"

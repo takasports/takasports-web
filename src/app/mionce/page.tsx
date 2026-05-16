@@ -10,8 +10,9 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { searchPlayers, getPlayerById, type Player, type PlayerPosition } from '@/lib/players-catalog'
 import { getWeeklyChallenge, type FormationId, type Challenge } from '@/lib/mionce-challenges'
 import { CountryFlag } from '@/components/icons/GameIcons'
-import { recordPlay, currentWeekISO } from '@/lib/games-store'
+import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
+import PostGameResultModal from '@/components/games/PostGameResultModal'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -1174,6 +1175,22 @@ export default function MiOncePage() {
           </aside>
         </div>
       </main>
+
+      {isComplete && (
+        <PostGameResultModal
+          gameId="mionce"
+          period={currentWeekISO()}
+          accent="#93C5FD"
+          onClose={() => { /* abre una vez por semana */ }}
+          play={{
+            game_id:     'mionce',
+            period:      currentWeekISO(),
+            score:       filledCount * 10,
+            payload:     { formation, filled: filledCount },
+            duration_ms: null,
+          } as GamePlay}
+        />
+      )}
 
       {/* Modal */}
       {activeSlot && (
