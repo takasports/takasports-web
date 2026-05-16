@@ -1,0 +1,9106 @@
+{
+  "Liga F": {
+    "tier": 1,
+    "players": [
+      {
+        "player": "Carla Abdon Naval",
+        "pos": "GK",
+        "min": 450,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Zipporah Agama",
+        "pos": "FW",
+        "min": 394,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Daniela Agote",
+        "pos": "MF,FW",
+        "min": 1857,
+        "g": 6,
+        "a": 3
+      },
+      {
+        "player": "Aiara Aguirrezabala",
+        "pos": "DF,MF",
+        "min": 1870,
+        "g": 6,
+        "a": 4
+      },
+      {
+        "player": "Laia Aleixandri",
+        "pos": "DF,MF",
+        "min": 862,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "María Alharilla Casado",
+        "pos": "DF,MF",
+        "min": 2103,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Paulina Ali",
+        "pos": "DF",
+        "min": 392,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Eva Alonso",
+        "pos": "DF",
+        "min": 2345,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Meritxell Alsina",
+        "pos": "GK",
+        "min": 270,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Arene Altonaga",
+        "pos": "MF",
+        "min": 1743,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Andrea Álvarez",
+        "pos": "FW,MF",
+        "min": 1259,
+        "g": 6,
+        "a": 2
+      },
+      {
+        "player": "Astrid Álvarez",
+        "pos": "DF,MF",
+        "min": 1822,
+        "g": 1,
+        "a": 4
+      },
+      {
+        "player": "Isabel Álvarez",
+        "pos": "DF",
+        "min": 2149,
+        "g": 2,
+        "a": 4
+      },
+      {
+        "player": "Bernadette Amani",
+        "pos": "MF",
+        "min": 1076,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Jone Amezaga",
+        "pos": "FW",
+        "min": 852,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Bella Andersson",
+        "pos": "DF",
+        "min": 1215,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Nataša Andonova",
+        "pos": "MF,FW",
+        "min": 1239,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Andrés",
+        "pos": "DF",
+        "min": 2183,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Filippa Angeldahl",
+        "pos": "MF",
+        "min": 1667,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "María Antolín",
+        "pos": "FW",
+        "min": 1144,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Hildur Antonsdóttir",
+        "pos": "MF,DF",
+        "min": 2149,
+        "g": 2,
+        "a": 4
+      },
+      {
+        "player": "Arola Aparicio",
+        "pos": "MF,FW",
+        "min": 879,
+        "g": 0,
+        "a": 4
+      },
+      {
+        "player": "Nahia Aparicio",
+        "pos": "DF",
+        "min": 1608,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Eider Arana",
+        "pos": "DF",
+        "min": 1180,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Paula Arana",
+        "pos": "FW,MF",
+        "min": 1263,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Iris Arnaiz Gil",
+        "pos": "MF,DF",
+        "min": 1730,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Julia Arrula",
+        "pos": "GK",
+        "min": 1890,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Marina Artero",
+        "pos": "DF,MF",
+        "min": 766,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Mia Asenjo",
+        "pos": "FW",
+        "min": 1423,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Iris Ashley Santiago",
+        "pos": "FW",
+        "min": 611,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Chelsea Ashurst",
+        "pos": "GK",
+        "min": 540,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Eunate Astralaga",
+        "pos": "GK",
+        "min": 2250,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ane Azkona",
+        "pos": "FW",
+        "min": 1742,
+        "g": 6,
+        "a": 2
+      },
+      {
+        "player": "Laia Ballesté",
+        "pos": "DF",
+        "min": 1381,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Estefanía Banini",
+        "pos": "MF,FW",
+        "min": 1657,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Leire Baños",
+        "pos": "MF,DF",
+        "min": 1080,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Manoly Baquerizo",
+        "pos": "DF,MF",
+        "min": 2085,
+        "g": 5,
+        "a": 1
+      },
+      {
+        "player": "Ona Baradad",
+        "pos": "MF,FW",
+        "min": 1974,
+        "g": 4,
+        "a": 2
+      },
+      {
+        "player": "Celya Barclais",
+        "pos": "DF",
+        "min": 1140,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Maria Barquero",
+        "pos": "FW",
+        "min": 353,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Julia Bartel",
+        "pos": "MF",
+        "min": 1312,
+        "g": 5,
+        "a": 1
+      },
+      {
+        "player": "Merle Barth",
+        "pos": "DF",
+        "min": 1913,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Ona Batlle",
+        "pos": "DF",
+        "min": 1282,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Cristina Baudet",
+        "pos": "MF",
+        "min": 1107,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Alimata Bélem",
+        "pos": "DF,MF",
+        "min": 2401,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Soledad Belotto",
+        "pos": "GK",
+        "min": 1350,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Nerea Benito",
+        "pos": "DF",
+        "min": 352,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Hanna Bennison",
+        "pos": "MF",
+        "min": 593,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Claudia Blanco",
+        "pos": "DF,MF",
+        "min": 1454,
+        "g": 3,
+        "a": 4
+      },
+      {
+        "player": "Aitana Bonmatí",
+        "pos": "MF",
+        "min": 777,
+        "g": 6,
+        "a": 3
+      },
+      {
+        "player": "Estefanía Botero",
+        "pos": "DF",
+        "min": 1264,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Phornetia Browne",
+        "pos": "FW",
+        "min": 1512,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Esmee Brugts",
+        "pos": "DF",
+        "min": 1407,
+        "g": 6,
+        "a": 2
+      },
+      {
+        "player": "Signe Bruun",
+        "pos": "FW",
+        "min": 319,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Vilde Bøe Risa",
+        "pos": "MF",
+        "min": 1730,
+        "g": 5,
+        "a": 3
+      },
+      {
+        "player": "Sintia Cabezas",
+        "pos": "MF",
+        "min": 452,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Millene Cabral",
+        "pos": "FW",
+        "min": 545,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Nayluisa Cáceres",
+        "pos": "GK",
+        "min": 1170,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Klára Cahynová",
+        "pos": "MF",
+        "min": 2231,
+        "g": 4,
+        "a": 3
+      },
+      {
+        "player": "Linda Caicedo",
+        "pos": "FW,MF",
+        "min": 1340,
+        "g": 5,
+        "a": 1
+      },
+      {
+        "player": "Aïcha Cámara",
+        "pos": "DF",
+        "min": 1516,
+        "g": 1,
+        "a": 6
+      },
+      {
+        "player": "Laura Camino",
+        "pos": "DF,MF",
+        "min": 2252,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Ainoa Campo",
+        "pos": "MF",
+        "min": 2210,
+        "g": 5,
+        "a": 2
+      },
+      {
+        "player": "Ane Campos",
+        "pos": "FW",
+        "min": 781,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Antonia Canales",
+        "pos": "GK",
+        "min": 1170,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Daniela Caracas",
+        "pos": "DF",
+        "min": 1721,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Judith Caravaca",
+        "pos": "DF",
+        "min": 1107,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Aithiara Carballo",
+        "pos": "DF,MF",
+        "min": 776,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Nerea Carmona",
+        "pos": "DF",
+        "min": 531,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Raiderlin Carrasco",
+        "pos": "MF,DF",
+        "min": 1802,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Maria Carrión",
+        "pos": "MF,DF",
+        "min": 1119,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Adriana Casanovas",
+        "pos": "DF",
+        "min": 393,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sandra Castelló",
+        "pos": "MF",
+        "min": 1052,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Carla Castiñeyras",
+        "pos": "DF",
+        "min": 1659,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Iria Castro",
+        "pos": "DF",
+        "min": 1311,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Natalia Cebolla",
+        "pos": "DF",
+        "min": 598,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Alba Cerrato",
+        "pos": "MF,DF",
+        "min": 675,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Lice Chamorro",
+        "pos": "FW",
+        "min": 2060,
+        "g": 6,
+        "a": 1
+      },
+      {
+        "player": "Claudia",
+        "pos": "DF",
+        "min": 1562,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Opa Clement",
+        "pos": "FW",
+        "min": 690,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Cata Coll",
+        "pos": "GK",
+        "min": 1530,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Andrea Colomina",
+        "pos": "DF",
+        "min": 822,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Pau Comendador",
+        "pos": "FW,MF",
+        "min": 584,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Laura Coronado",
+        "pos": "GK",
+        "min": 1620,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Yannel Correa",
+        "pos": "DF",
+        "min": 1311,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Isabel Corte",
+        "pos": "MF,FW",
+        "min": 2209,
+        "g": 7,
+        "a": 7
+      },
+      {
+        "player": "Millaray Cortez",
+        "pos": "MF,FW",
+        "min": 998,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Silvia Cristobal",
+        "pos": "DF,MF",
+        "min": 455,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Cristina Cubedo",
+        "pos": "DF,MF",
+        "min": 1770,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Sara Däbritz",
+        "pos": "MF",
+        "min": 1516,
+        "g": 4,
+        "a": 3
+      },
+      {
+        "player": "Ángeles Del Álamo",
+        "pos": "FW,MF",
+        "min": 751,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Athenea del Castillo",
+        "pos": "FW,MF",
+        "min": 1607,
+        "g": 5,
+        "a": 8
+      },
+      {
+        "player": "Fatou Dembele",
+        "pos": "DF",
+        "min": 1464,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Clara Díaz",
+        "pos": "MF",
+        "min": 1467,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Mariana Díaz Leal",
+        "pos": "FW,MF",
+        "min": 570,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Ariadna Domènech",
+        "pos": "DF,MF",
+        "min": 942,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Irune Dorado",
+        "pos": "MF",
+        "min": 980,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Intza Eguiguren",
+        "pos": "MF,FW",
+        "min": 1451,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Nerea Eizaguirre",
+        "pos": "FW,MF",
+        "min": 908,
+        "g": 8,
+        "a": 3
+      },
+      {
+        "player": "Ane Elexpuru",
+        "pos": "DF",
+        "min": 2336,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Encarni",
+        "pos": "MF",
+        "min": 1624,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Olaya Enrique",
+        "pos": "MF",
+        "min": 2165,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Alazne Estensoro",
+        "pos": "GK",
+        "min": 630,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ainhoa Estevez",
+        "pos": "MF",
+        "min": 1116,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Ane Etxezarreta",
+        "pos": "DF",
+        "min": 1100,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Fácila",
+        "pos": "DF,MF",
+        "min": 2245,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Daiana Falfán",
+        "pos": "MF",
+        "min": 2107,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Naomie Feller",
+        "pos": "FW,MF",
+        "min": 938,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Martine Fenger",
+        "pos": "FW",
+        "min": 378,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Alexia Fernández",
+        "pos": "DF,MF",
+        "min": 1723,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Paula Fernandez",
+        "pos": "MF",
+        "min": 2253,
+        "g": 3,
+        "a": 4
+      },
+      {
+        "player": "Fiamma",
+        "pos": "MF",
+        "min": 2173,
+        "g": 9,
+        "a": 4
+      },
+      {
+        "player": "Gemma Font",
+        "pos": "GK",
+        "min": 990,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ana Franco",
+        "pos": "FW,MF",
+        "min": 1623,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Merle Frohms",
+        "pos": "GK",
+        "min": 900,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maria Gabaldón",
+        "pos": "DF,MF",
+        "min": 1799,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Dolores Gallardo",
+        "pos": "GK",
+        "min": 2221,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rocío Gálvez",
+        "pos": "DF",
+        "min": 1350,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Gio Garbelini",
+        "pos": "FW",
+        "min": 648,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Débora García",
+        "pos": "DF",
+        "min": 1899,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Gabriela García",
+        "pos": "MF",
+        "min": 1067,
+        "g": 4,
+        "a": 2
+      },
+      {
+        "player": "Sonia García Majarín",
+        "pos": "DF,MF",
+        "min": 2318,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Naima García",
+        "pos": "MF,FW",
+        "min": 1286,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Raquel García",
+        "pos": "DF",
+        "min": 1924,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Sheila García",
+        "pos": "DF",
+        "min": 1362,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Nuria Garrote",
+        "pos": "DF,MF",
+        "min": 847,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Patri Gavira",
+        "pos": "DF",
+        "min": 2426,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Marta Gestera",
+        "pos": "FW",
+        "min": 964,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Gemma Gili",
+        "pos": "MF",
+        "min": 498,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Andrea Gómez",
+        "pos": "MF,FW",
+        "min": 1427,
+        "g": 4,
+        "a": 3
+      },
+      {
+        "player": "Ana González",
+        "pos": "MF,DF",
+        "min": 1814,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Érika González",
+        "pos": "FW,MF",
+        "min": 1534,
+        "g": 5,
+        "a": 2
+      },
+      {
+        "player": "Miriam González",
+        "pos": "MF",
+        "min": 481,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Caroline Graham Hansen",
+        "pos": "FW,MF",
+        "min": 1214,
+        "g": 7,
+        "a": 10
+      },
+      {
+        "player": "Paulina Gramaglia",
+        "pos": "FW",
+        "min": 902,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Guereñu",
+        "pos": "DF",
+        "min": 414,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Júlia Guerra",
+        "pos": "DF",
+        "min": 1132,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Patri Guijarro",
+        "pos": "MF",
+        "min": 837,
+        "g": 3,
+        "a": 5
+      },
+      {
+        "player": "Sheila Guijarro",
+        "pos": "FW",
+        "min": 358,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Elene Gurtubay",
+        "pos": "MF",
+        "min": 655,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Paula Gutiérrez Caballero",
+        "pos": "MF",
+        "min": 2112,
+        "g": 3,
+        "a": 4
+      },
+      {
+        "player": "Chantal Hagel",
+        "pos": "MF",
+        "min": 742,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Paola Hernández",
+        "pos": "MF",
+        "min": 1283,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Chika Hirao",
+        "pos": "GK",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sara Holmgaard",
+        "pos": "DF",
+        "min": 1424,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Edna Imade",
+        "pos": "FW",
+        "min": 906,
+        "g": 11,
+        "a": 0
+      },
+      {
+        "player": "Amaia Iribarren",
+        "pos": "MF",
+        "min": 1470,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Andreia Jacinto",
+        "pos": "MF,FW",
+        "min": 1752,
+        "g": 0,
+        "a": 4
+      },
+      {
+        "player": "Marina Jaén",
+        "pos": "MF",
+        "min": 1086,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Sarah Jankovska",
+        "pos": "MF",
+        "min": 523,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Synne Jensen",
+        "pos": "FW,MF",
+        "min": 1730,
+        "g": 8,
+        "a": 4
+      },
+      {
+        "player": "Ariana Jimenez",
+        "pos": "FW",
+        "min": 795,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "María José Pérez",
+        "pos": "FW",
+        "min": 925,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Carla Julià",
+        "pos": "DF,FW",
+        "min": 1084,
+        "g": 6,
+        "a": 4
+      },
+      {
+        "player": "Juliana",
+        "pos": "DF",
+        "min": 2370,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Elena Julve Pérez",
+        "pos": "MF,FW",
+        "min": 2107,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Sofie Junge Pedersen",
+        "pos": "MF",
+        "min": 568,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Fatoumata Kanteh",
+        "pos": "MF,FW",
+        "min": 1839,
+        "g": 6,
+        "a": 4
+      },
+      {
+        "player": "Sonya Keefe",
+        "pos": "FW",
+        "min": 2114,
+        "g": 9,
+        "a": 0
+      },
+      {
+        "player": "Lotte Keukelaar",
+        "pos": "MF,FW",
+        "min": 339,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Miku Kojima",
+        "pos": "MF",
+        "min": 1455,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kathrine Kühl",
+        "pos": "MF",
+        "min": 270,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Loreta Kullashi",
+        "pos": "FW,MF",
+        "min": 685,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Esther Laborde",
+        "pos": "MF,DF",
+        "min": 1353,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Iara Lacosta",
+        "pos": "MF,FW",
+        "min": 1049,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Maëlle Lakrar",
+        "pos": "DF",
+        "min": 1126,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Naia Landaluze",
+        "pos": "DF",
+        "min": 1949,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Patricia Larqué",
+        "pos": "GK",
+        "min": 299,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maddi Larrañaga",
+        "pos": "DF",
+        "min": 813,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Bárbara Latorre",
+        "pos": "FW,MF",
+        "min": 905,
+        "g": 3,
+        "a": 3
+      },
+      {
+        "player": "Linnéa Laupstad",
+        "pos": "MF,FW",
+        "min": 508,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Lauren",
+        "pos": "DF",
+        "min": 1891,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Lauri",
+        "pos": "MF,FW",
+        "min": 2481,
+        "g": 5,
+        "a": 2
+      },
+      {
+        "player": "Claire Lavogez",
+        "pos": "FW,MF",
+        "min": 1078,
+        "g": 6,
+        "a": 0
+      },
+      {
+        "player": "Eden Le Guilly",
+        "pos": "DF",
+        "min": 938,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Annelie Leitner",
+        "pos": "DF,MF",
+        "min": 2084,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Mapi León",
+        "pos": "DF",
+        "min": 1036,
+        "g": 2,
+        "a": 7
+      },
+      {
+        "player": "Estefa Lima",
+        "pos": "MF",
+        "min": 951,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Eva Llamas",
+        "pos": "DF",
+        "min": 1574,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maria Llompart Pons",
+        "pos": "MF",
+        "min": 1804,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Silvia Lloris",
+        "pos": "DF",
+        "min": 1467,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Alba López",
+        "pos": "DF",
+        "min": 442,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Bárbara López",
+        "pos": "FW",
+        "min": 367,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "María López",
+        "pos": "GK",
+        "min": 900,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Vicky López",
+        "pos": "FW,MF",
+        "min": 1486,
+        "g": 9,
+        "a": 9
+      },
+      {
+        "player": "Luany",
+        "pos": "MF,FW",
+        "min": 1803,
+        "g": 7,
+        "a": 10
+      },
+      {
+        "player": "Ana Marcos",
+        "pos": "FW",
+        "min": 803,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Laura María Pérez",
+        "pos": "MF,FW",
+        "min": 2095,
+        "g": 6,
+        "a": 7
+      },
+      {
+        "player": "Ainhoa Marín",
+        "pos": "FW,MF",
+        "min": 2483,
+        "g": 6,
+        "a": 5
+      },
+      {
+        "player": "Carol Marín",
+        "pos": "MF",
+        "min": 1972,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Alice Marques",
+        "pos": "DF",
+        "min": 1289,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rosa Marquez",
+        "pos": "MF",
+        "min": 2380,
+        "g": 3,
+        "a": 4
+      },
+      {
+        "player": "Laura Martí",
+        "pos": "GK",
+        "min": 270,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Milagros Martín",
+        "pos": "DF,MF",
+        "min": 756,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Sara Martín",
+        "pos": "FW,MF",
+        "min": 1711,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Amaia Martinez",
+        "pos": "DF,MF",
+        "min": 1074,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Belén Martínez",
+        "pos": "MF,FW",
+        "min": 2012,
+        "g": 5,
+        "a": 1
+      },
+      {
+        "player": "Barbara Martínez Flores",
+        "pos": "MF",
+        "min": 526,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Laura Martinez",
+        "pos": "MF",
+        "min": 627,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Laura Martínez",
+        "pos": "MF",
+        "min": 950,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lucía Martínez",
+        "pos": "MF",
+        "min": 1574,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Nuria Martinez",
+        "pos": "DF",
+        "min": 916,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Vera Martínez",
+        "pos": "DF",
+        "min": 1810,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Mireia Masegur",
+        "pos": "DF",
+        "min": 1823,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Marta Masferrer",
+        "pos": "DF,MF",
+        "min": 2300,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Zoe Matthews",
+        "pos": "DF,MF",
+        "min": 432,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Flavine Mawete",
+        "pos": "FW,MF",
+        "min": 1474,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Andrea Medina",
+        "pos": "DF",
+        "min": 2225,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Kamilla Melgård",
+        "pos": "MF,FW",
+        "min": 2264,
+        "g": 4,
+        "a": 6
+      },
+      {
+        "player": "Carmen Menayo",
+        "pos": "DF",
+        "min": 866,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "María Méndez",
+        "pos": "DF",
+        "min": 1410,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Núria Mendoza",
+        "pos": "DF",
+        "min": 2355,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Teresa Mérida",
+        "pos": "DF",
+        "min": 2139,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Patri Miñano",
+        "pos": "FW",
+        "min": 424,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Ariadna Mingueza",
+        "pos": "MF",
+        "min": 2173,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "María Miralles",
+        "pos": "GK",
+        "min": 1980,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "María Molina",
+        "pos": "DF",
+        "min": 521,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Mônica",
+        "pos": "DF",
+        "min": 1958,
+        "g": 5,
+        "a": 0
+      },
+      {
+        "player": "Paula Monteagudo",
+        "pos": "MF,DF",
+        "min": 677,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Vega Montesinos",
+        "pos": "MF,FW",
+        "min": 855,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Lucia Moral",
+        "pos": "FW",
+        "min": 703,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Justina Morcillo",
+        "pos": "MF,DF",
+        "min": 1410,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Raquel Morcillo",
+        "pos": "MF,DF",
+        "min": 1797,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Emma Moreno",
+        "pos": "MF,FW",
+        "min": 1418,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Yerliane Moreno",
+        "pos": "MF",
+        "min": 772,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Henar Muiña",
+        "pos": "MF",
+        "min": 663,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Blanca Muñoz",
+        "pos": "DF,MF",
+        "min": 1213,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Ange N'Guessan",
+        "pos": "FW,MF",
+        "min": 545,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Cecilia Nabal",
+        "pos": "MF,FW",
+        "min": 843,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Adriana Nanclares",
+        "pos": "GK",
+        "min": 2256,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Emilie Nautnes",
+        "pos": "FW",
+        "min": 1663,
+        "g": 7,
+        "a": 2
+      },
+      {
+        "player": "Eva Navarro",
+        "pos": "DF,FW",
+        "min": 1670,
+        "g": 1,
+        "a": 7
+      },
+      {
+        "player": "Lorena Navarro",
+        "pos": "MF",
+        "min": 1281,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Kika Nazareth",
+        "pos": "MF,FW",
+        "min": 1219,
+        "g": 9,
+        "a": 9
+      },
+      {
+        "player": "Nerea Nevado",
+        "pos": "DF,MF",
+        "min": 2129,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Paula Novo",
+        "pos": "DF,MF",
+        "min": 1042,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Pierina Núñez",
+        "pos": "FW",
+        "min": 383,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Irene Oguiza",
+        "pos": "MF",
+        "min": 674,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Patricia Ojeda Ramírez",
+        "pos": "DF",
+        "min": 1327,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Freja Olofsson",
+        "pos": "DF,MF",
+        "min": 443,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Catalina Ongaro",
+        "pos": "MF",
+        "min": 754,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Sara Ortega",
+        "pos": "MF,FW",
+        "min": 2343,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Samara Ortiz Cruz",
+        "pos": "DF,MF",
+        "min": 1887,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Rosa Otermín",
+        "pos": "MF,DF",
+        "min": 718,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Sakina Ouzraoui",
+        "pos": "FW",
+        "min": 1702,
+        "g": 2,
+        "a": 4
+      },
+      {
+        "player": "Judit Pablos",
+        "pos": "MF",
+        "min": 338,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Ewa Pajor",
+        "pos": "FW",
+        "min": 1489,
+        "g": 16,
+        "a": 4
+      },
+      {
+        "player": "Salma Paralluelo",
+        "pos": "FW,MF",
+        "min": 1138,
+        "g": 6,
+        "a": 5
+      },
+      {
+        "player": "Lucia Pardo",
+        "pos": "FW,MF",
+        "min": 1068,
+        "g": 5,
+        "a": 1
+      },
+      {
+        "player": "Irene Paredes",
+        "pos": "DF",
+        "min": 1506,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Paula Partido",
+        "pos": "FW,MF",
+        "min": 791,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Natalia Peñalvo",
+        "pos": "MF",
+        "min": 537,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Paula Perea",
+        "pos": "DF,MF",
+        "min": 721,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Inês Pereira",
+        "pos": "GK",
+        "min": 2340,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sandra Perera",
+        "pos": "MF,DF",
+        "min": 434,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Alba Pérez",
+        "pos": "DF",
+        "min": 2410,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Iratxe Pérez",
+        "pos": "FW",
+        "min": 627,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Xènia Pérez",
+        "pos": "DF",
+        "min": 1638,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Clàudia Pina",
+        "pos": "FW,MF",
+        "min": 1435,
+        "g": 20,
+        "a": 5
+      },
+      {
+        "player": "Clara Pinedo",
+        "pos": "MF,FW",
+        "min": 1243,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Raquel Pinel",
+        "pos": "MF,FW",
+        "min": 967,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Itziar Pinillos Moreno",
+        "pos": "DF",
+        "min": 2461,
+        "g": 6,
+        "a": 2
+      },
+      {
+        "player": "Esperanza Pizarro",
+        "pos": "FW,MF",
+        "min": 1324,
+        "g": 6,
+        "a": 2
+      },
+      {
+        "player": "Allegra Poljak",
+        "pos": "MF,DF",
+        "min": 1804,
+        "g": 5,
+        "a": 1
+      },
+      {
+        "player": "Macarena Portales",
+        "pos": "MF,FW",
+        "min": 646,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Cristina Postigo",
+        "pos": "DF,MF",
+        "min": 1762,
+        "g": 0,
+        "a": 3
+      },
+      {
+        "player": "Esther Pozuelo",
+        "pos": "DF",
+        "min": 1841,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Salome Prat",
+        "pos": "FW,MF",
+        "min": 1034,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Berta Pujadas",
+        "pos": "DF,MF",
+        "min": 805,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Alexia Putellas",
+        "pos": "MF",
+        "min": 1373,
+        "g": 9,
+        "a": 6
+      },
+      {
+        "player": "Violeta Quiles",
+        "pos": "DF,MF",
+        "min": 650,
+        "g": 0,
+        "a": 4
+      },
+      {
+        "player": "Aldrith Quintero",
+        "pos": "DF,MF",
+        "min": 964,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Emma Ramirez",
+        "pos": "MF,DF",
+        "min": 1101,
+        "g": 3,
+        "a": 4
+      },
+      {
+        "player": "Natalia Ramos",
+        "pos": "MF",
+        "min": 2481,
+        "g": 9,
+        "a": 4
+      },
+      {
+        "player": "Noelia Ramos",
+        "pos": "GK",
+        "min": 1350,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rebeca",
+        "pos": "DF",
+        "min": 1876,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Alba Redondo",
+        "pos": "FW",
+        "min": 1362,
+        "g": 7,
+        "a": 2
+      },
+      {
+        "player": "Alicia Redondo",
+        "pos": "MF",
+        "min": 1700,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Paula Redru",
+        "pos": "MF",
+        "min": 335,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Yaiza Relea",
+        "pos": "MF,FW",
+        "min": 2037,
+        "g": 5,
+        "a": 0
+      },
+      {
+        "player": "Adela Rico",
+        "pos": "MF",
+        "min": 1419,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Lucia Rivas",
+        "pos": "FW,MF",
+        "min": 512,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Inés Rizo",
+        "pos": "MF",
+        "min": 557,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Cinta Del Mar Rodríguez",
+        "pos": "DF",
+        "min": 1273,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Clara Rodriguez",
+        "pos": "MF,DF",
+        "min": 510,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lucía Rodríguez",
+        "pos": "DF",
+        "min": 2126,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Misa Rodríguez",
+        "pos": "GK",
+        "min": 1620,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Inma Romero",
+        "pos": "FW",
+        "min": 1102,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Alba Ruiz",
+        "pos": "MF,DF",
+        "min": 1218,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Belén Ruíz",
+        "pos": "GK",
+        "min": 540,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Malou Rylov",
+        "pos": "MF,FW",
+        "min": 1411,
+        "g": 4,
+        "a": 2
+      },
+      {
+        "player": "Romane Salvador",
+        "pos": "GK",
+        "min": 2250,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Carmen Sanchez",
+        "pos": "FW",
+        "min": 1595,
+        "g": 4,
+        "a": 3
+      },
+      {
+        "player": "Laura Sánchez",
+        "pos": "GK",
+        "min": 1800,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Nerea Sánchez",
+        "pos": "MF",
+        "min": 378,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Paula Sánchez",
+        "pos": "MF,FW",
+        "min": 1192,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Alba Santamaría",
+        "pos": "DF",
+        "min": 1187,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Amaiur Sarriegi",
+        "pos": "FW,MF",
+        "min": 1348,
+        "g": 6,
+        "a": 4
+      },
+      {
+        "player": "Sydney Schertenleib",
+        "pos": "MF,FW",
+        "min": 1630,
+        "g": 7,
+        "a": 3
+      },
+      {
+        "player": "Bibiane Schulze-Solano",
+        "pos": "DF",
+        "min": 1066,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Dolores Silva",
+        "pos": "MF",
+        "min": 1750,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Gema Soliveres",
+        "pos": "MF",
+        "min": 843,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ángela Sosa",
+        "pos": "MF",
+        "min": 1807,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Carlota Suárez",
+        "pos": "FW",
+        "min": 970,
+        "g": 7,
+        "a": 2
+      },
+      {
+        "player": "Esther Sullastres",
+        "pos": "GK",
+        "min": 2430,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Andrea Tarazona",
+        "pos": "GK",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sandie Toletti",
+        "pos": "MF",
+        "min": 906,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Elena de Toro",
+        "pos": "GK",
+        "min": 1170,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Mar Torrás",
+        "pos": "MF",
+        "min": 882,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Marta Torrejón",
+        "pos": "DF",
+        "min": 1490,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Julia Torres",
+        "pos": "DF",
+        "min": 350,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Anna Torroda",
+        "pos": "MF",
+        "min": 2078,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Paola Ulloa",
+        "pos": "GK",
+        "min": 1980,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Mirari Uria",
+        "pos": "FW",
+        "min": 481,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Irina Uribe",
+        "pos": "FW,MF",
+        "min": 1432,
+        "g": 4,
+        "a": 3
+      },
+      {
+        "player": "Lorena Valderas",
+        "pos": "DF,MF",
+        "min": 430,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maite Valero",
+        "pos": "MF",
+        "min": 1728,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Lucía Vallejo",
+        "pos": "DF",
+        "min": 2388,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Elena Vázquez",
+        "pos": "DF",
+        "min": 1031,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Alma Velasco",
+        "pos": "DF",
+        "min": 1365,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ximena Velazco",
+        "pos": "MF",
+        "min": 817,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Ana Velázquez",
+        "pos": "MF",
+        "min": 2166,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Elba Vergés Prats",
+        "pos": "DF",
+        "min": 2359,
+        "g": 3,
+        "a": 3
+      },
+      {
+        "player": "Ainhoa Vicente",
+        "pos": "DF",
+        "min": 2366,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maitane Vilariño",
+        "pos": "MF,DF",
+        "min": 554,
+        "g": 0,
+        "a": 3
+      },
+      {
+        "player": "Sandra Villafañe",
+        "pos": "DF",
+        "min": 2160,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ana Vitória",
+        "pos": "MF",
+        "min": 421,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Caroline Weir",
+        "pos": "MF,FW",
+        "min": 1466,
+        "g": 10,
+        "a": 5
+      },
+      {
+        "player": "Yasmim",
+        "pos": "DF",
+        "min": 595,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Comfort Yeboah",
+        "pos": "MF,DF",
+        "min": 339,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Yolanda",
+        "pos": "DF",
+        "min": 790,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Aleksandra Zaremba",
+        "pos": "DF,MF",
+        "min": 2323,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Maite Zubieta",
+        "pos": "MF",
+        "min": 1632,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Aitana Zumárraga",
+        "pos": "DF",
+        "min": 1811,
+        "g": 0,
+        "a": 1
+      }
+    ]
+  },
+  "Women's Super League": {
+    "tier": 1,
+    "players": [
+      {
+        "player": "Michelle Agyemang",
+        "pos": "FW",
+        "min": 448,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Olga Ahtinen",
+        "pos": "MF",
+        "min": 389,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Asmita Ale",
+        "pos": "DF,MF",
+        "min": 1565,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Verena Aschauer",
+        "pos": "MF,DF",
+        "min": 922,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Kosovare Asllani",
+        "pos": "MF,FW",
+        "min": 1457,
+        "g": 2,
+        "a": 4
+      },
+      {
+        "player": "Viviane Asseyi",
+        "pos": "FW,MF",
+        "min": 1679,
+        "g": 2,
+        "a": 3
+      },
+      {
+        "player": "Simi Awujo",
+        "pos": "DF,MF",
+        "min": 408,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sandy Baltimore",
+        "pos": "MF,DF",
+        "min": 1111,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Molly Bartrip",
+        "pos": "DF",
+        "min": 376,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Agnes Beever-Jones",
+        "pos": "FW,MF",
+        "min": 934,
+        "g": 4,
+        "a": 1
+      },
+      {
+        "player": "Inès Belloumou",
+        "pos": "MF,DF",
+        "min": 674,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Iman Beney",
+        "pos": "FW,MF",
+        "min": 433,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Alice Bergström",
+        "pos": "MF,FW",
+        "min": 403,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Alejandra Bernabe",
+        "pos": "DF",
+        "min": 781,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Nathalie Björn",
+        "pos": "DF",
+        "min": 782,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Stina Blackstenius",
+        "pos": "FW,MF",
+        "min": 811,
+        "g": 11,
+        "a": 3
+      },
+      {
+        "player": "Julie Blakstad",
+        "pos": "DF,MF",
+        "min": 631,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Laura Blindkilde",
+        "pos": "MF",
+        "min": 1326,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Hannah Blundell",
+        "pos": "DF",
+        "min": 748,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Missy Bo Kearns",
+        "pos": "MF",
+        "min": 789,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Gemma Bonner",
+        "pos": "DF",
+        "min": 591,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Anneke Borbe",
+        "pos": "GK",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rafaela Borggräfe",
+        "pos": "GK",
+        "min": 270,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Celeste Boureille",
+        "pos": "MF,DF",
+        "min": 495,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Millie Bright",
+        "pos": "DF",
+        "min": 1182,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lucy Bronze",
+        "pos": "DF,MF",
+        "min": 871,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Courtney Brosnan",
+        "pos": "GK",
+        "min": 1350,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Veerle Buurman",
+        "pos": "DF",
+        "min": 906,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Hannah Cain",
+        "pos": "MF,FW",
+        "min": 1521,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Mariona Caldentey",
+        "pos": "MF",
+        "min": 1646,
+        "g": 3,
+        "a": 3
+      },
+      {
+        "player": "Jelena Čanković",
+        "pos": "MF",
+        "min": 1495,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Ellie Carpenter",
+        "pos": "DF,MF",
+        "min": 1542,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Carla Carrillo",
+        "pos": "FW,MF",
+        "min": 440,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Estelle Cascarino",
+        "pos": "DF",
+        "min": 800,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kerstin Casparij",
+        "pos": "DF",
+        "min": 1844,
+        "g": 3,
+        "a": 7
+      },
+      {
+        "player": "Steph Catley",
+        "pos": "DF",
+        "min": 1329,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Janice Cayman",
+        "pos": "MF,DF",
+        "min": 750,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Niamh Charles",
+        "pos": "DF",
+        "min": 546,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Jenna Clark",
+        "pos": "DF,MF",
+        "min": 1665,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Olivia Clark",
+        "pos": "GK",
+        "min": 495,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Grace Clinton",
+        "pos": "MF",
+        "min": 318,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Laia Codina",
+        "pos": "DF",
+        "min": 555,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Sam Coffey",
+        "pos": "MF",
+        "min": 523,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kyra Cooney-Cross",
+        "pos": "MF",
+        "min": 306,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lucía Corrales",
+        "pos": "MF,DF",
+        "min": 1150,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Aurélie Csillag",
+        "pos": "FW",
+        "min": 306,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Erin Cuthbert",
+        "pos": "MF",
+        "min": 1447,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Sabrina D'Angelo",
+        "pos": "GK",
+        "min": 1277,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rachel Daly",
+        "pos": "FW,MF",
+        "min": 934,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Anouk Denton",
+        "pos": "DF,MF",
+        "min": 841,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Océane Deslandes",
+        "pos": "DF",
+        "min": 1237,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Daphne van Domselaar",
+        "pos": "GK",
+        "min": 1170,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Emily van Egmond",
+        "pos": "MF",
+        "min": 1257,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Hlín Eiríksdóttir",
+        "pos": "MF,FW",
+        "min": 384,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Mia Enderby",
+        "pos": "MF,FW",
+        "min": 1390,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Yu Endo",
+        "pos": "DF",
+        "min": 1049,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Bethany England",
+        "pos": "FW,MF",
+        "min": 1314,
+        "g": 7,
+        "a": 1
+      },
+      {
+        "player": "Gemma Evans",
+        "pos": "DF,MF",
+        "min": 778,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jennifer Falk",
+        "pos": "GK",
+        "min": 900,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jana Fernández",
+        "pos": "DF,MF",
+        "min": 1812,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Grace Fisk",
+        "pos": "DF",
+        "min": 1595,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Caitlin Foord",
+        "pos": "MF",
+        "min": 1129,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Emily Fox",
+        "pos": "DF",
+        "min": 1513,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Sanni Franssi",
+        "pos": "FW",
+        "min": 423,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Aoba Fujino",
+        "pos": "MF,FW",
+        "min": 1111,
+        "g": 5,
+        "a": 2
+      },
+      {
+        "player": "Kelly Gago",
+        "pos": "FW,MF",
+        "min": 694,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Aurora Galli",
+        "pos": "MF",
+        "min": 408,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Signe Gaupset",
+        "pos": "MF",
+        "min": 834,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Gabrielle George",
+        "pos": "DF",
+        "min": 312,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Grace Geyoro",
+        "pos": "MF",
+        "min": 1312,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Naomi Girma",
+        "pos": "DF",
+        "min": 756,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Freya Godfrey",
+        "pos": "MF",
+        "min": 1108,
+        "g": 5,
+        "a": 4
+      },
+      {
+        "player": "Isobel Goodwin",
+        "pos": "FW",
+        "min": 1594,
+        "g": 5,
+        "a": 1
+      },
+      {
+        "player": "Rosa van Gool",
+        "pos": "MF",
+        "min": 1183,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Katrina Gorry",
+        "pos": "MF",
+        "min": 1289,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Chasity Grant",
+        "pos": "MF,FW",
+        "min": 1223,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Alex Greenwood",
+        "pos": "DF",
+        "min": 1395,
+        "g": 0,
+        "a": 4
+      },
+      {
+        "player": "Madison Haley",
+        "pos": "MF,FW",
+        "min": 1233,
+        "g": 3,
+        "a": 3
+      },
+      {
+        "player": "Maika Hamano",
+        "pos": "MF,FW",
+        "min": 425,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Hannah Hampton",
+        "pos": "GK",
+        "min": 1530,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Tuva Hansen",
+        "pos": "DF",
+        "min": 651,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kirsty Hanson",
+        "pos": "FW,MF",
+        "min": 1591,
+        "g": 12,
+        "a": 1
+      },
+      {
+        "player": "Yui Hasegawa",
+        "pos": "MF",
+        "min": 1710,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Honoka Hayashi",
+        "pos": "MF",
+        "min": 1242,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Caitlin Hayes",
+        "pos": "DF",
+        "min": 1241,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Lauren Hemp",
+        "pos": "MF",
+        "min": 1352,
+        "g": 1,
+        "a": 6
+      },
+      {
+        "player": "Maya Hijikata",
+        "pos": "MF,FW",
+        "min": 776,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Taylor Hinds",
+        "pos": "DF,MF",
+        "min": 595,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Marie Höbinger",
+        "pos": "MF",
+        "min": 285,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Olivia Holdt",
+        "pos": "MF,FW",
+        "min": 1470,
+        "g": 7,
+        "a": 3
+      },
+      {
+        "player": "Ceri Holland",
+        "pos": "MF,FW",
+        "min": 1666,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Smilla Holmberg",
+        "pos": "DF",
+        "min": 473,
+        "g": 2,
+        "a": 4
+      },
+      {
+        "player": "Karen Holmgaard",
+        "pos": "MF,DF",
+        "min": 565,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Clare Hunt",
+        "pos": "DF",
+        "min": 1440,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rofiat Imuran",
+        "pos": "DF,MF",
+        "min": 701,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rion Ishikawa",
+        "pos": "DF,MF",
+        "min": 687,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Lauren James",
+        "pos": "MF,FW",
+        "min": 700,
+        "g": 5,
+        "a": 3
+      },
+      {
+        "player": "Dominique Janssen",
+        "pos": "DF,MF",
+        "min": 1363,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Emma Jansson",
+        "pos": "MF",
+        "min": 416,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Oriane Jean-François",
+        "pos": "MF,DF",
+        "min": 718,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Cornelia Kapocs",
+        "pos": "MF,FW",
+        "min": 1728,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Wieke Kaptein",
+        "pos": "MF",
+        "min": 1141,
+        "g": 2,
+        "a": 3
+      },
+      {
+        "player": "Khiara Keating",
+        "pos": "GK",
+        "min": 360,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sari Kees",
+        "pos": "DF",
+        "min": 1370,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Chloe Kelly",
+        "pos": "MF",
+        "min": 468,
+        "g": 4,
+        "a": 3
+      },
+      {
+        "player": "Lucia Kendall",
+        "pos": "MF,FW",
+        "min": 1347,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Alanna Kennedy",
+        "pos": "DF,MF",
+        "min": 656,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Kerolin",
+        "pos": "MF",
+        "min": 833,
+        "g": 9,
+        "a": 5
+      },
+      {
+        "player": "Sam Kerr",
+        "pos": "FW",
+        "min": 606,
+        "g": 6,
+        "a": 2
+      },
+      {
+        "player": "Samantha Kerr",
+        "pos": "MF,FW",
+        "min": 683,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Faye Kirby",
+        "pos": "GK",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Fran Kirby",
+        "pos": "MF,FW",
+        "min": 1123,
+        "g": 2,
+        "a": 3
+      },
+      {
+        "player": "Hikaru Kitagawa",
+        "pos": "DF",
+        "min": 892,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Rebecca Knaak",
+        "pos": "DF",
+        "min": 1230,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Tōko Koga",
+        "pos": "DF",
+        "min": 1615,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Lize Kop",
+        "pos": "GK",
+        "min": 1890,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Zara Kramžar",
+        "pos": "FW,MF",
+        "min": 337,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Saki Kumagai",
+        "pos": "MF,DF",
+        "min": 1438,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Maya Le Tissier",
+        "pos": "DF",
+        "min": 1890,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Alisha Lehmann",
+        "pos": "MF,FW",
+        "min": 502,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Janina Leitzig",
+        "pos": "GK",
+        "min": 1260,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Elene Lete",
+        "pos": "GK",
+        "min": 1890,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Elena Linari",
+        "pos": "DF",
+        "min": 1288,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Kim Little",
+        "pos": "MF",
+        "min": 1379,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Hanna Lundkvist",
+        "pos": "DF,MF",
+        "min": 516,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Frida Maanum",
+        "pos": "MF,FW",
+        "min": 904,
+        "g": 6,
+        "a": 4
+      },
+      {
+        "player": "Catarina Macario",
+        "pos": "FW,MF",
+        "min": 473,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Ruby Mace",
+        "pos": "DF,MF",
+        "min": 1707,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Kirsty Maclean",
+        "pos": "MF,DF",
+        "min": 825,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Melvine Malard",
+        "pos": "MF,FW",
+        "min": 1427,
+        "g": 6,
+        "a": 3
+      },
+      {
+        "player": "Rachel Maltby",
+        "pos": "MF",
+        "min": 940,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Noelle Maritz",
+        "pos": "MF,DF",
+        "min": 1457,
+        "g": 0,
+        "a": 3
+      },
+      {
+        "player": "Shekiera Martinez",
+        "pos": "FW,MF",
+        "min": 1533,
+        "g": 6,
+        "a": 0
+      },
+      {
+        "player": "Sarah Mayling",
+        "pos": "DF,MF",
+        "min": 803,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Katie McCabe",
+        "pos": "DF",
+        "min": 1423,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Rachel McLauchlan",
+        "pos": "DF,MF",
+        "min": 1198,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Olivia McLoughlin",
+        "pos": "MF,FW",
+        "min": 1403,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Beth Mead",
+        "pos": "MF,FW",
+        "min": 957,
+        "g": 2,
+        "a": 5
+      },
+      {
+        "player": "Vivianne Miedema",
+        "pos": "MF,FW",
+        "min": 1437,
+        "g": 10,
+        "a": 5
+      },
+      {
+        "player": "Moeka Minami",
+        "pos": "DF",
+        "min": 1506,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Hinata Miyazawa",
+        "pos": "MF,DF",
+        "min": 1710,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Yuka Momiki",
+        "pos": "MF,FW",
+        "min": 1280,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Ffion Morgan",
+        "pos": "MF,FW",
+        "min": 944,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Noémie Mouchon",
+        "pos": "MF,FW",
+        "min": 484,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Maelys Mpomé",
+        "pos": "MF,DF",
+        "min": 286,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Georgia Mullett",
+        "pos": "FW,MF",
+        "min": 596,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Lisa Naalsund",
+        "pos": "MF",
+        "min": 826,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Fūka Nagano",
+        "pos": "MF,DF",
+        "min": 1683,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jessica Naz",
+        "pos": "MF,FW",
+        "min": 746,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Ashleigh Neville",
+        "pos": "DF",
+        "min": 583,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Ashleigh Neville",
+        "pos": "DF,MF",
+        "min": 846,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jenna Nighswonger",
+        "pos": "DF",
+        "min": 420,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Amanda Nildén",
+        "pos": "DF",
+        "min": 1686,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Chiamaka Nnadozie",
+        "pos": "GK",
+        "min": 1710,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Nadine Noordam",
+        "pos": "MF,FW",
+        "min": 990,
+        "g": 0,
+        "a": 5
+      },
+      {
+        "player": "Sjoeke Nüsken",
+        "pos": "MF,DF",
+        "min": 775,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Eva Nyström",
+        "pos": "DF",
+        "min": 1402,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Denise O'Sullivan",
+        "pos": "MF",
+        "min": 563,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Marisa Olislagers",
+        "pos": "DF,MF",
+        "min": 1792,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Beata Olsson",
+        "pos": "FW,MF",
+        "min": 1080,
+        "g": 6,
+        "a": 2
+      },
+      {
+        "player": "Leila Ouahabi",
+        "pos": "DF",
+        "min": 910,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Shannon O'Brien",
+        "pos": "FW,MF",
+        "min": 1235,
+        "g": 5,
+        "a": 0
+      },
+      {
+        "player": "Mayumi Pacheco",
+        "pos": "DF",
+        "min": 1027,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Jessica Park",
+        "pos": "MF,FW",
+        "min": 1688,
+        "g": 6,
+        "a": 5
+      },
+      {
+        "player": "Lucy Parker",
+        "pos": "DF",
+        "min": 688,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Nikita Parris",
+        "pos": "MF,FW",
+        "min": 1193,
+        "g": 4,
+        "a": 2
+      },
+      {
+        "player": "Anna Patten",
+        "pos": "DF,MF",
+        "min": 1620,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Poppy Pattinson",
+        "pos": "DF",
+        "min": 689,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Heather Payne",
+        "pos": "DF",
+        "min": 325,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Toni Payne",
+        "pos": "MF,FW",
+        "min": 1017,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Victoria Pelova",
+        "pos": "MF",
+        "min": 636,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Livia Peng",
+        "pos": "GK",
+        "min": 360,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "María Pérez",
+        "pos": "MF",
+        "min": 433,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Seraina Piubel",
+        "pos": "MF",
+        "min": 311,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Alexia Potter",
+        "pos": "MF",
+        "min": 383,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Gracie Prior",
+        "pos": "DF",
+        "min": 480,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Emily Ramsey",
+        "pos": "GK",
+        "min": 540,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jutta Rantala",
+        "pos": "FW,MF",
+        "min": 313,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Katie Reid",
+        "pos": "DF",
+        "min": 453,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jayde Riviere",
+        "pos": "DF",
+        "min": 1326,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Katie Robinson",
+        "pos": "MF,FW",
+        "min": 407,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Julia Roddar",
+        "pos": "MF,DF",
+        "min": 681,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ellie Roebuck",
+        "pos": "GK",
+        "min": 613,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Fridolina Rolfö",
+        "pos": "MF,DF",
+        "min": 973,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Inma Romero",
+        "pos": "MF,FW",
+        "min": 349,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Rusul Rosa Kafaji",
+        "pos": "MF",
+        "min": 952,
+        "g": 2,
+        "a": 3
+      },
+      {
+        "player": "Jade Rose",
+        "pos": "DF",
+        "min": 1647,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Charlize Rule",
+        "pos": "DF",
+        "min": 1280,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Alessia Russo",
+        "pos": "FW,MF",
+        "min": 1738,
+        "g": 11,
+        "a": 6
+      },
+      {
+        "player": "Josefine Rybrink",
+        "pos": "DF,MF",
+        "min": 672,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Malou Rylov",
+        "pos": "MF",
+        "min": 371,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Johanna Rytting Kaneryd",
+        "pos": "MF,FW",
+        "min": 1003,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Ebony Salmon",
+        "pos": "FW,MF",
+        "min": 951,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Anna Sandberg",
+        "pos": "DF",
+        "min": 1237,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Wassa Sangare",
+        "pos": "DF",
+        "min": 1483,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Lea Schüller",
+        "pos": "FW",
+        "min": 462,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Kiko Seike",
+        "pos": "MF,FW",
+        "min": 1531,
+        "g": 8,
+        "a": 2
+      },
+      {
+        "player": "Khadija Shaw",
+        "pos": "FW",
+        "min": 1856,
+        "g": 19,
+        "a": 4
+      },
+      {
+        "player": "Risa Shimizu",
+        "pos": "DF",
+        "min": 1018,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Oona Siren",
+        "pos": "MF",
+        "min": 1779,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Olivia Smith",
+        "pos": "MF,FW",
+        "min": 1146,
+        "g": 5,
+        "a": 3
+      },
+      {
+        "player": "Katja Snoeijs",
+        "pos": "MF,FW",
+        "min": 557,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Drew Spence",
+        "pos": "MF",
+        "min": 1443,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Elise Stenevik",
+        "pos": "DF,FW",
+        "min": 430,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Eveliina Summanen",
+        "pos": "MF",
+        "min": 1519,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Chantelle Swaby",
+        "pos": "DF",
+        "min": 1209,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maisie Symonds",
+        "pos": "MF",
+        "min": 1747,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kinga Szemik",
+        "pos": "GK",
+        "min": 1585,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Cathinka Tandberg",
+        "pos": "FW",
+        "min": 1077,
+        "g": 6,
+        "a": 1
+      },
+      {
+        "player": "Miri Taylor",
+        "pos": "MF,DF",
+        "min": 1386,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Ylinn Tennebø",
+        "pos": "MF,FW",
+        "min": 358,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Elisabeth Terland",
+        "pos": "FW,MF",
+        "min": 956,
+        "g": 6,
+        "a": 2
+      },
+      {
+        "player": "Julie Thibaud",
+        "pos": "DF",
+        "min": 1519,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Martha Thomas",
+        "pos": "FW",
+        "min": 347,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Martha Thomas",
+        "pos": "MF",
+        "min": 288,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Alyssa Thompson",
+        "pos": "MF,FW",
+        "min": 1324,
+        "g": 7,
+        "a": 3
+      },
+      {
+        "player": "Samantha Tierney",
+        "pos": "MF",
+        "min": 1766,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Ella Toone",
+        "pos": "MF",
+        "min": 1037,
+        "g": 3,
+        "a": 5
+      },
+      {
+        "player": "Phallon Tullis-Joyce",
+        "pos": "GK",
+        "min": 1800,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Millie Turner",
+        "pos": "DF,MF",
+        "min": 520,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Amber Tysiak",
+        "pos": "DF",
+        "min": 720,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Riko Ueki",
+        "pos": "FW,MF",
+        "min": 1630,
+        "g": 2,
+        "a": 5
+      },
+      {
+        "player": "Manuela Vanegas",
+        "pos": "DF",
+        "min": 950,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Ornella Vignola",
+        "pos": "MF,FW",
+        "min": 1739,
+        "g": 4,
+        "a": 1
+      },
+      {
+        "player": "Martina Vila",
+        "pos": "DF",
+        "min": 1860,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Matilda Vinberg",
+        "pos": "MF",
+        "min": 1266,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Keira Walsh",
+        "pos": "MF",
+        "min": 1493,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Megan Walsh",
+        "pos": "GK",
+        "min": 305,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Leila Wandeler",
+        "pos": "MF,FW",
+        "min": 584,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Clare Wheeler",
+        "pos": "MF,DF",
+        "min": 1419,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Hanna Wijk",
+        "pos": "DF,MF",
+        "min": 432,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rachel Williams",
+        "pos": "FW,MF",
+        "min": 323,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lynn Wilms",
+        "pos": "DF,MF",
+        "min": 1440,
+        "g": 1,
+        "a": 7
+      },
+      {
+        "player": "Lily Woodham",
+        "pos": "DF",
+        "min": 768,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Lotte Wubben-Moy",
+        "pos": "DF",
+        "min": 1176,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ayaka Yamashita",
+        "pos": "GK",
+        "min": 1530,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Shelina Zadorsky",
+        "pos": "DF,MF",
+        "min": 833,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Katie Zelem",
+        "pos": "MF",
+        "min": 552,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Julia Zigiotti Olme",
+        "pos": "MF",
+        "min": 1427,
+        "g": 2,
+        "a": 2
+      }
+    ]
+  },
+  "Division 1 Féminine": {
+    "tier": 1,
+    "players": [
+      {
+        "player": "Ikram Adjabi",
+        "pos": "FW,MF",
+        "min": 432,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Murphy Agnew",
+        "pos": "FW,MF",
+        "min": 604,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Eseosa Aigbogun",
+        "pos": "DF",
+        "min": 1219,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rasheedat Ajibade",
+        "pos": "MF,FW",
+        "min": 741,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Nadjma Ali Nadjim",
+        "pos": "MF,FW",
+        "min": 814,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Maddy Anderson",
+        "pos": "GK",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Louann Archier",
+        "pos": "MF,FW",
+        "min": 1520,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Lorena Azzaro",
+        "pos": "FW,MF",
+        "min": 971,
+        "g": 8,
+        "a": 2
+      },
+      {
+        "player": "Marème Babou",
+        "pos": "MF",
+        "min": 403,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Selma Bacha",
+        "pos": "DF",
+        "min": 818,
+        "g": 0,
+        "a": 4
+      },
+      {
+        "player": "Naomie Bamenga",
+        "pos": "MF,FW",
+        "min": 967,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ángela Barón",
+        "pos": "DF",
+        "min": 1329,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Amber Barrett",
+        "pos": "FW",
+        "min": 563,
+        "g": 5,
+        "a": 0
+      },
+      {
+        "player": "Faustine Bataillard",
+        "pos": "MF",
+        "min": 1564,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Chiara Baylet",
+        "pos": "DF",
+        "min": 1188,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Amandine Bèche",
+        "pos": "DF,MF",
+        "min": 1665,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Vicki Bècho",
+        "pos": "FW,MF",
+        "min": 1286,
+        "g": 8,
+        "a": 3
+      },
+      {
+        "player": "Feerine Belhadj",
+        "pos": "GK",
+        "min": 536,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Belinha",
+        "pos": "DF,MF",
+        "min": 955,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Morgane Belkhiter",
+        "pos": "MF,DF",
+        "min": 301,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Inès Benyahia",
+        "pos": "MF,FW",
+        "min": 831,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Clara Bertrand",
+        "pos": "MF",
+        "min": 1247,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Mélissa Bethi",
+        "pos": "MF",
+        "min": 1828,
+        "g": 2,
+        "a": 3
+      },
+      {
+        "player": "Deborah Bien-Aime",
+        "pos": "DF,MF",
+        "min": 1223,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Aude Bizet",
+        "pos": "DF",
+        "min": 486,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Cyrielle Blanc",
+        "pos": "MF",
+        "min": 1138,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Ninon Blanchard",
+        "pos": "DF",
+        "min": 1676,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Lou Bogaert",
+        "pos": "DF",
+        "min": 1836,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Célestine Boisard",
+        "pos": "DF",
+        "min": 1800,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Elise Bonet",
+        "pos": "DF,MF",
+        "min": 1497,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Maïté Boucly",
+        "pos": "DF,MF",
+        "min": 1288,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Mathilde Bourdieu",
+        "pos": "FW",
+        "min": 1858,
+        "g": 11,
+        "a": 1
+      },
+      {
+        "player": "Laura Bourgouin",
+        "pos": "MF,FW",
+        "min": 1666,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Jule Brand",
+        "pos": "FW,MF",
+        "min": 867,
+        "g": 4,
+        "a": 3
+      },
+      {
+        "player": "Jody Brown",
+        "pos": "MF,FW",
+        "min": 980,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Emily Burns",
+        "pos": "GK",
+        "min": 1980,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Anaïg Butel",
+        "pos": "DF,MF",
+        "min": 559,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lucie Calba",
+        "pos": "FW,MF",
+        "min": 1190,
+        "g": 11,
+        "a": 0
+      },
+      {
+        "player": "Sarah Cambot",
+        "pos": "MF,FW",
+        "min": 1776,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Laurie Cance",
+        "pos": "MF,FW",
+        "min": 1202,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Cindy Caputo",
+        "pos": "FW,MF",
+        "min": 1414,
+        "g": 4,
+        "a": 6
+      },
+      {
+        "player": "Noémie Carage",
+        "pos": "DF",
+        "min": 1980,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Olga Carmona",
+        "pos": "DF,MF",
+        "min": 1390,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Marta Carro",
+        "pos": "DF",
+        "min": 1812,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Amanda Chaney",
+        "pos": "DF",
+        "min": 1755,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Mylène Chavas",
+        "pos": "GK",
+        "min": 1923,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Tabitha Chawinga",
+        "pos": "FW,MF",
+        "min": 757,
+        "g": 11,
+        "a": 5
+      },
+      {
+        "player": "Wu Chengshu",
+        "pos": "FW",
+        "min": 875,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Shana Chossenotte",
+        "pos": "MF,FW",
+        "min": 781,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Aldana Cometti",
+        "pos": "DF",
+        "min": 1170,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Adéle Connesson",
+        "pos": "MF,FW",
+        "min": 565,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Adéle Connesson",
+        "pos": "FW,MF",
+        "min": 478,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Judith Coquet",
+        "pos": "MF",
+        "min": 1308,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Daphne Corboz",
+        "pos": "MF",
+        "min": 484,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Rachel Corboz",
+        "pos": "MF",
+        "min": 962,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Caitlin Cosme",
+        "pos": "DF",
+        "min": 952,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Maureen Cosson",
+        "pos": "DF,MF",
+        "min": 1890,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Bruna Costa",
+        "pos": "DF",
+        "min": 896,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Roxane Couasnon",
+        "pos": "DF",
+        "min": 303,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Ana-Maria Crnogorčević",
+        "pos": "MF,FW",
+        "min": 431,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Jagoda Cyraniak",
+        "pos": "DF",
+        "min": 501,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Tess David",
+        "pos": "MF",
+        "min": 667,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Deja Davis",
+        "pos": "DF",
+        "min": 1358,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Élisa De Almeida",
+        "pos": "DF",
+        "min": 1403,
+        "g": 0,
+        "a": 4
+      },
+      {
+        "player": "Léa Declercq",
+        "pos": "MF",
+        "min": 1849,
+        "g": 4,
+        "a": 1
+      },
+      {
+        "player": "Kadidiatou Diani",
+        "pos": "MF,FW",
+        "min": 826,
+        "g": 5,
+        "a": 2
+      },
+      {
+        "player": "Hillary Diaz",
+        "pos": "DF,MF",
+        "min": 1296,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Mama Diop",
+        "pos": "FW",
+        "min": 1143,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Oliwia Domin",
+        "pos": "MF,FW",
+        "min": 912,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Paulina Dudek",
+        "pos": "DF",
+        "min": 594,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Melchie Dumornay",
+        "pos": "MF",
+        "min": 952,
+        "g": 4,
+        "a": 7
+      },
+      {
+        "player": "Mary Earps",
+        "pos": "GK",
+        "min": 1890,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Anaïs Ebayilin",
+        "pos": "MF",
+        "min": 883,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Jennifer Echegini",
+        "pos": "MF,FW",
+        "min": 1587,
+        "g": 3,
+        "a": 3
+      },
+      {
+        "player": "Chancelle Effa Effa",
+        "pos": "FW",
+        "min": 1349,
+        "g": 5,
+        "a": 2
+      },
+      {
+        "player": "Damaris Egurrola",
+        "pos": "MF",
+        "min": 825,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Tara Elimbi Gilbert",
+        "pos": "MF,FW",
+        "min": 1020,
+        "g": 2,
+        "a": 4
+      },
+      {
+        "player": "Salomé Elisor",
+        "pos": "MF",
+        "min": 1064,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Roseline Éloissaint",
+        "pos": "MF,FW",
+        "min": 644,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Christiane Endler",
+        "pos": "GK",
+        "min": 1080,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sierra Enge",
+        "pos": "MF",
+        "min": 1872,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Romane Enguehard",
+        "pos": "MF,DF",
+        "min": 1889,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Agathe Felden",
+        "pos": "DF",
+        "min": 554,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Charlotte Fernandes",
+        "pos": "MF,DF",
+        "min": 1466,
+        "g": 1,
+        "a": 5
+      },
+      {
+        "player": "Louise Fleury",
+        "pos": "MF,DF",
+        "min": 1592,
+        "g": 1,
+        "a": 6
+      },
+      {
+        "player": "Airine Fontaine",
+        "pos": "MF,FW",
+        "min": 1333,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Eva Gaetino",
+        "pos": "DF,FW",
+        "min": 516,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Aleksandra Gajić",
+        "pos": "DF",
+        "min": 1779,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maëlle Garbino",
+        "pos": "MF,FW",
+        "min": 1281,
+        "g": 9,
+        "a": 1
+      },
+      {
+        "player": "Christy Gavory",
+        "pos": "MF",
+        "min": 1219,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Lina Gay",
+        "pos": "MF",
+        "min": 809,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Aude Gbedjissi",
+        "pos": "FW,MF",
+        "min": 1026,
+        "g": 11,
+        "a": 0
+      },
+      {
+        "player": "Grace Gillard",
+        "pos": "DF",
+        "min": 360,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lena Goetsch",
+        "pos": "DF,MF",
+        "min": 1777,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ornella Graziani",
+        "pos": "MF",
+        "min": 274,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Théa Greboval",
+        "pos": "DF",
+        "min": 1219,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Jackie Groenen",
+        "pos": "MF,DF",
+        "min": 971,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Gabriela Grzybowska",
+        "pos": "MF",
+        "min": 1288,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Lola Gstalter",
+        "pos": "MF,FW",
+        "min": 1247,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Sofia Guellati",
+        "pos": "DF",
+        "min": 1087,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Marion Haelewyn",
+        "pos": "DF",
+        "min": 895,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Nora Håheim",
+        "pos": "MF,FW",
+        "min": 373,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Laurine Hannequin",
+        "pos": "MF",
+        "min": 1611,
+        "g": 3,
+        "a": 6
+      },
+      {
+        "player": "Lindsey Heaps",
+        "pos": "MF",
+        "min": 611,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Ada Hegerberg",
+        "pos": "FW",
+        "min": 762,
+        "g": 3,
+        "a": 4
+      },
+      {
+        "player": "Laura Hermann",
+        "pos": "MF",
+        "min": 697,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Melissa Herrera",
+        "pos": "MF,FW",
+        "min": 1394,
+        "g": 4,
+        "a": 6
+      },
+      {
+        "player": "Mégane Hoeltzel",
+        "pos": "MF",
+        "min": 1062,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Tyler Isgrig",
+        "pos": "MF",
+        "min": 367,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Nikolina Istocki",
+        "pos": "MF",
+        "min": 286,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Inès Jaurena",
+        "pos": "MF",
+        "min": 1681,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Klaudia Jedlińska",
+        "pos": "MF,FW",
+        "min": 687,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Sherly Jeudy",
+        "pos": "FW,MF",
+        "min": 986,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Emmy Jezequel",
+        "pos": "DF",
+        "min": 946,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kedie Johnson",
+        "pos": "DF,MF",
+        "min": 778,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Blandine Joly",
+        "pos": "GK",
+        "min": 1080,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Florianne Jourde",
+        "pos": "MF",
+        "min": 453,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Rose Kadzere",
+        "pos": "MF,FW",
+        "min": 1210,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Ewelina Kamczyk",
+        "pos": "MF,FW",
+        "min": 628,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Merveille Kanjinga",
+        "pos": "FW,MF",
+        "min": 1145,
+        "g": 10,
+        "a": 8
+      },
+      {
+        "player": "Sakina Karchaoui",
+        "pos": "MF",
+        "min": 1482,
+        "g": 6,
+        "a": 4
+      },
+      {
+        "player": "Sarah Kassi",
+        "pos": "MF",
+        "min": 977,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Marie-Antoinette Katoto",
+        "pos": "FW,MF",
+        "min": 1024,
+        "g": 6,
+        "a": 1
+      },
+      {
+        "player": "Grace Kazadi",
+        "pos": "MF,DF",
+        "min": 870,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Inès Kbida",
+        "pos": "DF,MF",
+        "min": 727,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Moira Kelley",
+        "pos": "DF",
+        "min": 982,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Lea Khelifi",
+        "pos": "MF,FW",
+        "min": 1205,
+        "g": 8,
+        "a": 1
+      },
+      {
+        "player": "Roselène Khezami",
+        "pos": "DF",
+        "min": 837,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Inès Konan",
+        "pos": "FW,MF",
+        "min": 1156,
+        "g": 6,
+        "a": 0
+      },
+      {
+        "player": "Kaja Korošec",
+        "pos": "MF",
+        "min": 1937,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Eva Kouache",
+        "pos": "DF",
+        "min": 1961,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Kaîna El Koumir",
+        "pos": "FW",
+        "min": 829,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Nadia Krezyman",
+        "pos": "MF,FW",
+        "min": 1719,
+        "g": 5,
+        "a": 4
+      },
+      {
+        "player": "Ina Kristoffersen",
+        "pos": "DF",
+        "min": 274,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Alexandria Lamontagne",
+        "pos": "FW,MF",
+        "min": 749,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Tess Laplacette",
+        "pos": "DF,MF",
+        "min": 1864,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Emelyne Laurent",
+        "pos": "MF,FW",
+        "min": 1425,
+        "g": 10,
+        "a": 2
+      },
+      {
+        "player": "Ashley Lawrence",
+        "pos": "DF",
+        "min": 960,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Anaele Le Moguedec",
+        "pos": "MF",
+        "min": 1511,
+        "g": 3,
+        "a": 7
+      },
+      {
+        "player": "Margaux Le Mouël",
+        "pos": "MF",
+        "min": 1546,
+        "g": 4,
+        "a": 2
+      },
+      {
+        "player": "Emmy Lefèvre",
+        "pos": "MF",
+        "min": 607,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Romane Lejeune",
+        "pos": "DF",
+        "min": 1619,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Justine Lerond",
+        "pos": "GK",
+        "min": 1065,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Romée Leuchter",
+        "pos": "FW",
+        "min": 1384,
+        "g": 18,
+        "a": 7
+      },
+      {
+        "player": "Marie Levasseur",
+        "pos": "DF",
+        "min": 1800,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Fiona Liaigre",
+        "pos": "DF",
+        "min": 1045,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jennyfer Limage",
+        "pos": "DF",
+        "min": 1078,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kethna Louis",
+        "pos": "DF",
+        "min": 470,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Julie Machart",
+        "pos": "MF,DF",
+        "min": 1289,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Héloïse Mansuy",
+        "pos": "DF,MF",
+        "min": 991,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Morgane Martins",
+        "pos": "DF,MF",
+        "min": 1321,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Clara Matéo",
+        "pos": "FW,MF",
+        "min": 1822,
+        "g": 8,
+        "a": 3
+      },
+      {
+        "player": "Griedge Mbock Bathy",
+        "pos": "DF",
+        "min": 1207,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Hallie Meadows",
+        "pos": "DF",
+        "min": 334,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Claudine Meffometou",
+        "pos": "DF",
+        "min": 1800,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maeline Mendy",
+        "pos": "MF,FW",
+        "min": 600,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Mélinda Mendy",
+        "pos": "MF,FW",
+        "min": 786,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Teagan Micah",
+        "pos": "GK",
+        "min": 360,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Léa Morissaint",
+        "pos": "FW,MF",
+        "min": 292,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Juliette Mossard",
+        "pos": "MF,DF",
+        "min": 369,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Chloé N'Gazi",
+        "pos": "GK",
+        "min": 540,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jade Nassi",
+        "pos": "MF",
+        "min": 983,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Melween Ndongala",
+        "pos": "DF",
+        "min": 899,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Colette Ndzana",
+        "pos": "DF",
+        "min": 586,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Elma Nelhage",
+        "pos": "DF",
+        "min": 768,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Monique Ngock",
+        "pos": "MF",
+        "min": 1501,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Soufiya Ngueleu",
+        "pos": "FW",
+        "min": 1333,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Laureen Oillic",
+        "pos": "DF",
+        "min": 700,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sonia Ouchene",
+        "pos": "MF,FW",
+        "min": 1540,
+        "g": 4,
+        "a": 5
+      },
+      {
+        "player": "Célina Ould Hocine",
+        "pos": "DF",
+        "min": 1371,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Ella Palis",
+        "pos": "DF,MF",
+        "min": 1416,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Julie Pasquereau",
+        "pos": "DF",
+        "min": 1491,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Jenny Perret",
+        "pos": "MF,FW",
+        "min": 1240,
+        "g": 3,
+        "a": 3
+      },
+      {
+        "player": "Laëtitia Philippe",
+        "pos": "GK",
+        "min": 1800,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Océane Picard",
+        "pos": "MF,FW",
+        "min": 1007,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Constance Picaud",
+        "pos": "GK",
+        "min": 1980,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Amandine Pierre-Louis",
+        "pos": "DF,MF",
+        "min": 708,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Dayana Pierre-Louis",
+        "pos": "MF,FW",
+        "min": 669,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Alice Pinguet",
+        "pos": "GK",
+        "min": 1980,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Fátima Pinto",
+        "pos": "MF,DF",
+        "min": 1311,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Carla Polito",
+        "pos": "MF",
+        "min": 1226,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Fany Proniez",
+        "pos": "MF,DF",
+        "min": 753,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Romane Rafalski",
+        "pos": "DF,FW",
+        "min": 272,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Elisa Rambaud",
+        "pos": "MF,FW",
+        "min": 737,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jade Rastocle",
+        "pos": "DF",
+        "min": 1876,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Wendie Renard",
+        "pos": "DF,MF",
+        "min": 769,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Manon Revelli",
+        "pos": "MF,DF",
+        "min": 1694,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Camille Robillard",
+        "pos": "MF,FW",
+        "min": 391,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Nelly Rodrigues",
+        "pos": "DF",
+        "min": 1771,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Marion Romanelli",
+        "pos": "DF",
+        "min": 970,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Fanny Rossi",
+        "pos": "MF,DF",
+        "min": 500,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Madeline Roth",
+        "pos": "MF",
+        "min": 1544,
+        "g": 3,
+        "a": 3
+      },
+      {
+        "player": "Justine Rouquet",
+        "pos": "MF,FW",
+        "min": 1640,
+        "g": 9,
+        "a": 2
+      },
+      {
+        "player": "Thiniba Samoura",
+        "pos": "DF",
+        "min": 1143,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Hawa Sangare",
+        "pos": "MF,FW",
+        "min": 493,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Imane Saoud",
+        "pos": "FW,MF",
+        "min": 1492,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Sheika Scott",
+        "pos": "MF",
+        "min": 448,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Margot Shore",
+        "pos": "GK",
+        "min": 1890,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Korbin Shrader",
+        "pos": "MF",
+        "min": 1162,
+        "g": 7,
+        "a": 3
+      },
+      {
+        "player": "Emmi Siren",
+        "pos": "DF",
+        "min": 1812,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Alice Sombath",
+        "pos": "DF",
+        "min": 1145,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Zoé Stiévenart",
+        "pos": "FW,MF",
+        "min": 941,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Sofie Svava",
+        "pos": "DF,MF",
+        "min": 1025,
+        "g": 1,
+        "a": 8
+      },
+      {
+        "player": "Julie Swierot",
+        "pos": "MF",
+        "min": 1628,
+        "g": 2,
+        "a": 4
+      },
+      {
+        "player": "Ingrid Syrstad Engen",
+        "pos": "DF",
+        "min": 997,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Katriina Talaslahti",
+        "pos": "GK",
+        "min": 1710,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Chloé Tapia",
+        "pos": "DF",
+        "min": 1300,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Tarciane",
+        "pos": "DF",
+        "min": 1062,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Kate Taylor",
+        "pos": "DF",
+        "min": 1210,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Anaelle Tchakounte",
+        "pos": "DF",
+        "min": 617,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Meriame Terchoun",
+        "pos": "FW,MF",
+        "min": 1365,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Sofie Thrane Hornemann",
+        "pos": "FW",
+        "min": 1672,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Mariam Toloba",
+        "pos": "FW,MF",
+        "min": 1295,
+        "g": 7,
+        "a": 3
+      },
+      {
+        "player": "Marion Torrent",
+        "pos": "MF",
+        "min": 427,
+        "g": 0,
+        "a": 3
+      },
+      {
+        "player": "Aissata Traoré",
+        "pos": "FW,MF",
+        "min": 676,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Manssita Traore",
+        "pos": "MF,FW",
+        "min": 738,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lou Tsé",
+        "pos": "DF",
+        "min": 630,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Naomie Vagre",
+        "pos": "FW",
+        "min": 1187,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Margaux Vairon",
+        "pos": "DF",
+        "min": 1650,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Vitória",
+        "pos": "MF",
+        "min": 821,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Manon Wahl",
+        "pos": "GK",
+        "min": 1980,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kaylan Williams",
+        "pos": "FW",
+        "min": 325,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Wang Yanwen",
+        "pos": "MF,FW",
+        "min": 1069,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Lily Yohannes",
+        "pos": "MF",
+        "min": 1081,
+        "g": 4,
+        "a": 5
+      }
+    ]
+  },
+  "NWSL": {
+    "tier": 2,
+    "players": [
+      {
+        "player": "Emeri Adames",
+        "pos": "MF,FW",
+        "min": 375,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Marie-Yasmine Alidou",
+        "pos": "MF",
+        "min": 534,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Michelle Alozie",
+        "pos": "DF,MF",
+        "min": 448,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Angelina Anderson",
+        "pos": "GK",
+        "min": 630,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Hannah Anderson",
+        "pos": "DF",
+        "min": 293,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Joelle Anderson",
+        "pos": "DF",
+        "min": 417,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Angelina",
+        "pos": "MF",
+        "min": 549,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Laurel Ansbrow",
+        "pos": "DF",
+        "min": 321,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Laís Araújo",
+        "pos": "DF",
+        "min": 299,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Mackenzie Arnold",
+        "pos": "GK",
+        "min": 540,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ary Borges",
+        "pos": "MF",
+        "min": 568,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Kimmi Ascanio",
+        "pos": "MF",
+        "min": 589,
+        "g": 0,
+        "a": 3
+      },
+      {
+        "player": "Dorian Bailey",
+        "pos": "MF",
+        "min": 336,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Elizabeth Ball",
+        "pos": "DF",
+        "min": 373,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Barbra Banda",
+        "pos": "FW,MF",
+        "min": 745,
+        "g": 8,
+        "a": 0
+      },
+      {
+        "player": "Hannah Bebar",
+        "pos": "MF",
+        "min": 624,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maycee Bell",
+        "pos": "DF,MF",
+        "min": 540,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ann-Katrin Berger",
+        "pos": "GK",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Malia Berkely",
+        "pos": "DF",
+        "min": 653,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rebeca Bernal",
+        "pos": "MF",
+        "min": 722,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Hannah Betfort",
+        "pos": "FW",
+        "min": 357,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Croix Bethune",
+        "pos": "MF,FW",
+        "min": 546,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Jenna Bike",
+        "pos": "DF",
+        "min": 451,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jordyn Bloomer",
+        "pos": "GK",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Cassandra Bogere",
+        "pos": "MF",
+        "min": 546,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jane Campbell",
+        "pos": "GK",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Alba Caño",
+        "pos": "MF",
+        "min": 722,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Sofia Cantore",
+        "pos": "FW",
+        "min": 567,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Jorelyn Carabalí",
+        "pos": "DF",
+        "min": 619,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Gabrielle Carle",
+        "pos": "DF",
+        "min": 398,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Jess Carter",
+        "pos": "DF",
+        "min": 783,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Danielle Colaprico",
+        "pos": "MF",
+        "min": 535,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Sydney Collins",
+        "pos": "DF",
+        "min": 630,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Aldana Cometti",
+        "pos": "DF",
+        "min": 438,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Michelle Cooper",
+        "pos": "MF,FW",
+        "min": 493,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Gia Corley",
+        "pos": "MF",
+        "min": 308,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Brooklyn Courtnall",
+        "pos": "DF",
+        "min": 354,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Madison Curry",
+        "pos": "DF",
+        "min": 718,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maddie Dahlien",
+        "pos": "MF,FW",
+        "min": 377,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kenza Dali",
+        "pos": "MF",
+        "min": 810,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Tierna Davidson",
+        "pos": "DF",
+        "min": 395,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Debinha",
+        "pos": "MF",
+        "min": 438,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Kate Del Fava",
+        "pos": "DF",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Tessa Dellarose",
+        "pos": "DF",
+        "min": 523,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Cece Delzer",
+        "pos": "MF,FW",
+        "min": 581,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Anouk Denton",
+        "pos": "DF",
+        "min": 361,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lucia Di Guglielmo",
+        "pos": "DF",
+        "min": 588,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Claudia Dickey",
+        "pos": "GK",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Dudinha",
+        "pos": "FW,MF",
+        "min": 762,
+        "g": 3,
+        "a": 4
+      },
+      {
+        "player": "Jordynn Dudley",
+        "pos": "MF,FW",
+        "min": 553,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Cori Dyke",
+        "pos": "DF",
+        "min": 794,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Emerson Elgin",
+        "pos": "DF",
+        "min": 450,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kate Faasse",
+        "pos": "FW",
+        "min": 286,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Aaliyah Farmer",
+        "pos": "MF",
+        "min": 405,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Laurina Fazer",
+        "pos": "MF",
+        "min": 508,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kayla Fischer",
+        "pos": "MF",
+        "min": 650,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Jess Fishlock",
+        "pos": "MF",
+        "min": 341,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Jessie Fleming",
+        "pos": "MF",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Natasha Flint",
+        "pos": "MF",
+        "min": 713,
+        "g": 4,
+        "a": 2
+      },
+      {
+        "player": "Taylor Flint",
+        "pos": "MF,DF",
+        "min": 720,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Bea Franklin",
+        "pos": "DF",
+        "min": 341,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Leah Freeman",
+        "pos": "GK",
+        "min": 540,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kennedy Fuller",
+        "pos": "MF",
+        "min": 476,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Eva Gaetino",
+        "pos": "DF",
+        "min": 402,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ryan Gareis",
+        "pos": "MF,FW",
+        "min": 678,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Cristiana Girelli",
+        "pos": "FW",
+        "min": 340,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Lia Godfrey",
+        "pos": "MF,FW",
+        "min": 505,
+        "g": 4,
+        "a": 1
+      },
+      {
+        "player": "Nádia Gomes",
+        "pos": "MF,FW",
+        "min": 451,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Esther González",
+        "pos": "FW",
+        "min": 705,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Sarah Gorden",
+        "pos": "DF",
+        "min": 459,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Maggie Graham",
+        "pos": "MF",
+        "min": 637,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Julia Grosso",
+        "pos": "MF",
+        "min": 777,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Amanda Gutierres",
+        "pos": "MF,FW",
+        "min": 532,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "DiDi Haracic",
+        "pos": "GK",
+        "min": 270,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Josefine Hasbo",
+        "pos": "MF",
+        "min": 504,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ella Hase",
+        "pos": "MF,FW",
+        "min": 565,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Manaka Hayashi",
+        "pos": "MF",
+        "min": 600,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kathrin Hendrich",
+        "pos": "DF",
+        "min": 474,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Oihane Hernández",
+        "pos": "DF",
+        "min": 728,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Hal Hershfelt",
+        "pos": "MF",
+        "min": 765,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Samantha Hiatt",
+        "pos": "DF",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Macey Hodge",
+        "pos": "MF",
+        "min": 351,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Haley Hopkins",
+        "pos": "MF",
+        "min": 325,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Jaelin Howell",
+        "pos": "MF",
+        "min": 795,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sofia Huerta",
+        "pos": "DF",
+        "min": 707,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Taylor Huff",
+        "pos": "MF",
+        "min": 504,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Jordyn Huitema",
+        "pos": "FW",
+        "min": 453,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Claire Hutton",
+        "pos": "MF",
+        "min": 630,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Evelyn Ijeh",
+        "pos": "FW",
+        "min": 324,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Riley Jackson",
+        "pos": "MF",
+        "min": 705,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sveindís Jane Jónsdóttir",
+        "pos": "FW",
+        "min": 624,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Ellie Jean",
+        "pos": "DF",
+        "min": 630,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jameese Joseph",
+        "pos": "MF",
+        "min": 378,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Mia Justus",
+        "pos": "GK",
+        "min": 531,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Annie Karich",
+        "pos": "MF,DF",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Savannah King",
+        "pos": "DF",
+        "min": 288,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Leah Klenke",
+        "pos": "DF",
+        "min": 707,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Melissa Kössler",
+        "pos": "FW",
+        "min": 651,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Rosemonde Kouassi",
+        "pos": "MF",
+        "min": 598,
+        "g": 0,
+        "a": 3
+      },
+      {
+        "player": "Shinomi Koyama",
+        "pos": "MF,FW",
+        "min": 709,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Racheal Kundananji",
+        "pos": "MF",
+        "min": 277,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Kaleigh Kurtz",
+        "pos": "DF",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lo'eau LaBonta",
+        "pos": "MF",
+        "min": 491,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Cloé Lacasse",
+        "pos": "MF,FW",
+        "min": 700,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Rose Lavelle",
+        "pos": "MF",
+        "min": 630,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Karlie Lema",
+        "pos": "FW,MF",
+        "min": 418,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ally Lemos",
+        "pos": "MF",
+        "min": 652,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Maitane López Millán",
+        "pos": "MF",
+        "min": 342,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lorena",
+        "pos": "GK",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ludmila",
+        "pos": "FW",
+        "min": 684,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Devin Lynch",
+        "pos": "MF",
+        "min": 665,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Hailie Mace",
+        "pos": "DF",
+        "min": 790,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sandy MacIver",
+        "pos": "GK",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maiara",
+        "pos": "MF",
+        "min": 488,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Nealy Martin",
+        "pos": "MF",
+        "min": 572,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Claudia Martínez",
+        "pos": "MF",
+        "min": 287,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Emily Mason",
+        "pos": "DF",
+        "min": 697,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Manaka Matsukubo",
+        "pos": "MF,FW",
+        "min": 500,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Ainsley McCammon",
+        "pos": "MF",
+        "min": 427,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Savannah McCaskill",
+        "pos": "MF",
+        "min": 767,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Phoebe McClernon",
+        "pos": "DF",
+        "min": 700,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Yuna McCormack",
+        "pos": "MF",
+        "min": 420,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Haley McCutcheon",
+        "pos": "MF",
+        "min": 810,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Mandy McGlynn",
+        "pos": "GK",
+        "min": 279,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Tara McKeown",
+        "pos": "DF",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Quincy McMahon",
+        "pos": "DF",
+        "min": 289,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kristen McNabb",
+        "pos": "DF",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maddie Mercado",
+        "pos": "FW,MF",
+        "min": 648,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Morgan Messner",
+        "pos": "GK",
+        "min": 270,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Samantha Meza",
+        "pos": "MF",
+        "min": 696,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Tatumn Milazzo",
+        "pos": "DF",
+        "min": 394,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Lauren Milliet",
+        "pos": "DF",
+        "min": 719,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Narumi Miura",
+        "pos": "MF",
+        "min": 305,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Nérilia Mondésir",
+        "pos": "MF,FW",
+        "min": 544,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Anna Moorhouse",
+        "pos": "GK",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Madeline Moreau",
+        "pos": "DF",
+        "min": 279,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Esme Morgan",
+        "pos": "DF",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Miyabi Moriya",
+        "pos": "DF",
+        "min": 272,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Perle Morroni",
+        "pos": "DF",
+        "min": 793,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Olivia Moultrie",
+        "pos": "MF,FW",
+        "min": 810,
+        "g": 4,
+        "a": 4
+      },
+      {
+        "player": "Marie Müller",
+        "pos": "DF",
+        "min": 377,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Casey Murphy",
+        "pos": "GK",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Alyssa Naeher",
+        "pos": "GK",
+        "min": 630,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Paige Nielsen",
+        "pos": "DF",
+        "min": 659,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Isabella Obaze",
+        "pos": "DF",
+        "min": 450,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ayo Oke",
+        "pos": "DF,MF",
+        "min": 367,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Bárbara Olivieri",
+        "pos": "MF,FW",
+        "min": 463,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Lizbeth Ovalle",
+        "pos": "MF",
+        "min": 376,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Katie O'Kane",
+        "pos": "MF",
+        "min": 675,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Kiana Palacios",
+        "pos": "FW",
+        "min": 575,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Avery Patterson",
+        "pos": "DF",
+        "min": 630,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jayden Perry",
+        "pos": "DF",
+        "min": 314,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Courtney Petersen",
+        "pos": "DF",
+        "min": 610,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Alex Pfeiffer",
+        "pos": "MF",
+        "min": 270,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Carson Pickett",
+        "pos": "DF",
+        "min": 607,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Dayana Pierre-Louis",
+        "pos": "MF",
+        "min": 289,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Brianna Pinto",
+        "pos": "MF,FW",
+        "min": 427,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Gabi Portilho",
+        "pos": "FW",
+        "min": 396,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Nichelle Prince",
+        "pos": "MF,FW",
+        "min": 642,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Margaret Purce",
+        "pos": "DF,FW",
+        "min": 517,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kat Rader",
+        "pos": "MF",
+        "min": 648,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Rafaelle",
+        "pos": "DF",
+        "min": 580,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Lilly Reale",
+        "pos": "DF",
+        "min": 525,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Megan Reid",
+        "pos": "DF",
+        "min": 351,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Reyna Reyes",
+        "pos": "DF",
+        "min": 527,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kaleigh Riehl",
+        "pos": "DF",
+        "min": 720,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Gabrielle Robinson",
+        "pos": "DF",
+        "min": 440,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Trinity Rodman",
+        "pos": "MF",
+        "min": 721,
+        "g": 3,
+        "a": 3
+      },
+      {
+        "player": "Izzy Rodriguez",
+        "pos": "DF",
+        "min": 710,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Samantha Rose Smith",
+        "pos": "MF,FW",
+        "min": 577,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Laney Rouse",
+        "pos": "DF",
+        "min": 272,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Yazmeen Ryan",
+        "pos": "MF",
+        "min": 598,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Emily Sams",
+        "pos": "DF",
+        "min": 602,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Ashley Sanchez",
+        "pos": "MF,FW",
+        "min": 685,
+        "g": 5,
+        "a": 0
+      },
+      {
+        "player": "Leicy Santos",
+        "pos": "MF",
+        "min": 701,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Sarah Schupansky",
+        "pos": "MF,FW",
+        "min": 283,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Katie Scott",
+        "pos": "MF",
+        "min": 345,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Emma Sears",
+        "pos": "MF,FW",
+        "min": 501,
+        "g": 2,
+        "a": 3
+      },
+      {
+        "player": "Ally Sentnor",
+        "pos": "FW,MF",
+        "min": 673,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Kayla Sharples",
+        "pos": "DF",
+        "min": 651,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Jaedyn Shaw",
+        "pos": "MF,FW",
+        "min": 487,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Delanie Sheehan",
+        "pos": "MF",
+        "min": 506,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Kailen Sheridan",
+        "pos": "GK",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Uno Shiragaki",
+        "pos": "DF",
+        "min": 545,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Evelyn Shores",
+        "pos": "DF",
+        "min": 541,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Jordan Silkowitz",
+        "pos": "GK",
+        "min": 630,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Abby Smith",
+        "pos": "GK",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Janine Sonis",
+        "pos": "DF,FW",
+        "min": 566,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Emily Sonnett",
+        "pos": "DF",
+        "min": 476,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Bianca St-Georges",
+        "pos": "DF,FW",
+        "min": 617,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Samantha Staab",
+        "pos": "DF",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Talia Staude",
+        "pos": "DF",
+        "min": 371,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Katie Stengel",
+        "pos": "FW,MF",
+        "min": 287,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Taylor Suarez",
+        "pos": "MF,FW",
+        "min": 290,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Mina Tanaka",
+        "pos": "MF",
+        "min": 570,
+        "g": 2,
+        "a": 3
+      },
+      {
+        "player": "Ana Tejada",
+        "pos": "MF",
+        "min": 690,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Gisele Thompson",
+        "pos": "DF",
+        "min": 630,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Janni Thomsen",
+        "pos": "DF",
+        "min": 555,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Riley Tiernan",
+        "pos": "MF,FW",
+        "min": 502,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Pietra Tordin",
+        "pos": "MF,FW",
+        "min": 614,
+        "g": 3,
+        "a": 3
+      },
+      {
+        "player": "Aissata Traoré",
+        "pos": "FW",
+        "min": 578,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Reilyn Turner",
+        "pos": "MF",
+        "min": 506,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Linda Ullmark",
+        "pos": "MF",
+        "min": 643,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Amelia Van Zanten",
+        "pos": "DF",
+        "min": 666,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Kiki Van Zanten",
+        "pos": "FW",
+        "min": 465,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Mary Vignola",
+        "pos": "DF",
+        "min": 664,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Solai Washington",
+        "pos": "MF",
+        "min": 437,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Dani Weatherholt",
+        "pos": "DF",
+        "min": 515,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Sarah Weber",
+        "pos": "FW",
+        "min": 591,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Kennedy Wesley",
+        "pos": "DF",
+        "min": 810,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Ellie Wheeler",
+        "pos": "DF",
+        "min": 465,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Carly Wickenheiser",
+        "pos": "MF,DF",
+        "min": 328,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Kate Wiesner",
+        "pos": "DF",
+        "min": 450,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ryan Williams",
+        "pos": "DF,MF",
+        "min": 720,
+        "g": 0,
+        "a": 3
+      },
+      {
+        "player": "Sophia Wilson",
+        "pos": "FW",
+        "min": 563,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Arin Wright",
+        "pos": "DF",
+        "min": 360,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Summer Yates",
+        "pos": "MF",
+        "min": 424,
+        "g": 0,
+        "a": 0
+      }
+    ]
+  },
+  "Frauen-Bundesliga": {
+    "tier": 1,
+    "players": [
+      {
+        "player": "Friederike Abt",
+        "pos": "GK",
+        "min": 942,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Adriana Achcińska",
+        "pos": "MF",
+        "min": 1487,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Dilara Acikgöz",
+        "pos": "DF",
+        "min": 318,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rebecca Adamczyk",
+        "pos": "GK",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Anna Aehling",
+        "pos": "DF",
+        "min": 284,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sara Agrež",
+        "pos": "DF",
+        "min": 2083,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Mara Alber",
+        "pos": "MF,FW",
+        "min": 790,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Olivia Alcaide",
+        "pos": "FW,MF",
+        "min": 640,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Lina Altenburg",
+        "pos": "GK",
+        "min": 2160,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Bernadette Amani",
+        "pos": "MF",
+        "min": 451,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Valesca Ampoorter",
+        "pos": "MF",
+        "min": 1905,
+        "g": 4,
+        "a": 3
+      },
+      {
+        "player": "Lydia Andrade",
+        "pos": "FW,MF",
+        "min": 528,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Nicole Anyomi",
+        "pos": "FW",
+        "min": 1692,
+        "g": 13,
+        "a": 6
+      },
+      {
+        "player": "Amira Arfaoui",
+        "pos": "MF",
+        "min": 625,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Emilía Ásgeirsdóttir",
+        "pos": "MF,FW",
+        "min": 1457,
+        "g": 5,
+        "a": 1
+      },
+      {
+        "player": "Alina Axtmann",
+        "pos": "DF",
+        "min": 488,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lany Bäcker",
+        "pos": "DF",
+        "min": 907,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Stine Ballisager Pedersen",
+        "pos": "DF",
+        "min": 1362,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Paulina Bartz",
+        "pos": "MF",
+        "min": 709,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Nele Bauereisen",
+        "pos": "FW",
+        "min": 372,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Lisa Baum",
+        "pos": "MF,FW",
+        "min": 2020,
+        "g": 6,
+        "a": 2
+      },
+      {
+        "player": "Jacqueline Baumgärtel",
+        "pos": "FW",
+        "min": 586,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Sharon Beck",
+        "pos": "MF",
+        "min": 364,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Lineth Beerensteyn",
+        "pos": "FW",
+        "min": 1236,
+        "g": 9,
+        "a": 1
+      },
+      {
+        "player": "Loreen Bender",
+        "pos": "MF",
+        "min": 1280,
+        "g": 5,
+        "a": 4
+      },
+      {
+        "player": "Laura Benkarth",
+        "pos": "GK",
+        "min": 1440,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maike Berentzen",
+        "pos": "MF,FW",
+        "min": 909,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Guro Bergsvand",
+        "pos": "DF",
+        "min": 819,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Alena Bienz",
+        "pos": "MF",
+        "min": 574,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Luca-Emily Birkholz",
+        "pos": "FW",
+        "min": 1489,
+        "g": 5,
+        "a": 3
+      },
+      {
+        "player": "Thea Bjelde",
+        "pos": "DF",
+        "min": 700,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Rebecka Blomqvist",
+        "pos": "FW",
+        "min": 1322,
+        "g": 10,
+        "a": 5
+      },
+      {
+        "player": "Tessa Blumenberg",
+        "pos": "MF,FW",
+        "min": 796,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Delice Boboy",
+        "pos": "FW",
+        "min": 1982,
+        "g": 6,
+        "a": 5
+      },
+      {
+        "player": "Nadine Böhi",
+        "pos": "GK",
+        "min": 450,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Annaleen Böhler",
+        "pos": "DF",
+        "min": 1132,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Amelie Bohnen",
+        "pos": "DF,MF",
+        "min": 615,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Josephine Bonsu",
+        "pos": "DF,MF",
+        "min": 1594,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Rafaela Borggräfe",
+        "pos": "GK",
+        "min": 768,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Cara Bösl",
+        "pos": "GK",
+        "min": 1781,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Pauline Bremer",
+        "pos": "MF,FW",
+        "min": 1240,
+        "g": 5,
+        "a": 4
+      },
+      {
+        "player": "Melanie Brunnthaler",
+        "pos": "FW",
+        "min": 1969,
+        "g": 3,
+        "a": 4
+      },
+      {
+        "player": "Mia Büchele",
+        "pos": "MF,FW",
+        "min": 791,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Klara Bühl",
+        "pos": "MF",
+        "min": 1321,
+        "g": 7,
+        "a": 15
+      },
+      {
+        "player": "Kessya Bussy",
+        "pos": "MF,FW",
+        "min": 774,
+        "g": 8,
+        "a": 4
+      },
+      {
+        "player": "Eileen Campbell",
+        "pos": "FW,MF",
+        "min": 1899,
+        "g": 5,
+        "a": 3
+      },
+      {
+        "player": "Arianna Caruso",
+        "pos": "MF,FW",
+        "min": 1149,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Selina Cerci",
+        "pos": "FW",
+        "min": 1913,
+        "g": 16,
+        "a": 9
+      },
+      {
+        "player": "Remina Chiba",
+        "pos": "FW",
+        "min": 609,
+        "g": 5,
+        "a": 3
+      },
+      {
+        "player": "Gina Chmielinski",
+        "pos": "MF,FW",
+        "min": 1286,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Michela Croatto",
+        "pos": "DF",
+        "min": 273,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Aurélie Csillag",
+        "pos": "MF,FW",
+        "min": 476,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Chiara D'Angelo",
+        "pos": "DF",
+        "min": 2155,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Linda Dallmann",
+        "pos": "MF",
+        "min": 1411,
+        "g": 7,
+        "a": 5
+      },
+      {
+        "player": "Jovana Damnjanović",
+        "pos": "FW,MF",
+        "min": 848,
+        "g": 7,
+        "a": 2
+      },
+      {
+        "player": "Julia Debitzki",
+        "pos": "DF,MF",
+        "min": 770,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Celina Degen",
+        "pos": "DF",
+        "min": 1347,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Féli Delacauw",
+        "pos": "MF,FW",
+        "min": 620,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Medina Dešić",
+        "pos": "FW",
+        "min": 1451,
+        "g": 6,
+        "a": 2
+      },
+      {
+        "player": "Laura Dick",
+        "pos": "GK",
+        "min": 2250,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Vanessa Diehm",
+        "pos": "DF,MF",
+        "min": 2222,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Nikée van Dijk",
+        "pos": "FW",
+        "min": 717,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Caitlin Dijkstra",
+        "pos": "DF",
+        "min": 1273,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Jaqueline Donges",
+        "pos": "DF",
+        "min": 415,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Laura Donhauser",
+        "pos": "MF",
+        "min": 1162,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Lisa Doorn",
+        "pos": "DF",
+        "min": 1337,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sara Doorsoun",
+        "pos": "DF",
+        "min": 930,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Magou Doucouré",
+        "pos": "DF",
+        "min": 884,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Wiëlle Douma",
+        "pos": "DF",
+        "min": 1442,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Nikoline Dudek",
+        "pos": "DF,MF",
+        "min": 1590,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Barbara Dunst",
+        "pos": "MF",
+        "min": 690,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Leela Egli",
+        "pos": "MF",
+        "min": 1070,
+        "g": 5,
+        "a": 3
+      },
+      {
+        "player": "Laureta Elmazi",
+        "pos": "MF,FW",
+        "min": 1161,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Vivien Endemann",
+        "pos": "MF,FW",
+        "min": 910,
+        "g": 3,
+        "a": 5
+      },
+      {
+        "player": "Magdalena Eriksson",
+        "pos": "DF",
+        "min": 1326,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Hannah Etzold",
+        "pos": "GK",
+        "min": 630,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Hannah Eurlings",
+        "pos": "MF,FW",
+        "min": 804,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Laura Feiersinger",
+        "pos": "MF",
+        "min": 1845,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Meret Felde",
+        "pos": "MF",
+        "min": 2035,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jana Feldkamp",
+        "pos": "MF,DF",
+        "min": 868,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Paula Flach",
+        "pos": "MF,DF",
+        "min": 1968,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Svenja Fölmli",
+        "pos": "FW,MF",
+        "min": 915,
+        "g": 7,
+        "a": 3
+      },
+      {
+        "player": "Beatrix Fördős",
+        "pos": "DF",
+        "min": 1817,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Laura Freigang",
+        "pos": "FW,MF",
+        "min": 1746,
+        "g": 10,
+        "a": 2
+      },
+      {
+        "player": "Melissa Friedrich",
+        "pos": "DF",
+        "min": 291,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Clara Fröhlich",
+        "pos": "DF",
+        "min": 957,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Irina Fuchs",
+        "pos": "GK",
+        "min": 1620,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Vanessa Fudalla",
+        "pos": "FW",
+        "min": 1930,
+        "g": 14,
+        "a": 7
+      },
+      {
+        "player": "Vanessa Furst",
+        "pos": "DF,MF",
+        "min": 1904,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Aleigh Gambone",
+        "pos": "DF,MF",
+        "min": 879,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Noemi Gentile",
+        "pos": "MF,FW",
+        "min": 1387,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Marina Georgieva",
+        "pos": "DF",
+        "min": 317,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Anna Gerhardt",
+        "pos": "DF",
+        "min": 1618,
+        "g": 0,
+        "a": 3
+      },
+      {
+        "player": "Vanessa Gilles",
+        "pos": "DF",
+        "min": 771,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Laura Gloning",
+        "pos": "MF,DF",
+        "min": 1744,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Estrella Gonzalez",
+        "pos": "DF",
+        "min": 1778,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Lisa Gora",
+        "pos": "MF,DF",
+        "min": 988,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Dominika Grabowska",
+        "pos": "MF",
+        "min": 452,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Ruby Grant",
+        "pos": "MF",
+        "min": 967,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Lisanne Gräwe",
+        "pos": "MF",
+        "min": 1800,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Janna Grimm",
+        "pos": "MF",
+        "min": 784,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Maria-Luisa Grohs",
+        "pos": "GK",
+        "min": 810,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Meret Günster",
+        "pos": "FW",
+        "min": 327,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Sarah Gutmann",
+        "pos": "DF",
+        "min": 416,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Luisa Guttenberger",
+        "pos": "MF,DF",
+        "min": 2113,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Giulia Gwinn",
+        "pos": "DF",
+        "min": 1075,
+        "g": 3,
+        "a": 5
+      },
+      {
+        "player": "Suya Haering",
+        "pos": "MF",
+        "min": 793,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Chiara Hahn",
+        "pos": "MF,DF",
+        "min": 657,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Larissa Haidner",
+        "pos": "GK",
+        "min": 602,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Antonia Halverkamps",
+        "pos": "MF,FW",
+        "min": 804,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Pernille Harder",
+        "pos": "MF,FW",
+        "min": 1460,
+        "g": 16,
+        "a": 5
+      },
+      {
+        "player": "Franziska Harsch",
+        "pos": "MF,FW",
+        "min": 1497,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Lina Hausicke",
+        "pos": "MF",
+        "min": 1826,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Marina Hegering",
+        "pos": "DF",
+        "min": 1125,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Ida Heikkinen",
+        "pos": "DF,MF",
+        "min": 676,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Lisa Heiseler",
+        "pos": "MF",
+        "min": 1843,
+        "g": 7,
+        "a": 2
+      },
+      {
+        "player": "Nike Herrmann",
+        "pos": "MF",
+        "min": 928,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Elvira Herzog",
+        "pos": "GK",
+        "min": 2250,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sophie Hillebrand",
+        "pos": "MF,FW",
+        "min": 1709,
+        "g": 7,
+        "a": 1
+      },
+      {
+        "player": "Jenny Hipp",
+        "pos": "MF",
+        "min": 875,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Emilia Hirche",
+        "pos": "DF",
+        "min": 967,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Giovanna Hoffmann",
+        "pos": "FW,MF",
+        "min": 366,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Sanja Homann",
+        "pos": "MF,DF",
+        "min": 1554,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Svenja Huth",
+        "pos": "MF",
+        "min": 1988,
+        "g": 2,
+        "a": 10
+      },
+      {
+        "player": "Toma Ihlenburg",
+        "pos": "DF",
+        "min": 2205,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Amanda Ilestedt",
+        "pos": "DF",
+        "min": 1106,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Edna Imade",
+        "pos": "FW",
+        "min": 553,
+        "g": 5,
+        "a": 1
+      },
+      {
+        "player": "Carlotta Imping",
+        "pos": "DF,MF",
+        "min": 1031,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Noemi Ivelj",
+        "pos": "DF,MF",
+        "min": 528,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jasmin Janning",
+        "pos": "GK",
+        "min": 1620,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jill Janssens",
+        "pos": "DF,MF",
+        "min": 1851,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Isabella Jaron",
+        "pos": "FW,MF",
+        "min": 1513,
+        "g": 6,
+        "a": 2
+      },
+      {
+        "player": "Sandra Jessen",
+        "pos": "FW",
+        "min": 2147,
+        "g": 12,
+        "a": 2
+      },
+      {
+        "player": "Stina Johannes",
+        "pos": "GK",
+        "min": 1886,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lou-Ann Joly",
+        "pos": "MF",
+        "min": 1332,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Nelly Juckel",
+        "pos": "DF,MF",
+        "min": 1466,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Merza Julević",
+        "pos": "MF,FW",
+        "min": 582,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Lia Kamber",
+        "pos": "MF",
+        "min": 924,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Lisa Karl",
+        "pos": "DF",
+        "min": 2250,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Lisann Kaut",
+        "pos": "DF,MF",
+        "min": 1240,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Caroline Kehrer",
+        "pos": "FW",
+        "min": 1075,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Franziska Kett",
+        "pos": "DF",
+        "min": 1365,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Justine Kielland",
+        "pos": "MF",
+        "min": 1473,
+        "g": 3,
+        "a": 4
+      },
+      {
+        "player": "Jacqueline Klasen",
+        "pos": "DF,FW",
+        "min": 1510,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Sophia Kleinherne",
+        "pos": "DF",
+        "min": 436,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Kristin Kögel",
+        "pos": "MF",
+        "min": 1610,
+        "g": 4,
+        "a": 4
+      },
+      {
+        "player": "Lisa Kolb",
+        "pos": "MF",
+        "min": 1267,
+        "g": 3,
+        "a": 3
+      },
+      {
+        "player": "Leonie Köpp",
+        "pos": "FW,MF",
+        "min": 1099,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Melissa Kössler",
+        "pos": "FW",
+        "min": 726,
+        "g": 6,
+        "a": 4
+      },
+      {
+        "player": "Natasha Kowalski",
+        "pos": "MF,FW",
+        "min": 1494,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Cornelia Kramer",
+        "pos": "FW",
+        "min": 798,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Victoria Krug",
+        "pos": "DF",
+        "min": 1238,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Melina Krüger",
+        "pos": "MF",
+        "min": 311,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Camilla Küver",
+        "pos": "DF",
+        "min": 1411,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Julia Landenberger",
+        "pos": "DF",
+        "min": 1704,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Lena Lattwein",
+        "pos": "MF",
+        "min": 742,
+        "g": 5,
+        "a": 4
+      },
+      {
+        "player": "Vanessa Leimenstoll",
+        "pos": "MF",
+        "min": 380,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Nastassja Lein",
+        "pos": "MF,FW",
+        "min": 2127,
+        "g": 11,
+        "a": 4
+      },
+      {
+        "player": "Janou Levels",
+        "pos": "DF,MF",
+        "min": 1312,
+        "g": 2,
+        "a": 7
+      },
+      {
+        "player": "Selma Licina",
+        "pos": "MF,FW",
+        "min": 693,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Camilla Linberg",
+        "pos": "MF,FW",
+        "min": 853,
+        "g": 4,
+        "a": 2
+      },
+      {
+        "player": "Sarai Linder",
+        "pos": "DF",
+        "min": 1262,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Nina Lührßen",
+        "pos": "DF",
+        "min": 1720,
+        "g": 0,
+        "a": 8
+      },
+      {
+        "player": "Pauline Machtens",
+        "pos": "MF",
+        "min": 1869,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Valentina Mädl",
+        "pos": "FW,MF",
+        "min": 805,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Julia Magerl",
+        "pos": "DF",
+        "min": 565,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ena Mahmutovic",
+        "pos": "GK",
+        "min": 1440,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Franziska Mai",
+        "pos": "DF,MF",
+        "min": 1478,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Ramona Maier",
+        "pos": "FW,MF",
+        "min": 1987,
+        "g": 4,
+        "a": 1
+      },
+      {
+        "player": "Jonna Maj Wrede",
+        "pos": "DF",
+        "min": 407,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Leni Marie Eggert",
+        "pos": "DF",
+        "min": 1132,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ereleta Memeti",
+        "pos": "MF",
+        "min": 1662,
+        "g": 5,
+        "a": 4
+      },
+      {
+        "player": "Lara Meroni",
+        "pos": "MF",
+        "min": 825,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Christin Meyer",
+        "pos": "FW,MF",
+        "min": 805,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Julia Mickenhagen",
+        "pos": "DF",
+        "min": 1023,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Mária Mikolajová",
+        "pos": "MF",
+        "min": 1042,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Laura Miller",
+        "pos": "MF",
+        "min": 1497,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Janina Minge",
+        "pos": "MF",
+        "min": 1911,
+        "g": 7,
+        "a": 3
+      },
+      {
+        "player": "Anne Moll",
+        "pos": "GK",
+        "min": 450,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Elena Mühlemann",
+        "pos": "MF",
+        "min": 1259,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Larissa Mühlhaus",
+        "pos": "MF,FW",
+        "min": 2175,
+        "g": 16,
+        "a": 4
+      },
+      {
+        "player": "Marlene Müller",
+        "pos": "MF,DF",
+        "min": 1949,
+        "g": 3,
+        "a": 4
+      },
+      {
+        "player": "Gwendolyn Mummert",
+        "pos": "DF",
+        "min": 1066,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sophie Nachtigall",
+        "pos": "MF",
+        "min": 784,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Katharina Naschenweng",
+        "pos": "DF",
+        "min": 624,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Hanna Németh",
+        "pos": "DF",
+        "min": 1860,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Katja Nicola Orschmann",
+        "pos": "DF",
+        "min": 742,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Andrea Norheim",
+        "pos": "DF",
+        "min": 2069,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Nicole Ojukwu",
+        "pos": "MF",
+        "min": 1194,
+        "g": 3,
+        "a": 4
+      },
+      {
+        "player": "Dina Orschmann",
+        "pos": "MF,FW",
+        "min": 1455,
+        "g": 4,
+        "a": 1
+      },
+      {
+        "player": "Lena Ostermeier",
+        "pos": "DF",
+        "min": 2004,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Selina Ostermeier",
+        "pos": "DF",
+        "min": 1654,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Natalia Padilla-Bidas",
+        "pos": "MF",
+        "min": 436,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Luisa Palmen",
+        "pos": "GK",
+        "min": 720,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Emőke Pápai",
+        "pos": "FW,MF",
+        "min": 749,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Emőke Pápai",
+        "pos": "FW",
+        "min": 289,
+        "g": 4,
+        "a": 0
+      },
+      {
+        "player": "Lea Paulick",
+        "pos": "GK",
+        "min": 990,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Tanja Pawollek",
+        "pos": "MF",
+        "min": 1235,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Ella Peddemors",
+        "pos": "MF",
+        "min": 1558,
+        "g": 4,
+        "a": 2
+      },
+      {
+        "player": "Glódís Perla Viggósdóttir",
+        "pos": "DF",
+        "min": 1248,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lena Petermann",
+        "pos": "FW",
+        "min": 364,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Katharina Piljić",
+        "pos": "MF",
+        "min": 1986,
+        "g": 5,
+        "a": 4
+      },
+      {
+        "player": "Paulina Platner",
+        "pos": "MF",
+        "min": 1707,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Aneta Polášková",
+        "pos": "FW,MF",
+        "min": 1373,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Julia Pollak",
+        "pos": "DF",
+        "min": 1909,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Alexandra Popp",
+        "pos": "FW,MF",
+        "min": 1290,
+        "g": 12,
+        "a": 4
+      },
+      {
+        "player": "Kassandra Potsi",
+        "pos": "MF,FW",
+        "min": 481,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Fany Proniez",
+        "pos": "MF,DF",
+        "min": 513,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Laura Pucks",
+        "pos": "DF,FW",
+        "min": 820,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Judit Pujols",
+        "pos": "DF,MF",
+        "min": 617,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Nina Räcke",
+        "pos": "DF",
+        "min": 1058,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jamilla Rankin",
+        "pos": "DF",
+        "min": 1225,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Naika Reissner",
+        "pos": "MF,DF",
+        "min": 578,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Emily Reske",
+        "pos": "MF",
+        "min": 1297,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Géraldine Reuteler",
+        "pos": "MF,FW",
+        "min": 1987,
+        "g": 6,
+        "a": 6
+      },
+      {
+        "player": "Melina Reuter",
+        "pos": "FW,MF",
+        "min": 976,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Nadine Riesen",
+        "pos": "DF",
+        "min": 1582,
+        "g": 1,
+        "a": 4
+      },
+      {
+        "player": "Lourdes Romero",
+        "pos": "GK",
+        "min": 990,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Larissa Rusek",
+        "pos": "GK",
+        "min": 1260,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Annabel Schasching",
+        "pos": "MF",
+        "min": 2154,
+        "g": 3,
+        "a": 3
+      },
+      {
+        "player": "Lara Schenk",
+        "pos": "DF,MF",
+        "min": 545,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Marleen Schimmer",
+        "pos": "DF,MF",
+        "min": 873,
+        "g": 6,
+        "a": 0
+      },
+      {
+        "player": "Stefanie Schmid",
+        "pos": "DF",
+        "min": 1544,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lara Schmidt",
+        "pos": "DF",
+        "min": 311,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Lisa Schmitz",
+        "pos": "GK",
+        "min": 630,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maj Schneider",
+        "pos": "MF",
+        "min": 1160,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Tomke Schneider",
+        "pos": "DF",
+        "min": 870,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Inga Schuldt",
+        "pos": "GK",
+        "min": 540,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lea Schüller",
+        "pos": "FW",
+        "min": 476,
+        "g": 5,
+        "a": 4
+      },
+      {
+        "player": "Victoria Schulz",
+        "pos": "DF,MF",
+        "min": 1195,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Maëlle Seguin",
+        "pos": "MF",
+        "min": 407,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Alara Sehitler",
+        "pos": "MF",
+        "min": 548,
+        "g": 3,
+        "a": 0
+      },
+      {
+        "player": "Klara Senelius",
+        "pos": "DF",
+        "min": 344,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Elisa Senß",
+        "pos": "MF",
+        "min": 1837,
+        "g": 5,
+        "a": 2
+      },
+      {
+        "player": "Mariella El Sherif",
+        "pos": "GK",
+        "min": 2250,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Ingibjörg Sigurðardóttir",
+        "pos": "DF",
+        "min": 1264,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Carolin Simon",
+        "pos": "DF",
+        "min": 1135,
+        "g": 0,
+        "a": 6
+      },
+      {
+        "player": "Kim Sindermann",
+        "pos": "GK",
+        "min": 1530,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Felicia Sophie Sträßer",
+        "pos": "DF,MF",
+        "min": 1394,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Georgia Stanway",
+        "pos": "MF",
+        "min": 1803,
+        "g": 6,
+        "a": 9
+      },
+      {
+        "player": "Sandra Starke",
+        "pos": "MF",
+        "min": 1297,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Greta Stegemann",
+        "pos": "DF",
+        "min": 1558,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Marie Steiner",
+        "pos": "MF,FW",
+        "min": 1334,
+        "g": 5,
+        "a": 2
+      },
+      {
+        "player": "Judith Steinert",
+        "pos": "DF",
+        "min": 1140,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Maja Sternad",
+        "pos": "MF",
+        "min": 1744,
+        "g": 4,
+        "a": 5
+      },
+      {
+        "player": "Beke Sterner",
+        "pos": "MF,FW",
+        "min": 544,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Samantha Steuerwald",
+        "pos": "DF",
+        "min": 2233,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Julia Stierli",
+        "pos": "DF",
+        "min": 1339,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Svea Stoldt",
+        "pos": "DF,MF",
+        "min": 2250,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Anna-Lena Stolze",
+        "pos": "MF,FW",
+        "min": 985,
+        "g": 1,
+        "a": 3
+      },
+      {
+        "player": "Nia Szenk",
+        "pos": "DF",
+        "min": 1728,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Momoko Tanikawa",
+        "pos": "MF",
+        "min": 1551,
+        "g": 8,
+        "a": 2
+      },
+      {
+        "player": "Rieke Tietz",
+        "pos": "FW",
+        "min": 1481,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Ella Touon",
+        "pos": "MF,FW",
+        "min": 703,
+        "g": 3,
+        "a": 2
+      },
+      {
+        "player": "Martina Tufeković",
+        "pos": "GK",
+        "min": 270,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Lilla Turányi",
+        "pos": "DF",
+        "min": 1334,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Amber Tysiak",
+        "pos": "DF",
+        "min": 990,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Michelle Ulbrich",
+        "pos": "DF",
+        "min": 2144,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Smilla Vallotto",
+        "pos": "MF",
+        "min": 374,
+        "g": 2,
+        "a": 0
+      },
+      {
+        "player": "Shari Van Belle",
+        "pos": "MF,FW",
+        "min": 1067,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Leia Varley",
+        "pos": "DF",
+        "min": 557,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Jella Veit",
+        "pos": "DF",
+        "min": 1460,
+        "g": 0,
+        "a": 2
+      },
+      {
+        "player": "Juliette Vidal",
+        "pos": "MF,DF",
+        "min": 713,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Selina Vobian",
+        "pos": "MF",
+        "min": 1627,
+        "g": 4,
+        "a": 4
+      },
+      {
+        "player": "Laura Vogt",
+        "pos": "MF",
+        "min": 2081,
+        "g": 1,
+        "a": 2
+      },
+      {
+        "player": "Ricarda Walkling",
+        "pos": "MF,FW",
+        "min": 379,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Carlotta Wamser",
+        "pos": "DF",
+        "min": 1516,
+        "g": 2,
+        "a": 1
+      },
+      {
+        "player": "Joelle Wedemeyer",
+        "pos": "DF",
+        "min": 1221,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Sophie Weidauer",
+        "pos": "FW,MF",
+        "min": 1714,
+        "g": 6,
+        "a": 3
+      },
+      {
+        "player": "Anna Weiß",
+        "pos": "DF",
+        "min": 1961,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Michelle Weiß",
+        "pos": "DF",
+        "min": 2071,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Claudia Wenger",
+        "pos": "DF",
+        "min": 1371,
+        "g": 1,
+        "a": 0
+      },
+      {
+        "player": "Martyna Wiankowska",
+        "pos": "DF",
+        "min": 1268,
+        "g": 2,
+        "a": 2
+      },
+      {
+        "player": "Verena Wieder",
+        "pos": "MF,FW",
+        "min": 977,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Juliane Wirtz",
+        "pos": "MF",
+        "min": 1849,
+        "g": 0,
+        "a": 1
+      },
+      {
+        "player": "Pia-Sophie Wolter",
+        "pos": "DF",
+        "min": 818,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Oliwia Woś",
+        "pos": "DF",
+        "min": 1313,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Lotta Wrede",
+        "pos": "MF",
+        "min": 1450,
+        "g": 3,
+        "a": 1
+      },
+      {
+        "player": "Annalena Wucher",
+        "pos": "DF",
+        "min": 401,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Weronika Zawistowska",
+        "pos": "MF,FW",
+        "min": 881,
+        "g": 0,
+        "a": 0
+      },
+      {
+        "player": "Sofie Zdebel",
+        "pos": "MF",
+        "min": 1827,
+        "g": 1,
+        "a": 1
+      },
+      {
+        "player": "Cora Zicai",
+        "pos": "MF",
+        "min": 1028,
+        "g": 4,
+        "a": 1
+      },
+      {
+        "player": "Marthine Østenstad",
+        "pos": "DF",
+        "min": 578,
+        "g": 0,
+        "a": 0
+      }
+    ]
+  }
+}

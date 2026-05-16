@@ -2,23 +2,24 @@
 // ─────────────────────────────────────────────────────────────────
 // ingest-creator-social.mjs
 //
-// Actualiza los 4 factores auto de creadores/periodistas basándose
-// en métricas reales de redes sociales.
+// Actualiza rendimiento_auto y contexto_auto de creadores/periodistas.
 //
-// Factores → Métricas:
-//   rendimiento_auto (40%) = Alcance  — max(followers) log-normalizado
-//   mediatico_auto   (25%) = Engagement — ER ponderado por plataforma
-//   contexto_auto    (20%) = Consistencia — frecuencia publicación + nº plataformas
-//   narrativa_auto   (15%) = Crecimiento — delta 30d (snapshot vs anterior)
+// Factores actualizados:
+//   rendimiento_auto (40%) — Alcance: max(yt_subs, twitch_followers)
+//                            log10-normalizado, cap 15M
+//   contexto_auto    (20%) — Presencia: nº plataformas con handle activo
 //
-// Fuentes (Fase 1, coste €0):
-//   YouTube Data API v3  — suscriptores, vistas, vídeos recientes
-//   Twitch Helix API     — seguidores, total views
+// Factores NO tocados:
+//   mediatico_auto   (25%) — Wikipedia pageviews (ingest-wikipedia-views.mjs)
+//   narrativa_auto   (15%) — decay temporal (ingest-narrativa-decay.mjs)
 //
-// Variables de entorno necesarias:
-//   YOUTUBE_API_KEY       — Google Cloud, API habilitada: YouTube Data API v3
-//   TWITCH_CLIENT_ID      — dev.twitch.tv → nueva aplicación
-//   TWITCH_CLIENT_SECRET  — idem
+// Fuentes:
+//   Twitch:  GQL anónimo — funciona sin ninguna API key
+//   YouTube: YouTube Data API v3 (YOUTUBE_API_KEY opcional, gratis, 10K unidades/día)
+//            Si no está configurada, se usa sólo Twitch.
+//
+// Variables opcionales en .env.local:
+//   YOUTUBE_API_KEY  — https://console.cloud.google.com → YouTube Data API v3
 //
 // Uso:
 //   node scripts/ingest-creator-social.mjs           # DRY RUN
@@ -36,269 +37,171 @@ config({ path: path.join(__dirname, '..', '.env.local') })
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-const YT_KEY       = process.env.YOUTUBE_API_KEY
-const TW_ID        = process.env.TWITCH_CLIENT_ID
-const TW_SECRET    = process.env.TWITCH_CLIENT_SECRET
+const YT_KEY       = process.env.YOUTUBE_API_KEY   // opcional
 const APPLY        = process.argv.includes('--apply')
 const VERBOSE      = process.argv.includes('--verbose')
 
 if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('Missing SUPABASE keys'); process.exit(1) }
 
+// Client-ID anónimo embebido en el propio sitio web de Twitch (no requiere registro)
+const TWITCH_GQL_CLIENT_ID = 'kimne78kx3ncx6brgo4mv6wki5h1ko'
+
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 // ── Score helpers ─────────────────────────────────────────────────
 
-// Alcance: log10-normalizado, cap en 15M (Ibai-level), escala 0-100
-function reachScore(maxFollowers) {
-  if (!maxFollowers || maxFollowers <= 0) return null
-  const capped = Math.min(maxFollowers, 15_000_000)
+// Parsea "14.2M subscribers" / "123K" / "1,5 Mio." / "14 M. suscriptores"
+function parseCount(text) {
+  if (!text) return null
+  const clean = text.replace(/,/g, '.').replace(/\s/g, '').toLowerCase()
+  const m = clean.match(/([\d.]+)(k|m|b|mio\.?|mil\.?)?/)
+  if (!m) return null
+  const n = parseFloat(m[1])
+  if (isNaN(n) || n <= 0) return null
+  const mult = m[2]
+    ? ({ k: 1e3, m: 1e6, b: 1e9, 'mio.': 1e6, mio: 1e6, 'mil.': 1e3, mil: 1e3 }[m[2]] ?? 1)
+    : 1
+  return Math.round(n * mult)
+}
+
+// Alcance: log10-normalizado, cap 15M → score 100
+function reachScore(followers) {
+  if (!followers || followers <= 0) return null
+  const capped = Math.min(followers, 15_000_000)
   return Math.round((Math.log10(capped + 1) / Math.log10(15_000_001)) * 100 * 10) / 10
 }
 
-// Engagement: normalizado por plataforma (benchmarks deportivos), 0-100
-function engagementScore(platform, erPercent) {
-  const benchmarks = {
-    youtube:   { strong: 4.0, weak: 0.5 },   // (likes+comments)/views*100
-    twitch:    { strong: 4.0, weak: 0.5 },   // avgConcurrent/followers*100
-    instagram: { strong: 3.0, weak: 0.5 },
-    tiktok:    { strong: 8.0, weak: 2.0 },
-    twitter:   { strong: 1.5, weak: 0.2 },
-  }
-  const b = benchmarks[platform] ?? { strong: 3, weak: 0.5 }
-  const norm = Math.max(0, Math.min(1, (erPercent - b.weak) / (b.strong - b.weak)))
-  return Math.round(norm * 100 * 10) / 10
+// Presencia: escala lineal por número de plataformas activas (0-5)
+function presenceScore(count) {
+  return [30, 45, 60, 72, 82, 90][Math.min(count, 5)]
 }
 
-// Consistencia: posts/semana + número de plataformas activas, 0-100
-function consistencyScore(postsPerWeek, activePlatforms) {
-  const postScore = Math.min(1, postsPerWeek / 5) * 70      // cap 5x/semana = 70pts
-  const platScore = Math.min(activePlatforms, 4) / 4 * 30   // 4 plataformas = 30pts
-  return Math.round((postScore + platScore) * 10) / 10
-}
+// ── YouTube Data API v3 (opcional) ───────────────────────────────
 
-// Crecimiento: delta 30d respecto a snapshot anterior, 0-100
-// Sin snapshot previo → 50 (neutral)
-function growthScore(currentFollowers, prevFollowers) {
-  if (!prevFollowers || prevFollowers <= 0) return 50
-  const deltaPct = (currentFollowers - prevFollowers) / prevFollowers * 100
-  // -5% → 0, 0% → 50, +10% → 100
-  const norm = Math.max(0, Math.min(1, (deltaPct + 5) / 15))
-  return Math.round(norm * 100 * 10) / 10
-}
-
-// ── YouTube API ───────────────────────────────────────────────────
-
-async function fetchYouTubeChannel(channelId) {
-  if (!YT_KEY) return null
-  const isHandle = channelId.startsWith('@')
-  const param = isHandle ? `forHandle=${encodeURIComponent(channelId)}` : `id=${channelId}`
-  const url = `https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet,contentDetails&${param}&key=${YT_KEY}`
-  const r = await fetch(url)
-  if (!r.ok) { if (VERBOSE) console.error(`YT ${channelId} HTTP ${r.status}`); return null }
-  const d = await r.json()
-  const ch = d.items?.[0]
-  if (!ch) return null
-
-  const stats = ch.statistics ?? {}
-  const subs  = parseInt(stats.subscriberCount) || 0
-  const views = parseInt(stats.viewCount)        || 0
-  const videos= parseInt(stats.videoCount)       || 0
-
-  // Últimos 10 vídeos para engagement y consistencia
-  const uploadsId = ch.contentDetails?.relatedPlaylists?.uploads
-  let recentViews = [], recentLikes = [], recentComments = [], postDates = []
-
-  if (uploadsId && videos > 0) {
-    const plRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsId}&maxResults=10&key=${YT_KEY}`
-    )
-    if (plRes.ok) {
-      const plData = await plRes.json()
-      const videoIds = (plData.items ?? []).map(i => i.snippet?.resourceId?.videoId).filter(Boolean)
-      postDates = (plData.items ?? []).map(i => i.snippet?.publishedAt).filter(Boolean)
-
-      if (videoIds.length > 0) {
-        const vRes = await fetch(
-          `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds.join(',')}&key=${YT_KEY}`
-        )
-        if (vRes.ok) {
-          const vData = await vRes.json()
-          for (const v of vData.items ?? []) {
-            recentViews.push(parseInt(v.statistics?.viewCount) || 0)
-            recentLikes.push(parseInt(v.statistics?.likeCount) || 0)
-            recentComments.push(parseInt(v.statistics?.commentCount) || 0)
-          }
-        }
+// Fetch suscriptores en lotes de 50 (1 unidad de quota por llamada)
+async function fetchAllYouTubeSubs(channelIds) {
+  if (!YT_KEY || channelIds.length === 0) return {}
+  const result = {}
+  for (let i = 0; i < channelIds.length; i += 50) {
+    const batch = channelIds.slice(i, i + 50)
+    const ids = batch.filter(id => !id.startsWith('@')).join(',')
+    if (!ids) continue
+    try {
+      const url = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${ids}&key=${YT_KEY}`
+      const res = await fetch(url)
+      if (!res.ok) { if (VERBOSE) console.error(`  YT API HTTP ${res.status}`); continue }
+      const data = await res.json()
+      for (const item of data.items ?? []) {
+        const subs = parseInt(item.statistics?.subscriberCount)
+        if (subs > 0) result[item.id] = subs
       }
-    }
-    await sleep(50)
+    } catch (e) { if (VERBOSE) console.error(`  YT API error: ${e.message}`) }
+    if (i + 50 < channelIds.length) await sleep(200)
   }
-
-  const avgViews    = recentViews.length ? recentViews.reduce((a, b) => a + b, 0) / recentViews.length : views / Math.max(videos, 1)
-  const avgLikes    = recentLikes.length ? recentLikes.reduce((a, b) => a + b, 0) / recentLikes.length : 0
-  const avgComments = recentComments.length ? recentComments.reduce((a, b) => a + b, 0) / recentComments.length : 0
-  const erPct       = avgViews > 0 ? (avgLikes + avgComments) / avgViews * 100 : 0
-
-  // Frecuencia: posts en últimos 30 días
-  const now = Date.now()
-  const postsLast30 = postDates.filter(d => (now - new Date(d).getTime()) < 30 * 86400_000).length
-  const postsPerWeek = postsLast30 / 4.3
-
-  return { platform: 'youtube', subscribers: subs, totalViews: views, videoCount: videos, avgViews, erPct, postsPerWeek }
+  return result
 }
 
-// ── Twitch API ────────────────────────────────────────────────────
+// ── Twitch via GQL anónimo ────────────────────────────────────────
 
-let _twitchToken = null
-async function getTwitchToken() {
-  if (_twitchToken) return _twitchToken
-  if (!TW_ID || !TW_SECRET) return null
-  const r = await fetch(`https://id.twitch.tv/oauth2/token?client_id=${TW_ID}&client_secret=${TW_SECRET}&grant_type=client_credentials`, { method: 'POST' })
-  if (!r.ok) return null
-  const d = await r.json()
-  _twitchToken = d.access_token
-  return _twitchToken
-}
-
-async function fetchTwitchChannel(login) {
-  const token = await getTwitchToken()
-  if (!token) return null
-
-  const headers = { 'Client-Id': TW_ID, 'Authorization': `Bearer ${token}` }
-
-  const uRes = await fetch(`https://api.twitch.tv/helix/users?login=${login}`, { headers })
-  if (!uRes.ok) return null
-  const uData = await uRes.json()
-  const user = uData.data?.[0]
-  if (!user) return null
-
-  const fRes = await fetch(`https://api.twitch.tv/helix/channels/followers?broadcaster_id=${user.id}`, { headers })
-  const fData = fRes.ok ? await fRes.json() : {}
-  const followers = fData.total ?? 0
-
-  // Actividad reciente (si está en directo o ha emitido recientemente)
-  const sRes = await fetch(`https://api.twitch.tv/helix/videos?user_id=${user.id}&type=archive&first=10`, { headers })
-  const sData = sRes.ok ? await sRes.json() : {}
-  const vods = sData.data ?? []
-  const now = Date.now()
-  const streamsLast30 = vods.filter(v => (now - new Date(v.created_at).getTime()) < 30 * 86400_000).length
-  const postsPerWeek = streamsLast30 / 4.3
-
-  // Avg viewers no disponible sin historial de terceros → usar view_count total como proxy de alcance
-  return { platform: 'twitch', followers, totalViews: parseInt(user.view_count) || 0, postsPerWeek }
+async function fetchTwitchFollowers(login) {
+  try {
+    const res = await fetch('https://gql.twitch.tv/gql', {
+      method: 'POST',
+      headers: {
+        'Client-Id': TWITCH_GQL_CLIENT_ID,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([{
+        query: `{user(login:"${login.toLowerCase()}"){followers{totalCount}}}`,
+        variables: {},
+      }]),
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    const count = data[0]?.data?.user?.followers?.totalCount
+    return typeof count === 'number' ? count : null
+  } catch { return null }
 }
 
 // ── Main ──────────────────────────────────────────────────────────
 
 async function main() {
-  console.log(`Mode: ${APPLY ? 'APPLY' : 'DRY RUN'}`)
-  if (!YT_KEY)     console.warn('⚠  YOUTUBE_API_KEY no configurada — YouTube omitido')
-  if (!TW_ID)      console.warn('⚠  TWITCH_CLIENT_ID no configurada — Twitch omitido')
+  console.log(`Mode: ${APPLY ? 'APPLY' : 'DRY RUN'}\n`)
 
   const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
 
-  // Cargar creadores con handles definidos
-  const { data: entries, error } = await sb.from('ranking_entries')
-    .select('id, name, sport, category, handles, rendimiento_auto, mediatico_auto, contexto_auto, narrativa_auto, score_auto')
-    .in('category', ['creadores','periodistas','creadores_wwe'])
+  const { data: entries, error } = await sb
+    .from('ranking_entries')
+    .select('id, name, sport, category, handles, rendimiento_auto, contexto_auto')
+    .in('category', ['creadores', 'periodistas', 'creadores_wwe'])
     .not('handles', 'is', null)
   if (error) throw error
-  console.log(`\n${entries.length} creadores con handles definidos`)
+  console.log(`${entries.length} creadores con handles\n`)
 
+  // ── YouTube (API v3 opcional) ────────────────────────────────────
+  const ytIds = entries.map(e => e.handles?.youtube).filter(Boolean)
+  if (YT_KEY) {
+    console.log(`Fetching ${ytIds.length} canales YouTube via Data API v3...`)
+  } else {
+    console.log(`YouTube omitido (sin YOUTUBE_API_KEY) — ${ytIds.length} canales sin datos de YT`)
+  }
+  const ytSubs = await fetchAllYouTubeSubs(ytIds)
+  const ytOk = Object.values(ytSubs).filter(v => v != null && v > 0).length
+  if (YT_KEY) console.log(`  → ${ytOk}/${ytIds.length} con datos\n`)
+
+  // ── Twitch (GQL anónimo, requests individuales) ──────────────────
+  const twLogins = entries.filter(e => e.handles?.twitch).map(e => ({ id: e.id, login: e.handles.twitch }))
+  console.log(`Fetching ${twLogins.length} canales Twitch via GQL...`)
+  const twFollowers = {}
+  for (const { id, login } of twLogins) {
+    twFollowers[login] = await fetchTwitchFollowers(login)
+    await sleep(150)
+  }
+  const twOk = Object.values(twFollowers).filter(v => v != null).length
+  console.log(`  → ${twOk}/${twLogins.length} con datos\n`)
+
+  // ── Calcular scores ──────────────────────────────────────────────
   const updates = []
 
   for (const entry of entries) {
     const h = entry.handles ?? {}
-    if (!h.youtube && !h.twitch) {
-      if (VERBOSE) console.log(`  skip ${entry.id} (sin YouTube ni Twitch)`)
-      continue
-    }
+    const activePlatforms = ['youtube', 'twitch', 'instagram', 'tiktok', 'twitter'].filter(p => h[p]).length
 
-    const platforms = []
-    let maxFollowers = 0
-    let erScores = [], postsPerWeek = 0, activePlatforms = 0
+    const yt = h.youtube ? (ytSubs[h.youtube] ?? null) : null
+    const tw = h.twitch  ? (twFollowers[h.twitch] ?? null) : null
+    const maxFollowers = Math.max(yt ?? 0, tw ?? 0)
 
-    // YouTube
-    if (h.youtube && YT_KEY) {
-      const yt = await fetchYouTubeChannel(h.youtube)
-      await sleep(100)
-      if (yt) {
-        platforms.push(yt)
-        maxFollowers = Math.max(maxFollowers, yt.subscribers)
-        if (yt.erPct > 0) erScores.push(engagementScore('youtube', yt.erPct))
-        postsPerWeek = Math.max(postsPerWeek, yt.postsPerWeek)
-        activePlatforms++
-        if (VERBOSE) console.log(`    YT  ${entry.id}: subs=${yt.subscribers.toLocaleString()} ER=${yt.erPct.toFixed(2)}% posts/w=${yt.postsPerWeek.toFixed(1)}`)
-      }
-    }
+    const newRendimiento = maxFollowers > 0 ? reachScore(maxFollowers) : null
+    const newContexto    = presenceScore(activePlatforms)
 
-    // Twitch
-    if (h.twitch && TW_ID) {
-      const tw = await fetchTwitchChannel(h.twitch)
-      await sleep(100)
-      if (tw) {
-        platforms.push(tw)
-        maxFollowers = Math.max(maxFollowers, tw.followers)
-        postsPerWeek = Math.max(postsPerWeek, tw.postsPerWeek)
-        activePlatforms++
-        if (VERBOSE) console.log(`    TW  ${entry.id}: followers=${tw.followers.toLocaleString()} posts/w=${tw.postsPerWeek.toFixed(1)}`)
-      }
-    }
+    const fmt = n => n == null ? '    ?' : n >= 1e6 ? `${(n/1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n/1e3)}K` : String(n)
+    console.log(
+      `  ${entry.name.padEnd(26)}` +
+      `  YT=${fmt(yt).padStart(6)}  TW=${fmt(tw).padStart(6)}` +
+      `  plat=${activePlatforms}` +
+      `  → rend=${newRendimiento?.toFixed(1).padStart(5) ?? ' null'}  ctx=${newContexto}`
+    )
 
-    // Bonus plataformas sin API (Instagram/TikTok/Twitter presentes en handles)
-    if (h.instagram) activePlatforms++
-    if (h.tiktok)    activePlatforms++
-    if (h.twitter)   activePlatforms++
-
-    if (platforms.length === 0) continue
-
-    const newRendimiento = reachScore(maxFollowers)
-    const newMediatico   = erScores.length ? Math.round(erScores.reduce((a, b) => a + b, 0) / erScores.length * 10) / 10 : null
-    const newContexto    = consistencyScore(postsPerWeek, Math.min(activePlatforms, 5))
-    const newNarrativa   = growthScore(maxFollowers, null)  // 50 hasta tener snapshot previo
-
-    updates.push({
-      id: entry.id,
-      name: entry.name,
-      sport: entry.sport,
-      maxFollowers,
-      newRendimiento,
-      newMediatico,
-      newContexto,
-      newNarrativa,
-      prevScore: entry.score_auto,
-    })
+    updates.push({ id: entry.id, name: entry.name, newRendimiento, newContexto })
   }
 
-  updates.sort((a, b) => (b.newRendimiento ?? 0) - (a.newRendimiento ?? 0))
+  const withData = updates.filter(u => u.newRendimiento !== null)
+  console.log(`\nCon datos de alcance: ${withData.length} / ${updates.length}`)
 
-  console.log(`\n--- Creadores actualizados (${updates.length}) ---`)
-  updates.forEach(u => {
-    const reach = u.maxFollowers >= 1_000_000 ? `${(u.maxFollowers/1_000_000).toFixed(1)}M` : `${Math.round(u.maxFollowers/1000)}K`
-    console.log(
-      `  ${u.name.padEnd(28)} ${reach.padStart(6)} followers` +
-      `  rend=${u.newRendimiento?.toFixed(1).padStart(5) ?? '  null'}` +
-      `  media=${u.newMediatico?.toFixed(1).padStart(5) ?? '  null'}` +
-      `  ctx=${u.newContexto?.toFixed(1).padStart(5)}` +
-      `  [${u.sport}]`
-    )
-  })
+  if (!APPLY) { console.log('\nDRY RUN — pasa --apply para escribir.'); return }
 
-  if (!APPLY) { console.log('\nDRY RUN.'); return }
-
+  console.log('\nEscribiendo en Supabase...')
   let ok = 0, fail = 0
   for (const u of updates) {
     const patch = {
       ...(u.newRendimiento !== null && { rendimiento_auto: u.newRendimiento }),
-      ...(u.newMediatico   !== null && { mediatico_auto:   u.newMediatico }),
-      ...(u.newContexto    !== null && { contexto_auto:    u.newContexto }),
-      ...(u.newNarrativa   !== null && { narrativa_auto:   u.newNarrativa }),
+      contexto_auto: u.newContexto,
       last_auto_update: new Date().toISOString(),
     }
     const { error: err } = await sb.from('ranking_entries').update(patch).eq('id', u.id)
     if (err) { fail++; console.error(`FAIL ${u.id}: ${err.message}`) } else ok++
   }
-  console.log(`\nDone. OK=${ok} FAIL=${fail}`)
+  console.log(`Done. OK=${ok} FAIL=${fail}`)
 }
 
 main().catch(err => { console.error(err); process.exit(1) })
