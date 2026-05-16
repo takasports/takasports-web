@@ -33,6 +33,12 @@ import {
   getMatchContext, getDivision, scoreForMember,
 } from './lib/helpers'
 import { usePushSubscription, useMatchCountdown } from './lib/hooks'
+import { InfoTip } from './components/atoms/InfoTip'
+import { ProgressBar } from './components/atoms/ProgressBar'
+import { WinProbabilityBar } from './components/atoms/WinProbabilityBar'
+import { ConfettiPiece } from './components/atoms/ConfettiPiece'
+import { TeamBadge, JerseyIcon } from './components/atoms/TeamBadge'
+import { GoogleSignInButton } from './components/atoms/GoogleSignInButton'
 
 function ConsensusBar({ match, userPick }: { match: QuinielaMatch; userPick: Pick | undefined }) {
   const [tick, setTick] = useState(() => Math.floor(Date.now() / 180_000))
@@ -90,94 +96,6 @@ function ConsensusBar({ match, userPick }: { match: QuinielaMatch; userPick: Pic
         </p>
       )}
     </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Jersey SVG — camiseta minimalista bicolor
-// ─────────────────────────────────────────────────────────────────
-function JerseyIcon({ name, size = 32 }: { name: string; size?: number }) {
-  const { primary, secondary } = getClubColors(name)
-  const id = `j-${name.replace(/\s/g, '-').toLowerCase()}`
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <clipPath id={`clip-${id}`}>
-          <path d="M10 4 L6 10 L2 8 L2 16 L6 16 L6 28 L26 28 L26 16 L30 16 L30 8 L26 10 L22 4 C20 6 18 7 16 7 C14 7 12 6 10 4Z" />
-        </clipPath>
-      </defs>
-      {/* Mitad izquierda — color primario */}
-      <rect x="0" y="0" width="16" height="32" fill={primary} clipPath={`url(#clip-${id})`} />
-      {/* Mitad derecha — color secundario */}
-      <rect x="16" y="0" width="16" height="32" fill={secondary} clipPath={`url(#clip-${id})`} />
-      {/* Silueta de camiseta */}
-      <path
-        d="M10 4 L6 10 L2 8 L2 16 L6 16 L6 28 L26 28 L26 16 L30 16 L30 8 L26 10 L22 4 C20 6 18 7 16 7 C14 7 12 6 10 4Z"
-        stroke="rgba(255,255,255,0.18)"
-        strokeWidth="1"
-        fill="none"
-      />
-    </svg>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────
-// TeamBadge — logo real ESPN si disponible, escudo SVG si no
-// ─────────────────────────────────────────────────────────────────
-function TeamBadge({ name, logo, size = 44 }: { name: string; logo?: string; size?: number }) {
-  const [imgError, setImgError] = useState(false)
-  if (logo && !imgError) {
-    const pad = Math.round(size * 0.08)
-    return (
-      <div style={{
-        width: size, height: size,
-        borderRadius: Math.round(size * 0.22),
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        overflow: 'hidden', flexShrink: 0,
-      }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={logo}
-          alt={name}
-          width={size - pad * 2}
-          height={size - pad * 2}
-          style={{ objectFit: 'contain', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))' }}
-          onError={() => setImgError(true)}
-        />
-      </div>
-    )
-  }
-  return <ShieldIcon name={name} size={size} />
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Shield SVG — escudo de equipo con colores reales
-// ─────────────────────────────────────────────────────────────────
-function ShieldIcon({ name, size = 44 }: { name: string; size?: number }) {
-  const { primary, secondary } = getClubColors(name)
-  const initials = name.replace(/^(FC |CD |RC |Real |Atlético |Club |Athletic |Sporting |Deportivo )/i, '').slice(0, 2).toUpperCase()
-  const id = `sh-${name.replace(/\s/g, '-').toLowerCase()}`
-  const h = Math.round(size * 1.12)
-  return (
-    <svg width={size} height={h} viewBox="0 0 40 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id={`sg-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={primary} />
-          <stop offset="100%" stopColor={secondary} />
-        </linearGradient>
-        <clipPath id={`sc-${id}`}>
-          <path d="M20 2L37 9V25C37 35 20 43 20 43C20 43 3 35 3 25V9L20 2Z" />
-        </clipPath>
-      </defs>
-      <path d="M20 2L37 9V25C37 35 20 43 20 43C20 43 3 35 3 25V9L20 2Z" fill={`url(#sg-${id})`} />
-      <path d="M20 2V43C20 43 3 35 3 25V9L20 2Z" fill={secondary} opacity="0.4" />
-      <line x1="20" y1="2" x2="20" y2="43" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" />
-      <path d="M3 16H37" stroke="rgba(255,255,255,0.08)" strokeWidth="0.6" />
-      <path d="M20 2L37 9V25C37 35 20 43 20 43C20 43 3 35 3 25V9L20 2Z" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" fill="none" />
-      <text x="20" y="27" textAnchor="middle" dominantBaseline="middle" fontSize="13" fontWeight="900" fill="rgba(255,255,255,0.92)" fontFamily="system-ui,sans-serif" letterSpacing="-0.5">{initials}</text>
-    </svg>
   )
 }
 
@@ -529,115 +447,8 @@ function MatchCard({
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Barra de progreso de picks
-// ─────────────────────────────────────────────────────────────────
-function ProgressBar({ done, total }: { done: number; total: number }) {
-  const pct  = total === 0 ? 0 : Math.round((done / total) * 100)
-  const full = done === total && total > 0
-  return (
-    <div
-      className="rounded-2xl px-4 py-3.5"
-      style={{
-        background: full
-          ? 'linear-gradient(135deg,rgba(34,197,94,0.07) 0%,rgba(16,185,129,0.03) 100%)'
-          : 'rgba(124,58,237,0.06)',
-        border: full
-          ? '1px solid rgba(34,197,94,0.18)'
-          : '1px solid rgba(124,58,237,0.14)',
-        transition: 'background 0.4s ease, border-color 0.4s ease',
-      }}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: full ? '#4ade80' : '#9080C0', fontFamily: 'var(--font-sport)' }}>
-          {done === 0 ? 'Elige tus picks' : done < total ? `${done} de ${total} elegidos` : '¡Todo listo! Confirma →'}
-        </span>
-        <span
-          className="text-[11px] font-black tabular-nums"
-          style={{ color: full ? '#22c55e' : '#A78BFA', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}
-        >
-          {pct}%
-        </span>
-      </div>
-      <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden' }}>
-        <div style={{
-          height: '100%', width: `${pct}%`,
-          background: full ? 'linear-gradient(to right,#22c55e,#4ade80)' : 'linear-gradient(to right,#7C3AED,#A78BFA)',
-          borderRadius: 999, transition: 'width 0.35s ease, background 0.4s ease',
-          boxShadow: full ? '0 0 8px rgba(34,197,94,0.5)' : '0 0 8px rgba(124,58,237,0.4)',
-        }} />
-      </div>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────
 // Formulario — picks de la quiniela oficial
 // ─────────────────────────────────────────────────────────────────
-
-// ─────────────────────────────────────────────────────────────────
-// Info tooltip — accesible, tap/hover, cierra con Esc o click fuera
-// ─────────────────────────────────────────────────────────────────
-function InfoTip({ label, text, size = 12 }: { label: string; text: string; size?: number }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLSpanElement>(null)
-  useEffect(() => {
-    if (!open) return
-    const onDoc = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
-    document.addEventListener('mousedown', onDoc)
-    document.addEventListener('keydown', onKey)
-    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey) }
-  }, [open])
-  return (
-    <span ref={ref} className="relative inline-flex items-center" style={{ lineHeight: 0 }}>
-      <button
-        type="button"
-        aria-label={`Información: ${label}`}
-        aria-expanded={open}
-        onClick={(e) => { e.stopPropagation(); setOpen(v => !v) }}
-        className="rounded-full inline-flex items-center justify-center transition-opacity"
-        style={{ width: size + 4, height: size + 4, background: 'rgba(255,255,255,0.06)', color: '#7C7CA0', border: 'none', cursor: 'pointer', opacity: open ? 1 : 0.7 }}
-      >
-        <svg width={size - 2} height={size - 2} viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.1" /><path d="M6 5.4v2.4M6 4v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
-      </button>
-      {open && (
-        <span role="tooltip" className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 px-3 py-2 rounded-lg text-[10px] leading-snug shadow-xl" style={{ top: '100%', minWidth: 180, maxWidth: 240, background: '#1a0a2e', border: '1px solid rgba(124,58,237,0.35)', color: '#E0D5F8', fontFamily: 'var(--font-sport)', fontWeight: 600 }}>
-          <span className="block font-black mb-1" style={{ color: '#C4B5FD', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
-          {text}
-        </span>
-      )}
-    </span>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Win probability bar (derivada de odds, no sintética)
-// ─────────────────────────────────────────────────────────────────
-function WinProbabilityBar({ odds, userPick }: { odds?: { home: number; draw: number; away: number }; userPick?: Pick }) {
-  if (!odds || !odds.home || !odds.draw || !odds.away) return null
-  const invH = 1 / odds.home, invD = 1 / odds.draw, invA = 1 / odds.away
-  const sum = invH + invD + invA
-  const pH = Math.round((invH / sum) * 100)
-  const pD = Math.round((invD / sum) * 100)
-  const pA = 100 - pH - pD
-  const seg = (color: string, value: number, active: boolean) => (
-    <div style={{ flex: value, height: 4, background: color, opacity: active ? 1 : 0.55, transition: 'opacity 0.2s' }} />
-  )
-  return (
-    <div className="mt-2 mb-2.5">
-      <div className="flex w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.04)' }}>
-        {seg('#22c55e', pH, !userPick || userPick === '1' || userPick === '1X')}
-        {seg('#f59e0b', pD, !userPick || userPick === 'X' || userPick === '1X' || userPick === 'X2')}
-        {seg('#ef4444', pA, !userPick || userPick === '2' || userPick === 'X2')}
-      </div>
-      <div className="flex justify-between mt-1 tabular-nums" style={{ fontSize: 8, fontFamily: 'var(--font-sport)', fontWeight: 800, letterSpacing: '0.04em' }}>
-        <span style={{ color: '#16a34a' }}>{pH}%</span>
-        <span style={{ color: '#d97706' }}>{pD}%</span>
-        <span style={{ color: '#dc2626' }}>{pA}%</span>
-      </div>
-    </div>
-  )
-}
 
 // ─────────────────────────────────────────────────────────────────
 // Quick-pick IA — autocompleta picks pendientes con la sugerencia
@@ -1186,25 +997,6 @@ function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0 }: { matches:
 // ─────────────────────────────────────────────────────────────────
 // Ceremonia de revelación — pantalla fullscreen dramática
 // ─────────────────────────────────────────────────────────────────
-const CONFETTI_COLORS = ['#7C3AED','#A78BFA','#fbbf24','#4ade80','#f87171','#60a5fa','#f472b6']
-
-function ConfettiPiece({ i }: { i: number }) {
-  const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length]
-  const left = ((i * 37 + 13) % 100)
-  const delay = ((i * 7) % 18) * 0.1
-  const size = 6 + (i % 5) * 2
-  return (
-    <div style={{
-      position: 'fixed', top: 0, left: `${left}%`, zIndex: 51,
-      width: size, height: size, borderRadius: i % 3 === 0 ? '50%' : 2,
-      background: color,
-      animation: `confettiFall ${1.4 + (i % 6) * 0.15}s ease-in both`,
-      animationDelay: `${delay}s`,
-      pointerEvents: 'none',
-    }} />
-  )
-}
-
 function RevealCeremony({ picks, results, matchData, onComplete }: {
   picks: Array<{ home: string; away: string; pick: string }>
   results: MatchResult[]
@@ -2631,43 +2423,6 @@ function Rules() {
         </div>
       )}
     </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Google sign-in button (reutilizable)
-// ─────────────────────────────────────────────────────────────────
-function GoogleSignInButton({ onClose }: { onClose?: () => void }) {
-  const [loading, setLoading] = useState(false)
-  return (
-    <button
-      disabled={loading}
-      onClick={async () => {
-        const sb = createClient()
-        if (!sb) return
-        setLoading(true)
-        await sb.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/quiniela` },
-        })
-        onClose?.()
-      }}
-      className="w-full flex items-center justify-center gap-3 rounded-2xl py-3 font-semibold text-sm transition-all hover:brightness-110"
-      style={{ background: loading ? 'rgba(255,255,255,0.08)' : '#fff', color: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', cursor: loading ? 'wait' : 'pointer' }}
-    >
-      {loading
-        ? <span className="w-5 h-5 rounded-full border-2 border-gray-300 border-t-gray-600 animate-spin" />
-        : (
-          <svg width="18" height="18" viewBox="0 0 24 24">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-          </svg>
-        )
-      }
-      {loading ? 'Redirigiendo…' : 'Continuar con Google'}
-    </button>
   )
 }
 
