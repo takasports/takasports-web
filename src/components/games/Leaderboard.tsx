@@ -15,16 +15,25 @@ interface Props {
   title?:    string
   /** Refresca cada N ms si > 5000. */
   refreshMs?: number
+  /** Override del label mostrado para el periodo (truncar/normalizar).
+   *  Si se omite, se usa `period` truncado a 24 chars con elipsis. */
+  periodLabel?: string
+}
+
+function fallbackPeriodLabel(period: string): string {
+  if (period.length <= 24) return period
+  return period.slice(0, 22) + '…'
 }
 
 export default function Leaderboard({
-  gameId, period, limit = 10, accent = '#A78BFA', title, refreshMs,
+  gameId, period, limit = 10, accent = '#A78BFA', title, refreshMs, periodLabel,
 }: Props) {
   const { entries, loading } = useLeaderboard(gameId, period, { limit, refreshMs })
   const { data: me }         = useMyPosition(gameId, period)
 
   const myInTop = me.position && me.position <= limit
   const heading = title ?? `Top ${limit}`
+  const displayPeriod = periodLabel ?? fallbackPeriodLabel(period)
 
   return (
     <div
@@ -39,7 +48,7 @@ export default function Leaderboard({
             {heading}
           </h3>
           <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
-            {period}
+            {displayPeriod}
           </span>
         </div>
 

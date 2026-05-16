@@ -86,7 +86,16 @@ export default function LeaderboardTabs({ quinielaJornada }: Props) {
         })}
       </div>
 
-      <Leaderboard gameId={active} period={period} limit={10} accent={accent} />
+      <Leaderboard
+        gameId={active}
+        period={period}
+        limit={10}
+        accent={accent}
+        // Quiniela usa la etiqueta humana de la jornada como periodo
+        // ("Champions · LaLiga · Premier") — más larga que las semanas
+        // ISO. Para el header usamos una versión normalizada estándar.
+        periodLabel={active === 'quiniela' && period && period !== 'unknown' ? 'Jornada actual' : undefined}
+      />
     </section>
   )
 }

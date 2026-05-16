@@ -32,6 +32,7 @@ const CADENCES: ChipSpec<CadenceKey>[] = [
 export interface FilterState {
   category: CategoryKey
   cadence:  CadenceKey
+  pending:  boolean
 }
 
 /** Lee filtros del URL. Server-safe (devuelve defaults sin window). */
@@ -39,6 +40,7 @@ export function readFilters(params: URLSearchParams): FilterState {
   return {
     category: (params.get('cat') as CategoryKey) || 'all',
     cadence:  (params.get('cad') as CadenceKey)  || 'all',
+    pending:  params.get('pending') === '1',
   }
 }
 
@@ -54,6 +56,7 @@ export default function GamesFilterBar() {
     const merged = { ...state, ...patch }
     if (merged.category === 'all') next.delete('cat'); else next.set('cat', merged.category)
     if (merged.cadence  === 'all') next.delete('cad'); else next.set('cad', merged.cadence)
+    if (merged.pending)            next.set('pending', '1'); else next.delete('pending')
     const qs = next.toString()
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }, [router, pathname, searchParams, state])
@@ -62,6 +65,33 @@ export default function GamesFilterBar() {
     <div className="mb-5 flex flex-col gap-2.5">
       <ChipRow label="Categoría" chips={CATS}     active={state.category} onClick={c => update({ category: c })} />
       <ChipRow label="Cadencia"  chips={CADENCES} active={state.cadence}  onClick={c => update({ cadence:  c })} />
+      <div className="flex items-center gap-2">
+        <span className="text-[9px] font-black uppercase tracking-widest flex-shrink-0 pr-1" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)', minWidth: 64 }}>
+          Estado
+        </span>
+        <button
+          onClick={() => update({ pending: !state.pending })}
+          aria-pressed={state.pending}
+          className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all flex items-center gap-2"
+          style={{
+            background:    state.pending ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.03)',
+            color:         state.pending ? '#4ade80' : '#5A5A7A',
+            border:        state.pending ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(255,255,255,0.04)',
+            fontFamily:    'var(--font-sport)',
+            letterSpacing: '0.06em',
+            cursor:        'pointer',
+          }}
+        >
+          <span
+            className="w-3 h-3 rounded-full flex-shrink-0 transition-colors"
+            style={{
+              background: state.pending ? '#4ade80' : 'transparent',
+              border: state.pending ? '1px solid #4ade80' : '1px solid rgba(255,255,255,0.15)',
+            }}
+          />
+          Solo no jugados
+        </button>
+      </div>
     </div>
   )
 }

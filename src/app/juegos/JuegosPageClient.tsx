@@ -25,6 +25,7 @@ import LeaderboardTabs from '@/components/games/LeaderboardTabs'
 import GamesFilterBar from '@/components/games/GamesFilterBar'
 import GuestRankingHint from '@/components/games/GuestRankingHint'
 import { useGamesFilter } from '@/hooks/useGamesFilter'
+import { useMyPlayedGames } from '@/hooks/useMyPlayedGames'
 import { getGamePeriod } from '@/lib/games-periods'
 import type { GameId } from '@/lib/games-store'
 
@@ -573,8 +574,9 @@ export default function JuegosPageClient() {
   const activeGame = GAMES.find(g => g.status === 'active')!
   const allLive    = GAMES.filter(g => g.status === 'live')
   const allComing  = GAMES.filter(g => g.status === 'coming')
-  const liveGames   = useGamesFilter(allLive)
-  const comingGames = useGamesFilter(allComing)
+  const playedGames = useMyPlayedGames()
+  const liveGames   = useGamesFilter(allLive,   playedGames)
+  const comingGames = useGamesFilter(allComing, playedGames)
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>

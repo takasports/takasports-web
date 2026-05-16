@@ -22,6 +22,7 @@ export default function LeaderboardFull({ gameId, accent }: Props) {
       accent={accent}
       refreshMs={30_000}
       title="Top 100"
+      periodLabel={gameId === 'quiniela' && period ? 'Jornada actual' : undefined}
     />
   )
 }
