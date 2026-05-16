@@ -776,18 +776,37 @@ const SPORTS: SportConfig[] = [
     id: 'ufc', label: 'UFC', emoji: '🥊', accent: '#f97316',
     sections: [
       {
-        id: 'ranking-ufc', label: 'Rankings', icon: '🏆',
+        id: 'ranking-ufc', label: 'Top general', icon: '🏆',
         blocks: [
           {
             id: 'ufc-p4p', title: 'Pound for Pound (Top 10)', metric: 'Pos.',
-            rows: [
-              { rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const },
-            ],
+            rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }],
           },
           {
             id: 'ufc-campeones', title: 'Campeones actuales por división', metric: 'División',
             rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }],
           },
+        ],
+      },
+      {
+        id: 'pesos-masc', label: 'Pesos masculinos', icon: '🥊',
+        blocks: [
+          { id: 'ufc-hw',  title: 'Peso pesado · Top 5',  metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
+          { id: 'ufc-lhw', title: 'Semipesado · Top 5',   metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
+          { id: 'ufc-mw',  title: 'Peso medio · Top 5',   metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
+          { id: 'ufc-ww',  title: 'Wélter · Top 5',       metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
+          { id: 'ufc-lw',  title: 'Ligero · Top 5',       metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
+          { id: 'ufc-fw',  title: 'Pluma · Top 5',        metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
+          { id: 'ufc-bw',  title: 'Gallo · Top 5',        metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
+          { id: 'ufc-flw', title: 'Mosca · Top 5',        metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
+        ],
+      },
+      {
+        id: 'pesos-fem', label: 'Pesos femeninos', icon: '🥊',
+        blocks: [
+          { id: 'ufc-w-bw',  title: 'Gallo · Top 5',  metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
+          { id: 'ufc-w-flw', title: 'Mosca · Top 5',  metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
+          { id: 'ufc-w-stw', title: 'Paja · Top 5',   metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
         ],
       },
     ],
@@ -1406,6 +1425,8 @@ const LIVE_BLOCK_IDS = new Set([
   'goles-equipo', 'menos-goles',
   'ranking-fifa',
   'ufc-p4p', 'ufc-campeones',
+  'ufc-hw', 'ufc-lhw', 'ufc-mw', 'ufc-ww', 'ufc-lw', 'ufc-fw', 'ufc-bw', 'ufc-flw',
+  'ufc-w-bw', 'ufc-w-flw', 'ufc-w-stw',
   'nba-scoring', 'nba-rebounds', 'nba-assists', 'nba-blocks', 'nba-steals', 'nba-efficiency', 'nba-3pt',
   'nba-mvp-race', 'nba-dpoy-race', 'nba-rookie-race',
   'ucl-scorers', 'uel-scorers', 'uecl-scorers', 'ucl-assists', 'uel-assists', 'uecl-assists',
@@ -1447,6 +1468,7 @@ interface LiveStandingsData {
   fifaRanking: LiveStandingRow[]
   ufcP4P: LiveStandingRow[]
   ufcChampions?: LiveStandingRow[]
+  ufcDivisions?: Record<string, LiveStandingRow[]>
   womenLigaF: LiveStandingRow[]
   womenGoals: LiveStandingRow[]; womenAssists: LiveStandingRow[]
   nationsLeague?: LiveLeague[]
@@ -1492,6 +1514,11 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'ranking-fifa': 'fifaRanking',
   'ufc-p4p': 'ufcP4P',
   'ufc-campeones': 'ufcChampions',
+  // Divisiones UFC: meta se inyecta por blockId directo (route lo hace en
+  // for-loop sobre UFC_DIVISIONS), así que mapeamos blockId → mismo key.
+  'ufc-hw': 'ufc-hw', 'ufc-lhw': 'ufc-lhw', 'ufc-mw': 'ufc-mw', 'ufc-ww': 'ufc-ww',
+  'ufc-lw': 'ufc-lw', 'ufc-fw': 'ufc-fw', 'ufc-bw': 'ufc-bw', 'ufc-flw': 'ufc-flw',
+  'ufc-w-bw': 'ufc-w-bw', 'ufc-w-flw': 'ufc-w-flw', 'ufc-w-stw': 'ufc-w-stw',
   'f-ligaf-tabla': 'womenLigaF', 'f-goleadoras': 'womenGoals', 'f-asistencias': 'womenAssists',
   'nations-a1': 'nationsLeague', 'nations-a2': 'nationsLeague', 'nations-a3': 'nationsLeague', 'nations-a4': 'nationsLeague',
   'stats-dt': 'coachesWinRate',
@@ -2145,6 +2172,13 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
 
         if (block.id === 'ufc-campeones' && liveData.ufcChampions?.length)
           return { ...block, rows: toStatRows(liveData.ufcChampions, 'División') }
+
+        // Cualquier división UFC (ufc-hw, ufc-lhw, ..., ufc-w-stw) viene en
+        // el agregator liveData.ufcDivisions keyed por blockId.
+        if (block.id.startsWith('ufc-') && block.id !== 'ufc-p4p' && block.id !== 'ufc-campeones') {
+          const rows = liveData.ufcDivisions?.[block.id]
+          if (rows?.length) return { ...block, rows: toStatRows(rows) }
+        }
 
         if (block.id.startsWith('wc-group-') && liveData.worldCup?.length) {
           const group = liveData.worldCup.find(g => g.id === block.id)

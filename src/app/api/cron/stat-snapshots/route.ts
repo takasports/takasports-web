@@ -12,7 +12,7 @@
 import { NextResponse } from 'next/server'
 import { upsertSnapshot, type UpsertResult } from '@/lib/stat-snapshots'
 import { fetchMotogpRiders, fetchMotogpConstructors, type ScrapeResult } from '@/lib/motogp-scraper'
-import { fetchUfcP4P, fetchUfcChampions } from '@/lib/ufc-scraper'
+import { fetchUfcP4P, fetchUfcChampions, makeDivisionFetcher, UFC_DIVISIONS } from '@/lib/ufc-scraper'
 import { fetchEloWorldRanking } from '@/lib/elo-scraper'
 
 export const dynamic = 'force-dynamic'
@@ -31,6 +31,12 @@ const JOBS_BY_SPORT: Record<string, ScraperJob[]> = {
   ufc: [
     { blockId: 'ufc-p4p',       fetcher: fetchUfcP4P },
     { blockId: 'ufc-campeones', fetcher: fetchUfcChampions },
+    // 11 divisiones (8 masc + 3 fem). Comparten 1 sola fetch HTML
+    // gracias al cache de 60s en getRankings().
+    ...UFC_DIVISIONS.map(div => ({
+      blockId: div.blockId,
+      fetcher: makeDivisionFetcher(div),
+    })),
   ],
   // 'fifa' = ranking mundial selecciones (Elo, ya que la FIFA bloquea su API).
   // Bloque mantiene id legacy 'ranking-fifa' por estabilidad de URLs/favoritos.

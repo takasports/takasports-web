@@ -10,6 +10,7 @@ export type { StandingRow } from '@/lib/stats-editorial'
 import { withStaleFallback } from '@/lib/stats-cache'
 import { espnStandingsSchema, jolpicaDriverStandingsSchema, safeParse } from '@/lib/stats-schemas'
 import { loadAllSnapshots, type StatSnapshot } from '@/lib/stat-snapshots'
+import { UFC_DIVISIONS } from '@/lib/ufc-scraper'
 
 const staleSet = new Set<string>()
 
@@ -49,6 +50,9 @@ export interface StatsStandingsResponse {
   fifaRanking: StandingRow[]
   ufcP4P: StandingRow[]
   ufcChampions: StandingRow[]
+  // Rankings por división — Record<blockId, rows> para evitar 11 fields explícitos.
+  // Las 11 keys posibles vienen de UFC_DIVISIONS en src/lib/ufc-scraper.ts.
+  ufcDivisions: Record<string, StandingRow[]>
   womenLigaF: StandingRow[]
   womenGoals: StandingRow[]
   womenAssists: StandingRow[]
@@ -1070,7 +1074,7 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps', 'f1Calendar', 'f1Sprints'],
   tenis: ['atpRanking', 'wtaRanking', 'tennisSlams'],
   tennis: ['atpRanking', 'wtaRanking', 'tennisSlams'],
-  ufc: ['ufcP4P', 'ufcChampions'],
+  ufc: ['ufcP4P', 'ufcChampions', 'ufcDivisions'],
   selecciones: ['fifaRanking', 'nationsLeague'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
   mundial: ['worldCup', 'worldCupScorers', 'worldCupKnockout', 'worldCupQualified'],
@@ -1129,6 +1133,11 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   }
   const ufcP4PR          = resolveSnapshot('ufc-p4p',             ufcP4P,              'UFC Rankings', UFC_P4P_AS_OF)
   const ufcChampionsR    = resolveSnapshot('ufc-campeones',       [],                  'UFC',          UFC_P4P_AS_OF)
+  // 11 divisiones — cada blockId resuelve a su propio snapshot.
+  const ufcDivisionsResolved = UFC_DIVISIONS.map(div => ({
+    div,
+    r: resolveSnapshot(div.blockId, [], `ufc.com · ${div.label}`, ''),
+  }))
   const fifaR            = resolveSnapshot('ranking-fifa',        FIFA_RANKING,        'FIFA',         FIFA_RANKING_AS_OF)
   // MotoGP solo tiene datos vía cron Vercel → snapshot Supabase. Si snapshot
   // ausente, devuelve [] y meta='unavailable' (UI lo oculta con toggle).
@@ -1171,6 +1180,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fifaRanking:     fifaR.snap ? live(fifaR.snap.source) : histor('FIFA', FIFA_RANKING_AS_OF),
     ufcP4P:          ufcP4PR.snap ? live(ufcP4PR.snap.source) : histor('UFC Rankings', UFC_P4P_AS_OF),
     ufcChampions:    ufcChampionsR.snap ? live(ufcChampionsR.snap.source) : unavail('Sin snapshot — ejecutar cron UFC'),
+    // Meta de cada división se inyecta debajo en el for-loop (no cabe aquí).
     womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
     womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
     womenAssists:        womenStats.assists.length     ? live('ESPN') : unavail('ESPN'),
@@ -1213,6 +1223,15 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     tennisSlams:         TENNIS_SLAMS_2026.length     ? histor('ATP/WTA · calendario', '2026') : unavail('Calendario no disponible'),
   }
 
+  // Per-UFC-division meta + payload aggregator
+  const ufcDivisions: Record<string, StandingRow[]> = {}
+  for (const { div, r } of ufcDivisionsResolved) {
+    ufcDivisions[div.blockId] = r.rows
+    meta[div.blockId] = r.snap
+      ? live(r.snap.source)
+      : unavail('Sin snapshot — ejecutar cron UFC')
+  }
+
   // Per-football-league meta — lets the UI surface stale-fallback per tabla-* block.
   for (const league of football) {
     if (staleSet.has(league.id)) {
@@ -1242,6 +1261,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fifaRanking:    fifaR.rows,
     ufcP4P:         ufcP4PR.rows,
     ufcChampions:   ufcChampionsR.rows,
+    ufcDivisions,
     womenLigaF,
     womenGoals:          womenStats.goals,
     womenAssists:        womenStats.assists,
