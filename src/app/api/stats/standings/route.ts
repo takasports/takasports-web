@@ -1188,8 +1188,9 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     nba3ptMade:      nbaLeaders.threePt.length    ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
     atpRanking:      tennis.atp.length ? live('ESPN') : unavail('ESPN'),
     wtaRanking:      tennis.wta.length ? live('ESPN') : unavail('ESPN'),
-    fifaRanking:     fifaR.snap ? live(fifaR.snap.source) : histor('FIFA', FIFA_RANKING_AS_OF),
-    ufcP4P:          ufcP4PR.snap ? live(ufcP4PR.snap.source) : histor('UFC Rankings', UFC_P4P_AS_OF),
+    // Sin fallback hardcoded: si snapshot ausente → unavailable (no datos viejos disfrazados de live).
+    fifaRanking:     fifaR.snap ? live(fifaR.snap.source) : unavail('Sin snapshot — esperando cron diario Elo'),
+    ufcP4P:          ufcP4PR.snap ? live(ufcP4PR.snap.source) : unavail('Sin snapshot — esperando cron lunes UFC'),
     ufcChampions:    ufcChampionsR.snap ? live(ufcChampionsR.snap.source) : unavail('Sin snapshot — ejecutar cron UFC'),
     // Meta de cada división se inyecta debajo en el for-loop (no cabe aquí).
     womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
