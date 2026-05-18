@@ -1,9 +1,36 @@
 // API route — sirve los reels de @taka.sports
-// Fuente: bucket público en Supabase Storage (lo refresca cada 6h el WF-10 de n8n).
-// Fallbacks: live IG public API → JSON estático en repo.
+// Fuentes (fundidas y dedupadas por shortcode):
+//   1. Graph API oficial (token OAuth) — no la bloquea el 401 anónimo
+//   2. Supabase Storage (lo refresca cada 6h el WF-10 de n8n)
+//   3. IG public API anónima (suele dar 401) → JSON estático en repo
 
 import { fetchPublicReels, type PublicReel, detectSportPublic, extractTitlePublic } from '@/lib/instagram-public'
+import { fetchInstagramReels } from '@/lib/instagram'
 import reelsData from '@/lib/reels-data.json'
+
+// La Graph API oficial no devuelve video_url ni proxea el thumbnail; el
+// frontend ya cae al embed oficial de IG cuando falta video_url.
+function toPublicReel(r: {
+  id: string; instagram_url: string; thumbnail_url: string | null
+  timestamp: string; caption: string; sport: string; title: string
+}): PublicReel {
+  const thumb = r.thumbnail_url
+  return {
+    ...r,
+    thumbnail_url: thumb && /^https?:\/\//.test(thumb)
+      ? `/api/instagram/thumbnail?url=${encodeURIComponent(thumb)}`
+      : thumb,
+    video_url: null,
+  }
+}
+
+// Clave canónica para dedupar entre fuentes: el shortcode del permalink
+// (/reel/CODE/ o /p/CODE/) es estable; el id difiere entre Graph y la
+// API anónima para el MISMO reel, así que dedupar por id no bastaría.
+function keyOf(r: PublicReel): string {
+  const m = r.instagram_url?.match(/\/(?:reel|p|tv)\/([^/?#]+)/i)
+  return m ? m[1] : r.id
+}
 
 export const runtime = 'nodejs'
 export const dynamic  = 'force-dynamic'
@@ -86,18 +113,20 @@ async function fetchFromStorage(): Promise<PublicReel[]> {
   }
 }
 
-// Funde reels de varias fuentes (Supabase + live IG + estático) dedupando por id
-// y filtrando por la ventana de actualidad (≤3 días). Maximiza la cantidad de
-// reels visibles sin depender de que una sola fuente esté completa.
+// Funde reels de varias fuentes dedupando por shortcode del permalink y
+// filtrando por la ventana de actualidad. El orden de las fuentes importa:
+// la primera que aporte un shortcode gana, así que va primero la oficial.
 function merge(...sources: PublicReel[][]): PublicReel[] {
   const seen = new Map<string, PublicReel>()
   const now = Date.now()
   for (const src of sources) {
     for (const r of src) {
-      if (!r?.id || seen.has(r.id)) continue
+      if (!r?.id) continue
+      const key = keyOf(r)
+      if (seen.has(key)) continue
       const ms = tsToMs(r.timestamp)
       if (ms > 0 && now - ms > FRESHNESS_MAX_AGE_MS) continue
-      seen.set(r.id, r)
+      seen.set(key, r)
     }
   }
   return Array.from(seen.values()).sort((a, b) => tsToMs(b.timestamp) - tsToMs(a.timestamp))
@@ -109,13 +138,15 @@ export async function GET() {
     return Response.json(cache.data)
   }
 
-  // En paralelo: storage + live IG. Mezclamos resultados para maximizar diversidad.
-  const [fromStorage, live] = await Promise.all([
+  // En paralelo: Graph oficial + storage + live IG anónima.
+  // La oficial va primero en el merge (gana el dedupe por shortcode).
+  const [official, fromStorage, live] = await Promise.all([
+    fetchInstagramReels().then(rs => rs.map(toPublicReel)).catch(() => []),
     fetchFromStorage(),
     fetchPublicReels().catch(() => []),
   ])
 
-  const merged = merge(fromStorage, live, reelsData as PublicReel[])
+  const merged = merge(official, fromStorage, live, reelsData as PublicReel[])
 
   // Conservamos el cache previo SOLO si su reel más reciente es más nuevo
   // que el de la mezcla actual (p.ej. storage falló puntualmente y la mezcla
