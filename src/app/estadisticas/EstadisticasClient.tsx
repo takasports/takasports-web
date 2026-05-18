@@ -178,28 +178,6 @@ const FUTBOL_FEMENINO_BLOCKS: StatBlock[] = [
     ],
   },
   {
-    id: 'f-ga90', title: 'G+A por 90 minutos', metric: 'G+A/90',
-    rows: [
-      { rank: 1, name: 'Aitana Bonmatí',           team: 'FC Barcelona',  value: '1.54', sub: '25 PJ', flag: '🇪🇸', trend: 'up' },
-      { rank: 2, name: 'Ada Hegerberg',             team: 'Lyon',          value: '1.42', sub: '20 PJ', flag: '🇳🇴', trend: 'up' },
-      { rank: 3, name: 'Salma Paralluelo',          team: 'FC Barcelona',  value: '1.38', sub: '24 PJ', flag: '🇪🇸', trend: 'up' },
-      { rank: 4, name: 'Sam Kerr',                  team: 'Chelsea Women', value: '1.24', sub: '22 PJ', flag: '🇦🇺', trend: 'flat' },
-      { rank: 5, name: 'Caroline Graham Hansen',    team: 'FC Barcelona',  value: '1.22', sub: '23 PJ', flag: '🇳🇴', trend: 'flat' },
-      { rank: 6, name: 'Pernille Harder',           team: 'Wolfsburg',     value: '1.18', sub: '22 PJ', flag: '🇩🇰', trend: 'up' },
-    ],
-  },
-  {
-    id: 'f-champions-goleadoras', title: 'Champions F — Goleadoras', metric: 'Goles', league: 'Champions F',
-    rows: [
-      { rank: 1, name: 'Ada Hegerberg',             team: 'Lyon',          value: '8', sub: '7 PJ',  flag: '🇳🇴', trend: 'up' },
-      { rank: 2, name: 'Aitana Bonmatí',            team: 'FC Barcelona',  value: '7', sub: '7 PJ',  flag: '🇪🇸', trend: 'up' },
-      { rank: 3, name: 'Sam Kerr',                  team: 'Chelsea Women', value: '6', sub: '6 PJ',  flag: '🇦🇺', trend: 'flat' },
-      { rank: 4, name: 'Salma Paralluelo',          team: 'FC Barcelona',  value: '5', sub: '7 PJ',  flag: '🇪🇸', trend: 'up' },
-      { rank: 5, name: 'Pernille Harder',           team: 'Wolfsburg',     value: '5', sub: '6 PJ',  flag: '🇩🇰', trend: 'up' },
-      { rank: 6, name: 'Lauren Hemp',               team: 'Man City Women',value: '4', sub: '5 PJ',  flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up' },
-    ],
-  },
-  {
     id: 'f-ligaf-tabla', title: 'Tabla Liga F', metric: 'Puntos', placeholder: false,
     rows: [
       { rank: 1, name: 'FC Barcelona',              value: '72', sub: '26 PJ', trend: 'up',   extra: { V: '24', E: '0', D: '2' } },
@@ -379,13 +357,6 @@ const SPORTS: SportConfig[] = [
             ],
           },
           {
-            id: 'tabla-uecl', title: 'Conference League', metric: 'Pts',
-            rows: [
-              { rank: 1,  name: 'Chelsea',            value: '—', sub: 'Fase de liga', trend: 'flat' as const, extra: {} },
-              { rank: 2,  name: 'Real Betis',          value: '—', sub: 'Fase de liga', trend: 'flat' as const, extra: {} },
-            ],
-          },
-          {
             id: 'ucl-scorers', title: 'Champions · Goleadores', metric: 'Goles',
             rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN', trend: 'flat' as const }],
           },
@@ -399,14 +370,6 @@ const SPORTS: SportConfig[] = [
           },
           {
             id: 'uel-assists', title: 'Europa League · Asistencias', metric: 'Asist.',
-            rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN', trend: 'flat' as const }],
-          },
-          {
-            id: 'uecl-scorers', title: 'Conference · Goleadores', metric: 'Goles',
-            rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN', trend: 'flat' as const }],
-          },
-          {
-            id: 'uecl-assists', title: 'Conference · Asistencias', metric: 'Asist.',
             rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN', trend: 'flat' as const }],
           },
           {
@@ -473,22 +436,6 @@ const SPORTS: SportConfig[] = [
               { rank: 9,  name: 'Bélgica',        value: '1734.7', sub: 'pts FIFA', flag: '🇧🇪', trend: 'down' },
               { rank: 10, name: 'Alemania',       value: '1730.4', sub: 'pts FIFA', flag: '🇩🇪', trend: 'up' },
             ],
-          },
-          {
-            id: 'nations-a1', title: 'Nations League · Grupo A1 (Ed. 2026-27, sep 2026)', metric: 'Pts', placeholder: true,
-            rows: [],
-          },
-          {
-            id: 'nations-a2', title: 'Nations League · Grupo A2 (Ed. 2026-27, sep 2026)', metric: 'Pts', placeholder: true,
-            rows: [],
-          },
-          {
-            id: 'nations-a3', title: 'Nations League · Grupo A3 (Ed. 2026-27, sep 2026)', metric: 'Pts', placeholder: true,
-            rows: [],
-          },
-          {
-            id: 'nations-a4', title: 'Nations League · Grupo A4 (Ed. 2026-27, sep 2026)', metric: 'Pts', placeholder: true,
-            rows: [],
           },
         ],
       },
@@ -1438,7 +1385,7 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
 // ─────────────────────────────────────────────────────────────────
 // IDs of blocks that get replaced with live standings/ESPN data
 const LIVE_BLOCK_IDS = new Set([
-  'tabla-laliga', 'tabla-premier', 'tabla-serie-a', 'tabla-bundesliga', 'tabla-ligue1', 'tabla-ucl', 'tabla-uel', 'tabla-uecl',
+  'tabla-laliga', 'tabla-premier', 'tabla-serie-a', 'tabla-bundesliga', 'tabla-ligue1', 'tabla-ucl', 'tabla-uel',
   'nba-este', 'nba-oeste',
   'f1-campeonato', 'f1-constructores', 'f1-poles', 'f1-calendario', 'f1-sprints',
   'atp-ranking', 'wta-ranking',
@@ -1449,9 +1396,8 @@ const LIVE_BLOCK_IDS = new Set([
   'ufc-w-bw', 'ufc-w-flw', 'ufc-w-stw',
   'nba-scoring', 'nba-rebounds', 'nba-assists', 'nba-blocks', 'nba-steals', 'nba-efficiency', 'nba-3pt',
   'nba-mvp-race', 'nba-dpoy-race', 'nba-rookie-race',
-  'ucl-scorers', 'uel-scorers', 'uecl-scorers', 'ucl-assists', 'uel-assists', 'uecl-assists',
+  'ucl-scorers', 'uel-scorers', 'ucl-assists', 'uel-assists',
   'f-ligaf-tabla', 'f-goleadoras', 'f-asistencias',
-  'nations-a1', 'nations-a2', 'nations-a3', 'nations-a4',
   'stats-dt',
   // World Cup 2026 — grupos A-L + goleadores
   'wc-group-a', 'wc-group-b', 'wc-group-c', 'wc-group-d',
@@ -1525,7 +1471,7 @@ interface LiveStandingsData {
 // Map block.id -> standings payload key (for meta lookup)
 const BLOCK_TO_META_KEY: Record<string, string> = {
   'tabla-laliga': 'football', 'tabla-premier': 'football', 'tabla-serie-a': 'football',
-  'tabla-bundesliga': 'football', 'tabla-ligue1': 'football', 'tabla-ucl': 'football', 'tabla-uel': 'football', 'tabla-uecl': 'football',
+  'tabla-bundesliga': 'football', 'tabla-ligue1': 'football', 'tabla-ucl': 'football', 'tabla-uel': 'football',
   'goles-equipo': 'football', 'menos-goles': 'football',
   'nba-este': 'nbaEast', 'nba-oeste': 'nbaWest',
   'nba-scoring': 'nbaScoring', 'nba-rebounds': 'nbaRebounds', 'nba-assists': 'nbaAssists',
@@ -1542,7 +1488,6 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'ufc-lw': 'ufc-lw', 'ufc-fw': 'ufc-fw', 'ufc-bw': 'ufc-bw', 'ufc-flw': 'ufc-flw',
   'ufc-w-bw': 'ufc-w-bw', 'ufc-w-flw': 'ufc-w-flw', 'ufc-w-stw': 'ufc-w-stw',
   'f-ligaf-tabla': 'womenLigaF', 'f-goleadoras': 'womenGoals', 'f-asistencias': 'womenAssists',
-  'nations-a1': 'nationsLeague', 'nations-a2': 'nationsLeague', 'nations-a3': 'nationsLeague', 'nations-a4': 'nationsLeague',
   'stats-dt': 'coachesWinRate',
   'wc-group-a': 'worldCup', 'wc-group-b': 'worldCup', 'wc-group-c': 'worldCup',
   'wc-group-d': 'worldCup', 'wc-group-e': 'worldCup', 'wc-group-f': 'worldCup',
@@ -1557,8 +1502,8 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'nba-mvp-race': 'nbaMvpRace',
   'nba-dpoy-race': 'nbaDpoyRace',
   'nba-rookie-race': 'nbaRookieRace',
-  'ucl-scorers': 'uclScorers', 'uel-scorers': 'uelScorers', 'uecl-scorers': 'ueclScorers',
-  'ucl-assists': 'uclAssists', 'uel-assists': 'uelAssists', 'uecl-assists': 'ueclAssists',
+  'ucl-scorers': 'uclScorers', 'uel-scorers': 'uelScorers',
+  'ucl-assists': 'uclAssists', 'uel-assists': 'uelAssists',
   'motogp-pilotos': 'motogpRiders',
   'motogp-constructores': 'motogpConstructors',
   'tenis-slams': 'tennisSlams',
@@ -1569,7 +1514,7 @@ const HISTORICAL_PLAYER_BLOCK_IDS = new Set<string>()
 const STATIC_STALE_BLOCK_IDS = new Set<string>()
 
 const FIXTURE_META_KEY: Record<string, string> = {
-  'tabla-ucl': 'uclFixtures', 'tabla-uel': 'uelFixtures', 'tabla-uecl': 'ueclFixtures',
+  'tabla-ucl': 'uclFixtures', 'tabla-uel': 'uelFixtures',
 }
 
 const STATIC_HIST_META: BlockMeta  = { status: 'historical', source: 'Estimado',    fetchedAt: '', asOf: 'Temp. 24/25' }
@@ -1602,8 +1547,6 @@ function playerHref(p: { playerId?: string; leagueSlug?: string }): string | und
 interface LeaguePlayerData {
   id: string; label: string
   goals: PlayerLeader[]; assists: PlayerLeader[]
-  yellowCards: PlayerLeader[]; redCards: PlayerLeader[]
-  shots: PlayerLeader[]; goalsPerGame: PlayerLeader[]
 }
 interface LivePlayerData { leagues: LeaguePlayerData[] }
 
@@ -1672,51 +1615,6 @@ function applyLivePlayerToBlock(
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
       logo: g.teamLogo, href: playerHref(g),
-    }))}}
-  }
-
-  // API-Sports data covers season 2024 only (free tier). Return isLive: false so badge shows "Hist · 24/25", not "● LIVE"
-  if (block.id === 'tarjetas-amarillas') {
-    const all = leagues
-      .flatMap(l => (l.yellowCards ?? []).slice(0, 5).map(g => ({ ...g })))
-      .sort((a, b) => b.value - a.value).slice(0, 10)
-    if (!all.length) return { block, isLive: false }
-    return { isLive: false, block: { ...block, rows: all.map((g, i) => ({
-      rank: i + 1, name: g.name, team: g.team,
-      value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
-    }))}}
-  }
-
-  if (block.id === 'tarjetas-rojas') {
-    const all = leagues
-      .flatMap(l => (l.redCards ?? []).slice(0, 5).map(g => ({ ...g })))
-      .sort((a, b) => b.value - a.value).slice(0, 8)
-    if (!all.length) return { block, isLive: false }
-    return { isLive: false, block: { ...block, rows: all.map((g, i) => ({
-      rank: i + 1, name: g.name, team: g.team,
-      value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
-    }))}}
-  }
-
-  if (block.id === 'tiros-puerta') {
-    const all = leagues
-      .flatMap(l => (l.shots ?? []).slice(0, 5).map(g => ({ ...g })))
-      .sort((a, b) => b.value - a.value).slice(0, 8)
-    if (!all.length) return { block, isLive: false }
-    return { isLive: false, block: { ...block, rows: all.map((g, i) => ({
-      rank: i + 1, name: g.name, team: g.team,
-      value: g.value.toFixed(1), sub: `${g.matches} PJ`, trend: 'flat' as const,
-    }))}}
-  }
-
-  if (block.id === 'goles-90') {
-    const all = leagues
-      .flatMap(l => (l.goalsPerGame ?? []).slice(0, 5).map(g => ({ ...g })))
-      .sort((a, b) => b.value - a.value).slice(0, 8)
-    if (!all.length) return { block, isLive: false }
-    return { isLive: false, block: { ...block, rows: all.map((g, i) => ({
-      rank: i + 1, name: g.name, team: g.team,
-      value: g.value.toFixed(2), sub: `${g.matches} PJ`, trend: 'flat' as const,
     }))}}
   }
 
@@ -2149,8 +2047,6 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           return { ...block, title: 'Champions League · Fase KO', rows: toStatRows(liveData.uclFixtures), placeholder: false, cardType: 'fixtures' }
         if (block.id === 'tabla-uel' && liveData.uelFixtures?.length)
           return { ...block, title: 'Europa League · Fase KO', rows: toStatRows(liveData.uelFixtures), placeholder: false, cardType: 'fixtures' }
-        if (block.id === 'tabla-uecl' && liveData.ueclFixtures?.length)
-          return { ...block, title: 'Conference League · Fase KO', rows: toStatRows(liveData.ueclFixtures), placeholder: false, cardType: 'fixtures' }
         if (block.id === 'nba-este'        && liveData.nbaEast.length)         return { ...block, rows: toStatRows(liveData.nbaEast, undefined, 'basketball/nba') }
         if (block.id === 'nba-oeste'       && liveData.nbaWest.length)         return { ...block, rows: toStatRows(liveData.nbaWest, undefined, 'basketball/nba') }
         if (block.id === 'f1-campeonato'   && liveData.f1Drivers.length)       return { ...block, rows: toStatRows(liveData.f1Drivers, 'Escudería') }
@@ -2170,10 +2066,6 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (block.id === 'f-goleadoras'      && liveData.womenGoals?.length)          return { ...block, rows: toStatRows(liveData.womenGoals),           placeholder: false }
         if (block.id === 'f-asistencias'     && liveData.womenAssists?.length)        return { ...block, rows: toStatRows(liveData.womenAssists),         placeholder: false }
         if (block.id === 'stats-dt'          && liveData.coachesWinRate?.length)      return { ...block, rows: toStatRows(liveData.coachesWinRate!, 'Club') }
-        if (block.id.startsWith('nations-') && liveData.nationsLeague?.length) {
-          const group = liveData.nationsLeague.find(g => g.id === block.id)
-          if (group?.rows.length) return { ...block, rows: toStatRows(group.rows) }
-        }
 
         if (block.id === 'goles-equipo') {
           const allTeams = liveData.football.flatMap(league =>
@@ -2239,10 +2131,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (block.id === 'nba-rookie-race'  && liveData.nbaRookieRace?.length)     return { ...block, rows: toStatRows(liveData.nbaRookieRace) }
         if (block.id === 'ucl-scorers'      && liveData.uclScorers?.length)        return { ...block, rows: toStatRows(liveData.uclScorers) }
         if (block.id === 'uel-scorers'      && liveData.uelScorers?.length)        return { ...block, rows: toStatRows(liveData.uelScorers) }
-        if (block.id === 'uecl-scorers'     && liveData.ueclScorers?.length)       return { ...block, rows: toStatRows(liveData.ueclScorers) }
         if (block.id === 'ucl-assists'      && liveData.uclAssists?.length)        return { ...block, rows: toStatRows(liveData.uclAssists) }
         if (block.id === 'uel-assists'      && liveData.uelAssists?.length)        return { ...block, rows: toStatRows(liveData.uelAssists) }
-        if (block.id === 'uecl-assists'     && liveData.ueclAssists?.length)       return { ...block, rows: toStatRows(liveData.ueclAssists) }
         if (block.id === 'wc-qualified'     && liveData.worldCupQualified?.length) return { ...block, rows: toStatRows(liveData.worldCupQualified) }
         if (block.id === 'motogp-pilotos'        && liveData.motogpRiders?.length)        return { ...block, rows: toStatRows(liveData.motogpRiders, 'Escudería') }
         if (block.id === 'motogp-constructores'  && liveData.motogpConstructors?.length)  return { ...block, rows: toStatRows(liveData.motogpConstructors) }
@@ -2259,7 +2149,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
 
   function isBlockLive(block: StatBlock): boolean {
     const metaKey = block.cardType === 'fixtures'
-      ? ({ 'tabla-ucl': 'uclFixtures', 'tabla-uel': 'uelFixtures', 'tabla-uecl': 'ueclFixtures' } as Record<string, string>)[block.id] ?? BLOCK_TO_META_KEY[block.id]
+      ? ({ 'tabla-ucl': 'uclFixtures', 'tabla-uel': 'uelFixtures' } as Record<string, string>)[block.id] ?? BLOCK_TO_META_KEY[block.id]
       : BLOCK_TO_META_KEY[block.id]
     const meta = liveData?.meta?.[metaKey]
     if (meta?.status === 'unavailable' || meta?.status === 'stale') return false

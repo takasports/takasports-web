@@ -20,10 +20,6 @@ export interface LeaguePlayerData {
   label: string
   goals: PlayerLeader[]
   assists: PlayerLeader[]
-  yellowCards: PlayerLeader[]
-  redCards: PlayerLeader[]
-  shots: PlayerLeader[]       // shots on target per game (×10 for display)
-  goalsPerGame: PlayerLeader[] // goals per 90 min (×100 for display)
 }
 
 export interface PlayersResponse {
@@ -32,24 +28,17 @@ export interface PlayersResponse {
   updatedAt: string
 }
 
-const LEAGUES = SOCCER_LEAGUES.map(l => ({ id: l.id, label: l.label, slug: l.espnSlug, apiId: l.apiSportsId }))
+const LEAGUES = SOCCER_LEAGUES.map(l => ({ id: l.id, label: l.label, slug: l.espnSlug }))
 
-// API-Sports free tier: only covers up to season 2024.
-// Pro (~€12/mes) unlocks current seasons.
-// Season detection: European leagues run Aug → May. Aug-Dec → that year; Jan-Jul → year-1.
-// Override via API_SPORTS_SEASON env var (e.g. "2025" if Pro tier is active).
-function soccerSeason(): number {
-  const env = Number(process.env.API_SPORTS_SEASON)
-  if (Number.isFinite(env) && env > 2000) return env
-  // Without Pro, the highest season the free tier can resolve is 2024.
-  if (!process.env.API_SPORTS_PRO) return 2024
+// European season label: Aug→May. Aug-Dec → Y/Y+1; Jan-Jul → Y-1/Y.
+function seasonLabel(): string {
   const now = new Date()
-  return now.getUTCMonth() >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
+  const start = now.getUTCMonth() >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
+  return `${start}-${String((start + 1) % 100).padStart(2, '0')}`
 }
-const SEASON = soccerSeason()
-const SEASON_LABEL = `${SEASON}-${String((SEASON + 1) % 100).padStart(2, '0')}`
+const SEASON_LABEL = seasonLabel()
 
-// Player tables update slowly; ESPN goals/assists at 30 min, API-Sports cards at 24 h.
+// Player tables update slowly; ESPN goals/assists revalidate at 30 min.
 export const revalidate = 1800
 
 // ── ESPN ──────────────────────────────────────────────────────────────────────
@@ -104,122 +93,9 @@ async function fetchEspnLeague(
   }
 }
 
-// ── API-Football ──────────────────────────────────────────────────────────────
-
-interface ApiPlayer {
-  player: { name: string }
-  statistics: [{
-    team: { name: string }
-    games: { appearences: number; minutes: number }
-    shots: { total: number; on: number }
-    goals: { total: number }
-    cards: { yellow: number; yellowred: number; red: number }
-  }]
-}
-
-async function fetchApiFooty(endpoint: string): Promise<ApiPlayer[]> {
-  const key = process.env.API_SPORTS_KEY
-  if (!key) return []
-  try {
-    const res = await fetch(`https://v3.football.api-sports.io/${endpoint}`, {
-      headers: { 'x-apisports-key': key },
-      next: { revalidate: 86400 },
-    })
-    if (!res.ok) return []
-    const json = await res.json()
-    return (json.response ?? []) as ApiPlayer[]
-  } catch { return [] }
-}
-
-function toShots(players: ApiPlayer[]): PlayerLeader[] {
-  return players
-    .filter(p => p.statistics[0]?.games.appearences > 0)
-    .map(p => {
-      const s = p.statistics[0]
-      const spg = s.games.appearences > 0 ? s.shots.on / s.games.appearences : 0
-      return { name: p.player.name, team: s.team.name, value: Math.round(spg * 10) / 10, matches: s.games.appearences }
-    })
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 10)
-}
-
-function toGoalsPer90(players: ApiPlayer[]): PlayerLeader[] {
-  return players
-    .filter(p => p.statistics[0]?.games.minutes > 0)
-    .map(p => {
-      const s = p.statistics[0]
-      const g90 = s.games.minutes > 0 ? (s.goals.total / s.games.minutes) * 90 : 0
-      return { name: p.player.name, team: s.team.name, value: Math.round(g90 * 100) / 100, matches: s.games.appearences }
-    })
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 10)
-}
-
-function toYellowCards(players: ApiPlayer[]): PlayerLeader[] {
-  return players
-    .map(p => {
-      const s = p.statistics[0]
-      return { name: p.player.name, team: s.team.name, value: s.cards.yellow + s.cards.yellowred, matches: s.games.appearences }
-    })
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 10)
-}
-
-function toRedCards(players: ApiPlayer[]): PlayerLeader[] {
-  return players
-    .map(p => {
-      const s = p.statistics[0]
-      return { name: p.player.name, team: s.team.name, value: s.cards.red + s.cards.yellowred, matches: s.games.appearences }
-    })
-    .filter(p => p.value > 0)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 10)
-}
-
-async function fetchApiFootyLeague(
-  league: typeof LEAGUES[0],
-): Promise<Pick<LeaguePlayerData, 'yellowCards' | 'redCards' | 'shots' | 'goalsPerGame'>> {
-  const empty = { yellowCards: [], redCards: [], shots: [], goalsPerGame: [] }
-  const key = process.env.API_SPORTS_KEY
-  // API-Sports free tier solo da temporada 2024 (datos obsoletos) y se agota a 100 req/día.
-  // Solo lanzamos las fetches si el plan Pro está activo (API_SPORTS_PRO=1 + season actual).
-  if (!key || !process.env.API_SPORTS_PRO) return empty
-
-  const base = `league=${league.apiId}&season=${SEASON}`
-  const [scorers, yellows, reds] = await Promise.allSettled([
-    fetchApiFooty(`players/topscorers?${base}`),
-    fetchApiFooty(`players/topyellowcards?${base}`),
-    fetchApiFooty(`players/topredcards?${base}`),
-  ])
-
-  return {
-    shots:       scorers.status === 'fulfilled' ? toShots(scorers.value)         : [],
-    goalsPerGame:scorers.status === 'fulfilled' ? toGoalsPer90(scorers.value)    : [],
-    yellowCards: yellows.status === 'fulfilled' ? toYellowCards(yellows.value)   : [],
-    redCards:    reds.status    === 'fulfilled' ? toRedCards(reds.value)         : [],
-  }
-}
-
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 export async function GET() {
-  const [espnData, apiFootyResults] = await Promise.all([
-    Promise.all(LEAGUES.map(fetchEspnLeague)),
-    Promise.allSettled(LEAGUES.map(fetchApiFootyLeague)),
-  ])
-
-  const apiFootyData: Record<string, Pick<LeaguePlayerData, 'yellowCards' | 'redCards' | 'shots' | 'goalsPerGame'>> = {}
-  LEAGUES.forEach((league, i) => {
-    const r = apiFootyResults[i]
-    apiFootyData[league.id] = r.status === 'fulfilled'
-      ? r.value
-      : { yellowCards: [], redCards: [], shots: [], goalsPerGame: [] }
-  })
-
-  const leagues: LeaguePlayerData[] = espnData.map(l => ({
-    ...l,
-    ...(apiFootyData[l.id] ?? { yellowCards: [], redCards: [], shots: [], goalsPerGame: [] }),
-  }))
-
+  const leagues = await Promise.all(LEAGUES.map(fetchEspnLeague))
   return NextResponse.json({ leagues, season: SEASON_LABEL, updatedAt: new Date().toISOString() } satisfies PlayersResponse)
 }
