@@ -196,6 +196,7 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
             time={m.time}
             odds={m.odds}
             isoDate={m.isoDate}
+            jornada={jornada}
             isCaptain={captainIdx === i}
             onSetCaptain={picks[i] ? () => setCaptainIdx(prev => prev === i ? null : i) : undefined}
           />

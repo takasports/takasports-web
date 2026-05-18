@@ -3,22 +3,8 @@
 import { useState, useEffect } from 'react'
 import type { QuinielaMatch, Pick } from '@/components/QuinielaModule'
 import { communityConsensus } from '../../lib/helpers'
+import { loadConsensus, type ConsensusRow } from '../../lib/consensus'
 import { nameMatch } from '@/lib/quiniela'
-
-interface ConsensusRow { home: string; away: string; p1: number; px: number; p2: number; total: number }
-
-// Cache por jornada — un fetch por sesión, compartido entre cards
-const cache = new Map<string, Promise<ConsensusRow[]>>()
-function loadConsensus(jornada: string): Promise<ConsensusRow[]> {
-  const cached = cache.get(jornada)
-  if (cached) return cached
-  const p = fetch(`/api/quiniela/consensus?jornada=${encodeURIComponent(jornada)}`, { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : { rows: [] })
-    .then(j => (j.rows ?? []) as ConsensusRow[])
-    .catch(() => [] as ConsensusRow[])
-  cache.set(jornada, p)
-  return p
-}
 
 // Mínimo de votos para mostrar datos reales; por debajo, fallback heurístico
 const REAL_MIN_VOTES = 5

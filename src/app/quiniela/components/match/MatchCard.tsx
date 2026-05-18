@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Pick } from '@/components/QuinielaModule'
 import { getClubColors } from '@/lib/clubs'
 import { PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW } from '../../lib/constants'
-import { getMatchContext, aiSuggest } from '../../lib/helpers'
+import { getMatchContext, aiSuggest, liveOdds } from '../../lib/helpers'
+import { loadConsensus } from '../../lib/consensus'
+import { nameMatch } from '@/lib/quiniela'
 import { useMatchCountdown } from '../../lib/hooks'
 import { TeamBadge } from '../atoms/TeamBadge'
 import { WinProbabilityBar } from '../atoms/WinProbabilityBar'
@@ -15,7 +17,7 @@ import { WinProbabilityBar } from '../atoms/WinProbabilityBar'
 export function MatchCard({
   match, index, pick, onPick, forceLocked, showOverlay, comp, time, odds, isoDate,
   comodinAvailable, isComodinUnlocked, onUseComodin, comodinCost, coinBalance, liveScore, finalScore, correct, friendPicks,
-  isCaptain, onSetCaptain,
+  isCaptain, onSetCaptain, jornada,
 }: {
   match: { home: string; away: string; homeLogo?: string; awayLogo?: string; homeShort?: string; awayShort?: string }
   index: number; pick?: Pick; onPick: (p: Pick) => void
@@ -23,6 +25,7 @@ export function MatchCard({
   comp?: string; time?: string
   odds?: { home: number; draw: number; away: number }
   isoDate?: string
+  jornada?: string
   comodinAvailable?: boolean
   isComodinUnlocked?: boolean
   onUseComodin?: () => void
@@ -41,6 +44,22 @@ export function MatchCard({
   const [animPick, setAnimPick] = useState<Pick | null>(null)
   const homeColors = getClubColors(match.home)
   const awayColors = getClubColors(match.away)
+
+  // ── Cuotas vivas: la línea se mueve por el consenso real + tiempo ──
+  const [consensus, setConsensus] = useState<{ p1: number; px: number; p2: number; total: number } | null>(null)
+  const [oddsTick, setOddsTick] = useState(() => Date.now())
+  useEffect(() => {
+    if (!jornada || !odds || locked) return
+    let cancelled = false
+    loadConsensus(jornada).then(rows => {
+      if (cancelled) return
+      const row = rows.find(r => nameMatch(r.home, match.home) && nameMatch(r.away, match.away))
+      if (row) setConsensus({ p1: row.p1, px: row.px, p2: row.p2, total: row.total })
+    })
+    const t = setInterval(() => setOddsTick(Date.now()), 45_000)
+    return () => { cancelled = true; clearInterval(t) }
+  }, [jornada, odds, locked, match.home, match.away])
+  const shownOdds = liveOdds(odds, consensus, isoDate, oddsTick)
 
   return (
     <div
@@ -211,7 +230,7 @@ export function MatchCard({
           )
         })()}
 
-        <WinProbabilityBar odds={odds} userPick={pick} />
+        <WinProbabilityBar odds={shownOdds} userPick={pick} />
 
         {/* Botones Local / Empate / Visitante */}
         <div className="grid grid-cols-3 gap-2 mt-1" role="radiogroup" aria-label={`Predicción para ${match.home} vs ${match.away}`}>
@@ -219,7 +238,7 @@ export function MatchCard({
             const selected = pick === opt
             const label = opt === '1' ? (match.homeShort ?? match.home) : opt === '2' ? (match.awayShort ?? match.away) : 'Empate'
             const sublabel = opt === '1' ? 'local' : opt === '2' ? 'visitante' : 'empate'
-            const odd = opt === '1' ? odds?.home ?? null : opt === 'X' ? odds?.draw ?? null : odds?.away ?? null
+            const odd = opt === '1' ? shownOdds?.home ?? null : opt === 'X' ? shownOdds?.draw ?? null : shownOdds?.away ?? null
             const aria = opt === '1' ? `Gana local ${match.home}` : opt === '2' ? `Gana visitante ${match.away}` : `Empate entre ${match.home} y ${match.away}`
             return (
               <button

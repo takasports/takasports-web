@@ -261,3 +261,56 @@ export function computeStandings(
       a.nickname.localeCompare(b.nickname),
     )
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Cuotas "vivas" estilo casa de apuestas — la línea se mueve por la
+// ACCIÓN REAL de la gente (consenso de picks) y se aprieta al acercarse
+// el inicio. Base = cuota real del bookmaker; preservamos su margen
+// (overround) para que sigan pareciendo cuotas reales. Sin aleatoriedad:
+// si no hay suficientes votos reales, devolvemos la base sin tocar.
+// ─────────────────────────────────────────────────────────────────
+export interface OddsTriple { home: number; draw: number; away: number }
+
+const ODDS_MIN_VOTES = 8          // por debajo: no movemos la línea (sería humo)
+const ODDS_MAX_PULL  = 0.45       // tope de desplazamiento hacia el consenso
+const ODDS_RAMP_HOURS = 6         // en las últimas N horas el book "aprieta"
+
+export function liveOdds(
+  base: OddsTriple | undefined,
+  consensus: { p1: number; px: number; p2: number; total: number } | null,
+  isoDate: string | undefined,
+  now: number = Date.now(),
+): OddsTriple | undefined {
+  if (!base || !base.home || !base.away) return base
+  const drawO = base.draw || 0
+  const iH = 1 / base.home
+  const iD = drawO ? 1 / drawO : 0
+  const iA = 1 / base.away
+  const margin = iH + iD + iA            // overround real del bookmaker
+  if (margin <= 0) return base
+  const bH = iH / margin, bD = iD / margin, bA = iA / margin   // prob justa
+
+  if (!consensus || consensus.total < ODDS_MIN_VOTES) return base
+
+  const cTot = consensus.p1 + consensus.px + consensus.p2 || 1
+  const cH = consensus.p1 / cTot, cD = consensus.px / cTot, cA = consensus.p2 / cTot
+
+  // Peso: más volumen de picks + más cerca del inicio → más arrastre.
+  const volumeW = Math.min(consensus.total / 60, 1)
+  let timeW = 0.4
+  if (isoDate) {
+    const hoursToKO = (new Date(isoDate).getTime() - now) / 3_600_000
+    const t = Math.max(0, Math.min(1, (ODDS_RAMP_HOURS - hoursToKO) / ODDS_RAMP_HOURS))
+    timeW = 0.4 + 0.6 * t
+  }
+  const w = ODDS_MAX_PULL * volumeW * timeW
+
+  const pH = bH * (1 - w) + cH * w
+  const pD = bD * (1 - w) + cD * w
+  const pA = bA * (1 - w) + cA * w
+  const sum = pH + pD + pA || 1
+
+  // Reaplicamos el margen original para que la cuota siga "de casa".
+  const mk = (p: number) => Math.max(1.01, Math.round((1 / ((p / sum) * margin)) * 100) / 100)
+  return { home: mk(pH), draw: drawO ? mk(pD) : 0, away: mk(pA) }
+}
