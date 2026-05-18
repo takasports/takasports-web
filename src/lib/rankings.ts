@@ -1321,6 +1321,38 @@ export const RANKING_CREADORES_WWE: RankingEntry[] = [
     scorePrev: 71.3, trendReason: 'Crecimiento sostenido del formato corto en español — fuerte entre 18-24 en LATAM',
     factors: { rendimiento: 76, contexto: 70, mediatico: 76, narrativa: 73 },
   },
+  // ── Hispanohablantes WWE ─────────────────────────────────────
+  {
+    id: 'falbak-wwe', rank: 7, name: 'Falbak', subtitle: 'WWE · YouTube (638K suscriptores)',
+    sport: 'wwe', score: 75.0, trend: 'up', badge: 'Histórico',
+    insight: 'El mayor canal de wrestling en español. 638K subs, 295M views. Análisis y retros desde 2016.',
+    emoji: '🎬', country: '🇪🇸',
+    scorePrev: 72.0,
+  },
+  {
+    id: 'superluchas-wwe', rank: 8, name: 'Superluchas', subtitle: 'WWE · Medio Digital (desde 1991)',
+    sport: 'wwe', score: 72.0, trend: 'flat', badge: 'Histórico',
+    insight: 'La publicación de wrestling en español más veterana. Desde 1991, MX. 7M+ páginas vistas/mes.',
+    emoji: '📰', country: '🇲🇽',
+  },
+  {
+    id: 'carlos-cabrera-wwe', rank: 0, name: 'Carlos Cabrera', subtitle: 'WWE · Narrador Histórico (1989-2022)',
+    sport: 'wwe', score: 85.0, trend: 'up', badge: 'Histórico', featured: true,
+    insight: '"La Voz" — 29 años narrando WWE en LATAM. Ahora en AEW. El más querido del wrestling hispano.',
+    emoji: '🎙️', country: '🇨🇴',
+  },
+  {
+    id: 'marcelo-rodriguez-wwe', rank: 9, name: 'Marcelo Rodríguez', subtitle: 'WWE · Narrador Oficial Actual',
+    sport: 'wwe', score: 70.0, trend: 'flat',
+    insight: 'Voz oficial de WWE en español desde 1999. 111K IG. RAW, SmackDown y todos los PLEs.',
+    emoji: '🎙️', country: '🇻🇪',
+  },
+  {
+    id: 'planeta-wrestling-es', rank: 10, name: 'Planeta Wrestling', subtitle: 'WWE · Media Digital · España',
+    sport: 'wwe', score: 65.0, trend: 'up',
+    insight: 'El mayor medio de wrestling en español de Europa. Fundado 2013. Miguel Pérez, ahora narrador de Netflix.',
+    emoji: '🌍', country: '🇪🇸',
+  },
 ]
 
 // ── ENTRENADORES — solo Fútbol y NBA ─────────────────────────────
@@ -1486,6 +1518,42 @@ export const RANKING_CREADORES: RankingEntry[] = [
     emoji: '🥊',
     scorePrev: 50.0,
   },
+  {
+    id: 'brandon-moreno-podcast', rank: 2, name: 'Brandon Moreno', subtitle: 'UFC Entre Asaltos · Podcast Oficial',
+    sport: 'ufc', score: 78.3, trend: 'up', badge: 'Histórico',
+    insight: 'Campeón ex-mosca y cara del MMA mexicano. Host del único podcast oficial de UFC en español.',
+    emoji: '🥊', country: '🇲🇽',
+  },
+  {
+    id: 'gaston-tonga-reyno', rank: 3, name: 'Gastón Reyno', subtitle: 'UFC · Narrador Oficial LATAM',
+    sport: 'ufc', score: 72.0, trend: 'flat',
+    insight: '"El Tonga" — la voz de UFC LATAM durante una década en ESPN. 330K en Instagram.',
+    emoji: '🎙️', country: '🇺🇾',
+  },
+  {
+    id: 'impacto-mma', rank: 4, name: 'Impacto MMA', subtitle: 'UFC · YouTube / Digital',
+    sport: 'ufc', score: 68.0, trend: 'up',
+    insight: 'Canal YouTube de referencia del MMA en español. 250K+ suscriptores.',
+    emoji: '📺', country: '🇲🇽',
+  },
+  {
+    id: 'ivette-hernandez-ufc', rank: 5, name: 'Ivette Hernández', subtitle: 'ESPN Knockout · Periodista',
+    sport: 'ufc', score: 65.0, trend: 'flat',
+    insight: '226K en Instagram. La periodista de MMA hispanohablante con mayor audiencia social.',
+    emoji: '🎤', country: '🇲🇽',
+  },
+  {
+    id: 'victor-davila-ufc', rank: 6, name: 'Víctor Dávila', subtitle: 'UFC · Narrador Oficial (desde 2007)',
+    sport: 'ufc', score: 63.0, trend: 'up',
+    insight: '17+ años como narrador oficial de UFC en español. Encabeza el equipo de Paramount+.',
+    emoji: '🎙️', country: '🇲🇽',
+  },
+  {
+    id: 'mmadictos', rank: 7, name: 'MMAdictos', subtitle: 'UFC · Podcast / España',
+    sport: 'ufc', score: 58.0, trend: 'flat',
+    insight: '"El programa de MMA en español más longevo del mundo". 10+ años en activo.',
+    emoji: '🎧', country: '🇪🇸',
+  },
 ]
 
 // ── PERIODISTAS — por deporte ─────────────────────────────────────
@@ -1566,6 +1634,74 @@ export const RANKING_PERIODISTAS: RankingEntry[] = [
     emoji: '🎾',
     scorePrev: 85.0, trendReason: 'Fuente primaria del Career Slam Alcaraz y dominio Sinner — referencia global del circuito',
     factors: { rendimiento: 87, contexto: 86, mediatico: 81, narrativa: 91 },
+  },
+  // ── WWE / Wrestling ──────────────────────────────────────────
+  {
+    id: 'carlos-cabrera-wwe', rank: 1, name: 'Carlos Cabrera', subtitle: 'WWE/AEW · Narrador Histórico',
+    sport: 'wwe', score: 85.0, trend: 'up', badge: 'Histórico',
+    insight: '"La Voz" — 29 años narrando WWE para LATAM (1989-2022). Leyenda absoluta del wrestling hispano.',
+    emoji: '🎙️', country: '🇨🇴',
+  },
+  {
+    id: 'hugo-savinovich', rank: 2, name: 'Hugo Savinovich', subtitle: 'WWE · Analista Legendario',
+    sport: 'wwe', score: 80.0, trend: 'flat', badge: 'Histórico',
+    insight: 'La mitad del dúo legendario junto a Cabrera. "¡Atángana!" — voz del wrestling hispano en los 2000s.',
+    emoji: '🤼', country: '🇪🇨',
+  },
+  {
+    id: 'marcelo-rodriguez-wwe', rank: 3, name: 'Marcelo Rodríguez', subtitle: 'WWE · Narrador Oficial',
+    sport: 'wwe', score: 72.0, trend: 'flat',
+    insight: 'Narrador oficial WWE en español desde 1999. RAW, SmackDown, todos los PLEs. 111K en Instagram.',
+    emoji: '🎙️', country: '🇻🇪',
+  },
+  {
+    id: 'miguel-perez-wwe', rank: 4, name: 'Miguel Pérez', subtitle: 'WWE Netflix · Narrador España',
+    sport: 'wwe', score: 68.0, trend: 'up2', badge: 'Revelación',
+    insight: 'Elegido narrador de WWE en Netflix para España. Co-fundador de Planeta Wrestling. En ascenso.',
+    emoji: '📺', country: '🇪🇸',
+  },
+  {
+    id: 'alvaro-carrera-wwe', rank: 5, name: 'Álvaro Carrera', subtitle: 'WWE Netflix / DAZN · Narrador',
+    sport: 'wwe', score: 65.0, trend: 'up2', badge: 'Nuevo',
+    insight: 'Periodista de Relevo y DAZN. Narrador de WWE en Netflix junto a Miguel Pérez desde 2024.',
+    emoji: '🎤', country: '🇪🇸',
+  },
+  {
+    id: 'jerry-soto-wwe', rank: 6, name: 'Jerry Soto', subtitle: 'WWE · Analista Oficial',
+    sport: 'wwe', score: 60.0, trend: 'flat',
+    insight: 'Tándem oficial con Marcelo Rodríguez. RAW y SmackDown en español para toda LATAM desde 2011.',
+    emoji: '🎙️', country: '🇵🇷',
+  },
+  // ── UFC / MMA ─────────────────────────────────────────────────
+  {
+    id: 'gaston-tonga-reyno', rank: 1, name: 'Gastón Reyno', subtitle: 'UFC · Narrador LATAM',
+    sport: 'ufc', score: 72.0, trend: 'flat',
+    insight: '"El Tonga" — cara de UFC LATAM en ESPN durante una década. 330K IG. El más reconocido del MMA hispano.',
+    emoji: '🥊', country: '🇺🇾',
+  },
+  {
+    id: 'ivette-hernandez-ufc', rank: 2, name: 'Ivette Hernández', subtitle: 'ESPN Knockout · Periodista',
+    sport: 'ufc', score: 65.0, trend: 'flat',
+    insight: '226K en Instagram — la periodista de MMA hispanohablante con mayor audiencia en redes sociales.',
+    emoji: '🎤', country: '🇲🇽',
+  },
+  {
+    id: 'victor-davila-ufc', rank: 3, name: 'Víctor Dávila', subtitle: 'UFC Paramount+ · Narrador Oficial',
+    sport: 'ufc', score: 63.0, trend: 'up',
+    insight: 'Narrador oficial de UFC en español desde 2007. CEO de MMAMexicoMX. Lidera el equipo de Paramount+.',
+    emoji: '🎙️', country: '🇲🇽',
+  },
+  {
+    id: 'andres-bermudez-ufc', rank: 4, name: 'Andrés Bermúdez', subtitle: 'ESPN Knockout · Narrador',
+    sport: 'ufc', score: 58.0, trend: 'flat',
+    insight: 'Narrador venezolano de UFC y boxeo en ESPN Knockout. Junto a su hermano Renato, dúo icónico de la era ESPN.',
+    emoji: '🎙️', country: '🇻🇪',
+  },
+  {
+    id: 'danny-segura-mma', rank: 5, name: 'Danny Segura', subtitle: 'MMA Junkie / USA Today · Periodista',
+    sport: 'ufc', score: 55.0, trend: 'up',
+    insight: 'Único hispano con posición estable en medio anglosajón de referencia de MMA. Host de Hablemos MMA.',
+    emoji: '📰', country: '🇨🇴',
   },
   // ── Destacados ────────────────────────────────────────────────
   {
