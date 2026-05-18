@@ -49,8 +49,10 @@ export async function POST(req: NextRequest) {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      title: '⚽ Quiniela cierra pronto',
-      body: `${first.home} vs ${first.away} en ${Math.round(minsToKickoff)} min — ¡envía tus picks!`,
+      // jornada ya es consciente del Mundial ("Mundial · Fase de grupos · 14 jun")
+      // o de las ligas de club, según el modo activo del endpoint /api/quiniela.
+      title: `⚽ ${data.jornada} cierra pronto`,
+      body: `${data.matches.length} partido${data.matches.length !== 1 ? 's' : ''} · empieza ${first.home} vs ${first.away} en ${Math.round(minsToKickoff)} min — ¡envía tus picks!`,
       url: '/quiniela',
       tag: 'quiniela-reminder',
       topic: 'quiniela',
