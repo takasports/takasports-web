@@ -78,7 +78,7 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
           fetch('/api/quiniela/leagues', {
             method: 'PATCH',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ id: l.id, nickname: alias, picks: picksMap }),
+            body: JSON.stringify({ id: l.id, nickname: l.nickname || alias, picks: picksMap }),
           }).catch(() => {})
         }
       }

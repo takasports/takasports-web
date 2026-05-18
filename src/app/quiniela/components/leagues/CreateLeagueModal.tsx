@@ -50,6 +50,7 @@ export function CreateLeagueModal({ onClose, onCreated, apiMatches, apiJornada }
         picks: {},
         submitted: false,
         createdAt: new Date().toISOString(),
+        nickname: alias.trim() || undefined,
       }
       try {
         const raw = localStorage.getItem(LEAGUES_KEY)

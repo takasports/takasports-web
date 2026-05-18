@@ -4,12 +4,13 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 
 interface ChatMessage { id: string; nickname: string; message: string; created_at: string }
 
-export function LeagueChat({ leagueId }: { leagueId: string }) {
+// `nickname` viene de la liga (mismo nombre que en picks y clasificación).
+// Identidad ÚNICA por liga, espejo de la app (LeagueChat recibe nickname).
+export function LeagueChat({ leagueId, nickname }: { leagueId: string; nickname: string }) {
+  const me = nickname.trim() || 'Anon'
   const [msgs, setMsgs]       = useState<ChatMessage[]>([])
   const [input, setInput]     = useState('')
-  const [nick, setNick]       = useState(() => { try { return localStorage.getItem('ts_quiniela_nickname') ?? '' } catch { return '' } })
   const [sending, setSending] = useState(false)
-  const [showNick, setShowNick] = useState(false)
   const [error, setError]     = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -30,16 +31,14 @@ export function LeagueChat({ leagueId }: { leagueId: string }) {
 
   const send = async () => {
     const msg = input.trim()
-    const nickname = nick.trim() || 'Anon'
     if (!msg || sending) return
     setSending(true)
     setError(null)
     try {
-      localStorage.setItem('ts_quiniela_nickname', nickname)
       const res = await fetch('/api/quiniela/chat', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ liga: leagueId, message: msg, nickname }),
+        body: JSON.stringify({ liga: leagueId, message: msg, nickname: me }),
       })
       if (res.status === 429) {
         const j = await res.json().catch(() => ({})) as { error?: string; retryMs?: number }
@@ -82,12 +81,14 @@ export function LeagueChat({ leagueId }: { leagueId: string }) {
             Sin mensajes aún. ¡Di algo!
           </p>
         )}
-        {msgs.map(m => (
-          <div key={m.id} className="group flex flex-col gap-0.5 relative">
-            <span className="text-[9px] font-black" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>
-              {m.nickname} · {new Date(m.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+        {msgs.map(m => {
+          const mine = m.nickname === me
+          return (
+          <div key={m.id} className="group flex flex-col gap-0.5 relative" style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
+            <span className="text-[9px] font-black" style={{ color: mine ? '#7C6AAA' : '#5A4878', fontFamily: 'var(--font-sport)' }}>
+              {mine ? 'Tú' : m.nickname} · {new Date(m.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
             </span>
-            <p className="text-[11px] px-2.5 py-1.5 rounded-xl inline-block max-w-full break-words pr-7" style={{ background: 'rgba(255,255,255,0.04)', color: '#C0C0D8', fontFamily: 'var(--font-display)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-[11px] px-2.5 py-1.5 rounded-xl inline-block max-w-full break-words pr-7" style={{ background: mine ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.04)', color: mine ? '#D6C9FF' : '#C0C0D8', fontFamily: 'var(--font-display)', border: mine ? '1px solid rgba(124,58,237,0.3)' : '1px solid rgba(255,255,255,0.06)' }}>
               {m.message}
             </p>
             <button
@@ -100,7 +101,8 @@ export function LeagueChat({ leagueId }: { leagueId: string }) {
               <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
             </button>
           </div>
-        ))}
+          )
+        })}
         <div ref={bottomRef} />
       </div>
 
@@ -110,26 +112,11 @@ export function LeagueChat({ leagueId }: { leagueId: string }) {
         </div>
       )}
 
-      {/* Nickname prompt */}
-      {showNick && (
-        <input
-          className="w-full rounded-xl px-3 py-2 text-xs mb-1.5 outline-none"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(124,58,237,0.3)', color: '#C0C0D8', fontFamily: 'var(--font-display)' }}
-          placeholder="Tu nombre en la liga…"
-          value={nick}
-          maxLength={24}
-          onChange={e => setNick(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && setShowNick(false)}
-          onBlur={() => setShowNick(false)}
-          autoFocus
-        />
-      )}
-
-      {/* Input */}
+      {/* Input — escribes con tu nombre de la liga */}
       <div className="flex gap-2">
-        <button onClick={() => setShowNick(v => !v)} className="text-[10px] px-2 py-1.5 rounded-lg flex-shrink-0 truncate max-w-[60px]" style={{ background: 'rgba(124,58,237,0.1)', color: '#7C6AAA', border: '1px solid rgba(124,58,237,0.2)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}>
-          {nick || 'Anon'}
-        </button>
+        <span className="text-[10px] px-2 py-1.5 rounded-lg flex-shrink-0 truncate max-w-[60px] flex items-center" style={{ background: 'rgba(124,58,237,0.1)', color: '#7C6AAA', border: '1px solid rgba(124,58,237,0.2)', fontFamily: 'var(--font-sport)' }} title={`Escribes como ${me}`}>
+          {me}
+        </span>
         <input
           className="flex-1 rounded-xl px-3 py-1.5 text-[11px] outline-none"
           style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#C0C0D8', fontFamily: 'var(--font-display)' }}

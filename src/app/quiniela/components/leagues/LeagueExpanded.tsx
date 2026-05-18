@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import type { League, MatchResult } from '../../lib/types'
-import { scoreForMember, getPlayerAlias } from '../../lib/helpers'
+import { computeStandings, getPlayerAlias } from '../../lib/helpers'
+import type { LeagueMatchKey, LeagueMemberLite } from '../../lib/helpers'
 import { LeagueChat } from './LeagueChat'
 
-interface ServerMember { nickname: string; picks: Record<number, string> }
-
 export function LeagueExpanded({ league, localResults }: { league: League; localResults: MatchResult[] }) {
-  const [members, setMembers] = useState<ServerMember[]>([])
+  const [members, setMembers] = useState<LeagueMemberLite[]>([])
+  const [matchKeys, setMatchKeys] = useState<LeagueMatchKey[]>([])
   const [loading, setLoading] = useState(true)
 
   // Refresca miembros periódicamente: aparecen nuevos picks y la
@@ -17,7 +17,11 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
     let cancelled = false
     const load = () => fetch(`/api/quiniela/leagues?id=${league.id}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (!cancelled && data?.members) setMembers(data.members) })
+      .then(data => {
+        if (cancelled || !data) return
+        if (data.members) setMembers(data.members)
+        if (Array.isArray(data.matchKeys)) setMatchKeys(data.matchKeys)
+      })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false) })
     load()
@@ -25,10 +29,9 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
     return () => { cancelled = true; clearInterval(t) }
   }, [league.id])
 
-  const alias = getPlayerAlias()
-  const ranked = [...members]
-    .map(m => ({ name: m.nickname, pts: scoreForMember(m.picks, localResults) }))
-    .sort((a, b) => b.pts - a.pts)
+  const alias = (league.nickname || getPlayerAlias()).trim()
+  const standings = computeStandings(matchKeys, members, localResults)
+  const ranked = standings.map(s => ({ name: s.nickname, pts: s.points, hits: s.hits, pleno: s.pleno }))
 
   const hasResults = localResults.length > 0
 
@@ -71,10 +74,17 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
                   {pos + 1}
                 </span>
                 <span className="flex-1 text-[11px] font-bold" style={{ color: gold || isMe ? '#F0F0F5' : '#8080A0', fontFamily: 'var(--font-display)' }}>
-                  {r.name}{isMe && <span style={{ color: '#A78BFA', marginLeft: 4, fontSize: 8 }}>tú</span>}
+                  {r.name}
+                  {r.pleno && <span style={{ marginLeft: 4, fontSize: 9 }}>🎯</span>}
+                  {isMe && <span style={{ color: '#A78BFA', marginLeft: 4, fontSize: 8 }}>tú</span>}
                 </span>
+                {hasResults && (
+                  <span className="text-[9px] tabular-nums" style={{ color: '#3A3A56', fontFamily: 'var(--font-sport)' }}>
+                    {r.hits} ✓
+                  </span>
+                )}
                 <span className="text-[11px] font-black tabular-nums" style={{ color: gold ? '#fbbf24' : isMe ? '#A78BFA' : '#5A5A7A', fontFamily: 'var(--font-display)' }}>
-                  {hasResults ? `${r.pts} pts` : '—'}
+                  {hasResults ? `${r.pts % 1 ? r.pts.toFixed(1) : r.pts} pts` : '—'}
                 </span>
               </div>
             )
@@ -88,7 +98,7 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
         </p>
       )}
 
-      <LeagueChat leagueId={league.id} />
+      <LeagueChat leagueId={league.id} nickname={alias} />
     </div>
   )
 }

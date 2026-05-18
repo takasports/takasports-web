@@ -24,6 +24,9 @@ export interface League {
   picks: Record<number, Pick>
   submitted: boolean
   createdAt: string
+  // Nombre del jugador en ESTA liga (modelo por-liga, espejo de la app
+  // takasports-app/src/stores/leagues.ts). Default: alias global.
+  nickname?: string
 }
 
 export interface MatchResult { home: string; away: string; outcome: '1' | 'X' | '2'; homeGoals: number; awayGoals: number; espnId?: string }

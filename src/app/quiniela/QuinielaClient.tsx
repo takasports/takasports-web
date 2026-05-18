@@ -202,7 +202,7 @@ export default function QuinielaClient() {
                     const raw = localStorage.getItem(LEAGUES_KEY)
                     const existing: League[] = raw ? JSON.parse(raw) : []
                     if (!existing.some(l => l.id === ligaParam)) {
-                      existing.push({ id: ligaParam!, name: ligaName!, competitionId: 'mixed', matchIds: [], picks: {}, submitted: false, createdAt: new Date().toISOString() })
+                      existing.push({ id: ligaParam!, name: ligaName!, competitionId: 'mixed', matchIds: [], picks: {}, submitted: false, createdAt: new Date().toISOString(), nickname: joinAlias.trim() || undefined })
                       localStorage.setItem(LEAGUES_KEY, JSON.stringify(existing))
                     }
                   } catch { /* ignore */ }

@@ -2,6 +2,7 @@ import type { Pick } from '@/components/QuinielaModule'
 import type { QuinielaMatch } from '@/components/QuinielaModule'
 import type { BadgeId, MatchResult } from './types'
 import { ALIAS_KEY } from './constants'
+import { scorePick, nameMatch, SCORING } from '@/lib/quiniela'
 
 // ─────────────────────────────────────────────────────────────────
 // Alias del jugador (identidad visible en ligas / ranking).
@@ -201,9 +202,62 @@ export function getDivision(history: { correct: number; total: number }[]): { na
   return { name: 'Bronce', color: '#fb923c', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)', emoji: '🔶' }
 }
 
-export function scoreForMember(picks: Record<number, string>, results: MatchResult[]): number {
-  return Object.values(picks).filter((p, i) => {
-    const r = results[i]
-    return r && isCorrect(p as Pick, r.outcome)
-  }).length
+// ─────────────────────────────────────────────────────────────────
+// Clasificación de liga — puntos reales (capitán ×2, marcador exacto,
+// confianza, pleno) con desempates. Espejo de la app
+// (takasports-app/src/services/leagueStandings.ts) para que el ranking
+// sea IDÉNTICO en app y web sobre los mismos picks/resultados.
+// ─────────────────────────────────────────────────────────────────
+export interface LeagueMatchKey { home: string; away: string; isoDate?: string }
+export interface LeagueMemberLite {
+  nickname: string
+  picks?: Record<string, string>
+  exactScores?: Record<string, { home: number; away: number }>
+  captainIdx?: number | null
+}
+export interface LeagueStanding {
+  nickname: string
+  points: number
+  hits: number
+  exacts: number
+  picked: number
+  pleno: boolean
+}
+
+export function computeStandings(
+  matchKeys: LeagueMatchKey[],
+  members: LeagueMemberLite[],
+  results: MatchResult[],
+): LeagueStanding[] {
+  const resultFor = (mk: LeagueMatchKey) =>
+    results.find(r => nameMatch(r.home, mk.home) && nameMatch(r.away, mk.away))
+
+  return members
+    .map(m => {
+      const total = matchKeys.length
+      let points = 0, hits = 0, exacts = 0, picked = 0
+      matchKeys.forEach((mk, i) => {
+        const pk = m.picks?.[String(i)]
+        if (!pk) return
+        picked++
+        const ex = m.exactScores?.[String(i)]
+        const s = scorePick(
+          { home: mk.home, away: mk.away, pick: pk as Pick, exactHome: ex?.home, exactAway: ex?.away },
+          resultFor(mk),
+          m.captainIdx === i,
+        )
+        points += s.points
+        if (s.hit) hits++
+        if (s.exact) exacts++
+      })
+      const pleno = total > 0 && picked === total && hits === total
+      if (pleno) points += SCORING.PLENO_BONUS
+      return { nickname: m.nickname, points, hits, exacts, picked, pleno }
+    })
+    .sort((a, b) =>
+      b.points - a.points ||
+      b.exacts - a.exacts ||
+      b.hits - a.hits ||
+      a.nickname.localeCompare(b.nickname),
+    )
 }
