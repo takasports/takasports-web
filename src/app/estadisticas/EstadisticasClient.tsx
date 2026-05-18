@@ -147,6 +147,54 @@ const FUTBOL_JUGADORES_GROUPS: MetricGroup[] = [
       },
     ],
   },
+  {
+    id: 'tiro',
+    label: 'Tiro',
+    icon: '🎯',
+    description: 'Volumen y precisión de disparo (5 grandes ligas)',
+    blocks: [
+      {
+        id: 'tiros-puerta', title: 'Tiros a puerta', metric: 'TP',
+        rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN · 5 ligas', trend: 'flat' as const }],
+      },
+      {
+        id: 'tiros-totales', title: 'Tiros totales', metric: 'Tiros',
+        rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN · 5 ligas', trend: 'flat' as const }],
+      },
+    ],
+  },
+  {
+    id: 'disciplina',
+    label: 'Disciplina',
+    icon: '🟨',
+    description: 'Tarjetas y faltas (5 grandes ligas)',
+    blocks: [
+      {
+        id: 'tarjetas-amarillas', title: 'Tarjetas amarillas', metric: 'TA',
+        rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN · 5 ligas', trend: 'flat' as const }],
+      },
+      {
+        id: 'tarjetas-rojas', title: 'Tarjetas rojas', metric: 'TR',
+        rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN · 5 ligas', trend: 'flat' as const }],
+      },
+      {
+        id: 'faltas', title: 'Faltas cometidas', metric: 'Faltas',
+        rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN · 5 ligas', trend: 'flat' as const }],
+      },
+    ],
+  },
+  {
+    id: 'porteria',
+    label: 'Portería',
+    icon: '🧤',
+    description: 'Porteros con más paradas (5 grandes ligas)',
+    blocks: [
+      {
+        id: 'paradas', title: 'Paradas', metric: 'Paradas',
+        rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN · 5 ligas', trend: 'flat' as const }],
+      },
+    ],
+  },
 ]
 
 // ─────────────────────────────────────────────────────────────────
@@ -1548,12 +1596,23 @@ interface LeaguePlayerData {
   id: string; label: string
   goals: PlayerLeader[]; assists: PlayerLeader[]
 }
-interface LivePlayerData { leagues: LeaguePlayerData[] }
+interface LivePlayerData {
+  leagues: LeaguePlayerData[]
+  combined?: Record<string, PlayerLeader[]>
+}
 
-// IDs of blocks that get player-stats live data (ESPN /statistics)
+// IDs of blocks that get player-stats live data (ESPN)
 const LIVE_PLAYER_BLOCK_IDS = new Set([
   'pichichi-laliga', 'bota-oro', 'goleadores', 'asistencias',
+  'tiros-puerta', 'tiros-totales', 'tarjetas-amarillas', 'tarjetas-rojas', 'faltas', 'paradas',
 ])
+
+// Combined-ranking blocks → key in livePlayerData.combined
+const COMBINED_BLOCK_KEY: Record<string, string> = {
+  'tiros-puerta': 'shotsOnTarget', 'tiros-totales': 'totalShots',
+  'tarjetas-amarillas': 'yellowCards', 'tarjetas-rojas': 'redCards',
+  'faltas': 'foulsCommitted', 'paradas': 'saves',
+}
 
 const LEAGUE_FILTER_TO_ID: Record<string, string> = {
   'LaLiga': 'esp.1', 'Premier League': 'eng.1', 'Bundesliga': 'ger.1',
@@ -1566,6 +1625,17 @@ function applyLivePlayerToBlock(
   leagueFilter?: string,
 ): { block: StatBlock; isLive: boolean } {
   const leagues = lpd.leagues
+
+  const combinedKey = COMBINED_BLOCK_KEY[block.id]
+  if (combinedKey) {
+    const src = lpd.combined?.[combinedKey] ?? []
+    if (!src.length) return { block, isLive: false }
+    return { isLive: true, block: { ...block, rows: src.map((g, i) => ({
+      rank: i + 1, name: g.name, team: '',
+      value: g.value.toString(), trend: 'flat' as const,
+      logo: g.teamLogo, href: playerHref(g),
+    }))}}
+  }
 
   if (block.id === 'pichichi-laliga') {
     const lg = leagues.find(l => l.id === 'esp.1')

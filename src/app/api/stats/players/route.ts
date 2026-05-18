@@ -22,21 +22,27 @@ export interface LeaguePlayerData {
   assists: PlayerLeader[]
 }
 
+// Cross-league combined rankings (ESPN core API, free). Keys map 1:1 to blocks.
+export type CombinedKey =
+  | 'yellowCards' | 'redCards' | 'shotsOnTarget' | 'totalShots'
+  | 'foulsCommitted' | 'saves'
+
 export interface PlayersResponse {
   leagues: LeaguePlayerData[]
+  combined: Record<CombinedKey, PlayerLeader[]>
   season: string
   updatedAt: string
 }
 
 const LEAGUES = SOCCER_LEAGUES.map(l => ({ id: l.id, label: l.label, slug: l.espnSlug }))
 
-// European season label: Aug→May. Aug-Dec → Y/Y+1; Jan-Jul → Y-1/Y.
-function seasonLabel(): string {
+// European season: Aug→May. Aug-Dec → start=Y; Jan-Jul → start=Y-1.
+function seasonStartYear(): number {
   const now = new Date()
-  const start = now.getUTCMonth() >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
-  return `${start}-${String((start + 1) % 100).padStart(2, '0')}`
+  return now.getUTCMonth() >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
 }
-const SEASON_LABEL = seasonLabel()
+const SEASON_START = seasonStartYear()
+const SEASON_LABEL = `${SEASON_START}-${String((SEASON_START + 1) % 100).padStart(2, '0')}`
 
 // Player tables update slowly; ESPN goals/assists revalidate at 30 min.
 export const revalidate = 1800
@@ -93,9 +99,120 @@ async function fetchEspnLeague(
   }
 }
 
+// ── ESPN Core API — combined cross-league rankings (free) ──────────────────────
+// core leaders return value inline but athlete/team as $ref URLs. We sort by the
+// inline value first, keep only the global top N, then resolve just those names.
+
+const COMBINED_CATS: CombinedKey[] = [
+  'yellowCards', 'redCards', 'shotsOnTarget', 'totalShots', 'foulsCommitted', 'saves',
+]
+const TOP_N = 15
+
+interface CoreLeader {
+  value: number
+  athlete?: { $ref?: string }
+  team?: { $ref?: string }
+}
+interface CoreCategory { name: string; leaders?: CoreLeader[] }
+
+interface RawEntry { value: number; athleteId: string; teamId?: string; leagueSlug: string }
+
+function idFromRef(ref: string | undefined, segment: string): string | undefined {
+  if (!ref) return undefined
+  const m = ref.match(new RegExp(`/${segment}/(\\d+)`))
+  return m?.[1]
+}
+
+async function fetchCoreLeaders(
+  league: typeof LEAGUES[0],
+): Promise<Record<string, RawEntry[]>> {
+  const url = `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${league.id}/seasons/${SEASON_START}/types/1/leaders?lang=en`
+  const out: Record<string, RawEntry[]> = {}
+  try {
+    const res = await fetch(url, { next: { revalidate: 86400 } })
+    if (!res.ok) return out
+    const json = await res.json()
+    const cats = (json.categories ?? []) as CoreCategory[]
+    for (const key of COMBINED_CATS) {
+      const cat = cats.find(c => c.name === key)
+      if (!cat?.leaders) continue
+      out[key] = cat.leaders.flatMap(l => {
+        const athleteId = idFromRef(l.athlete?.$ref, 'athletes')
+        if (!athleteId || !Number.isFinite(l.value)) return []
+        return [{
+          value: l.value,
+          athleteId,
+          teamId: idFromRef(l.team?.$ref, 'teams'),
+          leagueSlug: league.slug,
+        }]
+      })
+    }
+  } catch { /* league offline → skip */ }
+  return out
+}
+
+async function resolveAthleteName(slug: string, id: string): Promise<string> {
+  try {
+    const r = await fetch(
+      `https://sports.core.api.espn.com/v2/sports/${slug}/seasons/${SEASON_START}/athletes/${id}?lang=en`,
+      { next: { revalidate: 86400 } },
+    )
+    if (!r.ok) return ''
+    const a = await r.json()
+    return (a.displayName as string) ?? (a.fullName as string) ?? ''
+  } catch { return '' }
+}
+
+async function buildCombined(): Promise<Record<CombinedKey, PlayerLeader[]>> {
+  const result: Record<CombinedKey, PlayerLeader[]> = {
+    yellowCards: [], redCards: [], shotsOnTarget: [], totalShots: [], foulsCommitted: [], saves: [],
+  }
+  const perLeague = await Promise.all(LEAGUES.map(fetchCoreLeaders))
+
+  // Merge + sort by inline value, keep global top N per category.
+  const topByCat: Record<string, RawEntry[]> = {}
+  for (const key of COMBINED_CATS) {
+    const merged = perLeague.flatMap(l => l[key] ?? [])
+    merged.sort((a, b) => b.value - a.value)
+    topByCat[key] = merged.slice(0, TOP_N)
+  }
+
+  // Resolve only the names we'll actually display (dedupe across categories).
+  const need = new Map<string, string>() // athleteId -> leagueSlug
+  for (const key of COMBINED_CATS)
+    for (const e of topByCat[key]) if (!need.has(e.athleteId)) need.set(e.athleteId, e.leagueSlug)
+  const names = new Map<string, string>()
+  await Promise.all([...need].map(async ([id, slug]) => {
+    names.set(id, await resolveAthleteName(slug, id))
+  }))
+
+  for (const key of COMBINED_CATS) {
+    result[key] = topByCat[key].flatMap((e, i) => {
+      const name = names.get(e.athleteId)
+      if (!name) return []
+      return [{
+        name,
+        team: '',
+        value: e.value,
+        matches: 0,
+        playerId: e.athleteId,
+        teamLogo: e.teamId ? `https://a.espncdn.com/i/teamlogos/soccer/500/${e.teamId}.png` : undefined,
+        leagueSlug: e.leagueSlug,
+        extra: { Pos: String(i + 1) },
+      }]
+    })
+  }
+  return result
+}
+
 // ── GET ───────────────────────────────────────────────────────────────────────
 
 export async function GET() {
-  const leagues = await Promise.all(LEAGUES.map(fetchEspnLeague))
-  return NextResponse.json({ leagues, season: SEASON_LABEL, updatedAt: new Date().toISOString() } satisfies PlayersResponse)
+  const [leagues, combined] = await Promise.all([
+    Promise.all(LEAGUES.map(fetchEspnLeague)),
+    buildCombined(),
+  ])
+  return NextResponse.json(
+    { leagues, combined, season: SEASON_LABEL, updatedAt: new Date().toISOString() } satisfies PlayersResponse,
+  )
 }
