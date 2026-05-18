@@ -18,11 +18,13 @@ export function Rules() {
       {open && (
         <div className="px-5 pb-5 flex flex-col gap-2.5" style={{ borderTop: '1px solid var(--border)' }}>
           {[
-            'Elige 1 (local), X (empate) o 2 (visitante) para cada partido.',
-            'Cierra antes del comienzo del primer partido de la jornada.',
-            'Acumula puntos por cada resultado acertado.',
-            'Crea ligas privadas e invita a amigos para competir entre vosotros.',
-            'El ranking se publica al final de cada jornada.',
+            'Elige 1 (local), X (empate) o 2 (visitante) en cada partido. Cada acierto suma +10🪙.',
+            'Toca la 👑 de una tarjeta para hacerla capitán: si aciertas ese pick, los puntos se doblan (solo 1 por jornada).',
+            'Opcional: sube la confianza de un pick (Seguro ×1.5 · ¡Clave! ×2) o acierta el marcador exacto (+50🪙).',
+            'Acertar todos los partidos de la jornada: +100🪙 de bonus (pleno).',
+            'Cada pick se bloquea al empezar su partido; la jornada cierra con el primero.',
+            'Crea o únete a ligas privadas con tu nombre e invita a amigos: ranking real al cierre.',
+            'Durante el Mundial la quiniela son partidos de selecciones; el resto del año, de clubes.',
           ].map((rule, i) => (
             <div key={i} className="flex items-start gap-3 pt-2.5">
               <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black mt-0.5" style={{ background: 'rgba(124,58,237,0.12)', color: '#9B7CF6' }}>{i + 1}</span>

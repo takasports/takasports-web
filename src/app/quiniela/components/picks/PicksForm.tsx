@@ -9,9 +9,7 @@ import { CONFIDENCE_LABELS } from '@/lib/quiniela'
 import { PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW, TUTORED_KEY, LEAGUES_KEY, STREAK_KEY } from '../../lib/constants'
 import type { League } from '../../lib/types'
 import { scorelinesFor, ensurePlayerAlias } from '../../lib/helpers'
-import { InfoTip } from '../atoms/InfoTip'
 import { ProgressBar } from '../atoms/ProgressBar'
-import { TeamBadge } from '../atoms/TeamBadge'
 import { MatchCard } from '../match/MatchCard'
 import { ConsensusBar } from '../match/ConsensusBar'
 import { OnboardingSheet } from './OnboardingSheet'
@@ -24,7 +22,7 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
   const [captainIdx, setCaptainIdx]   = useState<number | null>(null)
   const [exactScores, setExactScores] = useState<Record<number, { home: number; away: number }>>({})
   const [confidences, setConfidences] = useState<Record<number, Confidence>>({})
-  const [step, setStep]               = useState<'picks' | 'bonus'>('picks')
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [now, setNow]                 = useState(Date.now())
   const [submitting, setSubmitting]   = useState(false)
   const [tutored, setTutored]         = useState(() => {
@@ -52,8 +50,8 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
     const diff = new Date(m.isoDate).getTime() - now
     return diff > 0 && diff < min ? diff : min
   }, Infinity)
-  const urgent      = step === 'picks' && !allDone && nearestMs < 30 * 60_000
-  const streakAtRisk = step === 'picks' && !allDone && !urgent && nearestMs < 8 * 3_600_000
+  const urgent      = !allDone && nearestMs < 30 * 60_000
+  const streakAtRisk = !allDone && !urgent && nearestMs < 8 * 3_600_000
 
   const handleSubmit = () => {
     if (!allDone || submitting) return
@@ -126,8 +124,8 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
     )
   }
 
-  // ── Step 1: picks ──────────────────────────────────────────────
-  if (step === 'picks') return (
+  // ── Una sola pantalla: picks + ajustes opcionales ──────────────
+  return (
     <div className="flex flex-col gap-3">
       {/* Submit seal animation */}
       {submitting && (
@@ -198,198 +196,122 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
             time={m.time}
             odds={m.odds}
             isoDate={m.isoDate}
+            isCaptain={captainIdx === i}
+            onSetCaptain={picks[i] ? () => setCaptainIdx(prev => prev === i ? null : i) : undefined}
           />
           {done >= 3 && <ConsensusBar match={m} userPick={picks[i]} jornada={jornada} />}
         </div>
       ))}
 
-      <StickyBetslip done={done} total={total} allDone={allDone} captainSet={false} urgent={urgent} onSubmit={() => allDone && setStep('bonus')} />
-    </div>
-  )
-
-  // ── Step 2: bonus (captain + exact scores) ──────────────────────
-  return (
-    <div className="flex flex-col gap-4" style={{ animation: 'feedReveal 0.2s ease both' }}>
-      {submitting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(3,0,9,0.95)', backdropFilter: 'blur(20px)', animation: 'fadeIn 0.2s ease both' }}>
-          <div className="flex flex-col items-center gap-6 text-center px-8" style={{ animation: 'sealPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both' }}>
-            <div style={{ fontSize: 80, lineHeight: 1 }}>🎯</div>
-            <div>
-              <p className="font-black leading-none mb-3" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem,5vw,2.8rem)', color: '#F8F8FF', letterSpacing: '-0.03em' }}>
-                ¡Predicción sellada!
-              </p>
-              <p className="text-sm mb-2" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Suerte esta jornada 🤞</p>
-              <p className="text-xs font-black inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}>
-                Si aciertas todo: hasta {matches.length * 10 + (captainIdx != null ? 10 : 0) + 100}🪙
-              </p>
+      {/* Ajustes opcionales — colapsado por defecto, solo cuando ya hay picks */}
+      {allDone && (
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <button
+            onClick={() => setShowAdvanced(v => !v)}
+            className="w-full flex items-center gap-3 px-5 py-3.5 text-left"
+            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            <span style={{ fontSize: 16 }}>⚡</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>Sube la apuesta · opcional</p>
+              <p className="text-[9px]" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>Confianza y marcador exacto para ganar más monedas</p>
             </div>
-          </div>
-        </div>
-      )}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: showAdvanced ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#5A5A7A' }}>
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
 
-      {/* Back */}
-      <button onClick={() => setStep('picks')} className="flex items-center gap-2 text-[10px] font-black self-start" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)', background: 'none', border: 'none', cursor: 'pointer' }}>
-        ← Editar picks
-      </button>
-
-      {/* Captain */}
-      <div className="rounded-2xl p-4" style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.18)' }}>
-        <div className="flex items-center gap-2 mb-3">
-          <span style={{ fontSize: 18 }}>👑</span>
-          <div className="flex-1">
-            <p className="text-xs font-black flex items-center gap-1.5" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
-              Capitán · pick que más te convence
-              <InfoTip label="Capitán" text="Marca el partido del que más seguro estés. Si aciertas ese pick, sus puntos se doblan. Si fallas, no descuenta. Solo 1 capitán por jornada." />
-            </p>
-            <p className="text-[9px]" style={{ color: '#4A3A10', fontFamily: 'var(--font-sport)' }}>Si aciertas, ganas el doble: +20🪙 en vez de +10🪙</p>
-          </div>
-        </div>
-        <div className="flex flex-col gap-2">
-          {matches.map((m, i) => {
-            const p = picks[i]
-            if (!p) return null
-            const label = p === '1' ? (m.homeShort ?? m.home) : p === '2' ? (m.awayShort ?? m.away) : 'Empate'
-            const isCap = captainIdx === i
-            return (
-              <button
-                key={i}
-                onClick={() => setCaptainIdx(prev => prev === i ? null : i)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
-                style={{
-                  background: isCap ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.03)',
-                  border: isCap ? '1.5px solid rgba(251,191,36,0.5)' : '1px solid rgba(255,255,255,0.07)',
-                  boxShadow: isCap ? '0 0 16px rgba(251,191,36,0.2)' : 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <TeamBadge name={m.home} logo={m.homeLogo} size={28} />
-                <div className="flex-1 text-left min-w-0">
-                  <p className="text-[11px] font-black truncate" style={{ color: isCap ? '#fbbf24' : '#C0C0D8', fontFamily: 'var(--font-display)' }}>
-                    {m.homeShort ?? m.home} vs {m.awayShort ?? m.away}
-                  </p>
-                  <p className="text-[9px] font-black" style={{ color: PICK_COLOR[p], fontFamily: 'var(--font-sport)' }}>Tu pick: {label}</p>
-                </div>
-                <TeamBadge name={m.away} logo={m.awayLogo} size={28} />
-                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: isCap ? '#fbbf24' : 'rgba(255,255,255,0.06)', border: isCap ? 'none' : '1px solid rgba(255,255,255,0.1)' }}>
-                  {isCap && <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L5 9.5L10 3" stroke="#000" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Confidence points */}
-      <div className="rounded-2xl p-4" style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.18)' }}>
-        <div className="flex items-center gap-2 mb-3">
-          <span style={{ fontSize: 18 }}>⚡</span>
-          <div>
-            <p className="text-xs font-black" style={{ color: '#93C5FD', fontFamily: 'var(--font-display)' }}>Confianza · más riesgo, más puntos</p>
-            <p className="text-[9px]" style={{ color: '#1E3A5F', fontFamily: 'var(--font-sport)' }}>Normal ×1 · Seguro ×1.5 · ¡Clave! ×2 puntos</p>
-          </div>
-        </div>
-        <div className="flex flex-col gap-2">
-          {matches.map((m, i) => {
-            const p = picks[i]
-            if (!p) return null
-            const conf = confidences[i] ?? 1
-            const label = p === '1' ? (m.homeShort ?? m.home) : p === '2' ? (m.awayShort ?? m.away) : 'Empate'
-            return (
-              <div key={i} className="flex items-center gap-2">
-                <span className="text-[10px] flex-1 truncate font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>
-                  {m.homeShort ?? m.home} vs {m.awayShort ?? m.away}
-                  <span className="ml-1 font-semibold" style={{ color: PICK_COLOR[p] }}>{label}</span>
-                </span>
-                <div className="flex gap-1 flex-shrink-0">
-                  {([1, 2, 3] as Confidence[]).map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setConfidences(prev => ({ ...prev, [i]: c }))}
-                      className="rounded-lg text-[10px] font-black px-2 py-1 transition-all"
-                      style={{
-                        background: conf === c ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
-                        color: conf === c ? '#93C5FD' : '#4A4A6A',
-                        border: conf === c ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.08)',
-                        fontFamily: 'var(--font-sport)',
-                        transform: conf === c ? 'scale(1.05)' : 'scale(1)',
-                      }}
-                    >
-                      {CONFIDENCE_LABELS[c]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Exact scores */}
-      <div className="rounded-2xl p-4" style={{ background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.15)' }}>
-        <div className="flex items-center gap-2 mb-3">
-          <span style={{ fontSize: 18 }}>🎯</span>
-          <div>
-            <p className="text-xs font-black" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>Marcador exacto · opcional</p>
-            <p className="text-[9px]" style={{ color: '#3A2A50', fontFamily: 'var(--font-sport)' }}>+50🪙 por cada marcador que aciertes</p>
-          </div>
-        </div>
-        <div className="flex flex-col gap-4">
-          {matches.map((m, i) => {
-            const p = picks[i] as Pick
-            if (!p) return null
-            const lines = scorelinesFor(p)
-            const sel = exactScores[i]
-            return (
-              <div key={i}>
-                <p className="text-[9px] font-black mb-2 truncate" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {m.homeShort ?? m.home} vs {m.awayShort ?? m.away}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {lines.map(([h, a]) => {
-                    const active = sel?.home === h && sel?.away === a
+          {showAdvanced && (
+            <div className="px-4 pb-4 flex flex-col gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              {/* Confianza */}
+              <div className="pt-4">
+                <p className="text-xs font-black mb-1" style={{ color: '#93C5FD', fontFamily: 'var(--font-display)' }}>Confianza · más riesgo, más puntos</p>
+                <p className="text-[9px] mb-3" style={{ color: '#3A4A6F', fontFamily: 'var(--font-sport)' }}>Normal ×1 · Seguro ×1.5 · ¡Clave! ×2 · El 👑 capitán (en la tarjeta) también dobla</p>
+                <div className="flex flex-col gap-2">
+                  {matches.map((m, i) => {
+                    const p = picks[i]
+                    if (!p) return null
+                    const conf = confidences[i] ?? 1
+                    const label = p === '1' ? (m.homeShort ?? m.home) : p === '2' ? (m.awayShort ?? m.away) : 'Empate'
                     return (
-                      <button
-                        key={`${h}-${a}`}
-                        onClick={() => setExactScores(prev => active ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== String(i))) : { ...prev, [i]: { home: h, away: a } })}
-                        className="px-3 py-1.5 rounded-xl font-black transition-all"
-                        style={{
-                          fontSize: 12, fontFamily: 'var(--font-display)',
-                          background: active ? PICK_BG[p] : 'rgba(255,255,255,0.04)',
-                          color: active ? PICK_COLOR[p] : '#4A4A6A',
-                          border: active ? `1.5px solid ${PICK_BORDER[p]}` : '1px solid rgba(255,255,255,0.08)',
-                          boxShadow: active ? `0 0 12px ${PICK_GLOW[p]}` : 'none',
-                          transform: active ? 'scale(1.06)' : 'scale(1)',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        {h}–{a}
-                      </button>
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="text-[10px] flex-1 truncate font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>
+                          {m.homeShort ?? m.home} vs {m.awayShort ?? m.away}
+                          <span className="ml-1 font-semibold" style={{ color: PICK_COLOR[p] }}>{label}</span>
+                        </span>
+                        <div className="flex gap-1 flex-shrink-0">
+                          {([1, 2, 3] as Confidence[]).map(c => (
+                            <button
+                              key={c}
+                              onClick={() => setConfidences(prev => ({ ...prev, [i]: c }))}
+                              className="rounded-lg text-[10px] font-black px-2 py-1 transition-all"
+                              style={{
+                                background: conf === c ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
+                                color: conf === c ? '#93C5FD' : '#4A4A6A',
+                                border: conf === c ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                                fontFamily: 'var(--font-sport)',
+                                transform: conf === c ? 'scale(1.05)' : 'scale(1)',
+                              }}
+                            >
+                              {CONFIDENCE_LABELS[c]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     )
                   })}
                 </div>
               </div>
-            )
-          })}
-        </div>
-      </div>
 
-      {/* Submit */}
-      <button
-        onClick={handleSubmit}
-        disabled={submitting}
-        className="w-full rounded-2xl font-black uppercase tracking-widest transition-all"
-        style={{
-          minHeight: 56, fontSize: 13, fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
-          background: 'linear-gradient(135deg,#7C3AED 0%,#5B21B6 100%)',
-          color: '#fff',
-          border: '1px solid rgba(124,58,237,0.45)',
-          boxShadow: '0 8px 28px rgba(124,58,237,0.38), inset 0 1px 0 rgba(255,255,255,0.1)',
-          cursor: submitting ? 'not-allowed' : 'pointer',
-          animation: 'quinielaPulse 0.85s ease-in-out infinite',
-        }}
-      >
-        🎯 Sellar predicción · gana hasta {matches.length * 10 + (captainIdx != null ? 10 : 0) + 100}🪙
-      </button>
+              {/* Marcador exacto */}
+              <div className="pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <p className="text-xs font-black mb-1" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>Marcador exacto · opcional</p>
+                <p className="text-[9px] mb-3" style={{ color: '#3A2A50', fontFamily: 'var(--font-sport)' }}>+50🪙 por cada marcador que aciertes</p>
+                <div className="flex flex-col gap-4">
+                  {matches.map((m, i) => {
+                    const p = picks[i] as Pick
+                    if (!p) return null
+                    const lines = scorelinesFor(p)
+                    const sel = exactScores[i]
+                    return (
+                      <div key={i}>
+                        <p className="text-[9px] font-black mb-2 truncate" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          {m.homeShort ?? m.home} vs {m.awayShort ?? m.away}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {lines.map(([h, a]) => {
+                            const active = sel?.home === h && sel?.away === a
+                            return (
+                              <button
+                                key={`${h}-${a}`}
+                                onClick={() => setExactScores(prev => active ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== String(i))) : { ...prev, [i]: { home: h, away: a } })}
+                                className="px-3 py-1.5 rounded-xl font-black transition-all"
+                                style={{
+                                  fontSize: 12, fontFamily: 'var(--font-display)',
+                                  background: active ? PICK_BG[p] : 'rgba(255,255,255,0.04)',
+                                  color: active ? PICK_COLOR[p] : '#4A4A6A',
+                                  border: active ? `1.5px solid ${PICK_BORDER[p]}` : '1px solid rgba(255,255,255,0.08)',
+                                  boxShadow: active ? `0 0 12px ${PICK_GLOW[p]}` : 'none',
+                                  transform: active ? 'scale(1.06)' : 'scale(1)',
+                                  transition: 'all 0.15s ease',
+                                }}
+                              >
+                                {h}–{a}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <StickyBetslip done={done} total={total} allDone={allDone} captainSet={captainIdx != null} urgent={urgent} onSubmit={handleSubmit} />
     </div>
   )
 }

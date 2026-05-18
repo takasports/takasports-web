@@ -31,7 +31,7 @@ export const ALIAS_KEY = 'ts_quiniela_alias'
 // ─────────────────────────────────────────────────────────────────
 export const ONBOARDING_STEPS: { emoji: string; title: string; body: string; hint?: string }[] = [
   { emoji: '🎯', title: 'Predice cada partido', body: 'Toca 1 (gana local), X (empate) o 2 (gana visitante). Cada acierto = +10🪙.', hint: 'La IA te sugiere una opción usando las cuotas reales.' },
-  { emoji: '👑', title: 'Elige tu capitán', body: 'Marca un partido con la corona. Si aciertas ese, los puntos se doblan (+20🪙). Si fallas, no pasa nada.', hint: 'Úsalo en el partido donde más seguro estés.' },
+  { emoji: '👑', title: 'Elige tu capitán', body: 'Toca la 👑 en la tarjeta del partido que más seguro veas. Si aciertas ese, los puntos se doblan (+20🪙). Si fallas, no pasa nada.', hint: 'Solo 1 capitán por jornada · puedes cambiarlo hasta el cierre.' },
   { emoji: '🪙', title: 'Gana monedas y pleno', body: 'Acierto = +10 · Capitán acertado = +20 · Acertar todos los partidos = +100 de bonus.', hint: 'Las monedas desbloquean comodines durante la jornada.' },
   { emoji: '🏆', title: 'Compite con amigos', body: 'Crea una liga privada con código y compartilo. Compite cada semana en un ranking propio.', hint: 'También puedes unirte con un enlace de invitación.' },
 ]

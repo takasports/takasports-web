@@ -18,11 +18,21 @@ export function MyLeagues({ onCreate }: { onCreate: () => void }) {
       const raw = localStorage.getItem(LEAGUES_KEY)
       if (raw) setLeagues(JSON.parse(raw))
     } catch { /* ignore */ }
-    fetch('/api/quiniela/results')
-      .then(r => r.ok ? r.json() : [])
-      .then(setResults)
-      .catch(() => {})
   }, [])
+
+  // Resultados en vivo: refresca mientras haya una liga abierta para que
+  // la clasificación se mueva conforme terminan partidos (clave en Mundial).
+  useEffect(() => {
+    let cancelled = false
+    const load = () => fetch('/api/quiniela/results')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (!cancelled) setResults(d) })
+      .catch(() => {})
+    load()
+    if (!expandedId) return () => { cancelled = true }
+    const t = setInterval(load, 60_000)
+    return () => { cancelled = true; clearInterval(t) }
+  }, [expandedId])
 
   if (leagues.length === 0) {
     return (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { League, MatchResult } from '../../lib/types'
-import { scoreForMember } from '../../lib/helpers'
+import { scoreForMember, getPlayerAlias } from '../../lib/helpers'
 import { LeagueChat } from './LeagueChat'
 
 interface ServerMember { nickname: string; picks: Record<number, string> }
@@ -11,14 +11,21 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
   const [members, setMembers] = useState<ServerMember[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Refresca miembros periódicamente: aparecen nuevos picks y la
+  // clasificación «vosotros vs» se mueve en vivo durante la jornada.
   useEffect(() => {
-    fetch(`/api/quiniela/leagues?id=${league.id}`)
+    let cancelled = false
+    const load = () => fetch(`/api/quiniela/leagues?id=${league.id}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.members) setMembers(data.members) })
+      .then(data => { if (!cancelled && data?.members) setMembers(data.members) })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    load()
+    const t = setInterval(load, 60_000)
+    return () => { cancelled = true; clearInterval(t) }
   }, [league.id])
 
+  const alias = getPlayerAlias()
   const ranked = [...members]
     .map(m => ({ name: m.nickname, pts: scoreForMember(m.picks, localResults) }))
     .sort((a, b) => b.pts - a.pts)
@@ -27,9 +34,12 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
 
   return (
     <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-      <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
-        Ranking
-      </p>
+      <div className="flex items-center gap-1.5 mb-2">
+        <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{ background: '#4ade80', boxShadow: '0 0 6px rgba(74,222,128,0.7)' }} />
+        <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
+          Clasificación en vivo
+        </p>
+      </div>
 
       {loading && (
         <div className="flex flex-col gap-1 mb-3">
@@ -48,7 +58,7 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
       {!loading && ranked.length > 0 && (
         <div className="flex flex-col gap-1 mb-3">
           {ranked.map((r, pos) => {
-            const isMe = r.name === 'Tú'
+            const isMe = !!alias && r.name === alias
             const gold = pos === 0
             return (
               <div key={r.name} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"

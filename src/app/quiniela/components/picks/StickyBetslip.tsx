@@ -6,7 +6,7 @@
 export function StickyBetslip({ done, total, allDone, captainSet, onSubmit, urgent }: { done: number; total: number; allDone: boolean; captainSet: boolean; onSubmit: () => void; urgent: boolean }) {
   const potential = done * 10 + (captainSet ? 10 : 0) + (allDone ? 100 : 0)
   const cta = allDone
-    ? captainSet ? 'Siguiente: ajusta marcadores →' : 'Siguiente: elige capitán →'
+    ? '🎯 Sellar predicción'
     : `Te quedan ${total - done} partido${total - done !== 1 ? 's' : ''}`
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
   return (
