@@ -160,6 +160,9 @@ export default function QuinielaClient() {
   }, [])
 
   const statusOpen = apiMatches.length > 0
+  // Skin "Copa 2026": se auto-activa cuando la jornada es del Mundial
+  // (buildJornadaLabel antepone "Mundial · ..."). Sin marcas FIFA.
+  const isMundial = apiJornada.toLowerCase().startsWith('mundial')
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
@@ -258,6 +261,14 @@ export default function QuinielaClient() {
                   >
                     {apiJornada}
                   </span>
+                  {isMundial && (
+                    <span
+                      className="text-[9px] font-black uppercase tracking-[0.18em] px-2.5 py-1 rounded-full"
+                      style={{ background: 'rgba(245,158,11,0.18)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.4)', fontFamily: 'var(--font-sport)' }}
+                    >
+                      🏆 Copa 2026
+                    </span>
+                  )}
                   {statusOpen && (
                     <div className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{ background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.8)' }} />
@@ -276,9 +287,13 @@ export default function QuinielaClient() {
                 </h1>
                 <p className="text-sm" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>
                   {activeTab === 'official'
-                    ? 'Ranked · partidos destacados de la semana · ranking global y monedas'
+                    ? (isMundial
+                        ? 'Copa 2026 · Ranked del Mundial · ranking global y monedas'
+                        : 'Ranked · partidos destacados de la semana · ranking global y monedas')
                     : activeTab === 'leagues'
-                    ? 'Mis ligas · compite con amigos por código o enlace'
+                    ? (isMundial
+                        ? 'Copa 2026 · crea tu liga del Mundial con amigos'
+                        : 'Mis ligas · compite con amigos por código o enlace')
                     : 'Predicciones de torneo'}
                 </p>
               </div>
