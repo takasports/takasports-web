@@ -8,6 +8,7 @@ import { z } from 'zod'
 
 // ── ESPN football standings ──────────────────────────────────────────────────
 const espnTeam = z.object({
+  id: z.string().optional(),
   displayName: z.string().optional(),
   abbreviation: z.string().optional(),
 }).passthrough()

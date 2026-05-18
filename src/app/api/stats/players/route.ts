@@ -7,6 +7,12 @@ export interface PlayerLeader {
   value: number
   matches: number
   extra?: Record<string, string>
+  /** ESPN athlete id — lets the client deep-link to /jugador. */
+  playerId?: string
+  /** ESPN athlete headshot URL. */
+  headshot?: string
+  /** ESPN league slug (e.g. "soccer/esp.1") for building the player slug. */
+  leagueSlug?: string
 }
 
 export interface LeaguePlayerData {
@@ -51,11 +57,16 @@ export const revalidate = 1800
 interface EspnLeader {
   displayValue: string
   value: number
-  athlete: { displayName: string; team?: { displayName: string } }
+  athlete: {
+    id?: string
+    displayName: string
+    team?: { displayName: string }
+    headshot?: { href?: string }
+  }
 }
 interface EspnStat { name: string; displayName: string; leaders: EspnLeader[] }
 
-function parseLeaders(cat: EspnStat | undefined): PlayerLeader[] {
+function parseLeaders(cat: EspnStat | undefined, leagueSlug: string): PlayerLeader[] {
   if (!cat) return []
   return cat.leaders.map(l => {
     const m = l.displayValue.match(/Matches:\s*(\d+)/)
@@ -64,6 +75,9 @@ function parseLeaders(cat: EspnStat | undefined): PlayerLeader[] {
       team:    l.athlete.team?.displayName ?? '',
       value:   Math.round(l.value),
       matches: m ? parseInt(m[1]) : 0,
+      playerId:   l.athlete.id,
+      headshot:   l.athlete.headshot?.href,
+      leagueSlug,
     }
   })
 }
@@ -79,7 +93,11 @@ async function fetchEspnLeague(
     const stats = (json.stats ?? []) as EspnStat[]
     const goalscat   = stats.find(c => c.displayName === 'Goals'   || c.name === 'goals')
     const assistscat = stats.find(c => c.displayName === 'Assists' || c.name === 'assists')
-    return { id: league.id, label: league.label, goals: parseLeaders(goalscat), assists: parseLeaders(assistscat) }
+    return {
+      id: league.id, label: league.label,
+      goals: parseLeaders(goalscat, league.slug),
+      assists: parseLeaders(assistscat, league.slug),
+    }
   } catch {
     return { id: league.id, label: league.label, goals: [], assists: [] }
   }

@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
@@ -44,6 +46,10 @@ interface StatRow {
   flag?: string
   trend?: 'up' | 'down' | 'flat'
   extra?: Record<string, string>
+  /** Deep-link target (player or club detail page). */
+  href?: string
+  /** Headshot URL for player rows. */
+  photo?: string
 }
 
 interface StatBlock {
@@ -1266,12 +1272,27 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
             }}
           >
             <div className="w-8 flex-shrink-0 flex items-center"><MedalBadge rank={row.rank} /></div>
+            {row.photo && (
+              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0"
+                style={{ background: `${accent}1A` }}>
+                <Image src={row.photo} alt={row.name} width={32} height={32} unoptimized
+                  style={{ objectFit: 'cover', width: 32, height: 32 }} />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 {row.flag && <span className="text-xs leading-none flex-shrink-0">{row.flag}</span>}
-                <span className="font-semibold text-[13px] truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
-                  {row.name}
-                </span>
+                {row.href ? (
+                  <Link href={row.href}
+                    className="font-semibold text-[13px] truncate hover:underline focus:underline outline-none"
+                    style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
+                    {row.name}
+                  </Link>
+                ) : (
+                  <span className="font-semibold text-[13px] truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
+                    {row.name}
+                  </span>
+                )}
               </div>
               {(row.team || row.sub) && (
                 <span className="block text-[11px] truncate" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
@@ -1451,8 +1472,9 @@ interface LiveStandingRow {
   rank: number; name: string; abbr: string; value: string; sub: string
   trend?: 'up' | 'down' | 'flat'; extra: Record<string, string>
   flag?: string
+  teamId?: string
 }
-interface LiveLeague { id: string; label: string; rows: LiveStandingRow[] }
+interface LiveLeague { id: string; label: string; rows: LiveStandingRow[]; leagueSlug?: string }
 type FreshnessStatus = 'live' | 'stale' | 'historical' | 'unavailable'
 interface BlockMeta { status: FreshnessStatus; source: string; fetchedAt: string; asOf?: string }
 interface LiveStandingsData {
@@ -1566,7 +1588,17 @@ function getBlockMeta(blockId: string, liveMeta?: Record<string, BlockMeta>, car
 }
 
 // ── Player stats types (from /api/stats/players) ──────────────────
-interface PlayerLeader { name: string; team: string; value: number; matches: number; extra?: Record<string, string> }
+interface PlayerLeader {
+  name: string; team: string; value: number; matches: number
+  extra?: Record<string, string>
+  playerId?: string; headshot?: string; leagueSlug?: string
+}
+
+// Build the /jugador deep-link slug from an ESPN league slug + athlete id.
+function playerHref(p: { playerId?: string; leagueSlug?: string }): string | undefined {
+  if (!p.playerId || !p.leagueSlug) return undefined
+  return `/jugador/${p.leagueSlug.replace('/', '_')}_${p.playerId}`
+}
 interface LeaguePlayerData {
   id: string; label: string
   goals: PlayerLeader[]; assists: PlayerLeader[]
@@ -1598,6 +1630,7 @@ function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: lg.goals.slice(0, 10).map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
+      photo: g.headshot, href: playerHref(g),
     }))}}
   }
 
@@ -1612,6 +1645,7 @@ function applyLivePlayerToBlock(
       value: (g.value * 2).toString(),
       sub: `${g.value} goles`,
       trend: 'flat' as const,
+      photo: g.headshot, href: playerHref(g),
     }))}}
   }
 
@@ -1624,6 +1658,7 @@ function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: source.map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
+      photo: g.headshot, href: playerHref(g),
     }))}}
   }
 
@@ -1636,6 +1671,7 @@ function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: source.map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
+      photo: g.headshot, href: playerHref(g),
     }))}}
   }
 
@@ -1687,13 +1723,16 @@ function applyLivePlayerToBlock(
   return { block, isLive: false }
 }
 
-function toStatRows(rows: LiveStandingRow[], teamKey?: string): StatRow[] {
+function toStatRows(rows: LiveStandingRow[], teamKey?: string, leagueSlug?: string): StatRow[] {
   return rows.map(r => ({
     rank: r.rank, name: r.name,
     team: teamKey ? r.extra[teamKey] : r.abbr || undefined,
     flag: r.flag,
     value: r.value, sub: r.sub, trend: r.trend ?? 'flat',
     extra: Object.fromEntries(Object.entries(r.extra).filter(([k]) => k !== teamKey)),
+    href: leagueSlug && r.teamId
+      ? `/equipo/${leagueSlug.replace('/', '_')}_${r.teamId}`
+      : undefined,
   }))
 }
 
@@ -2103,7 +2142,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
       // Standings data
       if (liveData) {
         const league = liveData.football.find(l => l.id === block.id)
-        if (league?.rows.length) return { ...block, rows: toStatRows(league.rows), placeholder: false }
+        if (league?.rows.length) return { ...block, rows: toStatRows(league.rows, undefined, league.leagueSlug), placeholder: false }
         // Knockout phase: standings empty → fallback to live fixtures
         if (block.id === 'tabla-ucl' && liveData.uclFixtures?.length)
           return { ...block, title: 'Champions League · Fase KO', rows: toStatRows(liveData.uclFixtures), placeholder: false, cardType: 'fixtures' }

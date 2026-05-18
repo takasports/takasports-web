@@ -17,6 +17,8 @@ export interface LeagueStandings {
   id: string
   label: string
   rows: StandingRow[]
+  /** ESPN slug (e.g. "soccer/esp.1") — lets the client build /equipo deep-links. */
+  leagueSlug?: string
 }
 
 export type FreshnessStatus = 'live' | 'stale' | 'historical' | 'unavailable'
@@ -133,9 +135,10 @@ async function fetchFootball(slug: string, id: string, label: string): Promise<L
           sub:   `${gp} PJ · ${gd >= 0 ? '+' : ''}${Math.round(gd)}`,
           trend: 'flat' as const,
           extra: { V: String(w), E: String(d), D: String(l), GF: String(Math.round(gf)), GC: String(Math.round(gc)) },
+          teamId: team?.id,
         }
       })
-      return { id, label, rows }
+      return { id, label, rows, leagueSlug: slug }
     },
     fallback,
   )
