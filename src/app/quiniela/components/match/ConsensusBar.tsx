@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import type { QuinielaMatch, Pick } from '@/components/QuinielaModule'
 import { communityConsensus } from '../../lib/helpers'
 import { loadConsensus, type ConsensusRow } from '../../lib/consensus'
-import { nameMatch } from '@/lib/quiniela'
+import { nameMatch, OUTCOME_LABEL } from '@/lib/quiniela'
 
 // Mínimo de votos para mostrar datos reales; por debajo, fallback heurístico
 const REAL_MIN_VOTES = 5
@@ -66,7 +66,7 @@ export function ConsensusBar({ match, userPick, jornada }: { match: QuinielaMatc
           <div key={s.key} style={{ width: `${s.pct}%` }} className="flex justify-center">
             <div className="flex items-center gap-0.5">
               <span style={{ fontSize: 8, fontWeight: 900, fontFamily: 'var(--font-sport)', color: userBase === s.key ? s.color : '#2A2A42', whiteSpace: 'nowrap' }}>
-                {s.key} {s.pct}%
+                {OUTCOME_LABEL[s.key as keyof typeof OUTCOME_LABEL]} {s.pct}%
               </span>
               {userBase === s.key && (
                 <span style={{ fontSize: 7, color: s.color, fontWeight: 900 }}>←</span>

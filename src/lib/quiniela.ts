@@ -15,10 +15,9 @@ export interface MatchResult {
   espnId?: string
 }
 
-// confidence: 1=normal, 2=seguro (×1.5pts), 3=clave (×2pts)
-export type Confidence = 1 | 2 | 3
-export const CONFIDENCE_LABELS: Record<Confidence, string> = { 1: 'Normal', 2: 'Seguro', 3: '¡Clave!' }
-export const CONFIDENCE_MULT: Record<Confidence, number>  = { 1: 1, 2: 1.5, 3: 2 }
+// Etiqueta visible del resultado (L/E/V). El valor interno sigue
+// siendo '1'/'X'/'2' para API, scoring y compatibilidad.
+export const OUTCOME_LABEL: Record<Outcome, string> = { '1': 'L', 'X': 'E', '2': 'V' }
 
 export interface SavedPick {
   home: string
@@ -26,7 +25,10 @@ export interface SavedPick {
   pick: Pick
   exactHome?: number
   exactAway?: number
-  confidence?: Confidence
+  // Cuota congelada de la opción elegida en el momento de sellar
+  // (como una apuesta real: el multiplicador queda fijo). Multiplica
+  // monedas y puntos si el pick acierta. Ausente → multiplicador 1.
+  oddsAtPick?: number
 }
 
 // ── Normalización de nombres ─────────────────────────────────────
@@ -154,18 +156,24 @@ export function scorePick(
     pick.exactAway != null &&
     (pick.exactHome - pick.exactAway) === (result.homeGoals - result.awayGoals)
 
+  // La cuota congelada es el multiplicador de riesgo: acertar una
+  // opción improbable (cuota alta) paga más en monedas y puntos.
+  // Sin cuota (proveedor sin datos) → ×1 (comportamiento plano previo).
+  const oddsMult = hit ? Math.max(1, pick.oddsAtPick ?? 1) : 1
+
   let points = 0
   if (hit) points += SCORING.TENDENCY
   if (goalDiff) points += SCORING.GOAL_DIFF
   if (exact) points += SCORING.EXACT_BONUS + SCORING.GOAL_DIFF
-  const confMult = CONFIDENCE_MULT[pick.confidence ?? 1]
-  points *= confMult
+  points *= oddsMult
   if (isCaptain) points *= SCORING.CAPTAIN_MULTIPLIER
+  points = Math.round(points * 10) / 10
 
   let coins = 0
-  if (hit) coins += SCORING.COINS_PER_HIT
+  if (hit) coins += SCORING.COINS_PER_HIT * oddsMult
   if (exact) coins += SCORING.COINS_PER_EXACT
-  if (isCaptain && hit) coins += SCORING.COINS_PER_HIT // capitán correcto duplica también monedas
+  if (isCaptain) coins *= SCORING.CAPTAIN_MULTIPLIER // el capitán dobla todo el pick
+  coins = Math.round(coins)
 
   return { hit, goalDiff, exact, isCaptain, points, coins }
 }

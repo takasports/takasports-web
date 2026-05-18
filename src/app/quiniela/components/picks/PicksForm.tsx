@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import { trackGameComplete } from '@/lib/analytics'
 import { QUINIELA_PICKS_KEY } from '@/components/QuinielaModule'
 import type { QuinielaMatch, QuinielaSaved, Pick } from '@/components/QuinielaModule'
-import type { Confidence } from '@/lib/quiniela'
-import { CONFIDENCE_LABELS } from '@/lib/quiniela'
 import { PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW, TUTORED_KEY, LEAGUES_KEY, STREAK_KEY } from '../../lib/constants'
 import type { League } from '../../lib/types'
-import { scorelinesFor, ensurePlayerAlias } from '../../lib/helpers'
+import { scorelinesFor, ensurePlayerAlias, liveOdds } from '../../lib/helpers'
+import { loadConsensus } from '../../lib/consensus'
+import { nameMatch } from '@/lib/quiniela'
 import { ProgressBar } from '../atoms/ProgressBar'
 import { MatchCard } from '../match/MatchCard'
 import { ConsensusBar } from '../match/ConsensusBar'
@@ -21,7 +21,6 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
   const [picks, setPicks]             = useState<Record<number, Pick>>({})
   const [captainIdx, setCaptainIdx]   = useState<number | null>(null)
   const [exactScores, setExactScores] = useState<Record<number, { home: number; away: number }>>({})
-  const [confidences, setConfidences] = useState<Record<number, Confidence>>({})
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [now, setNow]                 = useState(Date.now())
   const [submitting, setSubmitting]   = useState(false)
@@ -53,16 +52,26 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
   const urgent      = !allDone && nearestMs < 30 * 60_000
   const streakAtRisk = !allDone && !urgent && nearestMs < 8 * 3_600_000
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!allDone || submitting) return
     trackGameComplete({ game: 'quiniela', correct: matches.length, total: matches.length })
     setSubmitting(true)
+    // Congela la cuota VIVA de la opción elegida (consenso real + tiempo),
+    // igual que la que ve el usuario en la tarjeta. Es el multiplicador.
+    let consRows: Awaited<ReturnType<typeof loadConsensus>> = []
+    try { consRows = await loadConsensus(jornada) } catch { /* sin consenso → cuota base */ }
+    const oddsForPick = (m: QuinielaMatch, p: Pick): number | undefined => {
+      const row = consRows.find(r => nameMatch(r.home, m.home) && nameMatch(r.away, m.away))
+      const o = liveOdds(m.odds, row ?? null, m.isoDate, Date.now())
+      if (!o) return undefined
+      return p === '1' ? o.home : p === '2' ? o.away : o.draw || undefined
+    }
     const saved: QuinielaSaved = {
       jornada,
       picks: matches.map((m, i) => ({
         home: m.home, away: m.away, pick: picks[i],
         exactHome: exactScores[i]?.home, exactAway: exactScores[i]?.away,
-        confidence: confidences[i] ?? 1,
+        oddsAtPick: oddsForPick(m, picks[i]),
       })),
       captainIdx: captainIdx ?? undefined,
     }
@@ -214,8 +223,8 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
           >
             <span style={{ fontSize: 16 }}>⚡</span>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>Sube la apuesta · opcional</p>
-              <p className="text-[9px]" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>Confianza y marcador exacto para ganar más monedas</p>
+              <p className="text-xs font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>Marcador exacto · opcional</p>
+              <p className="text-[9px]" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>Acierta el resultado exacto para +50🪙 extra</p>
             </div>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: showAdvanced ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#5A5A7A' }}>
               <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -224,48 +233,8 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
 
           {showAdvanced && (
             <div className="px-4 pb-4 flex flex-col gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              {/* Confianza */}
-              <div className="pt-4">
-                <p className="text-xs font-black mb-1" style={{ color: '#93C5FD', fontFamily: 'var(--font-display)' }}>Confianza · más riesgo, más puntos</p>
-                <p className="text-[9px] mb-3" style={{ color: '#3A4A6F', fontFamily: 'var(--font-sport)' }}>Normal ×1 · Seguro ×1.5 · ¡Clave! ×2 · El 👑 capitán (en la tarjeta) también dobla</p>
-                <div className="flex flex-col gap-2">
-                  {matches.map((m, i) => {
-                    const p = picks[i]
-                    if (!p) return null
-                    const conf = confidences[i] ?? 1
-                    const label = p === '1' ? (m.homeShort ?? m.home) : p === '2' ? (m.awayShort ?? m.away) : 'Empate'
-                    return (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className="text-[10px] flex-1 truncate font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>
-                          {m.homeShort ?? m.home} vs {m.awayShort ?? m.away}
-                          <span className="ml-1 font-semibold" style={{ color: PICK_COLOR[p] }}>{label}</span>
-                        </span>
-                        <div className="flex gap-1 flex-shrink-0">
-                          {([1, 2, 3] as Confidence[]).map(c => (
-                            <button
-                              key={c}
-                              onClick={() => setConfidences(prev => ({ ...prev, [i]: c }))}
-                              className="rounded-lg text-[10px] font-black px-2 py-1 transition-all"
-                              style={{
-                                background: conf === c ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
-                                color: conf === c ? '#93C5FD' : '#4A4A6A',
-                                border: conf === c ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.08)',
-                                fontFamily: 'var(--font-sport)',
-                                transform: conf === c ? 'scale(1.05)' : 'scale(1)',
-                              }}
-                            >
-                              {CONFIDENCE_LABELS[c]}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
               {/* Marcador exacto */}
-              <div className="pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="pt-4">
                 <p className="text-xs font-black mb-1" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>Marcador exacto · opcional</p>
                 <p className="text-[9px] mb-3" style={{ color: '#3A2A50', fontFamily: 'var(--font-sport)' }}>+50🪙 por cada marcador que aciertes</p>
                 <div className="flex flex-col gap-4">

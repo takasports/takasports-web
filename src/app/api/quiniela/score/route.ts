@@ -19,7 +19,7 @@ interface ScoreBody {
 }
 
 const VALID_PICKS = new Set(['1', 'X', '2', '1X', 'X2'])
-const VALID_CONFIDENCE = new Set([1, 2, 3])
+const MAX_ODDS = 100
 const MAX_PICKS = 20
 const MAX_TEAM_LEN = 80
 const MAX_GOALS = 20
@@ -64,8 +64,11 @@ export async function POST(req: NextRequest) {
       if (!VALID_PICKS.has(p.pick as string)) {
         return NextResponse.json({ error: 'invalid pick value' }, { status: 400 })
       }
-      if (p.confidence != null && !VALID_CONFIDENCE.has(p.confidence as number)) {
-        return NextResponse.json({ error: 'invalid confidence' }, { status: 400 })
+      if (p.oddsAtPick != null && (
+        typeof p.oddsAtPick !== 'number' || !isFinite(p.oddsAtPick) ||
+        p.oddsAtPick < 1 || p.oddsAtPick > MAX_ODDS
+      )) {
+        return NextResponse.json({ error: 'invalid oddsAtPick' }, { status: 400 })
       }
       if (p.exactHome != null && (
         !Number.isInteger(p.exactHome) || p.exactHome < 0 || p.exactHome > MAX_GOALS

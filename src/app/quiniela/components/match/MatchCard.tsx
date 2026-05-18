@@ -6,7 +6,7 @@ import { getClubColors } from '@/lib/clubs'
 import { PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW } from '../../lib/constants'
 import { getMatchContext, aiSuggest, liveOdds } from '../../lib/helpers'
 import { loadConsensus } from '../../lib/consensus'
-import { nameMatch } from '@/lib/quiniela'
+import { nameMatch, OUTCOME_LABEL } from '@/lib/quiniela'
 import { useMatchCountdown } from '../../lib/hooks'
 import { TeamBadge } from '../atoms/TeamBadge'
 import { WinProbabilityBar } from '../atoms/WinProbabilityBar'
@@ -261,12 +261,15 @@ export function MatchCard({
                   transition: animPick === opt ? 'none' : 'all 0.18s ease',
                 }}
               >
-                <span className="font-black text-center leading-tight truncate w-full" style={{ fontSize: 'clamp(0.65rem,2vw,0.78rem)', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', maxWidth: 90 }}>
+                <span className="font-black text-center leading-none" style={{ fontSize: 'clamp(0.95rem,3vw,1.15rem)', fontFamily: 'var(--font-display)', letterSpacing: '0.02em' }}>
+                  {OUTCOME_LABEL[opt as keyof typeof OUTCOME_LABEL]}
+                </span>
+                <span className="text-center leading-tight truncate w-full" style={{ fontSize: 'clamp(0.55rem,1.7vw,0.66rem)', fontFamily: 'var(--font-sport)', color: selected ? PICK_COLOR[opt] : '#4A4A6A', maxWidth: 90, fontWeight: 700 }}>
                   {label}
                 </span>
                 {odd ? (
-                  <span style={{ fontSize: 9, fontFamily: 'var(--font-sport)', color: selected ? PICK_COLOR[opt] : '#4A4A6A', fontWeight: 700 }}>
-                    {odd.toFixed(2)}
+                  <span style={{ fontSize: 10, fontFamily: 'var(--font-display)', color: selected ? PICK_COLOR[opt] : '#6A6A8A', fontWeight: 900 }}>
+                    ×{odd.toFixed(2)}
                   </span>
                 ) : (
                   <span style={{ fontSize: 7, fontFamily: 'var(--font-sport)', opacity: 0.4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
@@ -275,7 +278,7 @@ export function MatchCard({
                 )}
                 {!locked && (
                   <span style={{ fontSize: 7, fontFamily: 'var(--font-sport)', fontWeight: 900, color: selected ? PICK_COLOR[opt] : '#2A2A42', opacity: selected ? 0.85 : 0.45, marginTop: 1 }}>
-                    +10🪙
+                    +{odd ? Math.round(10 * odd) : 10}🪙
                   </span>
                 )}
               </button>
