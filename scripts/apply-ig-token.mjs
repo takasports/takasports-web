@@ -40,6 +40,28 @@ env = /^INSTAGRAM_ACCESS_TOKEN=.*$/m.test(env)
 writeFileSync(ENV, env)
 console.log('   ✓ .env.local')
 
+// 1b. Supabase app_secrets — fuente de verdad que la web y el WF-10 leen
+step('1b', 'Guardando en Supabase (app_secrets)')
+{
+  const m = env.match(/^NEXT_PUBLIC_SUPABASE_URL=(.+)$/m)
+  const k = env.match(/^SUPABASE_SERVICE_ROLE_KEY=(.+)$/m)
+  const supa = m && m[1].trim().replace(/^["']|["']$/g, '')
+  const svc  = k && k[1].trim().replace(/^["']|["']$/g, '')
+  if (supa && svc) {
+    const res = await fetch(`${supa}/rest/v1/app_secrets`, {
+      method: 'POST',
+      headers: {
+        apikey: svc, Authorization: `Bearer ${svc}`,
+        'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({ key: 'ig_access_token', value: token, updated_at: new Date().toISOString() }),
+    })
+    console.log(res.ok ? '   ✓ Supabase' : `   ⚠ Supabase HTTP ${res.status} (¿migración 025 aplicada?)`)
+  } else {
+    console.log('   ⚠ faltan credenciales Supabase en .env.local')
+  }
+}
+
 // 2. Vercel Production (rm si existe, luego add por stdin)
 step(2, 'Subiendo a Vercel (Production)')
 try {

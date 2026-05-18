@@ -73,8 +73,8 @@ function extractTitle(caption: string): string {
 }
 
 // ── Fetch principal ────────────────────────────────────────────
-export async function fetchInstagramReels(): Promise<TakaReel[]> {
-  const token = process.env.INSTAGRAM_ACCESS_TOKEN
+export async function fetchInstagramReels(tokenOverride?: string | null): Promise<TakaReel[]> {
+  const token = tokenOverride ?? process.env.INSTAGRAM_ACCESS_TOKEN
   if (!token) return []
 
   try {

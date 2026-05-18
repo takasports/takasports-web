@@ -40,11 +40,20 @@ export async function GET(request: Request) {
 
   const days = Math.floor((longData.expires_in ?? 5183944) / 86400)
 
+  // Persistir en Supabase: a partir de aquí la web y el WF-10 lo leen
+  // de ahí y lo auto-refrescan. No hay que copiar nada a mano.
+  const { saveIgToken } = await import('@/lib/ig-token')
+  const stored = await saveIgToken(longData.access_token, longData.expires_in)
+
   return html(`
-    <h2 style="color:#22c55e">✅ Token obtenido</h2>
-    <p>Copia esta línea en <code style="background:#1e1b4b;padding:2px 6px;border-radius:4px">.env.local</code>:</p>
-    <pre style="background:#0d0d18;border:1px solid #2a2a4a;padding:16px;border-radius:8px;word-break:break-all;font-size:13px">INSTAGRAM_ACCESS_TOKEN=${longData.access_token}</pre>
-    <p style="color:#52527A;font-size:13px">Expira en ~${days} días. Para renovar: <code>GET /api/instagram/refresh</code></p>
+    <h2 style="color:#22c55e">✅ Token obtenido${stored ? ' y guardado' : ''}</h2>
+    ${stored
+      ? `<p>Guardado en Supabase. La web y el WF-10 ya lo usan y lo
+         auto-refrescarán solos. <strong>No tienes que hacer nada más.</strong></p>`
+      : `<p style="color:#f59e0b">⚠️ No se pudo guardar en Supabase
+         (¿migración 025 aplicada?). Pégalo a mano en .env.local:</p>
+         <pre style="background:#0d0d18;border:1px solid #2a2a4a;padding:16px;border-radius:8px;word-break:break-all;font-size:13px">INSTAGRAM_ACCESS_TOKEN=${longData.access_token}</pre>`}
+    <p style="color:#52527A;font-size:13px">Expira en ~${days} días. Renovación automática vía WF-10; manual: <code>GET /api/instagram/refresh</code></p>
   `)
 }
 

@@ -6,6 +6,7 @@
 
 import { fetchPublicReels, type PublicReel, detectSportPublic, extractTitlePublic } from '@/lib/instagram-public'
 import { fetchInstagramReels } from '@/lib/instagram'
+import { getIgToken } from '@/lib/ig-token'
 import reelsData from '@/lib/reels-data.json'
 
 // La Graph API oficial no devuelve video_url ni proxea el thumbnail; el
@@ -140,8 +141,9 @@ export async function GET() {
 
   // En paralelo: Graph oficial + storage + live IG anónima.
   // La oficial va primero en el merge (gana el dedupe por shortcode).
+  const igToken = await getIgToken()
   const [official, fromStorage, live] = await Promise.all([
-    fetchInstagramReels().then(rs => rs.map(toPublicReel)).catch(() => []),
+    fetchInstagramReels(igToken).then(rs => rs.map(toPublicReel)).catch(() => []),
     fetchFromStorage(),
     fetchPublicReels().catch(() => []),
   ])

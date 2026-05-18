@@ -11,13 +11,62 @@
 // (o portar este fetch a un nodo HTTP Request con el token).
 //
 // Env requeridas:
-//   INSTAGRAM_ACCESS_TOKEN       token largo OAuth (60 días)
 //   NEXT_PUBLIC_SUPABASE_URL     proyecto Supabase
-//   SUPABASE_SERVICE_ROLE_KEY    para escribir en el bucket `reels`
+//   SUPABASE_SERVICE_ROLE_KEY    leer/escribir app_secrets + bucket reels
+//   INSTAGRAM_ACCESS_TOKEN       (opcional) solo bootstrap si app_secrets vacío
+//
+// El token vive en la tabla privada `app_secrets` (clave ig_access_token).
+// Cada corrida lo refresca (Graph ig_refresh_token, sin login) y lo
+// reescribe, así que NUNCA caduca mientras el WF-10 corra cada ≤60d.
 
-const TOKEN  = process.env.INSTAGRAM_ACCESS_TOKEN
 const SUPA   = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SVCKEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const ENV_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN
+
+const restHeaders = () => ({
+  apikey: SVCKEY, Authorization: `Bearer ${SVCKEY}`, 'Content-Type': 'application/json',
+})
+
+async function readToken() {
+  try {
+    const res = await fetch(
+      `${SUPA}/rest/v1/app_secrets?key=eq.ig_access_token&select=value`,
+      { headers: restHeaders() })
+    if (res.ok) { const r = await res.json(); if (r[0]?.value) return r[0].value }
+  } catch { /* fallback abajo */ }
+  return ENV_TOKEN ?? null
+}
+
+async function writeToken(token, expiresInSec) {
+  const res = await fetch(`${SUPA}/rest/v1/app_secrets`, {
+    method: 'POST',
+    headers: { ...restHeaders(), Prefer: 'resolution=merge-duplicates' },
+    body: JSON.stringify({
+      key: 'ig_access_token', value: token,
+      expires_at: expiresInSec ? new Date(Date.now() + expiresInSec * 1000).toISOString() : null,
+      updated_at: new Date().toISOString(),
+    }),
+  })
+  return res.ok
+}
+
+// Refresca el token (no requiere login). Si falla, seguimos con el actual.
+async function refreshToken(current) {
+  try {
+    const url = new URL('https://graph.instagram.com/refresh_access_token')
+    url.searchParams.set('grant_type', 'ig_refresh_token')
+    url.searchParams.set('access_token', current)
+    const res = await fetch(url.toString())
+    const d = await res.json()
+    if (d.access_token) {
+      await writeToken(d.access_token, d.expires_in)
+      console.log(`   ↻ token renovado (+${Math.floor((d.expires_in ?? 0) / 86400)}d)`)
+      return d.access_token
+    }
+    console.log(`   ⚠ refresh no aplicado: ${d.error?.message ?? res.status}`)
+  } catch (e) { console.log(`   ⚠ refresh error: ${e.message}`) }
+  return current
+}
 
 const SPORT_KEYWORDS = {
   futbol:     ['futbol','football','laliga','champions','premier','bundesliga','seriea','serie a','gol','messi','ronaldo','madrid','barca','barcelona','copa','neymar','mourinho','mbapp','bellingham','vinicius','yamal','pedri','lewandowski','haaland','salah','ancelotti','guardiola','portero','delantero','derbi','derby','rashford','ascenso','fichaje'],
@@ -44,10 +93,10 @@ function extractTitle(caption) {
   return first.length > 65 ? first.slice(0, 62) + '…' : first
 }
 
-async function fetchGraphReels() {
+async function fetchGraphReels(token) {
   const url = new URL('https://graph.instagram.com/me/media')
   url.searchParams.set('fields', 'id,media_type,thumbnail_url,timestamp,caption,permalink')
-  url.searchParams.set('access_token', TOKEN)
+  url.searchParams.set('access_token', token)
   url.searchParams.set('limit', '50')
 
   const res = await fetch(url.toString())
@@ -92,12 +141,17 @@ async function uploadToStorage(reels) {
 }
 
 async function main() {
-  if (!TOKEN)  throw new Error('Falta INSTAGRAM_ACCESS_TOKEN')
   if (!SUPA)   throw new Error('Falta NEXT_PUBLIC_SUPABASE_URL')
   if (!SVCKEY) throw new Error('Falta SUPABASE_SERVICE_ROLE_KEY')
 
+  let token = await readToken()
+  if (!token) throw new Error('Sin token: re-autentica en /api/instagram/auth')
+
+  // Refrescar primero mantiene el token vivo indefinidamente sin login.
+  token = await refreshToken(token)
+
   process.stdout.write('Fetching @taka.sports (Graph API)... ')
-  const reels = await fetchGraphReels()
+  const reels = await fetchGraphReels(token)
   console.log(`OK — ${reels.length} reels`)
   if (reels.length === 0) throw new Error('Graph API devolvió 0 reels (¿token caducado?)')
 
