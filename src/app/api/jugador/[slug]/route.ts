@@ -13,6 +13,8 @@ export interface PlayerDetail {
   leagueSlug: string       // soccer/esp.1
   leagueLabel: string
   name: string
+  /** Real headshot (NBA has them; soccer does not — falls back to club crest). */
+  headshot?: string
   flag?: string
   position?: string
   jersey?: string
@@ -59,6 +61,7 @@ const COMP_LABELS: Record<string, string> = {
   'soccer/uefa.champions': 'Champions League',
   'soccer/uefa.europa':    'Europa League',
   'soccer/uefa.conference':'Conference League',
+  'basketball/nba':        'NBA',
 }
 
 const COUNTRY_ES: Record<string, string> = {
@@ -81,6 +84,16 @@ const STAT_LABEL_ES: Record<string, string> = {
   'RC':         'Rojas',
   'FC':         'Faltas com.',
   'FA':         'Faltas rec.',
+  // NBA
+  'PPG':        'Puntos/partido',
+  'RPG':        'Rebotes/partido',
+  'APG':        'Asist./partido',
+  'FG%':        '% Tiros campo',
+  '3P%':        '% Triples',
+  'FT%':        '% T. libres',
+  'BPG':        'Tapones/partido',
+  'SPG':        'Robos/partido',
+  'MPG':        'Minutos/partido',
 }
 
 // ── GET ──────────────────────────────────────────────────────────────
@@ -145,6 +158,7 @@ export async function GET(
     leagueSlug,
     leagueLabel,
     name: asString(ath.displayName) ?? '—',
+    headshot: asString(asObj(ath.headshot)?.href),
     flag: asString(flag?.href),
     position: asString(position?.displayName) ?? asString(position?.name),
     jersey: asString(ath.jersey),

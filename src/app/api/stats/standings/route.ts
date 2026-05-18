@@ -299,12 +299,22 @@ async function fetchNBA(): Promise<{ east: StandingRow[]; west: StandingRow[] }>
         const l     = stats.find(s => s.name === 'losses')?.displayValue ?? '0'
         const ppg   = stats.find(s => s.name === 'avgPointsFor')?.displayValue ?? '—'
         const streak= stats.find(s => s.name === 'streak')?.displayValue ?? '—'
-        return { seed, name: (team?.displayName as string) ?? '—', abbr: (team?.abbreviation as string) ?? '', w, l, ppg, streak }
+        const logos = (team?.logos as { href?: string }[] | undefined) ?? []
+        return {
+          seed,
+          name: (team?.displayName as string) ?? '—',
+          abbr: (team?.abbreviation as string) ?? '',
+          w, l, ppg, streak,
+          teamId: team?.id as string | undefined,
+          logo: logos[0]?.href,
+        }
       }).sort((a, b) => a.seed - b.seed)
       return mapped.map((r, i) => ({
         rank: i + 1, name: r.name, abbr: r.abbr,
         value: `${r.w}-${r.l}`, sub: `${i + 1}º ${confLabel}`, trend: 'flat' as const,
         extra: { PPG: r.ppg, Racha: r.streak },
+        teamId: r.teamId,
+        logo: r.logo,
       }))
     }
 

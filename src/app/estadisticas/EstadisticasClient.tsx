@@ -2151,8 +2151,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           return { ...block, title: 'Europa League · Fase KO', rows: toStatRows(liveData.uelFixtures), placeholder: false, cardType: 'fixtures' }
         if (block.id === 'tabla-uecl' && liveData.ueclFixtures?.length)
           return { ...block, title: 'Conference League · Fase KO', rows: toStatRows(liveData.ueclFixtures), placeholder: false, cardType: 'fixtures' }
-        if (block.id === 'nba-este'        && liveData.nbaEast.length)         return { ...block, rows: toStatRows(liveData.nbaEast) }
-        if (block.id === 'nba-oeste'       && liveData.nbaWest.length)         return { ...block, rows: toStatRows(liveData.nbaWest) }
+        if (block.id === 'nba-este'        && liveData.nbaEast.length)         return { ...block, rows: toStatRows(liveData.nbaEast, undefined, 'basketball/nba') }
+        if (block.id === 'nba-oeste'       && liveData.nbaWest.length)         return { ...block, rows: toStatRows(liveData.nbaWest, undefined, 'basketball/nba') }
         if (block.id === 'f1-campeonato'   && liveData.f1Drivers.length)       return { ...block, rows: toStatRows(liveData.f1Drivers, 'Escudería') }
         if (block.id === 'f1-constructores'&& liveData.f1Constructors.length)  return { ...block, rows: toStatRows(liveData.f1Constructors) }
         if (block.id === 'atp-ranking'       && liveData.atpRanking?.length)     return { ...block, rows: toStatRows(liveData.atpRanking) }

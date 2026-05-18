@@ -137,10 +137,13 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
       >
         <div
-          className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0 p-2"
+          className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0"
           style={{ background: `${accent}18` }}
         >
-          {player.team?.logo ? (
+          {player.headshot ? (
+            <Image src={player.headshot} alt={player.name} width={80} height={80} unoptimized
+              style={{ objectFit: 'cover', width: 80, height: 80 }} />
+          ) : player.team?.logo ? (
             <Image src={player.team.logo} alt={player.team.name} width={56} height={56} unoptimized
               style={{ objectFit: 'contain' }} />
           ) : (
