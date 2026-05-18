@@ -1,13 +1,51 @@
 // API route — sirve los reels de @taka.sports
-// Fuentes (fundidas y dedupadas por shortcode):
-//   1. Graph API oficial (token OAuth) — no la bloquea el 401 anónimo
-//   2. Supabase Storage (lo refresca cada 6h el WF-10 de n8n)
-//   3. IG public API anónima (suele dar 401) → JSON estático en repo
+// Fuentes (fundidas y dedupadas por shortcode), por prioridad:
+//   1. Sanity CMS — reels curados a mano. No depende de Instagram: fiable.
+//   2. Graph API oficial (token OAuth) — si está configurada
+//   3. Supabase Storage (lo refresca el WF-10 de n8n)
+//   4. IG public API anónima (suele dar 401) → JSON estático en repo
 
 import { fetchPublicReels, type PublicReel, detectSportPublic, extractTitlePublic } from '@/lib/instagram-public'
 import { fetchInstagramReels } from '@/lib/instagram'
 import { getIgToken } from '@/lib/ig-token'
+import { sanityClient, reelsQuery, urlFor } from '@/lib/sanity'
 import reelsData from '@/lib/reels-data.json'
+
+interface SanityReelDoc {
+  _id: string
+  title?: string
+  instagram_url?: string
+  thumbnail?: unknown
+  sport?: string
+  publishedAt?: string
+}
+
+// Reels gestionados en el CMS: fuente principal, no se rompe nunca porque
+// no toca Instagram (solo guarda el link público que tú pegas).
+async function fetchSanityReels(): Promise<PublicReel[]> {
+  try {
+    const docs = await sanityClient.fetch<SanityReelDoc[]>(reelsQuery)
+    if (!Array.isArray(docs)) return []
+    return docs
+      .filter(d => d.instagram_url)
+      .map(d => {
+        let thumb: string | null = null
+        try { if (d.thumbnail) thumb = urlFor(d.thumbnail).width(640).url() } catch { /* sin thumb */ }
+        return {
+          id:            d._id,
+          instagram_url: d.instagram_url!,
+          thumbnail_url: thumb,
+          video_url:     null, // el frontend cae al embed oficial de IG
+          timestamp:     d.publishedAt ?? new Date().toISOString(),
+          caption:       d.title ?? '',
+          sport:         d.sport ?? '',
+          title:         d.title ?? 'Reel',
+        }
+      })
+  } catch {
+    return []
+  }
+}
 
 // La Graph API oficial no devuelve video_url ni proxea el thumbnail; el
 // frontend ya cae al embed oficial de IG cuando falta video_url.
@@ -139,16 +177,17 @@ export async function GET() {
     return Response.json(cache.data)
   }
 
-  // En paralelo: Graph oficial + storage + live IG anónima.
-  // La oficial va primero en el merge (gana el dedupe por shortcode).
+  // En paralelo todas las fuentes. Sanity (CMS curado) va primero en el
+  // merge: gana el dedupe por shortcode y nunca depende de Instagram.
   const igToken = await getIgToken()
-  const [official, fromStorage, live] = await Promise.all([
+  const [sanity, official, fromStorage, live] = await Promise.all([
+    fetchSanityReels(),
     fetchInstagramReels(igToken).then(rs => rs.map(toPublicReel)).catch(() => []),
     fetchFromStorage(),
     fetchPublicReels().catch(() => []),
   ])
 
-  const merged = merge(official, fromStorage, live, reelsData as PublicReel[])
+  const merged = merge(sanity, official, fromStorage, live, reelsData as PublicReel[])
 
   // Conservamos el cache previo SOLO si su reel más reciente es más nuevo
   // que el de la mezcla actual (p.ej. storage falló puntualmente y la mezcla
