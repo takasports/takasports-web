@@ -275,7 +275,11 @@ export default function QuinielaClient() {
                   Quiniela
                 </h1>
                 <p className="text-sm" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>
-                  Haz tus picks antes del primer partido · Acierta más que nadie
+                  {activeTab === 'official'
+                    ? 'Ranked · partidos destacados de la semana · ranking global y monedas'
+                    : activeTab === 'leagues'
+                    ? 'Mis ligas · compite con amigos por código o enlace'
+                    : 'Predicciones de torneo'}
                 </p>
               </div>
 
@@ -313,7 +317,7 @@ export default function QuinielaClient() {
         {/* ── TABS ─────────────────────────────────────── */}
         <div className="flex items-center gap-1 mb-6 p-1 rounded-2xl w-fit" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
           {([
-            { id: 'official', label: 'Mi Quiniela' },
+            { id: 'official', label: 'Ranked' },
             { id: 'leagues',  label: 'Mis ligas' },
             { id: 'season',   label: 'Predicciones' },
           ] as { id: Tab; label: string }[]).map((t) => (
