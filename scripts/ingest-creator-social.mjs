@@ -131,9 +131,11 @@ async function fetchAllYouTubeSubs(channelIds) {
 // Rate-limit suave: 500ms entre peticiones, retry una vez si falla.
 
 // Instagram usa TLS fingerprinting que bloquea el fetch nativo de Node.js.
-// Se usa curl vía child_process (funciona en macOS/Linux; script de mantenimiento).
+// Se usa curl vía child_process. Detecta rate-limit y retorna símbolo especial.
+let _igRateLimited = false
+
 function fetchInstagramFollowers(username) {
-  if (!username) return null
+  if (!username || _igRateLimited) return null
   const clean = username.replace(/^@/, '').toLowerCase()
   try {
     const out = execSync(
@@ -144,6 +146,11 @@ function fetchInstagramFollowers(username) {
       { encoding: 'utf8', timeout: 10000 }
     )
     const data = JSON.parse(out)
+    if (data?.message?.includes('wait') || data?.require_login) {
+      _igRateLimited = true
+      if (VERBOSE || true) console.log('  ⚠️  Instagram rate-limited — saltando resto de cuentas IG.')
+      return null
+    }
     const count = data?.data?.user?.edge_followed_by?.count
     return typeof count === 'number' && count > 0 ? count : null
   } catch (e) {
@@ -217,6 +224,7 @@ async function main() {
   const igFollowers = {}
   for (const { user } of igLogins) {
     igFollowers[user] = fetchInstagramFollowers(user)   // sync
+    if (_igRateLimited) break  // para inmediatamente al detectar rate-limit
     await sleep(600)  // 600ms para no disparar rate-limit
   }
   const igOk = Object.values(igFollowers).filter(v => v != null).length
