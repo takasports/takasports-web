@@ -73,19 +73,15 @@ const SUB_ENTITY_TABS: Record<string, { id: string; label: string }[]> = {
     { id: 'femenino',  label: 'Femenino'  },
     { id: 'creadores', label: 'Creadores' },
   ],
-  contenido: [
-    { id: 'total',       label: 'Total'       },
-    { id: 'creadores',   label: 'Creadores'   },
-    { id: 'periodistas', label: 'Periodistas' },
-  ],
+  // contenido: sin sub-tabs — lista unificada creadores+periodistas
 }
+
+// Contenidos: sólo los 3 deportes con sección propia
+const CONTENIDO_SPORTS = ['futbol', 'ufc', 'wwe']
 
 const SPORT_FILTERS_CONTENIDO = [
   { label: 'Todos',  slug: '' },
   { label: 'Fútbol', slug: 'futbol' },
-  { label: 'Baloncesto', slug: 'baloncesto' },
-  { label: 'F1',     slug: 'formula1' },
-  { label: 'Tenis',  slug: 'tenis' },
   { label: 'UFC',    slug: 'ufc' },
   { label: 'WWE',    slug: 'wwe' },
 ]
@@ -248,26 +244,18 @@ export default function RankingsClient({
       else entries = wweBase
     }
   } else if (isContenido) {
-    const sportMatch = (e: RankingEntry) => !contenidoSport || e.sport === contenidoSport
-    if (subEntity === 'total') {
-      entries = [
-        ...db('creadores', RANKING_CREADORES).filter(e => !e.featured),
-        ...db('periodistas', RANKING_PERIODISTAS).filter(e => !e.featured),
-        ...db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => !e.featured),
-      ]
-        .filter(sportMatch)
-        .sort((a, b) => getDisplayScore(b) - getDisplayScore(a))
-    } else if (subEntity === 'creadores') {
-      const allCreadores = [
-        ...db('creadores', RANKING_CREADORES),
-        ...db('creadores_wwe', RANKING_CREADORES_WWE),
-      ]
-      entries = allCreadores.filter(e => !e.featured && sportMatch(e))
-      featuredEntries = allCreadores.filter(e => e.featured && sportMatch(e))
-    } else if (subEntity === 'periodistas') {
-      entries = db('periodistas', RANKING_PERIODISTAS).filter(e => !e.featured && sportMatch(e))
-      featuredEntries = db('periodistas', RANKING_PERIODISTAS).filter(e => e.featured && sportMatch(e))
-    }
+    // Lista unificada: creadores + periodistas + creadores_wwe
+    // Restringida a fútbol, UFC y WWE (los deportes con sección propia)
+    const contenidoBase = (e: RankingEntry) =>
+      CONTENIDO_SPORTS.includes(e.sport ?? '') &&
+      (!contenidoSport || e.sport === contenidoSport)
+    entries = [
+      ...db('creadores',     RANKING_CREADORES).filter(e => !e.featured),
+      ...db('periodistas',   RANKING_PERIODISTAS).filter(e => !e.featured),
+      ...db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => !e.featured),
+    ]
+      .filter(contenidoBase)
+      .sort((a, b) => getDisplayScore(b) - getDisplayScore(a))
   } else if (activeTab === 'jugadores') {
     if (jugadoresScope === 'global') {
       entries = jugadoresBase
@@ -425,14 +413,13 @@ export default function RankingsClient({
   const jugadoresLigaFilters = isFemenino ? JUGADORAS_LIGA_FILTERS : (LIGA_FILTERS_BY_SPORT[activeSport] ?? LIGA_FILTERS_BY_SPORT[''])
   const clubesLigaFilters    = isFemenino ? CLUBES_FEMENINO_LIGA_FILTERS : CLUBES_LIGA_FILTERS
 
-  // typeTagFn for contenido total view
-  const typeTagFn = (isContenido && subEntity === 'total')
+  // typeTagFn para contenido: muestra el tipo (Creador/Periodista) en cada fila
+  const typeTagFn = isContenido
     ? (e: RankingEntry) => contenidoTypeMap.get(e.id)
     : undefined
 
   const showFeatured = (
-    (isContenido && subEntity !== 'total') ||
-    (activeSport === 'wwe' && subEntity === 'creadores')
+    activeSport === 'wwe' && subEntity === 'creadores'
   ) && featuredEntries.length > 0
 
   return (
@@ -784,13 +771,7 @@ export default function RankingsClient({
               onClear: () => setSubEntity('total'),
             })
           }
-          if (isContenido && subEntity !== 'total') {
-            const sLabel: Record<string, string> = { creadores: 'Creadores', periodistas: 'Periodistas' }
-            applied.push({
-              key: 'cont-sub', label: sLabel[subEntity] ?? subEntity, color: '#f59e0b',
-              onClear: () => setSubEntity('total'),
-            })
-          }
+          // contenido ya no tiene sub-tabs Creadores/Periodistas — sólo filtro de deporte
           if (isContenido && contenidoSport) {
             applied.push({
               key: 'cont-sport',
