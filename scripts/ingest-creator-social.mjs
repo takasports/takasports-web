@@ -77,15 +77,20 @@ function presenceScore(count) {
 }
 
 // ── YouTube Data API v3 (opcional) ───────────────────────────────
+// Soporta dos formatos:
+//   UCxxxx  → batch de 50, 1 unidad de quota por llamada
+//   @handle → llamada individual con forHandle=, 1 unidad cada una
 
-// Fetch suscriptores en lotes de 50 (1 unidad de quota por llamada)
 async function fetchAllYouTubeSubs(channelIds) {
   if (!YT_KEY || channelIds.length === 0) return {}
   const result = {}
-  for (let i = 0; i < channelIds.length; i += 50) {
-    const batch = channelIds.slice(i, i + 50)
-    const ids = batch.filter(id => !id.startsWith('@')).join(',')
-    if (!ids) continue
+
+  const ucIds    = channelIds.filter(id => !id.startsWith('@'))
+  const handles  = channelIds.filter(id =>  id.startsWith('@'))
+
+  // ── Batch UCxxxx ───────────────────────────────────────────────
+  for (let i = 0; i < ucIds.length; i += 50) {
+    const ids = ucIds.slice(i, i + 50).join(',')
     try {
       const url = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${ids}&key=${YT_KEY}`
       const res = await fetch(url)
@@ -95,9 +100,26 @@ async function fetchAllYouTubeSubs(channelIds) {
         const subs = parseInt(item.statistics?.subscriberCount)
         if (subs > 0) result[item.id] = subs
       }
-    } catch (e) { if (VERBOSE) console.error(`  YT API error: ${e.message}`) }
-    if (i + 50 < channelIds.length) await sleep(200)
+    } catch (e) { if (VERBOSE) console.error(`  YT API error (batch): ${e.message}`) }
+    await sleep(150)
   }
+
+  // ── Individual @handles ────────────────────────────────────────
+  for (const handle of handles) {
+    try {
+      const url = `https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&forHandle=${encodeURIComponent(handle)}&key=${YT_KEY}`
+      const res = await fetch(url)
+      if (!res.ok) { if (VERBOSE) console.error(`  YT API HTTP ${res.status} for ${handle}`); await sleep(150); continue }
+      const data = await res.json()
+      const item = data.items?.[0]
+      if (item) {
+        const subs = parseInt(item.statistics?.subscriberCount)
+        if (subs > 0) result[handle] = subs
+      }
+    } catch (e) { if (VERBOSE) console.error(`  YT API error (${handle}): ${e.message}`) }
+    await sleep(150)
+  }
+
   return result
 }
 
