@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { QuinielaMatch } from '@/components/QuinielaModule'
 import { LEAGUES_KEY } from '../../lib/constants'
+import { getPlayerAlias, setPlayerAlias } from '../../lib/helpers'
 import type { League } from '../../lib/types'
 import { JerseyIcon } from '../atoms/TeamBadge'
 
@@ -19,6 +20,7 @@ export function CreateLeagueModal({ onClose, onCreated, apiMatches, apiJornada }
 }) {
   const [step, setStep]               = useState<CreateStep>('name')
   const [name, setName]               = useState('')
+  const [alias, setAlias]             = useState(() => getPlayerAlias())
   const [selectedMatches, setMatches] = useState<number[]>([])
   const [createdCode, setCreatedCode] = useState('')
   const [creating, setCreating]       = useState(false)
@@ -29,6 +31,7 @@ export function CreateLeagueModal({ onClose, onCreated, apiMatches, apiJornada }
 
   const handleCreate = async () => {
     if (selectedMatches.length === 0 || creating) return
+    if (alias.trim()) setPlayerAlias(alias)
     setCreating(true)
     try {
       const res = await fetch('/api/quiniela/leagues', {
@@ -113,13 +116,33 @@ export function CreateLeagueModal({ onClose, onCreated, apiMatches, apiJornada }
             <div className="flex flex-col gap-5">
               <div>
                 <label className="text-[10px] font-black uppercase tracking-widest mb-2 block" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>
-                  Nombre de la liga
+                  Tu nombre · visible para el resto
                 </label>
                 <input
                   autoFocus
+                  value={alias}
+                  onChange={(e) => setAlias(e.target.value.slice(0, 24))}
+                  placeholder="Ej: Kun, Marta, ElPibe10..."
+                  className="w-full rounded-xl px-4 py-3.5 text-sm font-semibold outline-none transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1.5px solid rgba(255,255,255,0.08)',
+                    color: '#E0E0F0',
+                    fontFamily: 'var(--font-display)',
+                  }}
+                />
+                <p className="text-[10px] mt-1.5" style={{ color: '#2E2E48', fontFamily: 'var(--font-sport)' }}>
+                  Así te verán tus amigos en el ranking de la liga.
+                </p>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest mb-2 block" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>
+                  Nombre de la liga
+                </label>
+                <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && setStep('matches')}
+                  onKeyDown={(e) => e.key === 'Enter' && alias.trim() && setStep('matches')}
                   placeholder="Ej: Liga del trabajo, Familia..."
                   className="w-full rounded-xl px-4 py-3.5 text-sm font-semibold outline-none transition-all"
                   style={{
@@ -134,9 +157,16 @@ export function CreateLeagueModal({ onClose, onCreated, apiMatches, apiJornada }
                 </p>
               </div>
               <button
-                onClick={() => setStep('matches')}
+                onClick={() => { if (!alias.trim()) return; setPlayerAlias(alias); setStep('matches') }}
+                disabled={!alias.trim()}
                 className="w-full py-3.5 rounded-xl font-black uppercase tracking-widest transition-opacity hover:opacity-85"
-                style={{ background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', color: '#fff', fontSize: 12, fontFamily: 'var(--font-sport)', letterSpacing: '0.09em', boxShadow: '0 6px 20px rgba(124,58,237,0.35)' }}
+                style={{
+                  background: alias.trim() ? 'linear-gradient(135deg,#7C3AED,#5B21B6)' : 'rgba(255,255,255,0.04)',
+                  color: alias.trim() ? '#fff' : '#3A3A52',
+                  fontSize: 12, fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
+                  boxShadow: alias.trim() ? '0 6px 20px rgba(124,58,237,0.35)' : 'none',
+                  cursor: alias.trim() ? 'pointer' : 'not-allowed',
+                }}
               >
                 Siguiente →
               </button>

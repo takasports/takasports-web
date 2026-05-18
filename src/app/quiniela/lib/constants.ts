@@ -22,6 +22,10 @@ export const TUTORED_KEY = 'ts_quiniela_tutored'
 
 export const LEAGUES_KEY = 'ts_quiniela_leagues'
 
+// Alias visible del jugador en ligas/ranking (antes se mandaba 'Tú'
+// hardcodeado, lo que colapsaba a todos los miembros en una sola fila).
+export const ALIAS_KEY = 'ts_quiniela_alias'
+
 // ─────────────────────────────────────────────────────────────────
 // Onboarding steps
 // ─────────────────────────────────────────────────────────────────

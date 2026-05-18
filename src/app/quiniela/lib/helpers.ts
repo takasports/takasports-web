@@ -1,6 +1,30 @@
 import type { Pick } from '@/components/QuinielaModule'
 import type { QuinielaMatch } from '@/components/QuinielaModule'
 import type { BadgeId, MatchResult } from './types'
+import { ALIAS_KEY } from './constants'
+
+// ─────────────────────────────────────────────────────────────────
+// Alias del jugador (identidad visible en ligas / ranking).
+// Nunca devolvemos 'Tú': si no hay alias elegido, generamos un
+// «Invitado-XXXX» estable para que cada invitado sea distinguible.
+// ─────────────────────────────────────────────────────────────────
+export function getPlayerAlias(): string {
+  if (typeof window === 'undefined') return ''
+  try { return (localStorage.getItem(ALIAS_KEY) ?? '').trim() } catch { return '' }
+}
+
+export function setPlayerAlias(alias: string): void {
+  if (typeof window === 'undefined') return
+  try { localStorage.setItem(ALIAS_KEY, alias.trim().slice(0, 24)) } catch { /* ignore */ }
+}
+
+export function ensurePlayerAlias(): string {
+  const existing = getPlayerAlias()
+  if (existing) return existing
+  const guest = `Invitado-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+  setPlayerAlias(guest)
+  return guest
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Racha por jornada — cuenta jornadas distintas jugadas.
@@ -18,25 +42,6 @@ export function isCorrect(pick: Pick, outcome: '1' | 'X' | '2'): boolean {
   if (pick === '1X') return outcome === '1' || outcome === 'X'
   if (pick === 'X2') return outcome === 'X' || outcome === '2'
   return false
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Forma reciente del equipo — últimos 5 partidos (determinista)
-// ─────────────────────────────────────────────────────────────────
-export function teamForm(name: string): ('W' | 'D' | 'L')[] {
-  const seed = name.split('').reduce((s, c, i) => s + c.charCodeAt(0) * (i + 3), 0)
-  return Array.from({ length: 5 }, (_, i) => {
-    const v = (seed * (i + 7) * 31 + i * 13) % 10
-    return v < 4 ? 'W' : v < 7 ? 'D' : 'L'
-  })
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Tendencia de picks — cambia cada 3 min, combinada con match seed
-// ─────────────────────────────────────────────────────────────────
-export function communityTrend(match: QuinielaMatch, tick: number): { d1: number; dX: number; d2: number } {
-  const s = (match.home.charCodeAt(0) * 11 + match.away.charCodeAt(0) * 7 + tick * 3) % 30 - 15
-  return { d1: Math.round(s * 0.4), dX: Math.round(-s * 0.2), d2: Math.round(-s * 0.3) }
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -115,26 +120,9 @@ export function computeNewBadges(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Leaderboard semanal — generado deterministamente por jornada
-// ─────────────────────────────────────────────────────────────────
-const LEADERBOARD_NAMES = [
-  'Carlos M.','Laura P.','Javi G.','María R.','Álex T.',
-  'Sergio F.','Ana L.','Pablo S.','Marta D.','Diego C.',
-  'Elena V.','Rubén A.','Cristina H.','Iván N.','Sofía B.',
-  'Marcos J.','Patricia O.','Daniel E.','Carmen U.','Adrián M.',
-]
-
-export function communityLeaderboard(jornada: string, totalMatches: number) {
-  const seed = jornada.split('').reduce((s, c, i) => s + c.charCodeAt(0) * (i + 2), 0)
-  return LEADERBOARD_NAMES.map((name, i) => {
-    const raw = (seed * (i + 5) * 13 + i * 97) % 100
-    const score = Math.round((raw / 100) * totalMatches)
-    return { name, score }
-  }).sort((a, b) => b.score - a.score)
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Consenso de comunidad — derivado de cuotas + ruido determinista
+// Consenso de comunidad — fallback ESTIMADO derivado de cuotas reales
+// (se usa solo cuando aún no hay suficientes votos reales; la UI lo
+// etiqueta explícitamente como «ESTIMADO», nunca como dato de comunidad)
 // ─────────────────────────────────────────────────────────────────
 export function communityConsensus(match: QuinielaMatch): { p1: number; pX: number; p2: number } {
   if (match.odds) {

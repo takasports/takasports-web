@@ -19,7 +19,7 @@ import {
 import type { BadgeId, League } from './lib/types'
 import {
   computeStreak, isCorrect, computeNewBadges,
-  getDivision,
+  getDivision, getPlayerAlias, setPlayerAlias,
 } from './lib/helpers'
 import { usePushSubscription, useCoins } from './lib/hooks'
 import { PicksForm } from './components/picks/PicksForm'
@@ -50,6 +50,7 @@ export default function QuinielaClient() {
   const [apiJornada, setApiJornada] = useState('Cargando…')
   const [ligaName, setLigaName]   = useState<string | null>(null)
   const [ligaJoined, setLigaJoined] = useState(false)
+  const [joinAlias, setJoinAlias]   = useState('')
   const [history, setHistory]     = useState<{ jornada: string; correct: number; total: number }[]>([])
   const [streak, setStreak]       = useState<{ current: number; best: number }>({ current: 0, best: 0 })
   const [badges, setBadges]       = useState<BadgeId[]>([])
@@ -138,6 +139,7 @@ export default function QuinielaClient() {
   // Detect ?liga= param and load league name
   useEffect(() => {
     if (!ligaParam) return
+    setJoinAlias(getPlayerAlias())
     fetch(`/api/quiniela/leagues?id=${ligaParam}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.name) setLigaName(data.name) })
@@ -168,38 +170,58 @@ export default function QuinielaClient() {
 
         {/* ── BANNER: unirse a liga por link ─────────── */}
         {ligaParam && ligaName && !ligaJoined && (
-          <div className="mt-6 mb-2 rounded-2xl px-5 py-4 flex items-center gap-4" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)' }}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#A78BFA" strokeWidth="1.5" />
-                <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="#A78BFA" strokeWidth="1.5" />
-                <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="#A78BFA" strokeWidth="1.5" />
-                <path d="M14 17.5h7M17.5 14v7" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
+          <div className="mt-6 mb-2 rounded-2xl px-5 py-4 flex flex-col gap-3.5" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)' }}>
+            <div className="flex items-center gap-4">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#A78BFA" strokeWidth="1.5" />
+                  <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="#A78BFA" strokeWidth="1.5" />
+                  <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="#A78BFA" strokeWidth="1.5" />
+                  <path d="M14 17.5h7M17.5 14v7" stroke="#A78BFA" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-black" style={{ color: '#D0C0FF', fontFamily: 'var(--font-display)' }}>Te invitaron a <span style={{ color: '#C4B5FD' }}>«{ligaName}»</span></p>
+                <p className="text-[10px]" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Elige tu nombre y únete a la competición</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-black" style={{ color: '#D0C0FF', fontFamily: 'var(--font-display)' }}>Te invitaron a <span style={{ color: '#C4B5FD' }}>«{ligaName}»</span></p>
-              <p className="text-[10px]" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Haz tus picks y únete a la competición</p>
+            <div className="flex items-center gap-2.5">
+              <input
+                value={joinAlias}
+                onChange={(e) => setJoinAlias(e.target.value.slice(0, 24))}
+                placeholder="Tu nombre en la liga"
+                className="flex-1 min-w-0 rounded-xl px-3.5 py-2.5 text-sm font-semibold outline-none"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(124,58,237,0.25)', color: '#E0E0F0', fontFamily: 'var(--font-display)' }}
+              />
+              <button
+                disabled={!joinAlias.trim()}
+                onClick={() => {
+                  if (!joinAlias.trim()) return
+                  setPlayerAlias(joinAlias)
+                  try {
+                    const raw = localStorage.getItem(LEAGUES_KEY)
+                    const existing: League[] = raw ? JSON.parse(raw) : []
+                    if (!existing.some(l => l.id === ligaParam)) {
+                      existing.push({ id: ligaParam!, name: ligaName!, competitionId: 'mixed', matchIds: [], picks: {}, submitted: false, createdAt: new Date().toISOString() })
+                      localStorage.setItem(LEAGUES_KEY, JSON.stringify(existing))
+                    }
+                  } catch { /* ignore */ }
+                  setLigaJoined(true)
+                  setTab('official')
+                  bump(v => v + 1)
+                }}
+                className="flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-opacity hover:opacity-85"
+                style={{
+                  background: joinAlias.trim() ? 'linear-gradient(135deg,#7C3AED,#5B21B6)' : 'rgba(255,255,255,0.04)',
+                  color: joinAlias.trim() ? '#fff' : '#3A3A52',
+                  fontFamily: 'var(--font-sport)',
+                  boxShadow: joinAlias.trim() ? '0 4px 16px rgba(124,58,237,0.3)' : 'none',
+                  cursor: joinAlias.trim() ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Unirme
+              </button>
             </div>
-            <button
-              onClick={() => {
-                try {
-                  const raw = localStorage.getItem(LEAGUES_KEY)
-                  const existing: League[] = raw ? JSON.parse(raw) : []
-                  if (!existing.some(l => l.id === ligaParam)) {
-                    existing.push({ id: ligaParam!, name: ligaName!, competitionId: 'mixed', matchIds: [], picks: {}, submitted: false, createdAt: new Date().toISOString() })
-                    localStorage.setItem(LEAGUES_KEY, JSON.stringify(existing))
-                  }
-                } catch { /* ignore */ }
-                setLigaJoined(true)
-                setTab('official')
-                bump(v => v + 1)
-              }}
-              className="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-opacity hover:opacity-85"
-              style={{ background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', color: '#fff', fontFamily: 'var(--font-sport)', boxShadow: '0 4px 16px rgba(124,58,237,0.3)' }}
-            >
-              Unirme
-            </button>
           </div>
         )}
         {ligaParam && ligaJoined && (
@@ -576,53 +598,6 @@ export default function QuinielaClient() {
                   + Crear nueva liga
                 </button>
               </div>
-            </div>
-
-            {/* Ranking */}
-            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-              <div className="px-5 py-4 flex items-center justify-between gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="flex items-center gap-2">
-                  <span className="section-accent" />
-                  <h2 className="section-label">Ranking</h2>
-                </div>
-                <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.1)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.2)', fontFamily: 'var(--font-sport)' }}>
-                  Próximamente
-                </span>
-              </div>
-              {/* Preview list skeleton */}
-              <div className="px-5 pt-4 pb-2 flex flex-col gap-1">
-                {[
-                  { name: 'Tú', pos: 1, pts: '—', highlight: true },
-                  { name: 'Carlos M.', pos: 2, pts: '—', highlight: false },
-                  { name: 'Ana G.',    pos: 3, pts: '—', highlight: false },
-                ].map((r) => (
-                  <div
-                    key={r.pos}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                    style={{
-                      background: r.highlight ? 'rgba(124,58,237,0.08)' : 'rgba(255,255,255,0.02)',
-                      border: r.highlight ? '1px solid rgba(124,58,237,0.18)' : '1px solid transparent',
-                    }}
-                  >
-                    <span className="text-[10px] font-black w-4 tabular-nums flex-shrink-0" style={{ color: r.pos === 1 ? '#fbbf24' : '#2A2A3A', fontFamily: 'var(--font-display)' }}>{r.pos}</span>
-                    <span className="flex-1 text-[11px] font-bold" style={{ color: r.highlight ? '#D0C0FF' : '#3A3A50', fontFamily: 'var(--font-display)' }}>{r.name}</span>
-                    <span className="text-[11px] font-black tabular-nums" style={{ color: r.highlight ? '#7C3AED' : '#252535', fontFamily: 'var(--font-display)' }}>{r.pts} pts</span>
-                  </div>
-                ))}
-              </div>
-              <div className="px-5 py-3">
-                <p className="text-[9px] text-center" style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
-                  Se actualizará al cierre de la jornada
-                </p>
-              </div>
-              {saved && (
-                <div className="px-5 pb-4">
-                  <div className="flex items-center justify-center gap-1.5 py-2 rounded-xl" style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.15)' }}>
-                    <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#4ade80' }} />
-                    <span className="text-[9px] font-black" style={{ color: '#4ade80', fontFamily: 'var(--font-sport)' }}>Predicción registrada</span>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Precisión histórica */}

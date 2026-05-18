@@ -8,7 +8,7 @@ import type { Confidence } from '@/lib/quiniela'
 import { CONFIDENCE_LABELS } from '@/lib/quiniela'
 import { PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW, TUTORED_KEY, LEAGUES_KEY, STREAK_KEY } from '../../lib/constants'
 import type { League } from '../../lib/types'
-import { scorelinesFor } from '../../lib/helpers'
+import { scorelinesFor, ensurePlayerAlias } from '../../lib/helpers'
 import { InfoTip } from '../atoms/InfoTip'
 import { ProgressBar } from '../atoms/ProgressBar'
 import { TeamBadge } from '../atoms/TeamBadge'
@@ -75,11 +75,12 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
         const leagueList: League[] = JSON.parse(raw)
         const picksMap: Record<number, string> = {}
         saved.picks.forEach((p, i) => { picksMap[i] = p.pick })
+        const alias = ensurePlayerAlias()
         for (const l of leagueList) {
           fetch('/api/quiniela/leagues', {
             method: 'PATCH',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ id: l.id, nickname: 'Tú', picks: picksMap }),
+            body: JSON.stringify({ id: l.id, nickname: alias, picks: picksMap }),
           }).catch(() => {})
         }
       }

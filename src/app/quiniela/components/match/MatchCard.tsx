@@ -4,7 +4,7 @@ import { useState } from 'react'
 import type { Pick } from '@/components/QuinielaModule'
 import { getClubColors } from '@/lib/clubs'
 import { PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW } from '../../lib/constants'
-import { teamForm, getMatchContext, aiSuggest } from '../../lib/helpers'
+import { getMatchContext, aiSuggest } from '../../lib/helpers'
 import { useMatchCountdown } from '../../lib/hooks'
 import { TeamBadge } from '../atoms/TeamBadge'
 import { WinProbabilityBar } from '../atoms/WinProbabilityBar'
@@ -152,15 +152,6 @@ export function MatchCard({
             >
               {match.homeShort ?? match.home}
             </span>
-            <div className="flex items-center gap-0.5">
-              {teamForm(match.home).map((r, i) => (
-                <div key={i} style={{
-                  width: 5, height: 5, borderRadius: '50%',
-                  background: r === 'W' ? '#22c55e' : r === 'D' ? '#6b7280' : '#ef4444',
-                  opacity: 0.6 + i * 0.08,
-                }} title={r} />
-              ))}
-            </div>
           </div>
 
           {/* VS central / live or final score */}
@@ -206,15 +197,6 @@ export function MatchCard({
             >
               {match.awayShort ?? match.away}
             </span>
-            <div className="flex items-center gap-0.5">
-              {teamForm(match.away).map((r, i) => (
-                <div key={i} style={{
-                  width: 5, height: 5, borderRadius: '50%',
-                  background: r === 'W' ? '#22c55e' : r === 'D' ? '#6b7280' : '#ef4444',
-                  opacity: 0.6 + i * 0.08,
-                }} title={r} />
-              ))}
-            </div>
           </div>
         </div>
 

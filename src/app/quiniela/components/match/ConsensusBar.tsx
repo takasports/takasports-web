@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { QuinielaMatch, Pick } from '@/components/QuinielaModule'
-import { communityConsensus, communityTrend } from '../../lib/helpers'
+import { communityConsensus } from '../../lib/helpers'
 import { nameMatch } from '@/lib/quiniela'
 
 interface ConsensusRow { home: string; away: string; p1: number; px: number; p2: number; total: number }
@@ -24,13 +24,7 @@ function loadConsensus(jornada: string): Promise<ConsensusRow[]> {
 const REAL_MIN_VOTES = 5
 
 export function ConsensusBar({ match, userPick, jornada }: { match: QuinielaMatch; userPick: Pick | undefined; jornada?: string }) {
-  const [tick, setTick] = useState(() => Math.floor(Date.now() / 180_000))
   const [real, setReal] = useState<ConsensusRow | null>(null)
-
-  useEffect(() => {
-    const t = setInterval(() => setTick(Math.floor(Date.now() / 180_000)), 30_000)
-    return () => clearInterval(t)
-  }, [])
 
   useEffect(() => {
     if (!jornada) return
@@ -54,11 +48,10 @@ export function ConsensusBar({ match, userPick, jornada }: { match: QuinielaMatc
     const c = communityConsensus(match)
     p1 = c.p1; pX = c.pX; p2 = c.p2
   }
-  const { d1, dX, d2 } = useReal ? { d1: 0, dX: 0, d2: 0 } : communityTrend(match, tick)
-  const segs: { key: Pick; pct: number; color: string; delta: number }[] = [
-    { key: '1', pct: p1, color: '#22c55e', delta: d1 },
-    { key: 'X', pct: pX, color: '#f59e0b', delta: dX },
-    { key: '2', pct: p2, color: '#ef4444', delta: d2 },
+  const segs: { key: Pick; pct: number; color: string }[] = [
+    { key: '1', pct: p1, color: '#22c55e' },
+    { key: 'X', pct: pX, color: '#f59e0b' },
+    { key: '2', pct: p2, color: '#ef4444' },
   ]
   const userBase: Pick | null = userPick === '1' || userPick === '1X' ? '1' : userPick === '2' || userPick === 'X2' ? '2' : userPick === 'X' ? 'X' : null
   return (
@@ -89,11 +82,6 @@ export function ConsensusBar({ match, userPick, jornada }: { match: QuinielaMatc
               <span style={{ fontSize: 8, fontWeight: 900, fontFamily: 'var(--font-sport)', color: userBase === s.key ? s.color : '#2A2A42', whiteSpace: 'nowrap' }}>
                 {s.key} {s.pct}%
               </span>
-              {s.delta !== 0 && (
-                <span style={{ fontSize: 7, fontWeight: 900, color: s.delta > 0 ? '#4ade80' : '#f87171', lineHeight: 1 }}>
-                  {s.delta > 0 ? '↑' : '↓'}{Math.abs(s.delta)}
-                </span>
-              )}
               {userBase === s.key && (
                 <span style={{ fontSize: 7, color: s.color, fontWeight: 900 }}>←</span>
               )}

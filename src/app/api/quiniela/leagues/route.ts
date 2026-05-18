@@ -213,7 +213,10 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json()
     const id = String(body?.id ?? '').toUpperCase()
-    const nickname = String(body?.nickname ?? '').trim().slice(0, 24)
+    // 'Tú' era el placeholder hardcodeado que colapsaba a todos los
+    // miembros en una sola fila — lo tratamos como vacío.
+    const rawNick = String(body?.nickname ?? '').trim().slice(0, 24)
+    const nickname = rawNick.toLowerCase() === 'tú' || rawNick.toLowerCase() === 'tu' ? '' : rawNick
     const rawPicks = sanitizePicks(body?.picks)
     const rawExact = sanitizeExact(body?.exactScores)
     const captainIdxRaw = body?.captainIdx
@@ -221,14 +224,17 @@ export async function PATCH(req: NextRequest) {
       Number.isInteger(captainIdxRaw) && captainIdxRaw >= 0 && captainIdxRaw < 50
         ? captainIdxRaw : null
 
-    if (!id || !nickname) {
-      return NextResponse.json({ error: 'id and nickname required' }, { status: 400 })
+    if (!id) {
+      return NextResponse.json({ error: 'id required' }, { status: 400 })
     }
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const sb = await createServerSupabaseClient()
       const { data: { user } } = await sb.auth.getUser()
       if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
+
+      // Si el cliente no manda alias válido, derivamos del email — nunca 'Tú'
+      const safeNick = nickname || user.email?.split('@')[0]?.slice(0, 24) || `User-${user.id.slice(0, 6)}`
 
       const { data: league } = await sb
         .from('quiniela_leagues').select('match_keys').eq('id', id).maybeSingle()
@@ -248,7 +254,7 @@ export async function PATCH(req: NextRequest) {
       const { error } = await sb.from('quiniela_league_members').upsert({
         league_id: id,
         user_id: user.id,
-        nickname,
+        nickname: safeNick,
         picks,
         exact_scores: exact,
         captain_idx: captain,
@@ -258,7 +264,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ ok: true, locked: Object.keys(rawPicks).length - Object.keys(picks).length })
     }
 
-    // Fallback
+    // Fallback (sin Supabase): alias o invitado aleatorio, nunca 'Tú'
+    const guestNick = nickname || `Invitado-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
     const mem = memStore.get(id)
     if (!mem) return NextResponse.json({ error: 'not found' }, { status: 404 })
     const picks = dropLockedPicks(rawPicks, mem.row.match_keys)
@@ -268,8 +275,8 @@ export async function PATCH(req: NextRequest) {
       const m = mem.row.match_keys[captain]
       if (m?.isoDate && new Date(m.isoDate).getTime() <= Date.now()) captain = null
     }
-    mem.members.set(nickname, {
-      league_id: id, user_id: 'anon', nickname,
+    mem.members.set(guestNick, {
+      league_id: id, user_id: 'anon', nickname: guestNick,
       picks, exact_scores: exact, captain_idx: captain,
     })
     return NextResponse.json({ ok: true, locked: Object.keys(rawPicks).length - Object.keys(picks).length })
