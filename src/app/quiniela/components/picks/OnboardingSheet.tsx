@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ONBOARDING_STEPS } from '../../lib/constants'
 
 // ─────────────────────────────────────────────────────────────────
@@ -8,18 +8,24 @@ import { ONBOARDING_STEPS } from '../../lib/constants'
 // ─────────────────────────────────────────────────────────────────
 export function OnboardingSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [step, setStep] = useState(0)
+  // onClose suele venir como arrow inline (nueva identidad en cada render
+  // del padre, que además re-renderiza cada 1s por un setInterval). Si lo
+  // metemos en las deps, el efecto re-corre y resetea step→0 cada segundo
+  // y "Siguiente" no avanza. Lo leemos por ref y dependemos solo de `open`.
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
   useEffect(() => {
     if (!open) return
     setStep(0)
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') onCloseRef.current()
       if (e.key === 'ArrowRight') setStep(s => Math.min(s + 1, ONBOARDING_STEPS.length - 1))
       if (e.key === 'ArrowLeft') setStep(s => Math.max(s - 1, 0))
     }
     document.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
-  }, [open, onClose])
+  }, [open])
   if (!open) return null
   const isLast = step === ONBOARDING_STEPS.length - 1
   const s = ONBOARDING_STEPS[step]
