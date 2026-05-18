@@ -7,7 +7,7 @@ export const BADGE_DEFS = [
   { id: 'pleno',         emoji: '🎯', name: 'Pleno',          desc: 'Acertaste todos los picks de una jornada' },
   { id: 'contra_ia',    emoji: '🤖', name: 'Contra la IA',   desc: 'Acertaste yendo contra la sugerencia de IA' },
   { id: 'empate_guru',  emoji: '🤝', name: 'Gurú del empate', desc: 'Acertaste 2 empates en la misma jornada' },
-  { id: 'racha5',       emoji: '🔥', name: 'En racha x5',    desc: '5 semanas consecutivas participando' },
+  { id: 'racha5',       emoji: '🔥', name: 'En racha x5',    desc: '5 jornadas consecutivas participando' },
   { id: 'veterano',     emoji: '⭐', name: 'Veterano',        desc: '10 jornadas completadas' },
   { id: 'pick_dificil', emoji: '💎', name: 'Pick difícil',   desc: 'Acertaste un resultado con cuota > 3.0' },
 ] as const

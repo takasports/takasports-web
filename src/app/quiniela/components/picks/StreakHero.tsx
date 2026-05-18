@@ -10,7 +10,7 @@ export function StreakHero({ current }: { current: number }) {
       <span style={{ fontSize: 28, filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.6))' }}>🔥</span>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-black leading-none" style={{ color: '#fb923c', fontFamily: 'var(--font-display)' }}>
-          {current} semana{current !== 1 ? 's' : ''} seguida{current !== 1 ? 's' : ''}
+          {current} jornada{current !== 1 ? 's' : ''} seguida{current !== 1 ? 's' : ''}
         </p>
         <p className="text-[10px] mt-1" style={{ color: '#7A4530', fontFamily: 'var(--font-sport)' }}>
           Manda tus picks antes del cierre para no perderla

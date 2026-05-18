@@ -467,7 +467,7 @@ export default function QuinielaClient() {
                 <span style={{ fontSize: 28, lineHeight: 1 }}>🔥</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-black text-sm" style={{ color: '#fdba74', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
-                    {streak.current} semana{streak.current !== 1 ? 's' : ''} seguida{streak.current !== 1 ? 's' : ''}
+                    {streak.current} jornada{streak.current !== 1 ? 's' : ''} seguida{streak.current !== 1 ? 's' : ''}
                   </p>
                   <p className="text-[10px]" style={{ color: '#78350f', fontFamily: 'var(--font-sport)' }}>
                     Mejor racha: {streak.best} · Sigue así

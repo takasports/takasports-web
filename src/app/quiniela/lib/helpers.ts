@@ -3,40 +3,14 @@ import type { QuinielaMatch } from '@/components/QuinielaModule'
 import type { BadgeId, MatchResult } from './types'
 
 // ─────────────────────────────────────────────────────────────────
-// ISO week helper
+// Racha por jornada — cuenta jornadas distintas jugadas.
+// Antes era por semana ISO (no encajaba con un torneo diario como
+// el Mundial). Cada jornada jugada suma; durante un torneo activo
+// current = best = nº de jornadas distintas en las que participaste.
 // ─────────────────────────────────────────────────────────────────
-export function getISOWeek(date: Date = new Date()): string {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  const day = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - day)
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
-  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
-}
-
 export function computeStreak(submitted: Set<string>): { current: number; best: number } {
-  const today = new Date()
-  let current = 0
-  for (let i = 0; i < 52; i++) {
-    const d = new Date(today); d.setDate(d.getDate() - i * 7)
-    if (submitted.has(getISOWeek(d))) current++
-    else break
-  }
-  // Best streak: scan all submitted weeks sorted
-  const sorted = [...submitted].sort()
-  let best = 0, run = 0, prev = ''
-  for (const w of sorted) {
-    if (!prev) { run = 1 }
-    else {
-      const [py, pn] = prev.split('-W').map(Number)
-      const [cy, cn] = w.split('-W').map(Number)
-      const consecutive = (cy === py && cn === pn + 1) || (cy === py + 1 && pn >= 52 && cn === 1)
-      run = consecutive ? run + 1 : 1
-    }
-    if (run > best) best = run
-    prev = w
-  }
-  return { current, best: Math.max(best, current) }
+  const n = submitted.size
+  return { current: n, best: n }
 }
 
 export function isCorrect(pick: Pick, outcome: '1' | 'X' | '2'): boolean {

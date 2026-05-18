@@ -16,6 +16,7 @@ export interface QuinielaMatch {
   awayAbbr?: string
   homeShort?: string
   awayShort?: string
+  round?: string
 }
 
 export interface QuinielaData {
@@ -28,6 +29,7 @@ let cache: CacheEntry | null = null
 const CACHE_TTL = 10 * 60_000
 
 const FOOTBALL_SOURCES = [
+  { slug: 'soccer/fifa.world',       comp: 'Mundial',       oddsKey: 'soccer_fifa_world_cup'      },
   { slug: 'soccer/uefa.champions',   comp: 'Champions',     oddsKey: 'soccer_uefa_champs_league'  },
   { slug: 'soccer/uefa.europa',      comp: 'Europa League', oddsKey: 'soccer_uefa_europa_league'  },
   { slug: 'soccer/esp.copa_del_rey', comp: 'Copa del Rey',  oddsKey: null                          },
@@ -142,6 +144,9 @@ async function fetchMatchesFromLeague(slug: string, comp: string): Promise<Quini
     const homeShort = (homeTeam?.shortDisplayName as string | undefined) || undefined
     const awayShort = (awayTeam?.shortDisplayName as string | undefined) || undefined
 
+    const notes = (competition.notes as Array<Record<string, unknown>> | undefined) ?? []
+    const round = (notes[0]?.headline as string | undefined) || undefined
+
     results.push({
       home, away, comp, time: toTimeStr(isoDate), isoDate,
       espnId: ev.id as string,
@@ -150,21 +155,51 @@ async function fetchMatchesFromLeague(slug: string, comp: string): Promise<Quini
       awayAbbr: awayTeam?.abbreviation as string | undefined,
       homeShort: homeShort !== home ? homeShort : undefined,
       awayShort: awayShort !== away ? awayShort : undefined,
+      round,
     })
   }
 
   return results.sort((a, b) => a.isoDate.localeCompare(b.isoDate))
 }
 
+// Mapea el «headline» de ronda de ESPN a la fase del torneo en español
+function worldCupPhase(matches: QuinielaMatch[]): string {
+  const r = (matches.find(m => m.round)?.round ?? '').toLowerCase()
+  if (r.includes('final') && !r.includes('semi') && !r.includes('quarter') && !r.includes('third')) return 'Final'
+  if (r.includes('third')) return 'Tercer puesto'
+  if (r.includes('semi')) return 'Semifinales'
+  if (r.includes('quarter')) return 'Cuartos de final'
+  if (r.includes('round of 16') || r.includes('16')) return 'Octavos de final'
+  return 'Fase de grupos'
+}
+
+// El label de jornada se usa también como identificador (saved picks /
+// historial / racha), por eso debe ser ÚNICO por día de competición:
+// añadimos la fecha del primer partido del bloque.
 function buildJornadaLabel(matches: QuinielaMatch[]): string {
   if (matches.length === 0) return 'Esta semana'
+
+  const dayLabel = (() => {
+    const first = [...matches].sort((a, b) => a.isoDate.localeCompare(b.isoDate))[0]
+    if (!first?.isoDate) return ''
+    return new Intl.DateTimeFormat('es-ES', {
+      timeZone: SOURCE_TZ, day: 'numeric', month: 'short',
+    }).format(new Date(first.isoDate)).replace('.', '')
+  })()
+
+  // Durante el Mundial la quiniela es 100% selecciones: label de torneo
+  if (matches.some(m => m.comp === 'Mundial')) {
+    return `Mundial · ${worldCupPhase(matches)}${dayLabel ? ` · ${dayLabel}` : ''}`
+  }
+
+  // Resto de competiciones: comportamiento original (sin discriminador)
   const comps = [...new Set(matches.map(m => m.comp))]
-  // Si hay más de 2 ligas distintas, usar label genérico evitando confundir al usuario
   if (comps.length > 2) return `${matches.length} partidos`
   return comps.slice(0, 2).join(' · ')
 }
 
 const COMP_WEIGHT: Record<string, number> = {
+  'Mundial': 6,
   'Champions': 3, 'Europa League': 2.5,
   'LaLiga': 2, 'Premier': 2, 'Bundesliga': 1.8, 'Serie A': 1.8, 'Ligue 1': 1.5,
   'Copa del Rey': 0.8,

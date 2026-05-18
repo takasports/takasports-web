@@ -8,7 +8,7 @@ import type { Confidence } from '@/lib/quiniela'
 import { CONFIDENCE_LABELS } from '@/lib/quiniela'
 import { PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW, TUTORED_KEY, LEAGUES_KEY, STREAK_KEY } from '../../lib/constants'
 import type { League } from '../../lib/types'
-import { getISOWeek, scorelinesFor } from '../../lib/helpers'
+import { scorelinesFor } from '../../lib/helpers'
 import { InfoTip } from '../atoms/InfoTip'
 import { ProgressBar } from '../atoms/ProgressBar'
 import { TeamBadge } from '../atoms/TeamBadge'
@@ -86,10 +86,9 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
     } catch { /* ignore */ }
     try {
       const raw = localStorage.getItem(STREAK_KEY)
-      const weeks: string[] = raw ? JSON.parse(raw) : []
-      const thisWeek = getISOWeek()
-      if (!weeks.includes(thisWeek)) {
-        localStorage.setItem(STREAK_KEY, JSON.stringify([...weeks, thisWeek]))
+      const played: string[] = raw ? JSON.parse(raw) : []
+      if (!played.includes(jornada)) {
+        localStorage.setItem(STREAK_KEY, JSON.stringify([...played, jornada]))
       }
     } catch { /* ignore */ }
     onParticipation?.(jornada)
