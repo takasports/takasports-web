@@ -5,7 +5,7 @@
 // Actualiza rendimiento_auto y contexto_auto de creadores/periodistas.
 //
 // Factores actualizados:
-//   rendimiento_auto (40%) — Alcance: max(yt_subs, twitch_followers)
+//   rendimiento_auto (40%) — Alcance: max(yt_subs, twitch_followers, ig_followers)
 //                            log10-normalizado, cap 15M
 //   contexto_auto    (20%) — Presencia: nº plataformas con handle activo
 //
@@ -14,9 +14,11 @@
 //   narrativa_auto   (15%) — decay temporal (ingest-narrativa-decay.mjs)
 //
 // Fuentes:
-//   Twitch:  GQL anónimo — funciona sin ninguna API key
-//   YouTube: YouTube Data API v3 (YOUTUBE_API_KEY opcional, gratis, 10K unidades/día)
-//            Si no está configurada, se usa sólo Twitch.
+//   Twitch:    GQL anónimo — funciona sin ninguna API key
+//   YouTube:   YouTube Data API v3 (YOUTUBE_API_KEY opcional, gratis, 10K unidades/día)
+//              Si no está configurada, se usa sólo Twitch + Instagram.
+//   Instagram: Endpoint público no oficial (sin API key)
+//              Rate-limit: ~500ms entre peticiones
 //
 // Variables opcionales en .env.local:
 //   YOUTUBE_API_KEY  — https://console.cloud.google.com → YouTube Data API v3
@@ -30,6 +32,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { fileURLToPath } from 'url'
+import { execSync } from 'child_process'
 import path from 'path'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -123,6 +126,32 @@ async function fetchAllYouTubeSubs(channelIds) {
   return result
 }
 
+// ── Instagram (endpoint público no oficial) ───────────────────────
+// Usa el endpoint web de Instagram que devuelve datos públicos de perfil.
+// Rate-limit suave: 500ms entre peticiones, retry una vez si falla.
+
+// Instagram usa TLS fingerprinting que bloquea el fetch nativo de Node.js.
+// Se usa curl vía child_process (funciona en macOS/Linux; script de mantenimiento).
+function fetchInstagramFollowers(username) {
+  if (!username) return null
+  const clean = username.replace(/^@/, '').toLowerCase()
+  try {
+    const out = execSync(
+      `curl -s --max-time 8 ` +
+      `-H "User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15" ` +
+      `-H "x-ig-app-id: 936619743392459" ` +
+      `"https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(clean)}"`,
+      { encoding: 'utf8', timeout: 10000 }
+    )
+    const data = JSON.parse(out)
+    const count = data?.data?.user?.edge_followed_by?.count
+    return typeof count === 'number' && count > 0 ? count : null
+  } catch (e) {
+    if (VERBOSE) console.error(`  IG error (${clean}): ${e.message?.slice(0,80)}`)
+    return null
+  }
+}
+
 // ── Twitch via GQL anónimo ────────────────────────────────────────
 
 async function fetchTwitchFollowers(login) {
@@ -182,6 +211,17 @@ async function main() {
   const twOk = Object.values(twFollowers).filter(v => v != null).length
   console.log(`  → ${twOk}/${twLogins.length} con datos\n`)
 
+  // ── Instagram (curl, requests individuales con pausa) ────────────
+  const igLogins = entries.filter(e => e.handles?.instagram).map(e => ({ id: e.id, user: e.handles.instagram }))
+  console.log(`Fetching ${igLogins.length} perfiles Instagram (via curl)...`)
+  const igFollowers = {}
+  for (const { user } of igLogins) {
+    igFollowers[user] = fetchInstagramFollowers(user)   // sync
+    await sleep(600)  // 600ms para no disparar rate-limit
+  }
+  const igOk = Object.values(igFollowers).filter(v => v != null).length
+  console.log(`  → ${igOk}/${igLogins.length} con datos\n`)
+
   // ── Calcular scores ──────────────────────────────────────────────
   const updates = []
 
@@ -189,9 +229,10 @@ async function main() {
     const h = entry.handles ?? {}
     const activePlatforms = ['youtube', 'twitch', 'instagram', 'tiktok', 'twitter'].filter(p => h[p]).length
 
-    const yt = h.youtube ? (ytSubs[h.youtube] ?? null) : null
-    const tw = h.twitch  ? (twFollowers[h.twitch] ?? null) : null
-    const maxFollowers = Math.max(yt ?? 0, tw ?? 0)
+    const yt = h.youtube   ? (ytSubs[h.youtube]      ?? null) : null
+    const tw = h.twitch    ? (twFollowers[h.twitch]   ?? null) : null
+    const ig = h.instagram ? (igFollowers[h.instagram] ?? null) : null
+    const maxFollowers = Math.max(yt ?? 0, tw ?? 0, ig ?? 0)
 
     const newRendimiento = maxFollowers > 0 ? reachScore(maxFollowers) : null
     const newContexto    = presenceScore(activePlatforms)
@@ -199,7 +240,7 @@ async function main() {
     const fmt = n => n == null ? '    ?' : n >= 1e6 ? `${(n/1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n/1e3)}K` : String(n)
     console.log(
       `  ${entry.name.padEnd(26)}` +
-      `  YT=${fmt(yt).padStart(6)}  TW=${fmt(tw).padStart(6)}` +
+      `  YT=${fmt(yt).padStart(6)}  TW=${fmt(tw).padStart(6)}  IG=${fmt(ig).padStart(6)}` +
       `  plat=${activePlatforms}` +
       `  → rend=${newRendimiento?.toFixed(1).padStart(5) ?? ' null'}  ctx=${newContexto}`
     )
