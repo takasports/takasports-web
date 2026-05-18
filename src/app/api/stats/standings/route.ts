@@ -134,8 +134,13 @@ async function fetchFootball(slug: string, id: string, label: string): Promise<L
           value: String(Math.round(pts)),
           sub:   `${gp} PJ · ${gd >= 0 ? '+' : ''}${Math.round(gd)}`,
           trend: 'flat' as const,
-          extra: { V: String(w), E: String(d), D: String(l), GF: String(Math.round(gf)), GC: String(Math.round(gc)) },
+          extra: {
+            V: String(w), E: String(d), D: String(l),
+            GF: String(Math.round(gf)), GC: String(Math.round(gc)),
+            DG: `${gd >= 0 ? '+' : ''}${Math.round(gd)}`,
+          },
           teamId: team?.id,
+          logo: team?.id ? `https://a.espncdn.com/i/teamlogos/soccer/500/${team.id}.png` : undefined,
         }
       })
       return { id, label, rows, leagueSlug: slug }

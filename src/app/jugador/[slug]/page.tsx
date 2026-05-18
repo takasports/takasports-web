@@ -2,7 +2,8 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import type { PlayerDetail, PlayerMatch } from '@/app/api/jugador/[slug]/route'
+import type { PlayerDetail } from '@/app/api/jugador/[slug]/route'
+import type { TeamResult } from '@/app/api/team/[slug]/route'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
@@ -19,14 +20,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const title = `${player.name} · ${player.leagueLabel} | TakaSports`
   const description = `${player.name}${player.position ? ` · ${player.position}` : ''}${
     player.team ? ` · ${player.team.name}` : ''
-  } — estadísticas y últimos partidos en ${player.leagueLabel}`
+  } — estadísticas de la temporada en ${player.leagueLabel}`
   return {
     title,
     description,
     alternates: { canonical: `${SITE_URL}/jugador/${slug}` },
     openGraph: {
       title, description,
-      images: [{ url: player.headshot ?? `${SITE_URL}/taka-icon.png`, width: 200, height: 200 }],
+      images: [{ url: player.team?.logo ?? `${SITE_URL}/taka-icon.png`, width: 200, height: 200 }],
       type: 'profile', siteName: SITE_NAME,
     },
   }
@@ -54,46 +55,55 @@ function formatShortDate(iso: string): string {
   } catch { return iso }
 }
 
-// ── Match row ─────────────────────────────────────────────────────────
-function MatchRow({ m }: { m: PlayerMatch }) {
-  const resultColor = m.result === 'W' ? '#22c55e' : m.result === 'L' ? '#ef4444' : m.result === 'D' ? '#f59e0b' : undefined
+// ── Match row (player's club) ─────────────────────────────────────────
+function MatchRow({ r, teamId }: { r: TeamResult; teamId: string }) {
+  const resultColor = r.result === 'W' ? '#22c55e' : r.result === 'L' ? '#ef4444' : r.result === 'D' ? '#f59e0b' : undefined
   return (
-    <div
-      className="flex items-center gap-3 py-3 px-4 rounded-xl mb-1.5"
-      style={{ background: 'rgba(255,255,255,0.025)' }}
-    >
+    <Link href={`/partido/${r.matchRef}`}>
       <div
-        className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 text-[11px] font-black"
-        style={{
-          background: resultColor ? `${resultColor}22` : 'rgba(255,255,255,0.06)',
-          color: resultColor ?? '#5A5A6A',
-          fontFamily: 'var(--font-sport)',
-        }}
+        className="flex items-center gap-3 py-3 px-4 rounded-xl mb-1.5 transition-all hover:bg-white/5"
+        style={{ background: 'rgba(255,255,255,0.025)' }}
       >
-        {m.result ?? '•'}
+        <div
+          className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 text-[11px] font-black"
+          style={{
+            background: resultColor ? `${resultColor}22` : 'rgba(255,255,255,0.06)',
+            color: resultColor ?? '#5A5A6A',
+            fontFamily: 'var(--font-sport)',
+          }}
+        >
+          {r.result ?? '•'}
+        </div>
+        <div className="text-[11px] text-[#5A5A6A] w-16 flex-shrink-0">{formatShortDate(r.date)}</div>
+        <div className="flex-1 flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+            <span className="text-[13px] font-semibold truncate"
+              style={{ color: r.homeTeam.id === teamId ? '#fff' : '#9A9AAA' }}>
+              {r.homeTeam.abbr}
+            </span>
+            {r.homeTeam.logo && (
+              <Image src={r.homeTeam.logo} alt={r.homeTeam.abbr} width={20} height={20} unoptimized
+                style={{ objectFit: 'contain', flexShrink: 0 }} />
+            )}
+          </div>
+          <div className="flex-shrink-0 text-[14px] font-black w-14 text-center"
+            style={{ fontFamily: 'var(--font-display)', color: '#fff' }}>
+            {`${r.homeScore ?? '?'} · ${r.awayScore ?? '?'}`}
+          </div>
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            {r.awayTeam.logo && (
+              <Image src={r.awayTeam.logo} alt={r.awayTeam.abbr} width={20} height={20} unoptimized
+                style={{ objectFit: 'contain', flexShrink: 0 }} />
+            )}
+            <span className="text-[13px] font-semibold truncate"
+              style={{ color: r.awayTeam.id === teamId ? '#fff' : '#9A9AAA' }}>
+              {r.awayTeam.abbr}
+            </span>
+          </div>
+        </div>
+        <span className="text-[#3A3A4A] flex-shrink-0">›</span>
       </div>
-      <div className="text-[11px] text-[#5A5A6A] w-16 flex-shrink-0">
-        {m.date ? formatShortDate(m.date) : '—'}
-      </div>
-      <div className="flex items-center gap-1.5 flex-1 min-w-0">
-        {m.opponentLogo && (
-          <Image src={m.opponentLogo} alt={m.opponent} width={18} height={18} unoptimized
-            style={{ objectFit: 'contain', flexShrink: 0 }} />
-        )}
-        <span className="text-[13px] font-semibold truncate" style={{ color: '#9A9AAA' }}>
-          {m.homeAway === 'away' ? '@ ' : m.homeAway === 'home' ? 'vs ' : ''}{m.opponent}
-        </span>
-        {m.score && (
-          <span className="text-[12px] text-[#5A5A6A] tabular-nums flex-shrink-0">{m.score}</span>
-        )}
-      </div>
-      <div
-        className="text-[12px] font-black tabular-nums flex-shrink-0"
-        style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
-      >
-        {m.line}
-      </div>
-    </div>
+    </Link>
   )
 }
 
@@ -127,12 +137,12 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
       >
         <div
-          className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0"
+          className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0 p-2"
           style={{ background: `${accent}18` }}
         >
-          {player.headshot ? (
-            <Image src={player.headshot} alt={player.name} width={80} height={80} unoptimized
-              style={{ objectFit: 'cover' }} />
+          {player.team?.logo ? (
+            <Image src={player.team.logo} alt={player.team.name} width={56} height={56} unoptimized
+              style={{ objectFit: 'contain' }} />
           ) : (
             <span className="font-black text-3xl" style={{ color: accent, fontFamily: 'var(--font-display)' }}>
               {player.name.charAt(0)}
@@ -162,10 +172,6 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
               className="inline-flex items-center gap-1.5 mt-2 text-[12px] font-semibold transition-opacity hover:opacity-80"
               style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
             >
-              {player.team.logo && (
-                <Image src={player.team.logo} alt={player.team.name} width={16} height={16} unoptimized
-                  style={{ objectFit: 'contain' }} />
-              )}
               {player.team.name} ›
             </Link>
           )}
@@ -179,9 +185,9 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
             className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A] mb-3"
             style={{ fontFamily: 'var(--font-sport)' }}
           >
-            {player.season ? `Temporada · ${player.season}` : 'Temporada'}
+            {player.season ? `Estadísticas · ${player.season}` : 'Estadísticas de la temporada'}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
             {player.stats.map(s => (
               <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
                 <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
@@ -194,18 +200,24 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
         </>
       )}
 
-      {/* Historial */}
-      <div
-        className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A] mb-3"
-        style={{ fontFamily: 'var(--font-sport)' }}
-      >
-        Últimos partidos
-      </div>
-      {player.recent.length > 0 ? (
-        player.recent.map((m, i) => <MatchRow key={i} m={m} />)
-      ) : (
+      {/* Club recent matches */}
+      {player.recent.length > 0 && player.team && (
+        <>
+          <div
+            className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A] mb-3"
+            style={{ fontFamily: 'var(--font-sport)' }}
+          >
+            Últimos partidos · {player.team.name}
+          </div>
+          {player.recent.map(r => (
+            <MatchRow key={r.matchRef} r={r} teamId={player.team!.id} />
+          ))}
+        </>
+      )}
+
+      {player.stats.length === 0 && player.recent.length === 0 && (
         <div className="text-center py-10 text-[#5A5A6A] text-sm">
-          Sin historial de partidos disponible
+          Sin estadísticas disponibles para este jugador
         </div>
       )}
     </div>

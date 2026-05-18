@@ -333,16 +333,29 @@ function TeamContent({ team }: { team: TeamDetail }) {
       </div>
 
       {/* Quick stats bar */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-6">
         {(() => {
-          const gp = team.record?.gp ?? past.length
-          const w = team.record?.w ?? past.filter(r => r.result === 'W').length
+          const mainRow = team.leagueTable.find(r => r.isMain)
+          const gp = team.record?.gp ?? mainRow?.gp ?? past.length
+          const w = team.record?.w ?? mainRow?.w ?? past.filter(r => r.result === 'W').length
+          const pts = team.record?.pts ?? mainRow?.pts
           const winPct = gp > 0 ? `${Math.round((w / gp) * 100)}%` : '—'
-          return [
+          const ppp = pts != null && gp > 0 ? (pts / gp).toFixed(2) : '—'
+          const cells: { label: string; value: string | number }[] = [
             { label: 'Jugados', value: gp },
             { label: 'Victorias', value: w },
             { label: '% Victorias', value: winPct },
           ]
+          if (mainRow) {
+            cells.push(
+              { label: 'GF', value: mainRow.gf },
+              { label: 'GC', value: mainRow.gc },
+              { label: 'DG', value: mainRow.gd > 0 ? `+${mainRow.gd}` : mainRow.gd },
+            )
+          }
+          if (mainRow) cells.push({ label: 'Posición', value: `${mainRow.rank}º` })
+          cells.push({ label: 'Pts/partido', value: ppp })
+          return cells
         })().map(s => (
           <div
             key={s.label}

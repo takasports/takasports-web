@@ -9,8 +9,8 @@ export interface PlayerLeader {
   extra?: Record<string, string>
   /** ESPN athlete id — lets the client deep-link to /jugador. */
   playerId?: string
-  /** ESPN athlete headshot URL. */
-  headshot?: string
+  /** Club crest URL (ESPN has no soccer headshots, so we show the crest). */
+  teamLogo?: string
   /** ESPN league slug (e.g. "soccer/esp.1") for building the player slug. */
   leagueSlug?: string
 }
@@ -60,8 +60,7 @@ interface EspnLeader {
   athlete: {
     id?: string
     displayName: string
-    team?: { displayName: string }
-    headshot?: { href?: string }
+    team?: { id?: string; displayName?: string; logos?: { href?: string }[] }
   }
 }
 interface EspnStat { name: string; displayName: string; leaders: EspnLeader[] }
@@ -70,13 +69,15 @@ function parseLeaders(cat: EspnStat | undefined, leagueSlug: string): PlayerLead
   if (!cat) return []
   return cat.leaders.map(l => {
     const m = l.displayValue.match(/Matches:\s*(\d+)/)
+    const teamId = l.athlete.team?.id
     return {
       name:    l.athlete.displayName,
       team:    l.athlete.team?.displayName ?? '',
       value:   Math.round(l.value),
       matches: m ? parseInt(m[1]) : 0,
       playerId:   l.athlete.id,
-      headshot:   l.athlete.headshot?.href,
+      teamLogo:   l.athlete.team?.logos?.[0]?.href
+        ?? (teamId ? `https://a.espncdn.com/i/teamlogos/soccer/500/${teamId}.png` : undefined),
       leagueSlug,
     }
   })

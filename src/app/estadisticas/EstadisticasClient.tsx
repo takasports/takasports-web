@@ -48,8 +48,8 @@ interface StatRow {
   extra?: Record<string, string>
   /** Deep-link target (player or club detail page). */
   href?: string
-  /** Headshot URL for player rows. */
-  photo?: string
+  /** Club crest URL — shown on club table rows and as the avatar on player rows. */
+  logo?: string
 }
 
 interface StatBlock {
@@ -1272,11 +1272,10 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
             }}
           >
             <div className="w-8 flex-shrink-0 flex items-center"><MedalBadge rank={row.rank} /></div>
-            {row.photo && (
-              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0"
-                style={{ background: `${accent}1A` }}>
-                <Image src={row.photo} alt={row.name} width={32} height={32} unoptimized
-                  style={{ objectFit: 'cover', width: 32, height: 32 }} />
+            {row.logo && (
+              <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
+                <Image src={row.logo} alt={row.name} width={26} height={26} unoptimized
+                  style={{ objectFit: 'contain', width: 26, height: 26 }} />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -1473,6 +1472,7 @@ interface LiveStandingRow {
   trend?: 'up' | 'down' | 'flat'; extra: Record<string, string>
   flag?: string
   teamId?: string
+  logo?: string
 }
 interface LiveLeague { id: string; label: string; rows: LiveStandingRow[]; leagueSlug?: string }
 type FreshnessStatus = 'live' | 'stale' | 'historical' | 'unavailable'
@@ -1591,7 +1591,7 @@ function getBlockMeta(blockId: string, liveMeta?: Record<string, BlockMeta>, car
 interface PlayerLeader {
   name: string; team: string; value: number; matches: number
   extra?: Record<string, string>
-  playerId?: string; headshot?: string; leagueSlug?: string
+  playerId?: string; teamLogo?: string; leagueSlug?: string
 }
 
 // Build the /jugador deep-link slug from an ESPN league slug + athlete id.
@@ -1630,7 +1630,7 @@ function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: lg.goals.slice(0, 10).map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
-      photo: g.headshot, href: playerHref(g),
+      logo: g.teamLogo, href: playerHref(g),
     }))}}
   }
 
@@ -1645,7 +1645,7 @@ function applyLivePlayerToBlock(
       value: (g.value * 2).toString(),
       sub: `${g.value} goles`,
       trend: 'flat' as const,
-      photo: g.headshot, href: playerHref(g),
+      logo: g.teamLogo, href: playerHref(g),
     }))}}
   }
 
@@ -1658,7 +1658,7 @@ function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: source.map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
-      photo: g.headshot, href: playerHref(g),
+      logo: g.teamLogo, href: playerHref(g),
     }))}}
   }
 
@@ -1671,7 +1671,7 @@ function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: source.map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
-      photo: g.headshot, href: playerHref(g),
+      logo: g.teamLogo, href: playerHref(g),
     }))}}
   }
 
@@ -1733,6 +1733,7 @@ function toStatRows(rows: LiveStandingRow[], teamKey?: string, leagueSlug?: stri
     href: leagueSlug && r.teamId
       ? `/equipo/${leagueSlug.replace('/', '_')}_${r.teamId}`
       : undefined,
+    logo: r.logo,
   }))
 }
 

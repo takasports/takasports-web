@@ -18,6 +18,8 @@ export interface StandingRow {
   flag?: string
   /** ESPN team id — present on football standings so the row can deep-link to /equipo. */
   teamId?: string
+  /** Club crest URL — present on football standings. */
+  logo?: string
 }
 
 // Fallbacks vacíos: si el cron Supabase Y la fuente en vivo (eloratings.net,
