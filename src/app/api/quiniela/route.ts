@@ -24,12 +24,33 @@ export interface QuinielaData {
   matches: QuinielaMatch[]
 }
 
-interface CacheEntry { data: QuinielaData; ts: number }
+interface CacheEntry { data: QuinielaData; ts: number; mundial: boolean }
 let cache: CacheEntry | null = null
 const CACHE_TTL = 10 * 60_000
 
-const FOOTBALL_SOURCES = [
-  { slug: 'soccer/fifa.world',       comp: 'Mundial',       oddsKey: 'soccer_fifa_world_cup'      },
+// ─────────────────────────────────────────────────────────────────
+// Dos sistemas sobre la misma base:
+//  · MUNDIAL  → durante la ventana del torneo, la quiniela es 100%
+//               selecciones (solo soccer/fifa.world).
+//  · LIGA     → resto del año, quiniela de clubes (inicio de temporada).
+// El modo se auto-resuelve por fecha; QUINIELA_MUNDIAL=on|off fuerza.
+// Tras la final no hay que tocar nada: la ventana caduca sola.
+// ─────────────────────────────────────────────────────────────────
+const WORLD_CUP_START = Date.UTC(2026, 5, 11)        // 11 jun 2026 00:00 UTC
+const WORLD_CUP_END   = Date.UTC(2026, 6, 20)        // 20 jul 2026 00:00 UTC (final 19 jul)
+
+function isMundialMode(now = Date.now()): boolean {
+  const flag = process.env.QUINIELA_MUNDIAL?.toLowerCase()
+  if (flag === 'on')  return true
+  if (flag === 'off') return false
+  return now >= WORLD_CUP_START && now < WORLD_CUP_END
+}
+
+const WORLD_CUP_SOURCE = {
+  slug: 'soccer/fifa.world', comp: 'Mundial', oddsKey: 'soccer_fifa_world_cup',
+}
+
+const LEAGUE_SOURCES = [
   { slug: 'soccer/uefa.champions',   comp: 'Champions',     oddsKey: 'soccer_uefa_champs_league'  },
   { slug: 'soccer/uefa.europa',      comp: 'Europa League', oddsKey: 'soccer_uefa_europa_league'  },
   { slug: 'soccer/esp.copa_del_rey', comp: 'Copa del Rey',  oddsKey: null                          },
@@ -192,14 +213,14 @@ function buildJornadaLabel(matches: QuinielaMatch[]): string {
     return `Mundial · ${worldCupPhase(matches)}${dayLabel ? ` · ${dayLabel}` : ''}`
   }
 
-  // Resto de competiciones: comportamiento original (sin discriminador)
+  // Quiniela de liga: mismo discriminador por día para que la racha
+  // por jornada y la persistencia de picks funcionen también aquí.
   const comps = [...new Set(matches.map(m => m.comp))]
-  if (comps.length > 2) return `${matches.length} partidos`
-  return comps.slice(0, 2).join(' · ')
+  const base = comps.length > 2 ? `${matches.length} partidos` : comps.slice(0, 2).join(' · ')
+  return `${base}${dayLabel ? ` · ${dayLabel}` : ''}`
 }
 
 const COMP_WEIGHT: Record<string, number> = {
-  'Mundial': 6,
   'Champions': 3, 'Europa League': 2.5,
   'LaLiga': 2, 'Premier': 2, 'Bundesliga': 1.8, 'Serie A': 1.8, 'Ligue 1': 1.5,
   'Copa del Rey': 0.8,
@@ -231,10 +252,16 @@ function selectMatches(all: QuinielaMatch[]): QuinielaMatch[] {
 
 export async function GET() {
   const now = Date.now()
-  if (cache && now - cache.ts < CACHE_TTL) return NextResponse.json(cache.data)
+  const mundial = isMundialMode(now)
+  if (cache && cache.mundial === mundial && now - cache.ts < CACHE_TTL) {
+    return NextResponse.json(cache.data)
+  }
+
+  // Sistema activo: solo el Mundial durante la ventana, clubes el resto del año
+  const sources = mundial ? [WORLD_CUP_SOURCE] : LEAGUE_SOURCES
 
   const settled = await Promise.allSettled(
-    FOOTBALL_SOURCES.map(s => fetchMatchesFromLeague(s.slug, s.comp))
+    sources.map(s => fetchMatchesFromLeague(s.slug, s.comp))
   )
 
   const all: QuinielaMatch[] = []
@@ -260,7 +287,7 @@ export async function GET() {
   const apiKey = process.env.ODDS_API_KEY
   if (apiKey && deduped.length > 0) {
     const oddsKeys = [...new Set(
-      FOOTBALL_SOURCES.filter(s => s.oddsKey).map(s => s.oddsKey as string)
+      sources.filter(s => s.oddsKey).map(s => s.oddsKey as string)
     )]
     const oddsResults = await Promise.allSettled(oddsKeys.map(k => fetchOddsForSport(k, apiKey)))
     const allOddsEvents: OddsEvent[] = []
@@ -280,6 +307,6 @@ export async function GET() {
     .sort((a, b) => a.isoDate.localeCompare(b.isoDate))
 
   const data: QuinielaData = { jornada: buildJornadaLabel(selected), matches: selected }
-  cache = { data, ts: now }
+  cache = { data, ts: now, mundial }
   return NextResponse.json(data)
 }

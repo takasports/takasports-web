@@ -4,6 +4,7 @@ import type { MatchResult } from '@/lib/quiniela'
 export type { MatchResult }
 
 const FOOTBALL_SLUGS = [
+  'soccer/fifa.world',
   'soccer/uefa.champions',
   'soccer/uefa.europa',
   'soccer/esp.copa_del_rey',
