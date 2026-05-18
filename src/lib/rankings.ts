@@ -1353,6 +1353,37 @@ export const RANKING_CREADORES_WWE: RankingEntry[] = [
     insight: 'El mayor medio de wrestling en español de Europa. Fundado 2013. Miguel Pérez, ahora narrador de Netflix.',
     emoji: '🌍', country: '🇪🇸',
   },
+  // ── Creadores hispanohablantes WWE — nueva generación ──────────
+  {
+    id: 'uke-wrestling', rank: 11, name: 'Uke Wrestling', subtitle: 'WWE · TikTok (409K) / Kick',
+    sport: 'wwe', score: 69.0, trend: 'up', badge: 'Viral',
+    insight: 'El mayor creador de wrestling en español en TikTok (409K, 27.5M likes). Streamer en Kick. Cubre WWE + AEW + AAA.',
+    emoji: '📲', country: '🇪🇸',
+  },
+  {
+    id: 'wwecucu', rank: 12, name: 'WWECucu', subtitle: 'WWE · Twitch / YouTube',
+    sport: 'wwe', score: 53.0, trend: 'up',
+    insight: 'Fan WWE desde los 9 años. Reacciones en vivo a RAW, SmackDown y PPVs. Tier lists y memes del ecosistema wrestling español.',
+    emoji: '🎮', country: '🇪🇸',
+  },
+  {
+    id: 'xeniadidthat-wwe', rank: 13, name: 'XeniaDidThat', subtitle: 'WWE · YouTube / TikTok',
+    sport: 'wwe', score: 50.0, trend: 'up',
+    insight: 'Top 3 canales de wrestling en español en YouTube (SPEAKRJ 2024). El perfil femenino más destacado del wrestling en español.',
+    emoji: '✨', country: '🇪🇸',
+  },
+  {
+    id: 'twisted-banks-wwe', rank: 14, name: 'Twisted Banks', subtitle: 'WWE · YouTube / Análisis',
+    sport: 'wwe', score: 47.0, trend: 'flat',
+    insight: 'Top 4 canales de wrestling en español en YouTube (SPEAKRJ 2024). Análisis y debate del producto WWE para audiencia hispana.',
+    emoji: '🤼', country: '🇪🇸',
+  },
+  {
+    id: 'danidelasluchas', rank: 15, name: 'DanidelasLuchas', subtitle: 'Lucha Libre & WWE · TikTok',
+    sport: 'wwe', score: 50.0, trend: 'up',
+    insight: 'Creador de contenido de lucha libre y wrestling en español. Cubre WWE, AAA y lucha libre mexicana.',
+    emoji: '🥊', country: '🇲🇽',
+  },
 ]
 
 // ── ENTRENADORES — solo Fútbol y NBA ─────────────────────────────
@@ -1553,6 +1584,37 @@ export const RANKING_CREADORES: RankingEntry[] = [
     sport: 'ufc', score: 58.0, trend: 'flat',
     insight: '"El programa de MMA en español más longevo del mundo". 10+ años en activo.',
     emoji: '🎧', country: '🇪🇸',
+  },
+  // ── Fútbol — creadores digitales hispanohablantes ─────────────
+  {
+    id: 'nachohernaez', rank: 8, name: 'NachoHernaez', subtitle: 'Fútbol Retro · TikTok / YouTube',
+    sport: 'futbol', score: 62.0, trend: 'up',
+    insight: '"CEO de la nostalgia en el fútbol". Creador DAZN. ~6-7 vídeos/día en TikTok. Referente del fútbol histórico para audiencia joven.',
+    emoji: '📼', country: '🇪🇸',
+  },
+  {
+    id: 'lamediainglesa', rank: 9, name: 'La Media Inglesa', subtitle: 'Premier League · YouTube (453K)',
+    sport: 'futbol', score: 73.0, trend: 'flat',
+    insight: 'El medio de referencia en español para la Premier League. 453K suscriptores. Análisis táctico en profundidad.',
+    emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', country: '🇪🇸',
+  },
+  {
+    id: 'retrocalcioshirts', rank: 10, name: 'RetrocalcioShirts', subtitle: 'Camisetas Retro · TikTok (132K)',
+    sport: 'futbol', score: 61.0, trend: 'up',
+    insight: '132K TikTok, 82K IG. Coleccionismo y divulgación sobre camisetas retro. Colabora con COPA Football.',
+    emoji: '👕', country: '🇪🇸',
+  },
+  {
+    id: 'lorena-escoz', rank: 11, name: 'Lorena Escoz', subtitle: 'Fútbol & Lifestyle · Instagram (156K)',
+    sport: 'futbol', score: 63.0, trend: 'up',
+    insight: '156K Instagram. Colaboraciones con LaLiga. El perfil femenino más destacado del contenido deportivo digital en español.',
+    emoji: '⚽', country: '🇪🇸',
+  },
+  {
+    id: 'david-suarez-creator', rank: 12, name: 'David Suárez', subtitle: 'Humor Deportivo · YouTube (1.4M)',
+    sport: 'futbol', score: 85.0, trend: 'up', badge: 'Viral',
+    insight: '1.4M YouTube, 825K IG. Monologuista español. Participa en DWT (Jordi Wild) e Ibai. El humor deportivo más viral de España.',
+    emoji: '😂', country: '🇪🇸',
   },
 ]
 

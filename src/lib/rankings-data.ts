@@ -212,6 +212,7 @@ export async function getRanking(category: RankingCategory): Promise<RankingEntr
       .from('ranking_view')
       .select('*')
       .eq('category', category)
+      .eq('active', true)
       .order('rank', { ascending: true })
       .range(0, MAX_ROWS_PER_CAT - 1)
 
@@ -241,6 +242,7 @@ export async function getAllRankings(): Promise<Record<RankingCategory, RankingE
         .from('ranking_view')
         .select('*')
         .eq('category', cat)
+        .eq('active', true)
         .order('rank', { ascending: true })
         .range(0, MAX_ROWS_PER_CAT - 1)
         .then(({ data, error }) => ({ cat, rows: (!error && data) ? data : null }))
