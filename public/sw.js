@@ -1,5 +1,7 @@
-// TakaSports Service Worker — push notifications + offline shell (v4)
-const CACHE_NAME = 'takasports-v4'
+// TakaSports Service Worker — push notifications + offline shell (v5)
+// v5: bump de cache para purgar bundles viejos en clientes recurrentes
+// (el modal de login sin Google quedaba cacheado en PWAs instaladas).
+const CACHE_NAME = 'takasports-v5'
 const SHELL_URLS = ['/', '/quiniela', '/calendario', '/noticias']
 
 // Install: pre-cache app shell (best-effort)
