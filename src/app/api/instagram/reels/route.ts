@@ -41,10 +41,20 @@ interface CacheEntry { data: PublicReel[]; ts: number }
 // preservar el resultado bueno (~50+ reels) entre llamadas y limitar
 // presión sobre los endpoints públicos.
 const CACHE_TTL = 30 * 60 * 1000
-// Si una llamada fresca trae MENOS reels que el cache previo (porque IG
-// devolvió 401 antes de terminar de paginar), conservamos el cache mejor.
-const KEEP_BEST_CACHE = true
 let cache: CacheEntry | null = null
+
+// Timestamp (ms) del reel más reciente de un conjunto. Sirve para decidir
+// qué resultado es "mejor": el que tenga contenido más nuevo, NO el que
+// tenga más items (comparar por cantidad congelaba instancias serverless
+// con un cache grande-pero-viejo cuando IG live empezaba a dar 401).
+function newestMs(arr: PublicReel[]): number {
+  let max = 0
+  for (const r of arr) {
+    const ms = tsToMs(r.timestamp)
+    if (ms > max) max = ms
+  }
+  return max
+}
 
 // Reels: ventana de 60 días. Los reels son contenido social organico, no
 // breaking news; el usuario quiere que la sección se mantenga llena para
@@ -107,10 +117,11 @@ export async function GET() {
 
   const merged = merge(fromStorage, live, reelsData as PublicReel[])
 
-  // Si el cache previo tenía más reels (probablemente porque una corrida
-  // anterior logró paginar IG y la actual fue bloqueada por rate-limit),
-  // mantenemos el cache anterior para no degradar la página.
-  if (KEEP_BEST_CACHE && cache && cache.data.length > merged.length) {
+  // Conservamos el cache previo SOLO si su reel más reciente es más nuevo
+  // que el de la mezcla actual (p.ej. storage falló puntualmente y la mezcla
+  // quedó con datos viejos). Comparar por frescura —no por cantidad— evita
+  // que una instancia se congele con un cache grande pero obsoleto.
+  if (cache && merged.length > 0 && newestMs(cache.data) > newestMs(merged)) {
     return Response.json(cache.data)
   }
 
@@ -118,6 +129,8 @@ export async function GET() {
     cache = { data: merged, ts: now }
     return Response.json(merged)
   }
+
+  if (cache) return Response.json(cache.data)
 
   return Response.json([])
 }
