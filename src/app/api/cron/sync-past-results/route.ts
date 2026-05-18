@@ -17,7 +17,18 @@ async function handle(req: Request) {
   const secret = process.env.CRON_SECRET
   if (secret) {
     const url = new URL(req.url)
-    const provided = req.headers.get('x-cron-secret') ?? url.searchParams.get('secret')
+    // Métodos aceptados, en orden:
+    //  1. Header `x-cron-secret`  → llamadas manuales / n8n
+    //  2. Query  `?secret=`       → llamadas manuales
+    //  3. Header `Authorization: Bearer <CRON_SECRET>` → Vercel Cron
+    //     lo envía automáticamente cuando CRON_SECRET está en env.
+    const authHeader = req.headers.get('authorization') ?? ''
+    const bearer     = authHeader.toLowerCase().startsWith('bearer ')
+      ? authHeader.slice(7).trim()
+      : null
+    const provided = req.headers.get('x-cron-secret')
+      ?? url.searchParams.get('secret')
+      ?? bearer
     if (provided !== secret) {
       return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
     }
