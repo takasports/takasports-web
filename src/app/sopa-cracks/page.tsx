@@ -11,6 +11,7 @@ import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
+import MyPositionBanner from '@/components/games/MyPositionBanner'
 
 // ── Tipos y datos ─────────────────────────────────────────────
 
@@ -114,7 +115,9 @@ const PUZZLES: Puzzle[] = [
 
 const COLOR_ACCENT = '#6EE7B7'
 const COLOR_ACCENT_DIM = '#059669'
+const COLOR_HINT = '#FCD34D'
 const STORAGE_KEY = 'ts_sopa_cracks_state'
+const HINT_PENALTY_SECONDS = 30
 
 // ── Selección de puzzle por semana ────────────────────────────
 
@@ -294,9 +297,13 @@ export default function SopaCracksPage() {
   const [found, setFound] = useState<string[]>([])
   const [seconds, setSeconds] = useState(0)
   const [running, setRunning] = useState(false)
+  const [paused, setPaused] = useState(false)
   const [bestSeconds, setBestSeconds] = useState<number | null>(null)
   const [hydrated, setHydrated] = useState(false)
   const [justFound, setJustFound] = useState<string | null>(null)
+  const [hintsUsed, setHintsUsed] = useState(0)
+  const [revealedFirstCells, setRevealedFirstCells] = useState<Set<string>>(new Set())
+  const [expanded, setExpanded] = useState(false)
 
   // Selección
   const [startCell, setStartCell] = useState<Cell | null>(null)
@@ -315,10 +322,39 @@ export default function SopaCracksPage() {
 
   // Timer
   useEffect(() => {
-    if (!running) return
+    if (!running || paused) return
     const id = setInterval(() => setSeconds(s => s + 1), 1000)
     return () => clearInterval(id)
-  }, [running])
+  }, [running, paused])
+
+  const togglePause = useCallback(() => {
+    setPaused(p => {
+      const next = !p
+      trackGameEvent({ gameId: 'sopacracks', event: next ? 'abandoned' : 'started', period: currentWeekISO(), meta: { paused: next } })
+      return next
+    })
+  }, [])
+
+  const useHint = useCallback(() => {
+    if (paused) return
+    const unfound = placed.filter(p => !found.includes(p.word))
+    if (unfound.length === 0) return
+    const pick = unfound[Math.floor(Math.random() * unfound.length)]
+    const firstCell = pick.cells[0]
+    const key = `${firstCell.r},${firstCell.c}`
+    setRevealedFirstCells(prev => {
+      if (prev.has(key)) return prev
+      const next = new Set(prev); next.add(key); return next
+    })
+    setHintsUsed(h => h + 1)
+    setSeconds(s => s + HINT_PENALTY_SECONDS)
+    if (!running) {
+      trackGameStart('sopa_cracks')
+      trackGameEvent({ gameId: 'sopacracks', event: 'started', period: currentWeekISO() })
+      setRunning(true)
+    }
+    trackGameEvent({ gameId: 'sopacracks', event: 'shared', period: currentWeekISO(), meta: { kind: 'hint', word: pick.word } })
+  }, [placed, found, running, paused])
 
   // Persistir found
   useEffect(() => {
@@ -383,7 +419,7 @@ export default function SopaCracksPage() {
   }, [letters, placed, found, running, allFound])
 
   const onCellDown = (r: number, c: number) => {
-    if (allFound) return
+    if (allFound || paused) return
     if (!running) setRunning(true)
     dragging.current = true
     setStartCell({ r, c })
@@ -391,7 +427,7 @@ export default function SopaCracksPage() {
   }
 
   const onCellEnter = (r: number, c: number) => {
-    if (!dragging.current) return
+    if (!dragging.current || paused) return
     setEndCell({ r, c })
   }
 
@@ -449,6 +485,9 @@ export default function SopaCracksPage() {
     setFound([])
     setSeconds(0)
     setRunning(false)
+    setPaused(false)
+    setHintsUsed(0)
+    setRevealedFirstCells(new Set())
     wonRef.current = false
     saveState({ puzzleId: puzzle.id, found: [], bestSeconds })
   }
@@ -525,67 +564,126 @@ export default function SopaCracksPage() {
                 </div>
               </div>
 
-              <button
-                onClick={handleReset}
-                className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-colors hover:opacity-90"
-                style={{ background: 'rgba(255,255,255,0.04)', color: '#9090B0', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
-              >
-                Reiniciar
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={useHint}
+                  disabled={allFound || paused}
+                  className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-colors hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+                  style={{ background: `${COLOR_HINT}14`, color: COLOR_HINT, border: `1px solid ${COLOR_HINT}40`, fontFamily: 'var(--font-sport)' }}
+                  title={`Revela la primera letra de una palabra (+${HINT_PENALTY_SECONDS}s)`}
+                >
+                  💡 Pista +{HINT_PENALTY_SECONDS}s
+                  {hintsUsed > 0 && (
+                    <span className="text-[9px] px-1 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.4)', color: COLOR_HINT }}>×{hintsUsed}</span>
+                  )}
+                </button>
+                <button
+                  onClick={togglePause}
+                  disabled={!running || allFound}
+                  className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-colors hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: paused ? `${COLOR_ACCENT_DIM}20` : 'rgba(255,255,255,0.04)', color: paused ? COLOR_ACCENT : '#9090B0', border: paused ? `1px solid ${COLOR_ACCENT_DIM}60` : '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
+                  aria-label={paused ? 'Reanudar' : 'Pausar'}
+                >
+                  {paused ? '▶ Reanudar' : '⏸ Pausa'}
+                </button>
+                <button
+                  onClick={() => setExpanded(e => !e)}
+                  className="lg:hidden text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-colors hover:opacity-90"
+                  style={{ background: expanded ? `${COLOR_ACCENT_DIM}20` : 'rgba(255,255,255,0.04)', color: expanded ? COLOR_ACCENT : '#9090B0', border: expanded ? `1px solid ${COLOR_ACCENT_DIM}60` : '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
+                  aria-pressed={expanded}
+                  title="Cuadrícula más grande (se desplaza horizontalmente)"
+                >
+                  {expanded ? '⊟ 1×' : '⊞ Lupa'}
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-colors hover:opacity-90"
+                  style={{ background: 'rgba(255,255,255,0.04)', color: '#9090B0', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
+                >
+                  Reiniciar
+                </button>
+              </div>
             </div>
 
             {/* Grid letras */}
             <div
-              ref={gridRef}
-              className="relative z-10 select-none mx-auto"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(${puzzle.size}, minmax(0,1fr))`,
-                gap: 3,
-                width: '100%',
-                maxWidth: puzzle.size * 38,
-                touchAction: 'none',
-              }}
-              onTouchMove={onTouchMove}
-              onMouseLeave={() => { /* mantenemos selección, el mouseup global la valida */ }}
+              className="relative z-10"
+              style={expanded ? { overflowX: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' } : undefined}
             >
-              {letters.map((row, r) =>
-                row.map((ch, c) => {
-                  const key = `${r},${c}`
-                  const solved = solvedCells.has(key)
-                  const inSelection = selectionSet.has(key)
-                  return (
-                    <div
-                      key={key}
-                      data-cell={key}
-                      onMouseDown={() => onCellDown(r, c)}
-                      onMouseEnter={() => onCellEnter(r, c)}
-                      onTouchStart={(e) => { e.preventDefault(); onCellDown(r, c) }}
-                      className="aspect-square flex items-center justify-center font-black cursor-pointer transition-colors"
-                      style={{
-                        background: solved
-                          ? `${COLOR_ACCENT_DIM}40`
-                          : inSelection
-                            ? `${COLOR_ACCENT}30`
-                            : 'rgba(255,255,255,0.025)',
-                        color: solved ? COLOR_ACCENT : inSelection ? '#F8FFF4' : '#C0C0D8',
-                        border: solved
-                          ? `1px solid ${COLOR_ACCENT}50`
-                          : inSelection
-                            ? `1px solid ${COLOR_ACCENT}80`
-                            : '1px solid rgba(255,255,255,0.04)',
-                        borderRadius: 6,
-                        fontFamily: 'var(--font-display)',
-                        fontSize: 'clamp(12px, 3.2vw, 16px)',
-                        userSelect: 'none',
-                      }}
-                    >
-                      {ch}
-                    </div>
-                  )
-                })
-              )}
+              <div
+                ref={gridRef}
+                className="select-none mx-auto"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${puzzle.size}, minmax(0,1fr))`,
+                  gap: 3,
+                  width: expanded ? puzzle.size * 44 : '100%',
+                  maxWidth: expanded ? 'none' : puzzle.size * 38,
+                  minWidth: expanded ? puzzle.size * 44 : undefined,
+                  touchAction: 'none',
+                  filter: paused ? 'blur(8px)' : undefined,
+                  transition: 'filter 0.2s',
+                }}
+                onTouchMove={onTouchMove}
+                onMouseLeave={() => { /* mantenemos selección, el mouseup global la valida */ }}
+              >
+                {letters.map((row, r) =>
+                  row.map((ch, c) => {
+                    const key = `${r},${c}`
+                    const solved = solvedCells.has(key)
+                    const inSelection = selectionSet.has(key)
+                    const hinted = revealedFirstCells.has(key) && !solved
+                    return (
+                      <div
+                        key={key}
+                        data-cell={key}
+                        onMouseDown={() => onCellDown(r, c)}
+                        onMouseEnter={() => onCellEnter(r, c)}
+                        onTouchStart={(e) => { e.preventDefault(); onCellDown(r, c) }}
+                        className="aspect-square flex items-center justify-center font-black cursor-pointer transition-colors"
+                        style={{
+                          background: solved
+                            ? `${COLOR_ACCENT_DIM}40`
+                            : hinted
+                              ? `${COLOR_HINT}28`
+                              : inSelection
+                                ? `${COLOR_ACCENT}30`
+                                : 'rgba(255,255,255,0.025)',
+                          color: solved ? COLOR_ACCENT : hinted ? COLOR_HINT : inSelection ? '#F8FFF4' : '#C0C0D8',
+                          border: solved
+                            ? `1px solid ${COLOR_ACCENT}50`
+                            : hinted
+                              ? `1px solid ${COLOR_HINT}`
+                              : inSelection
+                                ? `1px solid ${COLOR_ACCENT}80`
+                                : '1px solid rgba(255,255,255,0.04)',
+                          boxShadow: hinted ? `0 0 12px ${COLOR_HINT}55` : undefined,
+                          borderRadius: 6,
+                          fontFamily: 'var(--font-display)',
+                          fontSize: expanded ? '18px' : 'clamp(12px, 3.2vw, 16px)',
+                          userSelect: 'none',
+                        }}
+                      >
+                        {ch}
+                      </div>
+                    )
+                  })
+                )}
+              </div>
             </div>
+
+            {/* Pause overlay */}
+            {paused && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center" style={{ background: 'rgba(10,20,14,0.55)', backdropFilter: 'blur(2px)' }}>
+                <button
+                  onClick={togglePause}
+                  className="px-6 py-3 rounded-xl text-[12px] font-black uppercase tracking-widest"
+                  style={{ background: `linear-gradient(135deg, ${COLOR_ACCENT_DIM}, #047857)`, color: '#F0FFF4', boxShadow: `0 8px 24px ${COLOR_ACCENT_DIM}80`, fontFamily: 'var(--font-sport)' }}
+                >
+                  ▶ Reanudar
+                </button>
+              </div>
+            )}
 
             {justFound && (
               <div
@@ -689,6 +787,12 @@ export default function SopaCracksPage() {
                 </div>
               </div>
 
+              {hintsUsed > 0 && (
+                <p className="mt-3 text-[10px] flex items-center gap-1.5" style={{ color: COLOR_HINT, fontFamily: 'var(--font-sport)' }}>
+                  💡 {hintsUsed} pista{hintsUsed > 1 ? 's' : ''} usada{hintsUsed > 1 ? 's' : ''} · +{hintsUsed * HINT_PENALTY_SECONDS}s
+                </p>
+              )}
+
               {allFound && (
                 <div
                   className="mt-4 p-3 rounded-xl text-center"
@@ -702,6 +806,27 @@ export default function SopaCracksPage() {
                   </p>
                 </div>
               )}
+            </div>
+
+            {/* Ranking semanal */}
+            <div
+              className="rounded-2xl p-5"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="section-accent" />
+                  <h3 className="section-label">Clasificación semanal</h3>
+                </div>
+                <Link
+                  href="/juegos/leaderboard/sopacracks"
+                  className="text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-80"
+                  style={{ color: COLOR_ACCENT, fontFamily: 'var(--font-sport)' }}
+                >
+                  Ver →
+                </Link>
+              </div>
+              <MyPositionBanner gameId="sopacracks" period={currentWeekISO()} accent={COLOR_ACCENT} />
             </div>
 
             {/* Próximo puzzle */}
