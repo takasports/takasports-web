@@ -75,9 +75,11 @@ function encodeCrackquiz(play: GamePlay, period: string): string {
   const correct = asNumber(p.correct)
   const total   = asNumber(p.total) || correct
   const streak  = asNumber(p.streak)
+  const combo   = asNumber(p.combo)
   const emojis  = '🟩'.repeat(correct) + '⬜'.repeat(Math.max(0, total - correct))
+  const comboTail = combo >= 2 ? `\n⚡ combo ${combo}` : ''
   const tail    = streak > 0 ? `\n🔥 racha ${streak}` : ''
-  return `Taka CrackQuiz ${period} — ${correct}/${total}\n${emojis}${tail}`
+  return `Taka CrackQuiz ${period} — ${correct}/${total}\n${emojis}${comboTail}${tail}`
 }
 
 // TakaGrid: payload { solved: bool[9] }  (3x3 row-major)

@@ -64,6 +64,58 @@ function scoreForAnswer(secondsLeft: number, correct: boolean, streakBefore: num
   return { total: base + time + streak, base, time, streak }
 }
 
+// Calendar-day difference between two YYYY-MM-DD keys (toKey - fromKey)
+function dayDiff(fromKey: string, toKey: string): number {
+  const a = new Date(fromKey.slice(0, 10) + 'T12:00:00Z').getTime()
+  const b = new Date(toKey.slice(0, 10) + 'T12:00:00Z').getTime()
+  if (Number.isNaN(a) || Number.isNaN(b)) return Number.POSITIVE_INFINITY
+  return Math.round((b - a) / 86400000)
+}
+
+// ── Sound & haptic (client-only, no assets) ───────────────────────
+
+const SOUND_KEY = 'ts_crackquiz_sound'
+let audioCtx: AudioContext | null = null
+
+function ensureAudio(): AudioContext | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    if (!Ctor) return null
+    if (!audioCtx) audioCtx = new Ctor()
+    if (audioCtx.state === 'suspended') void audioCtx.resume()
+    return audioCtx
+  } catch { return null }
+}
+
+function tone(freq: number, durMs: number, type: OscillatorType = 'sine', gain = 0.05) {
+  const ctx = audioCtx
+  if (!ctx) return
+  try {
+    const osc = ctx.createOscillator()
+    const g = ctx.createGain()
+    osc.type = type
+    osc.frequency.value = freq
+    g.gain.setValueAtTime(gain, ctx.currentTime)
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durMs / 1000)
+    osc.connect(g); g.connect(ctx.destination)
+    osc.start()
+    osc.stop(ctx.currentTime + durMs / 1000)
+  } catch { /* ignore */ }
+}
+
+function vibrate(pattern: number | number[]) {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    try { navigator.vibrate(pattern) } catch { /* ignore */ }
+  }
+}
+
+const sfx = {
+  tick:    () => tone(660, 70, 'square', 0.025),
+  correct: () => { tone(720, 90, 'sine', 0.05); setTimeout(() => tone(960, 130, 'sine', 0.05), 90); vibrate(20) },
+  wrong:   () => { tone(180, 220, 'sawtooth', 0.04); vibrate([45, 40, 45]) },
+}
+
 // ── Icons ─────────────────────────────────────────────────────────
 
 function IconCheck() {
@@ -341,20 +393,54 @@ function HistoryCalendar({ history }: { history: Array<HistoryEntry> }) {
 
 // ── Idle screen ───────────────────────────────────────────────────
 
+function SoundToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={on ? 'Desactivar sonido' : 'Activar sonido'}
+      title={on ? 'Sonido activado' : 'Sonido desactivado'}
+      className="flex items-center justify-center rounded-full transition-opacity hover:opacity-80"
+      style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: on ? '#FCD34D' : 'rgba(255,255,255,0.35)' }}
+    >
+      {on ? (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 6v4h2.5L9 13V3L5.5 6H3z" fill="currentColor" />
+          <path d="M11 5.5a3 3 0 010 5M12.5 4a5.5 5.5 0 010 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+        </svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 6v4h2.5L9 13V3L5.5 6H3z" fill="currentColor" />
+          <path d="M11 6l3 4M14 6l-3 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+        </svg>
+      )}
+    </button>
+  )
+}
+
 function IdleScreen({
   stored,
   onStart,
+  onPractice,
   alreadyPlayed,
+  soundOn,
+  onToggleSound,
 }: {
   stored: StoredState | null
   onStart: () => void
+  onPractice: () => void
   alreadyPlayed: boolean
+  soundOn: boolean
+  onToggleSound: () => void
 }) {
   // streak at risk: has active streak but hasn't played today
   const streakAtRisk = !alreadyPlayed && !!stored && stored.streak > 1
 
   return (
-    <div className="max-w-lg mx-auto text-center py-12 px-4">
+    <div className="max-w-lg mx-auto text-center py-12 px-4 relative">
+      <div className="absolute right-4 top-4">
+        <SoundToggle on={soundOn} onToggle={onToggleSound} />
+      </div>
       <div className="mb-4 flex justify-center" style={{ color: '#FCD34D' }} aria-label="trofeo">
         <TrophyIcon size={64} />
       </div>
@@ -386,7 +472,7 @@ function IdleScreen({
           <div>
             <p className="text-sm font-bold" style={{ color: '#FB923C' }}>¡Racha en riesgo!</p>
             <p className="text-xs" style={{ color: 'rgba(251,146,60,0.7)' }}>
-              Llevas {stored!.streak} días seguidos. Juega hoy para no perder la racha.
+              Llevas {stored!.streak} días seguidos. Tienes 1 día de margen, pero juega hoy para no arriesgarla.
             </p>
           </div>
         </div>
@@ -404,6 +490,16 @@ function IdleScreen({
           {stored && stored.streak > 1 && (
             <p className="mt-1 text-xs flex items-center justify-center gap-1.5" style={{ color: '#F59E0B' }}><FireIcon size={14} /> Racha activa: {stored.streak} días</p>
           )}
+          <button
+            onClick={onPractice}
+            className="mt-5 w-full py-3 rounded-xl font-semibold transition-opacity hover:opacity-80"
+            style={{ background: 'rgba(252,211,77,0.1)', color: '#FCD34D', border: '1px solid rgba(252,211,77,0.25)' }}
+          >
+            Practicar otra ronda
+          </button>
+          <p className="mt-2 text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            No cuenta para el ranking ni la racha
+          </p>
         </div>
       ) : (
         <button
@@ -442,6 +538,8 @@ function ResultScreen({
   answers,
   questions,
   stored,
+  maxCombo,
+  practice,
   onHome,
 }: {
   score: number
@@ -449,13 +547,36 @@ function ResultScreen({
   answers: Array<{ selected: number; correct: number; points: number }>
   questions: QuizQuestion[]
   stored: StoredState | null
+  maxCombo: number
+  practice: boolean
   onHome: () => void
 }) {
   const pct = correct / QUESTIONS_PER_ROUND
-  const isNewBest = stored ? score > stored.bestScore : true
+  const isNewBest = !practice && (stored ? score > stored.bestScore : true)
+
+  // Per-category breakdown → strongest / weakest
+  const catMap: Record<string, { correct: number; total: number }> = {}
+  questions.forEach((qq, i) => {
+    const a = answers[i]
+    const cat = qq.category || 'General'
+    if (!catMap[cat]) catMap[cat] = { correct: 0, total: 0 }
+    catMap[cat].total += 1
+    if (a && a.selected === qq.correctIndex) catMap[cat].correct += 1
+  })
+  const catRows = Object.entries(catMap).map(([category, v]) => ({ category, ...v, ratio: v.correct / v.total }))
+  const sorted = [...catRows].sort((a, b) => b.ratio - a.ratio)
+  const best = sorted[0]
+  const worst = sorted[sorted.length - 1]
+  const showCatInsight = catRows.length >= 2 && best && worst && best.category !== worst.category
 
   return (
     <div className="max-w-lg mx-auto py-8 px-4">
+      {practice && (
+        <div className="rounded-xl px-4 py-2.5 mb-5 text-center text-xs font-semibold"
+          style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          Ronda de práctica · no cuenta para el ranking ni la racha
+        </div>
+      )}
       {/* Header */}
       <div className="text-center mb-8">
         <div className="mb-3 flex justify-center" aria-label="resultado" style={{ color: pct >= 0.8 ? '#FB923C' : pct >= 0.5 ? '#FCD34D' : '#86EFAC' }}>
@@ -472,10 +593,31 @@ function ResultScreen({
         <p className="text-5xl font-black mb-1" style={{ color: '#FCD34D', fontFamily: 'var(--font-display)' }}>{score}</p>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>puntos</p>
         {isNewBest && <p className="mt-2 text-xs font-semibold" style={{ color: '#86EFAC' }}>✦ Nuevo récord personal</p>}
-        {stored && stored.streak > 1 && (
+        {!practice && stored && stored.streak > 1 && (
           <p className="mt-1 text-xs flex items-center justify-center gap-1.5" style={{ color: '#FCD34D' }}><FireIcon size={14} /> Racha de {stored.streak} días</p>
         )}
+        {maxCombo >= 2 && (
+          <p className="mt-1 text-xs flex items-center justify-center gap-1.5" style={{ color: '#FB923C' }}>
+            <FireIcon size={14} /> Mejor combo: {maxCombo} seguidas
+          </p>
+        )}
       </div>
+
+      {/* Category insight */}
+      {showCatInsight && (
+        <div className="rounded-2xl p-4 mb-6 grid grid-cols-2 gap-3">
+          <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(110,231,183,0.06)', border: '1px solid rgba(110,231,183,0.15)' }}>
+            <p className="text-[10px] uppercase tracking-wider font-bold mb-1" style={{ color: '#6EE7B7' }}>Más fuerte</p>
+            <p className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>{best.category}</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{best.correct}/{best.total}</p>
+          </div>
+          <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)' }}>
+            <p className="text-[10px] uppercase tracking-wider font-bold mb-1" style={{ color: '#F87171' }}>A mejorar</p>
+            <p className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>{worst.category}</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{worst.correct}/{worst.total}</p>
+          </div>
+        </div>
+      )}
 
       {/* Answer review */}
       <div className="space-y-2 mb-8">
@@ -519,7 +661,7 @@ function ResultScreen({
             game_id:     'crackquiz',
             period:      currentDayISO(),
             score,
-            payload:     { correct, total: QUESTIONS_PER_ROUND, streak: stored?.streak ?? 0 },
+            payload:     { correct, total: QUESTIONS_PER_ROUND, streak: practice ? 0 : (stored?.streak ?? 0), combo: maxCombo },
             duration_ms: null,
           } as GamePlay}
         />
@@ -550,11 +692,18 @@ export default function CrackQuizPage() {
   const [revealed, setRevealed] = useState(false)
   const [score, setScore] = useState(0)
   const [currentStreak, setCurrentStreak] = useState(0)
+  const [maxCombo, setMaxCombo] = useState(0)
   const [lastBreakdown, setLastBreakdown] = useState<ScoreBreakdown | null>(null)
   const [answers, setAnswers] = useState<Array<{ selected: number; correct: number; points: number }>>([])
+  const [soundOn, setSoundOn] = useState(false)
+  const [showIntro, setShowIntro] = useState(false)
+  const [practice, setPractice] = useState(false)
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const introTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const practiceRef = useRef(false)
+  const soundRef = useRef(false)
 
   // ── Hydrate from localStorage ──────────────────────────────────
   useEffect(() => {
@@ -562,7 +711,23 @@ export default function CrackQuizPage() {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) setStored(JSON.parse(raw) as StoredState)
     } catch { /* ignore */ }
+    try {
+      const s = localStorage.getItem(SOUND_KEY)
+      const on = s === null ? true : s === '1'
+      setSoundOn(on)
+      soundRef.current = on
+    } catch { /* ignore */ }
     setHydrated(true)
+  }, [])
+
+  const toggleSound = useCallback(() => {
+    setSoundOn(prev => {
+      const next = !prev
+      soundRef.current = next
+      try { localStorage.setItem(SOUND_KEY, next ? '1' : '0') } catch { /* ignore */ }
+      if (next) { ensureAudio(); sfx.correct() }
+      return next
+    })
   }, [])
 
   const saveStored = useCallback((next: StoredState) => {
@@ -589,31 +754,55 @@ export default function CrackQuizPage() {
     }, 1000)
   }, [clearTimer])
 
+  // Show a brief category intro, then start the question timer
+  const startQuestion = useCallback(() => {
+    if (introTimeoutRef.current) clearTimeout(introTimeoutRef.current)
+    setShowIntro(true)
+    setSecondsLeft(QUESTION_TIME)
+    introTimeoutRef.current = setTimeout(() => {
+      setShowIntro(false)
+      startTimer()
+    }, 900)
+  }, [startTimer])
+
+  // Timer warning ticks (last seconds)
+  useEffect(() => {
+    if (phase !== 'playing' || revealed || showIntro) return
+    if (secondsLeft > 0 && secondsLeft <= TIMER_WARN_AT && soundRef.current) {
+      ensureAudio()
+      sfx.tick()
+    }
+  }, [secondsLeft, phase, revealed, showIntro])
+
   // Auto-reveal on timeout
   useEffect(() => {
-    if (phase !== 'playing' || revealed) return
+    if (phase !== 'playing' || revealed || showIntro) return
     if (secondsLeft === 0) {
       handleReveal(-1)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secondsLeft, phase, revealed])
+  }, [secondsLeft, phase, revealed, showIntro])
 
   // ── Start game ─────────────────────────────────────────────────
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback((isPractice = false) => {
+    if (soundRef.current) ensureAudio()
+    practiceRef.current = isPractice
+    setPractice(isPractice)
     trackGameStart('crackquiz')
-    trackGameEvent({ gameId: 'crackquiz', event: 'started', period: currentDayISO() })
+    trackGameEvent({ gameId: 'crackquiz', event: 'started', period: currentDayISO(), meta: { practice: isPractice } })
     const qs = getDailyQuestions(QUESTIONS_PER_ROUND)
     setQuestions(qs)
     setCurrentIndex(0)
     setScore(0)
     setCurrentStreak(0)
+    setMaxCombo(0)
     setAnswers([])
     setSelectedOption(null)
     setRevealed(false)
     setLastBreakdown(null)
     setPhase('playing')
-    startTimer()
-  }, [startTimer])
+    startQuestion()
+  }, [startQuestion])
 
   // ── Answer selection ───────────────────────────────────────────
   const handleReveal = useCallback((optionIndex: number) => {
@@ -628,8 +817,17 @@ export default function CrackQuizPage() {
 
     setAnswers(prev => [...prev, { selected: optionIndex, correct: q.correctIndex, points: breakdown.total }])
     setScore(prev => prev + breakdown.total)
-    setCurrentStreak(prev => isCorrect ? prev + 1 : 0)
+    setCurrentStreak(prev => {
+      const next = isCorrect ? prev + 1 : 0
+      if (isCorrect) setMaxCombo(m => Math.max(m, next))
+      return next
+    })
     setLastBreakdown(isCorrect ? breakdown : null)
+
+    if (soundRef.current) {
+      ensureAudio()
+      ;(isCorrect ? sfx.correct : sfx.wrong)()
+    }
 
     revealTimeoutRef.current = setTimeout(() => {
       const nextIdx = currentIndex + 1
@@ -640,25 +838,40 @@ export default function CrackQuizPage() {
         setSelectedOption(null)
         setRevealed(false)
         setLastBreakdown(null)
-        startTimer()
+        startQuestion()
       }
     }, 1400)
-  }, [revealed, clearTimer, questions, currentIndex, secondsLeft, currentStreak, startTimer])
+  }, [revealed, clearTimer, questions, currentIndex, secondsLeft, currentStreak, startQuestion])
 
   // ── End of game — persist results ──────────────────────────────
   useEffect(() => {
     if (phase !== 'result') return
     const today = todayKey()
     const correct = answers.filter((a, i) => questions[i] && a.selected === questions[i].correctIndex).length
+
+    // Practice rounds never touch streak, history, leaderboard or stats
+    if (practiceRef.current) {
+      trackGameComplete({ game: 'crackquiz', score, correct, total: QUESTIONS_PER_ROUND })
+      trackGameEvent({ gameId: 'crackquiz', event: 'completed', period: currentDayISO(), meta: { score, correct, total: QUESTIONS_PER_ROUND, practice: true } })
+      return
+    }
+
     const prevBest = stored?.bestScore ?? 0
     const prevStreak = stored?.streak ?? 0
     const prevTotal = stored?.totalCorrect ?? 0
     const prevPlayed = stored?.totalPlayed ?? 0
 
-    const wasYesterday = stored?.lastPlayedDate
-      ? new Date(today).getTime() - new Date(stored.lastPlayedDate).getTime() === 86400000
-      : false
-    const newStreak = wasYesterday ? prevStreak + 1 : 1
+    // Calendar-day aware streak with a one-day grace window:
+    //  gap 1  → consecutive day, streak grows
+    //  gap 2  → missed exactly one day, streak survives (not incremented)
+    //  gap ≥3 → streak resets
+    const gap = stored?.lastPlayedDate ? dayDiff(stored.lastPlayedDate, today) : null
+    let newStreak: number
+    if (gap === null) newStreak = 1
+    else if (gap <= 0) newStreak = Math.max(prevStreak, 1)
+    else if (gap === 1) newStreak = prevStreak + 1
+    else if (gap === 2) newStreak = Math.max(prevStreak, 1)
+    else newStreak = 1
     const prevBestStreak = stored?.bestStreak ?? prevStreak
 
     // Per-category breakdown for the interactive history
@@ -690,9 +903,9 @@ export default function CrackQuizPage() {
       gameId:  'crackquiz',
       period,
       score,
-      payload: { correct, total: QUESTIONS_PER_ROUND, streak: newStreak },
+      payload: { correct, total: QUESTIONS_PER_ROUND, streak: newStreak, combo: maxCombo },
     })
-    trackGameEvent({ gameId: 'crackquiz', event: 'completed', period, meta: { score, correct, total: QUESTIONS_PER_ROUND } })
+    trackGameEvent({ gameId: 'crackquiz', event: 'completed', period, meta: { score, correct, total: QUESTIONS_PER_ROUND, combo: maxCombo } })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
@@ -701,6 +914,7 @@ export default function CrackQuizPage() {
     return () => {
       clearTimer()
       if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current)
+      if (introTimeoutRef.current) clearTimeout(introTimeoutRef.current)
     }
   }, [clearTimer])
 
@@ -756,7 +970,14 @@ export default function CrackQuizPage() {
 
         {/* Game area */}
         {phase === 'idle' && (
-          <IdleScreen stored={stored} onStart={handleStart} alreadyPlayed={alreadyPlayed} />
+          <IdleScreen
+            stored={stored}
+            onStart={() => handleStart(false)}
+            onPractice={() => handleStart(true)}
+            alreadyPlayed={alreadyPlayed}
+            soundOn={soundOn}
+            onToggleSound={toggleSound}
+          />
         )}
 
         {phase === 'playing' && q && (
@@ -768,8 +989,15 @@ export default function CrackQuizPage() {
                   {currentIndex + 1} / {QUESTIONS_PER_ROUND}
                 </span>
                 <StreakBadge streak={currentStreak} />
+                {practice && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    Práctica
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-3">
+                <SoundToggle on={soundOn} onToggle={toggleSound} />
                 <div className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: '#FCD34D' }}>
                   <IconStar />
                   <span>{score}</span>
@@ -781,25 +1009,40 @@ export default function CrackQuizPage() {
             {/* Progress */}
             <ProgressBar current={currentIndex + (revealed ? 1 : 0)} total={QUESTIONS_PER_ROUND} />
 
-            {/* Question card */}
-            <div className="rounded-2xl p-6 my-6" style={{ background: 'rgba(252,211,77,0.05)', border: '1px solid rgba(252,211,77,0.1)' }}>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(252,211,77,0.1)', color: '#FCD34D' }}>
+            {/* Question card / category intro */}
+            {showIntro ? (
+              <div
+                key={`intro-${currentIndex}`}
+                className="rounded-2xl p-10 my-6 text-center"
+                style={{ background: 'rgba(252,211,77,0.07)', border: '1px solid rgba(252,211,77,0.15)', animation: 'cq-combo-pop 0.4s ease-out' }}
+              >
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: 'var(--text-muted)' }}>
+                  Categoría
+                </p>
+                <p className="text-2xl font-black" style={{ fontFamily: 'var(--font-display)', color: '#FCD34D' }}>
                   {q.category}
-                </span>
-                <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  <IconTime />
-                  <span>{QUESTION_TIME}s</span>
-                </div>
+                </p>
               </div>
-              <p className="text-lg font-semibold leading-snug" style={{ color: 'rgba(255,255,255,0.92)' }}>
-                {q.question}
-              </p>
-            </div>
+            ) : (
+              <div className="rounded-2xl p-6 my-6" style={{ background: 'rgba(252,211,77,0.05)', border: '1px solid rgba(252,211,77,0.1)' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(252,211,77,0.1)', color: '#FCD34D' }}>
+                    {q.category}
+                  </span>
+                  <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <IconTime />
+                    <span>{QUESTION_TIME}s</span>
+                  </div>
+                </div>
+                <p className="text-lg font-semibold leading-snug" style={{ color: 'rgba(255,255,255,0.92)' }}>
+                  {q.question}
+                </p>
+              </div>
+            )}
 
             {/* Options */}
-            <div className="relative grid grid-cols-1 gap-3">
+            <div className="relative grid grid-cols-1 gap-3" style={{ visibility: showIntro ? 'hidden' : 'visible' }}>
               {revealed && lastBreakdown && <ScorePop breakdown={lastBreakdown} streak={currentStreak} />}
               {q.options.map((opt, i) => {
                 let bg = 'rgba(255,255,255,0.04)'
@@ -825,7 +1068,7 @@ export default function CrackQuizPage() {
                 return (
                   <button
                     key={i}
-                    disabled={revealed}
+                    disabled={revealed || showIntro}
                     onClick={() => handleReveal(i)}
                     className="text-left px-5 py-4 rounded-xl font-medium transition-all"
                     style={{ background: bg, border, color: textColor, cursor }}
@@ -852,25 +1095,30 @@ export default function CrackQuizPage() {
               answers={answers}
               questions={questions}
               stored={stored}
+              maxCombo={maxCombo}
+              practice={practice}
               onHome={() => setPhase('idle')}
             />
-            <PostGameResultModal
-              gameId="crackquiz"
-              period={currentDayISO()}
-              accent="#FCD34D"
-              onClose={() => { /* el modal solo se abre una vez por periodo */ }}
-              play={{
-                game_id:     'crackquiz',
-                period:      currentDayISO(),
-                score,
-                payload:     {
-                  correct: answers.filter((a, i) => questions[i] && a.selected === questions[i].correctIndex).length,
-                  total:   QUESTIONS_PER_ROUND,
-                  streak:  stored?.streak ?? 0,
-                },
-                duration_ms: null,
-              } as GamePlay}
-            />
+            {!practice && (
+              <PostGameResultModal
+                gameId="crackquiz"
+                period={currentDayISO()}
+                accent="#FCD34D"
+                onClose={() => { /* el modal solo se abre una vez por periodo */ }}
+                play={{
+                  game_id:     'crackquiz',
+                  period:      currentDayISO(),
+                  score,
+                  payload:     {
+                    correct: answers.filter((a, i) => questions[i] && a.selected === questions[i].correctIndex).length,
+                    total:   QUESTIONS_PER_ROUND,
+                    streak:  stored?.streak ?? 0,
+                    combo:   maxCombo,
+                  },
+                  duration_ms: null,
+                } as GamePlay}
+              />
+            )}
           </>
         )}
       </main>
