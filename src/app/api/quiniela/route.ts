@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { SOURCE_TZ } from '@/lib/timezone'
 import { nameMatch } from '@/lib/quiniela'
+import { adminSupabase } from '@/lib/supabase-admin'
 
 export interface QuinielaMatch {
   home: string
@@ -107,32 +108,83 @@ interface OddsEvent {
   bookmakers: { markets: { key: string; outcomes: { name: string; price: number }[] }[] }[]
 }
 
-// Caché por liga de LARGA duración. La cuota base del bookmaker apenas
-// se mueve pre-partido y además la mecánica congela la cuota al sellar,
-// así que no necesitamos refrescarla cada 30 min. Esto evita reventar
-// el free tier de the-odds-api (~500/mes): ~8 llamadas/liga/día como
-// mucho. Respuesta vacía (p. ej. cupo agotado) → caché negativa corta
-// para no spamear pero recuperarse al resetear el cupo.
+// Caché por liga de LARGA duración + COMPARTIDA entre instancias
+// (Supabase) para que serverless cold starts no multipliquen llamadas
+// a the-odds-api. ~240 req/mes en Mundial (1 oddsKey) → cabe en free.
+// Stale-on-failure: si el cupo se agota o la API falla, servimos la
+// última línea conocida (real, vieja) en vez de vacío → nunca crashea.
+// L1 (Map por instancia) reduce idas a Supabase dentro de una misma
+// instancia caliente.
 interface OddsCacheEntry { events: OddsEvent[]; ts: number; empty: boolean }
-const oddsBySport = new Map<string, OddsCacheEntry>()
+const oddsBySport = new Map<string, OddsCacheEntry>()       // L1 in-memory
 const ODDS_TTL_OK    = 3 * 3_600_000   // 3 h si hubo datos
 const ODDS_TTL_EMPTY = 20 * 60_000     // 20 min si vino vacío/erróneo
 
+async function readOddsCacheL2(oddsKey: string): Promise<OddsCacheEntry | null> {
+  const sb = adminSupabase()
+  if (!sb) return null
+  const { data } = await sb
+    .from('quiniela_odds_cache')
+    .select('events,ts,empty')
+    .eq('odds_key', oddsKey)
+    .maybeSingle()
+  if (!data) return null
+  return {
+    events: (data.events as OddsEvent[]) ?? [],
+    ts: new Date(data.ts as string).getTime(),
+    empty: !!data.empty,
+  }
+}
+
+async function writeOddsCacheL2(oddsKey: string, entry: OddsCacheEntry): Promise<void> {
+  const sb = adminSupabase()
+  if (!sb) return
+  await sb.from('quiniela_odds_cache').upsert({
+    odds_key: oddsKey,
+    events: entry.events as unknown as object,
+    ts: new Date(entry.ts).toISOString(),
+    empty: entry.empty,
+  })
+}
+
 async function fetchOddsForSport(oddsKey: string, apiKey: string): Promise<OddsEvent[]> {
   const now = Date.now()
-  const cached = oddsBySport.get(oddsKey)
-  if (cached && now - cached.ts < (cached.empty ? ODDS_TTL_EMPTY : ODDS_TTL_OK)) {
-    return cached.events
+
+  // L1: caché in-memory de la instancia (hot path).
+  const l1 = oddsBySport.get(oddsKey)
+  if (l1 && now - l1.ts < (l1.empty ? ODDS_TTL_EMPTY : ODDS_TTL_OK)) return l1.events
+
+  // L2: caché compartida en Supabase (cold start friendly).
+  const l2 = await readOddsCacheL2(oddsKey).catch(() => null)
+  if (l2 && now - l2.ts < (l2.empty ? ODDS_TTL_EMPTY : ODDS_TTL_OK)) {
+    oddsBySport.set(oddsKey, l2)
+    return l2.events
   }
+
+  // Origen: the-odds-api. Si falla y hay L2 stale → servimos lo viejo.
   const url = `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${apiKey}&regions=eu&markets=h2h&dateFormat=iso&oddsFormat=decimal`
   const res = await fetchWithRetry(url, { next: { revalidate: 300 } })
   if (!res || !res.ok) {
-    oddsBySport.set(oddsKey, { events: [], ts: now, empty: true })
+    if (l2 && l2.events.length > 0) {
+      // Stale-on-failure: línea real vieja > vacío. No reescribe ts.
+      oddsBySport.set(oddsKey, l2)
+      return l2.events
+    }
+    const empty: OddsCacheEntry = { events: [], ts: now, empty: true }
+    oddsBySport.set(oddsKey, empty)
+    writeOddsCacheL2(oddsKey, empty).catch(() => {})
     return []
   }
   let json: OddsEvent[]
   try { json = await res.json() } catch { json = [] }
-  oddsBySport.set(oddsKey, { events: json, ts: now, empty: json.length === 0 })
+  // Si vino vacío pero teníamos data buena → preferir la stale.
+  if (json.length === 0 && l2 && l2.events.length > 0) {
+    oddsBySport.set(oddsKey, l2)
+    return l2.events
+  }
+  const fresh: OddsCacheEntry = { events: json, ts: now, empty: json.length === 0 }
+  oddsBySport.set(oddsKey, fresh)
+  writeOddsCacheL2(oddsKey, fresh).catch(() => {})
   return json
 }
 
