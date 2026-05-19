@@ -152,9 +152,11 @@ async function fetchCoreLeaders(
 }
 
 async function resolveAthleteName(slug: string, id: string): Promise<string> {
+  // slug is "soccer/esp.1" → core path needs sports/<sport>/leagues/<leagueId>
+  const [sport, leagueId] = slug.split('/')
   try {
     const r = await fetch(
-      `https://sports.core.api.espn.com/v2/sports/${slug}/seasons/${SEASON_START}/athletes/${id}?lang=en`,
+      `https://sports.core.api.espn.com/v2/sports/${sport}/leagues/${leagueId}/seasons/${SEASON_START}/athletes/${id}?lang=en`,
       { next: { revalidate: 86400 } },
     )
     if (!r.ok) return ''
