@@ -26,7 +26,10 @@ export interface QuinielaData {
 
 interface CacheEntry { data: QuinielaData; ts: number; mundial: boolean }
 let cache: CacheEntry | null = null
-const CACHE_TTL = 10 * 60_000
+// 30 min: the-odds-api free tier es ~500 req/mes. Con TTL bajo + pedir
+// todas las ligas se agota en horas. Subir TTL y pedir solo las ligas
+// presentes mantiene el consumo dentro del free tier.
+const CACHE_TTL = 30 * 60_000
 
 // ─────────────────────────────────────────────────────────────────
 // Dos sistemas sobre la misma base:
@@ -286,8 +289,14 @@ export async function GET() {
   // Enriquecer con cuotas (en paralelo)
   const apiKey = process.env.ODDS_API_KEY
   if (apiKey && deduped.length > 0) {
+    // Solo pedir cuotas de las ligas que REALMENTE tienen partidos en
+    // este bloque (no las 7 siempre) → recorta drásticamente el consumo
+    // del free tier de the-odds-api.
+    const compsPresent = new Set(deduped.map(m => m.comp))
     const oddsKeys = [...new Set(
-      sources.filter(s => s.oddsKey).map(s => s.oddsKey as string)
+      sources
+        .filter(s => s.oddsKey && compsPresent.has(s.comp))
+        .map(s => s.oddsKey as string)
     )]
     const oddsResults = await Promise.allSettled(oddsKeys.map(k => fetchOddsForSport(k, apiKey)))
     const allOddsEvents: OddsEvent[] = []
