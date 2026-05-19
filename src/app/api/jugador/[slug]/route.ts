@@ -73,7 +73,71 @@ const COUNTRY_ES: Record<string, string> = {
   'United States': 'EEUU', 'Japan': 'Japón', 'Morocco': 'Marruecos', 'Nigeria': 'Nigeria',
 }
 
-// statsSummary uses English short labels — translate the common ones.
+// European season start year: Aug→May. Aug-Dec → Y; Jan-Jul → Y-1.
+function seasonStartYear(): number {
+  const now = new Date()
+  return now.getUTCMonth() >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
+}
+
+// Curated soccer season stats from ESPN Core (≈100 stats available; we surface
+// the meaningful ones). Order = display order. `core` flag = always show even
+// if 0; others are hidden when 0/absent so the card stays clean.
+const SOCCER_STAT_PICKS: { key: string; label: string; core?: boolean }[] = [
+  { key: 'appearances',      label: 'Partidos',          core: true },
+  { key: 'subAppearances',   label: 'Supl.' },
+  { key: 'minutes',          label: 'Minutos' },
+  { key: 'totalGoals',       label: 'Goles',             core: true },
+  { key: 'goalAssists',      label: 'Asistencias',       core: true },
+  { key: 'totalShots',       label: 'Tiros' },
+  { key: 'shotsOnTarget',    label: 'Tiros a puerta' },
+  { key: 'bigChanceCreated', label: 'Ocasiones creadas' },
+  { key: 'accuratePasses',   label: 'Pases acertados' },
+  { key: 'totalPasses',      label: 'Pases' },
+  { key: 'interceptions',    label: 'Intercepciones' },
+  { key: 'foulsCommitted',   label: 'Faltas' },
+  { key: 'yellowCards',      label: 'Amarillas' },
+  { key: 'redCards',         label: 'Rojas' },
+  { key: 'saves',            label: 'Paradas' },
+  { key: 'cleanSheet',       label: 'Porterías a 0' },
+]
+
+interface CoreStat { name?: string; displayValue?: string; value?: number }
+
+function buildSoccerStats(statsJson: Record<string, unknown> | null): { stats: PlayerStat[]; season?: string } {
+  const splits = asObj(statsJson?.splits)
+  const cats = asArr(splits?.categories)
+  if (!cats.length) return { stats: [] }
+  const byName = new Map<string, CoreStat>()
+  for (const c of cats)
+    for (const s of asArr(asObj(c)?.stats)) {
+      const st = asObj(s)
+      const n = asString(st?.name)
+      if (n && !byName.has(n)) byName.set(n, st as CoreStat)
+    }
+
+  const acc = byName.get('accuratePasses')?.value
+  const tot = byName.get('totalPasses')?.value
+  const passPctNum = typeof acc === 'number' && typeof tot === 'number' && tot > 0
+    ? Math.round((acc / tot) * 100) : undefined
+
+  const stats: PlayerStat[] = []
+  for (const p of SOCCER_STAT_PICKS) {
+    const s = byName.get(p.key)
+    if (!s) { continue }
+    const num = typeof s.value === 'number' ? s.value : undefined
+    if (!p.core && (num === undefined || num === 0)) continue
+    let value = s.displayValue ?? (num != null ? String(num) : '')
+    if (p.key === 'minutes' && num != null) value = String(Math.round(num))
+    if (!value) continue
+    stats.push({ label: p.label, value })
+    if (p.key === 'accuratePasses' && passPctNum != null)
+      stats.push({ label: '% Pases', value: `${passPctNum}%` })
+  }
+  const seasonObj = asObj(statsJson?.season)
+  return { stats, season: asString(seasonObj?.displayName) }
+}
+
+// statsSummary uses English short labels — translate the common ones (NBA).
 const STAT_LABEL_ES: Record<string, string> = {
   'STRT-SUBIN': 'Titular (supl.)',
   'G':          'Goles',
@@ -131,16 +195,34 @@ export async function GET(
   const citizenshipEn = asString(ath.citizenship)
   const flag = asObj(ath.flag)
 
-  // Season stats from statsSummary (the only working per-player soccer source).
-  const ss = asObj(ath.statsSummary)
-  const season = asString(ss?.displayName)
-  const stats: PlayerStat[] = asArr(ss?.statistics).flatMap(raw => {
-    const s = asObj(raw)
-    const abbr = asString(s?.shortDisplayName) ?? asString(s?.abbreviation) ?? ''
-    const value = asString(s?.displayValue)
-    if (!value) return []
-    return [{ label: STAT_LABEL_ES[abbr] ?? asString(s?.displayName) ?? abbr, value }]
-  })
+  // Season stats. Soccer → ESPN Core full per-player stats (every player who
+  // has played gets a full card, à la SofaScore). NBA → statsSummary (rich for
+  // basketball: PPG/RPG/APG…). Bio always comes from the overview above.
+  const sport = leagueSlug.split('/')[0]
+  const leagueId = leagueSlug.split('/').slice(1).join('.')
+  let stats: PlayerStat[] = []
+  let season: string | undefined
+
+  if (sport === 'soccer') {
+    const y = seasonStartYear()
+    const statsJson = await jsonFetch(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${leagueId}/seasons/${y}/types/1/athletes/${playerId}/statistics/0?lang=en`,
+      3600,
+    )
+    const built = buildSoccerStats(statsJson)
+    stats = built.stats
+    season = built.season ?? `${y}-${String((y + 1) % 100).padStart(2, '0')}`
+  } else {
+    const ss = asObj(ath.statsSummary)
+    season = asString(ss?.displayName)
+    stats = asArr(ss?.statistics).flatMap(raw => {
+      const s = asObj(raw)
+      const abbr = asString(s?.shortDisplayName) ?? asString(s?.abbreviation) ?? ''
+      const value = asString(s?.displayValue)
+      if (!value) return []
+      return [{ label: STAT_LABEL_ES[abbr] ?? asString(s?.displayName) ?? abbr, value }]
+    })
+  }
 
   // Player's club recent matches — reuse the existing team endpoint.
   let recent: TeamResult[] = []
