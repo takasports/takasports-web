@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase'
 import { trackSearch } from '@/lib/analytics'
 import type { User } from '@supabase/supabase-js'
 import { PersonIcon } from '@/components/icons/GameIcons'
+import type { SearchHit } from '@/app/api/search/players/route'
 import dynamic from 'next/dynamic'
 
 const AuthModal = dynamic(() => import('./AuthModal'), { ssr: false })
@@ -78,6 +79,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState('')
   const [articles, setArticles] = useState<SearchArticle[]>([])
   const [players, setPlayers] = useState<SearchPlayer[]>([])
+  const [espnHits, setEspnHits] = useState<SearchHit[]>([])
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -98,6 +100,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
     if (q.length < 2) {
       setArticles([])
       setPlayers([])
+      setEspnHits([])
       setLoading(false)
       return
     }
@@ -105,21 +108,23 @@ function SearchModal({ onClose }: { onClose: () => void }) {
     debounceRef.current = setTimeout(async () => {
       trackSearch(q)
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
-        if (res.ok) {
-          const data = await res.json()
-          // Support both old format (array) and new format ({ articles, players })
-          if (Array.isArray(data)) {
-            setArticles(data)
-            setPlayers([])
-          } else {
-            setArticles(data.articles ?? [])
-            setPlayers(data.players ?? [])
-          }
+        const [contentRes, espnRes] = await Promise.all([
+          fetch(`/api/search?q=${encodeURIComponent(q)}`),
+          fetch(`/api/search/players?q=${encodeURIComponent(q)}`),
+        ])
+        if (contentRes.ok) {
+          const data = await contentRes.json()
+          if (Array.isArray(data)) { setArticles(data); setPlayers([]) }
+          else { setArticles(data.articles ?? []); setPlayers(data.players ?? []) }
         }
+        if (espnRes.ok) {
+          const d = await espnRes.json()
+          setEspnHits(d.hits ?? [])
+        } else { setEspnHits([]) }
       } catch {
         setArticles([])
         setPlayers([])
+        setEspnHits([])
       } finally {
         setLoading(false)
       }
@@ -127,7 +132,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [query])
 
-  const totalResults = articles.length + players.length
+  const totalResults = articles.length + players.length + espnHits.length
 
   return (
     <div className="search-overlay" onClick={onClose} aria-hidden="true">
@@ -179,6 +184,40 @@ function SearchModal({ onClose }: { onClose: () => void }) {
           {!loading && query.trim().length < 2 && (
             <div className="px-4 py-6 text-center text-sm" style={{ color: '#3A3A4A' }}>
               Escribe al menos 2 caracteres para buscar
+            </div>
+          )}
+
+          {/* Jugadores y equipos (ESPN) — fichas con stats reales */}
+          {espnHits.length > 0 && (
+            <div className="pt-2 pb-1" style={{ borderBottom: (players.length || articles.length) ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+              <div className="px-4 pb-1">
+                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A5A6A' }}>
+                  Jugadores y equipos
+                </span>
+              </div>
+              {espnHits.map(h => (
+                <Link key={`${h.type}-${h.href}`} href={h.href} onClick={onClose}
+                  className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-white/[0.04]">
+                  {h.logo ? (
+                    <Image src={h.logo} alt="" width={22} height={22} unoptimized
+                      style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  ) : (
+                    <span className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0"
+                      style={{ background: 'rgba(124,58,237,0.18)', color: '#C4B5FD' }}>
+                      {h.name.charAt(0)}
+                    </span>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold truncate" style={{ color: '#EBEBF5' }}>{h.name}</div>
+                    <div className="text-[10px] truncate" style={{ color: '#7A7A8E' }}>{h.subtitle}</div>
+                  </div>
+                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded flex-shrink-0"
+                    style={{ background: h.type === 'team' ? 'rgba(34,197,94,0.15)' : 'rgba(124,58,237,0.18)',
+                             color: h.type === 'team' ? '#4ade80' : '#C4B5FD' }}>
+                    {h.type === 'team' ? 'Equipo' : 'Jugador'}
+                  </span>
+                </Link>
+              ))}
             </div>
           )}
 

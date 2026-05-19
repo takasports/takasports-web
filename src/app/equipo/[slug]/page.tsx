@@ -277,7 +277,16 @@ function TeamContent({ team }: { team: TeamDetail }) {
         >
           ‹ Volver
         </Link>
-        <ShareButton title={`${team.name} · ${team.leagueLabel}`} />
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/comparar-equipos?t1=${team.leagueSlug.replace('/', '_')}_${team.id}`}
+            className="text-[12px] font-bold transition-opacity hover:opacity-80"
+            style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
+          >
+            ⇄ Comparar
+          </Link>
+          <ShareButton title={`${team.name} · ${team.leagueLabel}`} />
+        </div>
       </div>
 
       {/* Team Header */}

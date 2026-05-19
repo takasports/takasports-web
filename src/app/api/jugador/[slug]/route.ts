@@ -137,7 +137,54 @@ function buildSoccerStats(statsJson: Record<string, unknown> | null): { stats: P
   return { stats, season: asString(seasonObj?.displayName) }
 }
 
-// statsSummary uses English short labels — translate the common ones (NBA).
+// NBA season starts in October. Oct-Dec → start=Y; Jan-Sep → start=Y-1.
+function nbaSeasonYear(): number {
+  const now = new Date()
+  return now.getUTCMonth() >= 9 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
+}
+
+const NBA_STAT_PICKS: { key: string; label: string; pct?: boolean; core?: boolean }[] = [
+  { key: 'gamesPlayed',    label: 'Partidos',         core: true },
+  { key: 'avgMinutes',     label: 'Min/partido' },
+  { key: 'avgPoints',      label: 'Puntos/partido',   core: true },
+  { key: 'avgRebounds',    label: 'Rebotes/partido',  core: true },
+  { key: 'avgAssists',     label: 'Asist./partido',   core: true },
+  { key: 'avgSteals',      label: 'Robos/partido' },
+  { key: 'avgBlocks',      label: 'Tapones/partido' },
+  { key: 'fieldGoalPct',   label: '% Tiros campo',   pct: true },
+  { key: 'threePointPct',  label: '% Triples',        pct: true },
+  { key: 'freeThrowPct',   label: '% T. libres',      pct: true },
+  { key: 'avgTurnovers',   label: 'Pérdidas/partido' },
+  { key: 'PER',            label: 'PER' },
+]
+
+function buildNbaStats(statsJson: Record<string, unknown> | null): { stats: PlayerStat[]; season?: string } {
+  const splits = asObj(statsJson?.splits)
+  const cats = asArr(splits?.categories)
+  if (!cats.length) return { stats: [] }
+  const byName = new Map<string, CoreStat>()
+  for (const c of cats)
+    for (const s of asArr(asObj(c)?.stats)) {
+      const st = asObj(s)
+      const n = asString(st?.name)
+      if (n && !byName.has(n)) byName.set(n, st as CoreStat)
+    }
+  const stats: PlayerStat[] = []
+  for (const p of NBA_STAT_PICKS) {
+    const s = byName.get(p.key)
+    if (!s) continue
+    const num = typeof s.value === 'number' ? s.value : undefined
+    if (!p.core && (num === undefined || num === 0)) continue
+    const value = p.pct && num != null
+      ? `${num.toFixed(1)}%`
+      : s.displayValue ?? (num != null ? String(num) : '')
+    if (!value) continue
+    stats.push({ label: p.label, value })
+  }
+  return { stats }
+}
+
+// statsSummary uses English short labels — translate the common ones (NBA fallback).
 const STAT_LABEL_ES: Record<string, string> = {
   'STRT-SUBIN': 'Titular (supl.)',
   'G':          'Goles',
@@ -221,6 +268,27 @@ export async function GET(
     const built = buildSoccerStats(statsJson)
     stats = built.stats
     season = built.season ?? `${y}-${String((y + 1) % 100).padStart(2, '0')}`
+  } else if (sport === 'basketball' && leagueId === 'nba') {
+    const y = nbaSeasonYear()
+    const statsJson = await jsonFetch(
+      `https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/${y}/types/2/athletes/${playerId}/statistics/0?lang=en`,
+      3600,
+    )
+    const built = buildNbaStats(statsJson)
+    stats = built.stats
+    season = `${y}-${String((y + 1) % 100).padStart(2, '0')} · Regular Season`
+    // Fall back to overview statsSummary if Core returned nothing (off-season).
+    if (!stats.length) {
+      const ss = asObj(ath.statsSummary)
+      season = asString(ss?.displayName) ?? season
+      stats = asArr(ss?.statistics).flatMap(raw => {
+        const s = asObj(raw)
+        const abbr = asString(s?.shortDisplayName) ?? asString(s?.abbreviation) ?? ''
+        const value = asString(s?.displayValue)
+        if (!value) return []
+        return [{ label: STAT_LABEL_ES[abbr] ?? asString(s?.displayName) ?? abbr, value }]
+      })
+    }
   } else {
     const ss = asObj(ath.statsSummary)
     season = asString(ss?.displayName)
