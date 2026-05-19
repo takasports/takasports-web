@@ -107,11 +107,33 @@ interface OddsEvent {
   bookmakers: { markets: { key: string; outcomes: { name: string; price: number }[] }[] }[]
 }
 
+// Caché por liga de LARGA duración. La cuota base del bookmaker apenas
+// se mueve pre-partido y además la mecánica congela la cuota al sellar,
+// así que no necesitamos refrescarla cada 30 min. Esto evita reventar
+// el free tier de the-odds-api (~500/mes): ~8 llamadas/liga/día como
+// mucho. Respuesta vacía (p. ej. cupo agotado) → caché negativa corta
+// para no spamear pero recuperarse al resetear el cupo.
+interface OddsCacheEntry { events: OddsEvent[]; ts: number; empty: boolean }
+const oddsBySport = new Map<string, OddsCacheEntry>()
+const ODDS_TTL_OK    = 3 * 3_600_000   // 3 h si hubo datos
+const ODDS_TTL_EMPTY = 20 * 60_000     // 20 min si vino vacío/erróneo
+
 async function fetchOddsForSport(oddsKey: string, apiKey: string): Promise<OddsEvent[]> {
+  const now = Date.now()
+  const cached = oddsBySport.get(oddsKey)
+  if (cached && now - cached.ts < (cached.empty ? ODDS_TTL_EMPTY : ODDS_TTL_OK)) {
+    return cached.events
+  }
   const url = `https://api.the-odds-api.com/v4/sports/${oddsKey}/odds/?apiKey=${apiKey}&regions=eu&markets=h2h&dateFormat=iso&oddsFormat=decimal`
   const res = await fetchWithRetry(url, { next: { revalidate: 300 } })
-  if (!res || !res.ok) return []
-  try { return await res.json() } catch { return [] }
+  if (!res || !res.ok) {
+    oddsBySport.set(oddsKey, { events: [], ts: now, empty: true })
+    return []
+  }
+  let json: OddsEvent[]
+  try { json = await res.json() } catch { json = [] }
+  oddsBySport.set(oddsKey, { events: json, ts: now, empty: json.length === 0 })
+  return json
 }
 
 function extractOdds(ev: OddsEvent): { home: number; draw: number; away: number } | undefined {
