@@ -5,15 +5,50 @@ import type { Player } from './players-catalog'
 
 export type FormationId = '4-3-3' | '4-4-2' | '3-5-2' | '4-2-3-1'
 
+// Etiqueta opcional asignada a un slot concreto del once. Si está presente,
+// el jugador colocado en ese slot debe cumplirla (además de la posición y
+// del filtro global del reto). El tag se muestra como chip junto al slot.
+export interface SlotTag {
+  id: string
+  label: string
+  emoji: string
+  match: (p: Player) => boolean
+}
+
+// Tags reutilizables — derivados de los campos disponibles en el catálogo.
+export const TAG = {
+  country: (label: string, emoji: string, countries: string[]): SlotTag => ({
+    id: `country:${countries.join(',')}`,
+    label,
+    emoji,
+    match: p => countries.includes(p.country),
+  }),
+  era: (era: 'current' | 'historic'): SlotTag => era === 'current'
+    ? { id: 'era:current', label: 'En activo', emoji: '⚡', match: p => p.era === 'current' }
+    : { id: 'era:historic', label: 'Leyenda', emoji: '🏛️', match: p => p.era === 'historic' },
+  club: (label: string, emoji: string, pattern: RegExp): SlotTag => ({
+    id: `club:${label}`,
+    label,
+    emoji,
+    match: p => pattern.test(p.club),
+  }),
+}
+
 export interface Challenge {
   id: string
   title: string
   tagline: string
   description: string
-  // Filtro opcional sobre el catálogo. Si devuelve true, el jugador es válido.
+  // Filtro global opcional sobre el catálogo (aplicado a todos los slots).
   filter?: (p: Player) => boolean
   // Formación recomendada (el usuario puede cambiarla)
   recommendedFormation: FormationId
+  // Reto con restricción por slot: cada hueco lleva su propia etiqueta.
+  // Cuando se define, la formación queda bloqueada en `recommendedFormation`
+  // para que los IDs coincidan, y se valida match por slot.
+  slotTags?: Record<string, SlotTag>
+  // Meta-regla: prohíbe colocar dos jugadores que comparten club.
+  noRepeatClub?: boolean
 }
 
 export const CHALLENGES: Challenge[] = [
@@ -95,6 +130,48 @@ export const CHALLENGES: Challenge[] = [
     description: 'Solo leyendas históricas, nada de jugadores actuales.',
     filter: p => p.era === 'historic',
     recommendedFormation: '4-4-2',
+  },
+  {
+    id: 'eleven-nations',
+    title: 'Once de 11 nacionalidades',
+    tagline: 'Un país distinto en cada posición',
+    description: 'Cada hueco está reservado a una nacionalidad concreta. Acierta los 11 sin repetir país y sin repetir club.',
+    recommendedFormation: '4-3-3',
+    noRepeatClub: true,
+    slotTags: {
+      gk:  TAG.country('Español',    '🇪🇸', ['España']),
+      lb:  TAG.country('Brasileño',  '🇧🇷', ['Brasil']),
+      cb1: TAG.country('Argentino',  '🇦🇷', ['Argentina']),
+      cb2: TAG.country('Italiano',   '🇮🇹', ['Italia']),
+      rb:  TAG.country('Inglés',     '🏴',   ['Inglaterra']),
+      cm1: TAG.country('Francés',    '🇫🇷', ['Francia']),
+      cm2: TAG.country('Alemán',     '🇩🇪', ['Alemania']),
+      cm3: TAG.country('Croata',     '🇭🇷', ['Croacia']),
+      lw:  TAG.country('Portugués',  '🇵🇹', ['Portugal']),
+      st:  TAG.country('Uruguayo',   '🇺🇾', ['Uruguay']),
+      rw:  TAG.country('Belga',      '🇧🇪', ['Bélgica']),
+    },
+  },
+  {
+    id: 'eras-mixed',
+    title: 'Once entre dos épocas',
+    tagline: 'Mitad leyendas, mitad presente',
+    description: 'Cada posición pide leyenda histórica o jugador en activo. Sin repetir club.',
+    recommendedFormation: '4-4-2',
+    noRepeatClub: true,
+    slotTags: {
+      gk:  TAG.era('historic'),
+      lb:  TAG.era('current'),
+      cb1: TAG.era('historic'),
+      cb2: TAG.era('current'),
+      rb:  TAG.era('historic'),
+      lm:  TAG.era('current'),
+      cm1: TAG.era('historic'),
+      cm2: TAG.era('current'),
+      rm:  TAG.era('historic'),
+      st1: TAG.era('current'),
+      st2: TAG.era('historic'),
+    },
   },
 ]
 

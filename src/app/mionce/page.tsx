@@ -8,7 +8,7 @@ import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { searchPlayers, getPlayerById, type Player, type PlayerPosition } from '@/lib/players-catalog'
-import { getWeeklyChallenge, type FormationId, type Challenge } from '@/lib/mionce-challenges'
+import { getWeeklyChallenge, type FormationId, type Challenge, type SlotTag } from '@/lib/mionce-challenges'
 import { CountryFlag } from '@/components/icons/GameIcons'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
@@ -426,12 +426,14 @@ function IconReset() {
 interface SearchModalProps {
   slot: SlotDef
   challenge: Challenge
+  slotTag: SlotTag | null
   excludeIds: string[]
+  excludedClubs: Set<string>
   onSelect: (player: Player) => void
   onClose: () => void
 }
 
-function PlayerSearchModal({ slot, challenge, excludeIds, onSelect, onClose }: SearchModalProps) {
+function PlayerSearchModal({ slot, challenge, slotTag, excludeIds, excludedClubs, onSelect, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -447,10 +449,12 @@ function PlayerSearchModal({ slot, challenge, excludeIds, onSelect, onClose }: S
   }, [onClose])
 
   const results = useMemo(() => {
-    const all = searchPlayers(query, { position: slot.position, excludeIds, limit: 60 })
-    if (challenge.filter) return all.filter(challenge.filter)
+    let all = searchPlayers(query, { position: slot.position, excludeIds, limit: 60 })
+    if (challenge.filter) all = all.filter(challenge.filter)
+    if (slotTag) all = all.filter(slotTag.match)
+    if (challenge.noRepeatClub && excludedClubs.size > 0) all = all.filter(p => !excludedClubs.has(p.club))
     return all
-  }, [query, slot.position, excludeIds, challenge])
+  }, [query, slot.position, excludeIds, challenge, slotTag, excludedClubs])
 
   return (
     <div
@@ -475,9 +479,21 @@ function PlayerSearchModal({ slot, challenge, excludeIds, onSelect, onClose }: S
             <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
               Buscar {slot.position === 'GK' ? 'portero' : slot.position === 'DEF' ? 'defensa' : slot.position === 'MID' ? 'centrocampista' : 'delantero'}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {challenge.title}
-            </p>
+            {slotTag ? (
+              <p className="text-xs mt-0.5 inline-flex items-center gap-1.5" style={{ color: '#F0F0F5' }}>
+                <span>{slotTag.emoji}</span>
+                <span className="font-bold">Solo {slotTag.label.toLowerCase()}</span>
+                {challenge.noRepeatClub && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(220,38,38,0.12)', color: '#FCA5A5', border: '1px solid rgba(220,38,38,0.25)' }}>
+                    sin repetir club
+                  </span>
+                )}
+              </p>
+            ) : (
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {challenge.title}
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -577,11 +593,13 @@ function PlayerSearchModal({ slot, challenge, excludeIds, onSelect, onClose }: S
 interface PitchSlotProps {
   slot: SlotDef
   player: Player | null
+  slotTag: SlotTag | null
+  isValid: boolean
   onClick: () => void
   onClear: () => void
 }
 
-function PitchSlot({ slot, player, onClick, onClear }: PitchSlotProps) {
+function PitchSlot({ slot, player, slotTag, isValid, onClick, onClear }: PitchSlotProps) {
   return (
     <div
       className="absolute -translate-x-1/2 -translate-y-1/2"
@@ -596,10 +614,12 @@ function PitchSlot({ slot, player, onClick, onClear }: PitchSlotProps) {
             <div
               className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-xs sm:text-sm font-black"
               style={{
-                background: `linear-gradient(135deg, ${ACCENT_DIM}, #1E3A8A)`,
+                background: isValid
+                  ? `linear-gradient(135deg, ${ACCENT_DIM}, #1E3A8A)`
+                  : 'linear-gradient(135deg, #7F1D1D, #450a0a)',
                 color: '#fff',
-                border: `2px solid ${ACCENT}`,
-                boxShadow: `0 4px 16px ${ACCENT_DIM}60, 0 0 0 3px rgba(0,0,0,0.4)`,
+                border: `2px solid ${isValid ? ACCENT : '#FCA5A5'}`,
+                boxShadow: `0 4px 16px ${isValid ? `${ACCENT_DIM}60` : 'rgba(220,38,38,0.5)'}, 0 0 0 3px rgba(0,0,0,0.4)`,
                 fontFamily: 'var(--font-display)',
               }}
             >
@@ -654,6 +674,21 @@ function PitchSlot({ slot, player, onClick, onClear }: PitchSlotProps) {
           >
             {slot.label}
           </span>
+          {slotTag && (
+            <span
+              className="mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-black inline-flex items-center gap-1 whitespace-nowrap"
+              style={{
+                background: 'rgba(252,211,77,0.18)',
+                color: '#FCD34D',
+                border: '1px solid rgba(252,211,77,0.35)',
+                fontFamily: 'var(--font-sport)',
+              }}
+              title={slotTag.label}
+            >
+              <span>{slotTag.emoji}</span>
+              <span className="hidden sm:inline">{slotTag.label}</span>
+            </span>
+          )}
         </button>
       )}
     </div>
@@ -662,9 +697,11 @@ function PitchSlot({ slot, player, onClick, onClear }: PitchSlotProps) {
 
 // ── Pitch ────────────────────────────────────────────────────────
 
-function Pitch({ slots, players, onSlotClick, onSlotClear }: {
+function Pitch({ slots, players, slotTags, validBySlot, onSlotClick, onSlotClear }: {
   slots: SlotDef[]
   players: Record<string, string>
+  slotTags: Record<string, SlotTag> | undefined
+  validBySlot: Record<string, boolean>
   onSlotClick: (slot: SlotDef) => void
   onSlotClear: (slotId: string) => void
 }) {
@@ -714,11 +751,14 @@ function Pitch({ slots, players, onSlotClick, onSlotClear }: {
       {slots.map(slot => {
         const playerId = players[slot.id]
         const player = playerId ? getPlayerById(playerId) ?? null : null
+        const slotTag = slotTags?.[slot.id] ?? null
         return (
           <PitchSlot
             key={slot.id}
             slot={slot}
             player={player}
+            slotTag={slotTag}
+            isValid={validBySlot[slot.id] ?? true}
             onClick={() => onSlotClick(slot)}
             onClear={() => onSlotClear(slot.id)}
           />
@@ -768,6 +808,35 @@ export default function MiOncePage() {
   const formationSlots = FORMATIONS[formation]
   const filledCount = formationSlots.filter(s => !!slots[s.id]).length
   const isComplete = filledCount === 11
+  const isTagged = !!challenge.slotTags
+  const formationLocked = isTagged
+
+  // Validez por slot (cumple posición + filtro global + tag + no-repeat-club).
+  // En modo clásico (sin slotTags) todo slot ocupado es válido por defecto.
+  const validBySlot = useMemo<Record<string, boolean>>(() => {
+    const out: Record<string, boolean> = {}
+    const seenClubs = new Map<string, string>() // club -> first slotId
+    formationSlots.forEach(s => {
+      const pid = slots[s.id]
+      if (!pid) { out[s.id] = true; return }
+      const p = getPlayerById(pid)
+      if (!p) { out[s.id] = false; return }
+      let ok = true
+      if (challenge.filter && !challenge.filter(p)) ok = false
+      const tag = challenge.slotTags?.[s.id]
+      if (tag && !tag.match(p)) ok = false
+      if (challenge.noRepeatClub) {
+        const owner = seenClubs.get(p.club)
+        if (owner && owner !== s.id) ok = false
+        seenClubs.set(p.club, s.id)
+      }
+      out[s.id] = ok
+    })
+    return out
+  }, [formationSlots, slots, challenge])
+
+  const validCount = formationSlots.filter(s => slots[s.id] && validBySlot[s.id]).length
+  const score = isTagged ? validCount * 10 : filledCount * 10
 
   const prevFilledRef = useRef(0)
   useEffect(() => {
@@ -778,16 +847,16 @@ export default function MiOncePage() {
     }
     if (!prevFilledRef.current || prevFilledRef.current < 11) {
       if (filledCount === 11) {
-        trackGameComplete({ game: 'mi_once', correct: 11, total: 11 })
-        // Sync con games-store. Score = filled * 10 (max 110); payload
-        // guarda formación y nº alineados para encoder de share.
+        trackGameComplete({ game: 'mi_once', correct: validCount, total: 11 })
+        // Sync con games-store. En modo etiquetado el score depende de los
+        // slots válidos; en clásico, de los rellenos. Payload guarda ambos.
         void recordPlay({
           gameId:  'mionce',
           period,
-          score:   filledCount * 10,
-          payload: { formation, filled: filledCount },
+          score,
+          payload: { formation, filled: filledCount, valid: validCount, tagged: isTagged },
         })
-        trackGameEvent({ gameId: 'mionce', event: 'completed', period, meta: { formation, filled: filledCount } })
+        trackGameEvent({ gameId: 'mionce', event: 'completed', period, meta: { formation, filled: filledCount, valid: validCount, tagged: isTagged } })
       }
     }
     prevFilledRef.current = filledCount
@@ -795,6 +864,22 @@ export default function MiOncePage() {
   }, [filledCount])
 
   const usedPlayerIds = useMemo(() => Object.values(slots).filter(Boolean), [slots])
+
+  // Clubes ya usados por otros slots (para meta-regla noRepeatClub).
+  const excludedClubsForActive = useMemo<Set<string>>(() => {
+    const out = new Set<string>()
+    if (!challenge.noRepeatClub || !activeSlot) return out
+    for (const s of formationSlots) {
+      if (s.id === activeSlot.id) continue
+      const pid = slots[s.id]
+      if (!pid) continue
+      const p = getPlayerById(pid)
+      if (p) out.add(p.club)
+    }
+    return out
+  }, [challenge.noRepeatClub, activeSlot, formationSlots, slots])
+
+  const activeSlotTag = activeSlot ? (challenge.slotTags?.[activeSlot.id] ?? null) : null
 
   const handleSelectPlayer = useCallback((player: Player) => {
     if (!activeSlot) return
@@ -979,11 +1064,13 @@ export default function MiOncePage() {
               </span>
               {FORMATION_LIST.map(f => {
                 const active = f === formation
+                const disabled = formationLocked && !active
                 return (
                   <button
                     key={f}
-                    onClick={() => handleChangeFormation(f)}
-                    className="flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all"
+                    onClick={() => !disabled && handleChangeFormation(f)}
+                    disabled={disabled}
+                    className="flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all disabled:cursor-not-allowed disabled:opacity-30"
                     style={{
                       background: active ? `linear-gradient(135deg, ${ACCENT_DIM}, #1E3A8A)` : 'rgba(255,255,255,0.04)',
                       color: active ? '#fff' : 'var(--text-muted)',
@@ -991,11 +1078,19 @@ export default function MiOncePage() {
                       fontFamily: 'var(--font-sport)',
                       boxShadow: active ? `0 2px 12px ${ACCENT_DIM}40` : 'none',
                     }}
+                    title={disabled ? 'Este reto bloquea la formación' : undefined}
                   >
                     {f}
                   </button>
                 )
               })}
+              {formationLocked && (
+                <span className="text-[10px] font-black uppercase tracking-widest px-2 inline-flex items-center gap-1 flex-shrink-0"
+                  style={{ color: '#FCD34D', fontFamily: 'var(--font-sport)' }}
+                >
+                  🔒 Fijada por el reto
+                </span>
+              )}
             </div>
 
             {/* Pitch */}
@@ -1004,6 +1099,8 @@ export default function MiOncePage() {
                 <Pitch
                   slots={formationSlots}
                   players={slots}
+                  slotTags={challenge.slotTags}
+                  validBySlot={validBySlot}
                   onSlotClick={setActiveSlot}
                   onSlotClear={handleClearSlot}
                 />
@@ -1047,9 +1144,27 @@ export default function MiOncePage() {
                   }}
                 />
               </div>
+              {isTagged && (
+                <div className="mt-3 flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Slots válidos</span>
+                    <span className="font-black" style={{ color: validCount === filledCount && filledCount > 0 ? '#86EFAC' : '#FCD34D', fontFamily: 'var(--font-display)' }}>
+                      {validCount}/{filledCount || 11}
+                    </span>
+                  </div>
+                  {challenge.noRepeatClub && (
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Sin repetir club</span>
+                      <span style={{ color: '#FCA5A5', fontFamily: 'var(--font-sport)' }}>obligatorio</span>
+                    </div>
+                  )}
+                </div>
+              )}
               {isComplete && (
-                <p className="mt-3 text-xs font-black" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
-                  ¡Once completo! Comparte tu alineación.
+                <p className="mt-3 text-xs font-black" style={{ color: validCount === 11 ? '#86EFAC' : ACCENT, fontFamily: 'var(--font-sport)' }}>
+                  {isTagged
+                    ? (validCount === 11 ? '¡11/11 perfecto! Comparte tu hazaña.' : `Once completo — ${validCount}/11 cumplen el reto.`)
+                    : '¡Once completo! Comparte tu alineación.'}
                 </p>
               )}
             </div>
@@ -1185,8 +1300,8 @@ export default function MiOncePage() {
           play={{
             game_id:     'mionce',
             period:      currentWeekISO(),
-            score:       filledCount * 10,
-            payload:     { formation, filled: filledCount },
+            score,
+            payload:     { formation, filled: filledCount, valid: validCount, tagged: isTagged },
             duration_ms: null,
           } as GamePlay}
         />
@@ -1197,7 +1312,9 @@ export default function MiOncePage() {
         <PlayerSearchModal
           slot={activeSlot}
           challenge={challenge}
+          slotTag={activeSlotTag}
           excludeIds={usedPlayerIds.filter(id => id !== slots[activeSlot.id])}
+          excludedClubs={excludedClubsForActive}
           onSelect={handleSelectPlayer}
           onClose={() => setActiveSlot(null)}
         />
