@@ -51,12 +51,41 @@ const FUTBOL = [
   { id: 'toto-bordieri',       score_manual: 74 },  // 17
 ]
 
-// ── UFC — boosts para nuevas incorporaciones ───────────────────────
+// ── UFC — ranking editorial completo (31 entradas) ────────────────
+// Posición 1 = score_manual 90. Los 4 creadores indicados encabezan.
+// El resto ordenado por calidad objetiva / relevancia para el público hispanohablante.
 const UFC = [
-  { id: 'geniomma',      score_manual: 78 },  // ya tenía auto≈78, se blinda
-  { id: 'imperator-mma', score_manual: 72 },  // boost desde 49
-  { id: 'greenvids-mma', score_manual: 71 },  // boost desde 52
-  { id: 'guante-a-guante',score_manual: 70 }, // boost desde 51
+  { id: 'geniomma',             score_manual: 90 },  //  1 — top creador MMA español
+  { id: 'imperator-mma',        score_manual: 89 },  //  2
+  { id: 'greenvids-mma',        score_manual: 88 },  //  3
+  { id: 'guante-a-guante',      score_manual: 87 },  //  4
+  { id: 'ilia-topuria',         score_manual: 86 },  //  5 — campeón UFC peso pluma, referente en España
+  { id: 'alex-pereira-content', score_manual: 85 },  //  6 — campeón UFC actual
+  { id: 'israel-adesanya',      score_manual: 84 },  //  7 — ex campeón, muy popular
+  { id: 'conor-mcgregor',       score_manual: 83 },  //  8 — más conocido globalmente
+  { id: 'brandon-moreno-podcast',score_manual: 82 }, //  9 — ex campeón mexicano
+  { id: 'hablemosmmachannel',   score_manual: 81 },  // 10
+  { id: 'islam-makhachev',      score_manual: 80 },  // 11 — campeón peso ligero
+  { id: 'ufc-espanol-tiktok',   score_manual: 79 },  // 12 — cuenta oficial UFC en español
+  { id: 'jaula-magazine',       score_manual: 78 },  // 13
+  { id: 'mmarc-creator',        score_manual: 77 },  // 14
+  { id: 'area-de-combate-espn', score_manual: 76 },  // 15
+  { id: 'box-azteca',           score_manual: 75 },  // 16
+  { id: 'generacionmma',        score_manual: 74 },  // 17
+  { id: 'combate-global-mx',    score_manual: 73 },  // 18
+  { id: 'impacto-mma',          score_manual: 72 },  // 19
+  { id: 'mmadictos',            score_manual: 71 },  // 20
+  { id: 'enrique-gimeno-mma',   score_manual: 70 },  // 21
+  { id: 'la-zona-de-combate',   score_manual: 69 },  // 22
+  { id: 'jiujitsu-en-espanol',  score_manual: 68 },  // 23
+  { id: 'fabricio-werdum-content',score_manual: 67 },// 24
+  { id: 'zonammaespanol',       score_manual: 66 },  // 25
+  { id: 'ufc-entre-asaltos',    score_manual: 65 },  // 26
+  { id: 'doberdan-mma',         score_manual: 64 },  // 27
+  { id: 'mma-mexico-oficial',   score_manual: 63 },  // 28
+  { id: 'fullblood-mma',        score_manual: 62 },  // 29
+  { id: 'chito-vera-content',   score_manual: 61 },  // 30
+  { id: 'zona-combate-es',      score_manual: 60 },  // 31
 ]
 
 // ── WWE — confirma y blinda el orden editorial ─────────────────────
