@@ -172,8 +172,7 @@ export async function GET(
     return NextResponse.json({ error: 'bad slug' }, { status: 400 })
   }
   const playerId   = parts[parts.length - 1]
-  const leagueSlug = parts.slice(0, -1).join('/')
-  const leagueLabel = COMP_LABELS[leagueSlug] ?? leagueSlug
+  let leagueSlug   = parts.slice(0, -1).join('/')
 
   const overviewJson = await jsonFetch(
     `https://site.web.api.espn.com/apis/common/v3/sports/${leagueSlug}/athletes/${playerId}`,
@@ -184,6 +183,16 @@ export async function GET(
   if (!ath || !asString(ath.displayName)) {
     return NextResponse.json({ error: 'not found' }, { status: 404 })
   }
+
+  // ESPN auto-resolves the player's real domestic competition in the overview's
+  // top-level `league` block (e.g. a search slug tagged "uefa.champions" still
+  // returns league.slug "esp.1"). Trust that so stats use the domestic season.
+  const sportSeg = leagueSlug.split('/')[0]
+  const ovLeague = asObj(overviewJson?.league)
+  const ovLeagueSlug = asString(ovLeague?.slug)
+  if (sportSeg === 'soccer' && ovLeagueSlug) leagueSlug = `soccer/${ovLeagueSlug}`
+  const leagueLabel =
+    COMP_LABELS[leagueSlug] ?? asString(ovLeague?.abbreviation) ?? asString(ovLeague?.name) ?? leagueSlug
 
   const team = asObj(ath.team)
   const teamId = asString(team?.id)

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SearchIcon } from '@/components/icons/GameIcons'
+import type { SearchHit } from '@/app/api/search/players/route'
 
 interface SearchableRow {
   blockId: string
@@ -55,6 +56,23 @@ export function StatsSearchModal({ open, onClose, rows, onPick }: Props) {
       .slice(0, 12)
   }, [q, rows])
 
+  // Global player/team lookup (ESPN). Debounced; navigates to the detail page.
+  const [hits, setHits] = useState<SearchHit[]>([])
+  useEffect(() => {
+    const term = q.trim()
+    if (term.length < 2) { setHits([]); return }
+    let cancelled = false
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/search/players?q=${encodeURIComponent(term)}`)
+        if (!r.ok) return
+        const d = await r.json()
+        if (!cancelled) setHits(d.hits ?? [])
+      } catch { /* ignore */ }
+    }, 250)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [q])
+
   if (!open) return null
 
   return (
@@ -79,9 +97,41 @@ export function StatsSearchModal({ open, onClose, rows, onPick }: Props) {
               Empieza a escribir un nombre, un equipo o una selección.
             </p>
           )}
-          {q.trim() !== '' && matches.length === 0 && (
+          {q.trim() !== '' && matches.length === 0 && hits.length === 0 && (
             <p className="px-4 py-6 text-center text-[11px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
               Nada encontrado para &ldquo;{q}&rdquo;.
+            </p>
+          )}
+          {hits.length > 0 && (
+            <div style={{ borderBottom: matches.length ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+              <p className="px-4 pt-3 pb-1 text-[10px] font-black uppercase tracking-widest"
+                style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                Jugadores y equipos
+              </p>
+              {hits.map((h, i) => (
+                <a key={`${h.type}-${h.href}-${i}`} href={h.href}
+                  className="block px-4 py-2.5 transition-colors hover:bg-white/[0.04]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded flex-shrink-0"
+                      style={{ background: h.type === 'team' ? 'rgba(34,197,94,0.15)' : 'rgba(124,58,237,0.18)',
+                               color: h.type === 'team' ? '#4ade80' : '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
+                      {h.type === 'team' ? 'Equipo' : 'Jugador'}
+                    </span>
+                    <span className="text-sm font-semibold truncate flex-1" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
+                      {h.name}
+                    </span>
+                  </div>
+                  <div className="text-[10px] mt-0.5" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
+                    {h.subtitle}
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+          {matches.length > 0 && (
+            <p className="px-4 pt-3 pb-1 text-[10px] font-black uppercase tracking-widest"
+              style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+              En esta página
             </p>
           )}
           {matches.map((m, i) => (
