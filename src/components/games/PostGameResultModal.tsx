@@ -45,7 +45,9 @@ function shownKey(gameId: GameId, period: string): string {
 export default function PostGameResultModal({
   gameId, period, play, accent, onClose, alwaysShow = false, leaderboardSlug,
 }: Props) {
-  const { data, loading } = useMyPosition(gameId, period)
+  // retryIfEmpty: el modal se monta a la vez que recordPlay() escribe;
+  // sin reintento mostraría copy de invitado aunque la partida se guarde.
+  const { data, loading } = useMyPosition(gameId, period, true)
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {

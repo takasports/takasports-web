@@ -127,17 +127,39 @@ export function useLeaderboard(
 
 // ── useMyPosition (independiente, ligero) ────────────────────────
 
-export function useMyPosition(gameId: GameId, period: string): { data: MyPosition; loading: boolean; refresh: () => Promise<void> } {
+/**
+ * @param retryIfEmpty  Si true, cuando la primera lectura viene sin
+ *   partida (total===0) reintenta unas veces con backoff corto. Sirve
+ *   para el modal post-partida: se monta a la vez que recordPlay() está
+ *   escribiendo, y sin reintento mostraría "sin datos / invitado"
+ *   aunque la partida sí se guarde milisegundos después.
+ */
+export function useMyPosition(
+  gameId: GameId,
+  period: string,
+  retryIfEmpty = false,
+): { data: MyPosition; loading: boolean; refresh: () => Promise<void> } {
   const [data,    setData]    = useState<MyPosition>({ play: null, position: null, total: 0 })
   const [loading, setLoading] = useState(true)
   const mounted = useRef(true)
 
   const refresh = useCallback(async () => {
-    const d = await getMyPosition(gameId, period)
-    if (!mounted.current) return
-    setData(d)
-    setLoading(false)
-  }, [gameId, period])
+    // Backoff: inmediato, +0.8s, +1.5s, +2.5s (solo si retryIfEmpty y
+    // sigue vacío — la escritura de recordPlay suele tardar <1s).
+    const delays = retryIfEmpty ? [0, 800, 1500, 2500] : [0]
+    for (let i = 0; i < delays.length; i++) {
+      if (delays[i] > 0) await new Promise(r => setTimeout(r, delays[i]))
+      if (!mounted.current) return
+      const d = await getMyPosition(gameId, period)
+      if (!mounted.current) return
+      const empty = !d.play && d.total === 0
+      if (!empty || i === delays.length - 1) {
+        setData(d)
+        setLoading(false)
+        return
+      }
+    }
+  }, [gameId, period, retryIfEmpty])
 
   useEffect(() => {
     mounted.current = true
