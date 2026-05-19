@@ -30,8 +30,8 @@ export const ALIAS_KEY = 'ts_quiniela_alias'
 // Onboarding steps
 // ─────────────────────────────────────────────────────────────────
 export const ONBOARDING_STEPS: { emoji: string; title: string; body: string; hint?: string }[] = [
-  { emoji: '🎯', title: 'Predice cada partido', body: 'Toca 1 (gana local), X (empate) o 2 (gana visitante). Cada acierto = +10🪙.', hint: 'La IA te sugiere una opción usando las cuotas reales.' },
-  { emoji: '👑', title: 'Elige tu capitán', body: 'Toca la 👑 en la tarjeta del partido que más seguro veas. Si aciertas ese, los puntos se doblan (+20🪙). Si fallas, no pasa nada.', hint: 'Solo 1 capitán por jornada · puedes cambiarlo hasta el cierre.' },
-  { emoji: '🪙', title: 'Gana monedas y pleno', body: 'Acierto = +10 · Capitán acertado = +20 · Acertar todos los partidos = +100 de bonus.', hint: 'Las monedas desbloquean comodines durante la jornada.' },
+  { emoji: '🎯', title: 'Predice cada partido', body: 'Toca L (gana local), E (empate) o V (gana visitante). Cada opción tiene su cuota: la cuota multiplica las monedas y puntos si aciertas.', hint: 'Arriesga con cuotas altas para subir más rápido.' },
+  { emoji: '👑', title: 'Elige tu capitán', body: 'Toca la 👑 en la tarjeta del partido que más seguro veas. Si aciertas ese pick, se dobla (×2) encima de la cuota. Si fallas, no pasa nada.', hint: 'Solo 1 capitán por jornada · puedes cambiarlo hasta el cierre.' },
+  { emoji: '🪙', title: 'Gana monedas y pleno', body: 'Monedas = base × cuota de tu acierto · Capitán acertado = ×2 · Acertar todos los partidos = +100 de bonus.', hint: 'Las monedas son tu progresión: cuanto más arriesgas, más subes.' },
   { emoji: '🏆', title: 'Compite con amigos', body: 'Crea una liga privada con código y compartilo. Compite cada semana en un ranking propio.', hint: 'También puedes unirte con un enlace de invitación.' },
 ]
