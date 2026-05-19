@@ -8,13 +8,14 @@ export interface SearchHit {
   logo?: string
 }
 
-// /jugador self-resolves the player's real domestic league from the ESPN
-// overview, so we accept any men's soccer competition slug here. We only
-// exclude women's / youth / college comps which we don't surface.
-function soccerOk(league: string): boolean {
-  if (!league) return false
-  return !/\.w\.|women|college|youth|u\d{2}/i.test(league)
-}
+// Curated allowlist: only top-5 European leagues + UEFA club competitions.
+// /jugador self-resolves the real domestic league from the ESPN overview, so
+// a uefa.champions-tagged Mbappé still shows LaLiga stats. Excluding cups,
+// lower divisions and women keeps the results clean and "pro".
+const SOCCER_ALLOWLIST = new Set([
+  'esp.1', 'eng.1', 'ita.1', 'ger.1', 'fra.1',
+  'uefa.champions', 'uefa.europa', 'uefa.conference',
+])
 
 function idFromUid(uid: string, kind: 'a' | 't'): string | undefined {
   const m = uid.match(new RegExp(`~${kind}:(\\d+)`))
@@ -58,7 +59,7 @@ export async function GET(req: Request) {
       if (!name || !uid) continue
 
       const supported =
-        (sport === 'soccer' && soccerOk(league)) ||
+        (sport === 'soccer' && SOCCER_ALLOWLIST.has(league)) ||
         (sport === 'basketball' && league === 'nba')
       if (!supported) continue
 
