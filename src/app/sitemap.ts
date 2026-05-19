@@ -26,8 +26,50 @@ function mostRecent(items: Array<{ publishedAt?: string; _updatedAt?: string }>)
   return max ? new Date(max) : STATIC_LASTMOD
 }
 
+// Player/team detail pages (deep, automated stat pages — high SEO value).
+async function statRoutes(): Promise<MetadataRoute.Sitemap> {
+  try {
+    const [standRes, playRes] = await Promise.all([
+      fetch(`${BASE_URL}/api/stats/standings`, { next: { revalidate: 3600 } }),
+      fetch(`${BASE_URL}/api/stats/players`, { next: { revalidate: 3600 } }),
+    ])
+    const teamUrls = new Set<string>()
+    const playerUrls = new Set<string>()
+
+    if (standRes.ok) {
+      const s = await standRes.json()
+      for (const g of s.football ?? []) {
+        const ls = g.leagueSlug as string | undefined
+        if (!ls) continue
+        for (const r of g.rows ?? []) if (r.teamId)
+          teamUrls.add(`${BASE_URL}/equipo/${ls.replace('/', '_')}_${r.teamId}`)
+      }
+      for (const r of [...(s.nbaEast ?? []), ...(s.nbaWest ?? [])])
+        if (r.teamId) teamUrls.add(`${BASE_URL}/equipo/basketball_nba_${r.teamId}`)
+    }
+    if (playRes.ok) {
+      const p = await playRes.json()
+      const push = (arr: { playerId?: string; leagueSlug?: string }[] | undefined) => {
+        for (const x of arr ?? []) if (x.playerId && x.leagueSlug)
+          playerUrls.add(`${BASE_URL}/jugador/${x.leagueSlug.replace('/', '_')}_${x.playerId}`)
+      }
+      for (const lg of p.leagues ?? []) { push(lg.goals); push(lg.assists) }
+      for (const k of Object.keys(p.combined ?? {})) push(p.combined[k])
+    }
+
+    return [
+      ...[...teamUrls].map(url => ({
+        url, lastModified: STATIC_LASTMOD, changeFrequency: 'daily' as const, priority: 0.7,
+      })),
+      ...[...playerUrls].map(url => ({
+        url, lastModified: STATIC_LASTMOD, changeFrequency: 'daily' as const, priority: 0.6,
+      })),
+    ]
+  } catch { return [] }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articles, tags, dbIds] = await Promise.all([
+  const [articles, tags, dbIds, stats] = await Promise.all([
     sanityClient.fetch<Array<{ slug: string; publishedAt: string; _updatedAt?: string; sport?: string }>>(
       `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc) {
         "slug": slug.current, publishedAt, _updatedAt, sport
@@ -35,6 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ).catch(() => []),
     sanityClient.fetch<string[]>(allTagsQuery).catch(() => [] as string[]),
     getAllEntryIdsFromDb(2000).catch(() => [] as string[]),
+    statRoutes(),
   ])
 
   const hubLastMod = mostRecent(articles)
@@ -109,5 +152,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     }))
 
-  return [...staticRoutes, ...sportRoutes, ...rankingDetailRoutes, ...articleRoutes, ...tagRoutes]
+  return [...staticRoutes, ...sportRoutes, ...rankingDetailRoutes, ...articleRoutes, ...tagRoutes, ...stats]
 }
