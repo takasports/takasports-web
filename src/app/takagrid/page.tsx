@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'react'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
-import { searchPlayers, getPlayerById, type Player } from '@/lib/players-catalog'
+import { searchPlayers, fuzzySearchPlayers, getPlayerById, type Player } from '@/lib/players-catalog'
 import { getDailyPuzzle, isValidAnswer, getValidAnswers, type CellCoord, type GridPuzzle } from '@/lib/takagrid-puzzles'
 import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag } from '@/components/icons/GameIcons'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
@@ -268,21 +268,36 @@ interface SearchModalProps {
 
 function SearchModal({ cell, puzzle, usedIds, validCount, onSelect, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('')
+  const [pending, setPending] = useState<Player | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const rowCond = puzzle.rows[cell.row]
   const colCond = puzzle.cols[cell.col]
 
   useEffect(() => {
     inputRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (pending) setPending(null)
+        else onClose()
+      }
+    }
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
-  }, [onClose])
+  }, [onClose, pending])
 
   const results = useMemo(() =>
     searchPlayers(query, { excludeIds: usedIds, limit: 40 }),
   [query, usedIds])
+
+  const fuzzyResults = useMemo(() =>
+    results.length === 0 && query.trim().length >= 3
+      ? fuzzySearchPlayers(query, { excludeIds: usedIds, limit: 5 })
+      : [],
+  [results.length, query, usedIds])
+
+  const posLabel = (p: Player['position']) =>
+    p === 'GK' ? 'Portero' : p === 'DEF' ? 'Defensa' : p === 'MID' ? 'Centrocampista' : 'Delantero'
 
   return (
     <div
@@ -347,45 +362,101 @@ function SearchModal({ cell, puzzle, usedIds, validCount, onSelect, onClose }: S
         {/* Results */}
         <div className="flex-1 overflow-y-auto px-2 pb-3">
           {results.length === 0 ? (
-            <div className="px-4 py-10 text-center">
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Sin resultados para "{query}"</p>
+            <div className="px-2 py-4">
+              <p className="text-sm text-center mb-3" style={{ color: 'var(--text-muted)' }}>
+                Sin resultados exactos para &ldquo;{query}&rdquo;
+              </p>
+              {fuzzyResults.length > 0 && (
+                <>
+                  <p className="px-2 mb-2 text-[10px] font-black uppercase tracking-widest" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+                    ¿Quisiste decir…?
+                  </p>
+                  <ul className="flex flex-col gap-1">
+                    {fuzzyResults.map(p => (
+                      <li key={p.id}>{renderPlayerRow(p, () => setPending(p), posLabel)}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
           ) : (
             <ul className="flex flex-col gap-1">
               {results.map(p => (
-                <li key={p.id}>
-                  <button
-                    onClick={() => onSelect(p)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left hover:bg-white/5"
-                  >
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-black flex-shrink-0"
-                      style={{ background: `${ACCENT_DIM}28`, color: ACCENT, border: `1px solid ${ACCENT_DIM}40`, fontFamily: 'var(--font-display)' }}
-                    >
-                      {p.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black truncate flex items-center gap-1.5" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
-                        <CountryFlag country={p.country} width={16} />
-                        <span className="truncate">{p.name}</span>
-                      </p>
-                      <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>{p.club}</p>
-                    </div>
-                    <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded flex-shrink-0" style={{
-                      background: p.era === 'current' ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.04)',
-                      color: p.era === 'current' ? '#4ade80' : '#5A5A7A',
-                      fontFamily: 'var(--font-sport)',
-                    }}>
-                      {p.era === 'current' ? 'Activo' : 'Leyenda'}
-                    </span>
-                  </button>
-                </li>
+                <li key={p.id}>{renderPlayerRow(p, () => setPending(p), posLabel)}</li>
               ))}
             </ul>
           )}
         </div>
+
+        {/* Confirmation footer */}
+        {pending && (
+          <div className="p-3 flex flex-col gap-2" style={{ borderTop: `1px solid ${ACCENT_DIM}50`, background: `${ACCENT_DIM}10` }}>
+            <p className="text-[10px] font-black uppercase tracking-widest text-center" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+              Confirmar selección · 1 intento por celda
+            </p>
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl" style={{ background: 'rgba(0,0,0,0.25)' }}>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-black flex-shrink-0"
+                style={{ background: `linear-gradient(135deg, ${ACCENT_DIM}, #9a3412)`, color: '#fff', fontFamily: 'var(--font-display)' }}>
+                {pending.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-black truncate flex items-center gap-1.5" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+                  <CountryFlag country={pending.country} width={14} />
+                  <span className="truncate">{pending.name}</span>
+                </p>
+                <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{posLabel(pending.position)} · {pending.club}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setPending(null)}
+                className="py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest"
+                style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { onSelect(pending); setPending(null) }}
+                className="py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest"
+                style={{ background: `linear-gradient(135deg, ${ACCENT_DIM}, #9a3412)`, color: '#fff', fontFamily: 'var(--font-sport)', boxShadow: `0 4px 16px ${ACCENT_DIM}40` }}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
+  )
+}
+
+function renderPlayerRow(p: Player, onClick: () => void, posLabel: (pos: Player['position']) => string) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left hover:bg-white/5"
+    >
+      <div
+        className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-black flex-shrink-0"
+        style={{ background: `${ACCENT_DIM}28`, color: ACCENT, border: `1px solid ${ACCENT_DIM}40`, fontFamily: 'var(--font-display)' }}
+      >
+        {p.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-black truncate flex items-center gap-1.5" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+          <CountryFlag country={p.country} width={16} />
+          <span className="truncate">{p.name}</span>
+        </p>
+        <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>{posLabel(p.position)} · {p.club}</p>
+      </div>
+      <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded flex-shrink-0" style={{
+        background: p.era === 'current' ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.04)',
+        color: p.era === 'current' ? '#4ade80' : '#5A5A7A',
+        fontFamily: 'var(--font-sport)',
+      }}>
+        {p.era === 'current' ? 'Activo' : 'Leyenda'}
+      </span>
+    </button>
   )
 }
 
@@ -411,9 +482,9 @@ function GridCell({ cell, onClick, isFinished }: GridCellProps) {
           style={{ background: `linear-gradient(135deg, ${ACCENT_DIM}, #9a3412)`, color: '#fff', fontFamily: 'var(--font-display)' }}>
           {player.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
         </div>
-        <p className="text-[10px] font-black leading-tight flex items-center justify-center gap-1" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+        <p className="text-[10px] font-black leading-tight flex items-center justify-center gap-1 w-full min-w-0" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
           <CountryFlag country={player.country} width={12} />
-          <span>{player.name.split(' ').slice(-1)[0]}</span>
+          <span className="truncate">{player.name.split(' ').slice(-1)[0]}</span>
         </p>
         <span className="text-[8px]" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
           <IconCheck />
@@ -788,13 +859,13 @@ export default function TakaGridPage() {
           {hydrated && (
             <div className="w-full" style={{ maxWidth: 560 }}>
               {/* Column headers */}
-              <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: 'clamp(56px,18vw,80px) 1fr 1fr 1fr' }}>
+              <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: 'clamp(46px,14vw,72px) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)' }}>
                 <div />
                 {puzzle.cols.map((col, c) => (
                   <div key={c} className="rounded-xl px-1 py-2 flex flex-col items-center justify-center text-center gap-0.5 min-h-[56px]"
                     style={{ background: `${ACCENT_DIM}12`, border: `1px solid ${ACCENT_DIM}25` }}>
                     <span className="text-base leading-none">{col.emoji}</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest leading-tight" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+                    <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest leading-tight break-words" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
                       {col.label}
                     </span>
                   </div>
@@ -803,12 +874,12 @@ export default function TakaGridPage() {
 
               {/* Rows */}
               {puzzle.rows.map((row, r) => (
-                <div key={r} className="grid gap-2 mb-2" style={{ gridTemplateColumns: 'clamp(56px,18vw,80px) 1fr 1fr 1fr' }}>
+                <div key={r} className="grid gap-2 mb-2" style={{ gridTemplateColumns: 'clamp(46px,14vw,72px) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)' }}>
                   {/* Row header */}
                   <div className="rounded-xl px-1 py-2 flex flex-col items-center justify-center text-center gap-0.5 min-h-[90px]"
                     style={{ background: `${ACCENT_DIM}12`, border: `1px solid ${ACCENT_DIM}25` }}>
                     <span className="text-base leading-none">{row.emoji}</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest leading-tight" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+                    <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest leading-tight break-words" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
                       {row.label}
                     </span>
                   </div>
@@ -832,7 +903,7 @@ export default function TakaGridPage() {
               <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 Jugadores posibles por celda
               </p>
-              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'clamp(56px,18vw,80px) 1fr 1fr 1fr' }}>
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'clamp(46px,14vw,72px) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)' }}>
                 <div />
                 {puzzle.cols.map((col, c) => (
                   <div key={c} className="text-center">
@@ -842,8 +913,8 @@ export default function TakaGridPage() {
                   </div>
                 ))}
                 {puzzle.rows.map((row, r) => (
-                  <>
-                    <div key={`row-${r}`} className="flex items-center">
+                  <Fragment key={`hint-row-${r}`}>
+                    <div className="flex items-center">
                       <span className="text-[9px] font-black uppercase" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{row.emoji}</span>
                     </div>
                     {[0, 1, 2].map(c => {
@@ -857,7 +928,7 @@ export default function TakaGridPage() {
                         </div>
                       )
                     })}
-                  </>
+                  </Fragment>
                 ))}
               </div>
               <p className="text-[9px] mt-2" style={{ color: '#2A2A40', fontFamily: 'var(--font-sport)' }}>

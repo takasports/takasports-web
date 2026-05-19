@@ -570,3 +570,59 @@ export function searchPlayers(query: string, opts: SearchOptions = {}): Player[]
 export function getPlayerById(id: string): Player | undefined {
   return PLAYERS_DEDUP.find(p => p.id === id)
 }
+
+// Levenshtein distance with early exit at `cap`
+function levenshtein(a: string, b: string, cap: number): number {
+  if (a === b) return 0
+  if (Math.abs(a.length - b.length) > cap) return cap + 1
+  const al = a.length, bl = b.length
+  if (al === 0) return bl
+  if (bl === 0) return al
+  const prev = new Array(bl + 1)
+  const curr = new Array(bl + 1)
+  for (let j = 0; j <= bl; j++) prev[j] = j
+  for (let i = 1; i <= al; i++) {
+    curr[0] = i
+    let rowMin = curr[0]
+    for (let j = 1; j <= bl; j++) {
+      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1
+      curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost)
+      if (curr[j] < rowMin) rowMin = curr[j]
+    }
+    if (rowMin > cap) return cap + 1
+    for (let j = 0; j <= bl; j++) prev[j] = curr[j]
+  }
+  return prev[bl]
+}
+
+// Fuzzy fallback for typos. Returns players whose name (or any name token) is
+// within Levenshtein distance ≤ 2 of the query. Useful when exact search yields nothing.
+export function fuzzySearchPlayers(query: string, opts: SearchOptions = {}): Player[] {
+  const q = normalize(query)
+  if (q.length < 3) return []
+  const exclude = new Set(opts.excludeIds ?? [])
+  const limit = opts.limit ?? 5
+  const cap = q.length <= 4 ? 1 : 2
+
+  const candidates = PLAYERS_DEDUP.filter(p => {
+    if (opts.position && p.position !== opts.position) return false
+    if (opts.era && p.era !== opts.era) return false
+    if (exclude.has(p.id)) return false
+    return true
+  })
+
+  const scored: Array<{ p: Player; dist: number }> = []
+  for (const p of candidates) {
+    const tokens = normalize(p.name).split(' ').filter(Boolean)
+    let best = cap + 1
+    for (const t of tokens) {
+      if (t.length < q.length - cap || t.length > q.length + cap) continue
+      const d = levenshtein(t, q, cap)
+      if (d < best) best = d
+      if (best === 0) break
+    }
+    if (best <= cap && best > 0) scored.push({ p, dist: best })
+  }
+  scored.sort((a, b) => a.dist - b.dist)
+  return scored.slice(0, limit).map(x => x.p)
+}
