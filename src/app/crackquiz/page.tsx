@@ -21,6 +21,8 @@ const QUESTION_TIME = 20        // seconds per question
 const QUESTIONS_PER_ROUND = 10  // questions per daily round
 const BASE_PTS = 10             // base points per correct answer
 const TIME_BONUS_MAX = 5        // max bonus points for fast answer
+const STREAK_BONUS_MAX = 5      // max bonus points for consecutive correct answers
+const TIMER_WARN_AT = 5         // seconds at which the timer enters warning state
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -31,17 +33,35 @@ interface StoredState {
   bestScore: number
   totalCorrect: number
   totalPlayed: number
-  history: Array<{ date: string; score: number; correct: number }>
+  history: Array<HistoryEntry>
+}
+
+interface HistoryEntry {
+  date: string
+  score: number
+  correct: number
+  cats?: Array<{ category: string; correct: number; total: number }>
 }
 
 type GamePhase = 'idle' | 'playing' | 'result'
 
 // ── Score helpers ─────────────────────────────────────────────────
 
-function scoreForAnswer(secondsLeft: number, correct: boolean): number {
-  if (!correct) return 0
-  const bonus = Math.round((secondsLeft / QUESTION_TIME) * TIME_BONUS_MAX)
-  return BASE_PTS + bonus
+interface ScoreBreakdown {
+  total: number
+  base: number
+  time: number
+  streak: number
+}
+
+// streakBefore = consecutive correct answers BEFORE this one
+function scoreForAnswer(secondsLeft: number, correct: boolean, streakBefore: number): ScoreBreakdown {
+  if (!correct) return { total: 0, base: 0, time: 0, streak: 0 }
+  const base = BASE_PTS
+  const time = Math.round((secondsLeft / QUESTION_TIME) * TIME_BONUS_MAX)
+  // Nth consecutive correct (N = streakBefore + 1): +1 from the 2nd, capped
+  const streak = Math.min(streakBefore, STREAK_BONUS_MAX)
+  return { total: base + time + streak, base, time, streak }
 }
 
 // ── Icons ─────────────────────────────────────────────────────────
@@ -98,9 +118,18 @@ function TimerRing({ seconds, total }: { seconds: number; total: number }) {
   const dash = circ * pct
 
   const color = pct > 0.5 ? '#FCD34D' : pct > 0.25 ? '#F59E0B' : '#EF4444'
+  const warning = seconds > 0 && seconds <= TIMER_WARN_AT
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 60, height: 60 }}>
+    <div
+      className="relative flex items-center justify-center"
+      style={{
+        width: 60,
+        height: 60,
+        animation: warning ? 'cq-timer-pulse 1s ease-in-out infinite' : undefined,
+      }}
+      aria-label={`${seconds} segundos restantes`}
+    >
       <svg width="60" height="60" style={{ position: 'absolute', transform: 'rotate(-90deg)' }}>
         <circle cx="30" cy="30" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
         <circle
@@ -122,11 +151,45 @@ function TimerRing({ seconds, total }: { seconds: number; total: number }) {
 
 function StreakBadge({ streak }: { streak: number }) {
   if (streak < 2) return null
+  const bonus = Math.min(streak - 1, STREAK_BONUS_MAX)
   return (
-    <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
-      style={{ background: 'rgba(252,211,77,0.1)', color: '#FCD34D', border: '1px solid rgba(252,211,77,0.2)' }}>
+    <div
+      key={streak}
+      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+      style={{
+        background: 'rgba(252,211,77,0.1)',
+        color: '#FCD34D',
+        border: '1px solid rgba(252,211,77,0.2)',
+        animation: 'cq-combo-pop 0.4s ease-out',
+      }}
+    >
       <IconFire />
-      <span>{streak} racha</span>
+      <span>x{streak}</span>
+      {bonus > 0 && <span style={{ color: '#FB923C' }}>· +{bonus}</span>}
+    </div>
+  )
+}
+
+// Floating "+pts" indicator shown briefly after a correct answer
+function ScorePop({ breakdown, streak }: { breakdown: ScoreBreakdown; streak: number }) {
+  if (breakdown.total <= 0) return null
+  return (
+    <div
+      key={`${streak}-${breakdown.total}`}
+      className="absolute left-1/2 -translate-x-1/2 -top-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-black pointer-events-none z-10"
+      style={{
+        background: 'rgba(252,211,77,0.16)',
+        color: '#FCD34D',
+        border: '1px solid rgba(252,211,77,0.3)',
+        animation: 'cq-score-float 1.2s ease-out forwards',
+      }}
+    >
+      <span>+{breakdown.total}</span>
+      {breakdown.streak > 0 && (
+        <span className="inline-flex items-center gap-0.5 text-xs" style={{ color: '#FB923C' }}>
+          <IconFire />combo
+        </span>
+      )}
     </div>
   )
 }
@@ -150,12 +213,14 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
 
 // ── History calendar ──────────────────────────────────────────────
 
-function HistoryCalendar({ history }: { history: Array<{ date: string; score: number; correct: number }> }) {
+function HistoryCalendar({ history }: { history: Array<HistoryEntry> }) {
+  const [selected, setSelected] = useState<string | null>(null)
   if (history.length === 0) return null
 
   // Build a map of date → entry
-  const byDate: Record<string, { score: number; correct: number }> = {}
+  const byDate: Record<string, HistoryEntry> = {}
   history.forEach(h => { byDate[h.date] = h })
+  const detail = selected ? byDate[selected] : null
 
   // Show last 28 days (4 weeks)
   const days: { date: string; label: string }[] = []
@@ -189,17 +254,79 @@ function HistoryCalendar({ history }: { history: Array<{ date: string; score: nu
             : pct >= 0.8 ? 'rgba(110,231,183,0.55)'
             : pct >= 0.5 ? 'rgba(252,211,77,0.50)'
             : 'rgba(248,113,113,0.45)'
-          const title = entry ? `${entry.correct}/${QUESTIONS_PER_ROUND} correctas` : ''
+          const title = entry ? `${entry.correct}/${QUESTIONS_PER_ROUND} correctas` : 'Sin jugar'
+          const isSel = selected === date
           return (
-            <div
+            <button
               key={date}
+              type="button"
               title={title}
-              className="rounded-md aspect-square"
-              style={{ background: bg, border: pct >= 0 ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.04)' }}
+              disabled={!entry}
+              onClick={() => setSelected(isSel ? null : date)}
+              className="rounded-md aspect-square transition-transform"
+              style={{
+                background: bg,
+                border: isSel
+                  ? '1px solid rgba(252,211,77,0.7)'
+                  : pct >= 0 ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.04)',
+                cursor: entry ? 'pointer' : 'default',
+                transform: isSel ? 'scale(1.12)' : undefined,
+                outline: 'none',
+              }}
+              aria-label={`${date}: ${title}`}
             />
           )
         })}
       </div>
+
+      {detail && (
+        <div
+          className="mt-4 rounded-xl p-4 text-left"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', animation: 'cq-combo-pop 0.3s ease-out' }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-bold" style={{ color: '#FCD34D' }}>
+              {new Date(selected! + 'T12:00:00Z').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              className="text-xs transition-opacity hover:opacity-70"
+              style={{ color: 'var(--text-muted)' }}
+              aria-label="Cerrar detalle"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex items-center gap-4 mb-3">
+            <span className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>
+              {detail.score} pts
+            </span>
+            <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              {detail.correct}/{QUESTIONS_PER_ROUND} correctas
+            </span>
+          </div>
+          {detail.cats && detail.cats.length > 0 ? (
+            <div className="space-y-1.5">
+              {detail.cats.map(c => (
+                <div key={c.category} className="flex items-center justify-between text-xs">
+                  <span style={{ color: 'rgba(255,255,255,0.7)' }}>{c.category}</span>
+                  <span
+                    className="font-semibold"
+                    style={{ color: c.correct === c.total ? '#6EE7B7' : c.correct === 0 ? '#F87171' : '#FCD34D' }}
+                  >
+                    {c.correct}/{c.total}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              Sin desglose por categoría para esta ronda
+            </p>
+          )}
+        </div>
+      )}
       <div className="flex items-center justify-center gap-3 mt-2">
         {[['rgba(110,231,183,0.55)', '≥8/10'], ['rgba(252,211,77,0.5)', '5–7/10'], ['rgba(248,113,113,0.45)', '≤4/10'], ['rgba(255,255,255,0.04)', 'Sin jugar']].map(([bg, label]) => (
           <div key={label} className="flex items-center gap-1">
@@ -234,8 +361,12 @@ function IdleScreen({
       <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: '#FCD34D' }}>
         CrackQuiz
       </h2>
-      <p className="mb-8" style={{ color: 'var(--text-muted)' }}>
+      <p className="mb-3" style={{ color: 'var(--text-muted)' }}>
         {QUESTIONS_PER_ROUND} preguntas · {QUESTION_TIME}s por pregunta · nueva ronda cada día
+      </p>
+      <p className="mb-8 text-xs inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+        style={{ background: 'rgba(252,211,77,0.08)', color: '#F59E0B', border: '1px solid rgba(252,211,77,0.18)' }}>
+        <FireIcon size={13} /> Encadena aciertos: cada acierto seguido suma puntos extra (hasta +{STREAK_BONUS_MAX})
       </p>
 
       {stored && (
@@ -419,6 +550,7 @@ export default function CrackQuizPage() {
   const [revealed, setRevealed] = useState(false)
   const [score, setScore] = useState(0)
   const [currentStreak, setCurrentStreak] = useState(0)
+  const [lastBreakdown, setLastBreakdown] = useState<ScoreBreakdown | null>(null)
   const [answers, setAnswers] = useState<Array<{ selected: number; correct: number; points: number }>>([])
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -478,6 +610,7 @@ export default function CrackQuizPage() {
     setAnswers([])
     setSelectedOption(null)
     setRevealed(false)
+    setLastBreakdown(null)
     setPhase('playing')
     startTimer()
   }, [startTimer])
@@ -491,11 +624,12 @@ export default function CrackQuizPage() {
 
     const q = questions[currentIndex]
     const isCorrect = optionIndex === q.correctIndex
-    const pts = scoreForAnswer(secondsLeft, isCorrect)
+    const breakdown = scoreForAnswer(secondsLeft, isCorrect, currentStreak)
 
-    setAnswers(prev => [...prev, { selected: optionIndex, correct: q.correctIndex, points: pts }])
-    setScore(prev => prev + pts)
+    setAnswers(prev => [...prev, { selected: optionIndex, correct: q.correctIndex, points: breakdown.total }])
+    setScore(prev => prev + breakdown.total)
     setCurrentStreak(prev => isCorrect ? prev + 1 : 0)
+    setLastBreakdown(isCorrect ? breakdown : null)
 
     revealTimeoutRef.current = setTimeout(() => {
       const nextIdx = currentIndex + 1
@@ -505,10 +639,11 @@ export default function CrackQuizPage() {
         setCurrentIndex(nextIdx)
         setSelectedOption(null)
         setRevealed(false)
+        setLastBreakdown(null)
         startTimer()
       }
     }, 1400)
-  }, [revealed, clearTimer, questions, currentIndex, secondsLeft, startTimer])
+  }, [revealed, clearTimer, questions, currentIndex, secondsLeft, currentStreak, startTimer])
 
   // ── End of game — persist results ──────────────────────────────
   useEffect(() => {
@@ -526,6 +661,17 @@ export default function CrackQuizPage() {
     const newStreak = wasYesterday ? prevStreak + 1 : 1
     const prevBestStreak = stored?.bestStreak ?? prevStreak
 
+    // Per-category breakdown for the interactive history
+    const catMap: Record<string, { correct: number; total: number }> = {}
+    questions.forEach((qq, i) => {
+      const a = answers[i]
+      const cat = qq.category || 'General'
+      if (!catMap[cat]) catMap[cat] = { correct: 0, total: 0 }
+      catMap[cat].total += 1
+      if (a && a.selected === qq.correctIndex) catMap[cat].correct += 1
+    })
+    const cats = Object.entries(catMap).map(([category, v]) => ({ category, correct: v.correct, total: v.total }))
+
     const next: StoredState = {
       lastPlayedDate: today,
       streak: newStreak,
@@ -533,7 +679,7 @@ export default function CrackQuizPage() {
       bestScore: Math.max(prevBest, score),
       totalCorrect: prevTotal + correct,
       totalPlayed: prevPlayed + QUESTIONS_PER_ROUND,
-      history: [{ date: today, score, correct }, ...(stored?.history ?? []).slice(0, 29)],
+      history: [{ date: today, score, correct, cats }, ...(stored?.history ?? []).slice(0, 29)],
     }
     trackGameComplete({ game: 'crackquiz', score, correct, total: QUESTIONS_PER_ROUND })
     saveStored(next)
@@ -568,6 +714,26 @@ export default function CrackQuizPage() {
 
   return (
     <>
+      <style>{`
+        @keyframes cq-timer-pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.12); }
+        }
+        @keyframes cq-combo-pop {
+          0% { transform: scale(0.7); opacity: 0; }
+          60% { transform: scale(1.12); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes cq-score-float {
+          0% { transform: translate(-50%, 6px) scale(0.8); opacity: 0; }
+          20% { transform: translate(-50%, -4px) scale(1.1); opacity: 1; }
+          80% { transform: translate(-50%, -10px) scale(1); opacity: 1; }
+          100% { transform: translate(-50%, -22px) scale(0.95); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [style*="cq-timer-pulse"], [style*="cq-combo-pop"], [style*="cq-score-float"] { animation: none !important; }
+        }
+      `}</style>
       <Header />
       <LiveStrip />
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24" style={{ paddingTop: 40 }}>
@@ -584,7 +750,7 @@ export default function CrackQuizPage() {
             CrackQuiz
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Trivia deportiva diaria · {QUESTIONS_PER_ROUND} preguntas · hasta 150 pts
+            Trivia deportiva diaria · {QUESTIONS_PER_ROUND} preguntas · combo de racha
           </p>
         </div>
 
@@ -633,7 +799,8 @@ export default function CrackQuizPage() {
             </div>
 
             {/* Options */}
-            <div className="grid grid-cols-1 gap-3">
+            <div className="relative grid grid-cols-1 gap-3">
+              {revealed && lastBreakdown && <ScorePop breakdown={lastBreakdown} streak={currentStreak} />}
               {q.options.map((opt, i) => {
                 let bg = 'rgba(255,255,255,0.04)'
                 let border = '1px solid rgba(255,255,255,0.08)'
