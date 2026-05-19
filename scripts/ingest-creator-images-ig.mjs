@@ -5,16 +5,19 @@
 //   - NO tienen image_url todavía (o --force para sobreescribir)
 //   - tienen handles.instagram
 //
-// Usa el mismo endpoint público que ingest-instagram-followers.mjs
-// (curl + iPhone User-Agent + x-ig-app-id).
+// Usa el mismo endpoint público (curl + iPhone User-Agent + x-ig-app-id).
 // Extrae profile_pic_url_hd (o profile_pic_url como fallback).
+//
+// Con --storage: descarga la imagen y la guarda en Supabase Storage bucket "avatars".
+//   → image_url apunta a la URL pública permanente en Supabase, no a la CDN de IG que expira.
 //
 // Instagram rate-limit: ~25-30 req antes de bloquear.
 // En ese caso para automáticamente. Ejecuta de nuevo más tarde.
 //
 // Uso:
-//   node scripts/ingest-creator-images-ig.mjs           # DRY RUN, batch 25
+//   node scripts/ingest-creator-images-ig.mjs                   # DRY RUN, batch 25
 //   node scripts/ingest-creator-images-ig.mjs --apply
+//   node scripts/ingest-creator-images-ig.mjs --apply --storage # guarda en Supabase Storage
 //   node scripts/ingest-creator-images-ig.mjs --apply --batch=50
 //   node scripts/ingest-creator-images-ig.mjs --apply --all
 //   node scripts/ingest-creator-images-ig.mjs --apply --force   # sobreescribe existentes
@@ -28,9 +31,11 @@ import path from 'path'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 config({ path: path.join(__dirname, '..', '.env.local') })
 
-const APPLY = process.argv.includes('--apply')
-const FORCE = process.argv.includes('--force')
-const ALL   = process.argv.includes('--all')
+const APPLY   = process.argv.includes('--apply')
+const FORCE   = process.argv.includes('--force')
+const ALL     = process.argv.includes('--all')
+const STORAGE = process.argv.includes('--storage')  // download + upload to Supabase Storage
+const BUCKET  = 'avatars'
 const BATCH = (() => {
   const b = process.argv.find(a => a.startsWith('--batch='))
   return b ? parseInt(b.split('=')[1]) : 25
@@ -43,6 +48,28 @@ const sb = createClient(
 )
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+// Descarga imagen desde URL y la sube a Supabase Storage.
+// Devuelve la URL pública permanente, o null si falla.
+async function uploadToStorage(id, cdnUrl) {
+  try {
+    const res = await fetch(cdnUrl, { headers: { 'User-Agent': 'TakaSports/1.0' } })
+    if (!res.ok) return null
+    const contentType = res.headers.get('content-type') ?? 'image/jpeg'
+    if (!contentType.startsWith('image/')) return null
+    const buffer = Buffer.from(await res.arrayBuffer())
+    if (buffer.length < 1000) return null
+    const ext = contentType.includes('png') ? 'png' : 'jpg'
+    const filePath = `${id}.${ext}`
+    const { error } = await sb.storage.from(BUCKET).upload(filePath, buffer, {
+      contentType,
+      upsert: true,
+    })
+    if (error) { console.error(`    UPLOAD FAIL ${id}: ${error.message}`); return null }
+    const { data } = sb.storage.from(BUCKET).getPublicUrl(filePath)
+    return data.publicUrl
+  } catch (err) { console.error(`    DOWNLOAD FAIL ${id}: ${err.message}`); return null }
+}
 
 // Devuelve { pic, followers } o { rateLimit: true } o null
 function fetchIGProfile(username) {
@@ -129,16 +156,39 @@ async function main() {
   if (!APPLY) { console.log('\nDRY RUN — pasa --apply para guardar.'); return }
   if (updates.length === 0) { console.log('Nada que guardar.'); return }
 
+  // Si --storage: asegura que el bucket existe
+  if (STORAGE) {
+    const { data: buckets } = await sb.storage.listBuckets()
+    if (!buckets?.find(b => b.id === BUCKET)) {
+      const { error: be } = await sb.storage.createBucket(BUCKET, { public: true })
+      if (be) console.error('No se pudo crear bucket:', be.message)
+      else console.log(`Bucket "${BUCKET}" creado.`)
+    }
+  }
+
   let saved = 0, failed = 0
-  for (const { id, image_url } of updates) {
+  for (const { id, image_url: cdnUrl } of updates) {
+    let finalUrl = cdnUrl
+
+    // Si --storage: descarga y sube a Supabase Storage
+    if (STORAGE) {
+      const storedUrl = await uploadToStorage(id, cdnUrl)
+      if (storedUrl) {
+        finalUrl = storedUrl
+        console.log(`  💾 ${id} → Storage OK`)
+      } else {
+        console.log(`  ⚠️  ${id} → Storage falló, guardando CDN URL`)
+      }
+    }
+
     const { error: e } = await sb
       .from('ranking_entries')
-      .update({ image_url })
+      .update({ image_url: finalUrl })
       .eq('id', id)
     if (e) { console.error(`  FAIL ${id}: ${e.message}`); failed++ }
     else saved++
   }
-  console.log(`Guardadas: ${saved} | Fallidas: ${failed}`)
+  console.log(`Guardadas: ${saved} | Fallidas: ${failed}${STORAGE ? ' (con Storage)' : ''}`)
 }
 
 main().catch(err => { console.error(err); process.exit(1) })
