@@ -75,11 +75,12 @@ const POS_LABEL: Record<string, string> = {
 }
 
 // ── Featured Player ────────────────────────────────────────────────────
-function FeaturedPlayerCard({ player, teamColor }: { player: RosterPlayer; teamColor?: string }) {
+function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterPlayer; teamColor?: string; leagueSlug: string }) {
   const accent = teamColor ? `#${teamColor}` : '#7C3AED'
-  return (
+  const href = player.id ? `/jugador/${leagueSlug.replace('/', '_')}_${player.id}` : undefined
+  const card = (
     <div
-      className="rounded-2xl p-5 mb-6 flex gap-4 items-center"
+      className={`rounded-2xl p-5 mb-6 flex gap-4 items-center${href ? ' transition-all hover:bg-white/[0.06]' : ''}`}
       style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
     >
       {/* Headshot or placeholder */}
@@ -132,6 +133,7 @@ function FeaturedPlayerCard({ player, teamColor }: { player: RosterPlayer; teamC
       </div>
     </div>
   )
+  return href ? <Link href={href} prefetch={false}>{card}</Link> : card
 }
 
 // ── Results Tab ────────────────────────────────────────────────────────
@@ -405,7 +407,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
 
       {/* Featured player */}
       {team.featuredPlayer && (
-        <FeaturedPlayerCard player={team.featuredPlayer} teamColor={team.color} />
+        <FeaturedPlayerCard player={team.featuredPlayer} teamColor={team.color} leagueSlug={team.leagueSlug} />
       )}
 
       {/* Tabs */}
@@ -417,7 +419,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
         ]}
       >
         <ResultsTab results={team.results} teamId={team.id} />
-        <RosterTab roster={team.roster} />
+        <RosterTab roster={team.roster} leagueSlug={team.leagueSlug} />
         <StandingsTab table={team.leagueTable} leagueSlug={team.leagueSlug} />
       </TeamTabs>
     </div>

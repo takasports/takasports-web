@@ -56,6 +56,7 @@ export interface TennisSet {
 }
 
 export interface LineupPlayer {
+  id?: string
   name: string
   shortName?: string
   jersey?: string
@@ -229,6 +230,7 @@ function buildLineups(json: Record<string, unknown>): MatchDetail['lineups'] | u
       const ath = asObj(p.athlete)
       const pos = asObj(p.position)
       const player: LineupPlayer = {
+        id:        asString(ath?.id),
         name:      asString(ath?.displayName) ?? '—',
         shortName: asString(ath?.shortName),
         jersey:    asString(p.jersey),

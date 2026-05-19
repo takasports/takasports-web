@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import type { RosterPlayer } from '@/app/api/team/[slug]/route'
 
 type SortKey = 'jersey' | 'goals' | 'assists' | 'gamesPlayed'
@@ -14,10 +15,11 @@ const POS_LABEL: Record<string, string> = {
   FW: 'Delanteros', F: 'Delanteros',
 }
 
-function PlayerRow({ player }: { player: RosterPlayer }) {
-  return (
+function PlayerRow({ player, leagueSlug }: { player: RosterPlayer; leagueSlug: string }) {
+  const href = player.id ? `/jugador/${leagueSlug.replace('/', '_')}_${player.id}` : undefined
+  const inner = (
     <div
-      className="flex items-center gap-3 py-2.5 px-4 rounded-xl mb-1 hover:bg-white/5 transition-all"
+      className={`flex items-center gap-3 py-2.5 px-4 rounded-xl mb-1 hover:bg-white/5 transition-all${href ? ' cursor-pointer' : ''}`}
       style={{ background: 'rgba(255,255,255,0.025)' }}
     >
       <div
@@ -69,6 +71,7 @@ function PlayerRow({ player }: { player: RosterPlayer }) {
       </div>
     </div>
   )
+  return href ? <Link href={href} prefetch={false}>{inner}</Link> : inner
 }
 
 function SortBtn({
@@ -91,7 +94,7 @@ function SortBtn({
   )
 }
 
-export function RosterTab({ roster }: { roster: RosterPlayer[] }) {
+export function RosterTab({ roster, leagueSlug }: { roster: RosterPlayer[]; leagueSlug: string }) {
   const [sortKey, setSortKey] = useState<SortKey>('jersey')
 
   if (roster.length === 0) {
@@ -140,7 +143,7 @@ export function RosterTab({ roster }: { roster: RosterPlayer[] }) {
             >
               {label}
             </div>
-            {sortPlayers(players).map(p => <PlayerRow key={p.id} player={p} />)}
+            {sortPlayers(players).map(p => <PlayerRow key={p.id} player={p} leagueSlug={leagueSlug} />)}
           </div>
         )
       })}

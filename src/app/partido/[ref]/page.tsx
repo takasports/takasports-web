@@ -708,19 +708,25 @@ function playerDisplayName(p: LineupPlayer): string {
   return parts.length > 1 ? parts[parts.length - 1] : base
 }
 
-function PlayerDot({ player, x, y, side }: {
+function lineupHref(leagueSlug: string | undefined, p: LineupPlayer): string | undefined {
+  return leagueSlug && p.id ? `/jugador/${leagueSlug.replace('/', '_')}_${p.id}` : undefined
+}
+
+function PlayerDot({ player, x, y, side, leagueSlug }: {
   player: LineupPlayer
   x: number
   y: number
   side: 'home' | 'away'
+  leagueSlug?: string
 }) {
   const color  = side === 'home' ? '#A78BFA' : '#F59E0B'
   const label  = playerDisplayName(player)
   const jersey = player.jersey ?? label.slice(0, 2).toUpperCase()
+  const href   = lineupHref(leagueSlug, player)
 
-  return (
+  const dot = (
     <div
-      className="absolute flex flex-col items-center pointer-events-none"
+      className={`absolute flex flex-col items-center${href ? '' : ' pointer-events-none'}`}
       style={{
         left: `${x}%`,
         top: `${y}%`,
@@ -758,6 +764,9 @@ function PlayerDot({ player, x, y, side }: {
       </span>
     </div>
   )
+  return href
+    ? <Link href={href} prefetch={false} className="contents">{dot}</Link>
+    : dot
 }
 
 function FieldMarkings() {
@@ -797,11 +806,12 @@ function FieldMarkings() {
   )
 }
 
-function BenchSection({ home, away, homeTeam, awayTeam }: {
+function BenchSection({ home, away, homeTeam, awayTeam, leagueSlug }: {
   home: TeamLineup
   away: TeamLineup
   homeTeam?: string
   awayTeam?: string
+  leagueSlug?: string
 }) {
   if (!home.bench.length && !away.bench.length) return null
   return (
@@ -817,15 +827,20 @@ function BenchSection({ home, away, homeTeam, awayTeam }: {
             {label} — Banquillo
           </p>
           <div className="flex flex-col gap-1">
-            {lineup.bench.map((p, i) => (
+            {lineup.bench.map((p, i) => {
+              const href = lineupHref(leagueSlug, p)
+              const nameEl = (
+                <span className={`text-[10px] font-semibold truncate${href ? ' hover:underline' : ''}`} style={{ color: '#C0C0D4', fontFamily: 'var(--font-sport)' }}>
+                  {playerDisplayName(p)}
+                </span>
+              )
+              return (
               <div key={i} className="flex items-center gap-2">
                 <span className="w-5 text-[9px] font-black tabular-nums text-right flex-shrink-0"
                   style={{ color: '#5A5A6A' }}>
                   {p.jersey ?? '—'}
                 </span>
-                <span className="text-[10px] font-semibold truncate" style={{ color: '#C0C0D4', fontFamily: 'var(--font-sport)' }}>
-                  {playerDisplayName(p)}
-                </span>
+                {href ? <Link href={href} prefetch={false}>{nameEl}</Link> : nameEl}
                 {p.posAbbr && (
                   <span className="text-[8px] ml-auto flex-shrink-0 px-1 py-0.5 rounded"
                     style={{ background: `${color}18`, color, fontFamily: 'var(--font-sport)' }}>
@@ -833,7 +848,8 @@ function BenchSection({ home, away, homeTeam, awayTeam }: {
                   </span>
                 )}
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       ))}
@@ -841,10 +857,11 @@ function BenchSection({ home, away, homeTeam, awayTeam }: {
   )
 }
 
-function LineupField({ lineups, homeTeam, awayTeam }: {
+function LineupField({ lineups, homeTeam, awayTeam, leagueSlug }: {
   lineups: NonNullable<MatchDetail['lineups']>
   homeTeam?: string
   awayTeam?: string
+  leagueSlug?: string
 }) {
   const homePositions = getFormationPositions(lineups.home.formation, 'home')
   const awayPositions = getFormationPositions(lineups.away.formation, 'away')
@@ -899,13 +916,13 @@ function LineupField({ lineups, homeTeam, awayTeam }: {
         {/* Away players (top) */}
         {lineups.away.starters.map((player, i) => {
           const [x, y] = awayPositions[i] ?? [50, 20]
-          return <PlayerDot key={`away-${i}`} player={player} x={x} y={y} side="away" />
+          return <PlayerDot key={`away-${i}`} player={player} x={x} y={y} side="away" leagueSlug={leagueSlug} />
         })}
 
         {/* Home players (bottom) */}
         {lineups.home.starters.map((player, i) => {
           const [x, y] = homePositions[i] ?? [50, 80]
-          return <PlayerDot key={`home-${i}`} player={player} x={x} y={y} side="home" />
+          return <PlayerDot key={`home-${i}`} player={player} x={x} y={y} side="home" leagueSlug={leagueSlug} />
         })}
       </div>
 
@@ -915,6 +932,7 @@ function LineupField({ lineups, homeTeam, awayTeam }: {
         away={lineups.away}
         homeTeam={homeTeam}
         awayTeam={awayTeam}
+        leagueSlug={leagueSlug}
       />
     </div>
   )
@@ -1206,6 +1224,7 @@ function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | nul
               lineups={match.lineups!}
               homeTeam={match.homeTeam}
               awayTeam={match.awayTeam}
+              leagueSlug={match.leagueSlug}
             />
           ) : (
             <EmptyState message="Alineación no disponible aún" />
