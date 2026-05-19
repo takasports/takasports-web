@@ -136,6 +136,20 @@ async function fetchOddsForSport(oddsKey: string, apiKey: string): Promise<OddsE
   return json
 }
 
+// ⚠️ SOLO QA/DEV — jamás en producción. Genera una línea plausible y
+// DETERMINISTA (estable por partido) para poder verificar la mecánica
+// de cuota-multiplicador sin depender del cupo de the-odds-api.
+// Se activa únicamente con QUINIELA_DEV_ODDS=on (no setear en prod).
+function devSeedOdds(home: string, away: string): { home: number; draw: number; away: number } {
+  const seed = (home + away).split('').reduce((s, c, i) => s + c.charCodeAt(0) * (i + 7), 0)
+  const ph = 0.30 + ((seed % 1000) / 1000) * 0.32          // 0.30–0.62
+  const pd = 0.22 + (((seed >> 3) % 100) / 100) * 0.10     // 0.22–0.32
+  const pa = Math.max(0.12, 1 - ph - pd)
+  const margin = 1.06
+  const mk = (p: number) => Math.max(1.05, Math.round((1 / (p * margin)) * 100) / 100)
+  return { home: mk(ph), draw: mk(pd), away: mk(pa) }
+}
+
 function extractOdds(ev: OddsEvent): { home: number; draw: number; away: number } | undefined {
   const allOutcomes: Record<string, number[]> = {}
   for (const bk of ev.bookmakers ?? []) {
@@ -331,6 +345,12 @@ export async function GET() {
       )
       if (ev) match.odds = extractOdds(ev)
     }
+  }
+
+  // QA only: rellena cuotas sintéticas si faltan (cupo agotado) para
+  // poder probar el ×cuota. Gated por env — nunca en producción.
+  if (process.env.QUINIELA_DEV_ODDS === 'on') {
+    for (const m of deduped) if (!m.odds) m.odds = devSeedOdds(m.home, m.away)
   }
 
   const selected = selectMatches(deduped)
