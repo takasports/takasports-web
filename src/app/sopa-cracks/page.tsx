@@ -325,7 +325,33 @@ function fmtTime(s: number): string {
 // ── Componente principal ──────────────────────────────────────
 
 export default function SopaCracksPage() {
-  const puzzle = useMemo(() => getCurrentPuzzle(), [])
+  const staticPuzzle = useMemo(() => getCurrentPuzzle(), [])
+  const [featuredPuzzle, setFeaturedPuzzle] = useState<Puzzle | null>(null)
+  const puzzle = featuredPuzzle ?? staticPuzzle
+
+  // Tema destacado de la semana inyectado por la redacción. Si no hay,
+  // seguimos con el pool estático sin que se note.
+  useEffect(() => {
+    let cancelled = false
+    const wk = currentWeekISO()
+    fetch(`/api/sopa-cracks/featured?week=${wk}`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => {
+        if (cancelled) return
+        const p = j?.puzzle
+        if (!p || !Array.isArray(p.words) || p.words.length < 5) return
+        setFeaturedPuzzle({
+          id:       `featured-${wk}`,
+          title:    String(p.title ?? 'Tema semanal'),
+          subtitle: String(p.subtitle ?? ''),
+          size:     typeof p.size === 'number' && p.size >= 10 && p.size <= 16 ? p.size : 13,
+          words:    p.words.filter((w: unknown): w is string => typeof w === 'string'),
+          intruder: typeof p.intruder === 'string' ? p.intruder : undefined,
+        })
+      })
+      .catch(() => { /* silencioso */ })
+    return () => { cancelled = true }
+  }, [])
   const seed = useMemo(() => {
     let h = 0
     for (const ch of puzzle.id) h = (h * 31 + ch.charCodeAt(0)) | 0
