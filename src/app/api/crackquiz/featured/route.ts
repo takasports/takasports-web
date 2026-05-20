@@ -1,0 +1,100 @@
+// Pregunta destacada del día para CrackQuiz. Permite que la redacción
+// inyecte una pregunta de actualidad sin tocar el repo:
+//
+//   GET    /api/crackquiz/featured?day=YYYY-MM-DD     → { question | null }
+//   POST   /api/crackquiz/featured  (x-admin-token)    → upsert
+//   DELETE /api/crackquiz/featured?day=…  (x-admin-token)
+//
+// El cliente la pide en cada arranque de ronda y, si existe, la coloca
+// como primera pregunta del día con un badge "Actualidad".
+
+import { NextRequest, NextResponse } from 'next/server'
+import { adminSupabase } from '@/lib/supabase-admin'
+
+export const dynamic = 'force-dynamic'
+
+interface FeaturedQuestion {
+  id: string
+  question: string
+  options: string[]
+  correctIndex: number
+  category: string
+}
+
+function validate(q: unknown): FeaturedQuestion | null {
+  if (!q || typeof q !== 'object') return null
+  const c = q as Record<string, unknown>
+  if (typeof c.id !== 'string' || c.id.length === 0) return null
+  if (typeof c.question !== 'string' || c.question.length < 3) return null
+  if (!Array.isArray(c.options) || c.options.length !== 4) return null
+  if (!c.options.every(o => typeof o === 'string' && o.length > 0)) return null
+  if (typeof c.correctIndex !== 'number' || c.correctIndex < 0 || c.correctIndex > 3) return null
+  if (typeof c.category !== 'string' || c.category.length === 0) return null
+  return c as unknown as FeaturedQuestion
+}
+
+function assertDay(day: string | null): day is string {
+  return !!day && /^\d{4}-\d{2}-\d{2}$/.test(day)
+}
+
+export async function GET(req: NextRequest) {
+  const day = new URL(req.url).searchParams.get('day')
+  if (!assertDay(day)) {
+    return NextResponse.json({ error: 'day (YYYY-MM-DD) required' }, { status: 400 })
+  }
+  const admin = adminSupabase()
+  if (!admin) return NextResponse.json({ question: null })
+  const { data } = await admin
+    .from('crackquiz_featured')
+    .select('question')
+    .eq('day_iso', day)
+    .maybeSingle()
+  return NextResponse.json(
+    { question: data?.question ?? null },
+    { headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' } },
+  )
+}
+
+export async function POST(req: NextRequest) {
+  const expected = process.env.GAMES_ADMIN_TOKEN
+  const provided = req.headers.get('x-admin-token') ?? ''
+  if (!expected || provided !== expected) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
+  const admin = adminSupabase()
+  if (!admin) return NextResponse.json({ error: 'admin client unavailable' }, { status: 503 })
+
+  try {
+    const body = await req.json() as { day?: string; question?: unknown }
+    if (!assertDay(body.day ?? null)) {
+      return NextResponse.json({ error: 'day (YYYY-MM-DD) required' }, { status: 400 })
+    }
+    const q = validate(body.question)
+    if (!q) return NextResponse.json({ error: 'invalid question payload' }, { status: 400 })
+
+    const { error } = await admin
+      .from('crackquiz_featured')
+      .upsert({ day_iso: body.day, question: q }, { onConflict: 'day_iso' })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true, day: body.day })
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 })
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const expected = process.env.GAMES_ADMIN_TOKEN
+  const provided = req.headers.get('x-admin-token') ?? ''
+  if (!expected || provided !== expected) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
+  const day = new URL(req.url).searchParams.get('day')
+  if (!assertDay(day)) {
+    return NextResponse.json({ error: 'day (YYYY-MM-DD) required' }, { status: 400 })
+  }
+  const admin = adminSupabase()
+  if (!admin) return NextResponse.json({ error: 'admin client unavailable' }, { status: 503 })
+  const { error } = await admin.from('crackquiz_featured').delete().eq('day_iso', day)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true, day })
+}

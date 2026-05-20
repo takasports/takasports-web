@@ -771,6 +771,11 @@ export default function CrackQuizPage() {
   // Doble o nada en la pregunta 10. null hasta llegar a Q10; 'pending'
   // mientras se muestra el diálogo; 'accepted' / 'declined' tras decidir.
   const [donChoice, setDonChoice] = useState<'pending' | 'accepted' | 'declined' | null>(null)
+  // Pregunta destacada del día (de actualidad). Si la API la devuelve, se
+  // inyecta como primera pregunta de la ronda diaria. El badge se pinta a
+  // partir de su id.
+  const [featuredQ, setFeaturedQ] = useState<QuizQuestion | null>(null)
+  const [featuredId, setFeaturedId] = useState<string | null>(null)
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -791,6 +796,21 @@ export default function CrackQuizPage() {
       soundRef.current = on
     } catch { /* ignore */ }
     setHydrated(true)
+
+    // Prefetch de la pregunta destacada del día (silencioso si no hay)
+    fetch(`/api/crackquiz/featured?day=${currentDayISO()}`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => {
+        const fq = j?.question
+        if (
+          fq && typeof fq.id === 'string' && typeof fq.question === 'string'
+          && Array.isArray(fq.options) && fq.options.length === 4
+          && typeof fq.correctIndex === 'number'
+        ) {
+          setFeaturedQ(fq as QuizQuestion)
+        }
+      })
+      .catch(() => { /* failsafe */ })
   }, [])
 
   const toggleSound = useCallback(() => {
@@ -863,10 +883,18 @@ export default function CrackQuizPage() {
     setPractice(isPractice)
     trackGameStart('crackquiz')
     trackGameEvent({ gameId: 'crackquiz', event: 'started', period: currentDayISO(), meta: { practice: isPractice, category: category ?? null } })
-    const qs = isPractice
+    let qs = isPractice
       ? getPracticeQuestions(QUESTIONS_PER_ROUND, category)
       : getDailyQuestions(QUESTIONS_PER_ROUND)
+    let fid: string | null = null
+    if (!isPractice && featuredQ) {
+      // Inyectamos la destacada como Q1, evitando duplicado si ya estaba.
+      const rest = qs.filter(x => x.id !== featuredQ.id)
+      qs = [featuredQ, ...rest].slice(0, QUESTIONS_PER_ROUND)
+      fid = featuredQ.id
+    }
     setQuestions(qs)
+    setFeaturedId(fid)
     setCurrentIndex(0)
     setScore(0)
     setCurrentStreak(0)
@@ -878,7 +906,7 @@ export default function CrackQuizPage() {
     setDonChoice(null)
     setPhase('playing')
     startQuestion()
-  }, [startQuestion])
+  }, [startQuestion, featuredQ])
 
   // Combo embolsado: suma de bonus de racha de todas las respuestas previas.
   // Es lo que se apuesta en el doble o nada de la pregunta final.
@@ -1203,6 +1231,15 @@ export default function CrackQuizPage() {
                         style={{ background: 'rgba(251,146,60,0.18)', color: '#FB923C', border: '1px solid rgba(251,146,60,0.4)' }}
                       >
                         🎲 Apostando +{comboBank}
+                      </span>
+                    )}
+                    {featuredId && q.id === featuredId && (
+                      <span
+                        className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full inline-flex items-center gap-1"
+                        style={{ background: 'rgba(248,113,113,0.15)', color: '#FCA5A5', border: '1px solid rgba(248,113,113,0.35)' }}
+                        title="Pregunta de actualidad seleccionada por la redacción"
+                      >
+                        🔥 Actualidad
                       </span>
                     )}
                   </div>
