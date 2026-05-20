@@ -20,8 +20,10 @@ import MyPositionBanner from '@/components/games/MyPositionBanner'
 
 const STORAGE_KEY = 'ts_takagrid_state'
 const STREAK_KEY = 'ts_takagrid_streak'
+const HARD_PREF_KEY = 'ts_takagrid_hard_mode'
 const ACCENT = '#FDBA74'
 const ACCENT_DIM = '#EA580C'
+const HINT_COLOR = '#FCD34D'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -37,6 +39,9 @@ interface StoredState {
   dayKey: string
   grid: GridState
   finished: boolean
+  hardMode?: boolean
+  pistaCell?: CellCoord | null
+  pistaLetter?: string | null
 }
 
 interface StreakState {
@@ -233,6 +238,33 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 
 function countSolved(grid: GridState): number {
   return grid.flat().filter(c => c.playerId !== null).length
+}
+
+// Inicial más común entre los apellidos de los jugadores válidos de una
+// celda. Usado por la Pista (un solo uso por puzzle): muestra una letra
+// sin destapar al jugador concreto.
+function pickHintLetter(validForCell: Player[]): string | null {
+  if (!validForCell || validForCell.length === 0) return null
+  const counts = new Map<string, number>()
+  for (const p of validForCell) {
+    const last = p.name.trim().split(/\s+/).pop() ?? ''
+    if (!last) continue
+    const ch = last[0].toUpperCase()
+    counts.set(ch, (counts.get(ch) ?? 0) + 1)
+  }
+  if (counts.size === 0) return null
+  let best: { ch: string; n: number } | null = null
+  for (const [ch, n] of counts) {
+    if (!best || n > best.n) best = { ch, n }
+  }
+  return best?.ch ?? null
+}
+
+function loadHardPref(): boolean {
+  try { return localStorage.getItem(HARD_PREF_KEY) === '1' } catch { return false }
+}
+function saveHardPref(v: boolean) {
+  try { localStorage.setItem(HARD_PREF_KEY, v ? '1' : '0') } catch { /* ignore */ }
 }
 
 // ── Icons ────────────────────────────────────────────────────────
@@ -468,9 +500,11 @@ interface GridCellProps {
   cell: CellState
   onClick: () => void
   isFinished: boolean
+  hintLetter?: string | null
+  pickingHint?: boolean
 }
 
-function GridCell({ cell, onClick, isFinished }: GridCellProps) {
+function GridCell({ cell, onClick, isFinished, hintLetter, pickingHint }: GridCellProps) {
   const player = cell.playerId ? getPlayerById(cell.playerId) : null
   const canClick = !cell.locked && !isFinished
 
@@ -512,22 +546,41 @@ function GridCell({ cell, onClick, isFinished }: GridCellProps) {
     )
   }
 
+  const hinted = !!hintLetter
   return (
     <button
       onClick={canClick ? onClick : undefined}
       disabled={!canClick}
-      className="flex flex-col items-center justify-center gap-1.5 rounded-xl transition-all disabled:opacity-40"
+      className="flex flex-col items-center justify-center gap-1 rounded-xl transition-all disabled:opacity-40"
       style={{
-        background: 'rgba(255,255,255,0.03)',
-        border: canClick ? `1px dashed ${ACCENT_DIM}60` : '1px solid rgba(255,255,255,0.05)',
+        background: hinted ? `${HINT_COLOR}12` : 'rgba(255,255,255,0.03)',
+        border: hinted
+          ? `1px solid ${HINT_COLOR}66`
+          : pickingHint
+            ? `1px dashed ${HINT_COLOR}88`
+            : canClick ? `1px dashed ${ACCENT_DIM}60` : '1px solid rgba(255,255,255,0.05)',
         minHeight: 90,
         cursor: canClick ? 'pointer' : 'default',
+        boxShadow: hinted ? `0 0 10px ${HINT_COLOR}33` : undefined,
       }}
     >
-      <span style={{ color: ACCENT_DIM, opacity: 0.6, fontSize: 22 }}>+</span>
-      <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-        Elegir
-      </span>
+      {hinted ? (
+        <>
+          <span className="text-2xl font-black leading-none" style={{ color: HINT_COLOR, fontFamily: 'var(--font-display)' }}>
+            {hintLetter}
+          </span>
+          <span className="text-[8px] font-black uppercase tracking-widest" style={{ color: HINT_COLOR, fontFamily: 'var(--font-sport)' }}>
+            Empieza por…
+          </span>
+        </>
+      ) : (
+        <>
+          <span style={{ color: ACCENT_DIM, opacity: 0.6, fontSize: 22 }}>+</span>
+          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+            {pickingHint ? 'Elige aquí' : 'Elegir'}
+          </span>
+        </>
+      )}
     </button>
   )
 }
@@ -718,6 +771,10 @@ export default function TakaGridPage() {
   const [activeCell, setActiveCell] = useState<CellCoord | null>(null)
   const [showResult, setShowResult] = useState(false)
   const [streakState, setStreakState] = useState<StreakState>({ streak: 0, bestStreak: 0, lastFinishedDate: '', history: [] })
+  const [hardMode, setHardMode] = useState(false)
+  const [pistaCell, setPistaCell] = useState<CellCoord | null>(null)
+  const [pistaLetter, setPistaLetter] = useState<string | null>(null)
+  const [awaitingPistaCell, setAwaitingPistaCell] = useState(false)
 
   const { puzzle, dayKey } = useMemo(() => getDailyPuzzle(), [])
   const validAnswers = useMemo(() => getValidAnswers(puzzle), [puzzle])
@@ -728,26 +785,56 @@ export default function TakaGridPage() {
     if (stored && stored.dayKey === dayKey.key) {
       setGrid(stored.grid)
       setFinished(stored.finished)
+      setPistaCell(stored.pistaCell ?? null)
+      setPistaLetter(stored.pistaLetter ?? null)
+      // hardMode del puzzle si quedó persistido, o pref global
+      setHardMode(stored.hardMode ?? loadHardPref())
       if (stored.finished) setTimeout(() => setShowResult(true), 400)
+    } else {
+      setHardMode(loadHardPref())
     }
     setStreakState(loadStreak())
     setHydrated(true)
     trackGameEvent({ gameId: 'takagrid', event: 'started', period: dayKey.key })
   }, [dayKey.key])
 
-  // Persist grid
+  // Persist grid + pista + hard mode (per-puzzle)
   useEffect(() => {
     if (!hydrated) return
-    saveState({ dayKey: dayKey.key, grid, finished })
-  }, [hydrated, dayKey.key, grid, finished])
+    saveState({ dayKey: dayKey.key, grid, finished, hardMode, pistaCell, pistaLetter })
+  }, [hydrated, dayKey.key, grid, finished, hardMode, pistaCell, pistaLetter])
 
   const solved = useMemo(() => countSolved(grid), [grid])
   const usedIds = useMemo(() => grid.flat().map(c => c.playerId).filter((id): id is string => !!id), [grid])
 
   const handleCellClick = useCallback((row: 0|1|2, col: 0|1|2) => {
     if (finished || grid[row][col].locked) return
+    // En modo "esperando pista", el siguiente click destapa la inicial en
+    // lugar de abrir la búsqueda de jugador.
+    if (awaitingPistaCell && !pistaCell) {
+      const letter = pickHintLetter(validAnswers[row][col])
+      if (letter) {
+        setPistaCell({ row, col })
+        setPistaLetter(letter)
+      }
+      setAwaitingPistaCell(false)
+      return
+    }
     setActiveCell({ row, col })
-  }, [finished, grid])
+  }, [finished, grid, awaitingPistaCell, pistaCell, validAnswers])
+
+  const toggleHardMode = useCallback(() => {
+    setHardMode(prev => {
+      const next = !prev
+      saveHardPref(next)
+      return next
+    })
+  }, [])
+
+  const requestPista = useCallback(() => {
+    if (finished || pistaCell) return
+    setAwaitingPistaCell(a => !a)
+  }, [finished, pistaCell])
 
   const handleSelectPlayer = useCallback((player: Player) => {
     if (!activeCell) return
@@ -773,15 +860,16 @@ export default function TakaGridPage() {
         // Sync con backend unificado. payload.solved = bool[9] row-major.
         const solvedArr = current.flat().map(c => c.playerId !== null)
         const period = currentDayISO()
+        const score = solvedCount * (hardMode ? 20 : 10)
         void recordPlay({
           gameId:  'takagrid',
           period,
-          score:   solvedCount * 10,
-          payload: { solved: solvedArr },
+          score,
+          payload: { solved: solvedArr, hardMode },
         })
-        addXp('takagrid', xpForTakagrid(solvedCount))
-        reportPlay('takagrid', { score: solvedCount * 10 })
-        trackGameEvent({ gameId: 'takagrid', event: 'completed', period, meta: { solved: solvedCount } })
+        addXp('takagrid', xpForTakagrid(solvedCount) + (hardMode ? 15 : 0))
+        reportPlay('takagrid', { score })
+        trackGameEvent({ gameId: 'takagrid', event: 'completed', period, meta: { solved: solvedCount, hardMode } })
 
         const prev = loadStreak()
         const alreadyToday = prev.lastFinishedDate === dayKey.key
@@ -801,7 +889,7 @@ export default function TakaGridPage() {
       }
       return current
     })
-  }, [activeCell, puzzle, dayKey.key])
+  }, [activeCell, puzzle, dayKey.key, hardMode])
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
@@ -857,6 +945,38 @@ export default function TakaGridPage() {
                 <IconShare /> Resultado
               </button>
             )}
+            {!finished && (
+              <>
+                <button
+                  onClick={toggleHardMode}
+                  className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 transition-opacity hover:opacity-90"
+                  style={{
+                    background: hardMode ? 'rgba(248,113,113,0.18)' : 'rgba(255,255,255,0.04)',
+                    color: hardMode ? '#FCA5A5' : 'var(--text-muted)',
+                    border: hardMode ? '1px solid rgba(248,113,113,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                    fontFamily: 'var(--font-sport)',
+                  }}
+                  title={hardMode ? 'Sin pistas de catálogo · doble puntos' : 'Activar modo hard'}
+                  aria-pressed={hardMode}
+                >
+                  {hardMode ? '🔥 Hard ×2' : '⚡ Modo Hard'}
+                </button>
+                <button
+                  onClick={requestPista}
+                  disabled={!!pistaCell}
+                  className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: awaitingPistaCell ? `${HINT_COLOR}25` : `${HINT_COLOR}12`,
+                    color: HINT_COLOR,
+                    border: `1px solid ${HINT_COLOR}40`,
+                    fontFamily: 'var(--font-sport)',
+                  }}
+                  title={pistaCell ? 'Pista ya gastada en este puzzle' : awaitingPistaCell ? 'Pincha una celda para destapar la inicial' : 'Destapa la inicial común de los válidos de una celda'}
+                >
+                  💡 {pistaCell ? 'Pista usada' : awaitingPistaCell ? 'Elige celda…' : 'Pista'}
+                </button>
+              </>
+            )}
           </div>
 
           {/* Grid */}
@@ -888,21 +1008,26 @@ export default function TakaGridPage() {
                     </span>
                   </div>
                   {/* Cells */}
-                  {puzzle.cols.map((_, c) => (
-                    <GridCell
-                      key={c}
-                      cell={grid[r][c]}
-                      onClick={() => handleCellClick(r as 0|1|2, c as 0|1|2)}
-                      isFinished={finished}
-                    />
-                  ))}
+                  {puzzle.cols.map((_, c) => {
+                    const isHintCell = pistaCell && pistaCell.row === r && pistaCell.col === c
+                    return (
+                      <GridCell
+                        key={c}
+                        cell={grid[r][c]}
+                        onClick={() => handleCellClick(r as 0|1|2, c as 0|1|2)}
+                        isFinished={finished}
+                        hintLetter={isHintCell ? pistaLetter : null}
+                        pickingHint={awaitingPistaCell && !pistaCell}
+                      />
+                    )
+                  })}
                 </div>
               ))}
             </div>
           )}
 
-          {/* Hints section */}
-          {hydrated && (
+          {/* Hints section — oculta en modo Hard */}
+          {hydrated && !hardMode && (
             <div className="w-full rounded-2xl p-4" style={{ maxWidth: 560, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
               <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 Jugadores posibles por celda
