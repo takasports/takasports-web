@@ -3,8 +3,11 @@
 // ─────────────────────────────────────────────────────────────────
 // Sticky betslip — footer fijo con progreso y CTA
 // ─────────────────────────────────────────────────────────────────
-export function StickyBetslip({ done, total, allDone, captainSet, onSubmit, urgent }: { done: number; total: number; allDone: boolean; captainSet: boolean; onSubmit: () => void; urgent: boolean }) {
-  const potential = done * 10 + (captainSet ? 10 : 0) + (allDone ? 100 : 0)
+// `potential` ahora lo calcula PicksForm (con cuotas como multiplicador,
+// espejo del scoring server). Antes era base plana 10/pick que mentía
+// con el nuevo modelo cuota-multiplicador.
+export function StickyBetslip({ done, total, allDone, captainSet, onSubmit, urgent, potential }: { done: number; total: number; allDone: boolean; captainSet: boolean; onSubmit: () => void; urgent: boolean; potential: number }) {
+  void captainSet
   const cta = allDone
     ? '🎯 Sellar predicción'
     : `Te quedan ${total - done} partido${total - done !== 1 ? 's' : ''}`

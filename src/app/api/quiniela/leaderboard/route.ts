@@ -14,28 +14,22 @@ export interface LeaderboardEntry {
   isMe?: boolean
 }
 
-function syntheticBoard(jornada: string, total: number, limit: number): LeaderboardEntry[] {
-  const NAMES = ['Carlos M.','Adrián M.','Ana L.','Cristina H.','Sergio F.','Pablo R.','Laura V.','Miguel Á.','Elena S.','David T.']
-  const seed = jornada.split('').reduce((s, c, i) => s + c.charCodeAt(0) * (i + 2), 0)
-  return NAMES.slice(0, limit).map((nickname, i) => {
-    const raw = (seed * (i + 5) * 13 + i * 97) % 100
-    const score = Math.max(0, Math.round((raw / 100) * total) - i)
-    return { nickname, score, total, captainUsed: i < 3 }
-  }).sort((a, b) => b.score - a.score)
-}
+// Nota: antes había un fallback "syntheticBoard" con nombres inventados
+// (Carlos M., Ana L. …) para que la UI nunca se viera vacía. Decidimos
+// quitar el humo: si no hay datos reales devolvemos []; la UI ya tiene
+// estado vacío honesto ("Aún no hay clasificación").
 
 export async function GET(req: NextRequest) {
   const jornada = req.nextUrl.searchParams.get('jornada') ?? ''
   const limit   = Math.min(parseInt(req.nextUrl.searchParams.get('limit') ?? '10', 10), 50)
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    // Return synthetic data so the UI is never empty in dev
-    return NextResponse.json({ entries: syntheticBoard(jornada, 10, limit), synthetic: true })
+    return NextResponse.json({ entries: [] })
   }
 
   try {
     const admin = adminSupabase()
-    if (!admin) return NextResponse.json({ entries: syntheticBoard(jornada, 10, limit), synthetic: true })
+    if (!admin) return NextResponse.json({ entries: [] })
 
     // Fetch all members with scores for this jornada from all leagues
     // We aggregate across leagues by user_id and take their best score
@@ -47,7 +41,7 @@ export async function GET(req: NextRequest) {
     if (error) throw error
 
     if (!data || data.length === 0) {
-      return NextResponse.json({ entries: syntheticBoard(jornada, 10, limit), synthetic: true })
+      return NextResponse.json({ entries: [] })
     }
 
     // Group by user_id, keep entry with highest pick count
@@ -77,9 +71,9 @@ export async function GET(req: NextRequest) {
         captainUsed: u.captainUsed,
       }))
 
-    return NextResponse.json({ entries, synthetic: entries.length === 0 })
+    return NextResponse.json({ entries })
   } catch (e) {
     console.error('[leaderboard]', e)
-    return NextResponse.json({ entries: syntheticBoard(jornada, 10, limit), synthetic: true })
+    return NextResponse.json({ entries: [] })
   }
 }

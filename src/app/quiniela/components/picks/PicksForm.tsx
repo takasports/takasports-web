@@ -52,6 +52,21 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
   const urgent      = !allDone && nearestMs < 30 * 60_000
   const streakAtRisk = !allDone && !urgent && nearestMs < 8 * 3_600_000
 
+  // Total potencial de monedas con cuota como multiplicador (espejo del
+  // scoring server). Si no hay cuota → ×1 (fallback honesto, base 10).
+  // Capitán dobla el pick correspondiente. Pleno +100 si todo lleno.
+  const COIN_BASE = 10
+  const potentialCoins = matches.reduce((sum, m, i) => {
+    const p = picks[i]
+    if (!p) return sum
+    const o = m.odds
+    const odd =
+      o ? (p === '1' ? o.home : p === '2' ? o.away : o.draw || 1) : 1
+    const mult = Math.max(1, odd) * (captainIdx === i ? 2 : 1)
+    return sum + COIN_BASE * mult
+  }, 0) + (allDone ? 100 : 0)
+  const potentialCoinsRound = Math.round(potentialCoins)
+
   const handleSubmit = async () => {
     if (!allDone || submitting) return
     trackGameComplete({ game: 'quiniela', correct: matches.length, total: matches.length })
@@ -147,7 +162,7 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
               </p>
               <p className="text-sm mb-2" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Suerte esta jornada 🤞</p>
               <p className="text-xs font-black inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}>
-                Si aciertas todo: hasta {matches.length * 10 + (captainIdx != null ? 10 : 0) + 100}🪙
+                Si aciertas todo: hasta {potentialCoinsRound}🪙
               </p>
             </div>
           </div>
@@ -281,7 +296,7 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
         </div>
       )}
 
-      <StickyBetslip done={done} total={total} allDone={allDone} captainSet={captainIdx != null} urgent={urgent} onSubmit={handleSubmit} />
+      <StickyBetslip done={done} total={total} allDone={allDone} captainSet={captainIdx != null} urgent={urgent} onSubmit={handleSubmit} potential={potentialCoinsRound} />
     </div>
   )
 }

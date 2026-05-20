@@ -21,6 +21,19 @@ interface ScoreBody {
 const VALID_PICKS = new Set(['1', 'X', '2', '1X', 'X2'])
 const MAX_ODDS = 100
 const MAX_PICKS = 20
+
+// Rate limit por-usuario: 5s entre submits. Evita doble crédito por
+// reintentos de red flaky aunque la idempotencia DB ya protegiera
+// (defensa en profundidad).
+const SCORE_GAP_MS = 5_000
+const lastSubmit = new Map<string, number>()
+function scoreRateLimit(userId: string): { ok: true } | { ok: false; retryMs: number } {
+  const now = Date.now()
+  const t = lastSubmit.get(userId) ?? 0
+  if (now - t < SCORE_GAP_MS) return { ok: false, retryMs: SCORE_GAP_MS - (now - t) }
+  lastSubmit.set(userId, now)
+  return { ok: true }
+}
 const MAX_TEAM_LEN = 80
 const MAX_GOALS = 20
 const MAX_JORNADA_LEN = 64
@@ -105,34 +118,58 @@ export async function POST(req: NextRequest) {
     const sb = await createServerSupabaseClient()
     const { data: { user } } = await sb.auth.getUser()
     if (user) {
-      await sb.from('quiniela_picks').insert({
+      // Rate limit por-usuario (in-memory, mismo patrón que chat).
+      const rl = scoreRateLimit(user.id)
+      if (!rl.ok) {
+        return NextResponse.json(
+          { error: 'demasiado rápido — espera unos segundos', retryMs: rl.retryMs },
+          { status: 429, headers: { 'retry-after': String(Math.ceil(rl.retryMs / 1000)) } },
+        )
+      }
+
+      // Idempotencia: si ya hay envío para (user, jornada), NO se vuelve
+      // a acreditar monedas ni a registrar game_plays. Las picks se
+      // actualizan (upsert) — el cierre por kickoff se valida aparte.
+      // Requiere índice único quiniela_picks(user_id, jornada) — migración 027.
+      const { data: existing } = await sb
+        .from('quiniela_picks')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('jornada', body.jornada)
+        .maybeSingle()
+      const alreadyCredited = !!existing
+
+      await sb.from('quiniela_picks').upsert({
         user_id: user.id,
         jornada: body.jornada,
         picks: { picks: body.picks, captainIdx: body.captainIdx, breakdown },
-      })
-      // Sube monedas via RPC (server-side audit, no manipulable)
-      if (breakdown.totalCoins > 0) {
-        await sb.rpc('add_coins', {
-          p_amount: breakdown.totalCoins,
-          p_reason: `Quiniela ${body.jornada}: ${breakdown.hits}/${body.picks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`,
-          p_context: { jornada: body.jornada, hits: breakdown.hits, exacts: breakdown.exacts, pleno: breakdown.pleno },
+      }, { onConflict: 'user_id,jornada' })
+
+      if (!alreadyCredited) {
+        if (breakdown.totalCoins > 0) {
+          await sb.rpc('add_coins', {
+            p_amount: breakdown.totalCoins,
+            p_reason: `Quiniela ${body.jornada}: ${breakdown.hits}/${body.picks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`,
+            p_context: { jornada: body.jornada, hits: breakdown.hits, exacts: breakdown.exacts, pleno: breakdown.pleno },
+          })
+        }
+
+        // game_plays sólo en la primera entrega — para no inflar el cross-game.
+        await sb.rpc('record_game_play', {
+          p_game_id: 'quiniela',
+          p_period:  body.jornada,
+          p_score:   breakdown.hits,
+          p_payload: {
+            picks:   body.picks.map(p => p.pick ?? null),
+            results: results.map(r => r.outcome ?? null),
+            exacts:  breakdown.exacts,
+            pleno:   breakdown.pleno,
+          },
+          p_duration_ms: null,
         })
       }
 
-      // Registrar también en game_plays para el ranking cross-game unificado.
-      // Score = aciertos (hits). Payload con picks + results para el share encoder.
-      await sb.rpc('record_game_play', {
-        p_game_id: 'quiniela',
-        p_period:  body.jornada,
-        p_score:   breakdown.hits,
-        p_payload: {
-          picks:   body.picks.map(p => p.pick ?? null),
-          results: results.map(r => r.outcome ?? null),
-          exacts:  breakdown.exacts,
-          pleno:   breakdown.pleno,
-        },
-        p_duration_ms: null,
-      })
+      return NextResponse.json({ breakdown, evaluated: results.length, persisted: true, alreadyCredited })
     }
 
     return NextResponse.json({ breakdown, evaluated: results.length })
