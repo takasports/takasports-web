@@ -11,14 +11,19 @@ interface EspnSource {
 }
 
 const SOURCES: EspnSource[] = [
-  { slug: 'soccer/esp.1',       sport: 'Fútbol',  comp: 'LaLiga',     teamSport: true  },
-  { slug: 'soccer/eng.1',       sport: 'Fútbol',  comp: 'Premier',    teamSport: true  },
-  { slug: 'soccer/ita.1',       sport: 'Fútbol',  comp: 'Serie A',    teamSport: true  },
-  { slug: 'soccer/ger.1',       sport: 'Fútbol',  comp: 'Bundesliga', teamSport: true  },
-  { slug: 'soccer/fra.1',       sport: 'Fútbol',  comp: 'Ligue 1',    teamSport: true  },
-  { slug: 'basketball/nba',     sport: 'NBA',     comp: 'NBA',        teamSport: true  },
-  { slug: 'racing/f1',          sport: 'F1',      comp: 'Fórmula 1',  teamSport: false },
-  { slug: 'mma/ufc',            sport: 'UFC',     comp: 'UFC',        teamSport: false },
+  { slug: 'soccer/uefa.champions',    sport: 'Fútbol',  comp: 'Champions',  teamSport: true  },
+  { slug: 'soccer/uefa.europa',       sport: 'Fútbol',  comp: 'Europa',     teamSport: true  },
+  { slug: 'soccer/uefa.europa.conf',  sport: 'Fútbol',  comp: 'Conference', teamSport: true  },
+  { slug: 'soccer/uefa.super_cup',    sport: 'Fútbol',  comp: 'Super Cup',  teamSport: true  },
+  { slug: 'soccer/uefa.nations',      sport: 'Fútbol',  comp: 'Nations',    teamSport: true  },
+  { slug: 'soccer/esp.1',             sport: 'Fútbol',  comp: 'LaLiga',     teamSport: true  },
+  { slug: 'soccer/eng.1',             sport: 'Fútbol',  comp: 'Premier',    teamSport: true  },
+  { slug: 'soccer/ita.1',             sport: 'Fútbol',  comp: 'Serie A',    teamSport: true  },
+  { slug: 'soccer/ger.1',             sport: 'Fútbol',  comp: 'Bundesliga', teamSport: true  },
+  { slug: 'soccer/fra.1',             sport: 'Fútbol',  comp: 'Ligue 1',    teamSport: true  },
+  { slug: 'basketball/nba',           sport: 'NBA',     comp: 'NBA',        teamSport: true  },
+  { slug: 'racing/f1',                sport: 'F1',      comp: 'Fórmula 1',  teamSport: false },
+  { slug: 'mma/ufc',                  sport: 'UFC',     comp: 'UFC',        teamSport: false },
 ]
 
 const TENNIS_SLUGS = ['tennis/atp', 'tennis/wta']

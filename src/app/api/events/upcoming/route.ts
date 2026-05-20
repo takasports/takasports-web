@@ -27,8 +27,12 @@ const STALE_MAX  = 30 * 60_000 // serve stale up to 30 min after expiry
 
 // Ordered by display priority
 const SOURCES = [
-  { slug: 'soccer/uefa.champions',  sport: 'soccer',     comp: 'Champions'  },
-  { slug: 'soccer/esp.copa_del_rey',sport: 'soccer',     comp: 'Copa Rey'   },
+  { slug: 'soccer/uefa.champions',   sport: 'soccer',     comp: 'Champions'  },
+  { slug: 'soccer/uefa.europa',      sport: 'soccer',     comp: 'Europa'     },
+  { slug: 'soccer/uefa.europa.conf', sport: 'soccer',     comp: 'Conference' },
+  { slug: 'soccer/uefa.super_cup',   sport: 'soccer',     comp: 'Super Cup'  },
+  { slug: 'soccer/uefa.nations',     sport: 'soccer',     comp: 'Nations'    },
+  { slug: 'soccer/esp.copa_del_rey', sport: 'soccer',     comp: 'Copa Rey'   },
   { slug: 'soccer/esp.1',           sport: 'soccer',     comp: 'LaLiga'     },
   { slug: 'soccer/eng.1',           sport: 'soccer',     comp: 'Premier'    },
   { slug: 'soccer/ita.1',           sport: 'soccer',     comp: 'Serie A'    },

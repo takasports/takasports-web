@@ -39,14 +39,22 @@ const SPAIN_BROADCAST: Record<string, string> = {
   'Supercopa de España': 'RTVE',
 
   // ── Fútbol · UEFA ────────────────────────────────────────────────────────
-  //   Champions, Europa y Conference → Movistar+ exclusivo (acuerdo 2024-27)
+  //   Champions, Europa, Conference y Supercopa europea → Movistar+ exclusivo
+  //   (acuerdo 2024-27). Nations League → DAZN.
+  Champions:                'Movistar+',
   'Champions League':       'Movistar+',
   'UEFA Champions League':  'Movistar+',
   'UCL':                    'Movistar+',
+  Europa:                   'Movistar+',
   'Europa League':          'Movistar+',
   'UEFA Europa League':     'Movistar+',
+  Conference:               'Movistar+',
   'Conference League':      'Movistar+',
   'UEFA Conference League': 'Movistar+',
+  'Super Cup':              'Movistar+',
+  'UEFA Super Cup':         'Movistar+',
+  'Supercopa de Europa':    'Movistar+',
+  Nations:                  'DAZN',
   'UEFA Nations League':    'DAZN',
   'Nations League':         'DAZN',
 

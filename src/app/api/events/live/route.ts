@@ -33,13 +33,17 @@ const IDLE_TTL  = 5 * 60_000
 const STALE_MAX = 10 * 60_000
 
 const ESPN_TEAM_LEAGUES = [
-  { slug: 'soccer/esp.1',          sport: 'soccer',     comp: 'LaLiga'     },
-  { slug: 'soccer/eng.1',          sport: 'soccer',     comp: 'Premier'    },
-  { slug: 'soccer/ita.1',          sport: 'soccer',     comp: 'Serie A'    },
-  { slug: 'soccer/ger.1',          sport: 'soccer',     comp: 'Bundesliga' },
-  { slug: 'soccer/fra.1',          sport: 'soccer',     comp: 'Ligue 1'    },
-  { slug: 'soccer/uefa.champions', sport: 'soccer',     comp: 'Champions'  },
-  { slug: 'basketball/nba',        sport: 'basketball', comp: 'NBA'        },
+  { slug: 'soccer/uefa.champions',   sport: 'soccer',     comp: 'Champions'  },
+  { slug: 'soccer/uefa.europa',      sport: 'soccer',     comp: 'Europa'     },
+  { slug: 'soccer/uefa.europa.conf', sport: 'soccer',     comp: 'Conference' },
+  { slug: 'soccer/uefa.super_cup',   sport: 'soccer',     comp: 'Super Cup'  },
+  { slug: 'soccer/uefa.nations',     sport: 'soccer',     comp: 'Nations'    },
+  { slug: 'soccer/esp.1',            sport: 'soccer',     comp: 'LaLiga'     },
+  { slug: 'soccer/eng.1',            sport: 'soccer',     comp: 'Premier'    },
+  { slug: 'soccer/ita.1',            sport: 'soccer',     comp: 'Serie A'    },
+  { slug: 'soccer/ger.1',            sport: 'soccer',     comp: 'Bundesliga' },
+  { slug: 'soccer/fra.1',            sport: 'soccer',     comp: 'Ligue 1'    },
+  { slug: 'basketball/nba',          sport: 'basketball', comp: 'NBA'        },
 ] as const
 
 const TENNIS_SLUGS = ['tennis/atp', 'tennis/wta'] as const
