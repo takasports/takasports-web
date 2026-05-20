@@ -60,6 +60,7 @@ export interface StatsStandingsResponse {
   coachesWinRate: StandingRow[]
   worldCup: LeagueStandings[]
   worldCupKnockout: StandingRow[]
+  worldCupSchedule: StandingRow[]
   uclFixtures: StandingRow[]
   uelFixtures: StandingRow[]
   // ── nuevos automatizados ────────────────────────────────────────────
@@ -928,24 +929,75 @@ const FIFA_CONFED: Record<string, string> = {
   'Bélgica': 'UEFA', 'Alemania': 'UEFA',
 }
 
-function buildWorldCupQualified(): StandingRow[] {
-  const hosts: StandingRow[] = [
-    { rank: 1, name: 'EEUU',    abbr: 'USA', value: 'Anfitrión', sub: 'Co-anfitrión',  flag: '🇺🇸', trend: 'flat', extra: { Confed: 'CONCACAF' } },
-    { rank: 2, name: 'México',   abbr: 'MEX', value: 'Anfitrión', sub: 'Co-anfitrión',  flag: '🇲🇽', trend: 'flat', extra: { Confed: 'CONCACAF' } },
-    { rank: 3, name: 'Canadá',   abbr: 'CAN', value: 'Anfitrión', sub: 'Co-anfitrión',  flag: '🇨🇦', trend: 'flat', extra: { Confed: 'CONCACAF' } },
-  ]
-  const champion: StandingRow = { rank: 4, name: 'Argentina', abbr: 'ARG', value: 'Campeona', sub: 'Defiende título 2022', flag: '🇦🇷', trend: 'flat', extra: { Confed: 'CONMEBOL' } }
-  const fifaTop = FIFA_RANKING
-    .filter(r => r.name !== 'Argentina')
-    .slice(0, 8)
-    .map((r, i) => ({
-      rank: 5 + i, name: r.name, abbr: r.abbr,
-      value: 'Top FIFA', sub: r.sub,
-      flag: FIFA_FLAG[r.name] ?? '',
-      trend: r.trend,
-      extra: { Confed: FIFA_CONFED[r.name] ?? '—', Pts: r.extra?.Pts ?? '' },
-    } as StandingRow))
-  return [...hosts, champion, ...fifaTop]
+// Aplana las 48 selecciones reales del Mundial 2026 (las que ESPN ya devuelve
+// en /standings, distribuidas en 12 grupos). Una sola fuente de verdad.
+function buildWorldCupQualifiedFromStandings(groups: LeagueStandings[]): StandingRow[] {
+  const out: StandingRow[] = []
+  let rank = 1
+  for (const g of groups) {
+    const letter = g.label.replace(/^Grupo\s+/i, '')
+    for (const r of g.rows) {
+      out.push({
+        rank: rank++,
+        name: r.name,
+        abbr: r.abbr,
+        value: `Grupo ${letter}`,
+        sub: r.sub === 'Sin jugar' ? 'Clasificada' : r.sub,
+        flag: FIFA_FLAG[r.name] ?? r.flag ?? '',
+        trend: 'flat',
+        extra: { Confed: FIFA_CONFED[r.name] ?? '—' },
+      })
+    }
+  }
+  return out
+}
+
+// Próximos partidos del Mundial 2026 (≤ 14 días). Antes del 11-jun: vacío;
+// después: muestra los partidos del bloque del día y siguientes.
+async function fetchWorldCupSchedule(): Promise<StandingRow[]> {
+  try {
+    const now = new Date()
+    const start = now < new Date('2026-06-11') ? new Date('2026-06-11') : now
+    const end = new Date(start.getTime() + 14 * 86400_000)
+    const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${fmt(start)}-${fmt(end)}`,
+      { next: { revalidate: 600 } },
+    )
+    if (!res.ok) return []
+    const json = await res.json()
+    const events = (json.events as Record<string, unknown>[]) ?? []
+    const rows: StandingRow[] = []
+    for (const ev of events.slice(0, 12)) {
+      const comp = ((ev.competitions as Record<string, unknown>[])?.[0]) as Record<string, unknown> | undefined
+      const cs = (comp?.competitors as Record<string, unknown>[]) ?? []
+      if (cs.length < 2) continue
+      const home = cs.find(c => (c as Record<string, unknown>).homeAway === 'home') ?? cs[0]
+      const away = cs.find(c => (c as Record<string, unknown>).homeAway === 'away') ?? cs[1]
+      const hTeam = (home.team as Record<string, unknown>)?.displayName as string
+      const aTeam = (away.team as Record<string, unknown>)?.displayName as string
+      if (!hTeam || !aTeam) continue
+      const venue = ((comp?.venue as Record<string, unknown>)?.fullName as string) ?? ''
+      const dateStr = (ev.date as string) ?? ''
+      const d = dateStr ? new Date(dateStr) : null
+      const dateLabel = d
+        ? d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'short' })
+        : '—'
+      const timeLabel = d
+        ? d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' })
+        : ''
+      rows.push({
+        rank: rows.length + 1,
+        name: `${hTeam} vs ${aTeam}`,
+        abbr: '',
+        value: timeLabel,
+        sub: venue ? `${dateLabel} · ${venue}` : dateLabel,
+        trend: 'flat',
+        extra: {},
+      })
+    }
+    return rows
+  } catch { return [] }
 }
 
 // ── GET ───────────────────────────────────────────────────────────────────────
@@ -969,12 +1021,12 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   ufc: ['ufcP4P', 'ufcChampions', 'ufcDivisions'],
   selecciones: ['fifaRanking'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
-  mundial: ['worldCup', 'worldCupKnockout', 'worldCupQualified'],
+  mundial: ['worldCup', 'worldCupKnockout', 'worldCupQualified', 'worldCupSchedule'],
   motogp: ['motogpRiders', 'motogpConstructors'],
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
-  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, coaches, worldCup, worldCupKnockout, uclFixtures, uelFixtures] = await Promise.all([
+  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, coaches, worldCup, worldCupKnockout, worldCupSchedule, uclFixtures, uelFixtures] = await Promise.all([
     Promise.allSettled(FOOTBALL_LEAGUES.map(l => fetchFootball(l.slug, l.id, l.label))),
     fetchF1All(),
     fetchNBA(),
@@ -986,6 +1038,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchCoachRecords(),
     fetchWorldCup(),
     fetchWorldCupKnockout(),
+    fetchWorldCupSchedule(),
     fetchEuropeanCupFixtures('soccer/uefa.champions'),
     fetchEuropeanCupFixtures('soccer/uefa.europa'),
   ])
@@ -1034,7 +1087,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   const nbaMvpRace = buildNbaMvpRace(nbaLeaders.scoring, nba.east, nba.west)
   const nbaDpoyRace = buildNbaDpoyRace(nbaLeaders.blocks, nbaLeaders.steals)
   const nbaRookieRace = await fetchNbaRookieRace(nbaSeason)
-  const worldCupQualified = buildWorldCupQualified()
+  const worldCupQualified = buildWorldCupQualifiedFromStandings(worldCup)
 
   const now = new Date().toISOString()
   const stale   = (source: string): BlockMeta => ({ status: 'stale', source, fetchedAt: now, asOf: 'caché reciente' })
@@ -1094,7 +1147,8 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     uelScorers:        uelScorers.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
     uclAssists:        uclAssists.length    ? live('ESPN · UEFA Champions League') : unavail('ESPN'),
     uelAssists:        uelAssists.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
-    worldCupQualified: live('Auto · FIFA + anfitriones'),
+    worldCupQualified: worldCupQualified.length ? live('Auto · FIFA World Cup 2026') : unavail('ESPN'),
+    worldCupSchedule:  worldCupSchedule.length  ? live('ESPN · scoreboard')          : unavail('ESPN'),
     motogpRiders:        motogpRidersR.rows.length    ? live(motogpRidersR.snap?.source ?? 'MotoGP.com') : unavail('Sin snapshot — ejecutar cron MotoGP'),
     motogpConstructors:  motogpConstructR.rows.length ? live(motogpConstructR.snap?.source ?? 'MotoGP.com') : unavail('Sin snapshot — ejecutar cron MotoGP'),
     tennisSlams:         TENNIS_SLAMS_2026.length     ? histor('ATP/WTA · calendario', '2026') : unavail('Calendario no disponible'),
@@ -1145,6 +1199,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     coachesWinRate:      coaches,
     worldCup,
     worldCupKnockout,
+    worldCupSchedule,
     uclFixtures,
     uelFixtures,
     f1Calendar,

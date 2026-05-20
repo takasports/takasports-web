@@ -241,20 +241,13 @@ const FUTBOL_FEMENINO_BLOCKS: StatBlock[] = [
 // ─────────────────────────────────────────────────────────────────
 // DATOS — SPORTS COMPLETO
 // ─────────────────────────────────────────────────────────────────
-const WC_GROUPS_FALLBACK = [
-  { id: 'wc-group-a', label: 'Grupo A', teams: ['México', 'Chequia', 'Corea del Sur', 'Sudáfrica'] },
-  { id: 'wc-group-b', label: 'Grupo B', teams: ['Canadá', 'Bosnia-Herzegovina', 'Suiza', 'Qatar'] },
-  { id: 'wc-group-c', label: 'Grupo C', teams: ['Brasil', 'Escocia', 'Haití', 'Marruecos'] },
-  { id: 'wc-group-d', label: 'Grupo D', teams: ['Paraguay', 'Turquía', 'Australia', 'Estados Unidos'] },
-  { id: 'wc-group-e', label: 'Grupo E', teams: ['Ecuador', 'Alemania', 'Costa de Marfil', 'Curazao'] },
-  { id: 'wc-group-f', label: 'Grupo F', teams: ['Países Bajos', 'Suecia', 'Japón', 'Túnez'] },
-  { id: 'wc-group-g', label: 'Grupo G', teams: ['Bélgica', 'Irán', 'Egipto', 'Nueva Zelanda'] },
-  { id: 'wc-group-h', label: 'Grupo H', teams: ['España', 'Uruguay', 'Arabia Saudita', 'Cabo Verde'] },
-  { id: 'wc-group-i', label: 'Grupo I', teams: ['Noruega', 'Francia', 'Senegal', 'Irak'] },
-  { id: 'wc-group-j', label: 'Grupo J', teams: ['Argentina', 'Austria', 'Argelia', 'Jordania'] },
-  { id: 'wc-group-k', label: 'Grupo K', teams: ['Colombia', 'Portugal', 'Uzbekistán', 'Congo RD'] },
-  { id: 'wc-group-l', label: 'Grupo L', teams: ['Inglaterra', 'Croacia', 'Panamá', 'Ghana'] },
-]
+// Solo metadatos de cabecera (id + label). Las 4 selecciones por grupo
+// vienen siempre del live (ESPN /standings). Sin equipos hardcodeados → si
+// FIFA cambia algo, nunca mostramos un dato desactualizado.
+const WC_GROUPS_FALLBACK = (['A','B','C','D','E','F','G','H','I','J','K','L'] as const).map(L => ({
+  id: `wc-group-${L.toLowerCase()}`,
+  label: `Grupo ${L}`,
+}))
 
 const SPORTS: SportConfig[] = [
   {
@@ -274,11 +267,17 @@ const SPORTS: SportConfig[] = [
           id: g.id,
           title: g.label,
           metric: 'Pts',
-          rows: g.teams.map((name, i) => ({
-            rank: i + 1, name, value: '0', sub: 'Sin jugar', trend: 'flat' as const,
-            extra: { PJ: '0', V: '0', E: '0', D: '0', GF: '0', GC: '0' },
-          })),
+          rows: [],
         })),
+      },
+      {
+        id: 'calendario', label: 'Próximos partidos', icon: '📅',
+        blocks: [{
+          id: 'wc-schedule',
+          title: 'Próximos partidos · Mundial 2026',
+          metric: 'Hora',
+          rows: [],
+        }],
       },
       {
         id: 'eliminatoria', label: 'Eliminatoria', icon: '⚔️',
@@ -293,21 +292,8 @@ const SPORTS: SportConfig[] = [
       {
         id: 'clasificados', label: 'Clasificados', icon: '✅',
         blocks: [{
-          id: 'wc-qualified', title: 'Selecciones clasificadas (Top 16 ranking FIFA)', metric: 'Pos.',
-          rows: [
-            { rank: 1,  name: 'Argentina',     team: 'CONMEBOL',   value: 'Campeona', sub: 'Defiende título 2022',   flag: '🇦🇷', trend: 'flat' },
-            { rank: 2,  name: 'Francia',       team: 'UEFA',       value: 'Top FIFA', sub: 'Subcampeona 2022',       flag: '🇫🇷', trend: 'up' },
-            { rank: 3,  name: 'España',        team: 'UEFA',       value: 'Top FIFA', sub: 'Campeona Eurocopa 2024', flag: '🇪🇸', trend: 'up' },
-            { rank: 4,  name: 'Inglaterra',    team: 'UEFA',       value: 'Top FIFA', sub: 'Subcampeona Eurocopa 2024', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'flat' },
-            { rank: 5,  name: 'Portugal',      team: 'UEFA',       value: 'Top FIFA', sub: 'Campeona Nations League', flag: '🇵🇹', trend: 'up' },
-            { rank: 6,  name: 'Brasil',        team: 'CONMEBOL',   value: 'Top FIFA', sub: '5 títulos mundiales',    flag: '🇧🇷', trend: 'down' },
-            { rank: 7,  name: 'Países Bajos',  team: 'UEFA',       value: 'Top FIFA', sub: 'Cuartos 2022',           flag: '🇳🇱', trend: 'flat' },
-            { rank: 8,  name: 'Alemania',      team: 'UEFA',       value: 'Top FIFA', sub: 'Anfitriona Euro 2024',   flag: '🇩🇪', trend: 'up' },
-            { rank: 9,  name: 'EEUU',           team: 'CONCACAF',  value: 'Anfitrión', sub: 'Co-anfitrión',          flag: '🇺🇸', trend: 'flat' },
-            { rank: 10, name: 'México',         team: 'CONCACAF',  value: 'Anfitrión', sub: 'Co-anfitrión',          flag: '🇲🇽', trend: 'flat' },
-            { rank: 11, name: 'Canadá',         team: 'CONCACAF',  value: 'Anfitrión', sub: 'Co-anfitrión',          flag: '🇨🇦', trend: 'flat' },
-            { rank: 12, name: 'Marruecos',      team: 'CAF',       value: 'Top FIFA', sub: 'Semifinalista 2022',     flag: '🇲🇦', trend: 'up' },
-          ],
+          id: 'wc-qualified', title: 'Selecciones clasificadas · 48 plazas',
+          metric: 'Grupo', rows: [],
         }],
       },
     ],
@@ -1431,6 +1417,7 @@ const LIVE_BLOCK_IDS = new Set([
   'wc-group-i', 'wc-group-j', 'wc-group-k', 'wc-group-l',
   'wc-knockout',
   'wc-qualified',
+  'wc-schedule',
   // Snapshots auto-actualizados (cron Vercel)
   'motogp-pilotos', 'motogp-constructores',
   'tenis-slams',
@@ -1478,6 +1465,7 @@ interface LiveStandingsData {
   uclAssists?: LiveStandingRow[]
   uelAssists?: LiveStandingRow[]
   worldCupQualified?: LiveStandingRow[]
+  worldCupSchedule?: LiveStandingRow[]
   motogpRiders?: LiveStandingRow[]
   motogpConstructors?: LiveStandingRow[]
   tennisSlams?: LiveStandingRow[]
@@ -1512,6 +1500,7 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'wc-group-j': 'worldCup', 'wc-group-k': 'worldCup', 'wc-group-l': 'worldCup',
   'wc-knockout': 'worldCupKnockout',
   'wc-qualified': 'worldCupQualified',
+  'wc-schedule': 'worldCupSchedule',
   'f1-calendario': 'f1Calendar',
   'f1-sprints': 'f1Sprints',
   'nba-mvp-race': 'nbaMvpRace',
@@ -2167,6 +2156,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (block.id === 'ucl-assists'      && liveData.uclAssists?.length)        return { ...block, rows: toStatRows(liveData.uclAssists) }
         if (block.id === 'uel-assists'      && liveData.uelAssists?.length)        return { ...block, rows: toStatRows(liveData.uelAssists) }
         if (block.id === 'wc-qualified'     && liveData.worldCupQualified?.length) return { ...block, rows: toStatRows(liveData.worldCupQualified) }
+        if (block.id === 'wc-schedule'      && liveData.worldCupSchedule?.length)  return { ...block, rows: toStatRows(liveData.worldCupSchedule) }
         if (block.id === 'motogp-pilotos'        && liveData.motogpRiders?.length)        return { ...block, rows: toStatRows(liveData.motogpRiders, 'Escudería') }
         if (block.id === 'motogp-constructores'  && liveData.motogpConstructors?.length)  return { ...block, rows: toStatRows(liveData.motogpConstructors) }
         if (block.id === 'tenis-slams'           && liveData.tennisSlams?.length)         return { ...block, rows: toStatRows(liveData.tennisSlams) }
