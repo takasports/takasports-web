@@ -1028,3 +1028,23 @@ export function getDailyQuestions(count = 10): QuizQuestion[] {
   const shuffled = [...QUESTIONS].sort(() => rand() - 0.5)
   return shuffled.slice(0, count)
 }
+
+/** Lista única de categorías presentes en el pool actual. */
+export function listCategories(): QuizCategory[] {
+  return Array.from(new Set(QUESTIONS.map(q => q.category))).sort() as QuizCategory[]
+}
+
+/**
+ * Selección no-determinista (cada llamada distinta) filtrada opcionalmente
+ * por categoría. Usada por el modo práctica para variar las rondas extra
+ * sin tocar la selección diaria oficial.
+ *
+ * Si la categoría no tiene suficientes preguntas, devuelve las que haya.
+ */
+export function getPracticeQuestions(count = 10, category?: QuizCategory): QuizQuestion[] {
+  const pool = category ? QUESTIONS.filter(q => q.category === category) : QUESTIONS
+  const seed = (Date.now() & 0xffffffff) ^ Math.floor(Math.random() * 0xffffffff)
+  const rand = mulberry32(seed)
+  const shuffled = pool.map(q => ({ q, k: rand() })).sort((a, b) => a.k - b.k).map(x => x.q)
+  return shuffled.slice(0, Math.min(count, shuffled.length))
+}

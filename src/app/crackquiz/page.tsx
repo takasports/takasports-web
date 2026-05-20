@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
-import { getDailyQuestions, todayKey, type QuizQuestion } from '@/lib/crackquiz-questions'
+import { getDailyQuestions, getPracticeQuestions, listCategories, todayKey, type QuizQuestion, type QuizCategory } from '@/lib/crackquiz-questions'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import { TrophyIcon, FireIcon, ClapIcon, FlexIcon } from '@/components/icons/GameIcons'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
@@ -420,6 +420,17 @@ function SoundToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   )
 }
 
+const CATEGORY_LABEL: Record<string, string> = {
+  champions:   'Champions',
+  clubes:      'Clubes',
+  historia:    'Historia',
+  jugadores:   'Jugadores',
+  mundiales:   'Mundiales',
+  records:     'Récords',
+  reglas:      'Reglas',
+  selecciones: 'Selecciones',
+}
+
 function IdleScreen({
   stored,
   onStart,
@@ -430,11 +441,13 @@ function IdleScreen({
 }: {
   stored: StoredState | null
   onStart: () => void
-  onPractice: () => void
+  onPractice: (category?: QuizCategory) => void
   alreadyPlayed: boolean
   soundOn: boolean
   onToggleSound: () => void
 }) {
+  const [practiceCategory, setPracticeCategory] = useState<QuizCategory | ''>('')
+  const categories = listCategories()
   // streak at risk: has active streak but hasn't played today
   const streakAtRisk = !alreadyPlayed && !!stored && stored.streak > 1
 
@@ -492,13 +505,35 @@ function IdleScreen({
           {stored && stored.streak > 1 && (
             <p className="mt-1 text-xs flex items-center justify-center gap-1.5" style={{ color: '#F59E0B' }}><FireIcon size={14} /> Racha activa: {stored.streak} días</p>
           )}
-          <button
-            onClick={onPractice}
-            className="mt-5 w-full py-3 rounded-xl font-semibold transition-opacity hover:opacity-80"
-            style={{ background: 'rgba(252,211,77,0.1)', color: '#FCD34D', border: '1px solid rgba(252,211,77,0.25)' }}
-          >
-            Practicar otra ronda
-          </button>
+          <div className="mt-5 flex flex-col gap-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-left" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+              Categoría
+            </label>
+            <select
+              value={practiceCategory}
+              onChange={e => setPracticeCategory(e.target.value as QuizCategory | '')}
+              className="w-full px-3 py-2.5 rounded-xl text-sm font-semibold outline-none cursor-pointer"
+              style={{
+                background: 'rgba(0,0,0,0.3)',
+                color: '#F0F0F5',
+                border: '1px solid rgba(255,255,255,0.08)',
+                fontFamily: 'var(--font-display)',
+              }}
+              aria-label="Categoría para la ronda de práctica"
+            >
+              <option value="">Mezcla — todas las categorías</option>
+              {categories.map(c => (
+                <option key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => onPractice(practiceCategory || undefined)}
+              className="w-full py-3 rounded-xl font-semibold transition-opacity hover:opacity-80"
+              style={{ background: 'rgba(252,211,77,0.1)', color: '#FCD34D', border: '1px solid rgba(252,211,77,0.25)' }}
+            >
+              Practicar otra ronda
+            </button>
+          </div>
           <p className="mt-2 text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
             No cuenta para el ranking ni la racha
           </p>
@@ -696,10 +731,13 @@ export default function CrackQuizPage() {
   const [currentStreak, setCurrentStreak] = useState(0)
   const [maxCombo, setMaxCombo] = useState(0)
   const [lastBreakdown, setLastBreakdown] = useState<ScoreBreakdown | null>(null)
-  const [answers, setAnswers] = useState<Array<{ selected: number; correct: number; points: number }>>([])
+  const [answers, setAnswers] = useState<Array<{ selected: number; correct: number; points: number; streakBonus: number }>>([])
   const [soundOn, setSoundOn] = useState(false)
   const [showIntro, setShowIntro] = useState(false)
   const [practice, setPractice] = useState(false)
+  // Doble o nada en la pregunta 10. null hasta llegar a Q10; 'pending'
+  // mientras se muestra el diálogo; 'accepted' / 'declined' tras decidir.
+  const [donChoice, setDonChoice] = useState<'pending' | 'accepted' | 'declined' | null>(null)
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -786,13 +824,15 @@ export default function CrackQuizPage() {
   }, [secondsLeft, phase, revealed, showIntro])
 
   // ── Start game ─────────────────────────────────────────────────
-  const handleStart = useCallback((isPractice = false) => {
+  const handleStart = useCallback((isPractice = false, category?: QuizCategory) => {
     if (soundRef.current) ensureAudio()
     practiceRef.current = isPractice
     setPractice(isPractice)
     trackGameStart('crackquiz')
-    trackGameEvent({ gameId: 'crackquiz', event: 'started', period: currentDayISO(), meta: { practice: isPractice } })
-    const qs = getDailyQuestions(QUESTIONS_PER_ROUND)
+    trackGameEvent({ gameId: 'crackquiz', event: 'started', period: currentDayISO(), meta: { practice: isPractice, category: category ?? null } })
+    const qs = isPractice
+      ? getPracticeQuestions(QUESTIONS_PER_ROUND, category)
+      : getDailyQuestions(QUESTIONS_PER_ROUND)
     setQuestions(qs)
     setCurrentIndex(0)
     setScore(0)
@@ -802,9 +842,36 @@ export default function CrackQuizPage() {
     setSelectedOption(null)
     setRevealed(false)
     setLastBreakdown(null)
+    setDonChoice(null)
     setPhase('playing')
     startQuestion()
   }, [startQuestion])
+
+  // Combo embolsado: suma de bonus de racha de todas las respuestas previas.
+  // Es lo que se apuesta en el doble o nada de la pregunta final.
+  const comboBank = useMemo(
+    () => answers.reduce((acc, a) => acc + (a.streakBonus ?? 0), 0),
+    [answers],
+  )
+
+  const advanceToNext = useCallback(() => {
+    const nextIdx = currentIndex + 1
+    if (nextIdx >= QUESTIONS_PER_ROUND) {
+      setPhase('result')
+    } else {
+      setCurrentIndex(nextIdx)
+      setSelectedOption(null)
+      setRevealed(false)
+      setLastBreakdown(null)
+      startQuestion()
+    }
+  }, [currentIndex, startQuestion])
+
+  const handleDonChoice = useCallback((choice: 'accepted' | 'declined') => {
+    setDonChoice(choice)
+    // Pequeño respiro visual antes de pasar a Q10
+    setTimeout(() => advanceToNext(), 250)
+  }, [advanceToNext])
 
   // ── Answer selection ───────────────────────────────────────────
   const handleReveal = useCallback((optionIndex: number) => {
@@ -815,10 +882,21 @@ export default function CrackQuizPage() {
 
     const q = questions[currentIndex]
     const isCorrect = optionIndex === q.correctIndex
-    const breakdown = scoreForAnswer(secondsLeft, isCorrect, currentStreak)
+    const baseBreakdown = scoreForAnswer(secondsLeft, isCorrect, currentStreak)
 
-    setAnswers(prev => [...prev, { selected: optionIndex, correct: q.correctIndex, points: breakdown.total }])
-    setScore(prev => prev + breakdown.total)
+    // Doble o nada: en la pregunta final, si aceptó la apuesta, sumamos
+    // un extra equivalente al combo banco (si acierta) o lo restamos (si falla).
+    const isFinal = currentIndex === QUESTIONS_PER_ROUND - 1
+    const donDelta = isFinal && donChoice === 'accepted'
+      ? (isCorrect ? comboBank : -comboBank)
+      : 0
+    const breakdown: ScoreBreakdown = { ...baseBreakdown, total: baseBreakdown.total + donDelta }
+
+    setAnswers(prev => [
+      ...prev,
+      { selected: optionIndex, correct: q.correctIndex, points: breakdown.total, streakBonus: baseBreakdown.streak },
+    ])
+    setScore(prev => Math.max(0, prev + breakdown.total))
     setCurrentStreak(prev => {
       const next = isCorrect ? prev + 1 : 0
       if (isCorrect) setMaxCombo(m => Math.max(m, next))
@@ -833,17 +911,16 @@ export default function CrackQuizPage() {
 
     revealTimeoutRef.current = setTimeout(() => {
       const nextIdx = currentIndex + 1
-      if (nextIdx >= QUESTIONS_PER_ROUND) {
-        setPhase('result')
-      } else {
-        setCurrentIndex(nextIdx)
-        setSelectedOption(null)
-        setRevealed(false)
-        setLastBreakdown(null)
-        startQuestion()
+      // Si vamos a entrar en Q10 y hay combo bancado por apostar, paramos
+      // para preguntar el doble o nada. El usuario decide y avanza desde el diálogo.
+      const projectedBank = comboBank + (isCorrect ? baseBreakdown.streak : 0)
+      if (nextIdx === QUESTIONS_PER_ROUND - 1 && donChoice === null && projectedBank > 0) {
+        setDonChoice('pending')
+        return
       }
+      advanceToNext()
     }, 1400)
-  }, [revealed, clearTimer, questions, currentIndex, secondsLeft, currentStreak, startQuestion])
+  }, [revealed, clearTimer, questions, currentIndex, secondsLeft, currentStreak, comboBank, donChoice, advanceToNext])
 
   // ── End of game — persist results ──────────────────────────────
   useEffect(() => {
@@ -977,7 +1054,7 @@ export default function CrackQuizPage() {
           <IdleScreen
             stored={stored}
             onStart={() => handleStart(false)}
-            onPractice={() => handleStart(true)}
+            onPractice={(cat) => handleStart(true, cat)}
             alreadyPlayed={alreadyPlayed}
             soundOn={soundOn}
             onToggleSound={toggleSound}
@@ -1013,40 +1090,99 @@ export default function CrackQuizPage() {
             {/* Progress */}
             <ProgressBar current={currentIndex + (revealed ? 1 : 0)} total={QUESTIONS_PER_ROUND} />
 
-            {/* Question card / category intro */}
-            {showIntro ? (
+            {/* Doble o nada — overlay antes de la pregunta final */}
+            {donChoice === 'pending' ? (
               <div
-                key={`intro-${currentIndex}`}
-                className="rounded-2xl p-10 my-6 text-center"
-                style={{ background: 'rgba(252,211,77,0.07)', border: '1px solid rgba(252,211,77,0.15)', animation: 'cq-combo-pop 0.4s ease-out' }}
+                className="rounded-2xl p-6 my-6 text-center"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(252,211,77,0.12), rgba(251,146,60,0.08))',
+                  border: '1px solid rgba(252,211,77,0.35)',
+                  animation: 'cq-combo-pop 0.4s ease-out',
+                }}
               >
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: 'var(--text-muted)' }}>
-                  Categoría
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] mb-2 inline-flex items-center justify-center gap-1.5" style={{ color: '#FB923C' }}>
+                  <FireIcon size={14} /> Doble o nada
                 </p>
-                <p className="text-2xl font-black" style={{ fontFamily: 'var(--font-display)', color: '#FCD34D' }}>
-                  {q.category}
+                <p className="text-2xl font-black mb-2" style={{ fontFamily: 'var(--font-display)', color: '#FCD34D' }}>
+                  Te quedas con tu combo o lo apuestas
                 </p>
-              </div>
-            ) : (
-              <div className="rounded-2xl p-6 my-6" style={{ background: 'rgba(252,211,77,0.05)', border: '1px solid rgba(252,211,77,0.1)' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: 'rgba(252,211,77,0.1)', color: '#FCD34D' }}>
-                    {q.category}
-                  </span>
-                  <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <IconTime />
-                    <span>{QUESTION_TIME}s</span>
-                  </div>
+                <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                  Llevas <span className="font-black" style={{ color: '#FCD34D' }}>+{comboBank} pts</span> de combo bancado.
+                  Si aciertas la última pregunta los <span className="font-black">duplicas</span>; si fallas los <span className="font-black" style={{ color: '#F87171' }}>pierdes</span>.
+                </p>
+                <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+                  <button
+                    onClick={() => handleDonChoice('declined')}
+                    className="py-3 rounded-xl text-sm font-bold transition-opacity hover:opacity-80"
+                    style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  >
+                    Me quedo el combo
+                  </button>
+                  <button
+                    onClick={() => handleDonChoice('accepted')}
+                    className="py-3 rounded-xl text-sm font-black transition-opacity hover:opacity-90 inline-flex items-center justify-center gap-1.5"
+                    style={{
+                      background: 'linear-gradient(135deg, #FCD34D, #FB923C)',
+                      color: '#09090F',
+                      boxShadow: '0 6px 20px rgba(251,146,60,0.35)',
+                    }}
+                  >
+                    🎲 Apostar +{comboBank}
+                  </button>
                 </div>
-                <p className="text-lg font-semibold leading-snug" style={{ color: 'rgba(255,255,255,0.92)' }}>
-                  {q.question}
-                </p>
               </div>
+            ) : null}
+
+            {/* Question card / category intro (oculto durante el diálogo de doble o nada) */}
+            {donChoice !== 'pending' && (
+              showIntro ? (
+                <div
+                  key={`intro-${currentIndex}`}
+                  className="rounded-2xl p-10 my-6 text-center"
+                  style={{ background: 'rgba(252,211,77,0.07)', border: '1px solid rgba(252,211,77,0.15)', animation: 'cq-combo-pop 0.4s ease-out' }}
+                >
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] mb-2" style={{ color: 'var(--text-muted)' }}>
+                    Categoría
+                  </p>
+                  <p className="text-2xl font-black" style={{ fontFamily: 'var(--font-display)', color: '#FCD34D' }}>
+                    {q.category}
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-2xl p-6 my-6" style={{ background: 'rgba(252,211,77,0.05)', border: '1px solid rgba(252,211,77,0.1)' }}>
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: 'rgba(252,211,77,0.1)', color: '#FCD34D' }}>
+                      {q.category}
+                    </span>
+                    <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      <IconTime />
+                      <span>{QUESTION_TIME}s</span>
+                    </div>
+                    {donChoice === 'accepted' && currentIndex === QUESTIONS_PER_ROUND - 1 && (
+                      <span
+                        className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full inline-flex items-center gap-1"
+                        style={{ background: 'rgba(251,146,60,0.18)', color: '#FB923C', border: '1px solid rgba(251,146,60,0.4)' }}
+                      >
+                        🎲 Apostando +{comboBank}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-lg font-semibold leading-snug" style={{ color: 'rgba(255,255,255,0.92)' }}>
+                    {q.question}
+                  </p>
+                </div>
+              )
             )}
 
             {/* Options */}
-            <div className="relative grid grid-cols-1 gap-3" style={{ visibility: showIntro ? 'hidden' : 'visible' }}>
+            <div
+              className="relative grid grid-cols-1 gap-3"
+              style={{
+                visibility: showIntro || donChoice === 'pending' ? 'hidden' : 'visible',
+                display: donChoice === 'pending' ? 'none' : 'grid',
+              }}
+            >
               {revealed && lastBreakdown && <ScorePop breakdown={lastBreakdown} streak={currentStreak} />}
               {q.options.map((opt, i) => {
                 let bg = 'rgba(255,255,255,0.04)'
