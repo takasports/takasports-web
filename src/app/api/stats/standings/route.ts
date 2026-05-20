@@ -545,14 +545,17 @@ async function fetchWorldCup(): Promise<LeagueStandings[]> {
         const w  = sv(stats, 'wins'); const d = sv(stats, 'ties'); const l = sv(stats, 'losses')
         const pts = sv(stats, 'points'); const gd = sv(stats, 'pointDifferential')
         const gf  = sv(stats, 'pointsFor'); const gc = sv(stats, 'pointsAgainst')
+        const espnName = (team?.displayName as string) ?? '—'
+        const m = nationMeta(espnName)
         return {
           rank: i + 1,
-          name: (team?.displayName as string) ?? '—',
+          name: m?.es ?? espnName,
           abbr: (team?.abbreviation as string) ?? '',
           value: String(Math.round(pts)),
           sub:   pj > 0 ? `${pj} PJ · ${gd >= 0 ? '+' : ''}${Math.round(gd)}` : 'Sin jugar',
           trend: 'flat' as const,
           extra: { PJ: String(Math.round(pj)), V: String(w), E: String(d), D: String(l), GF: String(Math.round(gf)), GC: String(Math.round(gc)) },
+          flag: m?.flag,
         }
       })
       results.push({ id: `wc-group-${groupLetter.toLowerCase()}`, label: `Grupo ${groupLetter}`, rows })
@@ -918,15 +921,72 @@ async function fetchNbaRookieRace(season: string): Promise<StandingRow[]> {
 
 // ── World Cup qualified (derivado de FIFA ranking + anfitriones) ──────────────
 
-const FIFA_FLAG: Record<string, string> = {
-  'Francia': '🇫🇷', 'España': '🇪🇸', 'Argentina': '🇦🇷', 'Inglaterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-  'Portugal': '🇵🇹', 'Brasil': '🇧🇷', 'Países Bajos': '🇳🇱', 'Marruecos': '🇲🇦',
-  'Bélgica': '🇧🇪', 'Alemania': '🇩🇪',
+// Las 48 selecciones del Mundial 2026 + sinónimos en español. ESPN devuelve
+// nombres en inglés en /standings; los aliases en español sirven para otras
+// llamadas (FIFA ranking, etc.). Una sola fuente para bandera, confederación
+// y nombre mostrado en español.
+interface NationMeta { flag: string; confed: string; es?: string }
+const WC_NATIONS: Record<string, NationMeta> = {
+  // CONCACAF
+  Mexico:           { flag: '🇲🇽', confed: 'CONCACAF', es: 'México' },
+  Canada:           { flag: '🇨🇦', confed: 'CONCACAF', es: 'Canadá' },
+  'United States':  { flag: '🇺🇸', confed: 'CONCACAF', es: 'EEUU' },
+  Haiti:            { flag: '🇭🇹', confed: 'CONCACAF', es: 'Haití' },
+  Panama:           { flag: '🇵🇦', confed: 'CONCACAF', es: 'Panamá' },
+  Curaçao:          { flag: '🇨🇼', confed: 'CONCACAF', es: 'Curazao' },
+  // CONMEBOL
+  Argentina:        { flag: '🇦🇷', confed: 'CONMEBOL' },
+  Brazil:           { flag: '🇧🇷', confed: 'CONMEBOL', es: 'Brasil' },
+  Uruguay:          { flag: '🇺🇾', confed: 'CONMEBOL' },
+  Colombia:         { flag: '🇨🇴', confed: 'CONMEBOL' },
+  Ecuador:          { flag: '🇪🇨', confed: 'CONMEBOL' },
+  Paraguay:         { flag: '🇵🇾', confed: 'CONMEBOL' },
+  // UEFA
+  Czechia:          { flag: '🇨🇿', confed: 'UEFA', es: 'Chequia' },
+  Switzerland:      { flag: '🇨🇭', confed: 'UEFA', es: 'Suiza' },
+  Scotland:         { flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', confed: 'UEFA', es: 'Escocia' },
+  Turkey:           { flag: '🇹🇷', confed: 'UEFA', es: 'Turquía' },
+  Germany:          { flag: '🇩🇪', confed: 'UEFA', es: 'Alemania' },
+  Netherlands:      { flag: '🇳🇱', confed: 'UEFA', es: 'Países Bajos' },
+  Sweden:           { flag: '🇸🇪', confed: 'UEFA', es: 'Suecia' },
+  Belgium:          { flag: '🇧🇪', confed: 'UEFA', es: 'Bélgica' },
+  Spain:            { flag: '🇪🇸', confed: 'UEFA', es: 'España' },
+  Norway:           { flag: '🇳🇴', confed: 'UEFA', es: 'Noruega' },
+  France:           { flag: '🇫🇷', confed: 'UEFA', es: 'Francia' },
+  Austria:          { flag: '🇦🇹', confed: 'UEFA' },
+  Portugal:         { flag: '🇵🇹', confed: 'UEFA' },
+  England:          { flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', confed: 'UEFA', es: 'Inglaterra' },
+  Croatia:          { flag: '🇭🇷', confed: 'UEFA', es: 'Croacia' },
+  'Bosnia-Herzegovina': { flag: '🇧🇦', confed: 'UEFA', es: 'Bosnia-Herzegovina' },
+  // AFC
+  'South Korea':    { flag: '🇰🇷', confed: 'AFC', es: 'Corea del Sur' },
+  Qatar:            { flag: '🇶🇦', confed: 'AFC' },
+  Japan:            { flag: '🇯🇵', confed: 'AFC', es: 'Japón' },
+  Iran:             { flag: '🇮🇷', confed: 'AFC', es: 'Irán' },
+  'Saudi Arabia':   { flag: '🇸🇦', confed: 'AFC', es: 'Arabia Saudí' },
+  Iraq:             { flag: '🇮🇶', confed: 'AFC', es: 'Irak' },
+  Jordan:           { flag: '🇯🇴', confed: 'AFC', es: 'Jordania' },
+  Uzbekistan:       { flag: '🇺🇿', confed: 'AFC', es: 'Uzbekistán' },
+  Australia:        { flag: '🇦🇺', confed: 'AFC' },
+  // CAF
+  'South Africa':   { flag: '🇿🇦', confed: 'CAF', es: 'Sudáfrica' },
+  Morocco:          { flag: '🇲🇦', confed: 'CAF', es: 'Marruecos' },
+  'Ivory Coast':    { flag: '🇨🇮', confed: 'CAF', es: 'Costa de Marfil' },
+  "Côte d'Ivoire":  { flag: '🇨🇮', confed: 'CAF', es: 'Costa de Marfil' },
+  Tunisia:          { flag: '🇹🇳', confed: 'CAF', es: 'Túnez' },
+  Egypt:            { flag: '🇪🇬', confed: 'CAF', es: 'Egipto' },
+  'Cape Verde':     { flag: '🇨🇻', confed: 'CAF', es: 'Cabo Verde' },
+  'Cabo Verde':     { flag: '🇨🇻', confed: 'CAF', es: 'Cabo Verde' },
+  Senegal:          { flag: '🇸🇳', confed: 'CAF' },
+  Algeria:          { flag: '🇩🇿', confed: 'CAF', es: 'Argelia' },
+  'DR Congo':       { flag: '🇨🇩', confed: 'CAF', es: 'Congo RD' },
+  Ghana:            { flag: '🇬🇭', confed: 'CAF' },
+  // OFC
+  'New Zealand':    { flag: '🇳🇿', confed: 'OFC', es: 'Nueva Zelanda' },
 }
-const FIFA_CONFED: Record<string, string> = {
-  'Francia': 'UEFA', 'España': 'UEFA', 'Argentina': 'CONMEBOL', 'Inglaterra': 'UEFA',
-  'Portugal': 'UEFA', 'Brasil': 'CONMEBOL', 'Países Bajos': 'UEFA', 'Marruecos': 'CAF',
-  'Bélgica': 'UEFA', 'Alemania': 'UEFA',
+
+function nationMeta(name: string): NationMeta | undefined {
+  return WC_NATIONS[name]
 }
 
 // Aplana las 48 selecciones reales del Mundial 2026 (las que ESPN ya devuelve
@@ -937,15 +997,16 @@ function buildWorldCupQualifiedFromStandings(groups: LeagueStandings[]): Standin
   for (const g of groups) {
     const letter = g.label.replace(/^Grupo\s+/i, '')
     for (const r of g.rows) {
+      const m = nationMeta(r.name)
       out.push({
         rank: rank++,
-        name: r.name,
+        name: m?.es ?? r.name,
         abbr: r.abbr,
         value: `Grupo ${letter}`,
         sub: r.sub === 'Sin jugar' ? 'Clasificada' : r.sub,
-        flag: FIFA_FLAG[r.name] ?? r.flag ?? '',
+        flag: m?.flag ?? r.flag ?? '',
         trend: 'flat',
-        extra: { Confed: FIFA_CONFED[r.name] ?? '—' },
+        extra: { Confed: m?.confed ?? '—' },
       })
     }
   }
@@ -977,6 +1038,8 @@ async function fetchWorldCupSchedule(): Promise<StandingRow[]> {
       const hTeam = (home.team as Record<string, unknown>)?.displayName as string
       const aTeam = (away.team as Record<string, unknown>)?.displayName as string
       if (!hTeam || !aTeam) continue
+      const hEs = nationMeta(hTeam)?.es ?? hTeam
+      const aEs = nationMeta(aTeam)?.es ?? aTeam
       const venue = ((comp?.venue as Record<string, unknown>)?.fullName as string) ?? ''
       const dateStr = (ev.date as string) ?? ''
       const d = dateStr ? new Date(dateStr) : null
@@ -988,7 +1051,7 @@ async function fetchWorldCupSchedule(): Promise<StandingRow[]> {
         : ''
       rows.push({
         rank: rows.length + 1,
-        name: `${hTeam} vs ${aTeam}`,
+        name: `${hEs} vs ${aEs}`,
         abbr: '',
         value: timeLabel,
         sub: venue ? `${dateLabel} · ${venue}` : dateLabel,
