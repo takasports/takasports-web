@@ -11,6 +11,7 @@ import { getDailyPuzzle, isValidAnswer, getValidAnswers, type CellCoord, type Gr
 import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag } from '@/components/icons/GameIcons'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
+import { addXp, xpForTakagrid } from '@/lib/meta-progression'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
 
@@ -777,6 +778,7 @@ export default function TakaGridPage() {
           score:   solvedCount * 10,
           payload: { solved: solvedArr },
         })
+        addXp('takagrid', xpForTakagrid(solvedCount))
         trackGameEvent({ gameId: 'takagrid', event: 'completed', period, meta: { solved: solvedCount } })
 
         const prev = loadStreak()

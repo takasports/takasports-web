@@ -9,6 +9,7 @@ import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
+import { addXp, xpForSopacracks } from '@/lib/meta-progression'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
@@ -384,6 +385,7 @@ export default function SopaCracksPage() {
         payload:    { found: puzzle.words.length, total: puzzle.words.length, seconds },
         durationMs: seconds * 1000,
       })
+      addXp('sopacracks', xpForSopacracks(puzzle.words.length))
       trackGameEvent({ gameId: 'sopacracks', event: 'completed', period, meta: { seconds } })
     }
   }, [allFound, seconds, hydrated])

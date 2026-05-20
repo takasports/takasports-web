@@ -11,6 +11,7 @@ import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import { TrophyIcon, FireIcon, ClapIcon, FlexIcon } from '@/components/icons/GameIcons'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
+import { addXp, xpForCrackquiz } from '@/lib/meta-progression'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 
@@ -905,6 +906,7 @@ export default function CrackQuizPage() {
       score,
       payload: { correct, total: QUESTIONS_PER_ROUND, streak: newStreak, combo: maxCombo },
     })
+    addXp('crackquiz', xpForCrackquiz(correct))
     trackGameEvent({ gameId: 'crackquiz', event: 'completed', period, meta: { score, correct, total: QUESTIONS_PER_ROUND, combo: maxCombo } })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])

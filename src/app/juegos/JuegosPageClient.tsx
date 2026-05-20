@@ -20,6 +20,7 @@ import {
   PreviewSopaCracks,
 } from '@/components/games/GameVisuals'
 import StreakChip from '@/components/games/StreakChip'
+import MetaProgressionStrip from '@/components/games/MetaProgressionStrip'
 import GameStatusBadge from '@/components/games/GameStatusBadge'
 import LeaderboardTabs from '@/components/games/LeaderboardTabs'
 import GamesFilterBar from '@/components/games/GamesFilterBar'
@@ -613,7 +614,10 @@ export default function JuegosPageClient() {
             <p className="text-sm" style={{ color: 'var(--text-muted)', maxWidth: 460 }}>
               Predicciones, trivia, fantasy y arcade. Compite cada semana y sube en el ranking.
             </p>
-            <div className="mt-4">
+            <div className="mt-5 max-w-[520px]">
+              <MetaProgressionStrip />
+            </div>
+            <div className="mt-3">
               <StreakChip />
             </div>
           </div>

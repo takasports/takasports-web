@@ -12,6 +12,7 @@ import { getWeeklyChallenge, type FormationId, type Challenge, type SlotTag } fr
 import { CountryFlag } from '@/components/icons/GameIcons'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
+import { addXp, xpForMionce } from '@/lib/meta-progression'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 
 // ── Constants ────────────────────────────────────────────────────
@@ -856,6 +857,7 @@ export default function MiOncePage() {
           score,
           payload: { formation, filled: filledCount, valid: validCount, tagged: isTagged },
         })
+        addXp('mionce', xpForMionce(isTagged ? validCount : filledCount))
         trackGameEvent({ gameId: 'mionce', event: 'completed', period, meta: { formation, filled: filledCount, valid: validCount, tagged: isTagged } })
       }
     }
