@@ -32,7 +32,7 @@ jobs:
             -H "Authorization: Bearer $CRON_SECRET" \
             -H "Content-Type: application/json" \
             -w "\nHTTP %{http_code}" \
-            https://takasportsmedia.com/api/quiniela/notify)
+            https://www.takasportsmedia.com/api/quiniela/notify)
           echo "$BODY"
           # Salud: solo fallar si la ruta devolvió 5xx; 403/no-window son OK
           CODE=$(echo "$BODY" | tail -1 | awk '{print $2}')
