@@ -1,0 +1,78 @@
+name: quiniela-health-monitor
+
+# Polea /api/quiniela/health cada 30 min. Si el status sale degraded /
+# down / empty, abre (o comenta) un Issue con título estable. Cuando
+# vuelve a healthy y hay Issue abierto, lo cierra con un comentario.
+# Sin cuenta externa, sin coste: usa GITHUB_TOKEN del runner.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  HEALTH_URL: https://takasportsmedia.com/api/quiniela/health
+  ISSUE_TITLE: '[health] quiniela odds cache degraded'
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consultar /health
+        id: health
+        run: |
+          curl -sS -o /tmp/health.json -w "%{http_code}" "$HEALTH_URL" > /tmp/code.txt
+          CODE=$(cat /tmp/code.txt)
+          STATUS=$(python3 -c "import json;print(json.load(open('/tmp/health.json')).get('status','unknown'))" 2>/dev/null || echo unknown)
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          echo "HTTP $CODE · status=$STATUS"
+          cat /tmp/health.json || true
+
+      - name: Abrir/comentar Issue si NO healthy
+        if: steps.health.outputs.status != 'healthy'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          STATUS='${{ steps.health.outputs.status }}'
+          BODY=$(cat <<EOF
+          Health check: **status=$STATUS** (HTTP ${{ steps.health.outputs.code }}) — $(date -u +'%Y-%m-%d %H:%M UTC')
+
+          Detalle:
+          \`\`\`json
+          $(cat /tmp/health.json)
+          \`\`\`
+
+          Acción sugerida según status:
+          - **down** → revisar Supabase / aplicar migración 026 si no está.
+          - **empty** → llamar a /api/quiniela una vez (warm-up) cuando el cupo de the-odds-api permita.
+          - **degraded** → the-odds-api podría estar fallando o sin cupo; stale-on-failure protege a usuarios, pero conviene revisar.
+          EOF
+          )
+          EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number' || echo "")
+          if [ -n "$EXISTING" ]; then
+            echo "Issue abierta #$EXISTING — añadiendo comentario"
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            echo "Abriendo nueva issue"
+            gh issue create --title "$ISSUE_TITLE" --label monitor,quiniela --body "$BODY" || \
+              gh issue create --title "$ISSUE_TITLE" --body "$BODY"
+          fi
+
+      - name: Cerrar Issue si recuperado
+        if: steps.health.outputs.status == 'healthy'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number' || echo "")
+          if [ -n "$EXISTING" ]; then
+            echo "Cerrando issue #$EXISTING (status=healthy)"
+            gh issue comment "$EXISTING" --body "Recuperado: status=healthy a $(date -u +'%Y-%m-%d %H:%M UTC')."
+            gh issue close "$EXISTING"
+          else
+            echo "Healthy, sin issues abiertas. OK."
+          fi

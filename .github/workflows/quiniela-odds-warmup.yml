@@ -1,0 +1,51 @@
+name: quiniela-odds-warmup
+
+# Detecta el reset mensual del cupo de the-odds-api y, en cuanto vuelve
+# a haber requests disponibles, hace UNA llamada a /api/quiniela en
+# producción para poblar la caché compartida (quiniela_odds_cache).
+# A partir de ese momento el sistema se auto-mantiene (TTL 3h).
+#
+# - La llamada de detección (/v4/sports) NO consume cupo.
+# - El warm-up real (/api/quiniela) consume 1 crédito por liga presente.
+# - Requiere secret de repo: ODDS_API_KEY (mismo de .env.local).
+
+on:
+  schedule:
+    - cron: '0 * * * *'        # cada hora en punto
+  workflow_dispatch:           # también disparable a mano
+
+permissions:
+  contents: read
+
+jobs:
+  warmup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar cupo de the-odds-api
+        id: quota
+        env:
+          KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::warning::secret ODDS_API_KEY no configurado, salto warm-up"
+            echo "remaining=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          curl -sS -D /tmp/h.txt -o /dev/null "https://api.the-odds-api.com/v4/sports/?apiKey=$KEY"
+          REM=$(grep -i '^x-requests-remaining:' /tmp/h.txt | awk '{print $2}' | tr -d '\r')
+          USED=$(grep -i '^x-requests-used:' /tmp/h.txt | awk '{print $2}' | tr -d '\r')
+          echo "remaining=${REM:-0}" >> "$GITHUB_OUTPUT"
+          echo "the-odds-api: usados=$USED restantes=$REM"
+
+      - name: Warm-up de /api/quiniela si hay cupo
+        if: steps.quota.outputs.remaining != '' && steps.quota.outputs.remaining != '0' && !startsWith(steps.quota.outputs.remaining, '-')
+        run: |
+          echo "Cupo disponible (${{ steps.quota.outputs.remaining }}). Llamando a /api/quiniela una vez..."
+          curl -sS -o /tmp/q.json -w "HTTP %{http_code}\n" https://takasportsmedia.com/api/quiniela
+          JOR=$(python3 -c "import sys,json;d=json.load(open('/tmp/q.json'));print(d.get('jornada',''),'·',sum(1 for m in d.get('matches',[]) if m.get('odds')),'/', len(d.get('matches',[])),'con cuotas')" || echo "(no parse)")
+          echo "Quiniela actual: $JOR"
+
+      - name: Verificar /health post-warmup
+        if: always()
+        run: |
+          curl -sS https://takasportsmedia.com/api/quiniela/health | python3 -m json.tool || true
