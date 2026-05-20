@@ -16,6 +16,14 @@
     {
       "path": "/api/cron/sync-past-results",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/push-reminders?kind=daily",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/push-reminders?kind=weekly",
+      "schedule": "0 8 * * 1"
     }
   ],
   "headers": [

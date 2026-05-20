@@ -23,6 +23,7 @@ import StreakChip from '@/components/games/StreakChip'
 import MetaProgressionStrip from '@/components/games/MetaProgressionStrip'
 import MissionsCard from '@/components/games/MissionsCard'
 import TuDiaTaka from '@/components/games/TuDiaTaka'
+import PushOptIn from '@/components/games/PushOptIn'
 import GameStatusBadge from '@/components/games/GameStatusBadge'
 import LeaderboardTabs from '@/components/games/LeaderboardTabs'
 import GamesFilterBar from '@/components/games/GamesFilterBar'
@@ -630,6 +631,9 @@ export default function JuegosPageClient() {
 
         {/* ── TU DÍA TAKA ──────────────────────────────────── */}
         <section className="mb-6">
+          <div className="flex items-center justify-end mb-2">
+            <PushOptIn accent="#93C5FD" />
+          </div>
           <TuDiaTaka />
         </section>
 
