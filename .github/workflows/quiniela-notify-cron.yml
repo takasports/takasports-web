@@ -1,0 +1,42 @@
+name: quiniela-notify-cron
+
+# Dispara /api/quiniela/notify cada 15 min. La ruta decide si toca
+# enviar push (ventana T-60..T-15 min antes del primer partido de la
+# jornada) y se auto-rate-limita por jornada. Si no toca, devuelve
+# {ok:true, reason:'outside window'}.
+#
+# Requiere secret de repo: CRON_SECRET (mismo valor que .env.local).
+# Sin él, la ruta devuelve 403 y este workflow loguea warning y sale 0.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST /api/quiniela/notify
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::warning::secret CRON_SECRET no configurado — los push no se dispararán"
+            exit 0
+          fi
+          BODY=$(curl -sSL -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP %{http_code}" \
+            https://takasportsmedia.com/api/quiniela/notify)
+          echo "$BODY"
+          # Salud: solo fallar si la ruta devolvió 5xx; 403/no-window son OK
+          CODE=$(echo "$BODY" | tail -1 | awk '{print $2}')
+          if [ "$CODE" -ge 500 ] 2>/dev/null; then
+            echo "::error::notify devolvió 5xx (HTTP $CODE)"
+            exit 1
+          fi
