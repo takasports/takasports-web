@@ -13,6 +13,7 @@ import { CountryFlag } from '@/components/icons/GameIcons'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { addXp, xpForMionce } from '@/lib/meta-progression'
+import { reportPlay } from '@/lib/missions'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 
 // ── Constants ────────────────────────────────────────────────────
@@ -858,6 +859,7 @@ export default function MiOncePage() {
           payload: { formation, filled: filledCount, valid: validCount, tagged: isTagged },
         })
         addXp('mionce', xpForMionce(isTagged ? validCount : filledCount))
+        reportPlay('mionce', { score })
         trackGameEvent({ gameId: 'mionce', event: 'completed', period, meta: { formation, filled: filledCount, valid: validCount, tagged: isTagged } })
       }
     }

@@ -12,6 +12,7 @@ import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag } from 
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { addXp, xpForTakagrid } from '@/lib/meta-progression'
+import { reportPlay } from '@/lib/missions'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
 
@@ -779,6 +780,7 @@ export default function TakaGridPage() {
           payload: { solved: solvedArr },
         })
         addXp('takagrid', xpForTakagrid(solvedCount))
+        reportPlay('takagrid', { score: solvedCount * 10 })
         trackGameEvent({ gameId: 'takagrid', event: 'completed', period, meta: { solved: solvedCount } })
 
         const prev = loadStreak()

@@ -21,6 +21,7 @@ import {
 } from '@/components/games/GameVisuals'
 import StreakChip from '@/components/games/StreakChip'
 import MetaProgressionStrip from '@/components/games/MetaProgressionStrip'
+import MissionsCard from '@/components/games/MissionsCard'
 import GameStatusBadge from '@/components/games/GameStatusBadge'
 import LeaderboardTabs from '@/components/games/LeaderboardTabs'
 import GamesFilterBar from '@/components/games/GamesFilterBar'
@@ -625,6 +626,11 @@ export default function JuegosPageClient() {
 
         {/* ── HINT INVITADOS ──────────────────────────────── */}
         <GuestRankingHint />
+
+        {/* ── MISIONES DEL DÍA ─────────────────────────────── */}
+        <section className="mb-10">
+          <MissionsCard />
+        </section>
 
         {/* ── JUEGO ACTIVO ─────────────────────────────────── */}
         <section className="mb-12">
