@@ -22,6 +22,7 @@ import {
 import StreakChip from '@/components/games/StreakChip'
 import MetaProgressionStrip from '@/components/games/MetaProgressionStrip'
 import MissionsCard from '@/components/games/MissionsCard'
+import TuDiaTaka from '@/components/games/TuDiaTaka'
 import GameStatusBadge from '@/components/games/GameStatusBadge'
 import LeaderboardTabs from '@/components/games/LeaderboardTabs'
 import GamesFilterBar from '@/components/games/GamesFilterBar'
@@ -626,6 +627,11 @@ export default function JuegosPageClient() {
 
         {/* ── HINT INVITADOS ──────────────────────────────── */}
         <GuestRankingHint />
+
+        {/* ── TU DÍA TAKA ──────────────────────────────────── */}
+        <section className="mb-6">
+          <TuDiaTaka />
+        </section>
 
         {/* ── MISIONES DEL DÍA ─────────────────────────────── */}
         <section className="mb-10">
