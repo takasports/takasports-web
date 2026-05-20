@@ -934,6 +934,7 @@ const WC_NATIONS: Record<string, NationMeta> = {
   Haiti:            { flag: '🇭🇹', confed: 'CONCACAF', es: 'Haití' },
   Panama:           { flag: '🇵🇦', confed: 'CONCACAF', es: 'Panamá' },
   Curaçao:          { flag: '🇨🇼', confed: 'CONCACAF', es: 'Curazao' },
+  Curacao:          { flag: '🇨🇼', confed: 'CONCACAF', es: 'Curazao' },
   // CONMEBOL
   Argentina:        { flag: '🇦🇷', confed: 'CONMEBOL' },
   Brazil:           { flag: '🇧🇷', confed: 'CONMEBOL', es: 'Brasil' },
@@ -946,6 +947,7 @@ const WC_NATIONS: Record<string, NationMeta> = {
   Switzerland:      { flag: '🇨🇭', confed: 'UEFA', es: 'Suiza' },
   Scotland:         { flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', confed: 'UEFA', es: 'Escocia' },
   Turkey:           { flag: '🇹🇷', confed: 'UEFA', es: 'Turquía' },
+  Türkiye:          { flag: '🇹🇷', confed: 'UEFA', es: 'Turquía' },
   Germany:          { flag: '🇩🇪', confed: 'UEFA', es: 'Alemania' },
   Netherlands:      { flag: '🇳🇱', confed: 'UEFA', es: 'Países Bajos' },
   Sweden:           { flag: '🇸🇪', confed: 'UEFA', es: 'Suecia' },
@@ -980,6 +982,7 @@ const WC_NATIONS: Record<string, NationMeta> = {
   Senegal:          { flag: '🇸🇳', confed: 'CAF' },
   Algeria:          { flag: '🇩🇿', confed: 'CAF', es: 'Argelia' },
   'DR Congo':       { flag: '🇨🇩', confed: 'CAF', es: 'Congo RD' },
+  'Congo DR':       { flag: '🇨🇩', confed: 'CAF', es: 'Congo RD' },
   Ghana:            { flag: '🇬🇭', confed: 'CAF' },
   // OFC
   'New Zealand':    { flag: '🇳🇿', confed: 'OFC', es: 'Nueva Zelanda' },
