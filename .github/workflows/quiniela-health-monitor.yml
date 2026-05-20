@@ -25,7 +25,7 @@ jobs:
       - name: Consultar /health
         id: health
         run: |
-          curl -sS -o /tmp/health.json -w "%{http_code}" "$HEALTH_URL" > /tmp/code.txt
+          curl -sSL -o /tmp/health.json -w "%{http_code}" "$HEALTH_URL" > /tmp/code.txt
           CODE=$(cat /tmp/code.txt)
           STATUS=$(python3 -c "import json;print(json.load(open('/tmp/health.json')).get('status','unknown'))" 2>/dev/null || echo unknown)
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
@@ -53,14 +53,14 @@ jobs:
           - **degraded** → the-odds-api podría estar fallando o sin cupo; stale-on-failure protege a usuarios, pero conviene revisar.
           EOF
           )
-          EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number' || echo "")
+          EXISTING=$(gh issue list --repo takasports/takasports-web --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number' || echo "")
           if [ -n "$EXISTING" ]; then
             echo "Issue abierta #$EXISTING — añadiendo comentario"
-            gh issue comment "$EXISTING" --body "$BODY"
+            gh issue comment --repo takasports/takasports-web"$EXISTING" --body "$BODY"
           else
             echo "Abriendo nueva issue"
-            gh issue create --title "$ISSUE_TITLE" --label monitor,quiniela --body "$BODY" || \
-              gh issue create --title "$ISSUE_TITLE" --body "$BODY"
+            gh issue create --repo takasports/takasports-web --title"$ISSUE_TITLE" --label monitor,quiniela --body "$BODY" || \
+              gh issue create --repo takasports/takasports-web --title"$ISSUE_TITLE" --body "$BODY"
           fi
 
       - name: Cerrar Issue si recuperado
@@ -68,11 +68,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          EXISTING=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number' || echo "")
+          EXISTING=$(gh issue list --repo takasports/takasports-web --state open --search "in:title \"$ISSUE_TITLE\"" --json number --jq '.[0].number' || echo "")
           if [ -n "$EXISTING" ]; then
             echo "Cerrando issue #$EXISTING (status=healthy)"
-            gh issue comment "$EXISTING" --body "Recuperado: status=healthy a $(date -u +'%Y-%m-%d %H:%M UTC')."
-            gh issue close "$EXISTING"
+            gh issue comment --repo takasports/takasports-web"$EXISTING" --body "Recuperado: status=healthy a $(date -u +'%Y-%m-%d %H:%M UTC')."
+            gh issue close --repo takasports/takasports-web "$EXISTING"
           else
             echo "Healthy, sin issues abiertas. OK."
           fi

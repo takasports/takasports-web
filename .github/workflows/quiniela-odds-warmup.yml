@@ -41,11 +41,11 @@ jobs:
         if: steps.quota.outputs.remaining != '' && steps.quota.outputs.remaining != '0' && !startsWith(steps.quota.outputs.remaining, '-')
         run: |
           echo "Cupo disponible (${{ steps.quota.outputs.remaining }}). Llamando a /api/quiniela una vez..."
-          curl -sS -o /tmp/q.json -w "HTTP %{http_code}\n" https://takasportsmedia.com/api/quiniela
+          curl -sSL -o /tmp/q.json -w "HTTP %{http_code}\n" https://takasportsmedia.com/api/quiniela
           JOR=$(python3 -c "import sys,json;d=json.load(open('/tmp/q.json'));print(d.get('jornada',''),'·',sum(1 for m in d.get('matches',[]) if m.get('odds')),'/', len(d.get('matches',[])),'con cuotas')" || echo "(no parse)")
           echo "Quiniela actual: $JOR"
 
       - name: Verificar /health post-warmup
         if: always()
         run: |
-          curl -sS https://takasportsmedia.com/api/quiniela/health | python3 -m json.tool || true
+          curl -sSL https://takasportsmedia.com/api/quiniela/health | python3 -m json.tool || true
