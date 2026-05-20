@@ -187,6 +187,7 @@ function rowToEntry(row: any): RankingEntry {
     editorialBoost: row.editorial_boost !== null ? Number(row.editorial_boost) : undefined,
     editorialNote:  row.editorial_note ?? undefined,
     category:       row.category ?? undefined,
+    handles:        row.handles ?? undefined,
   }
 }
 

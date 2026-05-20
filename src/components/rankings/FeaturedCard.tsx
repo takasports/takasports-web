@@ -5,6 +5,7 @@ import { trendIcon } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
 import BadgePill from './BadgePill'
 import PlayerAvatar from './PlayerAvatar'
+import SocialHandles from './SocialHandles'
 
 export default function FeaturedCard({ entry }: { entry: RankingEntry }) {
   const trend = trendIcon(entry.trend)
@@ -33,6 +34,7 @@ export default function FeaturedCard({ entry }: { entry: RankingEntry }) {
         style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
         {entry.insight}
       </p>
+      {entry.handles && <SocialHandles handles={entry.handles} />}
       <span className="text-xs font-black flex-shrink-0" style={{ color: trend.color }}>{trend.icon}</span>
     </div>
   )

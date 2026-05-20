@@ -10,6 +10,7 @@ import PlayerAvatar from './PlayerAvatar'
 import ScoreBreakdown from './ScoreBreakdown'
 import ScoreSparkline from './ScoreSparkline'
 import { SportIcon } from '@/components/icons/GameIcons'
+import SocialHandles from './SocialHandles'
 
 export default function RankRow({
   entry, showSportEmoji = false, typeTag,
@@ -95,6 +96,11 @@ export default function RankRow({
         {scoreDiff !== null && (
           <div className="hidden sm:flex flex-shrink-0" title={`Anterior: ${entry.scorePrev?.toFixed(1)} → Ahora: ${displayScore.toFixed(1)}`}>
             <ScoreSparkline prev={entry.scorePrev} now={displayScore} />
+          </div>
+        )}
+        {entry.handles && (
+          <div className="hidden sm:flex flex-shrink-0">
+            <SocialHandles handles={entry.handles} />
           </div>
         )}
         <div className="flex items-center gap-2 flex-shrink-0 ml-auto">

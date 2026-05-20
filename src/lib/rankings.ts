@@ -61,6 +61,13 @@ export interface RankingEntry {
   editorialBoost?: number  // ajuste subjetivo Taka (-15 a +15) — requiere editorialNote
   editorialNote?: string   // razón del ajuste editorial visible al usuario
   category?: string        // jugadores | clubes | entrenadores | etc. — disponible para entradas de DB
+  handles?: {              // redes sociales — disponible para creadores/periodistas desde DB
+    instagram?: string
+    twitter?: string
+    tiktok?: string
+    youtube?: string
+    twitch?: string
+  }
   _globalRank?: number     // rank original antes de re-rank por filtro (interno UI)
 }
 
