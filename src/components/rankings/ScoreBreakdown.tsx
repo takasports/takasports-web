@@ -5,7 +5,10 @@ import type { RankingEntry } from '@/lib/rankings'
 import { scoreColor } from '@/lib/rankings-ui'
 import { PinIcon } from '@/components/icons/GameIcons'
 
-const FACTOR_META = [
+// Categorías editoriales (creadores de contenido)
+const CREATOR_CATEGORIES = new Set(['creadores', 'periodistas', 'creadores_wwe'])
+
+const FACTOR_META_ATHLETE = [
   { key: 'rendimiento', label: 'Rendimiento', pct: '40%', color: '#22c55e',
     desc: 'Stats reales (goles, asistencias, PPG, puntos, victorias…) y rating de equipo' },
   { key: 'contexto',    label: 'Contexto',    pct: '20%', color: '#60a5fa',
@@ -14,6 +17,17 @@ const FACTOR_META = [
     desc: 'Alcance en redes, búsquedas y cobertura en prensa especializada' },
   { key: 'narrativa',   label: 'Narrativa',   pct: '15%', color: '#c084fc',
     desc: 'Momento de su carrera, hitos, polémicas y peso histórico' },
+] as const
+
+const FACTOR_META_CREATOR = [
+  { key: 'mediatico',   label: 'Audiencia',   pct: '50%', color: '#f59e0b',
+    desc: 'Seguidores y suscriptores totales ponderados por plataforma (YouTube, Instagram, TikTok, Twitter/X)' },
+  { key: 'rendimiento', label: 'Contenido',   pct: '30%', color: '#22c55e',
+    desc: 'Calidad, frecuencia y engagement del contenido publicado' },
+  { key: 'narrativa',   label: 'Momento',     pct: '15%', color: '#c084fc',
+    desc: 'Tendencia de crecimiento, viralidad reciente y relevancia en el debate actual' },
+  { key: 'contexto',    label: 'Profundidad', pct:  '5%', color: '#60a5fa',
+    desc: 'Nivel de análisis y conocimiento del deporte que cubre' },
 ] as const
 
 export default function ScoreBreakdown({
@@ -27,11 +41,18 @@ export default function ScoreBreakdown({
 }) {
   if (!entry.factors) return null
 
-  const base = Math.round((
-    entry.factors.rendimiento * 0.40 +
-    entry.factors.contexto    * 0.20 +
-    entry.factors.mediatico   * 0.25 +
-    entry.factors.narrativa   * 0.15
+  const isCreator = CREATOR_CATEGORIES.has(entry.category ?? '')
+  const FACTOR_META = isCreator ? FACTOR_META_CREATOR : FACTOR_META_ATHLETE
+
+  const base = Math.round((isCreator
+    ? entry.factors.mediatico   * 0.50 +
+      entry.factors.rendimiento * 0.30 +
+      entry.factors.narrativa   * 0.15 +
+      entry.factors.contexto    * 0.05
+    : entry.factors.rendimiento * 0.40 +
+      entry.factors.contexto    * 0.20 +
+      entry.factors.mediatico   * 0.25 +
+      entry.factors.narrativa   * 0.15
   ) * 10) / 10
   const boost = entry.editorialBoost ?? 0
   const total = Math.round(Math.max(0, Math.min(100, base + boost)) * 10) / 10
