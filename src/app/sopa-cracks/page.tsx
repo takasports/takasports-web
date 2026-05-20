@@ -14,11 +14,13 @@ import { reportPlay } from '@/lib/missions'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
+import { searchPlayers, type Player } from '@/lib/players-catalog'
+import { CountryFlag } from '@/components/icons/GameIcons'
 
 // ── Tipos y datos ─────────────────────────────────────────────
 
 type Cell = { r: number; c: number }
-type Placed = { word: string; cells: Cell[] }
+type Placed = { word: string; cells: Cell[]; intruder?: boolean }
 
 interface Puzzle {
   id: string
@@ -26,6 +28,9 @@ interface Puzzle {
   subtitle: string
   size: number
   words: string[]
+  /** Palabra "intrusa": no se anuncia en la sidebar pero está escondida
+   * en el grid. Encontrarla da bonus pero no es obligatoria para ganar. */
+  intruder?: string
 }
 
 const PUZZLES: Puzzle[] = [
@@ -35,6 +40,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'Diez cracks que dejaron huella en España',
     size: 13,
     words: ['MESSI', 'RAUL', 'ZIDANE', 'PUYOL', 'INIESTA', 'XAVI', 'CASILLAS', 'KROOS', 'MODRIC', 'RONALDO'],
+    intruder: 'HIERRO',
   },
   {
     id: 'pichichis-historicos',
@@ -42,6 +48,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'Goleadores que reinaron en LaLiga',
     size: 13,
     words: ['ZARRA', 'MESSI', 'CRISTIANO', 'BENZEMA', 'SUAREZ', 'FORLAN', 'VILLA', 'AGUERO', 'ETOO'],
+    intruder: 'HIGUAIN',
   },
   {
     id: 'leyendas-mundiales',
@@ -49,6 +56,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'Iconos del fútbol global',
     size: 14,
     words: ['MARADONA', 'PELE', 'CRUYFF', 'BECKENBAUER', 'PLATINI', 'ZICO', 'ROMARIO', 'MALDINI', 'BAGGIO'],
+    intruder: 'STOICHKOV',
   },
   {
     id: 'champions-goleadores',
@@ -56,6 +64,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'Los máximos goleadores de la historia europea',
     size: 13,
     words: ['RONALDO', 'MESSI', 'BENZEMA', 'RAUL', 'MORIENTES', 'HENRY', 'SHEVCHENKO', 'INZAGHI'],
+    intruder: 'LEWANDOWSKI',
   },
   {
     id: 'porteros-leyenda',
@@ -63,6 +72,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'Los mejores guardametas de la historia',
     size: 13,
     words: ['CASILLAS', 'BUFFON', 'NEUER', 'YASHIN', 'ZOFF', 'SCHMEICHEL', 'KAHN', 'SEAMAN'],
+    intruder: 'COURTOIS',
   },
   {
     id: 'seleccion-espana',
@@ -70,6 +80,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'Héroes de los Mundiales y Europas de España',
     size: 13,
     words: ['XAVI', 'INIESTA', 'VILLA', 'CASILLAS', 'PUYOL', 'TORRES', 'BUSQUETS', 'FABREGAS', 'RAMOS'],
+    intruder: 'PIQUE',
   },
   {
     id: 'crack-premier',
@@ -77,6 +88,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'Cracks que brillaron en Inglaterra',
     size: 13,
     words: ['HENRY', 'BERGKAMP', 'GERRARD', 'LAMPARD', 'SCHOLES', 'SHEARER', 'GIGGS', 'BECKHAM'],
+    intruder: 'KEANE',
   },
   {
     id: 'generacion-argentina',
@@ -84,6 +96,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'Mitos del fútbol albiceleste',
     size: 13,
     words: ['MARADONA', 'MESSI', 'BATISTUTA', 'CANIGGIA', 'RIQUELME', 'TEVEZ', 'AGUERO', 'VERON'],
+    intruder: 'ZANETTI',
   },
   {
     id: 'entrenadores-historia',
@@ -91,6 +104,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'Los mejores entrenadores de la historia',
     size: 14,
     words: ['MOURINHO', 'ANCELOTTI', 'GUARDIOLA', 'FERGUSON', 'CAPELLO', 'CRUYFF', 'MICHELS', 'SACCHI'],
+    intruder: 'BIELSA',
   },
   {
     id: 'brasil-magico',
@@ -98,6 +112,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'La Canarinha en estado puro',
     size: 13,
     words: ['PELE', 'RONALDO', 'RONALDINHO', 'ZICO', 'ROMARIO', 'CAFU', 'ROBERTO', 'RIVALDO'],
+    intruder: 'NEYMAR',
   },
   {
     id: 'bundesliga-cracks',
@@ -105,6 +120,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'Los mejores de Alemania',
     size: 13,
     words: ['MULLER', 'BECKENBAUER', 'RUMMENIGGE', 'ROBBEN', 'RIBERY', 'LEWANDOWSKI', 'NEUER', 'KAHN'],
+    intruder: 'REUS',
   },
   {
     id: 'italia-calcio',
@@ -112,6 +128,7 @@ const PUZZLES: Puzzle[] = [
     subtitle: 'Ídolos del fútbol italiano',
     size: 13,
     words: ['MALDINI', 'BUFFON', 'TOTTI', 'DELPIERO', 'BAGGIO', 'BARESI', 'ZOLA', 'PIRLO'],
+    intruder: 'VIERI',
   },
 ]
 
@@ -120,6 +137,21 @@ const COLOR_ACCENT_DIM = '#059669'
 const COLOR_HINT = '#FCD34D'
 const STORAGE_KEY = 'ts_sopa_cracks_state'
 const HINT_PENALTY_SECONDS = 30
+const TIME_ATTACK_LIMIT = 3 * 60   // 3 minutos
+const INTRUDER_BONUS_PTS = 20      // Bonus visual al encontrar la intrusa
+const COLOR_INTRUDER = '#A78BFA'   // violeta, distinto del verde clásico
+
+// Busca un jugador en el catálogo que case con el "nombre crudo" que aparece
+// en la sopa (suele ser apellido). Devuelve el mejor match o null.
+function findPlayerForWord(word: string): Player | null {
+  if (!word || word.length < 3) return null
+  const res = searchPlayers(word, { limit: 5 })
+  if (res.length === 0) return null
+  // Preferimos a quien tenga la palabra como token (apellido o nombre) exacto.
+  const target = word.toLowerCase()
+  const exact = res.find(p => p.name.toLowerCase().split(/\s+/).includes(target))
+  return exact ?? res[0]
+}
 
 // ── Selección de puzzle por semana ────────────────────────────
 
@@ -174,10 +206,16 @@ function buildGrid(puzzle: Puzzle, seed: number): BuiltGrid {
   const letters: string[][] = Array.from({ length: N }, () => Array(N).fill(''))
   const placed: Placed[] = []
 
+  // Lista de palabras + intrusa (si la hay) marcada con flag.
+  const toPlace: Array<{ word: string; intruder: boolean }> = [
+    ...puzzle.words.map(w => ({ word: w, intruder: false })),
+    ...(puzzle.intruder ? [{ word: puzzle.intruder, intruder: true }] : []),
+  ]
   // Ordenar por longitud descendente — colocar las largas primero
-  const sorted = [...puzzle.words].sort((a, b) => b.length - a.length)
+  const sorted = toPlace.sort((a, b) => b.word.length - a.word.length)
 
-  for (const word of sorted) {
+  for (const item of sorted) {
+    const { word } = item
     let placedOk = false
     for (let attempt = 0; attempt < 200 && !placedOk; attempt++) {
       const dir = DIRS[Math.floor(rand() * DIRS.length)]
@@ -201,7 +239,7 @@ function buildGrid(puzzle: Puzzle, seed: number): BuiltGrid {
       for (let i = 0; i < word.length; i++) {
         letters[cells[i].r][cells[i].c] = word[i]
       }
-      placed.push({ word, cells })
+      placed.push(item.intruder ? { word, cells, intruder: true } : { word, cells })
       placedOk = true
     }
   }
@@ -306,6 +344,14 @@ export default function SopaCracksPage() {
   const [hintsUsed, setHintsUsed] = useState(0)
   const [revealedFirstCells, setRevealedFirstCells] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState(false)
+  // 8.1 mini-bio: popover con el jugador asociado a la palabra recién encontrada
+  const [playerInfo, setPlayerInfo] = useState<{ player: Player; word: string; intruder: boolean } | null>(null)
+  const playerInfoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // 8.2 intrusa: marcamos cuándo se encontró y la mostramos en la sidebar
+  const [intruderFound, setIntruderFound] = useState(false)
+  // 8.3 contrarreloj
+  const [timeAttack, setTimeAttack] = useState(false)
+  const [timeOver, setTimeOver] = useState(false)
 
   // Selección
   const [startCell, setStartCell] = useState<Cell | null>(null)
@@ -365,32 +411,57 @@ export default function SopaCracksPage() {
   }, [found, bestSeconds, hydrated, puzzle.id])
 
   const allFound = found.length === puzzle.words.length
+  // En contrarreloj puede acabar antes (timeOver) o al encontrar todo
+  const roundDone = allFound || timeOver
+
+  // Detener cronómetro y disparar fin de partida cuando la ronda termina.
+  // En modo contrarreloj, "ganar" no requiere todas las palabras: el ranking
+  // semanal usa el periodo distinto para no mezclarse con la modalidad normal.
   const wonRef = useRef(false)
   useEffect(() => {
-    if (allFound && !wonRef.current && hydrated) {
+    if (roundDone && !wonRef.current && hydrated) {
       wonRef.current = true
       setRunning(false)
+      const foundCount = found.length
       trackGameComplete({ game: 'sopa_cracks', score: seconds, total: puzzle.words.length })
-      setBestSeconds(prev => {
-        const next = prev == null ? seconds : Math.min(prev, seconds)
-        return next
-      })
+      if (allFound) {
+        setBestSeconds(prev => prev == null ? seconds : Math.min(prev, seconds))
+      }
 
-      // Sync con games-store. Score = palabras * 10 (mayor mejor);
-      // duration_ms guarda el tiempo para desempate en leaderboard.
-      const period = currentWeekISO()
+      // Sync con games-store. En contrarreloj el periodo se diferencia para
+      // no contaminar el leaderboard normal (mismo cronómetro pero meta opuesta).
+      const period = timeAttack ? `${currentWeekISO()}-TA` : currentWeekISO()
+      const score = (timeAttack ? foundCount : puzzle.words.length) * 10
       void recordPlay({
         gameId:     'sopacracks',
         period,
-        score:      puzzle.words.length * 10,
-        payload:    { found: puzzle.words.length, total: puzzle.words.length, seconds },
+        score,
+        payload:    {
+          found:      foundCount,
+          total:      puzzle.words.length,
+          seconds,
+          intruder:   intruderFound,
+          timeAttack,
+        },
         durationMs: seconds * 1000,
       })
-      addXp('sopacracks', xpForSopacracks(puzzle.words.length))
-      reportPlay('sopacracks', { score: puzzle.words.length * 10 })
-      trackGameEvent({ gameId: 'sopacracks', event: 'completed', period, meta: { seconds } })
+      addXp('sopacracks', xpForSopacracks(foundCount) + (intruderFound ? INTRUDER_BONUS_PTS : 0))
+      reportPlay('sopacracks', { score })
+      trackGameEvent({ gameId: 'sopacracks', event: 'completed', period, meta: { seconds, intruder: intruderFound, timeAttack, found: foundCount } })
     }
-  }, [allFound, seconds, hydrated])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roundDone, hydrated])
+
+  // Cronómetro de cuenta atrás en modo contrarreloj
+  useEffect(() => {
+    if (!timeAttack || !running || paused) return
+    if (seconds >= TIME_ATTACK_LIMIT) setTimeOver(true)
+  }, [timeAttack, running, paused, seconds])
+
+  // Limpieza del timer del popover en unmount
+  useEffect(() => () => {
+    if (playerInfoTimeoutRef.current) clearTimeout(playerInfoTimeoutRef.current)
+  }, [])
 
   // ── Selección por celda ─────────────────────────────────────
 
@@ -405,11 +476,28 @@ export default function SopaCracksPage() {
     const reversedWord = cellsToString(reversed, letters)
 
     for (const p of placed) {
-      if (found.includes(p.word)) continue
+      // La intrusa se "completa" una sola vez (intruderFound) y las normales
+      // entran en el array found una sola vez también.
+      const alreadyFound = p.intruder ? intruderFound : found.includes(p.word)
+      if (alreadyFound) continue
+
       const matchesWord = p.word === word || p.word === reversedWord
       if (matchesWord && sameCells(cells, p.cells)) {
-        setFound(prev => [...prev, p.word])
+        if (p.intruder) {
+          setIntruderFound(true)
+          // Bonus XP por encontrar la intrusa
+          addXp('sopacracks', INTRUDER_BONUS_PTS)
+        } else {
+          setFound(prev => [...prev, p.word])
+        }
         setJustFound(p.word)
+        // Mini-bio (8.1): popover con el jugador asociado
+        const player = findPlayerForWord(p.word)
+        if (player) {
+          if (playerInfoTimeoutRef.current) clearTimeout(playerInfoTimeoutRef.current)
+          setPlayerInfo({ player, word: p.word, intruder: !!p.intruder })
+          playerInfoTimeoutRef.current = setTimeout(() => setPlayerInfo(null), 4000)
+        }
         setTimeout(() => setJustFound(null), 1400)
         if (!running && !allFound) {
           trackGameStart('sopa_cracks')
@@ -420,7 +508,7 @@ export default function SopaCracksPage() {
       }
     }
     return false
-  }, [letters, placed, found, running, allFound])
+  }, [letters, placed, found, running, allFound, intruderFound])
 
   const onCellDown = (r: number, c: number) => {
     if (allFound || paused) return
@@ -492,8 +580,17 @@ export default function SopaCracksPage() {
     setPaused(false)
     setHintsUsed(0)
     setRevealedFirstCells(new Set())
+    setIntruderFound(false)
+    setTimeOver(false)
+    setPlayerInfo(null)
     wonRef.current = false
     saveState({ puzzleId: puzzle.id, found: [], bestSeconds })
+  }
+
+  const toggleTimeAttack = () => {
+    // Sólo permitimos cambiar de modo antes de empezar o tras reiniciar
+    if (running || roundDone) return
+    setTimeAttack(t => !t)
   }
 
   // ── Render ─────────────────────────────────────────────────
@@ -545,17 +642,22 @@ export default function SopaCracksPage() {
 
             {/* HUD */}
             <div className="relative z-10 flex items-center justify-between mb-4 flex-wrap gap-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <div
                   className="px-3 py-1.5 rounded-lg flex items-center gap-2"
-                  style={{ background: 'rgba(0,0,0,0.4)', border: `1px solid ${COLOR_ACCENT_DIM}30` }}
+                  style={{
+                    background: 'rgba(0,0,0,0.4)',
+                    border: `1px solid ${timeAttack ? `${COLOR_INTRUDER}80` : `${COLOR_ACCENT_DIM}30`}`,
+                  }}
                 >
                   <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
-                    <circle cx="7" cy="7" r="5.5" stroke={COLOR_ACCENT} strokeWidth="1.2" />
-                    <path d="M7 4v3l2 1.5" stroke={COLOR_ACCENT} strokeWidth="1.2" strokeLinecap="round" />
+                    <circle cx="7" cy="7" r="5.5" stroke={timeAttack ? COLOR_INTRUDER : COLOR_ACCENT} strokeWidth="1.2" />
+                    <path d="M7 4v3l2 1.5" stroke={timeAttack ? COLOR_INTRUDER : COLOR_ACCENT} strokeWidth="1.2" strokeLinecap="round" />
                   </svg>
-                  <span className="text-[12px] font-black tabular-nums" style={{ color: COLOR_ACCENT, fontFamily: 'var(--font-sport)' }}>
-                    {fmtTime(seconds)}
+                  <span className="text-[12px] font-black tabular-nums" style={{ color: timeAttack ? COLOR_INTRUDER : COLOR_ACCENT, fontFamily: 'var(--font-sport)' }}>
+                    {timeAttack
+                      ? fmtTime(Math.max(0, TIME_ATTACK_LIMIT - seconds))
+                      : fmtTime(seconds)}
                   </span>
                 </div>
                 <div
@@ -566,6 +668,16 @@ export default function SopaCracksPage() {
                     {found.length}/{puzzle.words.length} encontrados
                   </span>
                 </div>
+                {puzzle.intruder && intruderFound && (
+                  <div
+                    className="px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5"
+                    style={{ background: `${COLOR_INTRUDER}18`, border: `1px solid ${COLOR_INTRUDER}50` }}
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: COLOR_INTRUDER, fontFamily: 'var(--font-sport)' }}>
+                      🎯 Intrusa
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
@@ -589,6 +701,21 @@ export default function SopaCracksPage() {
                   aria-label={paused ? 'Reanudar' : 'Pausar'}
                 >
                   {paused ? '▶ Reanudar' : '⏸ Pausa'}
+                </button>
+                <button
+                  onClick={toggleTimeAttack}
+                  disabled={running || roundDone}
+                  className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-colors hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: timeAttack ? `${COLOR_INTRUDER}25` : 'rgba(255,255,255,0.04)',
+                    color: timeAttack ? COLOR_INTRUDER : '#9090B0',
+                    border: timeAttack ? `1px solid ${COLOR_INTRUDER}60` : '1px solid rgba(255,255,255,0.06)',
+                    fontFamily: 'var(--font-sport)',
+                  }}
+                  title="Modo contrarreloj: 3 minutos para encontrar el máximo de palabras"
+                  aria-pressed={timeAttack}
+                >
+                  {timeAttack ? '⚡ Contrarreloj 3:00' : '⚡ Contrarreloj'}
                 </button>
                 <button
                   onClick={() => setExpanded(e => !e)}
@@ -689,7 +816,51 @@ export default function SopaCracksPage() {
               </div>
             )}
 
-            {justFound && (
+            {playerInfo ? (
+              <div
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-auto max-w-[min(92%,420px)]"
+                style={{
+                  background: playerInfo.intruder
+                    ? `linear-gradient(135deg, ${COLOR_INTRUDER}E0, #4c1d95)`
+                    : `linear-gradient(135deg, ${COLOR_ACCENT_DIM}E0, #064e3b)`,
+                  color: '#F0FFF4',
+                  fontFamily: 'var(--font-sport)',
+                  border: `1px solid ${playerInfo.intruder ? COLOR_INTRUDER : COLOR_ACCENT}`,
+                  boxShadow: `0 8px 28px ${playerInfo.intruder ? `${COLOR_INTRUDER}80` : `${COLOR_ACCENT_DIM}80`}`,
+                  borderRadius: 16,
+                }}
+              >
+                <div className="px-4 py-3 flex items-center gap-3">
+                  <div
+                    className="w-11 h-11 rounded-full flex items-center justify-center text-[12px] font-black flex-shrink-0"
+                    style={{ background: 'rgba(0,0,0,0.35)', color: '#fff', fontFamily: 'var(--font-display)', border: '1px solid rgba(255,255,255,0.15)' }}
+                  >
+                    {playerInfo.player.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80 inline-flex items-center gap-1">
+                      {playerInfo.intruder ? '🎯 Palabra intrusa' : '✓ Encontrado'}
+                      {playerInfo.intruder && <span className="opacity-70">· +{INTRUDER_BONUS_PTS} XP</span>}
+                    </p>
+                    <p className="text-sm font-black truncate inline-flex items-center gap-1.5 w-full" style={{ fontFamily: 'var(--font-display)' }}>
+                      <CountryFlag country={playerInfo.player.country} width={14} />
+                      <span className="truncate">{playerInfo.player.name}</span>
+                    </p>
+                    <p className="text-[11px] truncate opacity-80">
+                      {playerInfo.player.club} · {playerInfo.player.era === 'current' ? 'En activo' : 'Leyenda'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setPlayerInfo(null)}
+                    aria-label="Cerrar"
+                    className="text-xs opacity-70 hover:opacity-100 transition-opacity flex-shrink-0"
+                    style={{ color: '#fff' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ) : justFound ? (
               <div
                 className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full pointer-events-none"
                 style={{
@@ -702,7 +873,7 @@ export default function SopaCracksPage() {
               >
                 <span className="text-[11px] font-black uppercase tracking-widest">✓ {justFound}</span>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Sidebar */}
@@ -755,6 +926,37 @@ export default function SopaCracksPage() {
                   )
                 })}
               </ul>
+              {puzzle.intruder && (
+                <div
+                  className="mt-3 flex items-center gap-2 px-2.5 py-2 rounded-lg"
+                  style={{
+                    background: intruderFound ? `${COLOR_INTRUDER}1E` : 'rgba(255,255,255,0.02)',
+                    border: `1px dashed ${intruderFound ? COLOR_INTRUDER : 'rgba(255,255,255,0.12)'}`,
+                  }}
+                >
+                  <span aria-hidden className="text-base leading-none">🎯</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: intruderFound ? COLOR_INTRUDER : '#9090B0', fontFamily: 'var(--font-sport)' }}>
+                      Palabra intrusa (bonus)
+                    </p>
+                    <p
+                      className="text-[11px] font-black tracking-wider truncate"
+                      style={{
+                        color: intruderFound ? COLOR_INTRUDER : '#5A5A7A',
+                        fontFamily: 'var(--font-display)',
+                        textDecoration: intruderFound ? 'line-through' : 'none',
+                      }}
+                    >
+                      {intruderFound ? puzzle.intruder : '??? · escondida en el grid'}
+                    </p>
+                  </div>
+                  {intruderFound && (
+                    <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.3)', color: COLOR_INTRUDER, fontFamily: 'var(--font-sport)' }}>
+                      +{INTRUDER_BONUS_PTS} XP
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Stats / récord */}
@@ -797,7 +999,7 @@ export default function SopaCracksPage() {
                 </p>
               )}
 
-              {allFound && (
+              {allFound && !timeAttack && (
                 <div
                   className="mt-4 p-3 rounded-xl text-center"
                   style={{ background: `${COLOR_ACCENT_DIM}18`, border: `1px solid ${COLOR_ACCENT_DIM}50` }}
@@ -807,6 +1009,19 @@ export default function SopaCracksPage() {
                   </p>
                   <p className="text-[11px]" style={{ color: '#9090B0' }}>
                     Has encontrado a los {puzzle.words.length} cracks en {fmtTime(seconds)}.
+                  </p>
+                </div>
+              )}
+              {timeAttack && roundDone && (
+                <div
+                  className="mt-4 p-3 rounded-xl text-center"
+                  style={{ background: `${COLOR_INTRUDER}18`, border: `1px solid ${COLOR_INTRUDER}50` }}
+                >
+                  <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: COLOR_INTRUDER, fontFamily: 'var(--font-sport)' }}>
+                    {allFound ? '¡Pleno antes de tiempo!' : '¡Tiempo!'}
+                  </p>
+                  <p className="text-[11px]" style={{ color: '#9090B0' }}>
+                    {found.length}/{puzzle.words.length} encontrados en {fmtTime(Math.min(seconds, TIME_ATTACK_LIMIT))}.
                   </p>
                 </div>
               )}
