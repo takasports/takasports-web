@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import RankingsClient from './RankingsClient'
 import { getTopMovers, getAllRankings, getLastIngestTime } from '@/lib/rankings-data'
 
-// Rankings se actualiza ~1 vez por semana — cachear 1h para evitar fetches continuos a Supabase
-export const revalidate = 3600
+// Rankings: cachear 5 min para reflejar cambios editoriales rápidamente
+export const revalidate = 300
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import {
   RANKING_JUGADORES, RANKING_CLUBES, RANKING_ENTRENADORES,
