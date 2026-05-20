@@ -14,6 +14,7 @@ import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { addXp, xpForMionce } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
+import { collectPlayer } from '@/lib/album'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 
 // ── Constants ────────────────────────────────────────────────────
@@ -888,6 +889,9 @@ export default function MiOncePage() {
   const handleSelectPlayer = useCallback((player: Player) => {
     if (!activeSlot) return
     setSlots(prev => ({ ...prev, [activeSlot.id]: player.id }))
+    // El search modal ya filtra por challenge.filter + slotTag, así que
+    // cualquier jugador colocado cuenta como cromo válido para el álbum.
+    collectPlayer(player.id, 'mionce')
     setActiveSlot(null)
   }, [activeSlot])
 

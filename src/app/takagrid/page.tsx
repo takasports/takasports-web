@@ -13,6 +13,7 @@ import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { addXp, xpForTakagrid } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
+import { collectPlayer } from '@/lib/album'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
 
@@ -840,6 +841,7 @@ export default function TakaGridPage() {
     if (!activeCell) return
     const { row, col } = activeCell
     const valid = isValidAnswer(player, puzzle, { row, col })
+    if (valid) collectPlayer(player.id, 'takagrid')
 
     setGrid(prev => {
       const next = prev.map(r => r.map(c => ({ ...c })))
