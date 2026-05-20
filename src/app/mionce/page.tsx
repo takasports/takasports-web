@@ -15,6 +15,8 @@ import { trackGameEvent } from '@/lib/games-telemetry'
 import { addXp, xpForMionce } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
 import { collectPlayer } from '@/lib/album'
+import { saveLineup, SAVED_LINEUP_LIMIT, loadSavedLineups } from '@/lib/mionce-saved'
+import { useSearchParams, useRouter } from 'next/navigation'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 
 // ── Constants ────────────────────────────────────────────────────
@@ -781,6 +783,8 @@ export default function MiOncePage() {
   const [shareToast, setShareToast] = useState<string | null>(null)
 
   const { challenge, week } = useMemo(() => getWeeklyChallenge(), [])
+  const searchParams = useSearchParams()
+  const router = useRouter()
 
   // Hydrate from localStorage; reset si la semana cambió
   useEffect(() => {
@@ -794,6 +798,21 @@ export default function MiOncePage() {
     }
     setHydrated(true)
   }, [week.key, challenge.recommendedFormation])
+
+  // Cargar un once guardado desde /perfil/onces vía ?load=ID. Sólo aplica
+  // sobre el reto actual si la formación coincide (slot ids cuadran).
+  useEffect(() => {
+    const loadId = searchParams?.get('load')
+    if (!loadId) return
+    const entry = loadSavedLineups().find(e => e.id === loadId)
+    if (entry) {
+      setFormation(entry.formation)
+      setSlots(entry.slots ?? {})
+      setShareToast(`Cargado "${entry.name}"`)
+    }
+    // Limpiar el query param para que un reload no recargue otra vez
+    router.replace('/mionce')
+  }, [searchParams, router])
 
   // Persist
   useEffect(() => {
@@ -933,6 +952,27 @@ export default function MiOncePage() {
   }
 
   const [generatingImage, setGeneratingImage] = useState(false)
+  const [saveModalOpen, setSaveModalOpen] = useState(false)
+  const [saveName, setSaveName] = useState('')
+
+  const handleSaveLineup = () => {
+    if (filledCount === 0) return
+    const defaultName = challenge.title.length > 30 ? challenge.title.slice(0, 30) + '…' : challenge.title
+    setSaveName(`${defaultName} · ${formation}`)
+    setSaveModalOpen(true)
+  }
+
+  const confirmSave = () => {
+    saveLineup({
+      name: saveName,
+      formation,
+      slots,
+      challengeId: challenge.id,
+      challengeTitle: challenge.title,
+    })
+    setSaveModalOpen(false)
+    setShareToast('Once guardado en tu perfil')
+  }
 
   const handleShareImage = async () => {
     if (generatingImage) return
@@ -1178,7 +1218,7 @@ export default function MiOncePage() {
             </div>
 
             {/* Acciones */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 onClick={handleShareImage}
                 disabled={generatingImage || filledCount === 0}
@@ -1208,6 +1248,21 @@ export default function MiOncePage() {
               >
                 <IconShare />
                 Texto
+              </button>
+              <button
+                onClick={handleSaveLineup}
+                disabled={filledCount === 0}
+                className="py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 col-span-1"
+                style={{
+                  background: 'rgba(252,211,77,0.12)',
+                  color: '#FCD34D',
+                  border: '1px solid rgba(252,211,77,0.3)',
+                  fontFamily: 'var(--font-sport)',
+                  letterSpacing: '0.06em',
+                }}
+                title="Guardar este once en tu perfil"
+              >
+                📒 Guardar
               </button>
               <button
                 onClick={handleReset}
@@ -1329,6 +1384,62 @@ export default function MiOncePage() {
       )}
 
       {/* Toast */}
+      {/* Modal guardar once */}
+      {saveModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setSaveModalOpen(false)}
+        >
+          <div
+            className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5"
+            style={{ background: 'var(--bg-card)', border: `1px solid ${ACCENT_DIM}40` }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+              Guardar este once
+            </p>
+            <h3 className="text-lg font-black mb-3" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+              Ponle un nombre que recuerdes
+            </h3>
+            <input
+              autoFocus
+              value={saveName}
+              onChange={e => setSaveName(e.target.value.slice(0, 40))}
+              onKeyDown={e => { if (e.key === 'Enter') confirmSave() }}
+              placeholder="Mi mejor once de los 2000"
+              className="w-full px-3 py-2.5 rounded-xl text-sm outline-none mb-2"
+              style={{
+                background: 'rgba(0,0,0,0.3)',
+                color: '#F0F0F5',
+                border: '1px solid rgba(255,255,255,0.08)',
+                fontFamily: 'var(--font-display)',
+              }}
+            />
+            <p className="text-[10px] mb-4" style={{ color: 'var(--text-muted)' }}>
+              Lo encontrarás en <strong style={{ color: '#F0F0F5' }}>/perfil → tus onces</strong>. Tope: {SAVED_LINEUP_LIMIT} guardados.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setSaveModalOpen(false)}
+                className="py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest"
+                style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmSave}
+                disabled={saveName.trim().length === 0}
+                className="py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ background: `linear-gradient(135deg, ${ACCENT_DIM}, #1E3A8A)`, color: '#fff', border: `1px solid ${ACCENT}80`, fontFamily: 'var(--font-sport)' }}
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {shareToast && (
         <div
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-xs font-black"

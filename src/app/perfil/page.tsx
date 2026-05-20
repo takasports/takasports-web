@@ -372,13 +372,22 @@ export default function PerfilPage() {
               <section>
                 <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
                   <SectionHeader title="Mis juegos" />
-                  <Link
-                    href="/perfil/album"
-                    className="text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-80 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
-                    style={{ background: 'rgba(252,211,77,0.10)', color: '#FCD34D', border: '1px solid rgba(252,211,77,0.25)', fontFamily: 'var(--font-sport)' }}
-                  >
-                    📒 Tu álbum →
-                  </Link>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      href="/perfil/album"
+                      className="text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-80 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                      style={{ background: 'rgba(252,211,77,0.10)', color: '#FCD34D', border: '1px solid rgba(252,211,77,0.25)', fontFamily: 'var(--font-sport)' }}
+                    >
+                      📒 Tu álbum →
+                    </Link>
+                    <Link
+                      href="/perfil/onces"
+                      className="text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-80 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                      style={{ background: 'rgba(147,197,253,0.10)', color: '#93C5FD', border: '1px solid rgba(147,197,253,0.25)', fontFamily: 'var(--font-sport)' }}
+                    >
+                      ⚽ Tus onces →
+                    </Link>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 
