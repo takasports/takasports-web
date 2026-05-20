@@ -591,6 +591,21 @@ function ResultScreen({
   const pct = correct / QUESTIONS_PER_ROUND
   const isNewBest = !practice && (stored ? score > stored.bestScore : true)
 
+  // Heatmap social: % comunidad que acertó cada pregunta del día.
+  // Se carga una vez al montar el ResultScreen; falla en silencio si no
+  // hay datos agregados (modo dev sin service role, día sin plays todavía).
+  const [heatmap, setHeatmap] = useState<{ byQuestion: Record<string, { plays: number; correct: number }>; totalPlays: number } | null>(null)
+  useEffect(() => {
+    if (practice) return
+    let cancelled = false
+    const period = currentDayISO()
+    fetch(`/api/games/crackquiz/heatmap?period=${period}`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (!cancelled && j && j.byQuestion) setHeatmap({ byQuestion: j.byQuestion, totalPlays: j.totalPlays ?? 0 }) })
+      .catch(() => { /* failsafe */ })
+    return () => { cancelled = true }
+  }, [practice])
+
   // Per-category breakdown → strongest / weakest
   const catMap: Record<string, { correct: number; total: number }> = {}
   questions.forEach((qq, i) => {
@@ -661,6 +676,8 @@ function ResultScreen({
         {questions.map((q, i) => {
           const ans = answers[i]
           const wasCorrect = ans?.selected === q.correctIndex
+          const hm = heatmap?.byQuestion?.[q.id]
+          const socialPct = hm && hm.plays > 0 ? Math.round((hm.correct / hm.plays) * 100) : null
           return (
             <div
               key={q.id}
@@ -679,6 +696,22 @@ function ResultScreen({
                   <p className="text-xs" style={{ color: '#6EE7B7' }}>
                     ✓ {q.options[q.correctIndex]}
                   </p>
+                )}
+                {socialPct !== null && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                      <div
+                        className="h-full"
+                        style={{
+                          width: `${socialPct}%`,
+                          background: socialPct >= 70 ? '#6EE7B7' : socialPct >= 40 ? '#FCD34D' : '#F87171',
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] tabular-nums font-bold whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                      {socialPct}% acertó
+                    </span>
+                  </div>
                 )}
               </div>
               {wasCorrect && ans.points > 0 && (
@@ -978,11 +1011,16 @@ export default function CrackQuizPage() {
 
     // Sync con backend unificado (games-store). No bloqueante.
     const period = currentDayISO()
+    // Compact per-question outcome for the social heatmap (qId + acierto).
+    const answersForPayload = questions.map((qq, i) => ({
+      qId: qq.id,
+      correct: answers[i] && answers[i].selected === qq.correctIndex,
+    }))
     void recordPlay({
       gameId:  'crackquiz',
       period,
       score,
-      payload: { correct, total: QUESTIONS_PER_ROUND, streak: newStreak, combo: maxCombo },
+      payload: { correct, total: QUESTIONS_PER_ROUND, streak: newStreak, combo: maxCombo, answers: answersForPayload },
     })
     addXp('crackquiz', xpForCrackquiz(correct))
     reportPlay('crackquiz', { score })
