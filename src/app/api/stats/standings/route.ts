@@ -985,8 +985,12 @@ const WC_NATIONS: Record<string, NationMeta> = {
   'New Zealand':    { flag: '🇳🇿', confed: 'OFC', es: 'Nueva Zelanda' },
 }
 
+// Lookup directo por nombre ESPN (inglés) o por su traducción ES.
+const WC_NATIONS_BY_ES: Record<string, NationMeta> = Object.fromEntries(
+  Object.values(WC_NATIONS).filter(m => m.es).map(m => [m.es!, m]),
+)
 function nationMeta(name: string): NationMeta | undefined {
-  return WC_NATIONS[name]
+  return WC_NATIONS[name] ?? WC_NATIONS_BY_ES[name]
 }
 
 // Aplana las 48 selecciones reales del Mundial 2026 (las que ESPN ya devuelve
