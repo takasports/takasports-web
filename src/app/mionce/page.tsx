@@ -876,7 +876,7 @@ export default function MiOncePage() {
           gameId:  'mionce',
           period,
           score,
-          payload: { formation, filled: filledCount, valid: validCount, tagged: isTagged },
+          payload: { formation, filled: filledCount, valid: validCount, tagged: isTagged, slots },
         })
         addXp('mionce', xpForMionce(isTagged ? validCount : filledCount))
         reportPlay('mionce', { score })
@@ -952,6 +952,35 @@ export default function MiOncePage() {
   }
 
   const [generatingImage, setGeneratingImage] = useState(false)
+
+  // Once editorial canónico (publicado por la redacción) + heatmap social
+  // por slot. Ambos se piden al montar; si la semana aún no tiene datos
+  // simplemente no se renderizan los paneles.
+  const [editorial, setEditorial] = useState<{ title: string; formation: string; slots: Record<string, string>; note: string | null } | null>(null)
+  const [slotHeatmap, setSlotHeatmap] = useState<{ bySlot: Record<string, Record<string, number>>; totalPlays: number } | null>(null)
+
+  useEffect(() => {
+    const wk = week.key
+    fetch(`/api/mionce/editorial?week=${wk}`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (j?.editorial) setEditorial(j.editorial) })
+      .catch(() => { /* silencioso */ })
+    fetch(`/api/games/mionce/heatmap?period=${wk}`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (j) setSlotHeatmap({ bySlot: j.bySlot ?? {}, totalPlays: j.totalPlays ?? 0 }) })
+      .catch(() => { /* silencioso */ })
+  }, [week.key])
+
+  const editorialMatches = useMemo(() => {
+    if (!editorial?.slots) return null
+    let matches = 0
+    let total = 0
+    for (const [slotId, eid] of Object.entries(editorial.slots)) {
+      total += 1
+      if (slots[slotId] === eid) matches += 1
+    }
+    return { matches, total }
+  }, [editorial, slots])
   const [saveModalOpen, setSaveModalOpen] = useState(false)
   const [saveName, setSaveName] = useState('')
 
@@ -1216,6 +1245,105 @@ export default function MiOncePage() {
                 </p>
               )}
             </div>
+
+            {/* Comparativa con once editorial */}
+            {isComplete && editorial && editorialMatches && (
+              <div
+                className="rounded-2xl p-4"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+              >
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+                    Once editorial
+                  </p>
+                  <span
+                    className="text-[10px] font-black px-2 py-0.5 rounded"
+                    style={{
+                      background: editorialMatches.matches >= 8 ? 'rgba(74,222,128,0.12)' : 'rgba(252,211,77,0.10)',
+                      color: editorialMatches.matches >= 8 ? '#86EFAC' : '#FCD34D',
+                      border: `1px solid ${editorialMatches.matches >= 8 ? 'rgba(74,222,128,0.25)' : 'rgba(252,211,77,0.25)'}`,
+                      fontFamily: 'var(--font-sport)',
+                    }}
+                  >
+                    {editorialMatches.matches}/{editorialMatches.total} coinciden
+                  </span>
+                </div>
+                <p className="text-sm font-black mb-1" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+                  {editorial.title}
+                </p>
+                {editorial.note && (
+                  <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{editorial.note}</p>
+                )}
+                <details className="mt-2">
+                  <summary className="text-[10px] font-black uppercase tracking-widest cursor-pointer" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                    Ver canónico ({editorial.formation})
+                  </summary>
+                  <ul className="mt-2 grid grid-cols-1 gap-1">
+                    {Object.entries(editorial.slots).map(([sid, pid]) => {
+                      const p = getPlayerById(pid)
+                      const userPick = slots[sid]
+                      const match = userPick === pid
+                      return (
+                        <li key={sid} className="flex items-center gap-2 text-[11px]">
+                          <span
+                            className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+                            style={{ background: match ? '#86EFAC' : '#5A5A7A' }}
+                          />
+                          <span className="font-black w-10 flex-shrink-0" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{sid.toUpperCase()}</span>
+                          <span className="truncate" style={{ color: match ? '#86EFAC' : '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+                            {p ? p.name : pid}
+                          </span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </details>
+              </div>
+            )}
+
+            {/* Heatmap social por slot */}
+            {isComplete && slotHeatmap && slotHeatmap.totalPlays > 0 && (
+              <div
+                className="rounded-2xl p-4"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+              >
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+                    Coincidencias con la comunidad
+                  </p>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                    {slotHeatmap.totalPlays} {slotHeatmap.totalPlays === 1 ? 'jugada' : 'jugadas'}
+                  </span>
+                </div>
+                <ul className="flex flex-col gap-1.5">
+                  {formationSlots.map(s => {
+                    const userPid = slots[s.id]
+                    if (!userPid) return null
+                    const slotCounts = slotHeatmap.bySlot[s.id]
+                    if (!slotCounts) return null
+                    const denom = Object.values(slotCounts).reduce((a, b) => a + b, 0)
+                    if (denom === 0) return null
+                    const userPickedCount = slotCounts[userPid] ?? 0
+                    const pct = Math.round((userPickedCount / denom) * 100)
+                    const colorStrong = pct >= 50
+                    return (
+                      <li key={s.id} className="flex items-center gap-2 text-[11px]">
+                        <span className="font-black w-10 flex-shrink-0" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{s.label}</span>
+                        <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                          <div className="h-full" style={{ width: `${pct}%`, background: colorStrong ? '#86EFAC' : pct >= 20 ? '#FCD34D' : '#F87171' }} />
+                        </div>
+                        <span className="text-[10px] tabular-nums font-bold w-12 text-right" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                          {pct}%
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+                <p className="mt-2 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                  % de la comunidad que puso al mismo jugador en cada hueco.
+                </p>
+              </div>
+            )}
 
             {/* Acciones */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
