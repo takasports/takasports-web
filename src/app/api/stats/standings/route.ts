@@ -57,15 +57,11 @@ export interface StatsStandingsResponse {
   womenLigaF: StandingRow[]
   womenGoals: StandingRow[]
   womenAssists: StandingRow[]
-  nationsLeague: LeagueStandings[]
   coachesWinRate: StandingRow[]
   worldCup: LeagueStandings[]
-  worldCupScorers: StandingRow[]
   worldCupKnockout: StandingRow[]
-  nbaPlayoffSeries: StandingRow[]
   uclFixtures: StandingRow[]
   uelFixtures: StandingRow[]
-  ueclFixtures: StandingRow[]
   // ── nuevos automatizados ────────────────────────────────────────────
   f1Calendar: StandingRow[]
   f1Sprints: StandingRow[]
@@ -74,10 +70,8 @@ export interface StatsStandingsResponse {
   nbaRookieRace: StandingRow[]
   uclScorers: StandingRow[]
   uelScorers: StandingRow[]
-  ueclScorers: StandingRow[]
   uclAssists: StandingRow[]
   uelAssists: StandingRow[]
-  ueclAssists: StandingRow[]
   worldCupQualified: StandingRow[]
   motogpRiders: StandingRow[]
   motogpConstructors: StandingRow[]
@@ -473,49 +467,6 @@ async function fetchTennis(): Promise<{ atp: StandingRow[]; wta: StandingRow[] }
 
 // ── UEFA Nations League via ESPN ──────────────────────────────────────────────
 
-const NATIONS_LEAGUE_A_GROUPS = ['A1', 'A2', 'A3', 'A4']
-
-async function fetchNationsLeague(): Promise<LeagueStandings[]> {
-  try {
-    const res = await fetch('https://site.web.api.espn.com/apis/v2/sports/soccer/uefa.nations/standings', { next: { revalidate: 3600 } })
-    if (!res.ok) return []
-    const json = await res.json()
-    const children = (json.children as Record<string, unknown>[]) ?? []
-    const results: LeagueStandings[] = []
-    for (const child of children) {
-      const name = (child.name as string) ?? ''
-      const groupLetter = name.replace('Group ', '')
-      if (!NATIONS_LEAGUE_A_GROUPS.includes(groupLetter)) continue
-      const entries = (child.standings as Record<string, unknown>)?.entries as Record<string, unknown>[] ?? []
-      const rows: StandingRow[] = entries.map((e, i) => {
-        const team  = e.team as Record<string, unknown>
-        const stats = (e.stats as RawStat[]) ?? []
-        const w = sv(stats, 'wins'); const d = sv(stats, 'ties'); const l = sv(stats, 'losses')
-        const pts = sv(stats, 'points'); const gp = w + d + l
-        const gd  = sv(stats, 'pointDifferential')
-        return {
-          rank: i + 1,
-          name: (team?.displayName as string) ?? '—',
-          abbr: (team?.abbreviation as string) ?? '',
-          value: String(Math.round(pts)),
-          sub: gp > 0 ? `${gp} PJ · ${gd >= 0 ? '+' : ''}${Math.round(gd)}` : 'Por jugar',
-          trend: 'flat' as const,
-          extra: { V: String(w), E: String(d), D: String(l) },
-        }
-      })
-      // Only include groups with at least one match played
-      const hasData = rows.some(r => r.sub !== 'Por jugar')
-      if (hasData) {
-        results.push({ id: `nations-${groupLetter.toLowerCase()}`, label: `Grupo ${groupLetter} · Nations League`, rows })
-      }
-    }
-    return results
-  } catch (err) {
-    console.error('[standings] Nations League failed:', err)
-    return []
-  }
-}
-
 // ── Coaches win-rate via ESPN team records ────────────────────────────────────
 // Update coach names here when managers change. Win% auto-fetches from ESPN.
 
@@ -781,94 +732,6 @@ async function fetchEuropeanCupLeaders(
   }
 }
 
-// ── NBA Playoff Series via ESPN scoreboard ────────────────────────────────────
-
-async function fetchNBAPlayoffSeries(): Promise<StandingRow[]> {
-  try {
-    const res = await fetch(
-      'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-      { next: { revalidate: 60 } },
-    )
-    if (!res.ok) return []
-    const json = await res.json()
-    const events = (json.events as Record<string, unknown>[]) ?? []
-    const rows: StandingRow[] = []
-    let rank = 0
-
-    for (const event of events) {
-      const comp = ((event.competitions as Record<string, unknown>[])?.[0]) as Record<string, unknown> | undefined
-      if (!comp) continue
-      const series = comp.series as Record<string, unknown> | undefined
-      if (!series?.summary) continue
-
-      const competitors = (comp.competitors as Record<string, unknown>[]) ?? []
-      const home = competitors.find(c => (c as Record<string, unknown>).homeAway === 'home') as Record<string, unknown> | undefined
-      const away = competitors.find(c => (c as Record<string, unknown>).homeAway === 'away') as Record<string, unknown> | undefined
-      const homeAbbr = ((home?.team as Record<string, unknown>)?.abbreviation as string) ?? '?'
-      const awayAbbr = ((away?.team as Record<string, unknown>)?.abbreviation as string) ?? '?'
-      const homeScore = (home?.score as string) ?? ''
-      const awayScore = (away?.score as string) ?? ''
-
-      const seriesSummary = (series.summary as string) ?? ''
-      const seriesScore = seriesSummary.match(/\d-\d/)?.[0] ?? ''
-
-      const status = (comp.status ?? event.status) as Record<string, unknown>
-      const state = ((status?.type as Record<string, unknown>)?.state as string) ?? 'pre'
-      const clock = (status?.displayClock as string) ?? ''
-      const period = (status?.period as number) ?? 0
-
-      let statusStr: string
-      let estado: string
-      if (state === 'in') {
-        statusStr = period > 4 ? `Prórroga · ${clock}` : `Q${period} · ${clock}`
-        estado = 'En juego'
-      } else if (state === 'post') {
-        statusStr = 'Final'
-        estado = 'Final'
-      } else {
-        const dateStr = (event.date as string) ?? ''
-        statusStr = dateStr
-          ? new Date(dateStr).toLocaleString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York' })
-          : 'Próximo'
-        estado = 'Programado'
-      }
-
-      const hasScore = state !== 'pre' && homeScore && awayScore
-      const matchup = hasScore
-        ? `${awayAbbr} ${awayScore}–${homeScore} ${homeAbbr}`
-        : `${awayAbbr} @ ${homeAbbr}`
-
-      rows.push({ rank: ++rank, name: matchup, abbr: seriesScore, value: seriesScore, sub: statusStr, trend: 'flat', extra: { Serie: seriesSummary, Estado: estado } })
-    }
-    return rows
-  } catch (err) {
-    console.error('[standings] NBA playoffs failed:', err)
-    return []
-  }
-}
-
-// ── World Cup top scorers (empty until tournament starts Jun 11, 2026) ─────────
-
-async function fetchWorldCupScorers(): Promise<StandingRow[]> {
-  try {
-    const res = await fetch(
-      'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/statistics',
-      { next: { revalidate: 1800 } },
-    )
-    if (!res.ok) return []
-    const json = await res.json()
-    const stats = (json.stats ?? []) as Array<{ name: string; displayName: string; leaders: Array<{ value: number; athlete: { displayName: string; team?: { displayName: string } } }> }>
-    const goalsCat = stats.find(c => c.displayName === 'Goals' || c.name === 'goals')
-    if (!goalsCat?.leaders.length) return []
-    return goalsCat.leaders.slice(0, 10).map((l, i) => ({
-      rank: i + 1, name: l.athlete.displayName,
-      abbr: l.athlete.team?.displayName ?? '',
-      value: String(Math.round(l.value)),
-      sub: l.athlete.team?.displayName ?? '',
-      trend: 'flat' as const, extra: {},
-    }))
-  } catch { return [] }
-}
 
 // ── F1 Calendar ───────────────────────────────────────────────────────────────
 
@@ -1091,27 +954,27 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   // Fútbol incluye TODAS las sub-secciones del sport (competiciones, selecciones, entrenadores, femenino).
   futbol: [
     'football',
-    'uclFixtures', 'uelFixtures', 'ueclFixtures',
-    'uclScorers', 'uelScorers', 'ueclScorers',
-    'uclAssists', 'uelAssists', 'ueclAssists',
-    'fifaRanking', 'nationsLeague',
+    'uclFixtures', 'uelFixtures',
+    'uclScorers', 'uelScorers',
+    'uclAssists', 'uelAssists',
+    'fifaRanking',
     'coachesWinRate',
     'womenLigaF', 'womenGoals', 'womenAssists',
   ],
-  football: ['football', 'uclScorers', 'uelScorers', 'ueclScorers', 'uclAssists', 'uelAssists', 'ueclAssists'],
-  nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaPlayoffSeries', 'nbaMvpRace', 'nbaDpoyRace', 'nbaRookieRace'],
+  football: ['football', 'uclScorers', 'uelScorers', 'uclAssists', 'uelAssists'],
+  nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaMvpRace', 'nbaDpoyRace', 'nbaRookieRace'],
   f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps', 'f1Calendar', 'f1Sprints'],
   tenis: ['atpRanking', 'wtaRanking', 'tennisSlams'],
   tennis: ['atpRanking', 'wtaRanking', 'tennisSlams'],
   ufc: ['ufcP4P', 'ufcChampions', 'ufcDivisions'],
-  selecciones: ['fifaRanking', 'nationsLeague'],
+  selecciones: ['fifaRanking'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
-  mundial: ['worldCup', 'worldCupScorers', 'worldCupKnockout', 'worldCupQualified'],
+  mundial: ['worldCup', 'worldCupKnockout', 'worldCupQualified'],
   motogp: ['motogpRiders', 'motogpConstructors'],
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
-  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, nationsLeague, coaches, worldCup, nbaPlayoffSeries, worldCupScorers, worldCupKnockout, uclFixtures, uelFixtures, ueclFixtures] = await Promise.all([
+  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, coaches, worldCup, worldCupKnockout, uclFixtures, uelFixtures] = await Promise.all([
     Promise.allSettled(FOOTBALL_LEAGUES.map(l => fetchFootball(l.slug, l.id, l.label))),
     fetchF1All(),
     fetchNBA(),
@@ -1120,23 +983,17 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchUFCP4P(),
     fetchWomenLigaF(),
     fetchWomenStats(),
-    fetchNationsLeague(),
     fetchCoachRecords(),
     fetchWorldCup(),
-    fetchNBAPlayoffSeries(),
-    fetchWorldCupScorers(),
     fetchWorldCupKnockout(),
     fetchEuropeanCupFixtures('soccer/uefa.champions'),
     fetchEuropeanCupFixtures('soccer/uefa.europa'),
-    fetchEuropeanCupFixtures('soccer/uefa.conference'),
   ])
-  const [uclScorers, uelScorers, ueclScorers, uclAssists, uelAssists, ueclAssists] = await Promise.all([
+  const [uclScorers, uelScorers, uclAssists, uelAssists] = await Promise.all([
     fetchEuropeanCupLeaders('soccer/uefa.champions',  'goals'),
     fetchEuropeanCupLeaders('soccer/uefa.europa',     'goals'),
-    fetchEuropeanCupLeaders('soccer/uefa.conference', 'goals'),
     fetchEuropeanCupLeaders('soccer/uefa.champions',  'assists'),
     fetchEuropeanCupLeaders('soccer/uefa.europa',     'assists'),
-    fetchEuropeanCupLeaders('soccer/uefa.conference', 'assists'),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
   const [f1Calendar, f1Sprints] = f1.season
@@ -1214,26 +1071,18 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
     womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
     womenAssists:        womenStats.assists.length     ? live('ESPN') : unavail('ESPN'),
-    nationsLeague:    nationsLeague.length ? live('ESPN · UEFA Nations League') : unavail('ESPN · Nations League no iniciada'),
     coachesWinRate:   coaches.length ? live('ESPN') : unavail('ESPN'),
     worldCup:         worldCup.length
       ? wcStarted ? live('ESPN · FIFA World Cup 2026') : ({ status: 'stale', source: 'ESPN · FIFA World Cup 2026', fetchedAt: now, asOf: 'Grupos confirmados — torneo inicia 11 jun 2026' } satisfies BlockMeta)
       : unavail('ESPN'),
-    worldCupScorers:  worldCupScorers.length ? live('ESPN · FIFA World Cup 2026') : unavail('ESPN · Torneo no iniciado'),
     worldCupKnockout: worldCupKnockout.length
       ? worldCupKnockout.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · FIFA World Cup 2026') : ({ status: 'stale', source: 'ESPN · FIFA World Cup 2026', fetchedAt: now, asOf: 'Partidos del día' } satisfies BlockMeta)
       : unavail('ESPN · Fase eliminatoria no iniciada'),
-    nbaPlayoffSeries: nbaPlayoffSeries.length
-      ? nbaPlayoffSeries.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · NBA Playoffs') : ({ status: 'stale', source: 'ESPN · NBA Playoffs', fetchedAt: now, asOf: 'Juegos del día' } satisfies BlockMeta)
-      : unavail('ESPN'),
     uclFixtures: uclFixtures.length
       ? uclFixtures.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · UEFA Champions League') : ({ status: 'stale', source: 'ESPN · UCL', fetchedAt: now, asOf: 'Fase KO' } satisfies BlockMeta)
       : unavail('ESPN'),
     uelFixtures: uelFixtures.length
       ? uelFixtures.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · UEFA Europa League') : ({ status: 'stale', source: 'ESPN · UEL', fetchedAt: now, asOf: 'Fase KO' } satisfies BlockMeta)
-      : unavail('ESPN'),
-    ueclFixtures: ueclFixtures.length
-      ? ueclFixtures.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · UEFA Conference League') : ({ status: 'stale', source: 'ESPN · UECL', fetchedAt: now, asOf: 'Fase KO' } satisfies BlockMeta)
       : unavail('ESPN'),
     // ── Nuevos automatizados ────────────────────────────────────────────
     f1Calendar:        f1Calendar.length    ? live(`Jolpica · ${f1.season}`) : unavail('Jolpica'),
@@ -1243,10 +1092,8 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     nbaRookieRace:     nbaRookieRace.length ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
     uclScorers:        uclScorers.length    ? live('ESPN · UEFA Champions League') : unavail('ESPN'),
     uelScorers:        uelScorers.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
-    ueclScorers:       ueclScorers.length   ? live('ESPN · UEFA Conference')       : unavail('ESPN'),
     uclAssists:        uclAssists.length    ? live('ESPN · UEFA Champions League') : unavail('ESPN'),
     uelAssists:        uelAssists.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
-    ueclAssists:       ueclAssists.length   ? live('ESPN · UEFA Conference')       : unavail('ESPN'),
     worldCupQualified: live('Auto · FIFA + anfitriones'),
     motogpRiders:        motogpRidersR.rows.length    ? live(motogpRidersR.snap?.source ?? 'MotoGP.com') : unavail('Sin snapshot — ejecutar cron MotoGP'),
     motogpConstructors:  motogpConstructR.rows.length ? live(motogpConstructR.snap?.source ?? 'MotoGP.com') : unavail('Sin snapshot — ejecutar cron MotoGP'),
@@ -1295,15 +1142,11 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     womenLigaF,
     womenGoals:          womenStats.goals,
     womenAssists:        womenStats.assists,
-    nationsLeague,
     coachesWinRate:      coaches,
     worldCup,
-    worldCupScorers,
     worldCupKnockout,
-    nbaPlayoffSeries,
     uclFixtures,
     uelFixtures,
-    ueclFixtures,
     f1Calendar,
     f1Sprints,
     nbaMvpRace,
@@ -1311,10 +1154,8 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     nbaRookieRace,
     uclScorers,
     uelScorers,
-    ueclScorers,
     uclAssists,
     uelAssists,
-    ueclAssists,
     worldCupQualified,
     motogpRiders:       motogpRidersR.rows,
     motogpConstructors: motogpConstructR.rows,

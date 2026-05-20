@@ -310,16 +310,6 @@ const SPORTS: SportConfig[] = [
           ],
         }],
       },
-      {
-        id: 'goleadores', label: 'Goleadores', icon: '⚽',
-        blocks: [{
-          id: 'wc-scorers',
-          title: 'Goleadores del Mundial 2026',
-          metric: 'Goles',
-          placeholder: true,
-          rows: [],
-        }],
-      },
     ],
   },
   {
@@ -509,18 +499,6 @@ const SPORTS: SportConfig[] = [
   {
     id: 'baloncesto', label: 'Baloncesto', emoji: '🏀', accent: '#f59e0b',
     sections: [
-      {
-        id: 'playoffs', label: 'Playoffs', icon: '🏆',
-        blocks: [{
-          id: 'nba-playoffs',
-          title: 'Series de Playoffs NBA',
-          metric: 'Serie',
-          rows: [
-            { rank: 1, name: 'PHI @ NYK', value: '2-1', sub: 'Game 4 · 7:30 PM ET', trend: 'flat' as const, extra: { Serie: 'NY leads series 2-1', Estado: 'Programado' } },
-            { rank: 2, name: 'MIN @ SA',  value: '1-1', sub: 'Game 3 · 9:30 PM ET', trend: 'flat' as const, extra: { Serie: 'Series tied 1-1',    Estado: 'Programado' } },
-          ],
-        }],
-      },
       {
         id: 'jugadores', label: 'Jugadores', icon: '👤',
         blocks: [
@@ -1451,11 +1429,8 @@ const LIVE_BLOCK_IDS = new Set([
   'wc-group-a', 'wc-group-b', 'wc-group-c', 'wc-group-d',
   'wc-group-e', 'wc-group-f', 'wc-group-g', 'wc-group-h',
   'wc-group-i', 'wc-group-j', 'wc-group-k', 'wc-group-l',
-  'wc-scorers',
   'wc-knockout',
   'wc-qualified',
-  // NBA Playoffs
-  'nba-playoffs',
   // Snapshots auto-actualizados (cron Vercel)
   'motogp-pilotos', 'motogp-constructores',
   'tenis-slams',
@@ -1487,15 +1462,11 @@ interface LiveStandingsData {
   ufcDivisions?: Record<string, LiveStandingRow[]>
   womenLigaF: LiveStandingRow[]
   womenGoals: LiveStandingRow[]; womenAssists: LiveStandingRow[]
-  nationsLeague?: LiveLeague[]
   coachesWinRate?: LiveStandingRow[]
   worldCup?: LiveLeague[]
-  worldCupScorers?: LiveStandingRow[]
   worldCupKnockout?: LiveStandingRow[]
-  nbaPlayoffSeries?: LiveStandingRow[]
   uclFixtures?: LiveStandingRow[]
   uelFixtures?: LiveStandingRow[]
-  ueclFixtures?: LiveStandingRow[]
   // Nuevos automatizados
   f1Calendar?: LiveStandingRow[]
   f1Sprints?: LiveStandingRow[]
@@ -1504,10 +1475,8 @@ interface LiveStandingsData {
   nbaRookieRace?: LiveStandingRow[]
   uclScorers?: LiveStandingRow[]
   uelScorers?: LiveStandingRow[]
-  ueclScorers?: LiveStandingRow[]
   uclAssists?: LiveStandingRow[]
   uelAssists?: LiveStandingRow[]
-  ueclAssists?: LiveStandingRow[]
   worldCupQualified?: LiveStandingRow[]
   motogpRiders?: LiveStandingRow[]
   motogpConstructors?: LiveStandingRow[]
@@ -1541,10 +1510,8 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'wc-group-d': 'worldCup', 'wc-group-e': 'worldCup', 'wc-group-f': 'worldCup',
   'wc-group-g': 'worldCup', 'wc-group-h': 'worldCup', 'wc-group-i': 'worldCup',
   'wc-group-j': 'worldCup', 'wc-group-k': 'worldCup', 'wc-group-l': 'worldCup',
-  'wc-scorers':  'worldCupScorers',
   'wc-knockout': 'worldCupKnockout',
   'wc-qualified': 'worldCupQualified',
-  'nba-playoffs': 'nbaPlayoffSeries',
   'f1-calendario': 'f1Calendar',
   'f1-sprints': 'f1Sprints',
   'nba-mvp-race': 'nbaMvpRace',
@@ -2186,12 +2153,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           const group = liveData.worldCup.find(g => g.id === block.id)
           if (group?.rows.length) return { ...block, rows: toStatRows(group.rows) }
         }
-        if (block.id === 'wc-scorers' && liveData.worldCupScorers?.length)
-          return { ...block, rows: toStatRows(liveData.worldCupScorers), placeholder: false }
         if (block.id === 'wc-knockout' && liveData.worldCupKnockout?.length)
           return { ...block, rows: toStatRows(liveData.worldCupKnockout), placeholder: false }
-        if (block.id === 'nba-playoffs' && liveData.nbaPlayoffSeries?.length)
-          return { ...block, rows: toStatRows(liveData.nbaPlayoffSeries), placeholder: false }
 
         // ── Nuevos automatizados ────────────────────────────────────────
         if (block.id === 'f1-calendario'    && liveData.f1Calendar?.length)        return { ...block, rows: toStatRows(liveData.f1Calendar) }
@@ -2650,7 +2613,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                 let inner: React.ReactNode
                 if (block.id.startsWith('wc-group-'))
                   inner = <WorldCupGroupCard block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
-                else if (block.id === 'nba-playoffs' || block.id === 'wc-knockout' || block.cardType === 'fixtures')
+                else if (block.id === 'wc-knockout' || block.cardType === 'fixtures')
                   inner = <PlayoffSeriesCard block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
                 else
                   inner = (
