@@ -13,6 +13,8 @@ import BackButton from '@/app/article/[id]/BackButton'
 import ScrollToTop from '@/components/ScrollToTop'
 import ReadingProgress from '@/app/article/[id]/ReadingProgress'
 import ReadTracker from '@/app/article/[id]/ReadTracker'
+import ArticleTableOfContents from '@/components/ArticleTableOfContents'
+import { extractHeadings, type TocHeading } from '@/lib/article-toc'
 import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const revalidate = 3600
@@ -181,6 +183,7 @@ function ArticleSidebar({
   badgeBorder,
   nextArticle,
   related,
+  tocHeadings,
 }: {
   article: Article
   badgeColor: string
@@ -188,9 +191,12 @@ function ArticleSidebar({
   badgeBorder: string
   nextArticle: (RelatedArticle & { short_summary?: string }) | null
   related: RelatedArticle[]
+  tocHeadings: TocHeading[]
 }) {
   return (
     <aside className="hidden lg:flex flex-col gap-6 sticky top-20 self-start">
+
+      <ArticleTableOfContents headings={tocHeadings} variant="sidebar" />
 
       <div
         className="rounded-2xl p-5"
@@ -494,6 +500,10 @@ export default async function NoticiaPage({
   const badgeBg = `${badgeColor}18`
   const badgeBorder = `${badgeColor}30`
 
+  // TOC: extraer h2/h3 una vez y reutilizar slugs en el render de PortableText
+  // para que los ids coincidan con los enlaces del índice.
+  const { headings: tocHeadings, idByKey: tocIdByKey } = extractHeadings(article.bodyPortable)
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
@@ -651,6 +661,10 @@ export default async function NoticiaPage({
               </aside>
             )}
 
+            <div style={{ maxWidth: 680 }}>
+              <ArticleTableOfContents headings={tocHeadings} variant="mobile" />
+            </div>
+
             {article.short_summary && (
               <p
                 className="leading-relaxed mb-8 pl-5"
@@ -673,21 +687,37 @@ export default async function NoticiaPage({
                   components={{
                     types: {
                       image: ({ value }) => {
-                        const src = value?.asset ? urlFor(value).width(700).url() : null
+                        const src = value?.asset ? urlFor(value).width(900).url() : null
                         if (!src) return null
                         return (
-                          <figure style={{ margin: '2rem 0' }}>
-                            <div style={{ borderRadius: '0.75rem', overflow: 'hidden' }}>
+                          <figure style={{ margin: '2.25rem 0' }}>
+                            <div
+                              style={{
+                                borderRadius: 'var(--radius-lg)',
+                                overflow: 'hidden',
+                                border: '1px solid var(--border)',
+                                boxShadow: 'var(--shadow-card)',
+                              }}
+                            >
                               <Image
                                 src={src}
                                 alt={value?.alt ?? ''}
-                                width={700}
-                                height={420}
+                                width={900}
+                                height={540}
                                 className="w-full h-auto object-cover"
                               />
                             </div>
                             {value?.caption && (
-                              <figcaption style={{ fontSize: '0.8rem', color: '#6A6A8A', marginTop: '0.5rem', textAlign: 'center', fontStyle: 'italic' }}>
+                              <figcaption
+                                style={{
+                                  fontSize: '0.8rem',
+                                  color: 'var(--text-muted)',
+                                  marginTop: '0.6rem',
+                                  textAlign: 'center',
+                                  fontStyle: 'italic',
+                                  lineHeight: 1.5,
+                                }}
+                              >
                                 {value.caption}
                               </figcaption>
                             )}
@@ -702,30 +732,102 @@ export default async function NoticiaPage({
                       h1: ({ children }) => (
                         <h1 style={{ color: '#E8E8F4', fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.015em', marginTop: '2rem', marginBottom: '0.75rem' }}>{children}</h1>
                       ),
-                      h2: ({ children }) => (
-                        <h2 style={{ color: '#E8E8F4', fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', marginTop: '1.75rem', marginBottom: '0.5rem' }}>{children}</h2>
-                      ),
-                      h3: ({ children }) => (
-                        <h3 style={{ color: '#E8E8F4', fontSize: '1.2rem', fontWeight: 700, fontFamily: 'var(--font-display)', marginTop: '1.5rem', marginBottom: '0.5rem' }}>{children}</h3>
-                      ),
+                      h2: ({ children, value }) => {
+                        const key = (value as { _key?: string })?._key
+                        const id = key ? tocIdByKey[key] : undefined
+                        return (
+                          <h2
+                            id={id}
+                            style={{ color: '#E8E8F4', fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', marginTop: '1.75rem', marginBottom: '0.5rem', scrollMarginTop: '80px' }}
+                          >
+                            {children}
+                          </h2>
+                        )
+                      },
+                      h3: ({ children, value }) => {
+                        const key = (value as { _key?: string })?._key
+                        const id = key ? tocIdByKey[key] : undefined
+                        return (
+                          <h3
+                            id={id}
+                            style={{ color: '#E8E8F4', fontSize: '1.2rem', fontWeight: 700, fontFamily: 'var(--font-display)', marginTop: '1.5rem', marginBottom: '0.5rem', scrollMarginTop: '80px' }}
+                          >
+                            {children}
+                          </h3>
+                        )
+                      },
                       blockquote: ({ children }) => (
-                        <blockquote style={{ borderLeft: `3px solid ${badgeColor}`, paddingLeft: '1rem', color: '#8A8AA8', fontStyle: 'italic', margin: '1.5rem 0' }}>{children}</blockquote>
+                        <blockquote
+                          className="ts-pt-blockquote"
+                          style={{
+                            position: 'relative',
+                            margin: '2rem 0',
+                            padding: '1.25rem 1.5rem 1.25rem 3rem',
+                            background: `linear-gradient(135deg, ${badgeColor}0F, ${badgeColor}05)`,
+                            borderLeft: `3px solid ${badgeColor}`,
+                            borderRadius: 'var(--radius-md)',
+                            color: '#D4D4E5',
+                            fontStyle: 'italic',
+                            fontSize: '1.1rem',
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          <span
+                            aria-hidden="true"
+                            style={{
+                              position: 'absolute',
+                              top: '0.25rem',
+                              left: '0.75rem',
+                              fontFamily: 'var(--font-display)',
+                              fontSize: '2.75rem',
+                              lineHeight: 1,
+                              color: badgeColor,
+                              opacity: 0.55,
+                              fontStyle: 'normal',
+                              fontWeight: 900,
+                            }}
+                          >
+                            “
+                          </span>
+                          {children}
+                        </blockquote>
                       ),
                     },
                     marks: {
-                      strong: ({ children }) => <strong style={{ color: '#E8E8F4', fontWeight: 700 }}>{children}</strong>,
+                      strong: ({ children }) => <strong style={{ color: '#F0F0F8', fontWeight: 700 }}>{children}</strong>,
                       em: ({ children }) => <em style={{ color: '#C4B5FD' }}>{children}</em>,
-                      link: ({ value, children }) => (
-                        <a href={value?.href} target="_blank" rel="noopener noreferrer" style={{ color: '#8B5CF6', textDecoration: 'underline' }}>{children}</a>
-                      ),
+                      link: ({ value, children }) => {
+                        const href = value?.href ?? '#'
+                        // Si es interno (mismo dominio o ruta relativa), no abrir en nueva pestaña.
+                        const isExternal = /^https?:\/\//i.test(href) && !href.includes('takasportsmedia.com')
+                        return (
+                          <a
+                            href={href}
+                            target={isExternal ? '_blank' : undefined}
+                            rel={isExternal ? 'noopener noreferrer' : undefined}
+                            style={{
+                              color: 'var(--purple-light)',
+                              textDecoration: 'underline',
+                              textDecorationColor: 'rgba(139,92,246,0.45)',
+                              textUnderlineOffset: 3,
+                            }}
+                          >
+                            {children}
+                          </a>
+                        )
+                      },
                     },
                     list: {
-                      bullet: ({ children }) => <ul style={{ color: '#B8B8D0', paddingLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'disc' }}>{children}</ul>,
-                      number: ({ children }) => <ol style={{ color: '#B8B8D0', paddingLeft: '1.5rem', marginBottom: '1rem', listStyleType: 'decimal' }}>{children}</ol>,
+                      bullet: ({ children }) => (
+                        <ul className="ts-pt-list ts-pt-list--bullet">{children}</ul>
+                      ),
+                      number: ({ children }) => (
+                        <ol className="ts-pt-list ts-pt-list--number">{children}</ol>
+                      ),
                     },
                     listItem: {
-                      bullet: ({ children }) => <li style={{ marginBottom: '0.35rem', lineHeight: 1.7 }}>{children}</li>,
-                      number: ({ children }) => <li style={{ marginBottom: '0.35rem', lineHeight: 1.7 }}>{children}</li>,
+                      bullet: ({ children }) => <li>{children}</li>,
+                      number: ({ children }) => <li>{children}</li>,
                     },
                   }}
                 />
@@ -858,6 +960,7 @@ export default async function NoticiaPage({
             badgeBorder={badgeBorder}
             nextArticle={nextArticle}
             related={relatedFinal}
+            tocHeadings={tocHeadings}
           />
 
         </div>

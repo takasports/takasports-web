@@ -58,6 +58,25 @@ export async function generateMetadata({
   }
 }
 
+const relatedTagsQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && $tag in coalesce(tags, [])][0...80] { tags }`
+
+function topRelatedTags(rows: Array<{ tags?: string[] | null }>, currentTag: string, limit = 8): Array<{ tag: string; count: number }> {
+  const counter = new Map<string, number>()
+  const currentLower = currentTag.toLowerCase()
+  for (const row of rows) {
+    if (!Array.isArray(row.tags)) continue
+    for (const t of row.tags) {
+      if (!t || typeof t !== 'string') continue
+      if (t.toLowerCase() === currentLower) continue
+      counter.set(t, (counter.get(t) ?? 0) + 1)
+    }
+  }
+  return Array.from(counter.entries())
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+}
+
 export default async function TagPage({
   params,
 }: {
@@ -66,11 +85,18 @@ export default async function TagPage({
   const { tag } = await params
   const decoded = decodeURIComponent(tag)
 
-  const articles = await sanityClient
-    .fetch<Article[]>(articlesByTagQuery, { tag: decoded } as Record<string, string>)
-    .catch(() => [] as Article[])
+  const [articles, relatedRows] = await Promise.all([
+    sanityClient
+      .fetch<Article[]>(articlesByTagQuery, { tag: decoded } as Record<string, string>)
+      .catch(() => [] as Article[]),
+    sanityClient
+      .fetch<Array<{ tags?: string[] | null }>>(relatedTagsQuery, { tag: decoded } as Record<string, string>)
+      .catch(() => [] as Array<{ tags?: string[] | null }>),
+  ])
 
   if (articles.length === 0) notFound()
+
+  const relatedTags = topRelatedTags(relatedRows, decoded)
 
   const tagUrl = `${SITE_URL}/tag/${tag}`
   const breadcrumbJsonLd = {
@@ -138,6 +164,42 @@ export default async function TagPage({
             {articles.length} {articles.length === 1 ? 'artículo' : 'artículos'}
           </p>
         </div>
+
+        {/* Tags relacionados (co-ocurrencia) */}
+        {relatedTags.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="section-label">Tags relacionados</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {relatedTags.map(({ tag: rt, count }) => (
+                <Link
+                  key={rt}
+                  href={`/tag/${encodeURIComponent(rt)}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--border)',
+                    fontFamily: 'var(--font-sport)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: '0.03em',
+                    textDecoration: 'none',
+                    transition: 'border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard)',
+                  }}
+                >
+                  #{rt}
+                  <span style={{ color: 'var(--text-faint)', fontSize: 10, fontWeight: 700 }}>{count}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Grid de artículos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

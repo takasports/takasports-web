@@ -449,6 +449,39 @@ a[href^="/noticias/"]:visited .news-title {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
 
+/* ── PortableText article lists ──
+   Bullets/números con tinte violeta y ritmo de lectura cuidado. */
+.ts-pt-list {
+  color: #B8B8D0;
+  margin: 0 0 1.25rem 0;
+  padding-left: 1.5rem;
+}
+.ts-pt-list--bullet { list-style: disc; }
+.ts-pt-list--number { list-style: decimal; }
+.ts-pt-list li {
+  margin-bottom: 0.45rem;
+  line-height: 1.7;
+  padding-left: 0.25rem;
+}
+.ts-pt-list--bullet li::marker {
+  color: var(--purple-light);
+  font-size: 1.1em;
+}
+.ts-pt-list--number li::marker {
+  color: var(--purple-light);
+  font-weight: 700;
+}
+.ts-pt-list ul,
+.ts-pt-list ol {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+/* ── Table of Contents (mobile <details>) ──
+   Rotación del chevron al expandir y reseteo del marcador nativo. */
+details > summary::-webkit-details-marker { display: none; }
+details[open] > summary .toc-chev { transform: rotate(180deg); }
+
 /* ── Consent banner ──
    En mobile (≤1023px) se eleva sobre el BottomNav (64px) + safe-area.
    En lg+ se ancla al borde inferior con safe-area. */

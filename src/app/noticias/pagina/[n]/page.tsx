@@ -33,8 +33,13 @@ const totalQuery = `count(*[_type == "article" && (status == "publicado" || (def
 export async function generateStaticParams() {
   const total: number = await sanityClient.fetch(totalQuery).catch(() => 0)
   const pages = Math.ceil(total / PAGE_SIZE)
-  // Pre-build las primeras 5 páginas; el resto ISR on-demand
-  return Array.from({ length: Math.min(pages, 5) }, (_, i) => ({ n: String(i + 2) }))
+  // Pre-build las primeras 8 páginas; el resto ISR on-demand.
+  // Más páginas pre-build = LCP estable en CrUX para las que más se navegan.
+  return Array.from({ length: Math.min(pages, 8) }, (_, i) => ({ n: String(i + 2) }))
+}
+
+function prevHref(page: number): string {
+  return page === 2 ? `${SITE_URL}/noticias` : `${SITE_URL}/noticias/pagina/${page - 1}`
 }
 
 export async function generateMetadata({
@@ -103,6 +108,9 @@ export default async function NoticiasPageN({
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      {/* Señalización rel=prev/next para crawlers (Bing/Yandex la usan; Google ignora pero no daña) */}
+      <link rel="prev" href={prevHref(page)} />
+      {hasNext && <link rel="next" href={`${SITE_URL}/noticias/pagina/${page + 1}`} />}
       <Header />
       <LiveStrip />
 
