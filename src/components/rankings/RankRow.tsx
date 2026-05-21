@@ -81,10 +81,20 @@ export default function RankRow({
               </span>
             )}
             {entry.badge && <BadgePill text={entry.badge} />}
+            {entry.editorialNote && <EditorialNoteChip note={entry.editorialNote} />}
           </div>
           <p className="text-[10px] truncate" style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
             {entry.subtitle}
           </p>
+          {/* Insight inline en mobile (en desktop se muestra en columna separada abajo) */}
+          {entry.insight && (
+            <p
+              className="xl:hidden text-[11px] mt-1 line-clamp-2"
+              style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)', lineHeight: 1.35 }}
+            >
+              {entry.insight}
+            </p>
+          )}
         </div>
         {entry.insight && (
           <p className="hidden xl:block text-[11px] flex-shrink-0 max-w-[220px] line-clamp-1"
@@ -92,9 +102,9 @@ export default function RankRow({
             {entry.insight}
           </p>
         )}
-        {/* Sparkline siempre visible cuando hay scorePrev */}
+        {/* Sparkline siempre visible cuando hay scorePrev — también en mobile */}
         {scoreDiff !== null && (
-          <div className="hidden sm:flex flex-shrink-0" title={`Anterior: ${entry.scorePrev?.toFixed(1)} → Ahora: ${displayScore.toFixed(1)}`}>
+          <div className="flex flex-shrink-0" title={`Anterior: ${entry.scorePrev?.toFixed(1)} → Ahora: ${displayScore.toFixed(1)}`}>
             <ScoreSparkline prev={entry.scorePrev} now={displayScore} />
           </div>
         )}
@@ -177,5 +187,62 @@ export default function RankRow({
         </div>
       )}
     </div>
+  )
+}
+
+// Chip de "Nota editorial": indica al lector que esta posición tiene un ajuste
+// editorial documentado (transparencia del Índice Taka). Click/tap o hover
+// muestra la razón. En mobile usa toggle controlado; en desktop, hover.
+function EditorialNoteChip({ note }: { note: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <span className="relative inline-flex flex-shrink-0">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen(o => !o) }}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        aria-label="Ver nota editorial"
+        className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)]"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '2px 7px',
+          borderRadius: 'var(--radius-full)',
+          background: 'rgba(124,58,237,0.12)',
+          border: '1px solid rgba(124,58,237,0.3)',
+          color: 'var(--purple-light)',
+          fontFamily: 'var(--font-sport)',
+          fontSize: 9,
+          fontWeight: 800,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+        }}
+      >
+        <span aria-hidden="true">✎</span>
+        <span>Nota</span>
+      </button>
+      {open && (
+        <span
+          role="tooltip"
+          className="absolute left-0 top-full mt-1.5 z-30 w-60 px-2.5 py-2 rounded-lg pointer-events-none"
+          style={{
+            background: '#12121E',
+            border: '1px solid rgba(124,58,237,0.35)',
+            boxShadow: 'var(--shadow-modal)',
+            color: '#D0D0E0',
+            fontFamily: 'var(--font-sport)',
+            fontSize: 11,
+            lineHeight: 1.45,
+          }}
+        >
+          {note}
+        </span>
+      )}
+    </span>
   )
 }

@@ -147,6 +147,10 @@ export default function LiveStrip() {
 
   return (
     <div
+      role="region"
+      aria-label={isLive ? 'Marcadores en vivo' : 'Próximos partidos'}
+      aria-live="polite"
+      aria-atomic="false"
       className="w-full transition-all duration-300"
       style={{
         background: 'rgba(9,9,15,0.92)',
@@ -189,8 +193,10 @@ export default function LiveStrip() {
             {isLive
               ? liveFixtures.map((fix, i) => {
                   const col = getSportColor(fix.sport)
+                  const liveLabel = getLiveLabel(fix.status, fix.elapsed)
+                  const ariaLabel = `${fix.homeTeam} ${fix.homeGoals ?? 0} - ${fix.awayGoals ?? 0} ${fix.awayTeam}, ${liveLabel}`
                   const inner = (
-                    <div className="flex items-center gap-1.5">
+                    <div role="group" aria-label={ariaLabel} className="flex items-center gap-1.5">
                       <TeamLogo logo={fix.homeLogo} name={fix.homeTeam} size={14} />
                       <span className="text-[10px] font-semibold" style={{ color: '#B0B0C8', fontFamily: 'var(--font-sport)' }}>
                         {short(fix.homeTeam, fix.homeAbbr)}
@@ -205,7 +211,7 @@ export default function LiveStrip() {
                       <TeamLogo logo={fix.awayLogo} name={fix.awayTeam} size={14} />
                       <span className="text-[9px] font-black px-1.5 py-0.5 rounded"
                         style={{ color: col, background: `${col}14`, border: `1px solid ${col}30`, fontFamily: 'var(--font-sport)' }}>
-                        {getLiveLabel(fix.status, fix.elapsed)}
+                        {liveLabel}
                       </span>
                     </div>
                   )

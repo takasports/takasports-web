@@ -17,6 +17,7 @@
 import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
+import { pingIndexNow, pathsToUrls } from '@/lib/indexnow'
 
 export const dynamic = 'force-dynamic'
 
@@ -105,11 +106,22 @@ export async function POST(req: NextRequest) {
 
   console.log(`[sanity-webhook] revalidated ${revalidated.length} paths for ${docType}${slug ? ` (${slug})` : ''} status=${status ?? '?'}`)
 
+  // Ping IndexNow (Bing/Yandex) — solo en publicaciones reales de artículos
+  // con slug, para no inundar el endpoint con sobreescrituras intermedias o
+  // cambios en reels/events que no son páginas indexables por sí solas.
+  let indexnow: { submitted: number; status: number; ok: boolean } | null = null
+  if (docType === 'article' && slug && status !== 'borrador' && status !== 'draft') {
+    const urls = pathsToUrls([`/noticias/${slug}`, '/noticias', '/'])
+    indexnow = await pingIndexNow(urls)
+    console.log(`[sanity-webhook] indexnow submitted=${indexnow.submitted} status=${indexnow.status} ok=${indexnow.ok}`)
+  }
+
   return NextResponse.json({
     ok: true,
     revalidated,
     docType,
     slug: slug ?? null,
+    indexnow,
     ts: new Date().toISOString(),
   })
 }
