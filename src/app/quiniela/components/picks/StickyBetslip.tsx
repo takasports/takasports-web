@@ -13,7 +13,7 @@ export function StickyBetslip({ done, total, allDone, captainSet, onSubmit, urge
     : `Te quedan ${total - done} partido${total - done !== 1 ? 's' : ''}`
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
   return (
-    <div className="sticky bottom-0 left-0 right-0 z-30 -mx-1 pt-3 pb-3" style={{ background: 'linear-gradient(to top, #060010 0%, #060010 60%, transparent 100%)' }}>
+    <div className="qn-betslip-sticky left-0 right-0 z-30 -mx-1 pt-3 pb-3" style={{ background: 'linear-gradient(to top, #060010 0%, #060010 60%, transparent 100%)' }}>
       <div className="rounded-2xl px-4 py-3" style={{ background: 'rgba(10,2,20,0.96)', backdropFilter: 'blur(16px)', border: '1px solid rgba(124,58,237,0.28)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
         <div className="flex items-center gap-3 mb-2.5">
           <div className="flex-1 min-w-0">

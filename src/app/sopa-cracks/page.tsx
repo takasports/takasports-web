@@ -536,20 +536,60 @@ export default function SopaCracksPage() {
     return false
   }, [letters, placed, found, running, allFound, intruderFound])
 
-  const onCellDown = (r: number, c: number) => {
+  // Bifurcación de input:
+  //  - Mouse/pen: drag continuo (down → enter celdas → up).
+  //  - Touch: dos taps (primer tap = inicio, segundo tap = fin y valida).
+  // Esto se decide por e.pointerType en cada gesto, no por feature detection,
+  // así que un híbrido (laptop con pantalla táctil) funciona como cada usuario
+  // prefiera momento a momento.
+
+  const onCellDown = (e: React.PointerEvent, r: number, c: number) => {
     if (allFound || paused) return
     if (!running) setRunning(true)
+
+    if (e.pointerType === 'touch') {
+      // Modo tap-to-select
+      if (!startCell) {
+        // Primer tap: marca el inicio
+        setStartCell({ r, c })
+        setEndCell({ r, c })
+        return
+      }
+      // Tap en la misma celda: cancela
+      if (startCell.r === r && startCell.c === c) {
+        setStartCell(null)
+        setEndCell(null)
+        return
+      }
+      // Segundo tap: cierra selección y valida (si los dos puntos forman línea)
+      const sel = lineBetween(startCell, { r, c })
+      if (sel && sel.length > 1) {
+        validateSelection(sel)
+        setStartCell(null)
+        setEndCell(null)
+      } else {
+        // No forman línea válida (diagonal inexacta, etc.): tomamos el nuevo tap
+        // como nuevo inicio en lugar de descartar el gesto.
+        setStartCell({ r, c })
+        setEndCell({ r, c })
+      }
+      return
+    }
+
+    // Modo drag (mouse/pen)
     dragging.current = true
     setStartCell({ r, c })
     setEndCell({ r, c })
   }
 
-  const onCellEnter = (r: number, c: number) => {
+  const onCellEnter = (e: React.PointerEvent, r: number, c: number) => {
+    if (e.pointerType === 'touch') return    // touch no usa hover
     if (!dragging.current || paused) return
     setEndCell({ r, c })
   }
 
   const onPointerUp = useCallback(() => {
+    // Si no hay drag en curso (ej: tap-mode touch), no resetear nada.
     if (!dragging.current) return
     dragging.current = false
     if (currentSelection && currentSelection.length > 1) {
@@ -560,25 +600,13 @@ export default function SopaCracksPage() {
   }, [currentSelection, validateSelection])
 
   useEffect(() => {
-    window.addEventListener('mouseup', onPointerUp)
-    window.addEventListener('touchend', onPointerUp)
+    window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerUp)
     return () => {
-      window.removeEventListener('mouseup', onPointerUp)
-      window.removeEventListener('touchend', onPointerUp)
+      window.removeEventListener('pointerup', onPointerUp)
+      window.removeEventListener('pointercancel', onPointerUp)
     }
   }, [onPointerUp])
-
-  // Touch — convertir coords a celda
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!dragging.current || !gridRef.current) return
-    const t = e.touches[0]
-    const el = document.elementFromPoint(t.clientX, t.clientY) as HTMLElement | null
-    if (!el) return
-    const cellAttr = el.getAttribute('data-cell')
-    if (!cellAttr) return
-    const [r, c] = cellAttr.split(',').map(Number)
-    setEndCell({ r, c })
-  }
 
   // Set de celdas resueltas (palabras encontradas)
   const solvedCells = useMemo(() => {
@@ -781,8 +809,7 @@ export default function SopaCracksPage() {
                   filter: paused ? 'blur(8px)' : undefined,
                   transition: 'filter 0.2s',
                 }}
-                onTouchMove={onTouchMove}
-                onMouseLeave={() => { /* mantenemos selección, el mouseup global la valida */ }}
+                onPointerLeave={() => { /* mantenemos selección, el pointerup global la valida */ }}
               >
                 {letters.map((row, r) =>
                   row.map((ch, c) => {
@@ -794,9 +821,8 @@ export default function SopaCracksPage() {
                       <div
                         key={key}
                         data-cell={key}
-                        onMouseDown={() => onCellDown(r, c)}
-                        onMouseEnter={() => onCellEnter(r, c)}
-                        onTouchStart={(e) => { e.preventDefault(); onCellDown(r, c) }}
+                        onPointerDown={(e) => { e.preventDefault(); onCellDown(e, r, c) }}
+                        onPointerEnter={(e) => onCellEnter(e, r, c)}
                         className="aspect-square flex items-center justify-center font-black cursor-pointer transition-colors"
                         style={{
                           background: solved

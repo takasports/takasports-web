@@ -23,6 +23,7 @@ import StreakChip from '@/components/games/StreakChip'
 import MetaProgressionStrip from '@/components/games/MetaProgressionStrip'
 import MissionsCard from '@/components/games/MissionsCard'
 import TuDiaTaka from '@/components/games/TuDiaTaka'
+import StreakAtRiskBanner from '@/components/games/StreakAtRiskBanner'
 import PushOptIn from '@/components/games/PushOptIn'
 import GameStatusBadge from '@/components/games/GameStatusBadge'
 import LeaderboardTabs from '@/components/games/LeaderboardTabs'
@@ -628,6 +629,9 @@ export default function JuegosPageClient() {
 
         {/* ── HINT INVITADOS ──────────────────────────────── */}
         <GuestRankingHint />
+
+        {/* ── RACHA EN RIESGO (sólo si aplica) ─────────────── */}
+        <StreakAtRiskBanner />
 
         {/* ── TU DÍA TAKA ──────────────────────────────────── */}
         <section className="mb-6">

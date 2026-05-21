@@ -4,10 +4,7 @@
 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import Header from '@/components/Header'
-import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
-import ScrollToTop from '@/components/ScrollToTop'
+import GameLayout from '@/components/games/GameLayout'
 import { getDailyPuzzle, getValidAnswers } from '@/lib/takagrid-puzzles'
 import ArchivePuzzleClient from './ArchivePuzzleClient'
 
@@ -41,23 +38,17 @@ export default async function Page({ params }: PageProps) {
   const validAnswers = getValidAnswers(puzzle)
 
   return (
-    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
-      <LiveStrip />
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
-        <div className="pt-6 sm:pt-8">
-          <Link
-            href="/takagrid"
-            className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-colors hover:text-white"
-            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
-          >
-            ← Volver al TakaGrid de hoy
-          </Link>
-        </div>
-        <ArchivePuzzleClient puzzle={puzzle} dayKey={dayKey} validAnswers={validAnswers} />
-      </main>
-      <Footer />
-      <ScrollToTop />
-    </div>
+    <GameLayout accent="#FDBA74" accentDim="#F97316">
+      <div className="pt-6 sm:pt-8">
+        <Link
+          href="/takagrid"
+          className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-colors hover:text-white"
+          style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
+        >
+          ← Volver al TakaGrid de hoy
+        </Link>
+      </div>
+      <ArchivePuzzleClient puzzle={puzzle} dayKey={dayKey} validAnswers={validAnswers} />
+    </GameLayout>
   )
 }

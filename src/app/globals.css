@@ -449,6 +449,19 @@ a[href^="/noticias/"]:visited .news-title {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
 
+/* ── Quiniela sticky betslip ──
+   En mobile el sticky debe quedar por encima del BottomNav (64px) y respetar
+   el home indicator iOS. En lg+ no hay BottomNav, así que se ancla al borde. */
+.qn-betslip-sticky {
+  position: sticky;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 1024px) {
+  .qn-betslip-sticky {
+    bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
 /* ── PortableText article lists ──
    Bullets/números con tinte violeta y ritmo de lectura cuidado. */
 .ts-pt-list {
