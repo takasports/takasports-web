@@ -59,9 +59,29 @@ interface LiveScore {
 const FINISHED = new Set(['FT', 'Final', 'STATUS_FINAL', 'NS'])
 
 // ─── Hooks ────────────────────────────────────────────────────────────────
+// Helper: ejecuta `tick` cada `ms` solo cuando la pestaña está visible.
+// Al volver de oculto-a-visible hace un fetch inmediato.
+function useVisiblePolling(tick: () => void, ms: number) {
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval> | null = null
+    const start = () => { if (!timer) timer = setInterval(tick, ms) }
+    const stop  = () => { if (timer) { clearInterval(timer); timer = null } }
+    const onVis = () => {
+      if (typeof document === 'undefined') return
+      if (document.visibilityState === 'visible') { tick(); start() } else { stop() }
+    }
+    tick()
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') start()
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis)
+    return () => {
+      stop()
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [tick, ms])
+}
+
 function useLiveFixtures() {
   const [fixtures, setFixtures] = useState<RawLiveFixture[]>([])
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetch_ = useCallback(async () => {
     try {
@@ -72,18 +92,13 @@ function useLiveFixtures() {
     } catch { /* ignore */ }
   }, [])
 
-  useEffect(() => {
-    fetch_()
-    timerRef.current = setInterval(fetch_, 30_000)
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [fetch_])
+  useVisiblePolling(fetch_, 30_000)
 
   return fixtures
 }
 
 function useLiveScores(events: SportEvent[]) {
   const [scores, setScores] = useState<Map<string, LiveScore>>(new Map())
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetch_ = useCallback(async () => {
     try {
@@ -110,11 +125,7 @@ function useLiveScores(events: SportEvent[]) {
     } catch { /* ignore */ }
   }, [events])
 
-  useEffect(() => {
-    fetch_()
-    timerRef.current = setInterval(fetch_, 30_000)
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [fetch_])
+  useVisiblePolling(fetch_, 30_000)
 
   return scores
 }

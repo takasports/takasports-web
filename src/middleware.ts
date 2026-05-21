@@ -29,8 +29,25 @@ export async function middleware(request: NextRequest) {
   return supabaseResponse
 }
 
+// Allowlist: el middleware solo corre en rutas que dependen de la sesión
+// de Supabase (refresh del cookie). Todo lo público (home, noticias, partidos,
+// sitemaps, OG images, /api/events/*, crons, etc.) queda fuera para no gastar
+// Function Invocations + Fluid CPU en cada request.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Páginas autenticadas
+    '/perfil/:path*',
+    '/admin/:path*',
+    '/archivo',
+    '/quiniela/:path*',
+    // Endpoints API con dependencia de sesión Supabase
+    '/api/auth/:path*',
+    '/api/articles/:path*',
+    '/api/reels/:path*',
+    '/api/search/:path*',
+    '/api/push/:path*',
+    '/api/rankings/:path*',
+    '/api/games/:path*',
+    '/api/quiniela/:path*',
   ],
 }

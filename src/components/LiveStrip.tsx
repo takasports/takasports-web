@@ -130,16 +130,41 @@ export default function LiveStrip() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const isLiveRef = useRef(false)
+  // Polling con pausa cuando la pestaña no está visible.
+  // Reduce drasticamente function invocations al evitar fetches en segundo plano.
   useEffect(() => {
-    const wasLive = isLiveRef.current
     const nowLive = liveFixtures.length > 0
-    isLiveRef.current = nowLive
-    if (wasLive === nowLive && timerRef.current) return
-    if (timerRef.current) clearInterval(timerRef.current)
     const interval = nowLive ? 30_000 : 300_000
-    timerRef.current = setInterval(() => { fetchLive(); fetchUpcoming() }, interval)
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+
+    const start = () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+      timerRef.current = setInterval(() => { fetchLive(); fetchUpcoming() }, interval)
+    }
+    const stop = () => {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    }
+    const onVisibility = () => {
+      if (typeof document === 'undefined') return
+      if (document.visibilityState === 'visible') {
+        fetchLive(); fetchUpcoming()
+        start()
+      } else {
+        stop()
+      }
+    }
+
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      start()
+    }
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibility)
+    }
+    return () => {
+      stop()
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibility)
+      }
+    }
   }, [liveFixtures.length, fetchLive, fetchUpcoming])
 
   const isLive    = liveFixtures.length > 0

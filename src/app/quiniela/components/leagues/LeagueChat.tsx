@@ -15,13 +15,22 @@ export function LeagueChat({ leagueId, nickname }: { leagueId: string; nickname:
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const loadMsgs = useCallback(() => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
     fetch(`/api/quiniela/chat?liga=${leagueId}&limit=30`)
       .then(r => r.ok ? r.json() : [])
       .then((data: ChatMessage[]) => setMsgs(data))
       .catch(() => {})
   }, [leagueId])
 
-  useEffect(() => { loadMsgs(); const t = setInterval(loadMsgs, 15_000); return () => clearInterval(t) }, [loadMsgs])
+  useEffect(() => {
+    loadMsgs()
+    const t = setInterval(loadMsgs, 15_000)
+    document.addEventListener('visibilitychange', loadMsgs)
+    return () => {
+      clearInterval(t)
+      document.removeEventListener('visibilitychange', loadMsgs)
+    }
+  }, [loadMsgs])
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs])
   useEffect(() => {
     if (!error) return

@@ -68,7 +68,8 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
     } catch { /* ignore */ }
 
     // Poll results + detect new ones for flash cards
-    const fetchResults = () =>
+    const fetchResults = () => {
+      if (document.visibilityState === 'hidden') return
       fetch('/api/quiniela/results')
         .then(r => r.ok ? r.json() : [])
         .then((newResults: MatchResult[]) => {
@@ -86,9 +87,14 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
           })
         })
         .catch(() => {})
+    }
     fetchResults()
     const t = setInterval(fetchResults, 30_000)
-    return () => clearInterval(t)
+    document.addEventListener('visibilitychange', fetchResults)
+    return () => {
+      clearInterval(t)
+      document.removeEventListener('visibilitychange', fetchResults)
+    }
   }, [])
 
   useEffect(() => {

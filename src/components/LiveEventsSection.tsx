@@ -38,7 +38,6 @@ type FixtureRaw = {
 
 function useLiveScores(events: SportEvent[]): Map<string, LiveScore> {
   const [scores, setScores] = useState<Map<string, LiveScore>>(new Map())
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetch_ = useCallback(async () => {
     try {
@@ -59,10 +58,22 @@ function useLiveScores(events: SportEvent[]): Map<string, LiveScore> {
     } catch { /* ignore */ }
   }, [events])
 
+  // Polling pausado mientras la pestaña está oculta.
   useEffect(() => {
+    let timer: ReturnType<typeof setInterval> | null = null
+    const start = () => { if (!timer) timer = setInterval(fetch_, 60_000) }
+    const stop  = () => { if (timer) { clearInterval(timer); timer = null } }
+    const onVis = () => {
+      if (typeof document === 'undefined') return
+      if (document.visibilityState === 'visible') { fetch_(); start() } else { stop() }
+    }
     fetch_()
-    timer.current = setInterval(fetch_, 60_000)
-    return () => { if (timer.current) clearInterval(timer.current) }
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') start()
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis)
+    return () => {
+      stop()
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis)
+    }
   }, [fetch_])
 
   return scores

@@ -15,18 +15,26 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
   // clasificación «vosotros vs» se mueve en vivo durante la jornada.
   useEffect(() => {
     let cancelled = false
-    const load = () => fetch(`/api/quiniela/leagues?id=${league.id}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (cancelled || !data) return
-        if (data.members) setMembers(data.members)
-        if (Array.isArray(data.matchKeys)) setMatchKeys(data.matchKeys)
-      })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setLoading(false) })
+    const load = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+      fetch(`/api/quiniela/leagues?id=${league.id}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (cancelled || !data) return
+          if (data.members) setMembers(data.members)
+          if (Array.isArray(data.matchKeys)) setMatchKeys(data.matchKeys)
+        })
+        .catch(() => {})
+        .finally(() => { if (!cancelled) setLoading(false) })
+    }
     load()
     const t = setInterval(load, 60_000)
-    return () => { cancelled = true; clearInterval(t) }
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', load)
+    return () => {
+      cancelled = true
+      clearInterval(t)
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', load)
+    }
   }, [league.id])
 
   const alias = (league.nickname || getPlayerAlias()).trim()

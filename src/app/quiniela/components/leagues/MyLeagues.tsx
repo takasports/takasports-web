@@ -24,14 +24,22 @@ export function MyLeagues({ onCreate }: { onCreate: () => void }) {
   // la clasificación se mueva conforme terminan partidos (clave en Mundial).
   useEffect(() => {
     let cancelled = false
-    const load = () => fetch('/api/quiniela/results')
-      .then(r => r.ok ? r.json() : [])
-      .then(d => { if (!cancelled) setResults(d) })
-      .catch(() => {})
+    const load = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+      fetch('/api/quiniela/results')
+        .then(r => r.ok ? r.json() : [])
+        .then(d => { if (!cancelled) setResults(d) })
+        .catch(() => {})
+    }
     load()
     if (!expandedId) return () => { cancelled = true }
     const t = setInterval(load, 60_000)
-    return () => { cancelled = true; clearInterval(t) }
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', load)
+    return () => {
+      cancelled = true
+      clearInterval(t)
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', load)
+    }
   }, [expandedId])
 
   if (leagues.length === 0) {
