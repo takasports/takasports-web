@@ -672,9 +672,25 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
         </span>
       )}
       {showScore && liveScore ? (
-        racing ? (
-          <span className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: isLive ? '#EF4444' : '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-            {isLive ? 'LIVE' : 'FIN'}
+        // Racing y combate: NO mostrar score numérico (no significa nada en
+        // F1/MotoGP/UFC), solo badge "LIVE"/"FIN". Combate añade "VS" pequeño
+        // para reforzar la semántica de enfrentamiento.
+        (racing || combat) ? (
+          <span className="flex flex-col items-center gap-0.5 leading-none">
+            <span
+              className="text-[10px] font-black uppercase tracking-[0.18em]"
+              style={{ color: isLive ? '#EF4444' : '#7A7A8E', fontFamily: 'var(--font-sport)' }}
+            >
+              {isLive ? 'LIVE' : 'FIN'}
+            </span>
+            {combat && (
+              <span
+                className="text-[9px] font-black tracking-[0.12em]"
+                style={{ color: isLive ? '#F472B6' : '#5A5A6E', fontFamily: 'var(--font-display)' }}
+              >
+                VS
+              </span>
+            )}
           </span>
         ) : (
           <>
@@ -688,6 +704,15 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
             ) : (
               <span className="text-[9px] font-black uppercase tracking-[0.14em] leading-none" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
                 Final
+              </span>
+            )}
+            {tennis && (
+              <span
+                className="text-[8px] font-black uppercase tracking-[0.18em] leading-none"
+                style={{ color: '#9090A8', fontFamily: 'var(--font-sport)' }}
+                title="Sets ganados"
+              >
+                Sets
               </span>
             )}
             {tennis && liveScore.clock && (
@@ -717,7 +742,16 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
             {displayTime}
           </span>
           {hasVs && (
-            <span className="text-[9px] font-bold uppercase tracking-[0.18em] leading-none" style={{ color: '#38384A', fontFamily: 'var(--font-sport)' }}>vs</span>
+            combat ? (
+              <span
+                className="text-[11px] font-black leading-none"
+                style={{ color: '#F472B6', fontFamily: 'var(--font-display)', letterSpacing: '0.12em' }}
+              >
+                VS
+              </span>
+            ) : (
+              <span className="text-[9px] font-bold uppercase tracking-[0.18em] leading-none" style={{ color: '#38384A', fontFamily: 'var(--font-sport)' }}>vs</span>
+            )
           )}
           {isFav && countdown && (
             <span className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-black tabular-nums uppercase tracking-wider"
