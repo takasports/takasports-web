@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
+import GameOnboarding from '@/components/games/GameOnboarding'
 import { searchPlayers, fuzzySearchPlayers, getPlayerById, type Player } from '@/lib/players-catalog'
 import { getDailyPuzzle, isValidAnswer, getValidAnswers, type CellCoord, type GridPuzzle } from '@/lib/takagrid-puzzles'
 import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag } from '@/components/icons/GameIcons'
@@ -14,7 +15,6 @@ import { trackGameEvent } from '@/lib/games-telemetry'
 import { addXp, xpForTakagrid } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
 import { collectPlayer } from '@/lib/album'
-import ShareResultButton from '@/components/games/ShareResultButton'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
 
 // ── Constants ────────────────────────────────────────────────────
@@ -897,6 +897,17 @@ export default function TakaGridPage() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />
       <LiveStrip />
+
+      <GameOnboarding
+        storageKey="ts-onboarded-takagrid"
+        accent={ACCENT}
+        ctaFinal="Empezar el grid"
+        steps={[
+          { emoji: '🟧', title: 'Resuelve el grid del día', body: 'Cada celda pide un jugador que cumpla AMBAS condiciones de su fila y columna.' },
+          { emoji: '🔍', title: 'Búscalos por nombre', body: 'Toca una celda, escribe parte del nombre y elige de la lista. Si hay match válido, queda en verde.' },
+          { emoji: '🔥', title: 'Perfecto = 9/9', body: 'Resolver las nueve celdas suma a tu racha diaria. Cada día hay un grid nuevo.' },
+        ]}
+      />
 
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
         {/* Breadcrumb */}

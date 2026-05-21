@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import CookieConsentControl from '@/components/CookieConsentControl'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
@@ -121,10 +122,18 @@ export default function PrivacidadPage() {
 
           <h2 className="text-2xl font-bold mt-10 mb-3">7. Cookies y almacenamiento local</h2>
           <p>
-            El sitio web utiliza cookies técnicas esenciales para autenticación y preferencias.
-            No utilizamos cookies de tracking publicitario. La app móvil usa AsyncStorage para
-            las mismas funciones.
+            El sitio web utiliza cookies y <code>localStorage</code> técnicos esenciales
+            para autenticación, preferencias y el funcionamiento de los juegos. Estos no
+            requieren consentimiento porque no rastrean comportamiento.
           </p>
+          <p className="mt-3">
+            Además, si lo aceptas explícitamente, cargamos analítica anónima de uso con{' '}
+            <strong>Google Analytics 4</strong> y <strong>Microsoft Clarity</strong> para
+            entender qué contenido funciona y dónde mejorar la experiencia. Si rechazas o
+            aún no has decidido, ningún tracker se carga. No utilizamos cookies de tracking
+            publicitario ni cedemos datos a terceros con fines comerciales.
+          </p>
+          <CookieConsentControl />
 
           <h2 className="text-2xl font-bold mt-10 mb-3">8. Cambios a esta política</h2>
           <p>

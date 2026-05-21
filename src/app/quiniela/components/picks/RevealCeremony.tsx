@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { trackGameStart } from '@/lib/analytics'
+import { trackGameEvent } from '@/lib/games-telemetry'
+import { shareResult } from '@/lib/share'
+import type { GamePlay } from '@/lib/games-store'
 import type { QuinielaMatch, Pick } from '@/components/QuinielaModule'
 import { nameMatch } from '@/lib/quiniela'
 import { PICK_COLOR, PICK_BG, PICK_BORDER } from '../../lib/constants'
@@ -41,6 +44,26 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
   const advance = () => {
     if (cardIdx < total - 1) setCardIdx(i => i + 1)
     else setPhase('summary')
+  }
+
+  // Share del resultado usando el helper genérico de lib/share.ts.
+  // Construye un GamePlay sintético con el shape que espera encodeQuiniela:
+  // payload.picks y payload.results como strings.
+  const handleShare = async () => {
+    const period = new Date().toISOString().slice(0, 10)
+    const play = {
+      game_id: 'quiniela',
+      period,
+      score: scored,
+      payload: {
+        picks: evaluated.map(p => p.pick),
+        results: evaluated.map(p => p.result.outcome),
+      },
+    } as unknown as GamePlay
+    const res = await shareResult(play)
+    if (res !== 'failed') {
+      trackGameEvent({ gameId: 'quiniela', event: 'shared', period, meta: { via: res } })
+    }
   }
 
   return (
@@ -225,17 +248,37 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
               ) : null
             })()}
           </div>
-          <button
-            onClick={onComplete}
-            className="px-8 py-4 rounded-2xl font-black uppercase tracking-widest transition-transform hover:scale-105 active:scale-95"
-            style={{
-              background: 'linear-gradient(135deg,#7C3AED,#5B21B6)',
-              color: '#fff', fontSize: 13, fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
-              boxShadow: '0 8px 28px rgba(124,58,237,0.4)',
-            }}
-          >
-            Ver mis picks
-          </button>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black uppercase tracking-widest transition-transform hover:scale-105 active:scale-95"
+              style={{
+                background: 'rgba(124,58,237,0.12)',
+                color: '#C4B5FD',
+                border: '1px solid rgba(124,58,237,0.35)',
+                fontSize: 12, fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                <path d="M9 4l-4 3 4 3M5 7h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="11" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.4" />
+                <circle cx="11" cy="11" r="1.5" stroke="currentColor" strokeWidth="1.4" />
+                <circle cx="3" cy="7" r="1.5" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
+              Compartir
+            </button>
+            <button
+              onClick={onComplete}
+              className="px-8 py-4 rounded-2xl font-black uppercase tracking-widest transition-transform hover:scale-105 active:scale-95"
+              style={{
+                background: 'linear-gradient(135deg,#7C3AED,#5B21B6)',
+                color: '#fff', fontSize: 13, fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
+                boxShadow: '0 8px 28px rgba(124,58,237,0.4)',
+              }}
+            >
+              Ver mis picks
+            </button>
+          </div>
         </div>
       )}
     </div>

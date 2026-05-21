@@ -166,7 +166,7 @@ async function Content({ p1, p2 }: { p1?: string; p2?: string }) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-3">
         <Link href="/estadisticas?sport=futbol"
           className="flex items-center gap-1.5 text-[12px] text-[#5A5A6A] hover:text-white transition-colors"
           style={{ fontFamily: 'var(--font-sport)' }}>
@@ -176,6 +176,22 @@ async function Content({ p1, p2 }: { p1?: string; p2?: string }) {
           style={{ fontFamily: 'var(--font-sport)' }}>
           Comparar
         </h1>
+      </div>
+
+      {/* Cross-link al comparador del Índice Taka (4 factores subjetivos) */}
+      <div className="mb-6">
+        <Link
+          href="/rankings/comparar"
+          className="inline-flex items-center gap-2 text-[11px] transition-colors hover:text-white"
+          style={{
+            color: '#C4B5FD',
+            fontFamily: 'var(--font-sport)',
+            textDecoration: 'none',
+          }}
+        >
+          <span style={{ color: '#5A5A6A' }}>¿Buscas comparar el Índice Taka?</span>
+          <span>Comparador Taka →</span>
+        </Link>
       </div>
 
       {a && b ? (

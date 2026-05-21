@@ -231,9 +231,20 @@ function RadarChart({
 
   const rings = [25, 50, 75, 100]
 
+  // Descripción a11y: "A: rendimiento 85, contexto 70, mediático 90, narrativa 60.
+  // B: rendimiento 80, contexto 75, mediático 85, narrativa 65."
+  const describe = (label: string, vals: Record<FactorKey, number>) =>
+    `${label}: rendimiento ${Math.round(vals.rendimiento)}, contexto ${Math.round(vals.contexto)}, mediático ${Math.round(vals.mediatico)}, narrativa ${Math.round(vals.narrativa)}`
+  const ariaLabel = `Radar 4 factores. ${describe('A', a)}. ${describe('B', b)}.`
+
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full max-w-[360px] h-auto"
-      style={{ overflow: 'visible' }}>
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full max-w-[360px] h-auto"
+      role="img"
+      aria-label={ariaLabel}
+      style={{ overflow: 'visible' }}
+    >
       {/* Rings */}
       {rings.map(v => (
         <polygon

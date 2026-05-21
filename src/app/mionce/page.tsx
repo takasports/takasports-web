@@ -12,6 +12,7 @@ import { getWeeklyChallenge, type FormationId, type Challenge, type SlotTag } fr
 import { CountryFlag } from '@/components/icons/GameIcons'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
+import GameOnboarding from '@/components/games/GameOnboarding'
 import { addXp, xpForMionce } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
 import { collectPlayer } from '@/lib/album'
@@ -1083,6 +1084,17 @@ export default function MiOncePage() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />
       <LiveStrip />
+
+      <GameOnboarding
+        storageKey="ts-onboarded-mionce"
+        accent="#93C5FD"
+        ctaFinal="Crear mi once"
+        steps={[
+          { emoji: '⚽', title: 'Tu once de la semana', body: 'Elige una formación (4-3-3, 4-4-2, etc.) y rellena los 11 puestos con jugadores reales de cualquier liga.' },
+          { emoji: '©', title: 'Capitán × 2', body: 'Marca un jugador como capitán: sus puntos cuentan doble en el ranking semanal.' },
+          { emoji: '💾', title: 'Guarda y compite', body: 'Tu once queda sellado al cerrar el reto. Al final de la semana se compara con el resto de la comunidad.' },
+        ]}
+      />
 
       <main className="max-w-[1440px] mx-auto px-4 sm:px-4 sm:px-6 xl:px-10 pb-24">
         {/* Breadcrumb */}
