@@ -5,7 +5,7 @@
   "start_url": "/juegos",
   "display": "standalone",
   "background_color": "#09090F",
-  "theme_color": "#EA580C",
+  "theme_color": "#7C3AED",
   "orientation": "portrait",
   "lang": "es",
   "scope": "/",

@@ -26,8 +26,43 @@
   --font-sport: var(--font-sport, system-ui);
 
   /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
   --radius-card: 12px;
   --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Spacing — escala consistente para padding/gap/margin
+     Usar como var(--space-md) o map a Tailwind via inline style cuando aplique. */
+  --space-2xs: 0.25rem;  /* 4px  */
+  --space-xs:  0.5rem;   /* 8px  */
+  --space-sm:  0.75rem;  /* 12px */
+  --space-md:  1rem;     /* 16px */
+  --space-lg:  1.5rem;   /* 24px */
+  --space-xl:  2rem;     /* 32px */
+  --space-2xl: 3rem;     /* 48px */
+  --space-3xl: 4rem;     /* 64px */
+
+  /* Elevation — sombras coherentes por nivel.
+     Card = elevación base; Card-hover = lift sutil con tinte violeta;
+     Modal = profundidad real; Glow = acentos brand. */
+  --shadow-card:       0 4px 16px rgba(0,0,0,0.32);
+  --shadow-card-hover: 0 12px 32px rgba(124,58,237,0.15), 0 0 0 1px rgba(124,58,237,0.10);
+  --shadow-modal:      0 24px 60px rgba(0,0,0,0.7);
+  --shadow-glow:       0 0 0 1px rgba(124,58,237,0.28), 0 8px 28px rgba(124,58,237,0.18);
+
+  /* Motion — duraciones y easings unificados */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 480ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasis: cubic-bezier(0.34, 1.1, 0.64, 1);
+  --ease-bounce:   cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Focus ring — accesibilidad consistente */
+  --focus-ring: 0 0 0 2px var(--purple), 0 0 0 4px rgba(124,58,237,0.25);
 }
 
 html {
@@ -111,26 +146,11 @@ body {
 }
 .animate-ticker { animation: ticker 30s linear infinite; }
 
-/* ── Editorial hover en news cards ── */
-.news-card {
-  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
-}
-.news-card:hover {
-  border-color: rgba(124,58,237,0.28) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.4), 0 0 0 1px rgba(124,58,237,0.07);
-}
-.news-card:hover .news-title {
-  text-decoration: underline;
-  text-decoration-color: rgba(124,58,237,0.6);
-  text-underline-offset: 3px;
-}
-
 /* ── Nav links ── */
 .nav-link {
   color: var(--text-muted);
-  transition: color 0.15s ease, background 0.15s ease;
-  border-radius: 8px;
+  transition: color var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard);
+  border-radius: var(--radius-md);
 }
 .nav-link:hover { color: #C4B5FD; }
 .nav-link.active {
@@ -140,7 +160,7 @@ body {
 
 /* ── Search bar ── */
 .search-bar {
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
 }
 .search-bar:hover {
   background: rgba(255,255,255,0.07) !important;
@@ -149,7 +169,7 @@ body {
 
 /* ── Profile button ── */
 .profile-btn {
-  transition: border-color 0.18s ease, background 0.18s ease;
+  transition: border-color var(--duration-base) var(--ease-standard), background var(--duration-base) var(--ease-standard);
 }
 .profile-btn:hover {
   border-color: rgba(124,58,237,0.55) !important;
@@ -375,17 +395,17 @@ a[href^="/noticias/"]:visited .news-title {
   .hero-enter { animation: none; }
 }
 
-/* ── Enhanced news card hover effects ── */
+/* ── News card hover (single source of truth) ── */
 .news-card {
-  transition: border-color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-              transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: border-color var(--duration-base) var(--ease-bounce),
+              transform var(--duration-base) var(--ease-bounce),
+              box-shadow var(--duration-base) var(--ease-bounce);
 }
 
 .news-card:hover {
   border-color: rgba(124, 58, 237, 0.4) !important;
   transform: translateY(-6px);
-  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.15), 0 0 0 1px rgba(124, 58, 237, 0.1);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .news-card:hover .news-title {
@@ -428,4 +448,75 @@ a[href^="/noticias/"]:visited .news-title {
 /* Hide scrollbar utility used in horizontal strips */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
+
+/* ── Consent banner ──
+   En mobile (≤1023px) se eleva sobre el BottomNav (64px) + safe-area.
+   En lg+ se ancla al borde inferior con safe-area. */
+.ts-consent-wrapper {
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 12px);
+}
+@media (min-width: 1024px) {
+  .ts-consent-wrapper {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  }
+}
+.ts-consent-card {
+  background: rgba(17, 17, 24, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  padding: var(--space-md) var(--space-lg);
+}
+
+/* ── Focus-visible global ──
+   Indicador de foco accesible (teclado) sin afectar el click con mouse.
+   Las clases especializadas (.nav-link, .profile-btn, .news-card) pueden
+   sobrescribir si necesitan un ring distinto. */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-md);
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ── Reduced motion universal ──
+   Cuando el usuario lo pide, neutralizamos todas las animaciones decorativas:
+   transiciones a ~0.01ms (no instantáneas para evitar bugs de :hover state) y
+   animaciones a una sola iteración. Las @keyframes ya cubiertas con bloques
+   específicos no se ven afectadas; este bloque cierra el resto: live-pulse,
+   quinielaPulse, cardShake, confettiFall, urgentPulse, scoreFlash, sealPop,
+   revealPop, revealSlam, chipPop, ticker, feedReveal, slideDown, fadeIn,
+   liveWinPulse, liveLosePulse, tsFlash, counterPulse. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-ticker,
+  .reel-enter,
+  .hero-enter,
+  .feed-animate,
+  [data-reveal],
+  [data-counter],
+  .ts-flash {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
 

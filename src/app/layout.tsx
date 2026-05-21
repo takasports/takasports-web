@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
 import { Barlow_Condensed, Bebas_Neue, Barlow_Semi_Condensed } from 'next/font/google'
-import Script from 'next/script'
 import './globals.css'
 import BottomNav from '@/components/BottomNav'
+import ConsentBanner from '@/components/ConsentBanner'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
@@ -142,27 +142,12 @@ export default function RootLayout({
         />
         {children}
         <BottomNav />
+        <ConsentBanner gaId={GA_ID} clarityId={CLARITY_ID} />
         <script
           dangerouslySetInnerHTML={{
             __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}) }) }`,
           }}
         />
-        {GA_ID && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script id="ga4-init" strategy="afterInteractive">
-              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}',{page_path:window.location.pathname});`}
-            </Script>
-          </>
-        )}
-        {CLARITY_ID && (
-          <Script id="clarity-init" strategy="afterInteractive">
-            {`(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${CLARITY_ID}");`}
-          </Script>
-        )}
       </body>
     </html>
   )

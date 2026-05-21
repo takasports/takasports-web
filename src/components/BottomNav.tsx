@@ -40,7 +40,7 @@ export default function BottomNav() {
                 href={href}
                 onClick={onTap}
                 aria-current={active ? 'page' : undefined}
-                className="flex flex-col items-center justify-center gap-1 h-full transition-colors"
+                className="flex flex-col items-center justify-center gap-1 h-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)] focus-visible:ring-inset"
                 style={{
                   color: active ? '#C4B5FD' : '#6A6A82',
                   textDecoration: 'none',
