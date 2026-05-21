@@ -2,65 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import { SPORT_EMOJI, getSportColor, getLiveLabel } from '@/lib/competitions'
-import { SportIcon } from '@/components/icons/GameIcons'
-
-interface LiveFixture {
-  id: string
-  homeTeam: string
-  awayTeam: string
-  homeGoals: number | null
-  awayGoals: number | null
-  status: string
-  elapsed: number | null
-  sport: string
-  comp?: string
-  homeAbbr?: string
-  awayAbbr?: string
-  homeLogo?: string
-  awayLogo?: string
-  matchRef?: string
-}
-
-interface UpcomingEvent {
-  id: string
-  homeTeam: string
-  awayTeam: string | null
-  time: string
-  dateLabel: string
-  sport: string
-  comp: string
-  homeLogo?: string
-  awayLogo?: string
-  homeAbbr?: string
-  awayAbbr?: string
-}
+import { LiveEventCard, UpcomingEventCard, type LiveFixture, type UpcomingEvent } from '@/components/events/LiveEventCard'
 
 const FINISHED = new Set(['FT', 'NS', 'FINAL', 'STATUS_FINAL', 'STATUS_SCHEDULED'])
-
-function TeamLogo({ logo, name, size = 14 }: { logo?: string; name: string; size?: number }) {
-  const [err, setErr] = useState(false)
-  if (logo && !err) {
-    return (
-      <img
-        src={logo}
-        alt={name}
-        width={size}
-        height={size}
-        onError={() => setErr(true)}
-        style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }}
-      />
-    )
-  }
-  return null
-}
-
-function short(name: string | null | undefined, abbr?: string): string {
-  if (!name) return ''
-  if (abbr) return abbr
-  // fallback: first word up to 4 chars
-  return name.split(' ')[0].slice(0, 4)
-}
 
 function useRelativeTime(ts: number | null): string {
   const [label, setLabel] = useState('')
@@ -216,65 +160,34 @@ export default function LiveStrip() {
           {/* Events */}
           <div className="flex items-center gap-1 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
             {isLive
-              ? liveFixtures.map((fix, i) => {
-                  const col = getSportColor(fix.sport)
-                  const liveLabel = getLiveLabel(fix.status, fix.elapsed)
-                  const ariaLabel = `${fix.homeTeam} ${fix.homeGoals ?? 0} - ${fix.awayGoals ?? 0} ${fix.awayTeam}, ${liveLabel}`
-                  const inner = (
-                    <div role="group" aria-label={ariaLabel} className="flex items-center gap-1.5">
-                      <TeamLogo logo={fix.homeLogo} name={fix.homeTeam} size={14} />
-                      <span className="text-[10px] font-semibold" style={{ color: '#B0B0C8', fontFamily: 'var(--font-sport)' }}>
-                        {short(fix.homeTeam, fix.homeAbbr)}
-                      </span>
-                      <span className="font-black tabular-nums text-[11px]"
-                        style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}>
-                        {fix.homeGoals ?? 0} – {fix.awayGoals ?? 0}
-                      </span>
-                      <span className="text-[10px] font-semibold" style={{ color: '#B0B0C8', fontFamily: 'var(--font-sport)' }}>
-                        {short(fix.awayTeam, fix.awayAbbr)}
-                      </span>
-                      <TeamLogo logo={fix.awayLogo} name={fix.awayTeam} size={14} />
-                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded"
-                        style={{ color: col, background: `${col}14`, border: `1px solid ${col}30`, fontFamily: 'var(--font-sport)' }}>
-                        {liveLabel}
-                      </span>
-                    </div>
-                  )
-                  return (
-                    <div key={fix.id} className="flex items-center gap-3 flex-shrink-0">
-                      {i > 0 && <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.07)', flexShrink: 0, display: 'inline-block' }} />}
-                      {fix.matchRef
-                        ? <Link href={`/partido/${fix.matchRef}`} className="hover:opacity-80 transition-opacity">{inner}</Link>
-                        : inner
-                      }
-                    </div>
-                  )
-                })
-              : upcoming.slice(0, 5).map((ev, i) => {
-                  const col = getSportColor(ev.sport)
-                  return (
-                    <div key={ev.id} className="flex items-center gap-3 flex-shrink-0">
-                      {i > 0 && <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.07)', flexShrink: 0, display: 'inline-block' }} />}
-                      <div className="flex items-center gap-1.5">
-                        <span style={{ color: col }}><SportIcon sport={ev.sport} size={13} /></span>
-                        <TeamLogo logo={ev.homeLogo} name={ev.homeTeam} size={13} />
-                        <span className="text-[10px] font-semibold" style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
-                          {ev.awayTeam
-                            ? `${short(ev.homeTeam, ev.homeAbbr)} vs ${short(ev.awayTeam, ev.awayAbbr)}`
-                            : ev.homeTeam}
-                        </span>
-                        <TeamLogo logo={ev.awayLogo} name={ev.awayTeam ?? ''} size={13} />
-                        <span className="text-[9px] font-black tabular-nums px-1.5 py-0.5 rounded"
-                          style={{ color: col, background: `${col}12`, border: `1px solid ${col}25`, fontFamily: 'var(--font-display)', letterSpacing: '0.02em' }}>
-                          {ev.time}
-                        </span>
-                        <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
-                          {ev.dateLabel}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })
+              ? liveFixtures.map((fix, i) => (
+                  <div key={fix.id} className="flex items-center gap-3 flex-shrink-0">
+                    {i > 0 && (
+                      <span
+                        style={{
+                          width: 1, height: 14,
+                          background: 'rgba(255,255,255,0.07)',
+                          flexShrink: 0, display: 'inline-block',
+                        }}
+                      />
+                    )}
+                    <LiveEventCard fix={fix} />
+                  </div>
+                ))
+              : upcoming.slice(0, 5).map((ev, i) => (
+                  <div key={ev.id} className="flex items-center gap-3 flex-shrink-0">
+                    {i > 0 && (
+                      <span
+                        style={{
+                          width: 1, height: 14,
+                          background: 'rgba(255,255,255,0.07)',
+                          flexShrink: 0, display: 'inline-block',
+                        }}
+                      />
+                    )}
+                    <UpcomingEventCard ev={ev} />
+                  </div>
+                ))
             }
           </div>
 
