@@ -9,7 +9,10 @@ import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { SITE_URL } from '@/lib/constants'
 
-export const revalidate = 0
+// Búsqueda cachea 60s por query: la mayoría de hits son del mismo término
+// (Google indexa, usuarios repiten). 60s da freshness razonable y evita
+// que cada hit invoque la función.
+export const revalidate = 60
 
 interface SearchArticle {
   _id: string

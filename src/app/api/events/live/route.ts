@@ -458,12 +458,26 @@ async function fetchApiSportsLive(): Promise<LiveScore[]> {
 
 // ── Handler ─────────────────────────────────────────────────────
 
+// Cache headers para CDN edge: todos los usuarios polleando comparten una sola
+// respuesta cacheada en el CDN en vez de invocar la función cada vez.
+// LIVE: 30s fresh + 60s stale-while-revalidate (matches client polling interval).
+// IDLE: 120s fresh + 300s stale (no urge si no hay partidos en vivo).
+function cacheHeaders(hasLive: boolean, extra: Record<string, string> = {}): Record<string, string> {
+  const sMax = hasLive ? 30 : 120
+  const swr  = hasLive ? 60 : 300
+  return {
+    'Cache-Control': `public, s-maxage=${sMax}, stale-while-revalidate=${swr}`,
+    'CDN-Cache-Control': `public, s-maxage=${sMax}, stale-while-revalidate=${swr}`,
+    ...extra,
+  }
+}
+
 export async function GET() {
   const now = Date.now()
   const ttl = cache?.hasLive ? LIVE_TTL : IDLE_TTL
 
   if (cache && now - cache.ts < ttl) {
-    return NextResponse.json(cache.data)
+    return NextResponse.json(cache.data, { headers: cacheHeaders(cache.hasLive) })
   }
 
   try {
@@ -493,12 +507,12 @@ export async function GET() {
     cache = { data: valid, ts: now, hasLive }
     staleCache = cache
 
-    return NextResponse.json(valid)
+    return NextResponse.json(valid, { headers: cacheHeaders(hasLive) })
   } catch (err) {
     console.error('[live] Unexpected error fetching live scores:', err)
     if (staleCache && now - staleCache.ts < STALE_MAX) {
-      return NextResponse.json(staleCache.data, { headers: { 'X-Cache': 'STALE' } })
+      return NextResponse.json(staleCache.data, { headers: cacheHeaders(staleCache.hasLive, { 'X-Cache': 'STALE' }) })
     }
-    return NextResponse.json([])
+    return NextResponse.json([], { headers: cacheHeaders(false) })
   }
 }

@@ -20,7 +20,10 @@ import { isSplitBroadcast } from '@/lib/broadcasts'
 import { GoalIcon, YellowCardIcon, RedCardIcon } from '@/components/icons/GameIcons'
 import { fetchH2H, type H2HResult } from '@/lib/past-events'
 
-export const revalidate = 30
+// Cache 2 min en ISR. Partidos en vivo se refrescan a 30s vía LiveRefresh
+// (router.refresh client-side), partidos finalizados aprovechan el cache.
+// Reduce 4× los renders SSR para bots crawleando partidos viejos.
+export const revalidate = 120
 
 // ── Metadata ───────────────────────────────────────────────────────
 export async function generateMetadata({

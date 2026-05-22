@@ -149,10 +149,16 @@ async function fetchUpcomingFromLeague(
   }
 }
 
+// Upcoming events: cambian poco. Cache edge 5min fresh + 15min stale.
+const UPCOMING_CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900',
+  'CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900',
+} as const
+
 export async function GET() {
   const now = Date.now()
   if (cache && now - cache.ts < CACHE_TTL) {
-    return NextResponse.json(cache.data)
+    return NextResponse.json(cache.data, { headers: UPCOMING_CACHE_HEADERS })
   }
 
   try {
@@ -169,7 +175,7 @@ export async function GET() {
     // If every source returned empty (total ESPN outage) fall back to stale
     if (all.length === 0 && staleCache && now - staleCache.ts < STALE_MAX) {
       return NextResponse.json(staleCache.data, {
-        headers: { 'X-Cache': 'STALE' },
+        headers: { ...UPCOMING_CACHE_HEADERS, 'X-Cache': 'STALE' },
       })
     }
 
@@ -186,14 +192,14 @@ export async function GET() {
 
     cache = { data, ts: now }
     staleCache = cache
-    return NextResponse.json(data)
+    return NextResponse.json(data, { headers: UPCOMING_CACHE_HEADERS })
   } catch (err) {
     console.error('[upcoming] Unexpected error:', err)
     if (staleCache && now - staleCache.ts < STALE_MAX) {
       return NextResponse.json(staleCache.data, {
-        headers: { 'X-Cache': 'STALE' },
+        headers: { ...UPCOMING_CACHE_HEADERS, 'X-Cache': 'STALE' },
       })
     }
-    return NextResponse.json([])
+    return NextResponse.json([], { headers: UPCOMING_CACHE_HEADERS })
   }
 }
