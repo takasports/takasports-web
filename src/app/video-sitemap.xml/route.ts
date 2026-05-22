@@ -1,6 +1,4 @@
 import { sanityClient } from '@/lib/sanity'
-import { fetchInstagramReels, type TakaReel } from '@/lib/instagram'
-import { getIgToken } from '@/lib/ig-token'
 import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 3600
@@ -32,12 +30,26 @@ interface SitemapReel {
   publishedAt?: string
 }
 
+// Shape del endpoint /api/instagram/reels (que ya mezcla 4 fuentes con
+// fallback: Sanity → Graph API → Supabase Storage → JSON estático).
+interface IgEndpointReel {
+  id: string
+  title?: string
+  caption?: string
+  instagram_url: string
+  thumbnail_url?: string | null
+  sport?: string
+  timestamp?: string
+}
+
 export async function GET() {
-  // Doble fuente: Sanity (reels curados por editor) + Instagram Graph API
-  // oficial con token OAuth (la API anónima suele dar 401, por eso no
-  // sirve aquí — ver comentario en /api/instagram/reels). El home y este
-  // sitemap deben pintar lo mismo: comparten misma fuente.
-  const igToken = await getIgToken().catch(() => null)
+  // Doble fuente:
+  //  1. Sanity directo (rápido, sin token).
+  //  2. /api/instagram/reels — endpoint propio que ya mezcla las 4 fuentes
+  //     con fallback (Graph API token + Supabase Storage + JSON estático).
+  //     Es la MISMA URL que llama el home, así que sitemap y carrusel
+  //     siempre coinciden. Llamada interna en cada revalidación del sitemap
+  //     (ISR 3600s, no es hot path).
   const [sanityRows, igRows] = await Promise.all([
     sanityClient
       .fetch<SanityReel[]>(
@@ -46,9 +58,10 @@ export async function GET() {
         }`,
       )
       .catch(() => [] as SanityReel[]),
-    igToken
-      ? fetchInstagramReels(igToken).catch(() => [] as TakaReel[])
-      : Promise.resolve([] as TakaReel[]),
+    fetch(`${SITE_URL}/api/instagram/reels`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: unknown): IgEndpointReel[] => Array.isArray(data) ? data as IgEndpointReel[] : [])
+      .catch(() => [] as IgEndpointReel[]),
   ])
 
   const merged: SitemapReel[] = []
@@ -69,12 +82,14 @@ export async function GET() {
   }
 
   for (const r of igRows) {
-    if (!r.instagram_url || !r.title) continue
+    if (!r.instagram_url) continue
     if (seen.has(r.instagram_url)) continue
+    const title = (r.title || r.caption || '').trim()
+    if (!title) continue
     seen.add(r.instagram_url)
     merged.push({
       id: r.id,
-      title: r.title,
+      title: title.slice(0, 100),
       instagram_url: r.instagram_url,
       thumbnail: r.thumbnail_url ?? undefined,
       sport: r.sport || undefined,
