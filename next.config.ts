@@ -29,6 +29,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "pbs.twimg.com" },
       { protocol: "https", hostname: "*.twimg.com" },
       { protocol: "https", hostname: "upload.wikimedia.org" },
+      { protocol: "https", hostname: "media.diariolasamericas.com" },
+      { protocol: "https", hostname: "*.rtve.es" },
+      { protocol: "https", hostname: "www.fichajes.net" },
     ],
   },
   async headers() {
