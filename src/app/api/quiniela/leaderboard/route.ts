@@ -1,79 +1,140 @@
-// GET /api/quiniela/leaderboard?jornada=X&limit=20
-// Devuelve el top N de usuarios por puntos en una jornada concreta.
-// Fuente: quiniela_league_members (picks persistidos con scores).
-// Fallback: datos sintéticos si Supabase no está configurado.
+// GET /api/quiniela/leaderboard?jornada=X&limit=20[&mode=ranked|legacy]
+//
+// Ranking de jugadores en una jornada concreta.
+//
+// MODO RANKED (default) — para el modo «Ranked» (Liga General):
+//   · Score = MONEDAS reales ganadas por el usuario en esa jornada.
+//   · Fuente: quiniela_picks.picks.breakdown.totalCoins (lo escribe
+//     /api/quiniela/score server-side, autoritativo).
+//   · JOIN con profiles para display_name; fallback a "Jugador-XXXXXX".
+//   · Top N ordenado por monedas desc, desempate por hits desc.
+//
+// MODO LEGACY (opt-in) — proxy histórico por pickCount:
+//   · Solo expuesto por compatibilidad con clientes viejos.
+//   · Sin jornada o sin sesión Ranked, lo usa como último recurso.
+//
+// Shape de respuesta (estable, no cambia desde la versión anterior):
+//   { entries: [{ nickname, score, total, captainUsed, isMe? }], mode }
+//
+// Notas:
+//   · Sin Supabase configurado → { entries: [] } (UI maneja vacío).
+//   · El campo `synthetic` se ha eliminado: el endpoint nunca lo
+//     emitía pero la UI lo defaulteaba a true (bug que mostraba
+//     «Datos de demostración» con datos reales). El cliente debe
+//     considerar ausente = false.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 
 export interface LeaderboardEntry {
   nickname: string
-  score: number
-  total: number
+  score: number          // ranked: monedas | legacy: pickCount
+  total: number          // ranked: hits  | legacy: 10 (placeholder)
   captainUsed: boolean
   isMe?: boolean
 }
 
-// Nota: antes había un fallback "syntheticBoard" con nombres inventados
-// (Carlos M., Ana L. …) para que la UI nunca se viera vacía. Decidimos
-// quitar el humo: si no hay datos reales devolvemos []; la UI ya tiene
-// estado vacío honesto ("Aún no hay clasificación").
+interface PickBreakdown {
+  totalCoins?: number
+  hits?: number
+  exacts?: number
+  pleno?: boolean
+}
+interface StoredPicks {
+  picks?: unknown
+  captainIdx?: number | null
+  breakdown?: PickBreakdown
+}
 
 export async function GET(req: NextRequest) {
   const jornada = req.nextUrl.searchParams.get('jornada') ?? ''
-  const limit   = Math.min(parseInt(req.nextUrl.searchParams.get('limit') ?? '10', 10), 50)
+  const limit   = Math.min(Math.max(parseInt(req.nextUrl.searchParams.get('limit') ?? '10', 10), 1), 50)
+  const mode    = (req.nextUrl.searchParams.get('mode') ?? 'ranked').toLowerCase()
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ entries: [] })
+    return NextResponse.json({ entries: [], mode })
   }
+  const admin = adminSupabase()
+  if (!admin) return NextResponse.json({ entries: [], mode })
 
   try {
-    const admin = adminSupabase()
-    if (!admin) return NextResponse.json({ entries: [] })
+    // ── MODO RANKED ────────────────────────────────────────────────
+    // Solo si hay jornada; sin ella no podemos filtrar picks Ranked.
+    if (mode === 'ranked' && jornada) {
+      const { data: rows, error } = await admin
+        .from('quiniela_picks')
+        .select('user_id, picks')
+        .eq('jornada', jornada)
+      if (error) throw error
+      if (!rows || rows.length === 0) {
+        return NextResponse.json({ entries: [], mode: 'ranked' })
+      }
 
-    // Fetch all members with scores for this jornada from all leagues
-    // We aggregate across leagues by user_id and take their best score
-    const { data, error } = await admin
-      .from('quiniela_league_members')
-      .select('user_id, nickname, picks, exact_scores, captain_idx, updated_at')
-      .filter('picks', 'neq', '{}')
+      // Profile lookup en una sola query.
+      const userIds = [...new Set(rows.map(r => r.user_id as string))]
+      const { data: profileRows } = await admin
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', userIds)
+      const nameById = new Map<string, string>()
+      for (const p of profileRows ?? []) {
+        const name = (p.display_name as string | null)?.trim()
+        if (name) nameById.set(p.id as string, name)
+      }
 
-    if (error) throw error
+      const entries: LeaderboardEntry[] = rows
+        .map(r => {
+          const stored = (r.picks ?? {}) as StoredPicks
+          const b = stored.breakdown ?? {}
+          const uid = r.user_id as string
+          return {
+            nickname: nameById.get(uid) ?? `Jugador-${uid.slice(0, 6)}`,
+            score: b.totalCoins ?? 0,
+            total: b.hits ?? 0,
+            captainUsed: stored.captainIdx != null,
+          }
+        })
+        // Score desc (monedas), desempate por hits (total) desc.
+        .sort((a, b) => b.score - a.score || b.total - a.total)
+        .slice(0, limit)
 
-    if (!data || data.length === 0) {
-      return NextResponse.json({ entries: [] })
+      return NextResponse.json({ entries, mode: 'ranked' })
     }
 
-    // Group by user_id, keep entry with highest pick count
+    // ── MODO LEGACY (fallback) ─────────────────────────────────────
+    // Proxy por pickCount agregando todas las ligas privadas. Mantenido
+    // por compatibilidad con clientes viejos. NO refleja aciertos.
+    const { data, error } = await admin
+      .from('quiniela_league_members')
+      .select('user_id, nickname, picks, captain_idx')
+      .filter('picks', 'neq', '{}')
+    if (error) throw error
+    if (!data || data.length === 0) {
+      return NextResponse.json({ entries: [], mode: 'legacy' })
+    }
+
     const byUser = new Map<string, { nickname: string; pickCount: number; captainUsed: boolean }>()
     for (const row of data) {
-      const picks = row.picks as Record<string, string>
-      const pickCount = Object.keys(picks).length
-      const existing = byUser.get(row.user_id)
+      const picksObj = row.picks as Record<string, string>
+      const pickCount = Object.keys(picksObj).length
+      const uid = row.user_id as string
+      const existing = byUser.get(uid)
       if (!existing || pickCount > existing.pickCount) {
-        byUser.set(row.user_id, {
-          nickname: row.nickname,
+        byUser.set(uid, {
+          nickname: row.nickname as string,
           pickCount,
           captainUsed: row.captain_idx != null,
         })
       }
     }
-
-    // Convert to entries — we don't have real scores stored per-member yet,
-    // so we use pickCount as proxy until server scoring lands
     const entries: LeaderboardEntry[] = [...byUser.values()]
       .sort((a, b) => b.pickCount - a.pickCount)
       .slice(0, limit)
-      .map(u => ({
-        nickname: u.nickname,
-        score: u.pickCount,
-        total: 10,
-        captainUsed: u.captainUsed,
-      }))
+      .map(u => ({ nickname: u.nickname, score: u.pickCount, total: 10, captainUsed: u.captainUsed }))
 
-    return NextResponse.json({ entries })
+    return NextResponse.json({ entries, mode: 'legacy' })
   } catch (e) {
     console.error('[leaderboard]', e)
-    return NextResponse.json({ entries: [] })
+    return NextResponse.json({ entries: [], mode })
   }
 }

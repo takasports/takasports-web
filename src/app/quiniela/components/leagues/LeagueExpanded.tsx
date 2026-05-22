@@ -37,6 +37,17 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
     }
   }, [league.id])
 
+  // Fire-and-forget: persistir scores reales por miembro al abrir la liga.
+  // El server rate-limita a 10s/liga, así que abrir varias veces es barato.
+  // No bloquea UI: la clasificación visible se sigue calculando en vivo via
+  // computeStandings sobre members+localResults. Esto solo alimenta la
+  // tabla quiniela_league_member_scores para historiales / leaderboards
+  // server-side futuros.
+  useEffect(() => {
+    fetch(`/api/quiniela/leagues/score?id=${league.id}`, { method: 'POST' })
+      .catch(() => { /* silent — UI no depende de esto */ })
+  }, [league.id])
+
   const alias = (league.nickname || getPlayerAlias()).trim()
   const standings = computeStandings(matchKeys, members, localResults)
   const ranked = standings.map(s => ({ name: s.nickname, pts: s.points, hits: s.hits, pleno: s.pleno }))

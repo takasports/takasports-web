@@ -1,5 +1,6 @@
 import { sanityClient } from '@/lib/sanity'
-import { fetchPublicReels, type PublicReel } from '@/lib/instagram-public'
+import { fetchInstagramReels, type TakaReel } from '@/lib/instagram'
+import { getIgToken } from '@/lib/ig-token'
 import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 3600
@@ -33,10 +34,10 @@ interface SitemapReel {
 
 export async function GET() {
   // Doble fuente: Sanity (reels curados por editor) + Instagram Graph API
-  // (reels publicados en @taka.sports). Hasta ahora solo Sanity, pero el
-  // editor no duplica reels ahí → sitemap quedaba vacío mientras el home
-  // sí mostraba reels desde IG. Ahora ambos contribuyen, deduplicados por
-  // instagram_url.
+  // oficial con token OAuth (la API anónima suele dar 401, por eso no
+  // sirve aquí — ver comentario en /api/instagram/reels). El home y este
+  // sitemap deben pintar lo mismo: comparten misma fuente.
+  const igToken = await getIgToken().catch(() => null)
   const [sanityRows, igRows] = await Promise.all([
     sanityClient
       .fetch<SanityReel[]>(
@@ -45,7 +46,9 @@ export async function GET() {
         }`,
       )
       .catch(() => [] as SanityReel[]),
-    fetchPublicReels().catch(() => [] as PublicReel[]),
+    igToken
+      ? fetchInstagramReels(igToken).catch(() => [] as TakaReel[])
+      : Promise.resolve([] as TakaReel[]),
   ])
 
   const merged: SitemapReel[] = []
@@ -74,7 +77,7 @@ export async function GET() {
       title: r.title,
       instagram_url: r.instagram_url,
       thumbnail: r.thumbnail_url ?? undefined,
-      sport: r.sport,
+      sport: r.sport || undefined,
       publishedAt: r.timestamp,
     })
   }

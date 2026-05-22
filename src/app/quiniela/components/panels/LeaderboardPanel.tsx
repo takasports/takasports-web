@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react'
 
 // ─────────────────────────────────────────────────────────────────
-// Leaderboard semanal
+// Leaderboard semanal — modo Ranked: ordena por monedas reales
+// ganadas en la jornada (no por pickCount como en versiones previas).
 // ─────────────────────────────────────────────────────────────────
 interface LBEntry { nickname: string; score: number; total: number }
+type LBMode = 'ranked' | 'legacy'
 
 export function LeaderboardPanel({ jornada, totalMatches, myScore }: { jornada: string; totalMatches: number; myScore?: number }) {
   const [board, setBoard] = useState<LBEntry[]>([])
-  const [synthetic, setSynthetic] = useState(true)
+  const [mode, setMode] = useState<LBMode>('ranked')
 
   useEffect(() => {
     if (!jornada || jornada === 'Cargando…') return
@@ -18,13 +20,21 @@ export function LeaderboardPanel({ jornada, totalMatches, myScore }: { jornada: 
       .then(data => {
         if (data?.entries?.length) {
           setBoard(data.entries)
-          setSynthetic(!!data.synthetic)
+          if (data.mode === 'ranked' || data.mode === 'legacy') setMode(data.mode)
         }
       })
       .catch(() => {})
   }, [jornada])
 
-  const myPos = myScore != null && board.length > 0
+  // En modo Ranked, score = monedas → mostramos "150 🪙" en vez de "150/10".
+  // En modo legacy, score = pickCount → mantenemos el formato histórico "5/10".
+  const formatScore = (s: number, t: number) =>
+    mode === 'ranked' ? `${s} 🪙` : `${s}/${t || totalMatches}`
+
+  // En modo ranked, score = monedas (no aciertos), así que comparar
+  // contra myScore (aciertos local) daría posición errónea. Lo
+  // desactivamos hasta que el endpoint emita isMe con auth real.
+  const myPos = mode === 'legacy' && myScore != null && board.length > 0
     ? board.findIndex(p => p.score <= myScore) + 1 || board.length + 1
     : null
 
@@ -75,7 +85,7 @@ export function LeaderboardPanel({ jornada, totalMatches, myScore }: { jornada: 
                 {isMe ? 'Tú' : p.nickname}
               </span>
               <span className="text-[11px] font-black tabular-nums" style={{ color: i === 0 ? '#fbbf24' : '#4A4A6A', fontFamily: 'var(--font-display)' }}>
-                {p.score}/{p.total || totalMatches}
+                {formatScore(p.score, p.total)}
               </span>
             </div>
           )
@@ -91,14 +101,14 @@ export function LeaderboardPanel({ jornada, totalMatches, myScore }: { jornada: 
               <span style={{ fontSize: 11, width: 18, textAlign: 'center', fontFamily: 'var(--font-display)', color: '#C4B5FD', fontWeight: 900 }}>{myPos}</span>
               <span className="flex-1 text-[11px] font-black" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>Tú</span>
               <span className="text-[11px] font-black tabular-nums" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
-                {myScore}/{totalMatches}
+                {mode === 'ranked' ? `${myScore} ✓` : `${myScore}/${totalMatches}`}
               </span>
             </div>
           </>
         )}
 
         <p className="text-[8px] text-center pt-1" style={{ color: '#1E1E38', fontFamily: 'var(--font-sport)' }}>
-          {synthetic ? 'Datos de demostración' : `${board.length} participantes`} · {jornada}
+          {board.length} participante{board.length !== 1 ? 's' : ''} · {mode === 'ranked' ? 'Ranked' : 'Ligas'} · {jornada}
         </p>
       </div>
     </div>
