@@ -17,6 +17,8 @@ export type GameId = 'quiniela' | 'crackquiz' | 'mionce' | 'sopacracks' | 'takag
 // así que no entra aquí — su balance se sigue acreditando directo via add_coins.
 export const COINS_ENABLED_GAMES: ReadonlySet<GameId> = new Set<GameId>([
   'crackquiz',
+  'mionce',
+  'sopacracks',
 ])
 
 /**
@@ -50,6 +52,34 @@ export function coinAmountFor(
     const correct = Number(payload?.correct ?? 0)
     const perfecto = total > 0 && correct === total ? 10 : 0
     return base + perf + combo + perfecto
+  }
+
+  if (gameId === 'mionce') {
+    // Mi Once: reto SEMANAL — armar un 11 en una formación con reglas.
+    // Score = válidos (modo tagged) o rellenos (modo clásico), 0–11.
+    // Como es semanal y se entra menos, premiamos más por completar.
+    //   · base       = 10  (entrar y dejar el lineup armado)
+    //   · perf       = score * 2  → 0–22
+    //   · perfecto   = +15 si score === 11 (lineup completo válido)
+    // Total típico: 10–47 monedas/semana.
+    const base = 10
+    const perf = Math.max(0, Math.min(11, score)) * 2
+    const perfecto = score >= 11 ? 15 : 0
+    return base + perf + perfecto
+  }
+
+  if (gameId === 'sopacracks') {
+    // Sopa de Cracks: SEMANAL. Score = palabras encontradas × 10 (0–~100).
+    //   · base       = 10
+    //   · perf       = floor(score / 10)   → 0–10
+    //   · intruder   = +10 si encontró al jugador intruso del puzzle
+    //   · timeAttack = +5 modo contrarreloj (más difícil)
+    // Total típico: 10–35 monedas/semana.
+    const base = 10
+    const perf = Math.floor(Math.max(0, score) / 10)
+    const intruder = payload?.intruder === true ? 10 : 0
+    const timeAttack = payload?.timeAttack === true ? 5 : 0
+    return base + perf + intruder + timeAttack
   }
 
   return 0

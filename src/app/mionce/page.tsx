@@ -16,6 +16,7 @@ import { collectPlayer } from '@/lib/album'
 import { saveLineup, SAVED_LINEUP_LIMIT, loadSavedLineups } from '@/lib/mionce-saved'
 import { useSearchParams, useRouter } from 'next/navigation'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
+import GameCoinsToast from '@/components/games/GameCoinsToast'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -779,6 +780,9 @@ export default function MiOncePage() {
   const [slots, setSlots] = useState<Record<string, string>>({})
   const [activeSlot, setActiveSlot] = useState<SlotDef | null>(null)
   const [shareToast, setShareToast] = useState<string | null>(null)
+  // Monedas acreditadas al Ranked tras recordPlay (auto-dismiss 5s en
+  // GameCoinsToast; null = sin respuesta o sin coins por idempotencia/cap).
+  const [awardedCoins, setAwardedCoins] = useState<number | null>(null)
 
   const { challenge, week } = useMemo(() => getWeeklyChallenge(), [])
   const searchParams = useSearchParams()
@@ -870,12 +874,13 @@ export default function MiOncePage() {
         trackGameComplete({ game: 'mi_once', correct: validCount, total: 11 })
         // Sync con games-store. En modo etiquetado el score depende de los
         // slots válidos; en clásico, de los rellenos. Payload guarda ambos.
-        void recordPlay({
+        recordPlay({
           gameId:  'mionce',
           period,
           score,
           payload: { formation, filled: filledCount, valid: validCount, tagged: isTagged, slots },
-        })
+        }).then(r => { if (r.awarded > 0) setAwardedCoins(r.awarded) })
+          .catch(() => { /* sin toast — el resto del flujo no se afecta */ })
         addXp('mionce', xpForMionce(isTagged ? validCount : filledCount))
         reportPlay('mionce', { score })
         trackGameEvent({ gameId: 'mionce', event: 'completed', period, meta: { formation, filled: filledCount, valid: validCount, tagged: isTagged } })
@@ -1587,6 +1592,12 @@ export default function MiOncePage() {
           {shareToast}
         </div>
       )}
+
+      <GameCoinsToast
+        awarded={awardedCoins}
+        accent={ACCENT}
+        onDismiss={() => setAwardedCoins(null)}
+      />
       </GameLayout>
     </>
   )

@@ -10,6 +10,7 @@ import { addXp, xpForSopacracks } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
+import GameCoinsToast from '@/components/games/GameCoinsToast'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
 import { searchPlayers, type Player } from '@/lib/players-catalog'
 import { CountryFlag } from '@/components/icons/GameIcons'
@@ -375,6 +376,9 @@ export default function SopaCracksPage() {
   // 8.3 contrarreloj
   const [timeAttack, setTimeAttack] = useState(false)
   const [timeOver, setTimeOver] = useState(false)
+  // Monedas acreditadas al Ranked tras recordPlay (auto-dismiss 5s en
+  // GameCoinsToast; null = sin respuesta o sin coins por idempotencia/cap).
+  const [awardedCoins, setAwardedCoins] = useState<number | null>(null)
 
   // Selección
   const [startCell, setStartCell] = useState<Cell | null>(null)
@@ -455,7 +459,7 @@ export default function SopaCracksPage() {
       // no contaminar el leaderboard normal (mismo cronómetro pero meta opuesta).
       const period = timeAttack ? `${currentWeekISO()}-TA` : currentWeekISO()
       const score = (timeAttack ? foundCount : puzzle.words.length) * 10
-      void recordPlay({
+      recordPlay({
         gameId:     'sopacracks',
         period,
         score,
@@ -467,7 +471,8 @@ export default function SopaCracksPage() {
           timeAttack,
         },
         durationMs: seconds * 1000,
-      })
+      }).then(r => { if (r.awarded > 0) setAwardedCoins(r.awarded) })
+        .catch(() => { /* sin toast — el resto del flujo no se afecta */ })
       addXp('sopacracks', xpForSopacracks(foundCount) + (intruderFound ? INTRUDER_BONUS_PTS : 0))
       reportPlay('sopacracks', { score })
       trackGameEvent({ gameId: 'sopacracks', event: 'completed', period, meta: { seconds, intruder: intruderFound, timeAttack, found: foundCount } })
@@ -1125,6 +1130,12 @@ export default function SopaCracksPage() {
           } as GamePlay}
         />
       )}
+
+      <GameCoinsToast
+        awarded={awardedCoins}
+        accent="#6EE7B7"
+        onDismiss={() => setAwardedCoins(null)}
+      />
       </>
     </GameLayout>
   )
