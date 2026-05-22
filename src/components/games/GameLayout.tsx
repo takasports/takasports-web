@@ -20,6 +20,9 @@ interface GameLayoutProps {
   accent: string
   accentDim?: string
   liveStrip?: boolean
+  /** Estilo adicional para el <main>. Útil para paddingTop específico
+   *  de un juego sin tener que extraer al children. */
+  mainStyle?: React.CSSProperties
   children: ReactNode
 }
 
@@ -27,6 +30,7 @@ export default function GameLayout({
   accent,
   accentDim,
   liveStrip = true,
+  mainStyle,
   children,
 }: GameLayoutProps) {
   // CSS custom properties no son strict en React style typing; usamos cast.
@@ -45,7 +49,7 @@ export default function GameLayout({
     >
       <Header />
       {liveStrip && <LiveStrip />}
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24" style={mainStyle}>
         {children}
       </main>
       <Footer />

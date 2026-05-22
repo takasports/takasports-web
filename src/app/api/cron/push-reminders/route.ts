@@ -15,15 +15,53 @@ interface PushMessage {
   tag: string
 }
 
-const DAILY_MESSAGES: PushMessage[] = [
-  { title: 'CrackQuiz de hoy 🎯', body: '10 preguntas, 20 s cada una. ¿Mantienes la racha?', url: '/crackquiz', tag: 'crackquiz' },
-  { title: 'TakaGrid de hoy 🟧',  body: 'Tres clubes, tres categorías. Un intento por celda.',   url: '/takagrid',  tag: 'takagrid' },
+// Variantes por juego — rotan según el día del mes para que el aviso diario
+// no se sienta calcado. El tag se mantiene fijo por juego (iOS deduplica por
+// tag y reemplaza la notificación previa si aún no se ha tocado).
+
+const CRACKQUIZ_VARIANTS: Array<Omit<PushMessage, 'url' | 'tag'>> = [
+  { title: 'CrackQuiz de hoy 🎯',  body: '10 preguntas, 20 s cada una. ¿Mantienes la racha?' },
+  { title: 'Tu trivia diaria 🧠', body: '¿Cuánto sabes del deporte que sigues? Ponte a prueba.' },
+  { title: 'Pleno o nada 🎯',     body: 'Diez disparos. Cero segundos para dudar. ¡Adentro!' },
+  { title: 'Reta tu memoria 🔥',  body: 'Los 10 que jugaron ayer ya están dentro. ¿Y tú?' },
 ]
 
-const WEEKLY_MESSAGES: PushMessage[] = [
-  { title: 'Nueva Sopa de Cracks 🔤', body: 'Diez nombres ocultos en el puzzle semanal.', url: '/sopa-cracks', tag: 'sopacracks' },
-  { title: 'Nuevo reto Mi Once ⚽',   body: 'Arma tu once con el reto de esta semana.',  url: '/mionce',      tag: 'mionce' },
+const TAKAGRID_VARIANTS: Array<Omit<PushMessage, 'url' | 'tag'>> = [
+  { title: 'TakaGrid de hoy 🟧',     body: 'Tres clubes, tres categorías. Un intento por celda.' },
+  { title: 'Nuevo grid disponible',  body: 'Encaja los nueve. Tu racha depende de ello.' },
+  { title: 'Conecta los nueve 🟧',   body: 'Un puzzle nuevo, nueve huecos, un solo intento.' },
 ]
+
+const SOPACRACKS_VARIANTS: Array<Omit<PushMessage, 'url' | 'tag'>> = [
+  { title: 'Nueva Sopa de Cracks 🔤', body: 'Diez nombres ocultos en el puzzle semanal.' },
+  { title: 'Encuentra a los cracks',  body: 'Nueva sopa lista. ¿Cuántos cazas en menos de 2 min?' },
+]
+
+const MIONCE_VARIANTS: Array<Omit<PushMessage, 'url' | 'tag'>> = [
+  { title: 'Nuevo reto Mi Once ⚽',  body: 'Arma tu once con el reto de esta semana.' },
+  { title: 'Tu once de la semana',   body: 'Convocatoria abierta. Elige a los 11 que apuestan por ti.' },
+]
+
+function pickByDate<T>(arr: T[], seed = Date.now()): T {
+  const day = Math.floor(seed / (1000 * 60 * 60 * 24))
+  return arr[day % arr.length]
+}
+
+function buildDaily(): PushMessage[] {
+  const seed = Date.now()
+  return [
+    { ...pickByDate(CRACKQUIZ_VARIANTS, seed), url: '/crackquiz', tag: 'crackquiz' },
+    { ...pickByDate(TAKAGRID_VARIANTS, seed),  url: '/takagrid',  tag: 'takagrid'  },
+  ]
+}
+
+function buildWeekly(): PushMessage[] {
+  const seed = Date.now()
+  return [
+    { ...pickByDate(SOPACRACKS_VARIANTS, seed), url: '/sopa-cracks', tag: 'sopacracks' },
+    { ...pickByDate(MIONCE_VARIANTS, seed),     url: '/mionce',      tag: 'mionce'     },
+  ]
+}
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
@@ -42,8 +80,8 @@ export async function GET(req: NextRequest) {
 
   const kind = url.searchParams.get('kind') ?? 'daily'
   const messages: PushMessage[] =
-    kind === 'weekly' ? WEEKLY_MESSAGES :
-    kind === 'daily'  ? DAILY_MESSAGES  :
+    kind === 'weekly' ? buildWeekly() :
+    kind === 'daily'  ? buildDaily()  :
     []
 
   if (messages.length === 0) {

@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
-import Header from '@/components/Header'
-import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
-import ScrollToTop from '@/components/ScrollToTop'
+import GameLayout from '@/components/games/GameLayout'
 import { getDailyQuestions, getPracticeQuestions, listCategories, todayKey, type QuizQuestion, type QuizCategory } from '@/lib/crackquiz-questions'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import { TrophyIcon, FireIcon, ClapIcon, FlexIcon } from '@/components/icons/GameIcons'
@@ -1095,9 +1092,7 @@ export default function CrackQuizPage() {
           [style*="cq-timer-pulse"], [style*="cq-combo-pop"], [style*="cq-score-float"] { animation: none !important; }
         }
       `}</style>
-      <Header />
-      <LiveStrip />
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24" style={{ paddingTop: 40 }}>
+      <GameLayout accent="#FCD34D" accentDim="#F59E0B" mainStyle={{ paddingTop: 40 }}>
         {/* Page header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1">
@@ -1336,9 +1331,7 @@ export default function CrackQuizPage() {
             )}
           </>
         )}
-      </main>
-      <Footer />
-      <ScrollToTop />
+      </GameLayout>
     </>
   )
 }

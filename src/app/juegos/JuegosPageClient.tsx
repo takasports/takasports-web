@@ -24,6 +24,7 @@ import MetaProgressionStrip from '@/components/games/MetaProgressionStrip'
 import MissionsCard from '@/components/games/MissionsCard'
 import TuDiaTaka from '@/components/games/TuDiaTaka'
 import StreakAtRiskBanner from '@/components/games/StreakAtRiskBanner'
+import LeaderboardPreview from '@/components/games/LeaderboardPreview'
 import PushOptIn from '@/components/games/PushOptIn'
 import GameStatusBadge from '@/components/games/GameStatusBadge'
 import LeaderboardTabs from '@/components/games/LeaderboardTabs'
@@ -642,8 +643,22 @@ export default function JuegosPageClient() {
         </section>
 
         {/* ── MISIONES DEL DÍA ─────────────────────────────── */}
-        <section className="mb-10">
+        <section className="mb-6">
           <MissionsCard />
+        </section>
+
+        {/* ── TOP 3 DEL DÍA / SEMANA ───────────────────────── */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10">
+          <LeaderboardPreview
+            gameId="crackquiz"
+            accent="#FCD34D"
+            label="CrackQuiz"
+          />
+          <LeaderboardPreview
+            gameId="mionce"
+            accent="#93C5FD"
+            label="Mi Once"
+          />
         </section>
 
         {/* ── JUEGO ACTIVO ─────────────────────────────────── */}

@@ -3,10 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
-import Header from '@/components/Header'
-import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
-import ScrollToTop from '@/components/ScrollToTop'
+import GameLayout from '@/components/games/GameLayout'
 import { searchPlayers, getPlayerById, type Player, type PlayerPosition } from '@/lib/players-catalog'
 import { getWeeklyChallenge, type FormationId, type Challenge, type SlotTag } from '@/lib/mionce-challenges'
 import { CountryFlag } from '@/components/icons/GameIcons'
@@ -1081,10 +1078,7 @@ export default function MiOncePage() {
   }
 
   return (
-    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
-      <LiveStrip />
-
+    <>
       <GameOnboarding
         storageKey="ts-onboarded-mionce"
         accent="#93C5FD"
@@ -1095,8 +1089,7 @@ export default function MiOncePage() {
           { emoji: '💾', title: 'Guarda y compite', body: 'Tu once queda sellado al cerrar el reto. Al final de la semana se compara con el resto de la comunidad.' },
         ]}
       />
-
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-4 sm:px-6 xl:px-10 pb-24">
+      <GameLayout accent="#93C5FD" accentDim="#60A5FA">
         {/* Breadcrumb */}
         <div className="pt-6 sm:pt-8">
           <Link
@@ -1492,7 +1485,6 @@ export default function MiOncePage() {
             </div>
           </aside>
         </div>
-      </main>
 
       {isComplete && (
         <PostGameResultModal
@@ -1595,9 +1587,7 @@ export default function MiOncePage() {
           {shareToast}
         </div>
       )}
-
-      <Footer />
-      <ScrollToTop />
-    </div>
+      </GameLayout>
+    </>
   )
 }

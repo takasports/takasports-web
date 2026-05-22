@@ -3,10 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
-import Header from '@/components/Header'
-import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
-import ScrollToTop from '@/components/ScrollToTop'
+import GameLayout from '@/components/games/GameLayout'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { addXp, xpForSopacracks } from '@/lib/meta-progression'
@@ -650,11 +647,8 @@ export default function SopaCracksPage() {
   // ── Render ─────────────────────────────────────────────────
 
   return (
-    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
-      <LiveStrip />
-
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+    <GameLayout accent="#6EE7B7" accentDim="#34D399">
+      <>
         {/* HERO */}
         <div className="relative pt-10 pb-8">
           <div className="flex items-center gap-2.5 mb-3">
@@ -1114,7 +1108,6 @@ export default function SopaCracksPage() {
             </div>
           </aside>
         </div>
-      </main>
 
       {allFound && (
         <PostGameResultModal
@@ -1132,9 +1125,7 @@ export default function SopaCracksPage() {
           } as GamePlay}
         />
       )}
-
-      <Footer />
-      <ScrollToTop />
-    </div>
+      </>
+    </GameLayout>
   )
 }
