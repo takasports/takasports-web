@@ -1,6 +1,9 @@
 import { sanityClient } from '@/lib/sanity'
 import { SITE_URL } from '@/lib/constants'
 
+// Fuerza nodejs runtime: las queries a Sanity vía sanityClient van mejor
+// fuera de edge, y evitamos sorpresas si Next cambia default en el futuro.
+export const runtime = 'nodejs'
 export const revalidate = 3600
 
 function escapeXml(str: string | null | undefined): string {

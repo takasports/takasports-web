@@ -1,43 +1,13 @@
-// video-sitemap: combina JSON estático del repo (fallback garantizado) con
-// reels curados en Sanity (frescos). NO usa fetchPublicReels ni Graph API:
-// ambas hacían crashear la función con 0 bytes en producción (timeout o
-// edge runtime). Los reels frescos de IG ya viven en el carrusel del home
-// vía /api/instagram/reels — el sitemap solo necesita lo indexable.
+// video-sitemap: usa getMergedReels() de lib/reels-feed.ts — la misma
+// fusión que sirve /api/instagram/reels al home. Eso garantiza que el
+// sitemap indexe lo mismo que el usuario ve, con la red de seguridad
+// del JSON estático y timeouts por fuente para evitar crashes.
 
-import { sanityClient } from '@/lib/sanity'
-import reelsStatic from '@/lib/reels-data.json'
+import { getMergedReels } from '@/lib/reels-feed'
 import { SITE_URL } from '@/lib/constants'
 
 export const runtime = 'nodejs'
 export const revalidate = 3600
-
-interface StaticReel {
-  id: string
-  instagram_url: string
-  thumbnail_url?: string | null
-  timestamp?: string
-  caption?: string
-  title?: string
-  sport?: string
-}
-
-interface SanityReel {
-  _id: string
-  title?: string
-  instagram_url?: string
-  thumbnail?: string
-  sport?: string
-  publishedAt?: string
-}
-
-interface MergedReel {
-  id: string
-  instagram_url: string
-  thumbnail_url: string | null
-  timestamp: string | null
-  title: string
-  sport?: string
-}
 
 function escapeXml(str: string | null | undefined): string {
   if (!str) return ''
@@ -48,50 +18,7 @@ function escapeXml(str: string | null | undefined): string {
 }
 
 export async function GET() {
-  const sanityRows = await sanityClient
-    .fetch<SanityReel[]>(
-      `*[_type == "reel" && defined(instagram_url) && defined(title)] | order(publishedAt desc)[0...500] {
-        _id, title, instagram_url, thumbnail, sport, publishedAt
-      }`,
-    )
-    .catch(() => [] as SanityReel[])
-
-  const merged: MergedReel[] = []
-  const seen = new Set<string>()
-
-  // Sanity primero (más fresco si hay)
-  for (const r of sanityRows) {
-    if (!r.instagram_url || !r.title) continue
-    if (seen.has(r.instagram_url)) continue
-    seen.add(r.instagram_url)
-    merged.push({
-      id: r._id,
-      instagram_url: r.instagram_url,
-      thumbnail_url: r.thumbnail ?? null,
-      timestamp: r.publishedAt ?? null,
-      title: r.title.trim().slice(0, 100),
-      sport: r.sport,
-    })
-  }
-
-  // JSON estático como fallback garantizado
-  for (const r of (reelsStatic as StaticReel[])) {
-    if (!r.instagram_url) continue
-    if (seen.has(r.instagram_url)) continue
-    const title = (r.title || r.caption || '').trim()
-    if (!title) continue
-    seen.add(r.instagram_url)
-    merged.push({
-      id: r.id,
-      instagram_url: r.instagram_url,
-      thumbnail_url: r.thumbnail_url ?? null,
-      timestamp: r.timestamp ?? null,
-      title: title.slice(0, 100),
-      sport: r.sport,
-    })
-  }
-
-  const reels = merged.slice(0, 500)
+  const reels = (await getMergedReels().catch(() => [])).slice(0, 500)
 
   const urls = reels
     .map(r => {

@@ -1,6 +1,7 @@
 import { sanityClient } from '@/lib/sanity'
 import { SITE_URL } from '@/lib/constants'
 
+export const runtime = 'nodejs'
 export const revalidate = 86400
 
 function escapeXml(str: string | null | undefined): string {
