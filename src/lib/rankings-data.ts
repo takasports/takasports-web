@@ -197,7 +197,13 @@ const DB_CATEGORIES: RankingCategory[] = [
   'creadores', 'periodistas', 'creadores_wwe',
 ]
 // Máximo de filas por categoría. Supabase limita a 1000 por defecto si no se especifica range.
-const MAX_ROWS_PER_CAT = 1000
+// Top-N por categoría que servimos en el SSR de /rankings. Antes 1000 →
+// el HTML llegaba a 1.4 MB (12 categorías × 1000 entries × ~20 campos =
+// payload RSC monstruoso). 200 da margen para filtros/búsqueda local sin
+// inflar el bundle; el detalle individual /rankings/[id] no depende de
+// este límite. Si en el futuro hace falta navegar más profundo, paginar
+// via API (no traer todo al cliente).
+const MAX_ROWS_PER_CAT = 200
 
 /**
  * Obtiene un ranking por categoría.
