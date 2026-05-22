@@ -1,6 +1,7 @@
 'use client'
 
 import { LogoFull } from './Logo'
+import NewsletterForm from './NewsletterForm'
 
 const SPORTS_LINKS = [
   { label: 'Fútbol',     href: '/futbol' },
@@ -207,6 +208,32 @@ export default function Footer() {
             </ul>
           </div>
 
+        </div>
+
+        {/* Newsletter — opt-in con consentimiento explícito */}
+        <div
+          className="mb-10 pb-10"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+        >
+          <p
+            className="section-label"
+            style={{ marginBottom: 6 }}
+          >
+            Newsletter
+          </p>
+          <h3
+            className="font-black"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)',
+              color: '#F0F0F8',
+              letterSpacing: '-0.015em',
+              marginBottom: 12,
+            }}
+          >
+            El resumen deportivo que importa, sin ruido.
+          </h3>
+          <NewsletterForm source="footer" />
         </div>
 
         {/* Bottom bar */}
