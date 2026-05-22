@@ -47,6 +47,9 @@ export interface RecordPlayResult {
   queued:    boolean
   /** El score efectivo tras reconciliar con lo previo (max). */
   score:     number
+  /** Monedas acreditadas al Ranked por esta partida (0 si juego sin
+   *  coins, ya acreditado para este período, o cap diario alcanzado). */
+  awarded:   number
 }
 
 export interface Streak {
@@ -144,7 +147,7 @@ export async function flushQueue(): Promise<{ sent: number; failed: number }> {
 
 // ── Network ──────────────────────────────────────────────────────
 
-async function postPlay(input: RecordPlayInput): Promise<boolean> {
+async function postPlay(input: RecordPlayInput): Promise<{ persisted: boolean; awarded: number }> {
   try {
     const res = await fetch('/api/games/plays', {
       method:  'POST',
@@ -157,10 +160,10 @@ async function postPlay(input: RecordPlayInput): Promise<boolean> {
         duration_ms: input.durationMs ?? undefined,
       }),
     })
-    if (!res.ok) return false
-    const data = await res.json() as { persisted?: boolean }
-    return !!data.persisted
-  } catch { return false }
+    if (!res.ok) return { persisted: false, awarded: 0 }
+    const data = await res.json() as { persisted?: boolean; awarded?: number }
+    return { persisted: !!data.persisted, awarded: Number(data.awarded ?? 0) }
+  } catch { return { persisted: false, awarded: 0 } }
 }
 
 async function pingStreak(): Promise<Streak | null> {
@@ -197,7 +200,7 @@ export async function recordPlay(input: RecordPlayInput): Promise<RecordPlayResu
   // 2) Envío al server. La RPC ya hace MAX(prev, new) server-side, así
   //    que enviar el score recién jugado (no el reconciliado local) es
   //    correcto y nunca regresa puntuaciones.
-  const persisted = await postPlay(input)
+  const { persisted, awarded } = await postPlay(input)
 
   // 3) Si falló y hay window, encolar para retry.
   let queued = false
@@ -209,7 +212,7 @@ export async function recordPlay(input: RecordPlayInput): Promise<RecordPlayResu
   // 4) Streak ping (fire-and-forget — no bloqueante).
   if (persisted) { void pingStreak() }
 
-  return { local: typeof window !== 'undefined', persisted, queued, score: effectiveScore }
+  return { local: typeof window !== 'undefined', persisted, queued, score: effectiveScore, awarded }
 }
 
 /**

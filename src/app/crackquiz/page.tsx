@@ -574,6 +574,7 @@ function ResultScreen({
   stored,
   maxCombo,
   practice,
+  awardedCoins,
   onHome,
 }: {
   score: number
@@ -583,6 +584,7 @@ function ResultScreen({
   stored: StoredState | null
   maxCombo: number
   practice: boolean
+  awardedCoins: number | null
   onHome: () => void
 }) {
   const pct = correct / QUESTIONS_PER_ROUND
@@ -651,6 +653,30 @@ function ResultScreen({
           </p>
         )}
       </div>
+
+      {/* Toast de monedas acreditadas — solo en ronda real con auth y server OK */}
+      {!practice && awardedCoins !== null && awardedCoins > 0 && (
+        <div
+          className="rounded-2xl px-5 py-4 mb-6 flex items-center gap-3"
+          style={{
+            background: 'linear-gradient(135deg, rgba(252,211,77,0.12), rgba(251,146,60,0.08))',
+            border: '1px solid rgba(252,211,77,0.3)',
+            animation: 'cq-combo-pop 0.45s ease-out',
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          <span style={{ fontSize: 28, lineHeight: 1 }}>🪙</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-black" style={{ color: '#FCD34D', fontFamily: 'var(--font-display)' }}>
+              +{awardedCoins} monedas al Ranked
+            </p>
+            <p className="text-[10px]" style={{ color: 'rgba(252,211,77,0.6)', fontFamily: 'var(--font-sport)' }}>
+              Las usás para apostar en la Quiniela Ranked
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Category insight */}
       {showCatInsight && (
@@ -773,6 +799,10 @@ export default function CrackQuizPage() {
   // partir de su id.
   const [featuredQ, setFeaturedQ] = useState<QuizQuestion | null>(null)
   const [featuredId, setFeaturedId] = useState<string | null>(null)
+  // Monedas acreditadas al Ranked tras la partida (server-autoritativo).
+  // null = aún no respondió el server; 0 = sin coins (ya estaba acreditado
+  // hoy, no hay sesión, o cap alcanzado); >0 = mostrar toast en ResultScreen.
+  const [awardedCoins, setAwardedCoins] = useState<number | null>(null)
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -901,6 +931,7 @@ export default function CrackQuizPage() {
     setRevealed(false)
     setLastBreakdown(null)
     setDonChoice(null)
+    setAwardedCoins(null)
     setPhase('playing')
     startQuestion()
   }, [startQuestion, featuredQ])
@@ -1041,12 +1072,13 @@ export default function CrackQuizPage() {
       qId: qq.id,
       correct: answers[i] && answers[i].selected === qq.correctIndex,
     }))
-    void recordPlay({
+    recordPlay({
       gameId:  'crackquiz',
       period,
       score,
       payload: { correct, total: QUESTIONS_PER_ROUND, streak: newStreak, combo: maxCombo, answers: answersForPayload },
-    })
+    }).then(r => { if (r.awarded > 0) setAwardedCoins(r.awarded) })
+      .catch(() => { /* no toast — el resto del flujo no se afecta */ })
     addXp('crackquiz', xpForCrackquiz(correct))
     reportPlay('crackquiz', { score })
     trackGameEvent({ gameId: 'crackquiz', event: 'completed', period, meta: { score, correct, total: QUESTIONS_PER_ROUND, combo: maxCombo } })
@@ -1307,7 +1339,8 @@ export default function CrackQuizPage() {
               stored={stored}
               maxCombo={maxCombo}
               practice={practice}
-              onHome={() => setPhase('idle')}
+              awardedCoins={awardedCoins}
+              onHome={() => { setAwardedCoins(null); setPhase('idle') }}
             />
             {!practice && (
               <PostGameResultModal
