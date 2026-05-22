@@ -21,6 +21,7 @@ import {
 import { usePushSubscription, useCoins } from './lib/hooks'
 import { PicksForm } from './components/picks/PicksForm'
 import { PicksSummary } from './components/picks/PicksSummary'
+import FeaturedGoalscorerCard from './components/featured/FeaturedGoalscorerCard'
 import { MyLeagues } from './components/leagues/MyLeagues'
 import { CreateLeagueModal } from './components/leagues/CreateLeagueModal'
 import { BadgesPanel } from './components/panels/BadgesPanel'
@@ -356,6 +357,9 @@ export default function QuinielaClient() {
                   <div key={i} className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', height: 148, animation: `pulse ${1 + i * 0.1}s ease-in-out infinite alternate` }} />
                 ))}
               </div>
+            )}
+            {activeTab === 'official' && hydrated && apiMatches.length > 0 && (
+              <FeaturedGoalscorerCard authed={!!user} />
             )}
             {activeTab === 'official' && hydrated && (
               saved

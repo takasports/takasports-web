@@ -11,6 +11,9 @@ export interface QuinielaMatch {
   isoDate: string
   odds?: { home: number; draw: number; away: number }
   espnId?: string
+  // Slug ESPN de la competición (e.g. 'soccer/esp.1') — necesario para
+  // llamadas posteriores al endpoint summary (goleadores, lineups).
+  leagueSlug?: string
   homeLogo?: string
   awayLogo?: string
   homeAbbr?: string
@@ -18,6 +21,10 @@ export interface QuinielaMatch {
   homeShort?: string
   awayShort?: string
   round?: string
+  // El partido de mayor matchScore de la jornada queda marcado para
+  // el feature «Goleador del partido destacado». Lo marca el GET tras
+  // selectMatches() y antes del re-sort cronológico.
+  isFeatured?: boolean
 }
 
 export interface QuinielaData {
@@ -262,6 +269,7 @@ async function fetchMatchesFromLeague(slug: string, comp: string): Promise<Quini
     results.push({
       home, away, comp, time: toTimeStr(isoDate), isoDate,
       espnId: ev.id as string,
+      leagueSlug: slug,
       homeLogo, awayLogo,
       homeAbbr: homeTeam?.abbreviation as string | undefined,
       awayAbbr: awayTeam?.abbreviation as string | undefined,
@@ -405,9 +413,13 @@ export async function GET() {
     for (const m of deduped) if (!m.odds) m.odds = devSeedOdds(m.home, m.away)
   }
 
-  const selected = selectMatches(deduped)
-    // ordenamos por fecha cronológicamente para la UI
-    .sort((a, b) => a.isoDate.localeCompare(b.isoDate))
+  // Selección por matchScore (orden de calidad). El primero es el
+  // featured de la jornada — lo marcamos ANTES del re-sort cronológico.
+  const selectedByScore = selectMatches(deduped)
+  if (selectedByScore.length > 0 && selectedByScore[0].espnId && selectedByScore[0].leagueSlug) {
+    selectedByScore[0].isFeatured = true
+  }
+  const selected = selectedByScore.sort((a, b) => a.isoDate.localeCompare(b.isoDate))
 
   const data: QuinielaData = { jornada: buildJornadaLabel(selected), matches: selected }
   cache = { data, ts: now, mundial }
