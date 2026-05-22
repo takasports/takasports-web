@@ -425,6 +425,8 @@ export default function QuinielaClient() {
                     matches={apiMatches}
                     jornada={apiJornada}
                     streakCurrent={streak.current}
+                    coinBalance={coins.balance}
+                    authed={!!user}
                     onParticipation={(j) => { void coins.add(5, `Participación ${j}`) }}
                     onSubmit={(s) => { setSaved(s); if (!user) setTimeout(() => setShowAuthBanner(true), 2000) }}
                   />

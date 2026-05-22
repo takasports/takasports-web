@@ -29,6 +29,13 @@ export interface SavedPick {
   // (como una apuesta real: el multiplicador queda fijo). Multiplica
   // monedas y puntos si el pick acierta. Ausente → multiplicador 1.
   oddsAtPick?: number
+  // Booster activado por el usuario al sellar este pick. Si true, la
+  // cuota efectiva se multiplica ×BOOSTER_MULTIPLIER (+20%) — premia
+  // un poco más si acierta. Coste: BOOSTER_COST monedas, descontado
+  // server-side en /api/quiniela/score. Sin auth o sin saldo, el server
+  // strip-pea este flag antes del scoring para evitar bonus gratis.
+  // Máx 1 booster por jornada (validado server-side).
+  boosted?: boolean
 }
 
 // ── Normalización de nombres ─────────────────────────────────────
@@ -114,6 +121,9 @@ export const SCORING = {
   COINS_PER_EXACT: 50,
   COINS_PLENO: 100,
   COINS_PARTICIPATE: 5,
+  // Booster (gasto de monedas para subir la cuota efectiva de UN pick)
+  BOOSTER_MULTIPLIER: 1.2,  // +20% sobre la cuota base
+  BOOSTER_COST: 30,         // monedas que cuesta activar el booster
 } as const
 
 export interface PickScore {
@@ -159,7 +169,11 @@ export function scorePick(
   // La cuota congelada es el multiplicador de riesgo: acertar una
   // opción improbable (cuota alta) paga más en monedas y puntos.
   // Sin cuota (proveedor sin datos) → ×1 (comportamiento plano previo).
-  const oddsMult = hit ? Math.max(1, pick.oddsAtPick ?? 1) : 1
+  // Si el usuario activó el booster en este pick y aciertó, sumamos
+  // un +20% sobre la cuota efectiva (las 30 monedas se descuentan
+  // server-side al sellar, aparte de este scoring).
+  const baseOddsMult = hit ? Math.max(1, pick.oddsAtPick ?? 1) : 1
+  const oddsMult = hit && pick.boosted ? baseOddsMult * SCORING.BOOSTER_MULTIPLIER : baseOddsMult
 
   let points = 0
   if (hit) points += SCORING.TENDENCY

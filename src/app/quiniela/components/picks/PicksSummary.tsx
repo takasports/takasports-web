@@ -309,6 +309,23 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
                 friendPicks={friendPicksData.filter(m => m.picks[i] !== undefined).map(m => ({ name: m.nickname, pick: m.picks[i] })).slice(0, 3)}
                 isCaptain={saved.captainIdx === i}
               />
+              {/* Badge booster: overlay no intrusivo en esquina superior del card */}
+              {p.boosted && (
+                <span
+                  className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(244,114,182,0.25), rgba(190,24,93,0.18))',
+                    color: '#F9A8D4',
+                    border: '1px solid rgba(244,114,182,0.5)',
+                    boxShadow: '0 4px 12px rgba(190,24,93,0.3)',
+                    fontFamily: 'var(--font-sport)',
+                    letterSpacing: '0.06em',
+                  }}
+                  title="Booster activo: cuota efectiva +20%"
+                >
+                  ⚡ Boost +20%
+                </span>
+              )}
             </div>
             {/* Consenso de la comunidad */}
             <ConsensusBar match={matchData} userPick={p.pick as Pick} jornada={saved.jornada} />

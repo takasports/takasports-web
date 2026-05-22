@@ -17,10 +17,31 @@ import { StreakHero } from './StreakHero'
 import { QuickPickIA } from './QuickPickIA'
 import { StickyBetslip } from './StickyBetslip'
 
-export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onParticipation }: { matches: QuinielaMatch[]; jornada: string; onSubmit: (s: QuinielaSaved) => void; streakCurrent?: number; onParticipation?: (jornada: string) => void }) {
+// Booster: cuesta BOOSTER_COST monedas, multiplica ×1.20 la cuota efectiva
+// del pick boosted si acierta. Se descuenta server-side al sellar.
+// Mantenemos el valor local sincronizado con SCORING.BOOSTER_* para que
+// el cliente y el server vean lo mismo.
+const BOOSTER_COST = 30
+const BOOSTER_MULTIPLIER = 1.20
+
+export function PicksForm({
+  matches, jornada, onSubmit, streakCurrent = 0, onParticipation,
+  coinBalance = 0, authed = false,
+}: {
+  matches: QuinielaMatch[]
+  jornada: string
+  onSubmit: (s: QuinielaSaved) => void
+  streakCurrent?: number
+  onParticipation?: (jornada: string) => void
+  /** Saldo actual del wallet (del usuario o invitado) — para validar booster. */
+  coinBalance?: number
+  /** Hay sesión Supabase activa — sin auth no hay cobro real, así que ocultamos el botón. */
+  authed?: boolean
+}) {
   const [picks, setPicks]             = useState<Record<number, Pick>>({})
   const [captainIdx, setCaptainIdx]   = useState<number | null>(null)
   const [exactScores, setExactScores] = useState<Record<number, { home: number; away: number }>>({})
+  const [boostedIdx, setBoostedIdx]   = useState<number | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [now, setNow]                 = useState(Date.now())
   const [submitting, setSubmitting]   = useState(false)
@@ -62,7 +83,9 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
     const o = m.odds
     const odd =
       o ? (p === '1' ? o.home : p === '2' ? o.away : o.draw || 1) : 1
-    const mult = Math.max(1, odd) * (captainIdx === i ? 2 : 1)
+    const captainMult = captainIdx === i ? 2 : 1
+    const boostMult   = boostedIdx === i ? BOOSTER_MULTIPLIER : 1
+    const mult = Math.max(1, odd) * captainMult * boostMult
     return sum + COIN_BASE * mult
   }, 0) + (allDone ? 100 : 0)
   const potentialCoinsRound = Math.round(potentialCoins)
@@ -87,6 +110,10 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
         home: m.home, away: m.away, pick: picks[i],
         exactHome: exactScores[i]?.home, exactAway: exactScores[i]?.away,
         oddsAtPick: oddsForPick(m, picks[i]),
+        // Solo marcamos booster si el usuario está autenticado Y tiene saldo
+        // suficiente. Sin esto, el server lo strippearía igual; lo evitamos
+        // de raíz para que la UI no muestre un boost que no se va a aplicar.
+        boosted: authed && boostedIdx === i && coinBalance >= BOOSTER_COST,
       })),
       captainIdx: captainIdx ?? undefined,
     }
@@ -238,8 +265,8 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
           >
             <span style={{ fontSize: 16 }}>⚡</span>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>Marcador exacto · opcional</p>
-              <p className="text-[9px]" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>Acierta el resultado exacto para +50🪙 extra</p>
+              <p className="text-xs font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>Más opciones · booster y marcador exacto</p>
+              <p className="text-[9px]" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>+20% cuota en un pick con booster · +50🪙 por marcador exacto</p>
             </div>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: showAdvanced ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#5A5A7A' }}>
               <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -248,8 +275,67 @@ export function PicksForm({ matches, jornada, onSubmit, streakCurrent = 0, onPar
 
           {showAdvanced && (
             <div className="px-4 pb-4 flex flex-col gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+
+              {/* ── Booster (1 pick por jornada) ────────────────── */}
+              {authed && (
+                <div className="pt-4">
+                  <div className="flex items-baseline justify-between mb-1">
+                    <p className="text-xs font-black" style={{ color: '#F9A8D4', fontFamily: 'var(--font-display)' }}>
+                      Booster · +20% cuota
+                    </p>
+                    <span className="text-[10px] font-black tabular-nums" style={{ color: coinBalance >= BOOSTER_COST ? '#F472B6' : '#8E5A78', fontFamily: 'var(--font-sport)' }}>
+                      Coste: {BOOSTER_COST} 🪙 · Saldo: {coinBalance}
+                    </span>
+                  </div>
+                  <p className="text-[9px] mb-3" style={{ color: '#7A4A68', fontFamily: 'var(--font-sport)' }}>
+                    Elegí 1 pick para multiplicar su cuota efectiva. Sólo se cobra si lo sellás.
+                  </p>
+                  {coinBalance < BOOSTER_COST ? (
+                    <div className="rounded-xl px-3 py-2.5 text-[10px] text-center" style={{ background: 'rgba(255,255,255,0.03)', color: '#6A6A8A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}>
+                      Necesitás {BOOSTER_COST - coinBalance} 🪙 más para activar el booster.
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {matches.map((m, i) => {
+                        const p = picks[i] as Pick | undefined
+                        if (!p) return null
+                        const active = boostedIdx === i
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => setBoostedIdx(prev => prev === i ? null : i)}
+                            className="px-3 py-1.5 rounded-xl font-black transition-all inline-flex items-center gap-1.5"
+                            style={{
+                              fontSize: 11, fontFamily: 'var(--font-display)',
+                              background: active ? 'rgba(244,114,182,0.18)' : 'rgba(255,255,255,0.04)',
+                              color: active ? '#F9A8D4' : '#6A6A8A',
+                              border: active ? '1.5px solid rgba(244,114,182,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                              boxShadow: active ? '0 0 12px rgba(244,114,182,0.25)' : 'none',
+                            }}
+                            aria-pressed={active}
+                          >
+                            {active && <span style={{ fontSize: 10 }}>⚡</span>}
+                            {(m.homeShort ?? m.home).slice(0, 3).toUpperCase()}-{(m.awayShort ?? m.away).slice(0, 3).toUpperCase()}
+                            <span style={{ fontSize: 8, opacity: 0.7 }}>{p}</span>
+                          </button>
+                        )
+                      })}
+                      {boostedIdx != null && (
+                        <button
+                          onClick={() => setBoostedIdx(null)}
+                          className="px-3 py-1.5 rounded-xl font-black"
+                          style={{ fontSize: 10, fontFamily: 'var(--font-sport)', background: 'transparent', color: '#5A4070', border: '1px dashed rgba(255,255,255,0.1)' }}
+                        >
+                          Quitar
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Marcador exacto */}
-              <div className="pt-4">
+              <div className={authed ? 'pt-4' : 'pt-4'} style={authed ? { borderTop: '1px solid rgba(255,255,255,0.05)' } : undefined}>
                 <p className="text-xs font-black mb-1" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>Marcador exacto · opcional</p>
                 <p className="text-[9px] mb-3" style={{ color: '#3A2A50', fontFamily: 'var(--font-sport)' }}>+50🪙 por cada marcador que aciertes</p>
                 <div className="flex flex-col gap-4">
