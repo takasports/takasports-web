@@ -5,6 +5,9 @@ import { getIgToken } from '@/lib/ig-token'
 import reelsStatic from '@/lib/reels-data.json'
 import { SITE_URL } from '@/lib/constants'
 
+// Forzamos nodejs runtime: getIgToken() usa fetch a Supabase con headers
+// específicos y el import del JSON estático puede fallar en edge.
+export const runtime = 'nodejs'
 export const revalidate = 3600
 
 function escapeXml(str: string | null | undefined): string {
