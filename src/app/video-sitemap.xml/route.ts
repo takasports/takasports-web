@@ -1,4 +1,8 @@
 import { sanityClient } from '@/lib/sanity'
+import { fetchInstagramReels, type TakaReel } from '@/lib/instagram'
+import { fetchPublicReels, type PublicReel } from '@/lib/instagram-public'
+import { getIgToken } from '@/lib/ig-token'
+import reelsStatic from '@/lib/reels-data.json'
 import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 3600
@@ -30,27 +34,33 @@ interface SitemapReel {
   publishedAt?: string
 }
 
-// Shape del endpoint /api/instagram/reels (que ya mezcla 4 fuentes con
-// fallback: Sanity → Graph API → Supabase Storage → JSON estático).
-interface IgEndpointReel {
+// Shape compartido del JSON estático y de PublicReel.
+interface FallbackReel {
   id: string
-  title?: string
-  caption?: string
   instagram_url: string
   thumbnail_url?: string | null
-  sport?: string
   timestamp?: string
+  caption?: string
+  title?: string
+  sport?: string
+}
+
+function takeTitle(r: { title?: string; caption?: string }): string {
+  const t = (r.title || r.caption || '').trim()
+  return t ? t.slice(0, 100) : ''
 }
 
 export async function GET() {
-  // Doble fuente:
-  //  1. Sanity directo (rápido, sin token).
-  //  2. /api/instagram/reels — endpoint propio que ya mezcla las 4 fuentes
-  //     con fallback (Graph API token + Supabase Storage + JSON estático).
-  //     Es la MISMA URL que llama el home, así que sitemap y carrusel
-  //     siempre coinciden. Llamada interna en cada revalidación del sitemap
-  //     (ISR 3600s, no es hot path).
-  const [sanityRows, igRows] = await Promise.all([
+  // Estrategia escalonada con fallback garantizado al JSON del repo:
+  //  1. Sanity directo
+  //  2. Graph API con token (la fuente preferida en runtime real)
+  //  3. IG anónima (suele dar 401, intento por si acaso)
+  //  4. JSON estático del repo (reels-data.json) — SIEMPRE funciona
+  //
+  // Dedupe por instagram_url. La frescura no importa para el sitemap; lo
+  // crítico es que NUNCA quede vacío para que Google pueda indexar reels.
+  const igToken = await getIgToken().catch(() => null)
+  const [sanityRows, official, anonymous] = await Promise.all([
     sanityClient
       .fetch<SanityReel[]>(
         `*[_type == "reel" && defined(instagram_url)] | order(publishedAt desc)[0...500] {
@@ -58,15 +68,16 @@ export async function GET() {
         }`,
       )
       .catch(() => [] as SanityReel[]),
-    fetch(`${SITE_URL}/api/instagram/reels`, { cache: 'no-store' })
-      .then(r => r.ok ? r.json() : [])
-      .then((data: unknown): IgEndpointReel[] => Array.isArray(data) ? data as IgEndpointReel[] : [])
-      .catch(() => [] as IgEndpointReel[]),
+    igToken
+      ? fetchInstagramReels(igToken).catch(() => [] as TakaReel[])
+      : Promise.resolve([] as TakaReel[]),
+    fetchPublicReels().catch(() => [] as PublicReel[]),
   ])
 
   const merged: SitemapReel[] = []
   const seen = new Set<string>()
 
+  // 1. Sanity
   for (const r of sanityRows) {
     if (!r.instagram_url || !r.title) continue
     if (seen.has(r.instagram_url)) continue
@@ -81,18 +92,54 @@ export async function GET() {
     })
   }
 
-  for (const r of igRows) {
+  // 2. Graph API oficial
+  for (const r of official) {
     if (!r.instagram_url) continue
     if (seen.has(r.instagram_url)) continue
-    const title = (r.title || r.caption || '').trim()
+    const title = takeTitle(r)
     if (!title) continue
     seen.add(r.instagram_url)
     merged.push({
       id: r.id,
-      title: title.slice(0, 100),
+      title,
       instagram_url: r.instagram_url,
       thumbnail: r.thumbnail_url ?? undefined,
       sport: r.sport || undefined,
+      publishedAt: r.timestamp,
+    })
+  }
+
+  // 3. IG anónima (suele dar 401, defensivo)
+  for (const r of anonymous) {
+    if (!r.instagram_url) continue
+    if (seen.has(r.instagram_url)) continue
+    const title = takeTitle(r)
+    if (!title) continue
+    seen.add(r.instagram_url)
+    merged.push({
+      id: r.id,
+      title,
+      instagram_url: r.instagram_url,
+      thumbnail: r.thumbnail_url ?? undefined,
+      sport: r.sport || undefined,
+      publishedAt: r.timestamp,
+    })
+  }
+
+  // 4. JSON estático — garantiza que el sitemap nunca quede vacío
+  const staticReels = (reelsStatic as FallbackReel[]) ?? []
+  for (const r of staticReels) {
+    if (!r.instagram_url) continue
+    if (seen.has(r.instagram_url)) continue
+    const title = takeTitle(r)
+    if (!title) continue
+    seen.add(r.instagram_url)
+    merged.push({
+      id: r.id,
+      title,
+      instagram_url: r.instagram_url,
+      thumbnail: r.thumbnail_url ?? undefined,
+      sport: r.sport,
       publishedAt: r.timestamp,
     })
   }
