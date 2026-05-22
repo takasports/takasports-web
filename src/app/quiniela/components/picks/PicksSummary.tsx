@@ -138,10 +138,19 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
   }).length
   const allEvaluated = evaluated > 0 && evaluated === saved.picks.length
 
+  // Acreditación de coins: tan pronto TODOS los partidos finalicen.
+  // Antes esto dependía también de `revealed` (la ceremonia) — pero si el
+  // usuario nunca pulsa "Revelar" o limpia cookies (perdiendo el flag
+  // local), las coins NUNCA se acreditaban. La ceremonia sigue siendo
+  // opcional/visual, pero el endpoint /api/quiniela/score se llama solo
+  // (idempotencia server-side previene doble crédito). El sidebar
+  // (LeaderboardPanel/myScore) puede mostrar la posición agregada antes
+  // de la ceremonia, pero las cards individuales siguen tapadas por
+  // isResultVisible() hasta el reveal — no se spoilea pick-por-pick.
   useEffect(() => {
-    if (allEvaluated && revealed && onScore) onScore(scored, evaluated, results)
+    if (allEvaluated && onScore) onScore(scored, evaluated, results)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allEvaluated, revealed])
+  }, [allEvaluated])
 
   const isResultVisible = (i: number) => {
     const hasResult = !!getResult(saved.picks[i].home, saved.picks[i].away)
