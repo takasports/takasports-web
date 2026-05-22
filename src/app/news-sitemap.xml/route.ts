@@ -13,14 +13,23 @@ function escapeXml(str: string | null | undefined): string {
     .replace(/'/g, '&apos;')
 }
 
+// coalesce(headline, title): los artículos del Taka System usan `headline`
+// y `title` queda null. Si proyectamos title directo, esos artículos salen
+// sin título y se filtran fuera del sitemap. Con coalesce capturamos ambos
+// esquemas en una sola query.
 const ARTICLE_QUERY = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && publishedAt > $since] | order(publishedAt desc)[0...1000] {
-  "slug": slug.current, title, publishedAt
+  "slug": slug.current,
+  "title": coalesce(headline, title),
+  publishedAt
 }`
 
-// Fallback: when no articles fall within the time window, include the most
-// recent ones anyway so Google News always has content to index.
-const FALLBACK_QUERY = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(slug.current) && defined(title) && defined(publishedAt)] | order(publishedAt desc)[0...50] {
-  "slug": slug.current, title, publishedAt
+// Fallback: cuando la ventana 72h está vacía (gap de publicación o desajuste
+// de fechas) tiramos de los últimos 50. Filtro permite cualquiera de los dos
+// campos de título; el proyect coalesce los devuelve unificados.
+const FALLBACK_QUERY = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(slug.current) && (defined(title) || defined(headline)) && defined(publishedAt)] | order(publishedAt desc)[0...50] {
+  "slug": slug.current,
+  "title": coalesce(headline, title),
+  publishedAt
 }`
 
 export async function GET() {
