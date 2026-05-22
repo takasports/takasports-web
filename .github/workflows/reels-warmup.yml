@@ -1,0 +1,28 @@
+name: reels-warmup
+
+# Mantiene caliente el cache in-memory de getMergedReels (lib/reels-feed.ts,
+# TTL 30 min). Sin esto, el primer crawler que llegue al video-sitemap tras
+# un cold start solo ve los reels del JSON estático (~6) en lugar del set
+# completo (~18+ con Graph API).
+#
+# Vercel Hobby no permite crons sub-diarios; por eso esto vive en GitHub
+# Actions. Cero coste: una llamada GET ligera cada 25 min.
+
+on:
+  schedule:
+    - cron: '*/25 * * * *'   # cada 25 min (TTL del cache es 30 min)
+  workflow_dispatch:          # disparable a mano
+
+permissions:
+  contents: read
+
+jobs:
+  warmup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Calentar cache de reels
+        run: |
+          COUNT=$(curl -sSL -w '\n%{http_code}' https://www.takasportsmedia.com/api/instagram/reels \
+            | python3 -c "import sys; lines=sys.stdin.read().rsplit('\n',1); body=lines[0]; code=lines[1] if len(lines)>1 else '?'; import json; data=json.loads(body) if body.strip().startswith('[') else []; print(f'{len(data)} reels · HTTP {code}')" \
+            || echo '(no parse)')
+          echo "Reels feed calentado: $COUNT"

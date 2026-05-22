@@ -3,10 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import Header from '@/components/Header'
-import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
-import ScrollToTop from '@/components/ScrollToTop'
+import GameLayout from '@/components/games/GameLayout'
 import { QUINIELA_PICKS_KEY } from '@/components/QuinielaModule'
 import type { QuinielaMatch, QuinielaSaved, Pick } from '@/components/QuinielaModule'
 import { nameMatch } from '@/lib/quiniela'
@@ -165,11 +162,7 @@ export default function QuinielaClient() {
   const isMundial = apiJornada.toLowerCase().startsWith('mundial')
 
   return (
-    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
-      <LiveStrip />
-
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+    <GameLayout accent="#A78BFA" accentDim="#7C3AED">
 
         {/* ── BANNER: unirse a liga por link ─────────── */}
         {ligaParam && ligaName && !ligaJoined && (
@@ -718,8 +711,6 @@ export default function QuinielaClient() {
 
           </div>
         </div>
-      </main>
-
       {showCreate && (
         <CreateLeagueModal
           onClose={() => { setCreate(false); bump(v => v + 1) }}
@@ -729,8 +720,6 @@ export default function QuinielaClient() {
         />
       )}
 
-      <Footer />
-      <ScrollToTop />
-    </div>
+    </GameLayout>
   )
 }
