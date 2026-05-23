@@ -28,8 +28,7 @@ export type Pick = '1' | 'X' | '2' | '1X' | 'X2'
 
 export type QuinielaSaved = {
   jornada: string
-  picks: { home: string; away: string; pick: Pick; mvp?: string; exactHome?: number; exactAway?: number; oddsAtPick?: number; boosted?: boolean }[]
-  captainIdx?: number
+  picks: { home: string; away: string; pick: Pick; oddsAtPick?: number; boosted?: boolean; stake?: number }[]
 }
 
 // Sin fallback estático: si /api/quiniela aún no responde mostramos "Cargando…",

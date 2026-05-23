@@ -14,13 +14,16 @@ import { scorePicks, SCORING, type SavedPick, type MatchResult } from '@/lib/qui
 interface ScoreBody {
   jornada: string
   picks: SavedPick[]
-  captainIdx?: number
   // Resultados se obtienen del endpoint oficial — el cliente NO los inyecta
 }
 
 const VALID_PICKS = new Set(['1', 'X', '2', '1X', 'X2'])
 const MAX_ODDS = 100
 const MAX_PICKS = 20
+// Stake (Ranked): los límites duros se aplican aquí; SCORING tiene los
+// mismos valores por consistencia pero éstos son la defensa de borde.
+const MIN_STAKE = 1
+const MAX_STAKE = 200
 
 // Rate limit por-usuario: 5s entre submits. Evita doble crédito por
 // reintentos de red flaky aunque la idempotencia DB ya protegiera
@@ -35,7 +38,6 @@ function scoreRateLimit(userId: string): { ok: true } | { ok: false; retryMs: nu
   return { ok: true }
 }
 const MAX_TEAM_LEN = 80
-const MAX_GOALS = 20
 const MAX_JORNADA_LEN = 64
 
 // Normaliza un partido para deduplicación. Evita que envíen el mismo
@@ -55,13 +57,6 @@ export async function POST(req: NextRequest) {
     }
     if (body.picks.length > MAX_PICKS) {
       return NextResponse.json({ error: 'too many picks' }, { status: 400 })
-    }
-    if (body.captainIdx != null && (
-      !Number.isInteger(body.captainIdx) ||
-      body.captainIdx < 0 ||
-      body.captainIdx >= body.picks.length
-    )) {
-      return NextResponse.json({ error: 'invalid captainIdx' }, { status: 400 })
     }
     // Validación por pick — cualquier irregularidad bloquea el batch
     const seen = new Set<string>()
@@ -83,15 +78,11 @@ export async function POST(req: NextRequest) {
       )) {
         return NextResponse.json({ error: 'invalid oddsAtPick' }, { status: 400 })
       }
-      if (p.exactHome != null && (
-        !Number.isInteger(p.exactHome) || p.exactHome < 0 || p.exactHome > MAX_GOALS
+      // Stake (Ranked): opcional pero si viene debe estar en rango.
+      if (p.stake != null && (
+        !Number.isFinite(p.stake) || p.stake < MIN_STAKE || p.stake > MAX_STAKE
       )) {
-        return NextResponse.json({ error: 'invalid exactHome' }, { status: 400 })
-      }
-      if (p.exactAway != null && (
-        !Number.isInteger(p.exactAway) || p.exactAway < 0 || p.exactAway > MAX_GOALS
-      )) {
-        return NextResponse.json({ error: 'invalid exactAway' }, { status: 400 })
+        return NextResponse.json({ error: 'invalid stake' }, { status: 400 })
       }
       const key = matchKey(p.home, p.away)
       if (seen.has(key)) {
@@ -118,7 +109,7 @@ export async function POST(req: NextRequest) {
     // antes de scoring (no se cobró nada, no se acredita bonus gratis).
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       const safePicks = body.picks.map(p => ({ ...p, boosted: false }))
-      const breakdown = scorePicks(safePicks, results, body.captainIdx)
+      const breakdown = scorePicks(safePicks, results)
       return NextResponse.json({ breakdown, evaluated: results.length, persisted: false })
     }
 
@@ -127,7 +118,7 @@ export async function POST(req: NextRequest) {
     if (!user) {
       // Modo invitado: strip booster (sin saldo del que descontar).
       const safePicks = body.picks.map(p => ({ ...p, boosted: false }))
-      const breakdown = scorePicks(safePicks, results, body.captainIdx)
+      const breakdown = scorePicks(safePicks, results)
       return NextResponse.json({ breakdown, evaluated: results.length })
     }
 
@@ -193,12 +184,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const breakdown = scorePicks(effectivePicks, results, body.captainIdx)
+    const breakdown = scorePicks(effectivePicks, results)
 
     await sb.from('quiniela_picks').upsert({
       user_id: user.id,
       jornada: body.jornada,
-      picks: { picks: effectivePicks, captainIdx: body.captainIdx, breakdown },
+      picks: { picks: effectivePicks, breakdown },
     }, { onConflict: 'user_id,jornada' })
 
     if (!alreadyCredited) {
@@ -206,7 +197,7 @@ export async function POST(req: NextRequest) {
         await sb.rpc('add_coins', {
           p_amount: breakdown.totalCoins,
           p_reason: `Quiniela ${body.jornada}: ${breakdown.hits}/${body.picks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`,
-          p_context: { jornada: body.jornada, hits: breakdown.hits, exacts: breakdown.exacts, pleno: breakdown.pleno },
+          p_context: { jornada: body.jornada, hits: breakdown.hits, pleno: breakdown.pleno },
         })
       }
 
@@ -218,7 +209,6 @@ export async function POST(req: NextRequest) {
         p_payload: {
           picks:   body.picks.map(p => p.pick ?? null),
           results: results.map(r => r.outcome ?? null),
-          exacts:  breakdown.exacts,
           pleno:   breakdown.pleno,
         },
         p_duration_ms: null,

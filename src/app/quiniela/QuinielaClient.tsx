@@ -399,7 +399,6 @@ export default function QuinielaClient() {
                           body: JSON.stringify({
                             jornada: saved!.jornada,
                             picks: saved!.picks,
-                            captainIdx: saved!.captainIdx,
                           }),
                         })
                         if (res.ok) {

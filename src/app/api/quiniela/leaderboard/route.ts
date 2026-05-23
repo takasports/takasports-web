@@ -42,7 +42,6 @@ interface PickBreakdown {
 }
 interface StoredPicks {
   picks?: unknown
-  captainIdx?: number | null
   breakdown?: PickBreakdown
 }
 
@@ -91,7 +90,7 @@ export async function GET(req: NextRequest) {
             nickname: nameById.get(uid) ?? `Jugador-${uid.slice(0, 6)}`,
             score: b.totalCoins ?? 0,
             total: b.hits ?? 0,
-            captainUsed: stored.captainIdx != null,
+            captainUsed: false,
           }
         })
         // Score desc (monedas), desempate por hits (total) desc.

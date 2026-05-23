@@ -23,11 +23,11 @@ export interface SavedPick {
   home: string
   away: string
   pick: Pick
-  exactHome?: number
-  exactAway?: number
   // Cuota congelada de la opción elegida en el momento de sellar
   // (como una apuesta real: el multiplicador queda fijo). Multiplica
-  // monedas y puntos si el pick acierta. Ausente → multiplicador 1.
+  // las monedas ganadas si el pick acierta. En el modo Ranked es
+  // obligatoria — sin cuotas reales (the-odds-api caída) la jornada
+  // se bloquea aparte.
   oddsAtPick?: number
   // Booster activado por el usuario al sellar este pick. Si true, la
   // cuota efectiva se multiplica ×BOOSTER_MULTIPLIER (+20%) — premia
@@ -36,6 +36,12 @@ export interface SavedPick {
   // strip-pea este flag antes del scoring para evitar bonus gratis.
   // Máx 1 booster por jornada (validado server-side).
   boosted?: boolean
+  // Monedas apostadas en este pick (Ranked). Se descuentan del wallet
+  // al sellar, se devuelven multiplicadas por la cuota si acierta. En
+  // ligas privadas (que son por puntos, no monedas) este campo se
+  // ignora — el scoring de standings no lo usa.
+  // Min 1, max 200, default 10 — validado server-side.
+  stake?: number
 }
 
 // ── Normalización de nombres ─────────────────────────────────────
@@ -104,113 +110,100 @@ export function isCorrect(pick: Pick, outcome: Outcome): boolean {
   return false
 }
 
-// ── Sistema de puntuación tiered (estilo Superbru) ───────────────
-//  · 1pt   tendencia correcta (1/X/2)
-//  · +0.5  diferencia de goles correcta
-//  · +1.5  marcador exacto (total 3pt)
-//  · ×2    si es el capitán (multiplica TODO el pick)
-//  · +5    pleno (todos los picks correctos en tendencia)
+// ── Sistema de puntuación: dos pistas paralelas ────────────────────
+//
+// RANKED (modo principal, por monedas):
+//   · Coins ganadas por pick acertado = stake × cuota × (boosted? 1.2 : 1)
+//   · Stake se descuenta al sellar; las ganancias se acreditan al cierre.
+//   · Sin acertar = pierde el stake (ya descontado, no se devuelve).
+//   · +COINS_PARTICIPATE por sellar (engagement diario).
+//   · +COINS_PLENO si acierta tendencia en TODOS los picks (bonus).
+//
+// LIGAS PRIVADAS (modo amigos, por puntos):
+//   · 1 punto por tendencia acertada.
+//   · +PLENO_BONUS si acierta todos.
+//   · NO usa stake, NO usa cuotas, NO acredita monedas.
+//   · Ranking interno cosmético.
+//
+// scorePick + scorePicks devuelven ambas pistas (points + coins) y el
+// consumidor decide cuál usar según el contexto.
 export const SCORING = {
+  // Puntos (ligas privadas)
   TENDENCY: 1,
-  GOAL_DIFF: 0.5,
-  EXACT_BONUS: 1.5, // se suma encima de TENDENCY+GOAL_DIFF
-  CAPTAIN_MULTIPLIER: 2,
   PLENO_BONUS: 5,
-  // Coins (recompensa económica del juego — NO confundir con puntos)
-  COINS_PER_HIT: 10,
-  COINS_PER_EXACT: 50,
-  COINS_PLENO: 100,
+  // Coins (Ranked)
   COINS_PARTICIPATE: 5,
-  // Booster (gasto de monedas para subir la cuota efectiva de UN pick)
-  BOOSTER_MULTIPLIER: 1.2,  // +20% sobre la cuota base
+  COINS_PLENO: 100,
+  // Stake (Ranked)
+  STAKE_MIN: 1,
+  STAKE_MAX: 200,
+  STAKE_DEFAULT: 10,
+  // Booster (Ranked)
+  BOOSTER_MULTIPLIER: 1.2,  // +20% sobre la cuota base si acierta
   BOOSTER_COST: 30,         // monedas que cuesta activar el booster
 } as const
 
 export interface PickScore {
-  hit: boolean        // tendencia correcta
-  goalDiff: boolean   // diferencia de goles correcta
-  exact: boolean      // marcador exacto
-  isCaptain: boolean
-  points: number      // puntos finales (con multiplicador capitán aplicado)
-  coins: number       // monedas ganadas por este pick
+  hit: boolean         // tendencia correcta
+  points: number       // puntos (ligas privadas) — 0 o TENDENCY
+  coins: number        // monedas Ranked ganadas (stake × cuota × boost) si acierta, 0 si no
+  stake: number        // stake declarado del pick (0 si no se apostó / liga privada)
+  oddsApplied: number  // cuota efectiva usada en el cálculo (incluye booster si aplica)
 }
 
 export interface ScoreBreakdown {
   perPick: PickScore[]
   hits: number          // nº de picks con tendencia correcta
-  exacts: number
   pleno: boolean
-  totalPoints: number
-  totalCoins: number
+  totalPoints: number   // suma de points + pleno bonus
+  totalCoins: number    // suma de coins (Ranked) + pleno bonus de coins
+  totalStake: number    // suma de stakes apostados (para validación de saldo)
 }
 
 export function scorePick(
   pick: SavedPick,
   result: MatchResult | undefined,
-  isCaptain: boolean,
 ): PickScore {
+  const stake = pick.stake ?? 0
   if (!result) {
-    return { hit: false, goalDiff: false, exact: false, isCaptain, points: 0, coins: 0 }
+    return { hit: false, points: 0, coins: 0, stake, oddsApplied: 1 }
   }
   const hit = isCorrect(pick.pick, result.outcome)
-  const exact =
-    hit &&
-    pick.exactHome != null &&
-    pick.exactAway != null &&
-    pick.exactHome === result.homeGoals &&
-    pick.exactAway === result.awayGoals
-  const goalDiff =
-    hit &&
-    !exact &&
-    pick.exactHome != null &&
-    pick.exactAway != null &&
-    (pick.exactHome - pick.exactAway) === (result.homeGoals - result.awayGoals)
 
-  // La cuota congelada es el multiplicador de riesgo: acertar una
-  // opción improbable (cuota alta) paga más en monedas y puntos.
-  // Sin cuota (proveedor sin datos) → ×1 (comportamiento plano previo).
-  // Si el usuario activó el booster en este pick y aciertó, sumamos
-  // un +20% sobre la cuota efectiva (las 30 monedas se descuentan
-  // server-side al sellar, aparte de este scoring).
-  const baseOddsMult = hit ? Math.max(1, pick.oddsAtPick ?? 1) : 1
-  const oddsMult = hit && pick.boosted ? baseOddsMult * SCORING.BOOSTER_MULTIPLIER : baseOddsMult
+  // Cuota efectiva = cuota congelada × booster (+20% si aplica y acierta).
+  // Sin cuota real (the-odds-api caída) → ×1, pero el flow Ranked debería
+  // bloquear la jornada antes de llegar aquí (validación aparte).
+  const baseOdd = Math.max(1, pick.oddsAtPick ?? 1)
+  const oddsApplied = hit && pick.boosted ? baseOdd * SCORING.BOOSTER_MULTIPLIER : (hit ? baseOdd : 1)
 
-  let points = 0
-  if (hit) points += SCORING.TENDENCY
-  if (goalDiff) points += SCORING.GOAL_DIFF
-  if (exact) points += SCORING.EXACT_BONUS + SCORING.GOAL_DIFF
-  points *= oddsMult
-  if (isCaptain) points *= SCORING.CAPTAIN_MULTIPLIER
-  points = Math.round(points * 10) / 10
+  // Puntos (ligas privadas): tendencia binaria. No depende de cuota ni stake.
+  const points = hit ? SCORING.TENDENCY : 0
 
-  let coins = 0
-  if (hit) coins += SCORING.COINS_PER_HIT * oddsMult
-  if (exact) coins += SCORING.COINS_PER_EXACT
-  if (isCaptain) coins *= SCORING.CAPTAIN_MULTIPLIER // el capitán dobla todo el pick
-  coins = Math.round(coins)
+  // Coins (Ranked): stake × cuota efectiva si acierta. 0 si falla
+  // (el stake ya fue descontado al sellar, no se devuelve).
+  const coins = hit && stake > 0 ? Math.round(stake * oddsApplied) : 0
 
-  return { hit, goalDiff, exact, isCaptain, points, coins }
+  return { hit, points, coins, stake, oddsApplied }
 }
 
 export function scorePicks(
   picks: SavedPick[],
   results: MatchResult[],
-  captainIdx?: number,
 ): ScoreBreakdown {
-  const perPick = picks.map((p, i) => {
+  const perPick = picks.map(p => {
     const r = results.find(rr => nameMatch(rr.home, p.home) && nameMatch(rr.away, p.away))
-    return scorePick(p, r, captainIdx === i)
+    return scorePick(p, r)
   })
   const hits = perPick.filter(s => s.hit).length
-  const exacts = perPick.filter(s => s.exact).length
   const pleno = picks.length > 0 && hits === picks.length
+  const totalStake = perPick.reduce((a, s) => a + s.stake, 0)
   let totalPoints = perPick.reduce((a, s) => a + s.points, 0)
   let totalCoins  = perPick.reduce((a, s) => a + s.coins, 0)
   if (pleno) {
     totalPoints += SCORING.PLENO_BONUS
     totalCoins  += SCORING.COINS_PLENO
   }
-  return { perPick, hits, exacts, pleno, totalPoints, totalCoins }
+  return { perPick, hits, pleno, totalPoints, totalCoins, totalStake }
 }
 
 // ── Validación de cierre por kickoff ─────────────────────────────

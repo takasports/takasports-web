@@ -316,7 +316,6 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
                 finalScore={visible && result ? { homeGoals: result.homeGoals, awayGoals: result.awayGoals } : undefined}
                 correct={visible && result ? correct : undefined}
                 friendPicks={friendPicksData.filter(m => m.picks[i] !== undefined).map(m => ({ name: m.nickname, pick: m.picks[i] })).slice(0, 3)}
-                isCaptain={saved.captainIdx === i}
               />
               {/* Badge booster: overlay no intrusivo en esquina superior del card */}
               {p.boosted && (

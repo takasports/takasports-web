@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { trackGameComplete } from '@/lib/analytics'
 import { QUINIELA_PICKS_KEY } from '@/components/QuinielaModule'
 import type { QuinielaMatch, QuinielaSaved, Pick } from '@/components/QuinielaModule'
-import { PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW, TUTORED_KEY, LEAGUES_KEY, STREAK_KEY } from '../../lib/constants'
+import { TUTORED_KEY, LEAGUES_KEY, STREAK_KEY } from '../../lib/constants'
 import type { League } from '../../lib/types'
-import { scorelinesFor, ensurePlayerAlias, liveOdds } from '../../lib/helpers'
+import { ensurePlayerAlias, liveOdds } from '../../lib/helpers'
 import { loadConsensus } from '../../lib/consensus'
 import { nameMatch } from '@/lib/quiniela'
 import { ProgressBar } from '../atoms/ProgressBar'
@@ -39,8 +39,6 @@ export function PicksForm({
   authed?: boolean
 }) {
   const [picks, setPicks]             = useState<Record<number, Pick>>({})
-  const [captainIdx, setCaptainIdx]   = useState<number | null>(null)
-  const [exactScores, setExactScores] = useState<Record<number, { home: number; away: number }>>({})
   const [boostedIdx, setBoostedIdx]   = useState<number | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [now, setNow]                 = useState(Date.now())
@@ -76,6 +74,10 @@ export function PicksForm({
   // Total potencial de monedas con cuota como multiplicador (espejo del
   // scoring server). Si no hay cuota → ×1 (fallback honesto, base 10).
   // Capitán dobla el pick correspondiente. Pleno +100 si todo lleno.
+  // Potencial de monedas si acierta TODOS los picks. Mientras estamos
+  // todavía en transición al modelo de stake variable, mantenemos
+  // COIN_BASE=10 como aproximación de "stake medio". En el paso 2 del
+  // rediseño esto pasará a sum(stake[i] * odd[i] * boost[i]).
   const COIN_BASE = 10
   const potentialCoins = matches.reduce((sum, m, i) => {
     const p = picks[i]
@@ -83,9 +85,8 @@ export function PicksForm({
     const o = m.odds
     const odd =
       o ? (p === '1' ? o.home : p === '2' ? o.away : o.draw || 1) : 1
-    const captainMult = captainIdx === i ? 2 : 1
-    const boostMult   = boostedIdx === i ? BOOSTER_MULTIPLIER : 1
-    const mult = Math.max(1, odd) * captainMult * boostMult
+    const boostMult = boostedIdx === i ? BOOSTER_MULTIPLIER : 1
+    const mult = Math.max(1, odd) * boostMult
     return sum + COIN_BASE * mult
   }, 0) + (allDone ? 100 : 0)
   const potentialCoinsRound = Math.round(potentialCoins)
@@ -108,14 +109,12 @@ export function PicksForm({
       jornada,
       picks: matches.map((m, i) => ({
         home: m.home, away: m.away, pick: picks[i],
-        exactHome: exactScores[i]?.home, exactAway: exactScores[i]?.away,
         oddsAtPick: oddsForPick(m, picks[i]),
         // Solo marcamos booster si el usuario está autenticado Y tiene saldo
         // suficiente. Sin esto, el server lo strippearía igual; lo evitamos
         // de raíz para que la UI no muestre un boost que no se va a aplicar.
         boosted: authed && boostedIdx === i && coinBalance >= BOOSTER_COST,
       })),
-      captainIdx: captainIdx ?? undefined,
     }
     localStorage.setItem(QUINIELA_PICKS_KEY, JSON.stringify(saved))
     try {
@@ -248,8 +247,6 @@ export function PicksForm({
             odds={m.odds}
             isoDate={m.isoDate}
             jornada={jornada}
-            isCaptain={captainIdx === i}
-            onSetCaptain={picks[i] ? () => setCaptainIdx(prev => prev === i ? null : i) : undefined}
           />
           {done >= 3 && <ConsensusBar match={m} userPick={picks[i]} jornada={jornada} />}
         </div>
@@ -265,8 +262,8 @@ export function PicksForm({
           >
             <span style={{ fontSize: 16 }}>⚡</span>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>Más opciones · booster y marcador exacto</p>
-              <p className="text-[9px]" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>+20% cuota en un pick con booster · +50🪙 por marcador exacto</p>
+              <p className="text-xs font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>Booster · multiplicador extra</p>
+              <p className="text-[9px]" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>+20% cuota en un pick a cambio de 30🪙</p>
             </div>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: showAdvanced ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#5A5A7A' }}>
               <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -334,55 +331,12 @@ export function PicksForm({
                 </div>
               )}
 
-              {/* Marcador exacto */}
-              <div className={authed ? 'pt-4' : 'pt-4'} style={authed ? { borderTop: '1px solid rgba(255,255,255,0.05)' } : undefined}>
-                <p className="text-xs font-black mb-1" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>Marcador exacto · opcional</p>
-                <p className="text-[9px] mb-3" style={{ color: '#3A2A50', fontFamily: 'var(--font-sport)' }}>+50🪙 por cada marcador que aciertes</p>
-                <div className="flex flex-col gap-4">
-                  {matches.map((m, i) => {
-                    const p = picks[i] as Pick
-                    if (!p) return null
-                    const lines = scorelinesFor(p)
-                    const sel = exactScores[i]
-                    return (
-                      <div key={i}>
-                        <p className="text-[9px] font-black mb-2 truncate" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                          {m.homeShort ?? m.home} vs {m.awayShort ?? m.away}
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {lines.map(([h, a]) => {
-                            const active = sel?.home === h && sel?.away === a
-                            return (
-                              <button
-                                key={`${h}-${a}`}
-                                onClick={() => setExactScores(prev => active ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== String(i))) : { ...prev, [i]: { home: h, away: a } })}
-                                className="px-3 py-1.5 rounded-xl font-black transition-all"
-                                style={{
-                                  fontSize: 12, fontFamily: 'var(--font-display)',
-                                  background: active ? PICK_BG[p] : 'rgba(255,255,255,0.04)',
-                                  color: active ? PICK_COLOR[p] : '#4A4A6A',
-                                  border: active ? `1.5px solid ${PICK_BORDER[p]}` : '1px solid rgba(255,255,255,0.08)',
-                                  boxShadow: active ? `0 0 12px ${PICK_GLOW[p]}` : 'none',
-                                  transform: active ? 'scale(1.06)' : 'scale(1)',
-                                  transition: 'all 0.15s ease',
-                                }}
-                              >
-                                {h}–{a}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
             </div>
           )}
         </div>
       )}
 
-      <StickyBetslip done={done} total={total} allDone={allDone} captainSet={captainIdx != null} urgent={urgent} onSubmit={handleSubmit} potential={potentialCoinsRound} />
+      <StickyBetslip done={done} total={total} allDone={allDone} captainSet={false} urgent={urgent} onSubmit={handleSubmit} potential={potentialCoinsRound} />
     </div>
   )
 }

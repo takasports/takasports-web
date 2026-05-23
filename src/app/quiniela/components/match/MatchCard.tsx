@@ -17,7 +17,7 @@ import { WinProbabilityBar } from '../atoms/WinProbabilityBar'
 export function MatchCard({
   match, index, pick, onPick, forceLocked, showOverlay, comp, time, odds, isoDate,
   comodinAvailable, isComodinUnlocked, onUseComodin, comodinCost, coinBalance, liveScore, finalScore, correct, friendPicks,
-  isCaptain, onSetCaptain, jornada,
+  jornada,
 }: {
   match: { home: string; away: string; homeLogo?: string; awayLogo?: string; homeShort?: string; awayShort?: string }
   index: number; pick?: Pick; onPick: (p: Pick) => void
@@ -35,8 +35,6 @@ export function MatchCard({
   finalScore?: { homeGoals: number; awayGoals: number }
   correct?: boolean
   friendPicks?: { name: string; pick: string }[]
-  isCaptain?: boolean
-  onSetCaptain?: () => void
 }) {
   const num = String(index + 1).padStart(2, '0')
   const { started, soon, label: countdownLabel } = useMatchCountdown(isoDate)
@@ -72,13 +70,11 @@ export function MatchCard({
           ? '1.5px solid rgba(34,197,94,0.45)'
           : correct === false
           ? '1.5px solid rgba(239,68,68,0.4)'
-          : isCaptain ? '1.5px solid rgba(251,191,36,0.55)'
           : pick ? `1px solid ${PICK_BORDER[pick]}` : '1px solid rgba(255,255,255,0.07)',
         boxShadow: correct === true
           ? '0 0 0 1px rgba(34,197,94,0.12), 0 4px 24px rgba(34,197,94,0.1)'
           : correct === false
           ? '0 0 0 1px rgba(239,68,68,0.1), 0 4px 24px rgba(239,68,68,0.07)'
-          : isCaptain ? '0 0 0 1px rgba(251,191,36,0.15), 0 6px 28px rgba(251,191,36,0.12)'
           : 'none',
         transition: 'border-color 0.22s ease, background 0.22s ease, box-shadow 0.3s ease',
         animation: liveScore?.homeGoals != null && correct === true
@@ -127,28 +123,6 @@ export function MatchCard({
             {pick && (
               <span className="text-[9px] font-black px-2 py-0.5 rounded-full" style={{ background: PICK_BG[pick], color: PICK_COLOR[pick], border: `1px solid ${PICK_BORDER[pick]}`, fontFamily: 'var(--font-sport)' }}>
                 {pick === '1' ? match.home : pick === '2' ? match.away : 'Empate'}
-              </span>
-            )}
-            {/* Captain toggle */}
-            {onSetCaptain && !locked && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onSetCaptain() }}
-                title={isCaptain ? 'Capitán activo · 2x puntos' : 'Hacer capitán · dobla puntos si aciertas'}
-                className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full transition-all"
-                style={{
-                  background: isCaptain ? 'rgba(251,191,36,0.18)' : 'rgba(255,255,255,0.04)',
-                  border: isCaptain ? '1px solid rgba(251,191,36,0.5)' : '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: isCaptain ? '0 0 10px rgba(251,191,36,0.3)' : 'none',
-                }}
-              >
-                <span style={{ fontSize: 11, filter: isCaptain ? 'none' : 'grayscale(1) opacity(0.4)' }}>👑</span>
-                {isCaptain && <span style={{ fontSize: 8, fontWeight: 900, color: '#fbbf24', fontFamily: 'var(--font-sport)', letterSpacing: '0.04em' }}>2x</span>}
-              </button>
-            )}
-            {isCaptain && !onSetCaptain && (
-              <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.4)' }}>
-                <span style={{ fontSize: 10 }}>👑</span>
-                <span style={{ fontSize: 8, fontWeight: 900, color: '#fbbf24', fontFamily: 'var(--font-sport)' }}>2x</span>
               </span>
             )}
           </div>

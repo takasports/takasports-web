@@ -25,8 +25,6 @@ interface MemberRow {
   user_id: string
   nickname: string
   picks: Record<string, Pick>
-  exact_scores: Record<string, { home: number; away: number }>
-  captain_idx: number | null
 }
 
 // ── Fallback in-memory (solo si Supabase no está configurado) ──────
@@ -51,21 +49,6 @@ function sanitizePicks(input: unknown): Record<string, Pick> {
     if (!/^\d+$/.test(k)) continue
     if (typeof v !== 'string' || !VALID_PICKS.has(v)) continue
     out[k] = v as Pick
-  }
-  return out
-}
-
-function sanitizeExact(input: unknown): Record<string, { home: number; away: number }> {
-  if (!input || typeof input !== 'object') return {}
-  const out: Record<string, { home: number; away: number }> = {}
-  for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
-    if (!/^\d+$/.test(k)) continue
-    if (!v || typeof v !== 'object') continue
-    const obj = v as Record<string, unknown>
-    const h = Number(obj.home), a = Number(obj.away)
-    if (Number.isInteger(h) && Number.isInteger(a) && h >= 0 && a >= 0 && h <= 20 && a <= 20) {
-      out[k] = { home: h, away: a }
-    }
   }
   return out
 }
@@ -130,12 +113,14 @@ export async function POST(req: NextRequest) {
       })
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-      // El owner se autoinscribe vacío
+      // El owner se autoinscribe vacío. Las columnas exact_scores y
+      // captain_idx siguen existiendo en la DB (sin borrar para no romper)
+      // pero ya no se leen ni se escriben — ligas privadas son por puntos.
       await sb.from('quiniela_league_members').insert({
         league_id: id,
         user_id: user.id,
         nickname: user.email?.split('@')[0]?.slice(0, 24) ?? `User-${user.id.slice(0, 6)}`,
-        picks: {}, exact_scores: {}, captain_idx: null,
+        picks: {},
       })
 
       return NextResponse.json({ id, name: name || `Liga ${id}` })
@@ -176,7 +161,7 @@ export async function GET(req: NextRequest) {
     }
     const { data: members } = await sb
       .from('quiniela_league_members')
-      .select('nickname, picks, exact_scores, captain_idx')
+      .select('nickname, picks')
       .eq('league_id', id)
     return NextResponse.json({
       id: league.id,
@@ -187,8 +172,6 @@ export async function GET(req: NextRequest) {
       members: (members ?? []).map(m => ({
         nickname: m.nickname,
         picks: m.picks ?? {},
-        exactScores: m.exact_scores ?? {},
-        captainIdx: m.captain_idx,
       })),
     })
   }
@@ -203,7 +186,7 @@ export async function GET(req: NextRequest) {
     matchKeys: mem.row.match_keys,
     createdAt: mem.row.created_at,
     members: [...mem.members.values()].map(m => ({
-      nickname: m.nickname, picks: m.picks, exactScores: m.exact_scores, captainIdx: m.captain_idx,
+      nickname: m.nickname, picks: m.picks,
     })),
   })
 }
@@ -218,11 +201,6 @@ export async function PATCH(req: NextRequest) {
     const rawNick = String(body?.nickname ?? '').trim().slice(0, 24)
     const nickname = rawNick.toLowerCase() === 'tú' || rawNick.toLowerCase() === 'tu' ? '' : rawNick
     const rawPicks = sanitizePicks(body?.picks)
-    const rawExact = sanitizeExact(body?.exactScores)
-    const captainIdxRaw = body?.captainIdx
-    const captainIdx =
-      Number.isInteger(captainIdxRaw) && captainIdxRaw >= 0 && captainIdxRaw < 50
-        ? captainIdxRaw : null
 
     if (!id) {
       return NextResponse.json({ error: 'id required' }, { status: 400 })
@@ -242,22 +220,12 @@ export async function PATCH(req: NextRequest) {
 
       const matchKeys = league.match_keys as LeagueMatchKey[]
       const picks = dropLockedPicks(rawPicks, matchKeys)
-      const exact = dropLockedPicks(rawExact, matchKeys)
-
-      // Capitán: si el partido del capitán ya empezó, descartamos
-      let captain: number | null = captainIdx
-      if (captain != null) {
-        const m = matchKeys[captain]
-        if (m?.isoDate && new Date(m.isoDate).getTime() <= Date.now()) captain = null
-      }
 
       const { error } = await sb.from('quiniela_league_members').upsert({
         league_id: id,
         user_id: user.id,
         nickname: safeNick,
         picks,
-        exact_scores: exact,
-        captain_idx: captain,
       }, { onConflict: 'league_id,user_id' })
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -269,15 +237,8 @@ export async function PATCH(req: NextRequest) {
     const mem = memStore.get(id)
     if (!mem) return NextResponse.json({ error: 'not found' }, { status: 404 })
     const picks = dropLockedPicks(rawPicks, mem.row.match_keys)
-    const exact = dropLockedPicks(rawExact, mem.row.match_keys)
-    let captain: number | null = captainIdx
-    if (captain != null) {
-      const m = mem.row.match_keys[captain]
-      if (m?.isoDate && new Date(m.isoDate).getTime() <= Date.now()) captain = null
-    }
     mem.members.set(guestNick, {
-      league_id: id, user_id: 'anon', nickname: guestNick,
-      picks, exact_scores: exact, captain_idx: captain,
+      league_id: id, user_id: 'anon', nickname: guestNick, picks,
     })
     return NextResponse.json({ ok: true, locked: Object.keys(rawPicks).length - Object.keys(picks).length })
   } catch (e) {

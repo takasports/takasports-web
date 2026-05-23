@@ -46,38 +46,11 @@ export function isCorrect(pick: Pick, outcome: '1' | 'X' | '2'): boolean {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Sistema de monedas internas — ahora vive en `useCoins` (./hooks).
-// Estas funciones legacy se eliminaron; usar el hook en componentes.
+// Sistema de monedas internas — vive en `useCoins` (./hooks).
+// (La función legacy computeCoinRewards fue eliminada en el rediseño
+// de scoring; ya no quedan callers. lib/quiniela.scorePicks es la
+// fuente única.)
 // ─────────────────────────────────────────────────────────────────
-
-export function computeCoinRewards(
-  picks: Array<{ pick: string; exactHome?: number; exactAway?: number }>,
-  results: MatchResult[],
-  captainIdx: number | undefined,
-): { perPick: number[]; exact: number[]; captainBonus: number; plenoBonus: number; total: number } {
-  const perPick: number[] = []
-  const exact: number[] = []
-  let plenoCount = 0
-
-  picks.forEach((p, i) => {
-    const r = results[i]
-    if (!r) { perPick.push(0); exact.push(0); return }
-    const hit = isCorrect(p.pick as Pick, r.outcome)
-    const base = hit ? (captainIdx === i ? 20 : 10) : 0
-    perPick.push(base)
-    const exactHit =
-      hit &&
-      p.exactHome != null && p.exactAway != null &&
-      p.exactHome === r.homeGoals && p.exactAway === r.awayGoals
-    exact.push(exactHit ? 50 : 0)
-    if (hit) plenoCount++
-  })
-
-  const captainBonus = 0
-  const plenoBonus = plenoCount === picks.length && picks.length > 0 ? 100 : 0
-  const total = perPick.reduce((a, b) => a + b, 0) + exact.reduce((a, b) => a + b, 0) + plenoBonus
-  return { perPick, exact, captainBonus, plenoBonus, total }
-}
 
 export function computeNewBadges(
   picks: Array<{ home: string; away: string; pick: string; result?: { outcome: '1'|'X'|'2'; homeGoals: number; awayGoals: number }; odds?: { home: number; draw: number; away: number } }>,
@@ -162,15 +135,6 @@ export function aiSuggest(odds: { home: number; draw: number; away: number }): {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Scoreline chips per outcome
-// ─────────────────────────────────────────────────────────────────
-export function scorelinesFor(pick: Pick): [number, number][] {
-  if (pick === '1') return [[1,0],[2,0],[2,1],[3,0],[3,1],[3,2]]
-  if (pick === '2') return [[0,1],[0,2],[1,2],[0,3],[1,3],[2,3]]
-  return [[0,0],[1,1],[2,2],[3,3]]
-}
-
-// ─────────────────────────────────────────────────────────────────
 // Línea de contexto por partido — generada desde cuotas
 // ─────────────────────────────────────────────────────────────────
 export function getMatchContext(home: string, away: string, odds?: { home: number; draw: number; away: number }): string {
@@ -203,23 +167,20 @@ export function getDivision(history: { correct: number; total: number }[]): { na
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Clasificación de liga — puntos reales (capitán ×2, marcador exacto,
-// confianza, pleno) con desempates. Espejo de la app
-// (takasports-app/src/services/leagueStandings.ts) para que el ranking
-// sea IDÉNTICO en app y web sobre los mismos picks/resultados.
+// Clasificación de liga PRIVADA — sistema de puntos.
+// Ligas privadas son por puntos internos (no monedas, no cuotas).
+// El scoring se simplificó: 1 punto por tendencia acertada, +5 si
+// hace pleno. Desempates: hits, luego nickname alfabético.
 // ─────────────────────────────────────────────────────────────────
 export interface LeagueMatchKey { home: string; away: string; isoDate?: string }
 export interface LeagueMemberLite {
   nickname: string
   picks?: Record<string, string>
-  exactScores?: Record<string, { home: number; away: number }>
-  captainIdx?: number | null
 }
 export interface LeagueStanding {
   nickname: string
   points: number
   hits: number
-  exacts: number
   picked: number
   pleno: boolean
 }
@@ -235,28 +196,24 @@ export function computeStandings(
   return members
     .map(m => {
       const total = matchKeys.length
-      let points = 0, hits = 0, exacts = 0, picked = 0
+      let points = 0, hits = 0, picked = 0
       matchKeys.forEach((mk, i) => {
         const pk = m.picks?.[String(i)]
         if (!pk) return
         picked++
-        const ex = m.exactScores?.[String(i)]
         const s = scorePick(
-          { home: mk.home, away: mk.away, pick: pk as Pick, exactHome: ex?.home, exactAway: ex?.away },
+          { home: mk.home, away: mk.away, pick: pk as Pick },
           resultFor(mk),
-          m.captainIdx === i,
         )
         points += s.points
         if (s.hit) hits++
-        if (s.exact) exacts++
       })
       const pleno = total > 0 && picked === total && hits === total
       if (pleno) points += SCORING.PLENO_BONUS
-      return { nickname: m.nickname, points, hits, exacts, picked, pleno }
+      return { nickname: m.nickname, points, hits, picked, pleno }
     })
     .sort((a, b) =>
       b.points - a.points ||
-      b.exacts - a.exacts ||
       b.hits - a.hits ||
       a.nickname.localeCompare(b.nickname),
     )

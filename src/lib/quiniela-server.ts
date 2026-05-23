@@ -14,8 +14,6 @@ interface DbLeagueMember {
   user_id: string
   nickname: string
   picks: Record<string, Pick> | null
-  exact_scores: Record<string, { home: number; away: number }> | null
-  captain_idx: number | null
 }
 
 export interface PersistLeagueScoresResult {
@@ -60,7 +58,7 @@ export async function persistLeagueScores(
 
   const { data: members } = await sb
     .from('quiniela_league_members')
-    .select('user_id, nickname, picks, exact_scores, captain_idx')
+    .select('user_id, nickname, picks')
     .eq('league_id', leagueId)
   if (!members || members.length === 0) return { persisted: 0, skipped: 0, jornada }
 
@@ -71,34 +69,19 @@ export async function persistLeagueScores(
     if (!m.user_id) { skipped++; return null }
 
     const memberPicks = m.picks ?? {}
-    const memberExact = m.exact_scores ?? {}
 
-    // Reconstruimos el array de SavedPick alineado a matchKeys.
-    // Solo incluimos índices donde el miembro tiene pick (vacíos no puntúan).
-    const indexedPicks: { idx: number; pick: SavedPick }[] = []
+    // Reconstruimos SavedPick[] alineado a matchKeys. Solo incluimos
+    // índices donde el miembro tiene pick (vacíos no puntúan).
+    const indexedPicks: SavedPick[] = []
     matchKeys.forEach((mk, i) => {
       const pk = memberPicks[String(i)]
       if (!pk) return
-      const ex = memberExact[String(i)]
       indexedPicks.push({
-        idx: i,
-        pick: {
-          home: mk.home,
-          away: mk.away,
-          pick: pk,
-          exactHome: ex?.home,
-          exactAway: ex?.away,
-        },
+        home: mk.home,
+        away: mk.away,
+        pick: pk,
       })
     })
-
-    // captainIdx en SavedPick[] es el índice DENTRO del array filtrado.
-    // Si el capitán original cae en un índice sin pick, no aplicamos.
-    let captainInFiltered: number | undefined
-    if (m.captain_idx != null) {
-      const pos = indexedPicks.findIndex(p => p.idx === m.captain_idx)
-      if (pos >= 0) captainInFiltered = pos
-    }
 
     if (indexedPicks.length === 0) {
       // Miembro sin picks → fila con ceros (mantiene presencia en ranking).
@@ -111,11 +94,7 @@ export async function persistLeagueScores(
       }
     }
 
-    const breakdown = scorePicks(
-      indexedPicks.map(p => p.pick),
-      results,
-      captainInFiltered,
-    )
+    const breakdown = scorePicks(indexedPicks, results)
 
     return {
       league_id: leagueId,
@@ -123,7 +102,10 @@ export async function persistLeagueScores(
       jornada,
       points: Math.round(breakdown.totalPoints * 100) / 100,
       hits: breakdown.hits,
-      exacts: breakdown.exacts,
+      // exacts dejado en 0 — el modelo de ligas privadas ya no tiene
+      // exacto, pero la columna sigue existiendo en la migración 032
+      // (no toco la DB para evitar cambios destructivos).
+      exacts: 0,
       // Pleno solo si llenó TODOS los partidos de la liga (no solo los suyos).
       pleno: breakdown.pleno && indexedPicks.length === matchKeys.length,
       computed_at: nowIso,
