@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { SOURCE_TZ } from '@/lib/timezone'
 import { nameMatch } from '@/lib/quiniela'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { computeInternalOdds, neutralOdds } from '@/lib/internal-odds'
 
 export interface QuinielaMatch {
   home: string
@@ -10,9 +11,16 @@ export interface QuinielaMatch {
   time: string
   isoDate: string
   odds?: { home: number; draw: number; away: number }
+  // Origen de las cuotas:
+  //   · 'bookmaker' = the-odds-api (cuotas reales del mercado)
+  //   · 'internal'  = sistema interno basado en standings ESPN +
+  //                   neutrales (fallback cuando bookmaker no responde)
+  // La UI puede mostrar un badge sutil "📊 Estimada" cuando es internal.
+  oddsSource?: 'bookmaker' | 'internal'
   espnId?: string
   // Slug ESPN de la competición (e.g. 'soccer/esp.1') — necesario para
-  // llamadas posteriores al endpoint summary (goleadores, lineups).
+  // llamadas posteriores al endpoint summary (goleadores, lineups) y
+  // para que el sistema interno de cuotas use las standings correctas.
   leagueSlug?: string
   homeLogo?: string
   awayLogo?: string
@@ -403,12 +411,35 @@ export async function GET() {
       const ev = allOddsEvents.find(
         o => nameMatch(o.home_team, match.home) && nameMatch(o.away_team, match.away)
       )
-      if (ev) match.odds = extractOdds(ev)
+      if (ev) {
+        const extracted = extractOdds(ev)
+        if (extracted) {
+          match.odds = extracted
+          match.oddsSource = 'bookmaker'
+        }
+      }
     }
+  }
+
+  // ── Cascada a cuotas internas ────────────────────────────────────
+  // Para los matches que no recibieron cuotas del bookmaker (cupo
+  // agotado, downtime, liga sin cobertura), generamos cuotas internas
+  // a partir de las standings ESPN (pts + gd del club a este momento).
+  // Si tampoco hay standings disponibles (Copa, Champions KO), caemos
+  // a cuotas neutrales para que la jornada nunca quede bloqueada.
+  // Esto reemplaza el comportamiento previo de QUINIELA_DEV_ODDS en
+  // producción — el dev override sigue funcionando aparte para QA.
+  for (const match of deduped) {
+    if (match.odds || !match.leagueSlug) continue
+    const internal = await computeInternalOdds(match.home, match.away, match.leagueSlug)
+    match.odds = internal ?? neutralOdds()
+    match.oddsSource = 'internal'
   }
 
   // QA only: rellena cuotas sintéticas si faltan (cupo agotado) para
   // poder probar el ×cuota. Gated por env — nunca en producción.
+  // En la práctica ya no debería disparar porque el sistema interno
+  // arriba cubre todos los casos; queda como override explícito de QA.
   if (process.env.QUINIELA_DEV_ODDS === 'on') {
     for (const m of deduped) if (!m.odds) m.odds = devSeedOdds(m.home, m.away)
   }

@@ -15,7 +15,7 @@ import { WinProbabilityBar } from '../atoms/WinProbabilityBar'
 // Match Card con camisetas
 // ─────────────────────────────────────────────────────────────────
 export function MatchCard({
-  match, index, pick, onPick, forceLocked, showOverlay, comp, time, odds, isoDate,
+  match, index, pick, onPick, forceLocked, showOverlay, comp, time, odds, oddsSource, isoDate,
   comodinAvailable, isComodinUnlocked, onUseComodin, comodinCost, coinBalance, liveScore, finalScore, correct, friendPicks,
   jornada,
 }: {
@@ -24,6 +24,8 @@ export function MatchCard({
   forceLocked?: boolean; showOverlay?: boolean
   comp?: string; time?: string
   odds?: { home: number; draw: number; away: number }
+  /** Origen de las cuotas. 'internal' muestra badge sutil "Estimada". */
+  oddsSource?: 'bookmaker' | 'internal'
   isoDate?: string
   jornada?: string
   comodinAvailable?: boolean
@@ -104,6 +106,15 @@ export function MatchCard({
             {comp && (
               <span className="text-[9px] font-semibold px-2 py-0.5 rounded-md" style={{ background: 'rgba(255,255,255,0.04)', color: '#4A4A68', fontFamily: 'var(--font-sport)' }}>
                 {comp}
+              </span>
+            )}
+            {oddsSource === 'internal' && odds && (
+              <span
+                className="text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
+                style={{ background: 'rgba(124,58,237,0.08)', color: '#7C7CA0', border: '1px solid rgba(124,58,237,0.18)', fontFamily: 'var(--font-sport)' }}
+                title="Cuota estimada por el sistema interno (sin bookmaker disponible)"
+              >
+                📊 EST
               </span>
             )}
           </div>

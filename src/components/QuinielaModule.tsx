@@ -10,6 +10,12 @@ export interface QuinielaMatch {
   time?: string
   isoDate?: string
   odds?: { home: number; draw: number; away: number }
+  /** Origen de las cuotas: 'bookmaker' = the-odds-api, 'internal' = sistema interno (standings ESPN + neutrales). */
+  oddsSource?: 'bookmaker' | 'internal'
+  /** Slug ESPN de la competición (necesario para summary endpoint y standings). */
+  leagueSlug?: string
+  /** El partido destacado de la jornada — usado para el feature de goleador. */
+  isFeatured?: boolean
   espnId?: string
   homeLogo?: string
   awayLogo?: string

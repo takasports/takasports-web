@@ -307,6 +307,7 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
                 time={matchData.time}
                 isoDate={matchData.isoDate}
                 odds={matchData.odds}
+                oddsSource={matchData.oddsSource}
                 comodinAvailable={!comodinUsed && !comodinTarget && matchStarted}
                 isComodinUnlocked={isComodinTarget}
                 onUseComodin={() => setComodinTarget(i)}

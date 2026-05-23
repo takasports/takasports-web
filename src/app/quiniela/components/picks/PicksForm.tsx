@@ -320,6 +320,7 @@ export function PicksForm({
             comp={m.comp}
             time={m.time}
             odds={m.odds}
+            oddsSource={m.oddsSource}
             isoDate={m.isoDate}
             jornada={jornada}
           />
