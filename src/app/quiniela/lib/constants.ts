@@ -27,11 +27,33 @@ export const LEAGUES_KEY = 'ts_quiniela_leagues'
 export const ALIAS_KEY = 'ts_quiniela_alias'
 
 // ─────────────────────────────────────────────────────────────────
-// Onboarding steps
+// Onboarding steps — refleja el modelo Ranked actual (apuesta con
+// monedas + cuota como multiplicador + bonus de jornada + ligas
+// privadas por puntos).
 // ─────────────────────────────────────────────────────────────────
 export const ONBOARDING_STEPS: { emoji: string; title: string; body: string; hint?: string }[] = [
-  { emoji: '🎯', title: 'Predice cada partido', body: 'Toca L (gana local), E (empate) o V (gana visitante). Cada opción tiene su cuota: la cuota multiplica las monedas y puntos si aciertas.', hint: 'Arriesga con cuotas altas para subir más rápido.' },
-  { emoji: '👑', title: 'Elige tu capitán', body: 'Toca la 👑 en la tarjeta del partido que más seguro veas. Si aciertas ese pick, se dobla (×2) encima de la cuota. Si fallas, no pasa nada.', hint: 'Solo 1 capitán por jornada · puedes cambiarlo hasta el cierre.' },
-  { emoji: '🪙', title: 'Gana monedas y pleno', body: 'Monedas = base × cuota de tu acierto · Capitán acertado = ×2 · Acertar todos los partidos = +100 de bonus.', hint: 'Las monedas son tu progresión: cuanto más arriesgas, más subes.' },
-  { emoji: '🏆', title: 'Compite con amigos', body: 'Crea una liga privada con código y compartilo. Compite cada semana en un ranking propio.', hint: 'También puedes unirte con un enlace de invitación.' },
+  {
+    emoji: '🎯',
+    title: 'Predice cada partido',
+    body: 'En cada tarjeta tocá L (gana local), E (empate) o V (gana visitante). Cada opción tiene su cuota (el multiplicador estilo casa de apuestas).',
+    hint: 'Las cuotas se mueven en vivo según el consenso real del resto de jugadores.',
+  },
+  {
+    emoji: '💰',
+    title: 'Apostá tus monedas',
+    body: 'Decidí cuántas monedas apostar en cada pick (entre 1 y 200). Si aciertas, ganás stake × cuota. Si fallás, perdés el stake. Apostar a una cuota alta paga mucho más, pero es más arriesgado.',
+    hint: 'Default 10🪙 por pick · podés bajarlo o subirlo en el panel «Tu apuesta».',
+  },
+  {
+    emoji: '⚡',
+    title: 'Booster y goleador destacado',
+    body: 'Una vez por jornada podés activar un Booster: 30🪙 que suman +20% a la cuota de UN pick. Además hay 1 partido destacado por jornada donde elegís quién marcará gol — gratis, da 100/200/350🪙 según los goles.',
+    hint: 'El booster solo se cobra si sellás. El goleador es opcional pero no cuesta nada participar.',
+  },
+  {
+    emoji: '🏆',
+    title: 'Liga general + amigos',
+    body: 'En el Ranked competís contra todos por monedas acumuladas. En ligas privadas armás un grupo con amigos por código/link y compiten por puntos internos (sin apuesta).',
+    hint: 'Los juegos diarios (CrackQuiz, Mi Once, Sopa de Cracks) también te dan monedas para usar en el Ranked.',
+  },
 ]
