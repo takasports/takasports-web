@@ -14,6 +14,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import ReadingProgress from '@/app/article/[id]/ReadingProgress'
 import ReadTracker from '@/app/article/[id]/ReadTracker'
 import ArticleTableOfContents from '@/components/ArticleTableOfContents'
+import ArticleComments from '@/components/ArticleComments'
 import { extractHeadings, type TocHeading } from '@/lib/article-toc'
 import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
 
@@ -949,6 +950,10 @@ export default async function NoticiaPage({
                   </div>
                 </div>
               )}
+            </div>
+
+            <div style={{ maxWidth: 680 }}>
+              <ArticleComments slug={article.slug ?? id} />
             </div>
 
           </article>
