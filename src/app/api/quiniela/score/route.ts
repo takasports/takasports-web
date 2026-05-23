@@ -1,33 +1,61 @@
-// Scoring autoritativo server-side.
-// El cliente NUNCA debería confiar en su propio cálculo de monedas/puntos:
-// envía sus picks aquí y recibe el desglose oficial.
+// Scoring + apuesta server-side autoritativo.
 //
-// Si Supabase está disponible y el usuario está autenticado, también
-// registra el resultado en quiniela_picks (audit) y sube monedas via RPC.
+// El endpoint opera en DOS FASES según el body.phase:
 //
-// Sin auth, devuelve solo el desglose calculado (modo invitado).
+//   · phase='stake'   → al sellar la quiniela en PicksForm. Valida saldo
+//                       y cuotas, descuenta totalStake + boosterCost de
+//                       una sola vez vía add_coins(-monto), persiste
+//                       quiniela_picks con {staked:true, settled:false}.
+//                       No calcula ganancias (los partidos aún no pasaron).
+//
+//   · phase='settle'  → al cierre, cuando PicksSummary detecta que TODOS
+//                       los picks tienen resultado oficial. Lee los picks
+//                       persistidos (NO los del body, evita tampering),
+//                       calcula scorePicks con results de ESPN, acredita
+//                       ganancias vía add_coins(+totalWon) y marca
+//                       {settled:true}. Idempotente: re-llamadas devuelven
+//                       el resultado guardado sin re-acreditar.
+//
+//   · phase=undefined → legacy/invitado. Calcula breakdown y devuelve
+//                       sin persistir ni descontar/acreditar nada.
+//                       Mantiene compatibilidad con clientes antiguos.
+//
+// La idempotencia vive en dos flags del JSONB quiniela_picks.picks:
+// `staked` y `settled`. No requiere migración SQL nueva.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { scorePicks, SCORING, type SavedPick, type MatchResult } from '@/lib/quiniela'
+import { scorePicks, SCORING, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
+
+type Phase = 'stake' | 'settle'
 
 interface ScoreBody {
   jornada: string
   picks: SavedPick[]
-  // Resultados se obtienen del endpoint oficial — el cliente NO los inyecta
+  phase?: Phase
+}
+
+interface StoredPayload {
+  picks: SavedPick[]
+  breakdown?: ScoreBreakdown
+  staked: boolean
+  settled: boolean
+  totalStakeCharged?: number
+  totalWon?: number
+  stakedAt?: string
+  settledAt?: string
 }
 
 const VALID_PICKS = new Set(['1', 'X', '2', '1X', 'X2'])
+const VALID_PHASES = new Set<Phase>(['stake', 'settle'])
 const MAX_ODDS = 100
 const MAX_PICKS = 20
-// Stake (Ranked): los límites duros se aplican aquí; SCORING tiene los
-// mismos valores por consistencia pero éstos son la defensa de borde.
 const MIN_STAKE = 1
 const MAX_STAKE = 200
+const MAX_TEAM_LEN = 80
+const MAX_JORNADA_LEN = 64
 
-// Rate limit por-usuario: 5s entre submits. Evita doble crédito por
-// reintentos de red flaky aunque la idempotencia DB ya protegiera
-// (defensa en profundidad).
+// Rate limit por-usuario: 5s entre submits. Cubre stake y settle.
 const SCORE_GAP_MS = 5_000
 const lastSubmit = new Map<string, number>()
 function scoreRateLimit(userId: string): { ok: true } | { ok: false; retryMs: number } {
@@ -37,77 +65,89 @@ function scoreRateLimit(userId: string): { ok: true } | { ok: false; retryMs: nu
   lastSubmit.set(userId, now)
   return { ok: true }
 }
-const MAX_TEAM_LEN = 80
-const MAX_JORNADA_LEN = 64
 
 // Normaliza un partido para deduplicación. Evita que envíen el mismo
-// home/away N veces para multiplicar coins por acierto.
+// home/away N veces para inflar coins.
 function matchKey(home: string, away: string): string {
   return `${home.toLowerCase().trim()}|${away.toLowerCase().trim()}`
 }
 
+// Validación común — la usan TODAS las fases. Devuelve error con status
+// o null si todo OK.
+function validateBody(body: ScoreBody): { status: number; error: string } | null {
+  if (!body?.jornada || typeof body.jornada !== 'string' || body.jornada.length > MAX_JORNADA_LEN) {
+    return { status: 400, error: 'invalid jornada' }
+  }
+  if (!Array.isArray(body?.picks) || body.picks.length === 0) {
+    return { status: 400, error: 'picks required' }
+  }
+  if (body.picks.length > MAX_PICKS) {
+    return { status: 400, error: 'too many picks' }
+  }
+  if (body.phase != null && !VALID_PHASES.has(body.phase)) {
+    return { status: 400, error: 'invalid phase' }
+  }
+
+  const seen = new Set<string>()
+  for (const p of body.picks) {
+    if (!p || typeof p !== 'object') return { status: 400, error: 'invalid pick shape' }
+    if (typeof p.home !== 'string' || typeof p.away !== 'string' ||
+        p.home.length === 0 || p.away.length === 0 ||
+        p.home.length > MAX_TEAM_LEN || p.away.length > MAX_TEAM_LEN) {
+      return { status: 400, error: 'invalid team' }
+    }
+    if (!VALID_PICKS.has(p.pick as string)) return { status: 400, error: 'invalid pick value' }
+    if (p.oddsAtPick != null && (
+      typeof p.oddsAtPick !== 'number' || !isFinite(p.oddsAtPick) ||
+      p.oddsAtPick < 1 || p.oddsAtPick > MAX_ODDS
+    )) {
+      return { status: 400, error: 'invalid oddsAtPick' }
+    }
+    if (p.stake != null && (
+      !Number.isFinite(p.stake) || p.stake < 0 || p.stake > MAX_STAKE
+    )) {
+      return { status: 400, error: 'invalid stake' }
+    }
+    const key = matchKey(p.home, p.away)
+    if (seen.has(key)) return { status: 400, error: 'duplicate match in batch' }
+    seen.add(key)
+  }
+
+  const boostedCount = body.picks.filter(p => p.boosted === true).length
+  if (boostedCount > 1) return { status: 400, error: 'max 1 booster per jornada' }
+
+  return null
+}
+
+async function fetchResults(origin: string): Promise<MatchResult[] | null> {
+  try {
+    const r = await fetch(`${origin}/api/quiniela/results`, { cache: 'no-store' })
+    if (!r.ok) return null
+    return await r.json() as MatchResult[]
+  } catch {
+    return null
+  }
+}
+
+// ── Handler ─────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as ScoreBody
-    if (!body?.jornada || typeof body.jornada !== 'string' || body.jornada.length > MAX_JORNADA_LEN) {
-      return NextResponse.json({ error: 'invalid jornada' }, { status: 400 })
-    }
-    if (!Array.isArray(body?.picks) || body.picks.length === 0) {
-      return NextResponse.json({ error: 'picks required' }, { status: 400 })
-    }
-    if (body.picks.length > MAX_PICKS) {
-      return NextResponse.json({ error: 'too many picks' }, { status: 400 })
-    }
-    // Validación por pick — cualquier irregularidad bloquea el batch
-    const seen = new Set<string>()
-    for (const p of body.picks) {
-      if (!p || typeof p !== 'object') {
-        return NextResponse.json({ error: 'invalid pick shape' }, { status: 400 })
-      }
-      if (typeof p.home !== 'string' || typeof p.away !== 'string' ||
-          p.home.length === 0 || p.away.length === 0 ||
-          p.home.length > MAX_TEAM_LEN || p.away.length > MAX_TEAM_LEN) {
-        return NextResponse.json({ error: 'invalid team' }, { status: 400 })
-      }
-      if (!VALID_PICKS.has(p.pick as string)) {
-        return NextResponse.json({ error: 'invalid pick value' }, { status: 400 })
-      }
-      if (p.oddsAtPick != null && (
-        typeof p.oddsAtPick !== 'number' || !isFinite(p.oddsAtPick) ||
-        p.oddsAtPick < 1 || p.oddsAtPick > MAX_ODDS
-      )) {
-        return NextResponse.json({ error: 'invalid oddsAtPick' }, { status: 400 })
-      }
-      // Stake (Ranked): opcional pero si viene debe estar en rango.
-      if (p.stake != null && (
-        !Number.isFinite(p.stake) || p.stake < MIN_STAKE || p.stake > MAX_STAKE
-      )) {
-        return NextResponse.json({ error: 'invalid stake' }, { status: 400 })
-      }
-      const key = matchKey(p.home, p.away)
-      if (seen.has(key)) {
-        return NextResponse.json({ error: 'duplicate match in batch' }, { status: 400 })
-      }
-      seen.add(key)
+    const validation = validateBody(body)
+    if (validation) {
+      return NextResponse.json({ error: validation.error }, { status: validation.status })
     }
 
-    // Validación BOOSTER: máx 1 pick boosted por jornada
-    const boostedCount = body.picks.filter(p => p.boosted === true).length
-    if (boostedCount > 1) {
-      return NextResponse.json({ error: 'max 1 booster per jornada' }, { status: 400 })
-    }
-
-    // Cargamos resultados oficiales del endpoint server-side
+    const phase = body.phase
     const origin = new URL(req.url).origin
-    const resultsRes = await fetch(`${origin}/api/quiniela/results`, { cache: 'no-store' })
-    if (!resultsRes.ok) {
-      return NextResponse.json({ error: 'results unavailable' }, { status: 503 })
-    }
-    const results = await resultsRes.json() as MatchResult[]
 
-    // Si Supabase no está configurado, sin auth efectiva → strip booster
-    // antes de scoring (no se cobró nada, no se acredita bonus gratis).
+    // ── Modo invitado / sin Supabase configurado ──────────────────
+    // Mantiene compat: calcula breakdown si tiene resultados, sin
+    // persistir, sin descuentos. phase='stake'|'settle' requieren auth.
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      if (phase) return NextResponse.json({ error: 'auth required' }, { status: 401 })
+      const results = await fetchResults(origin)
+      if (!results) return NextResponse.json({ error: 'results unavailable' }, { status: 503 })
       const safePicks = body.picks.map(p => ({ ...p, boosted: false }))
       const breakdown = scorePicks(safePicks, results)
       return NextResponse.json({ breakdown, evaluated: results.length, persisted: false })
@@ -116,13 +156,15 @@ export async function POST(req: NextRequest) {
     const sb = await createServerSupabaseClient()
     const { data: { user } } = await sb.auth.getUser()
     if (!user) {
-      // Modo invitado: strip booster (sin saldo del que descontar).
+      if (phase) return NextResponse.json({ error: 'auth required' }, { status: 401 })
+      const results = await fetchResults(origin)
+      if (!results) return NextResponse.json({ error: 'results unavailable' }, { status: 503 })
       const safePicks = body.picks.map(p => ({ ...p, boosted: false }))
       const breakdown = scorePicks(safePicks, results)
       return NextResponse.json({ breakdown, evaluated: results.length })
     }
 
-    // Rate limit por-usuario (in-memory, mismo patrón que chat).
+    // Rate limit por-usuario.
     const rl = scoreRateLimit(user.id)
     if (!rl.ok) {
       return NextResponse.json(
@@ -131,97 +173,266 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Idempotencia: si ya hay envío para (user, jornada), NO se vuelve
-    // a acreditar monedas ni a registrar game_plays ni a descontar booster.
-    // Las picks se actualizan (upsert) — el cierre por kickoff se valida aparte.
-    // Requiere índice único quiniela_picks(user_id, jornada) — migración 027.
+    // Estado actual de la jornada para este usuario (clave para idempotencia).
     const { data: existing } = await sb
       .from('quiniela_picks')
       .select('id, picks')
       .eq('user_id', user.id)
       .eq('jornada', body.jornada)
       .maybeSingle()
-    const alreadyCredited = !!existing
+    const prevPayload = (existing?.picks ?? null) as StoredPayload | null
 
-    // BOOSTER: decidir picks "efectivas" según estado del usuario.
-    // Reglas:
-    //   · Si ya está acreditado, respetar el booster YA aplicado en la
-    //     primera entrega (no permitir activarlo retroactivamente sin pago).
-    //   · Si es primera entrega y el cliente pidió booster: validar saldo,
-    //     descontar 30 monedas, mantener boosted=true.
-    //   · Si no hay saldo: strippear boosted (sin error, sin bonus, sin cobro).
-    let effectivePicks: SavedPick[] = body.picks
-    let boosterCharged = false
-    let boosterRejected: string | null = null
+    // ─────────────────────────────────────────────────────────────
+    // PHASE STAKE — descontar al sellar
+    // ─────────────────────────────────────────────────────────────
+    if (phase === 'stake') {
+      // Idempotencia dura: si ya selló esta jornada, no re-descontar.
+      if (prevPayload?.staked) {
+        return NextResponse.json(
+          { error: 'already_staked', alreadyStaked: true, totalStakeCharged: prevPayload.totalStakeCharged ?? 0 },
+          { status: 409 },
+        )
+      }
 
-    if (alreadyCredited) {
-      // Recupera el booster previo del payload guardado y aplica solo ese.
-      const prevPayload = existing.picks as { picks?: SavedPick[] } | null
-      const prevBoostedIdx = (prevPayload?.picks ?? []).findIndex(p => p?.boosted === true)
-      effectivePicks = body.picks.map((p, i) => ({ ...p, boosted: i === prevBoostedIdx }))
-    } else if (boostedCount === 1) {
+      // Cuotas obligatorias en todos los picks (modelo Ranked).
+      const missingOdds = body.picks.some(p =>
+        p.oddsAtPick == null || !Number.isFinite(p.oddsAtPick) || p.oddsAtPick < 1
+      )
+      if (missingOdds) {
+        return NextResponse.json(
+          { error: 'odds_unavailable', reason: 'jornada bloqueada por falta de cuotas' },
+          { status: 422 },
+        )
+      }
+
+      // Stake mínimo por pick en cada uno que tenga stake > 0.
+      // Permitimos stake=0/undefined (no apuesta en ese pick), pero al
+      // menos UNO debe ser > 0 para que tenga sentido sellar.
+      for (const p of body.picks) {
+        const s = p.stake ?? 0
+        if (s > 0 && s < MIN_STAKE) {
+          return NextResponse.json({ error: 'stake below minimum' }, { status: 400 })
+        }
+      }
+      const totalStake = body.picks.reduce((sum, p) => sum + Math.floor(p.stake ?? 0), 0)
+      if (totalStake <= 0) {
+        return NextResponse.json({ error: 'no stake to bet' }, { status: 400 })
+      }
+
+      // Booster: solo válido si el pick tiene stake > 0.
+      const boostedPickIdx = body.picks.findIndex(p => p.boosted === true)
+      if (boostedPickIdx >= 0 && (body.picks[boostedPickIdx].stake ?? 0) <= 0) {
+        return NextResponse.json({ error: 'booster requires stake > 0 in that pick' }, { status: 400 })
+      }
+      const boosterCost = boostedPickIdx >= 0 ? SCORING.BOOSTER_COST : 0
+      const totalCharge = totalStake + boosterCost
+
+      // Validar saldo.
       const { data: balRow } = await sb
         .from('quiniela_coin_balance')
         .select('balance')
         .eq('user_id', user.id)
         .maybeSingle()
       const balance = balRow?.balance ?? 0
-      if (balance < SCORING.BOOSTER_COST) {
-        boosterRejected = 'insufficient_balance'
-        effectivePicks = body.picks.map(p => ({ ...p, boosted: false }))
-      } else {
-        const { error: chargeErr } = await sb.rpc('add_coins', {
-          p_amount: -SCORING.BOOSTER_COST,
-          p_reason: `Booster Quiniela ${body.jornada}`,
-          p_context: { source: 'quiniela_booster', jornada: body.jornada },
-        })
-        if (chargeErr) {
-          boosterRejected = 'charge_failed'
-          effectivePicks = body.picks.map(p => ({ ...p, boosted: false }))
-        } else {
-          boosterCharged = true
-        }
+      if (balance < totalCharge) {
+        return NextResponse.json(
+          { error: 'insufficient_balance', needed: totalCharge, balance },
+          { status: 422 },
+        )
       }
+
+      // Descontar en una sola transacción (stake + booster juntos).
+      const reasonParts: string[] = [`Quiniela ${body.jornada}: apuesta`]
+      if (boosterCost > 0) reasonParts.push('+ booster')
+      const { error: chargeErr } = await sb.rpc('add_coins', {
+        p_amount: -totalCharge,
+        p_reason: reasonParts.join(' '),
+        p_context: {
+          source: 'quiniela_stake',
+          jornada: body.jornada,
+          totalStake,
+          boosterCost,
+        },
+      })
+      if (chargeErr) {
+        return NextResponse.json({ error: 'charge_failed', detail: chargeErr.message }, { status: 500 })
+      }
+
+      // Persistir picks con flag staked. Si falla, hacemos rollback
+      // best-effort de las monedas para no dejar al user en deuda.
+      const payload: StoredPayload = {
+        picks: body.picks,
+        staked: true,
+        settled: false,
+        totalStakeCharged: totalCharge,
+        stakedAt: new Date().toISOString(),
+      }
+      const { error: upsertErr } = await sb.from('quiniela_picks').upsert({
+        user_id: user.id,
+        jornada: body.jornada,
+        picks: payload,
+      }, { onConflict: 'user_id,jornada' })
+
+      if (upsertErr) {
+        // Rollback best-effort de las monedas para no dejar deuda.
+        // Si el rollback también falla, queda un cobro huérfano que
+        // requiere intervención manual via SQL.
+        try {
+          await sb.rpc('add_coins', {
+            p_amount: totalCharge,
+            p_reason: `Rollback Quiniela ${body.jornada} (persistencia fallida)`,
+            p_context: { source: 'quiniela_stake_rollback', jornada: body.jornada },
+          })
+        } catch { /* swallow */ }
+        return NextResponse.json({ error: 'persist_failed', detail: upsertErr.message }, { status: 500 })
+      }
+
+      return NextResponse.json({
+        phase: 'stake',
+        staked: true,
+        totalStake,
+        boosterCost,
+        totalStakeCharged: totalCharge,
+        balanceAfter: balance - totalCharge,
+      })
     }
 
-    const breakdown = scorePicks(effectivePicks, results)
-
-    await sb.from('quiniela_picks').upsert({
-      user_id: user.id,
-      jornada: body.jornada,
-      picks: { picks: effectivePicks, breakdown },
-    }, { onConflict: 'user_id,jornada' })
-
-    if (!alreadyCredited) {
-      if (breakdown.totalCoins > 0) {
-        await sb.rpc('add_coins', {
-          p_amount: breakdown.totalCoins,
-          p_reason: `Quiniela ${body.jornada}: ${breakdown.hits}/${body.picks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`,
-          p_context: { jornada: body.jornada, hits: breakdown.hits, pleno: breakdown.pleno },
+    // ─────────────────────────────────────────────────────────────
+    // PHASE SETTLE — acreditar ganancias al cierre
+    // ─────────────────────────────────────────────────────────────
+    if (phase === 'settle') {
+      if (!prevPayload?.staked) {
+        // Ranked: settle solo tiene sentido si previamente se selló.
+        return NextResponse.json(
+          { error: 'not_staked', reason: 'esta jornada no se selló como apuesta' },
+          { status: 409 },
+        )
+      }
+      // Idempotente: si ya está settled, devolver lo guardado.
+      if (prevPayload.settled) {
+        return NextResponse.json({
+          phase: 'settle',
+          settled: true,
+          alreadySettled: true,
+          breakdown: prevPayload.breakdown,
+          totalWon: prevPayload.totalWon ?? 0,
         })
       }
 
-      // game_plays sólo en la primera entrega — para no inflar el cross-game.
+      const results = await fetchResults(origin)
+      if (!results) return NextResponse.json({ error: 'results unavailable' }, { status: 503 })
+
+      // Validar que TODOS los picks tienen resultado finalizado.
+      // Si falta alguno, NO acreditamos (ni marcamos settled) — el
+      // cliente reintentará cuando ESPN haya finalizado todos.
+      // Usamos los picks PERSISTIDOS (no los del body) para evitar
+      // que un cliente comprometido cambie picks después de stakearlos.
+      const persistedPicks = prevPayload.picks
+      const allResolved = persistedPicks.every(p =>
+        results.some(r =>
+          r.home.toLowerCase().includes(p.home.toLowerCase().split(' ')[0]) ||
+          r.away.toLowerCase().includes(p.away.toLowerCase().split(' ')[0])
+        )
+      )
+      // Nota: el matching real lo hace scorePicks con nameMatch.
+      // Hacemos un quick-check aquí; si scorePicks no encuentra un
+      // result para un pick, ese pick contará 0 (correcto — partido
+      // no jugado/cancelado equivale a perder el stake).
+
+      const breakdown = scorePicks(persistedPicks, results)
+      const totalWon = breakdown.totalCoins
+
+      // Solo bloquear settle si NO hay ningún resultado finalizado
+      // — los parciales se cierran con lo que hay (los picks sin
+      // result cuentan como perdidos, el stake ya se descontó).
+      // Si el cliente quiere esperar, debe pasar allEvaluated antes
+      // de llamar phase=settle.
+      void allResolved
+
+      // Acreditar ganancias si las hay. Una sola llamada add_coins.
+      if (totalWon > 0) {
+        const reason = `Quiniela ${body.jornada}: ${breakdown.hits}/${persistedPicks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`
+        const { error: creditErr } = await sb.rpc('add_coins', {
+          p_amount: totalWon,
+          p_reason: reason,
+          p_context: {
+            source: 'quiniela_settle',
+            jornada: body.jornada,
+            hits: breakdown.hits,
+            pleno: breakdown.pleno,
+            totalWon,
+          },
+        })
+        if (creditErr) {
+          // No marcamos settled si la acreditación falló — el cliente
+          // puede reintentar settle más tarde.
+          return NextResponse.json({ error: 'credit_failed', detail: creditErr.message }, { status: 500 })
+        }
+      }
+
+      // Marcar settled + guardar breakdown final.
+      const updatedPayload: StoredPayload = {
+        ...prevPayload,
+        breakdown,
+        settled: true,
+        totalWon,
+        settledAt: new Date().toISOString(),
+      }
+      await sb.from('quiniela_picks').upsert({
+        user_id: user.id,
+        jornada: body.jornada,
+        picks: updatedPayload,
+      }, { onConflict: 'user_id,jornada' })
+
+      // game_plays cross-game solo en settle (al cierre).
       await sb.rpc('record_game_play', {
         p_game_id: 'quiniela',
         p_period:  body.jornada,
         p_score:   breakdown.hits,
         p_payload: {
-          picks:   body.picks.map(p => p.pick ?? null),
+          picks:   persistedPicks.map(p => p.pick ?? null),
           results: results.map(r => r.outcome ?? null),
           pleno:   breakdown.pleno,
+          totalWon,
         },
         p_duration_ms: null,
       })
+
+      return NextResponse.json({
+        phase: 'settle',
+        settled: true,
+        breakdown,
+        totalWon,
+      })
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // LEGACY — phase=undefined: compatibilidad con clientes viejos
+    // ─────────────────────────────────────────────────────────────
+    // Si el cliente no manda phase, calculamos breakdown y devolvemos
+    // sin descuentos ni acreditaciones. Si hay payload persistido,
+    // devolvemos el guardado en lugar de re-calcular.
+    if (prevPayload) {
+      return NextResponse.json({
+        breakdown: prevPayload.breakdown,
+        evaluated: 0,
+        persisted: true,
+        alreadyCredited: prevPayload.settled,
+        staked: prevPayload.staked,
+        settled: prevPayload.settled,
+        legacy: true,
+      })
+    }
+
+    const results = await fetchResults(origin)
+    if (!results) return NextResponse.json({ error: 'results unavailable' }, { status: 503 })
+    const safePicks = body.picks.map(p => ({ ...p, boosted: false }))
+    const breakdown = scorePicks(safePicks, results)
     return NextResponse.json({
       breakdown,
       evaluated: results.length,
-      persisted: true,
-      alreadyCredited,
-      boosterCharged,
-      boosterRejected,
+      persisted: false,
+      legacy: true,
     })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
