@@ -8,7 +8,7 @@ import { TUTORED_KEY, LEAGUES_KEY, STREAK_KEY } from '../../lib/constants'
 import type { League } from '../../lib/types'
 import { ensurePlayerAlias, liveOdds } from '../../lib/helpers'
 import { loadConsensus } from '../../lib/consensus'
-import { nameMatch } from '@/lib/quiniela'
+import { nameMatch, SCORING } from '@/lib/quiniela'
 import { ProgressBar } from '../atoms/ProgressBar'
 import { MatchCard } from '../match/MatchCard'
 import { ConsensusBar } from '../match/ConsensusBar'
@@ -19,10 +19,12 @@ import { StickyBetslip } from './StickyBetslip'
 
 // Booster: cuesta BOOSTER_COST monedas, multiplica ×1.20 la cuota efectiva
 // del pick boosted si acierta. Se descuenta server-side al sellar.
-// Mantenemos el valor local sincronizado con SCORING.BOOSTER_* para que
-// el cliente y el server vean lo mismo.
-const BOOSTER_COST = 30
-const BOOSTER_MULTIPLIER = 1.20
+const BOOSTER_COST = SCORING.BOOSTER_COST
+const BOOSTER_MULTIPLIER = SCORING.BOOSTER_MULTIPLIER
+// Stake: monedas que se apuestan por pick. Reglas idénticas server-side.
+const STAKE_MIN = SCORING.STAKE_MIN
+const STAKE_MAX = SCORING.STAKE_MAX
+const STAKE_DEFAULT = SCORING.STAKE_DEFAULT
 
 export function PicksForm({
   matches, jornada, onSubmit, streakCurrent = 0, onParticipation,
@@ -39,10 +41,12 @@ export function PicksForm({
   authed?: boolean
 }) {
   const [picks, setPicks]             = useState<Record<number, Pick>>({})
+  const [stakes, setStakes]           = useState<Record<number, number>>({})
   const [boostedIdx, setBoostedIdx]   = useState<number | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [now, setNow]                 = useState(Date.now())
   const [submitting, setSubmitting]   = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [tutored, setTutored]         = useState(() => {
     try { return typeof window !== 'undefined' && !!localStorage.getItem(TUTORED_KEY) } catch { return true }
   })
@@ -71,30 +75,64 @@ export function PicksForm({
   const urgent      = !allDone && nearestMs < 30 * 60_000
   const streakAtRisk = !allDone && !urgent && nearestMs < 8 * 3_600_000
 
-  // Total potencial de monedas con cuota como multiplicador (espejo del
-  // scoring server). Si no hay cuota → ×1 (fallback honesto, base 10).
-  // Capitán dobla el pick correspondiente. Pleno +100 si todo lleno.
-  // Potencial de monedas si acierta TODOS los picks. Mientras estamos
-  // todavía en transición al modelo de stake variable, mantenemos
-  // COIN_BASE=10 como aproximación de "stake medio". En el paso 2 del
-  // rediseño esto pasará a sum(stake[i] * odd[i] * boost[i]).
-  const COIN_BASE = 10
+  // Helper para extraer la cuota del lado elegido de un pick.
+  const oddFor = (m: QuinielaMatch, p: Pick | undefined): number => {
+    const o = m.odds
+    if (!o || !p) return 1
+    return p === '1' ? o.home : p === '2' ? o.away : (o.draw || 1)
+  }
+
+  // Stake total apostado en esta jornada. Suma los stakes de los picks
+  // elegidos. Picks sin pick (1X2) o con stake 0 no cuentan.
+  const totalStake = matches.reduce((sum, _, i) => {
+    if (!picks[i]) return sum
+    return sum + Math.max(0, Math.floor(stakes[i] ?? 0))
+  }, 0)
+
+  // Potencial total: suma de stake × cuota efectiva (con booster si
+  // aplica). + 100🪙 bonus si pleno (allDone).
   const potentialCoins = matches.reduce((sum, m, i) => {
     const p = picks[i]
     if (!p) return sum
-    const o = m.odds
-    const odd =
-      o ? (p === '1' ? o.home : p === '2' ? o.away : o.draw || 1) : 1
+    const stake = Math.max(0, Math.floor(stakes[i] ?? 0))
+    const odd = Math.max(1, oddFor(m, p))
     const boostMult = boostedIdx === i ? BOOSTER_MULTIPLIER : 1
-    const mult = Math.max(1, odd) * boostMult
-    return sum + COIN_BASE * mult
-  }, 0) + (allDone ? 100 : 0)
+    return sum + stake * odd * boostMult
+  }, 0) + (allDone ? SCORING.COINS_PLENO : 0)
   const potentialCoinsRound = Math.round(potentialCoins)
+
+  // ── Validaciones pre-submit ──
+  // Sin cuotas en algún pick = jornada bloqueada (modelo Ranked exige
+  // multiplicador real; sin él no se puede calcular retorno).
+  const oddsAvailable = matches.every(m => !!m.odds)
+  // Coste total si el user sella: stake + booster (si aplica + tiene saldo).
+  const boosterCost = (boostedIdx != null && authed) ? BOOSTER_COST : 0
+  const totalCharge = totalStake + boosterCost
+  const enoughBalance = !authed || totalCharge <= coinBalance
+  const canSeal = allDone && oddsAvailable && totalStake > 0 && enoughBalance && !submitting
 
   const handleSubmit = async () => {
     if (!allDone || submitting) return
+    setSubmitError(null)
+
+    // Validaciones de pre-flight — defendemos el client antes de
+    // golpear el server (que igual valida).
+    if (!oddsAvailable) {
+      setSubmitError('Jornada bloqueada: cuotas no disponibles. Volvé en unos minutos.')
+      return
+    }
+    if (totalStake <= 0) {
+      setSubmitError('Tenés que apostar al menos 1🪙 en algún pick.')
+      return
+    }
+    if (authed && totalCharge > coinBalance) {
+      setSubmitError(`Saldo insuficiente. Necesitás ${totalCharge}🪙 y tenés ${coinBalance}🪙.`)
+      return
+    }
+
     trackGameComplete({ game: 'quiniela', correct: matches.length, total: matches.length })
     setSubmitting(true)
+
     // Congela la cuota VIVA de la opción elegida (consenso real + tiempo),
     // igual que la que ve el usuario en la tarjeta. Es el multiplicador.
     let consRows: Awaited<ReturnType<typeof loadConsensus>> = []
@@ -110,12 +148,44 @@ export function PicksForm({
       picks: matches.map((m, i) => ({
         home: m.home, away: m.away, pick: picks[i],
         oddsAtPick: oddsForPick(m, picks[i]),
-        // Solo marcamos booster si el usuario está autenticado Y tiene saldo
-        // suficiente. Sin esto, el server lo strippearía igual; lo evitamos
-        // de raíz para que la UI no muestre un boost que no se va a aplicar.
-        boosted: authed && boostedIdx === i && coinBalance >= BOOSTER_COST,
+        // El booster solo aplica si el user está autenticado, el saldo
+        // cubre stake + booster, y ese pick tiene stake > 0.
+        boosted: authed && boostedIdx === i && coinBalance >= totalCharge && (stakes[i] ?? 0) > 0,
+        stake: Math.max(0, Math.floor(stakes[i] ?? 0)),
       })),
     }
+
+    // PHASE STAKE — descontar del wallet ANTES de sellar localmente.
+    // Sin auth: skip (modo invitado no descuenta nada, juega cosmético).
+    if (authed) {
+      try {
+        const res = await fetch('/api/quiniela/score', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            jornada: saved.jornada,
+            picks: saved.picks,
+            phase: 'stake',
+          }),
+        })
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({})) as { error?: string; needed?: number; balance?: number }
+          const msg =
+              j.error === 'insufficient_balance' ? `Saldo insuficiente. Necesitás ${j.needed}🪙 y tenés ${j.balance}🪙.`
+            : j.error === 'odds_unavailable'    ? 'Jornada bloqueada: cuotas no disponibles.'
+            : j.error === 'already_staked'      ? 'Ya sellaste esta jornada.'
+            : `No pudimos sellar (${j.error ?? 'error desconocido'}).`
+          setSubmitError(msg)
+          setSubmitting(false)
+          return
+        }
+      } catch {
+        setSubmitError('Error de red. Intentá de nuevo.')
+        setSubmitting(false)
+        return
+      }
+    }
+
     localStorage.setItem(QUINIELA_PICKS_KEY, JSON.stringify(saved))
     try {
       const raw = localStorage.getItem(LEAGUES_KEY)
@@ -235,13 +305,31 @@ export function PicksForm({
 
       <ProgressBar done={done} total={total} />
 
+      {/* Banner bloqueo por falta de cuotas (jornada en modo Ranked
+          exige cuotas reales — si the-odds-api se cayó, no se sella) */}
+      {!oddsAvailable && (
+        <div className="rounded-2xl px-5 py-4 flex items-center gap-3" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+          <span style={{ fontSize: 22 }}>⏸</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-black" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>Jornada en pausa</p>
+            <p className="text-[10px]" style={{ color: '#7A5A20', fontFamily: 'var(--font-sport)' }}>
+              Cuotas en actualización. Volvé en unos minutos para apostar.
+            </p>
+          </div>
+        </div>
+      )}
+
       {matches.map((m, i) => (
         <div key={i} className="flex flex-col">
           <MatchCard
             match={m}
             index={i}
             pick={picks[i]}
-            onPick={(p) => { setPicks((prev) => ({ ...prev, [i]: p })); if (!tutored) { setTutored(true); try { localStorage.setItem(TUTORED_KEY, '1') } catch {/* */} } }}
+            onPick={(p) => {
+              setPicks((prev) => ({ ...prev, [i]: p }))
+              setStakes((prev) => prev[i] != null ? prev : { ...prev, [i]: STAKE_DEFAULT })
+              if (!tutored) { setTutored(true); try { localStorage.setItem(TUTORED_KEY, '1') } catch {/* */} }
+            }}
             comp={m.comp}
             time={m.time}
             odds={m.odds}
@@ -251,6 +339,89 @@ export function PicksForm({
           {done >= 3 && <ConsensusBar match={m} userPick={picks[i]} jornada={jornada} />}
         </div>
       ))}
+
+      {/* ── Panel APUESTA: stake por pick + total ─────────────────── */}
+      {Object.keys(picks).length > 0 && oddsAvailable && (
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(145deg, rgba(34,197,94,0.05) 0%, rgba(16,185,129,0.02) 100%)', border: '1px solid rgba(34,197,94,0.18)' }}>
+          <div className="px-5 py-3.5 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(34,197,94,0.12)' }}>
+            <div className="flex items-center gap-2">
+              <span style={{ fontSize: 18 }}>💰</span>
+              <p className="text-xs font-black uppercase tracking-widest" style={{ color: '#4ade80', fontFamily: 'var(--font-sport)' }}>
+                Tu apuesta
+              </p>
+            </div>
+            <span className="text-[10px] font-black tabular-nums" style={{ color: authed ? '#86efac' : '#5A7068', fontFamily: 'var(--font-sport)' }}>
+              {authed ? `Saldo: ${coinBalance}🪙` : 'Inicia sesión para apostar'}
+            </span>
+          </div>
+          <div className="px-4 py-3 flex flex-col gap-2">
+            {matches.map((m, i) => {
+              const p = picks[i]
+              if (!p) return null
+              const stake = Math.max(0, Math.floor(stakes[i] ?? 0))
+              const odd = Math.max(1, oddFor(m, p))
+              const boostMult = boostedIdx === i ? BOOSTER_MULTIPLIER : 1
+              const ret = Math.round(stake * odd * boostMult)
+              const isBoosted = boostedIdx === i
+              return (
+                <div key={i} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.18)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  <span className="text-[10px] font-black flex-shrink-0" style={{ color: '#6A7A78', fontFamily: 'var(--font-sport)', minWidth: 18, textAlign: 'center' }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="text-[10px] font-bold truncate flex-1 min-w-0" style={{ color: '#C0E0C8', fontFamily: 'var(--font-display)' }}>
+                    {(m.homeShort ?? m.home).slice(0, 8)} <span style={{ color: '#4A5A55' }}>vs</span> {(m.awayShort ?? m.away).slice(0, 8)}
+                  </span>
+                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: 'rgba(124,58,237,0.18)', color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
+                    {p}
+                  </span>
+                  <span className="text-[9px] font-black tabular-nums flex-shrink-0" style={{ color: '#5A7A70', fontFamily: 'var(--font-display)' }}>
+                    ×{(odd * boostMult).toFixed(2)}{isBoosted && '⚡'}
+                  </span>
+                  <input
+                    type="number"
+                    min={STAKE_MIN}
+                    max={STAKE_MAX}
+                    value={stake}
+                    onChange={e => {
+                      const v = Math.max(0, Math.min(STAKE_MAX, Math.floor(Number(e.target.value) || 0)))
+                      setStakes(prev => ({ ...prev, [i]: v }))
+                    }}
+                    aria-label={`Stake para ${m.home} vs ${m.away}`}
+                    className="w-14 px-2 py-1 rounded text-xs font-black tabular-nums text-center outline-none flex-shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.06)', color: '#E0E0F0', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-display)' }}
+                  />
+                  <span className="text-[9px] font-bold tabular-nums flex-shrink-0" style={{ color: stake > 0 ? '#86efac' : '#3A4A45', fontFamily: 'var(--font-sport)', minWidth: 48, textAlign: 'right' }}>
+                    → {ret}🪙
+                  </span>
+                </div>
+              )
+            })}
+
+            <div className="flex items-center justify-between px-2 pt-2 mt-1" style={{ borderTop: '1px solid rgba(34,197,94,0.1)' }}>
+              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#4ade80', fontFamily: 'var(--font-sport)' }}>
+                Total apostado
+              </span>
+              <span className="text-sm font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>
+                {totalStake}🪙{boosterCost > 0 && ` + ${boosterCost}🪙 booster`}
+              </span>
+            </div>
+            <div className="flex items-center justify-between px-2">
+              <span className="text-[10px]" style={{ color: '#5A7A70', fontFamily: 'var(--font-sport)' }}>
+                Potencial máx. si acertás todo
+              </span>
+              <span className="text-xs font-black tabular-nums" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
+                {potentialCoinsRound}🪙
+              </span>
+            </div>
+
+            {authed && !enoughBalance && (
+              <div className="mt-2 rounded-lg px-3 py-2 text-[10px] text-center" style={{ background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', fontFamily: 'var(--font-sport)' }}>
+                Saldo insuficiente · necesitás {totalCharge - coinBalance}🪙 más
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Ajustes opcionales — colapsado por defecto, solo cuando ya hay picks */}
       {allDone && (
@@ -336,7 +507,25 @@ export function PicksForm({
         </div>
       )}
 
-      <StickyBetslip done={done} total={total} allDone={allDone} captainSet={false} urgent={urgent} onSubmit={handleSubmit} potential={potentialCoinsRound} />
+      {/* Error de submit (sin saldo, sin cuotas, red, etc) */}
+      {submitError && (
+        <div className="rounded-2xl px-4 py-3 flex items-start gap-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
+          <span style={{ fontSize: 16, lineHeight: 1, marginTop: 2 }}>⚠️</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-black" style={{ color: '#f87171', fontFamily: 'var(--font-display)' }}>{submitError}</p>
+          </div>
+          <button
+            onClick={() => setSubmitError(null)}
+            className="text-[10px] font-black px-2 py-1 rounded"
+            style={{ background: 'transparent', color: '#7a3838', border: '1px solid rgba(239,68,68,0.25)', fontFamily: 'var(--font-sport)' }}
+            aria-label="Cerrar mensaje"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+
+      <StickyBetslip done={done} total={total} allDone={canSeal} captainSet={false} urgent={urgent} onSubmit={handleSubmit} potential={potentialCoinsRound} />
     </div>
   )
 }
