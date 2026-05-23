@@ -96,7 +96,9 @@ export default async function Home({
     sanityClient.fetch(eventsQuery).catch(() => []),
     fetchEspnEvents().catch(() => []),
     fetchPublicReels().catch(() => []),
-    getRanking('jugadores').catch(() => []),
+    // El Sidebar del home solo pinta TOP 5 jugadores. Mandar los 200 de
+    // getRanking(...) inflaba el RSC payload de la home en ~500 KB sin uso.
+    getRanking('jugadores').then(r => r.slice(0, 5)).catch(() => []),
     Promise.all(
       HOME_SPORT_SLUGS.map(slug => {
         const slugs = Array.from(new Set([slug, ...(HOME_SLUG_ALIASES[slug] ?? [])]))

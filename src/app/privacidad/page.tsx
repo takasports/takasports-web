@@ -59,6 +59,40 @@ export default function PrivacidadPage() {
             incluyen contenido personal ni identificadores que puedan rastrear al usuario.
           </p>
 
+          <h3 className="text-lg font-semibold mt-6 mb-2">1.5 Newsletter</h3>
+          <p>
+            Si te suscribes a la newsletter desde el pie de la web (formulario con casilla de
+            consentimiento explícito), guardamos: tu <strong>email</strong>, la <strong>fecha y
+            hora del consentimiento</strong>, el <strong>origen</strong> (página de captación),
+            tu <strong>user-agent</strong> y un <strong>hash SHA-256 de tu IP</strong> (nunca la
+            IP en claro). Estos datos sirven como prueba del consentimiento conforme al RGPD.
+          </p>
+          <p className="mt-3">
+            <strong>Base legal:</strong> consentimiento explícito (Art. 6.1.a RGPD).
+            <br />
+            <strong>Retención:</strong> hasta que solicites tu baja. Cada email enviado incluye
+            un enlace de baja inmediata (un solo click). También puedes pedir la baja escribiendo
+            a hola@takasportsmedia.com.
+          </p>
+
+          <h3 className="text-lg font-semibold mt-6 mb-2">1.6 Comentarios en artículos</h3>
+          <p>
+            Si comentas en un artículo (requiere haber iniciado sesión), guardamos: el
+            <strong> texto de tu comentario</strong>, tu <strong>nombre público</strong>, tu
+            <strong> avatar</strong> (si lo proporcionaste al registrarte), tu <strong>user_id</strong>
+            de Supabase, el <strong>slug del artículo</strong> y la <strong>fecha de
+            publicación</strong>. Los comentarios son visibles públicamente.
+          </p>
+          <p className="mt-3">
+            Aplicamos un <strong>límite de 5 comentarios por hora</strong> para prevenir spam.
+            Cualquier usuario puede <strong>reportar un comentario</strong>; los que acumulen
+            varios reportes quedan automáticamente ocultos hasta revisión. Para borrar comentarios
+            propios o solicitar la eliminación de tus datos, escribe a hola@takasportsmedia.com.
+          </p>
+          <p className="mt-3">
+            <strong>Base legal:</strong> ejecución de los servicios solicitados (Art. 6.1.b RGPD).
+          </p>
+
           <h2 className="text-2xl font-bold mt-10 mb-3">2. Cómo usamos tus datos</h2>
           <ul className="list-disc pl-6 space-y-1">
             <li>Personalizar tu feed con los deportes y equipos que sigues.</li>
