@@ -236,14 +236,30 @@ export async function getRanking(category: RankingCategory): Promise<RankingEntr
  * Cada categoría con Supabase data se fetcha por separado para evitar
  * el límite de 1000 filas de Supabase en una query única.
  */
-export async function getAllRankings(): Promise<Record<RankingCategory, RankingEntry[]>> {
-  if (!supabaseConfigured()) return STATIC_FALLBACK
+export async function getAllRankings(
+  only?: ReadonlyArray<RankingCategory>,
+): Promise<Partial<Record<RankingCategory, RankingEntry[]>>> {
+  // El SSR de /rankings llama con `only` (categorías de la vista activa)
+  // para no serializar 12 categorías × 200 entries al HTML. Las categorías
+  // omitidas no se devuelven aquí — el cliente cae al STATIC_FALLBACK
+  // que ya vive en el bundle JS (importado por RankingsClient indirect).
+  // Si no se pasa `only`, devolvemos todas (compat con otros consumidores).
+  const targetCats = only && only.length > 0
+    ? DB_CATEGORIES.filter(c => only.includes(c))
+    : DB_CATEGORIES
+
+  if (!supabaseConfigured()) {
+    if (!only) return STATIC_FALLBACK
+    const partial: Partial<Record<RankingCategory, RankingEntry[]>> = {}
+    for (const c of only) partial[c] = STATIC_FALLBACK[c]
+    return partial
+  }
 
   try {
     const sb = getReadClient()
 
-    // Fetch en paralelo — una query por categoría, top MAX_ROWS_PER_CAT
-    const fetches = DB_CATEGORIES.map(cat =>
+    // Fetch en paralelo — una query por categoría objetivo
+    const fetches = targetCats.map(cat =>
       sb
         .from('ranking_view')
         .select('*')
@@ -254,7 +270,21 @@ export async function getAllRankings(): Promise<Record<RankingCategory, RankingE
     )
     const results = await Promise.all(fetches)
 
-    // Parte del fallback estático — las categorías sin DB quedan intactas
+    // Si `only` está, devolvemos SOLO esas categorías (no fundimos con
+    // STATIC_FALLBACK aquí — el cliente lo hace por defecto si dbData[cat]
+    // viene undefined). Si no, devolvemos el bag completo como antes.
+    if (only) {
+      const partial: Partial<Record<RankingCategory, RankingEntry[]>> = {}
+      for (const { cat, rows } of results) {
+        if (rows && rows.length > 0) {
+          partial[cat] = rows.map(rowToEntry)
+        } else {
+          partial[cat] = STATIC_FALLBACK[cat]
+        }
+      }
+      return partial
+    }
+
     const result = { ...STATIC_FALLBACK } as Record<RankingCategory, RankingEntry[]>
     for (const { cat, rows } of results) {
       if (rows && rows.length > 0) {
@@ -263,6 +293,11 @@ export async function getAllRankings(): Promise<Record<RankingCategory, RankingE
     }
     return result
   } catch {
+    if (only) {
+      const partial: Partial<Record<RankingCategory, RankingEntry[]>> = {}
+      for (const c of only) partial[c] = STATIC_FALLBACK[c]
+      return partial
+    }
     return STATIC_FALLBACK
   }
 }

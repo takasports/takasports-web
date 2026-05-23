@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import RankingsClient from './RankingsClient'
-import { getTopMovers, getAllRankings, getLastIngestTime } from '@/lib/rankings-data'
+import { getTopMovers, getAllRankings, getLastIngestTime, type RankingCategory } from '@/lib/rankings-data'
 
 // Rankings: cachear 5 min para reflejar cambios editoriales rápidamente
 export const revalidate = 300
@@ -169,14 +169,59 @@ function buildItemListJsonLd(sp: SP) {
   }
 }
 
+// Decide qué categorías cargar en SSR según la vista activa.
+// Las omitidas no se serializan al HTML — el cliente cae al STATIC_FALLBACK
+// que ya vive en el bundle JS. Default: jugadores + jugadoras (vista inicial).
+function categoriesForView(sp: SP): RankingCategory[] {
+  const tab = pickStr(sp, 'tab') || 'jugadores'
+  const gender = pickStr(sp, 'gender')
+  const scope = pickStr(sp, 'scope')
+  const deporte = pickStr(sp, 'deporte')
+
+  const set = new Set<RankingCategory>()
+
+  if (tab === 'jugadores') {
+    set.add('jugadores')
+    // Cargamos también la versión opuesta de gender para que el toggle
+    // sea inmediato (sin refetch) en la mayoría de combinaciones.
+    if (gender === 'f') set.add('jugadores')
+    set.add('jugadoras')
+    if (scope === 'sub21') set.add('sub21')
+    if (scope === 'pais') {
+      set.add('latam')
+      set.add('concacaf')
+    }
+    if (deporte === 'ufc' && gender === 'f') set.add('luchadoras_ufc')
+    if (deporte === 'wwe') set.add('creadores_wwe')
+  } else if (tab === 'clubes') {
+    set.add('clubes')
+    set.add('clubes_femenino')
+  } else if (tab === 'entrenadores') {
+    set.add('entrenadores')
+  } else if (tab === 'creadores' || tab === 'periodistas') {
+    // contenidoTypeMap necesita las 3 para clasificar Creador/Periodista
+    set.add('creadores')
+    set.add('periodistas')
+    set.add('creadores_wwe')
+  } else {
+    set.add('jugadores')
+    set.add('jugadoras')
+  }
+
+  return Array.from(set)
+}
+
 // ── Página (server) ────────────────────────────────────────────────
 export default async function Page(
   { searchParams }: { searchParams: Promise<SP> }
 ) {
+  const spResolved = await searchParams
+  const targetCats = categoriesForView(spResolved)
+
   const [sp, { movers, fallers }, dbData, lastUpdated] = await Promise.all([
-    searchParams,
+    Promise.resolve(spResolved),
     getTopMovers(3),
-    getAllRankings(),
+    getAllRankings(targetCats),
     getLastIngestTime(),
   ])
   const jsonLd = buildItemListJsonLd(sp)
