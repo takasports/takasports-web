@@ -29,13 +29,6 @@ export interface SavedPick {
   // obligatoria — sin cuotas reales (the-odds-api caída) la jornada
   // se bloquea aparte.
   oddsAtPick?: number
-  // Booster activado por el usuario al sellar este pick. Si true, la
-  // cuota efectiva se multiplica ×BOOSTER_MULTIPLIER (+20%) — premia
-  // un poco más si acierta. Coste: BOOSTER_COST monedas, descontado
-  // server-side en /api/quiniela/score. Sin auth o sin saldo, el server
-  // strip-pea este flag antes del scoring para evitar bonus gratis.
-  // Máx 1 booster por jornada (validado server-side).
-  boosted?: boolean
   // Monedas apostadas en este pick (Ranked). Se descuentan del wallet
   // al sellar, se devuelven multiplicadas por la cuota si acierta. En
   // ligas privadas (que son por puntos, no monedas) este campo se
@@ -113,7 +106,7 @@ export function isCorrect(pick: Pick, outcome: Outcome): boolean {
 // ── Sistema de puntuación: dos pistas paralelas ────────────────────
 //
 // RANKED (modo principal, por monedas):
-//   · Coins ganadas por pick acertado = stake × cuota × (boosted? 1.2 : 1)
+//   · Coins ganadas por pick acertado = stake × cuota
 //   · Stake se descuenta al sellar; las ganancias se acreditan al cierre.
 //   · Sin acertar = pierde el stake (ya descontado, no se devuelve).
 //   · +COINS_PARTICIPATE por sellar (engagement diario).
@@ -138,9 +131,6 @@ export const SCORING = {
   STAKE_MIN: 1,
   STAKE_MAX: 200,
   STAKE_DEFAULT: 10,
-  // Booster (Ranked)
-  BOOSTER_MULTIPLIER: 1.2,  // +20% sobre la cuota base si acierta
-  BOOSTER_COST: 30,         // monedas que cuesta activar el booster
 } as const
 
 export interface PickScore {
@@ -148,7 +138,7 @@ export interface PickScore {
   points: number       // puntos (ligas privadas) — 0 o TENDENCY
   coins: number        // monedas Ranked ganadas (stake × cuota × boost) si acierta, 0 si no
   stake: number        // stake declarado del pick (0 si no se apostó / liga privada)
-  oddsApplied: number  // cuota efectiva usada en el cálculo (incluye booster si aplica)
+  oddsApplied: number  // cuota efectiva usada en el cálculo
 }
 
 export interface ScoreBreakdown {
@@ -170,11 +160,11 @@ export function scorePick(
   }
   const hit = isCorrect(pick.pick, result.outcome)
 
-  // Cuota efectiva = cuota congelada × booster (+20% si aplica y acierta).
+  // Cuota efectiva = cuota congelada del pick en el momento de sellar.
   // Sin cuota real (the-odds-api caída) → ×1, pero el flow Ranked debería
   // bloquear la jornada antes de llegar aquí (validación aparte).
   const baseOdd = Math.max(1, pick.oddsAtPick ?? 1)
-  const oddsApplied = hit && pick.boosted ? baseOdd * SCORING.BOOSTER_MULTIPLIER : (hit ? baseOdd : 1)
+  const oddsApplied = hit ? baseOdd : 1
 
   // Puntos (ligas privadas): tendencia binaria. No depende de cuota ni stake.
   const points = hit ? SCORING.TENDENCY : 0

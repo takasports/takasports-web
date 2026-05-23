@@ -17,10 +17,6 @@ import { StreakHero } from './StreakHero'
 import { QuickPickIA } from './QuickPickIA'
 import { StickyBetslip } from './StickyBetslip'
 
-// Booster: cuesta BOOSTER_COST monedas, multiplica ×1.20 la cuota efectiva
-// del pick boosted si acierta. Se descuenta server-side al sellar.
-const BOOSTER_COST = SCORING.BOOSTER_COST
-const BOOSTER_MULTIPLIER = SCORING.BOOSTER_MULTIPLIER
 // Stake: monedas que se apuestan por pick. Reglas idénticas server-side.
 const STAKE_MIN = SCORING.STAKE_MIN
 const STAKE_MAX = SCORING.STAKE_MAX
@@ -35,15 +31,13 @@ export function PicksForm({
   onSubmit: (s: QuinielaSaved) => void
   streakCurrent?: number
   onParticipation?: (jornada: string) => void
-  /** Saldo actual del wallet (del usuario o invitado) — para validar booster. */
+  /** Saldo actual del wallet (del usuario o invitado) — para validar que tiene saldo para apostar. */
   coinBalance?: number
   /** Hay sesión Supabase activa — sin auth no hay cobro real, así que ocultamos el botón. */
   authed?: boolean
 }) {
   const [picks, setPicks]             = useState<Record<number, Pick>>({})
   const [stakes, setStakes]           = useState<Record<number, number>>({})
-  const [boostedIdx, setBoostedIdx]   = useState<number | null>(null)
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const [now, setNow]                 = useState(Date.now())
   const [submitting, setSubmitting]   = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -89,15 +83,14 @@ export function PicksForm({
     return sum + Math.max(0, Math.floor(stakes[i] ?? 0))
   }, 0)
 
-  // Potencial total: suma de stake × cuota efectiva (con booster si
-  // aplica). + 100🪙 bonus si pleno (allDone).
+  // Potencial total: suma de stake × cuota efectiva.
+  // + 100🪙 bonus si pleno (allDone).
   const potentialCoins = matches.reduce((sum, m, i) => {
     const p = picks[i]
     if (!p) return sum
     const stake = Math.max(0, Math.floor(stakes[i] ?? 0))
     const odd = Math.max(1, oddFor(m, p))
-    const boostMult = boostedIdx === i ? BOOSTER_MULTIPLIER : 1
-    return sum + stake * odd * boostMult
+    return sum + stake * odd
   }, 0) + (allDone ? SCORING.COINS_PLENO : 0)
   const potentialCoinsRound = Math.round(potentialCoins)
 
@@ -105,10 +98,7 @@ export function PicksForm({
   // Sin cuotas en algún pick = jornada bloqueada (modelo Ranked exige
   // multiplicador real; sin él no se puede calcular retorno).
   const oddsAvailable = matches.every(m => !!m.odds)
-  // Coste total si el user sella: stake + booster (si aplica + tiene saldo).
-  const boosterCost = (boostedIdx != null && authed) ? BOOSTER_COST : 0
-  const totalCharge = totalStake + boosterCost
-  const enoughBalance = !authed || totalCharge <= coinBalance
+  const enoughBalance = !authed || totalStake <= coinBalance
   const canSeal = allDone && oddsAvailable && totalStake > 0 && enoughBalance && !submitting
 
   const handleSubmit = async () => {
@@ -125,8 +115,8 @@ export function PicksForm({
       setSubmitError('Tenés que apostar al menos 1🪙 en algún pick.')
       return
     }
-    if (authed && totalCharge > coinBalance) {
-      setSubmitError(`Saldo insuficiente. Necesitás ${totalCharge}🪙 y tenés ${coinBalance}🪙.`)
+    if (authed && totalStake > coinBalance) {
+      setSubmitError(`Saldo insuficiente. Necesitás ${totalStake}🪙 y tenés ${coinBalance}🪙.`)
       return
     }
 
@@ -148,9 +138,6 @@ export function PicksForm({
       picks: matches.map((m, i) => ({
         home: m.home, away: m.away, pick: picks[i],
         oddsAtPick: oddsForPick(m, picks[i]),
-        // El booster solo aplica si el user está autenticado, el saldo
-        // cubre stake + booster, y ese pick tiene stake > 0.
-        boosted: authed && boostedIdx === i && coinBalance >= totalCharge && (stakes[i] ?? 0) > 0,
         stake: Math.max(0, Math.floor(stakes[i] ?? 0)),
       })),
     }
@@ -360,9 +347,7 @@ export function PicksForm({
               if (!p) return null
               const stake = Math.max(0, Math.floor(stakes[i] ?? 0))
               const odd = Math.max(1, oddFor(m, p))
-              const boostMult = boostedIdx === i ? BOOSTER_MULTIPLIER : 1
-              const ret = Math.round(stake * odd * boostMult)
-              const isBoosted = boostedIdx === i
+              const ret = Math.round(stake * odd)
               return (
                 <div key={i} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.18)', border: '1px solid rgba(255,255,255,0.04)' }}>
                   <span className="text-[10px] font-black flex-shrink-0" style={{ color: '#6A7A78', fontFamily: 'var(--font-sport)', minWidth: 18, textAlign: 'center' }}>
@@ -375,7 +360,7 @@ export function PicksForm({
                     {p}
                   </span>
                   <span className="text-[9px] font-black tabular-nums flex-shrink-0" style={{ color: '#5A7A70', fontFamily: 'var(--font-display)' }}>
-                    ×{(odd * boostMult).toFixed(2)}{isBoosted && '⚡'}
+                    ×{odd.toFixed(2)}
                   </span>
                   <input
                     type="number"
@@ -402,7 +387,7 @@ export function PicksForm({
                 Total apostado
               </span>
               <span className="text-sm font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>
-                {totalStake}🪙{boosterCost > 0 && ` + ${boosterCost}🪙 booster`}
+                {totalStake}🪙
               </span>
             </div>
             <div className="flex items-center justify-between px-2">
@@ -416,94 +401,10 @@ export function PicksForm({
 
             {authed && !enoughBalance && (
               <div className="mt-2 rounded-lg px-3 py-2 text-[10px] text-center" style={{ background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', fontFamily: 'var(--font-sport)' }}>
-                Saldo insuficiente · necesitás {totalCharge - coinBalance}🪙 más
+                Saldo insuficiente · necesitás {totalStake - coinBalance}🪙 más
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Ajustes opcionales — colapsado por defecto, solo cuando ya hay picks */}
-      {allDone && (
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <button
-            onClick={() => setShowAdvanced(v => !v)}
-            className="w-full flex items-center gap-3 px-5 py-3.5 text-left"
-            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            <span style={{ fontSize: 16 }}>⚡</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>Booster · multiplicador extra</p>
-              <p className="text-[9px]" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>+20% cuota en un pick a cambio de 30🪙</p>
-            </div>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: showAdvanced ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#5A5A7A' }}>
-              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-
-          {showAdvanced && (
-            <div className="px-4 pb-4 flex flex-col gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-
-              {/* ── Booster (1 pick por jornada) ────────────────── */}
-              {authed && (
-                <div className="pt-4">
-                  <div className="flex items-baseline justify-between mb-1">
-                    <p className="text-xs font-black" style={{ color: '#F9A8D4', fontFamily: 'var(--font-display)' }}>
-                      Booster · +20% cuota
-                    </p>
-                    <span className="text-[10px] font-black tabular-nums" style={{ color: coinBalance >= BOOSTER_COST ? '#F472B6' : '#8E5A78', fontFamily: 'var(--font-sport)' }}>
-                      Coste: {BOOSTER_COST} 🪙 · Saldo: {coinBalance}
-                    </span>
-                  </div>
-                  <p className="text-[9px] mb-3" style={{ color: '#7A4A68', fontFamily: 'var(--font-sport)' }}>
-                    Elegí 1 pick para multiplicar su cuota efectiva. Sólo se cobra si lo sellás.
-                  </p>
-                  {coinBalance < BOOSTER_COST ? (
-                    <div className="rounded-xl px-3 py-2.5 text-[10px] text-center" style={{ background: 'rgba(255,255,255,0.03)', color: '#6A6A8A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}>
-                      Necesitás {BOOSTER_COST - coinBalance} 🪙 más para activar el booster.
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                      {matches.map((m, i) => {
-                        const p = picks[i] as Pick | undefined
-                        if (!p) return null
-                        const active = boostedIdx === i
-                        return (
-                          <button
-                            key={i}
-                            onClick={() => setBoostedIdx(prev => prev === i ? null : i)}
-                            className="px-3 py-1.5 rounded-xl font-black transition-all inline-flex items-center gap-1.5"
-                            style={{
-                              fontSize: 11, fontFamily: 'var(--font-display)',
-                              background: active ? 'rgba(244,114,182,0.18)' : 'rgba(255,255,255,0.04)',
-                              color: active ? '#F9A8D4' : '#6A6A8A',
-                              border: active ? '1.5px solid rgba(244,114,182,0.5)' : '1px solid rgba(255,255,255,0.08)',
-                              boxShadow: active ? '0 0 12px rgba(244,114,182,0.25)' : 'none',
-                            }}
-                            aria-pressed={active}
-                          >
-                            {active && <span style={{ fontSize: 10 }}>⚡</span>}
-                            {(m.homeShort ?? m.home).slice(0, 3).toUpperCase()}-{(m.awayShort ?? m.away).slice(0, 3).toUpperCase()}
-                            <span style={{ fontSize: 8, opacity: 0.7 }}>{p}</span>
-                          </button>
-                        )
-                      })}
-                      {boostedIdx != null && (
-                        <button
-                          onClick={() => setBoostedIdx(null)}
-                          className="px-3 py-1.5 rounded-xl font-black"
-                          style={{ fontSize: 10, fontFamily: 'var(--font-sport)', background: 'transparent', color: '#5A4070', border: '1px dashed rgba(255,255,255,0.1)' }}
-                        >
-                          Quitar
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-            </div>
-          )}
         </div>
       )}
 

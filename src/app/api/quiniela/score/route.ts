@@ -3,10 +3,10 @@
 // El endpoint opera en DOS FASES según el body.phase:
 //
 //   · phase='stake'   → al sellar la quiniela en PicksForm. Valida saldo
-//                       y cuotas, descuenta totalStake + boosterCost de
-//                       una sola vez vía add_coins(-monto), persiste
-//                       quiniela_picks con {staked:true, settled:false}.
-//                       No calcula ganancias (los partidos aún no pasaron).
+//                       y cuotas, descuenta totalStake vía add_coins
+//                       (-totalStake), persiste quiniela_picks con
+//                       {staked:true, settled:false}. No calcula
+//                       ganancias (los partidos aún no pasaron).
 //
 //   · phase='settle'  → al cierre, cuando PicksSummary detecta que TODOS
 //                       los picks tienen resultado oficial. Lee los picks
@@ -25,7 +25,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { scorePicks, SCORING, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
+import { scorePicks, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
 
 type Phase = 'stake' | 'settle'
 
@@ -113,9 +113,6 @@ function validateBody(body: ScoreBody): { status: number; error: string } | null
     seen.add(key)
   }
 
-  const boostedCount = body.picks.filter(p => p.boosted === true).length
-  if (boostedCount > 1) return { status: 400, error: 'max 1 booster per jornada' }
-
   return null
 }
 
@@ -148,8 +145,7 @@ export async function POST(req: NextRequest) {
       if (phase) return NextResponse.json({ error: 'auth required' }, { status: 401 })
       const results = await fetchResults(origin)
       if (!results) return NextResponse.json({ error: 'results unavailable' }, { status: 503 })
-      const safePicks = body.picks.map(p => ({ ...p, boosted: false }))
-      const breakdown = scorePicks(safePicks, results)
+      const breakdown = scorePicks(body.picks, results)
       return NextResponse.json({ breakdown, evaluated: results.length, persisted: false })
     }
 
@@ -159,8 +155,7 @@ export async function POST(req: NextRequest) {
       if (phase) return NextResponse.json({ error: 'auth required' }, { status: 401 })
       const results = await fetchResults(origin)
       if (!results) return NextResponse.json({ error: 'results unavailable' }, { status: 503 })
-      const safePicks = body.picks.map(p => ({ ...p, boosted: false }))
-      const breakdown = scorePicks(safePicks, results)
+      const breakdown = scorePicks(body.picks, results)
       return NextResponse.json({ breakdown, evaluated: results.length })
     }
 
@@ -219,14 +214,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'no stake to bet' }, { status: 400 })
       }
 
-      // Booster: solo válido si el pick tiene stake > 0.
-      const boostedPickIdx = body.picks.findIndex(p => p.boosted === true)
-      if (boostedPickIdx >= 0 && (body.picks[boostedPickIdx].stake ?? 0) <= 0) {
-        return NextResponse.json({ error: 'booster requires stake > 0 in that pick' }, { status: 400 })
-      }
-      const boosterCost = boostedPickIdx >= 0 ? SCORING.BOOSTER_COST : 0
-      const totalCharge = totalStake + boosterCost
-
       // Validar saldo.
       const { data: balRow } = await sb
         .from('quiniela_coin_balance')
@@ -234,24 +221,21 @@ export async function POST(req: NextRequest) {
         .eq('user_id', user.id)
         .maybeSingle()
       const balance = balRow?.balance ?? 0
-      if (balance < totalCharge) {
+      if (balance < totalStake) {
         return NextResponse.json(
-          { error: 'insufficient_balance', needed: totalCharge, balance },
+          { error: 'insufficient_balance', needed: totalStake, balance },
           { status: 422 },
         )
       }
 
-      // Descontar en una sola transacción (stake + booster juntos).
-      const reasonParts: string[] = [`Quiniela ${body.jornada}: apuesta`]
-      if (boosterCost > 0) reasonParts.push('+ booster')
+      // Descontar totalStake.
       const { error: chargeErr } = await sb.rpc('add_coins', {
-        p_amount: -totalCharge,
-        p_reason: reasonParts.join(' '),
+        p_amount: -totalStake,
+        p_reason: `Quiniela ${body.jornada}: apuesta sellada`,
         p_context: {
           source: 'quiniela_stake',
           jornada: body.jornada,
           totalStake,
-          boosterCost,
         },
       })
       if (chargeErr) {
@@ -264,7 +248,7 @@ export async function POST(req: NextRequest) {
         picks: body.picks,
         staked: true,
         settled: false,
-        totalStakeCharged: totalCharge,
+        totalStakeCharged: totalStake,
         stakedAt: new Date().toISOString(),
       }
       const { error: upsertErr } = await sb.from('quiniela_picks').upsert({
@@ -279,7 +263,7 @@ export async function POST(req: NextRequest) {
         // requiere intervención manual via SQL.
         try {
           await sb.rpc('add_coins', {
-            p_amount: totalCharge,
+            p_amount: totalStake,
             p_reason: `Rollback Quiniela ${body.jornada} (persistencia fallida)`,
             p_context: { source: 'quiniela_stake_rollback', jornada: body.jornada },
           })
@@ -291,9 +275,8 @@ export async function POST(req: NextRequest) {
         phase: 'stake',
         staked: true,
         totalStake,
-        boosterCost,
-        totalStakeCharged: totalCharge,
-        balanceAfter: balance - totalCharge,
+        totalStakeCharged: totalStake,
+        balanceAfter: balance - totalStake,
       })
     }
 
@@ -426,8 +409,7 @@ export async function POST(req: NextRequest) {
 
     const results = await fetchResults(origin)
     if (!results) return NextResponse.json({ error: 'results unavailable' }, { status: 503 })
-    const safePicks = body.picks.map(p => ({ ...p, boosted: false }))
-    const breakdown = scorePicks(safePicks, results)
+    const breakdown = scorePicks(body.picks, results)
     return NextResponse.json({
       breakdown,
       evaluated: results.length,

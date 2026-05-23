@@ -45,10 +45,10 @@ export const ONBOARDING_STEPS: { emoji: string; title: string; body: string; hin
     hint: 'Default 10🪙 por pick · podés bajarlo o subirlo en el panel «Tu apuesta».',
   },
   {
-    emoji: '⚡',
-    title: 'Booster y goleador destacado',
-    body: 'Una vez por jornada podés activar un Booster: 30🪙 que suman +20% a la cuota de UN pick. Además hay 1 partido destacado por jornada donde elegís quién marcará gol — gratis, da 100/200/350🪙 según los goles.',
-    hint: 'El booster solo se cobra si sellás. El goleador es opcional pero no cuesta nada participar.',
+    emoji: '⚽',
+    title: 'Goleador del partido destacado',
+    body: 'Cada jornada hay 1 partido destacado (el de mayor calidad). Podés elegir gratis quién marcará gol ahí: si tu jugador anota recibís bonus extra — 100🪙 si marca 1, 200🪙 si marca 2, 350🪙 si hace hat-trick.',
+    hint: 'No cuesta nada participar · el partido destacado se autoselecciona cada jornada.',
   },
   {
     emoji: '🏆',
