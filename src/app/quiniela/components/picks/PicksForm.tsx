@@ -38,6 +38,11 @@ export function PicksForm({
 }) {
   const [picks, setPicks]             = useState<Record<number, Pick>>({})
   const [stakes, setStakes]           = useState<Record<number, number>>({})
+  // Picks que el user fijó explícitamente. Es UX para "confirmar y bajar
+  // al siguiente" — compacta la card y permite enfoque en lo pendiente.
+  // No es estrictamente obligatorio fijar para sellar: si el user pulsa
+  // "Cerrar apuesta" en el sticky, los stakes > 0 cuentan igual.
+  const [fixedPicks, setFixedPicks]   = useState<Set<number>>(new Set())
   const [now, setNow]                 = useState(Date.now())
   const [submitting, setSubmitting]   = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -307,7 +312,7 @@ export function PicksForm({
       )}
 
       {matches.map((m, i) => (
-        <div key={i} className="flex flex-col">
+        <div key={i} id={`pick-card-${i}`} className="flex flex-col">
           <MatchCard
             match={m}
             index={i}
@@ -315,6 +320,14 @@ export function PicksForm({
             onPick={(p) => {
               setPicks((prev) => ({ ...prev, [i]: p }))
               setStakes((prev) => prev[i] != null ? prev : { ...prev, [i]: STAKE_DEFAULT })
+              // Si cambia de pick, sale del estado fijado (la cuota
+              // efectiva cambió, hay que reconfirmar).
+              setFixedPicks((prev) => {
+                if (!prev.has(i)) return prev
+                const next = new Set(prev)
+                next.delete(i)
+                return next
+              })
               if (!tutored) { setTutored(true); try { localStorage.setItem(TUTORED_KEY, '1') } catch {/* */} }
             }}
             comp={m.comp}
@@ -323,150 +336,84 @@ export function PicksForm({
             oddsSource={m.oddsSource}
             isoDate={m.isoDate}
             jornada={jornada}
+            showStakeBar
+            stake={stakes[i]}
+            onStakeChange={(v) => setStakes((prev) => ({ ...prev, [i]: v }))}
+            fixed={fixedPicks.has(i)}
+            stakeMin={STAKE_MIN}
+            stakeMax={STAKE_MAX}
+            stakeDefault={STAKE_DEFAULT}
+            onFix={() => {
+              setFixedPicks((prev) => {
+                const next = new Set(prev)
+                next.add(i)
+                return next
+              })
+              // Scroll suave al próximo pick pendiente (sin pick o
+              // con pick pero sin fijar). Si no queda ninguno, scroll
+              // al sticky bottom para que vea "Cerrar apuesta".
+              if (typeof window !== 'undefined') {
+                requestAnimationFrame(() => {
+                  const nextIdx = matches.findIndex((_, j) =>
+                    j > i && (!picks[j] || !fixedPicks.has(j))
+                  )
+                  const target = nextIdx >= 0
+                    ? document.getElementById(`pick-card-${nextIdx}`)
+                    : null
+                  if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  }
+                })
+              }
+            }}
+            onEdit={() => {
+              setFixedPicks((prev) => {
+                if (!prev.has(i)) return prev
+                const next = new Set(prev)
+                next.delete(i)
+                return next
+              })
+            }}
           />
           {done >= 3 && <ConsensusBar match={m} userPick={picks[i]} jornada={jornada} />}
         </div>
       ))}
 
-      {/* ── BOLETA DE APUESTAS (estilo casa de apuestas real) ────────
-          Cada pick es UNA APUESTA INDEPENDIENTE — no se combina.
-          stake × cuota por pick, suma de stakes = total apostado. */}
+      {/* Resumen MÍNIMO al pie — solo cuando hay al menos un pick.
+          No es un panel separado de "boleta" (eso se eliminó por
+          ser confuso) sino un recordatorio compacto del estado:
+          cuánto va apostado en total + saldo restante.
+          La apuesta real se hace DENTRO de cada MatchCard. */}
       {Object.keys(picks).length > 0 && oddsAvailable && (
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(155deg, rgba(34,197,94,0.10) 0%, rgba(16,185,129,0.04) 60%, rgba(8,0,14,0.6) 100%)', border: '1px solid rgba(34,197,94,0.28)', boxShadow: '0 12px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(134,239,172,0.08)' }}>
-          {/* Header con icono ticket + título grande + saldo */}
-          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(34,197,94,0.2)', background: 'rgba(0,0,0,0.25)' }}>
-            <div className="flex items-center gap-2.5">
-              <span style={{ fontSize: 22, lineHeight: 1 }}>🎫</span>
-              <div>
-                <p className="text-sm font-black uppercase tracking-widest" style={{ color: '#86efac', fontFamily: 'var(--font-sport)', letterSpacing: '0.1em' }}>
-                  Tu boleta
-                </p>
-                <p className="text-[9px]" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>
-                  Cada partido es una apuesta independiente · no combinada
-                </p>
-              </div>
-            </div>
-            {authed ? (
-              <div className="flex flex-col items-end">
-                <span className="text-[9px] uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>Saldo</span>
-                <span className="text-sm font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>{coinBalance}🪙</span>
-              </div>
-            ) : (
-              <span className="text-[10px] font-black" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>
-                Iniciá sesión para apostar
-              </span>
-            )}
-          </div>
-
-          {/* Lista de picks como "boletas" individuales */}
-          <div className="px-3 py-3 flex flex-col gap-2">
-            {matches.map((m, i) => {
-              const p = picks[i]
-              if (!p) return null
-              const stake = Math.max(0, Math.floor(stakes[i] ?? 0))
-              const odd = Math.max(1, oddFor(m, p))
-              const ret = Math.round(stake * odd)
-              const profit = ret - stake
-              const lado = p === '1' ? (m.homeShort ?? m.home) : p === '2' ? (m.awayShort ?? m.away) : 'Empate'
-              return (
-                <div key={i} className="rounded-xl overflow-hidden" style={{ background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  {/* Fila superior: nº + equipos + cuota grande */}
-                  <div className="px-3 py-2 flex items-center gap-2" style={{ borderBottom: '1px dashed rgba(255,255,255,0.04)' }}>
-                    <span className="text-[9px] font-black tabular-nums flex-shrink-0" style={{ color: '#3A5A48', fontFamily: 'var(--font-sport)', minWidth: 18, textAlign: 'center' }}>
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-bold truncate" style={{ color: '#D0E8D8', fontFamily: 'var(--font-display)' }}>
-                        {(m.homeShort ?? m.home).slice(0, 12)} <span style={{ color: '#4A5A55' }}>vs</span> {(m.awayShort ?? m.away).slice(0, 12)}
-                      </p>
-                      <p className="text-[9px] truncate" style={{ color: '#3A5A48', fontFamily: 'var(--font-sport)' }}>
-                        Tu pick: <span style={{ color: '#86efac', fontWeight: 700 }}>{lado}</span>
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end flex-shrink-0">
-                      <span className="text-[8px] uppercase tracking-widest" style={{ color: '#3A5A48', fontFamily: 'var(--font-sport)' }}>Cuota</span>
-                      <span className="text-base font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)', lineHeight: 1 }}>
-                        ×{odd.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Fila inferior: stake input + retorno */}
-                  <div className="px-3 py-2.5 flex items-center gap-3" style={{ background: 'rgba(0,0,0,0.2)' }}>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>Apostás</span>
-                      <button
-                        type="button"
-                        onClick={() => setStakes(prev => ({ ...prev, [i]: Math.max(STAKE_MIN, (prev[i] ?? STAKE_DEFAULT) - 5) }))}
-                        aria-label="Bajar stake"
-                        className="w-6 h-6 rounded font-black flex items-center justify-center transition-opacity hover:opacity-80"
-                        style={{ background: 'rgba(255,255,255,0.06)', color: '#86efac', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-display)', fontSize: 14, lineHeight: 1, cursor: 'pointer' }}
-                      >−</button>
-                      <input
-                        type="number"
-                        min={STAKE_MIN}
-                        max={STAKE_MAX}
-                        value={stake}
-                        onChange={e => {
-                          const v = Math.max(0, Math.min(STAKE_MAX, Math.floor(Number(e.target.value) || 0)))
-                          setStakes(prev => ({ ...prev, [i]: v }))
-                        }}
-                        aria-label={`Stake para ${m.home} vs ${m.away}`}
-                        className="w-14 px-2 py-1 rounded text-sm font-black tabular-nums text-center outline-none"
-                        style={{ background: 'rgba(0,0,0,0.4)', color: '#E0F0E5', border: '1px solid rgba(134,239,172,0.25)', fontFamily: 'var(--font-display)' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setStakes(prev => ({ ...prev, [i]: Math.min(STAKE_MAX, (prev[i] ?? STAKE_DEFAULT) + 5) }))}
-                        aria-label="Subir stake"
-                        className="w-6 h-6 rounded font-black flex items-center justify-center transition-opacity hover:opacity-80"
-                        style={{ background: 'rgba(255,255,255,0.06)', color: '#86efac', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-display)', fontSize: 14, lineHeight: 1, cursor: 'pointer' }}
-                      >+</button>
-                      <span className="text-[10px] font-bold" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>🪙</span>
-                    </div>
-                    <span className="flex-1" />
-                    <div className="flex flex-col items-end flex-shrink-0">
-                      <span className="text-[8px] uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>Si acertás</span>
-                      <span className="text-sm font-black tabular-nums" style={{ color: stake > 0 ? '#fbbf24' : '#3A4A45', fontFamily: 'var(--font-display)', lineHeight: 1 }}>
-                        {ret}🪙
-                      </span>
-                      {stake > 0 && profit > 0 && (
-                        <span className="text-[8px] font-bold tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-sport)' }}>
-                          +{profit} ganancia
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Totales destacados */}
-          <div className="px-5 py-4" style={{ background: 'rgba(0,0,0,0.35)', borderTop: '1px solid rgba(34,197,94,0.2)' }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>
+        <div
+          className="rounded-2xl px-5 py-3 flex items-center justify-between flex-wrap gap-2"
+          style={{
+            background: 'rgba(34,197,94,0.05)',
+            border: '1px solid rgba(34,197,94,0.18)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: 16, lineHeight: 1 }}>💰</span>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>
                 Total apostado en la fecha
-              </span>
-              <span className="text-lg font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>
+              </p>
+              <p className="text-lg font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)', lineHeight: 1 }}>
                 {totalStake}🪙
-              </span>
+              </p>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>
-                Si acertás todos los partidos
-              </span>
-              <span className="text-base font-black tabular-nums" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
-                {potentialCoinsRound}🪙
-              </span>
-            </div>
-
-            {authed && !enoughBalance && (
-              <div className="mt-3 rounded-lg px-3 py-2 text-[10px] text-center" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', fontFamily: 'var(--font-sport)', fontWeight: 700 }}>
-                Saldo insuficiente · necesitás {totalStake - coinBalance}🪙 más
-              </div>
-            )}
           </div>
+          {authed && (
+            <div className="flex flex-col items-end">
+              <span className="text-[9px] uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>Saldo</span>
+              <span className="text-sm font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>{coinBalance}🪙</span>
+            </div>
+          )}
+          {authed && !enoughBalance && (
+            <div className="w-full rounded-lg px-3 py-2 text-[10px] text-center" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', fontFamily: 'var(--font-sport)', fontWeight: 700 }}>
+              Saldo insuficiente · necesitás {totalStake - coinBalance}🪙 más
+            </div>
+          )}
         </div>
       )}
 
@@ -488,7 +435,7 @@ export function PicksForm({
         </div>
       )}
 
-      <StickyBetslip done={done} total={total} allDone={canSeal} captainSet={false} urgent={urgent} onSubmit={handleSubmit} potential={potentialCoinsRound} />
+      <StickyBetslip done={done} total={total} allDone={canSeal} captainSet={false} urgent={urgent} onSubmit={handleSubmit} potential={potentialCoinsRound} totalStake={totalStake} />
     </div>
   )
 }

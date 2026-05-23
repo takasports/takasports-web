@@ -1,16 +1,37 @@
 'use client'
 
 // ─────────────────────────────────────────────────────────────────
-// Sticky betslip — footer fijo con progreso y CTA
+// Sticky betslip — footer fijo con progreso + CTA "Cerrar apuesta"
 // ─────────────────────────────────────────────────────────────────
-// `potential` ahora lo calcula PicksForm (con cuotas como multiplicador,
-// espejo del scoring server). Antes era base plana 10/pick que mentía
-// con el nuevo modelo cuota-multiplicador.
-export function StickyBetslip({ done, total, allDone, captainSet, onSubmit, urgent, potential }: { done: number; total: number; allDone: boolean; captainSet: boolean; onSubmit: () => void; urgent: boolean; potential: number }) {
+// El modelo Ranked apuesta monedas por pick. El footer muestra
+// cuántos picks van, el total apostado en la fecha y el CTA para
+// cerrar y enviar al server.
+//   · `done`      = picks con elección 1X2 hechos
+//   · `total`     = picks totales disponibles
+//   · `allDone`   = canSeal (validación combinada de PicksForm)
+//   · `potential` = monedas potenciales si acertás todos (stake × cuota)
+//   · `totalStake`= monedas apostadas en total en la fecha (sumado)
+export function StickyBetslip({
+  done, total, allDone, captainSet, onSubmit, urgent, potential, totalStake,
+}: {
+  done: number
+  total: number
+  allDone: boolean
+  /** @deprecated — el capitán ya no existe. Se preserva firma por compat. */
+  captainSet: boolean
+  onSubmit: () => void
+  urgent: boolean
+  potential: number
+  /** Suma de stakes apostados en todos los picks (Ranked). Default 0. */
+  totalStake?: number
+}) {
   void captainSet
-  const cta = allDone
-    ? '🎯 Sellar predicción'
-    : `Te quedan ${total - done} partido${total - done !== 1 ? 's' : ''}`
+  const stake = totalStake ?? 0
+  const cta = !allDone
+    ? `Te quedan ${total - done} partido${total - done !== 1 ? 's' : ''}`
+    : stake > 0
+      ? `🎫 Cerrar apuesta · ${stake}🪙`
+      : '🎯 Sellar predicción'
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
   return (
     <div className="qn-betslip-sticky left-0 right-0 z-30 -mx-1 pt-3 pb-3" style={{ background: 'linear-gradient(to top, #060010 0%, #060010 60%, transparent 100%)' }}>
@@ -20,6 +41,15 @@ export function StickyBetslip({ done, total, allDone, captainSet, onSubmit, urge
             <div className="flex items-baseline gap-1.5">
               <span className="font-black tabular-nums" style={{ fontSize: 18, color: '#F8F8FF', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>{done}/{total}</span>
               <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>picks</span>
+              {stake > 0 && (
+                <>
+                  <span className="text-[10px]" style={{ color: '#3A3050' }}>·</span>
+                  <span className="font-black tabular-nums" style={{ fontSize: 13, color: '#86efac', fontFamily: 'var(--font-display)' }}>
+                    {stake}🪙
+                  </span>
+                  <span className="text-[9px] uppercase tracking-widest" style={{ color: '#3A5A48', fontFamily: 'var(--font-sport)' }}>apostado</span>
+                </>
+              )}
             </div>
             <div className="mt-1.5 w-full rounded-full overflow-hidden" style={{ height: 3, background: 'rgba(255,255,255,0.06)' }}>
               <div style={{ width: `${pct}%`, height: '100%', background: allDone ? 'linear-gradient(90deg,#22c55e,#16a34a)' : 'linear-gradient(90deg,#7C3AED,#A78BFA)', transition: 'width 0.3s' }} />
@@ -39,10 +69,10 @@ export function StickyBetslip({ done, total, allDone, captainSet, onSubmit, urge
           className="w-full rounded-xl font-black uppercase tracking-widest transition-opacity"
           style={{
             minHeight: 48, fontSize: 12, fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
-            background: allDone ? 'linear-gradient(135deg,#7C3AED 0%,#5B21B6 100%)' : 'rgba(255,255,255,0.04)',
+            background: allDone ? 'linear-gradient(135deg,#22c55e 0%,#16a34a 100%)' : 'rgba(255,255,255,0.04)',
             color: allDone ? '#fff' : '#3A3A50',
-            border: allDone ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.05)',
-            boxShadow: allDone ? '0 6px 22px rgba(124,58,237,0.35)' : 'none',
+            border: allDone ? '1px solid rgba(34,197,94,0.45)' : '1px solid rgba(255,255,255,0.05)',
+            boxShadow: allDone ? '0 6px 22px rgba(34,197,94,0.35)' : 'none',
             cursor: allDone ? 'pointer' : 'not-allowed',
             animation: allDone && urgent ? 'quinielaPulse 0.85s ease-in-out infinite' : 'none',
           }}

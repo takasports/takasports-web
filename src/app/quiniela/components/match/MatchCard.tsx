@@ -18,6 +18,11 @@ export function MatchCard({
   match, index, pick, onPick, forceLocked, showOverlay, comp, time, odds, oddsSource, isoDate,
   comodinAvailable, isComodinUnlocked, onUseComodin, comodinCost, coinBalance, liveScore, finalScore, correct, friendPicks,
   jornada,
+  // Sistema de apuesta integrada (Ranked). Si stake/onStakeChange están
+  // definidos, el card muestra la barra de apuesta debajo de los picks.
+  stake, onStakeChange, fixed, onFix, onEdit,
+  stakeMin, stakeMax, stakeDefault,
+  showStakeBar,
 }: {
   match: { home: string; away: string; homeLogo?: string; awayLogo?: string; homeShort?: string; awayShort?: string }
   index: number; pick?: Pick; onPick: (p: Pick) => void
@@ -37,6 +42,18 @@ export function MatchCard({
   finalScore?: { homeGoals: number; awayGoals: number }
   correct?: boolean
   friendPicks?: { name: string; pick: string }[]
+  /** Monedas apostadas en este pick (Ranked). Undefined = aún sin apuesta. */
+  stake?: number
+  onStakeChange?: (v: number) => void
+  /** true = el user fijó esta apuesta. Compacta la UI y muestra botón Editar. */
+  fixed?: boolean
+  onFix?: () => void
+  onEdit?: () => void
+  stakeMin?: number
+  stakeMax?: number
+  stakeDefault?: number
+  /** Mostrar la barra de apuesta integrada. false en PicksSummary (lectura). */
+  showStakeBar?: boolean
 }) {
   const num = String(index + 1).padStart(2, '0')
   const { started, soon, label: countdownLabel } = useMatchCountdown(isoDate)
@@ -261,15 +278,135 @@ export function MatchCard({
                     {sublabel}
                   </span>
                 )}
-                {!locked && (
-                  <span style={{ fontSize: 7, fontFamily: 'var(--font-sport)', fontWeight: 900, color: selected ? PICK_COLOR[opt] : '#2A2A42', opacity: selected ? 0.85 : 0.45, marginTop: 1 }}>
-                    +{odd ? Math.round(10 * odd) : 10}🪙
-                  </span>
-                )}
+                {!locked && (() => {
+                  // "Si acertás +X🪙" en cada botón: usa el stake del card si
+                  // está definido (modo Ranked con apuesta integrada), o el
+                  // default 10 como aproximación si todavía no se eligió stake.
+                  const effectiveStake = stake ?? stakeDefault ?? 10
+                  const ret = odd ? Math.round(effectiveStake * odd) : effectiveStake
+                  return (
+                    <span style={{ fontSize: 7, fontFamily: 'var(--font-sport)', fontWeight: 900, color: selected ? PICK_COLOR[opt] : '#2A2A42', opacity: selected ? 0.85 : 0.45, marginTop: 1 }}>
+                      +{ret}🪙
+                    </span>
+                  )
+                })()}
               </button>
             )
           })}
         </div>
+
+        {/* ── BARRA DE APUESTA INTEGRADA (Ranked) ────────────────────
+            Aparece solo si hay pick + props de stake habilitadas.
+            Dos modos: editando (input +/-) y fijado (compacto con Editar). */}
+        {pick && !locked && showStakeBar && onStakeChange && (
+          <div className="mt-3 rounded-xl overflow-hidden" style={{ background: 'rgba(34,197,94,0.04)', border: `1px solid ${fixed ? 'rgba(134,239,172,0.35)' : 'rgba(34,197,94,0.18)'}` }}>
+            {(() => {
+              const min = stakeMin ?? 1
+              const max = stakeMax ?? 200
+              const def = stakeDefault ?? 10
+              const stk = Math.max(0, Math.floor(stake ?? def))
+              const pickOdd = pick === '1' ? (shownOdds?.home ?? 1) : pick === '2' ? (shownOdds?.away ?? 1) : (shownOdds?.draw ?? 1)
+              const eff = Math.max(1, pickOdd)
+              const ret = Math.round(stk * eff)
+              const profit = ret - stk
+
+              if (fixed) {
+                // Estado FIJADO: barra ultra compacta
+                return (
+                  <div className="px-3 py-2.5 flex items-center gap-2">
+                    <span style={{ fontSize: 14, lineHeight: 1, color: '#4ade80' }}>✓</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>
+                        Apostás {stk}🪙 → ganás {ret}🪙 si acertás
+                      </p>
+                      <p className="text-[9px]" style={{ color: '#3A5A48', fontFamily: 'var(--font-sport)' }}>
+                        Cuota fijada ×{eff.toFixed(2)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onEdit?.()}
+                      className="text-[10px] font-black px-2.5 py-1 rounded transition-opacity hover:opacity-80"
+                      style={{ background: 'rgba(255,255,255,0.04)', color: '#86efac', border: '1px solid rgba(134,239,172,0.25)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
+                    >
+                      Editar
+                    </button>
+                  </div>
+                )
+              }
+
+              // Estado EDITANDO: input +/- + retorno + botón Fijar
+              return (
+                <div className="flex flex-col">
+                  <div className="px-3 pt-2.5 pb-2 flex items-center gap-2 flex-wrap">
+                    <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>
+                      Apostás
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => onStakeChange(Math.max(min, stk - 5))}
+                        aria-label="Bajar stake"
+                        className="w-7 h-7 rounded font-black flex items-center justify-center transition-opacity hover:opacity-80"
+                        style={{ background: 'rgba(255,255,255,0.06)', color: '#86efac', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-display)', fontSize: 15, lineHeight: 1, cursor: 'pointer' }}
+                      >−</button>
+                      <input
+                        type="number"
+                        min={min}
+                        max={max}
+                        value={stk}
+                        onChange={e => {
+                          const v = Math.max(0, Math.min(max, Math.floor(Number(e.target.value) || 0)))
+                          onStakeChange(v)
+                        }}
+                        aria-label={`Stake en ${match.home} vs ${match.away}`}
+                        className="w-16 px-2 py-1 rounded text-sm font-black tabular-nums text-center outline-none"
+                        style={{ background: 'rgba(0,0,0,0.4)', color: '#E0F0E5', border: '1px solid rgba(134,239,172,0.3)', fontFamily: 'var(--font-display)' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => onStakeChange(Math.min(max, stk + 5))}
+                        aria-label="Subir stake"
+                        className="w-7 h-7 rounded font-black flex items-center justify-center transition-opacity hover:opacity-80"
+                        style={{ background: 'rgba(255,255,255,0.06)', color: '#86efac', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-display)', fontSize: 15, lineHeight: 1, cursor: 'pointer' }}
+                      >+</button>
+                      <span className="text-[10px] font-bold" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>🪙</span>
+                    </div>
+                    <span className="flex-1" />
+                    <div className="flex flex-col items-end">
+                      <span className="text-[8px] uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>Si acertás</span>
+                      <span className="text-sm font-black tabular-nums" style={{ color: stk > 0 ? '#fbbf24' : '#3A4A45', fontFamily: 'var(--font-display)', lineHeight: 1 }}>
+                        {ret}🪙
+                      </span>
+                      {stk > 0 && profit > 0 && (
+                        <span className="text-[8px] font-bold tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-sport)' }}>
+                          +{profit} neto
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onFix?.()}
+                    disabled={stk <= 0}
+                    className="w-full py-2 text-[10px] font-black uppercase tracking-widest transition-opacity disabled:opacity-40 hover:opacity-90"
+                    style={{
+                      background: stk > 0 ? 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(16,185,129,0.16))' : 'rgba(255,255,255,0.03)',
+                      color: stk > 0 ? '#86efac' : '#3A5A48',
+                      border: 'none',
+                      borderTop: stk > 0 ? '1px solid rgba(134,239,172,0.25)' : '1px solid rgba(255,255,255,0.04)',
+                      fontFamily: 'var(--font-sport)',
+                      letterSpacing: '0.1em',
+                      cursor: stk > 0 ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    ✓ Fijar apuesta
+                  </button>
+                </div>
+              )
+            })()}
+          </div>
+        )}
 
         {/* ── AI Sugerencia ── */}
         {odds && !locked && (() => {
