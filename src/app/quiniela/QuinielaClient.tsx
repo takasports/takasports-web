@@ -388,10 +388,10 @@ export default function QuinielaClient() {
                         })
                         return next
                       })
-                      // Server es la fuente única para coins. Calcula breakdown
-                      // autoritativo y, si hay sesión, sube monedas vía RPC.
-                      // Si no hay sesión, replicamos en localStorage con el
-                      // breakdown oficial (no cálculo local).
+                      // Server es la fuente única para coins. Modelo Ranked
+                      // en 2 fases: stake al sellar (PicksForm), settle al
+                      // cierre (acá). El server lee picks PERSISTIDOS (no
+                      // los del body) y acredita ganancias con idempotencia.
                       try {
                         const res = await fetch('/api/quiniela/score', {
                           method: 'POST',
@@ -399,23 +399,28 @@ export default function QuinielaClient() {
                           body: JSON.stringify({
                             jornada: saved!.jornada,
                             picks: saved!.picks,
+                            phase: user ? 'settle' : undefined,  // invitados van por rama legacy
                           }),
                         })
                         if (res.ok) {
-                          const json = await res.json() as { breakdown?: { totalCoins: number; hits: number; pleno: boolean } }
-                          if (json.breakdown && json.breakdown.totalCoins > 0) {
-                            if (user) {
-                              // Server ya escribió via RPC: refresca balance/txns
+                          const json = await res.json() as {
+                            breakdown?: { totalCoins?: number; hits?: number; pleno?: boolean }
+                            totalWon?: number
+                            settled?: boolean
+                          }
+                          // En modo settle: server ya acreditó via RPC; refresca balance.
+                          // En modo legacy (invitado): replica en localStorage si hubo ganancias.
+                          if (user) {
+                            if ((json.totalWon ?? 0) > 0 || json.settled) {
                               await coins.refresh()
-                            } else {
-                              // Invitado: replicamos en localStorage usando breakdown autoritativo
-                              const reasonParts = [`${json.breakdown.hits} aciertos`]
-                              if (json.breakdown.pleno) reasonParts.push('¡PLENO!')
-                              await coins.add(json.breakdown.totalCoins, `Quiniela ${saved!.jornada}: ${reasonParts.join(' · ')}`)
                             }
+                          } else if (json.breakdown && (json.breakdown.totalCoins ?? 0) > 0) {
+                            const reasonParts = [`${json.breakdown.hits ?? 0} aciertos`]
+                            if (json.breakdown.pleno) reasonParts.push('¡PLENO!')
+                            await coins.add(json.breakdown.totalCoins ?? 0, `Quiniela ${saved!.jornada}: ${reasonParts.join(' · ')}`)
                           }
                         }
-                      } catch { /* offline OK */ }
+                      } catch { /* offline OK — el server settle es idempotente, retry en próxima visita */ }
                       // Suprime `results` warn — lo deja disponible por si onScore se extiende
                       void results
                     }}
