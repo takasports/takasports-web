@@ -20,7 +20,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import {
   fetchFeaturedMatch, fetchSummary,
-  extractRoster, extractScorers, coinsForGoals,
+  extractRoster, extractScorers, coinsForGoals, lineupCandidates,
   type FeaturedMatchInfo, type FeaturedRoster,
 } from '@/lib/featured-goalscorer'
 
@@ -216,11 +216,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'match already started' }, { status: 410 })
   }
 
-  // Validar player_id contra el roster real
+  // Validar player_id contra el roster real (titulares + banquillo)
   const summary = await fetchSummary(match.leagueSlug, match.espnId)
   if (!summary) return NextResponse.json({ error: 'roster unavailable' }, { status: 503 })
   const roster = extractRoster(summary)
-  const allCandidates = [...roster.home, ...roster.away]
+  const allCandidates = [
+    ...lineupCandidates(roster.home),
+    ...lineupCandidates(roster.away),
+  ]
   const matchedCandidate = allCandidates.find(c => c.id === body.playerId)
   if (!matchedCandidate) {
     return NextResponse.json({ error: 'player not in roster' }, { status: 400 })

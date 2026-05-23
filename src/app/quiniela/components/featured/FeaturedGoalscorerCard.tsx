@@ -25,6 +25,13 @@ interface Candidate {
   posAbbr?: string
   headshot?: string
   teamSide: 'home' | 'away'
+  starter?: boolean
+}
+
+interface TeamLineup {
+  formation: string
+  starters: Candidate[]
+  bench: Candidate[]
 }
 
 interface MatchInfo {
@@ -56,7 +63,7 @@ interface UserPick {
 
 interface FeaturedData {
   match: MatchInfo | null
-  candidates: { home: Candidate[]; away: Candidate[]; status: 'pre' | 'live' | 'final' | 'unknown' } | null
+  candidates: { home: TeamLineup; away: TeamLineup; status: 'pre' | 'live' | 'final' | 'unknown' } | null
   userPick: UserPick | null
   justResolved?: { goals: number; awarded: number }
 }
@@ -104,7 +111,10 @@ export default function FeaturedGoalscorerCard({ authed }: { authed: boolean }) 
 
   const allCandidates = useMemo<Candidate[]>(() => {
     if (!candidates) return []
-    return [...candidates.home, ...candidates.away]
+    return [
+      ...candidates.home.starters, ...candidates.home.bench,
+      ...candidates.away.starters, ...candidates.away.bench,
+    ]
   }, [candidates])
 
   const filtered = useMemo<Candidate[]>(() => {
@@ -294,10 +304,10 @@ export default function FeaturedGoalscorerCard({ authed }: { authed: boolean }) 
           />
         )}
 
-        {/* Edge case: status pre pero el server aún no publicó rosters */}
+        {/* Edge case: status pre pero el server aún no publicó alineaciones */}
         {authed && status === 'pre' && !kickoffPassed && !userPick && allCandidates.length === 0 && (
           <BlockMessage tone="neutral">
-            <span>Las alineaciones se publican cerca del inicio. Vuelve más cerca del kickoff.</span>
+            <span>Las alineaciones se publican ~1h antes del kickoff. Vuelve más cerca del inicio.</span>
           </BlockMessage>
         )}
       </div>
@@ -391,7 +401,12 @@ function PrePicker({
   }
 
   // Picker
-  if (!candidates || (candidates.home.length === 0 && candidates.away.length === 0)) return null
+  const hasAnyPlayer =
+    candidates && (
+      candidates.home.starters.length + candidates.home.bench.length +
+      candidates.away.starters.length + candidates.away.bench.length
+    ) > 0
+  if (!candidates || !hasAnyPlayer) return null
 
   return (
     <div>
@@ -409,16 +424,18 @@ function PrePicker({
         }}
       />
 
-      <div className="grid grid-cols-2 gap-3 mb-3" style={{ maxHeight: 280, overflowY: 'auto' }}>
-        <PlayerColumn
-          label={candidates.home[0]?.name ? 'Local' : 'Local'}
-          players={filtered.filter(c => c.teamSide === 'home')}
+      <div className="grid grid-cols-2 gap-3 mb-3" style={{ maxHeight: 380, overflowY: 'auto' }}>
+        <LineupColumn
+          label="Local"
+          lineup={candidates.home}
+          searchFilter={search.trim().toLowerCase()}
           selectedId={selectedId}
           onSelect={setSelectedId}
         />
-        <PlayerColumn
+        <LineupColumn
           label="Visitante"
-          players={filtered.filter(c => c.teamSide === 'away')}
+          lineup={candidates.away}
+          searchFilter={search.trim().toLowerCase()}
           selectedId={selectedId}
           onSelect={setSelectedId}
         />
@@ -462,45 +479,153 @@ function PrePicker({
   )
 }
 
-function PlayerColumn({ label, players, selectedId, onSelect }: { label: string; players: Candidate[]; selectedId: string | null; onSelect: (id: string) => void }) {
+// Agrupa una lista de candidatos por línea táctica (FWD/MID/DEF) para
+// que la formación se vea como en un sitio de fantasy real.
+function groupByLine(players: Candidate[]): { line: string; players: Candidate[] }[] {
+  const lines = new Map<string, Candidate[]>()
+  for (const p of players) {
+    const pos = (p.posAbbr ?? '').toUpperCase()
+    let line: string
+    if (['F','CF','ST','SS','LW','RW','FW'].includes(pos)) line = 'Delanteros'
+    else if (['M','CM','AM','DM','LM','RM','MF'].includes(pos)) line = 'Centrocampistas'
+    else if (['D','CB','LB','RB','WB','DF'].includes(pos)) line = 'Defensas'
+    else line = 'Otros'
+    if (!lines.has(line)) lines.set(line, [])
+    lines.get(line)!.push(p)
+  }
+  // Orden FWD → MID → DEF → Otros
+  const ORDER = ['Delanteros', 'Centrocampistas', 'Defensas', 'Otros']
+  return ORDER.filter(l => lines.has(l)).map(l => ({ line: l, players: lines.get(l)! }))
+}
+
+function LineupColumn({
+  label, lineup, searchFilter, selectedId, onSelect,
+}: {
+  label: string
+  lineup: TeamLineup
+  searchFilter: string
+  selectedId: string | null
+  onSelect: (id: string) => void
+}) {
+  const [showBench, setShowBench] = useState(false)
+
+  const filterByQ = (list: Candidate[]) => {
+    if (!searchFilter) return list
+    return list.filter(c =>
+      c.name.toLowerCase().includes(searchFilter) ||
+      (c.shortName?.toLowerCase().includes(searchFilter) ?? false),
+    )
+  }
+  const starters = filterByQ(lineup.starters)
+  const bench = filterByQ(lineup.bench)
+  const grouped = groupByLine(starters)
+  const isEmpty = starters.length === 0 && bench.length === 0
+
   return (
     <div>
-      <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{ color: '#5A4070', fontFamily: 'var(--font-sport)' }}>
-        {label}
-      </p>
-      <div className="flex flex-col gap-1">
-        {players.length === 0 ? (
-          <p className="text-[10px]" style={{ color: '#3A3A52' }}>—</p>
-        ) : players.map(p => {
-          const isSel = selectedId === p.id
-          return (
-            <button
-              key={p.id}
-              onClick={() => onSelect(p.id)}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-all"
-              style={{
-                background: isSel ? 'rgba(244,114,182,0.18)' : 'rgba(255,255,255,0.02)',
-                border: isSel ? '1px solid rgba(244,114,182,0.5)' : '1px solid transparent',
-                cursor: 'pointer',
-              }}
-            >
-              {p.headshot ? (
-                <img src={p.headshot} alt="" width={20} height={20} style={{ borderRadius: '50%', flexShrink: 0 }} />
-              ) : (
-                <span className="w-5 h-5 rounded-full flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }} />
-              )}
-              <span className="text-[11px] font-bold truncate flex-1 min-w-0" style={{ color: isSel ? '#F9A8D4' : '#C0C0D8', fontFamily: 'var(--font-display)' }}>
-                {p.shortName || p.name}
-              </span>
-              {p.posAbbr && (
-                <span className="text-[8px] font-black flex-shrink-0" style={{ color: isSel ? '#F472B6' : '#3A3A52', fontFamily: 'var(--font-sport)' }}>
-                  {p.posAbbr}
-                </span>
-              )}
-            </button>
-          )
-        })}
+      {/* Header con liga / equipo + formación táctica */}
+      <div className="flex items-baseline justify-between mb-2">
+        <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#F9A8D4', fontFamily: 'var(--font-sport)' }}>
+          {label}
+        </p>
+        {lineup.formation && (
+          <span
+            className="text-[9px] font-black tabular-nums px-1.5 py-0.5 rounded"
+            style={{ background: 'rgba(244,114,182,0.12)', color: '#F472B6', border: '1px solid rgba(244,114,182,0.25)', fontFamily: 'var(--font-display)' }}
+            title="Sistema táctico anunciado"
+          >
+            {lineup.formation}
+          </span>
+        )}
       </div>
+
+      {isEmpty && (
+        <p className="text-[10px] py-2 text-center" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+          {searchFilter ? '—' : 'Alineación no publicada todavía'}
+        </p>
+      )}
+
+      {/* Titulares agrupados por línea (FWD → MID → DEF) */}
+      {grouped.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {grouped.map(g => (
+            <div key={g.line}>
+              <p className="text-[8px] font-black uppercase tracking-widest mb-1" style={{ color: '#5A4070', fontFamily: 'var(--font-sport)' }}>
+                {g.line}
+              </p>
+              <div className="flex flex-col gap-1">
+                {g.players.map(p => (
+                  <PlayerButton key={p.id} player={p} selectedId={selectedId} onSelect={onSelect} starter />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Banquillo colapsable */}
+      {bench.length > 0 && (
+        <div className="mt-3 pt-2" style={{ borderTop: '1px dashed rgba(255,255,255,0.06)' }}>
+          <button
+            onClick={() => setShowBench(v => !v)}
+            className="w-full flex items-center justify-between text-[9px] font-black uppercase tracking-widest mb-1.5 py-1"
+            style={{ background: 'none', border: 'none', color: '#6A4A80', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
+            aria-expanded={showBench}
+          >
+            <span>Banquillo ({bench.length})</span>
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" style={{ transform: showBench ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {showBench && (
+            <div className="flex flex-col gap-1">
+              {bench.map(p => (
+                <PlayerButton key={p.id} player={p} selectedId={selectedId} onSelect={onSelect} starter={false} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
+
+function PlayerButton({ player: p, selectedId, onSelect, starter }: {
+  player: Candidate
+  selectedId: string | null
+  onSelect: (id: string) => void
+  starter: boolean
+}) {
+  const isSel = selectedId === p.id
+  return (
+    <button
+      onClick={() => onSelect(p.id)}
+      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-all"
+      style={{
+        background: isSel ? 'rgba(244,114,182,0.18)' : 'rgba(255,255,255,0.02)',
+        border: isSel ? '1px solid rgba(244,114,182,0.5)' : '1px solid transparent',
+        cursor: 'pointer',
+        opacity: starter ? 1 : 0.78,
+      }}
+      aria-pressed={isSel}
+    >
+      {p.headshot ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={p.headshot} alt="" width={20} height={20} style={{ borderRadius: '50%', flexShrink: 0 }} />
+      ) : (
+        <span className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[8px] font-black" style={{ background: 'rgba(255,255,255,0.06)', color: '#6A6A8A', fontFamily: 'var(--font-sport)' }}>
+          {p.jersey ?? '?'}
+        </span>
+      )}
+      <span className="text-[11px] font-bold truncate flex-1 min-w-0" style={{ color: isSel ? '#F9A8D4' : '#C0C0D8', fontFamily: 'var(--font-display)' }}>
+        {p.shortName || p.name}
+      </span>
+      {p.posAbbr && (
+        <span className="text-[8px] font-black flex-shrink-0" style={{ color: isSel ? '#F472B6' : '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+          {p.posAbbr}
+        </span>
+      )}
+    </button>
+  )
+}
+

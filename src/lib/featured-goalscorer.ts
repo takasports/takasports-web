@@ -29,11 +29,22 @@ export interface GoalscorerCandidate {
   posAbbr?: string       // 'F' | 'M' | 'D' | 'G' | etc. — para filtros UI
   headshot?: string
   teamSide: 'home' | 'away'
+  /** true = titular en la formación. false/undefined = banquillo (puede entrar). */
+  starter?: boolean
+}
+
+export interface FeaturedTeamLineup {
+  /** Sistema táctico anunciado, e.g. '4-3-3'. Vacío si no hay todavía. */
+  formation: string
+  /** Los 11 titulares (sin portero) ordenados FWD → MID → DEF. */
+  starters: GoalscorerCandidate[]
+  /** Banquillo (suplentes que pueden marcar al entrar). */
+  bench: GoalscorerCandidate[]
 }
 
 export interface FeaturedRoster {
-  home: GoalscorerCandidate[]
-  away: GoalscorerCandidate[]
+  home: FeaturedTeamLineup
+  away: FeaturedTeamLineup
   /** Status del partido: 'pre' (sin kickoff), 'live' (en curso), 'final' (terminado), 'unknown' */
   status: 'pre' | 'live' | 'final' | 'unknown'
 }
@@ -97,9 +108,25 @@ function isGoalscorerPosition(posAbbr: string | undefined): boolean {
   return !(a === 'G' || a === 'GK')
 }
 
-function parseRoster(rosterObj: Record<string, unknown>, side: 'home' | 'away'): GoalscorerCandidate[] {
+// Orden de líneas para mostrar la formación de arriba abajo (delanteros
+// primero, mejor primero los que más marcan).
+const LINE_ORDER: Record<string, number> = {
+  'F': 0, 'CF': 0, 'ST': 0, 'SS': 0, 'LW': 0, 'RW': 0, 'FW': 0,
+  'M': 1, 'CM': 1, 'AM': 1, 'DM': 1, 'LM': 1, 'RM': 1, 'MF': 1,
+  'D': 2, 'CB': 2, 'LB': 2, 'RB': 2, 'WB': 2, 'DF': 2,
+}
+
+function lineRank(posAbbr: string | undefined): number {
+  if (!posAbbr) return 3
+  return LINE_ORDER[posAbbr.toUpperCase()] ?? 3
+}
+
+function parseLineup(rosterObj: Record<string, unknown>, side: 'home' | 'away'): FeaturedTeamLineup {
+  const formation = asString(rosterObj.formation) ?? ''
   const all = asArr(rosterObj.roster) as Record<string, unknown>[]
-  const out: GoalscorerCandidate[] = []
+  const starters: GoalscorerCandidate[] = []
+  const bench: GoalscorerCandidate[] = []
+
   for (const p of all) {
     const ath = asObj(p.athlete)
     if (!ath) continue
@@ -108,8 +135,11 @@ function parseRoster(rosterObj: Record<string, unknown>, side: 'home' | 'away'):
     if (!id || !name) continue
     const pos = asObj(p.position)
     const posAbbr = asString(pos?.abbreviation)
+    // Excluir porteros — no candidatos al goleador (raro que marquen).
     if (!isGoalscorerPosition(posAbbr)) continue
-    out.push({
+
+    const isStarter = p.starter === true
+    const candidate: GoalscorerCandidate = {
       id,
       name,
       shortName: asString(ath.shortName),
@@ -117,9 +147,30 @@ function parseRoster(rosterObj: Record<string, unknown>, side: 'home' | 'away'):
       posAbbr,
       headshot: asString(asObj(ath.headshot)?.href),
       teamSide: side,
-    })
+      starter: isStarter,
+    }
+    if (isStarter) starters.push(candidate)
+    else bench.push(candidate)
   }
-  return out
+
+  // Ordenar titulares por línea: FWD → MID → DEF (los que más marcan arriba).
+  starters.sort((a, b) => {
+    const r = lineRank(a.posAbbr) - lineRank(b.posAbbr)
+    if (r !== 0) return r
+    // Dentro de la misma línea, por dorsal asc (visual estable)
+    const ja = Number(a.jersey ?? 99); const jb = Number(b.jersey ?? 99)
+    return ja - jb
+  })
+  // Bench: también ordenado por línea (FWD primero los más probables de marcar).
+  bench.sort((a, b) => lineRank(a.posAbbr) - lineRank(b.posAbbr))
+
+  return { formation, starters, bench }
+}
+
+/** Aplana un FeaturedTeamLineup a un array de candidatos (titulares +
+ *  banquillo) por si algún consumer necesita la lista completa. */
+export function lineupCandidates(lineup: FeaturedTeamLineup): GoalscorerCandidate[] {
+  return [...lineup.starters, ...lineup.bench]
 }
 
 function extractStatusInternal(json: Record<string, unknown>): FeaturedRoster['status'] {
@@ -135,23 +186,28 @@ function extractStatusInternal(json: Record<string, unknown>): FeaturedRoster['s
 }
 
 /**
- * Extrae los dos rosters (home/away) del summary ESPN. Si ESPN aún
- * no publicó alineaciones (típico hasta ~1h antes del kickoff),
- * devuelve listas vacías y la UI muestra «pendientes».
+ * Extrae los dos lineups (home/away) del summary ESPN. Cada lineup
+ * trae { formation, starters, bench }:
+ *   · formation = sistema táctico anunciado (ej. '4-3-3')
+ *   · starters  = los 10 de campo titulares (sin GK), ordenados
+ *                 FWD → MID → DEF (delanteros arriba)
+ *   · bench     = suplentes (pueden marcar al entrar)
  *
- * Excluye porteros. Mantiene defensas y centrocampistas porque
- * también pueden marcar.
+ * Si ESPN aún no publicó alineaciones (típico hasta ~1h antes del
+ * kickoff), home/away vienen con arrays vacíos y formation=''.
+ * Excluye porteros (raro que marquen).
  */
 export function extractRoster(json: Record<string, unknown>): FeaturedRoster {
   const status = extractStatusInternal(json)
   const rosters = asArr(json.rosters) as Record<string, unknown>[]
-  if (rosters.length < 2) return { home: [], away: [], status }
+  const empty: FeaturedTeamLineup = { formation: '', starters: [], bench: [] }
+  if (rosters.length < 2) return { home: empty, away: empty, status }
 
   const homeR = rosters.find(r => r.homeAway === 'home') ?? rosters[0]
   const awayR = rosters.find(r => r.homeAway === 'away') ?? rosters[1]
   return {
-    home: parseRoster(homeR as Record<string, unknown>, 'home'),
-    away: parseRoster(awayR as Record<string, unknown>, 'away'),
+    home: parseLineup(homeR as Record<string, unknown>, 'home'),
+    away: parseLineup(awayR as Record<string, unknown>, 'away'),
     status,
   }
 }

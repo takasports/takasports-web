@@ -328,80 +328,141 @@ export function PicksForm({
         </div>
       ))}
 
-      {/* ── Panel APUESTA: stake por pick + total ─────────────────── */}
+      {/* ── BOLETA DE APUESTAS (estilo casa de apuestas real) ────────
+          Cada pick es UNA APUESTA INDEPENDIENTE — no se combina.
+          stake × cuota por pick, suma de stakes = total apostado. */}
       {Object.keys(picks).length > 0 && oddsAvailable && (
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(145deg, rgba(34,197,94,0.05) 0%, rgba(16,185,129,0.02) 100%)', border: '1px solid rgba(34,197,94,0.18)' }}>
-          <div className="px-5 py-3.5 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(34,197,94,0.12)' }}>
-            <div className="flex items-center gap-2">
-              <span style={{ fontSize: 18 }}>💰</span>
-              <p className="text-xs font-black uppercase tracking-widest" style={{ color: '#4ade80', fontFamily: 'var(--font-sport)' }}>
-                Tu apuesta
-              </p>
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(155deg, rgba(34,197,94,0.10) 0%, rgba(16,185,129,0.04) 60%, rgba(8,0,14,0.6) 100%)', border: '1px solid rgba(34,197,94,0.28)', boxShadow: '0 12px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(134,239,172,0.08)' }}>
+          {/* Header con icono ticket + título grande + saldo */}
+          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(34,197,94,0.2)', background: 'rgba(0,0,0,0.25)' }}>
+            <div className="flex items-center gap-2.5">
+              <span style={{ fontSize: 22, lineHeight: 1 }}>🎫</span>
+              <div>
+                <p className="text-sm font-black uppercase tracking-widest" style={{ color: '#86efac', fontFamily: 'var(--font-sport)', letterSpacing: '0.1em' }}>
+                  Tu boleta
+                </p>
+                <p className="text-[9px]" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>
+                  Cada partido es una apuesta independiente · no combinada
+                </p>
+              </div>
             </div>
-            <span className="text-[10px] font-black tabular-nums" style={{ color: authed ? '#86efac' : '#5A7068', fontFamily: 'var(--font-sport)' }}>
-              {authed ? `Saldo: ${coinBalance}🪙` : 'Inicia sesión para apostar'}
-            </span>
+            {authed ? (
+              <div className="flex flex-col items-end">
+                <span className="text-[9px] uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>Saldo</span>
+                <span className="text-sm font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>{coinBalance}🪙</span>
+              </div>
+            ) : (
+              <span className="text-[10px] font-black" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>
+                Iniciá sesión para apostar
+              </span>
+            )}
           </div>
-          <div className="px-4 py-3 flex flex-col gap-2">
+
+          {/* Lista de picks como "boletas" individuales */}
+          <div className="px-3 py-3 flex flex-col gap-2">
             {matches.map((m, i) => {
               const p = picks[i]
               if (!p) return null
               const stake = Math.max(0, Math.floor(stakes[i] ?? 0))
               const odd = Math.max(1, oddFor(m, p))
               const ret = Math.round(stake * odd)
+              const profit = ret - stake
+              const lado = p === '1' ? (m.homeShort ?? m.home) : p === '2' ? (m.awayShort ?? m.away) : 'Empate'
               return (
-                <div key={i} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.18)', border: '1px solid rgba(255,255,255,0.04)' }}>
-                  <span className="text-[10px] font-black flex-shrink-0" style={{ color: '#6A7A78', fontFamily: 'var(--font-sport)', minWidth: 18, textAlign: 'center' }}>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="text-[10px] font-bold truncate flex-1 min-w-0" style={{ color: '#C0E0C8', fontFamily: 'var(--font-display)' }}>
-                    {(m.homeShort ?? m.home).slice(0, 8)} <span style={{ color: '#4A5A55' }}>vs</span> {(m.awayShort ?? m.away).slice(0, 8)}
-                  </span>
-                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: 'rgba(124,58,237,0.18)', color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
-                    {p}
-                  </span>
-                  <span className="text-[9px] font-black tabular-nums flex-shrink-0" style={{ color: '#5A7A70', fontFamily: 'var(--font-display)' }}>
-                    ×{odd.toFixed(2)}
-                  </span>
-                  <input
-                    type="number"
-                    min={STAKE_MIN}
-                    max={STAKE_MAX}
-                    value={stake}
-                    onChange={e => {
-                      const v = Math.max(0, Math.min(STAKE_MAX, Math.floor(Number(e.target.value) || 0)))
-                      setStakes(prev => ({ ...prev, [i]: v }))
-                    }}
-                    aria-label={`Stake para ${m.home} vs ${m.away}`}
-                    className="w-14 px-2 py-1 rounded text-xs font-black tabular-nums text-center outline-none flex-shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.06)', color: '#E0E0F0', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-display)' }}
-                  />
-                  <span className="text-[9px] font-bold tabular-nums flex-shrink-0" style={{ color: stake > 0 ? '#86efac' : '#3A4A45', fontFamily: 'var(--font-sport)', minWidth: 48, textAlign: 'right' }}>
-                    → {ret}🪙
-                  </span>
+                <div key={i} className="rounded-xl overflow-hidden" style={{ background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  {/* Fila superior: nº + equipos + cuota grande */}
+                  <div className="px-3 py-2 flex items-center gap-2" style={{ borderBottom: '1px dashed rgba(255,255,255,0.04)' }}>
+                    <span className="text-[9px] font-black tabular-nums flex-shrink-0" style={{ color: '#3A5A48', fontFamily: 'var(--font-sport)', minWidth: 18, textAlign: 'center' }}>
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-bold truncate" style={{ color: '#D0E8D8', fontFamily: 'var(--font-display)' }}>
+                        {(m.homeShort ?? m.home).slice(0, 12)} <span style={{ color: '#4A5A55' }}>vs</span> {(m.awayShort ?? m.away).slice(0, 12)}
+                      </p>
+                      <p className="text-[9px] truncate" style={{ color: '#3A5A48', fontFamily: 'var(--font-sport)' }}>
+                        Tu pick: <span style={{ color: '#86efac', fontWeight: 700 }}>{lado}</span>
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <span className="text-[8px] uppercase tracking-widest" style={{ color: '#3A5A48', fontFamily: 'var(--font-sport)' }}>Cuota</span>
+                      <span className="text-base font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)', lineHeight: 1 }}>
+                        ×{odd.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Fila inferior: stake input + retorno */}
+                  <div className="px-3 py-2.5 flex items-center gap-3" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>Apostás</span>
+                      <button
+                        type="button"
+                        onClick={() => setStakes(prev => ({ ...prev, [i]: Math.max(STAKE_MIN, (prev[i] ?? STAKE_DEFAULT) - 5) }))}
+                        aria-label="Bajar stake"
+                        className="w-6 h-6 rounded font-black flex items-center justify-center transition-opacity hover:opacity-80"
+                        style={{ background: 'rgba(255,255,255,0.06)', color: '#86efac', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-display)', fontSize: 14, lineHeight: 1, cursor: 'pointer' }}
+                      >−</button>
+                      <input
+                        type="number"
+                        min={STAKE_MIN}
+                        max={STAKE_MAX}
+                        value={stake}
+                        onChange={e => {
+                          const v = Math.max(0, Math.min(STAKE_MAX, Math.floor(Number(e.target.value) || 0)))
+                          setStakes(prev => ({ ...prev, [i]: v }))
+                        }}
+                        aria-label={`Stake para ${m.home} vs ${m.away}`}
+                        className="w-14 px-2 py-1 rounded text-sm font-black tabular-nums text-center outline-none"
+                        style={{ background: 'rgba(0,0,0,0.4)', color: '#E0F0E5', border: '1px solid rgba(134,239,172,0.25)', fontFamily: 'var(--font-display)' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setStakes(prev => ({ ...prev, [i]: Math.min(STAKE_MAX, (prev[i] ?? STAKE_DEFAULT) + 5) }))}
+                        aria-label="Subir stake"
+                        className="w-6 h-6 rounded font-black flex items-center justify-center transition-opacity hover:opacity-80"
+                        style={{ background: 'rgba(255,255,255,0.06)', color: '#86efac', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-display)', fontSize: 14, lineHeight: 1, cursor: 'pointer' }}
+                      >+</button>
+                      <span className="text-[10px] font-bold" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>🪙</span>
+                    </div>
+                    <span className="flex-1" />
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <span className="text-[8px] uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>Si acertás</span>
+                      <span className="text-sm font-black tabular-nums" style={{ color: stake > 0 ? '#fbbf24' : '#3A4A45', fontFamily: 'var(--font-display)', lineHeight: 1 }}>
+                        {ret}🪙
+                      </span>
+                      {stake > 0 && profit > 0 && (
+                        <span className="text-[8px] font-bold tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-sport)' }}>
+                          +{profit} ganancia
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )
             })}
+          </div>
 
-            <div className="flex items-center justify-between px-2 pt-2 mt-1" style={{ borderTop: '1px solid rgba(34,197,94,0.1)' }}>
-              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#4ade80', fontFamily: 'var(--font-sport)' }}>
-                Total apostado
+          {/* Totales destacados */}
+          <div className="px-5 py-4" style={{ background: 'rgba(0,0,0,0.35)', borderTop: '1px solid rgba(34,197,94,0.2)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>
+                Total apostado en la fecha
               </span>
-              <span className="text-sm font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>
+              <span className="text-lg font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>
                 {totalStake}🪙
               </span>
             </div>
-            <div className="flex items-center justify-between px-2">
-              <span className="text-[10px]" style={{ color: '#5A7A70', fontFamily: 'var(--font-sport)' }}>
-                Potencial máx. si acertás todo
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>
+                Si acertás todos los partidos
               </span>
-              <span className="text-xs font-black tabular-nums" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
+              <span className="text-base font-black tabular-nums" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
                 {potentialCoinsRound}🪙
               </span>
             </div>
 
             {authed && !enoughBalance && (
-              <div className="mt-2 rounded-lg px-3 py-2 text-[10px] text-center" style={{ background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', fontFamily: 'var(--font-sport)' }}>
+              <div className="mt-3 rounded-lg px-3 py-2 text-[10px] text-center" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', fontFamily: 'var(--font-sport)', fontWeight: 700 }}>
                 Saldo insuficiente · necesitás {totalStake - coinBalance}🪙 más
               </div>
             )}
