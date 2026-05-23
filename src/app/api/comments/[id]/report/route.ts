@@ -5,24 +5,11 @@
 // Comentarios con flagged_count >= 5 quedan auto-ocultos en el GET público.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { getUserFromRequest } from '@/lib/supabase-server'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-
-function supaForRoute(req: NextRequest) {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return req.cookies.getAll() },
-        setAll() { /* no-op */ },
-      },
-    },
-  )
-}
 
 export async function POST(
   req: NextRequest,
@@ -35,12 +22,11 @@ export async function POST(
   try { body = await req.json() } catch { /* sin body es válido */ }
   const reason = typeof body.reason === 'string' ? body.reason.slice(0, 200) : null
 
-  const userClient = supaForRoute(req)
-  const { data: userRes } = await userClient.auth.getUser()
-  if (!userRes?.user) {
+  // Acepta cookies (web) o Authorization: Bearer (móvil).
+  const user = await getUserFromRequest(req)
+  if (!user) {
     return NextResponse.json({ ok: false, error: 'unauthenticated' }, { status: 401 })
   }
-  const user = userRes.user
 
   const admin = adminSupabase()
   if (!admin) return NextResponse.json({ ok: false, error: 'unavailable' }, { status: 503 })

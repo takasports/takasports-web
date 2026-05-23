@@ -7,27 +7,14 @@
 // (el cliente renderiza como texto plano + linkify).
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { getUserFromRequest } from '@/lib/supabase-server'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const MAX_BODY_LEN = 1000
 const RATE_LIMIT_PER_HOUR = 5
-
-function supaForRoute(req: NextRequest) {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return req.cookies.getAll() },
-        setAll() { /* no-op: este route no setea cookies */ },
-      },
-    },
-  )
-}
 
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get('slug')?.trim() ?? ''
@@ -74,13 +61,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'invalid_body' }, { status: 400 })
   }
 
-  // Sesión Supabase (cookies)
-  const userClient = supaForRoute(req)
-  const { data: userRes, error: userErr } = await userClient.auth.getUser()
-  if (userErr || !userRes?.user) {
+  // Sesión Supabase: acepta cookies (web) o Authorization: Bearer (móvil).
+  const user = await getUserFromRequest(req)
+  if (!user) {
     return NextResponse.json({ ok: false, error: 'unauthenticated' }, { status: 401 })
   }
-  const user = userRes.user
 
   const admin = adminSupabase()
   if (!admin) return NextResponse.json({ ok: false, error: 'unavailable' }, { status: 503 })
