@@ -230,7 +230,14 @@ function ArticleSidebar({
                 <circle cx="6.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3" />
                 <path d="M1.5 11.5c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
               </svg>
-              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{article.author}</p>
+              <Link
+                href="/autor/redaccion"
+                rel="author"
+                className="text-[11px] hover:text-white transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                {article.author}
+              </Link>
             </div>
           )}
 
@@ -452,9 +459,14 @@ export default async function NoticiaPage({
     },
     isPartOf: { '@id': `${SITE_URL}/#website` },
     author: {
-      '@type': 'Person',
+      '@type': 'Organization',
       name: articleAuthor,
-      worksFor: { '@id': `${SITE_URL}/#organization` },
+      url: `${SITE_URL}/autor/redaccion`,
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/taka-logo.png` },
+      sameAs: [
+        'https://www.instagram.com/takasportsmedia',
+        'https://x.com/takasportsx',
+      ],
     },
     publisher: { '@id': `${SITE_URL}/#organization` },
     copyrightHolder: { '@id': `${SITE_URL}/#organization` },
@@ -865,7 +877,14 @@ export default async function NoticiaPage({
                     <circle cx="6.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3" />
                     <path d="M1.5 11.5c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
                   </svg>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{article.author}</p>
+                  <Link
+                    href="/autor/redaccion"
+                    rel="author"
+                    className="text-xs hover:text-white transition-colors"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {article.author}
+                  </Link>
                 </div>
               )}
               {article.source_name && (

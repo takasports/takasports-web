@@ -23,9 +23,9 @@ const PLATFORM_LINKS = [
   { label: 'Sobre TakaSports', href: '/sobre' },
 ]
 const LEGAL_LINKS = [
-  { label: 'Privacidad', href: '#' },
-  { label: 'Términos',   href: '#' },
-  { label: 'Cookies',    href: '#' },
+  { label: 'Política editorial', href: '/politica-editorial' },
+  { label: 'Privacidad',         href: '/privacidad' },
+  { label: 'Equipo editorial',   href: '/autor/redaccion' },
 ]
 
 const SOCIAL = [
