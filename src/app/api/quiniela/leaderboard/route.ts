@@ -165,6 +165,66 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ entries, mode: 'tournament', tournament })
     }
 
+    // ── MODO SEASON ───────────────────────────────────────────────
+    // Ranking acumulado de TODAS las jornadas de clubes (NO Mundial)
+    // — equivalente al modo tournament pero al revés: agrega todo
+    // EXCEPTO las jornadas de torneos especiales.
+    //
+    // Permite a un user que entra a la jornada 5 ver SU ranking de
+    // temporada incluso sin estar en el TOP 10 semanal. Anti-frustración
+    // de onboarding tardío.
+    if (mode === 'season') {
+      // Construimos la condición "NO empieza con prefijo de ningún
+      // tournament conocido". Por ahora solo Mundial, pero está abierto
+      // a expandirse (Eurocopa, Copa América, etc.).
+      const excludePrefixes = Object.values(TOURNAMENT_PREFIXES)
+      let query = admin.from('quiniela_picks').select('user_id, picks, jornada')
+      for (const prefix of excludePrefixes) {
+        query = query.not('jornada', 'ilike', `${prefix}%`)
+      }
+      const { data: rows, error } = await query
+      if (error) throw error
+      if (!rows || rows.length === 0) {
+        return NextResponse.json({ entries: [], mode: 'season' })
+      }
+
+      const byUser = new Map<string, { coins: number; jornadas: number; hits: number }>()
+      for (const r of rows) {
+        const stored = (r.picks ?? {}) as StoredPicks
+        const b = stored.breakdown ?? {}
+        const uid = r.user_id as string
+        const prev = byUser.get(uid) ?? { coins: 0, jornadas: 0, hits: 0 }
+        prev.coins += b.totalCoins ?? 0
+        prev.hits += b.hits ?? 0
+        prev.jornadas += 1
+        byUser.set(uid, prev)
+      }
+
+      const userIds = [...byUser.keys()]
+      const [{ data: profileRows }, badgesByUser] = await Promise.all([
+        admin.from('profiles').select('id, display_name').in('id', userIds),
+        fetchBadgesByUser(admin, userIds),
+      ])
+      const nameById = new Map<string, string>()
+      for (const p of profileRows ?? []) {
+        const name = (p.display_name as string | null)?.trim()
+        if (name) nameById.set(p.id as string, name)
+      }
+
+      const entries: LeaderboardEntry[] = [...byUser.entries()]
+        .map(([uid, agg]) => ({
+          nickname: nameById.get(uid) ?? `Jugador-${uid.slice(0, 6)}`,
+          score: agg.coins,
+          total: agg.jornadas,
+          captainUsed: false,
+          badges: badgesByUser.get(uid) ?? [],
+        }))
+        .sort((a, b) => b.score - a.score || b.total - a.total)
+        .slice(0, limit)
+
+      return NextResponse.json({ entries, mode: 'season' })
+    }
+
     // ── MODO RANKED ────────────────────────────────────────────────
     // Solo si hay jornada; sin ella no podemos filtrar picks Ranked.
     if (mode === 'ranked' && jornada) {

@@ -57,7 +57,7 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: SITE_URL,
-    languages: { 'es-ES': SITE_URL, es: SITE_URL, 'x-default': SITE_URL },
+    languages: { 'x-default': SITE_URL },
   },
   verification: { google: ['LkOObyh0JeHucGf6NTELFcAQxFSMJrd2-9QoWVMM1g4', 'uciwyOWZbwp-GK4G0jKLxu6_FMuP5ZeptYObbCQxbJM'] },
   manifest: '/manifest.json',
