@@ -241,7 +241,7 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
                   </span>
                   {scored === total && total > 0 && (
                     <span className="text-[9px] font-black px-2 py-0.5 rounded-full ml-1" style={{ background: 'rgba(251,191,36,0.2)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.4)', fontFamily: 'var(--font-sport)' }}>
-                      PLENO +100
+                      PLENO ×2
                     </span>
                   )}
                 </div>

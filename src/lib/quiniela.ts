@@ -130,7 +130,11 @@ export const SCORING = {
   PLENO_BONUS: 5,
   // Coins (Ranked)
   COINS_PARTICIPATE: 5,
-  COINS_PLENO: 100,
+  /** Bonus mínimo de pleno: garantiza un piso para apostadores muy
+   *  conservadores (totalStake bajo). El bonus efectivo se calcula
+   *  como max(totalStake, COINS_PLENO_FLOOR) — el pleno escala con
+   *  la apuesta total para no sentirse irrisorio con stakes grandes. */
+  COINS_PLENO_FLOOR: 100,
   // Stake (Ranked)
   STAKE_MIN: 1,
   STAKE_MAX: 200,
@@ -221,7 +225,11 @@ export function scorePicks(
   let totalCoins  = perPick.reduce((a, s) => a + s.coins, 0)
   if (pleno) {
     totalPoints += SCORING.PLENO_BONUS
-    totalCoins  += SCORING.COINS_PLENO
+    // Bonus pleno escalado: equivalente a recuperar el stake total como
+    // bonus (double-down efectivo sobre todas tus apuestas). Garantiza
+    // un piso COINS_PLENO_FLOOR para que stakes muy chicos no den un
+    // bonus ridículo (alguien que apuesta 1🪙 por pick sigue ganando 100).
+    totalCoins  += Math.max(SCORING.COINS_PLENO_FLOOR, totalStake)
   }
   return { perPick, hits, pleno, totalPoints, totalCoins, totalStake, totalRefund, cancelledCount }
 }

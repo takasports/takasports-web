@@ -38,6 +38,10 @@ export function PicksForm({
 }) {
   const [picks, setPicks]             = useState<Record<number, Pick>>({})
   const [stakes, setStakes]           = useState<Record<number, number>>({})
+  // Stake "bulk" para el control rápido "Aplicar a todos". Default al
+  // mismo valor que cada pick individual. Cambia cuando el user usa
+  // los botones del bulk picker arriba del listado de matches.
+  const [bulkStake, setBulkStake]     = useState<number>(STAKE_DEFAULT)
   // Picks que el user fijó explícitamente. Es UX para "confirmar y bajar
   // al siguiente" — compacta la card y permite enfoque en lo pendiente.
   // No es estrictamente obligatorio fijar para sellar: si el user pulsa
@@ -89,14 +93,21 @@ export function PicksForm({
   }, 0)
 
   // Potencial total: suma de stake × cuota efectiva.
-  // + 100🪙 bonus si pleno (allDone).
-  const potentialCoins = matches.reduce((sum, m, i) => {
-    const p = picks[i]
-    if (!p) return sum
-    const stake = Math.max(0, Math.floor(stakes[i] ?? 0))
-    const odd = Math.max(1, oddFor(m, p))
-    return sum + stake * odd
-  }, 0) + (allDone ? SCORING.COINS_PLENO : 0)
+  // + bonus pleno escalado si allDone (max(totalStake, COINS_PLENO_FLOOR)).
+  const potentialCoins = (() => {
+    let sum = 0
+    let totalStakeLocal = 0
+    matches.forEach((m, i) => {
+      const p = picks[i]
+      if (!p) return
+      const stake = Math.max(0, Math.floor(stakes[i] ?? 0))
+      const odd = Math.max(1, oddFor(m, p))
+      sum += stake * odd
+      totalStakeLocal += stake
+    })
+    if (allDone) sum += Math.max(SCORING.COINS_PLENO_FLOOR, totalStakeLocal)
+    return sum
+  })()
   const potentialCoinsRound = Math.round(potentialCoins)
 
   // ── Validaciones pre-submit ──
@@ -307,6 +318,72 @@ export function PicksForm({
             <p className="text-[10px]" style={{ color: '#7A5A20', fontFamily: 'var(--font-sport)' }}>
               Cuotas en actualización. Volvé en unos minutos para apostar.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Quick-set: aplicar el mismo stake a todos los picks ──────
+          Reduce fricción para usuarios casuales que solo quieren
+          jugar rápido. Solo aparece cuando hay al menos 1 pick para
+          no estorbar antes de elegir L/E/V. */}
+      {Object.keys(picks).length > 0 && oddsAvailable && (
+        <div
+          className="rounded-2xl px-4 py-3 flex items-center gap-3 flex-wrap"
+          style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.18)' }}
+        >
+          <span style={{ fontSize: 18 }}>⚡</span>
+          <div className="flex-1 min-w-[160px]">
+            <p className="text-[11px] font-black" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
+              Apostar lo mismo en todos
+            </p>
+            <p className="text-[9px]" style={{ color: '#7060A0', fontFamily: 'var(--font-sport)' }}>
+              Atajo para aplicar el mismo stake a tus {Object.keys(picks).length} pick{Object.keys(picks).length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setBulkStake(v => Math.max(STAKE_MIN, v - 5))}
+              aria-label="Bajar stake bulk"
+              className="w-7 h-7 rounded font-black flex items-center justify-center transition-opacity hover:opacity-80"
+              style={{ background: 'rgba(255,255,255,0.06)', color: '#A78BFA', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-display)', fontSize: 15, lineHeight: 1, cursor: 'pointer' }}
+            >−</button>
+            <input
+              type="number"
+              min={STAKE_MIN}
+              max={STAKE_MAX}
+              value={bulkStake}
+              onChange={e => {
+                const v = Math.max(STAKE_MIN, Math.min(STAKE_MAX, Math.floor(Number(e.target.value) || STAKE_MIN)))
+                setBulkStake(v)
+              }}
+              aria-label="Stake para aplicar a todos"
+              className="w-14 px-2 py-1 rounded text-sm font-black tabular-nums text-center outline-none"
+              style={{ background: 'rgba(0,0,0,0.4)', color: '#E0E0F0', border: '1px solid rgba(167,139,250,0.3)', fontFamily: 'var(--font-display)' }}
+            />
+            <button
+              type="button"
+              onClick={() => setBulkStake(v => Math.min(STAKE_MAX, v + 5))}
+              aria-label="Subir stake bulk"
+              className="w-7 h-7 rounded font-black flex items-center justify-center transition-opacity hover:opacity-80"
+              style={{ background: 'rgba(255,255,255,0.06)', color: '#A78BFA', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-display)', fontSize: 15, lineHeight: 1, cursor: 'pointer' }}
+            >+</button>
+            <button
+              type="button"
+              onClick={() => {
+                setStakes(prev => {
+                  const next = { ...prev }
+                  Object.keys(picks).forEach(k => {
+                    next[Number(k)] = bulkStake
+                  })
+                  return next
+                })
+              }}
+              className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-85"
+              style={{ background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', color: '#fff', border: '1px solid rgba(124,58,237,0.5)', fontFamily: 'var(--font-sport)', boxShadow: '0 4px 12px rgba(124,58,237,0.3)', cursor: 'pointer' }}
+            >
+              Aplicar
+            </button>
           </div>
         </div>
       )}

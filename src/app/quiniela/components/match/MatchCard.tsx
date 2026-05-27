@@ -125,15 +125,10 @@ export function MatchCard({
                 {comp}
               </span>
             )}
-            {oddsSource === 'internal' && odds && (
-              <span
-                className="text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
-                style={{ background: 'rgba(124,58,237,0.08)', color: '#7C7CA0', border: '1px solid rgba(124,58,237,0.18)', fontFamily: 'var(--font-sport)' }}
-                title="Cuota estimada por el sistema interno (sin bookmaker disponible)"
-              >
-                📊 EST
-              </span>
-            )}
+            {/* El badge "📊 EST" se quitó (commit pulidos UX): generaba
+                duda en usuarios casuales sobre si las cuotas son "reales".
+                Una cuota es una cuota. El prop oddsSource sigue activo
+                por si se quiere reactivar el badge en algún flow concreto. */}
           </div>
           <div className="flex items-center gap-1.5">
             {started ? (
