@@ -151,8 +151,24 @@ export default async function Home({
     })),
   }
 
+  // LCP: pre-cargamos la imagen del primer artículo del hero. Es la imagen
+  // que Next/Image marca como `priority` en HeroBlock; con `<link rel=preload>`
+  // el navegador empieza a descargarla antes de que React hidrate.
+  const heroArticle = articles[0]
+  const heroImgUrl =
+    heroArticle?.imageUrl ??
+    (heroArticle?.image?.asset ? urlFor(heroArticle.image).width(1200).height(680).url() : null)
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+      {heroImgUrl && (
+        <link
+          rel="preload"
+          as="image"
+          href={heroImgUrl}
+          fetchPriority="high"
+        />
+      )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       <Header />
       <h1 className="sr-only">TakaSports — Noticias deportivas en tiempo real</h1>

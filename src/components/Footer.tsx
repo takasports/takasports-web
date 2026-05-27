@@ -19,6 +19,7 @@ const PLATFORM_LINKS = [
   { label: 'Estadísticas', href: '/estadisticas' },
   { label: 'Rankings',     href: '/rankings' },
   { label: 'Calendario',   href: '/calendario' },
+  { label: 'Glosario',     href: '/glosario' },
   { label: 'Juegos',       href: '/juegos' },
   { label: 'Sobre TakaSports', href: '/sobre' },
 ]

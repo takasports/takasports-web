@@ -10,6 +10,7 @@ import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import CalendarioContent from '@/components/CalendarioContent'
+import { SITE_URL, LOGO_URL } from '@/lib/constants'
 
 export const revalidate = 300
 
@@ -91,8 +92,55 @@ export default async function CalendarioPage() {
   const cookieStore = await cookies()
   const initialTz = cookieStore.get(TZ_KEY)?.value || SOURCE_TZ
 
+  // SportsEvent JSON-LD: emitimos los primeros 60 eventos futuros para
+  // que Google los muestre como rich results (carrusel de eventos en SERP).
+  // Más de 60 satura el grafo sin beneficio adicional.
+  const eventsJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': events.slice(0, 60).map((e) => {
+      const isTeamMatch = Boolean(e.away)
+      const startDate = e.isoDate ?? undefined
+      const name = isTeamMatch
+        ? `${e.home} vs ${e.away}`
+        : e.home
+      return {
+        '@type': isTeamMatch ? 'SportsEvent' : 'Event',
+        name,
+        startDate,
+        eventStatus: 'https://schema.org/EventScheduled',
+        eventAttendanceMode: 'https://schema.org/MixedEventAttendanceMode',
+        location: e.venue
+          ? { '@type': 'Place', name: e.venue }
+          : { '@type': 'VirtualLocation', url: SITE_URL },
+        description: [e.comp, e.stage].filter(Boolean).join(' · ') || undefined,
+        sport: e.sport,
+        ...(isTeamMatch
+          ? {
+              homeTeam: { '@type': 'SportsTeam', name: e.home },
+              awayTeam: { '@type': 'SportsTeam', name: e.away },
+              competitor: [
+                { '@type': 'SportsTeam', name: e.home },
+                { '@type': 'SportsTeam', name: e.away },
+              ],
+            }
+          : {}),
+        organizer: {
+          '@type': 'Organization',
+          name: e.comp ?? 'TakaSports',
+          url: SITE_URL,
+        },
+        image: LOGO_URL,
+        url: `${SITE_URL}/calendario`,
+      }
+    }),
+  }
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventsJsonLd) }}
+      />
       <Header />
       <LiveStrip />
       <CalendarioContent

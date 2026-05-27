@@ -4,6 +4,8 @@ import { SLUG_TO_LABEL } from '@/lib/sports'
 import { getAllRankingEntries } from '@/lib/rankings-search'
 import { getAllEntryIdsFromDb } from '@/lib/rankings-data'
 import { SITE_URL } from '@/lib/constants'
+import { COMPETITIONS } from '@/lib/calendar-competitions'
+import { GLOSARIO_TERMS } from '@/lib/glosario-terms'
 
 const BASE_URL = SITE_URL
 
@@ -114,6 +116,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/sobre`, lastModified: STATIC_LASTMOD, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/politica-editorial`, lastModified: STATIC_LASTMOD, changeFrequency: 'yearly', priority: 0.4 },
     { url: `${BASE_URL}/autor/redaccion`, lastModified: hubLastMod, changeFrequency: 'daily', priority: 0.6 },
+    { url: `${BASE_URL}/glosario`, lastModified: STATIC_LASTMOD, changeFrequency: 'monthly', priority: 0.6 },
+    ...GLOSARIO_TERMS.map((t) => ({
+      url: `${BASE_URL}/glosario/${t.slug}`,
+      lastModified: new Date(t.updatedAt),
+      changeFrequency: 'yearly' as const,
+      priority: 0.55,
+    })),
+    ...COMPETITIONS.map((c) => ({
+      url: `${BASE_URL}/calendario/${c.slug}`,
+      lastModified: STATIC_LASTMOD,
+      changeFrequency: 'daily' as const,
+      priority: 0.75,
+    })),
   ]
 
   // Combina entradas estáticas curadas + entradas auto-generadas de DB (top 2000)
