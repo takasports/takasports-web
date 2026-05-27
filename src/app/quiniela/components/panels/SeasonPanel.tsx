@@ -15,6 +15,10 @@ interface SeasonQuestion {
   options: Array<{ value: string; label: string; logo?: string }>
   closes_at: string
   resolved: string | null
+  /** Monedas que recibe el user si acierta (escalado por dificultad). */
+  prize_coins?: number
+  /** ID del torneo agrupador (ej. 'mundial2026') — para badges. */
+  tournament?: string | null
 }
 
 export function SeasonPanel({ user }: { user: User | null }) {
@@ -93,9 +97,21 @@ export function SeasonPanel({ user }: { user: User | null }) {
             {/* Header */}
             <div className="px-5 py-3.5 flex items-start justify-between gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
               <div className="flex-1 min-w-0">
-                <p className="text-[9px] font-black uppercase tracking-widest mb-0.5" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>
-                  {q.competition} · {q.season}
-                </p>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>
+                    {q.competition} · {q.season}
+                  </p>
+                  {/* Chip de PREMIO — destacado para incentivar predicción */}
+                  {(q.prize_coins ?? 0) > 0 && (
+                    <span
+                      className="text-[9px] font-black tabular-nums px-2 py-0.5 rounded-full"
+                      style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}
+                      title="Monedas que recibís si acertás esta pregunta"
+                    >
+                      +{q.prize_coins}🪙 si acertás
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm font-black leading-snug" style={{ color: '#D0D0F0', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
                   {q.question}
                 </p>
@@ -146,6 +162,11 @@ export function SeasonPanel({ user }: { user: User | null }) {
                     </span>
                     {selected && !q.resolved && (
                       <span style={{ fontSize: 9, color: '#7C3AED' }}>✓ Tu pick</span>
+                    )}
+                    {isWinner && selected && (q.prize_coins ?? 0) > 0 && (
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded" style={{ background: 'rgba(251,191,36,0.2)', color: '#fbbf24', fontFamily: 'var(--font-sport)' }}>
+                        +{q.prize_coins}🪙
+                      </span>
                     )}
                     {isWinner && <span style={{ fontSize: 13 }}>🏆</span>}
                     {isWrong  && <span style={{ fontSize: 11, color: '#f87171' }}>✗</span>}
