@@ -13,6 +13,10 @@ export interface MatchResult {
   awayGoals: number
   outcome: Outcome
   espnId?: string
+  /** true = partido anulado (pospuesto/cancelado/forfeit). En ese caso
+   *  el pick no cuenta como acierto ni fallo, y el stake se devuelve
+   *  íntegro al wallet en el settle. */
+  cancelled?: boolean
 }
 
 // Etiqueta visible del resultado (L/E/V). El valor interno sigue
@@ -134,9 +138,13 @@ export const SCORING = {
 } as const
 
 export interface PickScore {
-  hit: boolean         // tendencia correcta
+  hit: boolean         // tendencia correcta (false si cancelled)
+  /** true = el partido fue anulado. El stake se devuelve íntegro
+   *  en `refund`, y el pick NO cuenta como hit ni como fallo. */
+  cancelled: boolean
   points: number       // puntos (ligas privadas) — 0 o TENDENCY
-  coins: number        // monedas Ranked ganadas (stake × cuota × boost) si acierta, 0 si no
+  coins: number        // monedas Ranked ganadas (stake × cuota) si acierta, 0 si no
+  refund: number       // stake devuelto si partido cancelado, 0 normalmente
   stake: number        // stake declarado del pick (0 si no se apostó / liga privada)
   oddsApplied: number  // cuota efectiva usada en el cálculo
 }
@@ -144,10 +152,12 @@ export interface PickScore {
 export interface ScoreBreakdown {
   perPick: PickScore[]
   hits: number          // nº de picks con tendencia correcta
-  pleno: boolean
+  pleno: boolean        // pleno calcula sobre picks NO cancelados
   totalPoints: number   // suma de points + pleno bonus
   totalCoins: number    // suma de coins (Ranked) + pleno bonus de coins
-  totalStake: number    // suma de stakes apostados (para validación de saldo)
+  totalStake: number    // suma de stakes apostados (validación de saldo)
+  totalRefund: number   // suma de stakes devueltos por partidos anulados
+  cancelledCount: number // nº de picks anulados
 }
 
 export function scorePick(
@@ -156,8 +166,23 @@ export function scorePick(
 ): PickScore {
   const stake = pick.stake ?? 0
   if (!result) {
-    return { hit: false, points: 0, coins: 0, stake, oddsApplied: 1 }
+    return { hit: false, cancelled: false, points: 0, coins: 0, refund: 0, stake, oddsApplied: 1 }
   }
+
+  // Partido anulado: el pick no compite. Devolvemos el stake íntegro
+  // (refund) y NO contamos hit ni fallo. points=0, coins=0.
+  if (result.cancelled) {
+    return {
+      hit: false,
+      cancelled: true,
+      points: 0,
+      coins: 0,
+      refund: stake,
+      stake,
+      oddsApplied: 1,
+    }
+  }
+
   const hit = isCorrect(pick.pick, result.outcome)
 
   // Cuota efectiva = cuota congelada del pick en el momento de sellar.
@@ -173,7 +198,7 @@ export function scorePick(
   // (el stake ya fue descontado al sellar, no se devuelve).
   const coins = hit && stake > 0 ? Math.round(stake * oddsApplied) : 0
 
-  return { hit, points, coins, stake, oddsApplied }
+  return { hit, cancelled: false, points, coins, refund: 0, stake, oddsApplied }
 }
 
 export function scorePicks(
@@ -185,15 +210,20 @@ export function scorePicks(
     return scorePick(p, r)
   })
   const hits = perPick.filter(s => s.hit).length
-  const pleno = picks.length > 0 && hits === picks.length
+  const cancelledCount = perPick.filter(s => s.cancelled).length
+  // Pleno se calcula sobre picks NO cancelados — anulado ≠ fallo.
+  // Ejemplo: 6 picks, 1 cancelado, 5 aciertos → pleno (5 de 5 jugados).
+  const playable = picks.length - cancelledCount
+  const pleno = playable > 0 && hits === playable
   const totalStake = perPick.reduce((a, s) => a + s.stake, 0)
+  const totalRefund = perPick.reduce((a, s) => a + s.refund, 0)
   let totalPoints = perPick.reduce((a, s) => a + s.points, 0)
   let totalCoins  = perPick.reduce((a, s) => a + s.coins, 0)
   if (pleno) {
     totalPoints += SCORING.PLENO_BONUS
     totalCoins  += SCORING.COINS_PLENO
   }
-  return { perPick, hits, pleno, totalPoints, totalCoins, totalStake }
+  return { perPick, hits, pleno, totalPoints, totalCoins, totalStake, totalRefund, cancelledCount }
 }
 
 // ── Validación de cierre por kickoff ─────────────────────────────

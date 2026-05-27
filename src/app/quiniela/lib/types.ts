@@ -29,4 +29,4 @@ export interface League {
   nickname?: string
 }
 
-export interface MatchResult { home: string; away: string; outcome: '1' | 'X' | '2'; homeGoals: number; awayGoals: number; espnId?: string }
+export interface MatchResult { home: string; away: string; outcome: '1' | 'X' | '2'; homeGoals: number; awayGoals: number; espnId?: string; cancelled?: boolean }

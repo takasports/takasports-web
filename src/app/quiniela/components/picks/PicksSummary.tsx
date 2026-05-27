@@ -131,10 +131,14 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
     return liveScores.find(f => nameMatch(f.homeTeam, home) && nameMatch(f.awayTeam, away))
   }
 
+  // Un pick está "evaluado" si tiene resultado (final O cancelado).
+  // El cancelado SÍ cuenta como evaluado para destrabar el settle, pero
+  // no como acierto ni fallo — el stake se devuelve íntegro.
   const evaluated = results.length > 0 ? saved.picks.filter((p, i) => getResult(p.home, p.away, matches[i]?.espnId)).length : 0
   const scored = saved.picks.filter((p, i) => {
     const r = getResult(p.home, p.away, matches[i]?.espnId)
-    return r && isCorrect(p.pick as Pick, r.outcome)
+    if (!r || r.cancelled) return false
+    return isCorrect(p.pick as Pick, r.outcome)
   }).length
   const allEvaluated = evaluated > 0 && evaluated === saved.picks.length
 
@@ -289,10 +293,14 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
         const matchData = matches[i] ?? { home: p.home, away: p.away }
         const result    = getResult(p.home, p.away, matchData.espnId)
         const live      = !result ? getLive(p.home, p.away, matchData.espnId) : undefined
-        const correct   = result ? isCorrect(p.pick as Pick, result.outcome) : false
+        // Cancelado: el pick no compite. correct queda undefined para
+        // que MatchCard no muestre tick verde ni cruz roja.
+        const cancelled = !!result?.cancelled
+        const correct   = result && !cancelled ? isCorrect(p.pick as Pick, result.outcome) : false
         const visible   = isResultVisible(i)
         const isComodinTarget = comodinTarget === i
         const matchStarted = !!(matchData.isoDate && new Date(matchData.isoDate).getTime() < Date.now())
+        const stake = p.stake ?? 0
 
         return (
           <div key={i} className="flex flex-col">
@@ -308,16 +316,37 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
                 isoDate={matchData.isoDate}
                 odds={matchData.odds}
                 oddsSource={matchData.oddsSource}
-                comodinAvailable={!comodinUsed && !comodinTarget && matchStarted}
+                comodinAvailable={!comodinUsed && !comodinTarget && matchStarted && !cancelled}
                 isComodinUnlocked={isComodinTarget}
                 onUseComodin={() => setComodinTarget(i)}
                 comodinCost={COMODIN_COST}
                 coinBalance={coinBalance}
                 liveScore={live && live.homeGoals != null ? { homeGoals: live.homeGoals, awayGoals: live.awayGoals, elapsed: live.elapsed, status: live.status } : undefined}
-                finalScore={visible && result ? { homeGoals: result.homeGoals, awayGoals: result.awayGoals } : undefined}
-                correct={visible && result ? correct : undefined}
+                finalScore={visible && result && !cancelled ? { homeGoals: result.homeGoals, awayGoals: result.awayGoals } : undefined}
+                correct={visible && result && !cancelled ? correct : undefined}
                 friendPicks={friendPicksData.filter(m => m.picks[i] !== undefined).map(m => ({ name: m.nickname, pick: m.picks[i] })).slice(0, 3)}
               />
+
+              {/* Overlay ANULADO: cuando el partido se postergó/canceló.
+                  El stake se devuelve en el settle (refund). */}
+              {cancelled && visible && (
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-1 z-10 pointer-events-none rounded-2xl"
+                  style={{ background: 'rgba(8,0,15,0.72)', backdropFilter: 'blur(2px)' }}
+                >
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.45)' }}>
+                    <span style={{ fontSize: 14 }}>⏸</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#fbbf24', fontFamily: 'var(--font-sport)' }}>
+                      Partido anulado
+                    </span>
+                  </div>
+                  {stake > 0 && (
+                    <span className="text-[9px] font-bold tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-sport)' }}>
+                      +{stake}🪙 devueltos al wallet
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             {/* Consenso de la comunidad */}
             <ConsensusBar match={matchData} userPick={p.pick as Pick} jornada={saved.jornada} />

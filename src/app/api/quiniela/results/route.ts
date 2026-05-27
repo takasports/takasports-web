@@ -35,6 +35,17 @@ async function fetchWithRetry(url: string): Promise<Response | null> {
   return null
 }
 
+// Estados ESPN que tratamos como "anulado": el partido NO se jugó ni
+// se va a jugar. El stake del user debe devolverse, el pick no cuenta
+// como acierto ni como fallo.
+const CANCELLED_STATUSES = new Set([
+  'STATUS_POSTPONED',
+  'STATUS_CANCELED',
+  'STATUS_CANCELLED',
+  'STATUS_FORFEIT',
+  'STATUS_ABANDONED',
+])
+
 async function fetchResultsFromLeague(slug: string): Promise<MatchResult[]> {
   const res = await fetchWithRetry(
     `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${dateRangeParam()}&limit=20`
@@ -49,7 +60,9 @@ async function fetchResultsFromLeague(slug: string): Promise<MatchResult[]> {
     if (!competition) continue
     const status = competition.status as Record<string, unknown> | undefined
     const statusName = (status?.type as Record<string, unknown> | undefined)?.name as string ?? ''
-    if (statusName !== 'STATUS_FINAL') continue
+    const isFinal = statusName === 'STATUS_FINAL'
+    const isCancelled = CANCELLED_STATUSES.has(statusName)
+    if (!isFinal && !isCancelled) continue
 
     const competitors = (competition.competitors as Array<Record<string, unknown>>) ?? []
     if (competitors.length < 2) continue
@@ -60,9 +73,24 @@ async function fetchResultsFromLeague(slug: string): Promise<MatchResult[]> {
     const awayTeam = awayComp?.team as Record<string, unknown>
     const home = (homeTeam?.displayName as string) || (homeTeam?.shortDisplayName as string)
     const away = (awayTeam?.displayName as string) || (awayTeam?.shortDisplayName as string)
+    if (!home || !away) continue
+
+    // Cancelados: sin goles, outcome dummy 'X' (no se usa porque cancelled=true).
+    // Finales: parseamos goles normalmente.
+    if (isCancelled) {
+      results.push({
+        home, away,
+        homeGoals: 0, awayGoals: 0,
+        outcome: 'X',
+        cancelled: true,
+        espnId: ev.id as string,
+      })
+      continue
+    }
+
     const homeGoals = parseInt(String(homeComp?.score ?? '0'), 10)
     const awayGoals = parseInt(String(awayComp?.score ?? '0'), 10)
-    if (!home || !away || Number.isNaN(homeGoals) || Number.isNaN(awayGoals)) continue
+    if (Number.isNaN(homeGoals) || Number.isNaN(awayGoals)) continue
 
     const outcome: '1' | 'X' | '2' =
       homeGoals > awayGoals ? '1' : homeGoals < awayGoals ? '2' : 'X'

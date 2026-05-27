@@ -42,6 +42,9 @@ interface StoredPayload {
   settled: boolean
   totalStakeCharged?: number
   totalWon?: number
+  /** Stake devuelto al wallet por partidos anulados (pospuestos/cancelados).
+   *  Acreditado en una RPC separada al settle. */
+  totalRefunded?: number
   stakedAt?: string
   settledAt?: string
 }
@@ -324,6 +327,7 @@ export async function POST(req: NextRequest) {
 
       const breakdown = scorePicks(persistedPicks, results)
       const totalWon = breakdown.totalCoins
+      const totalRefunded = breakdown.totalRefund
 
       // Solo bloquear settle si NO hay ningún resultado finalizado
       // — los parciales se cierran con lo que hay (los picks sin
@@ -331,6 +335,26 @@ export async function POST(req: NextRequest) {
       // Si el cliente quiere esperar, debe pasar allEvaluated antes
       // de llamar phase=settle.
       void allResolved
+
+      // Refund de partidos anulados (pospuestos/cancelados): se hace
+      // ANTES de la acreditación de ganancias en una RPC separada
+      // para que aparezca como txn distinta en el ledger del user.
+      if (totalRefunded > 0) {
+        const refundReason = `Quiniela ${body.jornada}: stake devuelto · ${breakdown.cancelledCount} partido${breakdown.cancelledCount === 1 ? '' : 's'} anulado${breakdown.cancelledCount === 1 ? '' : 's'}`
+        const { error: refundErr } = await sb.rpc('add_coins', {
+          p_amount: totalRefunded,
+          p_reason: refundReason,
+          p_context: {
+            source: 'quiniela_refund',
+            jornada: body.jornada,
+            cancelledCount: breakdown.cancelledCount,
+            totalRefunded,
+          },
+        })
+        if (refundErr) {
+          return NextResponse.json({ error: 'refund_failed', detail: refundErr.message }, { status: 500 })
+        }
+      }
 
       // Acreditar ganancias si las hay. Una sola llamada add_coins.
       if (totalWon > 0) {
@@ -359,6 +383,7 @@ export async function POST(req: NextRequest) {
         breakdown,
         settled: true,
         totalWon,
+        totalRefunded,
         settledAt: new Date().toISOString(),
       }
       await sb.from('quiniela_picks').upsert({
@@ -380,6 +405,27 @@ export async function POST(req: NextRequest) {
         },
         p_duration_ms: null,
       })
+
+      // Push notification fire-and-forget — solo si ganó algo. La
+      // idempotencia ya está garantizada por el flag `settled` del
+      // payload (este código solo corre una vez por jornada/user).
+      if (totalWon > 0) {
+        const title = breakdown.pleno
+          ? `🎯 ¡PLENO! +${totalWon}🪙`
+          : `🪙 +${totalWon} en la Quiniela`
+        const pushBody = breakdown.pleno
+          ? `Acertaste TODOS los ${persistedPicks.length} partidos · ${body.jornada}`
+          : `${breakdown.hits}/${persistedPicks.length} aciertos · ${body.jornada}`
+        // Lazy import — evita coste si push no está configurado en build
+        import('@/lib/push-helper').then(({ sendPushToUser }) =>
+          sendPushToUser(user.id, {
+            title,
+            body: pushBody,
+            url: '/quiniela',
+            tag: `quiniela-settle-${body.jornada}`,
+          }),
+        ).catch(() => { /* silent: push best-effort */ })
+      }
 
       return NextResponse.json({
         phase: 'settle',
