@@ -27,6 +27,8 @@ import { CreateLeagueModal } from './components/leagues/CreateLeagueModal'
 import { BadgesPanel } from './components/panels/BadgesPanel'
 import { CoinWallet } from './components/panels/CoinWallet'
 import { LeaderboardPanel } from './components/panels/LeaderboardPanel'
+import { PersonalStatsPanel } from './components/panels/PersonalStatsPanel'
+import { MundialLeaderboardPanel } from './components/panels/MundialLeaderboardPanel'
 import { SeasonPanel } from './components/panels/SeasonPanel'
 import { Rules } from './components/panels/Rules'
 
@@ -486,6 +488,14 @@ export default function QuinielaClient() {
 
             {/* Monedas wallet */}
             <CoinWallet balance={coins.balance} txns={coins.txns} />
+
+            {/* Ranking acumulado del Mundial 2026 — solo cuando la
+                jornada activa es del torneo (auto-detect por label). */}
+            {isMundial && <MundialLeaderboardPanel />}
+
+            {/* Stats personales del Ranked (ROI, racha, mejor jornada).
+                Silent si el user no jugó nunca o no está autenticado. */}
+            <PersonalStatsPanel user={user} />
 
             {/* División del jugador */}
             {(() => {

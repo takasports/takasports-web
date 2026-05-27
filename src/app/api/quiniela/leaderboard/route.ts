@@ -1,19 +1,23 @@
-// GET /api/quiniela/leaderboard?jornada=X&limit=20[&mode=ranked|legacy]
+// GET /api/quiniela/leaderboard?jornada=X&limit=20[&mode=ranked|legacy][&tournament=mundial2026]
 //
-// Ranking de jugadores en una jornada concreta.
+// Ranking de jugadores. Tres modos:
 //
-// MODO RANKED (default) — para el modo «Ranked» (Liga General):
+// MODO RANKED + jornada (default) — Liga General de una jornada concreta:
 //   · Score = MONEDAS reales ganadas por el usuario en esa jornada.
-//   · Fuente: quiniela_picks.picks.breakdown.totalCoins (lo escribe
-//     /api/quiniela/score server-side, autoritativo).
-//   · JOIN con profiles para display_name; fallback a "Jugador-XXXXXX".
+//   · Fuente: quiniela_picks.picks.breakdown.totalCoins.
 //   · Top N ordenado por monedas desc, desempate por hits desc.
 //
-// MODO LEGACY (opt-in) — proxy histórico por pickCount:
-//   · Solo expuesto por compatibilidad con clientes viejos.
-//   · Sin jornada o sin sesión Ranked, lo usa como último recurso.
+// MODO TOURNAMENT — ranking acumulado a través de TODAS las jornadas
+// del torneo (e.g. Mundial 2026). Filtro por prefijo en la label
+// de jornada (las jornadas del Mundial empiezan con "Mundial · …",
+// generado por buildJornadaLabel cuando QUINIELA_MUNDIAL está activo).
+//   · tournament=mundial2026 → filtra jornadas LIKE "Mundial%".
+//   · Score = suma de totalCoins a lo largo del torneo.
+//   · total = jornadas jugadas (para mostrar "X jornadas").
 //
-// Shape de respuesta (estable, no cambia desde la versión anterior):
+// MODO LEGACY (opt-in) — proxy histórico por pickCount.
+//
+// Shape de respuesta:
 //   { entries: [{ nickname, score, total, captainUsed, isMe? }], mode }
 //
 // Notas:
@@ -45,10 +49,18 @@ interface StoredPicks {
   breakdown?: PickBreakdown
 }
 
+// Prefijo en la columna `jornada` que identifica al torneo.
+// Las jornadas del Mundial se generan con buildJornadaLabel y
+// empiezan SIEMPRE con "Mundial" (skin "Copa 2026" auto-detectado).
+const TOURNAMENT_PREFIXES: Record<string, string> = {
+  mundial2026: 'Mundial',
+}
+
 export async function GET(req: NextRequest) {
   const jornada = req.nextUrl.searchParams.get('jornada') ?? ''
   const limit   = Math.min(Math.max(parseInt(req.nextUrl.searchParams.get('limit') ?? '10', 10), 1), 50)
   const mode    = (req.nextUrl.searchParams.get('mode') ?? 'ranked').toLowerCase()
+  const tournament = req.nextUrl.searchParams.get('tournament')?.toLowerCase() ?? ''
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ entries: [], mode })
@@ -57,6 +69,58 @@ export async function GET(req: NextRequest) {
   if (!admin) return NextResponse.json({ entries: [], mode })
 
   try {
+    // ── MODO TOURNAMENT ────────────────────────────────────────────
+    // Ranking acumulado a través de TODAS las jornadas del torneo.
+    // Score = suma de totalCoins ganados; total = jornadas jugadas.
+    const tournamentPrefix = TOURNAMENT_PREFIXES[tournament]
+    if (tournamentPrefix) {
+      const { data: rows, error } = await admin
+        .from('quiniela_picks')
+        .select('user_id, picks, jornada')
+        .ilike('jornada', `${tournamentPrefix}%`)
+      if (error) throw error
+      if (!rows || rows.length === 0) {
+        return NextResponse.json({ entries: [], mode: 'tournament', tournament })
+      }
+
+      // Agregamos por user_id sumando totalCoins.
+      const byUser = new Map<string, { coins: number; jornadas: number; hits: number }>()
+      for (const r of rows) {
+        const stored = (r.picks ?? {}) as StoredPicks
+        const b = stored.breakdown ?? {}
+        const uid = r.user_id as string
+        const prev = byUser.get(uid) ?? { coins: 0, jornadas: 0, hits: 0 }
+        prev.coins += b.totalCoins ?? 0
+        prev.hits += b.hits ?? 0
+        prev.jornadas += 1
+        byUser.set(uid, prev)
+      }
+
+      // Profile lookup en una sola query.
+      const userIds = [...byUser.keys()]
+      const { data: profileRows } = await admin
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', userIds)
+      const nameById = new Map<string, string>()
+      for (const p of profileRows ?? []) {
+        const name = (p.display_name as string | null)?.trim()
+        if (name) nameById.set(p.id as string, name)
+      }
+
+      const entries: LeaderboardEntry[] = [...byUser.entries()]
+        .map(([uid, agg]) => ({
+          nickname: nameById.get(uid) ?? `Jugador-${uid.slice(0, 6)}`,
+          score: agg.coins,
+          total: agg.jornadas,  // jornadas jugadas
+          captainUsed: false,
+        }))
+        .sort((a, b) => b.score - a.score || b.total - a.total)
+        .slice(0, limit)
+
+      return NextResponse.json({ entries, mode: 'tournament', tournament })
+    }
+
     // ── MODO RANKED ────────────────────────────────────────────────
     // Solo si hay jornada; sin ella no podemos filtrar picks Ranked.
     if (mode === 'ranked' && jornada) {

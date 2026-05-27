@@ -1,0 +1,114 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+
+// ─────────────────────────────────────────────────────────────────
+// Ranking del Mundial 2026 — acumulado a través de TODAS las
+// jornadas del torneo (11 jun – 19 jul 2026). Pega al endpoint
+// /api/quiniela/leaderboard?tournament=mundial2026 que filtra
+// jornadas con prefijo "Mundial%" y suma totalCoins por user.
+//
+// Render condicional: solo cuando QuinielaClient detecta isMundial
+// (jornada activa empieza con "Mundial"). Skin dorado distintivo
+// del badge "Copa 2026".
+// ─────────────────────────────────────────────────────────────────
+
+interface MundialEntry { nickname: string; score: number; total: number }
+
+export function MundialLeaderboardPanel() {
+  const [board, setBoard] = useState<MundialEntry[]>([])
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/quiniela/leaderboard?tournament=mundial2026&limit=10', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (cancelled) return
+        if (data?.entries) setBoard(data.entries)
+        setLoaded(true)
+      })
+      .catch(() => { if (!cancelled) setLoaded(true) })
+    return () => { cancelled = true }
+  }, [])
+
+  // Skeleton mientras carga, panel vacío si nadie jugó todavía.
+  if (!loaded) {
+    return (
+      <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(160deg, rgba(245,158,11,0.06), rgba(180,83,9,0.03))', border: '1px solid rgba(245,158,11,0.22)' }}>
+        <div className="px-5 py-3.5 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(245,158,11,0.15)' }}>
+          <span style={{ fontSize: 14 }}>🏆</span>
+          <h2 className="section-label" style={{ color: '#fbbf24' }}>Ranking Mundial 2026</h2>
+        </div>
+        <div className="px-5 py-4 flex flex-col gap-1.5">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-8 rounded-xl animate-pulse" style={{ background: 'rgba(245,158,11,0.05)' }} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (board.length === 0) {
+    return (
+      <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(160deg, rgba(245,158,11,0.06), rgba(180,83,9,0.03))', border: '1px solid rgba(245,158,11,0.22)' }}>
+        <div className="px-5 py-3.5 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(245,158,11,0.15)' }}>
+          <span style={{ fontSize: 14 }}>🏆</span>
+          <h2 className="section-label" style={{ color: '#fbbf24' }}>Ranking Mundial 2026</h2>
+        </div>
+        <div className="px-5 py-5 text-center">
+          <p className="text-[11px]" style={{ color: '#8A6B30', fontFamily: 'var(--font-sport)' }}>
+            Sé el primero en apostar en una jornada del Mundial.<br />
+            El ranking se va acumulando jornada a jornada.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(160deg, rgba(245,158,11,0.08), rgba(180,83,9,0.03) 60%, rgba(8,0,15,0.5))', border: '1px solid rgba(245,158,11,0.3)', boxShadow: '0 10px 30px rgba(180,83,9,0.18)' }}>
+      <div className="px-5 py-3.5 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(245,158,11,0.22)', background: 'rgba(0,0,0,0.18)' }}>
+        <span style={{ fontSize: 14 }}>🏆</span>
+        <div className="flex-1">
+          <h2 className="section-label" style={{ color: '#fbbf24' }}>Ranking Mundial 2026</h2>
+          <p className="text-[8px]" style={{ color: '#8A6B30', fontFamily: 'var(--font-sport)' }}>
+            Acumulado · todas las jornadas del torneo
+          </p>
+        </div>
+      </div>
+      <div className="px-4 py-3 flex flex-col gap-1">
+        {board.slice(0, 5).map((p, i) => {
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
+          return (
+            <div
+              key={`${p.nickname}-${i}`}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+              style={{
+                background: i === 0 ? 'rgba(245,158,11,0.10)' : 'rgba(255,255,255,0.02)',
+                border: i === 0 ? '1px solid rgba(245,158,11,0.3)' : '1px solid transparent',
+              }}
+            >
+              <span style={{ fontSize: 11, width: 18, textAlign: 'center', fontFamily: 'var(--font-display)', color: '#6A5020', fontWeight: 900 }}>
+                {medal ?? `${i + 1}`}
+              </span>
+              <span className="flex-1 text-[11px] font-black truncate" style={{ color: i === 0 ? '#fbbf24' : '#A89878', fontFamily: 'var(--font-display)' }}>
+                {p.nickname}
+              </span>
+              <span className="text-[9px]" style={{ color: '#6A5020', fontFamily: 'var(--font-sport)' }}>
+                {p.total}j
+              </span>
+              <span className="text-[11px] font-black tabular-nums" style={{ color: i === 0 ? '#fbbf24' : '#8A7050', fontFamily: 'var(--font-display)' }}>
+                {p.score}🪙
+              </span>
+            </div>
+          )
+        })}
+
+        <p className="text-[8px] text-center pt-1" style={{ color: '#5A3F18', fontFamily: 'var(--font-sport)' }}>
+          {board.length} participante{board.length !== 1 ? 's' : ''} · Copa 2026
+        </p>
+      </div>
+    </div>
+  )
+}
