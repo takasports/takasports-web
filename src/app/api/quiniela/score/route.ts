@@ -27,6 +27,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { scorePicks, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
 import { awardBadges, badgesEarnedOnSettle } from '@/lib/badge-awards'
+import { fetchActiveSpecialBadgesForJornada, grantSpecialBadge, userMeetsCriteria } from '@/lib/special-badges'
 
 type Phase = 'stake' | 'settle'
 
@@ -451,6 +452,27 @@ export async function POST(req: NextRequest) {
         if (earned.length > 0) {
           await awardBadges(sb, user.id, earned)
         }
+
+        // ── Special badges (DB-defined, admin-created) ─────────────
+        // Para criterios que NO requieren ranking cross-user (pleno,
+        // min_hits, all_participants), evaluamos inline. Los que sí
+        // (top_n) requieren scan completo de la jornada — más caro,
+        // se hace solo si existen badges activos con ese criterio.
+        const specials = await fetchActiveSpecialBadgesForJornada(sb, body.jornada)
+        for (const sp of specials) {
+          if (sp.criteria_type === 'top_n' || sp.criteria_type === 'manual') continue
+          const meets = userMeetsCriteria(sp, {
+            hits: breakdown.hits,
+            pleno: breakdown.pleno,
+            totalStake: prevPayload.totalStakeCharged ?? breakdown.totalStake,
+          })
+          if (meets) {
+            await grantSpecialBadge(sb, sp, user.id)
+          }
+        }
+        // Nota: top_n se evalúa en un job separado tras cierre completo
+        // de la jornada (no en cada settle individual). Pendiente: cron
+        // o trigger admin manual.
       } catch (badgeErr) {
         console.error('[score/settle] badge award failed', badgeErr)
       }

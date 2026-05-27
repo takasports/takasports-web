@@ -16,6 +16,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { BADGES, listAllBadges, type BadgeDef } from '@/lib/badges'
+import { fetchSpecialBadgeDefs } from '@/lib/special-badges'
 import { computeLevel, computeXp } from '@/lib/levels'
 
 interface MeBadge {
@@ -86,9 +87,20 @@ export async function GET() {
     unlockedMap.set(r.badge_id as string, (r.unlocked_at as string) ?? new Date(0).toISOString())
   }
 
-  const unlockedDefs = [...unlockedMap.keys()]
+  // Defs del catálogo conocido
+  const unlockedIds = [...unlockedMap.keys()]
+  const unlockedCatalog = unlockedIds
     .map(id => BADGES[id])
     .filter((b): b is BadgeDef => !!b)
+
+  // Defs de special badges que el user tenga pero NO están en el catálogo de código
+  const unknownIds = unlockedIds.filter(id => !BADGES[id])
+  const specialDefs = unknownIds.length > 0
+    ? await fetchSpecialBadgeDefs(sb, unknownIds)
+    : new Map<string, BadgeDef>()
+  const unlockedSpecials = [...specialDefs.values()]
+
+  const unlockedDefs = [...unlockedCatalog, ...unlockedSpecials]
 
   const xp = computeXp({
     lifetimePositiveCoins: lifetimePositive,
@@ -96,8 +108,11 @@ export async function GET() {
   })
   const levelInfo = computeLevel(xp)
 
-  // Catálogo completo split en unlocked + locked, ordenado por rareza.
-  const allBadges = listAllBadges()
+  // Catálogo completo (código) + special badges desbloqueados por el user.
+  // Los special badges que el user NO tiene se omiten del listado (no
+  // queremos exponer todos los specials posibles a todos los users — son
+  // sorpresa). Los que sí tiene aparecen como unlocked en su perfil.
+  const allBadges = [...listAllBadges(), ...unlockedSpecials]
   const meBadges: MeBadge[] = allBadges.map(def =>
     toMeBadge(def, unlockedMap.get(def.id) ?? null),
   )
