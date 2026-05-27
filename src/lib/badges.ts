@@ -1,0 +1,220 @@
+// ─────────────────────────────────────────────────────────────────
+// Badges registry — catálogo central de logros de TakaSports.
+//
+// Cada badge tiene:
+//   · id          PK estable (NUNCA cambia, se guarda en quiniela_badges)
+//   · name        nombre humano corto (sidebar/perfil)
+//   · emoji       icono compacto (mostrado en ranking junto al nick)
+//   · color       hex del aro/border (UI consistente con rarity)
+//   · description texto largo para tooltip / modal de perfil
+//   · rarity      'common' | 'rare' | 'epic' | 'legendary' (orden visual)
+//   · category    'season' | 'jornada' | 'mundial' | 'special' | 'milestone'
+//
+// Reglas:
+//   · El catálogo vive en código, NO en DB — agregar/modificar requiere
+//     deploy, lo cual queremos (audit + revisión).
+//   · La DB (quiniela_badges) solo guarda (user_id, badge_id, unlocked_at)
+//     — el badge_id se valida contra este catálogo antes de upsert.
+//   · Si un badge_id desconocido aparece en DB (e.g. tras revert), la UI
+//     lo ignora silenciosamente — no rompe el render.
+//
+// Cuándo agregar un badge:
+//   · Hito de producto recurrente (primera apuesta, pleno, racha)
+//   · Cierre de torneo (mundialista_2026, top3_mundial_2026)
+//   · Eventos especiales temporales (admin define vía /admin/badges) —
+//     estos NO viven aquí, viven en quiniela_special_badges (Fase 4).
+// ─────────────────────────────────────────────────────────────────
+
+export type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary'
+export type BadgeCategory = 'milestone' | 'jornada' | 'season' | 'mundial' | 'special'
+
+export interface BadgeDef {
+  id: string
+  name: string
+  emoji: string
+  color: string          // hex del aro
+  bg: string             // hex del background del chip (con alpha)
+  description: string
+  rarity: BadgeRarity
+  category: BadgeCategory
+  /** Si true, NO se muestra en ranking público (solo en perfil propio). */
+  privateOnly?: boolean
+}
+
+const RARITY_ORDER: Record<BadgeRarity, number> = {
+  legendary: 0,
+  epic: 1,
+  rare: 2,
+  common: 3,
+}
+
+// Catálogo principal. Mantener orden estable (no reordenar arbitrariamente).
+export const BADGES: Record<string, BadgeDef> = {
+  // ── Milestones (primera vez que hacés X) ────────────────────────
+  first_bet: {
+    id: 'first_bet',
+    name: 'Primera apuesta',
+    emoji: '🎯',
+    color: '#94a3b8',
+    bg: 'rgba(148,163,184,0.12)',
+    description: 'Sellaste tu primera jornada con monedas reales.',
+    rarity: 'common',
+    category: 'milestone',
+  },
+  first_win: {
+    id: 'first_win',
+    name: 'Primera ganancia',
+    emoji: '💰',
+    color: '#34d399',
+    bg: 'rgba(52,211,153,0.12)',
+    description: 'Recuperaste más de lo que apostaste en una jornada.',
+    rarity: 'common',
+    category: 'milestone',
+  },
+
+  // ── Jornada (logros de una sola jornada) ────────────────────────
+  pleno_jornada: {
+    id: 'pleno_jornada',
+    name: 'Pleno',
+    emoji: '🎯',
+    color: '#fbbf24',
+    bg: 'rgba(251,191,36,0.14)',
+    description: 'Acertaste TODOS los partidos de una jornada.',
+    rarity: 'epic',
+    category: 'jornada',
+  },
+  oraculo: {
+    id: 'oraculo',
+    name: 'Oráculo',
+    emoji: '🔮',
+    color: '#a78bfa',
+    bg: 'rgba(167,139,250,0.14)',
+    description: 'Acertaste 4 o más partidos en una jornada.',
+    rarity: 'rare',
+    category: 'jornada',
+  },
+  high_roller: {
+    id: 'high_roller',
+    name: 'High Roller',
+    emoji: '💎',
+    color: '#22d3ee',
+    bg: 'rgba(34,211,238,0.14)',
+    description: 'Apostaste 500🪙 o más en una sola jornada y ganaste.',
+    rarity: 'epic',
+    category: 'jornada',
+  },
+  underdog: {
+    id: 'underdog',
+    name: 'Underdog',
+    emoji: '🐺',
+    color: '#fb923c',
+    bg: 'rgba(251,146,60,0.14)',
+    description: 'Ganaste con una cuota igual o mayor a 4.0 en algún pick.',
+    rarity: 'rare',
+    category: 'jornada',
+  },
+
+  // ── Season (logros acumulativos de temporada) ───────────────────
+  racha_3: {
+    id: 'racha_3',
+    name: 'Racha x3',
+    emoji: '🔥',
+    color: '#f97316',
+    bg: 'rgba(249,115,22,0.14)',
+    description: 'Tres jornadas consecutivas con ganancias.',
+    rarity: 'rare',
+    category: 'season',
+  },
+  racha_5: {
+    id: 'racha_5',
+    name: 'En llamas',
+    emoji: '🔥',
+    color: '#ef4444',
+    bg: 'rgba(239,68,68,0.14)',
+    description: 'Cinco jornadas consecutivas con ganancias.',
+    rarity: 'epic',
+    category: 'season',
+  },
+  top_3_weekly: {
+    id: 'top_3_weekly',
+    name: 'Podio semanal',
+    emoji: '🥉',
+    color: '#cd7f32',
+    bg: 'rgba(205,127,50,0.16)',
+    description: 'Terminaste TOP 3 en el ranking semanal de una jornada.',
+    rarity: 'rare',
+    category: 'season',
+  },
+  champion_weekly: {
+    id: 'champion_weekly',
+    name: 'Campeón semanal',
+    emoji: '👑',
+    color: '#fbbf24',
+    bg: 'rgba(251,191,36,0.18)',
+    description: 'Ganaste el ranking semanal de una jornada.',
+    rarity: 'epic',
+    category: 'season',
+  },
+
+  // ── Mundial 2026 ────────────────────────────────────────────────
+  profeta_mundial_2026: {
+    id: 'profeta_mundial_2026',
+    name: 'Profeta del Mundial',
+    emoji: '🔮',
+    color: '#fbbf24',
+    bg: 'rgba(251,191,36,0.18)',
+    description: 'Acertaste 3 o más predicciones long-term del Mundial 2026.',
+    rarity: 'legendary',
+    category: 'mundial',
+  },
+  mundialista_2026: {
+    id: 'mundialista_2026',
+    name: 'Mundialista 2026',
+    emoji: '🌍',
+    color: '#22c55e',
+    bg: 'rgba(34,197,94,0.14)',
+    description: 'Participaste en al menos una jornada del Mundial 2026. Badge conmemorativo.',
+    rarity: 'rare',
+    category: 'mundial',
+  },
+  top3_mundial_2026: {
+    id: 'top3_mundial_2026',
+    name: 'Podio Mundial 2026',
+    emoji: '🏆',
+    color: '#fbbf24',
+    bg: 'rgba(251,191,36,0.20)',
+    description: 'Terminaste TOP 3 en el ranking acumulado del Mundial 2026.',
+    rarity: 'legendary',
+    category: 'mundial',
+  },
+}
+
+export function getBadge(id: string): BadgeDef | null {
+  return BADGES[id] ?? null
+}
+
+/** Lista todos los badges conocidos ordenados por rareza (legendary primero). */
+export function listAllBadges(): BadgeDef[] {
+  return Object.values(BADGES).sort((a, b) =>
+    RARITY_ORDER[a.rarity] - RARITY_ORDER[b.rarity] || a.name.localeCompare(b.name)
+  )
+}
+
+/**
+ * Toma una lista de badge_ids (de DB) y devuelve los N más prestigiosos
+ * para mostrar en ranking público. Filtra desconocidos y privateOnly.
+ */
+export function selectDisplayBadges(badgeIds: string[], limit = 3): BadgeDef[] {
+  const known = badgeIds
+    .map(id => BADGES[id])
+    .filter((b): b is BadgeDef => b != null && !b.privateOnly)
+  // Orden: rareza desc, luego categoría mundial primero (visualmente más vistoso)
+  known.sort((a, b) => {
+    const r = RARITY_ORDER[a.rarity] - RARITY_ORDER[b.rarity]
+    if (r !== 0) return r
+    if (a.category === 'mundial' && b.category !== 'mundial') return -1
+    if (b.category === 'mundial' && a.category !== 'mundial') return 1
+    return 0
+  })
+  return known.slice(0, limit)
+}

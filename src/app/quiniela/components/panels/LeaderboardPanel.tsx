@@ -6,8 +6,27 @@ import { useState, useEffect } from 'react'
 // Leaderboard semanal — modo Ranked: ordena por monedas reales
 // ganadas en la jornada (no por pickCount como en versiones previas).
 // ─────────────────────────────────────────────────────────────────
-interface LBEntry { nickname: string; score: number; total: number }
+interface LBBadge { id: string; name: string; emoji: string; color: string; bg: string; rarity: string }
+interface LBEntry { nickname: string; score: number; total: number; badges?: LBBadge[] }
 type LBMode = 'ranked' | 'legacy'
+
+// Chip compacto que se renderiza junto al nickname en el ranking.
+// Tooltip nativo (title) muestra el nombre del badge para no inventar UI.
+function BadgeChip({ badge }: { badge: LBBadge }) {
+  return (
+    <span
+      title={badge.name}
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: 16, height: 16, borderRadius: 4,
+        background: badge.bg, border: `1px solid ${badge.color}`,
+        fontSize: 9, lineHeight: 1,
+      }}
+    >
+      {badge.emoji}
+    </span>
+  )
+}
 
 export function LeaderboardPanel({ jornada, totalMatches, myScore }: { jornada: string; totalMatches: number; myScore?: number }) {
   const [board, setBoard] = useState<LBEntry[]>([])
@@ -81,8 +100,13 @@ export function LeaderboardPanel({ jornada, totalMatches, myScore }: { jornada: 
               <span style={{ fontSize: 11, width: 18, textAlign: 'center', fontFamily: 'var(--font-display)', color: '#3A3A58', fontWeight: 900 }}>
                 {medal ?? `${i + 1}`}
               </span>
-              <span className="flex-1 text-[11px] font-black" style={{ color: isMe ? '#C4B5FD' : '#8080A0', fontFamily: 'var(--font-display)' }}>
-                {isMe ? 'Tú' : p.nickname}
+              <span className="flex-1 text-[11px] font-black flex items-center gap-1.5 min-w-0" style={{ color: isMe ? '#C4B5FD' : '#8080A0', fontFamily: 'var(--font-display)' }}>
+                <span className="truncate">{isMe ? 'Tú' : p.nickname}</span>
+                {p.badges && p.badges.length > 0 && (
+                  <span className="flex items-center gap-0.5 flex-shrink-0">
+                    {p.badges.map(b => <BadgeChip key={b.id} badge={b} />)}
+                  </span>
+                )}
               </span>
               <span className="text-[11px] font-black tabular-nums" style={{ color: i === 0 ? '#fbbf24' : '#4A4A6A', fontFamily: 'var(--font-display)' }}>
                 {formatScore(p.score, p.total)}

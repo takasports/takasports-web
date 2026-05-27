@@ -26,6 +26,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { scorePicks, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
+import { awardBadges, badgesEarnedOnSettle } from '@/lib/badge-awards'
 
 type Phase = 'stake' | 'settle'
 
@@ -391,6 +392,68 @@ export async function POST(req: NextRequest) {
         jornada: body.jornada,
         picks: updatedPayload,
       }, { onConflict: 'user_id,jornada' })
+
+      // ── Badge awards (fire-and-forget) ───────────────────────────
+      // Detectamos qué badges merece el user tras este settle y los
+      // otorgamos vía awardBadges (idempotente). Errores se loguean
+      // pero NO bloquean la respuesta — un fallo de badge nunca puede
+      // romper la acreditación de monedas.
+      try {
+        // Historial previo del user (otras jornadas settled) para
+        // detectar isFirstBet/isFirstWin/streak.
+        const { data: history } = await sb
+          .from('quiniela_picks')
+          .select('jornada, picks, created_at')
+          .eq('user_id', user.id)
+          .neq('jornada', body.jornada)
+          .order('created_at', { ascending: false })
+          .limit(20)
+
+        const histPayloads = (history ?? [])
+          .map(h => h.picks as StoredPayload | null)
+          .filter((p): p is StoredPayload => !!p)
+
+        const isFirstBet = histPayloads.filter(p => p.staked).length === 0
+        const isFirstWin = histPayloads.filter(p =>
+          p.settled && (p.totalWon ?? 0) > (p.totalStakeCharged ?? 0)
+        ).length === 0
+
+        // Streak: cuántas jornadas consecutivas previas (settled) tuvieron win.
+        // Recorremos de más reciente a más vieja y cortamos al primer no-win.
+        let prevStreak = 0
+        for (const p of histPayloads) {
+          if (!p.settled) break
+          if ((p.totalWon ?? 0) > (p.totalStakeCharged ?? 0)) prevStreak += 1
+          else break
+        }
+
+        // Picks con su odds + si ganó (para underdog)
+        const picksWithOdds = persistedPicks.map((pick, i) => {
+          const ps = breakdown.perPick[i]
+          return {
+            won: !!ps?.hit,
+            odds: pick.oddsAtPick ?? 1,
+          }
+        })
+
+        const earned = badgesEarnedOnSettle({
+          hits: breakdown.hits,
+          totalPicks: persistedPicks.length,
+          pleno: breakdown.pleno,
+          totalStake: prevPayload.totalStakeCharged ?? breakdown.totalStake,
+          totalWon,
+          picksWithOdds,
+          prevStreak,
+          isFirstBet,
+          isFirstWin,
+        })
+
+        if (earned.length > 0) {
+          await awardBadges(sb, user.id, earned)
+        }
+      } catch (badgeErr) {
+        console.error('[score/settle] badge award failed', badgeErr)
+      }
 
       // game_plays cross-game solo en settle (al cierre).
       await sb.rpc('record_game_play', {

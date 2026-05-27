@@ -29,6 +29,16 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { selectDisplayBadges } from '@/lib/badges'
+
+export interface LeaderboardBadge {
+  id: string
+  name: string
+  emoji: string
+  color: string
+  bg: string
+  rarity: string
+}
 
 export interface LeaderboardEntry {
   nickname: string
@@ -36,6 +46,39 @@ export interface LeaderboardEntry {
   total: number          // ranked: hits  | legacy: 10 (placeholder)
   captainUsed: boolean
   isMe?: boolean
+  /** Hasta 3 badges (los más prestigiosos) para mostrar junto al nick. */
+  badges?: LeaderboardBadge[]
+}
+
+// Helper compartido: fetch badges para un set de userIds y devuelve
+// un Map<userId, LeaderboardBadge[]>. Filtra IDs desconocidos y
+// limita a 3 por user (los más prestigiosos según selectDisplayBadges).
+async function fetchBadgesByUser(
+  admin: ReturnType<typeof adminSupabase>,
+  userIds: string[],
+): Promise<Map<string, LeaderboardBadge[]>> {
+  const out = new Map<string, LeaderboardBadge[]>()
+  if (!admin || userIds.length === 0) return out
+  const { data } = await admin
+    .from('quiniela_badges')
+    .select('user_id, badge_id')
+    .in('user_id', userIds)
+  if (!data) return out
+  const byUser = new Map<string, string[]>()
+  for (const row of data) {
+    const uid = row.user_id as string
+    const list = byUser.get(uid) ?? []
+    list.push(row.badge_id as string)
+    byUser.set(uid, list)
+  }
+  for (const [uid, ids] of byUser.entries()) {
+    const defs = selectDisplayBadges(ids, 3)
+    out.set(uid, defs.map(d => ({
+      id: d.id, name: d.name, emoji: d.emoji,
+      color: d.color, bg: d.bg, rarity: d.rarity,
+    })))
+  }
+  return out
 }
 
 interface PickBreakdown {
@@ -98,10 +141,10 @@ export async function GET(req: NextRequest) {
 
       // Profile lookup en una sola query.
       const userIds = [...byUser.keys()]
-      const { data: profileRows } = await admin
-        .from('profiles')
-        .select('id, display_name')
-        .in('id', userIds)
+      const [{ data: profileRows }, badgesByUser] = await Promise.all([
+        admin.from('profiles').select('id, display_name').in('id', userIds),
+        fetchBadgesByUser(admin, userIds),
+      ])
       const nameById = new Map<string, string>()
       for (const p of profileRows ?? []) {
         const name = (p.display_name as string | null)?.trim()
@@ -114,6 +157,7 @@ export async function GET(req: NextRequest) {
           score: agg.coins,
           total: agg.jornadas,  // jornadas jugadas
           captainUsed: false,
+          badges: badgesByUser.get(uid) ?? [],
         }))
         .sort((a, b) => b.score - a.score || b.total - a.total)
         .slice(0, limit)
@@ -133,12 +177,12 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ entries: [], mode: 'ranked' })
       }
 
-      // Profile lookup en una sola query.
+      // Profile lookup + badges en paralelo.
       const userIds = [...new Set(rows.map(r => r.user_id as string))]
-      const { data: profileRows } = await admin
-        .from('profiles')
-        .select('id, display_name')
-        .in('id', userIds)
+      const [{ data: profileRows }, badgesByUser] = await Promise.all([
+        admin.from('profiles').select('id, display_name').in('id', userIds),
+        fetchBadgesByUser(admin, userIds),
+      ])
       const nameById = new Map<string, string>()
       for (const p of profileRows ?? []) {
         const name = (p.display_name as string | null)?.trim()
@@ -155,6 +199,7 @@ export async function GET(req: NextRequest) {
             score: b.totalCoins ?? 0,
             total: b.hits ?? 0,
             captainUsed: false,
+            badges: badgesByUser.get(uid) ?? [],
           }
         })
         // Score desc (monedas), desempate por hits (total) desc.

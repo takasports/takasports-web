@@ -13,7 +13,24 @@ import { useEffect, useState } from 'react'
 // del badge "Copa 2026".
 // ─────────────────────────────────────────────────────────────────
 
-interface MundialEntry { nickname: string; score: number; total: number }
+interface MundialBadge { id: string; name: string; emoji: string; color: string; bg: string; rarity: string }
+interface MundialEntry { nickname: string; score: number; total: number; badges?: MundialBadge[] }
+
+function BadgeChip({ badge }: { badge: MundialBadge }) {
+  return (
+    <span
+      title={badge.name}
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: 16, height: 16, borderRadius: 4,
+        background: badge.bg, border: `1px solid ${badge.color}`,
+        fontSize: 9, lineHeight: 1,
+      }}
+    >
+      {badge.emoji}
+    </span>
+  )
+}
 
 export function MundialLeaderboardPanel() {
   const [board, setBoard] = useState<MundialEntry[]>([])
@@ -106,8 +123,13 @@ export function MundialLeaderboardPanel() {
               <span style={{ fontSize: 11, width: 18, textAlign: 'center', fontFamily: 'var(--font-display)', color: '#6A5020', fontWeight: 900 }}>
                 {medal ?? `${i + 1}`}
               </span>
-              <span className="flex-1 text-[11px] font-black truncate" style={{ color: i === 0 ? '#fbbf24' : '#A89878', fontFamily: 'var(--font-display)' }}>
-                {p.nickname}
+              <span className="flex-1 text-[11px] font-black flex items-center gap-1.5 min-w-0" style={{ color: i === 0 ? '#fbbf24' : '#A89878', fontFamily: 'var(--font-display)' }}>
+                <span className="truncate">{p.nickname}</span>
+                {p.badges && p.badges.length > 0 && (
+                  <span className="flex items-center gap-0.5 flex-shrink-0">
+                    {p.badges.map(b => <BadgeChip key={b.id} badge={b} />)}
+                  </span>
+                )}
               </span>
               <span className="text-[9px]" style={{ color: '#6A5020', fontFamily: 'var(--font-sport)' }}>
                 {p.total}j

@@ -28,6 +28,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { nameMatch } from './quiniela'
+import { curatedStrength, NEUTRAL_STRENGTH } from './team-strengths'
 
 // ── Parámetros del modelo ─────────────────────────────────────────
 const HOME_ADV     = 5
@@ -137,12 +138,48 @@ export interface InternalOdds {
 }
 
 /**
- * Computa cuotas internas para un partido usando standings ESPN.
- * Devuelve null si no hay datos suficientes — el caller debería
- * usar `neutralOdds()` como fallback final.
+ * Computa la fuerza de un equipo con CASCADA de fuentes:
+ *   1. Standings ESPN actual (más preciso, refleja actividad reciente).
+ *   2. Tabla curada (`team-strengths.ts`) — fuerza histórica.
+ *   3. Neutral (~50) como último recurso.
  *
- * Es async porque puede pegar al endpoint ESPN. Con caché interno
- * 30min — llamarlo N veces para la misma liga es barato.
+ * La fuerza está en escala "pts + 0.3 * gd" para mantener
+ * coherencia entre fuentes (top ~105, colero ~15, neutro ~50).
+ */
+function teamStrength(
+  teamName: string,
+  standings: StandingsEntry[],
+): { strength: number; source: 'standings' | 'curated' | 'neutral' } {
+  // 1. Standings (si está)
+  const entry = findTeam(standings, teamName)
+  if (entry) {
+    return { strength: entry.pts + 0.3 * entry.gd, source: 'standings' }
+  }
+  // 2. Tabla curada (top ~100 equipos europeos + selecciones)
+  const curated = curatedStrength(teamName)
+  if (curated != null) {
+    return { strength: curated, source: 'curated' }
+  }
+  // 3. Neutral mid-tier
+  return { strength: NEUTRAL_STRENGTH, source: 'neutral' }
+}
+
+/**
+ * Computa cuotas internas para un partido con cascada de fuentes
+ * (standings → tabla curada → neutral). Devuelve siempre algo válido
+ * salvo que el modelo numérico falle (degenerate probs).
+ *
+ * Antes era un "all or nothing" basado en standings. Ahora puede
+ * combinar: equipo local con standings + visitante de tabla curada,
+ * o ambos curados (común en Champions KO sin tabla, Copa del Rey,
+ * Mundial fase eliminatoria).
+ *
+ * Si AMBOS equipos terminan en neutral (50), devolvemos `null` para
+ * que el caller use `neutralOdds()` — son cuotas más predecibles que
+ * el cálculo logístico con datos vacíos.
+ *
+ * Es async porque puede pegar al endpoint ESPN standings. Con caché
+ * interno 30min — llamarlo N veces para la misma liga es barato.
  */
 export async function computeInternalOdds(
   home: string,
@@ -150,22 +187,21 @@ export async function computeInternalOdds(
   leagueSlug: string,
 ): Promise<InternalOdds | null> {
   const standings = await fetchStandings(leagueSlug)
-  if (standings.length === 0) return null
 
-  const homeTeam = findTeam(standings, home)
-  const awayTeam = findTeam(standings, away)
-  if (!homeTeam || !awayTeam) return null
+  const homeS = teamStrength(home, standings)
+  const awayS = teamStrength(away, standings)
 
-  const strength = (t: StandingsEntry) => t.pts + 0.3 * t.gd
-  const diff = (strength(homeTeam) + HOME_ADV) - strength(awayTeam)
+  // Si los DOS son neutrales (50/50), no aporta nada el cálculo
+  // logístico. El caller usa neutralOdds() — más honesto.
+  if (homeS.source === 'neutral' && awayS.source === 'neutral') return null
+
+  const diff = (homeS.strength + HOME_ADV) - awayS.strength
 
   const pHomeVsAway = 1 / (1 + Math.exp(-diff / SCALE))
   const drawProb    = Math.max(DRAW_FLOOR, DRAW_BASE - Math.abs(diff) / 100)
   const pHome       = (1 - drawProb) * pHomeVsAway
   const pAway       = (1 - drawProb) * (1 - pHomeVsAway)
 
-  // Defensa contra probs degeneradas (no debería ocurrir con los
-  // floor/ceiling pero por las dudas).
   if (pHome <= 0 || pAway <= 0 || drawProb <= 0) return null
 
   return {

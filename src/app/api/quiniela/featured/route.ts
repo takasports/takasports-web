@@ -159,6 +159,26 @@ async function resolvePickLazy(
     .eq('user_id', userId)
     .eq('jornada', jornada)
 
+  // Push notification fire-and-forget — solo si ganó algo y NO había
+  // sido pagado antes (existingTxn null). El push es one-time porque
+  // el flag `resolved` previene re-resolución.
+  if (awarded > 0 && !existingTxn) {
+    const title = myGoals >= 3
+      ? `⚽ ¡HAT-TRICK! +${awarded}🪙`
+      : myGoals === 2
+        ? `⚽ Doblete · +${awarded}🪙`
+        : `⚽ ¡Tu goleador marcó! +${awarded}🪙`
+    const pushBody = `${pick.player_name} hizo ${myGoals} ${myGoals === 1 ? 'gol' : 'goles'} · partido destacado de ${jornada}`
+    import('@/lib/push-helper').then(({ sendPushToUser }) =>
+      sendPushToUser(userId, {
+        title,
+        body: pushBody,
+        url: '/quiniela',
+        tag: `quiniela-goalscorer-${jornada}`,
+      }),
+    ).catch(() => { /* silent: push best-effort */ })
+  }
+
   return { goals: myGoals, awarded }
 }
 
