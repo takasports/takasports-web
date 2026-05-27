@@ -28,6 +28,7 @@ import { BadgesPanel } from './components/panels/BadgesPanel'
 import { CoinWallet } from './components/panels/CoinWallet'
 import { LeaderboardPanel } from './components/panels/LeaderboardPanel'
 import { PersonalStatsPanel } from './components/panels/PersonalStatsPanel'
+import { HitosPanel } from './components/panels/HitosPanel'
 import { MundialLeaderboardPanel } from './components/panels/MundialLeaderboardPanel'
 import { SeasonPanel } from './components/panels/SeasonPanel'
 import { MundialWelcomeModal } from './components/MundialWelcomeModal'
@@ -497,6 +498,10 @@ export default function QuinielaClient() {
             {/* Stats personales del Ranked (ROI, racha, mejor jornada).
                 Silent si el user no jugó nunca o no está autenticado. */}
             <PersonalStatsPanel user={user} />
+
+            {/* Hitos del user (level + XP + badges desbloqueados).
+                Click → BadgesModal con catálogo completo. Silent si no auth. */}
+            <HitosPanel user={user} />
 
             {/* División del jugador */}
             {(() => {
