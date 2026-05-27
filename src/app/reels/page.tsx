@@ -19,12 +19,14 @@ export const metadata: Metadata = {
     siteName: 'TakaSports',
     locale: 'es_ES',
     type: 'website',
+    images: [{ url: `${SITE_URL}/taka-logo.png`, width: 1200, height: 630, alt: 'Reels deportivos — TakaSports' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Reels deportivos — TakaSports',
     description: 'Vídeos cortos de fútbol, NBA, UFC, F1 y más.',
     site: '@takasportsx',
+    images: [`${SITE_URL}/taka-logo.png`],
   },
 }
 

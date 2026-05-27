@@ -146,6 +146,7 @@ export default async function Home({
       position: i + 1,
       url: a.slug ? `${SITE_URL}/noticias/${a.slug}` : undefined,
       name: a.title,
+      description: a.short_summary,
       image: a.imageUrl ?? (a.image?.asset ? urlFor(a.image).width(1200).height(630).url() : undefined),
     })),
   }

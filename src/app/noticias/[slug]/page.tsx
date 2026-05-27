@@ -100,6 +100,7 @@ export async function generateMetadata({
   return {
     title: article.title,
     description: article.short_summary ?? article.subtitle,
+    authors: [{ name: article.author ?? 'Redacción TakaSports' }],
     alternates: { canonical },
     keywords: keywordList.length > 0 ? keywordList : undefined,
     other: keywordList.length > 0 ? { news_keywords: keywordList.slice(0, 10).join(', ') } : undefined,

@@ -151,6 +151,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
+  // Paginación del hub /noticias: indexable hasta página 20 (ver noticias/pagina/[n]/page.tsx).
+  const PAGE_SIZE = 40
+  const totalPages = Math.min(Math.ceil(articles.length / PAGE_SIZE), 20)
+  const paginatedHubRoutes: MetadataRoute.Sitemap = Array.from(
+    { length: Math.max(totalPages - 1, 0) },
+    (_, i) => ({
+      url: `${BASE_URL}/noticias/pagina/${i + 2}`,
+      lastModified: hubLastMod,
+      changeFrequency: 'daily' as const,
+      priority: 0.6,
+    }),
+  )
+
   const tagRoutes: MetadataRoute.Sitemap = (tags as string[])
     .filter(Boolean)
     .map(tag => ({
@@ -160,5 +173,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     }))
 
-  return [...staticRoutes, ...sportRoutes, ...rankingDetailRoutes, ...articleRoutes, ...tagRoutes, ...stats]
+  return [...staticRoutes, ...sportRoutes, ...rankingDetailRoutes, ...articleRoutes, ...paginatedHubRoutes, ...tagRoutes, ...stats]
 }
