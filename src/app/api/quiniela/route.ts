@@ -444,9 +444,23 @@ export async function GET() {
     for (const m of deduped) if (!m.odds) m.odds = devSeedOdds(m.home, m.away)
   }
 
-  // Selección por matchScore (orden de calidad). El primero es el
-  // featured de la jornada — lo marcamos ANTES del re-sort cronológico.
-  const selectedByScore = selectMatches(deduped)
+  // Modo Mundial: TODOS los partidos del torneo aparecen (sin filtrar
+  // por calidad/matchScore). El user puede apostar en cualquier partido
+  // del Mundial, no solo los destacados. Visión del producto: el Mundial
+  // es el evento principal y todo el catálogo debe estar disponible.
+  //
+  // Modo normal (clubes): selectMatches filtra a los 5-10 mejores por
+  // matchScore para no abrumar al usuario en jornadas con 30+ partidos.
+  let selectedByScore: QuinielaMatch[]
+  if (mundial) {
+    selectedByScore = [...deduped].sort((a, b) => matchScore(b) - matchScore(a))
+  } else {
+    selectedByScore = selectMatches(deduped)
+  }
+
+  // El primer partido por matchScore queda marcado como featured (para
+  // el feature de goleador destacado). Aplica tanto a Mundial como
+  // clubes — siempre hay 1 destacado por jornada.
   if (selectedByScore.length > 0 && selectedByScore[0].espnId && selectedByScore[0].leagueSlug) {
     selectedByScore[0].isFeatured = true
   }

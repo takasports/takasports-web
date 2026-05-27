@@ -77,6 +77,20 @@ export function MundialLeaderboardPanel() {
           </p>
         </div>
       </div>
+
+      {/* Comunicación del premio físico — visible siempre que haya leaderboard */}
+      <div className="mx-4 mt-3 mb-1 px-3 py-2.5 rounded-xl flex items-center gap-2.5" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.32)' }}>
+        <span style={{ fontSize: 22, lineHeight: 1 }}>👕</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-black" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
+            Premio del torneo
+          </p>
+          <p className="text-[9px] leading-snug" style={{ color: '#C99858', fontFamily: 'var(--font-sport)' }}>
+            El TOP 3 al final del Mundial recibe una camiseta oficial de su selección. Te contactamos por email al cerrar el torneo.
+          </p>
+        </div>
+      </div>
+
       <div className="px-4 py-3 flex flex-col gap-1">
         {board.slice(0, 5).map((p, i) => {
           const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null

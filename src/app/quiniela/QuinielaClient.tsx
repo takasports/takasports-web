@@ -30,6 +30,7 @@ import { LeaderboardPanel } from './components/panels/LeaderboardPanel'
 import { PersonalStatsPanel } from './components/panels/PersonalStatsPanel'
 import { MundialLeaderboardPanel } from './components/panels/MundialLeaderboardPanel'
 import { SeasonPanel } from './components/panels/SeasonPanel'
+import { MundialWelcomeModal } from './components/MundialWelcomeModal'
 import { Rules } from './components/panels/Rules'
 
 // ─────────────────────────────────────────────────────────────────
@@ -739,6 +740,14 @@ export default function QuinielaClient() {
           apiJornada={apiJornada}
         />
       )}
+
+      {/* Bienvenida Mundial: aparece 1 vez por user/device cuando isMundial
+          y todavía no votó las predicciones long-term. Self-dismiss + flag local. */}
+      <MundialWelcomeModal
+        user={user}
+        isMundial={isMundial}
+        onGoToPredictions={() => setTab('season')}
+      />
 
     </GameLayout>
   )
