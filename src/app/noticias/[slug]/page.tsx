@@ -16,6 +16,13 @@ import ReadTracker from '@/app/article/[id]/ReadTracker'
 import ArticleTableOfContents from '@/components/ArticleTableOfContents'
 import ArticleComments from '@/components/ArticleComments'
 import { extractHeadings, type TocHeading } from '@/lib/article-toc'
+import {
+  getEntityIndex,
+  createAutolinkContext,
+  autolinkSegments,
+  type EntityIndex,
+  type AutolinkContext,
+} from '@/lib/article-autolink'
 import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const revalidate = 3600
@@ -126,7 +133,11 @@ export async function generateMetadata({
   }
 }
 
-function renderBodyBlock(text: string, i: number) {
+function renderBodyBlock(
+  text: string,
+  i: number,
+  autolink?: { index: EntityIndex; ctx: AutolinkContext },
+) {
   if (/^\*\*(.+)\*\*$/.test(text)) {
     const heading = text.slice(2, -2)
     return (
@@ -146,9 +157,25 @@ function renderBodyBlock(text: string, i: number) {
       </h3>
     )
   }
+  const segments = autolink
+    ? autolinkSegments(text, autolink.index, autolink.ctx)
+    : [{ type: 'text' as const, text }]
   return (
     <p key={i} style={{ color: '#B8B8D0', fontSize: '1.125rem', lineHeight: 1.8 }}>
-      {text}
+      {segments.map((seg, j) =>
+        seg.type === 'link' && seg.url ? (
+          <Link
+            key={j}
+            href={seg.url}
+            className="hover:underline"
+            style={{ color: '#A78BFA', textDecorationColor: 'rgba(167,139,250,0.4)' }}
+          >
+            {seg.text}
+          </Link>
+        ) : (
+          <span key={j}>{seg.text}</span>
+        ),
+      )}
     </p>
   )
 }
@@ -507,6 +534,14 @@ export default async function NoticiaPage({
     ? article.bodyText.split('\n').filter((p) => p.trim().length > 0)
     : []
 
+  // Auto-interlinking: cargamos el índice una vez por render y lo pasamos a
+  // los renders de párrafo. El contexto se comparte entre todos los párrafos
+  // del artículo para respetar cap global y "primer match por entidad".
+  const autolinkIndex = paragraphs.length > 0 ? await getEntityIndex() : null
+  const autolinkCtx = autolinkIndex ? createAutolinkContext(article.sport ?? null) : null
+  const autolink: { index: EntityIndex; ctx: AutolinkContext } | undefined =
+    autolinkIndex && autolinkCtx ? { index: autolinkIndex, ctx: autolinkCtx } : undefined
+
   const wc = bodyWordCount()
   const minRead = wc ? Math.max(1, Math.round(wc / 200)) : readingTime(article.bodyText)
   const { accent } = getSportStyle(article.sport, article.category)
@@ -848,7 +883,7 @@ export default async function NoticiaPage({
               </div>
             ) : paragraphs.length > 0 ? (
               <div className="flex flex-col gap-6" style={{ maxWidth: 680 }}>
-                {paragraphs.map((p, i) => renderBodyBlock(p, i))}
+                {paragraphs.map((p, i) => renderBodyBlock(p, i, autolink))}
               </div>
             ) : (
               <p className="text-sm italic" style={{ color: 'var(--text-muted)', maxWidth: 680 }}>
