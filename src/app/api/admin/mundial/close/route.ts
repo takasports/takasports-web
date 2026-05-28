@@ -19,6 +19,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { closeMundial2026, MUNDIAL_CLOSE_DATE } from '@/lib/mundial-closure'
+import { safeEqual } from '@/lib/auth-utils'
 
 function checkAuth(req: NextRequest, secret?: string): NextResponse | null {
   const required = process.env.PUSH_BROADCAST_SECRET
@@ -27,7 +28,7 @@ function checkAuth(req: NextRequest, secret?: string): NextResponse | null {
   }
   const header = req.headers.get('x-admin-secret')
   const provided = secret ?? header ?? ''
-  if (provided !== required) {
+  if (!safeEqual(provided, required)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
   return null

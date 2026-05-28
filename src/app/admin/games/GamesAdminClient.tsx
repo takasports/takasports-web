@@ -49,11 +49,12 @@ export default function GamesAdminClient() {
   }
 
   const loadList = async () => {
-    if (!token) { setMsg({ kind: 'err', text: 'Falta token' }); return }
+    // Si hay sesión admin (cookie) no hace falta token. El campo se mantiene
+    // como fallback para llamadas desde n8n/cron o uso sin login.
     setBusy(true)
     const [resList, resFunnel] = await Promise.all([
-      fetch(`/api/admin/games/content?game=${gameId}`, { headers }),
-      fetch('/api/admin/games/funnel', { headers }),
+      fetch(`/api/admin/games/content?game=${gameId}`, { headers, credentials: 'same-origin' }),
+      fetch('/api/admin/games/funnel', { headers, credentials: 'same-origin' }),
     ])
     setBusy(false)
     if (!resList.ok) { setMsg({ kind: 'err', text: `${resList.status} — ${await resList.text()}` }); return }
@@ -65,7 +66,6 @@ export default function GamesAdminClient() {
   }
 
   const submit = async () => {
-    if (!token) { setMsg({ kind: 'err', text: 'Falta token' }); return }
     let parsed: Record<string, unknown>
     try { parsed = JSON.parse(payload) }
     catch { setMsg({ kind: 'err', text: 'Payload JSON inválido' }); return }
@@ -75,6 +75,7 @@ export default function GamesAdminClient() {
     const res = await fetch('/api/admin/games/content', {
       method: 'POST',
       headers,
+      credentials: 'same-origin',
       body: JSON.stringify({ game_id: gameId, period: period.trim(), payload: parsed, status }),
     })
     setBusy(false)
@@ -89,6 +90,7 @@ export default function GamesAdminClient() {
     const res = await fetch(`/api/admin/games/content?game=${g}&period=${encodeURIComponent(p)}`, {
       method: 'DELETE',
       headers,
+      credentials: 'same-origin',
     })
     setBusy(false)
     if (!res.ok) { setMsg({ kind: 'err', text: `${res.status} — ${await res.text()}` }); return }

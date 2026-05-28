@@ -5,16 +5,17 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { isAdminRequest } from '@/lib/admin-auth'
 
-function authOk(req: NextRequest): boolean {
-  const token    = req.headers.get('x-admin-token')
-  const expected = process.env.GAMES_ADMIN_TOKEN
-  if (!expected) return false
-  return token === expected
+async function authOk(req: NextRequest): Promise<boolean> {
+  return isAdminRequest(req, {
+    headerName: 'x-admin-token',
+    tokenEnv: process.env.GAMES_ADMIN_TOKEN,
+  })
 }
 
 export async function GET(req: NextRequest) {
-  if (!authOk(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!(await authOk(req))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'supabase not configured' }, { status: 503 })

@@ -35,10 +35,21 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
+    // `unsafe-eval` solo es necesario en desarrollo (HMR de Next, Fast Refresh).
+    // En producción lo eliminamos para reducir la superficie de XSS — un atacante
+    // que consiga inyectar un script via tags HTML ya no puede ejecutar `eval()`
+    // ni `new Function()`. Mantenemos `'unsafe-inline'` porque Next 16 todavía
+    // emite scripts inline para hydration; migrar a CSP basada en nonce queda
+    // como deuda técnica (script-loader.tsx custom o `experimental.cspNonce`).
+    const isDev = process.env.NODE_ENV !== 'production'
+    const scriptSrc = isDev
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.clarity.ms"
+      : "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.clarity.ms"
+
     const csp = [
       "default-src 'self'",
-      // Next.js inline scripts + HMR en dev; GA y Clarity
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.clarity.ms",
+      // Next.js inline scripts + (dev) HMR + GA + Clarity
+      scriptSrc,
       // Tailwind/inline styles
       "style-src 'self' 'unsafe-inline'",
       // Imágenes: CDNs conocidos + data URIs (favicons, placeholders)

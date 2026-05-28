@@ -10,15 +10,16 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { isAdminRequest } from '@/lib/admin-auth'
 
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
 type GameId = typeof GAME_IDS[number]
 
-function authOk(req: NextRequest): boolean {
-  const token    = req.headers.get('x-admin-token')
-  const expected = process.env.GAMES_ADMIN_TOKEN
-  if (!expected) return false
-  return token === expected
+async function authOk(req: NextRequest): Promise<boolean> {
+  return isAdminRequest(req, {
+    headerName: 'x-admin-token',
+    tokenEnv: process.env.GAMES_ADMIN_TOKEN,
+  })
 }
 
 interface ContentBody {
@@ -29,7 +30,7 @@ interface ContentBody {
 }
 
 export async function POST(req: NextRequest) {
-  if (!authOk(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!(await authOk(req))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'supabase not configured' }, { status: 503 })
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  if (!authOk(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!(await authOk(req))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'supabase not configured' }, { status: 503 })
@@ -76,7 +77,7 @@ export async function DELETE(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  if (!authOk(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!(await authOk(req))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'supabase not configured' }, { status: 503 })

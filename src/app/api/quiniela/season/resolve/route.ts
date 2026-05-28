@@ -27,6 +27,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { safeEqual } from '@/lib/auth-utils'
 
 interface ResolveBody {
   questionId: string
@@ -50,7 +51,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid body' }, { status: 400 })
   }
 
-  if (body.adminSecret !== required) {
+  // Aceptamos el secreto en header `x-admin-secret` (preferido) o, por
+  // compatibilidad, en el body (`adminSecret`). El header debería usarse
+  // siempre que sea posible para que no quede en logs de stringify.
+  const header = req.headers.get('x-admin-secret')
+  const provided = header ?? body.adminSecret ?? ''
+  if (!safeEqual(provided, required)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
   if (!body.questionId || !body.winner) {

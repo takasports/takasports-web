@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { getUserFromRequest } from '@/lib/supabase-server'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,21 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // Rate-limit por IP: máximo 30 reportes/hora — defiende de un atacante
+  // que cree cuentas en bucle para silenciar comentarios.
+  const rl = await checkRateLimit({
+    bucket: 'comment_report',
+    key: getClientIp(req),
+    windowSeconds: 3600,
+    max: 30,
+  })
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: 'rate_limited', retryAfter: rl.retryAfterSeconds },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+    )
+  }
+
   const { id } = await params
   if (!id) return NextResponse.json({ ok: false, error: 'id_required' }, { status: 400 })
 

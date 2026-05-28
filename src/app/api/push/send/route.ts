@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { getSubscriptions } from '../subscribe/route'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { checkHeaderSecret } from '@/lib/auth-utils'
 
 // Lazy init — evita crash en build si las env vars VAPID no están configuradas
 function initVapid() {
@@ -24,25 +25,25 @@ interface SendBody {
   url?: string
   tag?: string
   topic?: string  // filtra suscripciones por topic (default 'quiniela')
-  // Opcional: token compartido para crons/jobs externos
-  secret?: string
 }
 
 export async function POST(req: NextRequest) {
+  // PUSH_BROADCAST_SECRET es obligatorio — sin él el endpoint queda cerrado.
+  // El secreto debe viajar en el header `x-push-secret`, NUNCA en el body
+  // (los bodies suelen quedar registrados en logs de proxies / observabilidad).
+  const required = process.env.PUSH_BROADCAST_SECRET
+  if (!required) {
+    return NextResponse.json({ error: 'Push broadcast not configured' }, { status: 503 })
+  }
+  if (!checkHeaderSecret(req.headers.get('x-push-secret'), required)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
+
   if (!initVapid()) {
     return NextResponse.json({ error: 'Push notifications not configured' }, { status: 503 })
   }
   try {
-    const { title, body, url, tag, topic = 'quiniela', secret } = await req.json() as SendBody
-
-    // PUSH_BROADCAST_SECRET es obligatorio — sin él el endpoint queda abierto
-    const required = process.env.PUSH_BROADCAST_SECRET
-    if (!required) {
-      return NextResponse.json({ error: 'Push broadcast not configured' }, { status: 503 })
-    }
-    if (secret !== required) {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-    }
+    const { title, body, url, tag, topic = 'quiniela' } = await req.json() as SendBody
 
     if (!title || !body) {
       return NextResponse.json({ error: 'title and body required' }, { status: 400 })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 interface PushSubscriptionInput {
   endpoint: string
@@ -12,6 +13,23 @@ interface PushSubscriptionInput {
 const memSubs = new Map<string, { endpoint: string; keys: { p256dh: string; auth: string }; topics: string[] }>()
 
 export async function POST(req: NextRequest) {
+  // Rate-limit por IP: 10 subs/hora. Mitiga el hueco actual de la policy
+  // `push_subs_insert` (WITH CHECK true) que permite insertar suscripciones
+  // sin sesión. Mientras se aplica la migración 039 que cierra esa policy,
+  // limitamos el daño aquí.
+  const rl = await checkRateLimit({
+    bucket: 'push_subscribe',
+    key: getClientIp(req),
+    windowSeconds: 3600,
+    max: 10,
+  })
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'rate_limited', retryAfter: rl.retryAfterSeconds },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+    )
+  }
+
   try {
     const sub = await req.json() as PushSubscriptionInput
     if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) {

@@ -1,16 +1,17 @@
-// /admin/dashboard?token=XXX
+// /admin/dashboard
 // Dashboard editorial protegido. Muestra métricas básicas para tomar
 // decisiones de contenido: artículos publicados, top tags, push subs,
 // plays por juego, reels indexados, newsletter subs.
 //
-// Protección: ?token=$RANKINGS_ADMIN_TOKEN (mismo patrón que /admin/rankings).
-// Sin token o token erróneo → redirect a /?admin=unauthorized.
+// Protección: sesión Supabase con email en `ADMIN_EMAILS` (env). Si no hay
+// sesión, redirige a /perfil (donde está el login). Si la sesión existe pero
+// el email no está en la allowlist, redirige a /?admin=unauthorized.
 
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { sanityClient } from '@/lib/sanity'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { getMergedReels } from '@/lib/reels-feed'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -19,8 +20,6 @@ export const metadata = {
   title: 'Dashboard editorial — TakaSports',
   robots: { index: false, follow: false },
 }
-
-type SP = { token?: string | string[] }
 
 interface TagCount { tag: string; count: number }
 interface GameCount { game_id: string; plays: number }
@@ -142,15 +141,8 @@ function MetricCard({ label, value, hint, accent = 'var(--purple)' }: MetricCard
   )
 }
 
-export default async function AdminDashboardPage(
-  { searchParams }: { searchParams: Promise<SP> },
-) {
-  const sp = await searchParams
-  const token = Array.isArray(sp.token) ? sp.token[0] : (sp.token ?? '')
-  const expected = process.env.RANKINGS_ADMIN_TOKEN
-  if (!token || !expected || token !== expected) {
-    redirect('/?admin=unauthorized')
-  }
+export default async function AdminDashboardPage() {
+  await requireAdmin('/admin/dashboard')
 
   // Datos en paralelo — cada uno con su catch defensivo
   const [
@@ -180,7 +172,7 @@ export default async function AdminDashboardPage(
         {/* Header */}
         <div className="mb-8">
           <Link
-            href={`/admin/rankings?token=${encodeURIComponent(token)}`}
+            href="/admin/rankings"
             style={{
               fontFamily: 'var(--font-sport)',
               fontSize: 11,

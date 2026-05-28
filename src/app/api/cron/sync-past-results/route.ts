@@ -5,33 +5,21 @@
 //  - Vercel Cron
 //  - manualmente con curl + CRON_SECRET
 //
-// Auth: header `x-cron-secret` o query `?secret=` debe coincidir con env CRON_SECRET.
+// Auth: header `x-cron-secret` o `Authorization: Bearer <CRON_SECRET>` (Vercel
+// Cron lo envía automático). El antiguo `?secret=` queda eliminado (filtra en
+// logs y referer).
 
 import { NextResponse } from 'next/server'
 import { fetchEspnPastEvents } from '@/lib/espn'
 import { upsertPastEvents, pastEventsConfigured } from '@/lib/past-events'
+import { checkBearerOrHeader } from '@/lib/auth-utils'
 
 export const dynamic = 'force-dynamic'
 
 async function handle(req: Request) {
-  const secret = process.env.CRON_SECRET
-  if (secret) {
-    const url = new URL(req.url)
-    // Métodos aceptados, en orden:
-    //  1. Header `x-cron-secret`  → llamadas manuales / n8n
-    //  2. Query  `?secret=`       → llamadas manuales
-    //  3. Header `Authorization: Bearer <CRON_SECRET>` → Vercel Cron
-    //     lo envía automáticamente cuando CRON_SECRET está en env.
-    const authHeader = req.headers.get('authorization') ?? ''
-    const bearer     = authHeader.toLowerCase().startsWith('bearer ')
-      ? authHeader.slice(7).trim()
-      : null
-    const provided = req.headers.get('x-cron-secret')
-      ?? url.searchParams.get('secret')
-      ?? bearer
-    if (provided !== secret) {
-      return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
-    }
+  // CRON_SECRET es obligatorio: si no está seteado, el endpoint queda cerrado.
+  if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
+    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   }
 
   if (!pastEventsConfigured()) {

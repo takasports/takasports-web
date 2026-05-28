@@ -32,11 +32,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { isAdminRequest } from '@/lib/admin-auth'
 
-function checkAuth(req: NextRequest): boolean {
-  const token = req.headers.get('x-admin-token')
-  const expected = process.env.RANKINGS_ADMIN_TOKEN
-  return Boolean(expected && token === expected)
+async function checkAuth(req: NextRequest): Promise<boolean> {
+  return isAdminRequest(req, {
+    headerName: 'x-admin-token',
+    tokenEnv: process.env.RANKINGS_ADMIN_TOKEN,
+  })
 }
 
 // Fórmula canónica del Índice Taka (espejada de rankings.ts:calcScore)
@@ -46,7 +48,7 @@ function calcScore(f: { rendimiento: number; contexto: number; mediatico: number
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!(await checkAuth(req))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'supabase not configured' }, { status: 500 })
@@ -160,7 +162,7 @@ export async function POST(req: NextRequest) {
 
 // GET → estado del último run (debug rápido)
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!(await checkAuth(req))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'supabase not configured' }, { status: 500 })

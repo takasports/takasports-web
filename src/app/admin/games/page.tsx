@@ -8,6 +8,7 @@ import type { Metadata } from 'next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import GamesAdminClient from './GamesAdminClient'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export const metadata: Metadata = {
   title: 'Admin · Contenido de juegos — TakaSports',
@@ -15,7 +16,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default function GamesAdminPage() {
+export default async function GamesAdminPage() {
+  await requireAdmin('/admin/games')
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />

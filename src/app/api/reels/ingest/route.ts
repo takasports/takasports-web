@@ -16,6 +16,8 @@
 //   NEXT_PUBLIC_SANITY_PROJECT_ID / NEXT_PUBLIC_SANITY_DATASET
 
 import { createClient } from '@sanity/client'
+import { safeEqual } from '@/lib/auth-utils'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -36,7 +38,7 @@ async function handle(params: {
   secret?: string; url?: string; title?: string; sport?: string
 }) {
   const SECRET = process.env.REELS_INGEST_SECRET
-  if (!SECRET || params.secret !== SECRET) {
+  if (!SECRET || !safeEqual(params.secret, SECRET)) {
     return Response.json({ ok: false, error: 'no autorizado' }, { status: 401 })
   }
 
@@ -84,15 +86,37 @@ async function handle(params: {
 }
 
 export async function POST(req: Request) {
+  // Rate-limit por IP previo al check de secret: si alguien intenta brute-force
+  // el REELS_INGEST_SECRET, lo cortamos rápido (60 intentos/hora).
+  const rl = await checkRateLimit({
+    bucket: 'reels_ingest',
+    key: getClientIp(req),
+    windowSeconds: 3600,
+    max: 60,
+  })
+  if (!rl.ok) {
+    return Response.json(
+      { ok: false, error: 'rate_limited', retryAfter: rl.retryAfterSeconds },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+    )
+  }
+
   const body = await req.json().catch(() => ({}))
-  return handle(body)
+  // El header `x-reels-secret` tiene prioridad sobre el secret del body (más
+  // seguro: no acaba en historiales/logs de stringificación accidental).
+  const headerSecret = req.headers.get('x-reels-secret') ?? undefined
+  return handle({ ...body, secret: headerSecret ?? body.secret })
 }
 
-// GET para que el atajo pueda usar una sola URL si se prefiere.
+// GET para compat con atajos iOS antiguos que mandan `?secret=`. El secret en
+// query queda en access logs y en el referer si el atajo abre algún navegador,
+// por eso preferimos POST con header `x-reels-secret`. Migrar el atajo cuando
+// sea posible.
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams
+  const headerSecret = req.headers.get('x-reels-secret') ?? undefined
   return handle({
-    secret: q.get('secret') ?? undefined,
+    secret: headerSecret ?? q.get('secret') ?? undefined,
     url:    q.get('url') ?? undefined,
     title:  q.get('title') ?? undefined,
     sport:  q.get('sport') ?? undefined,

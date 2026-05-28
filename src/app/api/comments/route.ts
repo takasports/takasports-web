@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { getUserFromRequest } from '@/lib/supabase-server'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -48,6 +49,21 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate-limit por IP además del rate-limit por user_id existente. Defiende
+  // de cuentas creadas en bucle desde el mismo origen: 20 POSTs/hora por IP.
+  const rl = await checkRateLimit({
+    bucket: 'comments_post',
+    key: getClientIp(req),
+    windowSeconds: 3600,
+    max: 20,
+  })
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: 'rate_limited', retryAfter: rl.retryAfterSeconds },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+    )
+  }
+
   let body: { slug?: unknown; body?: unknown }
   try { body = await req.json() } catch {
     return NextResponse.json({ ok: false, error: 'invalid_json' }, { status: 400 })

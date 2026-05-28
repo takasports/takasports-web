@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export const metadata: Metadata = {
   title: 'Audit · Rankings — TakaSports',
@@ -10,8 +11,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-// SSR cada 60s — el audit se nutre on-demand
-export const revalidate = 60
+// Página dinámica: requireAdmin lee la cookie de sesión, no puede ser
+// estática/cacheada. (Antes era `revalidate = 60`; dropped a favor de auth.)
+export const dynamic = 'force-dynamic'
 
 type Edit = {
   id: number
@@ -76,6 +78,7 @@ function fmtDate(iso: string): string {
 }
 
 export default async function RankingsAuditPage() {
+  await requireAdmin('/admin/rankings-audit')
   const { edits, warning } = await loadEdits()
 
   const stats = {

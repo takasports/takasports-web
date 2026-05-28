@@ -20,6 +20,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { safeEqual } from '@/lib/auth-utils'
 
 interface CreateBody {
   adminSecret: string
@@ -43,9 +44,11 @@ function assertAuthorized(req: NextRequest, body: { adminSecret?: string }): Nex
   if (!required) {
     return NextResponse.json({ error: 'admin endpoint not configured' }, { status: 503 })
   }
+  // Prioridad: header `x-admin-secret`. El `adminSecret` en body/query queda
+  // como compatibilidad pero conviene migrarlo (filtra en logs si va en query).
   const header = req.headers.get('x-admin-secret')
-  const secret = body.adminSecret ?? header ?? ''
-  if (secret !== required) {
+  const secret = header ?? body.adminSecret ?? ''
+  if (!safeEqual(secret, required)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
   return null

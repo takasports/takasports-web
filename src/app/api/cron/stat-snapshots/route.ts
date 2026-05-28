@@ -2,18 +2,20 @@
 // Cron orquestador de scrapers para bloques sin API gratuita en vivo.
 // Cada scraper devuelve {rows, source, asOf} | null. Si null se omite el upsert.
 //
-// Auth: header `x-cron-secret` o ?secret= debe coincidir con env CRON_SECRET.
+// Auth: header `x-cron-secret` o `Authorization: Bearer <CRON_SECRET>`.
+// El antiguo `?secret=` queda eliminado (filtra en logs/referer).
 // Selección de scraper: ?sport=motogp (default: 'all' = todos los configurados).
 //
 // Vercel Cron lo invoca semanalmente (ver vercel.json).
-// También se puede llamar manualmente:
-//   curl "https://takasportsmedia.com/api/cron/stat-snapshots?secret=XXX&sport=motogp"
+// Llamada manual:
+//   curl -H "x-cron-secret: XXX" "https://takasportsmedia.com/api/cron/stat-snapshots?sport=motogp"
 
 import { NextResponse } from 'next/server'
 import { upsertSnapshot, type UpsertResult } from '@/lib/stat-snapshots'
 import { fetchMotogpRiders, fetchMotogpConstructors, type ScrapeResult } from '@/lib/motogp-scraper'
 import { fetchUfcP4P, fetchUfcChampions, makeDivisionFetcher, UFC_DIVISIONS } from '@/lib/ufc-scraper'
 import { fetchEloWorldRanking } from '@/lib/elo-scraper'
+import { checkBearerOrHeader } from '@/lib/auth-utils'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -56,19 +58,10 @@ async function runJob(job: ScraperJob): Promise<UpsertResult> {
 }
 
 async function handle(req: Request) {
-  const secret = process.env.CRON_SECRET
-  const url = new URL(req.url)
-  if (secret) {
-    const auth = req.headers.get('authorization') ?? ''
-    const bearer = auth.toLowerCase().startsWith('bearer ') ? auth.slice(7) : null
-    const provided = req.headers.get('x-cron-secret')
-      ?? url.searchParams.get('secret')
-      ?? bearer  // Vercel Cron auto-añade `Authorization: Bearer ${CRON_SECRET}`
-    if (provided !== secret) {
-      return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
-    }
+  if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
+    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   }
-
+  const url = new URL(req.url)
   const sport = (url.searchParams.get('sport') ?? 'all').toLowerCase()
   const jobs = sport === 'all' ? ALL_JOBS : (JOBS_BY_SPORT[sport] ?? [])
   if (jobs.length === 0) {

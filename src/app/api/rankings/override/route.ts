@@ -24,11 +24,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createHash } from 'crypto'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { isAdminRequest } from '@/lib/admin-auth'
 
-function checkAuth(req: NextRequest): boolean {
-  const token = req.headers.get('x-admin-token')
-  const expected = process.env.RANKINGS_ADMIN_TOKEN
-  return Boolean(expected && token === expected)
+async function checkAuth(req: NextRequest): Promise<boolean> {
+  return isAdminRequest(req, {
+    headerName: 'x-admin-token',
+    tokenEnv: process.env.RANKINGS_ADMIN_TOKEN,
+  })
 }
 
 function tokenHash(req: NextRequest): string | null {
@@ -90,7 +92,7 @@ async function logEdits(
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!(await checkAuth(req))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'supabase not configured' }, { status: 500 })
@@ -174,7 +176,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!(await checkAuth(req))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'supabase not configured' }, { status: 500 })

@@ -16,7 +16,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
-import { createHmac } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { pingIndexNow, pathsToUrls } from '@/lib/indexnow'
 
 export const dynamic = 'force-dynamic'
@@ -45,22 +45,31 @@ function verifySignature(body: string, signature: string | null, secret: string)
   const hmac = createHmac('sha256', secret)
   hmac.update(body)
   const expected = 'sha256=' + hmac.digest('hex')
-  // Comparación timing-safe
-  if (expected.length !== signature.length) return false
-  const a = Buffer.from(expected)
-  const b = Buffer.from(signature)
-  let diff = 0
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i]
-  return diff === 0
+  const a = Buffer.from(expected, 'utf8')
+  const b = Buffer.from(signature, 'utf8')
+  if (a.length !== b.length) return false
+  return timingSafeEqual(a, b)
 }
 
 export async function POST(req: NextRequest) {
   const secret = process.env.SANITY_WEBHOOK_SECRET
 
+  // En producción exigimos el secret. Si no está configurado, devolvemos 503
+  // en lugar de aceptar payloads sin firmar (lo contrario es un open relay
+  // para forzar revalidaciones y pings de IndexNow).
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { ok: false, error: 'webhook_misconfigured' },
+        { status: 503 },
+      )
+    }
+    console.warn('[sanity-webhook] SANITY_WEBHOOK_SECRET not set (dev only)')
+  }
+
   // Leer body como texto para verificar firma HMAC
   const rawBody = await req.text()
 
-  // Verificar firma si hay secret configurado
   if (secret) {
     const signature = req.headers.get('sanity-webhook-signature')
     if (!verifySignature(rawBody, signature, secret)) {

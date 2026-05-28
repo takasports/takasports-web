@@ -1,7 +1,19 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isSameOrigin } from '@/lib/csrf'
 
 export async function middleware(request: NextRequest) {
+  // CSRF guard: para métodos mutables sobre rutas autenticadas, exigimos
+  // mismo origen. Se aplica antes del refresh de sesión para que un ataque
+  // CSRF ni siquiera llegue al endpoint. Las APIs de auth/callback de OAuth
+  // tienen su propio mecanismo (PKCE/state) y quedan fuera del matcher.
+  if (!isSameOrigin(request)) {
+    return NextResponse.json(
+      { error: 'csrf_origin_mismatch' },
+      { status: 403 },
+    )
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 

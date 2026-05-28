@@ -3,7 +3,9 @@
 // edad en horas, alarma si lleva > 8d sin actualizarse).
 //
 // Auth: misma CRON_SECRET. Llamada típica:
-//   curl "https://takasportsmedia.com/api/admin/cron-health?secret=XXX"
+//   curl -H "x-cron-secret: XXX" https://takasportsmedia.com/api/admin/cron-health
+//   o con Authorization: Bearer XXX (cron de Vercel).
+// `?secret=` quedó deprecado (filtra en logs/referer) — ya no se acepta.
 //
 // Esperable: todos los blocks con ageHours < 168h (1 semana) excepto los
 // snapshots editoriales raros. Si algún score es 'red', un cron rompió
@@ -11,6 +13,7 @@
 
 import { NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { checkBearerOrHeader } from '@/lib/auth-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,17 +47,9 @@ function classify(blockId: string, ageH: number): BlockHealth['status'] {
 }
 
 async function handle(req: Request) {
-  const secret = process.env.CRON_SECRET
-  if (secret) {
-    const url = new URL(req.url)
-    const auth = req.headers.get('authorization') ?? ''
-    const bearer = auth.toLowerCase().startsWith('bearer ') ? auth.slice(7) : null
-    const provided = req.headers.get('x-cron-secret')
-      ?? url.searchParams.get('secret')
-      ?? bearer
-    if (provided !== secret) {
-      return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
-    }
+  // CRON_SECRET es obligatorio: si no está configurado, el endpoint queda cerrado.
+  if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
+    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   }
 
   const sb = adminSupabase()

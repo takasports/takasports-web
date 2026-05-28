@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import type { QuinielaData } from '../route'
+import { checkBearerOrHeader } from '@/lib/auth-utils'
 
 const NOTIFY_WINDOW_MIN = 60   // notifica entre T-NOTIFY_WINDOW_MIN y T-15
 const NOTIFY_FLOOR_MIN  = 15   // mínimo a kickoff para no spammear in-progress
@@ -19,9 +20,7 @@ let lastSentForJornada: string | null = null
 let lastSentTs = 0
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.CRON_SECRET
-  const auth = req.headers.get('authorization')
-  if (!secret || auth !== `Bearer ${secret}`) {
+  if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
 
@@ -47,7 +46,10 @@ export async function POST(req: NextRequest) {
   const broadcastSecret = process.env.PUSH_BROADCAST_SECRET
   const sendRes = await fetch(`${origin}/api/push/send`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      ...(broadcastSecret ? { 'x-push-secret': broadcastSecret } : {}),
+    },
     body: JSON.stringify({
       // jornada ya es consciente del Mundial ("Mundial · Fase de grupos · 14 jun")
       // o de las ligas de club, según el modo activo del endpoint /api/quiniela.
@@ -56,7 +58,6 @@ export async function POST(req: NextRequest) {
       url: '/quiniela',
       tag: 'quiniela-reminder',
       topic: 'quiniela',
-      secret: broadcastSecret,
     }),
   })
   const sendJson = await sendRes.json().catch(() => ({}))

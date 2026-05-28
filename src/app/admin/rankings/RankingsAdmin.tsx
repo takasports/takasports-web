@@ -54,12 +54,10 @@ const TREND_COLORS: Record<string, string> = {
 // ── Panel de edición inline ───────────────────────────────────────────────
 function EditPanel({
   entry,
-  token,
   onClose,
   onSaved,
 }: {
   entry: Entry
-  token: string
   onClose: () => void
   onSaved: () => void
 }) {
@@ -86,7 +84,8 @@ function EditPanel({
     try {
       const res = await fetch('/api/rankings/override', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ id: entry.id, category: entry.category, overrides }),
       })
       if (!res.ok) {
@@ -107,7 +106,7 @@ function EditPanel({
     setSaving(true)
     const res = await fetch(
       `/api/rankings/override?id=${entry.id}&category=${entry.category}&field=${field}`,
-      { method: 'DELETE', headers: { 'x-admin-token': token } }
+      { method: 'DELETE', credentials: 'same-origin' }
     )
     if (res.ok) { setStatus('✓ Override eliminado'); setTimeout(() => { onSaved(); onClose() }, 700) }
     else setStatus('Error al limpiar')
@@ -258,7 +257,7 @@ function EditPanel({
 }
 
 // ── Fila de entry ─────────────────────────────────────────────────────────
-function EntryRow({ entry, token, onRefresh }: { entry: Entry; token: string; onRefresh: () => void }) {
+function EntryRow({ entry, onRefresh }: { entry: Entry; onRefresh: () => void }) {
   const [editing, setEditing] = useState(false)
   const hasOverride = entry.rank_manual !== null || entry.score_manual !== null || entry.insight_manual !== null
   const trend = entry.trend ?? 'flat'
@@ -323,7 +322,6 @@ function EntryRow({ entry, token, onRefresh }: { entry: Entry; token: string; on
       {editing && (
         <EditPanel
           entry={entry}
-          token={token}
           onClose={() => setEditing(false)}
           onSaved={onRefresh}
         />
@@ -333,7 +331,7 @@ function EntryRow({ entry, token, onRefresh }: { entry: Entry; token: string; on
 }
 
 // ── Componente principal ──────────────────────────────────────────────────
-export default function RankingsAdmin({ token }: { token: string }) {
+export default function RankingsAdmin() {
   const [category, setCategory]   = useState<Category>('jugadores')
   const [entries,  setEntries]    = useState<Entry[]>([])
   const [loading,  setLoading]    = useState(false)
@@ -341,12 +339,11 @@ export default function RankingsAdmin({ token }: { token: string }) {
   const [search,   setSearch]     = useState('')
 
   const load = useCallback(async () => {
-    if (!token) return
     setLoading(true)
     try {
       const res = await fetch(
         `/api/rankings/admin-list?category=${category}`,
-        { headers: { 'x-admin-token': token } }
+        { credentials: 'same-origin' },
       )
       if (!res.ok) { setSource('error'); setEntries([]); return }
       const data = await res.json()
@@ -357,7 +354,7 @@ export default function RankingsAdmin({ token }: { token: string }) {
     } finally {
       setLoading(false)
     }
-  }, [category, token])
+  }, [category])
 
   useEffect(() => { load() }, [load])
 
@@ -459,7 +456,7 @@ export default function RankingsAdmin({ token }: { token: string }) {
               </thead>
               <tbody>
                 {filtered.map(entry => (
-                  <EntryRow key={entry.id + entry.category} entry={entry} token={token} onRefresh={load} />
+                  <EntryRow key={entry.id + entry.category} entry={entry} onRefresh={load} />
                 ))}
               </tbody>
             </table>
@@ -472,7 +469,7 @@ export default function RankingsAdmin({ token }: { token: string }) {
           <p><span style={{ color: '#9B7CF6' }}>✏️ Override</span> — sobreescribe el valor automático del cron. La vista <code style={{ color: '#C4B5FD' }}>ranking_view</code> aplica <code>COALESCE(manual, auto)</code>.</p>
           <p className="mt-1"><span style={{ color: '#9B7CF6' }}>🔒 Locked</span> — el cron nunca toca esa entry. Útil para posiciones que quieres fijar indefinidamente.</p>
           <p className="mt-1"><span style={{ color: '#9B7CF6' }}>Reset</span> — elimina todos los overrides de una entry. Vuelve al valor automático del cron.</p>
-          <p className="mt-1">URL de acceso directo: <code style={{ color: '#C4B5FD' }}>/admin/rankings?token=TU_TOKEN</code></p>
+          <p className="mt-1">Acceso: tu email debe estar en <code style={{ color: '#C4B5FD' }}>ADMIN_EMAILS</code> y debes estar logueado en TakaSports.</p>
         </div>
       </div>
     </div>

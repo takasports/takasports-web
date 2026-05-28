@@ -7,6 +7,7 @@
 // también ?secret= para pruebas manuales.
 
 import { NextRequest, NextResponse } from 'next/server'
+import { checkBearerOrHeader } from '@/lib/auth-utils'
 
 interface PushMessage {
   title: string
@@ -65,13 +66,13 @@ function buildWeekly(): PushMessage[] {
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
-  const cronSecret = process.env.CRON_SECRET
   const broadcastSecret = process.env.PUSH_BROADCAST_SECRET
 
-  // Auth: header Authorization: Bearer <secret> o ?secret=...
-  const headerAuth = req.headers.get('authorization') ?? ''
-  const provided = url.searchParams.get('secret') ?? headerAuth.replace(/^Bearer\s+/i, '')
-  if (cronSecret && provided !== cronSecret) {
+  // CRON_SECRET es obligatorio: si no está seteado, el endpoint queda cerrado.
+  // Aceptamos `Authorization: Bearer <CRON_SECRET>` (formato Vercel) o el
+  // header `x-cron-secret`. El antiguo `?secret=` queda eliminado (filtra en
+  // logs y referer).
+  if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
   if (!broadcastSecret) {
@@ -93,8 +94,11 @@ export async function GET(req: NextRequest) {
     try {
       const res = await fetch(new URL('/api/push/send', url.origin), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...m, topic: 'games', secret: broadcastSecret }),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-push-secret': broadcastSecret,
+        },
+        body: JSON.stringify({ ...m, topic: 'games' }),
       })
       const j = await res.json() as { sent?: number; pruned?: number; error?: string }
       results.push({ tag: m.tag, sent: j.sent, pruned: j.pruned, error: j.error })

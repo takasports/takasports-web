@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { createHash } from 'crypto'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,6 +23,21 @@ function hashIp(req: NextRequest): string | null {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate-limit: 5 suscripciones/hora por IP. Defiende de bots que prueban
+  // emails desechables en bucle (también frente a spam de bounces).
+  const rl = await checkRateLimit({
+    bucket: 'newsletter_subscribe',
+    key: getClientIp(req),
+    windowSeconds: 3600,
+    max: 5,
+  })
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: 'rate_limited', retryAfter: rl.retryAfterSeconds },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+    )
+  }
+
   let body: { email?: unknown; consent?: unknown; source?: unknown }
   try {
     body = await req.json()

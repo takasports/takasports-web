@@ -8,8 +8,16 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { isAdminRequest } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
+
+async function isAdmin(req: NextRequest): Promise<boolean> {
+  return isAdminRequest(req, {
+    headerName: 'x-admin-token',
+    tokenEnv: process.env.GAMES_ADMIN_TOKEN,
+  })
+}
 
 interface FeaturedPuzzle {
   title: string
@@ -82,9 +90,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const expected = process.env.GAMES_ADMIN_TOKEN
-  const provided = req.headers.get('x-admin-token') ?? ''
-  if (!expected || provided !== expected) {
+  if (!(await isAdmin(req))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
   const admin = adminSupabase()
@@ -116,9 +122,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const expected = process.env.GAMES_ADMIN_TOKEN
-  const provided = req.headers.get('x-admin-token') ?? ''
-  if (!expected || provided !== expected) {
+  if (!(await isAdmin(req))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
   const week = new URL(req.url).searchParams.get('week')

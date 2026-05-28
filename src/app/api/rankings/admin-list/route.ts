@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { isAdminRequest } from '@/lib/admin-auth'
 import {
   RANKING_JUGADORES, RANKING_JUGADORAS, RANKING_CLUBES, RANKING_CLUBES_FEMENINO,
   RANKING_ENTRENADORES, RANKING_CREADORES, RANKING_PERIODISTAS,
@@ -12,10 +13,11 @@ import {
   type RankingEntry,
 } from '@/lib/rankings'
 
-function checkAuth(req: NextRequest): boolean {
-  const token    = req.headers.get('x-admin-token')
-  const expected = process.env.RANKINGS_ADMIN_TOKEN
-  return Boolean(expected && token === expected)
+async function checkAuth(req: NextRequest): Promise<boolean> {
+  return isAdminRequest(req, {
+    headerName: 'x-admin-token',
+    tokenEnv: process.env.RANKINGS_ADMIN_TOKEN,
+  })
 }
 
 const STATIC_FALLBACK: Record<string, RankingEntry[]> = {
@@ -34,7 +36,7 @@ const STATIC_FALLBACK: Record<string, RankingEntry[]> = {
 }
 
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!(await checkAuth(req))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const url      = new URL(req.url)
   const category = url.searchParams.get('category') ?? 'jugadores'
