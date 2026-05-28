@@ -135,7 +135,7 @@ export default async function RootLayout({
                 logo: { '@type': 'ImageObject', url: LOGO_URL, width: 512, height: 512 },
                 sameAs: ['https://www.instagram.com/takasportsmedia', 'https://x.com/takasportsx'],
                 areaServed: { '@type': 'Country', name: 'España' },
-                knowsAbout: ['Fútbol', 'Baloncesto', 'Fórmula 1', 'UFC', 'Tenis', 'WWE', 'Rugby'],
+                knowsAbout: ['Fútbol', 'Baloncesto', 'Fórmula 1', 'UFC', 'Tenis', 'Lucha libre', 'Rugby'],
               },
               {
                 '@type': 'WebSite',

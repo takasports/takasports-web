@@ -7,8 +7,11 @@ import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
 
-const ROTATION_MS = 5000
-const SWIPE_THRESHOLD = 50
+const ROTATION_MS       = 8000   // big cards
+const STRIP_ROTATION_MS = 12000  // strip cards (más lentas)
+const BIG_POOL          = 6      // artículos reservados para big cards (3 pares)
+const STRIP_SIZE        = 5
+const SWIPE_THRESHOLD   = 50
 
 const OVERLAY = 'linear-gradient(to top, rgba(3,3,10,0.97) 0%, rgba(3,3,10,0.55) 38%, rgba(3,3,10,0.08) 72%, transparent 100%)'
 const CARD_BG = '#06060F'
@@ -186,30 +189,47 @@ function StripCard({ article }: { article: Article }) {
 // ── Componente principal ───────────────────────────────────────
 export default function NoticiasPortada({ articles }: { articles: Article[] }) {
   const safe = articles.filter(Boolean)
-  const [pairIdx, setPairIdx] = useState(0)
-  const [visible, setVisible] = useState(true)
+
+  // ── Big cards: pool fijo de los primeros BIG_POOL artículos ──
+  const bigPool   = safe.slice(0, BIG_POOL)
+  const totalPairs = Math.min(3, Math.max(1, Math.floor(bigPool.length / 2)))
+
+  // ── Strip: artículos a partir de BIG_POOL, rotan en grupos de STRIP_SIZE ──
+  const stripPool       = safe.slice(BIG_POOL)
+  const totalStripGroups = Math.max(1, Math.ceil(stripPool.length / STRIP_SIZE))
+
+  const [pairIdx,      setPairIdx]      = useState(0)
+  const [visible,      setVisible]      = useState(true)
+  const [stripIdx,     setStripIdx]     = useState(0)
+  const [stripVisible, setStripVisible] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
   const pausedRef = useRef(false)
   const touchStartX = useRef<number | null>(null)
 
-  const MAX_PAIRS = 5
-  const totalPairs = Math.min(MAX_PAIRS, Math.max(1, Math.floor(safe.length / 2)))
-
-  const pause = () => { pausedRef.current = true; setIsPaused(true) }
+  const pause  = () => { pausedRef.current = true;  setIsPaused(true)  }
   const resume = () => { pausedRef.current = false; setIsPaused(false) }
 
+  // Rotación big cards
   useEffect(() => {
-    if (safe.length <= 2) return
+    if (bigPool.length <= 2) return
     const timer = setInterval(() => {
       if (pausedRef.current) return
       setVisible(false)
-      setTimeout(() => {
-        setPairIdx(i => (i + 1) % totalPairs)
-        setVisible(true)
-      }, 400)
+      setTimeout(() => { setPairIdx(i => (i + 1) % totalPairs); setVisible(true) }, 400)
     }, ROTATION_MS)
     return () => clearInterval(timer)
-  }, [safe.length, totalPairs])
+  }, [bigPool.length, totalPairs])
+
+  // Rotación strip (más lenta, independiente)
+  useEffect(() => {
+    if (stripPool.length <= STRIP_SIZE) return
+    const timer = setInterval(() => {
+      if (pausedRef.current) return
+      setStripVisible(false)
+      setTimeout(() => { setStripIdx(i => (i + 1) % totalStripGroups); setStripVisible(true) }, 400)
+    }, STRIP_ROTATION_MS)
+    return () => clearInterval(timer)
+  }, [stripPool.length, totalStripGroups])
 
   const goTo = (i: number) => {
     setVisible(false)
@@ -235,9 +255,11 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
     resume()
   }
 
-  const base = (pairIdx * 2) % safe.length
-  const big  = [safe[base], safe[(base + 1) % safe.length]].filter(Boolean)
-  const strip = safe.slice(2, 7)
+  const base = (pairIdx * 2) % Math.max(1, bigPool.length)
+  const big  = [bigPool[base], bigPool[(base + 1) % bigPool.length]].filter(Boolean)
+
+  const stripStart = (stripIdx * STRIP_SIZE) % Math.max(1, stripPool.length)
+  const strip = stripPool.slice(stripStart, stripStart + STRIP_SIZE)
 
   if (safe.length === 0) return null
 
@@ -304,10 +326,17 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
           )}
         </div>
 
-        {/* ── TIRA (2 cols mobile → 5 cols desktop) ── */}
-        {strip.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {strip.map(a => <StripCard key={a._id} article={a} />)}
+        {/* ── TIRA — rota lentamente entre grupos de 5 ── */}
+        {(strip.length > 0 || stripPool.length > 0) && (
+          <div
+            style={{ opacity: stripVisible ? 1 : 0, transition: 'opacity 400ms ease' }}
+            className="grid grid-cols-2 sm:grid-cols-5 gap-3"
+          >
+            {strip.map((a, i) => (
+              <div key={a._id} className={i === 4 ? 'hidden sm:block' : ''}>
+                <StripCard article={a} />
+              </div>
+            ))}
           </div>
         )}
 

@@ -9,7 +9,7 @@ const SPORTS_LINKS = [
   { label: 'F1',         href: '/formula1' },
   { label: 'UFC',        href: '/ufc' },
   { label: 'Tenis',      href: '/tenis' },
-  { label: 'WWE',        href: '/wwe' },
+  { label: 'Lucha libre', href: '/wwe' },
   { label: 'Rugby',      href: '/rugby' },
 ]
 const PLATFORM_LINKS = [

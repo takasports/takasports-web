@@ -278,16 +278,19 @@ export default function NewsPageFeed({
             <div key={label} className="mb-3">
               <DateSeparator label={label} />
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mt-1">
-                {items.map((article) => {
+                {items.map((article, idx) => {
                   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(400).height(220).url() : null)
                   const sportLabel = getSportLabel(article.sport, article.category)
                   const { accent } = getSportStyle(article.sport, article.category)
+                  // Última card huérfana: ocupa todo el ancho en su grid
+                  const isOrphan2 = idx === items.length - 1 && items.length % 2 !== 0
+                  const isOrphan3 = idx === items.length - 1 && items.length % 3 === 1
 
                   return (
                     <Link
                       key={article._id}
                       href={`/noticias/${article.slug ?? article._id}`}
-                      className="news-card rounded-xl overflow-hidden block"
+                      className={`news-card rounded-xl overflow-hidden block${isOrphan2 ? ' col-span-2' : ''}${isOrphan3 ? ' lg:col-span-3' : ''}`}
                       data-reveal
                       style={{
                         background: 'var(--bg-card)',

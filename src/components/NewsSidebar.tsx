@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { getSportStyle, getSportLabel, SLUG_TO_LABEL } from '@/lib/sports'
-import { timeAgo } from '@/lib/timeAgo'
 
 interface Article {
   _id: string
@@ -37,15 +36,23 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
   // Skip los 5 primeros (apertura + 4 cubierta en NoticiasPortada)
   const trending = articles.slice(5, 11)
 
-  // Count por deporte
+  // Count por deporte — normaliza aliases al slug canónico antes de contar
+  const ALIAS_TO_CANONICAL: Record<string, string> = {
+    wrestling: 'wwe',
+    nba: 'baloncesto', bcl: 'baloncesto', euroliga: 'baloncesto', acb: 'baloncesto',
+  }
   const sportCounts: Record<string, number> = {}
   for (const a of articles) {
-    const slug = a.sport?.toLowerCase() ?? ''
-    if (slug) sportCounts[slug] = (sportCounts[slug] ?? 0) + 1
+    const raw = a.sport?.toLowerCase() ?? ''
+    if (!raw) continue
+    const slug = ALIAS_TO_CANONICAL[raw] ?? raw
+    sportCounts[slug] = (sportCounts[slug] ?? 0) + 1
   }
 
-  const sportEntries = Object.entries(SLUG_TO_LABEL)
-    .map(([slug, label]) => ({ slug, label, count: sportCounts[slug] ?? 0 }))
+  // Solo slugs canónicos (sin aliases ni sub-competiciones) para el sidebar
+  const CANONICAL_SLUGS = ['futbol', 'wwe', 'formula1', 'baloncesto', 'tenis', 'ufc', 'rugby']
+  const sportEntries = CANONICAL_SLUGS
+    .map(slug => ({ slug, label: SLUG_TO_LABEL[slug], count: sportCounts[slug] ?? 0 }))
     .filter((e) => e.count > 0)
     .sort((a, b) => b.count - a.count)
 
@@ -98,11 +105,6 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
                     >
                       {article.title}
                     </p>
-                    {article.publishedAt && (
-                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-faint)' }}>
-                        {timeAgo(article.publishedAt)}
-                      </p>
-                    )}
                   </div>
                 </Link>
               )
