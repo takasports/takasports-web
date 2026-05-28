@@ -30,10 +30,12 @@ export function LogoFull({
   size = 28,
   href = '/',
   asLink = true,
+  onClick,
 }: {
   size?: number
   href?: string
   asLink?: boolean
+  onClick?: () => void
 }) {
   const height = size
   const width = Math.round(size * FULL_RATIO)
@@ -51,7 +53,7 @@ export function LogoFull({
   if (!asLink) return content
 
   return (
-    <Link href={href} aria-label="TakaSports — inicio" style={{ display: 'inline-flex' }}>
+    <Link href={href} aria-label="TakaSports — inicio" style={{ display: 'inline-flex' }} onClick={onClick}>
       {content}
     </Link>
   )

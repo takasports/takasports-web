@@ -406,7 +406,10 @@ export default function Header() {
         <div className={`${INNER} flex items-center h-14 gap-4`}>
 
           {/* Logo */}
-          <LogoFull size={30} />
+          <LogoFull
+            size={30}
+            onClick={pathname === '/' ? () => window.scrollTo({ top: 0, behavior: 'smooth' }) : undefined}
+          />
 
           {/* Nav desktop */}
           <nav className="hidden lg:flex items-center gap-0 flex-1" aria-label="Navegación principal">
@@ -419,6 +422,7 @@ export default function Header() {
                   aria-current={active ? 'page' : undefined}
                   className={`nav-link relative flex items-center px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap${active ? ' active' : ''}`}
                   style={{ fontFamily: 'var(--font-sport)', textDecoration: 'none', letterSpacing: '0.01em' }}
+                  onClick={href === '/' && pathname === '/' ? () => window.scrollTo({ top: 0, behavior: 'smooth' }) : undefined}
                 >
                   {label}
                   {active && (
@@ -543,7 +547,10 @@ export default function Header() {
                     <Link
                       key={href}
                       href={href}
-                      onClick={() => setMenuOpen(false)}
+                      onClick={() => {
+                        setMenuOpen(false)
+                        if (href === '/' && pathname === '/') window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }}
                       aria-current={active ? 'page' : undefined}
                       className="flex items-center justify-between px-3 py-3 rounded-xl transition-all"
                       style={{

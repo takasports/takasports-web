@@ -158,19 +158,25 @@ export default function NoticiasContent({
     <>
       {/* CABECERA */}
       <div className="px-4 sm:px-6 xl:px-10 pt-6 pb-0">
-        <div className="flex items-baseline justify-between gap-4">
-          <h1
-            className="font-black leading-none"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(2rem, 4vw, 3rem)',
-              color: '#F2F2FA',
-              letterSpacing: '-0.028em',
-            }}
-          >
-            Noticias
-          </h1>
-          <p className="text-[10px] flex-shrink-0" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="section-accent" />
+              <span className="section-label">La actualidad deportiva</span>
+            </div>
+            <h1
+              className="font-black leading-none"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(2rem, 4vw, 3rem)',
+                color: '#F2F2FA',
+                letterSpacing: '-0.028em',
+              }}
+            >
+              Noticias
+            </h1>
+          </div>
+          <p className="text-[10px] flex-shrink-0 pb-1" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
             {editorialDate()}{filteredArticles.length > 0 ? ` · ${filteredArticles.length} historias` : ''}
           </p>
         </div>

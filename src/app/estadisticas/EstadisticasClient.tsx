@@ -2336,7 +2336,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           <div className="relative">
             <div className="flex items-center gap-2.5 mb-1.5">
               <span className="section-accent" style={{ background: sport.accent }} />
-              <span className="section-label">Hub de estadísticas</span>
+              <span className="section-label">Datos en directo</span>
             </div>
             <h1 className="font-black leading-none mb-2"
               style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#F8F8FF', letterSpacing: '-0.02em' }}>

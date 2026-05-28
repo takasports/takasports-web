@@ -1,6 +1,6 @@
 // Convención oficial de deportes — slugs canónicos alineados con Sanity:
 // - `sport` en Sanity = slug: 'futbol', 'wwe', 'baloncesto', 'formula1', 'tenis', 'ufc', 'rugby'
-// - Labels visuales: 'Fútbol', 'WWE', 'Baloncesto', 'F1', 'Tenis', 'UFC', 'Rugby'
+// - Labels visuales: 'Fútbol', 'WWE', 'Baloncesto', 'F1', 'Tenis', 'MMA', 'Rugby'
 
 // Slug → label visual (fuente de verdad)
 export const SLUG_TO_LABEL: Record<string, string> = {
@@ -9,7 +9,7 @@ export const SLUG_TO_LABEL: Record<string, string> = {
   formula1:   'F1',
   baloncesto: 'Baloncesto',
   tenis:      'Tenis',
-  ufc:        'UFC',
+  ufc:        'MMA',
   rugby:      'Rugby',
   // Alias de wrestling detectado en captions de Instagram
   wrestling:  'WWE',
@@ -30,7 +30,7 @@ export const CATEGORY_TO_SLUG: Record<string, string> = {
 }
 
 // Categorías principales del filtro global (Home / Noticias)
-export const HOME_SPORT_CATEGORIES = ['Todo', 'Fútbol', 'WWE', 'F1', 'Baloncesto', 'Tenis', 'UFC', 'Rugby']
+export const HOME_SPORT_CATEGORIES = ['Todo', 'Fútbol', 'WWE', 'F1', 'Baloncesto', 'Tenis', 'MMA', 'Rugby']
 
 // Categorías extra para el dropdown "Más" (vacío: ya no se muestra)
 export const MORE_SPORT_CATEGORIES: string[] = []
@@ -77,7 +77,7 @@ export const SPORT_EMOJI: Record<string, string> = {
   Baloncesto: '🏀',
   F1:         '🏎️',
   Tenis:      '🎾',
-  UFC:        '🥊',
+  MMA:        '🥊',
   Rugby:      '🏉',
   WWE:        '🎭',
 }
@@ -91,7 +91,7 @@ export const SPORT_TABS = [
   { label: 'Todos',  slug: '',           href: '/' },
   { label: 'Fútbol', slug: 'futbol',     href: '/?sport=futbol' },
   { label: 'WWE',    slug: 'wwe',        href: '/?sport=wwe' },
-  { label: 'UFC',    slug: 'ufc',        href: '/?sport=ufc' },
+  { label: 'MMA',    slug: 'ufc',        href: '/?sport=ufc' },
   { label: 'Baloncesto', slug: 'baloncesto', href: '/?sport=baloncesto' },
   { label: 'F1',     slug: 'formula1',   href: '/?sport=formula1' },
   { label: 'Tenis',  slug: 'tenis',      href: '/?sport=tenis' },
