@@ -62,6 +62,9 @@ function mapStatus(espnStatus: string, sport: string, period?: number): string {
   if (espnStatus === 'STATUS_OVERTIME')    return 'OT'
   if (espnStatus === 'STATUS_FULL_TIME' || espnStatus === 'STATUS_FINAL') return 'FT'
   if (espnStatus === 'STATUS_SCHEDULED')   return 'NS'
+  if (espnStatus === 'STATUS_ABANDONED' || espnStatus === 'STATUS_CANCELED' ||
+      espnStatus === 'STATUS_WALKOVER'  || espnStatus === 'STATUS_RETIRED'  ||
+      espnStatus === 'STATUS_POSTPONED' || espnStatus === 'STATUS_SUSPENDED') return 'FT'
   return espnStatus.replace('STATUS_', '')
 }
 

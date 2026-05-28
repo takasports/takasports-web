@@ -27,7 +27,13 @@ export async function GET(request: Request) {
         }, { onConflict: 'id', ignoreDuplicates: true })
       }
 
-      return NextResponse.redirect(`${origin}${next}`)
+      // window.location.replace no añade entrada al historial,
+      // evitando el loop al pulsar "atrás" tras el callback OAuth.
+      const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/perfil'
+      return new NextResponse(
+        `<!DOCTYPE html><html><head><script>window.location.replace("${origin}${safeNext}")</script></head><body></body></html>`,
+        { headers: { 'Content-Type': 'text/html' } }
+      )
     }
   }
 

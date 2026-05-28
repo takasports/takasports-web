@@ -18,7 +18,8 @@ interface LiveScore {
   matchRef?: string
 }
 
-const FINISHED = new Set(['FT', 'Final', 'STATUS_FINAL', 'NS', 'STATUS_SCHEDULED'])
+const FINISHED = new Set(['FT', 'Final', 'STATUS_FINAL', 'NS', 'STATUS_SCHEDULED',
+  'ABANDONED', 'WALKOVER', 'RETIRED', 'CANCELED', 'POSTPONED', 'SUSPENDED'])
 
 function normalize(name: string) {
   return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '')

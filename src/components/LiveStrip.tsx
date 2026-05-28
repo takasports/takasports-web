@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { LiveEventCard, UpcomingEventCard, type LiveFixture, type UpcomingEvent } from '@/components/events/LiveEventCard'
 
-const FINISHED = new Set(['FT', 'NS', 'FINAL', 'STATUS_FINAL', 'STATUS_SCHEDULED'])
+const FINISHED = new Set(['FT', 'NS', 'FINAL', 'STATUS_FINAL', 'STATUS_SCHEDULED',
+  'ABANDONED', 'WALKOVER', 'RETIRED', 'CANCELED', 'POSTPONED', 'SUSPENDED'])
 
 function useRelativeTime(ts: number | null): string {
   const [label, setLabel] = useState('')
