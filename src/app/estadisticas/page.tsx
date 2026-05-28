@@ -8,9 +8,8 @@ const EstadisticasClient = dynamic(() => import('./EstadisticasClient'), {
   loading: () => <EstadisticasLoading />,
 })
 
-// Para que cada ?sport= tenga su propia metadata + OG image, declaramos
-// la página como dinámica respecto a searchParams. Sin esto Next.js
-// cachearía un único snapshot y todos los deportes compartirían OG.
+// searchParams hace la página dinámica; force-dynamic evita el error de build.
+export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 
 interface SportMeta { label: string; description: string }

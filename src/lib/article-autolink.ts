@@ -39,8 +39,6 @@ export interface AutolinkEntry {
 
 export interface EntityIndex {
   entries: AutolinkEntry[]
-  /** Regex compilado para una sola pasada. */
-  pattern: RegExp
   /** Lookup case-insensitive: nombre normalizado → entrada. */
   byKey: Map<string, AutolinkEntry>
 }
@@ -162,13 +160,7 @@ export const getEntityIndex = unstable_cache(
     // Orden por longitud descendente para que "Real Madrid" gane a "Real" si lo hubiera.
     const entries = [...byKey.values()].sort((a, b) => b.displayName.length - a.displayName.length)
 
-    // Una sola regex con alternancia. Word boundaries unicode-aware.
-    const alt = entries.map(e => escapeRegex(e.displayName)).join('|')
-    const pattern = entries.length > 0
-      ? new RegExp(`(?<![\\p{L}\\p{N}])(${alt})(?![\\p{L}\\p{N}])`, 'gu')
-      : /(?!.*)/g // never-match fallback
-
-    return { entries, pattern, byKey }
+    return { entries, byKey }
   },
   ['article-autolink-entity-index-v1'],
   { revalidate: ENTITY_CACHE_TTL, tags: ['autolink-entities'] },
@@ -210,12 +202,14 @@ export function autolinkSegments(
     return [{ type: 'text', text }]
   }
 
+  const alt = index.entries.map(e => escapeRegex(e.displayName)).join('|')
+  const pattern = new RegExp(`(?<![\\p{L}\\p{N}])(${alt})(?![\\p{L}\\p{N}])`, 'gu')
+
   const segments: AutolinkSegment[] = []
   let lastEnd = 0
-  index.pattern.lastIndex = 0
 
   let m: RegExpExecArray | null
-  while ((m = index.pattern.exec(text)) !== null) {
+  while ((m = pattern.exec(text)) !== null) {
     if (ctx.count >= MAX_AUTOLINKS_PER_ARTICLE) break
 
     const matchText = m[1]
