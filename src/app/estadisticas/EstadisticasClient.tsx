@@ -1684,12 +1684,13 @@ function buildSummaryCards(
   const meta = liveData?.meta ?? {}
 
   // ⚽ Goleadores LaLiga (ESPN, vivo)
-  const laliga = livePlayerData?.leagues.find(l => l.id === 'laliga')
+  // Fix: league id is 'esp.1', not 'laliga'
+  const laliga = livePlayerData?.leagues.find(l => l.id === 'esp.1')
   if (laliga && laliga.goals.length) {
     cards.push({
       sportId: 'futbol', sportLabel: 'LaLiga', emoji: '⚽', accent: '#22c55e',
       title: 'Goleadores LaLiga', metric: 'Goles',
-      rows: laliga.goals.slice(0, 3).map((p, i) => ({
+      rows: laliga.goals.slice(0, 5).map((p, i) => ({
         rank: i + 1, name: p.name, sub: p.team, value: String(p.value),
       })),
       meta: { status: 'live', source: 'ESPN · LaLiga', fetchedAt: liveData?.updatedAt ?? '' },
@@ -1703,10 +1704,24 @@ function buildSummaryCards(
     cards.push({
       sportId: 'futbol', sportLabel: 'LaLiga', emoji: '⚽', accent: '#22c55e',
       title: 'Clasificación LaLiga', metric: 'Pts',
-      rows: laligaTable.rows.slice(0, 3).map(r => ({
+      rows: laligaTable.rows.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: r.value,
       })),
       meta: meta['tabla-laliga'] ?? meta['football'],
+      sectionTarget: 'competiciones',
+    })
+  }
+
+  // ⚽ Clasificación Premier League
+  const premierTable = liveData?.football?.find(f => f.id === 'tabla-premier')
+  if (premierTable && premierTable.rows.length) {
+    cards.push({
+      sportId: 'futbol', sportLabel: 'Premier League', emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', accent: '#6C2D91',
+      title: 'Clasificación Premier', metric: 'Pts',
+      rows: premierTable.rows.slice(0, 5).map(r => ({
+        rank: r.rank, name: r.name, sub: r.sub, value: r.value,
+      })),
+      meta: meta['tabla-premier'] ?? meta['football'],
       sectionTarget: 'competiciones',
     })
   }
@@ -1715,8 +1730,8 @@ function buildSummaryCards(
   if (liveData?.nbaScoring?.length) {
     cards.push({
       sportId: 'baloncesto', sportLabel: 'NBA', emoji: '🏀', accent: '#ef4444',
-      title: 'NBA · Anotadores', metric: 'PPP',
-      rows: liveData.nbaScoring.slice(0, 3).map(r => ({
+      title: 'NBA · Anotadores', metric: 'PPG',
+      rows: liveData.nbaScoring.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value,
       })),
       meta: meta.nbaScoring,
@@ -1729,10 +1744,23 @@ function buildSummaryCards(
     cards.push({
       sportId: 'baloncesto', sportLabel: 'NBA Este', emoji: '🏀', accent: '#ef4444',
       title: 'NBA · Conferencia Este', metric: 'V-D',
-      rows: liveData.nbaEast.slice(0, 3).map(r => ({
+      rows: liveData.nbaEast.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: r.value,
       })),
       meta: meta.nbaEast,
+      sectionTarget: 'conferencias',
+    })
+  }
+
+  // 🏀 NBA Conferencia Oeste
+  if (liveData?.nbaWest?.length) {
+    cards.push({
+      sportId: 'baloncesto', sportLabel: 'NBA Oeste', emoji: '🏀', accent: '#f59e0b',
+      title: 'NBA · Conferencia Oeste', metric: 'V-D',
+      rows: liveData.nbaWest.slice(0, 5).map(r => ({
+        rank: r.rank, name: r.name, sub: r.sub, value: r.value,
+      })),
+      meta: meta.nbaWest,
       sectionTarget: 'conferencias',
     })
   }
@@ -1742,7 +1770,7 @@ function buildSummaryCards(
     cards.push({
       sportId: 'f1', sportLabel: 'Fórmula 1', emoji: '🏎️', accent: '#f97316',
       title: 'F1 · Mundial Pilotos', metric: 'Pts',
-      rows: liveData.f1Drivers.slice(0, 3).map(r => ({
+      rows: liveData.f1Drivers.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
       })),
       meta: meta.f1Drivers,
@@ -1755,10 +1783,23 @@ function buildSummaryCards(
     cards.push({
       sportId: 'tenis', sportLabel: 'ATP', emoji: '🎾', accent: '#84cc16',
       title: 'Tenis · ATP Ranking', metric: 'Pts',
-      rows: liveData.atpRanking.slice(0, 3).map(r => ({
+      rows: liveData.atpRanking.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
       })),
       meta: meta.atpRanking,
+      sectionTarget: 'ranking',
+    })
+  }
+
+  // 🎾 WTA top
+  if (liveData?.wtaRanking?.length) {
+    cards.push({
+      sportId: 'tenis', sportLabel: 'WTA', emoji: '🎾', accent: '#d946ef',
+      title: 'Tenis · WTA Ranking', metric: 'Pts',
+      rows: liveData.wtaRanking.slice(0, 5).map(r => ({
+        rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
+      })),
+      meta: meta.wtaRanking,
       sectionTarget: 'ranking',
     })
   }
@@ -1768,7 +1809,7 @@ function buildSummaryCards(
     cards.push({
       sportId: 'mundial', sportLabel: 'Mundial 2026', emoji: '🌍', accent: '#f59e0b',
       title: 'Mundial 2026 · Top selecciones', metric: 'Ranking',
-      rows: liveData.worldCupQualified.slice(0, 3).map(r => ({
+      rows: liveData.worldCupQualified.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: r.value, flag: r.flag,
       })),
       meta: meta.worldCupQualified,
@@ -1781,7 +1822,7 @@ function buildSummaryCards(
     cards.push({
       sportId: 'futbol', sportLabel: 'Liga F', emoji: '⚽', accent: '#ec4899',
       title: 'Liga F · Goleadoras', metric: 'Goles',
-      rows: liveData.womenGoals.slice(0, 3).map(r => ({
+      rows: liveData.womenGoals.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value,
       })),
       meta: meta.womenGoals,
@@ -1794,7 +1835,7 @@ function buildSummaryCards(
     cards.push({
       sportId: 'f1', sportLabel: 'F1', emoji: '🏎️', accent: '#f97316',
       title: 'F1 · Sprint Wins', metric: 'Vic',
-      rows: liveData.f1Sprints.slice(0, 3).map(r => ({
+      rows: liveData.f1Sprints.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
       })),
       meta: meta.f1Sprints,
@@ -1802,12 +1843,12 @@ function buildSummaryCards(
     })
   }
 
-  // 🏍️ MotoGP: pilotos top 3
+  // 🏍️ MotoGP: pilotos top
   if (liveData?.motogpRiders?.length) {
     cards.push({
       sportId: 'motogp', sportLabel: 'MotoGP', emoji: '🏍️', accent: '#dc2626',
       title: 'MotoGP · Mundial Pilotos', metric: 'Pts',
-      rows: liveData.motogpRiders.slice(0, 3).map(r => ({
+      rows: liveData.motogpRiders.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
       })),
       meta: meta.motogpRiders,
@@ -1815,12 +1856,12 @@ function buildSummaryCards(
     })
   }
 
-  // 🥊 UFC P4P top 3
+  // 🥊 UFC P4P top
   if (liveData?.ufcP4P?.length) {
     cards.push({
       sportId: 'ufc', sportLabel: 'UFC', emoji: '🥊', accent: '#f97316',
       title: 'UFC · Pound for Pound', metric: 'Pos.',
-      rows: liveData.ufcP4P.slice(0, 3).map(r => ({
+      rows: liveData.ufcP4P.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: `#${r.rank}`, flag: r.flag,
       })),
       meta: meta.ufcP4P,
@@ -1833,7 +1874,7 @@ function buildSummaryCards(
     cards.push({
       sportId: 'futbol', sportLabel: 'Selecciones', emoji: '🌍', accent: '#3b82f6',
       title: 'Ranking Mundial · Elo', metric: 'Pts',
-      rows: liveData.fifaRanking.slice(0, 3).map(r => ({
+      rows: liveData.fifaRanking.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: r.value, flag: r.flag,
       })),
       meta: meta.fifaRanking,
@@ -1847,9 +1888,11 @@ function buildSummaryCards(
 function ResumenCard({ card, onOpen }: { card: SummaryCard; onOpen: () => void }) {
   return (
     <button onClick={onOpen}
-      className="text-left rounded-2xl p-4 transition-all hover:brightness-110 active:scale-[0.99]"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'pointer' }}>
-      <div className="flex items-center justify-between gap-2 mb-3">
+      className="text-left rounded-2xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99] w-full"
+      style={{ background: 'var(--bg-card)', border: `1px solid ${card.accent}20`, cursor: 'pointer' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-2.5"
+        style={{ borderBottom: `1px solid ${card.accent}15`, background: `${card.accent}08` }}>
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-base leading-none">{card.emoji}</span>
           <h3 className="font-black text-[13px] truncate"
@@ -1859,34 +1902,41 @@ function ResumenCard({ card, onOpen }: { card: SummaryCard; onOpen: () => void }
         </div>
         <FreshnessBadge isLive={card.meta?.status === 'live'} meta={card.meta} />
       </div>
-      <div className="flex flex-col gap-1.5">
-        {card.rows.map(r => (
-          <div key={r.rank} className="flex items-center gap-2 py-1"
-            style={{ borderBottom: r.rank < 3 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+      {/* Rows */}
+      <div className="flex flex-col px-4 py-2">
+        {card.rows.map((r, idx) => (
+          <div key={r.rank} className="flex items-center gap-2 py-1.5"
+            style={{ borderBottom: idx < card.rows.length - 1 ? '1px solid rgba(255,255,255,0.035)' : 'none' }}>
             <div className="w-6 flex-shrink-0"><MedalBadge rank={r.rank} /></div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                {r.flag && <span className="text-[11px] leading-none flex-shrink-0">{r.flag}</span>}
-                <span className="font-semibold text-[12px] truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
-                  {r.name}
-                </span>
-              </div>
+            <div className="flex-1 min-w-0 flex items-center gap-1.5">
+              {r.flag && <span className="text-[11px] leading-none flex-shrink-0">{r.flag}</span>}
+              <span className="font-semibold text-[12px] truncate" style={{ color: r.rank === 1 ? '#F0F0FF' : '#B8B8D0', fontFamily: 'var(--font-display)' }}>
+                {r.name}
+              </span>
               {r.sub && (
-                <span className="block text-[10px] truncate" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
-                  {r.sub}
+                <span className="text-[10px] truncate hidden sm:block" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                  · {r.sub}
                 </span>
               )}
             </div>
             <span className="font-black tabular-nums text-[13px] flex-shrink-0"
-              style={{ color: r.rank === 1 ? card.accent : '#8080A0', fontFamily: 'var(--font-display)' }}>
+              style={{ color: r.rank === 1 ? card.accent : '#6060A0', fontFamily: 'var(--font-display)' }}>
               {r.value}
             </span>
           </div>
         ))}
       </div>
-      <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-right"
-        style={{ color: card.accent, fontFamily: 'var(--font-sport)' }}>
-        Ver {card.sportLabel} →
+      {/* Footer CTA */}
+      <div className="px-4 py-2.5 flex items-center justify-between"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+        <span className="text-[9px] font-black uppercase tracking-[0.15em]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+          {card.metric}
+        </span>
+        <span className="text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-1"
+          style={{ color: card.accent, fontFamily: 'var(--font-sport)' }}>
+          Ver todo
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 4h5M4 1.5l2.5 2.5L4 6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </span>
       </div>
     </button>
   )
@@ -1917,17 +1967,25 @@ function ResumenView({
 
   return (
     <div>
-      <div className="mb-4 px-1 flex flex-wrap items-center gap-3 text-[11px]"
-        style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
-          <strong style={{ color: '#86efac' }}>{liveCount}</strong> en vivo
-        </span>
+      {/* Status bar */}
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        {liveCount > 0 && (
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full"
+            style={{ background: 'rgba(74,222,128,0.10)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)', fontFamily: 'var(--font-sport)' }}>
+            <span className="inline-block w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
+            {liveCount} en vivo
+          </span>
+        )}
         {histCount > 0 && (
-          <span>· <strong style={{ color: '#94a3b8' }}>{histCount}</strong> snapshot</span>
+          <span className="text-[10px] px-2.5 py-1 rounded-full font-bold"
+            style={{ background: 'rgba(148,163,184,0.08)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.15)', fontFamily: 'var(--font-sport)' }}>
+            {histCount} snapshot
+          </span>
         )}
         {lastUpdated && (
-          <span>· última carga {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+          <span className="text-[10px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+            · {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+          </span>
         )}
       </div>
 
@@ -1936,7 +1994,7 @@ function ResumenView({
           Aún no hay datos cargados. Refresca en unos segundos.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {cards.map((c, i) => (
             <ResumenCard key={`${c.sportId}-${c.title}-${i}`} card={c}
               onOpen={() => onPickSport(c.sportId, c.sectionTarget)} />
@@ -2236,7 +2294,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
     return out
   }, [liveMeta])
 
-  const flatBlocks = applyLive(section?.blocks ?? [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const flatBlocks = React.useMemo(() => applyLive(section?.blocks ?? []), [section, liveData, livePlayerData, leagueFilter])
   const leagueFilteredBlocks = (sectionId === 'competiciones' && leagueFilter !== 'General')
     ? flatBlocks.filter(b => !b.league || b.league === leagueFilter)
     : flatBlocks
@@ -2330,36 +2389,46 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
         {/* ── HERO ──────────────────────────────────────── */}
-        <div className="relative pt-8 pb-6">
-          <div className="absolute -top-8 left-0 w-96 h-56 pointer-events-none"
-            style={{ background: `radial-gradient(ellipse at 20% 40%, ${sport.accent}0A 0%, transparent 70%)`, filter: 'blur(20px)', transition: 'background 0.5s ease' }} />
+        <div className="relative pt-8 pb-5">
+          {/* Accent glow */}
+          <div className="absolute -top-8 left-0 w-[500px] h-64 pointer-events-none"
+            style={{ background: `radial-gradient(ellipse at 15% 50%, ${sport.accent}12 0%, transparent 65%)`, filter: 'blur(24px)', transition: 'background 0.5s ease' }} />
           <div className="relative">
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <span className="section-accent" style={{ background: sport.accent }} />
-              <span className="section-label">Datos en directo</span>
-            </div>
-            <h1 className="font-black leading-none mb-2"
-              style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#F8F8FF', letterSpacing: '-0.02em' }}>
-              Estadísticas
-            </h1>
-            <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', maxWidth: 460 }}>
-              Datos en vivo desde ESPN, NBA.com y Jolpica · Bloques marcados <span style={{ color: '#94a3b8' }}>Hist</span> son snapshots manuales con su fecha visible.
-            </p>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
+            {/* Title row */}
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3 mb-3">
+              <div>
+                <h1 className="font-black leading-none"
+                  style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem,5vw,3.2rem)', letterSpacing: '-0.03em' }}>
+                  <span style={{ color: '#F8F8FF' }}>Estad</span><span style={{ color: sport.accent }}>ísticas</span>
+                </h1>
+                <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                  ESPN · NBA.com · Jolpica · F1 oficial · Actualizado automáticamente
+                </p>
+              </div>
+              {/* Freshness chip */}
               {lastUpdated && (
-                <span className="text-[11px] inline-flex items-center gap-1.5"
-                  style={{ color: fetchError ? '#f87171' : 'rgba(34,197,94,0.75)', fontFamily: 'var(--font-sport)' }}>
-                  <span className={refreshing ? 'animate-pulse' : ''}>⟳</span>
-                  Última actualización: {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                <span className="text-[10px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full sm:mb-0.5"
+                  style={{ background: fetchError ? 'rgba(248,113,113,0.08)' : 'rgba(74,222,128,0.08)', color: fetchError ? '#f87171' : '#4ade80', border: `1px solid ${fetchError ? 'rgba(248,113,113,0.2)' : 'rgba(74,222,128,0.2)'}`, fontFamily: 'var(--font-sport)' }}>
+                  <span className={refreshing ? 'animate-spin' : ''} style={{ display: 'inline-block' }}>⟳</span>
+                  {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
+              {updatedFlash && (
+                <span aria-live="polite" className="text-[10px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(74,222,128,0.14)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.32)', fontFamily: 'var(--font-sport)', animation: 'fadeOut 2.2s forwards' }}>
+                  ● Actualizado
+                </span>
+              )}
+            </div>
+            {/* Action buttons */}
+            <div className="flex flex-wrap items-center gap-2">
               <button onClick={() => { refreshOnceRef.current(); fetchPlayersRef.current() }} disabled={refreshing}
-                className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-opacity hover:opacity-80 disabled:opacity-40"
+                className="text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-opacity hover:opacity-80 disabled:opacity-40 inline-flex items-center gap-1"
                 style={{ background: 'rgba(34,197,94,0.08)', color: '#86efac', border: '1px solid rgba(34,197,94,0.2)', fontFamily: 'var(--font-sport)', cursor: refreshing ? 'wait' : 'pointer' }}>
-                {refreshing ? 'Refrescando…' : 'Refrescar'}
+                {refreshing ? '⟳ Refrescando…' : '⟳ Refrescar'}
               </button>
               <button onClick={() => setSearchOpen(true)}
-                className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
+                className="text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
                 style={{ background: 'rgba(255,255,255,0.04)', color: '#9090B0', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
                 aria-label="Buscar (⌘K)">
                 🔍 Buscar
@@ -2367,7 +2436,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
               </button>
               {favorites.size > 0 && (
                 <button onClick={() => setShowFavoritesOnly(v => !v)}
-                  className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
+                  className="text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
                   style={{
                     background: showFavoritesOnly ? 'rgba(251,191,36,0.14)' : 'rgba(255,255,255,0.04)',
                     color: showFavoritesOnly ? '#fbbf24' : '#9090B0',
@@ -2375,11 +2444,11 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                     fontFamily: 'var(--font-sport)', cursor: 'pointer',
                   }}>
                   {showFavoritesOnly ? '★' : '☆'} Favoritos
-                  <span className="text-[9px] font-mono px-1 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)' }}>{favorites.size}</span>
+                  {favorites.size > 0 && <span className="text-[9px] font-mono px-1 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)' }}>{favorites.size}</span>}
                 </button>
               )}
               <button onClick={() => setHideUnavailable(v => !v)}
-                className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
+                className="text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
                 style={{
                   background: hideUnavailable ? 'rgba(255,255,255,0.04)' : 'rgba(248,113,113,0.10)',
                   color: hideUnavailable ? '#9090B0' : '#f87171',
@@ -2388,17 +2457,11 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                 }}
                 title={hideUnavailable ? 'Mostrar también bloques sin datos' : 'Ocultar bloques sin datos'}
                 aria-pressed={!hideUnavailable}>
-                {hideUnavailable ? '⊘ Ocultar vacíos' : '⊕ Ver todos'}
+                {hideUnavailable ? '⊘ Vacíos' : '⊕ Ver todos'}
               </button>
               {fetchError && (
                 <span className="text-[11px]" style={{ color: '#f87171', fontFamily: 'var(--font-sport)' }}>
-                  ⚠ Algunos datos no se han podido actualizar ({fetchError})
-                </span>
-              )}
-              {updatedFlash && (
-                <span aria-live="polite" className="text-[11px] inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full"
-                  style={{ background: 'rgba(74,222,128,0.14)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.32)', fontFamily: 'var(--font-sport)', animation: 'fadeOut 2.2s forwards' }}>
-                  ● Datos actualizados
+                  ⚠ {fetchError}
                 </span>
               )}
             </div>
