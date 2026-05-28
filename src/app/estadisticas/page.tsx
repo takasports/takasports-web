@@ -1,10 +1,10 @@
-import dynamic from 'next/dynamic'
+import dynamicImport from 'next/dynamic'
 import type { Metadata } from 'next'
 import { getStandingsData, shardStandingsForSport } from '@/app/api/stats/standings/route'
 import { SITE_URL } from '@/lib/constants'
 import EstadisticasLoading from './loading'
 
-const EstadisticasClient = dynamic(() => import('./EstadisticasClient'), {
+const EstadisticasClient = dynamicImport(() => import('./EstadisticasClient'), {
   loading: () => <EstadisticasLoading />,
 })
 
