@@ -35,7 +35,24 @@ export default function BottomNav() {
         {TABS.map(({ href, label, match, icon: Icon }) => {
           const active = match(pathname)
           return (
-            <li key={href} className="flex-1">
+            <li key={href} className="flex-1 relative">
+              {/* Active top-pill indicator */}
+              {active && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 28,
+                    height: 2,
+                    borderRadius: '0 0 2px 2px',
+                    background: 'linear-gradient(90deg, #7C3AED, #A855F7)',
+                    boxShadow: '0 0 6px rgba(124,58,237,0.6)',
+                  }}
+                />
+              )}
               <Link
                 href={href}
                 onClick={onTap}
@@ -46,14 +63,21 @@ export default function BottomNav() {
                   textDecoration: 'none',
                 }}
               >
-                <span className="flex items-center justify-center" style={{ width: 22, height: 22 }}>
+                <span
+                  className="flex items-center justify-center rounded-xl transition-all"
+                  style={{
+                    width: 36,
+                    height: 26,
+                    background: active ? 'rgba(124,58,237,0.12)' : 'transparent',
+                  }}
+                >
                   <Icon active={active} />
                 </span>
                 <span
                   style={{
                     fontFamily: 'var(--font-sport)',
                     fontSize: 10,
-                    fontWeight: 700,
+                    fontWeight: active ? 700 : 600,
                     letterSpacing: '0.04em',
                   }}
                 >

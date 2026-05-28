@@ -701,7 +701,7 @@ function ExternalGameCard({ game }: { game: Game }) {
           onClick={() => setSheetOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-t-2xl overflow-hidden pb-safe"
+            className="w-full max-w-md rounded-t-2xl overflow-hidden safe-bottom"
             style={{ background: 'var(--bg-card)', border: `1px solid ${game.accentDim}40` }}
             onClick={e => e.stopPropagation()}
           >
@@ -791,8 +791,8 @@ function ExternalGameCard({ game }: { game: Game }) {
               </button>
             </div>
 
-            {/* safe area bottom */}
-            <div className="h-4" />
+            {/* safe area bottom — mínimo 8px adicionales sobre safe-bottom */}
+            <div style={{ height: 8 }} />
           </div>
         </div>
       )}
