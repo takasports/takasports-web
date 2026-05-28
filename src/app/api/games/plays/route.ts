@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { adminSupabase } from '@/lib/supabase-admin'
 import { COINS_ENABLED_GAMES, coinAmountFor, type GameId as CoinGameId } from '@/lib/game-coins'
 
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
@@ -75,12 +76,16 @@ export async function POST(req: NextRequest) {
       const amount = coinAmountFor(body.game_id as CoinGameId, body.score, body.payload)
       if (amount > 0) {
         try {
-          const { data: credited, error: coinErr } = await sb.rpc('award_game_coins', {
-            p_game_id: body.game_id,
-            p_amount:  amount,
-            p_period:  body.period,
-          })
-          if (!coinErr && typeof credited === 'number') awarded = credited
+          const admin = adminSupabase()
+          if (admin) {
+            const { data: credited, error: coinErr } = await admin.rpc('award_game_coins', {
+              p_game_id: body.game_id,
+              p_amount:  amount,
+              p_period:  body.period,
+              p_user_id: user.id,
+            })
+            if (!coinErr && typeof credited === 'number') awarded = credited
+          }
         } catch { /* RPC ausente o error transitorio — sin coins, todo lo demás OK */ }
       }
     }

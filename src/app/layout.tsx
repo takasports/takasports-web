@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
 import { Barlow_Condensed, Bebas_Neue, Barlow_Semi_Condensed } from 'next/font/google'
+import { headers } from 'next/headers'
 import './globals.css'
 import BottomNav from '@/components/BottomNav'
 import ConsentBanner from '@/components/ConsentBanner'
@@ -97,9 +98,12 @@ export const viewport = {
   maximumScale: 5,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const headersList = await headers()
+  const nonce = headersList.get('x-nonce') ?? ''
+
   return (
     <html
       lang="es"
@@ -116,6 +120,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@graph': [
@@ -150,8 +155,9 @@ export default function RootLayout({
         />
         {children}
         <BottomNav />
-        <ConsentBanner gaId={GA_ID} clarityId={CLARITY_ID} />
+        <ConsentBanner gaId={GA_ID} clarityId={CLARITY_ID} nonce={nonce} />
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', () => { const reg = () => navigator.serviceWorker.register('/sw.js').catch(() => {}); 'requestIdleCallback' in window ? requestIdleCallback(reg) : setTimeout(reg, 2000) }) }`,
           }}

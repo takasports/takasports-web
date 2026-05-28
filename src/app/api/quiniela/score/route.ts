@@ -25,6 +25,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { adminSupabase } from '@/lib/supabase-admin'
 import { scorePicks, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
 import { awardBadges, badgesEarnedOnSettle } from '@/lib/badge-awards'
 import { fetchActiveSpecialBadgesForJornada, grantSpecialBadge, userMeetsCriteria } from '@/lib/special-badges'
@@ -234,7 +235,11 @@ export async function POST(req: NextRequest) {
       }
 
       // Descontar totalStake.
-      const { error: chargeErr } = await sb.rpc('add_coins', {
+      const adminSb = adminSupabase()
+      if (!adminSb) {
+        return NextResponse.json({ error: 'service_unavailable' }, { status: 503 })
+      }
+      const { error: chargeErr } = await adminSb.rpc('add_coins', {
         p_amount: -totalStake,
         p_reason: `Quiniela ${body.jornada}: apuesta sellada`,
         p_context: {
@@ -268,7 +273,7 @@ export async function POST(req: NextRequest) {
         // Si el rollback también falla, queda un cobro huérfano que
         // requiere intervención manual via SQL.
         try {
-          await sb.rpc('add_coins', {
+          await adminSb.rpc('add_coins', {
             p_amount: totalStake,
             p_reason: `Rollback Quiniela ${body.jornada} (persistencia fallida)`,
             p_context: { source: 'quiniela_stake_rollback', jornada: body.jornada },
@@ -345,7 +350,11 @@ export async function POST(req: NextRequest) {
       // para que aparezca como txn distinta en el ledger del user.
       if (totalRefunded > 0) {
         const refundReason = `Quiniela ${body.jornada}: stake devuelto · ${breakdown.cancelledCount} partido${breakdown.cancelledCount === 1 ? '' : 's'} anulado${breakdown.cancelledCount === 1 ? '' : 's'}`
-        const { error: refundErr } = await sb.rpc('add_coins', {
+        const adminSbSettle = adminSupabase()
+        if (!adminSbSettle) {
+          return NextResponse.json({ error: 'service_unavailable' }, { status: 503 })
+        }
+        const { error: refundErr } = await adminSbSettle.rpc('add_coins', {
           p_amount: totalRefunded,
           p_reason: refundReason,
           p_context: {
@@ -364,7 +373,11 @@ export async function POST(req: NextRequest) {
       // Acreditar ganancias si las hay. Una sola llamada add_coins.
       if (totalWon > 0) {
         const reason = `Quiniela ${body.jornada}: ${breakdown.hits}/${persistedPicks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`
-        const { error: creditErr } = await sb.rpc('add_coins', {
+        const adminSbCredit = adminSupabase()
+        if (!adminSbCredit) {
+          return NextResponse.json({ error: 'service_unavailable' }, { status: 503 })
+        }
+        const { error: creditErr } = await adminSbCredit.rpc('add_coins', {
           p_amount: totalWon,
           p_reason: reason,
           p_context: {

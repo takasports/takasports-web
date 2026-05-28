@@ -2,6 +2,7 @@
 // Idempotente: no duplica coins si ya se han migrado (usa una marca en user_metadata).
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { adminSupabase } from '@/lib/supabase-admin'
 
 interface MigrateBody {
   coinBalance: number          // saldo actual en localStorage
@@ -34,13 +35,16 @@ export async function POST(req: NextRequest) {
       if (surplus > 0) {
         // Cap: máximo 2000 monedas de migración para evitar abuso
         const amount = Math.min(surplus, 2000)
-        await sb.rpc('add_coins', {
-          p_amount: amount,
-          p_reason: 'Migración desde dispositivo anterior',
-          p_context: { source: 'localStorage' },
-          p_user_id: user.id,
-        })
-        coinsAdded = amount
+        const admin = adminSupabase()
+        if (admin) {
+          await admin.rpc('add_coins', {
+            p_amount: amount,
+            p_reason: 'Migración desde dispositivo anterior',
+            p_context: { source: 'localStorage' },
+            p_user_id: user.id,
+          })
+          coinsAdded = amount
+        }
       }
     }
 

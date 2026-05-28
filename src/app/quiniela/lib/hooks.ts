@@ -183,11 +183,14 @@ export function useCoins(user: User | null): UseCoinsApi {
     setBalance(optimistic)
     setTxns(prev => [{ amount, reason, ts: Date.now() }, ...prev].slice(0, 50))
     try {
-      const { error } = await sb.rpc('add_coins', {
-        p_amount: amount,
-        p_reason: reason,
-        p_context: context ?? {},
+      const res = await fetch('/api/quiniela/coins/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ amount, reason, context: context ?? {} }),
       })
+      const json = await res.json().catch(() => ({}))
+      const error = res.ok ? null : (json.error ?? 'error')
       if (error) {
         // Rollback optimistic update y refresca
         await refresh()

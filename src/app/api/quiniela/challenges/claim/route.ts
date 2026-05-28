@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
 
   // 3. Acreditar coins si hay bonus
   if (coinBonus > 0) {
-    const { error: creditErr } = await sb.rpc('add_coins', {
+    const { error: creditErr } = await admin!.rpc('add_coins', {
       p_amount: coinBonus,
       p_reason: `Desafío completado: ${spBadge.name}`,
       p_context: {
