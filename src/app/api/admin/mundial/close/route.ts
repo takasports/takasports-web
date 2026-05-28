@@ -21,13 +21,12 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { closeMundial2026, MUNDIAL_CLOSE_DATE } from '@/lib/mundial-closure'
 import { safeEqual } from '@/lib/auth-utils'
 
-function checkAuth(req: NextRequest, secret?: string): NextResponse | null {
+function checkAuth(req: NextRequest): NextResponse | null {
   const required = process.env.PUSH_BROADCAST_SECRET
   if (!required) {
     return NextResponse.json({ error: 'admin endpoint not configured' }, { status: 503 })
   }
-  const header = req.headers.get('x-admin-secret')
-  const provided = secret ?? header ?? ''
+  const provided = req.headers.get('x-admin-secret') ?? ''
   if (!safeEqual(provided, required)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
@@ -35,7 +34,8 @@ function checkAuth(req: NextRequest, secret?: string): NextResponse | null {
 }
 
 export async function GET(req: NextRequest) {
-  const auth = checkAuth(req, req.nextUrl.searchParams.get('adminSecret') ?? '')
+  // Solo header x-admin-secret. Query string eliminado: filtraría el secret en logs de Vercel.
+  const auth = checkAuth(req)
   if (auth) return auth
 
   const admin = adminSupabase()
@@ -71,11 +71,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  let body: { adminSecret?: string; force?: boolean } = {}
-  try { body = await req.json() } catch { /* empty body permitido */ }
-
-  const auth = checkAuth(req, body.adminSecret)
+  // adminSecret en body eliminado: solo header x-admin-secret.
+  const auth = checkAuth(req)
   if (auth) return auth
+
+  let body: { force?: boolean } = {}
+  try { body = await req.json() } catch { /* empty body permitido */ }
 
   const admin = adminSupabase()
   if (!admin) return NextResponse.json({ error: 'no_supabase' }, { status: 503 })

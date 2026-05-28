@@ -4,7 +4,6 @@
 // Protegido por X-Admin-Secret (PUSH_BROADCAST_SECRET reusado).
 //
 // Body: {
-//   adminSecret: string
 //   badge_id: string         // PK, normalmente con prefijo "sp_"
 //   name, emoji, color, bg, description
 //   rarity?: 'common' | 'rare' | 'epic' | 'legendary' (default 'rare')
@@ -23,7 +22,6 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { safeEqual } from '@/lib/auth-utils'
 
 interface CreateBody {
-  adminSecret: string
   badge_id: string
   name: string
   emoji: string
@@ -39,15 +37,12 @@ interface CreateBody {
   active?: boolean
 }
 
-function assertAuthorized(req: NextRequest, body: { adminSecret?: string }): NextResponse | null {
+function assertAuthorized(req: NextRequest): NextResponse | null {
   const required = process.env.PUSH_BROADCAST_SECRET
   if (!required) {
     return NextResponse.json({ error: 'admin endpoint not configured' }, { status: 503 })
   }
-  // Prioridad: header `x-admin-secret`. El `adminSecret` en body/query queda
-  // como compatibilidad pero conviene migrarlo (filtra en logs si va en query).
-  const header = req.headers.get('x-admin-secret')
-  const secret = header ?? body.adminSecret ?? ''
+  const secret = req.headers.get('x-admin-secret') ?? ''
   if (!safeEqual(secret, required)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
@@ -55,7 +50,8 @@ function assertAuthorized(req: NextRequest, body: { adminSecret?: string }): Nex
 }
 
 export async function GET(req: NextRequest) {
-  const auth = assertAuthorized(req, { adminSecret: req.nextUrl.searchParams.get('adminSecret') ?? '' })
+  // Solo header x-admin-secret. Query string eliminado: filtraría el secret en logs de Vercel.
+  const auth = assertAuthorized(req)
   if (auth) return auth
 
   const admin = adminSupabase()
@@ -70,11 +66,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = assertAuthorized(req)
+  if (auth) return auth
+
   let body: CreateBody
   try { body = await req.json() as CreateBody } catch { return NextResponse.json({ error: 'invalid body' }, { status: 400 }) }
-
-  const auth = assertAuthorized(req, body)
-  if (auth) return auth
 
   if (!body.badge_id || !body.name || !body.emoji || !body.color || !body.bg || !body.description || !body.criteria_type) {
     return NextResponse.json({ error: 'missing required fields' }, { status: 400 })

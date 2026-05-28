@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { createClient } from '@supabase/supabase-js'
+import { adminSupabase } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/admin-auth'
 
 export const metadata: Metadata = {
@@ -28,14 +28,8 @@ type Edit = {
 }
 
 async function loadEdits(): Promise<{ edits: Edit[]; warning?: string }> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return { edits: [], warning: 'supabase not configured' }
-  }
-  const sb = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { auth: { persistSession: false } }
-  )
+  const sb = adminSupabase()
+  if (!sb) return { edits: [], warning: 'supabase not configured' }
   const { data, error } = await sb
     .from('ranking_edits')
     .select('id, entry_id, category, field, old_value, new_value, reason, edited_by, edited_at')

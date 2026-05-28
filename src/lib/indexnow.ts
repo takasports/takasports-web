@@ -4,7 +4,9 @@
 
 import { SITE_URL } from './constants'
 
-const INDEXNOW_KEY = '61076e72cd4e4151830368503d68e4ad'
+// La clave identifica el sitio ante Bing/Yandex. Externalizada a env para
+// poder rotarla sin redeploy. El archivo /[key].txt debe existir en /public.
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY ?? '61076e72cd4e4151830368503d68e4ad'
 const INDEXNOW_ENDPOINT = 'https://www.bing.com/indexnow'
 
 export interface IndexNowResult {
