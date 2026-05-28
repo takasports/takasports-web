@@ -1,30 +1,82 @@
 'use client'
 import Image, { ImageProps } from 'next/image'
 
+// CDNs que funcionan directamente con next/image sin problemas de hotlink.
+// Para estos dominios usamos la optimización nativa de Next.js.
 const OPTIMIZED_HOSTS = [
   'cdn.sanity.io',
   'cdninstagram.com',
   'fbcdn.net',
-  'espncdn.com',
   'api-sports.io',
   'cloudfront.net',
   'twimg.com',
   'pbs.twimg.com',
 ]
 
-function needsOptimization(src: string): boolean {
-  try {
-    const { hostname } = new URL(src)
-    return OPTIMIZED_HOSTS.some(h => hostname === h || hostname.endsWith(`.${h}`))
-  } catch {
-    return false
-  }
+// Dominios propios/de confianza que se sirven directamente sin proxy.
+// Supabase Storage funciona bien; solo algunas imágenes fallan por el
+// pipeline, pero eso es un problema de datos, no de hotlink.
+const TRUSTED_HOSTS = [
+  'takasportsmedia.com',
+  'supabase.co',
+  'vercel.app',
+  'localhost',
+]
+
+function hostMatches(hostname: string, list: string[]): boolean {
+  return list.some(h => hostname === h || hostname.endsWith(`.${h}`))
 }
 
-// Drop-in replacement for next/image that skips optimization for unknown external
-// domains (news pipeline images from arbitrary sources) while still optimizing
-// known CDNs (Sanity, ESPN, Instagram, etc.).
+function needsOptimization(hostname: string): boolean {
+  return hostMatches(hostname, OPTIMIZED_HOSTS)
+}
+
+function isTrusted(hostname: string): boolean {
+  return hostMatches(hostname, TRUSTED_HOSTS)
+}
+
+/**
+ * Convierte una URL externa de tercero en una URL de nuestro proxy.
+ * El proxy descarga con cabeceras de navegador real → bypassa hotlink blocking.
+ * Cache 24 h en Vercel CDN → 1 descarga por URL al día máximo.
+ */
+function toProxyUrl(src: string): string {
+  return `/api/image-proxy?url=${encodeURIComponent(src)}`
+}
+
+/**
+ * Drop-in replacement for next/image con tres modos:
+ *
+ * 1. CDN conocido (Sanity, Instagram…)  → next/image con optimización
+ * 2. Host de confianza (Supabase, own)   → next/image unoptimized
+ * 3. Tercero desconocido (marca, clarin…)→ proxy /api/image-proxy
+ *    El proxy sirve desde nuestro dominio, evitando hotlink blocks.
+ */
 export default function DynamicImage({ src, ...props }: ImageProps) {
-  const unoptimized = typeof src === 'string' && src.startsWith('http') && !needsOptimization(src)
-  return <Image src={src} unoptimized={unoptimized} {...props} />
+  if (typeof src !== 'string' || !src.startsWith('http')) {
+    // Rutas relativas / StaticImageData: next/image directo
+    return <Image src={src} {...props} />
+  }
+
+  let hostname = ''
+  try {
+    hostname = new URL(src).hostname
+  } catch {
+    return <Image src={src} unoptimized {...props} />
+  }
+
+  if (needsOptimization(hostname)) {
+    // CDN conocido: next/image optimiza directamente (WebP, resize…)
+    return <Image src={src} {...props} />
+  }
+
+  if (isTrusted(hostname)) {
+    // Host propio/Supabase: unoptimized para no pasar por _next/image
+    return <Image src={src} unoptimized {...props} />
+  }
+
+  // Tercero desconocido → proxy para bypasear hotlink blocking.
+  // El proxy ya sirve la imagen con Content-Type correcto y cache 24 h,
+  // así que marcamos unoptimized para no añadir un doble salto de proxy.
+  return <Image src={toProxyUrl(src)} unoptimized {...props} />
 }
