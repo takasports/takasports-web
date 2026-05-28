@@ -22,6 +22,7 @@ export interface LiveScore {
   homePhoto?: string   // athlete headshot URL if available
   awayPhoto?: string
   matchRef?: string   // "{sport}_{league}_{espnId}" for detail page URL
+  setsStr?: string    // tennis: formatted set scores e.g. "6-4 7-5 *3-2" (* = active set)
 }
 
 interface CacheEntry { data: LiveScore[]; ts: number; hasLive: boolean }
@@ -101,6 +102,24 @@ function parseCurrentSetScore(scoreStr: string | undefined): string | null {
   const [a, b] = parts
   const isComplete = (a >= 6 || b >= 6) && Math.abs(a - b) >= 2
   return isComplete ? null : last
+}
+
+/** Build a human-readable set-by-set string for tennis (e.g. "6-4 7-5 *3-2").
+ *  The active (incomplete) set is prefixed with * for UI highlighting.
+ *  Handles tiebreaks: "7-6(4)" is correctly treated as a completed set. */
+function formatTennisSets(homeStr: string | undefined): string {
+  if (!homeStr) return ''
+  const sets = homeStr.trim().split(/\s+/)
+  const parts: string[] = []
+  for (const set of sets) {
+    const hasTiebreak = /\(.*?\)/.test(set)
+    const base = set.replace(/\(.*?\)/g, '')
+    const [a, b] = base.split('-').map(Number)
+    if (isNaN(a) || isNaN(b)) continue
+    const isComplete = hasTiebreak || ((a >= 6 || b >= 6) && Math.abs(a - b) >= 2)
+    parts.push(isComplete ? `${a}-${b}` : `*${a}-${b}`)
+  }
+  return parts.join(' ')
 }
 
 // ── Helpers ─────────────────────────────────────────────────────
@@ -245,6 +264,7 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
       const [homeGoals, awayGoals] = parseSetsWon(scoreStr)
       const currentSet = parseCurrentSetScore(scoreStr)
       const tournament = (ev.shortName as string) ?? (slug.includes('wta') ? 'WTA' : 'ATP')
+      const setsStr = formatTennisSets(scoreStr)
 
       let clock: string | undefined
       if (currentSet) {
@@ -260,7 +280,7 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
         awayGoals,
         mapStatus(statusName, 'tennis'),
         'tennis',
-        { comp: tournament, clock },
+        { comp: tournament, clock, ...(setsStr ? { setsStr } : {}) },
       ))
     }
     return results

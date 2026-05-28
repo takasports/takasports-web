@@ -26,6 +26,8 @@ export interface LiveFixture {
   homeLogo?: string
   awayLogo?: string
   matchRef?: string
+  clock?: string      // current set game score (tennis) or match clock
+  setsStr?: string    // tennis: "6-4 7-5 *3-2" (* = active set)
 }
 
 export interface UpcomingEvent {
@@ -107,6 +109,38 @@ function GenericLive({ fix, col }: { fix: LiveFixture; col: string }) {
 
 // ── Tenis: jugadores + sets (mapeamos goals → "sets" visualmente) ──
 
+function TennisSets({ setsStr, col }: { setsStr: string; col: string }) {
+  const sets = setsStr.split(' ')
+  return (
+    <span
+      className="font-black tabular-nums text-[10px]"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+        fontFamily: 'var(--font-display)',
+        letterSpacing: '0.02em',
+      }}
+      title="Parciales por set"
+    >
+      {sets.map((s, i) => {
+        const isActive = s.startsWith('*')
+        const display = isActive ? s.slice(1) : s
+        return (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            {i > 0 && (
+              <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: 9, lineHeight: 1 }}>·</span>
+            )}
+            <span style={{ color: isActive ? col : '#F0F0F8' }}>
+              {display}
+            </span>
+          </span>
+        )
+      })}
+    </span>
+  )
+}
+
 function TennisLive({ fix, col }: { fix: LiveFixture; col: string }) {
   // Pass sport context so getLiveLabel uses "Set N" instead of soccer labels
   const setLabel = getLiveLabel(fix.status, fix.elapsed, {
@@ -122,13 +156,17 @@ function TennisLive({ fix, col }: { fix: LiveFixture; col: string }) {
       <span className="text-[10px] font-semibold" style={{ color: '#B0B0C8', fontFamily: 'var(--font-sport)' }}>
         {short(fix.homeTeam, fix.homeAbbr)}
       </span>
-      <span
-        className="font-black tabular-nums text-[11px]"
-        style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}
-        title="Sets ganados"
-      >
-        {fix.homeGoals ?? 0} – {fix.awayGoals ?? 0}
-      </span>
+      {fix.setsStr ? (
+        <TennisSets setsStr={fix.setsStr} col={col} />
+      ) : (
+        <span
+          className="font-black tabular-nums text-[11px]"
+          style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}
+          title="Sets ganados"
+        >
+          {fix.homeGoals ?? 0} – {fix.awayGoals ?? 0}
+        </span>
+      )}
       <span className="text-[10px] font-semibold" style={{ color: '#B0B0C8', fontFamily: 'var(--font-sport)' }}>
         {short(fix.awayTeam, fix.awayAbbr)}
       </span>
@@ -197,7 +235,9 @@ export function LiveEventCard({ fix }: { fix: LiveFixture }) {
     ariaLabel = `${fix.homeTeam} en carrera, ${liveLabel}`
   } else if (isTennis(fix.sport)) {
     body = <TennisLive fix={fix} col={col} />
-    ariaLabel = `${fix.homeTeam} ${fix.homeGoals ?? 0} - ${fix.awayGoals ?? 0} ${fix.awayTeam} sets, ${liveLabel}`
+    ariaLabel = fix.setsStr
+      ? `${fix.homeTeam} vs ${fix.awayTeam}, ${fix.setsStr.replace(/\*/g, '')}, ${liveLabel}`
+      : `${fix.homeTeam} ${fix.homeGoals ?? 0} - ${fix.awayGoals ?? 0} ${fix.awayTeam} sets, ${liveLabel}`
   } else {
     body = <GenericLive fix={fix} col={col} />
     ariaLabel = `${fix.homeTeam} ${fix.homeGoals ?? 0} - ${fix.awayGoals ?? 0} ${fix.awayTeam}, ${liveLabel}`
