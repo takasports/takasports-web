@@ -115,7 +115,9 @@ export async function generateMetadata({
       title: article.title,
       description: article.short_summary ?? article.subtitle,
       url: canonical,
-      images: imgUrl ? [{ url: imgUrl, width: 1200, height: 630 }] : [],
+      // No se especifican images para que Next.js use automáticamente
+      // el opengraph-image.tsx de esta ruta, que genera una tarjeta
+      // con branding, título y foto del artículo (mejor CTR en redes).
       type: 'article',
       publishedTime: article.publishedAt,
       modifiedTime: article._updatedAt ?? article.publishedAt,
@@ -126,7 +128,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: article.title,
       description: article.short_summary ?? article.subtitle,
-      images: imgUrl ? [imgUrl] : [],
+      // twitter:image se genera automáticamente desde opengraph-image.tsx
       site: '@takasportsx',
       creator: '@takasportsx',
     },
@@ -535,9 +537,10 @@ export default async function NoticiaPage({
     : []
 
   // Auto-interlinking: cargamos el índice una vez por render y lo pasamos a
-  // los renders de párrafo. El contexto se comparte entre todos los párrafos
-  // del artículo para respetar cap global y "primer match por entidad".
-  const autolinkIndex = paragraphs.length > 0 ? await getEntityIndex() : null
+  // los renders de párrafo. Aplica tanto a bodyText como a bodyPortable.
+  // El contexto se comparte para respetar cap global y "primer match por entidad".
+  const hasBody = paragraphs.length > 0 || (article.bodyPortable && article.bodyPortable.length > 0)
+  const autolinkIndex = hasBody ? await getEntityIndex() : null
   const autolinkCtx = autolinkIndex ? createAutolinkContext(article.sport ?? null) : null
   const autolink: { index: EntityIndex; ctx: AutolinkContext } | undefined =
     autolinkIndex && autolinkCtx ? { index: autolinkIndex, ctx: autolinkCtx } : undefined
@@ -775,9 +778,43 @@ export default async function NoticiaPage({
                       },
                     },
                     block: {
-                      normal: ({ children }) => (
-                        <p style={{ color: '#B8B8D0', fontSize: '1.125rem', lineHeight: 1.8, marginBottom: '1.5rem' }}>{children}</p>
-                      ),
+                      normal: ({ children, value }) => {
+                        const pStyle = { color: '#B8B8D0', fontSize: '1.125rem', lineHeight: 1.8, marginBottom: '1.5rem' }
+                        // Autolink solo en párrafos sin marks (negrita, cursiva, links manuales)
+                        // para no romper el formato editorial existente.
+                        if (autolink) {
+                          type PTSpan = { _type: string; text?: string; marks?: string[] }
+                          const spans = ((value as { children?: PTSpan[] }).children ?? [])
+                          const isPlainText = spans.length > 0 && spans.every(
+                            s => s._type === 'span' && (!s.marks || s.marks.length === 0),
+                          )
+                          if (isPlainText) {
+                            const rawText = spans.map(s => s.text ?? '').join('')
+                            const segments = autolinkSegments(rawText, autolink.index, autolink.ctx)
+                            if (segments.some(s => s.type === 'link')) {
+                              return (
+                                <p style={pStyle}>
+                                  {segments.map((seg, j) =>
+                                    seg.type === 'link' && seg.url ? (
+                                      <Link
+                                        key={j}
+                                        href={seg.url}
+                                        className="hover:underline"
+                                        style={{ color: '#A78BFA', textDecorationColor: 'rgba(167,139,250,0.4)' }}
+                                      >
+                                        {seg.text}
+                                      </Link>
+                                    ) : (
+                                      <span key={j}>{seg.text}</span>
+                                    ),
+                                  )}
+                                </p>
+                              )
+                            }
+                          }
+                        }
+                        return <p style={pStyle}>{children}</p>
+                      },
                       h1: ({ children }) => (
                         <h1 style={{ color: '#E8E8F4', fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.015em', marginTop: '2rem', marginBottom: '0.75rem' }}>{children}</h1>
                       ),
