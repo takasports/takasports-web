@@ -270,27 +270,6 @@ function ArticleSidebar({
             </div>
           )}
 
-          {article.source_name && (
-            <div className="flex items-center gap-2.5">
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ opacity: 0.4 }}>
-                <circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" strokeWidth="1.3" />
-                <path d="M6.5 4v3l2 1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-              </svg>
-              {article.source_url ? (
-                <a
-                  href={article.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] hover:opacity-70 transition-opacity"
-                  style={{ color: badgeColor }}
-                >
-                  {article.source_name}
-                </a>
-              ) : (
-                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{article.source_name}</p>
-              )}
-            </div>
-          )}
         </div>
 
         {article.tags && article.tags.length > 0 && (
@@ -957,20 +936,6 @@ export default async function NoticiaPage({
                   >
                     {article.author}
                   </Link>
-                </div>
-              )}
-              {article.source_name && (
-                <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    Fuente:{' '}
-                    {article.source_url ? (
-                      <a href={article.source_url} target="_blank" rel="noopener noreferrer" className="hover:opacity-70 transition-opacity" style={{ color: badgeColor }}>
-                        {article.source_name}
-                      </a>
-                    ) : (
-                      <span style={{ color: 'var(--text-secondary)' }}>{article.source_name}</span>
-                    )}
-                  </p>
                 </div>
               )}
             </div>
