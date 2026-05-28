@@ -67,7 +67,7 @@ export default function GuestRankingHint() {
             Compite en el ranking
           </p>
           <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Inicia sesión para que tus partidas cuenten en los rankings semanales.
+            Entra y que tus picks cuenten de verdad en el ranking semanal.
           </p>
         </div>
         <button

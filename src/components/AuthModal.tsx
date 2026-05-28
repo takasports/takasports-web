@@ -111,10 +111,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                 className="font-black text-xl leading-tight"
                 style={{ fontFamily: 'var(--font-display)', color: '#F0F0F8', letterSpacing: '-0.02em' }}
               >
-                Accede a tu cuenta
+                Únete a TakaSports
               </h2>
               <p className="text-xs mt-1" style={{ color: '#6060A0', fontFamily: 'var(--font-sport)' }}>
-                Sincroniza tus picks, recordatorios y historial en todos tus dispositivos.
+                Tus picks, tu palmarés y tus favoritos. Todo guardado, gratis.
               </p>
             </div>
             <button

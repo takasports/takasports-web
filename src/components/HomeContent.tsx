@@ -387,7 +387,7 @@ export default function HomeContent({
               <SearchIcon size={26} />
             </div>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              No hay noticias de <span style={{ color: '#C4B5FD' }}>{activeSport}</span> todavía.
+              Todavía no hay nada de <span style={{ color: '#C4B5FD' }}>{activeSport}</span> por aquí.
             </p>
             <button
               onClick={() => handleSportChange('Todo')}

@@ -690,7 +690,7 @@ export default function JuegosPageClient() {
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
                 <span className="section-accent" />
-                <h2 className="section-label">Disponibles</h2>
+                <h2 className="section-label">A jugar</h2>
                 <span
                   className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest"
                   style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.2)', fontFamily: 'var(--font-sport)' }}
@@ -719,7 +719,7 @@ export default function JuegosPageClient() {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
               <span className="section-accent" />
-              <h2 className="section-label">En desarrollo</h2>
+              <h2 className="section-label">Próximamente</h2>
               <span
                 className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest"
                 style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A5A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}

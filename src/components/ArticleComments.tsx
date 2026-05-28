@@ -76,7 +76,7 @@ export default function ArticleComments({ slug }: { slug: string }) {
       if (res.status === 429) {
         setError('Has comentado mucho en la última hora. Vuelve en un rato.')
       } else if (res.status === 401) {
-        setError('Inicia sesión para comentar.')
+        setError('Tienes que iniciar sesión para comentar.')
       } else if (!res.ok || !data?.ok) {
         setError('No se pudo publicar el comentario.')
       } else if (data.comment) {
@@ -189,7 +189,7 @@ export default function ArticleComments({ slug }: { slug: string }) {
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-md) var(--space-lg)' }}
         >
           <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-            <strong style={{ color: 'var(--text-primary)' }}>Inicia sesión</strong> para dejar tu comentario.
+            <strong style={{ color: 'var(--text-primary)' }}>Inicia sesión</strong> y deja tu opinión.
           </p>
           <a
             href="/perfil"

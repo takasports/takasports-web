@@ -59,7 +59,7 @@ export default function MyGamesActivity() {
     <section className="mt-12">
       <div className="flex items-center gap-2.5 mb-4">
         <span className="section-accent" />
-        <h2 className="section-label">Tu actividad en TakaSports</h2>
+        <h2 className="section-label">Tu palmarés</h2>
       </div>
 
       {/* Racha global */}

@@ -241,7 +241,7 @@ export default function NoticiasContent({
             <SearchIcon size={26} />
           </div>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            No hay noticias de <span style={{ color: '#C4B5FD' }}>{activeCategory}</span> todavía.
+            Todavía no hay noticias de <span style={{ color: '#C4B5FD' }}>{activeCategory}</span> por aquí.
           </p>
           <button
             onClick={() => handleCategoryChange('Todo')}

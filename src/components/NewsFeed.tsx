@@ -130,7 +130,7 @@ export default function NewsFeed({
       {displayed.length === 0 && (
         <div className="py-14 text-center">
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            No hay noticias en esta categoría.
+            Sin noticias en esta categoría de momento.
           </p>
         </div>
       )}

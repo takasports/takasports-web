@@ -1015,7 +1015,7 @@ export default async function NoticiaPage({
                 <div className="mt-10">
                   <div className="flex items-center gap-2.5 mb-4">
                     <span className="section-accent" />
-                    <h2 className="section-label">También te puede interesar</h2>
+                    <h2 className="section-label">Sigue leyendo</h2>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {relatedFinal.map((rel) => {
