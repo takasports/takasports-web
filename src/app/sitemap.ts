@@ -11,10 +11,10 @@ const BASE_URL = SITE_URL
 
 // Fechas deterministas por sección. Google ignora <lastmod> cuando ve que cambia
 // en cada build sin razón. Bumpear estas constantes solo al hacer cambios reales.
-const STATIC_LASTMOD = new Date('2026-05-09T00:00:00Z')
-const RANKINGS_LASTMOD = new Date('2026-05-09T00:00:00Z')
-const SPORT_HUB_FALLBACK_LASTMOD = new Date('2026-05-09T00:00:00Z')
-const TAG_LASTMOD = new Date('2026-05-09T00:00:00Z')
+const STATIC_LASTMOD = new Date('2026-05-28T00:00:00Z')
+const RANKINGS_LASTMOD = new Date('2026-05-28T00:00:00Z')
+const SPORT_HUB_FALLBACK_LASTMOD = new Date('2026-05-28T00:00:00Z')
+const TAG_LASTMOD = new Date('2026-05-28T00:00:00Z')
 
 function mostRecent(items: Array<{ publishedAt?: string; _updatedAt?: string }>): Date {
   let max = 0

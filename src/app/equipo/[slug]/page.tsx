@@ -441,8 +441,37 @@ export default async function EquipoPage({ params }: { params: Promise<{ slug: s
   const team = await fetchTeamDetail(slug)
   if (!team) notFound()
 
+  const canonicalUrl = `${SITE_URL}/equipo/${slug}`
+
+  const teamJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsTeam',
+    name: team.name,
+    url: canonicalUrl,
+    logo: team.logo ?? LOGO_URL,
+    image: team.logo ?? LOGO_URL,
+    sport: team.leagueSlug.includes('basketball') || team.leagueSlug.includes('nba') ? 'Basketball' : 'Soccer',
+    memberOf: {
+      '@type': 'SportsOrganization',
+      name: team.leagueLabel,
+    },
+    ...(team.standingSummary ? { description: `${team.name} — ${team.standingSummary}` } : {}),
+  }
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Estadísticas', item: `${SITE_URL}/estadisticas` },
+      { '@type': 'ListItem', position: 3, name: team.name, item: canonicalUrl },
+    ],
+  }
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(teamJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <LiveStrip />
       <Header />
       <main style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>

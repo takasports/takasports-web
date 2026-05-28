@@ -242,8 +242,45 @@ export default async function JugadorPage({ params }: { params: Promise<{ slug: 
   const player = await fetchPlayer(slug)
   if (!player) notFound()
 
+  const canonicalUrl = `${SITE_URL}/jugador/${slug}`
+
+  const playerJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: player.name,
+    url: canonicalUrl,
+    ...(player.headshot ? { image: player.headshot } : {}),
+    ...(player.nationality ? { nationality: { '@type': 'Country', name: player.nationality } } : {}),
+    ...(player.position ? { jobTitle: player.position } : {}),
+    ...(player.team ? {
+      memberOf: {
+        '@type': 'SportsTeam',
+        name: player.team.name,
+        url: `${SITE_URL}/equipo/${player.team.slug}`,
+      },
+    } : {}),
+    ...(player.leagueLabel ? {
+      affiliation: {
+        '@type': 'SportsOrganization',
+        name: player.leagueLabel,
+      },
+    } : {}),
+  }
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Estadísticas', item: `${SITE_URL}/estadisticas` },
+      { '@type': 'ListItem', position: 3, name: player.name, item: canonicalUrl },
+    ],
+  }
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <LiveStrip />
       <Header />
       <main style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
