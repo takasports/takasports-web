@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isSameOrigin } from '@/lib/csrf'
-import { randomBytes } from 'crypto'
 
 export async function middleware(request: NextRequest) {
   // CSRF guard: para métodos mutables sobre rutas autenticadas, exigimos
@@ -26,7 +25,9 @@ export async function middleware(request: NextRequest) {
   // middleware — siguen usando el CSP estático de next.config.ts con
   // 'unsafe-inline'. El trade-off es aceptable: las rutas sensibles
   // (quiniela, perfil, admin) tienen nonce; las páginas de contenido no.
-  const nonce = randomBytes(16).toString('base64')
+  // crypto.randomUUID() está disponible en el Edge Runtime de Vercel.
+  // randomBytes() de Node.js NO lo está → MIDDLEWARE_INVOCATION_FAILED.
+  const nonce = crypto.randomUUID().replace(/-/g, '')
 
   const isDev = process.env.NODE_ENV !== 'production'
   const scriptSrc = isDev
