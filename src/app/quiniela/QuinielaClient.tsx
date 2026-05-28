@@ -33,6 +33,7 @@ import { MundialLeaderboardPanel } from './components/panels/MundialLeaderboardP
 import { SeasonPanel } from './components/panels/SeasonPanel'
 import { MundialWelcomeModal } from './components/MundialWelcomeModal'
 import { Rules } from './components/panels/Rules'
+import { ChallengesPanel } from './components/panels/ChallengesPanel'
 
 // ─────────────────────────────────────────────────────────────────
 // Page
@@ -500,8 +501,13 @@ export default function QuinielaClient() {
             <PersonalStatsPanel user={user} />
 
             {/* Hitos del user (level + XP + badges desbloqueados).
-                Click → BadgesModal con catálogo completo. Silent si no auth. */}
+                Click → BadgesModal con catálogo completo + equip system. Silent si no auth. */}
             <HitosPanel user={user} />
+
+            {/* Retos semanales — visible para todos (non-auth ve CTA de login). */}
+            {apiJornada !== 'Cargando…' && apiJornada !== 'Sin jornada activa' && (
+              <ChallengesPanel jornada={apiJornada} user={user} />
+            )}
 
             {/* División del jugador */}
             {(() => {

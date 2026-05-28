@@ -18,6 +18,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { BADGES, listAllBadges, type BadgeDef } from '@/lib/badges'
 import { fetchSpecialBadgeDefs } from '@/lib/special-badges'
 import { computeLevel, computeXp } from '@/lib/levels'
+import { type EquipSlot } from '@/lib/equipment'
 
 interface MeBadge {
   id: string
@@ -29,9 +30,23 @@ interface MeBadge {
   category: string
   description: string
   unlockedAt: string | null   // null = locked
+  /** Slots que este badge puede ocupar en equipamiento. */
+  equipSlots: EquipSlot[]
+}
+
+/** Equipamiento activo del user (slot → badge_id). */
+interface MeEquipment {
+  badge?:   string  // badge_id
+  title?:   string
+  frame?:   string
+  card_bg?: string
 }
 
 function toMeBadge(def: BadgeDef, unlockedAt: string | null): MeBadge {
+  const slots: EquipSlot[] = ['badge']
+  if (def.unlocks?.title)      slots.push('title')
+  if (def.unlocks?.frameColor) slots.push('frame')
+  if (def.unlocks?.cardBg)     slots.push('card_bg')
   return {
     id: def.id,
     name: def.name,
@@ -42,6 +57,7 @@ function toMeBadge(def: BadgeDef, unlockedAt: string | null): MeBadge {
     category: def.category,
     description: def.description,
     unlockedAt,
+    equipSlots: slots,
   }
 }
 
@@ -117,6 +133,22 @@ export async function GET() {
     toMeBadge(def, unlockedMap.get(def.id) ?? null),
   )
 
+  // Equipamiento activo del user
+  const { data: equipRows } = await sb
+    .from('quiniela_user_equipment')
+    .select('slot, badge_id')
+    .eq('user_id', user.id)
+
+  const equipment: MeEquipment = {}
+  for (const r of equipRows ?? []) {
+    const slot = r.slot as EquipSlot
+    const bid  = r.badge_id as string
+    if (slot === 'badge')   equipment.badge   = bid
+    if (slot === 'title')   equipment.title   = bid
+    if (slot === 'frame')   equipment.frame   = bid
+    if (slot === 'card_bg') equipment.card_bg = bid
+  }
+
   return NextResponse.json({
     balance,
     xp,
@@ -134,5 +166,6 @@ export async function GET() {
     badges: meBadges,
     unlockedCount: unlockedDefs.length,
     totalBadges: allBadges.length,
+    equipment,
   })
 }

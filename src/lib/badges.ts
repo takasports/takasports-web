@@ -28,6 +28,22 @@
 export type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary'
 export type BadgeCategory = 'milestone' | 'jornada' | 'season' | 'mundial' | 'special'
 
+/**
+ * Ítems que desbloquea este badge (por rareza).
+ * common  → solo badge
+ * rare    → badge + title
+ * epic    → badge + title + frame
+ * legendary → badge + title + frame + cardBg
+ */
+export interface BadgeUnlocks {
+  /** Epíteto corto visible bajo el nick en el ranking. */
+  title?: string
+  /** Color hex del borde de la fila entera en el ranking (epic+). */
+  frameColor?: string
+  /** Gradiente CSS del fondo de la fila (legendary only). */
+  cardBg?: string
+}
+
 export interface BadgeDef {
   id: string
   name: string
@@ -37,6 +53,8 @@ export interface BadgeDef {
   description: string
   rarity: BadgeRarity
   category: BadgeCategory
+  /** Ítems equipables que desbloquea este badge. */
+  unlocks?: BadgeUnlocks
   /** Si true, NO se muestra en ranking público (solo en perfil propio). */
   privateOnly?: boolean
 }
@@ -82,6 +100,10 @@ export const BADGES: Record<string, BadgeDef> = {
     description: 'Acertaste TODOS los partidos de una jornada.',
     rarity: 'epic',
     category: 'jornada',
+    unlocks: {
+      title: 'El Pleno',
+      frameColor: '#fbbf24',
+    },
   },
   oraculo: {
     id: 'oraculo',
@@ -92,6 +114,9 @@ export const BADGES: Record<string, BadgeDef> = {
     description: 'Acertaste 4 o más partidos en una jornada.',
     rarity: 'rare',
     category: 'jornada',
+    unlocks: {
+      title: 'El Oráculo',
+    },
   },
   high_roller: {
     id: 'high_roller',
@@ -102,6 +127,10 @@ export const BADGES: Record<string, BadgeDef> = {
     description: 'Apostaste 500🪙 o más en una sola jornada y ganaste.',
     rarity: 'epic',
     category: 'jornada',
+    unlocks: {
+      title: 'High Roller',
+      frameColor: '#22d3ee',
+    },
   },
   underdog: {
     id: 'underdog',
@@ -112,6 +141,9 @@ export const BADGES: Record<string, BadgeDef> = {
     description: 'Ganaste con una cuota igual o mayor a 4.0 en algún pick.',
     rarity: 'rare',
     category: 'jornada',
+    unlocks: {
+      title: 'Cazador de Cuotas',
+    },
   },
 
   // ── Season (logros acumulativos de temporada) ───────────────────
@@ -124,6 +156,9 @@ export const BADGES: Record<string, BadgeDef> = {
     description: 'Tres jornadas consecutivas con ganancias.',
     rarity: 'rare',
     category: 'season',
+    unlocks: {
+      title: 'En Racha',
+    },
   },
   racha_5: {
     id: 'racha_5',
@@ -134,6 +169,10 @@ export const BADGES: Record<string, BadgeDef> = {
     description: 'Cinco jornadas consecutivas con ganancias.',
     rarity: 'epic',
     category: 'season',
+    unlocks: {
+      title: 'En Llamas',
+      frameColor: '#ef4444',
+    },
   },
   top_3_weekly: {
     id: 'top_3_weekly',
@@ -144,6 +183,9 @@ export const BADGES: Record<string, BadgeDef> = {
     description: 'Terminaste TOP 3 en el ranking semanal de una jornada.',
     rarity: 'rare',
     category: 'season',
+    unlocks: {
+      title: 'El Podio',
+    },
   },
   champion_weekly: {
     id: 'champion_weekly',
@@ -154,6 +196,10 @@ export const BADGES: Record<string, BadgeDef> = {
     description: 'Ganaste el ranking semanal de una jornada.',
     rarity: 'epic',
     category: 'season',
+    unlocks: {
+      title: 'Campeón Semanal',
+      frameColor: '#fbbf24',
+    },
   },
 
   // ── Mundial 2026 ────────────────────────────────────────────────
@@ -166,6 +212,11 @@ export const BADGES: Record<string, BadgeDef> = {
     description: 'Acertaste 3 o más predicciones long-term del Mundial 2026.',
     rarity: 'legendary',
     category: 'mundial',
+    unlocks: {
+      title: 'El Profeta',
+      frameColor: '#fbbf24',
+      cardBg: 'linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(180,83,9,0.10) 100%)',
+    },
   },
   mundialista_2026: {
     id: 'mundialista_2026',
@@ -176,6 +227,9 @@ export const BADGES: Record<string, BadgeDef> = {
     description: 'Participaste en al menos una jornada del Mundial 2026. Badge conmemorativo.',
     rarity: 'rare',
     category: 'mundial',
+    unlocks: {
+      title: 'Mundialista 2026',
+    },
   },
   top3_mundial_2026: {
     id: 'top3_mundial_2026',
@@ -186,6 +240,11 @@ export const BADGES: Record<string, BadgeDef> = {
     description: 'Terminaste TOP 3 en el ranking acumulado del Mundial 2026.',
     rarity: 'legendary',
     category: 'mundial',
+    unlocks: {
+      title: 'Podio Mundial',
+      frameColor: '#fbbf24',
+      cardBg: 'linear-gradient(135deg, rgba(251,191,36,0.22) 0%, rgba(180,83,9,0.12) 100%)',
+    },
   },
 }
 

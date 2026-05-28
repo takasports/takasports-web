@@ -28,6 +28,10 @@ export interface SpecialBadgeRow {
   granted_count: number
   expires_at: string | null
   active: boolean
+  /** Si true, el badge es un "reto semanal" visible en la sidebar.
+   *  El user debe reclamarlo manualmente para obtener badge + coin_bonus. */
+  show_in_sidebar?: boolean
+  coin_bonus?: number
 }
 
 /**

@@ -11,7 +11,14 @@ import { useMemo, useState } from 'react'
 //
 // Locked: muestra emoji en gris + descripción para que el user vea cómo
 // desbloquearlo (mecánica de "achievement hunter").
+//
+// Equip system (v2):
+//   Cada badge desbloqueado muestra botones de slot equipables.
+//   Equipment = { badge?, title?, frame?, card_bg? } → badge_id activo.
+//   onEquip(slot, badgeId) → llamado para equipar/desequipar.
 // ─────────────────────────────────────────────────────────────────
+
+type EquipSlot = 'badge' | 'title' | 'frame' | 'card_bg'
 
 interface Badge {
   id: string
@@ -23,6 +30,14 @@ interface Badge {
   category: string
   description: string
   unlockedAt: string | null
+  equipSlots?: EquipSlot[]
+}
+
+interface Equipment {
+  badge?:   string  // badge_id equipado en ese slot
+  title?:   string
+  frame?:   string
+  card_bg?: string
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -36,8 +51,16 @@ const CATEGORY_LABEL: Record<string, string> = {
 const CATEGORY_ORDER = ['mundial', 'milestone', 'jornada', 'season', 'special']
 const RARITY_ORDER: Record<string, number> = { legendary: 0, epic: 1, rare: 2, common: 3 }
 
+const SLOT_LABEL: Record<EquipSlot, string> = {
+  badge:   'Badge',
+  title:   'Título',
+  frame:   'Marco',
+  card_bg: 'Fondo',
+}
+
 export function BadgesModal({
-  badges, level, levelName, levelColor, xp, unlockedCount, totalBadges, onClose,
+  badges, level, levelName, levelColor, xp, unlockedCount, totalBadges,
+  equipment, onEquip, onClose,
 }: {
   badges: Badge[]
   level: number
@@ -46,9 +69,12 @@ export function BadgesModal({
   xp: number
   unlockedCount: number
   totalBadges: number
+  equipment?: Equipment
+  onEquip?: (slot: EquipSlot, badgeId: string | null) => Promise<void>
   onClose: () => void
 }) {
   const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all')
+  const [equipping, setEquipping] = useState<string | null>(null)  // `${badge_id}:${slot}`
 
   const grouped = useMemo(() => {
     const filtered = badges.filter(b => {
@@ -72,6 +98,19 @@ export function BadgesModal({
       .map(cat => ({ cat, items: byCat.get(cat) ?? [] }))
       .filter(g => g.items.length > 0)
   }, [badges, filter])
+
+  async function handleEquip(slot: EquipSlot, badgeId: string) {
+    if (!onEquip) return
+    const key = `${badgeId}:${slot}`
+    setEquipping(key)
+    try {
+      // Toggle: si ya está equipado, desequipar; si no, equipar
+      const currentlyEquipped = equipment?.[slot] === badgeId
+      await onEquip(slot, currentlyEquipped ? null : badgeId)
+    } finally {
+      setEquipping(null)
+    }
+  }
 
   return (
     <div
@@ -123,6 +162,36 @@ export function BadgesModal({
           </button>
         </div>
 
+        {/* Equipamiento activo — resumen compacto */}
+        {equipment && onEquip && (
+          <div
+            className="px-5 py-2.5 flex items-center gap-2 flex-wrap"
+            style={{ borderBottom: '1px solid rgba(124,58,237,0.12)', background: 'rgba(124,58,237,0.02)' }}
+          >
+            <span className="text-[8px] font-black uppercase tracking-widest" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>
+              Equipado:
+            </span>
+            {(['badge', 'title', 'frame', 'card_bg'] as EquipSlot[]).map(slot => {
+              const equippedId = equipment?.[slot]
+              const equippedBadge = equippedId ? badges.find(b => b.id === equippedId) : null
+              return (
+                <span
+                  key={slot}
+                  className="text-[8px] font-black px-1.5 py-0.5 rounded"
+                  style={{
+                    background: equippedBadge ? equippedBadge.bg : 'rgba(255,255,255,0.03)',
+                    color: equippedBadge ? equippedBadge.color : '#3A3A52',
+                    border: `1px solid ${equippedBadge ? equippedBadge.color + '55' : 'rgba(255,255,255,0.06)'}`,
+                    fontFamily: 'var(--font-sport)',
+                  }}
+                >
+                  {SLOT_LABEL[slot]}{equippedBadge ? `: ${equippedBadge.emoji}${equippedBadge.name}` : ': —'}
+                </span>
+              )
+            })}
+          </div>
+        )}
+
         {/* Filtros */}
         <div className="px-5 pt-3 flex items-center gap-1.5">
           {([
@@ -165,6 +234,8 @@ export function BadgesModal({
               </p>
               {items.map(b => {
                 const unlocked = b.unlockedAt != null
+                const slots = b.equipSlots ?? ['badge']
+
                 return (
                   <div
                     key={b.id}
@@ -209,6 +280,40 @@ export function BadgesModal({
                         <p className="text-[8px] mt-1" style={{ color: '#5A5A78', fontFamily: 'var(--font-sport)' }}>
                           Desbloqueado el {new Date(b.unlockedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
+                      )}
+
+                      {/* Equip buttons — solo para desbloqueados y si hay equip system */}
+                      {unlocked && onEquip && slots.length > 0 && (
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                          {slots.map(slot => {
+                            const key = `${b.id}:${slot}`
+                            const isEquipped = equipment?.[slot] === b.id
+                            const isLoading  = equipping === key
+                            return (
+                              <button
+                                key={slot}
+                                type="button"
+                                disabled={isLoading}
+                                onClick={() => void handleEquip(slot, b.id)}
+                                className="text-[8px] font-black px-2 py-0.5 rounded-full transition-all"
+                                style={{
+                                  background: isEquipped
+                                    ? `${b.color}33`
+                                    : 'rgba(255,255,255,0.05)',
+                                  color: isEquipped ? b.color : '#6A6A8A',
+                                  border: isEquipped
+                                    ? `1px solid ${b.color}88`
+                                    : '1px solid rgba(255,255,255,0.1)',
+                                  fontFamily: 'var(--font-sport)',
+                                  cursor: isLoading ? 'wait' : 'pointer',
+                                  opacity: isLoading ? 0.6 : 1,
+                                }}
+                              >
+                                {isLoading ? '…' : isEquipped ? `✓ ${SLOT_LABEL[slot]}` : `⊕ ${SLOT_LABEL[slot]}`}
+                              </button>
+                            )
+                          })}
+                        </div>
                       )}
                     </div>
                   </div>

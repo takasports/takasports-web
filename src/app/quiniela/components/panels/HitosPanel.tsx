@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { BadgesModal } from '../BadgesModal'
 
@@ -12,9 +12,12 @@ import { BadgesModal } from '../BadgesModal'
 //   · "X/Y badges desbloqueados"
 //   · Preview de hasta 5 badges desbloqueados (las más prestigiosas)
 //   · Click → abre BadgesModal con catálogo completo (unlocked + locked)
+//     + botones de equipamiento por slot.
 //
 // Si el user no está logueado, oculta el panel (no tiene sentido).
 // ─────────────────────────────────────────────────────────────────
+
+type EquipSlot = 'badge' | 'title' | 'frame' | 'card_bg'
 
 interface BadgePreview {
   id: string
@@ -26,6 +29,14 @@ interface BadgePreview {
   category: string
   description: string
   unlockedAt: string | null
+  equipSlots?: EquipSlot[]
+}
+
+interface Equipment {
+  badge?:   string
+  title?:   string
+  frame?:   string
+  card_bg?: string
 }
 
 interface MeData {
@@ -40,6 +51,7 @@ interface MeData {
   badges: BadgePreview[]
   unlockedCount: number
   totalBadges: number
+  equipment?: Equipment
 }
 
 const RARITY_ORDER: Record<string, number> = {
@@ -50,20 +62,44 @@ export function HitosPanel({ user }: { user: User | null }) {
   const [data, setData] = useState<MeData | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [equipment, setEquipment] = useState<Equipment>({})
 
-  useEffect(() => {
+  const fetchMe = useCallback(() => {
     if (!user) { setLoaded(true); return }
-    let cancelled = false
     fetch('/api/quiniela/me', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(d => {
-        if (cancelled) return
-        if (d && !d.error) setData(d)
+        if (d && !d.error) {
+          setData(d)
+          setEquipment(d.equipment ?? {})
+        }
         setLoaded(true)
       })
-      .catch(() => { if (!cancelled) setLoaded(true) })
-    return () => { cancelled = true }
+      .catch(() => setLoaded(true))
   }, [user])
+
+  useEffect(() => {
+    fetchMe()
+  }, [fetchMe])
+
+  const handleEquip = useCallback(async (slot: EquipSlot, badgeId: string | null) => {
+    const res = await fetch('/api/quiniela/me/equip', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ slot, badgeId }),
+    })
+    if (!res.ok) throw new Error('equip failed')
+    // Actualizar estado local optimísticamente
+    setEquipment(prev => {
+      const next = { ...prev }
+      if (badgeId === null) {
+        delete next[slot]
+      } else {
+        next[slot] = badgeId
+      }
+      return next
+    })
+  }, [])
 
   if (!user) return null
   if (!loaded) {
@@ -185,7 +221,7 @@ export function HitosPanel({ user }: { user: User | null }) {
             </div>
           )}
           <p className="text-[8px] text-center pt-3" style={{ color: '#2A2A42', fontFamily: 'var(--font-sport)' }}>
-            Click para ver todos los hitos
+            Click para ver todos los hitos y equipar items
           </p>
         </div>
       </div>
@@ -199,6 +235,8 @@ export function HitosPanel({ user }: { user: User | null }) {
           xp={data.xp}
           unlockedCount={data.unlockedCount}
           totalBadges={data.totalBadges}
+          equipment={equipment}
+          onEquip={handleEquip}
           onClose={() => setModalOpen(false)}
         />
       )}

@@ -31,6 +31,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { BADGES, selectDisplayBadges, type BadgeDef } from '@/lib/badges'
 import { fetchSpecialBadgeDefs } from '@/lib/special-badges'
+import { fetchEquipmentByUser } from '@/lib/equipment'
 
 export interface LeaderboardBadge {
   id: string
@@ -41,14 +42,23 @@ export interface LeaderboardBadge {
   rarity: string
 }
 
+export interface LeaderboardEquipment {
+  badge?:   { emoji: string; color: string; bg: string; name: string }
+  title?:   { text: string; color: string }
+  frame?:   { color: string }
+  card_bg?: { gradient: string }
+}
+
 export interface LeaderboardEntry {
   nickname: string
   score: number          // ranked: monedas | legacy: pickCount
   total: number          // ranked: hits  | legacy: 10 (placeholder)
   captainUsed: boolean
   isMe?: boolean
-  /** Hasta 3 badges (los más prestigiosos) para mostrar junto al nick. */
+  /** Hasta 3 badges (los más prestigiosos) — fallback si no hay equipment. */
   badges?: LeaderboardBadge[]
+  /** Equipamiento activo del user (badge/title/frame/card_bg). */
+  equipment?: LeaderboardEquipment
 }
 
 // Helper compartido: fetch badges para un set de userIds y devuelve
@@ -167,11 +177,12 @@ export async function GET(req: NextRequest) {
         byUser.set(uid, prev)
       }
 
-      // Profile lookup en una sola query.
+      // Profile lookup + badges + equipment en paralelo.
       const userIds = [...byUser.keys()]
-      const [{ data: profileRows }, badgesByUser] = await Promise.all([
+      const [{ data: profileRows }, badgesByUser, equipByUser] = await Promise.all([
         admin.from('profiles').select('id, display_name').in('id', userIds),
         fetchBadgesByUser(admin, userIds),
+        fetchEquipmentByUser(admin, userIds),
       ])
       const nameById = new Map<string, string>()
       for (const p of profileRows ?? []) {
@@ -183,9 +194,10 @@ export async function GET(req: NextRequest) {
         .map(([uid, agg]) => ({
           nickname: nameById.get(uid) ?? `Jugador-${uid.slice(0, 6)}`,
           score: agg.coins,
-          total: agg.jornadas,  // jornadas jugadas
+          total: agg.jornadas,
           captainUsed: false,
           badges: badgesByUser.get(uid) ?? [],
+          equipment: equipByUser.get(uid),
         }))
         .sort((a, b) => b.score - a.score || b.total - a.total)
         .slice(0, limit)
@@ -229,9 +241,10 @@ export async function GET(req: NextRequest) {
       }
 
       const userIds = [...byUser.keys()]
-      const [{ data: profileRows }, badgesByUser] = await Promise.all([
+      const [{ data: profileRows }, badgesByUser, equipByUser] = await Promise.all([
         admin.from('profiles').select('id, display_name').in('id', userIds),
         fetchBadgesByUser(admin, userIds),
+        fetchEquipmentByUser(admin, userIds),
       ])
       const nameById = new Map<string, string>()
       for (const p of profileRows ?? []) {
@@ -246,6 +259,7 @@ export async function GET(req: NextRequest) {
           total: agg.jornadas,
           captainUsed: false,
           badges: badgesByUser.get(uid) ?? [],
+          equipment: equipByUser.get(uid),
         }))
         .sort((a, b) => b.score - a.score || b.total - a.total)
         .slice(0, limit)
@@ -265,11 +279,12 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ entries: [], mode: 'ranked' })
       }
 
-      // Profile lookup + badges en paralelo.
+      // Profile lookup + badges + equipment en paralelo.
       const userIds = [...new Set(rows.map(r => r.user_id as string))]
-      const [{ data: profileRows }, badgesByUser] = await Promise.all([
+      const [{ data: profileRows }, badgesByUser, equipByUser] = await Promise.all([
         admin.from('profiles').select('id, display_name').in('id', userIds),
         fetchBadgesByUser(admin, userIds),
+        fetchEquipmentByUser(admin, userIds),
       ])
       const nameById = new Map<string, string>()
       for (const p of profileRows ?? []) {
@@ -288,6 +303,7 @@ export async function GET(req: NextRequest) {
             total: b.hits ?? 0,
             captainUsed: false,
             badges: badgesByUser.get(uid) ?? [],
+            equipment: equipByUser.get(uid),
           }
         })
         // Score desc (monedas), desempate por hits (total) desc.

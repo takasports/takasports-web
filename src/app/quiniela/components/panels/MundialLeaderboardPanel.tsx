@@ -11,15 +11,33 @@ import { useEffect, useState } from 'react'
 // Render condicional: solo cuando QuinielaClient detecta isMundial
 // (jornada activa empieza con "Mundial"). Skin dorado distintivo
 // del badge "Copa 2026".
+//
+// Equipment rendering (v2):
+//   · frame → border color de la fila
+//   · card_bg → fondo de la fila (legendary)
+//   · title → epíteto bajo el nick
+//   · badge → chip equipado (priority sobre auto-select)
 // ─────────────────────────────────────────────────────────────────
 
 interface MundialBadge { id: string; name: string; emoji: string; color: string; bg: string; rarity: string }
-interface MundialEntry { nickname: string; score: number; total: number; badges?: MundialBadge[] }
+interface MundialEquipment {
+  badge?:   { emoji: string; color: string; bg: string; name: string }
+  title?:   { text: string; color: string }
+  frame?:   { color: string }
+  card_bg?: { gradient: string }
+}
+interface MundialEntry {
+  nickname: string
+  score: number
+  total: number
+  badges?: MundialBadge[]
+  equipment?: MundialEquipment
+}
 
-function BadgeChip({ badge }: { badge: MundialBadge }) {
+function BadgeChip({ badge }: { badge: { emoji: string; color: string; bg: string; name?: string } }) {
   return (
     <span
-      title={badge.name}
+      title={badge.name ?? ''}
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         width: 16, height: 16, borderRadius: 4,
@@ -110,33 +128,60 @@ export function MundialLeaderboardPanel() {
 
       <div className="px-4 py-3 flex flex-col gap-1">
         {board.slice(0, 5).map((p, i) => {
-          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
+          const medal         = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
+          const eq            = p.equipment
+          const frameColor    = eq?.frame?.color
+          const cardBg        = eq?.card_bg?.gradient
+          const equippedBadge = eq?.badge
+          const title         = eq?.title
+          const chipBadge     = equippedBadge ?? p.badges?.[0]
+
           return (
             <div
               key={`${p.nickname}-${i}`}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+              className="flex flex-col px-3 py-2 rounded-xl"
               style={{
-                background: i === 0 ? 'rgba(245,158,11,0.10)' : 'rgba(255,255,255,0.02)',
-                border: i === 0 ? '1px solid rgba(245,158,11,0.3)' : '1px solid transparent',
+                background: cardBg
+                  ? cardBg
+                  : i === 0
+                  ? 'rgba(245,158,11,0.10)'
+                  : 'rgba(255,255,255,0.02)',
+                border: frameColor
+                  ? `1px solid ${frameColor}`
+                  : i === 0
+                  ? '1px solid rgba(245,158,11,0.3)'
+                  : '1px solid transparent',
               }}
             >
-              <span style={{ fontSize: 11, width: 18, textAlign: 'center', fontFamily: 'var(--font-display)', color: '#6A5020', fontWeight: 900 }}>
-                {medal ?? `${i + 1}`}
-              </span>
-              <span className="flex-1 text-[11px] font-black flex items-center gap-1.5 min-w-0" style={{ color: i === 0 ? '#fbbf24' : '#A89878', fontFamily: 'var(--font-display)' }}>
-                <span className="truncate">{p.nickname}</span>
-                {p.badges && p.badges.length > 0 && (
-                  <span className="flex items-center gap-0.5 flex-shrink-0">
-                    {p.badges.map(b => <BadgeChip key={b.id} badge={b} />)}
-                  </span>
-                )}
-              </span>
-              <span className="text-[9px]" style={{ color: '#6A5020', fontFamily: 'var(--font-sport)' }}>
-                {p.total}j
-              </span>
-              <span className="text-[11px] font-black tabular-nums" style={{ color: i === 0 ? '#fbbf24' : '#8A7050', fontFamily: 'var(--font-display)' }}>
-                {p.score}🪙
-              </span>
+              <div className="flex items-center gap-2.5">
+                <span style={{ fontSize: 11, width: 18, textAlign: 'center', fontFamily: 'var(--font-display)', color: '#6A5020', fontWeight: 900 }}>
+                  {medal ?? `${i + 1}`}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-black truncate" style={{ color: i === 0 ? '#fbbf24' : '#A89878', fontFamily: 'var(--font-display)' }}>
+                      {p.nickname}
+                    </span>
+                    {chipBadge && <BadgeChip badge={chipBadge} />}
+                    {!equippedBadge && p.badges && p.badges.length > 1 && (
+                      <span className="flex items-center gap-0.5 flex-shrink-0">
+                        {p.badges.slice(1, 3).map(b => <BadgeChip key={b.id} badge={b} />)}
+                      </span>
+                    )}
+                  </div>
+                  {title && (
+                    <p className="text-[8px] font-black" style={{ color: title.color, fontFamily: 'var(--font-sport)', opacity: 0.8 }}>
+                      {title.text}
+                    </p>
+                  )}
+                </div>
+                <span className="text-[9px]" style={{ color: '#6A5020', fontFamily: 'var(--font-sport)' }}>
+                  {p.total}j
+                </span>
+                <span className="text-[11px] font-black tabular-nums" style={{ color: i === 0 ? '#fbbf24' : '#8A7050', fontFamily: 'var(--font-display)' }}>
+                  {p.score}🪙
+                </span>
+              </div>
             </div>
           )
         })}

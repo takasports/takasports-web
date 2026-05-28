@@ -13,20 +13,39 @@ import { useState, useEffect } from 'react'
 // Ambos tabs comparten render, solo cambia el endpoint y la label
 // inferior. El tab se preserva en localStorage para que el user no
 // tenga que re-elegir cada visita.
+//
+// Equipment rendering (v2):
+//   · frame → border color de la fila
+//   · card_bg → fondo de la fila (legendary)
+//   · title → epíteto bajo el nick
+//   · badge → chip de badge equipado (priority sobre auto-select)
 // ─────────────────────────────────────────────────────────────────
 
 interface LBBadge { id: string; name: string; emoji: string; color: string; bg: string; rarity: string }
-interface LBEntry { nickname: string; score: number; total: number; badges?: LBBadge[] }
+interface LBEquipment {
+  badge?:   { emoji: string; color: string; bg: string; name: string }
+  title?:   { text: string; color: string }
+  frame?:   { color: string }
+  card_bg?: { gradient: string }
+}
+interface LBEntry {
+  nickname: string
+  score: number
+  total: number
+  badges?: LBBadge[]
+  equipment?: LBEquipment
+}
 type LBMode = 'ranked' | 'season' | 'legacy'
 type LBTab = 'weekly' | 'season'
 
 const TAB_KEY = 'ts_quiniela_lb_tab_v1'
 
 // Chip compacto que se renderiza junto al nickname en el ranking.
-function BadgeChip({ badge }: { badge: LBBadge }) {
+function BadgeChip({ badge }: { badge: LBBadge | LBEquipment['badge'] }) {
+  if (!badge) return null
   return (
     <span
-      title={badge.name}
+      title={'name' in badge ? badge.name : ''}
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         width: 16, height: 16, borderRadius: 4,
@@ -148,36 +167,69 @@ export function LeaderboardPanel({ jornada, totalMatches, myScore }: { jornada: 
           </p>
         ) : (
           board.slice(0, 5).map((p, i) => {
-            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
-            const isMe = myScore != null && p.score === myScore && myPos === i + 1
+            const medal   = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
+            const isMe    = myScore != null && p.score === myScore && myPos === i + 1
+            const eq      = p.equipment
+            const frameColor  = eq?.frame?.color
+            const cardBg      = eq?.card_bg?.gradient
+            const equippedBadge = eq?.badge
+            const title       = eq?.title
+
+            // Chip: badge equipado tiene priority; si no, auto-select del array
+            const chipBadge = equippedBadge ?? p.badges?.[0]
+
             return (
               <div
                 key={`${p.nickname}-${i}`}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+                className="flex flex-col px-3 py-2 rounded-xl"
                 style={{
-                  background: isMe ? 'rgba(124,58,237,0.12)' : i === 0 ? 'rgba(251,191,36,0.05)' : 'transparent',
-                  border: isMe ? '1px solid rgba(124,58,237,0.3)' : '1px solid transparent',
+                  background: cardBg
+                    ? cardBg
+                    : isMe
+                    ? 'rgba(124,58,237,0.12)'
+                    : i === 0
+                    ? 'rgba(251,191,36,0.05)'
+                    : 'transparent',
+                  border: frameColor
+                    ? `1px solid ${frameColor}`
+                    : isMe
+                    ? '1px solid rgba(124,58,237,0.3)'
+                    : '1px solid transparent',
                 }}
               >
-                <span style={{ fontSize: 11, width: 18, textAlign: 'center', fontFamily: 'var(--font-display)', color: '#3A3A58', fontWeight: 900 }}>
-                  {medal ?? `${i + 1}`}
-                </span>
-                <span className="flex-1 text-[11px] font-black flex items-center gap-1.5 min-w-0" style={{ color: isMe ? '#C4B5FD' : '#8080A0', fontFamily: 'var(--font-display)' }}>
-                  <span className="truncate">{isMe ? 'Tú' : p.nickname}</span>
-                  {p.badges && p.badges.length > 0 && (
-                    <span className="flex items-center gap-0.5 flex-shrink-0">
-                      {p.badges.map(b => <BadgeChip key={b.id} badge={b} />)}
+                <div className="flex items-center gap-2.5">
+                  <span style={{ fontSize: 11, width: 18, textAlign: 'center', fontFamily: 'var(--font-display)', color: '#3A3A58', fontWeight: 900 }}>
+                    {medal ?? `${i + 1}`}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-black truncate" style={{ color: isMe ? '#C4B5FD' : '#8080A0', fontFamily: 'var(--font-display)' }}>
+                        {isMe ? 'Tú' : p.nickname}
+                      </span>
+                      {chipBadge && <BadgeChip badge={chipBadge} />}
+                      {/* Additional badges (si hay más y no hay equipment.badge) */}
+                      {!equippedBadge && p.badges && p.badges.length > 1 && (
+                        <span className="flex items-center gap-0.5 flex-shrink-0">
+                          {p.badges.slice(1, 3).map(b => <BadgeChip key={b.id} badge={b} />)}
+                        </span>
+                      )}
+                    </div>
+                    {/* Título equipado */}
+                    {title && (
+                      <p className="text-[8px] font-black" style={{ color: title.color, fontFamily: 'var(--font-sport)', opacity: 0.8 }}>
+                        {title.text}
+                      </p>
+                    )}
+                  </div>
+                  {tab === 'season' && (
+                    <span className="text-[9px]" style={{ color: '#5A5A78', fontFamily: 'var(--font-sport)' }}>
+                      {p.total}j
                     </span>
                   )}
-                </span>
-                {tab === 'season' && (
-                  <span className="text-[9px]" style={{ color: '#5A5A78', fontFamily: 'var(--font-sport)' }}>
-                    {p.total}j
+                  <span className="text-[11px] font-black tabular-nums" style={{ color: i === 0 ? '#fbbf24' : '#4A4A6A', fontFamily: 'var(--font-display)' }}>
+                    {formatScore(p.score, p.total)}
                   </span>
-                )}
-                <span className="text-[11px] font-black tabular-nums" style={{ color: i === 0 ? '#fbbf24' : '#4A4A6A', fontFamily: 'var(--font-display)' }}>
-                  {formatScore(p.score, p.total)}
-                </span>
+                </div>
               </div>
             )
           })

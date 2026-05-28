@@ -458,7 +458,14 @@ export async function POST(req: NextRequest) {
         // min_hits, all_participants), evaluamos inline. Los que sí
         // (top_n) requieren scan completo de la jornada — más caro,
         // se hace solo si existen badges activos con ese criterio.
+        //
+        // Distinción por show_in_sidebar:
+        //   · show_in_sidebar=true  → reto semanal: escribir en
+        //     quiniela_challenge_completions (claimed_at=null).
+        //     El badge + coin_bonus se acreditan en /challenges/claim.
+        //   · show_in_sidebar=false → grant inmediato vía grantSpecialBadge.
         const specials = await fetchActiveSpecialBadgesForJornada(sb, body.jornada)
+        const nowIso = new Date().toISOString()
         for (const sp of specials) {
           if (sp.criteria_type === 'top_n' || sp.criteria_type === 'manual') continue
           const meets = userMeetsCriteria(sp, {
@@ -466,7 +473,24 @@ export async function POST(req: NextRequest) {
             pleno: breakdown.pleno,
             totalStake: prevPayload.totalStakeCharged ?? breakdown.totalStake,
           })
-          if (meets) {
+          if (!meets) continue
+
+          if (sp.show_in_sidebar) {
+            // Reto semanal: registrar completion (idempotente por PK).
+            // El claim posterior otorgará badge + coin_bonus.
+            await sb
+              .from('quiniela_challenge_completions')
+              .upsert(
+                {
+                  user_id: user.id,
+                  badge_id: sp.badge_id,
+                  jornada: body.jornada,
+                  completed_at: nowIso,
+                },
+                { onConflict: 'user_id,badge_id,jornada', ignoreDuplicates: true },
+              )
+          } else {
+            // Special badge no-reto: grant inmediato sin claim requerido.
             await grantSpecialBadge(sb, sp, user.id)
           }
         }
