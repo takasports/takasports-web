@@ -108,15 +108,15 @@ export async function POST(req: Request) {
   return handle({ ...body, secret: headerSecret ?? body.secret })
 }
 
-// GET para compat con atajos iOS antiguos que mandan `?secret=`. El secret en
-// query queda en access logs y en el referer si el atajo abre algún navegador,
-// por eso preferimos POST con header `x-reels-secret`. Migrar el atajo cuando
-// sea posible.
+// GET para atajos iOS — el secret debe ir en el header `x-reels-secret`.
+// El fallback `?secret=` ha sido eliminado: quedaba en access logs de Vercel
+// y en el referer del navegador, filtrando el REELS_INGEST_SECRET.
+// Actualiza el Atajo de iOS para enviar el header en lugar del query param.
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams
   const headerSecret = req.headers.get('x-reels-secret') ?? undefined
   return handle({
-    secret: headerSecret ?? q.get('secret') ?? undefined,
+    secret: headerSecret,
     url:    q.get('url') ?? undefined,
     title:  q.get('title') ?? undefined,
     sport:  q.get('sport') ?? undefined,

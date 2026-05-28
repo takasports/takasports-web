@@ -32,7 +32,6 @@ import { safeEqual } from '@/lib/auth-utils'
 interface ResolveBody {
   questionId: string
   winner: string
-  adminSecret: string
 }
 
 const PROFETA_BADGE_THRESHOLD = 3
@@ -51,11 +50,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid body' }, { status: 400 })
   }
 
-  // Aceptamos el secreto en header `x-admin-secret` (preferido) o, por
-  // compatibilidad, en el body (`adminSecret`). El header debería usarse
-  // siempre que sea posible para que no quede en logs de stringify.
-  const header = req.headers.get('x-admin-secret')
-  const provided = header ?? body.adminSecret ?? ''
+  // Solo header `x-admin-secret`. El fallback a body.adminSecret fue eliminado:
+  // los cuerpos JSON pueden quedar en logs de observabilidad/proxies APM.
+  const provided = req.headers.get('x-admin-secret') ?? ''
   if (!safeEqual(provided, required)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }

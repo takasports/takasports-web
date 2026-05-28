@@ -128,7 +128,7 @@ async function checkPendingJobs(): Promise<CheckResult> {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const [ingest, published, pending] = await Promise.all([
     checkLastIngest(),
     checkLastPublished(),
@@ -144,18 +144,29 @@ export async function GET() {
   if (ingestMin >= ERROR_THRESHOLD_MIN || !ingest.ok) level = 'error'
   else if (ingestMin >= WARN_THRESHOLD_MIN)            level = 'warn'
 
-  const body = {
-    ok:        allOk && level !== 'error',
-    level,
-    ts:        new Date().toISOString(),
-    thresholds: { warn_min: WARN_THRESHOLD_MIN, error_min: ERROR_THRESHOLD_MIN },
-    checks: {
-      last_ingest_min:    ingest.value,
-      last_published_h:   published.value,
-      pending_approvals:  pending.value,
-    },
-    details: checks.map(c => ({ label: c.label, ok: c.ok, detail: c.detail })),
-  }
+  const isOk = allOk && level !== 'error'
+
+  // Respuesta pública mínima — solo lo que UptimeRobot necesita para el keyword check.
+  // Los detalles internos (cadencia del pipeline, artículos pendientes) solo se
+  // exponen si el request lleva CRON_SECRET, para no revelar metadata editorial.
+  const cronSecret = process.env.CRON_SECRET
+  const authHeader = req.headers.get('authorization') ?? ''
+  const isAuthed   = cronSecret && authHeader === `Bearer ${cronSecret}`
+
+  const body = isAuthed
+    ? {
+        ok: isOk,
+        level,
+        ts: new Date().toISOString(),
+        thresholds: { warn_min: WARN_THRESHOLD_MIN, error_min: ERROR_THRESHOLD_MIN },
+        checks: {
+          last_ingest_min:   ingest.value,
+          last_published_h:  published.value,
+          pending_approvals: pending.value,
+        },
+        details: checks.map(c => ({ label: c.label, ok: c.ok, detail: c.detail })),
+      }
+    : { ok: isOk, level }  // respuesta mínima para monitorización pública
 
   const status = level === 'error' ? 503 : 200
 
