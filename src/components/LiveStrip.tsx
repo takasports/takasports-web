@@ -25,10 +25,11 @@ function useRelativeTime(ts: number | null): string {
 }
 
 export default function LiveStrip() {
-  const [liveFixtures, setLiveFixtures] = useState<LiveFixture[]>([])
-  const [upcoming, setUpcoming]         = useState<UpcomingEvent[]>([])
-  const [hidden, setHidden]             = useState(false)
-  const [fetchedAt, setFetchedAt]       = useState<number | null>(null)
+  const [liveFixtures,  setLiveFixtures]  = useState<LiveFixture[]>([])
+  const [recentResults, setRecentResults] = useState<LiveFixture[]>([])
+  const [upcoming,      setUpcoming]      = useState<UpcomingEvent[]>([])
+  const [hidden,        setHidden]        = useState(false)
+  const [fetchedAt,     setFetchedAt]     = useState<number | null>(null)
   const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastYRef   = useRef(0)
 
@@ -37,6 +38,7 @@ export default function LiveStrip() {
       const res = await fetch('/api/events/live', { cache: 'no-store' })
       if (!res.ok) return
       const all: LiveFixture[] = await res.json()
+      // En vivo: excluir finalizados
       const live = all.filter(f => !FINISHED.has(f.status))
       const seen = new Set<string>()
       setLiveFixtures(live.filter(f => {
@@ -45,6 +47,8 @@ export default function LiveStrip() {
         seen.add(k)
         return true
       }))
+      // Resultados recientes: solo FT del día (máx 5)
+      setRecentResults(all.filter(f => f.status === 'FT').slice(0, 5))
       setFetchedAt(Date.now())
     } catch { /* ignore */ }
   }, [])
@@ -112,8 +116,12 @@ export default function LiveStrip() {
     }
   }, [liveFixtures.length, fetchLive, fetchUpcoming])
 
-  const isLive    = liveFixtures.length > 0
-  const ageLabel  = useRelativeTime(fetchedAt)
+  const isLive       = liveFixtures.length > 0
+  const hasResults   = !isLive && recentResults.length > 0
+  const ageLabel     = useRelativeTime(fetchedAt)
+  // Qué mostrar: live > resultados recientes > próximos
+  const stripMode: 'live' | 'results' | 'upcoming' =
+    isLive ? 'live' : hasResults ? 'results' : 'upcoming'
 
   return (
     <div
@@ -133,26 +141,32 @@ export default function LiveStrip() {
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10">
         <div className="flex items-center h-10 gap-4 overflow-x-auto snap-strip" style={{ scrollbarWidth: 'none' }}>
 
-          {/* Label pill */}
+          {/* Label pill — live / resultados / próximo */}
           <div
             className="flex items-center gap-1.5 flex-shrink-0 px-2 py-0.5 rounded"
-            style={isLive
-              ? { background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)' }
-              : { background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }
+            style={
+              stripMode === 'live'
+                ? { background: 'rgba(74,222,128,0.12)',  border: '1px solid rgba(74,222,128,0.25)' }
+                : stripMode === 'results'
+                ? { background: 'rgba(251,146,60,0.12)',  border: '1px solid rgba(251,146,60,0.25)' }
+                : { background: 'rgba(124,58,237,0.12)',  border: '1px solid rgba(124,58,237,0.2)' }
             }
           >
             <span
               className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
               style={{
-                background: isLive ? '#4ade80' : '#7C3AED',
-                boxShadow: isLive ? '0 0 6px #4ade80' : '0 0 6px #7C3AED',
+                background: stripMode === 'live' ? '#4ade80' : stripMode === 'results' ? '#fb923c' : '#7C3AED',
+                boxShadow:  stripMode === 'live' ? '0 0 6px #4ade80' : stripMode === 'results' ? '0 0 6px #fb923c' : '0 0 6px #7C3AED',
               }}
             />
             <span
               className="text-[8px] font-black uppercase tracking-[0.2em]"
-              style={{ color: isLive ? '#4ade80' : '#9B6DB5', fontFamily: 'var(--font-sport)' }}
+              style={{
+                color: stripMode === 'live' ? '#4ade80' : stripMode === 'results' ? '#fb923c' : '#9B6DB5',
+                fontFamily: 'var(--font-sport)',
+              }}
             >
-              {isLive ? 'En Vivo' : 'Próximo'}
+              {stripMode === 'live' ? 'En Vivo' : stripMode === 'results' ? 'Resultados' : 'Próximo'}
             </span>
           </div>
 
@@ -160,8 +174,23 @@ export default function LiveStrip() {
 
           {/* Events */}
           <div className="flex items-center gap-1 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
-            {isLive
+            {stripMode === 'live'
               ? liveFixtures.map((fix, i) => (
+                  <div key={fix.id} className="flex items-center gap-3 flex-shrink-0">
+                    {i > 0 && (
+                      <span
+                        style={{
+                          width: 1, height: 14,
+                          background: 'rgba(255,255,255,0.07)',
+                          flexShrink: 0, display: 'inline-block',
+                        }}
+                      />
+                    )}
+                    <LiveEventCard fix={fix} />
+                  </div>
+                ))
+              : stripMode === 'results'
+              ? recentResults.map((fix, i) => (
                   <div key={fix.id} className="flex items-center gap-3 flex-shrink-0">
                     {i > 0 && (
                       <span
