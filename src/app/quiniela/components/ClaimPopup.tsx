@@ -47,7 +47,7 @@ export function ClaimPopup({ badgeEmoji, badgeName, coinsAwarded, onClose }: Cla
           background: 'linear-gradient(135deg, #1A0B30 0%, #0A0118 100%)',
           border: '1px solid rgba(251,191,36,0.45)',
           boxShadow: '0 20px 60px rgba(251,191,36,0.25), 0 4px 16px rgba(0,0,0,0.5)',
-          minWidth: 260,
+          minWidth: 270,
         }}
       >
         {/* Badge icon */}
@@ -56,7 +56,7 @@ export function ClaimPopup({ badgeEmoji, badgeName, coinsAwarded, onClose }: Cla
           style={{
             background: 'rgba(251,191,36,0.14)',
             border: '1px solid rgba(251,191,36,0.45)',
-            fontSize: 22,
+            fontSize: 24,
           }}
         >
           {badgeEmoji}
@@ -65,20 +65,24 @@ export function ClaimPopup({ badgeEmoji, badgeName, coinsAwarded, onClose }: Cla
         {/* Text */}
         <div className="flex-1 min-w-0">
           <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#fbbf24', fontFamily: 'var(--font-sport)' }}>
-            ¡Reto completado!
+            ¡Recompensa reclamada!
           </p>
           <p className="font-black text-[13px] leading-tight" style={{ color: '#F0F0FF', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
             {badgeName}
           </p>
-          {coinsAwarded > 0 && (
-            <p className="text-[11px] font-black tabular-nums" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
-              +{coinsAwarded}🪙
+          {coinsAwarded > 0 ? (
+            <p className="text-[15px] font-black tabular-nums leading-tight mt-0.5" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
+              +{coinsAwarded} 🪙
+            </p>
+          ) : (
+            <p className="text-[10px] font-black mt-0.5" style={{ color: '#A0A0C0', fontFamily: 'var(--font-sport)' }}>
+              Badge desbloqueado
             </p>
           )}
         </div>
 
-        {/* Shimmer particles */}
-        <div className="flex-shrink-0 text-lg" style={{ opacity: 0.8 }}>✨</div>
+        {/* Shimmer */}
+        <div className="flex-shrink-0 text-xl" style={{ opacity: 0.85 }}>✨</div>
       </div>
     </div>
   )
