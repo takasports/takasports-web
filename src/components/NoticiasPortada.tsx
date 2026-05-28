@@ -7,8 +7,8 @@ import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
 
-const ROTATION_MS       = 8000   // big cards
-const STRIP_ROTATION_MS = 12000  // strip cards (más lentas)
+const ROTATION_MS       = 5000   // big cards
+const STRIP_ROTATION_MS = 6000   // strip cards
 const BIG_POOL          = 6      // artículos reservados para big cards (3 pares)
 const STRIP_SIZE        = 5
 const SWIPE_THRESHOLD   = 50

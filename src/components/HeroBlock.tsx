@@ -1,12 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, startTransition } from 'react'
+import { useState, useEffect, useCallback, useRef, startTransition, useMemo } from 'react'
 import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
 import { useTilt } from '@/hooks/useTilt'
+
+const STRIP_COLS   = 5
+const STRIP_TICK_MS = 3200  // ms entre cada sustitución de tarjeta
 
 // ── Tira compacta inferior — 5 artículos ───────────────────────
 function CompactStripItem({ art }: { art: Article }) {
@@ -103,11 +106,64 @@ function CompactStripItem({ art }: { art: Article }) {
   )
 }
 
-function CompactStrip({ articles }: { articles: Article[] }) {
-  if (articles.length === 0) return null
+// Rotación uno a uno: cada STRIP_TICK_MS se reemplaza UNA tarjeta (en round-robin)
+// con fade suave. Las otras 4 permanecen visibles sin moverse.
+function CompactStrip({ pool, paused }: { pool: Article[]; paused: boolean }) {
+  const size = Math.min(STRIP_COLS, pool.length)
+  const [slots, setSlots]       = useState<Article[]>(() => pool.slice(0, size))
+  const [hiddenSlot, setHidden] = useState<number | null>(null)
+  const cursorRef  = useRef(0)
+  const poolIdxRef = useRef(size)
+  const pausedRef  = useRef(paused)
+
+  useEffect(() => { pausedRef.current = paused }, [paused])
+
+  // Sincronizar slots si el pool cambia (ej. cambio de filtro de deporte)
+  const poolKey = useMemo(() => pool.map(a => a._id).join(','), [pool])
+  useEffect(() => {
+    setSlots(pool.slice(0, Math.min(STRIP_COLS, pool.length)))
+    cursorRef.current  = 0
+    poolIdxRef.current = Math.min(STRIP_COLS, pool.length)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poolKey])
+
+  useEffect(() => {
+    if (pool.length <= STRIP_COLS) return
+    const t = setInterval(() => {
+      if (pausedRef.current) return
+      const slot = cursorRef.current % STRIP_COLS
+      // 1) Fade out la tarjeta en ese slot
+      setHidden(slot)
+      setTimeout(() => {
+        // 2) Sustituye el contenido y vuelve a hacer fade in
+        setSlots(prev => {
+          const next = [...prev]
+          next[slot] = pool[poolIdxRef.current % pool.length]
+          return next
+        })
+        poolIdxRef.current++
+        setHidden(null)
+      }, 280)
+      cursorRef.current++
+    }, STRIP_TICK_MS)
+    return () => clearInterval(t)
+  // pool.length como dep para recrear el timer si cambia el pool
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pool.length])
+
+  if (slots.length === 0) return null
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-4">
-      {articles.map((art) => <CompactStripItem key={art._id} art={art} />)}
+      {slots.map((art, i) => (
+        // key=i intencional: el DOM node queda en posición fija, solo cambia el contenido
+        <div
+          key={i}
+          style={{ opacity: hiddenSlot === i ? 0 : 1, transition: 'opacity 280ms ease' }}
+        >
+          <CompactStripItem art={art} />
+        </div>
+      ))}
     </div>
   )
 }
@@ -442,8 +498,8 @@ function ProgressBar({ offset, paused }: { offset: number; paused: boolean }) {
 
 // ── Componente principal ────────────────────────────────────────
 export default function HeroBlock({ articles }: { articles: Article[] }) {
-  // Los primeros 3 rotan en el hero. Los restantes van en la tira inferior.
-  const heroArticles = articles.slice(0, 3)
+  // Los primeros 3 rotan en el hero. Los restantes son el pool de la tira inferior.
+  const heroArticles  = articles.slice(0, 3)
   const stripArticles = articles.slice(3)
   const len = heroArticles.length
   const [offset, setOffset] = useState(0)
@@ -613,8 +669,8 @@ export default function HeroBlock({ articles }: { articles: Article[] }) {
           </div>
         )}
 
-        {/* ── Tira compacta: 5 artículos adicionales ────────── */}
-        <CompactStrip articles={stripArticles} />
+        {/* ── Tira compacta: rota de a una tarjeta cada ~3s ─── */}
+        <CompactStrip pool={stripArticles} paused={paused} />
       </div>
     </>
   )
