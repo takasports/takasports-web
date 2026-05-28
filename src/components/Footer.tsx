@@ -131,36 +131,6 @@ export default function Footer() {
                   rel={href !== '#' ? 'noopener noreferrer' : undefined}
                   onClick={href === '#' ? (e) => e.preventDefault() : undefined}
                   className="social-icon w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    color: '#5A5A6E',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    cursor: 'pointer',
-                    transition: 'all 180ms cubic-bezier(0.34,1.2,0.64,1)',
-                    textDecoration: 'none',
-                  }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget
-                    el.style.background = 'rgba(124,58,237,0.15)'
-                    el.style.color = '#C4B5FD'
-                    el.style.border = '1px solid rgba(124,58,237,0.3)'
-                    el.style.transform = 'scale(1.12) translateY(-1px)'
-                    el.style.boxShadow = '0 6px 18px rgba(124,58,237,0.2)'
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget
-                    el.style.background = 'rgba(255,255,255,0.05)'
-                    el.style.color = '#5A5A6E'
-                    el.style.border = '1px solid rgba(255,255,255,0.07)'
-                    el.style.transform = 'scale(1) translateY(0)'
-                    el.style.boxShadow = 'none'
-                  }}
-                  onMouseDown={(e) => {
-                    e.currentTarget.style.transform = 'scale(0.95) translateY(0)'
-                  }}
-                  onMouseUp={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.12) translateY(-1px)'
-                  }}
                 >
                   {icon}
                 </a>
