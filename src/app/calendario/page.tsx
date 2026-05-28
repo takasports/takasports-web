@@ -9,6 +9,7 @@ import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
+import NewsletterSection from '@/components/NewsletterSection'
 import CalendarioContent from '@/components/CalendarioContent'
 import { SITE_URL, LOGO_URL } from '@/lib/constants'
 
@@ -149,6 +150,7 @@ export default async function CalendarioPage() {
         recentForms={recentForms}
         initialTz={initialTz}
       />
+      <NewsletterSection source="calendario" />
       <Footer />
       <ScrollToTop />
     </div>

@@ -7,6 +7,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
+import NewsletterSection from '@/components/NewsletterSection'
 import ScrollToTop from '@/components/ScrollToTop'
 import { StatBlockBoundary } from '@/components/StatBlockBoundary'
 import { trackStatsBlockOpen, trackStatsGroupOpen, trackSearch } from '@/lib/analytics'
@@ -2742,6 +2743,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
 
       </main>
 
+      <NewsletterSection source="estadisticas" />
       <Footer />
       <ScrollToTop />
     </div>

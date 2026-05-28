@@ -8,6 +8,7 @@ import LiveStrip from '@/components/LiveStrip'
 import NoticiasContent from '@/components/NoticiasContent'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
+import NewsletterSection from '@/components/NewsletterSection'
 import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 300
@@ -85,6 +86,7 @@ export default async function NoticiasPage({
         />
       </main>
 
+      <NewsletterSection source="noticias" />
       <Footer />
       <ScrollToTop />
     </div>

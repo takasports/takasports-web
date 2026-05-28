@@ -11,6 +11,7 @@ import BreakingNewsBar from '@/components/BreakingNewsBar'
 import LiveStrip from '@/components/LiveStrip'
 import HomeContent from '@/components/HomeContent'
 import Footer from '@/components/Footer'
+import NewsletterSection from '@/components/NewsletterSection'
 import { urlFor } from '@/lib/sanity'
 import { SITE_URL } from '@/lib/constants'
 
@@ -212,6 +213,7 @@ export default async function Home({
       <BreakingNewsBar items={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
       <LiveStrip />
       <HomeContent articles={articles} reels={reels} events={events} initialSport={initialSport} topPlayers={topPlayers} featuredBySport={featuredBySport} />
+      <NewsletterSection source="home" />
       <Footer />
     </div>
   )
