@@ -66,8 +66,43 @@ const RARITY_ORDER: Record<BadgeRarity, number> = {
   common: 3,
 }
 
+// IDs de badges de bienvenida — se otorga uno al azar en el registro.
+export const WELCOME_BADGE_IDS = ['nuevo_fichaje', 'rookie_crack', 'taker_inicial'] as const
+
 // Catálogo principal. Mantener orden estable (no reordenar arbitrariamente).
 export const BADGES: Record<string, BadgeDef> = {
+  // ── Bienvenida (se regala uno al azar al registrarse) ───────────
+  nuevo_fichaje: {
+    id: 'nuevo_fichaje',
+    name: 'Nuevo fichaje',
+    emoji: '✍️',
+    color: '#818cf8',
+    bg: 'rgba(129,140,248,0.12)',
+    description: 'Te fichamos. Bienvenido al equipo TakaSports.',
+    rarity: 'common',
+    category: 'milestone',
+  },
+  rookie_crack: {
+    id: 'rookie_crack',
+    name: 'Crack en potencia',
+    emoji: '⭐',
+    color: '#fbbf24',
+    bg: 'rgba(251,191,36,0.12)',
+    description: 'El talento ya se ve desde el primer día.',
+    rarity: 'common',
+    category: 'milestone',
+  },
+  taker_inicial: {
+    id: 'taker_inicial',
+    name: 'Takero de pura cepa',
+    emoji: '🎯',
+    color: '#34d399',
+    bg: 'rgba(52,211,153,0.12)',
+    description: 'Desde el minuto uno, ya eres de los nuestros.',
+    rarity: 'common',
+    category: 'milestone',
+  },
+
   // ── Milestones (primera vez que hacés X) ────────────────────────
   first_bet: {
     id: 'first_bet',

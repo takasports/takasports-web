@@ -21,6 +21,8 @@ import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import { SportIcon, FireIcon, FootballIcon, StadiumIcon } from '@/components/icons/GameIcons'
 import MyGamesActivity from '@/components/games/MyGamesActivity'
+import { getBadge } from '@/lib/badges'
+import type { BadgeDef } from '@/lib/badges'
 
 const REMINDERS_KEY = 'ts_reminders'
 const PROFILE_NAME_KEY = 'ts_profile_name'
@@ -73,6 +75,8 @@ export default function PerfilPage() {
   const [tz, setTz] = useState<string>('Europe/Madrid')
   const [user, setUser] = useState<User | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [badges, setBadges] = useState<BadgeDef[]>([])
+  const [linkingGoogle, setLinkingGoogle] = useState(false)
 
   // Game stats
   const [quizStats, setQuizStats] = useState<{ streak: number; bestStreak: number; bestScore: number; totalCorrect: number; totalPlayed: number; lastPlayedDate: string } | null>(null)
@@ -92,14 +96,31 @@ export default function PerfilPage() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // When user signs in, set display name from provider metadata
+  // When user signs in, set display name and fetch badges
   useEffect(() => {
     if (!user) return
-    const providerName = (user.user_metadata?.full_name ?? user.user_metadata?.name) as string | undefined
-    if (providerName) {
-      setName(providerName)
-      if (nameRef.current) nameRef.current.textContent = providerName
-    }
+    const supabase = createClient()
+    if (!supabase) return
+
+    // Fetch display_name from profiles (covers email+password users who have email prefix)
+    supabase.from('profiles').select('display_name').eq('id', user.id).single()
+      .then(({ data }) => {
+        const dbName = data?.display_name as string | undefined
+        const providerName = (user.user_metadata?.full_name ?? user.user_metadata?.name) as string | undefined
+        const resolved = providerName ?? dbName
+        if (resolved) {
+          setName(resolved)
+          if (nameRef.current) nameRef.current.textContent = resolved
+        }
+      })
+
+    // Fetch badges
+    supabase.from('quiniela_badges').select('badge_id').eq('user_id', user.id)
+      .then(({ data }) => {
+        if (!data) return
+        const defs = data.map(r => getBadge(r.badge_id as string)).filter((b): b is BadgeDef => b !== null)
+        setBadges(defs)
+      })
   }, [user])
 
   // ── localStorage ───────────────────────────────────────────────
@@ -211,6 +232,17 @@ export default function PerfilPage() {
     await createClient()?.auth.signOut()
     setUser(null)
   }
+
+  const handleLinkGoogle = async () => {
+    setLinkingGoogle(true)
+    const supabase = createClient()
+    if (!supabase) { setLinkingGoogle(false); return }
+    const { error } = await supabase.auth.linkIdentity({ provider: 'google' })
+    if (error) setLinkingGoogle(false)
+    // On success Supabase redirects to Google OAuth — no need to reset state
+  }
+
+  const hasGoogleIdentity = user?.identities?.some(id => id.provider === 'google') ?? false
 
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined
   const initials = name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'TS'
@@ -332,10 +364,20 @@ export default function PerfilPage() {
 
               {/* Auth row */}
               {user ? (
-                <div className="flex items-center gap-3 mt-1">
+                <div className="flex items-center gap-3 mt-1 flex-wrap">
                   <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)', fontFamily: 'var(--font-sport)' }}>
                     ✓ Sincronizado
                   </span>
+                  {!hasGoogleIdentity && (
+                    <button
+                      onClick={handleLinkGoogle}
+                      disabled={linkingGoogle}
+                      className="text-[10px] font-semibold transition-opacity hover:opacity-70 disabled:opacity-40"
+                      style={{ color: '#9B7CF6', fontFamily: 'var(--font-sport)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    >
+                      {linkingGoogle ? 'Conectando…' : 'Conectar Google →'}
+                    </button>
+                  )}
                   <button
                     onClick={handleSignOut}
                     className="text-[10px] transition-opacity hover:opacity-70"
@@ -801,6 +843,38 @@ export default function PerfilPage() {
                 )
               )}
             </section>
+
+            {/* LOGROS / BADGES */}
+            {badges.length > 0 && (
+              <section>
+                <SectionHeader title="Logros" />
+                <div className="flex flex-col gap-1.5">
+                  {badges.map((badge) => (
+                    <div
+                      key={badge.id}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                      style={{ background: badge.bg, border: `1px solid ${badge.color}28` }}
+                    >
+                      <span className="text-lg flex-shrink-0">{badge.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-black leading-none mb-0.5" style={{ color: badge.color, fontFamily: 'var(--font-display)' }}>
+                          {badge.name}
+                        </p>
+                        <p className="text-[9px] line-clamp-1" style={{ color: 'var(--text-muted)' }}>
+                          {badge.description}
+                        </p>
+                      </div>
+                      <span
+                        className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full flex-shrink-0"
+                        style={{ background: `${badge.color}18`, color: badge.color, fontFamily: 'var(--font-sport)' }}
+                      >
+                        {badge.rarity}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* PREFERENCIAS */}
             <section>

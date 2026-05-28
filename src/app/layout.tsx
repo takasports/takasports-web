@@ -5,6 +5,7 @@ import { headers } from 'next/headers'
 import './globals.css'
 import BottomNav from '@/components/BottomNav'
 import ConsentBanner from '@/components/ConsentBanner'
+import AutoTZInit from '@/components/AutoTZInit'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
@@ -153,6 +154,7 @@ export default async function RootLayout({
             ],
           }) }}
         />
+        <AutoTZInit />
         {children}
         <BottomNav />
         <ConsentBanner gaId={GA_ID} clarityId={CLARITY_ID} nonce={nonce} />
