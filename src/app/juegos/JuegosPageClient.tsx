@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
+import NewsletterSection from '@/components/NewsletterSection'
 import { QUINIELA_PICKS_KEY, QUINIELA_MATCHES, MATCH_STATUS } from '@/components/QuinielaModule'
 import {
   IconQuiniela,
@@ -992,6 +993,7 @@ export default function JuegosPageClient() {
 
       </main>
 
+      <NewsletterSection source="juegos" />
       <Footer />
       <ScrollToTop />
     </div>

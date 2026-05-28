@@ -63,6 +63,7 @@ function BigCard({ article }: { article: Article }) {
   const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(800).height(520).url() : null)
+  const [imgFailed, setImgFailed] = useState(false)
 
   return (
     <Link
@@ -70,7 +71,7 @@ function BigCard({ article }: { article: Article }) {
       className="group relative block overflow-hidden rounded-2xl"
       style={{ height: 340, textDecoration: 'none', background: CARD_BG }}
     >
-      {imgUrl ? (
+      {imgUrl && !imgFailed ? (
         <Image
           src={imgUrl}
           alt={article.title}
@@ -78,6 +79,7 @@ function BigCard({ article }: { article: Article }) {
           sizes="(max-width: 1024px) 100vw, 48vw"
           className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           priority
+          onError={() => setImgFailed(true)}
         />
       ) : (
         <SportPlaceholder sport={article.sport} category={article.category} size="big" />
@@ -133,6 +135,7 @@ function StripCard({ article }: { article: Article }) {
   const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(400).height(280).url() : null)
+  const [imgFailed, setImgFailed] = useState(false)
 
   return (
     <Link
@@ -140,7 +143,7 @@ function StripCard({ article }: { article: Article }) {
       className="group relative block overflow-hidden rounded-xl"
       style={{ height: 200, textDecoration: 'none', background: CARD_BG }}
     >
-      {imgUrl ? (
+      {imgUrl && !imgFailed ? (
         <Image
           src={imgUrl}
           alt={article.title}
@@ -148,6 +151,7 @@ function StripCard({ article }: { article: Article }) {
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
           loading="lazy"
+          onError={() => setImgFailed(true)}
         />
       ) : (
         <SportPlaceholder sport={article.sport} category={article.category} size="strip" />

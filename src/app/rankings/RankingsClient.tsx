@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
+import NewsletterSection from '@/components/NewsletterSection'
 import {
   RANKINGS_BY_TAB, RANKING_JUGADORES, RANKING_JUGADORES_SUB21,
   RANKING_JUGADORES_LATAM, RANKING_JUGADORES_CONCACAF, RANKING_CLUBES,
@@ -959,6 +960,7 @@ export default function RankingsClient({
 
       </main>
 
+      <NewsletterSection source="rankings" />
       <Footer />
       <ScrollToTop />
     </div>

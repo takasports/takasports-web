@@ -35,8 +35,9 @@ function Thumb({
 }: {
   url: string | null; title: string; w: number; h: number; sport?: string; category?: string
 }) {
-  return url ? (
-    <Image src={url} alt={title} width={w} height={h} className="w-full h-full object-cover" />
+  const [failed, setFailed] = useState(false)
+  return url && !failed ? (
+    <Image src={url} alt={title} width={w} height={h} className="w-full h-full object-cover" onError={() => setFailed(true)} />
   ) : (
     <SportPlaceholder sport={sport} category={category} />
   )
