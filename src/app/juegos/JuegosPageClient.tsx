@@ -599,102 +599,179 @@ function ComingGameCard({ game }: { game: Game }) {
   )
 }
 
-// ── External game card (Wrestling Fantasy, etc.) ─────────────
-// Desktop: abre la web directamente.
-// Móvil: muestra un bottom sheet con opción web / descargar app.
+// ── Partner app banner (Wrestling Fantasy, etc.) ─────────────
+// Banner horizontal full-width que comunica claramente que es una
+// app amiga con identidad propia, no parte del ecosistema Taka.
 
 function ExternalGameCard({ game }: { game: Game }) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const links = game.externalLinks!
+  const accent = game.accent       // '#FFD700'
+  const dim    = game.accentDim    // '#B8910D'
 
-  const handleClick = () => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-    if (isMobile && links.appStore) {
-      setSheetOpen(true)
-    } else {
-      window.open(links.web, '_blank', 'noopener,noreferrer')
-    }
-  }
+  const openSheet = () => setSheetOpen(true)
 
   return (
     <>
-      <button
-        onClick={handleClick}
-        className="group rounded-2xl overflow-hidden relative flex flex-col transition-all hover:translate-y-[-2px] w-full text-left"
-        style={{ background: 'var(--bg-card)', border: `1px solid ${game.accentDim}50` }}
+      {/* ── Banner desktop/tablet ── */}
+      <div
+        className="relative rounded-2xl overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #0E0900 0%, #130D00 55%, #0C0800 100%)',
+          border: `1.5px solid ${accent}28`,
+          boxShadow: `0 0 70px ${accent}0A, inset 0 1px 0 ${accent}18`,
+        }}
       >
-        <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${game.accentDim}, ${game.accent})` }} />
-        <div className="absolute top-0 right-0 w-36 h-36 blur-3xl opacity-[0.12] pointer-events-none" style={{ background: game.accent }} />
+        {/* Gold top stripe */}
+        <div
+          className="h-[2px] w-full"
+          style={{ background: `linear-gradient(90deg, transparent 5%, ${dim} 25%, ${accent} 50%, ${dim} 75%, transparent 95%)` }}
+        />
 
-        <div className="relative z-10 p-5 flex flex-col gap-4 flex-1">
-          <div className="flex items-start justify-between gap-2">
+        {/* Ambient glow */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: `radial-gradient(ellipse 60% 50% at 85% 30%, ${accent}07 0%, transparent 100%)`
+        }} />
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: `radial-gradient(ellipse 40% 60% at 10% 70%, ${dim}05 0%, transparent 100%)`
+        }} />
+
+        {/* APP AMIGA badge — top-right */}
+        <div
+          className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full z-10"
+          style={{ background: `${accent}12`, border: `1px solid ${accent}30` }}
+        >
+          {/* External arrow icon */}
+          <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+            <path d="M1.5 8.5L8.5 1.5M8.5 1.5H4M8.5 1.5v4.5" stroke={accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span
+            className="text-[8px] font-black uppercase tracking-widest"
+            style={{ color: accent, fontFamily: 'var(--font-sport)' }}
+          >
+            App amiga
+          </span>
+        </div>
+
+        {/* Main content */}
+        <div className="relative z-10 p-5 sm:p-6 flex flex-col sm:flex-row gap-5 sm:gap-6 sm:items-center">
+
+          {/* ── Icon + domain ── */}
+          <div className="flex-shrink-0 flex sm:flex-col items-center gap-4 sm:gap-2">
             <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: `${game.accentDim}28`, color: game.accent, border: `1px solid ${game.accentDim}50` }}
+              className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: `radial-gradient(circle, ${dim}35 0%, ${accent}10 100%)`,
+                border: `1.5px solid ${accent}45`,
+                boxShadow: `0 0 28px ${accent}22`,
+                color: accent,
+              }}
             >
-              {game.icon}
+              <IconWrestlingFantasy size={38} />
             </div>
-            <div className="flex flex-col items-end gap-1">
-              <span
-                className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1"
-                style={{ background: `${game.accentDim}20`, color: game.accent, border: `1px solid ${game.accentDim}40`, fontFamily: 'var(--font-sport)' }}
+            <span
+              className="text-[9px] font-black"
+              style={{ color: `${accent}70`, fontFamily: 'var(--font-sport)', letterSpacing: '0.04em' }}
+            >
+              wrestlingfantasy.app
+            </span>
+          </div>
+
+          {/* ── Info ── */}
+          <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3
+                className="font-black leading-tight"
+                style={{ fontFamily: 'var(--font-display)', color: '#F5F0DC', fontSize: 19, letterSpacing: '-0.01em' }}
               >
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: game.accent }} />
-                Disponible
-              </span>
+                {game.name}
+              </h3>
               <span
                 className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-                style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A5A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
+                style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}38`, fontFamily: 'var(--font-sport)' }}
               >
                 {game.category}
               </span>
             </div>
-          </div>
-
-          <div className="flex flex-col gap-1 flex-1">
-            <h3 className="font-black leading-tight" style={{ fontFamily: 'var(--font-display)', color: '#F0F0F5', fontSize: 17, letterSpacing: '-0.01em' }}>
-              {game.name}
-            </h3>
-            <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: game.accent, fontFamily: 'var(--font-sport)', opacity: 0.85 }}>
+            <p
+              className="text-[9px] font-black uppercase tracking-widest"
+              style={{ color: dim, fontFamily: 'var(--font-sport)' }}
+            >
               {game.tagline}
             </p>
-            <p className="text-[11px] leading-relaxed mt-1" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-[11px] leading-relaxed mt-0.5" style={{ color: 'var(--text-muted)' }}>
               {game.description}
             </p>
+            {/* Meta row */}
+            <div className="flex items-center gap-2.5 mt-1">
+              <DifficultyDots level={game.difficulty} />
+              <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
+              <span className="text-[9px]" style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>·</span>
+              <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
+              <span className="text-[9px]" style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>·</span>
+              <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>App independiente</span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-            <DifficultyDots level={game.difficulty} />
-            <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
-            <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>·</span>
-            <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
-            {/* Indicador app disponible */}
+          {/* ── CTAs ── */}
+          <div className="flex-shrink-0 flex flex-row sm:flex-col gap-2.5 sm:min-w-[170px]">
+            {/* Primary: web */}
+            <a
+              href={links.web}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-[0.98]"
+              style={{
+                background: `linear-gradient(135deg, ${dim}, ${accent}DD)`,
+                color: '#0A0800',
+                fontFamily: 'var(--font-sport)',
+                boxShadow: `0 4px 22px ${dim}55`,
+                letterSpacing: '0.05em',
+              }}
+            >
+              Ir a la web
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M1.5 8.5L8.5 1.5M8.5 1.5H4M8.5 1.5v4.5" stroke="#0A0800" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </a>
+            {/* Secondary: App Store (mobile shows sheet, desktop links direct) */}
             {links.appStore && (
-              <span className="ml-auto text-[9px] font-black flex items-center gap-1" style={{ color: `${game.accent}B0`, fontFamily: 'var(--font-sport)' }}>
-                📱 App iOS
-              </span>
+              <button
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:opacity-80 sm:hidden"
+                style={{
+                  background: `${accent}10`,
+                  border: `1px solid ${accent}32`,
+                  color: accent,
+                  fontFamily: 'var(--font-sport)',
+                  letterSpacing: '0.04em',
+                }}
+                onClick={openSheet}
+              >
+                📱 App Store
+              </button>
+            )}
+            {links.appStore && (
+              <a
+                href={links.appStore}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:opacity-80"
+                style={{
+                  background: `${accent}10`,
+                  border: `1px solid ${accent}32`,
+                  color: accent,
+                  fontFamily: 'var(--font-sport)',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                📱 App Store
+              </a>
             )}
           </div>
-
-          <span
-            className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-center transition-all group-hover:gap-3 inline-flex items-center justify-center gap-2"
-            style={{
-              background: `linear-gradient(135deg,${game.accentDim},${game.accent}CC)`,
-              color: '#0A0A14',
-              fontFamily: 'var(--font-sport)',
-              letterSpacing: '0.06em',
-              boxShadow: `0 4px 18px ${game.accentDim}50`,
-            }}
-          >
-            Jugar ahora
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-              <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="#0A0A14" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
         </div>
-      </button>
+      </div>
 
-      {/* Bottom sheet (móvil) */}
+      {/* ── Bottom sheet (móvil) ── */}
       {sheetOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center"
@@ -703,7 +780,7 @@ function ExternalGameCard({ game }: { game: Game }) {
         >
           <div
             className="w-full max-w-md rounded-t-2xl overflow-hidden safe-bottom"
-            style={{ background: 'var(--bg-card)', border: `1px solid ${game.accentDim}40` }}
+            style={{ background: 'var(--bg-card)', border: `1px solid ${dim}40` }}
             onClick={e => e.stopPropagation()}
           >
             {/* Handle */}
@@ -712,11 +789,11 @@ function ExternalGameCard({ game }: { game: Game }) {
             </div>
 
             {/* Header */}
-            <div className="px-6 pt-3 pb-4" style={{ borderBottom: `1px solid ${game.accentDim}20` }}>
+            <div className="px-6 pt-3 pb-4" style={{ borderBottom: `1px solid ${dim}20` }}>
               <div className="flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${game.accentDim}28`, color: game.accent, border: `1px solid ${game.accentDim}40` }}
+                  style={{ background: `${dim}28`, color: accent, border: `1px solid ${dim}40` }}
                 >
                   {game.icon}
                 </div>
@@ -738,11 +815,11 @@ function ExternalGameCard({ game }: { game: Game }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 px-4 py-3.5 rounded-xl transition-opacity hover:opacity-80"
-                style={{ background: `${game.accentDim}18`, border: `1px solid ${game.accentDim}40` }}
+                style={{ background: `${dim}18`, border: `1px solid ${dim}40` }}
                 onClick={() => setSheetOpen(false)}
               >
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${game.accentDim}30`, color: game.accent }}>
+                  style={{ background: `${dim}30`, color: accent }}>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
                     <path d="M8 1.5C6 4 5 6 5 8s1 4 3 6.5M8 1.5C10 4 11 6 11 8s-1 4-3 6.5M1.5 8h13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
@@ -752,8 +829,8 @@ function ExternalGameCard({ game }: { game: Game }) {
                   <p className="text-sm font-black" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>Abrir en web</p>
                   <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>wrestlingfantasy.app</p>
                 </div>
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }} />
+                <svg width="12" height="12" viewBox="0 0 10 10" fill="none">
+                  <path d="M1.5 8.5L8.5 1.5M8.5 1.5H4M8.5 1.5v4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }} />
                 </svg>
               </a>
 
@@ -763,22 +840,22 @@ function ExternalGameCard({ game }: { game: Game }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 px-4 py-3.5 rounded-xl transition-opacity hover:opacity-80"
-                  style={{ background: `linear-gradient(135deg, ${game.accentDim}28, ${game.accent}18)`, border: `1px solid ${game.accent}50` }}
+                  style={{ background: `linear-gradient(135deg, ${dim}28, ${accent}18)`, border: `1px solid ${accent}50` }}
                   onClick={() => setSheetOpen(false)}
                 >
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: `${game.accentDim}40`, color: game.accent }}>
+                    style={{ background: `${dim}40`, color: accent }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path d="M11.5 8.5c0-2 1.5-3 1.5-3s-1-1.5-2.5-1.5c-1 0-2 .8-2.5.8-.5 0-1.5-.8-2.5-.8C3.5 4 2 5.5 2 7.5c0 3 2.5 6.5 4 6.5.7 0 1.3-.5 2-.5.7 0 1.2.5 2 .5 1.3 0 3.5-3 3.5-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                       <path d="M10 2c.5-.5 1-1.5.5-2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-black" style={{ color: game.accent, fontFamily: 'var(--font-display)' }}>Descargar en App Store</p>
+                    <p className="text-sm font-black" style={{ color: accent, fontFamily: 'var(--font-display)' }}>Descargar en App Store</p>
                     <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>iPhone · iPad · Gratis</p>
                   </div>
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke={game.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <svg width="12" height="12" viewBox="0 0 10 10" fill="none">
+                    <path d="M1.5 8.5L8.5 1.5M8.5 1.5H4M8.5 1.5v4.5" stroke={accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </a>
               )}
@@ -951,13 +1028,22 @@ export default function JuegosPageClient() {
                 Listos para jugar
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {liveGames.map(game => (
-                game.externalLinks
-                  ? <ExternalGameCard key={game.id} game={game} />
-                  : <LiveGameCard key={game.id} game={game} />
-              ))}
-            </div>
+
+            {/* Apps amigas: banner full-width encima del grid */}
+            {liveGames.filter(g => g.externalLinks).map(game => (
+              <div key={game.id} className="mb-4">
+                <ExternalGameCard game={game} />
+              </div>
+            ))}
+
+            {/* Juegos propios: grid estándar */}
+            {liveGames.filter(g => !g.externalLinks).length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {liveGames.filter(g => !g.externalLinks).map(game => (
+                  <LiveGameCard key={game.id} game={game} />
+                ))}
+              </div>
+            )}
           </section>
         )}
 
