@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
 import { getCompAccent, getLeagueScore, getEventHighlightScore, SPORT_EMOJI, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
-import { isSplitBroadcast } from '@/lib/broadcasts'
+import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
 import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime } from '@/lib/timezone'
 import TimezoneSelector from '@/components/TimezoneSelector'
@@ -235,6 +235,7 @@ interface HeroProps {
   comp?: string
   matchRef?: string
   broadcast?: string
+  tz?: string
   flashing?: boolean
   isReminded: boolean
   onToggleReminder: () => void
@@ -346,7 +347,7 @@ function LiveHeroCard(p: HeroProps) {
           <span className="text-[9px] font-semibold uppercase tracking-wider truncate" style={{ color: '#7A8A7E', fontFamily: 'var(--font-sport)' }}>
             {p.matchRef ? 'Ver detalles →' : p.sport}
           </span>
-          <BroadcastChip broadcast={p.broadcast} />
+          <BroadcastChip comp={p.comp ?? ''} sport={p.sport} tz={p.tz} fallback={p.broadcast} />
         </div>
         <ReminderButton active={p.isReminded} onClick={p.onToggleReminder} color="#4ade80" size="sm" />
       </div>
@@ -380,9 +381,17 @@ function FavoriteHeart({ active, onClick, size = 16 }: {
 }
 
 // ─── Broadcast chip (where to watch) ──────────────────────────────────────
-function BroadcastChip({ broadcast }: { broadcast?: string }) {
-  if (!broadcast) return null
-  const split = isSplitBroadcast(broadcast)
+function BroadcastChip({ comp, sport, tz, fallback }: {
+  comp: string
+  sport?: string
+  tz?: string
+  /** Canal de la fuente original (ESPN US) — solo si no hay dato local */
+  fallback?: string
+}) {
+  // Primero intenta el canal del país del usuario; si no hay, usa el fallback
+  const channel = getBroadcastForTz(comp, sport ?? '', tz ?? SOURCE_TZ) ?? fallback
+  if (!channel) return null
+  const split = isSplitBroadcast(channel)
   return (
     <span
       className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wide"
@@ -395,7 +404,7 @@ function BroadcastChip({ broadcast }: { broadcast?: string }) {
       title={split ? 'Los derechos de emisión están repartidos entre varios canales' : undefined}
     >
       <span className="inline-flex items-center"><TvIcon size={11} /></span>
-      <span className="truncate max-w-[110px]">{broadcast}</span>
+      <span className="truncate max-w-[110px]">{channel}</span>
     </span>
   )
 }
@@ -771,9 +780,9 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           )}
         </>
       )}
-      {event.broadcast && (
-        <div className="mt-0.5"><BroadcastChip broadcast={event.broadcast} /></div>
-      )}
+      <div className="mt-0.5">
+        <BroadcastChip comp={event.comp} sport={event.sport} tz={tz} fallback={event.broadcast} />
+      </div>
     </div>
   )
 
@@ -1940,6 +1949,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           comp={event.comp}
           matchRef={event.matchRef}
           broadcast={event.broadcast}
+          tz={tz}
           flashing={flashIds.has(event.id)}
           isReminded={reminders.has(event.id)}
           onToggleReminder={() => toggleReminder(event.id)}
@@ -1965,6 +1975,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           sport={fixture.sport}
           comp={fixture.comp}
           matchRef={fixture.matchRef}
+          tz={tz}
           isReminded={reminders.has(fixture.id)}
           onToggleReminder={() => toggleReminder(fixture.id)}
         />
@@ -1972,7 +1983,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     }
     return cards
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveEventsInList, orphanFixtures, reminders, liveScores])
+  }, [liveEventsInList, orphanFixtures, reminders, liveScores, tz])
 
   return (
     <main className="max-w-[1280px] mx-auto px-4 sm:px-6 xl:px-10 pb-28">
