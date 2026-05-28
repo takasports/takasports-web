@@ -250,7 +250,12 @@ export async function POST(req: NextRequest) {
         p_user_id: user.id,
       })
       if (chargeErr) {
-        return NextResponse.json({ error: 'charge_failed', detail: chargeErr.message }, { status: 500 })
+        // La RPC lanza 'insufficient_balance' si la protección atómica detecta saldo insuficiente
+        const isInsufficient = chargeErr.message?.includes('insufficient_balance')
+        return NextResponse.json(
+          { error: isInsufficient ? 'insufficient_balance' : 'charge_failed', detail: chargeErr.message },
+          { status: isInsufficient ? 422 : 500 },
+        )
       }
 
       // Persistir picks con flag staked. Si falla, hacemos rollback

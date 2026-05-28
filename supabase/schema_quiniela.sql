@@ -186,32 +186,55 @@ create trigger sp_updated_at
   before update on public.quiniela_season_predictions
   for each row execute procedure public.handle_updated_at();
 
--- ── RPC: añadir monedas con audit (anti-cheat) ──────────────────
--- El cliente NUNCA escribe a la tabla directamente; llama a esta función
--- que valida y registra. Para anti-cheat real, esta función debería
--- verificar el resultado server-side; por ahora es un wrapper de auditoría.
-create or replace function public.add_coins(p_amount int, p_reason text, p_context jsonb default '{}'::jsonb)
+-- ── RPC: añadir monedas con audit y protección de saldo ─────────
+-- p_user_id: override para llamadas server-side (auth.uid() es null en Next.js SSR).
+-- Cap: 5000 por transacción. Protección: rechaza débitos que lleven el saldo a < 0.
+-- Usa advisory lock para serializar operaciones concurrentes del mismo user.
+create or replace function public.add_coins(
+  p_amount  int,
+  p_reason  text  default '',
+  p_context jsonb default '{}'::jsonb,
+  p_user_id uuid  default null
+)
 returns int
-language plpgsql security definer as $$
+language plpgsql security definer
+set search_path to ''
+as $$
 declare
-  uid uuid := auth.uid();
+  uid             uuid;
+  current_balance integer;
+  new_balance     integer;
 begin
+  uid := coalesce(p_user_id, auth.uid());
   if uid is null then raise exception 'auth required'; end if;
   if p_amount = 0 then return 0; end if;
-  -- Cap absoluto por transacción para evitar abusos por bug de cliente
-  if abs(p_amount) > 500 then raise exception 'amount out of range'; end if;
+  if abs(p_amount) > 5000 then raise exception 'amount out of range'; end if;
+
+  perform pg_advisory_xact_lock(('x' || substr(md5(uid::text), 1, 15))::bit(60)::bigint);
+
+  select greatest(0, coalesce(sum(amount), 0))
+  into current_balance
+  from public.quiniela_coin_txns
+  where user_id = uid;
+
+  if p_amount < 0 and (current_balance + p_amount) < 0 then
+    raise exception 'insufficient_balance: need % have %', abs(p_amount), current_balance;
+  end if;
+
   insert into public.quiniela_coin_txns(user_id, amount, reason, context)
   values (uid, p_amount, p_reason, coalesce(p_context, '{}'::jsonb));
-  return p_amount;
+
+  new_balance := greatest(0, current_balance + p_amount);
+  return new_balance;
 end;
 $$;
 
-revoke all on function public.add_coins(int, text, jsonb) from public;
-grant execute on function public.add_coins(int, text, jsonb) to authenticated;
+revoke all on function public.add_coins(int, text, jsonb, uuid) from public;
+grant execute on function public.add_coins(int, text, jsonb, uuid) to authenticated, service_role;
 
--- ── Vista: balance de monedas por usuario ────────────────────────
+-- ── Vista: balance de monedas por usuario (floor en 0) ───────────
 create or replace view public.quiniela_coin_balance as
-select user_id, coalesce(sum(amount), 0)::int as balance
+select user_id, greatest(0, coalesce(sum(amount), 0))::int as balance
 from public.quiniela_coin_txns
 group by user_id;
 
