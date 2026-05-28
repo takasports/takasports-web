@@ -435,11 +435,11 @@ function SearchModal({ cell, puzzle, usedIds, validCount, onSelect, onClose }: S
                 {pending.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black truncate flex items-center gap-1.5" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
-                  <CountryFlag country={pending.country} width={14} />
-                  <span className="truncate">{pending.name}</span>
+                {/* Club y país omitidos para no desvelar la respuesta */}
+                <p className="text-sm font-black truncate" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+                  {pending.name}
                 </p>
-                <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{posLabel(pending.position)} · {pending.club}</p>
+                <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{posLabel(pending.position)}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -478,11 +478,11 @@ function renderPlayerRow(p: Player, onClick: () => void, posLabel: (pos: Player[
         {p.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-black truncate flex items-center gap-1.5" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
-          <CountryFlag country={p.country} width={16} />
-          <span className="truncate">{p.name}</span>
+        {/* Club y bandera se omiten para no desvelar la respuesta */}
+        <p className="text-sm font-black truncate" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+          {p.name}
         </p>
-        <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>{posLabel(p.position)} · {p.club}</p>
+        <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>{posLabel(p.position)}</p>
       </div>
       <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded flex-shrink-0" style={{
         background: p.era === 'current' ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.04)',
