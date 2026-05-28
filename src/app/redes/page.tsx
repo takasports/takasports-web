@@ -145,26 +145,8 @@ export default function RedesPage() {
               href={net.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative flex items-center gap-5 rounded-2xl p-6 transition-all duration-200"
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                textDecoration: 'none',
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget
-                el.style.background = 'rgba(255,255,255,0.06)'
-                el.style.border = '1px solid rgba(255,255,255,0.13)'
-                el.style.transform = 'translateY(-2px)'
-                el.style.boxShadow = '0 12px 32px rgba(0,0,0,0.3)'
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget
-                el.style.background = 'rgba(255,255,255,0.03)'
-                el.style.border = '1px solid rgba(255,255,255,0.07)'
-                el.style.transform = 'translateY(0)'
-                el.style.boxShadow = 'none'
-              }}
+              className="group relative flex items-center gap-5 rounded-2xl p-6 transition-all duration-200 bg-white/[0.03] border border-white/[0.07] hover:bg-white/[0.06] hover:border-white/[0.13] hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(0,0,0,0.3)]"
+              style={{ textDecoration: 'none' }}
             >
               {/* Icon bubble */}
               <div

@@ -39,8 +39,9 @@ export interface AutolinkEntry {
 
 export interface EntityIndex {
   entries: AutolinkEntry[]
-  /** Lookup case-insensitive: nombre normalizado → entrada. */
-  byKey: Map<string, AutolinkEntry>
+  /** Lookup case-insensitive: nombre normalizado → entrada.
+   *  Usamos Record (objeto plano) para que unstable_cache pueda serializarlo a JSON. */
+  byKey: Record<string, AutolinkEntry>
 }
 
 function leagueToSport(leagueSlug: string | undefined): Sport {
@@ -129,36 +130,36 @@ export const getEntityIndex = unstable_cache(
   async (): Promise<EntityIndex> => {
     const { teams, players } = await fetchEntities()
 
-    const byKey = new Map<string, AutolinkEntry>()
+    const byKey: Record<string, AutolinkEntry> = {}
 
     for (const t of teams) {
       if (!isTeamNameAcceptable(t.name)) continue
       const key = normalize(t.name)
-      if (byKey.has(key)) continue
+      if (key in byKey) continue
       const slug = `${t.leagueSlug.replace('/', '_')}_${t.teamId}`
-      byKey.set(key, {
+      byKey[key] = {
         url: `/equipo/${slug}`,
         displayName: t.name,
         sport: leagueToSport(t.leagueSlug),
         isPlayer: false,
-      })
+      }
     }
 
     for (const p of players) {
       if (!isPlayerNameAcceptable(p.name)) continue
       const key = normalize(p.name)
-      if (byKey.has(key)) continue
+      if (key in byKey) continue
       const slug = `${p.leagueSlug.replace('/', '_')}_${p.playerId}`
-      byKey.set(key, {
+      byKey[key] = {
         url: `/jugador/${slug}`,
         displayName: p.name,
         sport: leagueToSport(p.leagueSlug),
         isPlayer: true,
-      })
+      }
     }
 
     // Orden por longitud descendente para que "Real Madrid" gane a "Real" si lo hubiera.
-    const entries = [...byKey.values()].sort((a, b) => b.displayName.length - a.displayName.length)
+    const entries = Object.values(byKey).sort((a, b) => b.displayName.length - a.displayName.length)
 
     return { entries, byKey }
   },
@@ -213,7 +214,7 @@ export function autolinkSegments(
     if (ctx.count >= MAX_AUTOLINKS_PER_ARTICLE) break
 
     const matchText = m[1]
-    const entry = index.byKey.get(normalize(matchText))
+    const entry = index.byKey[normalize(matchText)]
     if (!entry) continue
 
     // Filtro por deporte del artículo: si está marcado, debe coincidir con la entidad.
