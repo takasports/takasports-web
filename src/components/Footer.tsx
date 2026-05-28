@@ -22,6 +22,7 @@ const PLATFORM_LINKS = [
   { label: 'Glosario',     href: '/glosario' },
   { label: 'Juegos',       href: '/juegos' },
   { label: 'Sobre TakaSports', href: '/sobre' },
+  { label: 'Redes sociales',   href: '/redes' },
 ]
 const LEGAL_LINKS = [
   { label: 'Política editorial', href: '/politica-editorial' },
