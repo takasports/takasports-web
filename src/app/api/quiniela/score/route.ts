@@ -242,6 +242,7 @@ export async function POST(req: NextRequest) {
           jornada: body.jornada,
           totalStake,
         },
+        p_user_id: user.id,
       })
       if (chargeErr) {
         return NextResponse.json({ error: 'charge_failed', detail: chargeErr.message }, { status: 500 })
@@ -271,6 +272,7 @@ export async function POST(req: NextRequest) {
             p_amount: totalStake,
             p_reason: `Rollback Quiniela ${body.jornada} (persistencia fallida)`,
             p_context: { source: 'quiniela_stake_rollback', jornada: body.jornada },
+            p_user_id: user.id,
           })
         } catch { /* swallow */ }
         return NextResponse.json({ error: 'persist_failed', detail: upsertErr.message }, { status: 500 })
@@ -352,6 +354,7 @@ export async function POST(req: NextRequest) {
             cancelledCount: breakdown.cancelledCount,
             totalRefunded,
           },
+          p_user_id: user.id,
         })
         if (refundErr) {
           return NextResponse.json({ error: 'refund_failed', detail: refundErr.message }, { status: 500 })
@@ -371,6 +374,7 @@ export async function POST(req: NextRequest) {
             pleno: breakdown.pleno,
             totalWon,
           },
+          p_user_id: user.id,
         })
         if (creditErr) {
           // No marcamos settled si la acreditación falló — el cliente

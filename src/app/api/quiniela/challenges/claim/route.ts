@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
         jornada: body.jornada,
         coin_bonus: coinBonus,
       },
+      p_user_id: user.id,
     })
     if (creditErr) {
       return NextResponse.json({ error: 'credit_failed', detail: creditErr.message }, { status: 500 })

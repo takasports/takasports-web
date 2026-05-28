@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
           p_amount: amount,
           p_reason: 'Migración desde dispositivo anterior',
           p_context: { source: 'localStorage' },
+          p_user_id: user.id,
         })
         coinsAdded = amount
       }

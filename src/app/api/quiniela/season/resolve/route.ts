@@ -114,25 +114,20 @@ export async function POST(req: NextRequest) {
   let credited = 0
   let creditFailed = 0
 
-  // 5. Acreditar uno por uno (no podemos usar RPC para múltiples users
-  // porque add_coins solo opera sobre auth.uid()). Service role no
-  // dispara RPC con auth.uid; usamos insert directo en quiniela_coin_txns
-  // (lo permite la tabla porque admin bypasses RLS).
+  // 5. Acreditar uno por uno usando add_coins con p_user_id (bypass auth.uid).
   if (prize > 0 && winners && winners.length > 0) {
     for (const w of winners) {
-      const { error: insErr } = await admin
-        .from('quiniela_coin_txns')
-        .insert({
-          user_id: w.user_id,
-          amount: prize,
-          reason,
-          context: {
-            source: 'season_question',
-            question_id: body.questionId,
-            tournament: q.tournament,
-            answer: body.winner,
-          },
-        })
+      const { error: insErr } = await admin.rpc('add_coins', {
+        p_amount: prize,
+        p_reason: reason,
+        p_context: {
+          source: 'season_question',
+          question_id: body.questionId,
+          tournament: q.tournament,
+          answer: body.winner,
+        },
+        p_user_id: w.user_id,
+      })
       if (insErr) { creditFailed += 1; continue }
       // Marcar prize_credited
       await admin
