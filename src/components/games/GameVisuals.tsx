@@ -93,6 +93,35 @@ export function IconStrikerRush({ size = 32 }: { size?: number }) {
   )
 }
 
+export function IconWrestlingFantasy({ size = 32 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <rect x="4" y="20" width="24" height="3" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="2" y="22" width="4" height="8" rx="1" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="26" y="22" width="4" height="8" rx="1" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="11" cy="10" r="3" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="21" cy="10" r="3" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M11 13v4l2 3M21 13v4l-2 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M13 16h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.5" />
+      <path d="M8 23l3-6M24 23l-3-6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.4" />
+    </svg>
+  )
+}
+
+export function IconUFCPrediction({ size = 32 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="7" r="3" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M16 10v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M10 14s2-2 6-2 6 2 6 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M10 14l-3 6M22 14l3 6M13 15l-2 5M19 15l2 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.6" />
+      <path d="M8 22h16M10 26h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+      <circle cx="7" cy="24" r="1.5" fill="currentColor" opacity="0.5" />
+      <circle cx="25" cy="24" r="1.5" fill="currentColor" opacity="0.5" />
+    </svg>
+  )
+}
+
 // ── Mini previews ─────────────────────────────────────────────
 
 export function PreviewTakaGrid({ accent, accentDim }: { accent: string; accentDim: string }) {

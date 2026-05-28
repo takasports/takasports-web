@@ -125,9 +125,29 @@ export default function PostGameResultModal({
               </span>
             </div>
           ) : (
-            <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-              Inicia sesión para entrar al ranking. Tu partida está guardada en este navegador.
-            </p>
+            <div
+              className="rounded-xl px-4 py-3 text-center"
+              style={{ background: `${accent}08`, border: `1px solid ${accent}20` }}
+            >
+              <p className="text-xs font-semibold mb-0.5" style={{ color: '#F0F0F5' }}>
+                No pierdas tu progreso
+              </p>
+              <p className="text-[10px] mb-3" style={{ color: 'var(--text-muted)' }}>
+                Tu partida está guardada en este navegador. Regístrate para entrar al ranking y mantener tu racha.
+              </p>
+              <Link
+                href="/auth?from=game"
+                className="inline-block w-full py-2 rounded-lg text-[10px] font-black uppercase tracking-widest text-center transition-opacity hover:opacity-80"
+                style={{
+                  background:   accent,
+                  color:        '#0A0A14',
+                  fontFamily:   'var(--font-sport)',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                Crear cuenta gratis →
+              </Link>
+            </div>
           )}
         </div>
 
