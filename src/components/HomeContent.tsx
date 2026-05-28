@@ -60,10 +60,20 @@ function pickTopEvents(events: SportEvent[], n = 4): SportEvent[] {
   const now = Date.now()
   const windowEnd = now + WINDOW_HOURS * 3600_000
 
+  // 0) Deduplicar: mismo partido puede llegar dos veces (courts distintas
+  //    en tenis, feeds duplicados). Clave = home+away+fecha normalizada.
+  const seen = new Set<string>()
+  const unique = events.filter(ev => {
+    const key = `${ev.home}|${ev.away ?? ''}|${ev.isoDate?.slice(0, 13) ?? ev.date}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
   // 1) Ventana temporal: descartar pasados y muy lejanos
   const inWindow: { ev: SportEvent; score: number; ts: number }[] = []
   const fallback: { ev: SportEvent; score: number; ts: number }[] = []
-  for (const ev of events) {
+  for (const ev of unique) {
     if (ev.isPast) continue
     const ts = ev.isoDate ? new Date(ev.isoDate).getTime() : NaN
     const base = tierScore(ev.comp)

@@ -8,6 +8,7 @@ import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import NewsletterSection from '@/components/NewsletterSection'
 import ShareButton from '@/app/article/[id]/ShareButton'
 import BackButton from '@/app/article/[id]/BackButton'
 import ScrollToTop from '@/components/ScrollToTop'
@@ -1102,6 +1103,7 @@ export default async function NoticiaPage({
 
       </main>
 
+      <NewsletterSection source="articulo" />
       <Footer />
       <ScrollToTop />
     </div>
