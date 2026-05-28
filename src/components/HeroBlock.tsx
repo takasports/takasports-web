@@ -1,15 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, startTransition, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, startTransition } from 'react'
 import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
 import { useTilt } from '@/hooks/useTilt'
+import HCarousel from '@/components/HCarousel'
 
-const STRIP_COLS   = 5
-const STRIP_TICK_MS = 3200  // ms entre cada sustitución de tarjeta
+const STRIP_COLS = 5
 
 // ── Tira compacta inferior — 5 artículos ───────────────────────
 function CompactStripItem({ art }: { art: Article }) {
@@ -106,64 +106,20 @@ function CompactStripItem({ art }: { art: Article }) {
   )
 }
 
-// Rotación uno a uno: cada STRIP_TICK_MS se reemplaza UNA tarjeta (en round-robin)
-// con fade suave. Las otras 4 permanecen visibles sin moverse.
-function CompactStrip({ pool, paused }: { pool: Article[]; paused: boolean }) {
-  const size = Math.min(STRIP_COLS, pool.length)
-  const [slots, setSlots]       = useState<Article[]>(() => pool.slice(0, size))
-  const [hiddenSlot, setHidden] = useState<number | null>(null)
-  const cursorRef  = useRef(0)
-  const poolIdxRef = useRef(size)
-  const pausedRef  = useRef(paused)
-
-  useEffect(() => { pausedRef.current = paused }, [paused])
-
-  // Sincronizar slots si el pool cambia (ej. cambio de filtro de deporte)
-  const poolKey = useMemo(() => pool.map(a => a._id).join(','), [pool])
-  useEffect(() => {
-    setSlots(pool.slice(0, Math.min(STRIP_COLS, pool.length)))
-    cursorRef.current  = 0
-    poolIdxRef.current = Math.min(STRIP_COLS, pool.length)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [poolKey])
-
-  useEffect(() => {
-    if (pool.length <= STRIP_COLS) return
-    const t = setInterval(() => {
-      if (pausedRef.current) return
-      const slot = cursorRef.current % STRIP_COLS
-      // 1) Fade out la tarjeta en ese slot
-      setHidden(slot)
-      setTimeout(() => {
-        // 2) Sustituye el contenido y vuelve a hacer fade in
-        setSlots(prev => {
-          const next = [...prev]
-          next[slot] = pool[poolIdxRef.current % pool.length]
-          return next
-        })
-        poolIdxRef.current++
-        setHidden(null)
-      }, 280)
-      cursorRef.current++
-    }, STRIP_TICK_MS)
-    return () => clearInterval(t)
-  // pool.length como dep para recrear el timer si cambia el pool
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pool.length])
-
-  if (slots.length === 0) return null
-
+// Carrusel: la tira se desplaza una tarjeta a la izquierda cada pocos
+// segundos, trayendo noticias que no caben en pantalla (la 9, 10, 11…).
+// Flechas para retroceder/avanzar a mano.
+function CompactStrip({ pool }: { pool: Article[] }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-4">
-      {slots.map((art, i) => (
-        // key=i intencional: el DOM node queda en posición fija, solo cambia el contenido
-        <div
-          key={i}
-          style={{ opacity: hiddenSlot === i ? 0 : 1, transition: 'opacity 280ms ease' }}
-        >
-          <CompactStripItem art={art} />
-        </div>
-      ))}
+    <div className="mt-4">
+      <HCarousel
+        items={pool}
+        getKey={(art, i) => art._id ?? String(i)}
+        visible={STRIP_COLS}
+        tickMs={4000}
+        basisClass="basis-[calc((100%-12px)/2)] sm:basis-[calc((100%-24px)/3)] lg:basis-[calc((100%-48px)/5)]"
+        renderItem={(art) => <CompactStripItem art={art} />}
+      />
     </div>
   )
 }
@@ -497,10 +453,11 @@ function ProgressBar({ offset, paused }: { offset: number; paused: boolean }) {
 }
 
 // ── Componente principal ────────────────────────────────────────
-export default function HeroBlock({ articles }: { articles: Article[] }) {
-  // Los primeros 3 rotan en el hero. Los restantes son el pool de la tira inferior.
+export default function HeroBlock({ articles, stripPool }: { articles: Article[]; stripPool?: Article[] }) {
+  // Los primeros 3 rotan en el hero. La tira inferior usa `stripPool` (que puede
+  // incluir noticias más allá del bloque destacado) o, en su defecto, el resto.
   const heroArticles  = articles.slice(0, 3)
-  const stripArticles = articles.slice(3)
+  const stripArticles = stripPool ?? articles.slice(3)
   const len = heroArticles.length
   const [offset, setOffset] = useState(0)
   const [visible, setVisible] = useState(true)
@@ -669,8 +626,8 @@ export default function HeroBlock({ articles }: { articles: Article[] }) {
           </div>
         )}
 
-        {/* ── Tira compacta: rota de a una tarjeta cada ~3s ─── */}
-        <CompactStrip pool={stripArticles} paused={paused} />
+        {/* ── Tira compacta: carrusel que desliza a la izquierda ─── */}
+        <CompactStrip pool={stripArticles} />
       </div>
     </>
   )

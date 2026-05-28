@@ -330,6 +330,9 @@ export default function HomeContent({
 
   const heroArticles = filteredArticles.slice(0, 8)
   const feedDisplayed = filteredArticles.slice(heroArticles.length)
+  // La tira-carrusel del hero arranca tras los 3 destacados y sigue trayendo
+  // noticias que no aparecen al principio (la 9, 10, 11…), hasta un máximo.
+  const heroStripPool = filteredArticles.slice(3, 23)
 
   return (
     <main className="max-w-[1440px] mx-auto pb-6">
@@ -372,7 +375,7 @@ export default function HomeContent({
               }}
             />
             <div className="relative z-10">
-              <HeroBlock articles={heroArticles} />
+              <HeroBlock articles={heroArticles} stripPool={heroStripPool} />
             </div>
           </div>
         )}
@@ -456,7 +459,7 @@ export default function HomeContent({
 
         {/* Sidebar — solo desktop */}
         <aside className="w-72 xl:w-80 flex-shrink-0 hidden lg:block sticky top-20 self-start pt-6">
-          <Sidebar topPlayers={topPlayers} />
+          <Sidebar topPlayers={topPlayers} events={pickTopEvents(events, 4)} />
         </aside>
 
       </div>

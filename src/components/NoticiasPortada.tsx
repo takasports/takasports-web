@@ -6,12 +6,11 @@ import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
+import HCarousel from '@/components/HCarousel'
 
-const ROTATION_MS       = 5000   // big cards
-const STRIP_ROTATION_MS = 6000   // strip cards
-const BIG_POOL          = 6      // artículos reservados para big cards (3 pares)
-const STRIP_SIZE        = 5
-const SWIPE_THRESHOLD   = 50
+const ROTATION_MS     = 5000   // big cards
+const BIG_POOL        = 6      // artículos reservados para big cards (3 pares)
+const SWIPE_THRESHOLD = 50
 
 const OVERLAY = 'linear-gradient(to top, rgba(3,3,10,0.97) 0%, rgba(3,3,10,0.55) 38%, rgba(3,3,10,0.08) 72%, transparent 100%)'
 const CARD_BG = '#06060F'
@@ -194,14 +193,11 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
   const bigPool   = safe.slice(0, BIG_POOL)
   const totalPairs = Math.min(3, Math.max(1, Math.floor(bigPool.length / 2)))
 
-  // ── Strip: artículos a partir de BIG_POOL, rotan en grupos de STRIP_SIZE ──
-  const stripPool       = safe.slice(BIG_POOL)
-  const totalStripGroups = Math.max(1, Math.ceil(stripPool.length / STRIP_SIZE))
+  // ── Strip: artículos a partir de BIG_POOL, se deslizan en carrusel ──
+  const stripPool = safe.slice(BIG_POOL)
 
   const [pairIdx,      setPairIdx]      = useState(0)
   const [visible,      setVisible]      = useState(true)
-  const [stripIdx,     setStripIdx]     = useState(0)
-  const [stripVisible, setStripVisible] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
   const pausedRef = useRef(false)
   const touchStartX = useRef<number | null>(null)
@@ -219,17 +215,6 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
     }, ROTATION_MS)
     return () => clearInterval(timer)
   }, [bigPool.length, totalPairs])
-
-  // Rotación strip (más lenta, independiente)
-  useEffect(() => {
-    if (stripPool.length <= STRIP_SIZE) return
-    const timer = setInterval(() => {
-      if (pausedRef.current) return
-      setStripVisible(false)
-      setTimeout(() => { setStripIdx(i => (i + 1) % totalStripGroups); setStripVisible(true) }, 400)
-    }, STRIP_ROTATION_MS)
-    return () => clearInterval(timer)
-  }, [stripPool.length, totalStripGroups])
 
   const goTo = (i: number) => {
     setVisible(false)
@@ -257,9 +242,6 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
 
   const base = (pairIdx * 2) % Math.max(1, bigPool.length)
   const big  = [bigPool[base], bigPool[(base + 1) % bigPool.length]].filter(Boolean)
-
-  const stripStart = (stripIdx * STRIP_SIZE) % Math.max(1, stripPool.length)
-  const strip = stripPool.slice(stripStart, stripStart + STRIP_SIZE)
 
   if (safe.length === 0) return null
 
@@ -326,18 +308,16 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
           )}
         </div>
 
-        {/* ── TIRA — rota lentamente entre grupos de 5 ── */}
-        {(strip.length > 0 || stripPool.length > 0) && (
-          <div
-            style={{ opacity: stripVisible ? 1 : 0, transition: 'opacity 400ms ease' }}
-            className="grid grid-cols-2 sm:grid-cols-5 gap-3"
-          >
-            {strip.map((a, i) => (
-              <div key={a._id} className={i === 4 ? 'hidden sm:block' : ''}>
-                <StripCard article={a} />
-              </div>
-            ))}
-          </div>
+        {/* ── TIRA — carrusel que se desliza tarjeta a tarjeta a la izquierda ── */}
+        {stripPool.length > 0 && (
+          <HCarousel
+            items={stripPool}
+            getKey={(a, i) => a._id ?? String(i)}
+            visible={5}
+            tickMs={5000}
+            basisClass="basis-[calc((100%-12px)/2)] sm:basis-[calc((100%-48px)/5)]"
+            renderItem={(a) => <StripCard article={a} />}
+          />
         )}
 
       </div>
