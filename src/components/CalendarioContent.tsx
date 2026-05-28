@@ -7,7 +7,7 @@ import type { SportEvent } from '@/lib/types'
 import { getCompAccent, getLeagueScore, getEventHighlightScore, SPORT_EMOJI, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
 import { isSplitBroadcast } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
-import { getStoredTZ, setStoredTZ, SOURCE_TZ, convertEventTime } from '@/lib/timezone'
+import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime } from '@/lib/timezone'
 import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
@@ -786,51 +786,53 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
 
   const inner = (
     <div
-      className={`relative grid items-center gap-2 px-3 py-3 rounded-lg transition-all ${flashing ? 'ts-flash' : ''}`}
+      className={`relative grid items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2.5 sm:py-3 rounded-xl transition-all hover:brightness-105 ${flashing ? 'ts-flash' : ''}`}
       style={{
         gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)',
-        background: isLive ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.025)',
-        borderLeft: `3px solid ${accent}`,
-        border: '1px solid rgba(255,255,255,0.04)',
+        background: isLive
+          ? 'linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(255,255,255,0.02) 100%)'
+          : 'rgba(255,255,255,0.025)',
+        border: `1px solid ${isLive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
         borderLeftWidth: 3,
         borderLeftColor: accent,
+        boxShadow: isLive ? `0 0 16px ${accent}12` : 'none',
       }}
     >
       {actions}
 
       {/* Home (or solo entity) */}
-      <div className="flex items-center gap-2.5 min-w-0 justify-end text-right pr-1">
+      <div className="flex items-center gap-2 min-w-0 justify-end text-right pr-1">
         <div className="min-w-0 flex flex-col items-end">
-          <span className="text-[13px] font-bold truncate max-w-full" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[12px] sm:text-[13px] font-bold truncate max-w-full leading-snug" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {event.home}
           </span>
-          {isFav && <span className="text-[9px] mt-0.5" style={{ color: '#F472B6' }}>♥</span>}
+          {isFav && <span className="text-[8px] mt-0.5 leading-none" style={{ color: '#F472B6' }}>♥</span>}
           {hasVs && formHome && <FormStrip form={formHome} align="end" />}
         </div>
-        <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={32} sport={event.sport} />
+        <TeamLogo logo={event.homeLogo} photo={event.homePhoto} name={event.home} size={28} sport={event.sport} />
       </div>
 
       {scoreBlock}
 
       {/* Away (vs match) or sport vignette (solo event) — mantiene la simetría */}
       {hasVs ? (
-        <div className="flex items-center gap-2.5 min-w-0 pl-1 pr-[72px] sm:pr-1">
-          <TeamLogo logo={event.awayLogo} photo={event.awayPhoto} name={event.away!} size={32} sport={event.sport} />
+        <div className="flex items-center gap-2 min-w-0 pl-1 pr-[68px] sm:pr-2">
+          <TeamLogo logo={event.awayLogo} photo={event.awayPhoto} name={event.away!} size={28} sport={event.sport} />
           <div className="min-w-0">
-            <span className="text-[13px] font-bold truncate block" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+            <span className="text-[12px] sm:text-[13px] font-bold truncate block leading-snug" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
               {event.away}
             </span>
             {formAway && <FormStrip form={formAway} align="start" />}
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-2 min-w-0 pl-1 pr-[72px] sm:pr-1 opacity-60">
+        <div className="flex items-center gap-2 min-w-0 pl-1 pr-[68px] sm:pr-2 opacity-60">
           <span className="inline-flex items-center justify-center rounded-full flex-shrink-0"
-            style={{ width: 32, height: 32, background: `${compColor}14`, border: `1px solid ${compColor}28`, color: compColor }}>
-            {racing ? <F1Icon size={16} /> : tennis ? <TennisIcon size={16} /> : <SportIcon sport={event.sport} size={16} />}
+            style={{ width: 28, height: 28, background: `${compColor}14`, border: `1px solid ${compColor}28`, color: compColor }}>
+            {racing ? <F1Icon size={14} /> : tennis ? <TennisIcon size={14} /> : <SportIcon sport={event.sport} size={14} />}
           </span>
           <div className="min-w-0">
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] truncate block"
+            <span className="text-[10px] font-bold uppercase tracking-[0.12em] truncate block"
               style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
               {racing ? 'Carrera' : tennis ? 'Individual' : combat ? 'Cartelera' : 'Evento'}
             </span>
@@ -1291,7 +1293,7 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
   const combat = isCombat(event.sport)
   const inner = (
     <div
-      className="relative grid items-center gap-2 px-3 py-3 rounded-lg transition-all"
+      className="relative grid items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2.5 sm:py-3 rounded-xl transition-all hover:brightness-105"
       style={{
         gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)',
         background: 'rgba(255,255,255,0.025)',
@@ -1305,22 +1307,22 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
       </div>
 
       {/* Home (or solo entity) */}
-      <div className="flex items-center gap-2.5 min-w-0 justify-end text-right pr-1">
+      <div className="flex items-center gap-2 min-w-0 justify-end text-right pr-1">
         <div className="min-w-0 flex flex-col items-end">
-          <span className="text-[13px] font-bold truncate max-w-full" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[12px] sm:text-[13px] font-bold truncate max-w-full leading-snug" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {event.home}
           </span>
         </div>
-        <TeamLogo logo={event.homeLogo} name={event.home} size={32} sport={event.sport} />
+        <TeamLogo logo={event.homeLogo} name={event.home} size={28} sport={event.sport} />
       </div>
 
-      <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 min-w-[88px] px-2">
-        <span className="text-[9px] font-black uppercase tracking-[0.18em] leading-none" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+      <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 min-w-[80px] sm:min-w-[88px] px-2">
+        <span className="text-[8.5px] font-black uppercase tracking-[0.18em] leading-none" style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
           FT
         </span>
         {hasScore ? (
           <span className="flex items-center gap-2 leading-none tabular-nums font-black"
-            style={{ fontSize: 22, color: '#C0C0D8', fontFamily: 'var(--font-sport)' }}>
+            style={{ fontSize: 20, color: '#C0C0D8', fontFamily: 'var(--font-sport)' }}>
             <span>{hs}</span>
             <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
             <span>{as_}</span>
@@ -1331,20 +1333,20 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
       </div>
 
       {hasVs ? (
-        <div className="flex items-center gap-2.5 min-w-0 pl-1 pr-10 sm:pr-1">
-          <TeamLogo logo={event.awayLogo} name={event.away!} size={32} sport={event.sport} />
-          <span className="text-[13px] font-bold truncate" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+        <div className="flex items-center gap-2 min-w-0 pl-1 pr-9 sm:pr-1">
+          <TeamLogo logo={event.awayLogo} name={event.away!} size={28} sport={event.sport} />
+          <span className="text-[12px] sm:text-[13px] font-bold truncate leading-snug" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {event.away}
           </span>
         </div>
       ) : (
-        <div className="flex items-center gap-2 min-w-0 pl-1 pr-10 sm:pr-1 opacity-60">
+        <div className="flex items-center gap-2 min-w-0 pl-1 pr-9 sm:pr-1 opacity-60">
           <span className="inline-flex items-center justify-center rounded-full flex-shrink-0"
-            style={{ width: 32, height: 32, background: `${compColor}14`, border: `1px solid ${compColor}28`, color: compColor }}>
-            {racing ? <F1Icon size={16} /> : tennis ? <TennisIcon size={16} /> : <SportIcon sport={event.sport} size={16} />}
+            style={{ width: 28, height: 28, background: `${compColor}14`, border: `1px solid ${compColor}28`, color: compColor }}>
+            {racing ? <F1Icon size={14} /> : tennis ? <TennisIcon size={14} /> : <SportIcon sport={event.sport} size={14} />}
           </span>
           <div className="min-w-0">
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] truncate block"
+            <span className="text-[10px] font-bold uppercase tracking-[0.12em] truncate block"
               style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
               {racing ? 'Carrera' : tennis ? 'Individual' : combat ? 'Cartelera' : 'Evento'}
             </span>
@@ -1404,7 +1406,13 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const liveFixtures = useLiveFixtures()
 
   useEffect(() => {
-    setTz(getStoredTZ())
+    // Auto-detect browser TZ on first visit (no stored preference).
+    // We persist it so the next SSR render already uses the correct cookie.
+    const detectedTz = getStoredTZ()
+    setTz(detectedTz)
+    if (!localStorage.getItem(TZ_KEY)) {
+      setStoredTZ(detectedTz)
+    }
     try {
       // ── Reminders / favorites / onboarding ─────────────────────
       const stored = JSON.parse(localStorage.getItem('ts_reminders') ?? '[]')
@@ -1967,40 +1975,55 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   }, [liveEventsInList, orphanFixtures, reminders, liveScores])
 
   return (
-    <main className="max-w-[1280px] mx-auto px-4 sm:px-4 sm:px-6 xl:px-10 pb-24">
+    <main className="max-w-[1280px] mx-auto px-4 sm:px-6 xl:px-10 pb-28">
       {/* Header */}
-      <div className="relative pt-6 pb-5">
-        <div className="absolute -top-8 left-0 w-80 h-48 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at 20% 40%, rgba(124,58,237,0.07) 0%, transparent 70%)', filter: 'blur(16px)' }} />
+      <div className="relative pt-6 pb-4">
+        {/* Ambient glow */}
+        <div className="absolute -top-8 left-0 w-96 h-56 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at 15% 45%, rgba(124,58,237,0.09) 0%, transparent 70%)', filter: 'blur(20px)' }} />
 
-        <div className="relative mb-5">
-          <div className="flex items-center gap-2.5 mb-3">
-            <span className="block rounded-sm" style={{ width: 3, height: 14, background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
-            <span className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
-              Sección
-            </span>
+        <div className="relative flex items-end justify-between gap-4 mb-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="block rounded-sm" style={{ width: 3, height: 13, background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: '#5A5A74', fontFamily: 'var(--font-sport)' }}>
+                Agenda deportiva
+              </span>
+            </div>
+            <h1 className="font-black leading-none uppercase"
+              style={{ fontFamily: 'var(--font-headline)', fontSize: 'clamp(2rem, 5.5vw, 3rem)', color: '#F8F8FF', letterSpacing: '-0.01em' }}>
+              Calendario
+            </h1>
           </div>
-          <h1 className="font-black leading-none uppercase tracking-[0.02em]"
-            style={{ fontFamily: 'var(--font-headline)', fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', color: '#F8F8FF' }}>
-            Calendario
-          </h1>
-          <p className="text-[11px] mt-2 flex items-center gap-1.5 flex-wrap" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-            <span className="tabular-nums">{filtered.length}</span>
-            <span>evento{filtered.length !== 1 ? 's' : ''}</span>
+
+          {/* Stat chips — compact on mobile */}
+          <div className="flex items-center gap-2 flex-shrink-0 pb-1">
+            <div className="flex flex-col items-center px-3 py-1.5 rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <span className="text-[17px] font-black tabular-nums leading-none" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
+                {filtered.length}
+              </span>
+              <span className="text-[7.5px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
+                eventos
+              </span>
+            </div>
             {liveCount > 0 && (
-              <>
-                <span style={{ color: '#38384A' }}>·</span>
-                <span className="inline-flex items-center gap-1 tabular-nums" style={{ color: '#EF4444' }}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
-                  {liveCount} en vivo
+              <div className="flex flex-col items-center px-3 py-1.5 rounded-xl"
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                <span className="text-[17px] font-black tabular-nums leading-none flex items-center gap-1" style={{ color: '#EF4444', fontFamily: 'var(--font-display)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
+                  {liveCount}
                 </span>
-              </>
+                <span className="text-[7.5px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#7A2A2A', fontFamily: 'var(--font-sport)' }}>
+                  en vivo
+                </span>
+              </div>
             )}
-          </p>
+          </div>
         </div>
 
-        {/* Timezone — compacto en mobile, completo en sm+ */}
-        <div className="flex items-center gap-3 mb-3 sm:mb-5">
+        {/* Timezone */}
+        <div className="flex items-center gap-3 mb-3 sm:mb-4">
           <TimezoneSelector value={tz} onChange={(newTz) => { setTz(newTz); setStoredTZ(newTz) }} compact />
         </div>
 
