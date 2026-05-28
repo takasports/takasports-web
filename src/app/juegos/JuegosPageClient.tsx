@@ -180,8 +180,8 @@ const GAMES: Game[] = [
     name: 'Wrestling Fantasy',
     tagline: 'El fantasy del wrestling. Ya disponible.',
     description: 'Haz el draft de tus luchadores favoritos y compite cada semana. App independiente con comunidad propia.',
-    accent: '#FFD700',
-    accentDim: '#B8910D',
+    accent: '#FF3131',
+    accentDim: '#D2272F',
     status: 'live',
     externalLinks: {
       web:      'https://www.wrestlingfantasy.app',
@@ -600,14 +600,17 @@ function ComingGameCard({ game }: { game: Game }) {
 }
 
 // ── Partner app banner (Wrestling Fantasy, etc.) ─────────────
-// Banner horizontal full-width que comunica claramente que es una
-// app amiga con identidad propia, no parte del ecosistema Taka.
+// Banner horizontal full-width con la identidad visual real de la app.
+// El contraste de color con el ecosistema Taka comunica por sí solo
+// que es un producto independiente, sin necesidad de etiquetas.
+
+const WF_LOGO_URL = 'https://www.wrestlingfantasy.app/assets/assets/images/logo-white.92ba9cfc247518e00d04cd962c0434ce.png'
 
 function ExternalGameCard({ game }: { game: Game }) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const links = game.externalLinks!
-  const accent = game.accent       // '#FFD700'
-  const dim    = game.accentDim    // '#B8910D'
+  const accent = game.accent    // '#FF3131'
+  const dim    = game.accentDim // '#D2272F'
 
   const openSheet = () => setSheetOpen(true)
 
@@ -617,61 +620,50 @@ function ExternalGameCard({ game }: { game: Game }) {
       <div
         className="relative rounded-2xl overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #0E0900 0%, #130D00 55%, #0C0800 100%)',
-          border: `1.5px solid ${accent}28`,
-          boxShadow: `0 0 70px ${accent}0A, inset 0 1px 0 ${accent}18`,
+          background: 'linear-gradient(135deg, #1A0303 0%, #200505 40%, #1C0404 100%)',
+          border: `1.5px solid ${dim}45`,
+          boxShadow: `0 0 60px ${accent}0D, inset 0 1px 0 ${dim}25`,
         }}
       >
-        {/* Gold top stripe */}
+        {/* Red top stripe — su identidad cromática */}
         <div
           className="h-[2px] w-full"
           style={{ background: `linear-gradient(90deg, transparent 5%, ${dim} 25%, ${accent} 50%, ${dim} 75%, transparent 95%)` }}
         />
 
-        {/* Ambient glow */}
+        {/* Ambient glow — derecha arriba, izquierda abajo */}
         <div className="absolute inset-0 pointer-events-none" style={{
-          background: `radial-gradient(ellipse 60% 50% at 85% 30%, ${accent}07 0%, transparent 100%)`
+          background: `radial-gradient(ellipse 55% 55% at 90% 15%, ${accent}09 0%, transparent 100%)`
         }} />
         <div className="absolute inset-0 pointer-events-none" style={{
-          background: `radial-gradient(ellipse 40% 60% at 10% 70%, ${dim}05 0%, transparent 100%)`
+          background: `radial-gradient(ellipse 35% 50% at 5% 85%, ${dim}07 0%, transparent 100%)`
         }} />
-
-        {/* APP AMIGA badge — top-right */}
-        <div
-          className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full z-10"
-          style={{ background: `${accent}12`, border: `1px solid ${accent}30` }}
-        >
-          {/* External arrow icon */}
-          <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
-            <path d="M1.5 8.5L8.5 1.5M8.5 1.5H4M8.5 1.5v4.5" stroke={accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span
-            className="text-[8px] font-black uppercase tracking-widest"
-            style={{ color: accent, fontFamily: 'var(--font-sport)' }}
-          >
-            App amiga
-          </span>
-        </div>
 
         {/* Main content */}
         <div className="relative z-10 p-5 sm:p-6 flex flex-col sm:flex-row gap-5 sm:gap-6 sm:items-center">
 
-          {/* ── Icon + domain ── */}
-          <div className="flex-shrink-0 flex sm:flex-col items-center gap-4 sm:gap-2">
+          {/* ── Logo real + domain ── */}
+          <div className="flex-shrink-0 flex sm:flex-col items-center gap-4 sm:gap-2.5">
+            {/* Contenedor circular con su rojo exacto, como en su web */}
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
               style={{
-                background: `radial-gradient(circle, ${dim}35 0%, ${accent}10 100%)`,
-                border: `1.5px solid ${accent}45`,
-                boxShadow: `0 0 28px ${accent}22`,
-                color: accent,
+                background: `linear-gradient(145deg, ${accent}DD, ${dim})`,
+                boxShadow: `0 0 32px ${accent}30, 0 4px 16px ${dim}40`,
               }}
             >
-              <IconWrestlingFantasy size={38} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={WF_LOGO_URL}
+                alt="Wrestling Fantasy"
+                width={36}
+                height={36}
+                style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+              />
             </div>
             <span
               className="text-[9px] font-black"
-              style={{ color: `${accent}70`, fontFamily: 'var(--font-sport)', letterSpacing: '0.04em' }}
+              style={{ color: `${accent}65`, fontFamily: 'var(--font-sport)', letterSpacing: '0.04em' }}
             >
               wrestlingfantasy.app
             </span>
@@ -682,20 +674,20 @@ function ExternalGameCard({ game }: { game: Game }) {
             <div className="flex items-center gap-2 flex-wrap">
               <h3
                 className="font-black leading-tight"
-                style={{ fontFamily: 'var(--font-display)', color: '#F5F0DC', fontSize: 19, letterSpacing: '-0.01em' }}
+                style={{ fontFamily: 'var(--font-display)', color: '#FFF5F5', fontSize: 19, letterSpacing: '-0.01em' }}
               >
                 {game.name}
               </h3>
               <span
                 className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-                style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}38`, fontFamily: 'var(--font-sport)' }}
+                style={{ background: `${accent}18`, color: accent, border: `1px solid ${dim}45`, fontFamily: 'var(--font-sport)' }}
               >
                 {game.category}
               </span>
             </div>
             <p
               className="text-[9px] font-black uppercase tracking-widest"
-              style={{ color: dim, fontFamily: 'var(--font-sport)' }}
+              style={{ color: `${dim}CC`, fontFamily: 'var(--font-sport)' }}
             >
               {game.tagline}
             </p>
@@ -706,10 +698,10 @@ function ExternalGameCard({ game }: { game: Game }) {
             <div className="flex items-center gap-2.5 mt-1">
               <DifficultyDots level={game.difficulty} />
               <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
-              <span className="text-[9px]" style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>·</span>
+              <span className="text-[9px]" style={{ color: '#2A2A3A' }}>·</span>
               <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
-              <span className="text-[9px]" style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>·</span>
-              <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>App independiente</span>
+              <span className="text-[9px]" style={{ color: '#2A2A3A' }}>·</span>
+              <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>WWE · AEW · Triple AAA</span>
             </div>
           </div>
 
@@ -722,8 +714,8 @@ function ExternalGameCard({ game }: { game: Game }) {
               rel="noopener noreferrer"
               className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-[0.98]"
               style={{
-                background: `linear-gradient(135deg, ${dim}, ${accent}DD)`,
-                color: '#0A0800',
+                background: `linear-gradient(135deg, ${dim}, ${accent})`,
+                color: '#fff',
                 fontFamily: 'var(--font-sport)',
                 boxShadow: `0 4px 22px ${dim}55`,
                 letterSpacing: '0.05em',
@@ -731,7 +723,7 @@ function ExternalGameCard({ game }: { game: Game }) {
             >
               Ir a la web
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <path d="M1.5 8.5L8.5 1.5M8.5 1.5H4M8.5 1.5v4.5" stroke="#0A0800" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M1.5 8.5L8.5 1.5M8.5 1.5H4M8.5 1.5v4.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </a>
             {/* Secondary: App Store (mobile shows sheet, desktop links direct) */}
