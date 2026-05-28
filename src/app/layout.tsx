@@ -111,6 +111,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://site.api.espn.com" />
         <link rel="dns-prefetch" href="https://v3.football.api-sports.io" />
+        <link rel="alternate" type="application/rss+xml" title="TakaSports — Noticias deportivas" href="/rss.xml" />
       </head>
       <body className="min-h-full flex flex-col">
         <script
@@ -152,7 +153,7 @@ export default function RootLayout({
         <ConsentBanner gaId={GA_ID} clarityId={CLARITY_ID} />
         <script
           dangerouslySetInnerHTML={{
-            __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}) }) }`,
+            __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', () => { const reg = () => navigator.serviceWorker.register('/sw.js').catch(() => {}); 'requestIdleCallback' in window ? requestIdleCallback(reg) : setTimeout(reg, 2000) }) }`,
           }}
         />
       </body>

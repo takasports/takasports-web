@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, startTransition } from 'react'
 import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
@@ -455,10 +455,12 @@ export default function HeroBlock({ articles }: { articles: Article[] }) {
   const advance = useCallback(
     (dir: number = 1) => {
       if (len < 2) return
-      setVisible(false)
+      startTransition(() => { setVisible(false) })
       setTimeout(() => {
-        setOffset((o) => (o + dir + len) % len)
-        setVisible(true)
+        startTransition(() => {
+          setOffset((o) => (o + dir + len) % len)
+          setVisible(true)
+        })
       }, FADE_OUT + 40)
     },
     [len]
@@ -466,10 +468,12 @@ export default function HeroBlock({ articles }: { articles: Article[] }) {
 
   const goTo = useCallback((i: number) => {
     if (timerRef.current) clearInterval(timerRef.current)
-    setVisible(false)
+    startTransition(() => { setVisible(false) })
     setTimeout(() => {
-      setOffset(i)
-      setVisible(true)
+      startTransition(() => {
+        setOffset(i)
+        setVisible(true)
+      })
     }, FADE_OUT + 40)
   }, [])
 

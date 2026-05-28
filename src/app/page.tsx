@@ -134,6 +134,40 @@ export default async function Home({
   // Convertir slug de URL ('futbol') → label visual ('Fútbol') para el estado inicial
   const initialSport = sport ? (SLUG_TO_LABEL[sport.toLowerCase()] ?? '') : ''
 
+  // VideoObject JSON-LD: solo cuando tenemos reels reales de Sanity con datos suficientes
+  interface SanityReel {
+    _id: string
+    title?: string | null
+    instagram_url?: string | null
+    thumbnail?: { asset: { _ref: string } } | null
+    publishedAt?: string | null
+  }
+  const sanityReelsTyped = sanityReels as SanityReel[]
+  const videoReels = sanityReelsTyped.filter(
+    r => r.title && r.instagram_url && r.thumbnail?.asset,
+  )
+  const videoListJsonLd =
+    videoReels.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: 'Últimos reels — TakaSports',
+          itemListOrder: 'https://schema.org/ItemListOrderDescending',
+          numberOfItems: videoReels.length,
+          itemListElement: videoReels.map((r, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            item: {
+              '@type': 'VideoObject',
+              name: r.title,
+              contentUrl: r.instagram_url,
+              thumbnailUrl: urlFor(r.thumbnail!).width(640).height(640).url(),
+              ...(r.publishedAt ? { uploadDate: new Date(r.publishedAt).toISOString() } : {}),
+            },
+          })),
+        }
+      : null
+
   const itemListJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -170,6 +204,9 @@ export default async function Home({
         />
       )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
+      {videoListJsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoListJsonLd) }} />
+      )}
       <Header />
       <h1 className="sr-only">TakaSports — Noticias deportivas en tiempo real</h1>
       <BreakingNewsBar items={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />

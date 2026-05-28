@@ -44,15 +44,11 @@ export default function ConsentBanner({ gaId, clarityId }: Props) {
   }, [])
 
   const decide = (d: Decision) => {
-    try {
-      window.localStorage.setItem(
-        CONSENT_KEY,
-        JSON.stringify({ decision: d, at: new Date().toISOString(), version: 1 } satisfies StoredConsent),
-      )
-    } catch {
-      // Si localStorage está bloqueado (modo privado), persistimos en memoria de la SPA.
-    }
     setDecision(d)
+    const key = CONSENT_KEY
+    const value = JSON.stringify({ decision: d, at: new Date().toISOString(), version: 1 } satisfies StoredConsent)
+    const persist = () => { try { localStorage.setItem(key, value) } catch {} }
+    if ('requestIdleCallback' in window) { requestIdleCallback(persist) } else { setTimeout(persist, 0) }
   }
 
   const showBanner = decision === null

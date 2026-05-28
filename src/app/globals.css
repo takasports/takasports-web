@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Fallback font para Barlow Condensed — evita FOIT en conexiones lentas */
+@font-face {
+  font-family: 'Barlow Condensed Fallback';
+  src: local('Arial Narrow'), local('Arial'), local('Helvetica');
+  size-adjust: 93%;
+  ascent-override: 98%;
+  descent-override: 22%;
+}
+
 :root {
   /* Backgrounds */
   --bg-base: #09090F;
@@ -72,6 +81,7 @@ html {
 
 body {
   overflow-x: clip;
+  scrollbar-gutter: stable;
 }
 
 /* ── Safe-area insets (iOS notch / home indicator) ── */
