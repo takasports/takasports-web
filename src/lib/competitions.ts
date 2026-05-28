@@ -40,6 +40,31 @@ export const LEAGUE_IMPORTANCE: Record<string, number> = {
   'Premier': 11,
   'LaLiga': 11,
   'NBA': 11,
+  // Grand Slams — máxima importancia en tenis
+  'Wimbledon': 11,
+  'Roland Garros': 11,
+  'French Open': 11,
+  'US Open': 11,
+  'Australian Open': 11,
+  'Grand Slam': 11,
+  // Masters 1000 / WTA 1000
+  'Masters 1000': 9,
+  'ATP 1000': 9,
+  'WTA 1000': 9,
+  'Indian Wells': 9,
+  'Miami Open': 9,
+  'Madrid Open': 9,
+  'Rome': 9,
+  'Monte Carlo': 9,
+  'Cincinnati': 9,
+  'Canadian Open': 9,
+  'Shanghai Masters': 9,
+  'ATP Finals': 10,
+  'WTA Finals': 10,
+  'Davis Cup': 9,
+  'Billie Jean King': 9,
+  'Olympic': 10,
+  // Club football
   'Serie A': 10,
   'Bundesliga': 10,
   'F1': 9,
@@ -48,6 +73,9 @@ export const LEAGUE_IMPORTANCE: Record<string, number> = {
   'UFC': 8,
   'Ligue 1': 8,
   'Copa Rey': 7,
+  // ATP/WTA 500 y genéricos
+  'ATP 500': 7,
+  'WTA 500': 7,
   'Tenis': 6,
   'ATP': 6,
   'WTA': 6,
@@ -76,9 +104,11 @@ const MARQUEE_TEAMS = [
   // NBA — franquicias top
   'lakers', 'celtics', 'warriors', 'bulls', 'heat', 'nuggets',
   'thunder', 'mavericks', 'bucks', '76ers', 'suns', 'knicks',
-  // Tenis — top atletas
-  'alcaraz', 'sinner', 'djokovic', 'medvedev', 'zverev',
-  'swiatek', 'sabalenka', 'gauff',
+  // Tenis — top atletas (actualizado 2025-2026)
+  'alcaraz', 'sinner', 'djokovic', 'medvedev', 'zverev', 'rune',
+  'de minaur', 'fritz', 'ruud', 'musetti', 'tsitsipas', 'rublev',
+  'swiatek', 'sabalenka', 'gauff', 'paolini', 'rybakina',
+  'keys', 'navarro', 'pegula', 'andreeva', 'collins',
   // F1
   'verstappen', 'hamilton', 'leclerc', 'norris', 'sainz', 'alonso', 'piastri',
   // UFC marquee

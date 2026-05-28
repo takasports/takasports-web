@@ -64,7 +64,10 @@ function TeamLogo({ logo, name, size = 14 }: { logo?: string; name: string; size
 function short(name: string | null | undefined, abbr?: string): string {
   if (!name) return ''
   if (abbr) return abbr
-  return name.split(' ')[0].slice(0, 4)
+  // Use the last word — more recognizable for both teams ("Manchester City" → "City")
+  // and athletes ("Carlos Alcaraz" → "Alcaraz", "Lewis Hamilton" → "Hamilton")
+  const parts = name.trim().split(/\s+/)
+  return parts[parts.length - 1].slice(0, 9)
 }
 
 function Badge({ children, col }: { children: React.ReactNode; col: string }) {
@@ -105,6 +108,12 @@ function GenericLive({ fix, col }: { fix: LiveFixture; col: string }) {
 // ── Tenis: jugadores + sets (mapeamos goals → "sets" visualmente) ──
 
 function TennisLive({ fix, col }: { fix: LiveFixture; col: string }) {
+  // Pass sport context so getLiveLabel uses "Set N" instead of soccer labels
+  const setLabel = getLiveLabel(fix.status, fix.elapsed, {
+    sport: fix.sport,
+    homeScore: fix.homeGoals,
+    awayScore: fix.awayGoals,
+  })
   return (
     <>
       <span style={{ color: col, flexShrink: 0 }}>
@@ -116,14 +125,14 @@ function TennisLive({ fix, col }: { fix: LiveFixture; col: string }) {
       <span
         className="font-black tabular-nums text-[11px]"
         style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}
-        title="Sets"
+        title="Sets ganados"
       >
         {fix.homeGoals ?? 0} – {fix.awayGoals ?? 0}
       </span>
       <span className="text-[10px] font-semibold" style={{ color: '#B0B0C8', fontFamily: 'var(--font-sport)' }}>
         {short(fix.awayTeam, fix.awayAbbr)}
       </span>
-      <Badge col={col}>SETS · {getLiveLabel(fix.status, fix.elapsed)}</Badge>
+      <Badge col={col}>{setLabel}</Badge>
     </>
   )
 }

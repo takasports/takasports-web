@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { LiveEventCard, UpcomingEventCard, type LiveFixture, type UpcomingEvent } from '@/components/events/LiveEventCard'
 
-const FINISHED = new Set(['FT', 'NS', 'FINAL', 'STATUS_FINAL', 'STATUS_SCHEDULED',
-  'ABANDONED', 'WALKOVER', 'RETIRED', 'CANCELED', 'POSTPONED', 'SUSPENDED'])
+const FINISHED = new Set([
+  'FT', 'NS', 'FINAL', 'STATUS_FINAL', 'STATUS_SCHEDULED',
+  'ABANDONED', 'WALKOVER', 'RETIRED', 'CANCELED', 'POSTPONED', 'SUSPENDED',
+])
 
 function useRelativeTime(ts: number | null): string {
   const [label, setLabel] = useState('')
@@ -13,7 +15,7 @@ function useRelativeTime(ts: number | null): string {
     if (!ts) { setLabel(''); return }
     const update = () => {
       const diff = Math.floor((Date.now() - ts) / 1000)
-      if (diff < 60)       setLabel(`hace ${diff}s`)
+      if (diff < 60)        setLabel(`hace ${diff}s`)
       else if (diff < 3600) setLabel(`hace ${Math.floor(diff / 60)}m`)
       else                  setLabel(`hace ${Math.floor(diff / 3600)}h`)
     }
@@ -24,22 +26,31 @@ function useRelativeTime(ts: number | null): string {
   return label
 }
 
+// Separador vertical inline entre eventos
+function Sep() {
+  return (
+    <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.07)', flexShrink: 0, display: 'inline-block' }} />
+  )
+}
+
 export default function LiveStrip() {
-  const [liveFixtures,  setLiveFixtures]  = useState<LiveFixture[]>([])
-  const [recentResults, setRecentResults] = useState<LiveFixture[]>([])
-  const [upcoming,      setUpcoming]      = useState<UpcomingEvent[]>([])
-  const [hidden,        setHidden]        = useState(false)
-  const [fetchedAt,     setFetchedAt]     = useState<number | null>(null)
-  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
-  const lastYRef   = useRef(0)
+  const [liveFixtures, setLiveFixtures] = useState<LiveFixture[]>([])
+  const [upcoming,     setUpcoming]     = useState<UpcomingEvent[]>([])
+  const [hidden,       setHidden]       = useState(false)
+  const [fetchedAt,    setFetchedAt]    = useState<number | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const lastYRef = useRef(0)
 
   const fetchLive = useCallback(async () => {
     try {
       const res = await fetch('/api/events/live', { cache: 'no-store' })
       if (!res.ok) return
       const all: LiveFixture[] = await res.json()
-      // En vivo: excluir finalizados
+
+      // Solo eventos realmente en juego (excluir FT, NS, etc.)
       const live = all.filter(f => !FINISHED.has(f.status))
+
+      // Deduplicar por id → fallback a homeTeam|awayTeam
       const seen = new Set<string>()
       setLiveFixtures(live.filter(f => {
         const k = f.id || `${f.homeTeam}|${f.awayTeam}`
@@ -47,8 +58,6 @@ export default function LiveStrip() {
         seen.add(k)
         return true
       }))
-      // Resultados recientes: solo FT del día (máx 5)
-      setRecentResults(all.filter(f => f.status === 'FT').slice(0, 5))
       setFetchedAt(Date.now())
     } catch { /* ignore */ }
   }, [])
@@ -80,10 +89,8 @@ export default function LiveStrip() {
   }, [])
 
   // Polling con pausa cuando la pestaña no está visible.
-  // Reduce drasticamente function invocations al evitar fetches en segundo plano.
   useEffect(() => {
-    const nowLive = liveFixtures.length > 0
-    const interval = nowLive ? 30_000 : 300_000
+    const interval = liveFixtures.length > 0 ? 30_000 : 300_000
 
     const start = () => {
       if (timerRef.current) clearInterval(timerRef.current)
@@ -94,34 +101,22 @@ export default function LiveStrip() {
     }
     const onVisibility = () => {
       if (typeof document === 'undefined') return
-      if (document.visibilityState === 'visible') {
-        fetchLive(); fetchUpcoming()
-        start()
-      } else {
-        stop()
-      }
+      if (document.visibilityState === 'visible') { fetchLive(); fetchUpcoming(); start() }
+      else stop()
     }
 
-    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-      start()
-    }
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', onVisibility)
-    }
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') start()
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisibility)
     return () => {
       stop()
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', onVisibility)
-      }
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [liveFixtures.length, fetchLive, fetchUpcoming])
 
-  const isLive       = liveFixtures.length > 0
-  const hasResults   = !isLive && recentResults.length > 0
-  const ageLabel     = useRelativeTime(fetchedAt)
-  // Qué mostrar: live > resultados recientes > próximos
-  const stripMode: 'live' | 'results' | 'upcoming' =
-    isLive ? 'live' : hasResults ? 'results' : 'upcoming'
+  const isLive   = liveFixtures.length > 0
+  const ageLabel = useRelativeTime(fetchedAt)
+  // Prioridad: eventos en vivo > próximos destacados con hora
+  const stripMode: 'live' | 'upcoming' = isLive ? 'live' : 'upcoming'
 
   return (
     <div
@@ -141,32 +136,30 @@ export default function LiveStrip() {
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10">
         <div className="flex items-center h-10 gap-4 overflow-x-auto snap-strip" style={{ scrollbarWidth: 'none' }}>
 
-          {/* Label pill — live / resultados / próximo */}
+          {/* Label pill — EN VIVO / PRÓXIMO */}
           <div
             className="flex items-center gap-1.5 flex-shrink-0 px-2 py-0.5 rounded"
             style={
-              stripMode === 'live'
-                ? { background: 'rgba(74,222,128,0.12)',  border: '1px solid rgba(74,222,128,0.25)' }
-                : stripMode === 'results'
-                ? { background: 'rgba(251,146,60,0.12)',  border: '1px solid rgba(251,146,60,0.25)' }
-                : { background: 'rgba(124,58,237,0.12)',  border: '1px solid rgba(124,58,237,0.2)' }
+              isLive
+                ? { background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)' }
+                : { background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }
             }
           >
             <span
               className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
               style={{
-                background: stripMode === 'live' ? '#4ade80' : stripMode === 'results' ? '#fb923c' : '#7C3AED',
-                boxShadow:  stripMode === 'live' ? '0 0 6px #4ade80' : stripMode === 'results' ? '0 0 6px #fb923c' : '0 0 6px #7C3AED',
+                background: isLive ? '#4ade80' : '#7C3AED',
+                boxShadow:  isLive ? '0 0 6px #4ade80' : '0 0 6px #7C3AED',
               }}
             />
             <span
               className="text-[8px] font-black uppercase tracking-[0.2em]"
               style={{
-                color: stripMode === 'live' ? '#4ade80' : stripMode === 'results' ? '#fb923c' : '#9B6DB5',
+                color: isLive ? '#4ade80' : '#9B6DB5',
                 fontFamily: 'var(--font-sport)',
               }}
             >
-              {stripMode === 'live' ? 'En Vivo' : stripMode === 'results' ? 'Resultados' : 'Próximo'}
+              {isLive ? 'En Vivo' : 'Próximo'}
             </span>
           </div>
 
@@ -177,44 +170,13 @@ export default function LiveStrip() {
             {stripMode === 'live'
               ? liveFixtures.map((fix, i) => (
                   <div key={fix.id} className="flex items-center gap-3 flex-shrink-0">
-                    {i > 0 && (
-                      <span
-                        style={{
-                          width: 1, height: 14,
-                          background: 'rgba(255,255,255,0.07)',
-                          flexShrink: 0, display: 'inline-block',
-                        }}
-                      />
-                    )}
+                    {i > 0 && <Sep />}
                     <LiveEventCard fix={fix} />
                   </div>
                 ))
-              : stripMode === 'results'
-              ? recentResults.map((fix, i) => (
-                  <div key={fix.id} className="flex items-center gap-3 flex-shrink-0">
-                    {i > 0 && (
-                      <span
-                        style={{
-                          width: 1, height: 14,
-                          background: 'rgba(255,255,255,0.07)',
-                          flexShrink: 0, display: 'inline-block',
-                        }}
-                      />
-                    )}
-                    <LiveEventCard fix={fix} />
-                  </div>
-                ))
-              : upcoming.slice(0, 5).map((ev, i) => (
+              : upcoming.slice(0, 6).map((ev, i) => (
                   <div key={ev.id} className="flex items-center gap-3 flex-shrink-0">
-                    {i > 0 && (
-                      <span
-                        style={{
-                          width: 1, height: 14,
-                          background: 'rgba(255,255,255,0.07)',
-                          flexShrink: 0, display: 'inline-block',
-                        }}
-                      />
-                    )}
+                    {i > 0 && <Sep />}
                     <UpcomingEventCard ev={ev} />
                   </div>
                 ))
@@ -223,7 +185,7 @@ export default function LiveStrip() {
 
           {/* CTA + freshness */}
           <div className="ml-auto flex-shrink-0 flex items-center gap-2">
-            {ageLabel && (
+            {ageLabel && isLive && (
               <span
                 className="hidden md:block text-[8px] tabular-nums"
                 style={{ color: '#2A2A40', fontFamily: 'var(--font-sport)' }}

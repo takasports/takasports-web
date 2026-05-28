@@ -51,6 +51,9 @@ const TENNIS_SLUGS = ['tennis/atp', 'tennis/wta'] as const
 function mapStatus(espnStatus: string, sport: string, period?: number): string {
   if (espnStatus === 'STATUS_IN_PROGRESS') {
     if (sport === 'basketball') return period ? `Q${period}` : 'LIVE'
+    // Tennis has no halves/sets concept in status — use LIVE so downstream
+    // getLiveLabel can derive the set number from homeGoals+awayGoals instead.
+    if (sport === 'tennis') return 'LIVE'
     return '1H'
   }
   if (espnStatus === 'STATUS_HALFTIME')    return 'HT'

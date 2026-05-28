@@ -41,6 +41,9 @@ const SOURCES = [
   { slug: 'basketball/nba',         sport: 'basketball', comp: 'NBA'        },
   { slug: 'racing/f1',              sport: 'racing',     comp: 'F1'         },
   { slug: 'mma/ufc',                sport: 'mma',        comp: 'UFC'        },
+  // Tennis: ATP + WTA — aparece en el strip cuando no hay live
+  { slug: 'tennis/atp',             sport: 'tennis',     comp: 'ATP'        },
+  { slug: 'tennis/wta',             sport: 'tennis',     comp: 'WTA'        },
 ]
 
 function toTimeStr(isoDate: string): string {
@@ -70,6 +73,9 @@ function toDateLabel(isoDate: string): string | null {
 async function fetchUpcomingFromLeague(
   slug: string, sport: string, comp: string
 ): Promise<UpcomingEvent[]> {
+  // Tennis uses /events endpoint (not /scoreboard) — different structure
+  if (sport === 'tennis') return fetchUpcomingTennis(slug, comp)
+
   try {
     const res = await fetch(
       `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
@@ -149,6 +155,63 @@ async function fetchUpcomingFromLeague(
   }
 }
 
+// Tennis uses a different ESPN endpoint structure (ev.competitors vs competition.competitors).
+// Limit to 3 matches per tour to avoid flooding the strip.
+async function fetchUpcomingTennis(slug: string, comp: string): Promise<UpcomingEvent[]> {
+  try {
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/${slug}/events?limit=50`,
+      { next: { revalidate: 300 } }
+    )
+    if (!res.ok) return []
+    const json = await res.json()
+    const results: UpcomingEvent[] = []
+
+    for (const ev of json.events ?? []) {
+      const statusName: string = ev.fullStatus?.type?.name ?? ''
+      if (statusName !== 'STATUS_SCHEDULED') continue
+
+      const isoDate: string = ev.date ?? ''
+      if (!isoDate) continue
+
+      const dateLabel = toDateLabel(isoDate)
+      if (!dateLabel) continue
+
+      const competitors: Record<string, unknown>[] = ev.competitors ?? []
+      if (competitors.length < 2) continue
+
+      const homeTeam  = (competitors[0]?.displayName as string) ?? ''
+      const awayTeam  = (competitors[1]?.displayName as string) ?? null
+      const homeAbbr  = (competitors[0]?.abbreviation as string) ?? undefined
+      const awayAbbr  = (competitors[1]?.abbreviation as string) ?? undefined
+      const tournament = (ev.shortName as string) ?? comp
+
+      if (!homeTeam) continue
+
+      results.push({
+        id: String(ev.id),
+        homeTeam,
+        awayTeam,
+        time: toTimeStr(isoDate),
+        dateLabel,
+        sport: 'tennis',
+        comp: tournament,
+        matchRef: `${slug.replace('/', '_')}_${String(ev.id)}`,
+        isoDate,
+      })
+
+      // Limit to 3 matches per tour (ATP or WTA) to keep the strip clean
+      if (results.length >= 3) break
+    }
+
+    results.sort((a, b) => (a.isoDate ?? '').localeCompare(b.isoDate ?? ''))
+    return results
+  } catch (err) {
+    console.error(`[upcoming] ESPN tennis fetch failed for ${slug}:`, err)
+    return []
+  }
+}
+
 // Upcoming events: cambian poco. Cache edge 5min fresh + 15min stale.
 const UPCOMING_CACHE_HEADERS = {
   'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900',
@@ -179,16 +242,17 @@ export async function GET() {
       })
     }
 
-    // Sort: today first, then by time, capped at 8 events
-    const today    = all.filter(e => e.dateLabel === 'Hoy').slice(0, 5)
-    const tomorrow = all.filter(e => e.dateLabel === 'Mañana').slice(0, 3)
+    // Sort: today first, then tomorrow, then next days — capped at 10
+    // (the strip shows 6; the extra allows the client to do its own capping)
+    const today    = all.filter(e => e.dateLabel === 'Hoy').slice(0, 6)
+    const tomorrow = all.filter(e => e.dateLabel === 'Mañana').slice(0, 4)
     const rest     = all.filter(e => e.dateLabel !== 'Hoy' && e.dateLabel !== 'Mañana').slice(0, 3)
 
     const data = today.length > 0
-      ? today.slice(0, 8)
+      ? today.slice(0, 10)
       : tomorrow.length > 0
-        ? [...tomorrow, ...rest].slice(0, 8)
-        : rest.slice(0, 8)
+        ? [...tomorrow, ...rest].slice(0, 10)
+        : rest.slice(0, 10)
 
     cache = { data, ts: now }
     staleCache = cache
