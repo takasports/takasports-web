@@ -45,6 +45,13 @@ import type { GameId } from '@/lib/games-store'
 type GameStatus = 'active' | 'live' | 'coming'
 type Difficulty = 1 | 2 | 3
 
+/** Links externos para juegos que viven fuera de Taka (ej. Wrestling Fantasy) */
+interface ExternalLinks {
+  web: string
+  appStore?: string  // iOS App Store URL
+  playStore?: string // Google Play URL
+}
+
 interface Game {
   id: string
   name: string
@@ -54,6 +61,8 @@ interface Game {
   accentDim: string
   status: GameStatus
   href?: string
+  /** Si está presente, el juego es externo: en desktop abre la web, en móvil muestra sheet */
+  externalLinks?: ExternalLinks
   icon: React.ReactNode
   preview?: React.ReactNode
   format: string        // Semanal · Diario · Infinito
@@ -168,17 +177,20 @@ const GAMES: Game[] = [
   {
     id: 'wrestlingfantasy',
     name: 'Wrestling Fantasy',
-    tagline: 'Arma tu roster. Gana monedas.',
-    description: 'Haz el draft de tu equipo de luchadores y compite semanalmente. Gana monedas Taka por cada predicción correcta.',
-    accent: '#E879F9',
-    accentDim: '#A21CAF',
-    status: 'coming',
+    tagline: 'El fantasy del wrestling. Ya disponible.',
+    description: 'Haz el draft de tus luchadores favoritos y compite cada semana. App independiente con comunidad propia.',
+    accent: '#FFD700',
+    accentDim: '#B8910D',
+    status: 'live',
+    externalLinks: {
+      web:      'https://www.wrestlingfantasy.app',
+      appStore: 'https://apps.apple.com/es/app/wrestling-fantasy/id6761522844',
+    },
     icon: <IconWrestlingFantasy />,
     format: 'Semanal',
     category: 'Fantasy',
     difficulty: 2,
     timeEst: '~5 min',
-    releaseTarget: 'Q4 2026',
     pts: 300,
   },
   {
@@ -586,6 +598,208 @@ function ComingGameCard({ game }: { game: Game }) {
   )
 }
 
+// ── External game card (Wrestling Fantasy, etc.) ─────────────
+// Desktop: abre la web directamente.
+// Móvil: muestra un bottom sheet con opción web / descargar app.
+
+function ExternalGameCard({ game }: { game: Game }) {
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const links = game.externalLinks!
+
+  const handleClick = () => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+    if (isMobile && links.appStore) {
+      setSheetOpen(true)
+    } else {
+      window.open(links.web, '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  return (
+    <>
+      <button
+        onClick={handleClick}
+        className="group rounded-2xl overflow-hidden relative flex flex-col transition-all hover:translate-y-[-2px] w-full text-left"
+        style={{ background: 'var(--bg-card)', border: `1px solid ${game.accentDim}50` }}
+      >
+        <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${game.accentDim}, ${game.accent})` }} />
+        <div className="absolute top-0 right-0 w-36 h-36 blur-3xl opacity-[0.12] pointer-events-none" style={{ background: game.accent }} />
+
+        <div className="relative z-10 p-5 flex flex-col gap-4 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `${game.accentDim}28`, color: game.accent, border: `1px solid ${game.accentDim}50` }}
+            >
+              {game.icon}
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <span
+                className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1"
+                style={{ background: `${game.accentDim}20`, color: game.accent, border: `1px solid ${game.accentDim}40`, fontFamily: 'var(--font-sport)' }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: game.accent }} />
+                Disponible
+              </span>
+              <span
+                className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A5A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
+              >
+                {game.category}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1 flex-1">
+            <h3 className="font-black leading-tight" style={{ fontFamily: 'var(--font-display)', color: '#F0F0F5', fontSize: 17, letterSpacing: '-0.01em' }}>
+              {game.name}
+            </h3>
+            <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: game.accent, fontFamily: 'var(--font-sport)', opacity: 0.85 }}>
+              {game.tagline}
+            </p>
+            <p className="text-[11px] leading-relaxed mt-1" style={{ color: 'var(--text-muted)' }}>
+              {game.description}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+            <DifficultyDots level={game.difficulty} />
+            <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
+            <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>·</span>
+            <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
+            {/* Indicador app disponible */}
+            {links.appStore && (
+              <span className="ml-auto text-[9px] font-black flex items-center gap-1" style={{ color: `${game.accent}B0`, fontFamily: 'var(--font-sport)' }}>
+                📱 App iOS
+              </span>
+            )}
+          </div>
+
+          <span
+            className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-center transition-all group-hover:gap-3 inline-flex items-center justify-center gap-2"
+            style={{
+              background: `linear-gradient(135deg,${game.accentDim},${game.accent}CC)`,
+              color: '#0A0A14',
+              fontFamily: 'var(--font-sport)',
+              letterSpacing: '0.06em',
+              boxShadow: `0 4px 18px ${game.accentDim}50`,
+            }}
+          >
+            Jugar ahora
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="#0A0A14" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </div>
+      </button>
+
+      {/* Bottom sheet (móvil) */}
+      {sheetOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.70)', backdropFilter: 'blur(6px)' }}
+          onClick={() => setSheetOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-2xl overflow-hidden pb-safe"
+            style={{ background: 'var(--bg-card)', border: `1px solid ${game.accentDim}40` }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.12)' }} />
+            </div>
+
+            {/* Header */}
+            <div className="px-6 pt-3 pb-4" style={{ borderBottom: `1px solid ${game.accentDim}20` }}>
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${game.accentDim}28`, color: game.accent, border: `1px solid ${game.accentDim}40` }}
+                >
+                  {game.icon}
+                </div>
+                <div>
+                  <p className="font-black text-sm" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+                    {game.name}
+                  </p>
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                    ¿Cómo quieres acceder?
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Options */}
+            <div className="p-4 flex flex-col gap-3">
+              <a
+                href={links.web}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl transition-opacity hover:opacity-80"
+                style={{ background: `${game.accentDim}18`, border: `1px solid ${game.accentDim}40` }}
+                onClick={() => setSheetOpen(false)}
+              >
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${game.accentDim}30`, color: game.accent }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M8 1.5C6 4 5 6 5 8s1 4 3 6.5M8 1.5C10 4 11 6 11 8s-1 4-3 6.5M1.5 8h13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-black" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>Abrir en web</p>
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>wrestlingfantasy.app</p>
+                </div>
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                  <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }} />
+                </svg>
+              </a>
+
+              {links.appStore && (
+                <a
+                  href={links.appStore}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl transition-opacity hover:opacity-80"
+                  style={{ background: `linear-gradient(135deg, ${game.accentDim}28, ${game.accent}18)`, border: `1px solid ${game.accent}50` }}
+                  onClick={() => setSheetOpen(false)}
+                >
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: `${game.accentDim}40`, color: game.accent }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M11.5 8.5c0-2 1.5-3 1.5-3s-1-1.5-2.5-1.5c-1 0-2 .8-2.5.8-.5 0-1.5-.8-2.5-.8C3.5 4 2 5.5 2 7.5c0 3 2.5 6.5 4 6.5.7 0 1.3-.5 2-.5.7 0 1.2.5 2 .5 1.3 0 3.5-3 3.5-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M10 2c.5-.5 1-1.5.5-2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-black" style={{ color: game.accent, fontFamily: 'var(--font-display)' }}>Descargar en App Store</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>iPhone · iPad · Gratis</p>
+                  </div>
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke={game.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </a>
+              )}
+
+              <button
+                onClick={() => setSheetOpen(false)}
+                className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest mt-1"
+                style={{ background: 'rgba(255,255,255,0.04)', color: '#5A5A7A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
+              >
+                Cancelar
+              </button>
+            </div>
+
+            {/* safe area bottom */}
+            <div className="h-4" />
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 // ── Page ──────────────────────────────────────────────────────
 
 export default function JuegosPageClient() {
@@ -738,7 +952,9 @@ export default function JuegosPageClient() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {liveGames.map(game => (
-                <LiveGameCard key={game.id} game={game} />
+                game.externalLinks
+                  ? <ExternalGameCard key={game.id} game={game} />
+                  : <LiveGameCard key={game.id} game={game} />
               ))}
             </div>
           </section>
