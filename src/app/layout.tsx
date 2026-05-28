@@ -57,7 +57,14 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: SITE_URL,
-    languages: { 'x-default': SITE_URL },
+    // Hreflang: el mismo contenido sirve a toda la comunidad hispanohablante
+    // (España + Latinoamérica). No hay variantes regionales de URL.
+    languages: {
+      'x-default': SITE_URL,
+      'es':        SITE_URL,
+      'es-ES':     SITE_URL,
+      'es-419':    SITE_URL,  // Español Latinoamérica (Buenos Aires ya aparece en analytics)
+    },
   },
   verification: { google: ['LkOObyh0JeHucGf6NTELFcAQxFSMJrd2-9QoWVMM1g4', 'uciwyOWZbwp-GK4G0jKLxu6_FMuP5ZeptYObbCQxbJM'] },
   manifest: '/manifest.json',

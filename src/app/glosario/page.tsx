@@ -35,13 +35,39 @@ const SPORT_LABEL: Record<GlosarioSport, string> = {
   general: 'General',
 }
 
+const GLOSARIO_URL = `${SITE_URL}/glosario`
+
 const breadcrumbJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
-    { '@type': 'ListItem', position: 2, name: 'Glosario', item: `${SITE_URL}/glosario` },
+    { '@type': 'ListItem', position: 2, name: 'Glosario', item: GLOSARIO_URL },
   ],
+}
+
+// DefinedTermSet: el schema más específico para glosarios curados.
+// Permite que Google muestre los términos en Knowledge Panels y rich results.
+const definedTermSetJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'DefinedTermSet',
+  '@id': `${GLOSARIO_URL}/#termset`,
+  name: 'Glosario deportivo TakaSports',
+  description: 'Conceptos del fútbol, baloncesto, F1, tenis y otros deportes explicados de forma clara y breve.',
+  url: GLOSARIO_URL,
+  inLanguage: 'es-ES',
+  publisher: {
+    '@type': 'Organization',
+    name: 'TakaSports',
+    url: SITE_URL,
+  },
+  hasDefinedTerm: GLOSARIO_TERMS.map(t => ({
+    '@type': 'DefinedTerm',
+    name: t.term,
+    description: t.summary,
+    url: `${GLOSARIO_URL}/${t.slug}`,
+    inDefinedTermSet: `${GLOSARIO_URL}/#termset`,
+  })),
 }
 
 const itemListJsonLd = {
@@ -52,7 +78,7 @@ const itemListJsonLd = {
   itemListElement: GLOSARIO_TERMS.map((t, i) => ({
     '@type': 'ListItem',
     position: i + 1,
-    url: `${SITE_URL}/glosario/${t.slug}`,
+    url: `${GLOSARIO_URL}/${t.slug}`,
     name: t.term,
   })),
 }
@@ -69,6 +95,7 @@ export default function GlosarioIndexPage() {
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(definedTermSetJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       <Header />
 

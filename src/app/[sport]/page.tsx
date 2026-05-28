@@ -39,6 +39,12 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `${SITE_URL}/${sport}`,
+      languages: {
+        'x-default': `${SITE_URL}/${sport}`,
+        'es':        `${SITE_URL}/${sport}`,
+        'es-ES':     `${SITE_URL}/${sport}`,
+        'es-419':    `${SITE_URL}/${sport}`,
+      },
     },
     openGraph: {
       title: `${emoji} ${title} | TakaSports`,

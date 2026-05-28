@@ -509,6 +509,108 @@ export const GLOSARIO_TERMS: GlosarioTerm[] = [
     updatedAt: '2026-05-28',
   },
 
+  {
+    slug: 'que-es-el-trofeo-zamora',
+    term: 'Trofeo Zamora',
+    sport: 'futbol',
+    summary:
+      'El Trofeo Zamora es el premio que se entrega al portero con mejor promedio de goles encajados por partido en LaLiga al final de cada temporada, en honor a Ricardo Zamora, el mejor guardameta de la historia del fútbol español.',
+    body: [
+      'El Trofeo Zamora es uno de los galardones individuales más prestigiosos del fútbol español. Lo entrega el diario Marca desde la temporada 1958-1959 y rinde homenaje a Ricardo Zamora (1901-1978), considerado el mejor portero que ha dado España y uno de los más grandes de la historia del fútbol.',
+      '**Cómo se decide**',
+      'El portero ganador es el que tiene el menor promedio de goles encajados por partido al final de la temporada, siempre que haya jugado un mínimo de partidos (habitualmente el 60% de la temporada). Si dos porteros tienen el mismo promedio, se usa el número de partidos jugados como desempate.',
+      '**Récord histórico**',
+      'Víctor Valdés ganó el Zamora en seis ocasiones, la mayoría con el FC Barcelona entre 2005 y 2012. Iker Casillas lo ganó cuatro veces con el Real Madrid. En la era moderna, Jan Oblak (Atlético de Madrid) y Marc-André ter Stegen (FC Barcelona) han sido los dominadores del galardón.',
+    ],
+    related: ['que-es-un-pichichi', 'que-es-porteria-a-cero'],
+    updatedAt: '2026-05-28',
+  },
+  {
+    slug: 'que-es-el-balon-de-oro',
+    term: 'Balón de Oro',
+    sport: 'futbol',
+    summary:
+      'El Balón de Oro es el premio individual más prestigioso del fútbol, entregado cada año por la revista France Football al mejor jugador de la temporada según una votación de periodistas y capitanes de selecciones nacionales.',
+    body: [
+      'El Balón de Oro (Ballon d\'Or en francés) es el trofeo individual más icónico del mundo del fútbol. Lo entrega la revista France Football desde 1956, cuando el ganador fue el inglés Stanley Matthews. Desde 2010 hasta 2015 se fusionó con el FIFA Ballon d\'Or, pero en 2016 volvió a ser un premio independiente.',
+      '**Cómo se vota**',
+      'Vota una combinación de periodistas especializados de todo el mundo y, desde 2024, también capitanes y entrenadores de selecciones nacionales. Los criterios principales son el rendimiento individual, los títulos ganados con el club y la selección, y el impacto general en la temporada.',
+      '**Récords**',
+      'Lionel Messi es el ganador con más Balones de Oro en la historia, con 8 (2009-2012, 2015, 2019, 2021, 2023). Cristiano Ronaldo es el segundo con 5 (2008, 2013-2014, 2016-2017). Ningún otro jugador ha superado los tres galardones.',
+    ],
+    related: ['que-es-un-hat-trick', 'que-es-un-pichichi'],
+    updatedAt: '2026-05-28',
+  },
+  {
+    slug: 'que-es-un-corner',
+    term: 'Saque de esquina (corner)',
+    sport: 'futbol',
+    summary:
+      'El saque de esquina o corner se produce cuando el balón sale por la línea de fondo tras tocar a un defensor. El equipo atacante lanza el balón desde la esquina del campo más cercana.',
+    body: [
+      'El saque de esquina, conocido popularmente como corner (del inglés), es una de las jugadas a balón parado más frecuentes del fútbol. Se produce cuando el balón traspasa completamente la línea de fondo (la línea de gol) y el último jugador en tocarlo es un defensor.',
+      '**Cómo se ejecuta**',
+      'El jugador que lanza el corner coloca el balón dentro del cuadrante de esquina (un arco de un metro de radio marcado en cada esquina del campo) y lo golpea hacia el área. Los rivales deben estar a un mínimo de 9,15 metros del lanzador hasta que el balón entre en juego. Se puede marcar directamente de corner (se llama "gol de córner directo" o "olimpic goal"), aunque es muy infrecuente.',
+      '**Importancia táctica**',
+      'Los corners son una de las principales fuentes de gol en el fútbol moderno: se estima que entre el 10 y el 15% de los goles en las principales ligas europeas provienen de jugadas a balón parado, incluyendo corners. Los equipos con jugadores altos o buenos rematadores de cabeza sacan mayor partido de estas situaciones.',
+    ],
+    related: ['que-es-el-var', 'que-es-el-offside'],
+    updatedAt: '2026-05-28',
+  },
+  {
+    slug: 'que-es-un-tiro-libre',
+    term: 'Tiro libre (falta)',
+    sport: 'futbol',
+    summary:
+      'Un tiro libre es la sanción con la que se penaliza una falta en el fútbol: el equipo perjudicado lanza el balón desde el lugar donde se cometió la infracción, con los rivales situados a un mínimo de 9,15 metros.',
+    body: [
+      'El tiro libre (o "falta" en el lenguaje coloquial) es la forma más común de sancionar las infracciones en el fútbol. Existen dos tipos: el tiro libre directo (puede ir directamente a portería) y el tiro libre indirecto (el balón debe tocar a otro jugador antes de entrar en gol).',
+      '**Tiro libre directo vs. indirecto**',
+      'El tiro libre directo se concede por faltas físicas (patadas, empujones, cargas ilegales, manoseos). El indirecto se concede por infracciones técnicas como juego peligroso, obstaculizar al portero o el doble toque en saque de inicio. En la práctica, casi todos los tiros libres que se ven en televisión son directos.',
+      '**La barrera**',
+      'El equipo defensor puede formar una "barrera" de jugadores colocados a un mínimo de 9,15 metros del balón para bloquear el tiro. El número de jugadores en la barrera depende de la distancia y la zona; en tiros frontales cerca del área suelen ser entre tres y seis jugadores.',
+      '**Especialistas históricos**',
+      'Los mejores lanzadores de faltas de la historia incluyen a Ronaldinho, Roberto Carlos, Zidane, David Beckham y, en la era moderna, Lionel Messi y Cristiano Ronaldo. La parábola del disparo, el efecto y la velocidad son los tres factores decisivos para burlar la barrera y al portero.',
+    ],
+    related: ['que-es-la-panenka', 'que-es-el-var'],
+    updatedAt: '2026-05-28',
+  },
+  {
+    slug: 'que-es-una-tarjeta-roja',
+    term: 'Tarjeta roja',
+    sport: 'futbol',
+    summary:
+      'La tarjeta roja es la sanción más severa del fútbol: el árbitro la muestra cuando un jugador comete una infracción grave o acumula dos tarjetas amarillas, expulsándolo del partido sin posibilidad de ser sustituido.',
+    body: [
+      'La tarjeta roja representa la expulsión inmediata en el fútbol. Su uso se generalizó tras el Mundial de México 1970, donde el árbitro inglés Ken Aston ideó el sistema de tarjetas para que las decisiones disciplinarias fueran universalmente comprensibles más allá del idioma.',
+      '**Cuándo se muestra**',
+      'Un árbitro puede mostrar tarjeta roja directa por: entrada violenta con riesgo de lesión para el rival, agresión, escupir, evitar un gol claro con la mano (salvo el portero en su área), o insultos y gestos graves hacia árbitros o rivales. También se puede acumular con dos tarjetas amarillas en el mismo partido (la segunda amarilla implica automáticamente la roja).',
+      '**Consecuencias**',
+      'El jugador expulsado abandona el campo y su equipo queda con un jugador menos el resto del partido. Además, el jugador cumple una sanción de al menos un partido (que puede ampliarse según la gravedad), sin poder ser reemplazado por otro jugador en ese encuentro.',
+      '**El VAR y las expulsiones**',
+      'El VAR puede recomendar al árbitro revisar una jugada para emitir o retirar una tarjeta roja directa, pero no puede intervenir en las segundas amarillas ni en decisiones puramente disciplinarias (como insultos).',
+    ],
+    related: ['que-es-el-var', 'que-es-una-mano-en-area'],
+    updatedAt: '2026-05-28',
+  },
+  {
+    slug: 'que-es-un-penalti',
+    term: 'Penalti (penal)',
+    sport: 'futbol',
+    summary:
+      'El penalti es el máximo castigo del fútbol: un disparo a portería desde el punto de penalti (11 metros) frente al portero, concedido cuando se comete una infracción punible dentro del área.',
+    body: [
+      'El penalti (conocido también como "penal" en Latinoamérica) es la jugada más dramática del fútbol moderno. Se concede cuando un equipo comete una infracción sancionable con tiro libre directo dentro de su propia área de penalti, o cuando un defensor evita un gol seguro con la mano dentro del área.',
+      '**El punto de penalti**',
+      'El disparo se lanza desde el "punto de penalti", situado a 11 metros de la portería y marcado con un pequeño círculo en el centro del área grande. Solo el lanzador y el portero pueden estar dentro del área en el momento del disparo; el resto de jugadores espera fuera del área y del semicírculo.',
+      '**Estadísticas de conversión**',
+      'En el fútbol profesional, el porcentaje de penaltis convertidos ronda el 75-78%. Los porteros paran aproximadamente 1 de cada 5 penaltis. Los mejores especialistas en penaltis (Messi, Lewandowski, Jorginho) superan el 85% de conversión a lo largo de su carrera.',
+      '**La tanda de penaltis**',
+      'Cuando un partido de eliminatoria termina empate después de la prórroga, se resuelve con una tanda de penaltis: cada equipo lanza 5 penaltis alternativamente. Si persiste el empate, se pasa a la "muerte súbita" (cada equipo lanza uno a la vez hasta que uno falla y el otro convierte).',
+    ],
+    related: ['que-es-la-panenka', 'que-es-el-var', 'que-es-una-mano-en-area'],
+    updatedAt: '2026-05-28',
+  },
   // ─── UFC / MMA ────────────────────────────────────────────────────────────────
   {
     slug: 'que-es-un-ko-en-ufc',
@@ -562,6 +664,137 @@ export const GLOSARIO_TERMS: GlosarioTerm[] = [
       'No todos los luchadores priorizan las sumisiones. Los wrestlers suelen buscar el control posicional y el ground and pound, mientras que los especialistas en jiu-jitsu prefieren las finalizaciones en el suelo.',
     ],
     related: ['que-es-un-ko-en-ufc', 'que-es-un-tko-ufc'],
+    updatedAt: '2026-05-28',
+  },
+  // ─── BALONCESTO adicional ────────────────────────────────────────────────────
+  {
+    slug: 'que-es-un-mate-slam-dunk',
+    term: 'Mate (Slam Dunk)',
+    sport: 'baloncesto',
+    summary:
+      'Un mate o slam dunk es la acción de anotar en baloncesto introduciendo el balón con fuerza directamente en el aro desde arriba, con una o ambas manos, valiéndose del salto vertical del jugador.',
+    body: [
+      'El mate (slam dunk en inglés) es la jugada más espectacular del baloncesto. No solo vale dos puntos igual que una canasta ordinaria, sino que tiene un impacto psicológico enorme: electriza al público, desanima al rival y genera una de las imágenes más icónicas del deporte.',
+      '**Tipos de mate**',
+      'El mate más básico es el de una mano con carrerilla. Entre las variantes más espectaculares están: el windmill (el jugador hace un círculo completo con el brazo antes de clavar), el 360 (el cuerpo gira sobre el eje vertical durante el salto), el between-the-legs (pasa el balón entre las piernas antes de encestarlo) y el lob dunk, normalmente combinado con un alley-oop de un compañero.',
+      '**El Concurso de Mates del All-Star**',
+      'Desde 1984, la NBA celebra el Slam Dunk Contest en el All-Star Weekend, uno de los eventos más seguidos del baloncesto mundial. Ganadores legendarios: Michael Jordan (1987, 1988), Vince Carter (2000) y Zach LaVine (2015, 2016), cuyas actuaciones se consideran las más memorables de la historia del concurso.',
+      '**Jugadores conocidos por sus mates**',
+      'Dominique Wilkins, Julius Erving, Shawn Kemp, LeBron James y Ja Morant son algunos de los jugadores más identificados con el mate por su explosividad y creatividad aérea.',
+    ],
+    related: ['que-es-el-alley-oop', 'que-es-el-pick-and-roll'],
+    updatedAt: '2026-05-28',
+  },
+  {
+    slug: 'que-es-un-tapon-baloncesto',
+    term: 'Tapón (bloqueo) en baloncesto',
+    sport: 'baloncesto',
+    summary:
+      'Un tapón o bloqueo en baloncesto ocurre cuando un jugador defensor desvía o rechaza legalmente un tiro rival que todavía está en su trayectoria ascendente o en el punto más alto antes de descender.',
+    body: [
+      'El tapón (block en inglés) es el arte defensivo más espectacular del baloncesto. Requiere una combinación de timing, posición, envergadura y salto vertical para impedir que el balón entre en el aro sin cometer falta sobre el atacante.',
+      '**Cuándo es legal**',
+      'Un tapón es legal si el defensor toca el balón cuando aún está en fase de subida o en la cima de su parábola. Si el balón ya está descendiendo hacia la canasta o ya está "en el cilindro" (la proyección vertical del aro), tocarlo es goaltending (interferencia de canasta), que se sanciona concediendo los puntos al equipo atacante.',
+      '**Tapones históricos**',
+      'Bill Russell (Boston Celtics, años 60) es el mayor bloqueador defensivo de la historia de la NBA. En la era moderna, Dikembe Mutombo (cuatro veces máximo taponador de la liga) y su característico dedo índice agitado tras cada bloqueo son una de las imágenes más icónicas de la NBA. Anthony Davis y Brook Lopez son los taponadores más relevantes de la actualidad.',
+      '**Diferencia con el manotazo**',
+      'Un manotazo (swat) toca el balón de forma más explosiva y a menudo lo manda fuera de la pista, mientras que un tapón técnico trata de dirigir el rechazo hacia un compañero para iniciar la transición. Los mejores defensores intentan controlar la dirección del tapón.',
+    ],
+    related: ['que-es-el-pick-and-roll', 'que-es-la-defensa-en-zona'],
+    updatedAt: '2026-05-28',
+  },
+  {
+    slug: 'que-es-un-triple-baloncesto',
+    term: 'Triple (tiro de 3 puntos)',
+    sport: 'baloncesto',
+    summary:
+      'Un triple es un tiro anotado desde más allá de la línea de tres puntos, que vale 3 puntos en vez de 2. La distancia varía: 7,24 metros en la NBA y 6,75 metros en la FIBA y EuroLiga.',
+    body: [
+      'El triple (o tiro de tres puntos) ha transformado el baloncesto moderno. Su introducción en la NBA en 1979-1980 tardó décadas en adoptarse masivamente, pero desde los años 2010, el juego exterior se ha convertido en el centro de la estrategia ofensiva de la mayoría de equipos profesionales.',
+      '**La revolución del triple**',
+      'Los Golden State Warriors de Stephen Curry, Klay Thompson y Draymond Green lideraron la revolución del triple entre 2015 y 2022, batiendo récords de triples anotados por partido temporada tras temporada. En 2015-16, Stephen Curry promedió 5,1 triples por partido, rompiendo todos los registros históricos.',
+      '**La línea de tres**',
+      'En la NBA, la línea de tres puntos está a 7,24 metros del aro en los laterales y a 7,24 metros en el arco central. En la FIBA y la EuroLiga, la distancia es de 6,75 metros. Los "corner threes" (triples de esquina) son los más eficientes estadísticamente porque son los más cortos de la cancha.',
+      '**Estadísticas actuales**',
+      'En la temporada 2024-25 de la NBA, los equipos promediaron más de 35 intentos de triple por partido, comparado con menos de 10 en 1990. Stephen Curry es el líder histórico de triples en la NBA, superando a Ray Allen en 2021.',
+    ],
+    related: ['que-es-el-pick-and-roll', 'que-es-el-triple-doble'],
+    updatedAt: '2026-05-28',
+  },
+
+  // ─── F1 adicional ────────────────────────────────────────────────────────────
+  {
+    slug: 'que-es-la-vuelta-rapida-f1',
+    term: 'Vuelta rápida en Fórmula 1',
+    sport: 'f1',
+    summary:
+      'La vuelta rápida en F1 es el tiempo de vuelta más rápido de toda la carrera, logrado por cualquier piloto. Su autor recibe 1 punto adicional si termina entre los 10 primeros de la clasificación.',
+    body: [
+      'La vuelta rápida (fastest lap en inglés) es uno de los objetivos secundarios de una carrera de F1. Aunque no afecta al resultado directo, otorga 1 punto adicional al clasificatorio si el piloto que la consigue termina entre los 10 primeros, lo que puede ser determinante en batallas ajustadas por el campeonato.',
+      '**Cómo se logra**',
+      'Habitualmente, los equipos esperan a las últimas vueltas de la carrera para intentar la vuelta rápida, cuando el tráfico es menor y pueden montar el compuesto de neumáticos más blando (el más rápido pero el que más se desgasta). A veces un coche hace una parada extra solo para intentar la fastest lap, aunque arriesga perder posiciones si sale del pit lane detrás de rivales.',
+      '**Historia del punto por vuelta rápida**',
+      'El punto extra por vuelta rápida se reintrodujo en la F1 en 2019 (había existido entre 1950-1959 y de nuevo entre 1961-1963). Su impacto en el campeonato es limitado, pero añade un elemento estratégico extra en las últimas vueltas.',
+      '**Récords**',
+      'Lewis Hamilton y Michael Schumacher lideran el ranking histórico de vueltas rápidas en F1, con más de 40 cada uno. En circuitos como Monza o Spa, donde la velocidad punta es muy alta, los tiempos de vuelta rápida suelen batir récords de la pista.',
+    ],
+    related: ['que-es-el-pit-stop-f1', 'que-es-la-pole-position-f1'],
+    updatedAt: '2026-05-28',
+  },
+  {
+    slug: 'que-es-una-bandera-roja-f1',
+    term: 'Bandera roja en Fórmula 1',
+    sport: 'f1',
+    summary:
+      'La bandera roja en F1 detiene completamente la sesión de carrera o clasificación por razones de seguridad extrema: un accidente grave, condiciones de pista muy peligrosas u obstáculos que el safety car no puede resolver.',
+    body: [
+      'La bandera roja es la señal más drástica que puede mostrar la dirección de carrera en Fórmula 1. Cuando aparece, todos los pilotos deben reducir la velocidad y regresar al pit lane o a la línea de salida de forma ordenada. La sesión queda suspendida hasta que la pista esté en condiciones seguras.',
+      '**Cuándo se despliega**',
+      'La bandera roja se usa cuando un safety car no es suficiente para proteger la situación. Los motivos más frecuentes son: un accidente con el coche en medio de la pista, derrames de fluidos en zonas peligrosas, lluvia muy intensa que hace la pista intransitable, o daños graves en las protecciones de la pista (barreras, neumáticos).',
+      '**Qué ocurre con la carrera**',
+      'Cuando se interrumpe una carrera, el clasificador provisional en ese momento puede convertirse en el resultado final si el director de carrera no puede reiniciarse o si ya se han completado suficientes vueltas (el 75% de la distancia total para puntuar al 50%). Si la carrera se puede reanudar, los pilotos deben volver a la parrilla y se da una segunda salida.',
+      '**Impacto estratégico**',
+      'Las banderas rojas son uno de los grandes imponderables de la F1: los equipos aprovechan la interrupción para cambiar neumáticos o ajustar la configuración del coche sin perder tiempo de carrera. Ha habido casos donde una bandera roja ha dado la vuelta por completo al resultado.',
+    ],
+    related: ['que-es-el-safety-car-f1', 'que-es-el-pit-stop-f1'],
+    updatedAt: '2026-05-28',
+  },
+
+  // ─── TENIS adicional ────────────────────────────────────────────────────────
+  {
+    slug: 'que-es-un-break-de-saque',
+    term: 'Break de saque (tenis)',
+    sport: 'tenis',
+    summary:
+      'Un break de saque o simplemente "break" ocurre cuando el jugador que recibe gana un juego al sacador. Es el evento más decisivo de un set de tenis porque rompe la ventaja natural del saque.',
+    body: [
+      'El break (ruptura del saque) es el momento más importante de un set de tenis. Estadísticamente, el jugador que saca tiene una ventaja natural: controla el inicio del punto con su servicio. Ganar un juego al saque del rival (hacer un break) supone una ventaja enorme en el marcador.',
+      '**Break point**',
+      'Un "break point" es la situación en la que el que recibe tiene oportunidad de ganar el juego: es decir, que el marcador del juego sea favorable al receptor (40-0, 40-15, 40-30 o ventaja del receptor). Si el que recibe gana ese punto, hace el break. Si el sacador salva el break point, se dice que "salva el quiebre".',
+      '**Contrabreak**',
+      'Un contrabreak ocurre cuando el equipo que acaba de ser roto (que ha sufrido un break) rompe inmediatamente el saque del rival para restablecer el equilibrio. Es una de las respuestas más comunes en el tenis de alto nivel.',
+      '**Importancia estadística**',
+      'En el circuito ATP, los mejores sacadores convierten alrededor del 65-70% de sus juegos de saque. Jugadores como Goran Ivanisevic o John Isner son especialmente difíciles de romper gracias a su servicio. En cambio, en tierra batida (Roland Garros), el saque es menos determinante y los breaks son más frecuentes.',
+    ],
+    related: ['que-es-un-ace-tenis', 'que-es-el-tie-break'],
+    updatedAt: '2026-05-28',
+  },
+  {
+    slug: 'que-es-el-golden-slam',
+    term: 'Golden Slam (tenis)',
+    sport: 'tenis',
+    summary:
+      'El Golden Slam es el logro de ganar los cuatro Grand Slams y la medalla de oro olímpica en el mismo año natural. Solo lo ha conseguido Steffi Graf en 1988 y, en dobles, Serena Williams y Venus Williams.',
+    body: [
+      'El Golden Slam es el mayor logro posible en un año en el tenis individual. Va más allá del Grand Slam de calendario (ganar los 4 torneos grandes del año) al añadir la medalla de oro olímpica, que solo está disponible cada cuatro años.',
+      '**Steffi Graf, 1988**',
+      'La alemana Steffi Graf es la única jugadora que ha completado el Golden Slam en individuales. En 1988 ganó el Open de Australia, Roland Garros, Wimbledon, el US Open y la medalla de oro en los Juegos Olímpicos de Seúl. Ese año solo perdió 3 partidos en toda la temporada.',
+      '**Intentos fallidos**',
+      'Novak Djokovic tuvo la oportunidad histórica en 2021 de convertirse en el primer hombre en lograr el Golden Slam: ganó los tres primeros Grand Slams del año y llegó a los Juegos de Tokio como favorito, pero perdió en semifinales. Rafael Nadal y Roger Federer tampoco lo consiguieron nunca.',
+      '**En dobles**',
+      'Serena Williams y Venus Williams han completado el Golden Slam en dobles en múltiples ocasiones juntas. También lo han conseguido varias parejas masculinas y mixtas a lo largo de los años.',
+    ],
+    related: ['que-es-un-grand-slam', 'que-es-el-ranking-atp-wta'],
     updatedAt: '2026-05-28',
   },
 ]
