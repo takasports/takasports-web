@@ -30,6 +30,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { BADGES, getBadge } from './badges'
 import { sendPushToUser } from './push-helper'
+import { sendBadgeEmail } from './email-helper'
 
 // Copy para push de badge — solo los que más engagement generan.
 // El resto usan el genérico.
@@ -104,12 +105,14 @@ export async function awardBadges(
 
   result.awarded = toInsert
 
-  // ── Push notification (fire-and-forget) ──────────────────────────
-  // Enviamos push por cada badge recién ganado. No bloqueamos el return.
-  // Si el user no tiene suscripción push, sendPushToUser devuelve { sent: 0 } sin error.
+  // ── Notificaciones (fire-and-forget) ────────────────────────────
+  // Push → todos los badges nuevos.
+  // Email → solo epic y legendary (momentos de celebración, no spam).
   for (const badgeId of toInsert) {
     const def  = getBadge(badgeId)
     if (!def) continue
+
+    // Push
     const copy = BADGE_PUSH_COPY[badgeId] ?? {
       title: `${def.emoji} Badge desbloqueado`,
       body:  `Conseguiste "${def.name}". Visita tu perfil para verlo.`,
@@ -121,6 +124,17 @@ export async function awardBadges(
       tag:   `badge_${badgeId}`,
       topic: 'quiniela',
     })
+
+    // Email — solo para rarezas altas
+    if (def.rarity === 'epic' || def.rarity === 'legendary') {
+      void sendBadgeEmail({
+        userId,
+        badgeEmoji: def.emoji,
+        badgeName:  def.name,
+        badgeDesc:  def.description,
+        rarity:     def.rarity,
+      })
+    }
   }
 
   return result

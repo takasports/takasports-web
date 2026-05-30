@@ -633,7 +633,7 @@ export default function MundialClient() {
           )}
         </div>
 
-        {/* Puntos info strip */}
+        {/* Puntos info strip + share stats */}
         <div className="relative flex items-center gap-4 flex-wrap">
           {[
             { icon: '⚽', text: 'Resultado correcto', pts: '3 pts' },
@@ -659,6 +659,35 @@ export default function MundialClient() {
               </span>
             </div>
           ))}
+
+          {/* Compartir mis stats — solo cuando hay picks resueltos con puntos */}
+          {totalPts > 0 && (
+            <a
+              href={`/api/og/mundial-stats?picks=${myPicks}&correct=${Object.values(preds).filter(p => p.is_correct).length}&pts=${totalPts}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                marginLeft: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '5px 12px',
+                borderRadius: 8,
+                background: `${GOLD}12`,
+                border: `1px solid ${GOLD}28`,
+                color: GOLD_D,
+                fontSize: 9,
+                fontWeight: 900,
+                fontFamily: 'var(--font-sport)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.07em',
+                textDecoration: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              🖼 Compartir mis stats
+            </a>
+          )}
         </div>
       </div>
 
