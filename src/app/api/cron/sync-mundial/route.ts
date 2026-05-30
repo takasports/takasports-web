@@ -23,6 +23,7 @@ interface EspnCompetitor {
   homeAway:   string
   team:       { displayName: string; abbreviation: string }
   score?:     string | { value: number }
+  winner?:    boolean  // ESPN pone true en el equipo que avanza (penaltis / prórroga)
 }
 
 interface EspnStatusType {
@@ -64,16 +65,35 @@ function scoreToInt(s: string | { value: number } | undefined): number | null {
   return isNaN(n) ? null : n
 }
 
-function toWinner(homeScore: number | null, awayScore: number | null): '1' | 'X' | '2' | null {
+/**
+ * Determina el ganador del partido.
+ * Prioridad: flag `winner` de ESPN (cubre penaltis y prórroga donde los
+ * marcadores son iguales pero hay un avanzante), luego comparación de scores.
+ */
+function toWinner(
+  homeScore:  number | null,
+  awayScore:  number | null,
+  homeWinner: boolean | undefined,
+  awayWinner: boolean | undefined,
+): '1' | 'X' | '2' | null {
+  // Penaltis / prórroga: ESPN marca winner=true en el equipo que avanza.
+  if (homeWinner === true) return '1'
+  if (awayWinner === true) return '2'
+  // Partido normal: comparación de scores.
   if (homeScore == null || awayScore == null) return null
   if (homeScore > awayScore) return '1'
   if (awayScore > homeScore) return '2'
   return 'X'
 }
 
+// STATUS_FINAL_PEN / STATUS_FINAL_AET son los estados de ESPN para partidos
+// decididos en penaltis o prórroga. Sin ellos, los cruces de eliminatoria
+// nunca se marcarían como resueltos.
 const FINAL_STATUSES = new Set([
   'STATUS_FINAL', 'STATUS_FULL_TIME', 'STATUS_FT', 'STATUS_ENDED',
   'STATUS_FULL_TIME_ET', 'STATUS_PENALTY',
+  'STATUS_FINAL_PEN', 'STATUS_FINAL_AET', 'STATUS_FULL_TIME_AET',
+  'STATUS_EXTRA_TIME', 'STATUS_EXTRA_TIME_FINAL',
 ])
 
 // Partidos icónicos como "featured" (apertura, semifinales, final)
@@ -133,7 +153,7 @@ async function handle(req: Request) {
 
     const homeScore = scoreToInt(home.score)
     const awayScore = scoreToInt(away.score)
-    const winner    = isResolved ? toWinner(homeScore, awayScore) : null
+    const winner    = isResolved ? toWinner(homeScore, awayScore, home.winner, away.winner) : null
 
     const eventId = `wc26-espn-${ev.id}`
 
