@@ -14,10 +14,11 @@ export const metadata: Metadata = {
     type: 'website',
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'Predicciones | TakaSports',
-    site: '@takasportsx',
+    card:  'summary_large_image',
+    title: 'Mundial 2026 — Predice en TakaSports',
+    site:  '@takasportsx',
   },
+  // opengraph-image.tsx en este directorio genera la imagen automáticamente.
 }
 
 export default function PrediccionesLayout({ children }: { children: React.ReactNode }) {
