@@ -3,10 +3,21 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+export interface PorraTopMatch {
+  home: string
+  away: string
+  comp: string
+  kickoff: string
+  homeLogo?: string
+  awayLogo?: string
+  odds?: { home: number; draw: number; away: number }
+}
+
 export interface PorraStatus {
   jornada: string | null
   deadline: string | null
   totalMatches: number
+  topMatches?: PorraTopMatch[]
   isAuthed: boolean
   hasPicked: boolean
   picksCount: number

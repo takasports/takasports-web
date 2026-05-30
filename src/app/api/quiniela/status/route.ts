@@ -26,6 +26,11 @@ export async function GET(req: NextRequest) {
   let jornada: string | null = null
   let deadline: string | null = null
   let totalMatches = 0
+  let topMatches: Array<{
+    home: string; away: string; comp: string; kickoff: string;
+    homeLogo?: string; awayLogo?: string;
+    odds?: { home: number; draw: number; away: number };
+  }> = []
   try {
     const r = await fetch(`${origin}/api/quiniela`, {
       // Reaprovecha el cache del proceso; no fuerza revalidación.
@@ -35,13 +40,23 @@ export async function GET(req: NextRequest) {
     if (r.ok) {
       const data = (await r.json()) as QuinielaData
       jornada = data.jornada
-      totalMatches = data.matches?.length ?? 0
+      const matches = data.matches ?? []
+      totalMatches = matches.length
       // Deadline = kickoff más temprano de la jornada.
-      const earliest = (data.matches ?? [])
-        .map((m) => m.isoDate)
-        .filter(Boolean)
-        .sort()[0]
-      deadline = earliest ?? null
+      const sorted = [...matches].sort((a, b) =>
+        (a.isoDate ?? '').localeCompare(b.isoDate ?? ''),
+      )
+      deadline = sorted[0]?.isoDate ?? null
+      // Top 3 partidos por orden cronológico para el hero.
+      topMatches = sorted.slice(0, 3).map((m) => ({
+        home: m.home,
+        away: m.away,
+        comp: m.comp,
+        kickoff: m.isoDate,
+        homeLogo: m.homeLogo,
+        awayLogo: m.awayLogo,
+        odds: m.odds,
+      }))
     }
   } catch {
     // Silencioso — el CTA tiene fallback estático en cliente.
@@ -77,6 +92,7 @@ export async function GET(req: NextRequest) {
       jornada,
       deadline,
       totalMatches,
+      topMatches,
       isAuthed,
       hasPicked,
       picksCount,
