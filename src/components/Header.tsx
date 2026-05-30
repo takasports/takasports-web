@@ -353,6 +353,65 @@ function SearchIcon() {
   )
 }
 
+// ── Level chip (XP compacto en el header) ───────────────────
+interface LevelData {
+  level:      number
+  levelName:  string
+  levelColor: string
+  progress:   number   // 0–1
+  xp:         number
+  xpToNext:   number
+}
+
+function LevelChip({ data }: { data: LevelData }) {
+  const pct = Math.round(data.progress * 100)
+  return (
+    <Link
+      href="/perfil"
+      aria-label={`Nivel ${data.level} — ${data.levelName}`}
+      style={{ textDecoration: 'none' }}
+      className="hidden md:flex flex-col items-center gap-1 px-2 py-1 rounded-lg transition-opacity hover:opacity-80 flex-shrink-0"
+    >
+      {/* Nivel + nombre */}
+      <div className="flex items-center gap-1">
+        <span
+          className="text-[9px] font-black tabular-nums leading-none"
+          style={{ color: data.levelColor, fontFamily: 'var(--font-sport)', letterSpacing: '0.04em' }}
+        >
+          L{data.level}
+        </span>
+        <span
+          className="text-[8px] font-semibold leading-none hidden lg:inline"
+          style={{ color: data.levelColor, opacity: 0.75, fontFamily: 'var(--font-sport)', maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        >
+          {data.levelName}
+        </span>
+      </div>
+      {/* Barra XP */}
+      <div
+        style={{
+          width: 48,
+          height: 3,
+          background: 'rgba(255,255,255,0.07)',
+          borderRadius: 999,
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            height: '100%',
+            width: `${pct}%`,
+            background: data.levelColor,
+            borderRadius: 999,
+            boxShadow: `0 0 6px ${data.levelColor}90`,
+            transition: 'width 0.6s ease',
+          }}
+        />
+      </div>
+    </Link>
+  )
+}
+
 // ── Header principal ─────────────────────────────────────────
 export default function Header() {
   const pathname = usePathname()
@@ -360,6 +419,7 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [levelData, setLevelData] = useState<LevelData | null>(null)
 
   useEffect(() => { setMenuOpen(false) }, [pathname])
 
@@ -372,6 +432,26 @@ export default function Header() {
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  // Fetch level data cuando hay sesión
+  useEffect(() => {
+    if (!user) { setLevelData(null); return }
+    fetch('/api/quiniela/me', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { level?: number; levelName?: string; levelColor?: string; progress?: number; xp?: number; xpToNext?: number } | null) => {
+        if (d && d.level != null) {
+          setLevelData({
+            level:      d.level,
+            levelName:  d.levelName  ?? '',
+            levelColor: d.levelColor ?? '#A78BFA',
+            progress:   d.progress   ?? 0,
+            xp:         d.xp         ?? 0,
+            xpToNext:   d.xpToNext   ?? 0,
+          })
+        }
+      })
+      .catch(() => {/* silencioso */})
+  }, [user])
 
   useEffect(() => {
     document.body.style.overflow = (menuOpen || searchOpen) ? 'hidden' : ''
@@ -462,6 +542,9 @@ export default function Header() {
             >
               <SearchIcon />
             </button>
+
+            {/* Level + XP chip — solo para usuarios autenticados */}
+            {user && levelData && <LevelChip data={levelData} />}
 
             {user ? (
               <Link
