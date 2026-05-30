@@ -113,13 +113,13 @@ export default function AuthModal({ onClose }: AuthModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[200] flex items-start sm:items-center justify-center p-4 overflow-y-auto"
       style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)' }}
       onClick={onClose}
     >
       <div
         ref={modalRef}
-        className="relative w-full"
+        className="relative w-full my-auto"
         style={{ maxWidth: 400, borderRadius: 24 }}
         onClick={e => e.stopPropagation()}
         onTouchStart={onTouchStart}
