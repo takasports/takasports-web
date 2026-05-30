@@ -80,15 +80,13 @@ export async function GET() {
     .maybeSingle()
   const balance = balRow?.balance ?? 0
 
-  // Lifetime positive coins (para XP). RLS en quiniela_coin_txns
-  // limita a self → no podemos sumar todas si admin no estuviera,
-  // pero auth.uid() = user.id → ok.
-  const { data: txns } = await sb
-    .from('quiniela_coin_txns')
+  // Lifetime positivo en point_transactions (fuente universal de puntos Taka)
+  const { data: ptRows } = await sb
+    .from('point_transactions')
     .select('amount')
     .eq('user_id', user.id)
     .gt('amount', 0)
-  const lifetimePositive = (txns ?? []).reduce(
+  const lifetimePts = (ptRows ?? []).reduce(
     (sum, t) => sum + (t.amount as number), 0,
   )
 
@@ -119,7 +117,7 @@ export async function GET() {
   const unlockedDefs = [...unlockedCatalog, ...unlockedSpecials]
 
   const xp = computeXp({
-    lifetimePositiveCoins: lifetimePositive,
+    lifetimePts,
     badgesCount: unlockedDefs.length,
   })
   const levelInfo = computeLevel(xp)

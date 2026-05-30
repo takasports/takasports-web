@@ -1,26 +1,23 @@
 // ─────────────────────────────────────────────────────────────────
-// Levels — fórmula XP → Level para el sistema de progresión.
+// Levels — fórmula XP → Level para el sistema de progresión Taka.
 //
 // Diseño:
-//   · XP es lifetime (nunca decrece), derivado de:
-//     - Suma de monedas POSITIVAS acreditadas (lifetime, ledger).
-//     - +200 XP por cada badge desbloqueado (recompensa de hito).
-//   · Levels son escalonados — los primeros niveles se suben rápido
-//     (gancho de onboarding), después el ritmo se aplana.
-//   · El level es puramente cosmético: NO da ventajas mecánicas. Es
-//     status. Esto evita que el sistema se sienta pay-to-win cuando
-//     introduzcamos tienda.
+//   · XP = puntos Taka acumulados lifetime (sum de point_transactions.amount > 0)
+//          + 200 XP por cada badge desbloqueado.
+//   · Los puntos son universales: vienen de ranked, quiniela,
+//     streak milestones, juegos diarios, etc.
+//   · El level es puramente cosmético — NO da ventajas mecánicas.
 //
-// Tabla:
-//   L1 Novato       0
-//   L2 Apostador    500
-//   L3 Quinielero   1500
-//   L4 Pronosticador 3500
-//   L5 Tahúr        7500
-//   L6 Crack        15000
-//   L7 Maestro      30000
-//   L8 Leyenda      60000
-//   L9 Mito         100000
+// Tabla de niveles:
+//   L1 Novato          0
+//   L2 Aficionado      500
+//   L3 Pronosticador   1500
+//   L4 Analista        3500
+//   L5 Experto         7500
+//   L6 Crack           15000
+//   L7 Maestro         30000
+//   L8 Leyenda         60000
+//   L9 Mito            100000
 // ─────────────────────────────────────────────────────────────────
 
 export interface LevelDef {
@@ -32,10 +29,10 @@ export interface LevelDef {
 
 export const LEVELS: LevelDef[] = [
   { level: 1, name: 'Novato',         minXp: 0,      color: '#94a3b8' },
-  { level: 2, name: 'Apostador',      minXp: 500,    color: '#60a5fa' },
-  { level: 3, name: 'Quinielero',     minXp: 1500,   color: '#22d3ee' },
-  { level: 4, name: 'Pronosticador',  minXp: 3500,   color: '#34d399' },
-  { level: 5, name: 'Tahúr',          minXp: 7500,   color: '#a78bfa' },
+  { level: 2, name: 'Aficionado',     minXp: 500,    color: '#60a5fa' },
+  { level: 3, name: 'Pronosticador',  minXp: 1500,   color: '#22d3ee' },
+  { level: 4, name: 'Analista',       minXp: 3500,   color: '#34d399' },
+  { level: 5, name: 'Experto',        minXp: 7500,   color: '#a78bfa' },
   { level: 6, name: 'Crack',          minXp: 15000,  color: '#f97316' },
   { level: 7, name: 'Maestro',        minXp: 30000,  color: '#ef4444' },
   { level: 8, name: 'Leyenda',        minXp: 60000,  color: '#fbbf24' },
@@ -55,7 +52,6 @@ export interface LevelInfo {
 
 export function computeLevel(xp: number): LevelInfo {
   const safe = Math.max(0, Math.floor(xp))
-  // Encontrar el nivel actual (último cuyo minXp <= safe)
   let currentIdx = 0
   for (let i = LEVELS.length - 1; i >= 0; i--) {
     if (safe >= LEVELS[i].minXp) { currentIdx = i; break }
@@ -74,11 +70,11 @@ export function computeLevel(xp: number): LevelInfo {
 
 /**
  * Calcula XP total de un user dados los inputs del ledger + badges.
- * Mantenido como pure function para facilitar testing.
+ * XP = suma de puntos positivos en point_transactions + bonus por badges.
  */
 export function computeXp(opts: {
-  lifetimePositiveCoins: number  // suma de txns con amount > 0
+  lifetimePts: number    // SUM(amount) WHERE amount > 0 FROM point_transactions
   badgesCount: number
 }): number {
-  return Math.max(0, Math.floor(opts.lifetimePositiveCoins) + opts.badgesCount * XP_PER_BADGE)
+  return Math.max(0, Math.floor(opts.lifetimePts) + opts.badgesCount * XP_PER_BADGE)
 }

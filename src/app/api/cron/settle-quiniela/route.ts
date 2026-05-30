@@ -208,32 +208,30 @@ async function handle(req: Request) {
 
       // Refund de partidos cancelados
       if (totalRefunded > 0) {
-        await admin.rpc('add_coins', {
-          p_amount:  totalRefunded,
-          p_reason:  `Quiniela ${row.jornada}: devolución por partidos anulados`,
-          p_context: { source: 'quiniela_refund_auto', jornada: row.jornada, totalRefunded },
+        await admin.rpc('award_points', {
           p_user_id: row.user_id,
+          p_amount:  totalRefunded,
+          p_sport:   'futbol',
+          p_source:  'quiniela_refund',
+          p_reason:  `Quiniela ${row.jornada}: devolución por partidos anulados`,
+          p_context: { jornada: row.jornada, totalRefunded },
         })
       }
 
       // Acreditación de ganancias
       if (totalWon > 0) {
         const reason = `Quiniela ${row.jornada}: ${breakdown.hits}/${savedPicks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`
-        const { error: coinErr } = await admin.rpc('add_coins', {
-          p_amount:  totalWon,
-          p_reason:  reason,
-          p_context: {
-            source:  'quiniela_settle_auto',
-            jornada: row.jornada,
-            hits:    breakdown.hits,
-            pleno:   breakdown.pleno,
-            totalWon,
-          },
+        const { error: ptErr } = await admin.rpc('award_points', {
           p_user_id: row.user_id,
+          p_amount:  totalWon,
+          p_sport:   'futbol',
+          p_source:  'quiniela_settle',
+          p_reason:  reason,
+          p_context: { jornada: row.jornada, hits: breakdown.hits, pleno: breakdown.pleno, totalWon },
         })
-        if (coinErr) {
-          errors.push(`user ${row.user_id} jornada ${row.jornada}: ${coinErr.message}`)
-          continue  // no marcar settled si falló la acreditación
+        if (ptErr) {
+          errors.push(`user ${row.user_id} jornada ${row.jornada}: ${ptErr.message}`)
+          continue
         }
       }
 

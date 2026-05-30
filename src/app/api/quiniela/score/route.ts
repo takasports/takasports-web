@@ -359,40 +359,33 @@ export async function POST(req: NextRequest) {
         if (!adminSbSettle) {
           return NextResponse.json({ error: 'service_unavailable' }, { status: 503 })
         }
-        const { error: refundErr } = await adminSbSettle.rpc('add_coins', {
-          p_amount: totalRefunded,
-          p_reason: refundReason,
-          p_context: {
-            source: 'quiniela_refund',
-            jornada: body.jornada,
-            cancelledCount: breakdown.cancelledCount,
-            totalRefunded,
-          },
+        const { error: refundErr } = await adminSbSettle.rpc('award_points', {
           p_user_id: user.id,
+          p_amount:  totalRefunded,
+          p_sport:   'futbol',
+          p_source:  'quiniela_refund',
+          p_reason:  refundReason,
+          p_context: { jornada: body.jornada, cancelledCount: breakdown.cancelledCount, totalRefunded },
         })
         if (refundErr) {
           return NextResponse.json({ error: 'refund_failed', detail: refundErr.message }, { status: 500 })
         }
       }
 
-      // Acreditar ganancias si las hay. Una sola llamada add_coins.
+      // Acreditar ganancias si las hay. Una sola llamada award_points.
       if (totalWon > 0) {
         const reason = `Quiniela ${body.jornada}: ${breakdown.hits}/${persistedPicks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`
         const adminSbCredit = adminSupabase()
         if (!adminSbCredit) {
           return NextResponse.json({ error: 'service_unavailable' }, { status: 503 })
         }
-        const { error: creditErr } = await adminSbCredit.rpc('add_coins', {
-          p_amount: totalWon,
-          p_reason: reason,
-          p_context: {
-            source: 'quiniela_settle',
-            jornada: body.jornada,
-            hits: breakdown.hits,
-            pleno: breakdown.pleno,
-            totalWon,
-          },
+        const { error: creditErr } = await adminSbCredit.rpc('award_points', {
           p_user_id: user.id,
+          p_amount:  totalWon,
+          p_sport:   'futbol',
+          p_source:  'quiniela_settle',
+          p_reason:  reason,
+          p_context: { jornada: body.jornada, hits: breakdown.hits, pleno: breakdown.pleno, totalWon },
         })
         if (creditErr) {
           // No marcamos settled si la acreditación falló — el cliente
