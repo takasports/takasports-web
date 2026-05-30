@@ -307,7 +307,7 @@ function MatchCard({
               active={isActive}
               correct={isCorrect || isWinRow}
               wrong={isWrong}
-              disabled={!isOpen || !!myPick || submitting}
+              disabled={!isOpen || submitting}
               onClick={() => onPick(event.id, p.val)}
             />
           )
@@ -482,13 +482,15 @@ export default function MundialClient() {
       if (!res.ok) throw new Error('error')
       const data = await res.json() as { prediction?: { event_id: string; prediction: { pick: '1'|'X'|'2' } } }
       if (data.prediction) {
+        // Actualiza el pick en el estado local (insert o update)
         setPreds(prev => ({
           ...prev,
           [eventId]: {
+            ...(prev[eventId] ?? {}),
             event_id:       eventId,
             prediction:     data.prediction!.prediction,
-            points_awarded: null,
-            is_correct:     null,
+            points_awarded: prev[eventId]?.points_awarded ?? null,
+            is_correct:     prev[eventId]?.is_correct     ?? null,
           },
         }))
       }

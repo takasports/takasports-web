@@ -87,51 +87,65 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'event_closed', status: (event as { status: string }).status }, { status: 409 })
   }
 
-  // Verificar que NO hay predicción previa (no se puede cambiar)
+  // ¿Ya existe predicción para este partido?
   const { data: existing } = await sb
     .from('ranked_predictions')
-    .select('id')
+    .select('id, prediction')
     .eq('user_id', user.id)
     .eq('event_id', body.event_id)
     .maybeSingle()
 
+  // ── Cambio de pick (el evento sigue open) ────────────────────────
+  // Si ya hay predicción y el partido aún no ha empezado, permitimos
+  // actualizarla. Los badges NO se re-disparan en actualizaciones.
   if (existing) {
-    return NextResponse.json({ error: 'already_predicted' }, { status: 409 })
+    const { data: updated, error: updateErr } = await sb
+      .from('ranked_predictions')
+      .update({ prediction: { pick: body.pick } })
+      .eq('user_id', user.id)
+      .eq('event_id', body.event_id)
+      .select()
+      .single()
+
+    if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+    return NextResponse.json({ prediction: updated, updated: true }, { status: 200 })
   }
 
-  // Insertar predicción
+  // ── Primera predicción para este partido ─────────────────────────
   const { data: prediction, error } = await sb
     .from('ranked_predictions')
     .insert({
-      user_id:   user.id,
-      event_id:  body.event_id,
+      user_id:    user.id,
+      event_id:   body.event_id,
       prediction: { pick: body.pick },
     })
     .select()
     .single()
 
   if (error) {
-    // 23505 = unique_violation: la DB tiene UNIQUE(user_id, event_id).
-    // Si dos requests simultáneos pasan el check "already_predicted" y ambos
-    // intentan insertar, uno fallará con 23505. Devolvemos 409 en vez de 500.
+    // 23505 = unique_violation: race condition entre dos requests simultáneos.
+    // Reintentamos como update (el pick ya quedó guardado por el otro request).
     if (error.code === '23505') {
-      return NextResponse.json({ error: 'already_predicted' }, { status: 409 })
+      const { data: fallback } = await sb
+        .from('ranked_predictions')
+        .update({ prediction: { pick: body.pick } })
+        .eq('user_id', user.id)
+        .eq('event_id', body.event_id)
+        .select()
+        .single()
+      return NextResponse.json({ prediction: fallback, updated: true }, { status: 200 })
     }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // ── Badges post-pick (fire-and-forget) ──────────────────────────
-  // Chequeamos primera predicción global + primera predicción del Mundial.
-  // Ambos checks van juntos para hacer una sola query de conteo.
+  // ── Badges — solo en primera inserción ──────────────────────────
   try {
     const eventSport = (event as { sport?: string }).sport ?? ''
 
     const [{ count: totalCount }, { count: mundialCount }] = await Promise.all([
-      // Total de picks en cualquier deporte
       sb.from('ranked_predictions')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id),
-      // Picks en Mundial (solo si aplica)
       eventSport === 'mundial'
         ? sb.from('ranked_predictions')
             .select('id', { count: 'exact', head: true })
@@ -148,7 +162,6 @@ export async function POST(req: NextRequest) {
 
     const earned = badgesEarnedOnRankedPick({ isFirstPick })
     if (isFirstMundial) earned.push('mundialista_2026')
-
     if (earned.length > 0) await awardBadges(sb, user.id, earned)
   } catch { /* badge fallo — nunca bloquea la respuesta */ }
 
