@@ -1132,6 +1132,33 @@ export default function PerfilPage() {
             {/* Tu actividad en TakaSports (datos Supabase, failsafe si no hay) */}
             <MyGamesActivity />
 
+            {/* Cerrar sesión — al final del perfil para que sea fácil de encontrar */}
+            {user && (
+              <section className="mt-8 mb-4 flex justify-center">
+                <button
+                  onClick={handleSignOut}
+                  className="inline-flex items-center gap-2 transition-all hover:brightness-110 active:scale-[0.98]"
+                  style={{
+                    color: '#f87171',
+                    fontFamily: 'var(--font-sport)',
+                    background: 'rgba(239,68,68,0.08)',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    cursor: 'pointer',
+                    padding: '12px 24px',
+                    borderRadius: 14,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M8 3.5V2.5a1 1 0 00-1-1H2.5a1 1 0 00-1 1v9a1 1 0 001 1H7a1 1 0 001-1v-1M5.5 7h7m0 0L10.5 5m2 2L10.5 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Cerrar sesión
+                </button>
+              </section>
+            )}
+
           </div>
         </div>
 
