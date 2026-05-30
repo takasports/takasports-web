@@ -668,7 +668,7 @@ export const QUESTIONS: QuizQuestion[] = [
   },
   {
     id: 'q070',
-    question: '¿De qué club es hincha confeso Zinedine Zidane desde su infancia?',
+    question: '¿De qué club es seguidor declarado Zinedine Zidane desde su infancia?',
     options: ['PSG', 'Olympique de Marsella', 'Monaco', 'Lyon'],
     correctIndex: 1,
     category: 'jugadores',

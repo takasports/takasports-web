@@ -315,7 +315,7 @@ export const RANKING_JUGADORES: RankingEntry[] = [
   {
     id: 'bellingham', rank: 24, name: 'Jude Bellingham', subtitle: 'Real Madrid · Centrocampista',
     sport: 'futbol', score: 81.0, trend: 'down', region: 'europa',
-    insight: 'Temporada irregular con el Madrid de Arbeloa tras el caos del banquillo. Líder en cancha pese a la inestabilidad del proyecto.',
+    insight: 'Temporada irregular con el Madrid de Arbeloa tras el caos del banquillo. Líder sobre el césped pese a la inestabilidad del proyecto.',
     emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', league: 'laliga', position: 'centrocampista',
     image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/25th_Laureus_World_Sports_Awards_-_Red_Carpet_-_Jude_Bellingham_-_240422_190551-2_%28cropped%29.jpg/330px-25th_Laureus_World_Sports_Awards_-_Red_Carpet_-_Jude_Bellingham_-_240422_190551-2_%28cropped%29.jpg',
     scorePrev: 84.1, trendReason: 'Madrid en crisis con tres entrenadores en una temporada — Bellingham acusa la inestabilidad',
