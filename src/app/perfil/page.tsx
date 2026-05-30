@@ -554,10 +554,21 @@ export default function PerfilPage() {
                   )}
                   <button
                     onClick={handleSignOut}
-                    className="text-[10px] transition-opacity hover:opacity-70"
-                    style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    className="text-[11px] font-semibold transition-all hover:brightness-110 active:scale-[0.97] inline-flex items-center gap-1.5"
+                    style={{
+                      color: '#f87171',
+                      fontFamily: 'var(--font-sport)',
+                      background: 'rgba(239,68,68,0.08)',
+                      border: '1px solid rgba(239,68,68,0.25)',
+                      cursor: 'pointer',
+                      padding: '4px 10px',
+                      borderRadius: 999,
+                    }}
                   >
-                    Cerrar sesión →
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                      <path d="M7 3V2a1 1 0 00-1-1H2a1 1 0 00-1 1v8a1 1 0 001 1h4a1 1 0 001-1V9M5 6h6m0 0L9 4m2 2L9 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Cerrar sesión
                   </button>
                 </div>
               ) : (
