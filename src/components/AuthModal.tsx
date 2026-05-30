@@ -137,6 +137,9 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             background: 'linear-gradient(160deg,#1A0030 0%,#110020 50%,#07000E 100%)',
             border: '1px solid rgba(124,58,237,0.32)',
             borderRadius: 24,
+            maxHeight: 'calc(100dvh - 2rem)',
+            display: 'flex',
+            flexDirection: 'column',
             overflow: 'hidden',
           }}
         >
@@ -194,7 +197,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
           </div>
 
           {/* Body */}
-          <div className="px-6 pb-6 flex flex-col gap-3">
+          <div className="px-6 pb-6 flex flex-col gap-3" style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
             {error && (
               <p
                 className="text-[11px] text-center px-3 py-2 rounded-xl"
