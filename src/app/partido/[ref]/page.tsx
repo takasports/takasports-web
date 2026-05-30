@@ -1325,11 +1325,15 @@ export default async function MatchPage({
       : match.statusLabel,
     url: `${SITE_URL}/partido/${ref}`,
     inLanguage: 'es-ES',
+    isAccessibleForFree: true,
+    ...(match.startDate ? { startDate: match.startDate } : {}),
     eventStatus: STATUS_MAP[match.status] ?? 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     organizer: { '@type': 'SportsOrganization', name: match.leagueLabel },
-    ...(match.venue && {
-      location: { '@type': 'Place', name: match.venue },
-    }),
+    location: {
+      '@type': 'Place',
+      name: match.venue ?? `${match.leagueLabel} — sede por confirmar`,
+    },
     ...(match.homeTeam && match.awayTeam && {
       competitor: [
         {

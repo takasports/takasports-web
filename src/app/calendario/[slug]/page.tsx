@@ -141,10 +141,11 @@ export default async function CompetitionCalendarPage({
         name,
         startDate: e.isoDate ?? undefined,
         eventStatus: 'https://schema.org/EventScheduled',
-        eventAttendanceMode: 'https://schema.org/MixedEventAttendanceMode',
-        location: e.venue
-          ? { '@type': 'Place', name: e.venue }
-          : { '@type': 'VirtualLocation', url: SITE_URL },
+        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+        location: {
+          '@type': 'Place',
+          name: e.venue ?? `${comp.displayName} — sede por confirmar`,
+        },
         description: [e.comp, e.stage].filter(Boolean).join(' · ') || undefined,
         sport: e.sport,
         ...(isTeamMatch

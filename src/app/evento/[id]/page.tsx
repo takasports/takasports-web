@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { sanityClient, eventDetailQuery, relatedByEventQuery, urlFor } from '@/lib/sanity'
 import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
@@ -113,8 +114,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title,
     description,
     alternates: { canonical: `${SITE_URL}/evento/${id}` },
-    openGraph: { title, description, type: 'website', url: `${SITE_URL}/evento/${id}`, siteName: 'TakaSports', locale: 'es_ES' },
-    twitter:   { card: 'summary_large_image', title, description, site: '@takasportsx', creator: '@takasportsx' },
+    openGraph: {
+      title, description, type: 'website',
+      url: `${SITE_URL}/evento/${id}`, siteName: 'TakaSports', locale: 'es_ES',
+      images: [{ url: LOGO_URL, width: 1200, height: 630, alt: SITE_NAME, type: 'image/png' }],
+    },
+    twitter:   { card: 'summary_large_image', title, description, site: '@takasportsx', creator: '@takasportsx', images: [LOGO_URL] },
+    robots:    { index: true, follow: true },
   }
 }
 
@@ -148,10 +154,11 @@ function RelatedArticleCard({ article }: { article: RelatedArticle }) {
       <div className="flex gap-3 p-3 rounded-xl transition-all hover:brightness-110"
         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
         {img && (
-          <img src={img} alt={article.title}
+          <Image src={img} alt={article.title}
             width={80} height={54}
             className="rounded-lg flex-shrink-0 object-cover"
-            style={{ width: 80, height: 54 }} />
+            style={{ width: 80, height: 54 }}
+            unoptimized />
         )}
         <div className="flex flex-col gap-1 min-w-0 justify-center">
           <p className="text-[12px] font-bold leading-snug line-clamp-2"
@@ -199,19 +206,25 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
   const eventStatusMap: Record<string, string> = {
     programado: 'https://schema.org/EventScheduled',
     en_vivo:    'https://schema.org/EventScheduled',
-    finalizado: 'https://schema.org/EventCancelled',
+    finalizado: 'https://schema.org/EventCompleted',
   }
+  const locationName = event.venue
+    ?? (event.competition?.name ? `${event.competition.name} — sede por confirmar` : 'Sede por confirmar')
   const sportsEventJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
     name: event.away ? `${event.home} vs ${event.away}` : event.home,
+    description: [event.competition?.name ?? sportLabel, event.stage, dateStr, event.venue].filter(Boolean).join(' · '),
     startDate: event.date,
     url: `${SITE_URL}/evento/${id}`,
     sport: sportLabel,
+    inLanguage: 'es-ES',
+    isAccessibleForFree: true,
     eventStatus: eventStatusMap[event.status ?? 'programado'] ?? 'https://schema.org/EventScheduled',
-    ...(event.venue ? { location: { '@type': 'Place', name: event.venue } } : {}),
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    location: { '@type': 'Place', name: locationName },
     ...(event.competition ? {
-      organizer: { '@type': 'Organization', name: event.competition.name },
+      organizer: { '@type': 'SportsOrganization', name: event.competition.name },
       superEvent: { '@type': 'SportsEvent', name: event.competition.name },
     } : {}),
     ...(event.away ? {
@@ -222,9 +235,20 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
     } : {}),
   }
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Calendario', item: `${SITE_URL}/calendario` },
+      { '@type': 'ListItem', position: 3, name: event.away ? `${event.home} vs ${event.away}` : event.home, item: `${SITE_URL}/evento/${id}` },
+    ],
+  }
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }} className="flex flex-col">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEventJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <Header />
       <LiveStrip />
 

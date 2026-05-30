@@ -105,9 +105,23 @@ export default async function NoticiasPageN({
     ],
   }
 
+  const itemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Noticias deportivas — Página ${page}`,
+    numberOfItems: articles.length,
+    itemListElement: articles.map((a, i) => ({
+      '@type': 'ListItem',
+      position: from + i + 1,
+      url: `${SITE_URL}/noticias/${a.slug ?? a._id}`,
+      name: a.title,
+    })),
+  }
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       {/* Señalización rel=prev/next para crawlers (Bing/Yandex la usan; Google ignora pero no daña) */}
       <link rel="prev" href={prevHref(page)} />
       {hasNext && <link rel="next" href={`${SITE_URL}/noticias/pagina/${page + 1}`} />}

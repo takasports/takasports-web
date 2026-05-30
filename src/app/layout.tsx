@@ -82,6 +82,7 @@ export const metadata: Metadata = {
     locale: 'es_ES',
     type: 'website',
     url: SITE_URL,
+    images: [{ url: LOGO_URL, width: 1200, height: 630, alt: 'TakaSports — Noticias deportivas', type: 'image/png' }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -89,6 +90,7 @@ export const metadata: Metadata = {
     description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario y juegos.',
     site: '@takasportsx',
     creator: '@takasportsx',
+    images: [LOGO_URL],
   },
 }
 

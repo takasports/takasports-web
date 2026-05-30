@@ -10,11 +10,32 @@ import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
-  title: 'Archivo de noticias — Buscador histórico | TakaSports',
-  description: 'Busca y filtra todo el archivo histórico de noticias deportivas de TakaSports por palabra clave, deporte y rango de fechas.',
-  alternates: { canonical: `${SITE_URL}/archivo` },
-  robots: { index: true, follow: true },
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; sport?: string; rango?: string; from?: string; to?: string }>
+}): Promise<Metadata> {
+  const sp = await searchParams
+  const q = sp.q?.trim().slice(0, 60)
+  const sport = sp.sport?.trim().slice(0, 20)
+  const parts: string[] = []
+  if (q) parts.push(`"${q}"`)
+  if (sport) parts.push(sport)
+  if (sp.from || sp.to) parts.push(`${sp.from ?? '…'} → ${sp.to ?? '…'}`)
+  const suffix = parts.length ? ` — ${parts.join(' · ')}` : ''
+  const title = `Archivo de noticias${suffix} | TakaSports`
+  const description = q || sport
+    ? `Resultados del archivo de noticias deportivas filtrados${q ? ` por "${q}"` : ''}${sport ? ` en ${sport}` : ''}.`
+    : 'Busca y filtra todo el archivo histórico de noticias deportivas de TakaSports por palabra clave, deporte y rango de fechas.'
+  // Canonical apunta a /archivo limpio: las combinaciones filtradas no deben generar URLs canónicas únicas
+  return {
+    title,
+    description,
+    alternates: { canonical: `${SITE_URL}/archivo` },
+    robots: q || sport || sp.from || sp.to
+      ? { index: false, follow: true }
+      : { index: true, follow: true },
+  }
 }
 
 const sanity = createClient({
