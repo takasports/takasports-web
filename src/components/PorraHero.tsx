@@ -106,12 +106,18 @@ function MatchRow({ m }: { m: PorraTopMatch }) {
 }
 
 export default function PorraHero() {
-  const [status, setStatus] = useState<PorraStatus | null>(() => readCache())
+  // Arranca null en SSR/hidratación inicial. Carga real en useEffect para
+  // evitar hydration mismatch (Date.now y sessionStorage solo en cliente).
+  const [status, setStatus] = useState<PorraStatus | null>(null)
   const [, setTick] = useState(0)
 
   useEffect(() => {
-    if (status) return
     let cancelled = false
+    const cached = readCache()
+    if (cached) {
+      setStatus(cached)
+      return
+    }
     fetch('/api/quiniela/status', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: PorraStatus | null) => {
@@ -121,7 +127,7 @@ export default function PorraHero() {
       })
       .catch(() => { /* silencioso */ })
     return () => { cancelled = true }
-  }, [status])
+  }, [])
 
   useEffect(() => {
     if (!status?.deadline) return

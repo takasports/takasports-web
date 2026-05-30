@@ -170,12 +170,17 @@ interface Props {
 }
 
 export default function PorraCTA({ href, active, variant, onNavigate }: Props) {
-  const [status, setStatus] = useState<PorraStatus | null>(() => readCache())
+  // IMPORTANT: status arranca null en SSR y en hidratación inicial para evitar
+  // mismatch React. La lectura de sessionStorage y el fetch viven en useEffect.
+  const [status, setStatus] = useState<PorraStatus | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    // Si ya hay cache válido, no refetcheamos.
-    if (status) return
+    const cached = readCache()
+    if (cached) {
+      setStatus(cached)
+      return
+    }
     fetch('/api/quiniela/status', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: PorraStatus | null) => {
@@ -185,7 +190,7 @@ export default function PorraCTA({ href, active, variant, onNavigate }: Props) {
       })
       .catch(() => { /* silencioso — fallback al estado guest */ })
     return () => { cancelled = true }
-  }, [status])
+  }, [])
 
   // Re-render cada 60s para que el contador "CIERRA 2H 14M" baje.
   const [, setTick] = useState(0)

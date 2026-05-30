@@ -17,7 +17,10 @@ import type { QuinielaData } from '@/app/api/quiniela/route'
 export const dynamic = 'force-dynamic'
 
 interface PicksRow {
-  picks: { picks?: Array<{ pick?: string }> } | null
+  picks: {
+    picks?: Array<{ pick?: string }>
+    staked?: boolean
+  } | null
 }
 
 export async function GET(req: NextRequest) {
@@ -78,9 +81,14 @@ export async function GET(req: NextRequest) {
           .eq('user_id', user.id)
           .eq('jornada', jornada)
           .maybeSingle<PicksRow>()
-        const arr = data?.picks?.picks ?? []
-        picksCount = Array.isArray(arr) ? arr.filter((p) => !!p?.pick).length : 0
-        hasPicked = picksCount > 0
+        // Solo cuenta como "ya jugado" si la jornada está sellada (staked=true).
+        // Las filas con picks tentativos sin sellar NO bloquean el CTA "TE FALTA".
+        const staked = data?.picks?.staked === true
+        if (staked) {
+          const arr = data?.picks?.picks ?? []
+          picksCount = Array.isArray(arr) ? arr.filter((p) => !!p?.pick).length : 0
+          hasPicked = picksCount > 0
+        }
       }
     }
   } catch {
