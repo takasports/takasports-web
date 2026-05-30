@@ -40,20 +40,20 @@ export const ONBOARDING_STEPS: { emoji: string; title: string; body: string; hin
   },
   {
     emoji: '💰',
-    title: 'Apostá tus monedas',
-    body: 'Decidí cuántas monedas apostar en cada pick (entre 1 y 200). Si aciertas, ganás stake × cuota. Si fallás, perdés el stake. Apostar a una cuota alta paga mucho más, pero es más arriesgado.',
-    hint: 'Default 10🪙 por pick · podés bajarlo o subirlo en el panel «Tu apuesta».',
+    title: 'Apostá tus puntos',
+    body: 'Decidí cuántos puntos apostar en cada pick (entre 1 y 200). Si aciertas, ganás stake × cuota. Si fallás, perdés el stake. Apostar a una cuota alta paga mucho más, pero es más arriesgado.',
+    hint: 'Default 10 pts por pick · podés bajarlo o subirlo en el panel «Tu apuesta».',
   },
   {
     emoji: '⚽',
     title: 'Goleador del partido destacado',
-    body: 'Cada jornada hay 1 partido destacado (el de mayor calidad). Podés elegir gratis quién marcará gol ahí: si tu jugador anota recibís bonus extra — 100🪙 si marca 1, 200🪙 si marca 2, 350🪙 si hace hat-trick.',
+    body: 'Cada jornada hay 1 partido destacado (el de mayor calidad). Podés elegir gratis quién marcará gol ahí: si tu jugador anota recibís bonus extra — 100 pts si marca 1, 200 pts si marca 2, 350 pts si hace hat-trick.',
     hint: 'No cuesta nada participar · el partido destacado se autoselecciona cada jornada.',
   },
   {
     emoji: '🏆',
     title: 'Liga general + amigos',
-    body: 'En el Ranked competís contra todos por monedas acumuladas. En ligas privadas armás un grupo con amigos por código/link y compiten por puntos internos (sin apuesta).',
-    hint: 'Los juegos diarios (CrackQuiz, Mi Once, Sopa de Cracks) también te dan monedas para usar en el Ranked.',
+    body: 'En el Ranked competís contra todos por puntos acumulados. En ligas privadas armás un grupo con amigos por código/link y compiten por puntos internos (sin apuesta).',
+    hint: 'Los juegos diarios (CrackQuiz, Mi Once, Sopa de Cracks) también te dan puntos Taka en el Ranked.',
   },
 ]

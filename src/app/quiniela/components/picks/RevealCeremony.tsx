@@ -235,9 +235,8 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
               const coinsEarned = scored * 10 + (scored === total && total > 0 ? 100 : 0)
               return coinsEarned > 0 ? (
                 <div className="mt-4 flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)' }}>
-                  <span style={{ fontSize: 18 }}>🪙</span>
                   <span className="font-black" style={{ fontSize: 18, color: '#fbbf24', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
-                    +{coinsEarned} monedas
+                    +{coinsEarned} pts
                   </span>
                   {scored === total && total > 0 && (
                     <span className="text-[9px] font-black px-2 py-0.5 rounded-full ml-1" style={{ background: 'rgba(251,191,36,0.2)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.4)', fontFamily: 'var(--font-sport)' }}>

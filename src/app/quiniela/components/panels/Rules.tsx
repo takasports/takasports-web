@@ -18,10 +18,10 @@ export function Rules() {
       {open && (
         <div className="px-5 pb-5 flex flex-col gap-2.5" style={{ borderTop: '1px solid var(--border)' }}>
           {[
-            'Elige 1 (local), X (empate) o 2 (visitante) en cada partido. Cada acierto suma +10🪙.',
+            'Elige 1 (local), X (empate) o 2 (visitante) en cada partido. Cada acierto suma +10 pts.',
             'Toca la 👑 de una tarjeta para hacerla capitán: si aciertas ese pick, los puntos se doblan (solo 1 por jornada).',
-            'Opcional: sube la confianza de un pick (Seguro ×1.5 · ¡Clave! ×2) o acierta el marcador exacto (+50🪙).',
-            'Acertar todos los partidos de la jornada: +100🪙 de bonus (pleno).',
+            'Opcional: sube la confianza de un pick (Seguro ×1.5 · ¡Clave! ×2) o acierta el marcador exacto (+50 pts).',
+            'Acertar todos los partidos de la jornada: +100 pts de bonus (pleno).',
             'Cada pick se bloquea al empezar su partido; la jornada cierra con el primero.',
             'Crea o únete a ligas privadas con tu nombre e invita a amigos: ranking real al cierre.',
             'Durante el Mundial la quiniela son partidos de selecciones; el resto del año, de clubes.',

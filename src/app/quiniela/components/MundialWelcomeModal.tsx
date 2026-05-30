@@ -142,7 +142,7 @@ export function MundialWelcomeModal({
                   {q.question.replace(/^¿/, '').replace(/\?$/, '')}
                 </span>
                 <span className="text-[11px] font-black tabular-nums flex-shrink-0" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
-                  +{q.prize_coins}🪙
+                  +{q.prize_coins} pts
                 </span>
               </div>
             ))}
@@ -156,7 +156,7 @@ export function MundialWelcomeModal({
                 Si acertás las 5
               </p>
               <p className="text-[10px]" style={{ color: '#8A6B30', fontFamily: 'var(--font-sport)' }}>
-                Hasta {totalPrize}🪙 + badge &quot;Profeta del Mundial 2026&quot;
+                Hasta {totalPrize} pts + badge &quot;Profeta del Mundial 2026&quot;
               </p>
             </div>
           </div>

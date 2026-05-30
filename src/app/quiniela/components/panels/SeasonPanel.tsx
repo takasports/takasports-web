@@ -108,7 +108,7 @@ export function SeasonPanel({ user }: { user: User | null }) {
                       style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}
                       title="Monedas que recibís si acertás esta pregunta"
                     >
-                      +{q.prize_coins}🪙 si acertás
+                      +{q.prize_coins} pts si acertás
                     </span>
                   )}
                 </div>
@@ -165,7 +165,7 @@ export function SeasonPanel({ user }: { user: User | null }) {
                     )}
                     {isWinner && selected && (q.prize_coins ?? 0) > 0 && (
                       <span className="text-[9px] font-black px-1.5 py-0.5 rounded" style={{ background: 'rgba(251,191,36,0.2)', color: '#fbbf24', fontFamily: 'var(--font-sport)' }}>
-                        +{q.prize_coins}🪙
+                        +{q.prize_coins} pts
                       </span>
                     )}
                     {isWinner && <span style={{ fontSize: 13 }}>🏆</span>}

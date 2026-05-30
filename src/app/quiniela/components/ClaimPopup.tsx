@@ -72,7 +72,7 @@ export function ClaimPopup({ badgeEmoji, badgeName, coinsAwarded, onClose }: Cla
           </p>
           {coinsAwarded > 0 ? (
             <p className="text-[15px] font-black tabular-nums leading-tight mt-0.5" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
-              +{coinsAwarded} 🪙
+              +{coinsAwarded} pts
             </p>
           ) : (
             <p className="text-[10px] font-black mt-0.5" style={{ color: '#A0A0C0', fontFamily: 'var(--font-sport)' }}>

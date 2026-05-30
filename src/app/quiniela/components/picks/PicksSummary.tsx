@@ -342,7 +342,7 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
                   </div>
                   {stake > 0 && (
                     <span className="text-[9px] font-bold tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-sport)' }}>
-                      +{stake}🪙 devueltos al wallet
+                      +{stake} pts devueltos
                     </span>
                   )}
                 </div>

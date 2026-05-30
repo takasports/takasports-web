@@ -30,7 +30,7 @@ export function StickyBetslip({
   const cta = !allDone
     ? `Te quedan ${total - done} partido${total - done !== 1 ? 's' : ''}`
     : stake > 0
-      ? `🎫 Cerrar apuesta · ${stake}🪙`
+      ? `🎫 Cerrar apuesta · ${stake} pts`
       : '🎯 Sellar predicción'
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
   return (
@@ -45,7 +45,7 @@ export function StickyBetslip({
                 <>
                   <span className="text-[10px]" style={{ color: '#3A3050' }}>·</span>
                   <span className="font-black tabular-nums" style={{ fontSize: 13, color: '#86efac', fontFamily: 'var(--font-display)' }}>
-                    {stake}🪙
+                    {stake} pts
                   </span>
                   <span className="text-[9px] uppercase tracking-widest" style={{ color: '#3A5A48', fontFamily: 'var(--font-sport)' }}>apostado</span>
                 </>
@@ -58,7 +58,7 @@ export function StickyBetslip({
           <div className="flex flex-col items-end flex-shrink-0">
             <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Si aciertas todo</span>
             <span className="font-black tabular-nums" style={{ fontSize: 16, color: '#fbbf24', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
-              {potential}🪙
+              {potential} pts
             </span>
           </div>
         </div>

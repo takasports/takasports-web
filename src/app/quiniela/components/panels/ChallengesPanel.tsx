@@ -214,7 +214,7 @@ export function ChallengesPanel({
                               fontFamily: 'var(--font-display)',
                             }}
                           >
-                            {isClaimed ? `+${ch.coins_awarded}🪙` : `+${ch.coin_bonus}🪙`}
+                            {isClaimed ? `+${ch.coins_awarded} pts` : `+${ch.coin_bonus} pts`}
                           </span>
                         )}
                         <span

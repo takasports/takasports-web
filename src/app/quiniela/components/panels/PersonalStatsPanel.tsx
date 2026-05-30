@@ -94,11 +94,11 @@ export function PersonalStatsPanel({ user }: { user: User | null }) {
             {roi == null ? '—' : roi > 0 ? `+${roi}%` : `${roi}%`}
           </span>
           <span className="text-[10px] tabular-nums mt-1.5" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)' }}>
-            {totalStaked}🪙 apostado · {totalWon}🪙 ganado
+            {totalStaked} pts apostado · {totalWon} pts ganado
           </span>
           {net !== 0 && (
             <span className="text-[9px] font-black tabular-nums mt-0.5" style={{ color: net > 0 ? '#4ade80' : '#f87171', fontFamily: 'var(--font-sport)' }}>
-              {net > 0 ? `+${net}` : net}🪙 neto
+              {net > 0 ? `+${net}` : net} pts neto
             </span>
           )}
         </div>
@@ -131,7 +131,7 @@ export function PersonalStatsPanel({ user }: { user: User | null }) {
             </p>
           </div>
           <span className="text-sm font-black tabular-nums flex-shrink-0" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
-            +{bestJornada.won}🪙
+            +{bestJornada.won} pts
           </span>
         </div>
       )}

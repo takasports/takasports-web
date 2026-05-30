@@ -27,10 +27,8 @@ import { MyLeagues } from './components/leagues/MyLeagues'
 import { CreateLeagueModal } from './components/leagues/CreateLeagueModal'
 import { BadgesPanel } from './components/panels/BadgesPanel'
 import TakaPoint from '@/components/TakaPoint'
-import { LeaderboardPanel } from './components/panels/LeaderboardPanel'
 import { PersonalStatsPanel } from './components/panels/PersonalStatsPanel'
 import { HitosPanel } from './components/panels/HitosPanel'
-import { MundialLeaderboardPanel } from './components/panels/MundialLeaderboardPanel'
 import { SeasonPanel } from './components/panels/SeasonPanel'
 import { MundialWelcomeModal } from './components/MundialWelcomeModal'
 import { Rules } from './components/panels/Rules'
@@ -514,9 +512,6 @@ export default function QuinielaClient() {
             {/* Puntos Taka panel */}
             <PointsPanel />
 
-            {/* Ranking acumulado del Mundial 2026 — solo cuando la
-                jornada activa es del torneo (auto-detect por label). */}
-            {isMundial && <MundialLeaderboardPanel />}
 
             {/* Stats personales del Ranked (ROI, racha, mejor jornada).
                 Silent si el user no jugó nunca o no está autenticado. */}
@@ -597,14 +592,6 @@ export default function QuinielaClient() {
               </div>
             )}
 
-            {/* Leaderboard semanal */}
-            {apiMatches.length > 0 && (
-              <LeaderboardPanel
-                jornada={apiJornada}
-                totalMatches={apiMatches.length}
-                myScore={myScore}
-              />
-            )}
 
             {/* Logros */}
             <BadgesPanel earned={badges} />

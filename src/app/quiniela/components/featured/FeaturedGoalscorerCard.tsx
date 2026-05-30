@@ -203,7 +203,7 @@ export default function FeaturedGoalscorerCard({ authed }: { authed: boolean }) 
             Goleador del partido destacado
           </p>
           <p className="text-[10px]" style={{ color: '#C77FAE', fontFamily: 'var(--font-sport)' }}>
-            Bonus de la jornada · 100 / 200 / 350 🪙 según los goles
+            Bonus de la jornada · 100 / 200 / 350 pts según los goles
           </p>
         </div>
         <span
@@ -246,7 +246,7 @@ export default function FeaturedGoalscorerCard({ authed }: { authed: boolean }) 
             <BlockMessage tone="win">
               <div>
                 <p className="text-sm font-black" style={{ color: '#86EFAC', fontFamily: 'var(--font-display)' }}>
-                  ¡Acertaste! +{userPick.awarded_coins} 🪙
+                  ¡Acertaste! +{userPick.awarded_coins} pts
                 </p>
                 <p className="text-[11px]" style={{ color: 'rgba(134,239,172,0.7)', fontFamily: 'var(--font-sport)' }}>
                   {userPick.player_name} marcó {userPick.goals_scored} {userPick.goals_scored === 1 ? 'gol' : 'goles'} en el partido.

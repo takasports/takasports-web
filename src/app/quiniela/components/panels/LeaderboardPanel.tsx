@@ -107,7 +107,7 @@ export function LeaderboardPanel({ jornada, totalMatches, myScore }: { jornada: 
   // En modo legacy, score = pickCount → "5/10".
   const formatScore = (s: number, t: number) => {
     if (mode === 'legacy') return `${s}/${t || totalMatches}`
-    return `${s} 🪙`
+    return `${s} pts`
   }
 
   // myPos / myScore: solo aplica al tab semanal con mode legacy histórico.
