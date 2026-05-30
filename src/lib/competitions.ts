@@ -245,7 +245,15 @@ export function getLiveLabel(
   elapsed: number | null,
   opts?: { sport?: string; homeScore?: number | null; awayScore?: number | null }
 ): string {
-  if (status === 'FT' || status === 'FINAL') return 'Final'
+  // Estados terminales (incluye fútbol acabado en penaltis o prórroga, post-game
+  // de NBA, etc.). Importante: cualquier estado que represente "ya terminó"
+  // debe devolver 'Final', nunca caer al fallback de 'EN VIVO'.
+  if (status === 'FT' || status === 'FINAL' || status === 'FINAL_PEN' ||
+      status === 'FINAL_AET' || status === 'POST_GAME' || status === 'END_OF_REGULATION' ||
+      status === 'ABANDONED' || status === 'WALKOVER' || status === 'RETIRED' ||
+      status === 'CANCELED' || status === 'POSTPONED' || status === 'SUSPENDED' ||
+      status === 'FORFEIT') return 'Final'
+  if (status === 'NS' || status === 'STATUS_SCHEDULED' || status === 'PRE_GAME' || status === 'DELAYED') return 'Próximo'
   if (status === 'HT') return 'Descanso'
   if (status === 'INT') return 'Intervalo'
 

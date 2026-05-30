@@ -80,16 +80,41 @@ function useVisiblePolling(tick: () => void, ms: number) {
   }, [tick, ms])
 }
 
+// Caché compartida a nivel módulo: ambos hooks (useLiveFixtures y useLiveScores)
+// consumen los mismos datos del endpoint /api/events/live. Sin esto, montar
+// CalendarioContent dispara DOS fetch idénticos cada 30s (uno por hook), con
+// posibles races al actualizar estado. Con la caché, una sola request alimenta
+// a ambos hooks.
+let _liveCache: { data: RawLiveFixture[]; ts: number } | null = null
+let _liveInflight: Promise<RawLiveFixture[]> | null = null
+const LIVE_CACHE_TTL = 15_000  // 15s: cubre el solapamiento entre los dos hooks
+
+async function fetchLiveSharedCached(): Promise<RawLiveFixture[]> {
+  const now = Date.now()
+  if (_liveCache && now - _liveCache.ts < LIVE_CACHE_TTL) return _liveCache.data
+  if (_liveInflight) return _liveInflight
+  _liveInflight = (async () => {
+    try {
+      const res = await fetch('/api/events/live', { cache: 'no-store' })
+      if (!res.ok) return _liveCache?.data ?? []
+      const data: RawLiveFixture[] = await res.json()
+      _liveCache = { data, ts: Date.now() }
+      return data
+    } catch {
+      return _liveCache?.data ?? []
+    } finally {
+      _liveInflight = null
+    }
+  })()
+  return _liveInflight
+}
+
 function useLiveFixtures() {
   const [fixtures, setFixtures] = useState<RawLiveFixture[]>([])
 
   const fetch_ = useCallback(async () => {
-    try {
-      const res = await fetch('/api/events/live', { cache: 'no-store' })
-      if (!res.ok) return
-      const data: RawLiveFixture[] = await res.json()
-      setFixtures(data.filter(f => !FINISHED.has(f.status)))
-    } catch { /* ignore */ }
+    const data = await fetchLiveSharedCached()
+    setFixtures(data.filter(f => !FINISHED.has(f.status)))
   }, [])
 
   useVisiblePolling(fetch_, 30_000)
@@ -102,9 +127,7 @@ function useLiveScores(events: SportEvent[]) {
 
   const fetch_ = useCallback(async () => {
     try {
-      const res = await fetch('/api/events/live', { cache: 'no-store' })
-      if (!res.ok) return
-      const fixtures: RawLiveFixture[] = await res.json()
+      const fixtures = await fetchLiveSharedCached()
       const byRef = new Map<string, RawLiveFixture>()
       for (const f of fixtures) if (f.matchRef) byRef.set(f.matchRef, f)
       const next = new Map<string, LiveScore>()

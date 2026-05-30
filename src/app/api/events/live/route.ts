@@ -33,6 +33,14 @@ const LIVE_TTL  = 60_000
 const IDLE_TTL  = 5 * 60_000
 const STALE_MAX = 10 * 60_000
 
+// Estados terminales — usados para distinguir si hay partidos *realmente en
+// curso* (afecta cadencia de polling / cabeceras CDN). Si todos los eventos
+// emitidos son finales, no necesitamos refrescar cada 30s.
+const TERMINAL_STATUSES = new Set([
+  'FT', 'FINAL', 'FINAL_PEN', 'FINAL_AET', 'POST_GAME', 'END_OF_REGULATION',
+  'ABANDONED', 'WALKOVER', 'RETIRED', 'CANCELED', 'POSTPONED', 'SUSPENDED', 'FORFEIT',
+])
+
 const ESPN_TEAM_LEAGUES = [
   { slug: 'soccer/uefa.champions',   sport: 'soccer',     comp: 'Champions'  },
   { slug: 'soccer/uefa.europa',      sport: 'soccer',     comp: 'Europa'     },
@@ -473,13 +481,22 @@ async function fetchApiSportsLive(): Promise<LiveScore[]> {
       })
       if (!home || !away) continue
 
+      // API-Sports usa códigos cortos para estados terminales: FT, AET (prórroga
+      // finalizada), PEN (penaltis), AWD (adjudicado), WO (walkover), CANC, PST
+      // (postponed), ABD (abandoned), SUSP. Normalizamos a 'FT' para que los
+      // consumidores los traten como finalizados — igual que el flag completed
+      // de ESPN. PT/HT/2H/ET/BT/P/INT son estados en juego o pausas activas.
+      const rawShort = (status.short as string) ?? ''
+      const APISPORTS_TERMINAL = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO', 'CANC', 'PST', 'ABD', 'SUSP'])
+      const normalizedStatus = APISPORTS_TERMINAL.has(rawShort) ? 'FT' : rawShort
+
       results.push(buildScore(
         `apisports-${fixture.id}`,
         home,
         away,
         goals.home,
         goals.away,
-        status.short as string,
+        normalizedStatus,
         'soccer',
         {
           comp: league.name as string,
@@ -542,7 +559,7 @@ export async function GET() {
     // Garantía de salida: nunca emitimos eventos sin nombres válidos.
     const valid = scores.filter(s => !!s.homeTeam && !!s.awayTeam && s.homeTeam.trim() && s.awayTeam.trim())
 
-    const hasLive = valid.length > 0
+    const hasLive = valid.some(s => !TERMINAL_STATUSES.has(s.status))
     cache = { data: valid, ts: now, hasLive }
     staleCache = cache
 
