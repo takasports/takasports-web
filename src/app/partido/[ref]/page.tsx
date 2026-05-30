@@ -77,9 +77,21 @@ export async function generateMetadata({
 
 const LIVE_STATUSES = new Set([
   'STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_SECOND_HALF',
-  'STATUS_END_PERIOD', 'STATUS_OVERTIME',
+  'STATUS_END_PERIOD', 'STATUS_OVERTIME', 'STATUS_SHOOTOUT',
 ])
 const isLive = (s: string) => LIVE_STATUSES.has(s)
+
+// Estados terminales según ESPN. Incluye variantes que aparecieron en
+// producción y que antes caían al limbo: ni "en vivo" ni "finalizado"
+// (p.ej. STATUS_FINAL_PEN tras la final UCL PSG-Arsenal). Cualquier estado
+// nuevo de la familia FINAL/POST debería añadirse aquí.
+const FINISHED_STATUSES = new Set([
+  'STATUS_FINAL', 'STATUS_FULL_TIME', 'STATUS_FINAL_PEN', 'STATUS_FINAL_AET',
+  'STATUS_POST_GAME', 'STATUS_END_OF_REGULATION',
+  'STATUS_CANCELED', 'STATUS_POSTPONED', 'STATUS_ABANDONED',
+  'STATUS_FORFEIT', 'STATUS_WALKOVER', 'STATUS_SUSPENDED', 'STATUS_RETIRED',
+])
+const isFinished = (s: string) => FINISHED_STATUSES.has(s)
 
 // ── Server fetch ───────────────────────────────────────────────────
 async function fetchMatchDetail(ref: string): Promise<MatchDetail | null> {
@@ -1081,8 +1093,7 @@ function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | nul
 
   // Solo ofrece "Añadir a calendario" si el partido aún no ha terminado
   // y conocemos la fecha exacta de inicio.
-  const finishedStatus = match.status === 'STATUS_FINAL' || match.status === 'STATUS_FULL_TIME'
-    || match.status === 'STATUS_CANCELED' || match.status === 'STATUS_POSTPONED'
+  const finishedStatus = isFinished(match.status)
   const showAddToCalendar = !!match.startDate && !finishedStatus
 
   const backLink = (
@@ -1305,13 +1316,25 @@ export default async function MatchPage({
   const STATUS_MAP: Record<string, string> = {
     STATUS_FINAL: 'https://schema.org/EventCompleted',
     STATUS_FULL_TIME: 'https://schema.org/EventCompleted',
+    STATUS_FINAL_PEN: 'https://schema.org/EventCompleted',
+    STATUS_FINAL_AET: 'https://schema.org/EventCompleted',
+    STATUS_POST_GAME: 'https://schema.org/EventCompleted',
+    STATUS_END_OF_REGULATION: 'https://schema.org/EventCompleted',
+    STATUS_FORFEIT: 'https://schema.org/EventCompleted',
+    STATUS_WALKOVER: 'https://schema.org/EventCompleted',
+    STATUS_RETIRED: 'https://schema.org/EventCompleted',
     STATUS_IN_PROGRESS: 'https://schema.org/EventScheduled',
     STATUS_HALFTIME: 'https://schema.org/EventScheduled',
     STATUS_SECOND_HALF: 'https://schema.org/EventScheduled',
     STATUS_END_PERIOD: 'https://schema.org/EventScheduled',
     STATUS_OVERTIME: 'https://schema.org/EventScheduled',
+    STATUS_SHOOTOUT: 'https://schema.org/EventScheduled',
     STATUS_CANCELED: 'https://schema.org/EventCancelled',
+    STATUS_ABANDONED: 'https://schema.org/EventCancelled',
     STATUS_POSTPONED: 'https://schema.org/EventPostponed',
+    STATUS_SUSPENDED: 'https://schema.org/EventPostponed',
+    STATUS_DELAYED: 'https://schema.org/EventPostponed',
+    STATUS_RAIN_DELAY: 'https://schema.org/EventPostponed',
   }
 
   const sportsEventJsonLd: Record<string, unknown> = {
