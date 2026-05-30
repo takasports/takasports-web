@@ -13,7 +13,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import type { PorraStatus, PorraTopMatch } from './PorraCTA'
+import type { PorraStatus, PorraMatch } from './PorraCTA'
 
 const STORAGE_KEY = 'porra:status:v1'
 const TTL_MS = 60_000
@@ -59,7 +59,7 @@ function formatKickoff(iso: string): string {
   } catch { return '' }
 }
 
-function MatchRow({ m }: { m: PorraTopMatch }) {
+function MatchRow({ m }: { m: PorraMatch }) {
   return (
     <div
       className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg"
@@ -144,12 +144,14 @@ export default function PorraHero() {
   if (hoursAhead > MAX_DAYS_AHEAD * 24) return null // demasiado pronto
 
   const alreadyPlayed = status.isAuthed && status.hasPicked
-  const matches = status.topMatches ?? []
+  // Hero solo muestra los 3 primeros por orden cronológico.
+  const matches = (status.matches ?? []).slice(0, 3)
 
   return (
     <section
       aria-label="La Porra — jornada activa"
       className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 mt-3 mb-4"
+      style={{ animation: 'porraHeroFadeIn 320ms cubic-bezier(0.34,1.2,0.64,1) both' }}
     >
       <div
         className="relative overflow-hidden rounded-2xl p-4 sm:p-5"
@@ -258,6 +260,10 @@ export default function PorraHero() {
           @keyframes porraHeroPulse {
             0%, 100% { opacity: 1; transform: scale(1); }
             50%      { opacity: 0.55; transform: scale(0.8); }
+          }
+          @keyframes porraHeroFadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
           }
         `}</style>
       </div>

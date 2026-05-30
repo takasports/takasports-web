@@ -16,6 +16,7 @@ import ReadingProgress from '@/app/article/[id]/ReadingProgress'
 import ReadTracker from '@/app/article/[id]/ReadTracker'
 import ArticleTableOfContents from '@/components/ArticleTableOfContents'
 import ArticleComments from '@/components/ArticleComments'
+import PorraMatchWidget from '@/components/PorraMatchWidget'
 import { extractHeadings, type TocHeading } from '@/lib/article-toc'
 import {
   getEntityIndex,
@@ -714,6 +715,11 @@ export default async function NoticiaPage({
                 {article.short_summary}
               </p>
             )}
+
+            {/* Widget La Porra — solo se materializa si el artículo cita un partido de la jornada activa */}
+            <div style={{ maxWidth: 680 }}>
+              <PorraMatchWidget title={article.title} tags={article.tags} />
+            </div>
 
             {article.bodyPortable && article.bodyPortable.length > 0 ? (
               <div style={{ maxWidth: 680 }}>

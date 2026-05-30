@@ -357,11 +357,17 @@ function selectMatches(all: QuinielaMatch[]): QuinielaMatch[] {
   return picked.length >= MIN_MATCHES ? picked : sorted.slice(0, MIN_MATCHES)
 }
 
-export async function GET() {
+/**
+ * Resuelve QuinielaData (jornada + matches enriquecidos con cuotas).
+ * Cache módulo-level de 30 min, compartido entre GET y consumidores
+ * internos (ej. /api/quiniela/status). Llamar a esta función en lugar
+ * de hacer fetch HTTP interno evita un round-trip en serverless.
+ */
+export async function getQuinielaData(): Promise<QuinielaData> {
   const now = Date.now()
   const mundial = isMundialMode(now)
   if (cache && cache.mundial === mundial && now - cache.ts < CACHE_TTL) {
-    return NextResponse.json(cache.data)
+    return cache.data
   }
 
   // Sistema activo: solo el Mundial durante la ventana, clubes el resto del año
@@ -468,5 +474,10 @@ export async function GET() {
 
   const data: QuinielaData = { jornada: buildJornadaLabel(selected), matches: selected }
   cache = { data, ts: now, mundial }
+  return data
+}
+
+export async function GET() {
+  const data = await getQuinielaData()
   return NextResponse.json(data)
 }
