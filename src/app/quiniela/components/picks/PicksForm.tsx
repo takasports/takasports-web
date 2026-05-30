@@ -128,11 +128,11 @@ export function PicksForm({
       return
     }
     if (totalStake <= 0) {
-      setSubmitError('Tenés que apostar al menos 1🪙 en algún pick.')
+      setSubmitError('Tenés que apostar al menos 1 pts en algún pick.')
       return
     }
     if (authed && totalStake > coinBalance) {
-      setSubmitError(`Saldo insuficiente. Necesitás ${totalStake}🪙 y tenés ${coinBalance}🪙.`)
+      setSubmitError(`Saldo insuficiente. Necesitás ${totalStake} pts y tenés ${coinBalance} pts.`)
       return
     }
 
@@ -174,7 +174,7 @@ export function PicksForm({
         if (!res.ok) {
           const j = await res.json().catch(() => ({})) as { error?: string; needed?: number; balance?: number }
           const msg =
-              j.error === 'insufficient_balance' ? `Saldo insuficiente. Necesitás ${j.needed}🪙 y tenés ${j.balance}🪙.`
+              j.error === 'insufficient_balance' ? `Saldo insuficiente. Necesitás ${j.needed} pts y tenés ${j.balance} pts.`
             : j.error === 'odds_unavailable'    ? 'Jornada bloqueada: cuotas no disponibles.'
             : j.error === 'already_staked'      ? 'Ya sellaste esta jornada.'
             : `No pudimos sellar (${j.error ?? 'error desconocido'}).`
@@ -261,7 +261,7 @@ export function PicksForm({
               </p>
               <p className="text-sm mb-2" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Suerte esta jornada 🤞</p>
               <p className="text-xs font-black inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}>
-                Si aciertas todo: hasta {potentialCoinsRound}🪙
+                Si aciertas todo: hasta {potentialCoinsRound} pts
               </p>
             </div>
           </div>
@@ -476,19 +476,19 @@ export function PicksForm({
                 Total apostado en la fecha
               </p>
               <p className="text-lg font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)', lineHeight: 1 }}>
-                {totalStake}🪙
+                {totalStake} pts
               </p>
             </div>
           </div>
           {authed && (
             <div className="flex flex-col items-end">
               <span className="text-[9px] uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>Saldo</span>
-              <span className="text-sm font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>{coinBalance}🪙</span>
+              <span className="text-sm font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>{coinBalance} pts</span>
             </div>
           )}
           {authed && !enoughBalance && (
             <div className="w-full rounded-lg px-3 py-2 text-[10px] text-center" style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', fontFamily: 'var(--font-sport)', fontWeight: 700 }}>
-              Saldo insuficiente · necesitás {totalStake - coinBalance}🪙 más
+              Saldo insuficiente · necesitás {totalStake - coinBalance} pts más
             </div>
           )}
         </div>

@@ -281,7 +281,7 @@ export function MatchCard({
                   const ret = odd ? Math.round(effectiveStake * odd) : effectiveStake
                   return (
                     <span style={{ fontSize: 7, fontFamily: 'var(--font-sport)', fontWeight: 900, color: selected ? PICK_COLOR[opt] : '#2A2A42', opacity: selected ? 0.85 : 0.45, marginTop: 1 }}>
-                      +{ret}🪙
+                      +{ret} pts
                     </span>
                   )
                 })()}
@@ -312,7 +312,7 @@ export function MatchCard({
                     <span style={{ fontSize: 14, lineHeight: 1, color: '#4ade80' }}>✓</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-black tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>
-                        Apostás {stk}🪙 → ganás {ret}🪙 si acertás
+                        Apostás {stk} pts → ganás {ret} pts si acertás
                       </p>
                       <p className="text-[9px]" style={{ color: '#3A5A48', fontFamily: 'var(--font-sport)' }}>
                         Cuota fijada ×{eff.toFixed(2)}
@@ -468,7 +468,7 @@ export function MatchCard({
                 cursor: (comodinCost != null && (coinBalance ?? 0) < comodinCost) ? 'not-allowed' : 'pointer',
               }}
             >
-              ⚡ Usar comodín {comodinCost != null && <span style={{ opacity: 0.7 }}>· {comodinCost}🪙</span>}
+              ⚡ Usar comodín {comodinCost != null && <span style={{ opacity: 0.7 }}>· {comodinCost} pts</span>}
             </button>
           )}
         </div>

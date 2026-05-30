@@ -1,0 +1,209 @@
+'use client'
+
+// Leaderboard unificado del sistema Ranked.
+// 4 pestañas: Global (todos los deportes) | Mundial | Fútbol | UFC (pronto)
+// Consume /api/ranked/leaderboard?sport=<sport>
+
+import { useState, useEffect, useCallback } from 'react'
+import TakaPoint from '@/components/TakaPoint'
+
+type RankedSport = 'global' | 'mundial' | 'futbol' | 'ufc'
+
+interface RankedEntry {
+  user_id:      string
+  display_name: string | null
+  avatar_url:   string | null
+  total:        number
+  rank:         number
+}
+
+const TABS: { id: RankedSport; label: string; emoji: string; accent: string; available: boolean }[] = [
+  { id: 'global',  label: 'Global',        emoji: '⚡', accent: '#A78BFA', available: true },
+  { id: 'mundial', label: 'Mundial 2026',  emoji: '🏆', accent: '#FBBF24', available: true },
+  { id: 'futbol',  label: 'Ranked Fútbol', emoji: '⚽', accent: '#4ADE80', available: true },
+  { id: 'ufc',     label: 'Ranked UFC',    emoji: '🥊', accent: '#F87171', available: false },
+]
+
+function Avatar({ url, name }: { url: string | null; name: string | null }) {
+  const initials = (name ?? '?').slice(0, 2).toUpperCase()
+  if (url) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={url}
+        alt={name ?? ''}
+        width={28}
+        height={28}
+        style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+      />
+    )
+  }
+  return (
+    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(167,139,250,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <span style={{ fontSize: 9, fontWeight: 900, color: '#A78BFA', fontFamily: 'var(--font-display)' }}>{initials}</span>
+    </div>
+  )
+}
+
+interface Props {
+  activeSport?: 'futbol' | 'ufc' | 'mundial'
+}
+
+export default function RankedLeaderboard({ activeSport }: Props) {
+  const defaultTab: RankedSport = activeSport === 'mundial' ? 'mundial'
+    : activeSport === 'futbol' ? 'futbol'
+    : 'global'
+
+  const [tab, setTab]         = useState<RankedSport>(defaultTab)
+  const [entries, setEntries] = useState<RankedEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setTab(defaultTab)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSport])
+
+  const load = useCallback(async (sport: RankedSport) => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/ranked/leaderboard?sport=${sport}&limit=10`, { cache: 'no-store' })
+      if (!res.ok) throw new Error('error')
+      const data = await res.json() as { entries: RankedEntry[] }
+      setEntries(data.entries ?? [])
+    } catch {
+      setEntries([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void load(tab)
+  }, [tab, load])
+
+  const activeTabInfo = TABS.find(t => t.id === tab)!
+  const accent = activeTabInfo.accent
+
+  return (
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-8 mt-2">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className="section-accent" />
+        <h2 className="section-label" style={{ color: '#F0F0F8', fontFamily: 'var(--font-sport)' }}>
+          RANKING RANKED
+        </h2>
+      </div>
+
+      {/* Tab pills */}
+      <div className="flex gap-1.5 flex-wrap mb-4">
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => t.available && setTab(t.id)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+            style={{
+              background: tab === t.id && t.available
+                ? `${t.accent}18`
+                : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${tab === t.id && t.available ? `${t.accent}50` : 'rgba(255,255,255,0.06)'}`,
+              color: t.available ? (tab === t.id ? t.accent : 'var(--text-muted)') : '#3A3A52',
+              cursor: t.available ? 'pointer' : 'default',
+              fontFamily: 'var(--font-sport)',
+              opacity: t.available ? 1 : 0.5,
+            }}
+          >
+            <span>{t.emoji}</span>
+            <span>{t.label}</span>
+            {!t.available && (
+              <span className="text-[7px] px-1 py-0.5 rounded-full ml-0.5" style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A52' }}>
+                Pronto
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Leaderboard card */}
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{
+          background: `linear-gradient(160deg, ${accent}07 0%, rgba(8,0,15,0.55) 100%)`,
+          border: `1px solid ${accent}20`,
+        }}
+      >
+        {/* Card header */}
+        <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${accent}12` }}>
+          <span style={{ fontSize: 13 }}>{activeTabInfo.emoji}</span>
+          <p className="text-[11px] font-black uppercase tracking-widest flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+            {activeTabInfo.label}
+          </p>
+          <TakaPoint size={12} />
+          <p className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+            pts acumulados
+          </p>
+        </div>
+
+        {/* Loading */}
+        {loading && (
+          <div className="px-5 py-4 flex flex-col gap-2">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="h-9 rounded-xl animate-pulse" style={{ background: `${accent}06` }} />
+            ))}
+          </div>
+        )}
+
+        {/* Coming soon */}
+        {!loading && tab === 'ufc' && (
+          <div className="px-5 py-10 text-center">
+            <span style={{ fontSize: 32 }}>🥊</span>
+            <p className="text-sm font-black mt-3" style={{ color: '#F87171', fontFamily: 'var(--font-display)' }}>Ranked UFC</p>
+            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Predicciones por PPV. Muy pronto.</p>
+          </div>
+        )}
+
+        {/* Empty */}
+        {!loading && tab !== 'ufc' && entries.length === 0 && (
+          <div className="px-5 py-10 text-center">
+            <p className="text-[12px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+              Nadie en el ranking todavía · Sé el primero
+            </p>
+          </div>
+        )}
+
+        {/* Rows */}
+        {!loading && entries.length > 0 && (
+          <div className="px-4 py-3 flex flex-col gap-1">
+            {entries.map((e, i) => {
+              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
+              const isTop = i < 3
+              return (
+                <div
+                  key={e.user_id ?? i}
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl"
+                  style={{
+                    background: isTop ? `${accent}08` : 'rgba(255,255,255,0.015)',
+                    border: isTop ? `1px solid ${accent}18` : '1px solid transparent',
+                  }}
+                >
+                  <span style={{ fontSize: 11, fontWeight: 900, width: 20, textAlign: 'center', color: isTop ? accent : '#4A4A6A', fontFamily: 'var(--font-display)', flexShrink: 0 }}>
+                    {medal ?? `${e.rank}`}
+                  </span>
+                  <Avatar url={e.avatar_url} name={e.display_name} />
+                  <span className="flex-1 truncate text-[12px] font-black" style={{ color: isTop ? '#F0F0F8' : '#8A8AAA', fontFamily: 'var(--font-display)' }}>
+                    {e.display_name ?? 'Anónimo'}
+                  </span>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <TakaPoint size={11} />
+                    <span className="text-[12px] font-black tabular-nums" style={{ color: isTop ? accent : '#6A6A8A', fontFamily: 'var(--font-display)' }}>
+                      {e.total.toLocaleString('es-ES')}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

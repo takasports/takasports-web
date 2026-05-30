@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const sb = await createServerSupabaseClient()
 
   const { data, error } = await sb.rpc('get_ranked_leaderboard', {
-    p_sport: sport,
+    p_sport: sport === 'global' ? null : sport,
     p_limit: limit,
   })
 

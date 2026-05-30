@@ -120,14 +120,15 @@ function PickButton({
 }) {
   let bg     = 'rgba(255,255,255,0.03)'
   let border = 'rgba(255,255,255,0.08)'
-  let color  = 'rgba(255,255,255,0.35)'
+  let color  = 'rgba(255,255,255,0.4)'
+  let subColor = 'rgba(255,255,255,0.2)'
 
   if (correct) {
-    bg = 'rgba(74,222,128,0.15)'; border = 'rgba(74,222,128,0.4)'; color = '#4ADE80'
+    bg = 'rgba(74,222,128,0.15)'; border = 'rgba(74,222,128,0.4)'; color = '#4ADE80'; subColor = 'rgba(74,222,128,0.6)'
   } else if (wrong) {
-    bg = 'rgba(239,68,68,0.1)'; border = 'rgba(239,68,68,0.3)'; color = 'rgba(239,68,68,0.6)'
+    bg = 'rgba(239,68,68,0.1)'; border = 'rgba(239,68,68,0.3)'; color = 'rgba(239,68,68,0.5)'; subColor = 'rgba(239,68,68,0.35)'
   } else if (active) {
-    bg = `${GOLD}18`; border = `${GOLD}60`; color = GOLD
+    bg = `${GOLD}18`; border = `${GOLD}60`; color = GOLD; subColor = GOLD2
   }
 
   return (
@@ -139,9 +140,10 @@ function PickButton({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 2,
-        padding: '8px 4px',
-        borderRadius: 10,
+        justifyContent: 'center',
+        gap: 3,
+        padding: '10px 6px',
+        borderRadius: 12,
         background: bg,
         border: `1.5px solid ${border}`,
         color,
@@ -149,11 +151,12 @@ function PickButton({
         transition: 'all 0.15s',
         fontFamily: 'var(--font-sport)',
         minWidth: 0,
+        minHeight: 52,
       }}
     >
-      <span style={{ fontSize: 13, fontWeight: 900 }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</span>
       {sublabel && (
-        <span style={{ fontSize: 8, opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <span style={{ fontSize: 8, color: subColor, textTransform: 'uppercase', letterSpacing: '0.06em', maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {sublabel}
         </span>
       )}
@@ -180,9 +183,9 @@ function MatchCard({
   const pts       = pred?.points_awarded ?? null
 
   const picks: { label: string; sub: string; val: '1' | 'X' | '2' }[] = [
-    { label: '1', sub: 'Local', val: '1' },
+    { label: 'Local', sub: event.team_home ?? '', val: '1' },
     { label: 'X', sub: 'Empate', val: 'X' },
-    { label: '2', sub: 'Visit.', val: '2' },
+    { label: 'Visita', sub: event.team_away ?? '', val: '2' },
   ]
 
   return (

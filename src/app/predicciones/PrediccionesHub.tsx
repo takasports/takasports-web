@@ -20,6 +20,7 @@ import NewsletterSection from '@/components/NewsletterSection'
 import TakaPoint from '@/components/TakaPoint'
 import { useStreak } from '@/hooks/useGameState'
 import { usePoints } from '@/hooks/useGameState'
+import RankedLeaderboard from '@/components/ranked/RankedLeaderboard'
 
 // Carga dinámica — solo se carga el cliente activo
 const QuinielaClient = dynamic(
@@ -241,6 +242,7 @@ export default function PrediccionesHub() {
           {sportTab === 'futbol' && <QuinielaClient />}
           {sportTab === 'ufc'    && <SportComingSoon sport="Ranked UFC" emoji="🥊" accent="#F87171" />}
           {sportTab === 'mundial' && <MundialClient />}
+          <RankedLeaderboard activeSport={sportTab} />
         </>
       )}
 

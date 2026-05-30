@@ -19,13 +19,14 @@ import {
   getDivision, getPlayerAlias, setPlayerAlias,
 } from './lib/helpers'
 import { usePushSubscription, useCoins } from './lib/hooks'
+import { usePoints } from '@/hooks/useGameState'
 import { PicksForm } from './components/picks/PicksForm'
 import { PicksSummary } from './components/picks/PicksSummary'
 import FeaturedGoalscorerCard from './components/featured/FeaturedGoalscorerCard'
 import { MyLeagues } from './components/leagues/MyLeagues'
 import { CreateLeagueModal } from './components/leagues/CreateLeagueModal'
 import { BadgesPanel } from './components/panels/BadgesPanel'
-import { CoinWallet } from './components/panels/CoinWallet'
+import TakaPoint from '@/components/TakaPoint'
 import { LeaderboardPanel } from './components/panels/LeaderboardPanel'
 import { PersonalStatsPanel } from './components/panels/PersonalStatsPanel'
 import { HitosPanel } from './components/panels/HitosPanel'
@@ -34,6 +35,27 @@ import { SeasonPanel } from './components/panels/SeasonPanel'
 import { MundialWelcomeModal } from './components/MundialWelcomeModal'
 import { Rules } from './components/panels/Rules'
 import { ChallengesPanel } from './components/panels/ChallengesPanel'
+
+// ─────────────────────────────────────────────────────────────────
+// PointsPanel — muestra el saldo de puntos Taka del usuario
+// ─────────────────────────────────────────────────────────────────
+function PointsPanel() {
+  const { points } = usePoints()
+  if (points === null) return null
+  return (
+    <div className="rounded-2xl px-5 py-4 flex items-center gap-3" style={{ background: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.2)' }}>
+      <TakaPoint size={20} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-black tabular-nums" style={{ color: '#A78BFA', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
+          {points.toLocaleString('es-ES')} pts
+        </p>
+        <p className="text-[9px]" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>
+          Puntos Taka acumulados
+        </p>
+      </div>
+    </div>
+  )
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Page
@@ -282,13 +304,13 @@ export default function QuinielaClient() {
                   letterSpacing: '-0.03em',
                   textShadow: '0 0 40px rgba(124,58,237,0.25)',
                 }}>
-                  Quiniela
+                  Ranked Fútbol
                 </h1>
                 <p className="text-sm" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>
                   {activeTab === 'official'
                     ? (isMundial
-                        ? 'Copa 2026 · Ranked del Mundial · ranking global y monedas'
-                        : 'Ranked · partidos destacados de la semana · ranking global y monedas')
+                        ? 'Copa 2026 · Ranked del Mundial · ranking global y puntos Taka'
+                        : 'Ranked · partidos destacados de la semana · ranking global y puntos Taka')
                     : activeTab === 'leagues'
                     ? (isMundial
                         ? 'Copa 2026 · crea tu liga del Mundial con amigos'
@@ -452,7 +474,7 @@ export default function QuinielaClient() {
                     Guarda tu progreso
                   </p>
                   <p className="text-[10px]" style={{ color: '#6A5A8A', fontFamily: 'var(--font-sport)' }}>
-                    Tus picks y monedas se sincronizan en todos tus dispositivos
+                    Tus picks y puntos Taka se sincronizan en todos tus dispositivos
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5 flex-shrink-0">
@@ -489,8 +511,8 @@ export default function QuinielaClient() {
           {/* Sidebar */}
           <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 flex flex-col gap-5">
 
-            {/* Monedas wallet */}
-            <CoinWallet balance={coins.balance} txns={coins.txns} />
+            {/* Puntos Taka panel */}
+            <PointsPanel />
 
             {/* Ranking acumulado del Mundial 2026 — solo cuando la
                 jornada activa es del torneo (auto-detect por label). */}

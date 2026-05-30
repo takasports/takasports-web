@@ -179,7 +179,7 @@ export function MundialLeaderboardPanel() {
                   {p.total}j
                 </span>
                 <span className="text-[11px] font-black tabular-nums" style={{ color: i === 0 ? '#fbbf24' : '#8A7050', fontFamily: 'var(--font-display)' }}>
-                  {p.score}🪙
+                  {p.score} pts
                 </span>
               </div>
             </div>
