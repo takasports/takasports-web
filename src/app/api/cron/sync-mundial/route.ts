@@ -9,6 +9,7 @@
 // Llama también a close_started_ranked_events() para cerrar partidos iniciados.
 
 import { NextResponse } from 'next/server'
+import { adminSupabase } from '@/lib/supabase-admin'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 
@@ -89,7 +90,7 @@ async function handle(req: Request) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   }
 
-  if (!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
+  if (!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)) {
     return NextResponse.json({ ok: false, error: 'supabase_not_configured' }, { status: 503 })
   }
 
@@ -98,10 +99,14 @@ async function handle(req: Request) {
     return NextResponse.json({ ok: true, fetched: 0, upserted: 0, note: 'ESPN returned no fixtures' })
   }
 
-  const sb    = await createServerSupabaseClient()
+  // Usamos admin (service role) para escrituras — ranked_events solo tiene SELECT pública
+  const admin = adminSupabase()
+  if (!admin) return NextResponse.json({ ok: false, error: 'admin_client_unavailable' }, { status: 503 })
+
   let upserted = 0
 
-  // Cerrar partidos iniciados
+  // Cerrar partidos iniciados (vía anon client que puede llamar la función SECURITY DEFINER)
+  const sb = await createServerSupabaseClient()
   try { await sb.rpc('close_started_ranked_events') } catch { /* no-op */ }
 
   for (const ev of fixtures) {
@@ -151,7 +156,7 @@ async function handle(req: Request) {
       },
     }
 
-    const { error } = await sb.from('ranked_events').upsert(row, {
+    const { error } = await admin.from('ranked_events').upsert(row, {
       onConflict: 'id',
       ignoreDuplicates: false,
     })

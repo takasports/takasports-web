@@ -12,7 +12,7 @@
 //     -d '{"event_id":"wc26-espn-123","winner":"1","home_score":2,"away_score":0}'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 
 export const dynamic = 'force-dynamic'
@@ -44,10 +44,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'invalid_body — need event_id and winner (1|X|2)' }, { status: 400 })
   }
 
-  const sb = await createServerSupabaseClient()
+  const admin = adminSupabase()
+  if (!admin) return NextResponse.json({ ok: false, error: 'admin_client_unavailable' }, { status: 503 })
 
   // Verificar que el evento existe y no está ya resuelto
-  const { data: event } = await sb
+  const { data: event } = await admin
     .from('ranked_events')
     .select('id, status, team_home, team_away')
     .eq('id', body.event_id)
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Llamar a la función SQL que hace todo el scoring
-  const { data: credited, error } = await sb.rpc('score_ranked_prediction', {
+  const { data: credited, error } = await admin.rpc('score_ranked_prediction', {
     p_event_id:   body.event_id,
     p_winner:     body.winner,
     p_home_score: body.home_score ?? null,
@@ -86,10 +87,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   }
 
-  const sb = await createServerSupabaseClient()
+  const admin = adminSupabase()
+  if (!admin) return NextResponse.json({ ok: false, error: 'admin_client_unavailable' }, { status: 503 })
   const sport = new URL(req.url).searchParams.get('sport') ?? 'mundial'
 
-  const { data, error } = await sb
+  const { data, error } = await admin
     .from('ranked_events')
     .select('id, team_home, team_away, event_date, status, featured, meta')
     .eq('sport', sport)
