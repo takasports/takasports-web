@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase'
 import { LogoMark } from './Logo'
 
@@ -22,6 +23,14 @@ export default function AuthModal({ onClose }: AuthModalProps) {
 
   const touchStartY = useRef<number | null>(null)
   const modalRef    = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
   function onTouchStart(e: React.TouchEvent) { touchStartY.current = e.touches[0].clientY }
   function onTouchEnd(e: React.TouchEvent) {
     if (touchStartY.current === null) return
@@ -111,7 +120,9 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     setConfirmPwd('')
   }
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <div
       className="fixed inset-0 z-[200] overflow-y-auto"
       style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)' }}
@@ -452,6 +463,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         </div>
       </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
