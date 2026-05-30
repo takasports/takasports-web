@@ -79,6 +79,8 @@ function BigCard({ article }: { article: Article }) {
           sizes="(max-width: 1024px) 100vw, 48vw"
           className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           priority
+          fetchPriority="high"
+          loading="eager"
           onError={() => setImgFailed(true)}
         />
       ) : (

@@ -177,6 +177,8 @@ function KenBurnsImage({
         sizes="(max-width: 1024px) 100vw, 62vw"
         className="object-cover"
         priority={priority}
+        fetchPriority={priority ? 'high' : 'auto'}
+        loading={priority ? 'eager' : 'lazy'}
         onError={onError}
       />
     </div>

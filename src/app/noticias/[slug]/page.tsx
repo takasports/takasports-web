@@ -661,7 +661,7 @@ export default async function NoticiaPage({
                 className="relative w-full rounded-2xl overflow-hidden mb-8"
                 style={{ height: 'clamp(240px, 52vw, 480px)' }}
               >
-                <Image src={imgUrl} alt={article.imageAlt ?? article.title} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 850px" />
+                <Image src={imgUrl} alt={article.imageAlt ?? article.title} fill className="object-cover" priority fetchPriority="high" loading="eager" sizes="(max-width: 768px) 100vw, 850px" />
                 <div
                   className="absolute inset-0"
                   style={{ background: 'linear-gradient(to top,rgba(9,9,15,0.2) 0%,transparent 50%)' }}
