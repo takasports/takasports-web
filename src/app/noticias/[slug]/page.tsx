@@ -756,6 +756,92 @@ export default async function NoticiaPage({
                           </figure>
                         )
                       },
+                      // FASE 5 — imagen intermedia con URL externa (no asset Sanity)
+                      inlineImage: ({ value }) => {
+                        const src = (value as { url?: string })?.url
+                        if (!src) return null
+                        const alt = (value as { alt?: string })?.alt ?? ''
+                        const caption = (value as { caption?: string })?.caption
+                        return (
+                          <figure style={{ margin: '2.25rem 0' }}>
+                            <div
+                              style={{
+                                borderRadius: 'var(--radius-lg)',
+                                overflow: 'hidden',
+                                border: '1px solid var(--border)',
+                                boxShadow: 'var(--shadow-card)',
+                              }}
+                            >
+                              <Image
+                                src={src}
+                                alt={alt}
+                                width={900}
+                                height={540}
+                                className="w-full h-auto object-cover"
+                                unoptimized
+                              />
+                            </div>
+                            {caption && (
+                              <figcaption
+                                style={{
+                                  fontSize: '0.8rem',
+                                  color: 'var(--text-muted)',
+                                  marginTop: '0.6rem',
+                                  textAlign: 'center',
+                                  fontStyle: 'italic',
+                                  lineHeight: 1.5,
+                                }}
+                              >
+                                {caption}
+                              </figcaption>
+                            )}
+                          </figure>
+                        )
+                      },
+                      // FASE 5 — embed de vídeo (YouTube iframe o enlace a tweet)
+                      videoEmbed: ({ value }) => {
+                        const v = value as { kind?: string; videoId?: string; url?: string; sourceName?: string }
+                        if (v?.kind === 'youtube' && v.videoId) {
+                          return (
+                            <figure style={{ margin: '2.25rem 0' }}>
+                              <div
+                                style={{
+                                  position: 'relative',
+                                  paddingBottom: '56.25%',
+                                  height: 0,
+                                  borderRadius: 'var(--radius-lg)',
+                                  overflow: 'hidden',
+                                  border: '1px solid var(--border)',
+                                }}
+                              >
+                                <iframe
+                                  src={`https://www.youtube.com/embed/${v.videoId}`}
+                                  title={v.sourceName || 'Video'}
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  loading="lazy"
+                                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                                />
+                              </div>
+                            </figure>
+                          )
+                        }
+                        if (v?.kind === 'tweet' && v.url) {
+                          return (
+                            <figure style={{ margin: '2.25rem 0', textAlign: 'center' }}>
+                              <a
+                                href={v.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: '#A78BFA', textDecoration: 'underline' }}
+                              >
+                                Ver publicación original ↗
+                              </a>
+                            </figure>
+                          )
+                        }
+                        return null
+                      },
                     },
                     block: {
                       normal: ({ children, value }) => {
