@@ -47,9 +47,16 @@ const webPageJsonLd = {
   dateModified: '2026-05-28',
 }
 
+function slugifySection(title: string): string {
+  // "3. Verificación de la información" → "seccion-3"
+  const num = title.match(/^(\d+)\./)
+  return num ? `seccion-${num[1]}` : title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const id = slugifySection(title)
   return (
-    <section style={{ marginBottom: '2.25rem' }}>
+    <section id={id} style={{ marginBottom: '2.25rem', scrollMarginTop: '80px' }}>
       <h2 style={{
         fontFamily: 'var(--font-display)',
         fontSize: '1.45rem',

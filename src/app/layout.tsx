@@ -128,16 +128,36 @@ export default async function RootLayout({
             '@context': 'https://schema.org',
             '@graph': [
               {
-                '@type': 'Organization',
+                // NewsMediaOrganization es el subtipo específico que Google News
+                // valora para EEAT: permite declarar policies verificables que
+                // los Search Quality Raters comprueban manualmente.
+                '@type': 'NewsMediaOrganization',
                 '@id': `${SITE_URL}/#organization`,
                 name: 'TakaSports',
                 alternateName: 'TakaSports Media',
                 url: SITE_URL,
                 foundingDate: '2024',
                 logo: { '@type': 'ImageObject', url: LOGO_URL, width: 512, height: 512 },
+                image: { '@type': 'ImageObject', url: LOGO_URL, width: 512, height: 512 },
+                description: 'Plataforma de noticias y análisis deportivos en español. Fútbol, NBA, F1, UFC, tenis y más. Resultados en vivo, rankings editoriales y juegos interactivos.',
                 sameAs: ['https://www.instagram.com/takasportsmedia', 'https://x.com/takasportsx'],
                 areaServed: { '@type': 'Country', name: 'España' },
-                knowsAbout: ['Fútbol', 'Baloncesto', 'Fórmula 1', 'UFC', 'Tenis', 'Lucha libre', 'Rugby'],
+                knowsAbout: ['Fútbol', 'Baloncesto', 'Fórmula 1', 'UFC', 'Tenis', 'Lucha libre', 'Rugby', 'MotoGP'],
+                contactPoint: {
+                  '@type': 'ContactPoint',
+                  email: 'contactotakasports@gmail.com',
+                  contactType: 'editorial',
+                  availableLanguage: ['Spanish', 'es'],
+                },
+                // Policies que Google News exige documentadas y enlazadas para EEAT
+                publishingPrinciples: `${SITE_URL}/politica-editorial`,
+                actionableFeedbackPolicy: `${SITE_URL}/politica-editorial#seccion-5`,
+                correctionsPolicy: `${SITE_URL}/politica-editorial#seccion-5`,
+                verificationFactCheckingPolicy: `${SITE_URL}/politica-editorial#seccion-3`,
+                ethicsPolicy: `${SITE_URL}/politica-editorial#seccion-6`,
+                missionCoveragePrioritiesPolicy: `${SITE_URL}/politica-editorial#seccion-2`,
+                unnamedSourcesPolicy: `${SITE_URL}/politica-editorial#seccion-7`,
+                ownershipFundingInfo: `${SITE_URL}/politica-editorial#seccion-8`,
               },
               {
                 '@type': 'WebSite',

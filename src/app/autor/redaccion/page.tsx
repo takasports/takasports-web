@@ -64,13 +64,13 @@ export default async function RedaccionAuthorPage() {
 
   const personJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': 'NewsMediaOrganization',
     '@id': `${SITE_URL}/autor/redaccion#author`,
     name: 'Redacción TakaSports',
     alternateName: 'Equipo editorial de TakaSports',
     url: `${SITE_URL}/autor/redaccion`,
     image: LOGO_URL,
-    logo: LOGO_URL,
+    logo: { '@type': 'ImageObject', url: LOGO_URL, width: 512, height: 512 },
     description:
       'Equipo editorial de TakaSports Media. Redactamos, verificamos y publicamos noticias, análisis y rankings deportivos con estándares periodísticos.',
     knowsAbout: ['Fútbol', 'Baloncesto', 'Fórmula 1', 'UFC', 'Tenis', 'WWE', 'Rugby', 'MotoGP'],
@@ -79,6 +79,18 @@ export default async function RedaccionAuthorPage() {
       'https://x.com/takasportsx',
     ],
     parentOrganization: { '@id': `${SITE_URL}/#organization` },
+    // Mismas policies que el publisher raíz: refuerzan el EEAT del autor
+    publishingPrinciples: `${SITE_URL}/politica-editorial`,
+    actionableFeedbackPolicy: `${SITE_URL}/politica-editorial#seccion-5`,
+    correctionsPolicy: `${SITE_URL}/politica-editorial#seccion-5`,
+    verificationFactCheckingPolicy: `${SITE_URL}/politica-editorial#seccion-3`,
+    ethicsPolicy: `${SITE_URL}/politica-editorial#seccion-6`,
+    contactPoint: {
+      '@type': 'ContactPoint',
+      email: 'contactotakasports@gmail.com',
+      contactType: 'editorial',
+      availableLanguage: ['Spanish', 'es'],
+    },
   }
 
   const breadcrumbJsonLd = {

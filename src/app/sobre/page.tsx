@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { SITE_URL, LOGO_URL } from '@/lib/constants'
+import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: 'Sobre TakaSports — Quiénes somos',
@@ -23,28 +23,8 @@ export const metadata: Metadata = {
   },
 }
 
-const organizationJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  '@id': `${SITE_URL}/#organization`,
-  name: 'TakaSports',
-  url: SITE_URL,
-  logo: { '@type': 'ImageObject', url: LOGO_URL, width: 512, height: 512 },
-  description: 'Plataforma de noticias y análisis deportivos en español. Fútbol, NBA, F1, UFC, tenis y más. Resultados en vivo, rankings editoriales y juegos interactivos.',
-  foundingDate: '2024',
-  inLanguage: 'es-ES',
-  areaServed: { '@type': 'Place', name: 'Hispanohablantes' },
-  sameAs: [
-    'https://www.instagram.com/takasportsmedia',
-    'https://x.com/takasportsx',
-  ],
-  contactPoint: {
-    '@type': 'ContactPoint',
-    email: 'contactotakasports@gmail.com',
-    contactType: 'customer support',
-    availableLanguage: 'Spanish',
-  },
-}
+// Organization (NewsMediaOrganization) se define una sola vez en el root layout
+// como #organization. Aquí solo emitimos breadcrumbs + AboutPage referenciándolo.
 
 const breadcrumbJsonLd = {
   '@context': 'https://schema.org',
@@ -68,7 +48,6 @@ const webPageJsonLd = {
 export default function SobrePage() {
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }} />
       <Header />

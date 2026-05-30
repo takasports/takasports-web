@@ -468,7 +468,8 @@ export default async function NoticiaPage({
     },
     isPartOf: { '@id': `${SITE_URL}/#website` },
     author: {
-      '@type': 'Organization',
+      '@type': 'NewsMediaOrganization',
+      '@id': `${SITE_URL}/autor/redaccion#author`,
       name: articleAuthor,
       url: `${SITE_URL}/autor/redaccion`,
       logo: { '@type': 'ImageObject', url: `${SITE_URL}/taka-logo.png` },
@@ -480,6 +481,8 @@ export default async function NoticiaPage({
     publisher: { '@id': `${SITE_URL}/#organization` },
     copyrightHolder: { '@id': `${SITE_URL}/#organization` },
     copyrightYear: article.publishedAt ? new Date(article.publishedAt).getFullYear() : new Date().getFullYear(),
+    // EEAT: enlaza el artículo con la política editorial verificable
+    publishingPrinciples: `${SITE_URL}/politica-editorial`,
   }
 
   const sportSlug = article.sport ?? null
