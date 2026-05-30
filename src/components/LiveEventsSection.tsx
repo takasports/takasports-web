@@ -18,7 +18,8 @@ interface LiveScore {
   matchRef?: string
 }
 
-const FINISHED = new Set(['FT', 'Final', 'STATUS_FINAL', 'NS', 'STATUS_SCHEDULED',
+const FINISHED = new Set(['FT', 'Final', 'FINAL', 'FINAL_PEN', 'FINAL_AET', 'STATUS_FINAL', 'NS', 'STATUS_SCHEDULED',
+  'POST_GAME', 'END_OF_REGULATION',
   'ABANDONED', 'WALKOVER', 'RETIRED', 'CANCELED', 'POSTPONED', 'SUSPENDED'])
 
 function normalize(name: string) {

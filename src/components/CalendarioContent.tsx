@@ -56,7 +56,7 @@ interface LiveScore {
   clock?: string   // current set score for tennis e.g. "4-2"
 }
 
-const FINISHED = new Set(['FT', 'Final', 'STATUS_FINAL', 'NS'])
+const FINISHED = new Set(['FT', 'Final', 'FINAL', 'FINAL_PEN', 'FINAL_AET', 'STATUS_FINAL', 'POST_GAME', 'END_OF_REGULATION', 'NS'])
 
 // ─── Hooks ────────────────────────────────────────────────────────────────
 // Helper: ejecuta `tick` cada `ms` solo cuando la pestaña está visible.

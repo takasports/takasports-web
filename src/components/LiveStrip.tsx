@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { LiveEventCard, UpcomingEventCard, type LiveFixture, type UpcomingEvent } from '@/components/events/LiveEventCard'
 
 const FINISHED = new Set([
-  'FT', 'NS', 'FINAL', 'STATUS_FINAL', 'STATUS_SCHEDULED',
+  'FT', 'NS', 'FINAL', 'FINAL_PEN', 'FINAL_AET', 'STATUS_FINAL', 'STATUS_SCHEDULED',
+  'POST_GAME', 'END_OF_REGULATION',
   'ABANDONED', 'WALKOVER', 'RETIRED', 'CANCELED', 'POSTPONED', 'SUSPENDED',
 ])
 

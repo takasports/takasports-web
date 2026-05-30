@@ -49,7 +49,11 @@ const ESPN_TEAM_LEAGUES = [
 
 const TENNIS_SLUGS = ['tennis/atp', 'tennis/wta'] as const
 
-function mapStatus(espnStatus: string, sport: string, period?: number): string {
+function mapStatus(espnStatus: string, sport: string, period?: number, completed?: boolean, state?: string): string {
+  // Cualquier evento marcado como terminado por ESPN (incluye STATUS_FINAL_PEN,
+  // STATUS_FINAL_AET, STATUS_POST_GAME, etc.) se normaliza a 'FT' para que los
+  // consumidores lo filtren como finalizado.
+  if (completed === true || state === 'post') return 'FT'
   if (espnStatus === 'STATUS_IN_PROGRESS') {
     if (sport === 'basketball') return period ? `Q${period}` : 'LIVE'
     // Tennis has no halves/sets concept in status — use LIVE so downstream
@@ -168,7 +172,10 @@ async function fetchTeamLeague(slug: string, sport: string, comp: string, league
     for (const ev of json.events ?? []) {
       const competition = ev.competitions?.[0]
       if (!competition) continue
-      const statusName: string = competition.status?.type?.name ?? ''
+      const statusType = competition.status?.type as { name?: string; completed?: boolean; state?: string } | undefined
+      const statusName: string = statusType?.name ?? ''
+      const completed = statusType?.completed === true
+      const state = statusType?.state
       if (statusName === 'STATUS_SCHEDULED' || statusName === 'STATUS_POSTPONED') continue
 
       const competitors: RawCompetitor[] = competition.competitors ?? []
@@ -205,7 +212,7 @@ async function fetchTeamLeague(slug: string, sport: string, comp: string, league
         away,
         homeScore,
         awayScore,
-        mapStatus(statusName, sport, period),
+        mapStatus(statusName, sport, period, completed, state),
         sport,
         {
           comp,
@@ -239,7 +246,10 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
     const results: LiveScore[] = []
 
     for (const ev of json.events ?? []) {
-      const statusName: string = ev.fullStatus?.type?.name ?? ''
+      const statusType = ev.fullStatus?.type as { name?: string; completed?: boolean; state?: string } | undefined
+      const statusName: string = statusType?.name ?? ''
+      const completed = statusType?.completed === true
+      const state = statusType?.state
       if (statusName === 'STATUS_SCHEDULED' || statusName === 'STATUS_POSTPONED') continue
 
       const competitors: RawCompetitor[] = ev.competitors ?? []
@@ -278,7 +288,7 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
         away,
         homeGoals,
         awayGoals,
-        mapStatus(statusName, 'tennis'),
+        mapStatus(statusName, 'tennis', undefined, completed, state),
         'tennis',
         { comp: tournament, clock, ...(setsStr ? { setsStr } : {}) },
       ))
@@ -308,7 +318,10 @@ async function fetchUfcLive(): Promise<LiveScore[]> {
       const eventName = (ev.shortName as string) ?? (ev.name as string) ?? 'UFC'
       const venue = (ev.competitions?.[0]?.venue as Record<string, unknown>)?.fullName as string | undefined
       for (const competition of ev.competitions ?? []) {
-        const statusName: string = competition.status?.type?.name ?? ''
+        const statusType = competition.status?.type as { name?: string; completed?: boolean; state?: string } | undefined
+        const statusName: string = statusType?.name ?? ''
+        const completed = statusType?.completed === true
+        const state = statusType?.state
         if (statusName === 'STATUS_SCHEDULED' || statusName === 'STATUS_POSTPONED') continue
 
         const competitors: RawCompetitor[] = competition.competitors ?? []
@@ -340,7 +353,7 @@ async function fetchUfcLive(): Promise<LiveScore[]> {
           away,
           null,
           null,
-          mapStatus(statusName, 'mma', period),
+          mapStatus(statusName, 'mma', period, completed, state),
           'mma',
           {
             comp: eventName,
