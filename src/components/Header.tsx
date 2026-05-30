@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase'
 import { trackSearch } from '@/lib/analytics'
 import type { User } from '@supabase/supabase-js'
 import { PersonIcon } from '@/components/icons/GameIcons'
+import PorraCTA from '@/components/PorraCTA'
 import type { SearchHit } from '@/app/api/search/players/route'
 import dynamic from 'next/dynamic'
 
@@ -585,59 +586,12 @@ export default function Header() {
               )
             })}
 
-            {/* Porra CTA — pill destacada, separada del resto */}
-            {(() => {
-              const active = isNavActive(PORRA_LINK.href, pathname)
-              return (
-                <Link
-                  href={PORRA_LINK.href}
-                  aria-current={active ? 'page' : undefined}
-                  className="porra-cta relative inline-flex items-center gap-1.5 ml-2 px-3 py-1.5 rounded-full whitespace-nowrap"
-                  style={{
-                    fontFamily: 'var(--font-sport)',
-                    fontSize: 12,
-                    fontWeight: 800,
-                    letterSpacing: '0.04em',
-                    color: '#fff',
-                    textDecoration: 'none',
-                    background: active
-                      ? 'linear-gradient(135deg, #7C3AED 0%, #F97316 100%)'
-                      : 'linear-gradient(135deg, rgba(124,58,237,0.18) 0%, rgba(249,115,22,0.18) 100%)',
-                    border: active
-                      ? '1px solid rgba(255,255,255,0.18)'
-                      : '1px solid rgba(124,58,237,0.45)',
-                    boxShadow: active
-                      ? '0 0 0 3px rgba(124,58,237,0.18), 0 6px 18px rgba(124,58,237,0.35)'
-                      : '0 0 14px rgba(124,58,237,0.18)',
-                    transition: 'background 200ms, box-shadow 200ms, transform 160ms',
-                  }}
-                >
-                  <span aria-hidden style={{
-                    display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
-                    background: '#F97316',
-                    boxShadow: '0 0 8px #F97316',
-                    animation: 'porraPulse 1.8s ease-in-out infinite',
-                  }} />
-                  {PORRA_LINK.label}
-                  <span style={{
-                    fontSize: 9, fontWeight: 900, letterSpacing: '0.08em',
-                    padding: '2px 5px', borderRadius: 4,
-                    background: 'rgba(255,255,255,0.18)',
-                    color: '#fff',
-                    marginLeft: 2,
-                  }}>
-                    JUEGA
-                  </span>
-                  <style>{`
-                    @keyframes porraPulse {
-                      0%, 100% { opacity: 1; transform: scale(1); }
-                      50%      { opacity: 0.55; transform: scale(0.85); }
-                    }
-                    .porra-cta:hover { transform: translateY(-1px); }
-                  `}</style>
-                </Link>
-              )
-            })()}
+            {/* Porra CTA — pill destacada con badge dinámico (jornada/deadline/picks) */}
+            <PorraCTA
+              href={PORRA_LINK.href}
+              active={isNavActive(PORRA_LINK.href, pathname)}
+              variant="desktop"
+            />
           </nav>
 
           {/* Right */}
@@ -746,44 +700,13 @@ export default function Header() {
                   <span>Buscar jugadores, noticias...</span>
                 </button>
 
-                {/* Porra CTA mobile — destacada arriba */}
-                {(() => {
-                  const active = isNavActive(PORRA_LINK.href, pathname)
-                  return (
-                    <Link
-                      href={PORRA_LINK.href}
-                      onClick={() => setMenuOpen(false)}
-                      aria-current={active ? 'page' : undefined}
-                      className="flex items-center justify-between px-3 py-3 rounded-xl mb-1.5"
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(124,58,237,0.22) 0%, rgba(249,115,22,0.18) 100%)',
-                        border: '1px solid rgba(124,58,237,0.5)',
-                        boxShadow: '0 0 16px rgba(124,58,237,0.18)',
-                        color: '#fff',
-                        fontFamily: 'var(--font-sport)',
-                        fontSize: 15,
-                        fontWeight: 800,
-                        letterSpacing: '0.02em',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <span aria-hidden style={{
-                          width: 7, height: 7, borderRadius: '50%',
-                          background: '#F97316', boxShadow: '0 0 8px #F97316', display: 'inline-block',
-                        }} />
-                        {PORRA_LINK.label}
-                      </span>
-                      <span style={{
-                        fontSize: 9, fontWeight: 900, letterSpacing: '0.08em',
-                        padding: '3px 7px', borderRadius: 5,
-                        background: 'rgba(255,255,255,0.18)', color: '#fff',
-                      }}>
-                        JUEGA
-                      </span>
-                    </Link>
-                  )
-                })()}
+                {/* Porra CTA mobile — destacada arriba con badge dinámico */}
+                <PorraCTA
+                  href={PORRA_LINK.href}
+                  active={isNavActive(PORRA_LINK.href, pathname)}
+                  variant="mobile"
+                  onNavigate={() => setMenuOpen(false)}
+                />
 
                 {NAV_LINKS.map(({ label, href }) => {
                   const active = isNavActive(href, pathname)
