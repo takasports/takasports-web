@@ -384,7 +384,7 @@ function PrePicker({
             Tu pick: {userPick.player_name}
           </p>
           <p className="text-[10px]" style={{ color: '#9B6B85', fontFamily: 'var(--font-sport)' }}>
-            Si marca al menos 1 gol, sumás monedas extra al Ranked.
+            Si marca al menos 1 gol, sumás puntos extra al Ranked.
           </p>
         </div>
         {!kickoffPassed && (
