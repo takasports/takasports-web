@@ -9,6 +9,10 @@
 //   <TakaPoint size={40} />           → tamaño grande (perfil, leaderboard)
 //   <TakaPoint size={16} muted />     → versión apagada (texto secundario)
 
+'use client'
+
+import { useId } from 'react'
+
 interface TakaPointProps {
   size?: number
   muted?: boolean
@@ -16,7 +20,8 @@ interface TakaPointProps {
 }
 
 export default function TakaPoint({ size = 16, muted = false, className }: TakaPointProps) {
-  const id = `tp-grad-${size}`
+  const uid = useId()
+  const id = `tp-grad-${uid}`
 
   return (
     <svg

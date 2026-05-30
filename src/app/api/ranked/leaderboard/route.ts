@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
     .from('point_transactions')
     .select(`
       user_id,
+      amount,
       profiles!point_transactions_user_id_fkey (
         display_name,
         avatar_url

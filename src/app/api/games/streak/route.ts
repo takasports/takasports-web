@@ -59,15 +59,12 @@ export async function POST() {
           context: { streak: current_streak, date: last_played_date },
         })
 
-        // Increment points_balance atomically via raw SQL workaround:
-        // SELECT + UPDATE is acceptable here (non-critical, bonus points)
-        const { data: profile } = await sb
-          .from('profiles')
-          .select('points_balance')
-          .eq('id', user.id)
-          .single()
-        const newBalance = ((profile as { points_balance?: number } | null)?.points_balance ?? 0) + bonusPoints
-        await sb.from('profiles').update({ points_balance: newBalance }).eq('id', user.id)
+        // Actualizar points_balance de forma atómica usando una expresión SQL
+        // a través de un RPC genérico. Evita la race condition del SELECT+UPDATE.
+        await sb.rpc('increment_points_balance', {
+          p_user_id: user.id,
+          p_amount:  bonusPoints,
+        })
 
         milestoneAwarded = bonusPoints
       }

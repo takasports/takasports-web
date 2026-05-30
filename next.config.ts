@@ -69,6 +69,22 @@ const nextConfig: NextConfig = {
       "form-action 'self'",
     ].join("; ");
 
+    // Cache-Control explícito en rutas de contenido.
+    //
+    // Contexto: el root layout hace `await headers()` para leer el nonce CSP,
+    // lo que marca TODA la app como dinámica → Next devuelve por defecto
+    // `cache-control: private, no-cache, no-store, max-age=0, must-revalidate`.
+    // Eso es catastrófico para SEO: Googlebot lo interpreta como "no almacenar
+    // ni mantener fresca esta URL en el índice" y deja de mantenerla indexada.
+    //
+    // Solución: sobrescribir el header en rutas que sí son cacheables (no hay
+    // contenido personalizado por usuario en el SSR — la auth corre en cliente).
+    // Vercel CDN respeta este header pese a que la ruta sea técnicamente dinámica.
+    const contentCache = "public, s-maxage=600, stale-while-revalidate=86400"
+    const articleCache = "public, s-maxage=600, stale-while-revalidate=86400"
+    const fastCache    = "public, s-maxage=120, stale-while-revalidate=3600"   // datos live (partidos, calendario)
+    const slowCache    = "public, s-maxage=3600, stale-while-revalidate=86400" // páginas evergreen
+
     return [
       {
         source: "/(.*)",
@@ -88,6 +104,36 @@ const nextConfig: NextConfig = {
           { key: "Content-Security-Policy", value: csp },
         ],
       },
+      // ── Noticias: artículos cacheables 10min, SWR 24h ──
+      { source: "/noticias/:slug*",            headers: [{ key: "Cache-Control", value: articleCache }] },
+      { source: "/tag/:tag*",                  headers: [{ key: "Cache-Control", value: contentCache }] },
+      // ── Datos en vivo: 2min de cache, SWR 1h ──
+      { source: "/partido/:ref*",              headers: [{ key: "Cache-Control", value: fastCache }] },
+      { source: "/calendario/:path*",          headers: [{ key: "Cache-Control", value: fastCache }] },
+      { source: "/estadisticas/:path*",        headers: [{ key: "Cache-Control", value: fastCache }] },
+      { source: "/liga/:id*",                  headers: [{ key: "Cache-Control", value: fastCache }] },
+      // ── Hubs de entidades: 10min ──
+      { source: "/equipo/:slug*",              headers: [{ key: "Cache-Control", value: contentCache }] },
+      { source: "/jugador/:slug*",             headers: [{ key: "Cache-Control", value: contentCache }] },
+      { source: "/evento/:id*",                headers: [{ key: "Cache-Control", value: contentCache }] },
+      { source: "/rankings/:path*",            headers: [{ key: "Cache-Control", value: contentCache }] },
+      { source: "/reels",                      headers: [{ key: "Cache-Control", value: contentCache }] },
+      // ── Hubs por deporte y home ──
+      { source: "/",                           headers: [{ key: "Cache-Control", value: contentCache }] },
+      { source: "/futbol",                     headers: [{ key: "Cache-Control", value: contentCache }] },
+      { source: "/baloncesto",                 headers: [{ key: "Cache-Control", value: contentCache }] },
+      { source: "/f1",                         headers: [{ key: "Cache-Control", value: contentCache }] },
+      { source: "/motogp",                     headers: [{ key: "Cache-Control", value: contentCache }] },
+      { source: "/tenis",                      headers: [{ key: "Cache-Control", value: contentCache }] },
+      { source: "/ufc",                        headers: [{ key: "Cache-Control", value: contentCache }] },
+      { source: "/mundial",                    headers: [{ key: "Cache-Control", value: contentCache }] },
+      // ── Páginas evergreen: 1h ──
+      { source: "/sobre",                      headers: [{ key: "Cache-Control", value: slowCache }] },
+      { source: "/politica-editorial",         headers: [{ key: "Cache-Control", value: slowCache }] },
+      { source: "/privacidad",                 headers: [{ key: "Cache-Control", value: slowCache }] },
+      { source: "/terminos",                   headers: [{ key: "Cache-Control", value: slowCache }] },
+      { source: "/glosario/:slug*",            headers: [{ key: "Cache-Control", value: slowCache }] },
+      { source: "/autor/:path*",               headers: [{ key: "Cache-Control", value: slowCache }] },
     ];
   },
 };

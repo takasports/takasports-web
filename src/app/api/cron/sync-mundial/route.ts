@@ -110,6 +110,15 @@ async function handle(req: Request) {
   const sb = await createServerSupabaseClient()
   try { await sb.rpc('close_started_ranked_events') } catch { /* no-op */ }
 
+  // Pre-fetch IDs ya resueltos para evitar regresión de status (resolved → open)
+  // cuando ESPN devuelve datos desactualizados en la misma pasada.
+  const { data: resolvedRows } = await admin
+    .from('ranked_events')
+    .select('id')
+    .eq('sport', 'mundial')
+    .eq('status', 'resolved')
+  const resolvedIds = new Set((resolvedRows ?? []).map((r: { id: string }) => r.id))
+
   for (const ev of fixtures) {
     const comp = ev.competitions?.[0]
     if (!comp) continue
@@ -127,6 +136,11 @@ async function handle(req: Request) {
     const winner    = isResolved ? toWinner(homeScore, awayScore) : null
 
     const eventId = `wc26-espn-${ev.id}`
+
+    // Protección anti-regresión: si ya está resolved en DB y ESPN devuelve
+    // datos no-finales (race condition o caché de ESPN), saltamos el evento.
+    if (resolvedIds.has(eventId) && !isResolved) continue
+
     const status  = isResolved ? 'resolved' : isClosed ? 'closed' : 'open'
     const result  = isResolved && winner != null
       ? { winner, home_score: homeScore, away_score: awayScore }
