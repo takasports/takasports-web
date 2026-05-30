@@ -365,10 +365,14 @@ interface LevelData {
 
 function LevelChip({ data }: { data: LevelData }) {
   const pct = Math.round(data.progress * 100)
+  const tooltip = data.xpToNext > 0
+    ? `${data.xp.toLocaleString()} XP · Faltan ${data.xpToNext.toLocaleString()} para L${data.level + 1}`
+    : `${data.xp.toLocaleString()} XP · Nivel máximo`
   return (
     <Link
       href="/perfil"
       aria-label={`Nivel ${data.level} — ${data.levelName}`}
+      title={tooltip}
       style={{ textDecoration: 'none' }}
       className="hidden md:flex flex-col items-center gap-1 px-2 py-1 rounded-lg transition-opacity hover:opacity-80 flex-shrink-0"
     >
@@ -412,6 +416,55 @@ function LevelChip({ data }: { data: LevelData }) {
   )
 }
 
+// ── Toast de level-up ─────────────────────────────────────────
+function LevelUpToast({ level, levelName, color, onClose }: {
+  level: number; levelName: string; color: string; onClose: () => void
+}) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 5000)
+    return () => clearTimeout(t)
+  }, [onClose])
+
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      style={{
+        position: 'fixed',
+        bottom: 24,
+        right: 24,
+        zIndex: 9999,
+        background: 'rgba(15,15,20,0.97)',
+        border: `1.5px solid ${color}`,
+        borderRadius: 14,
+        padding: '14px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        boxShadow: `0 4px 32px ${color}40, 0 0 0 1px rgba(255,255,255,0.04)`,
+        animation: 'slideUp 0.35s cubic-bezier(.17,.67,.35,1.2) both',
+        maxWidth: 280,
+      }}
+    >
+      <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      <span style={{ fontSize: 28, lineHeight: 1 }}>⬆️</span>
+      <div>
+        <div style={{ color, fontFamily: 'var(--font-sport)', fontWeight: 900, fontSize: 13, letterSpacing: '0.04em' }}>
+          ¡SUBISTE DE NIVEL!
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 2 }}>
+          Ahora eres <strong style={{ color }}>{levelName}</strong> (L{level})
+        </div>
+      </div>
+      <button
+        onClick={onClose}
+        aria-label="Cerrar"
+        style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}
+      >×</button>
+    </div>
+  )
+}
+
 // ── Header principal ─────────────────────────────────────────
 export default function Header() {
   const pathname = usePathname()
@@ -420,6 +473,7 @@ export default function Header() {
   const [authOpen, setAuthOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [levelData, setLevelData] = useState<LevelData | null>(null)
+  const [levelUpToast, setLevelUpToast] = useState<{ level: number; levelName: string; color: string } | null>(null)
 
   useEffect(() => { setMenuOpen(false) }, [pathname])
 
@@ -433,21 +487,34 @@ export default function Header() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Fetch level data cuando hay sesión
+  // Fetch level data cuando hay sesión — con detección de level-up
   useEffect(() => {
     if (!user) { setLevelData(null); return }
+    const LEVEL_KEY = `ts_level_${user.id}`
     fetch('/api/quiniela/me', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then((d: { level?: number; levelName?: string; levelColor?: string; progress?: number; xp?: number; xpToNext?: number } | null) => {
         if (d && d.level != null) {
-          setLevelData({
-            level:      d.level,
+          const newLevel = d.level
+          const newData: LevelData = {
+            level:      newLevel,
             levelName:  d.levelName  ?? '',
             levelColor: d.levelColor ?? '#A78BFA',
             progress:   d.progress   ?? 0,
             xp:         d.xp         ?? 0,
             xpToNext:   d.xpToNext   ?? 0,
-          })
+          }
+          setLevelData(newData)
+
+          // Detectar level-up comparando con el nivel anterior guardado
+          try {
+            const prevLevel = parseInt(sessionStorage.getItem(LEVEL_KEY) ?? '0', 10)
+            if (prevLevel > 0 && newLevel > prevLevel) {
+              // ¡Subió de nivel! Mostrar toast
+              setLevelUpToast({ level: newLevel, levelName: newData.levelName, color: newData.levelColor })
+            }
+            sessionStorage.setItem(LEVEL_KEY, String(newLevel))
+          } catch { /* sessionStorage no disponible — ignorar */ }
         }
       })
       .catch(() => {/* silencioso */})
@@ -669,6 +736,16 @@ export default function Header() {
       )}
 
       {searchOpen && <SearchModal onClose={closeSearch} />}
+
+      {/* Toast de level-up — portal al nivel de página */}
+      {levelUpToast && (
+        <LevelUpToast
+          level={levelUpToast.level}
+          levelName={levelUpToast.levelName}
+          color={levelUpToast.color}
+          onClose={() => setLevelUpToast(null)}
+        />
+      )}
     </>
   )
 }

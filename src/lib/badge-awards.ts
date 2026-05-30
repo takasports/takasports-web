@@ -141,3 +141,34 @@ export function badgesEarnedOnSettle(ctx: SettleBadgeContext): string[] {
 
   return earned
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Ranked prediction badges
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Badges que puede ganar un user al hacer su primera predicción Ranked.
+ * Llamar desde POST /api/ranked/predictions tras insertar el pick.
+ */
+export function badgesEarnedOnRankedPick(ctx: {
+  /** true si es la primera predicción del user en cualquier deporte */
+  isFirstPick: boolean
+}): string[] {
+  const earned: string[] = []
+  if (ctx.isFirstPick) earned.push('primera_prediccion')
+  return earned
+}
+
+/**
+ * Badges que puede ganar un user al acertar una predicción Ranked.
+ * Llamar desde admin/ranked/score o sync-mundial tras score_ranked_prediction,
+ * una vez por usuario correcto.
+ */
+export function badgesEarnedOnRankedCorrect(ctx: {
+  /** true si es su primera predicción ranked acertada en toda la historia */
+  isFirstCorrect: boolean
+}): string[] {
+  const earned: string[] = []
+  if (ctx.isFirstCorrect) earned.push('primera_prediccion_correcta')
+  return earned
+}

@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { awardBadges, badgesEarnedOnRankedPick } from '@/lib/badge-awards'
 
 export const dynamic = 'force-dynamic'
 
@@ -118,5 +119,20 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // ── Badge: primera_prediccion (fire-and-forget) ─────────────────
+  // Chequeamos si este es su PRIMER pick ranked en cualquier deporte.
+  // Lo hacemos tras el insert exitoso para no bloquear la respuesta.
+  try {
+    const { count } = await sb
+      .from('ranked_predictions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    const isFirstPick = (count ?? 0) <= 1  // 1 = el que acabamos de insertar
+    const earned = badgesEarnedOnRankedPick({ isFirstPick })
+    if (earned.length > 0) await awardBadges(sb, user.id, earned)
+  } catch { /* badge fallo — nunca bloquea la respuesta */ }
+
   return NextResponse.json({ prediction }, { status: 201 })
 }

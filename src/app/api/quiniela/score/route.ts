@@ -3,18 +3,18 @@
 // El endpoint opera en DOS FASES según el body.phase:
 //
 //   · phase='stake'   → al sellar la quiniela en PicksForm. Valida saldo
-//                       y cuotas, descuenta totalStake vía add_coins
-//                       (-totalStake), persiste quiniela_picks con
-//                       {staked:true, settled:false}. No calcula
-//                       ganancias (los partidos aún no pasaron).
+//                       y cuotas, descuenta totalStake vía spend_points
+//                       (txn negativa en point_transactions), persiste
+//                       quiniela_picks con {staked:true, settled:false}.
+//                       No calcula ganancias (los partidos aún no pasaron).
 //
 //   · phase='settle'  → al cierre, cuando PicksSummary detecta que TODOS
 //                       los picks tienen resultado oficial. Lee los picks
 //                       persistidos (NO los del body, evita tampering),
 //                       calcula scorePicks con results de ESPN, acredita
-//                       ganancias vía add_coins(+totalWon) y marca
-//                       {settled:true}. Idempotente: re-llamadas devuelven
-//                       el resultado guardado sin re-acreditar.
+//                       ganancias vía award_points y marca {settled:true}.
+//                       Idempotente: re-llamadas devuelven el resultado
+//                       guardado sin re-acreditar.
 //
 //   · phase=undefined → legacy/invitado. Calcula breakdown y devuelve
 //                       sin persistir ni descontar/acreditar nada.
@@ -220,13 +220,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'no stake to bet' }, { status: 400 })
       }
 
-      // Validar saldo.
-      const { data: balRow } = await sb
-        .from('quiniela_coin_balance')
-        .select('balance')
-        .eq('user_id', user.id)
+      // Validar saldo desde profiles.points_balance (fuente única de verdad).
+      const { data: profRow } = await sb
+        .from('profiles')
+        .select('points_balance')
+        .eq('id', user.id)
         .maybeSingle()
-      const balance = balRow?.balance ?? 0
+      const balance = (profRow as { points_balance?: number } | null)?.points_balance ?? 0
       if (balance < totalStake) {
         return NextResponse.json(
           { error: 'insufficient_balance', needed: totalStake, balance },
@@ -234,23 +234,20 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Descontar totalStake.
+      // Descontar totalStake vía spend_points (atómico, inserta txn negativa).
       const adminSb = adminSupabase()
       if (!adminSb) {
         return NextResponse.json({ error: 'service_unavailable' }, { status: 503 })
       }
-      const { error: chargeErr } = await adminSb.rpc('add_coins', {
-        p_amount: -totalStake,
-        p_reason: `Quiniela ${body.jornada}: apuesta sellada`,
-        p_context: {
-          source: 'quiniela_stake',
-          jornada: body.jornada,
-          totalStake,
-        },
+      const { error: chargeErr } = await adminSb.rpc('spend_points', {
         p_user_id: user.id,
+        p_amount:  totalStake,
+        p_sport:   'futbol',
+        p_source:  'quiniela_stake',
+        p_reason:  `Quiniela ${body.jornada}: apuesta sellada`,
+        p_context: { jornada: body.jornada, totalStake },
       })
       if (chargeErr) {
-        // La RPC lanza 'insufficient_balance' si la protección atómica detecta saldo insuficiente
         const isInsufficient = chargeErr.message?.includes('insufficient_balance')
         return NextResponse.json(
           { error: isInsufficient ? 'insufficient_balance' : 'charge_failed', detail: chargeErr.message },
@@ -258,8 +255,8 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Persistir picks con flag staked. Si falla, hacemos rollback
-      // best-effort de las monedas para no dejar al user en deuda.
+      // Persistir picks con flag staked. Si falla, devolvemos los puntos
+      // vía award_points (best-effort rollback).
       const payload: StoredPayload = {
         picks: body.picks,
         staked: true,
@@ -274,15 +271,17 @@ export async function POST(req: NextRequest) {
       }, { onConflict: 'user_id,jornada' })
 
       if (upsertErr) {
-        // Rollback best-effort de las monedas para no dejar deuda.
-        // Si el rollback también falla, queda un cobro huérfano que
-        // requiere intervención manual via SQL.
+        // Rollback best-effort: devolver los puntos descontados.
+        // Si este rollback también falla queda un cobro huérfano para
+        // intervención manual via SQL.
         try {
-          await adminSb.rpc('add_coins', {
-            p_amount: totalStake,
-            p_reason: `Rollback Quiniela ${body.jornada} (persistencia fallida)`,
-            p_context: { source: 'quiniela_stake_rollback', jornada: body.jornada },
+          await adminSb.rpc('award_points', {
             p_user_id: user.id,
+            p_amount:  totalStake,
+            p_sport:   'futbol',
+            p_source:  'quiniela_stake_rollback',
+            p_reason:  `Rollback Quiniela ${body.jornada} (persistencia fallida)`,
+            p_context: { jornada: body.jornada },
           })
         } catch { /* swallow */ }
         return NextResponse.json({ error: 'persist_failed', detail: upsertErr.message }, { status: 500 })

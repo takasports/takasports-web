@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
+import { awardBadges, badgesEarnedOnRankedCorrect } from '@/lib/badge-awards'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,6 +73,32 @@ export async function POST(req: NextRequest) {
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
   }
+
+  // ── Badge: primera_prediccion_correcta (fire-and-forget) ─────────
+  // Para cada user que acertó en este evento, verificamos si es su
+  // primer acierto ranked total y le otorgamos el badge.
+  try {
+    // Usuarios que acertaron en este evento
+    const { data: winners } = await admin
+      .from('ranked_predictions')
+      .select('user_id')
+      .eq('event_id', body.event_id)
+      .eq('is_correct', true)
+
+    for (const row of winners ?? []) {
+      const uid = (row as { user_id: string }).user_id
+      // ¿Tiene más de 1 predicción correcta? (> 1 = ya tenía aciertos previos)
+      const { count } = await admin
+        .from('ranked_predictions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', uid)
+        .eq('is_correct', true)
+
+      const isFirstCorrect = (count ?? 0) <= 1
+      const earned = badgesEarnedOnRankedCorrect({ isFirstCorrect })
+      if (earned.length > 0) await awardBadges(admin, uid, earned)
+    }
+  } catch { /* badge fallo — nunca bloquea la respuesta */ }
 
   return NextResponse.json({
     ok:      true,
