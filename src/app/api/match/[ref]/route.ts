@@ -175,21 +175,56 @@ function detectSport(leagueSlug: string): SportKind {
   return 'other'
 }
 
+// Estados conocidos — si llega uno fuera de este set, se loguea una vez por
+// proceso (warnUnknownStatus). Permite detectar nuevos códigos de ESPN sin
+// esperar a un bug visible en producción.
+const KNOWN_STATUSES = new Set([
+  'STATUS_SCHEDULED', 'STATUS_PRE_GAME', 'STATUS_DELAYED', 'STATUS_RAIN_DELAY',
+  'STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_SECOND_HALF',
+  'STATUS_END_PERIOD', 'STATUS_END_OF_PERIOD', 'STATUS_OVERTIME', 'STATUS_SHOOTOUT',
+  'STATUS_FULL_TIME', 'STATUS_FINAL', 'STATUS_FINAL_PEN', 'STATUS_FINAL_AET',
+  'STATUS_POST_GAME', 'STATUS_END_OF_REGULATION',
+  'STATUS_POSTPONED', 'STATUS_CANCELED', 'STATUS_ABANDONED',
+  'STATUS_FORFEIT', 'STATUS_WALKOVER', 'STATUS_SUSPENDED', 'STATUS_RETIRED',
+])
+const _warnedStatuses = new Set<string>()
+function warnUnknownStatus(status: string, context: string) {
+  if (!status || KNOWN_STATUSES.has(status) || _warnedStatuses.has(status)) return
+  _warnedStatuses.add(status)
+  console.warn(`[match] Unknown ESPN status "${status}" in ${context} — add to mapStatusLabel/KNOWN_STATUSES`)
+}
+
 function mapStatusLabel(espnStatus: string, period?: number, clock?: string, sport?: SportKind): string {
-  if (espnStatus === 'STATUS_SCHEDULED')   return 'Programado'
-  if (espnStatus === 'STATUS_FULL_TIME' || espnStatus === 'STATUS_FINAL') return 'Final'
-  if (espnStatus === 'STATUS_POSTPONED')   return 'Aplazado'
-  if (espnStatus === 'STATUS_CANCELED')    return 'Cancelado'
+  // Pre-game / scheduled
+  if (espnStatus === 'STATUS_SCHEDULED' || espnStatus === 'STATUS_PRE_GAME') return 'Programado'
+  if (espnStatus === 'STATUS_DELAYED' || espnStatus === 'STATUS_RAIN_DELAY') return 'Retrasado'
+  // Terminal (cubre variantes que antes caían al fallback con etiqueta cruda)
+  if (espnStatus === 'STATUS_FULL_TIME' || espnStatus === 'STATUS_FINAL' ||
+      espnStatus === 'STATUS_POST_GAME' || espnStatus === 'STATUS_END_OF_REGULATION') return 'Final'
+  if (espnStatus === 'STATUS_FINAL_PEN') return 'Final (penaltis)'
+  if (espnStatus === 'STATUS_FINAL_AET') return 'Final (prórroga)'
+  if (espnStatus === 'STATUS_POSTPONED') return 'Aplazado'
+  if (espnStatus === 'STATUS_CANCELED')  return 'Cancelado'
+  if (espnStatus === 'STATUS_ABANDONED') return 'Abandonado'
+  if (espnStatus === 'STATUS_SUSPENDED') return 'Suspendido'
+  if (espnStatus === 'STATUS_FORFEIT')   return 'No presentado'
+  if (espnStatus === 'STATUS_WALKOVER')  return 'Walkover'
+  if (espnStatus === 'STATUS_RETIRED')   return 'Retirado'
+  // Live
   if (sport === 'soccer') {
     if (espnStatus === 'STATUS_HALFTIME')    return 'Descanso'
     if (espnStatus === 'STATUS_SECOND_HALF') return `2T ${clock ?? ''}`.trim()
     if (espnStatus === 'STATUS_IN_PROGRESS') return `${period === 2 ? '2T' : '1T'} ${clock ?? ''}`.trim()
+    if (espnStatus === 'STATUS_OVERTIME')    return `Prórr. ${clock ?? ''}`.trim()
+    if (espnStatus === 'STATUS_SHOOTOUT')    return 'Penaltis'
   }
   if (sport === 'basketball') {
-    if (espnStatus === 'STATUS_END_PERIOD') return `Fin Q${period ?? ''}`
+    if (espnStatus === 'STATUS_END_PERIOD' || espnStatus === 'STATUS_END_OF_PERIOD') return `Fin Q${period ?? ''}`
     if (espnStatus === 'STATUS_HALFTIME')   return 'Descanso'
     if (espnStatus === 'STATUS_IN_PROGRESS') return `Q${period ?? 1} ${clock ?? ''}`.trim()
+    if (espnStatus === 'STATUS_OVERTIME')    return `OT ${clock ?? ''}`.trim()
   }
+  warnUnknownStatus(espnStatus, `mapStatusLabel(sport=${sport})`)
   return espnStatus.replace('STATUS_', '')
 }
 

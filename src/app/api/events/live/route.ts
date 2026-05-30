@@ -57,6 +57,26 @@ const ESPN_TEAM_LEAGUES = [
 
 const TENNIS_SLUGS = ['tennis/atp', 'tennis/wta'] as const
 
+// Estados que mapStatus sabe traducir. Si llega uno fuera de aquí (y no entra
+// por la rama completed/state==='post'), se loguea una vez por proceso para
+// detectar nuevos códigos ESPN sin esperar a un bug visible. Ver
+// match/[ref]/route.ts:KNOWN_STATUSES para la lista canónica.
+const _liveWarnedStatuses = new Set<string>()
+function warnUnknownLiveStatus(status: string, sport: string) {
+  const KNOWN_LIVE = new Set([
+    'STATUS_SCHEDULED', 'STATUS_PRE_GAME', 'STATUS_DELAYED', 'STATUS_RAIN_DELAY',
+    'STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_SECOND_HALF',
+    'STATUS_END_PERIOD', 'STATUS_END_OF_PERIOD', 'STATUS_OVERTIME', 'STATUS_SHOOTOUT',
+    'STATUS_FULL_TIME', 'STATUS_FINAL', 'STATUS_FINAL_PEN', 'STATUS_FINAL_AET',
+    'STATUS_POST_GAME', 'STATUS_END_OF_REGULATION',
+    'STATUS_POSTPONED', 'STATUS_CANCELED', 'STATUS_ABANDONED',
+    'STATUS_FORFEIT', 'STATUS_WALKOVER', 'STATUS_SUSPENDED', 'STATUS_RETIRED',
+  ])
+  if (!status || KNOWN_LIVE.has(status) || _liveWarnedStatuses.has(status)) return
+  _liveWarnedStatuses.add(status)
+  console.warn(`[live] Unknown ESPN status "${status}" (sport=${sport}) — add to mapStatus / KNOWN_LIVE`)
+}
+
 function mapStatus(espnStatus: string, sport: string, period?: number, completed?: boolean, state?: string): string {
   // Cualquier evento marcado como terminado por ESPN (incluye STATUS_FINAL_PEN,
   // STATUS_FINAL_AET, STATUS_POST_GAME, etc.) se normaliza a 'FT' para que los
@@ -81,6 +101,7 @@ function mapStatus(espnStatus: string, sport: string, period?: number, completed
   if (espnStatus === 'STATUS_ABANDONED' || espnStatus === 'STATUS_CANCELED' ||
       espnStatus === 'STATUS_WALKOVER'  || espnStatus === 'STATUS_RETIRED'  ||
       espnStatus === 'STATUS_POSTPONED' || espnStatus === 'STATUS_SUSPENDED') return 'FT'
+  warnUnknownLiveStatus(espnStatus, sport)
   return espnStatus.replace('STATUS_', '')
 }
 
