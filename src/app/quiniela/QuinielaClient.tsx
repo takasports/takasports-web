@@ -81,6 +81,7 @@ export default function QuinielaClient() {
   const [user, setUser]           = useState<User | null>(null)
   const [showAuthBanner, setShowAuthBanner] = useState(false)
   const coins = useCoins(user)
+  const { points: pointsBalance, refresh: refreshPoints } = usePoints()
   const push = usePushSubscription()
 
   useEffect(() => {
@@ -150,7 +151,7 @@ export default function QuinielaClient() {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ coinBalance: coinBal, badges: badgeList }),
-          }).then(() => coins.refresh()).catch(() => {})
+          }).then(() => refreshPoints()).catch(() => {})
         } catch { /* ignore */ }
         setShowAuthBanner(false)
       }
@@ -433,16 +434,12 @@ export default function QuinielaClient() {
                             totalWon?: number
                             settled?: boolean
                           }
-                          // En modo settle: server ya acreditó via RPC; refresca balance.
-                          // En modo legacy (invitado): replica en localStorage si hubo ganancias.
+                          // En modo settle: server ya acreditó via award_points RPC; refresca balance.
+                          // En modo legacy (invitado): no hay acreditación de monedas en cliente.
                           if (user) {
                             if ((json.totalWon ?? 0) > 0 || json.settled) {
-                              await coins.refresh()
+                              await refreshPoints()
                             }
-                          } else if (json.breakdown && (json.breakdown.totalCoins ?? 0) > 0) {
-                            const reasonParts = [`${json.breakdown.hits ?? 0} aciertos`]
-                            if (json.breakdown.pleno) reasonParts.push('¡PLENO!')
-                            await coins.add(json.breakdown.totalCoins ?? 0, `Quiniela ${saved!.jornada}: ${reasonParts.join(' · ')}`)
                           }
                         }
                       } catch { /* offline OK — el server settle es idempotente, retry en próxima visita */ }
@@ -454,9 +451,9 @@ export default function QuinielaClient() {
                     matches={apiMatches}
                     jornada={apiJornada}
                     streakCurrent={streak.current}
-                    coinBalance={coins.balance}
+                    coinBalance={pointsBalance ?? 0}
                     authed={!!user}
-                    onParticipation={(j) => { void coins.add(5, `Participación ${j}`) }}
+                    onParticipation={(_j) => { void refreshPoints() }}
                     onSubmit={(s) => { setSaved(s); if (!user) setTimeout(() => setShowAuthBanner(true), 2000) }}
                   />
             )}

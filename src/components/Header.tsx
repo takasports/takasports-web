@@ -729,6 +729,36 @@ export default function Header() {
                   <ProfileIcon />
                   <span>Mi perfil</span>
                 </Link>
+
+                {user && levelData && (
+                  <Link
+                    href="/perfil"
+                    onClick={() => setMenuOpen(false)}
+                    style={{ textDecoration: 'none' }}
+                    className="flex flex-col gap-1.5 px-4 py-3 border-t mt-1"
+                    aria-label={`Nivel ${levelData.level} — ${levelData.levelName}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span style={{ color: levelData.levelColor, fontWeight: 900, fontSize: 12, fontFamily: 'var(--font-sport)', letterSpacing: '0.04em' }}>
+                        L{levelData.level} · {levelData.levelName}
+                      </span>
+                      <span style={{ color: 'rgba(167,139,250,0.4)', fontSize: 10, fontFamily: 'var(--font-sport)' }}>
+                        {levelData.xp.toLocaleString('es-ES')} XP
+                      </span>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: 4, height: 3, overflow: 'hidden', width: '100%' }}>
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${Math.min(100, levelData.progress * 100)}%`,
+                          background: levelData.levelColor,
+                          borderRadius: 4,
+                          boxShadow: `0 0 4px ${levelData.levelColor}80`,
+                        }}
+                      />
+                    </div>
+                  </Link>
+                )}
               </div>
             </div>
           </nav>

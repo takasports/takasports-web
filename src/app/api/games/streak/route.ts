@@ -10,6 +10,8 @@
 
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { adminSupabase } from '@/lib/supabase-admin'
+import { awardBadges } from '@/lib/badge-awards'
 
 function hasSupabaseEnv(): boolean {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -67,6 +69,19 @@ export async function POST() {
       // Si txnErr.code === '23505' → ya acreditado (idempotente, silencioso)
       // Cualquier otro error se ignora (milestone es best-effort)
     }
+  }
+
+  // ── Milestone badge awards ────────────────────────────────────────
+  if (milestoneAwarded > 0 && streakData) {
+    try {
+      const { current_streak } = streakData
+      const badgeMap: Record<number, string> = { 3: 'racha_dias_3', 7: 'racha_dias_7', 30: 'racha_dias_30' }
+      const badgeId = badgeMap[current_streak]
+      if (badgeId) {
+        const admin = adminSupabase()
+        if (admin) await awardBadges(admin, user.id, [badgeId])
+      }
+    } catch { /* badge fallo — silencioso */ }
   }
 
   return NextResponse.json({ streak: data, milestone_awarded: milestoneAwarded })

@@ -84,6 +84,19 @@ export default function PerfilPage() {
   const { points } = usePoints()
   const { streak } = useStreak()
 
+  // Level / XP data from /api/quiniela/me
+  const [meData, setMeData] = useState<{
+    level: number; levelName: string; levelColor: string
+    progress: number; xp: number; xpToNext: number; nextLevel: number | null
+    badges: { id: string; unlockedAt: string | null }[]
+  } | null>(null)
+
+  // Ranked prediction stats
+  const [rankedStats, setRankedStats] = useState<{
+    total: number; correct: number; accuracy: number
+    bySport: Record<string, { total: number; correct: number }>
+  } | null>(null)
+
   // Game stats
   const [quizStats, setQuizStats] = useState<{ streak: number; bestStreak: number; bestScore: number; totalCorrect: number; totalPlayed: number; lastPlayedDate: string } | null>(null)
   const [gridStats, setGridStats] = useState<{ dayKey: string; solved: number; finished: boolean } | null>(null)
@@ -127,6 +140,44 @@ export default function PerfilPage() {
         const defs = data.map(r => getBadge(r.badge_id as string)).filter((b): b is BadgeDef => b !== null)
         setBadges(defs)
       })
+  }, [user])
+
+  // ── Level / XP data ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) return
+    fetch('/api/quiniela/me')
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { level?: number; levelName?: string; levelColor?: string; progress?: number; xp?: number; xpToNext?: number; nextLevel?: number | null; badges?: { id: string; unlockedAt: string | null }[] } | null) => {
+        if (!d || d.level == null) return
+        setMeData({
+          level:     d.level,
+          levelName: d.levelName  ?? '',
+          levelColor: d.levelColor ?? '#A78BFA',
+          progress:  d.progress   ?? 0,
+          xp:        d.xp         ?? 0,
+          xpToNext:  d.xpToNext   ?? 0,
+          nextLevel: d.nextLevel  ?? null,
+          badges:    d.badges     ?? [],
+        })
+      })
+      .catch(() => { /* ignore */ })
+  }, [user])
+
+  // ── Ranked stats ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) return
+    fetch('/api/ranked/me/stats')
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { total?: number; correct?: number; accuracy?: number; bySport?: Record<string, { total: number; correct: number }> } | null) => {
+        if (!d || d.total == null) return
+        setRankedStats({
+          total:    d.total    ?? 0,
+          correct:  d.correct  ?? 0,
+          accuracy: d.accuracy ?? 0,
+          bySport:  d.bySport  ?? {},
+        })
+      })
+      .catch(() => { /* ignore */ })
   }, [user])
 
   // ── localStorage ───────────────────────────────────────────────
@@ -406,6 +457,71 @@ export default function PerfilPage() {
                       </span>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Nivel / XP */}
+              {meData && (
+                <div
+                  className="flex flex-col gap-1.5 px-3 py-2.5 rounded-xl mt-1"
+                  style={{ background: 'rgba(167,139,250,0.06)', border: `1px solid ${meData.levelColor}30` }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className="text-[13px] font-black"
+                      style={{ color: meData.levelColor, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}
+                    >
+                      L{meData.level} · {meData.levelName}
+                    </span>
+                    <span className="text-[10px]" style={{ color: 'rgba(167,139,250,0.5)', fontFamily: 'var(--font-sport)' }}>
+                      {meData.badges.filter(b => b.unlockedAt).length} de {meData.badges.length} badges
+                    </span>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, height: 5, overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${Math.min(100, meData.progress * 100)}%`,
+                        background: meData.levelColor,
+                        borderRadius: 8,
+                        boxShadow: `0 0 6px ${meData.levelColor}80`,
+                        transition: 'width 0.5s ease',
+                      }}
+                    />
+                  </div>
+                  <span className="text-[10px]" style={{ color: 'rgba(167,139,250,0.5)', fontFamily: 'var(--font-sport)' }}>
+                    {meData.nextLevel
+                      ? `${meData.xp.toLocaleString('es-ES')} XP · faltan ${meData.xpToNext.toLocaleString('es-ES')} para el siguiente`
+                      : `${meData.xp.toLocaleString('es-ES')} XP · Nivel máximo`}
+                  </span>
+                </div>
+              )}
+
+              {/* Predicciones Ranked */}
+              {rankedStats && rankedStats.total > 0 && (
+                <div
+                  className="flex flex-col gap-2 px-3 py-2.5 rounded-xl mt-1"
+                  style={{ background: 'rgba(74,222,128,0.04)', border: '1px solid rgba(74,222,128,0.15)' }}
+                >
+                  <span className="text-[10px] font-black" style={{ color: '#4ADE80', fontFamily: 'var(--font-display)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    Predicciones Ranked
+                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: 'rgba(74,222,128,0.08)', color: '#4ADE80', fontFamily: 'var(--font-sport)' }}>
+                      {rankedStats.total} predicciones
+                    </span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: 'rgba(74,222,128,0.08)', color: '#4ADE80', fontFamily: 'var(--font-sport)' }}>
+                      {rankedStats.correct} aciertos
+                    </span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: 'rgba(74,222,128,0.08)', color: '#4ADE80', fontFamily: 'var(--font-sport)' }}>
+                      {rankedStats.accuracy.toFixed(0)}% precisión
+                    </span>
+                  </div>
+                  {Object.entries(rankedStats.bySport).filter(([, s]) => s.total > 0).map(([sport, s]) => (
+                    <span key={sport} className="text-[10px]" style={{ color: 'rgba(74,222,128,0.5)', fontFamily: 'var(--font-sport)' }}>
+                      {sport}: {s.correct}/{s.total}
+                    </span>
+                  ))}
                 </div>
               )}
 

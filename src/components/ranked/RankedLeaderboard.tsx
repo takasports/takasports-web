@@ -57,6 +57,9 @@ export default function RankedLeaderboard({ activeSport }: Props) {
   const [tab, setTab]         = useState<RankedSport>(defaultTab)
   const [entries, setEntries] = useState<RankedEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [ufcEmail, setUfcEmail]         = useState('')
+  const [ufcSubmitted, setUfcSubmitted] = useState(false)
+  const [ufcSubmitting, setUfcSubmitting] = useState(false)
 
   useEffect(() => {
     setTab(defaultTab)
@@ -152,12 +155,75 @@ export default function RankedLeaderboard({ activeSport }: Props) {
           </div>
         )}
 
-        {/* Coming soon */}
+        {/* UFC waitlist */}
         {!loading && tab === 'ufc' && (
-          <div className="px-5 py-10 text-center">
+          <div className="px-5 py-8 flex flex-col items-center gap-4">
             <span style={{ fontSize: 32 }}>🥊</span>
-            <p className="text-sm font-black mt-3" style={{ color: '#F87171', fontFamily: 'var(--font-display)' }}>Ranked UFC</p>
-            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Predicciones por PPV. Muy pronto.</p>
+            <p className="text-sm font-black" style={{ color: '#F87171', fontFamily: 'var(--font-display)' }}>Ranked UFC</p>
+            <p className="text-[11px] text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', maxWidth: 220 }}>
+              Predicciones por PPV. Muy pronto. Déjanos tu email y te avisamos en el lanzamiento.
+            </p>
+            {ufcSubmitted ? (
+              <div
+                className="flex items-center gap-2 px-4 py-2 rounded-xl"
+                style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.25)' }}
+              >
+                <span style={{ fontSize: 14 }}>✅</span>
+                <span className="text-[12px] font-black" style={{ color: '#F87171', fontFamily: 'var(--font-display)' }}>
+                  Te avisamos cuando lancemos UFC
+                </span>
+              </div>
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  if (!ufcEmail.trim() || ufcSubmitting) return
+                  setUfcSubmitting(true)
+                  try {
+                    await fetch('/api/ranked/ufc-waitlist', {
+                      method: 'POST',
+                      headers: { 'content-type': 'application/json' },
+                      body: JSON.stringify({ email: ufcEmail.trim() }),
+                    })
+                    setUfcSubmitted(true)
+                  } catch { /* ignore */ } finally {
+                    setUfcSubmitting(false)
+                  }
+                }}
+                className="flex gap-2 w-full"
+                style={{ maxWidth: 280 }}
+              >
+                <input
+                  type="email"
+                  required
+                  value={ufcEmail}
+                  onChange={e => setUfcEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  className="flex-1 rounded-xl px-3 py-2 text-[12px] outline-none"
+                  style={{
+                    background: 'rgba(248,113,113,0.07)',
+                    border: '1px solid rgba(248,113,113,0.22)',
+                    color: '#F0F0F8',
+                    fontFamily: 'var(--font-sport)',
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={ufcSubmitting}
+                  className="px-3 py-2 rounded-xl text-[11px] font-black transition-opacity hover:opacity-80 disabled:opacity-40"
+                  style={{
+                    background: 'rgba(248,113,113,0.15)',
+                    border: '1px solid rgba(248,113,113,0.35)',
+                    color: '#F87171',
+                    fontFamily: 'var(--font-display)',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                >
+                  {ufcSubmitting ? '…' : 'Avisarme'}
+                </button>
+              </form>
+            )}
           </div>
         )}
 

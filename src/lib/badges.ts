@@ -229,6 +229,41 @@ export const BADGES: Record<string, BadgeDef> = {
       frameColor: '#ef4444',
     },
   },
+
+  // ── Milestones de racha diaria ──────────────────────────────────
+  racha_dias_3: {
+    id: 'racha_dias_3',
+    name: 'Racha de 3 días',
+    emoji: '🔥',
+    color: '#f97316',
+    bg: 'rgba(249,115,22,0.12)',
+    description: 'Jugaste 3 días seguidos en TakaSports.',
+    rarity: 'common',
+    category: 'milestone',
+  },
+  racha_dias_7: {
+    id: 'racha_dias_7',
+    name: 'Semana en racha',
+    emoji: '🔥',
+    color: '#ef4444',
+    bg: 'rgba(239,68,68,0.12)',
+    description: 'Una semana entera jugando cada día.',
+    rarity: 'rare',
+    category: 'milestone',
+    unlocks: { title: 'Semana de Fuego' },
+  },
+  racha_dias_30: {
+    id: 'racha_dias_30',
+    name: 'Mes en racha',
+    emoji: '💥',
+    color: '#fb7185',
+    bg: 'rgba(251,113,133,0.12)',
+    description: '30 días seguidos. Esto ya es religión.',
+    rarity: 'epic',
+    category: 'milestone',
+    unlocks: { title: 'El Constante', frameColor: '#fb7185' },
+  },
+
   top_3_weekly: {
     id: 'top_3_weekly',
     name: 'Podio semanal',
