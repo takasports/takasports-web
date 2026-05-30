@@ -41,33 +41,28 @@ export async function POST() {
     const bonusPoints = STREAK_MILESTONES[current_streak]
 
     if (bonusPoints && last_played_date) {
-      // Idempotency: check if already awarded for this (user, streak, date)
-      const { count } = await sb
-        .from('point_transactions')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('source', 'streak_milestone')
-        .contains('context', { streak: current_streak, date: last_played_date })
+      // Un UNIQUE INDEX parcial en point_transactions garantiza idempotencia a
+      // nivel DB: (user_id, context->>'streak', context->>'date') WHERE source='streak_milestone'.
+      // Si dos requests simultáneos llegan, solo uno insertará — el otro obtendrá
+      // un error 23505 (unique_violation) que capturamos para no acreditar dos veces.
+      const { error: txnErr } = await sb.from('point_transactions').insert({
+        user_id: user.id,
+        amount:  bonusPoints,
+        source:  'streak_milestone',
+        sport:   'all',
+        context: { streak: current_streak, date: last_played_date },
+      })
 
-      if ((count ?? 0) === 0) {
-        // Insert transaction
-        await sb.from('point_transactions').insert({
-          user_id: user.id,
-          amount:  bonusPoints,
-          source:  'streak_milestone',
-          sport:   'all',
-          context: { streak: current_streak, date: last_played_date },
-        })
-
-        // Actualizar points_balance de forma atómica usando una expresión SQL
-        // a través de un RPC genérico. Evita la race condition del SELECT+UPDATE.
+      if (!txnErr) {
+        // Fila insertada → acreditar puntos atómicamente
         await sb.rpc('increment_points_balance', {
           p_user_id: user.id,
           p_amount:  bonusPoints,
         })
-
         milestoneAwarded = bonusPoints
       }
+      // Si txnErr.code === '23505' → ya acreditado (idempotente, silencioso)
+      // Cualquier otro error se ignora (milestone es best-effort)
     }
   }
 

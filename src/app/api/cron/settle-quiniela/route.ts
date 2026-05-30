@@ -130,11 +130,14 @@ interface PicksRow {
 
 // ── nameMatch ligero (simplificado de quiniela.ts) ────────────────────────
 // Verifica si ESPN tiene resultado para un pick dado.
+// Usa AND (no OR) para que ambas palabras clave coincidan — evita falsos
+// positivos cuando equipos de diferentes partidos comparten el mismo nombre
+// inicial (ej. "Sporting Braga" y "Sporting Kansas City").
 function hasResult(pick: SavedPick, results: MatchResult[]): boolean {
   const h = pick.home.toLowerCase().split(' ')[0]
   const a = pick.away.toLowerCase().split(' ')[0]
   return results.some(r =>
-    r.home.toLowerCase().includes(h) || r.away.toLowerCase().includes(a)
+    r.home.toLowerCase().includes(h) && r.away.toLowerCase().includes(a)
   )
 }
 

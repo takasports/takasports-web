@@ -37,7 +37,8 @@ export async function GET(req: NextRequest) {
   const { data, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ events: data ?? [] }, {
-    headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' },
-  })
+  // Sin Cache-Control: esta ruta llama a close_started_ranked_events() en cada
+  // request. Si Vercel CDN cacheara la respuesta, las peticiones servidas desde
+  // caché no ejecutarían el cierre automático, dejando partidos abiertos más tiempo.
+  return NextResponse.json({ events: data ?? [] })
 }
