@@ -6,7 +6,7 @@
 // Pick 1 / X / 2 — bloqueado una vez iniciado el partido.
 // Muestra puntos acreditados si el partido ya se resolvió.
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TakaPoint from '@/components/TakaPoint'
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -175,12 +175,13 @@ function MatchCard({
   submitting: boolean
   onPick:     (eventId: string, pick: '1' | 'X' | '2') => void
 }) {
-  const myPick    = pred?.prediction?.pick ?? null
-  const isOpen    = event.status === 'open'
-  const isClosed  = event.status === 'closed'
+  const myPick     = pred?.prediction?.pick ?? null
+  const isOpen     = event.status === 'open'
+  const isClosed   = event.status === 'closed'
   const isResolved = event.status === 'resolved'
-  const winner    = event.result?.winner ?? null
-  const pts       = pred?.points_awarded ?? null
+  const winner     = event.result?.winner ?? null
+  const pts        = pred?.points_awarded ?? null
+  const [shared,   setShared] = useState(false)
 
   const picks: { label: string; sub: string; val: '1' | 'X' | '2' }[] = [
     { label: 'Local', sub: event.team_home ?? '', val: '1' },
@@ -334,6 +335,36 @@ function MatchCard({
         </div>
       )}
 
+      {/* Share pick — visible cuando hay pick pero el partido aún no cerró */}
+      {myPick && isOpen && (
+        <button
+          onClick={async () => {
+            await sharePick(event.team_home, event.team_away, myPick)
+            setShared(true)
+            setTimeout(() => setShared(false), 3000)
+          }}
+          style={{
+            alignSelf: 'flex-start',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '4px 10px',
+            borderRadius: 8,
+            background: `${GOLD}10`,
+            border: `1px solid ${GOLD}25`,
+            color: GOLD_D,
+            fontSize: 9,
+            fontWeight: 900,
+            fontFamily: 'var(--font-sport)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            cursor: 'pointer',
+          }}
+        >
+          {shared ? '✓ Copiado' : '↗ Compartir pick'}
+        </button>
+      )}
+
       {/* Estado si no hay pick y partido no abierto */}
       {!myPick && !isOpen && (
         <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-sport)' }}>
@@ -344,13 +375,50 @@ function MatchCard({
   )
 }
 
-// ── Countdown helper ─────────────────────────────────────────────────────
+// ── Share helper ─────────────────────────────────────────────────────────
+
+async function sharePick(teamHome: string | null, teamAway: string | null, pick: '1' | 'X' | '2') {
+  const pickLabel = pick === '1' ? `${teamHome ?? 'Local'}` : pick === '2' ? `${teamAway ?? 'Visita'}` : 'Empate'
+  const text = `Predigo: ${pickLabel} en ${teamHome ?? '?'} vs ${teamAway ?? '?'} — ¿Quién acierta más? 🏆`
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Mi predicción en TakaSports', text, url: 'https://takasportsmedia.com/predicciones' })
+    } catch { /* user cancelled */ }
+  } else {
+    await navigator.clipboard.writeText(`${text} takasportsmedia.com/predicciones`)
+  }
+}
+
+// ── Countdown helpers ─────────────────────────────────────────────────────
 
 function daysUntilKickoff(): number | null {
   const kickoff = new Date('2026-06-11T19:00:00Z')
   const now     = new Date()
   if (now >= kickoff) return null
   return Math.ceil((kickoff.getTime() - now.getTime()) / 86_400_000)
+}
+
+/** Devuelve tiempo hasta el próximo evento open (en ms), o null si ya empezó el torneo */
+function msUntilNextOpen(events: RankedEvent[]): number | null {
+  const now   = Date.now()
+  const opens = events
+    .filter(e => e.status === 'open')
+    .map(e => new Date(e.event_date).getTime())
+    .filter(t => t > now)
+    .sort((a, b) => a - b)
+  if (opens.length === 0) return null
+  const ms = opens[0] - now
+  // Solo mostramos si el partido es en menos de 24h (urgencia real)
+  return ms < 86_400_000 ? ms : null
+}
+
+function formatCountdown(ms: number): string {
+  const totalSecs = Math.floor(ms / 1000)
+  const h = Math.floor(totalSecs / 3600)
+  const m = Math.floor((totalSecs % 3600) / 60)
+  const s = totalSecs % 60
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
 // ── Main component ───────────────────────────────────────────────────────
@@ -361,6 +429,9 @@ export default function MundialClient() {
   const [loading,    setLoading]    = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error,      setError]      = useState<string | null>(null)
+  const [showLogin,  setShowLogin]  = useState(false)
+  const [tick,       setTick]       = useState(0)   // fuerza re-render para countdown
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── Fetch events + predictions ───────────────────────────────────
   const load = useCallback(async () => {
@@ -384,6 +455,12 @@ export default function MundialClient() {
 
   useEffect(() => { void load() }, [load])
 
+  // Tick cada segundo para countdown de próximo partido
+  useEffect(() => {
+    tickRef.current = setInterval(() => setTick(t => t + 1), 1000)
+    return () => { if (tickRef.current) clearInterval(tickRef.current) }
+  }, [])
+
   // ── Submit pick ──────────────────────────────────────────────────
   const handlePick = useCallback(async (eventId: string, pick: '1' | 'X' | '2') => {
     if (submitting) return
@@ -395,7 +472,7 @@ export default function MundialClient() {
         body:    JSON.stringify({ event_id: eventId, pick }),
       })
       if (res.status === 401) {
-        setError('Inicia sesión para predecir.')
+        setShowLogin(true)
         return
       }
       if (res.status === 409) {
@@ -433,11 +510,14 @@ export default function MundialClient() {
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
   }, [events])
 
-  // ── Stats banner ─────────────────────────────────────────────────
-  const totalPts   = Object.values(preds).reduce((acc, p) => acc + (p.points_awarded ?? 0), 0)
-  const myPicks    = Object.keys(preds).length
-  const openCount  = events.filter(e => e.status === 'open').length
-  const daysLeft   = daysUntilKickoff()
+  // ── Stats + countdown ────────────────────────────────────────────
+  const totalPts    = Object.values(preds).reduce((acc, p) => acc + (p.points_awarded ?? 0), 0)
+  const myPicks     = Object.keys(preds).length
+  const openCount   = events.filter(e => e.status === 'open').length
+  const daysLeft    = daysUntilKickoff()
+  // tick hace que se recalcule cada segundo (solo importa cuando nextMatchMs !== null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const nextMatchMs = useMemo(() => msUntilNextOpen(events), [events, tick])
 
   // ── Render ───────────────────────────────────────────────────────
 
@@ -478,8 +558,8 @@ export default function MundialClient() {
             </p>
           </div>
 
-          {/* Countdown badge */}
-          {daysLeft !== null && (
+          {/* Countdown badge — días si torneo no empezó, horas si hay partido inminente */}
+          {(daysLeft !== null || nextMatchMs !== null) && (
             <div
               className="ml-auto flex-shrink-0 flex flex-col items-center px-4 py-2 rounded-xl"
               style={{
@@ -487,21 +567,43 @@ export default function MundialClient() {
                 border: `1px solid ${GOLD}35`,
               }}
             >
-              <span
-                style={{
-                  fontSize: 26,
-                  fontWeight: 900,
-                  color: GOLD,
-                  fontFamily: 'var(--font-display)',
-                  lineHeight: 1,
-                  letterSpacing: '-0.03em',
-                }}
-              >
-                {daysLeft}
-              </span>
-              <span style={{ fontSize: 8, color: GOLD_D, fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                {daysLeft === 1 ? 'día' : 'días'}
-              </span>
+              {daysLeft !== null ? (
+                <>
+                  <span
+                    style={{
+                      fontSize: 26,
+                      fontWeight: 900,
+                      color: GOLD,
+                      fontFamily: 'var(--font-display)',
+                      lineHeight: 1,
+                      letterSpacing: '-0.03em',
+                    }}
+                  >
+                    {daysLeft}
+                  </span>
+                  <span style={{ fontSize: 8, color: GOLD_D, fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    {daysLeft === 1 ? 'día' : 'días'}
+                  </span>
+                </>
+              ) : nextMatchMs !== null ? (
+                <>
+                  <span
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 900,
+                      color: GOLD,
+                      fontFamily: 'var(--font-display)',
+                      lineHeight: 1,
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    {formatCountdown(nextMatchMs)}
+                  </span>
+                  <span style={{ fontSize: 8, color: GOLD_D, fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    próximo pick
+                  </span>
+                </>
+              ) : null}
             </div>
           )}
           {/* Stats inline — solo tras el primer pick o cuando el torneo arrancó */}
@@ -559,6 +661,74 @@ export default function MundialClient() {
           ))}
         </div>
       </div>
+
+      {/* ── Login CTA ─────────────────────────────────────────── */}
+      {showLogin && (
+        <div
+          className="mb-4 px-5 py-4 rounded-2xl flex flex-col gap-3"
+          style={{ background: 'rgba(251,191,36,0.06)', border: `1px solid ${GOLD}30` }}
+        >
+          <div className="flex items-center gap-2">
+            <span style={{ fontSize: 20 }}>🏆</span>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 900, color: GOLD, fontFamily: 'var(--font-sport)' }}>
+                Inicia sesión para predecir
+              </p>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-sport)', marginTop: 1 }}>
+                Crea una cuenta gratis y compite en el Mundial 2026
+              </p>
+            </div>
+            <button
+              onClick={() => setShowLogin(false)}
+              style={{ marginLeft: 'auto', opacity: 0.4, background: 'none', border: 'none', color: '#F0F0F8', cursor: 'pointer', fontSize: 16 }}
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <a
+              href="/auth/login"
+              style={{
+                flex: 1,
+                textAlign: 'center',
+                padding: '9px 16px',
+                borderRadius: 10,
+                background: `${GOLD}20`,
+                border: `1px solid ${GOLD}50`,
+                color: GOLD,
+                fontSize: 11,
+                fontWeight: 900,
+                fontFamily: 'var(--font-sport)',
+                textDecoration: 'none',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Iniciar sesión
+            </a>
+            <a
+              href="/auth/register"
+              style={{
+                flex: 1,
+                textAlign: 'center',
+                padding: '9px 16px',
+                borderRadius: 10,
+                background: GOLD,
+                border: `1px solid ${GOLD}`,
+                color: '#000',
+                fontSize: 11,
+                fontWeight: 900,
+                fontFamily: 'var(--font-sport)',
+                textDecoration: 'none',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Crear cuenta gratis
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* ── Error ─────────────────────────────────────────────── */}
       {error && (

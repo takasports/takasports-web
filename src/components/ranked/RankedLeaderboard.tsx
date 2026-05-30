@@ -54,9 +54,10 @@ export default function RankedLeaderboard({ activeSport }: Props) {
     : activeSport === 'futbol' ? 'futbol'
     : 'global'
 
-  const [tab, setTab]         = useState<RankedSport>(defaultTab)
-  const [entries, setEntries] = useState<RankedEntry[]>([])
-  const [loading, setLoading] = useState(true)
+  const [tab, setTab]           = useState<RankedSport>(defaultTab)
+  const [entries, setEntries]   = useState<RankedEntry[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [hasLive, setHasLive]   = useState(false)  // true si hay partidos en curso
   const [ufcEmail, setUfcEmail]         = useState('')
   const [ufcSubmitted, setUfcSubmitted] = useState(false)
   const [ufcSubmitting, setUfcSubmitting] = useState(false)
@@ -71,8 +72,9 @@ export default function RankedLeaderboard({ activeSport }: Props) {
     try {
       const res = await fetch(`/api/ranked/leaderboard?sport=${sport}&limit=10`, { cache: 'no-store' })
       if (!res.ok) throw new Error('error')
-      const data = await res.json() as { entries: RankedEntry[] }
+      const data = await res.json() as { entries: RankedEntry[]; has_live?: boolean }
       setEntries(data.entries ?? [])
+      setHasLive(data.has_live ?? false)
     } catch {
       setEntries([])
     } finally {
@@ -83,6 +85,13 @@ export default function RankedLeaderboard({ activeSport }: Props) {
   useEffect(() => {
     void load(tab)
   }, [tab, load])
+
+  // Auto-refresh cada 60s cuando hay partidos en curso (status=closed = live)
+  useEffect(() => {
+    if (!hasLive) return
+    const id = setInterval(() => { void load(tab) }, 60_000)
+    return () => clearInterval(id)
+  }, [hasLive, tab, load])
 
   const activeTabInfo = TABS.find(t => t.id === tab)!
   const accent = activeTabInfo.accent

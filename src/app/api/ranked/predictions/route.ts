@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
   // Verificar que el evento existe y está open
   const { data: event } = await sb
     .from('ranked_events')
-    .select('id, status')
+    .select('id, status, sport')
     .eq('id', body.event_id)
     .single()
 
@@ -120,17 +120,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // ── Badge: primera_prediccion (fire-and-forget) ─────────────────
-  // Chequeamos si este es su PRIMER pick ranked en cualquier deporte.
-  // Lo hacemos tras el insert exitoso para no bloquear la respuesta.
+  // ── Badges post-pick (fire-and-forget) ──────────────────────────
+  // Chequeamos primera predicción global + primera predicción del Mundial.
+  // Ambos checks van juntos para hacer una sola query de conteo.
   try {
-    const { count } = await sb
-      .from('ranked_predictions')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+    const eventSport = (event as { sport?: string }).sport ?? ''
 
-    const isFirstPick = (count ?? 0) <= 1  // 1 = el que acabamos de insertar
+    const [{ count: totalCount }, { count: mundialCount }] = await Promise.all([
+      // Total de picks en cualquier deporte
+      sb.from('ranked_predictions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id),
+      // Picks en Mundial (solo si aplica)
+      eventSport === 'mundial'
+        ? sb.from('ranked_predictions')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .in('event_id',
+              (await sb.from('ranked_events').select('id').eq('sport', 'mundial'))
+                .data?.map((e: { id: string }) => e.id) ?? []
+            )
+        : Promise.resolve({ count: null }),
+    ])
+
+    const isFirstPick    = (totalCount ?? 0) <= 1
+    const isFirstMundial = eventSport === 'mundial' && (mundialCount ?? 0) <= 1
+
     const earned = badgesEarnedOnRankedPick({ isFirstPick })
+    if (isFirstMundial) earned.push('mundialista_2026')
+
     if (earned.length > 0) await awardBadges(sb, user.id, earned)
   } catch { /* badge fallo — nunca bloquea la respuesta */ }
 

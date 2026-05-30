@@ -28,7 +28,25 @@
 // ─────────────────────────────────────────────────────────────────
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { BADGES } from './badges'
+import { BADGES, getBadge } from './badges'
+import { sendPushToUser } from './push-helper'
+
+// Copy para push de badge — solo los que más engagement generan.
+// El resto usan el genérico.
+const BADGE_PUSH_COPY: Record<string, { title: string; body: string }> = {
+  primera_prediccion:         { title: '🔮 ¡Primera predicción!', body: 'Badge "Primera predicción" desbloqueado. El viaje empieza aquí.' },
+  primera_prediccion_correcta:{ title: '✅ ¡Primer acierto!',     body: 'Acertaste tu primera predicción Ranked. Badge desbloqueado.' },
+  pleno_jornada:              { title: '🎯 ¡PLENO!',               body: 'Acertaste TODOS los partidos de la jornada. Badge épico desbloqueado.' },
+  oraculo:                    { title: '🔮 Oráculo',               body: '4+ aciertos en una jornada. Tienes un don.' },
+  high_roller:                { title: '💎 High Roller',           body: 'Apuesta grande, victoria grande. Badge desbloqueado.' },
+  racha_5:                    { title: '🔥 EN LLAMAS',             body: '5 jornadas seguidas ganando. Eso ya es nivel élite.' },
+  racha_dias_7:               { title: '🔥 Semana en racha',       body: '7 días seguidos en TakaSports. Badge "Semana de Fuego" desbloqueado.' },
+  racha_dias_30:              { title: '💥 Mes en racha',          body: '30 días seguidos. Eres imparable.' },
+  champion_weekly:            { title: '👑 Campeón semanal',       body: 'Ganaste el ranking semanal. Eres el mejor de la jornada.' },
+  mundialista_2026:           { title: '🌍 Mundialista 2026',      body: 'Badge conmemorativo desbloqueado. Eres parte del Mundial.' },
+  profeta_mundial_2026:       { title: '🔮 El Profeta del Mundial',body: '3+ predicciones long-term acertadas. Legendario.' },
+  top3_mundial_2026:          { title: '🏆 Podio Mundial 2026',    body: 'TOP 3 en el Mundial. Badge legendario desbloqueado.' },
+}
 
 export interface BadgeAwardResult {
   awarded: string[]      // badges nuevos que se otorgaron en esta llamada
@@ -85,6 +103,26 @@ export async function awardBadges(
   }
 
   result.awarded = toInsert
+
+  // ── Push notification (fire-and-forget) ──────────────────────────
+  // Enviamos push por cada badge recién ganado. No bloqueamos el return.
+  // Si el user no tiene suscripción push, sendPushToUser devuelve { sent: 0 } sin error.
+  for (const badgeId of toInsert) {
+    const def  = getBadge(badgeId)
+    if (!def) continue
+    const copy = BADGE_PUSH_COPY[badgeId] ?? {
+      title: `${def.emoji} Badge desbloqueado`,
+      body:  `Conseguiste "${def.name}". Visita tu perfil para verlo.`,
+    }
+    void sendPushToUser(userId, {
+      title: copy.title,
+      body:  copy.body,
+      url:   '/perfil',
+      tag:   `badge_${badgeId}`,
+      topic: 'quiniela',
+    })
+  }
+
   return result
 }
 

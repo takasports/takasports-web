@@ -29,14 +29,22 @@ export async function GET(req: NextRequest) {
 
   const sb = await createServerSupabaseClient()
 
-  const { data, error } = await sb.rpc('get_ranked_leaderboard', {
-    p_sport: sport === 'global' ? null : sport,
-    p_limit: limit,
-  })
+  // Leaderboard + check de partidos en curso (para auto-refresh del cliente)
+  const [lbResult, liveResult] = await Promise.all([
+    sb.rpc('get_ranked_leaderboard', {
+      p_sport: sport === 'global' ? null : sport,
+      p_limit: limit,
+    }),
+    // has_live: hay algún evento del deporte en estado 'closed' (en curso)
+    sb.from('ranked_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'closed')
+      .eq('sport', sport === 'global' ? 'mundial' : sport),
+  ])
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (lbResult.error) return NextResponse.json({ error: lbResult.error.message }, { status: 500 })
 
-  const entries = (data as LeaderboardEntry[] ?? []).map((e, i) => ({
+  const entries = (lbResult.data as LeaderboardEntry[] ?? []).map((e, i) => ({
     user_id:      e.user_id,
     display_name: e.display_name,
     avatar_url:   e.avatar_url,
@@ -44,7 +52,15 @@ export async function GET(req: NextRequest) {
     rank:         e.rank ?? i + 1,
   }))
 
-  return NextResponse.json({ entries }, {
-    headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' },
+  const has_live = (liveResult.count ?? 0) > 0
+
+  return NextResponse.json({ entries, has_live }, {
+    // Si hay partidos en curso, no cachear (datos cambian rápido).
+    // En reposo: 2 min de cache + stale-while-revalidate.
+    headers: {
+      'Cache-Control': has_live
+        ? 'no-store'
+        : 'public, s-maxage=120, stale-while-revalidate=300',
+    },
   })
 }
