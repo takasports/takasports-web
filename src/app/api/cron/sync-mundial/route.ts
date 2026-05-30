@@ -104,6 +104,7 @@ async function handle(req: Request) {
   if (!admin) return NextResponse.json({ ok: false, error: 'admin_client_unavailable' }, { status: 503 })
 
   let upserted = 0
+  let scored   = 0
 
   // Cerrar partidos iniciados (vía anon client que puede llamar la función SECURITY DEFINER)
   const sb = await createServerSupabaseClient()
@@ -160,10 +161,27 @@ async function handle(req: Request) {
       onConflict: 'id',
       ignoreDuplicates: false,
     })
-    if (!error) upserted++
+    if (!error) {
+      upserted++
+
+      // ── Auto-scoring: si ESPN marca el partido como FINAL, distribuir
+      //    puntos a los usuarios que acertaron. score_ranked_prediction es
+      //    idempotente (solo actúa sobre predicciones con is_correct IS NULL).
+      if (isResolved && winner !== null) {
+        try {
+          await admin.rpc('score_ranked_prediction', {
+            p_event_id:   eventId,
+            p_winner:     winner,
+            p_home_score: homeScore ?? null,
+            p_away_score: awayScore ?? null,
+          })
+          scored++
+        } catch { /* scoring falla silencioso — el upsert ya guardó el resultado */ }
+      }
+    }
   }
 
-  return NextResponse.json({ ok: true, fetched: fixtures.length, upserted })
+  return NextResponse.json({ ok: true, fetched: fixtures.length, upserted, scored })
 }
 
 export async function GET(req: Request)  { return handle(req) }

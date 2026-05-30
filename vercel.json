@@ -28,6 +28,10 @@
     {
       "path": "/api/cron/sync-mundial",
       "schedule": "0 */2 * 6,7 *"
+    },
+    {
+      "path": "/api/cron/settle-quiniela",
+      "schedule": "30 0,6,12,18 * * *"
     }
   ],
   "headers": [
