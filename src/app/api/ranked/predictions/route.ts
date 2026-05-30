@@ -109,6 +109,14 @@ export async function POST(req: NextRequest) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    // 23505 = unique_violation: la DB tiene UNIQUE(user_id, event_id).
+    // Si dos requests simultáneos pasan el check "already_predicted" y ambos
+    // intentan insertar, uno fallará con 23505. Devolvemos 409 en vez de 500.
+    if (error.code === '23505') {
+      return NextResponse.json({ error: 'already_predicted' }, { status: 409 })
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json({ prediction }, { status: 201 })
 }

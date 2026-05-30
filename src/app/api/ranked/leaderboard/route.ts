@@ -14,7 +14,7 @@ interface LeaderboardEntry {
   user_id:      string
   display_name: string | null
   avatar_url:   string | null
-  total_points: number
+  total_points: number   // nombre de la columna SQL; se expone como 'total' en la respuesta JSON
   rank:         number
 }
 

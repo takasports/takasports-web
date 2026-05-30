@@ -156,10 +156,14 @@ async function handle(req: Request) {
   }
 
   // 2. Picks sellados pero no liquidados
-  //    Filtramos en JS porque el filter JSONB en Supabase JS es verboso y poco fiable
+  //    Filtramos en DB con JSONB path operators para no desperdiciar los 500 slots
+  //    en rows ya liquidados. Sin filtro en DB, con volumen alto los pending al
+  //    final de la cola nunca se procesarían.
   const { data: rows, error: fetchErr } = await admin
     .from('quiniela_picks')
     .select('id, user_id, jornada, picks')
+    .eq('picks->>staked', 'true')
+    .or('picks->>settled.is.null,picks->>settled.eq.false')
     .order('created_at', { ascending: true })
     .limit(500)
 
@@ -167,6 +171,7 @@ async function handle(req: Request) {
     return NextResponse.json({ ok: false, error: fetchErr.message }, { status: 500 })
   }
 
+  // El filtro DB ya excluye settled; el filter JS actúa como doble verificación
   const pending = (rows ?? []).filter((r: unknown) => {
     const row = r as PicksRow
     return row.picks?.staked === true && row.picks?.settled !== true

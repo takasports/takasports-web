@@ -55,11 +55,14 @@ export async function POST() {
 
       if (!txnErr) {
         // Fila insertada → acreditar puntos atómicamente
-        await sb.rpc('increment_points_balance', {
+        const { error: rpcErr } = await sb.rpc('increment_points_balance', {
           p_user_id: user.id,
           p_amount:  bonusPoints,
         })
-        milestoneAwarded = bonusPoints
+        // Solo informamos milestone_awarded si el balance realmente se incrementó.
+        // Si el RPC falla, la transacción en point_transactions queda registrada
+        // pero los puntos no se acreditaron — se detecta en el siguiente ping.
+        if (!rpcErr) milestoneAwarded = bonusPoints
       }
       // Si txnErr.code === '23505' → ya acreditado (idempotente, silencioso)
       // Cualquier otro error se ignora (milestone es best-effort)
