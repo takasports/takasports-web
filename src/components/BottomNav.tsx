@@ -7,7 +7,7 @@ const TABS = [
   { href: '/', label: 'Inicio',    match: (p: string) => p === '/',                                      icon: HomeIcon },
   { href: '/noticias',   label: 'Noticias',   match: (p: string) => p === '/noticias' || p.startsWith('/noticias/') || p.startsWith('/article'), icon: NewsIcon },
   { href: '/calendario', label: 'Calendario', match: (p: string) => p.startsWith('/calendario') || p.startsWith('/evento') || p.startsWith('/partido'), icon: CalIcon },
-  { href: '/juegos',     label: 'Juegos',     match: (p: string) => ['/juegos','/quiniela','/mionce','/sopa-cracks','/crackquiz','/takagrid'].some(r => p.startsWith(r)), icon: GameIcon },
+  { href: '/juegos',     label: 'Juegos',     match: (p: string) => ['/juegos','/predicciones','/quiniela','/mionce','/sopa-cracks','/crackquiz','/takagrid'].some(r => p.startsWith(r)), icon: GameIcon },
   { href: '/perfil',     label: 'Perfil',     match: (p: string) => p.startsWith('/perfil'), icon: UserIcon },
 ]
 

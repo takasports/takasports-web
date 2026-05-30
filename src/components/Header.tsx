@@ -25,7 +25,7 @@ const NAV_LINKS = [
   { label: 'Estadísticas', href: '/estadisticas'  },
   { label: 'Rankings',     href: '/rankings'      },
   { label: 'Juegos',       href: '/juegos'        },
-  { label: 'Quiniela',     href: '/quiniela'      },
+  { label: 'Predicciones', href: '/predicciones'  },
 ]
 
 function isNavActive(href: string, pathname: string): boolean {

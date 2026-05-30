@@ -1,13 +1,7 @@
-'use client'
-
-import dynamic from 'next/dynamic'
-import QuinielaLoading from './loading'
-
-const QuinielaClient = dynamic(() => import('./QuinielaClient'), {
-  loading: () => <QuinielaLoading />,
-  ssr: false,
-})
+// Redirect permanente: /quiniela → /predicciones
+// Preserva SEO (301) y mantiene compatibilidad con enlaces externos.
+import { redirect } from 'next/navigation'
 
 export default function QuinielaPage() {
-  return <QuinielaClient />
+  redirect('/predicciones')
 }
