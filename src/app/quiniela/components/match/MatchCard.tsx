@@ -365,13 +365,13 @@ export function MatchCard({
                         className="w-7 h-7 rounded font-black flex items-center justify-center transition-opacity hover:opacity-80"
                         style={{ background: 'rgba(255,255,255,0.06)', color: '#86efac', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-display)', fontSize: 15, lineHeight: 1, cursor: 'pointer' }}
                       >+</button>
-                      <span className="text-[10px] font-bold" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>🪙</span>
+                      <span className="text-[10px] font-bold" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>pts</span>
                     </div>
                     <span className="flex-1" />
                     <div className="flex flex-col items-end">
                       <span className="text-[8px] uppercase tracking-widest" style={{ color: '#5A7068', fontFamily: 'var(--font-sport)' }}>Si acertás</span>
                       <span className="text-sm font-black tabular-nums" style={{ color: stk > 0 ? '#fbbf24' : '#3A4A45', fontFamily: 'var(--font-display)', lineHeight: 1 }}>
-                        {ret}🪙
+                        {ret} pts
                       </span>
                       {stk > 0 && profit > 0 && (
                         <span className="text-[8px] font-bold tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-sport)' }}>
