@@ -199,9 +199,9 @@ function MatchCard({
         gap: 12,
       }}
     >
-      {/* Header: grupo + hora + featured badge */}
+      {/* Header: ciudad + hora + featured badge */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        {event.meta?.group && (
+        {(event.meta?.group || event.meta?.city) && (
           <span
             style={{
               fontSize: 9,
@@ -216,7 +216,7 @@ function MatchCard({
               letterSpacing: '0.08em',
             }}
           >
-            {event.meta.group}
+            {event.meta.group || event.meta.city}
           </span>
         )}
         {event.featured && (
@@ -341,6 +341,15 @@ function MatchCard({
   )
 }
 
+// ── Countdown helper ─────────────────────────────────────────────────────
+
+function daysUntilKickoff(): number | null {
+  const kickoff = new Date('2026-06-11T19:00:00Z')
+  const now     = new Date()
+  if (now >= kickoff) return null
+  return Math.ceil((kickoff.getTime() - now.getTime()) / 86_400_000)
+}
+
 // ── Main component ───────────────────────────────────────────────────────
 
 export default function MundialClient() {
@@ -425,6 +434,7 @@ export default function MundialClient() {
   const totalPts   = Object.values(preds).reduce((acc, p) => acc + (p.points_awarded ?? 0), 0)
   const myPicks    = Object.keys(preds).length
   const openCount  = events.filter(e => e.status === 'open').length
+  const daysLeft   = daysUntilKickoff()
 
   // ── Render ───────────────────────────────────────────────────────
 
@@ -461,11 +471,38 @@ export default function MundialClient() {
               Mundial 2026
             </h1>
             <p style={{ color: GOLD_D, fontSize: 12, fontFamily: 'var(--font-sport)', marginTop: 2 }}>
-              USA · Canada · Mexico · 11 Jun – 26 Jul
+              USA · Canada · Mexico · 11 Jun – Jul 2026
             </p>
           </div>
-          {/* Stats inline */}
-          {myPicks > 0 && (
+
+          {/* Countdown badge */}
+          {daysLeft !== null && (
+            <div
+              className="ml-auto flex-shrink-0 flex flex-col items-center px-4 py-2 rounded-xl"
+              style={{
+                background: `${GOLD}18`,
+                border: `1px solid ${GOLD}35`,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 26,
+                  fontWeight: 900,
+                  color: GOLD,
+                  fontFamily: 'var(--font-display)',
+                  lineHeight: 1,
+                  letterSpacing: '-0.03em',
+                }}
+              >
+                {daysLeft}
+              </span>
+              <span style={{ fontSize: 8, color: GOLD_D, fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                {daysLeft === 1 ? 'día' : 'días'}
+              </span>
+            </div>
+          )}
+          {/* Stats inline — solo tras el primer pick o cuando el torneo arrancó */}
+          {myPicks > 0 && daysLeft === null && (
             <div
               className="ml-auto flex items-center gap-3 px-4 py-2 rounded-xl"
               style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}25` }}
@@ -541,7 +578,7 @@ export default function MundialClient() {
         </div>
       )}
 
-      {/* ── Empty state ───────────────────────────────────────── */}
+      {/* ── Empty state (no debería verse, hay 104 fixtures) ─── */}
       {!loading && events.length === 0 && (
         <div className="flex flex-col items-center gap-4 py-24 text-center">
           <span style={{ fontSize: 52 }}>🏆</span>
@@ -553,10 +590,10 @@ export default function MundialClient() {
               letterSpacing: '-0.02em',
             }}
           >
-            Partidos disponibles el 11 de junio
+            Cargando partidos…
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, maxWidth: 360 }}>
-            Los fixtures del Mundial 2026 se cargarán automáticamente. Vuelve el día del partido.
+            Los fixtures del Mundial se están sincronizando. Recarga en unos segundos.
           </p>
         </div>
       )}
