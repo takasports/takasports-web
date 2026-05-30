@@ -21,9 +21,14 @@ import TakaPoint from '@/components/TakaPoint'
 import { useStreak } from '@/hooks/useGameState'
 import { usePoints } from '@/hooks/useGameState'
 
-// Carga dinámica — QuinielaClient es pesado, solo se carga si se activa fútbol
+// Carga dinámica — solo se carga el cliente activo
 const QuinielaClient = dynamic(
   () => import('@/app/quiniela/QuinielaClient'),
+  { ssr: false, loading: () => <QuinielaLoadingShim /> }
+)
+
+const MundialClient = dynamic(
+  () => import('@/app/mundial/MundialClient'),
   { ssr: false, loading: () => <QuinielaLoadingShim /> }
 )
 
@@ -45,8 +50,7 @@ const SPORTS: {
     label:     'Mundial 2026',
     emoji:     '🏆',
     accent:    '#FBBF24',
-    available: false,
-    badge:     'Pronto',
+    available: true,
   },
   {
     id:        'futbol',
@@ -65,10 +69,12 @@ const SPORTS: {
   },
 ]
 
+// Mundial es la tab por defecto cuando está disponible
+
 // ── Componente principal ─────────────────────────────────────────────
 export default function PrediccionesHub() {
   const [hubTab,   setHubTab]   = useState<HubTab>('ranked')
-  const [sportTab, setSportTab] = useState<SportTab>('futbol')
+  const [sportTab, setSportTab] = useState<SportTab>('mundial')
   const { streak }              = useStreak()
   const { points }              = usePoints()
 
@@ -234,7 +240,7 @@ export default function PrediccionesHub() {
           {/* Sport content */}
           {sportTab === 'futbol' && <QuinielaClient />}
           {sportTab === 'ufc'    && <SportComingSoon sport="Ranked UFC" emoji="🥊" accent="#F87171" />}
-          {sportTab === 'mundial' && <SportComingSoon sport="Ranked Mundial 2026" emoji="🏆" accent="#FBBF24" />}
+          {sportTab === 'mundial' && <MundialClient />}
         </>
       )}
 
