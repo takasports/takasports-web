@@ -17,6 +17,9 @@ import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
+import TakaPoint from '@/components/TakaPoint'
+import { useStreak } from '@/hooks/useGameState'
+import { usePoints } from '@/hooks/useGameState'
 
 // Carga dinámica — QuinielaClient es pesado, solo se carga si se activa fútbol
 const QuinielaClient = dynamic(
@@ -66,6 +69,8 @@ const SPORTS: {
 export default function PrediccionesHub() {
   const [hubTab,   setHubTab]   = useState<HubTab>('ranked')
   const [sportTab, setSportTab] = useState<SportTab>('futbol')
+  const { streak }              = useStreak()
+  const { points }              = usePoints()
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
@@ -151,6 +156,80 @@ export default function PrediccionesHub() {
               ))}
             </div>
           </div>
+
+          {/* Stats strip — racha + puntos (solo si hay sesión) */}
+          {(streak !== null || points !== null) && (
+            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-1">
+              <div
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl"
+                style={{
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                {/* Racha Taka */}
+                {streak !== null && (
+                  <div className="flex items-center gap-1.5">
+                    <span style={{ fontSize: 14 }}>🔥</span>
+                    <span
+                      className="text-[11px] font-black"
+                      style={{ fontFamily: 'var(--font-sport)', color: '#F97316' }}
+                    >
+                      {streak.current_streak}
+                    </span>
+                    <span
+                      className="text-[10px]"
+                      style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
+                    >
+                      {streak.current_streak === 1 ? 'día' : 'días'}
+                    </span>
+                  </div>
+                )}
+                {streak !== null && points !== null && (
+                  <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: 10 }}>·</span>
+                )}
+                {/* Puntos Taka */}
+                {points !== null && (
+                  <div className="flex items-center gap-1.5">
+                    <TakaPoint size={14} />
+                    <span
+                      className="text-[11px] font-black"
+                      style={{ fontFamily: 'var(--font-sport)', color: '#A78BFA' }}
+                    >
+                      {points.toLocaleString('es-ES')}
+                    </span>
+                    <span
+                      className="text-[10px]"
+                      style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
+                    >
+                      pts
+                    </span>
+                  </div>
+                )}
+                {/* Spacer */}
+                <div className="flex-1" />
+                {/* Milestone hint si racha cerca de un hito */}
+                {streak !== null && (() => {
+                  const next = [3, 7, 14, 30].find(m => m > streak.current_streak)
+                  if (!next) return null
+                  const diff = next - streak.current_streak
+                  if (diff > 3) return null
+                  return (
+                    <span
+                      className="text-[10px] font-black"
+                      style={{
+                        fontFamily: 'var(--font-sport)',
+                        color: '#F97316',
+                        opacity: 0.7,
+                      }}
+                    >
+                      {diff === 1 ? '¡Mañana bonus!' : `${diff} días para bonus`}
+                    </span>
+                  )
+                })()}
+              </div>
+            </div>
+          )}
 
           {/* Sport content */}
           {sportTab === 'futbol' && <QuinielaClient />}

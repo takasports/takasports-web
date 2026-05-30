@@ -89,6 +89,40 @@ export function useStreak(): { streak: Streak | null; loading: boolean; refresh:
   return { streak, loading, refresh }
 }
 
+// ── usePoints ────────────────────────────────────────────────────
+
+/**
+ * Saldo actual de puntos Taka del usuario. Devuelve null si no hay
+ * sesión o la columna points_balance todavía no existe.
+ */
+export function usePoints(): { points: number | null; loading: boolean; refresh: () => Promise<void> } {
+  const [points,  setPoints]  = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
+  const mounted = useRef(true)
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch('/api/ranked/points')
+      if (!res.ok) throw new Error('fetch error')
+      const data = await res.json() as { points: number | null }
+      if (!mounted.current) return
+      setPoints(data.points ?? null)
+    } catch {
+      if (mounted.current) setPoints(null)
+    } finally {
+      if (mounted.current) setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    mounted.current = true
+    void refresh()
+    return () => { mounted.current = false }
+  }, [refresh])
+
+  return { points, loading, refresh }
+}
+
 // ── useLeaderboard ───────────────────────────────────────────────
 
 export interface UseLeaderboardOptions {

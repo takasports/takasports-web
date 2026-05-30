@@ -23,6 +23,8 @@ import { SportIcon, FireIcon, FootballIcon, StadiumIcon } from '@/components/ico
 import MyGamesActivity from '@/components/games/MyGamesActivity'
 import { getBadge } from '@/lib/badges'
 import type { BadgeDef } from '@/lib/badges'
+import TakaPoint from '@/components/TakaPoint'
+import { usePoints, useStreak } from '@/hooks/useGameState'
 
 const REMINDERS_KEY = 'ts_reminders'
 const PROFILE_NAME_KEY = 'ts_profile_name'
@@ -77,6 +79,10 @@ export default function PerfilPage() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [badges, setBadges] = useState<BadgeDef[]>([])
   const [linkingGoogle, setLinkingGoogle] = useState(false)
+
+  // Ranked points & streak (server-side, only loaded when session exists)
+  const { points } = usePoints()
+  const { streak } = useStreak()
 
   // Game stats
   const [quizStats, setQuizStats] = useState<{ streak: number; bestStreak: number; bestScore: number; totalCorrect: number; totalPlayed: number; lastPlayedDate: string } | null>(null)
@@ -350,6 +356,58 @@ export default function PerfilPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Puntos Taka + Racha — solo si hay sesión y datos */}
+              {(points !== null || (streak && streak.current_streak > 0)) && (
+                <div className="flex items-center gap-3 flex-wrap">
+                  {points !== null && (
+                    <div
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                      style={{
+                        background: 'rgba(167,139,250,0.08)',
+                        border: '1px solid rgba(167,139,250,0.2)',
+                      }}
+                    >
+                      <TakaPoint size={13} />
+                      <span
+                        className="text-[12px] font-black"
+                        style={{ fontFamily: 'var(--font-display)', color: '#A78BFA', letterSpacing: '-0.01em' }}
+                      >
+                        {points.toLocaleString('es-ES')}
+                      </span>
+                      <span
+                        className="text-[10px]"
+                        style={{ color: 'rgba(167,139,250,0.6)', fontFamily: 'var(--font-sport)' }}
+                      >
+                        pts Taka
+                      </span>
+                    </div>
+                  )}
+                  {streak && streak.current_streak > 0 && (
+                    <div
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                      style={{
+                        background: 'rgba(249,115,22,0.08)',
+                        border: '1px solid rgba(249,115,22,0.2)',
+                      }}
+                    >
+                      <span style={{ fontSize: 12 }}>🔥</span>
+                      <span
+                        className="text-[12px] font-black"
+                        style={{ fontFamily: 'var(--font-display)', color: '#F97316', letterSpacing: '-0.01em' }}
+                      >
+                        {streak.current_streak}
+                      </span>
+                      <span
+                        className="text-[10px]"
+                        style={{ color: 'rgba(249,115,22,0.6)', fontFamily: 'var(--font-sport)' }}
+                      >
+                        {streak.current_streak === 1 ? 'día' : 'días de racha'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Zona horaria — solo indicador, el selector completo está en Preferencias */}
               <div className="flex items-center gap-1.5 mt-0.5">
