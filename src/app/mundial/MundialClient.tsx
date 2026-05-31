@@ -43,25 +43,40 @@ const FLAGS: Record<string, string> = {
   'Uruguay': '🇺🇾', 'Venezuela': '🇻🇪', 'Paraguay': '🇵🇾', 'Bolivia': '🇧🇴',
   'Costa Rica': '🇨🇷', 'Honduras': '🇭🇳', 'Panama': '🇵🇦',
   'Jamaica': '🇯🇲', 'Trinidad and Tobago': '🇹🇹',
+  'Haiti': '🇭🇹', 'Curacao': '🇨🇼', 'Curaçao': '🇨🇼',
+  'Guatemala': '🇬🇹', 'El Salvador': '🇸🇻', 'Cuba': '🇨🇺',
+  'Antigua and Barbuda': '🇦🇬', 'Martinique': '🏴', 'Guadeloupe': '🏴',
   // Europe
   'Spain': '🇪🇸', 'France': '🇫🇷', 'Germany': '🇩🇪', 'Portugal': '🇵🇹',
   'Netherlands': '🇳🇱', 'Italy': '🇮🇹', 'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Croatia': '🇭🇷',
   'Belgium': '🇧🇪', 'Denmark': '🇩🇰', 'Austria': '🇦🇹', 'Switzerland': '🇨🇭',
-  'Poland': '🇵🇱', 'Serbia': '🇷🇸', 'Turkey': '🇹🇷', 'Romania': '🇷🇴',
-  'Czech Republic': '🇨🇿', 'Scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'Hungary': '🇭🇺',
+  'Poland': '🇵🇱', 'Serbia': '🇷🇸', 'Turkey': '🇹🇷', 'Türkiye': '🇹🇷', 'Romania': '🇷🇴',
+  'Czech Republic': '🇨🇿', 'Czechia': '🇨🇿',
+  'Scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'Hungary': '🇭🇺',
   'Slovakia': '🇸🇰', 'Slovenia': '🇸🇮', 'Ukraine': '🇺🇦', 'Greece': '🇬🇷',
   'Albania': '🇦🇱', 'Georgia': '🇬🇪', 'Wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  'Sweden': '🇸🇪', 'Norway': '🇳🇴', 'Finland': '🇫🇮', 'Iceland': '🇮🇸',
+  'Bosnia': '🇧🇦', 'Bosnia-Herzegovina': '🇧🇦', 'Bosnia and Herzegovina': '🇧🇦',
+  'North Macedonia': '🇲🇰', 'Montenegro': '🇲🇪', 'Kosovo': '🇽🇰',
+  'Luxembourg': '🇱🇺', 'Belarus': '🇧🇾', 'Bulgaria': '🇧🇬',
   // Africa
   'Morocco': '🇲🇦', 'Senegal': '🇸🇳', 'Nigeria': '🇳🇬', 'Egypt': '🇪🇬',
-  'Ghana': '🇬🇭', 'Cameroon': '🇨🇲', 'Ivory Coast': '🇨🇮', 'Tunisia': '🇹🇳',
-  'South Africa': '🇿🇦', 'Algeria': '🇩🇿', 'Mali': '🇲🇱', 'Congo': '🇨🇩',
+  'Ghana': '🇬🇭', 'Cameroon': '🇨🇲', 'Ivory Coast': '🇨🇮', 'Cote d\'Ivoire': '🇨🇮',
+  'Tunisia': '🇹🇳', 'South Africa': '🇿🇦', 'Algeria': '🇩🇿',
+  'Mali': '🇲🇱', 'Congo': '🇨🇩', 'Congo DR': '🇨🇩', 'DR Congo': '🇨🇩',
+  'Cape Verde': '🇨🇻', 'Cabo Verde': '🇨🇻',
+  'Zambia': '🇿🇲', 'Uganda': '🇺🇬', 'Tanzania': '🇹🇿', 'Kenya': '🇰🇪',
+  'Libya': '🇱🇾', 'Ethiopia': '🇪🇹', 'Angola': '🇦🇴', 'Mozambique': '🇲🇿',
+  'Burkina Faso': '🇧🇫', 'Guinea': '🇬🇳', 'Equatorial Guinea': '🇬🇶',
   // Asia
   'Japan': '🇯🇵', 'South Korea': '🇰🇷', 'Australia': '🇦🇺', 'Iran': '🇮🇷',
   'Saudi Arabia': '🇸🇦', 'Qatar': '🇶🇦', 'China': '🇨🇳', 'Indonesia': '🇮🇩',
   'Jordan': '🇯🇴', 'Iraq': '🇮🇶', 'Uzbekistan': '🇺🇿', 'Bahrain': '🇧🇭',
-  'Oman': '🇴🇲', 'Palestine': '🇵🇸',
-  // Other
-  'New Zealand': '🇳🇿',
+  'Oman': '🇴🇲', 'Palestine': '🇵🇸', 'Syria': '🇸🇾', 'Vietnam': '🇻🇳',
+  'Thailand': '🇹🇭', 'Malaysia': '🇲🇾', 'Philippines': '🇵🇭',
+  'United Arab Emirates': '🇦🇪', 'UAE': '🇦🇪', 'Kuwait': '🇰🇼',
+  // Oceania / Other
+  'New Zealand': '🇳🇿', 'Fiji': '🇫🇯', 'Papua New Guinea': '🇵🇬',
 }
 
 function flag(team: string | null): string {
@@ -193,15 +208,17 @@ function MatchCard({
     <div
       style={{
         background: event.featured
-          ? `linear-gradient(135deg, ${GOLD}09 0%, ${GOLD}04 50%, transparent 100%)`
-          : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${event.featured ? `${GOLD}35` : 'rgba(255,255,255,0.07)'}`,
+          ? `linear-gradient(135deg, ${GOLD}0C 0%, ${GOLD}06 50%, rgba(255,255,255,0.015) 100%)`
+          : 'rgba(255,255,255,0.032)',
+        border: `1px solid ${event.featured ? `${GOLD}40` : 'rgba(255,255,255,0.1)'}`,
         borderRadius: 16,
-        padding: '14px 16px',
+        padding: '16px 16px',
         display: 'flex',
         flexDirection: 'column',
         gap: 12,
-        boxShadow: event.featured ? `0 0 20px ${GOLD}08` : 'none',
+        boxShadow: event.featured
+          ? `0 0 24px ${GOLD}0A, inset 0 1px 0 ${GOLD}12`
+          : `inset 0 1px 0 rgba(255,255,255,0.04)`,
         transition: 'border-color 0.15s',
       }}
     >
@@ -463,6 +480,7 @@ export default function MundialClient() {
   const [events,     setEvents]     = useState<RankedEvent[]>([])
   const [preds,      setPreds]      = useState<PredMap>({})
   const [loading,    setLoading]    = useState(true)
+  const [loggedIn,   setLoggedIn]   = useState<boolean | null>(null)  // null = desconocido
   const [submitting, setSubmitting] = useState(false)
   const [error,      setError]      = useState<string | null>(null)
   const [showLogin,  setShowLogin]  = useState(false)
@@ -479,9 +497,10 @@ export default function MundialClient() {
         fetch('/api/ranked/predictions?sport=mundial'),
       ])
       const evData   = await evRes.json()   as { events?: RankedEvent[] }
-      const predData = await predRes.json() as { predictions?: PredMap }
+      const predData = await predRes.json() as { predictions?: PredMap; reason?: string }
       setEvents(evData.events  ?? [])
       setPreds(predData.predictions ?? {})
+      setLoggedIn(predData.reason !== 'no_session')
     } catch {
       setError('Error cargando partidos. Intenta de nuevo.')
     } finally {
@@ -821,6 +840,71 @@ export default function MundialClient() {
             </a>
           )}
         </div>
+
+        {/* CTA registro — solo para usuarios no logueados, tras la carga */}
+        {loggedIn === false && !loading && (
+          <div
+            style={{
+              borderTop: `1px solid rgba(255,255,255,0.05)`,
+              padding: '12px 24px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              flexWrap: 'wrap',
+              background: 'rgba(0,0,0,0.2)',
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 13, fontWeight: 900, color: '#F0F0F8', fontFamily: 'var(--font-sport)', lineHeight: 1.3 }}>
+                Crea tu cuenta y empieza a predecir gratis
+              </p>
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-sport)', marginTop: 2 }}>
+                Guarda tus picks · Acumula puntos · Compite en el ranking
+              </p>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <a
+                href="/auth/login"
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: 'rgba(255,255,255,0.75)',
+                  fontSize: 11,
+                  fontWeight: 900,
+                  fontFamily: 'var(--font-sport)',
+                  textDecoration: 'none',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Iniciar sesión
+              </a>
+              <a
+                href="/auth/register"
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 10,
+                  background: GOLD,
+                  border: `1px solid ${GOLD}`,
+                  color: '#000',
+                  fontSize: 11,
+                  fontWeight: 900,
+                  fontFamily: 'var(--font-sport)',
+                  textDecoration: 'none',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Registro gratis →
+              </a>
+            </div>
+          </div>
+        )}
+
         </div>{/* end content wrapper */}
       </div>{/* end hero */}
 
@@ -983,7 +1067,11 @@ export default function MundialClient() {
               {/* Match cards grid */}
               <div
                 className="grid gap-3"
-                style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}
+                style={{
+                  gridTemplateColumns: dayEvents.length === 1
+                    ? 'minmax(280px, 420px)'
+                    : 'repeat(auto-fill, minmax(280px, 1fr))',
+                }}
               >
                 {dayEvents.map(ev => (
                   <MatchCard
