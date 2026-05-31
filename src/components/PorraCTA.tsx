@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { trackPorraCtaClick, type PorraUserState } from '@/lib/analytics'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
+import { fetchPorraStatus } from '@/lib/porra-status-client'
 
 export interface PorraMatch {
   home: string
@@ -67,27 +68,6 @@ interface BadgeState {
   pulseSpeed: number | null
   /** Color del dot. */
   dotColor: string
-}
-
-const STORAGE_KEY = 'porra:status:v1'
-const TTL_MS = 60_000 // 1 min en cliente
-
-interface CachedStatus { data: PorraStatus; ts: number }
-
-function readCache(): PorraStatus | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as CachedStatus
-    if (Date.now() - parsed.ts > TTL_MS) return null
-    return parsed.data
-  } catch { return null }
-}
-
-function writeCache(data: PorraStatus) {
-  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ data, ts: Date.now() })) }
-  catch { /* quota / SSR */ }
 }
 
 /** Formatea "2d 4h", "3h 20m", "12m" según cuánto falta. */
@@ -228,19 +208,10 @@ export default function PorraCTA({ href, active, variant, onNavigate }: Props) {
     // El componente cae en deriveStateMundial() abajo.
     if (!RANKED_FUTBOL_ENABLED) return
     let cancelled = false
-    const cached = readCache()
-    if (cached) {
-      setStatus(cached)
-      return
-    }
-    fetch('/api/quiniela/status', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: PorraStatus | null) => {
-        if (cancelled || !data) return
-        setStatus(data)
-        writeCache(data)
-      })
-      .catch(() => { /* silencioso — fallback al estado guest */ })
+    fetchPorraStatus().then((data) => {
+      if (cancelled || !data) return
+      setStatus(data)
+    })
     return () => { cancelled = true }
   }, [])
 
