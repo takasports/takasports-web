@@ -17,28 +17,9 @@ import Image from 'next/image'
 import type { PorraStatus, PorraMatch } from './PorraCTA'
 import { usePushSubscription } from '@/app/quiniela/lib/hooks'
 import { normalize as normalizeTeam } from '@/lib/quiniela'
+import { usePorraStatus } from '@/lib/porra-status-client'
 
-const STORAGE_KEY = 'porra:status:v1'
-const TTL_MS = 60_000
 const MAX_DAYS_AHEAD = 7
-
-interface CachedStatus { data: PorraStatus; ts: number }
-
-function readCache(): PorraStatus | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as CachedStatus
-    if (Date.now() - parsed.ts > TTL_MS) return null
-    return parsed.data
-  } catch { return null }
-}
-
-function writeCache(data: PorraStatus) {
-  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ data, ts: Date.now() })) }
-  catch { /* quota / SSR */ }
-}
 
 function formatCountdown(deadlineIso: string): { value: string; urgent: boolean } | null {
   const ms = new Date(deadlineIso).getTime() - Date.now()
@@ -248,9 +229,8 @@ function MatchRow({ m, pickStatus }: { m: PorraMatch; pickStatus?: PickStatus })
 }
 
 export default function PorraHero() {
-  // Arranca null en SSR/hidratación inicial. Carga real en useEffect para
-  // evitar hydration mismatch (Date.now y sessionStorage solo en cliente).
-  const [status, setStatus] = useState<PorraStatus | null>(null)
+  // Hook compartido para status (dedupea fetch entre los surfaces).
+  const status = usePorraStatus()
   const [, setTick] = useState(0)
   const [shareCopied, setShareCopied] = useState(false)
   const [liveScores, setLiveScores] = useState<LiveScore[]>([])
@@ -273,23 +253,6 @@ export default function PorraHero() {
     } catch { /* */ }
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
-    const cached = readCache()
-    if (cached) {
-      setStatus(cached)
-      return
-    }
-    fetch('/api/quiniela/status', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: PorraStatus | null) => {
-        if (cancelled || !data) return
-        setStatus(data)
-        writeCache(data)
-      })
-      .catch(() => { /* silencioso */ })
-    return () => { cancelled = true }
-  }, [])
 
   useEffect(() => {
     if (!status?.deadline) return

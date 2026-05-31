@@ -10,7 +10,7 @@
 // renderiza su cliente correspondiente (QuinielaClient para fútbol,
 // placeholders para el resto).
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
@@ -88,8 +88,12 @@ export default function PrediccionesHub() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />
       <LiveStrip />
-      {/* U — Banner de reto, solo cuando ?reto=TOKEN llega en la URL */}
-      <PorraChallengeBanner />
+      {/* U — Banner de reto, solo cuando ?reto=TOKEN llega en la URL.
+          F6 — Suspense boundary: useSearchParams en client component lo
+          requiere para no forzar a la ruta entera a dynamic rendering. */}
+      <Suspense fallback={null}>
+        <PorraChallengeBanner />
+      </Suspense>
 
       {/* ── Hub tabs ──────────────────────────────────────────────── */}
       <div

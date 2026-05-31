@@ -101,23 +101,26 @@ export async function GET() {
    *  (proxy de "engagement esta semana" para social proof). */
   let weeklyParticipants = 0
 
+  // F5 — Un único Supabase client reutilizado por todas las consultas
+  // (antes hacíamos createServerSupabaseClient() dos veces).
+  const sb = await createServerSupabaseClient()
+
   // 1bis. Engagement de la jornada activa (proxy para social proof).
-  // count(distinct user_id) en quiniela_picks de la jornada actual.
-  // Llamada anónima sin auth.
+  // Filtramos picks->>'staked' = 'true' para no contar filas huérfanas
+  // y nos aseguramos que la RLS permita el count anónimo (si no, queda 0).
   if (jornada) {
     try {
-      const sb = await createServerSupabaseClient()
       const { count } = await sb
         .from('quiniela_picks')
         .select('user_id', { count: 'exact', head: true })
         .eq('jornada', jornada)
+        .eq('picks->>staked', 'true')
       if (typeof count === 'number' && Number.isFinite(count)) {
         weeklyParticipants = Math.max(0, count)
       }
     } catch { /* silencioso */ }
   }
   try {
-    const sb = await createServerSupabaseClient()
     const { data: { user } } = await sb.auth.getUser()
     if (user) {
       isAuthed = true
@@ -179,7 +182,10 @@ export async function GET() {
         })
         .filter((t) => t.jornada && Number.isFinite(t.stakedAt))
         .sort((a, b) => b.stakedAt - a.stakedAt) // más reciente primero
-      const STREAK_GAP_MAX_MS = 14 * 24 * 3_600_000
+      // F6 — Streak gap: jornadas semanales son 7d, Mundial son ~3d.
+      // 8d cubre semanal con margen y rompe la racha si te saltas
+      // claramente una jornada Mundial (sin ser estricto en weekends).
+      const STREAK_GAP_MAX_MS = 8 * 24 * 3_600_000
       let streak = 0
       for (let i = 0; i < stakedTuples.length; i++) {
         if (i === 0) { streak = 1; continue }
@@ -246,7 +252,7 @@ export async function GET() {
   } | null = null
   if (lastSettled) {
     try {
-      const sb = await createServerSupabaseClient()
+      // Reusa el sb del scope exterior — F5: un solo client por request.
       const { data: { user } } = await sb.auth.getUser()
       if (user) {
         // 1. Ligas del user.

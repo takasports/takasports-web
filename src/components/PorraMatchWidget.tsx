@@ -18,6 +18,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type { PorraStatus, PorraMatch } from './PorraCTA'
 import { normalize as normalizeTeam, resolveAlias, TEAM_ALIASES } from '@/lib/quiniela'
+import { usePorraStatus } from '@/lib/porra-status-client'
 import {
   trackPorraCtaClick,
   trackPorraWidgetMatched,
@@ -25,26 +26,6 @@ import {
   type PorraUserState,
 } from '@/lib/analytics'
 
-const STORAGE_KEY = 'porra:status:v1'
-const TTL_MS = 60_000
-
-interface CachedStatus { data: PorraStatus; ts: number }
-
-function readCache(): PorraStatus | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as CachedStatus
-    if (Date.now() - parsed.ts > TTL_MS) return null
-    return parsed.data
-  } catch { return null }
-}
-
-function writeCache(data: PorraStatus) {
-  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ data, ts: Date.now() })) }
-  catch { /* quota / SSR */ }
-}
 
 /** Normaliza el haystack del artículo igual que normalize() de lib/quiniela.
  * Usamos la misma función para garantizar que TEAM_ALIASES (cuyas claves
@@ -159,23 +140,8 @@ interface Props {
 type Pick = '1' | 'X' | '2'
 
 export default function PorraMatchWidget({ title, tags }: Props) {
-  const [status, setStatus] = useState<PorraStatus | null>(null)
+  const status = usePorraStatus()
   const [pick, setPick] = useState<Pick | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    const cached = readCache()
-    if (cached) { setStatus(cached); return }
-    fetch('/api/quiniela/status', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: PorraStatus | null) => {
-        if (cancelled || !data) return
-        setStatus(data)
-        writeCache(data)
-      })
-      .catch(() => { /* silencioso */ })
-    return () => { cancelled = true }
-  }, [])
 
   const match = useMemo(() => {
     if (!status?.matches?.length) return null

@@ -465,10 +465,19 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                         return
                       }
                       // S — intenta auto-crear liga "Liga de X" si el user no tiene ninguna.
-                      // Idempotente: si ya tiene, devuelve created:false sin tocar.
+                      // F5 — Caché client-side: si ya sabemos que tiene liga (o ya
+                      // se le mostró el banner), no llamamos al endpoint de nuevo.
+                      try {
+                        if (sessionStorage.getItem('porra:hasLeague') === '1') return
+                      } catch { /* */ }
                       fetch('/api/quiniela/leagues/auto-create', { method: 'POST' })
                         .then((r) => (r.ok ? r.json() : null))
                         .then((json) => {
+                          // En cualquier respuesta válida (created:true o false)
+                          // sabemos que ya tiene liga → no volver a preguntar.
+                          if (json?.league?.id) {
+                            try { sessionStorage.setItem('porra:hasLeague', '1') } catch { /* */ }
+                          }
                           if (json?.created && json?.league?.id) {
                             setAutoLeague({ id: json.league.id, name: json.league.name })
                           }

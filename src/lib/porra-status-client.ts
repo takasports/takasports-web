@@ -9,6 +9,9 @@
 // Versionamos la clave de sessionStorage para invalidar caches viejas
 // sin tocar al user (bump cuando la shape de PorraStatus cambie).
 
+'use client'
+
+import { useEffect, useState } from 'react'
 import type { PorraStatus } from '@/components/PorraCTA'
 
 const STORAGE_KEY = 'porra:status:v2' // v1 → v2: shape extendida (F1-T)
@@ -65,3 +68,25 @@ export async function fetchPorraStatus(): Promise<PorraStatus | null> {
 
   return inflight
 }
+
+// ── Hook compartido ──────────────────────────────────────────────
+// Dedupea el patrón useState+useEffect+cancellation que tenían los
+// 4 componentes Porra. SSR-safe: status arranca null, el fetch corre
+// post-hidratación. NO actualiza al volver de background — para eso
+// hay polling explícito donde haga falta (ej. live overlay del hero).
+
+/** React hook que carga PorraStatus al montar y lo devuelve.
+ *  null mientras carga / si falla la red. */
+export function usePorraStatus(): PorraStatus | null {
+  const [status, setStatus] = useState<PorraStatus | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    fetchPorraStatus().then((data) => {
+      if (cancelled || !data) return
+      setStatus(data)
+    })
+    return () => { cancelled = true }
+  }, [])
+  return status
+}
+

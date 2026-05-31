@@ -11,27 +11,33 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import type { PorraStatus, PorraSettlement } from './PorraCTA'
 import { trackPorraCtaClick, trackPorraSettlementShown } from '@/lib/analytics'
 import { buildResultSlug } from '@/lib/porra-result-slug'
 import { buildChallengeToken, buildChallengeUrl, buildChallengeText } from '@/lib/porra-challenge'
+import { fetchPorraStatus, readPorraCache } from '@/lib/porra-status-client'
 
-const STORAGE_KEY = 'porra:status:v1'
-const TTL_MS = 60_000
 const ACK_KEY = 'porra:settledAck:v1'
 const AUTO_DISMISS_MS = 12_000
 
-interface CachedStatus { data: PorraStatus; ts: number }
+/** Rutas donde el toast NUNCA debe aparecer. Auto-skip silencioso:
+ *  evita disparar fetch a /api/quiniela/status en cada navegación a
+ *  perfil/admin/legal donde el user no espera ver el toast. */
+const SKIP_PATH_PREFIXES = [
+  '/admin',
+  '/perfil',
+  '/terminos',
+  '/privacidad',
+  '/politica-editorial',
+  '/sobre',
+  '/redes',
+  '/newsletter',
+]
 
-function readStatus(): PorraStatus | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as CachedStatus
-    if (Date.now() - parsed.ts > TTL_MS) return null
-    return parsed.data
-  } catch { return null }
+function shouldSkip(pathname: string | null): boolean {
+  if (!pathname) return false
+  return SKIP_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))
 }
 
 function readAcked(): string | null {
@@ -81,6 +87,7 @@ interface FriendsData { avgHits: number; count: number }
 interface LeagueRankData { id: string; name: string; rank: number; total: number }
 
 export default function PorraSettlementToast() {
+  const pathname = usePathname()
   const [settled, setSettled] = useState<PorraSettlement | null>(null)
   const [friends, setFriends] = useState<FriendsData | null>(null)
   const [leagueRank, setLeagueRank] = useState<LeagueRankData | null>(null)
@@ -88,6 +95,10 @@ export default function PorraSettlementToast() {
   const [shareDone, setShareDone] = useState(false)
   // Evita doble-track en StrictMode / re-renders.
   const trackedShownRef = useRef<string | null>(null)
+
+  // F4 — Auto-skip en rutas donde el toast no aporta. NO disparamos
+  // siquiera el fetch para no consumir queries en cada navegación.
+  const skip = shouldSkip(pathname)
 
   async function handleChallenge() {
     if (!settled || !leagueRank) return
@@ -145,6 +156,8 @@ export default function PorraSettlementToast() {
 
   // Carga inicial (post-hidratación) — usa cache compartido + fetch fallback.
   useEffect(() => {
+    // F4 — En rutas excluidas no cargamos ni intentamos render.
+    if (skip) return
     let cancelled = false
 
     function evaluate(data: PorraStatus | null) {
@@ -174,18 +187,17 @@ export default function PorraSettlementToast() {
       }
     }
 
-    const cached = readStatus()
+    const cached = readPorraCache()
     if (cached) { evaluate(cached); return }
 
-    fetch('/api/quiniela/status', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: PorraStatus | null) => {
+    fetchPorraStatus()
+      .then((data) => {
         if (cancelled) return
         evaluate(data)
       })
       .catch(() => { /* silencioso */ })
     return () => { cancelled = true }
-  }, [])
+  }, [skip])
 
   // Auto-dismiss + track de impresión (una vez por jornada en este mount).
   useEffect(() => {

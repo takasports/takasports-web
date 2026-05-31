@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { trackPorraCtaClick, type PorraUserState } from '@/lib/analytics'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
-import { fetchPorraStatus } from '@/lib/porra-status-client'
+import { usePorraStatus } from '@/lib/porra-status-client'
 
 export interface PorraMatch {
   home: string
@@ -198,22 +198,12 @@ interface Props {
 }
 
 export default function PorraCTA({ href, active, variant, onNavigate }: Props) {
-  // IMPORTANT: status arranca null en SSR y en hidratación inicial para evitar
-  // mismatch React. La lectura de sessionStorage y el fetch viven en useEffect.
-  const [status, setStatus] = useState<PorraStatus | null>(null)
-
-  useEffect(() => {
-    // Mientras Ranked Fútbol esté pausado: no consultar el status de la
-    // quiniela (mostraría una jornada de fútbol que el user no puede jugar).
-    // El componente cae en deriveStateMundial() abajo.
-    if (!RANKED_FUTBOL_ENABLED) return
-    let cancelled = false
-    fetchPorraStatus().then((data) => {
-      if (cancelled || !data) return
-      setStatus(data)
-    })
-    return () => { cancelled = true }
-  }, [])
+  // Hook compartido: dedupea la lógica fetch+state con los otros
+  // surfaces. Mientras Ranked Fútbol esté pausado, no consultamos el
+  // status (mostraría una jornada que el user no puede jugar) — el
+  // componente cae en deriveStateMundial() abajo.
+  const liveStatus = usePorraStatus()
+  const status = RANKED_FUTBOL_ENABLED ? liveStatus : null
 
   // Re-render cada 60s para que el contador "CIERRA 2H 14M" baje.
   const [, setTick] = useState(0)
