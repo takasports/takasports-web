@@ -33,6 +33,12 @@ export interface PorraStatus {
   hasPicked: boolean
   picksCount: number
   lastSettled?: PorraSettlement | null
+  /** Streak: jornadas consecutivas selladas por este user (0 si nunca o roto). */
+  streakCurrent?: number
+  /** Total de users distintos que sellaron picks en la jornada activa. */
+  weeklyParticipants?: number
+  /** Picks del user para la jornada activa (cliente cruza con live scores). */
+  userPicks?: Array<{ home: string; away: string; pick: string }>
 }
 
 interface BadgeState {

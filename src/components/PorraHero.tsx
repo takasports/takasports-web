@@ -16,6 +16,7 @@ import { trackPorraCtaClick, type PorraUserState } from '@/lib/analytics'
 import Image from 'next/image'
 import type { PorraStatus, PorraMatch } from './PorraCTA'
 import { usePushSubscription } from '@/app/quiniela/lib/hooks'
+import { normalize as normalizeTeam } from '@/lib/quiniela'
 
 const STORAGE_KEY = 'porra:status:v1'
 const TTL_MS = 60_000
@@ -50,6 +51,73 @@ function formatCountdown(deadlineIso: string): { value: string; urgent: boolean 
   return { value: `${Math.max(1, m)}m`, urgent: true }
 }
 
+// ── K: Live scoring overlay ────────────────────────────────────────
+interface LiveScore {
+  homeTeam: string
+  awayTeam: string
+  homeGoals: number | null
+  awayGoals: number | null
+  status: string
+}
+
+/** Calcula el outcome actual de un partido según el marcador. */
+function outcomeFromScore(hg: number | null, ag: number | null): '1' | 'X' | '2' | null {
+  if (hg == null || ag == null) return null
+  if (hg > ag) return '1'
+  if (hg < ag) return '2'
+  return 'X'
+}
+
+const TERMINAL = new Set(['FT', 'FINAL', 'FINAL_PEN', 'FINAL_AET', 'POST_GAME', 'END_OF_REGULATION'])
+
+function teamsMatch(a: string, b: string): boolean {
+  const na = normalizeTeam(a), nb = normalizeTeam(b)
+  if (!na || !nb) return false
+  return na === nb || na.includes(nb) || nb.includes(na)
+}
+
+/** Cruza un match de la jornada con el pick del user y el live score
+ *  para producir el estado visual de la fila. */
+function computePickStatus(
+  m: PorraMatch,
+  userPicks: PorraStatus['userPicks'] | undefined,
+  liveScores: LiveScore[],
+): PickStatus | undefined {
+  const pick = userPicks?.find((p) => teamsMatch(p.home, m.home) && teamsMatch(p.away, m.away))
+  if (!pick) return undefined
+  // Match en live scores.
+  const live = liveScores.find(
+    (s) => teamsMatch(s.homeTeam, m.home) && teamsMatch(s.awayTeam, m.away),
+  )
+  // Sin live → todavía no empezó (NS).
+  if (!live) {
+    return {
+      pick: pick.pick as PickStatus['pick'],
+      currentOutcome: null,
+      liveStatus: 'pending',
+      scoreLabel: null,
+    }
+  }
+  const currentOutcome = outcomeFromScore(live.homeGoals, live.awayGoals)
+  const scoreLabel = (live.homeGoals != null && live.awayGoals != null)
+    ? `${live.homeGoals}-${live.awayGoals}`
+    : null
+  const liveStatus = TERMINAL.has(live.status) ? 'final' : 'live'
+  return {
+    pick: pick.pick as PickStatus['pick'],
+    currentOutcome,
+    liveStatus,
+    scoreLabel,
+  }
+}
+
+/** Compacta: 1234 → "1.2k", 12 → "12". */
+function formatParticipants(n: number): string {
+  if (n >= 10000) return `${Math.round(n / 1000)}k`
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace('.0', '')}k`
+  return String(n)
+}
+
 function formatKickoff(iso: string): string {
   try {
     const d = new Date(iso)
@@ -61,7 +129,48 @@ function formatKickoff(iso: string): string {
   } catch { return '' }
 }
 
-function MatchRow({ m }: { m: PorraMatch }) {
+type PickStatus = {
+  pick: '1' | 'X' | '2' | '1X' | 'X2'
+  /** Resultado actual del partido según marcador live. */
+  currentOutcome: '1' | 'X' | '2' | null
+  /** Estado del partido (NS, LIVE, FT). */
+  liveStatus: 'pending' | 'live' | 'final'
+  /** Texto del marcador "2-1". */
+  scoreLabel: string | null
+}
+
+function pickHits(pick: PickStatus['pick'], outcome: '1' | 'X' | '2'): boolean {
+  if (pick === outcome) return true
+  if (pick === '1X') return outcome === '1' || outcome === 'X'
+  if (pick === 'X2') return outcome === 'X' || outcome === '2'
+  return false
+}
+
+function MatchRow({ m, pickStatus }: { m: PorraMatch; pickStatus?: PickStatus }) {
+  // Si el partido tiene pick y está vivo/final, calculamos chip de estado.
+  let chip: { label: string; bg: string; color: string; border: string } | null = null
+  if (pickStatus) {
+    const hits = pickStatus.currentOutcome
+      ? pickHits(pickStatus.pick, pickStatus.currentOutcome)
+      : null
+    if (pickStatus.liveStatus === 'final') {
+      chip = hits
+        ? { label: `✓ ${pickStatus.scoreLabel ?? ''}`,
+            bg: 'rgba(34,197,94,0.18)', color: '#86EFAC', border: 'rgba(34,197,94,0.4)' }
+        : { label: `✗ ${pickStatus.scoreLabel ?? ''}`,
+            bg: 'rgba(239,68,68,0.18)', color: '#FCA5A5', border: 'rgba(239,68,68,0.4)' }
+    } else if (pickStatus.liveStatus === 'live') {
+      chip = hits
+        ? { label: `● ${pickStatus.scoreLabel ?? 'EN JUEGO'}`,
+            bg: 'rgba(34,197,94,0.16)', color: '#86EFAC', border: 'rgba(34,197,94,0.32)' }
+        : hits === false
+          ? { label: `● ${pickStatus.scoreLabel ?? 'EN JUEGO'}`,
+              bg: 'rgba(249,115,22,0.16)', color: '#FED7AA', border: 'rgba(249,115,22,0.32)' }
+          : { label: `● ${pickStatus.scoreLabel ?? 'EN JUEGO'}`,
+              bg: 'rgba(255,255,255,0.08)', color: '#fff', border: 'rgba(255,255,255,0.18)' }
+    }
+  }
+
   return (
     <div
       className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg"
@@ -90,6 +199,23 @@ function MatchRow({ m }: { m: PorraMatch }) {
         {m.awayLogo
           ? <Image src={m.awayLogo} alt="" width={18} height={18} className="flex-shrink-0 object-contain" unoptimized />
           : <span className="w-[18px] h-[18px] rounded-full flex-shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />}
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {chip && (
+          <span
+            style={{
+              fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
+              padding: '2px 7px', borderRadius: 4,
+              background: chip.bg, color: chip.color,
+              border: `1px solid ${chip.border}`,
+              fontFamily: 'var(--font-sport)',
+              animation: pickStatus?.liveStatus === 'live'
+                ? 'porraLivePulse 1.6s ease-in-out infinite' : 'none',
+            }}
+          >
+            {chip.label}
+          </span>
+        )}
       </div>
       <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
         {m.featured && (
@@ -127,7 +253,25 @@ export default function PorraHero() {
   const [status, setStatus] = useState<PorraStatus | null>(null)
   const [, setTick] = useState(0)
   const [shareCopied, setShareCopied] = useState(false)
+  const [liveScores, setLiveScores] = useState<LiveScore[]>([])
   const { status: pushStatus, subscribe: subscribePush } = usePushSubscription()
+
+  // Soft-ask: pequeño paso intermedio antes del prompt nativo. Reduce
+  // denials (cuando el user dice "no" al nativo, no podemos volver a
+  // pedírselo en muchos meses).
+  const [pushAsking, setPushAsking] = useState(false)
+  const [pushDeferred, setPushDeferred] = useState(false)
+  // Hydratamos el flag de deferral después del mount para evitar SSR mismatch.
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('porra:pushAskDeferred')
+      if (!v) return
+      const ts = parseInt(v, 10)
+      if (!Number.isFinite(ts)) return
+      // Re-ofrecer pasados 7 días.
+      if (Date.now() - ts < 7 * 24 * 3_600_000) setPushDeferred(true)
+    } catch { /* */ }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -152,6 +296,30 @@ export default function PorraHero() {
     const id = setInterval(() => setTick((t) => t + 1), 60_000)
     return () => clearInterval(id)
   }, [status?.deadline])
+
+  // K: si el user tiene picks y la primera kickoff ya pasó, fetch live cada 60s.
+  const hasPicksForLive = status?.hasPicked && (status?.userPicks?.length ?? 0) > 0
+  const firstKickoff = status?.matches?.[0]?.kickoff
+  const jornadaStarted = firstKickoff
+    ? new Date(firstKickoff).getTime() <= Date.now()
+    : false
+  useEffect(() => {
+    if (!hasPicksForLive || !jornadaStarted) return
+    let cancelled = false
+    function loadLive() {
+      fetch('/api/events/live', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json: { events?: LiveScore[] } | LiveScore[] | null) => {
+          if (cancelled || !json) return
+          const list = Array.isArray(json) ? json : (json.events ?? [])
+          setLiveScores(list)
+        })
+        .catch(() => { /* */ })
+    }
+    loadLive()
+    const id = setInterval(loadLive, 60_000)
+    return () => { cancelled = true; clearInterval(id) }
+  }, [hasPicksForLive, jornadaStarted])
 
   if (!status?.jornada || !status.deadline) return null
 
@@ -179,19 +347,35 @@ export default function PorraHero() {
 
   // Suscripción a push para recordatorio T-60min. Solo se ofrece cuando
   // tiene sentido: jornada futura, user que no ha jugado, no ya suscrito,
-  // permiso no denegado. Para no entrenarles a ignorar prompts.
+  // no denegado nativo, no diferido recientemente vía soft-ask.
   const offerPush =
     pushStatus === 'idle' &&
     !alreadyPlayed &&
+    !pushDeferred &&
     new Date(status.deadline).getTime() > Date.now() + 60 * 60_000
 
-  async function handleSubscribePush() {
+  // Click en "AVÍSAME" abre el soft-ask (no dispara permiso nativo aún).
+  function handleOpenPushAsk() {
+    setPushAsking(true)
+  }
+
+  // Confirma → ahora sí lanza el permiso nativo.
+  async function handleConfirmPush() {
+    setPushAsking(false)
     await subscribePush()
     trackPorraCtaClick({
       surface: 'home_hero',
       state: userState,
       jornada: status?.jornada ?? null,
     })
+  }
+
+  // "Ahora no" → defer 7 días sin disparar el prompt nativo.
+  function handleDeferPush() {
+    setPushAsking(false)
+    setPushDeferred(true)
+    try { localStorage.setItem('porra:pushAskDeferred', String(Date.now())) }
+    catch { /* */ }
   }
 
   // Share: navigator.share nativo en móvil + fallback a copy.
@@ -276,13 +460,49 @@ export default function PorraHero() {
                 {alreadyPlayed ? 'Cierra en' : 'Cierra en'} {countdown.value}
               </span>
             </div>
+            {/* Streak (M) + participantes (L): chips de social proof / engagement.
+                Solo aparecen si los datos llegan; degradan silenciosamente. */}
+            {((status.streakCurrent ?? 0) >= 2 || (status.weeklyParticipants ?? 0) >= 5) && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {(status.streakCurrent ?? 0) >= 2 && (
+                  <span
+                    title="Jornadas consecutivas selladas"
+                    style={{
+                      fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
+                      padding: '2px 7px', borderRadius: 4,
+                      background: 'rgba(251,191,36,0.18)', color: '#FDE68A',
+                      border: '1px solid rgba(251,191,36,0.32)',
+                      fontFamily: 'var(--font-sport)',
+                    }}
+                  >
+                    🔥 {status.streakCurrent} en racha
+                  </span>
+                )}
+                {(status.weeklyParticipants ?? 0) >= 5 && (
+                  <span
+                    title="Jugadores que ya han sellado esta jornada"
+                    style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: '0.04em',
+                      color: 'rgba(255,255,255,0.55)',
+                      fontFamily: 'var(--font-sport)',
+                    }}
+                  >
+                    · {formatParticipants(status.weeklyParticipants ?? 0)} jugando
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Bloque central: 3 partidos top */}
           {matches.length > 0 && (
             <div className="flex-1 flex flex-col gap-1.5 min-w-0">
               {matches.map((m, i) => (
-                <MatchRow key={`${m.home}-${m.away}-${i}`} m={m} />
+                <MatchRow
+                  key={`${m.home}-${m.away}-${i}`}
+                  m={m}
+                  pickStatus={computePickStatus(m, status.userPicks, liveScores)}
+                />
               ))}
             </div>
           )}
@@ -327,13 +547,13 @@ export default function PorraHero() {
                 {status.totalMatches} partidos · 1 X 2
               </span>
             )}
-            {/* Botón "Avísame" — push para recordatorio T-60min. Solo cuando
-                tiene sentido (idle + no jugado + deadline >1h). Una vez
-                suscrito, desaparece. Si denegó permiso, también desaparece. */}
-            {offerPush && (
+            {/* Botón "Avísame" — push para recordatorio T-60min. Soft-ask
+                primero (J): mostramos un mini-prompt explicativo antes de
+                disparar el permiso nativo. Reduce denials irreversibles. */}
+            {offerPush && !pushAsking && (
               <button
                 type="button"
-                onClick={handleSubscribePush}
+                onClick={handleOpenPushAsk}
                 aria-label="Avísame antes del cierre"
                 className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap"
                 style={{
@@ -352,6 +572,54 @@ export default function PorraHero() {
                 </svg>
                 AVÍSAME
               </button>
+            )}
+            {pushAsking && (
+              <div
+                className="flex flex-col gap-2 p-3 rounded-xl"
+                style={{
+                  background: 'rgba(124,58,237,0.12)',
+                  border: '1px solid rgba(124,58,237,0.35)',
+                  animation: 'porraSoftAskIn 200ms cubic-bezier(0.34,1.4,0.64,1) both',
+                }}
+              >
+                <p style={{
+                  fontSize: 11, color: 'rgba(255,255,255,0.85)',
+                  margin: 0, lineHeight: 1.35,
+                  fontFamily: 'var(--font-sport)',
+                }}>
+                  Te avisamos <strong>1h antes</strong> del cierre para que no te quedes fuera. Sin spam.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleConfirmPush}
+                    style={{
+                      flex: 1, padding: '6px 10px', borderRadius: 8,
+                      background: 'linear-gradient(135deg, #7C3AED 0%, #F97316 100%)',
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      color: '#fff',
+                      fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
+                      letterSpacing: '0.06em', cursor: 'pointer',
+                    }}
+                  >
+                    SÍ, AVÍSAME
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeferPush}
+                    style={{
+                      padding: '6px 10px', borderRadius: 8,
+                      background: 'transparent',
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      color: 'rgba(255,255,255,0.55)',
+                      fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 800,
+                      letterSpacing: '0.06em', cursor: 'pointer',
+                    }}
+                  >
+                    AHORA NO
+                  </button>
+                </div>
+              </div>
             )}
             {pushStatus === 'subscribed' && !alreadyPlayed && (
               <span
@@ -409,6 +677,14 @@ export default function PorraHero() {
           @keyframes porraHeroFadeIn {
             from { opacity: 0; transform: translateY(-6px); }
             to   { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes porraSoftAskIn {
+            from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          @keyframes porraLivePulse {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.7; }
           }
         `}</style>
       </div>

@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic'
 
 interface PicksRow {
   picks: {
-    picks?: Array<{ pick?: string }>
+    picks?: Array<{ home?: string; away?: string; pick?: string }>
     staked?: boolean
   } | null
 }
@@ -35,8 +35,10 @@ interface SettledRow {
       hits?: number
     }
     settled?: boolean
+    staked?: boolean
     totalWon?: number
     settledAt?: string
+    stakedAt?: string
   } | null
 }
 
@@ -85,6 +87,32 @@ export async function GET() {
     totalPicks: number
     settledAt: string | null
   } | null = null
+  /** Streak: nº de jornadas consecutivas selladas (staked=true) por el user
+   *  ordenadas por stakedAt DESC. Si la última jornada cerrada no fue
+   *  sellada → streak=0 (se rompió). */
+  let streakCurrent = 0
+  /** Picks del user para la jornada activa (K). Cliente los cruza con
+   *  /api/events/live para mostrar resultados parciales en el hero. */
+  let userPicks: Array<{ home: string; away: string; pick: string }> = []
+  /** Nº de usuarios distintos que sellaron picks en la jornada activa
+   *  (proxy de "engagement esta semana" para social proof). */
+  let weeklyParticipants = 0
+
+  // 1bis. Engagement de la jornada activa (proxy para social proof).
+  // count(distinct user_id) en quiniela_picks de la jornada actual.
+  // Llamada anónima sin auth.
+  if (jornada) {
+    try {
+      const sb = await createServerSupabaseClient()
+      const { count } = await sb
+        .from('quiniela_picks')
+        .select('user_id', { count: 'exact', head: true })
+        .eq('jornada', jornada)
+      if (typeof count === 'number' && Number.isFinite(count)) {
+        weeklyParticipants = Math.max(0, count)
+      }
+    } catch { /* silencioso */ }
+  }
   try {
     const sb = await createServerSupabaseClient()
     const { data: { user } } = await sb.auth.getUser()
@@ -104,6 +132,12 @@ export async function GET() {
           const arr = data?.picks?.picks ?? []
           picksCount = Array.isArray(arr) ? arr.filter((p) => !!p?.pick).length : 0
           hasPicked = picksCount > 0
+          // K: picks del user para cruzar con live scores en el cliente.
+          if (Array.isArray(arr)) {
+            userPicks = arr
+              .filter((p) => p && typeof p.home === 'string' && typeof p.away === 'string' && !!p.pick)
+              .map((p) => ({ home: p.home as string, away: p.away as string, pick: p.pick as string }))
+          }
         }
       }
 
@@ -119,13 +153,38 @@ export async function GET() {
         .select('jornada, picks')
         .eq('user_id', user.id)
         .limit(32)
-      const settledRows = (rows as SettledRow[] | null ?? [])
-        .filter((r) => r.picks?.settled === true)
+      const userRows = (rows as SettledRow[] | null ?? [])
+      const settledRows = userRows.filter((r) => r.picks?.settled === true)
       settledRows.sort((a, b) => {
         const ta = a.picks?.settledAt ?? ''
         const tb = b.picks?.settledAt ?? ''
         return tb.localeCompare(ta) // desc
       })
+
+      // STREAK (M): jornadas consecutivas selladas. Como no tenemos una
+      // tabla de "todas las jornadas existentes", aproximamos por el gap
+      // entre stakedAt timestamps: si dos jornadas consecutivas se sellaron
+      // dentro de 14 días, las consideramos consecutivas; si el gap es
+      // mayor, asumimos que el user se saltó alguna y reseteamos la racha.
+      interface StakedTuple { jornada: string; stakedAt: number }
+      const stakedTuples: StakedTuple[] = userRows
+        .filter((r) => r.picks?.staked === true)
+        .map((r) => {
+          const s = typeof r.picks?.stakedAt === 'string'
+            ? Date.parse(r.picks.stakedAt) : NaN
+          return { jornada: r.jornada, stakedAt: s }
+        })
+        .filter((t) => t.jornada && Number.isFinite(t.stakedAt))
+        .sort((a, b) => b.stakedAt - a.stakedAt) // más reciente primero
+      const STREAK_GAP_MAX_MS = 14 * 24 * 3_600_000
+      let streak = 0
+      for (let i = 0; i < stakedTuples.length; i++) {
+        if (i === 0) { streak = 1; continue }
+        const gap = stakedTuples[i - 1].stakedAt - stakedTuples[i].stakedAt
+        if (gap > STREAK_GAP_MAX_MS) break
+        streak += 1
+      }
+      streakCurrent = streak
       const settledRow = settledRows[0]
       if (settledRow && typeof settledRow.jornada === 'string' && settledRow.jornada.length > 0) {
         const arr = Array.isArray(settledRow.picks?.picks) ? settledRow.picks!.picks! : []
@@ -175,6 +234,9 @@ export async function GET() {
       hasPicked,
       picksCount,
       lastSettled,
+      streakCurrent,
+      weeklyParticipants,
+      userPicks,
     },
     {
       headers: {
