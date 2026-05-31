@@ -275,6 +275,20 @@ export default function PorraSettlementToast() {
                   <strong style={{ color: t.accent }}>+{settled.totalWon} pts</strong>
                 </>
               )}
+              {settled.featuredHit && (
+                <>
+                  {' · '}
+                  <span style={{
+                    display: 'inline-block',
+                    fontSize: 9, fontWeight: 900, letterSpacing: '0.08em',
+                    padding: '1px 5px', borderRadius: 3,
+                    background: 'rgba(251,191,36,0.22)', color: '#FDE68A',
+                    border: '1px solid rgba(251,191,36,0.36)',
+                    fontFamily: 'var(--font-sport)',
+                    verticalAlign: 'middle',
+                  }}>⭐ x2 DESTACADO</span>
+                </>
+              )}
             </p>
             {/* R — Ranking en mejor liga (prioridad sobre P si está top-3). */}
             {leagueRank && (

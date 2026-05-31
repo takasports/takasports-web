@@ -336,9 +336,25 @@ const COMP_WEIGHT: Record<string, number> = {
 function matchScore(m: QuinielaMatch): number {
   const cw = COMP_WEIGHT[m.comp] ?? 1
   if (!m.odds) return cw * 0.5
-  const { home, away } = m.odds
+  const { home, draw, away } = m.odds
   const spread = Math.abs(home - away)
-  const uncertainty = spread < 0.5 ? 3 : spread < 1 ? 2 : 1
+  const minOdd = Math.min(home, draw, away)
+
+  // Penalty fuerte para partidos "obvios": si hay un favorito claro
+  // (alguna cuota muy baja) el partido es predecible y no debe ganar
+  // el featured. Esto era el bug que el user reportaba: featured de
+  // resultados demasiado cantados.
+  if (minOdd < 1.30) return cw * 0.2  // favorito apabullante
+  if (minOdd < 1.50) return cw * 0.8  // favorito claro
+
+  // Resto: prima la incertidumbre. Spread bajo = cuotas equilibradas =
+  // partido competitivo = bueno para featured.
+  const uncertainty =
+    spread < 0.30 ? 4 :   // muy equilibrado
+    spread < 0.70 ? 3 :   // equilibrado
+    spread < 1.30 ? 2 :   // razonable
+    1                     // tirando a obvio
+
   return cw * uncertainty
 }
 

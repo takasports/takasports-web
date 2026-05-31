@@ -17,6 +17,10 @@ export interface MatchResult {
    *  el pick no cuenta como acierto ni fallo, y el stake se devuelve
    *  íntegro al wallet en el settle. */
   cancelled?: boolean
+  /** Partido destacado de la jornada — si el user lo acierta, sus
+   *  points y coins por ese pick se duplican (T). No hay penalty por
+   *  fallarlo. Cancelados no aplican x2 (refund íntegro). */
+  featured?: boolean
 }
 
 // Etiqueta visible del resultado (L/E/V). El valor interno sigue
@@ -146,11 +150,14 @@ export interface PickScore {
   /** true = el partido fue anulado. El stake se devuelve íntegro
    *  en `refund`, y el pick NO cuenta como hit ni como fallo. */
   cancelled: boolean
-  points: number       // puntos (ligas privadas) — 0 o TENDENCY
-  coins: number        // monedas Ranked ganadas (stake × cuota) si acierta, 0 si no
+  points: number       // puntos (ligas privadas) — 0 o TENDENCY (x2 si featured+hit)
+  coins: number        // monedas Ranked ganadas (stake × cuota) si acierta, 0 si no (x2 si featured+hit)
   refund: number       // stake devuelto si partido cancelado, 0 normalmente
   stake: number        // stake declarado del pick (0 si no se apostó / liga privada)
   oddsApplied: number  // cuota efectiva usada en el cálculo
+  /** true cuando el partido era featured Y el user acertó → se aplicó x2.
+   *  Sirve para que la UI muestre el badge "⭐ x2" sobre ese pick. */
+  featuredBonus?: boolean
 }
 
 export interface ScoreBreakdown {
@@ -162,6 +169,9 @@ export interface ScoreBreakdown {
   totalStake: number    // suma de stakes apostados (validación de saldo)
   totalRefund: number   // suma de stakes devueltos por partidos anulados
   cancelledCount: number // nº de picks anulados
+  /** true cuando el user acertó el partido featured y por tanto recibió
+   *  el bonus x2. Solo uno por jornada como máximo. */
+  featuredHit?: boolean
 }
 
 export function scorePick(
@@ -196,13 +206,22 @@ export function scorePick(
   const oddsApplied = hit ? baseOdd : 1
 
   // Puntos (ligas privadas): tendencia binaria. No depende de cuota ni stake.
-  const points = hit ? SCORING.TENDENCY : 0
+  let points = hit ? SCORING.TENDENCY : 0
 
   // Coins (Ranked): stake × cuota efectiva si acierta. 0 si falla
   // (el stake ya fue descontado al sellar, no se devuelve).
-  const coins = hit && stake > 0 ? Math.round(stake * oddsApplied) : 0
+  let coins = hit && stake > 0 ? Math.round(stake * oddsApplied) : 0
 
-  return { hit, cancelled: false, points, coins, refund: 0, stake, oddsApplied }
+  // T — Bonus x2 sobre puntos Y coins si el partido era featured y se
+  // acertó la tendencia. NO afecta stake ni refund: si fallas el featured
+  // no hay penalty extra. Solo el upside está duplicado.
+  const featuredBonus = hit && result.featured === true
+  if (featuredBonus) {
+    points *= 2
+    coins *= 2
+  }
+
+  return { hit, cancelled: false, points, coins, refund: 0, stake, oddsApplied, featuredBonus }
 }
 
 export function scorePicks(
@@ -231,7 +250,8 @@ export function scorePicks(
     // bonus ridículo (alguien que apuesta 1🪙 por pick sigue ganando 100).
     totalCoins  += Math.max(SCORING.COINS_PLENO_FLOOR, totalStake)
   }
-  return { perPick, hits, pleno, totalPoints, totalCoins, totalStake, totalRefund, cancelledCount }
+  const featuredHit = perPick.some(s => s.featuredBonus === true)
+  return { perPick, hits, pleno, totalPoints, totalCoins, totalStake, totalRefund, cancelledCount, featuredHit }
 }
 
 // ── Validación de cierre por kickoff ─────────────────────────────

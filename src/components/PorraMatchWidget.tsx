@@ -358,13 +358,13 @@ export default function PorraMatchWidget({ title, tags }: Props) {
               fontFamily: 'var(--font-sport)', fontWeight: 900, fontSize: 11,
               color: '#FDE68A', letterSpacing: '0.06em', margin: 0,
             }}>
-              PARTIDO DESTACADO · BONUS GOLEADOR
+              PARTIDO DESTACADO · x2 SI ACIERTAS
             </p>
             <p style={{
               fontSize: 11, color: 'rgba(255,255,255,0.65)',
               margin: '2px 0 0', lineHeight: 1.3,
             }}>
-              Apuesta gratis al primer goleador y gana monedas extra.
+              Si clavas el 1/X/2 de este partido, tus puntos por este pick se duplican.
             </p>
           </div>
         </div>

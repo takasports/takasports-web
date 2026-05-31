@@ -22,6 +22,8 @@ export interface PorraSettlement {
   correctCount: number
   totalPicks: number
   settledAt: string | null
+  /** true si el user acertó el partido featured y recibió el bonus x2 (T). */
+  featuredHit?: boolean
 }
 
 export interface PorraStatus {

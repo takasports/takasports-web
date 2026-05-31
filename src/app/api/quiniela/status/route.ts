@@ -28,11 +28,13 @@ interface SettledRow {
   picks: {
     picks?: Array<{ pick?: string }>
     /** Estructura real (lib/quiniela.ts):
-     *   breakdown.perPick: Array<{ hit, cancelled, points, coins, ... }>
-     *   breakdown.hits:    nº total de aciertos (atajo) */
+     *   breakdown.perPick: Array<{ hit, cancelled, points, coins, featuredBonus, ... }>
+     *   breakdown.hits:    nº total de aciertos (atajo)
+     *   breakdown.featuredHit: true si el user clavó el featured (x2 aplicado) */
     breakdown?: {
-      perPick?: Array<{ hit?: boolean; cancelled?: boolean }>
+      perPick?: Array<{ hit?: boolean; cancelled?: boolean; featuredBonus?: boolean }>
       hits?: number
+      featuredHit?: boolean
     }
     settled?: boolean
     staked?: boolean
@@ -86,6 +88,7 @@ export async function GET() {
     correctCount: number
     totalPicks: number
     settledAt: string | null
+    featuredHit?: boolean
   } | null = null
   /** Streak: nº de jornadas consecutivas selladas (staked=true) por el user
    *  ordenadas por stakedAt DESC. Si la última jornada cerrada no fue
@@ -216,6 +219,7 @@ export async function GET() {
             settledAt: typeof settledRow.picks?.settledAt === 'string'
               ? settledRow.picks!.settledAt!
               : null,
+            featuredHit: settledRow.picks?.breakdown?.featuredHit === true,
           }
         }
       }
