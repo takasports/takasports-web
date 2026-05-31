@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import type { PorraStatus, PorraSettlement } from './PorraCTA'
 import { trackPorraCtaClick, trackPorraSettlementShown } from '@/lib/analytics'
+import { buildResultSlug } from '@/lib/porra-result-slug'
 
 const STORAGE_KEY = 'porra:status:v1'
 const TTL_MS = 60_000
@@ -75,11 +76,44 @@ function tone(settled: PorraSettlement): {
   }
 }
 
+interface FriendsData { avgHits: number; count: number }
+
 export default function PorraSettlementToast() {
   const [settled, setSettled] = useState<PorraSettlement | null>(null)
+  const [friends, setFriends] = useState<FriendsData | null>(null)
   const [closing, setClosing] = useState(false)
+  const [shareDone, setShareDone] = useState(false)
   // Evita doble-track en StrictMode / re-renders.
   const trackedShownRef = useRef<string | null>(null)
+
+  async function handleShareResult() {
+    if (!settled) return
+    const slug = buildResultSlug(
+      settled.jornada,
+      settled.correctCount,
+      settled.totalPicks,
+      settled.totalWon,
+    )
+    const url = typeof window !== 'undefined'
+      ? `${window.location.origin}/predicciones/resultado/${slug}`
+      : `https://takasportsmedia.com/predicciones/resultado/${slug}`
+    const text = `Mi porra de la ${settled.jornada}: ${settled.correctCount}/${settled.totalPicks} aciertos${settled.totalWon ? ` · +${settled.totalWon} pts` : ''}. ¿Le ganas?`
+    try {
+      const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> }
+      if (nav.share) {
+        await nav.share({ title: 'Mi porra · TakaSports', text, url })
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${url}`)
+        setShareDone(true)
+        setTimeout(() => setShareDone(false), 2000)
+      }
+      trackPorraCtaClick({
+        surface: 'settlement_toast',
+        state: 'authed_settled',
+        jornada: settled.jornada,
+      })
+    } catch { /* user canceled */ }
+  }
 
   // Carga inicial (post-hidratación) — usa cache compartido + fetch fallback.
   useEffect(() => {
@@ -96,6 +130,15 @@ export default function PorraSettlementToast() {
       const acked = readAcked()
       if (acked === s.jornada) return
       setSettled(s)
+      // Comparativa con amigos (P): requiere al menos 2 peers para mostrar
+      // (muestra demasiado pequeña con 1 es ruidosa).
+      if (
+        typeof data?.friendsAvgHits === 'number' &&
+        Number.isFinite(data.friendsAvgHits) &&
+        (data?.friendsCount ?? 0) >= 2
+      ) {
+        setFriends({ avgHits: data.friendsAvgHits, count: data.friendsCount ?? 0 })
+      }
     }
 
     const cached = readStatus()
@@ -200,25 +243,54 @@ export default function PorraSettlementToast() {
                 </>
               )}
             </p>
-            <Link
-              href="/predicciones"
-              onClick={() => {
-                trackPorraCtaClick({
-                  surface: 'settlement_toast',
-                  state: 'authed_settled',
-                  jornada: settled.jornada,
-                })
-                handleClose()
-              }}
-              className="inline-flex items-center gap-1 mt-2"
-              style={{
-                fontFamily: 'var(--font-sport)', fontWeight: 800, fontSize: 11,
-                color: t.accent, letterSpacing: '0.06em',
-                textDecoration: 'none',
-              }}
-            >
-              VER DETALLE →
-            </Link>
+            {/* P — comparativa con amigos. Solo si tenemos peers fiables. */}
+            {friends && (
+              <p style={{
+                fontSize: 11, color: 'rgba(255,255,255,0.55)',
+                margin: '4px 0 0', lineHeight: 1.3,
+              }}>
+                {settled.correctCount > friends.avgHits
+                  ? <>👑 Por encima de tu liga ({friends.avgHits.toFixed(1)} prom · {friends.count})</>
+                  : settled.correctCount < friends.avgHits
+                    ? <>Tu liga promedió {friends.avgHits.toFixed(1)} ({friends.count} amigos)</>
+                    : <>Empatas con tu liga ({friends.avgHits.toFixed(1)} prom)</>}
+              </p>
+            )}
+            <div className="flex items-center gap-3 mt-2">
+              <Link
+                href="/predicciones"
+                onClick={() => {
+                  trackPorraCtaClick({
+                    surface: 'settlement_toast',
+                    state: 'authed_settled',
+                    jornada: settled.jornada,
+                  })
+                  handleClose()
+                }}
+                className="inline-flex items-center gap-1"
+                style={{
+                  fontFamily: 'var(--font-sport)', fontWeight: 800, fontSize: 11,
+                  color: t.accent, letterSpacing: '0.06em',
+                  textDecoration: 'none',
+                }}
+              >
+                VER DETALLE →
+              </Link>
+              <button
+                type="button"
+                onClick={handleShareResult}
+                aria-label="Compartir resultado"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  padding: 0,
+                  fontFamily: 'var(--font-sport)', fontWeight: 800, fontSize: 11,
+                  color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em',
+                }}
+              >
+                {shareDone ? '✓ COPIADO' : 'COMPARTIR'}
+              </button>
+            </div>
           </div>
           <button
             type="button"

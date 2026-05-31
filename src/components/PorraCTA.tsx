@@ -39,6 +39,10 @@ export interface PorraStatus {
   weeklyParticipants?: number
   /** Picks del user para la jornada activa (cliente cruza con live scores). */
   userPicks?: Array<{ home: string; away: string; pick: string }>
+  /** Promedio de aciertos de tus ligas privadas en la última jornada (P). */
+  friendsAvgHits?: number | null
+  /** Nº de amigos comparados (no se renderiza si <2 para evitar muestras pobres). */
+  friendsCount?: number
 }
 
 interface BadgeState {

@@ -298,6 +298,9 @@ export default function PorraHero() {
   }, [status?.deadline])
 
   // K: si el user tiene picks y la primera kickoff ya pasó, fetch live cada 60s.
+  // Q: pausa el polling cuando la pestaña no está visible para ahorrar
+  // ancho de banda y carga del endpoint. Al volver a foreground refetcheamos
+  // inmediatamente para que el chip refleje lo que pasó mientras tanto.
   const hasPicksForLive = status?.hasPicked && (status?.userPicks?.length ?? 0) > 0
   const firstKickoff = status?.matches?.[0]?.kickoff
   const jornadaStarted = firstKickoff
@@ -306,6 +309,8 @@ export default function PorraHero() {
   useEffect(() => {
     if (!hasPicksForLive || !jornadaStarted) return
     let cancelled = false
+    let intervalId: ReturnType<typeof setInterval> | null = null
+
     function loadLive() {
       fetch('/api/events/live', { cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
@@ -316,9 +321,32 @@ export default function PorraHero() {
         })
         .catch(() => { /* */ })
     }
-    loadLive()
-    const id = setInterval(loadLive, 60_000)
-    return () => { cancelled = true; clearInterval(id) }
+
+    function startPolling() {
+      if (intervalId != null) return
+      loadLive()
+      intervalId = setInterval(loadLive, 60_000)
+    }
+
+    function stopPolling() {
+      if (intervalId == null) return
+      clearInterval(intervalId)
+      intervalId = null
+    }
+
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') startPolling()
+      else stopPolling()
+    }
+
+    if (document.visibilityState === 'visible') startPolling()
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      cancelled = true
+      stopPolling()
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [hasPicksForLive, jornadaStarted])
 
   if (!status?.jornada || !status.deadline) return null

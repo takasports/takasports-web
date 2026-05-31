@@ -224,6 +224,62 @@ export async function GET() {
     // sin sesión / sin Supabase → estado guest
   }
 
+  // P — Comparativa con amigos: promedio de aciertos de la última jornada
+  // entre miembros de tus ligas privadas. Solo se intenta si:
+  //   · user autenticado
+  //   · existe lastSettled (hay una jornada cerrada que compartir)
+  // Se hace en silencio: si falla la query, friends queda null.
+  let friendsAvgHits: number | null = null
+  let friendsCount = 0
+  if (lastSettled) {
+    try {
+      const sb = await createServerSupabaseClient()
+      const { data: { user } } = await sb.auth.getUser()
+      if (user) {
+        // 1. Ligas del user.
+        const { data: myLeagues } = await sb
+          .from('quiniela_league_members')
+          .select('league_id')
+          .eq('user_id', user.id)
+        const leagueIds = (myLeagues ?? [])
+          .map((r) => (r as { league_id?: string }).league_id)
+          .filter((id): id is string => !!id)
+        if (leagueIds.length > 0) {
+          // 2. Otros miembros (excluye el propio user).
+          const { data: peers } = await sb
+            .from('quiniela_league_members')
+            .select('user_id')
+            .in('league_id', leagueIds)
+            .neq('user_id', user.id)
+          const peerIds = [...new Set(
+            (peers ?? [])
+              .map((r) => (r as { user_id?: string }).user_id)
+              .filter((id): id is string => !!id),
+          )]
+          if (peerIds.length > 0) {
+            // 3. Picks de los peers en la misma jornada.
+            const { data: peerRows } = await sb
+              .from('quiniela_picks')
+              .select('picks')
+              .eq('jornada', lastSettled.jornada)
+              .in('user_id', peerIds)
+            const peerHits: number[] = []
+            for (const row of (peerRows ?? []) as SettledRow[]) {
+              if (row.picks?.settled !== true) continue
+              const h = row.picks?.breakdown?.hits
+              if (typeof h === 'number' && Number.isFinite(h)) peerHits.push(h)
+            }
+            if (peerHits.length > 0) {
+              const sum = peerHits.reduce((a, b) => a + b, 0)
+              friendsAvgHits = Math.round((sum / peerHits.length) * 10) / 10
+              friendsCount = peerHits.length
+            }
+          }
+        }
+      }
+    } catch { /* silencioso */ }
+  }
+
   return NextResponse.json(
     {
       jornada,
@@ -237,6 +293,8 @@ export async function GET() {
       streakCurrent,
       weeklyParticipants,
       userPicks,
+      friendsAvgHits,
+      friendsCount,
     },
     {
       headers: {
