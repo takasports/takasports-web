@@ -9,12 +9,7 @@ import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
-import dynamic from 'next/dynamic'
-
-const MundialClient = dynamic(
-  () => import('./MundialClient'),
-  { ssr: false }
-)
+import MundialWrapper from './MundialWrapper'
 
 export const metadata: Metadata = {
   title: 'Mundial 2026 — Predice cada partido | TakaSports',
@@ -40,7 +35,7 @@ export default function MundialPage() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />
       <LiveStrip />
-      <MundialClient />
+      <MundialWrapper />
       <NewsletterSection source="mundial" />
       <Footer />
       <ScrollToTop />

@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
   // Agrupa por user_id
   interface UserTotal { user_id: string; display_name: string | null; total: number }
   const totals = new Map<string, UserTotal>()
-  for (const r of rows as Array<{ user_id: string; profiles: { display_name: string | null } | null; amount: number }>) {
+  for (const r of rows as unknown as Array<{ user_id: string; profiles: { display_name: string | null } | null; amount: number }>) {
     const prev = totals.get(r.user_id) ?? {
       user_id:      r.user_id,
       display_name: r.profiles?.display_name ?? null,
@@ -176,7 +176,7 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
 
   const totals = new Map<string, { display_name: string | null; total: number }>()
-  for (const r of rows as Array<{ user_id: string; profiles: { display_name: string | null } | null; amount: number }> ?? []) {
+  for (const r of (rows as unknown as Array<{ user_id: string; profiles: { display_name: string | null } | null; amount: number }>) ?? []) {
     const prev = totals.get(r.user_id) ?? { display_name: r.profiles?.display_name ?? null, total: 0 }
     prev.total += r.amount
     totals.set(r.user_id, prev)

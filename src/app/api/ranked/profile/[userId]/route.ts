@@ -105,7 +105,7 @@ export async function GET(
     }
   }
 
-  const mundialPicks = (mundialRes.data ?? []) as PredRow[]
+  const mundialPicks = (mundialRes.data ?? []) as unknown as PredRow[]
   const totalMundial   = mundialPicks.length
   const correctMundial = mundialPicks.filter(p => p.is_correct === true).length
   const ptsMundial     = mundialPicks.reduce((s, p) => s + (p.points_awarded ?? 0), 0)
