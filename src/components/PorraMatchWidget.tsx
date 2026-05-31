@@ -49,23 +49,48 @@ function norm(s: string): string {
     .trim()
 }
 
-/** Devuelve true si todas las palabras "significativas" del nombre del
- * equipo (>=3 letras) aparecen en el haystack normalizado. Evita falsos
- * positivos con palabras cortas tipo "FC" o "real" sueltas. */
+/** Palabras genéricas a ignorar: muy comunes y por sí solas crean falsos
+ * positivos (ej. "Real" en cualquier artículo sobre fútbol español). */
+const STOPWORDS = new Set([
+  'fc', 'cf', 'sc', 'ac', 'sd', 'cd', 'rcd', 'ud', 'club', 'real', 'sporting',
+  'atletico', 'athletic', 'deportivo', 'racing', 'united', 'city',
+])
+
+/** Extrae las palabras distintivas (≥4 chars, no-stopword) de un nombre. */
+function distinctiveWords(team: string): string[] {
+  return norm(team)
+    .split(' ')
+    .filter((w) => w.length >= 4 && !STOPWORDS.has(w))
+}
+
+/** Devuelve true si al menos una palabra distintiva del equipo aparece
+ * en el haystack. Si el equipo no tiene palabras distintivas (caso raro
+ * tipo "Cádiz CF" → solo "cadiz" sirve, ≥4 → ok), cae a la palabra más
+ * larga aunque sea stopword. */
 function teamInHaystack(team: string, haystack: string): boolean {
+  const distinctive = distinctiveWords(team)
+  if (distinctive.length > 0) {
+    return distinctive.some((w) => haystack.includes(w))
+  }
+  // Fallback: palabra más larga ignorando stopwords cortos (≤2 chars).
   const words = norm(team).split(' ').filter((w) => w.length >= 3)
-  if (words.length === 0) return false
-  return words.every((w) => haystack.includes(w))
+  const longest = words.sort((a, b) => b.length - a.length)[0]
+  return !!longest && haystack.includes(longest)
 }
 
 function findMatch(matches: PorraMatch[], title: string, extra?: string[]): PorraMatch | null {
   const haystack = norm([title, ...(extra ?? [])].join(' '))
+  // Si varios partidos matchean (ej. dos partidos del mismo equipo), nos
+  // quedamos con el que más palabras distintivas aporte — más fiable.
+  let best: { match: PorraMatch; score: number } | null = null
   for (const m of matches) {
-    if (teamInHaystack(m.home, haystack) && teamInHaystack(m.away, haystack)) {
-      return m
-    }
+    if (!teamInHaystack(m.home, haystack) || !teamInHaystack(m.away, haystack)) continue
+    const score =
+      distinctiveWords(m.home).filter((w) => haystack.includes(w)).length +
+      distinctiveWords(m.away).filter((w) => haystack.includes(w)).length
+    if (!best || score > best.score) best = { match: m, score }
   }
-  return null
+  return best?.match ?? null
 }
 
 function formatKickoff(iso: string): string {
@@ -118,7 +143,20 @@ export default function PorraMatchWidget({ title, tags }: Props) {
   if (!Number.isFinite(kickoffMs) || kickoffMs <= Date.now()) return null
 
   const odds = match.odds
-  const href = `/predicciones?match=${encodeURIComponent(match.home + ' vs ' + match.away)}${pick ? `&pick=${pick}` : ''}`
+  const href = '/predicciones'
+
+  // Antes de navegar, deja la preselección en sessionStorage. PicksForm la
+  // consume al montar (clave: 'porra:pendingPick'). Más resiliente que
+  // query params porque no acopla a la ruta y se auto-limpia al consumirse.
+  function handleCtaClick() {
+    if (!pick) return
+    try {
+      sessionStorage.setItem(
+        'porra:pendingPick',
+        JSON.stringify({ home: match!.home, away: match!.away, pick, ts: Date.now() }),
+      )
+    } catch { /* quota */ }
+  }
 
   const options: Array<{ key: Pick; label: string; odd?: number; sub: string }> = [
     { key: '1', label: '1', odd: odds?.home, sub: match.home },
@@ -229,6 +267,7 @@ export default function PorraMatchWidget({ title, tags }: Props) {
       {/* CTA */}
       <Link
         href={href}
+        onClick={handleCtaClick}
         className="block w-full text-center py-2.5 rounded-xl"
         style={{
           background: pick

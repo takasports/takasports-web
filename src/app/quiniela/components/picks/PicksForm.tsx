@@ -60,6 +60,35 @@ export function PicksForm({
     try { if (!localStorage.getItem(TUTORED_KEY)) setShowOnboarding(true) } catch { /* */ }
   }, [])
 
+  // Consume preselección depositada por el widget de la noticia (PorraMatchWidget):
+  // si encontramos un partido cuyos nombres coinciden, lo seleccionamos como pick
+  // inicial y le damos stake por defecto. Auto-scroll a la card del partido.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (matches.length === 0) return
+    let raw: string | null = null
+    try { raw = sessionStorage.getItem('porra:pendingPick') } catch { return }
+    if (!raw) return
+    try { sessionStorage.removeItem('porra:pendingPick') } catch { /* */ }
+    try {
+      const pending = JSON.parse(raw) as { home?: string; away?: string; pick?: Pick; ts?: number }
+      if (!pending?.home || !pending?.away || !pending?.pick) return
+      // Caducidad 5 min — evita arrastrar preselecciones viejas.
+      if (typeof pending.ts === 'number' && Date.now() - pending.ts > 5 * 60_000) return
+      const idx = matches.findIndex(
+        (m) => nameMatch(m.home, pending.home!) && nameMatch(m.away, pending.away!),
+      )
+      if (idx < 0) return
+      setPicks((prev) => (prev[idx] != null ? prev : { ...prev, [idx]: pending.pick! }))
+      setStakes((prev) => (prev[idx] != null ? prev : { ...prev, [idx]: STAKE_DEFAULT }))
+      // Auto-scroll a la card del partido en el próximo tick.
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`pick-card-${idx}`)
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
+    } catch { /* JSON malformado — ignora */ }
+  }, [matches])
+
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1_000)
     return () => clearInterval(t)

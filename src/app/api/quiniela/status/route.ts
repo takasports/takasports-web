@@ -27,7 +27,13 @@ interface SettledRow {
   jornada: string
   picks: {
     picks?: Array<{ pick?: string }>
-    breakdown?: { results?: Array<{ correct?: boolean }> }
+    /** Estructura real (lib/quiniela.ts):
+     *   breakdown.perPick: Array<{ hit, cancelled, points, coins, ... }>
+     *   breakdown.hits:    nº total de aciertos (atajo) */
+    breakdown?: {
+      perPick?: Array<{ hit?: boolean; cancelled?: boolean }>
+      hits?: number
+    }
     settled?: boolean
     totalWon?: number
     settledAt?: string
@@ -100,22 +106,35 @@ export async function GET() {
       }
 
       // Última jornada liquidada del user (para toast post-jornada).
-      // El cliente decide si ya la "ackeó" comparando con localStorage.
+      // Filtramos client-side por `settled=true` y elegimos la más reciente
+      // por `settledAt` (orden lexicográfico de "jornada" no es fiable —
+      // "Jornada 9" > "Jornada 38" lexicográficamente).
+      // No usamos .order() porque desconocemos qué columnas timestamp tiene
+      // la tabla en prod. Filtramos y ordenamos client-side por settledAt
+      // dentro del JSONB. Limit 32 para cubrir varias jornadas históricas.
       const { data: rows } = await sb
         .from('quiniela_picks')
         .select('jornada, picks')
         .eq('user_id', user.id)
-        .order('jornada', { ascending: false })
-        .limit(8)
-      const settledRow = (rows as SettledRow[] | null ?? [])
-        .find((r) => r.picks?.settled === true)
+        .limit(32)
+      const settledRows = (rows as SettledRow[] | null ?? [])
+        .filter((r) => r.picks?.settled === true)
+      settledRows.sort((a, b) => {
+        const ta = a.picks?.settledAt ?? ''
+        const tb = b.picks?.settledAt ?? ''
+        return tb.localeCompare(ta) // desc
+      })
+      const settledRow = settledRows[0]
       if (settledRow) {
         const arr = settledRow.picks?.picks ?? []
         const totalPicks = Array.isArray(arr) ? arr.filter((p) => !!p?.pick).length : 0
-        const results = settledRow.picks?.breakdown?.results ?? []
-        const correctCount = Array.isArray(results)
-          ? results.filter((r) => r?.correct === true).length
+        // Hits del breakdown: usa `breakdown.hits` (atajo) y si no hay,
+        // cuenta `perPick.filter(p => p.hit && !p.cancelled)`.
+        const perPick = settledRow.picks?.breakdown?.perPick ?? []
+        const correctFromPerPick = Array.isArray(perPick)
+          ? perPick.filter((p) => p?.hit === true && p?.cancelled !== true).length
           : 0
+        const correctCount = settledRow.picks?.breakdown?.hits ?? correctFromPerPick
         lastSettled = {
           jornada: settledRow.jornada,
           totalWon: settledRow.picks?.totalWon ?? 0,
