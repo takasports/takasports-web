@@ -27,7 +27,7 @@
     },
     {
       "path": "/api/cron/sync-mundial",
-      "schedule": "0 */2 * 6,7 *"
+      "schedule": "*/30 * * 6,7 *"
     },
     {
       "path": "/api/cron/mundial-reminders",

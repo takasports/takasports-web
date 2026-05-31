@@ -20,6 +20,8 @@ const PLATFORM_LINKS = [
   { label: 'Calendario',   href: '/calendario' },
   { label: 'Glosario',     href: '/glosario' },
   { label: 'Juegos',       href: '/juegos' },
+  { label: '🏆 Mundial 2026', href: '/mundial' },
+  { label: 'Predicciones', href: '/predicciones' },
   { label: 'Colección de Badges', href: '/badges' },
   { label: 'Sobre TakaSports', href: '/sobre' },
   { label: 'Redes sociales',   href: '/redes' },
