@@ -193,68 +193,67 @@ function MatchCard({
     <div
       style={{
         background: event.featured
-          ? 'linear-gradient(135deg, rgba(251,191,36,0.07) 0%, rgba(245,158,11,0.04) 100%)'
-          : 'rgba(255,255,255,0.018)',
-        border: `1px solid ${event.featured ? `${GOLD}30` : 'rgba(255,255,255,0.07)'}`,
-        borderRadius: 14,
+          ? `linear-gradient(135deg, ${GOLD}09 0%, ${GOLD}04 50%, transparent 100%)`
+          : 'rgba(255,255,255,0.02)',
+        border: `1px solid ${event.featured ? `${GOLD}35` : 'rgba(255,255,255,0.07)'}`,
+        borderRadius: 16,
         padding: '14px 16px',
         display: 'flex',
         flexDirection: 'column',
         gap: 12,
+        boxShadow: event.featured ? `0 0 20px ${GOLD}08` : 'none',
+        transition: 'border-color 0.15s',
       }}
     >
-      {/* Header: ciudad + hora + featured badge */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        {(event.meta?.group || event.meta?.city) && (
-          <span
-            style={{
-              fontSize: 9,
-              fontWeight: 900,
-              padding: '2px 6px',
-              borderRadius: 6,
-              background: `${GOLD}14`,
-              border: `1px solid ${GOLD}25`,
-              color: GOLD2,
-              fontFamily: 'var(--font-sport)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-            }}
-          >
-            {event.meta.group || event.meta.city}
-          </span>
-        )}
+      {/* Header: grupo + featured badge */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 20 }}>
         {event.featured && (
           <span
             style={{
               fontSize: 9,
               fontWeight: 900,
-              padding: '2px 6px',
+              padding: '2px 7px',
               borderRadius: 6,
-              background: `${GOLD}20`,
-              border: `1px solid ${GOLD}40`,
+              background: `linear-gradient(90deg, ${GOLD}28 0%, ${GOLD}18 100%)`,
+              border: `1px solid ${GOLD}45`,
               color: GOLD,
               fontFamily: 'var(--font-sport)',
-              letterSpacing: '0.06em',
+              letterSpacing: '0.07em',
             }}
           >
             ⭐ DOBLE PUNTOS
           </span>
         )}
-        <div style={{ flex: 1 }} />
-        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-sport)' }}>
-          {isResolved && event.result
-            ? `${event.result.home_score ?? '?'} – ${event.result.away_score ?? '?'}`
-            : isClosed
-            ? '🔴 En curso'
-            : toTimeLabel(event.event_date)}
-        </span>
+        {(event.meta?.group || event.meta?.city) && (
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 700,
+              padding: '2px 6px',
+              borderRadius: 6,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.35)',
+              fontFamily: 'var(--font-sport)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.07em',
+            }}
+          >
+            {event.meta.group || event.meta.city}
+          </span>
+        )}
+        {isClosed && (
+          <span style={{ fontSize: 9, color: '#EF4444', fontFamily: 'var(--font-sport)', fontWeight: 900, letterSpacing: '0.06em' }}>
+            🔴 EN VIVO
+          </span>
+        )}
       </div>
 
-      {/* Teams */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {/* Home */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-          <span style={{ fontSize: 22 }}>{flag(event.team_home)}</span>
+      {/* Teams — centered layout */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        {/* Home team */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+          <span style={{ fontSize: 30, lineHeight: 1 }}>{flag(event.team_home)}</span>
           <span
             style={{
               fontSize: 11,
@@ -262,28 +261,65 @@ function MatchCard({
               color: '#F0F0F8',
               fontFamily: 'var(--font-sport)',
               lineHeight: 1.2,
+              textAlign: 'right',
             }}
           >
             {event.team_home ?? '—'}
           </span>
         </div>
 
-        {/* VS */}
-        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-sport)' }}>
-          vs
-        </span>
+        {/* Center: VS / score / live */}
+        <div
+          style={{
+            width: 56,
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          {isResolved && event.result ? (
+            <>
+              <span
+                style={{
+                  fontSize: 17,
+                  fontWeight: 900,
+                  color: GOLD,
+                  fontFamily: 'var(--font-display)',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1,
+                }}
+              >
+                {event.result.home_score ?? '?'}–{event.result.away_score ?? '?'}
+              </span>
+              <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-sport)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Final
+              </span>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', fontFamily: 'var(--font-sport)', fontWeight: 900, letterSpacing: '0.1em' }}>
+                VS
+              </span>
+              <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-sport)', textAlign: 'center', lineHeight: 1.3 }}>
+                {toTimeLabel(event.event_date)}
+              </span>
+            </>
+          )}
+        </div>
 
-        {/* Away */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-          <span style={{ fontSize: 22 }}>{flag(event.team_away)}</span>
+        {/* Away team */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
+          <span style={{ fontSize: 30, lineHeight: 1 }}>{flag(event.team_away)}</span>
           <span
             style={{
               fontSize: 11,
               fontWeight: 900,
               color: '#F0F0F8',
               fontFamily: 'var(--font-sport)',
-              textAlign: 'right',
               lineHeight: 1.2,
+              textAlign: 'left',
             }}
           >
             {event.team_away ?? '—'}
@@ -528,112 +564,206 @@ export default function MundialClient() {
 
       {/* ── Hero ──────────────────────────────────────────────── */}
       <div
-        className="relative rounded-2xl overflow-hidden mt-4 mb-6 px-6 py-8 flex flex-col gap-3"
+        className="relative rounded-2xl overflow-hidden mt-4 mb-8"
         style={{
-          background: 'linear-gradient(135deg, #1C1200 0%, #241800 50%, #1A1100 100%)',
-          border: `1px solid ${GOLD}25`,
+          background: 'linear-gradient(160deg, #080500 0%, #160E00 40%, #0C0700 100%)',
+          border: `1px solid ${GOLD}20`,
         }}
       >
-        {/* Glow */}
+        {/* Campo de fútbol SVG — watermark derecho */}
+        <svg
+          className="absolute pointer-events-none select-none"
+          style={{ right: -8, bottom: -8, width: 260, height: 190, opacity: 0.055 }}
+          viewBox="0 0 400 280" fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect x="4" y="4" width="392" height="272" stroke="white" strokeWidth="2.5"/>
+          <line x1="200" y1="4" x2="200" y2="276" stroke="white" strokeWidth="2.5"/>
+          <circle cx="200" cy="140" r="42" stroke="white" strokeWidth="2.5"/>
+          <circle cx="200" cy="140" r="4" fill="white"/>
+          <rect x="4" y="88" width="62" height="104" stroke="white" strokeWidth="2"/>
+          <rect x="4" y="112" width="24" height="56" stroke="white" strokeWidth="2"/>
+          <rect x="334" y="88" width="62" height="104" stroke="white" strokeWidth="2"/>
+          <rect x="372" y="112" width="24" height="56" stroke="white" strokeWidth="2"/>
+          <path d="M62 88 A42 42 0 0 1 62 192" stroke="white" strokeWidth="2" fill="none"/>
+          <path d="M338 88 A42 42 0 0 0 338 192" stroke="white" strokeWidth="2" fill="none"/>
+        </svg>
+
+        {/* Textura de césped (franjas horizontales) */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `radial-gradient(ellipse at 20% 50%, ${GOLD}08 0%, transparent 60%)`,
+            backgroundImage: `repeating-linear-gradient(
+              to bottom,
+              transparent, transparent 28px,
+              rgba(255,255,255,0.012) 28px, rgba(255,255,255,0.012) 56px
+            )`,
           }}
         />
-        <div className="relative flex items-center gap-3 flex-wrap">
-          <span style={{ fontSize: 40 }}>🏆</span>
-          <div>
-            <h1
-              className="font-black leading-none"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(1.6rem, 3vw, 2.4rem)',
-                color: GOLD,
-                letterSpacing: '-0.02em',
-              }}
-            >
-              Mundial 2026
-            </h1>
-            <p style={{ color: GOLD_D, fontSize: 12, fontFamily: 'var(--font-sport)', marginTop: 2 }}>
-              USA · Canada · Mexico · 11 Jun – Jul 2026
-            </p>
-          </div>
 
-          {/* Countdown badge — días si torneo no empezó, horas si hay partido inminente */}
-          {(daysLeft !== null || nextMatchMs !== null) && (
-            <div
-              className="ml-auto flex-shrink-0 flex flex-col items-center px-4 py-2 rounded-xl"
-              style={{
-                background: `${GOLD}18`,
-                border: `1px solid ${GOLD}35`,
-              }}
-            >
-              {daysLeft !== null ? (
-                <>
-                  <span
+        {/* Glow áureo izquierda-centro */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: -80,
+            left: '20%',
+            width: 360,
+            height: 360,
+            background: `radial-gradient(ellipse, ${GOLD}0D 0%, transparent 60%)`,
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative px-6 pt-7 pb-6 flex flex-col gap-5">
+
+          {/* Fila superior: título + countdown */}
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+
+            {/* Título */}
+            <div className="flex flex-col gap-2">
+              <p style={{ fontSize: 9, fontWeight: 900, fontFamily: 'var(--font-sport)', color: GOLD_D, textTransform: 'uppercase', letterSpacing: '0.18em' }}>
+                ⚽ Predicciones · Qatar 2022 sucesor
+              </p>
+              <div className="flex items-end gap-3">
+                <span style={{ fontSize: 46, lineHeight: 1 }}>🏆</span>
+                <div>
+                  <h1
                     style={{
-                      fontSize: 26,
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 'clamp(2rem, 5vw, 3.4rem)',
                       fontWeight: 900,
                       color: GOLD,
-                      fontFamily: 'var(--font-display)',
-                      lineHeight: 1,
                       letterSpacing: '-0.03em',
+                      lineHeight: 0.88,
                     }}
                   >
-                    {daysLeft}
-                  </span>
-                  <span style={{ fontSize: 8, color: GOLD_D, fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    {daysLeft === 1 ? 'día' : 'días'}
-                  </span>
-                </>
-              ) : nextMatchMs !== null ? (
-                <>
-                  <span
+                    MUNDIAL
+                  </h1>
+                  <p
                     style={{
-                      fontSize: 20,
-                      fontWeight: 900,
-                      color: GOLD,
                       fontFamily: 'var(--font-display)',
+                      fontSize: 'clamp(1.1rem, 2.8vw, 1.9rem)',
+                      fontWeight: 900,
+                      color: 'rgba(255,255,255,0.12)',
+                      letterSpacing: '0.1em',
                       lineHeight: 1,
-                      letterSpacing: '-0.02em',
                     }}
                   >
-                    {formatCountdown(nextMatchMs)}
-                  </span>
-                  <span style={{ fontSize: 8, color: GOLD_D, fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    próximo pick
-                  </span>
-                </>
-              ) : null}
-            </div>
-          )}
-          {/* Stats inline — solo tras el primer pick o cuando el torneo arrancó */}
-          {myPicks > 0 && daysLeft === null && (
-            <div
-              className="ml-auto flex items-center gap-3 px-4 py-2 rounded-xl"
-              style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}25` }}
-            >
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: 16, fontWeight: 900, color: GOLD, fontFamily: 'var(--font-display)', lineHeight: 1 }}>
-                  {myPicks}
-                </p>
-                <p style={{ fontSize: 9, color: GOLD_D, fontFamily: 'var(--font-sport)' }}>picks</p>
+                    2026
+                  </p>
+                </div>
               </div>
-              {totalPts > 0 && (
-                <>
-                  <span style={{ color: `${GOLD}30`, fontSize: 12 }}>·</span>
-                  <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: 16, fontWeight: 900, color: GOLD, fontFamily: 'var(--font-display)', lineHeight: 1 }}>
-                      {totalPts}
-                    </p>
-                    <p style={{ fontSize: 9, color: GOLD_D, fontFamily: 'var(--font-sport)' }}>pts</p>
+
+              {/* Host nations */}
+              <div className="flex items-center gap-0 flex-wrap mt-1">
+                {[
+                  { emoji: '🇺🇸', name: 'USA' },
+                  { emoji: '🇨🇦', name: 'CANADA' },
+                  { emoji: '🇲🇽', name: 'MEXICO' },
+                ].map(({ emoji, name }, i) => (
+                  <div key={name} className="flex items-center">
+                    {i > 0 && (
+                      <span style={{ color: `${GOLD}28`, fontSize: 10, margin: '0 8px' }}>·</span>
+                    )}
+                    <span style={{ fontSize: 16 }}>{emoji}</span>
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 900,
+                        color: 'rgba(255,255,255,0.35)',
+                        fontFamily: 'var(--font-sport)',
+                        letterSpacing: '0.1em',
+                        marginLeft: 5,
+                      }}
+                    >
+                      {name}
+                    </span>
                   </div>
-                </>
-              )}
+                ))}
+                <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-sport)', marginLeft: 14 }}>
+                  11 Jun – 19 Jul 2026
+                </span>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Countdown badge */}
+            {(daysLeft !== null || nextMatchMs !== null) && (
+              <div
+                className="flex-shrink-0 flex flex-col items-center justify-center rounded-2xl"
+                style={{
+                  background: `linear-gradient(135deg, ${GOLD}1C 0%, ${GOLD}0A 100%)`,
+                  border: `1.5px solid ${GOLD}32`,
+                  padding: '14px 22px',
+                  minWidth: 88,
+                  boxShadow: `0 0 32px ${GOLD}10`,
+                }}
+              >
+                {daysLeft !== null ? (
+                  <>
+                    <span
+                      style={{
+                        fontSize: 46,
+                        fontWeight: 900,
+                        color: GOLD,
+                        fontFamily: 'var(--font-display)',
+                        lineHeight: 1,
+                        letterSpacing: '-0.04em',
+                      }}
+                    >
+                      {daysLeft}
+                    </span>
+                    <span style={{ fontSize: 8, color: GOLD_D, fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.14em', marginTop: 3 }}>
+                      {daysLeft === 1 ? 'día' : 'días'}
+                    </span>
+                  </>
+                ) : nextMatchMs !== null ? (
+                  <>
+                    <span
+                      style={{
+                        fontSize: 26,
+                        fontWeight: 900,
+                        color: GOLD,
+                        fontFamily: 'var(--font-display)',
+                        lineHeight: 1,
+                        letterSpacing: '-0.02em',
+                      }}
+                    >
+                      {formatCountdown(nextMatchMs)}
+                    </span>
+                    <span style={{ fontSize: 8, color: GOLD_D, fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 3 }}>
+                      próximo pick
+                    </span>
+                  </>
+                ) : null}
+              </div>
+            )}
+
+            {/* Stats inline — solo tras el primer pick o cuando el torneo arrancó */}
+            {myPicks > 0 && daysLeft === null && (
+              <div
+                className="flex items-center gap-5 px-5 py-3 rounded-2xl"
+                style={{ background: `${GOLD}10`, border: `1px solid ${GOLD}22` }}
+              >
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: 22, fontWeight: 900, color: GOLD, fontFamily: 'var(--font-display)', lineHeight: 1 }}>
+                    {myPicks}
+                  </p>
+                  <p style={{ fontSize: 9, color: GOLD_D, fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>picks</p>
+                </div>
+                {totalPts > 0 && (
+                  <>
+                    <div style={{ width: 1, height: 28, background: `${GOLD}20` }} />
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ fontSize: 22, fontWeight: 900, color: GOLD, fontFamily: 'var(--font-display)', lineHeight: 1 }}>
+                        {totalPts}
+                      </p>
+                      <p style={{ fontSize: 9, color: GOLD_D, fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>pts</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
         {/* Puntos info strip + share stats */}
         <div className="relative flex items-center gap-4 flex-wrap">
@@ -691,7 +821,8 @@ export default function MundialClient() {
             </a>
           )}
         </div>
-      </div>
+        </div>{/* end content wrapper */}
+      </div>{/* end hero */}
 
       {/* ── Login CTA ─────────────────────────────────────────── */}
       {showLogin && (
@@ -808,29 +939,45 @@ export default function MundialClient() {
           {grouped.map(([dateKey, { label, events: dayEvents }]) => (
             <section key={dateKey}>
               {/* Date header */}
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-4">
+                <div
+                  style={{
+                    width: 3,
+                    height: 20,
+                    borderRadius: 2,
+                    background: `linear-gradient(to bottom, ${GOLD}, ${GOLD2}50)`,
+                    flexShrink: 0,
+                  }}
+                />
                 <span
                   style={{
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: 900,
-                    color: GOLD2,
+                    color: '#F0F0F8',
                     fontFamily: 'var(--font-sport)',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
+                    letterSpacing: '0.08em',
                   }}
                 >
                   {label}
                 </span>
-                <div style={{ flex: 1, height: 1, background: `${GOLD}15` }} />
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: 'rgba(255,255,255,0.2)',
-                    fontFamily: 'var(--font-sport)',
-                  }}
-                >
-                  {dayEvents.filter(e => e.status === 'open').length} pendientes
-                </span>
+                <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${GOLD}18, transparent)` }} />
+                {dayEvents.filter(e => e.status === 'open').length > 0 && (
+                  <span
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: GOLD2,
+                      fontFamily: 'var(--font-sport)',
+                      background: `${GOLD}10`,
+                      padding: '2px 8px',
+                      borderRadius: 10,
+                      border: `1px solid ${GOLD}1E`,
+                    }}
+                  >
+                    {dayEvents.filter(e => e.status === 'open').length} pendientes
+                  </span>
+                )}
               </div>
 
               {/* Match cards grid */}
