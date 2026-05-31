@@ -242,7 +242,7 @@ export default function PrediccionesHub() {
           )}
 
           {/* Sport content */}
-          {sportTab === 'futbol' && <QuinielaClient />}
+          {sportTab === 'futbol' && <QuinielaClient embedded />}
           {sportTab === 'ufc'    && <SportComingSoon sport="Ranked UFC" emoji="🥊" accent="#F87171" />}
           {sportTab === 'mundial' && <MundialClient />}
           <RankedLeaderboard activeSport={sportTab} />

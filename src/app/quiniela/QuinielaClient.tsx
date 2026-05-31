@@ -60,7 +60,7 @@ function PointsPanel() {
 // ─────────────────────────────────────────────────────────────────
 type Tab = 'official' | 'leagues' | 'season'
 
-export default function QuinielaClient() {
+export default function QuinielaClient({ embedded = false }: { embedded?: boolean } = {}) {
   const searchParams = useSearchParams()
   const ligaParam = searchParams?.get('liga')?.toUpperCase() ?? null
 
@@ -190,8 +190,10 @@ export default function QuinielaClient() {
   // (buildJornadaLabel antepone "Mundial · ..."). Sin marcas FIFA.
   const isMundial = apiJornada.toLowerCase().startsWith('mundial')
 
+  const Shell = embedded ? EmbeddedShell : GameLayout
+
   return (
-    <GameLayout accent="#A78BFA" accentDim="#7C3AED">
+    <Shell accent="#A78BFA" accentDim="#7C3AED">
 
         {/* ── BANNER: unirse a liga por link ─────────── */}
         {ligaParam && ligaName && !ligaJoined && (
@@ -835,6 +837,31 @@ export default function QuinielaClient() {
         onGoToPredictions={() => setTab('season')}
       />
 
-    </GameLayout>
+    </Shell>
+  )
+}
+
+// Wrapper sin Header/LiveStrip/Footer/Newsletter — para uso embebido dentro
+// de PrediccionesHub, que ya provee ese chrome a nivel de página.
+function EmbeddedShell({
+  accent,
+  accentDim,
+  children,
+}: {
+  accent: string
+  accentDim?: string
+  liveStrip?: boolean
+  children: React.ReactNode
+}) {
+  const cssVars = {
+    '--game-accent': accent,
+    '--game-accent-dim': accentDim ?? accent,
+  } as React.CSSProperties
+  return (
+    <div style={cssVars}>
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+        {children}
+      </main>
+    </div>
   )
 }
