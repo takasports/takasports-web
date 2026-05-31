@@ -1443,7 +1443,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     const detectedTz = getStoredTZ()
     setTz(detectedTz)
     if (!localStorage.getItem(TZ_KEY)) {
-      setStoredTZ(detectedTz)
+      setStoredTZ(detectedTz, 'auto')
     }
     try {
       // ── Reminders / favorites / onboarding ─────────────────────

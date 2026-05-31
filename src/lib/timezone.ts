@@ -3,6 +3,10 @@
 // Esta capa convierte esas horas a la TZ preferida del usuario.
 
 export const TZ_KEY = 'ts_timezone'
+export const TZ_SOURCE_KEY = 'ts_timezone_source'
+export const TZ_CHANGE_EVENT = 'ts-timezone-change'
+
+export type TZSource = 'auto' | 'manual'
 
 // Fuente de los eventos: Europe/Madrid
 export const SOURCE_TZ = 'Europe/Madrid'
@@ -59,11 +63,19 @@ export function getStoredTZ(): string {
 
 /** Guarda preferencia del usuario en localStorage + cookie (para que el
  *  server pueda leerla en el siguiente render y evite el flash de hidratación). */
-export function setStoredTZ(tz: string): void {
+export function setStoredTZ(tz: string, source: TZSource = 'manual'): void {
   if (typeof window === 'undefined') return
   localStorage.setItem(TZ_KEY, tz)
+  localStorage.setItem(TZ_SOURCE_KEY, source)
   // 1 año, accesible al server, samesite lax
   document.cookie = `${TZ_KEY}=${encodeURIComponent(tz)}; path=/; max-age=31536000; samesite=lax`
+  window.dispatchEvent(new CustomEvent(TZ_CHANGE_EVENT, { detail: { tz, source } }))
+}
+
+export function getStoredTZSource(): TZSource | null {
+  if (typeof window === 'undefined') return null
+  const v = localStorage.getItem(TZ_SOURCE_KEY)
+  return v === 'manual' || v === 'auto' ? v : null
 }
 
 /** Devuelve la opción de la lista o una sintética si no está. */

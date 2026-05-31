@@ -16,7 +16,7 @@ import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { timeAgo } from '@/lib/timeAgo'
 import TimezoneSelector from '@/components/TimezoneSelector'
 import ScrollToTop from '@/components/ScrollToTop'
-import { getStoredTZ, setStoredTZ, getTZOption, getTZOffset } from '@/lib/timezone'
+import { getStoredTZ, setStoredTZ, getTZOption, getTZOffset, TZ_CHANGE_EVENT } from '@/lib/timezone'
 import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import { SportIcon, FireIcon, FootballIcon, StadiumIcon } from '@/components/icons/GameIcons'
@@ -207,6 +207,9 @@ export default function PerfilPage() {
       setRecentlyRead(Array.isArray(reads) ? reads : [])
     } catch { /* ignore */ }
     setTz(getStoredTZ())
+    const syncTz = () => setTz(getStoredTZ())
+    window.addEventListener(TZ_CHANGE_EVENT, syncTz)
+    window.addEventListener('storage', syncTz)
 
     // Load game stats
     try {
@@ -251,6 +254,8 @@ export default function PerfilPage() {
     return () => {
       window.removeEventListener('storage', loadReminders)
       window.removeEventListener('ts-reminders-change', loadReminders)
+      window.removeEventListener(TZ_CHANGE_EVENT, syncTz)
+      window.removeEventListener('storage', syncTz)
     }
   }, [])
 
