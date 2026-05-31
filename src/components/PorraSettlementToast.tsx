@@ -77,10 +77,12 @@ function tone(settled: PorraSettlement): {
 }
 
 interface FriendsData { avgHits: number; count: number }
+interface LeagueRankData { name: string; rank: number; total: number }
 
 export default function PorraSettlementToast() {
   const [settled, setSettled] = useState<PorraSettlement | null>(null)
   const [friends, setFriends] = useState<FriendsData | null>(null)
+  const [leagueRank, setLeagueRank] = useState<LeagueRankData | null>(null)
   const [closing, setClosing] = useState(false)
   const [shareDone, setShareDone] = useState(false)
   // Evita doble-track en StrictMode / re-renders.
@@ -138,6 +140,11 @@ export default function PorraSettlementToast() {
         (data?.friendsCount ?? 0) >= 2
       ) {
         setFriends({ avgHits: data.friendsAvgHits, count: data.friendsCount ?? 0 })
+      }
+      // R — Ranking en mejor liga privada. Solo si total ≥ 2.
+      const br = data?.bestLeagueRank
+      if (br && typeof br.rank === 'number' && typeof br.total === 'number' && br.total >= 2) {
+        setLeagueRank({ name: br.leagueName, rank: br.rank, total: br.total })
       }
     }
 
@@ -243,6 +250,19 @@ export default function PorraSettlementToast() {
                 </>
               )}
             </p>
+            {/* R — Ranking en mejor liga (prioridad sobre P si está top-3). */}
+            {leagueRank && (
+              <p style={{
+                fontSize: 11, color: 'rgba(255,255,255,0.65)',
+                margin: '4px 0 0', lineHeight: 1.3,
+              }}>
+                {leagueRank.rank === 1
+                  ? <>👑 <strong style={{ color: '#FDE68A' }}>1º</strong> en {leagueRank.name}</>
+                  : leagueRank.rank <= 3
+                    ? <>🏅 <strong style={{ color: '#FDE68A' }}>{leagueRank.rank}º</strong> de {leagueRank.total} en {leagueRank.name}</>
+                    : <><strong style={{ color: '#fff' }}>{leagueRank.rank}º</strong> de {leagueRank.total} en {leagueRank.name}</>}
+              </p>
+            )}
             {/* P — comparativa con amigos. Solo si tenemos peers fiables. */}
             {friends && (
               <p style={{

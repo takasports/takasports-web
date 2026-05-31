@@ -231,6 +231,15 @@ export async function GET() {
   // Se hace en silencio: si falla la query, friends queda null.
   let friendsAvgHits: number | null = null
   let friendsCount = 0
+  /** R — Mejor ranking del user entre sus ligas privadas (la liga donde
+   *  saca su mejor posición, para social proof positivo). */
+  let bestLeagueRank: {
+    leagueId: string
+    leagueName: string
+    rank: number
+    total: number
+    myPoints: number
+  } | null = null
   if (lastSettled) {
     try {
       const sb = await createServerSupabaseClient()
@@ -275,6 +284,65 @@ export async function GET() {
               friendsCount = peerHits.length
             }
           }
+
+          // R — Ranking del user en cada liga para la jornada cerrada.
+          // Usamos la tabla pre-computada quiniela_league_member_scores con
+          // su índice (league_id, jornada, points DESC).
+          interface ScoreRow {
+            league_id: string
+            user_id: string
+            points: number
+          }
+          const { data: scoreRows } = await sb
+            .from('quiniela_league_member_scores')
+            .select('league_id, user_id, points')
+            .in('league_id', leagueIds)
+            .eq('jornada', lastSettled.jornada)
+          const grouped = new Map<string, ScoreRow[]>()
+          for (const row of (scoreRows ?? []) as ScoreRow[]) {
+            const arr = grouped.get(row.league_id) ?? []
+            arr.push(row)
+            grouped.set(row.league_id, arr)
+          }
+          // Para cada liga: ordenar por points DESC, localizar al user,
+          // computar rank (1-indexed). Quedarnos con la mejor posición.
+          interface LeagueRank {
+            leagueId: string
+            rank: number
+            total: number
+            myPoints: number
+          }
+          const ranks: LeagueRank[] = []
+          for (const [leagueId, rows] of grouped) {
+            if (rows.length < 2) continue // liga sola no aporta nada
+            rows.sort((a, b) => (b.points ?? 0) - (a.points ?? 0))
+            const idx = rows.findIndex((r) => r.user_id === user.id)
+            if (idx < 0) continue
+            ranks.push({
+              leagueId,
+              rank: idx + 1,
+              total: rows.length,
+              myPoints: rows[idx].points ?? 0,
+            })
+          }
+          if (ranks.length > 0) {
+            // Mejor: el de menor rank (1 = top). Desempate por liga más grande.
+            ranks.sort((a, b) => a.rank - b.rank || b.total - a.total)
+            const best = ranks[0]
+            // Nombre humano de la liga.
+            const { data: leagueRow } = await sb
+              .from('quiniela_leagues')
+              .select('name')
+              .eq('id', best.leagueId)
+              .maybeSingle<{ name: string | null }>()
+            bestLeagueRank = {
+              leagueId: best.leagueId,
+              leagueName: leagueRow?.name ?? best.leagueId,
+              rank: best.rank,
+              total: best.total,
+              myPoints: best.myPoints,
+            }
+          }
         }
       }
     } catch { /* silencioso */ }
@@ -295,6 +363,7 @@ export async function GET() {
       userPicks,
       friendsAvgHits,
       friendsCount,
+      bestLeagueRank,
     },
     {
       headers: {

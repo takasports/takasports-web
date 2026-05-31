@@ -80,6 +80,8 @@ export default function QuinielaClient() {
   const [myScore, setMyScore]     = useState<number | undefined>(undefined)
   const [user, setUser]           = useState<User | null>(null)
   const [showAuthBanner, setShowAuthBanner] = useState(false)
+  // S — Banner de onboarding cuando auto-creamos la primera liga del user.
+  const [autoLeague, setAutoLeague] = useState<{ id: string; name: string } | null>(null)
   const coins = useCoins(user)
   const { points: pointsBalance, refresh: refreshPoints } = usePoints()
   const push = usePushSubscription()
@@ -454,8 +456,75 @@ export default function QuinielaClient() {
                     coinBalance={pointsBalance ?? 0}
                     authed={!!user}
                     onParticipation={(_j) => { void refreshPoints() }}
-                    onSubmit={(s) => { setSaved(s); if (!user) setTimeout(() => setShowAuthBanner(true), 2000) }}
+                    onSubmit={(s) => {
+                      setSaved(s)
+                      if (!user) {
+                        setTimeout(() => setShowAuthBanner(true), 2000)
+                        return
+                      }
+                      // S — intenta auto-crear liga "Liga de X" si el user no tiene ninguna.
+                      // Idempotente: si ya tiene, devuelve created:false sin tocar.
+                      fetch('/api/quiniela/leagues/auto-create', { method: 'POST' })
+                        .then((r) => (r.ok ? r.json() : null))
+                        .then((json) => {
+                          if (json?.created && json?.league?.id) {
+                            setAutoLeague({ id: json.league.id, name: json.league.name })
+                          }
+                        })
+                        .catch(() => { /* silencioso — no es crítico */ })
+                    }}
                   />
+            )}
+            {/* S — Banner de onboarding: aparece cuando acabamos de auto-crear
+                la primera liga del user. Invita a compartir el código. */}
+            {autoLeague && (
+              <div
+                className="rounded-2xl px-5 py-4 flex items-center gap-3"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(124,58,237,0.18) 0%, rgba(249,115,22,0.12) 100%)',
+                  border: '1px solid rgba(124,58,237,0.4)',
+                  boxShadow: '0 8px 24px rgba(124,58,237,0.16)',
+                  animation: 'fadeIn 0.4s ease both',
+                }}
+              >
+                <span style={{ fontSize: 24 }} aria-hidden>🎉</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-xs mb-0.5" style={{ color: '#fff', fontFamily: 'var(--font-display)' }}>
+                    {autoLeague.name} creada
+                  </p>
+                  <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-sport)' }}>
+                    Comparte el código <strong style={{ color: '#FDE68A' }}>{autoLeague.id}</strong> con tus amigos
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={async () => {
+                      const url = `${window.location.origin}/quiniela?liga=${autoLeague.id}`
+                      const text = `Únete a mi liga "${autoLeague.name}" en TakaSports. Código: ${autoLeague.id}`
+                      try {
+                        const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> }
+                        if (nav.share) await nav.share({ title: 'La Porra', text, url })
+                        else await navigator.clipboard.writeText(`${text}\n${url}`)
+                      } catch { /* canceled */ }
+                    }}
+                    className="text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-wider"
+                    style={{
+                      background: 'linear-gradient(135deg, #7C3AED 0%, #F97316 100%)',
+                      color: '#fff', border: '1px solid rgba(255,255,255,0.18)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Invitar
+                  </button>
+                  <button
+                    onClick={() => setAutoLeague(null)}
+                    className="text-[9px] text-center"
+                    style={{ color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
             )}
             {/* Banner de auth — aparece 2s después de enviar picks sin sesión */}
             {showAuthBanner && !user && (

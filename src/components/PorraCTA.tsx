@@ -43,6 +43,14 @@ export interface PorraStatus {
   friendsAvgHits?: number | null
   /** Nº de amigos comparados (no se renderiza si <2 para evitar muestras pobres). */
   friendsCount?: number
+  /** Mejor ranking del user en sus ligas privadas para la última jornada (R). */
+  bestLeagueRank?: {
+    leagueId: string
+    leagueName: string
+    rank: number
+    total: number
+    myPoints: number
+  } | null
 }
 
 interface BadgeState {
