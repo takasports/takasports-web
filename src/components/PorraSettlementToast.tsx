@@ -14,6 +14,7 @@ import Link from 'next/link'
 import type { PorraStatus, PorraSettlement } from './PorraCTA'
 import { trackPorraCtaClick, trackPorraSettlementShown } from '@/lib/analytics'
 import { buildResultSlug } from '@/lib/porra-result-slug'
+import { buildChallengeToken, buildChallengeUrl, buildChallengeText } from '@/lib/porra-challenge'
 
 const STORAGE_KEY = 'porra:status:v1'
 const TTL_MS = 60_000
@@ -77,7 +78,7 @@ function tone(settled: PorraSettlement): {
 }
 
 interface FriendsData { avgHits: number; count: number }
-interface LeagueRankData { name: string; rank: number; total: number }
+interface LeagueRankData { id: string; name: string; rank: number; total: number }
 
 export default function PorraSettlementToast() {
   const [settled, setSettled] = useState<PorraSettlement | null>(null)
@@ -87,6 +88,31 @@ export default function PorraSettlementToast() {
   const [shareDone, setShareDone] = useState(false)
   // Evita doble-track en StrictMode / re-renders.
   const trackedShownRef = useRef<string | null>(null)
+
+  async function handleChallenge() {
+    if (!settled || !leagueRank) return
+    // Extrae handle del nombre de la liga si tiene formato "Liga de X".
+    const m = /^Liga de (.+)$/.exec(leagueRank.name)
+    const handle = m ? m[1] : ''
+    const token = buildChallengeToken(leagueRank.id, handle)
+    const url = buildChallengeUrl(token)
+    const text = buildChallengeText(handle || null, settled.jornada)
+    try {
+      const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> }
+      if (nav.share) {
+        await nav.share({ title: 'Reto · La Porra', text, url })
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${url}`)
+        setShareDone(true)
+        setTimeout(() => setShareDone(false), 2000)
+      }
+      trackPorraCtaClick({
+        surface: 'settlement_toast',
+        state: 'authed_settled',
+        jornada: settled.jornada,
+      })
+    } catch { /* canceled */ }
+  }
 
   async function handleShareResult() {
     if (!settled) return
@@ -144,7 +170,7 @@ export default function PorraSettlementToast() {
       // R — Ranking en mejor liga privada. Solo si total ≥ 2.
       const br = data?.bestLeagueRank
       if (br && typeof br.rank === 'number' && typeof br.total === 'number' && br.total >= 2) {
-        setLeagueRank({ name: br.leagueName, rank: br.rank, total: br.total })
+        setLeagueRank({ id: br.leagueId, name: br.leagueName, rank: br.rank, total: br.total })
       }
     }
 
@@ -310,6 +336,22 @@ export default function PorraSettlementToast() {
               >
                 {shareDone ? '✓ COPIADO' : 'COMPARTIR'}
               </button>
+              {leagueRank && (
+                <button
+                  type="button"
+                  onClick={handleChallenge}
+                  aria-label="Retar a un amigo"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    padding: 0,
+                    fontFamily: 'var(--font-sport)', fontWeight: 800, fontSize: 11,
+                    color: '#FDE68A', letterSpacing: '0.06em',
+                  }}
+                >
+                  🥊 RETAR
+                </button>
+              )}
             </div>
           </div>
           <button

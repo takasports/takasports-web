@@ -21,6 +21,7 @@ import TakaPoint from '@/components/TakaPoint'
 import { useStreak } from '@/hooks/useGameState'
 import { usePoints } from '@/hooks/useGameState'
 import RankedLeaderboard from '@/components/ranked/RankedLeaderboard'
+import PorraChallengeBanner from '@/components/PorraChallengeBanner'
 
 // Carga dinámica — solo se carga el cliente activo
 const QuinielaClient = dynamic(
@@ -83,6 +84,8 @@ export default function PrediccionesHub() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />
       <LiveStrip />
+      {/* U — Banner de reto, solo cuando ?reto=TOKEN llega en la URL */}
+      <PorraChallengeBanner />
 
       {/* ── Hub tabs ──────────────────────────────────────────────── */}
       <div
