@@ -78,13 +78,28 @@ export async function POST(req: NextRequest) {
   // Verificar que el evento existe y está open
   const { data: event } = await sb
     .from('ranked_events')
-    .select('id, status, sport')
+    .select('id, status, sport, event_date')
     .eq('id', body.event_id)
     .single()
 
   if (!event) return NextResponse.json({ error: 'event_not_found' }, { status: 404 })
-  if ((event as { status: string }).status !== 'open') {
-    return NextResponse.json({ error: 'event_closed', status: (event as { status: string }).status }, { status: 409 })
+
+  const ev = event as { status: string; sport: string; event_date: string }
+
+  if (ev.status !== 'open') {
+    return NextResponse.json({ error: 'event_closed', status: ev.status }, { status: 409 })
+  }
+
+  // Lock picks 60 minutos antes del inicio del partido
+  const matchStart   = new Date(ev.event_date).getTime()
+  const lockAt       = matchStart - 60 * 60 * 1000   // 1 hora antes
+  const nowMs        = Date.now()
+  if (nowMs >= lockAt) {
+    const minsLeft = Math.max(0, Math.ceil((matchStart - nowMs) / 60_000))
+    return NextResponse.json(
+      { error: 'pick_locked', message: `Las predicciones se bloquean 1 hora antes del partido. Quedan ${minsLeft} min.` },
+      { status: 409 }
+    )
   }
 
   // ¿Ya existe predicción para este partido?

@@ -96,6 +96,21 @@ function toTimeLabel(iso: string): string {
   return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')} UTC`
 }
 
+/** Devuelve ms hasta el lock (1h antes del partido). Negativo si ya está bloqueado. */
+function msUntilLock(eventDate: string): number {
+  const lockAt = new Date(eventDate).getTime() - 60 * 60 * 1000
+  return lockAt - Date.now()
+}
+
+/** Formatea el tiempo restante al lock de forma legible */
+function formatLock(ms: number): string {
+  if (ms <= 0) return '0 min'
+  const totalMins = Math.ceil(ms / 60_000)
+  if (totalMins >= 120) return `${Math.floor(totalMins / 60)}h ${totalMins % 60}m`
+  if (totalMins >= 60)  return `1h ${totalMins - 60}m`
+  return `${totalMins} min`
+}
+
 // ── Design tokens ─────────────────────────────────────────────────────────
 
 const GOLD     = '#FBBF24'
@@ -248,12 +263,19 @@ function MatchCard({
   submitting: boolean; onPick: (id: string, pick: '1'|'X'|'2') => void; animDelay?: number
 }) {
   const myPick     = pred?.prediction?.pick ?? null
-  const isOpen     = event.status === 'open'
-  const isClosed   = event.status === 'closed'
   const isResolved = event.status === 'resolved'
+  const isClosed   = event.status === 'closed'
   const winner     = event.result?.winner ?? null
   const pts        = pred?.points_awarded ?? null
   const [shared, setShared] = useState(false)
+
+  // Lock: 1h antes del partido (se recalcula en cada render por el tick)
+  const lockMs  = msUntilLock(event.event_date)
+  const isLocked = lockMs <= 0
+  // isOpen = evento open en DB y todavía fuera de la ventana de lock
+  const isOpen  = event.status === 'open' && !isLocked
+  // Aviso visible si quedan menos de 6h para el lock
+  const showLockWarning = event.status === 'open' && !isLocked && lockMs < 6 * 60 * 60 * 1000
 
   const picks: { label: string; flagEmoji: string; sub: string; val: '1'|'X'|'2' }[] = [
     { label: 'Local',  flagEmoji: flag(event.team_home), sub: event.team_home ?? '', val: '1' },
@@ -305,6 +327,16 @@ function MatchCard({
         {isClosed && (
           <span className="m-live" style={{ fontSize: 9, color: '#F87171', fontFamily: 'var(--font-sport)', fontWeight: 900, letterSpacing: '0.07em' }}>
             🔴 EN VIVO
+          </span>
+        )}
+        {isLocked && event.status === 'open' && (
+          <span style={{ fontSize: 9, color: 'rgba(251,191,36,0.6)', fontFamily: 'var(--font-sport)', fontWeight: 700, letterSpacing: '0.06em' }}>
+            🔒 PICKS BLOQUEADOS
+          </span>
+        )}
+        {showLockWarning && (
+          <span style={{ marginLeft: 'auto', fontSize: 8, color: 'rgba(251,191,36,0.55)', fontFamily: 'var(--font-sport)', fontWeight: 700, letterSpacing: '0.05em' }}>
+            ⏱ {formatLock(lockMs)} para el cierre
           </span>
         )}
       </div>
@@ -434,7 +466,7 @@ function MatchCard({
       {/* ── Sin pick + no abierto ── */}
       {!myPick && !isOpen && (
         <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-sport)', marginTop: 8 }}>
-          {isClosed ? 'Predicciones cerradas' : 'Sin predicción'}
+          {isClosed ? 'Predicciones cerradas' : isLocked ? 'Picks bloqueados — partido en menos de 1h' : 'Sin predicción'}
         </span>
       )}
     </div>
@@ -831,7 +863,7 @@ export default function MundialClient() {
       {/* ─── Footer note ─────────────────────────────────────── */}
       {!loading && openCount > 0 && (
         <p className="text-center mt-12" style={{ fontSize:10, color:'rgba(255,255,255,0.16)', fontFamily:'var(--font-sport)' }}>
-          Las predicciones se bloquean al inicio de cada partido · Sin cambios una vez guardadas
+          Los picks se pueden cambiar hasta 1 hora antes de cada partido · Se bloquean automáticamente
         </p>
       )}
     </div>
