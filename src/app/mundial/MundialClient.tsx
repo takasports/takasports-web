@@ -622,7 +622,7 @@ export default function MundialClient() {
             {/* Título */}
             <div className="flex flex-col gap-2">
               <p style={{ fontSize: 9, fontWeight: 900, fontFamily: 'var(--font-sport)', color: GOLD_D, textTransform: 'uppercase', letterSpacing: '0.18em' }}>
-                ⚽ Predicciones · Qatar 2022 sucesor
+                ⚽ Predice · Compite · Gana puntos
               </p>
               <div className="flex items-end gap-3">
                 <span style={{ fontSize: 46, lineHeight: 1 }}>🏆</span>
