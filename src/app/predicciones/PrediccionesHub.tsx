@@ -55,11 +55,14 @@ const SPORTS: {
     available: true,
   },
   {
+    // Sistema completo armado (QuinielaClient + APIs + DB). Para reactivar:
+    // poner available:true y quitar badge. La UI ya está lista.
     id:        'futbol',
     label:     'Ranked Fútbol',
     emoji:     '⚽',
     accent:    '#4ADE80',
-    available: true,
+    available: false,
+    badge:     'Pronto',
   },
   {
     id:        'ufc',
@@ -242,7 +245,13 @@ export default function PrediccionesHub() {
           )}
 
           {/* Sport content */}
-          {sportTab === 'futbol' && <QuinielaClient embedded />}
+          {/* Ranked Fútbol — actualmente "Pronto". Para reactivar: cambiar
+              available:true en SPORTS arriba y dejar este render activo. */}
+          {sportTab === 'futbol' && (
+            SPORTS.find(s => s.id === 'futbol')?.available
+              ? <QuinielaClient embedded />
+              : <SportComingSoon sport="Ranked Fútbol" emoji="⚽" accent="#4ADE80" />
+          )}
           {sportTab === 'ufc'    && <SportComingSoon sport="Ranked UFC" emoji="🥊" accent="#F87171" />}
           {sportTab === 'mundial' && <MundialClient />}
           <RankedLeaderboard activeSport={sportTab} />
