@@ -49,6 +49,7 @@ export async function GET() {
     home: string; away: string; comp: string; kickoff: string;
     homeLogo?: string; awayLogo?: string;
     odds?: { home: number; draw: number; away: number };
+    featured?: boolean;
   }> = []
   try {
     const data = await getQuinielaData()
@@ -67,6 +68,7 @@ export async function GET() {
       homeLogo: m.homeLogo,
       awayLogo: m.awayLogo,
       odds: m.odds,
+      featured: m.isFeatured,
     }))
   } catch {
     // Silencioso — el CTA tiene fallback estático en cliente.

@@ -78,3 +78,63 @@ export function trackStatsGroupOpen(params: {
 }) {
   track('stats_group_open', params)
 }
+
+// ── La Porra ─────────────────────────────────────────────────────
+// Eventos de los surfaces de captación: header pill, home hero, widget
+// inline en artículos, toast post-jornada. Permiten comparar qué surface
+// convierte mejor y dimensionar la inversión visual en cada uno.
+
+export type PorraSurface =
+  | 'header_pill'
+  | 'mobile_drawer'
+  | 'home_hero'
+  | 'article_widget'
+  | 'settlement_toast'
+
+export type PorraUserState =
+  | 'guest'
+  | 'authed_no_picks'
+  | 'authed_picked'
+  | 'authed_settled'
+
+/** Click en cualquier CTA que lleve a /predicciones. `surface` identifica
+ * la procedencia para poder embudar después. */
+export function trackPorraCtaClick(params: {
+  surface: PorraSurface
+  state?: PorraUserState
+  jornada?: string | null
+  /** Pick preseleccionado en el widget (solo para article_widget). */
+  pick?: '1' | 'X' | '2'
+}) {
+  track('porra_cta_click', params)
+}
+
+/** El widget inline matcheó el partido del artículo y se mostró. Nos
+ * permite calcular tasa de matching (% de previas que activan widget). */
+export function trackPorraWidgetMatched(params: {
+  home: string
+  away: string
+  comp: string
+  jornada?: string | null
+}) {
+  track('porra_widget_matched', params)
+}
+
+/** Usuario seleccionó un pronóstico DENTRO del widget inline. Mide intención. */
+export function trackPorraWidgetPick(params: {
+  home: string
+  away: string
+  pick: '1' | 'X' | '2'
+}) {
+  track('porra_widget_pick', params)
+}
+
+/** Toast post-jornada apareció (no necesariamente clickeado). */
+export function trackPorraSettlementShown(params: {
+  jornada: string
+  correct: number
+  total: number
+  totalWon: number
+}) {
+  track('porra_settlement_shown', params)
+}

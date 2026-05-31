@@ -9,7 +9,7 @@
 // Idempotente dentro de la misma ventana gracias al cache (ts).
 
 import { NextRequest, NextResponse } from 'next/server'
-import type { QuinielaData } from '../route'
+import { getQuinielaData } from '../route'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 
 const NOTIFY_WINDOW_MIN = 60   // notifica entre T-NOTIFY_WINDOW_MIN y T-15
@@ -25,9 +25,13 @@ export async function POST(req: NextRequest) {
   }
 
   const origin = new URL(req.url).origin
-  const dataRes = await fetch(`${origin}/api/quiniela`, { cache: 'no-store' })
-  if (!dataRes.ok) return NextResponse.json({ error: 'no jornada' }, { status: 503 })
-  const data = await dataRes.json() as QuinielaData
+  // Llamada directa al builder — sin internal HTTP fetch, mismo cache módulo.
+  let data
+  try {
+    data = await getQuinielaData()
+  } catch {
+    return NextResponse.json({ error: 'no jornada' }, { status: 503 })
+  }
   if (!data.matches?.length) return NextResponse.json({ ok: true, reason: 'no matches' })
 
   // Primer partido por kickoff

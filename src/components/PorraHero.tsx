@@ -12,8 +12,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { trackPorraCtaClick, type PorraUserState } from '@/lib/analytics'
 import Image from 'next/image'
 import type { PorraStatus, PorraMatch } from './PorraCTA'
+import { usePushSubscription } from '@/app/quiniela/lib/hooks'
 
 const STORAGE_KEY = 'porra:status:v1'
 const TTL_MS = 60_000
@@ -90,6 +92,20 @@ function MatchRow({ m }: { m: PorraMatch }) {
           : <span className="w-[18px] h-[18px] rounded-full flex-shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />}
       </div>
       <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+        {m.featured && (
+          <span
+            title="Partido destacado · Bonus goleador"
+            style={{
+              fontSize: 9, fontWeight: 900, letterSpacing: '0.06em',
+              padding: '2px 6px', borderRadius: 3,
+              background: 'rgba(251,191,36,0.22)', color: '#FDE68A',
+              border: '1px solid rgba(251,191,36,0.4)',
+              fontFamily: 'var(--font-sport)',
+            }}
+          >
+            ⭐ DESTACADO
+          </span>
+        )}
         <span style={{
           fontSize: 9, fontWeight: 800, letterSpacing: '0.06em',
           padding: '2px 6px', borderRadius: 3,
@@ -110,6 +126,8 @@ export default function PorraHero() {
   // evitar hydration mismatch (Date.now y sessionStorage solo en cliente).
   const [status, setStatus] = useState<PorraStatus | null>(null)
   const [, setTick] = useState(0)
+  const [shareCopied, setShareCopied] = useState(false)
+  const { status: pushStatus, subscribe: subscribePush } = usePushSubscription()
 
   useEffect(() => {
     let cancelled = false
@@ -146,6 +164,61 @@ export default function PorraHero() {
   const alreadyPlayed = status.isAuthed && status.hasPicked
   // Hero solo muestra los 3 primeros por orden cronológico.
   const matches = (status.matches ?? []).slice(0, 3)
+
+  const userState: PorraUserState = status.isAuthed
+    ? (alreadyPlayed ? 'authed_picked' : 'authed_no_picks')
+    : 'guest'
+
+  function handleHeroCtaClick() {
+    trackPorraCtaClick({
+      surface: 'home_hero',
+      state: userState,
+      jornada: status?.jornada ?? null,
+    })
+  }
+
+  // Suscripción a push para recordatorio T-60min. Solo se ofrece cuando
+  // tiene sentido: jornada futura, user que no ha jugado, no ya suscrito,
+  // permiso no denegado. Para no entrenarles a ignorar prompts.
+  const offerPush =
+    pushStatus === 'idle' &&
+    !alreadyPlayed &&
+    new Date(status.deadline).getTime() > Date.now() + 60 * 60_000
+
+  async function handleSubscribePush() {
+    await subscribePush()
+    trackPorraCtaClick({
+      surface: 'home_hero',
+      state: userState,
+      jornada: status?.jornada ?? null,
+    })
+  }
+
+  // Share: navigator.share nativo en móvil + fallback a copy.
+  async function handleShare() {
+    const jornadaName = status?.jornada
+    const text = jornadaName
+      ? `La Porra de TakaSports — ${jornadaName}. ${status?.totalMatches ?? 0} partidos, juega gratis 👇`
+      : 'La Porra de TakaSports — juega gratis 👇'
+    const url = typeof window !== 'undefined'
+      ? `${window.location.origin}/predicciones`
+      : 'https://takasportsmedia.com/predicciones'
+    try {
+      const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> }
+      if (nav.share) {
+        await nav.share({ title: 'La Porra · TakaSports', text, url })
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${url}`)
+        setShareCopied(true)
+        setTimeout(() => setShareCopied(false), 1800)
+      }
+      trackPorraCtaClick({
+        surface: 'home_hero',
+        state: userState,
+        jornada: status?.jornada ?? null,
+      })
+    } catch { /* user canceled / clipboard blocked */ }
+  }
 
   return (
     <section
@@ -218,6 +291,7 @@ export default function PorraHero() {
           <div className="flex-shrink-0 flex sm:flex-col items-stretch gap-2 sm:min-w-[160px]">
             <Link
               href="/predicciones"
+              onClick={handleHeroCtaClick}
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl whitespace-nowrap"
               style={{
                 background: alreadyPlayed
@@ -253,6 +327,77 @@ export default function PorraHero() {
                 {status.totalMatches} partidos · 1 X 2
               </span>
             )}
+            {/* Botón "Avísame" — push para recordatorio T-60min. Solo cuando
+                tiene sentido (idle + no jugado + deadline >1h). Una vez
+                suscrito, desaparece. Si denegó permiso, también desaparece. */}
+            {offerPush && (
+              <button
+                type="button"
+                onClick={handleSubscribePush}
+                aria-label="Avísame antes del cierre"
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap"
+                style={{
+                  background: 'rgba(124,58,237,0.14)',
+                  border: '1px solid rgba(124,58,237,0.35)',
+                  color: '#C4B5FD',
+                  fontFamily: 'var(--font-sport)',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: '0.06em',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
+                  <path d="M6 1.5a3 3 0 00-3 3v2.25l-1 1.5h8l-1-1.5V4.5a3 3 0 00-3-3zM5 10a1 1 0 002 0" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                AVÍSAME
+              </button>
+            )}
+            {pushStatus === 'subscribed' && !alreadyPlayed && (
+              <span
+                className="text-center"
+                style={{
+                  fontSize: 9, color: '#86EFAC',
+                  fontFamily: 'var(--font-sport)', letterSpacing: '0.06em',
+                  fontWeight: 700,
+                }}
+              >
+                ✓ TE AVISAMOS ANTES DEL CIERRE
+              </span>
+            )}
+            {/* Botón "Invitar amigos" — low-key pero presente. Aprovecha la
+                semántica social de la porra (tradicionalmente se comparte en
+                WhatsApp). En móvil dispara navigator.share; en desktop copia. */}
+            <button
+              type="button"
+              onClick={handleShare}
+              aria-label="Invitar amigos a La Porra"
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap"
+              style={{
+                background: shareCopied
+                  ? 'rgba(34,197,94,0.16)'
+                  : 'rgba(255,255,255,0.06)',
+                border: shareCopied
+                  ? '1px solid rgba(34,197,94,0.4)'
+                  : '1px solid rgba(255,255,255,0.12)',
+                color: shareCopied ? '#86EFAC' : 'rgba(255,255,255,0.75)',
+                fontFamily: 'var(--font-sport)',
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.06em',
+                cursor: 'pointer',
+                transition: 'background 200ms, border 200ms, color 200ms',
+              }}
+            >
+              {shareCopied ? '✓ ENLACE COPIADO' : (
+                <>
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
+                    <path d="M8.5 4.5L10 3l-4-2.5L2 3l1.5 1.5M8.5 7.5L10 9l-4 2.5L2 9l1.5-1.5M6 1v10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  INVITAR AMIGOS
+                </>
+              )}
+            </button>
           </div>
         </div>
 

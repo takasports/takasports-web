@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { trackPorraCtaClick, type PorraUserState } from '@/lib/analytics'
 
 export interface PorraMatch {
   home: string
@@ -11,6 +12,8 @@ export interface PorraMatch {
   homeLogo?: string
   awayLogo?: string
   odds?: { home: number; draw: number; away: number }
+  /** Partido destacado de la jornada — habilita el bonus goleador. */
+  featured?: boolean
 }
 
 export interface PorraSettlement {
@@ -211,11 +214,27 @@ export default function PorraCTA({ href, active, variant, onNavigate }: Props) {
 
   const state = deriveState(status)
 
+  // Estado del user para analytics.
+  const userState: PorraUserState | undefined = status
+    ? status.isAuthed
+      ? (status.hasPicked ? 'authed_picked' : 'authed_no_picks')
+      : 'guest'
+    : undefined
+
+  function handleClick() {
+    trackPorraCtaClick({
+      surface: variant === 'mobile' ? 'mobile_drawer' : 'header_pill',
+      state: userState,
+      jornada: status?.jornada ?? null,
+    })
+    if (onNavigate) onNavigate()
+  }
+
   if (variant === 'mobile') {
     return (
       <Link
         href={href}
-        onClick={onNavigate}
+        onClick={handleClick}
         aria-current={active ? 'page' : undefined}
         className="flex items-center justify-between px-3 py-3 rounded-xl mb-1.5"
         style={{
@@ -252,7 +271,7 @@ export default function PorraCTA({ href, active, variant, onNavigate }: Props) {
   return (
     <Link
       href={href}
-      onClick={onNavigate}
+      onClick={handleClick}
       aria-current={active ? 'page' : undefined}
       className="porra-cta relative inline-flex items-center gap-1.5 ml-2 px-3 py-1.5 rounded-full whitespace-nowrap"
       style={{

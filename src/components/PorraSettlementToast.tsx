@@ -9,9 +9,10 @@
 //  · Click en CTA → /predicciones (a ver detalle/ranking).
 //  · "Acked" persiste por jornada — la liquidación de cada jornada se nota una vez.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import type { PorraStatus, PorraSettlement } from './PorraCTA'
+import { trackPorraCtaClick, trackPorraSettlementShown } from '@/lib/analytics'
 
 const STORAGE_KEY = 'porra:status:v1'
 const TTL_MS = 60_000
@@ -77,6 +78,8 @@ function tone(settled: PorraSettlement): {
 export default function PorraSettlementToast() {
   const [settled, setSettled] = useState<PorraSettlement | null>(null)
   const [closing, setClosing] = useState(false)
+  // Evita doble-track en StrictMode / re-renders.
+  const trackedShownRef = useRef<string | null>(null)
 
   // Carga inicial (post-hidratación) — usa cache compartido + fetch fallback.
   useEffect(() => {
@@ -108,9 +111,18 @@ export default function PorraSettlementToast() {
     return () => { cancelled = true }
   }, [])
 
-  // Auto-dismiss
+  // Auto-dismiss + track de impresión (una vez por jornada en este mount).
   useEffect(() => {
     if (!settled) return
+    if (trackedShownRef.current !== settled.jornada) {
+      trackedShownRef.current = settled.jornada
+      trackPorraSettlementShown({
+        jornada: settled.jornada,
+        correct: settled.correctCount,
+        total: settled.totalPicks,
+        totalWon: settled.totalWon,
+      })
+    }
     const id = setTimeout(() => handleClose(), AUTO_DISMISS_MS)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -190,7 +202,14 @@ export default function PorraSettlementToast() {
             </p>
             <Link
               href="/predicciones"
-              onClick={handleClose}
+              onClick={() => {
+                trackPorraCtaClick({
+                  surface: 'settlement_toast',
+                  state: 'authed_settled',
+                  jornada: settled.jornada,
+                })
+                handleClose()
+              }}
               className="inline-flex items-center gap-1 mt-2"
               style={{
                 fontFamily: 'var(--font-sport)', fontWeight: 800, fontSize: 11,

@@ -13,11 +13,17 @@
 // para capturar la intención en el momento de máxima atención. El sellado
 // real ocurre en la página de quiniela (que ya valida stakes/cuotas).
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { PorraStatus, PorraMatch } from './PorraCTA'
 import { normalize as normalizeTeam, resolveAlias, TEAM_ALIASES } from '@/lib/quiniela'
+import {
+  trackPorraCtaClick,
+  trackPorraWidgetMatched,
+  trackPorraWidgetPick,
+  type PorraUserState,
+} from '@/lib/analytics'
 
 const STORAGE_KEY = 'porra:status:v1'
 const TTL_MS = 60_000
@@ -176,6 +182,21 @@ export default function PorraMatchWidget({ title, tags }: Props) {
     return findMatch(status.matches, title, tags)
   }, [status, title, tags])
 
+  // Trackea que el widget se materializó para este artículo (una vez por mount).
+  const trackedMatchRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!match) return
+    const key = `${match.home}|${match.away}|${status?.jornada ?? ''}`
+    if (trackedMatchRef.current === key) return
+    trackedMatchRef.current = key
+    trackPorraWidgetMatched({
+      home: match.home,
+      away: match.away,
+      comp: match.comp,
+      jornada: status?.jornada ?? null,
+    })
+  }, [match, status?.jornada])
+
   if (!status || !match) return null
 
   // No mostrar si el partido ya empezó.
@@ -185,11 +206,27 @@ export default function PorraMatchWidget({ title, tags }: Props) {
   const odds = match.odds
   const href = '/predicciones'
 
+  const userState: PorraUserState = status.isAuthed
+    ? (status.hasPicked ? 'authed_picked' : 'authed_no_picks')
+    : 'guest'
+
+  function handlePickClick(opt: Pick) {
+    setPick(opt)
+    if (!match) return
+    trackPorraWidgetPick({ home: match.home, away: match.away, pick: opt })
+  }
+
   // Antes de navegar, deja la preselección en sessionStorage. PicksForm la
   // consume al montar (clave: 'porra:pendingPick'). Más resiliente que
   // query params porque no acopla a la ruta y se auto-limpia al consumirse.
   function handleCtaClick() {
     if (!pick) return
+    trackPorraCtaClick({
+      surface: 'article_widget',
+      state: userState,
+      jornada: status?.jornada ?? null,
+      pick,
+    })
     try {
       sessionStorage.setItem(
         'porra:pendingPick',
@@ -269,7 +306,7 @@ export default function PorraMatchWidget({ title, tags }: Props) {
             <button
               key={opt.key}
               type="button"
-              onClick={() => setPick(opt.key)}
+              onClick={() => handlePickClick(opt.key)}
               aria-pressed={selected}
               className="flex flex-col items-center justify-center py-2.5 rounded-xl transition-all"
               style={{
@@ -303,6 +340,35 @@ export default function PorraMatchWidget({ title, tags }: Props) {
           )
         })}
       </div>
+
+      {/* Bonus goleador — solo si el partido es el destacado de la jornada.
+          No es selección inline (el roster vive en /predicciones); aquí es
+          un teaser para subir intención. */}
+      {match.featured && (
+        <div
+          className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg"
+          style={{
+            background: 'linear-gradient(90deg, rgba(251,191,36,0.18) 0%, rgba(251,191,36,0.04) 100%)',
+            border: '1px solid rgba(251,191,36,0.32)',
+          }}
+        >
+          <span style={{ fontSize: 16, lineHeight: 1 }} aria-hidden>⚽</span>
+          <div className="flex-1 min-w-0">
+            <p style={{
+              fontFamily: 'var(--font-sport)', fontWeight: 900, fontSize: 11,
+              color: '#FDE68A', letterSpacing: '0.06em', margin: 0,
+            }}>
+              PARTIDO DESTACADO · BONUS GOLEADOR
+            </p>
+            <p style={{
+              fontSize: 11, color: 'rgba(255,255,255,0.65)',
+              margin: '2px 0 0', lineHeight: 1.3,
+            }}>
+              Apuesta gratis al primer goleador y gana monedas extra.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* CTA */}
       <Link
