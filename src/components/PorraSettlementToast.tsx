@@ -100,7 +100,7 @@ export default function PorraSettlementToast() {
     try {
       const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> }
       if (nav.share) {
-        await nav.share({ title: 'Reto · La Porra', text, url })
+        await nav.share({ title: 'Reto · Predicciones', text, url })
       } else {
         await navigator.clipboard.writeText(`${text}\n${url}`)
         setShareDone(true)

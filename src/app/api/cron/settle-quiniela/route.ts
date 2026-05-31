@@ -18,6 +18,7 @@
 import { NextResponse }       from 'next/server'
 import { adminSupabase }      from '@/lib/supabase-admin'
 import { scorePicks }         from '@/lib/quiniela'
+import { enrichResultsWithFeatured } from '@/lib/quiniela-featured'
 import type { SavedPick, MatchResult } from '@/lib/quiniela'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 
@@ -154,6 +155,12 @@ async function handle(req: Request) {
   if (results.length === 0) {
     return NextResponse.json({ ok: true, settled_count: 0, note: 'no ESPN results available' })
   }
+
+  // T — Marcar el partido featured de la jornada activa en los results.
+  // Sin esto, scorePick no aplica el bonus x2 en la liquidación batch
+  // y los users que aciertan el destacado se quedan sin el premio
+  // que sí se promete en la UI.
+  await enrichResultsWithFeatured(results)
 
   // 2. Picks sellados pero no liquidados
   //    Filtramos en DB con JSONB path operators para no desperdiciar los 500 slots

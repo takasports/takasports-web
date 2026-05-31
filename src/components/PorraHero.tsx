@@ -410,15 +410,15 @@ export default function PorraHero() {
   async function handleShare() {
     const jornadaName = status?.jornada
     const text = jornadaName
-      ? `La Porra de TakaSports — ${jornadaName}. ${status?.totalMatches ?? 0} partidos, juega gratis 👇`
-      : 'La Porra de TakaSports — juega gratis 👇'
+      ? `Mi porra de TakaSports — ${jornadaName}. ${status?.totalMatches ?? 0} partidos, juega gratis 👇`
+      : 'La porra de TakaSports — juega gratis 👇'
     const url = typeof window !== 'undefined'
       ? `${window.location.origin}/predicciones`
       : 'https://takasportsmedia.com/predicciones'
     try {
       const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> }
       if (nav.share) {
-        await nav.share({ title: 'La Porra · TakaSports', text, url })
+        await nav.share({ title: 'Predicciones · TakaSports', text, url })
       } else {
         await navigator.clipboard.writeText(`${text}\n${url}`)
         setShareCopied(true)
@@ -434,7 +434,7 @@ export default function PorraHero() {
 
   return (
     <section
-      aria-label="La Porra — jornada activa"
+      aria-label="Predicciones — jornada activa"
       className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 mt-3 mb-4"
       style={{ animation: 'porraHeroFadeIn 320ms cubic-bezier(0.34,1.2,0.64,1) both' }}
     >
@@ -468,7 +468,7 @@ export default function PorraHero() {
                 fontFamily: 'var(--font-sport)', fontWeight: 900, fontSize: 18,
                 color: '#fff', letterSpacing: '0.02em',
               }}>
-                La Porra
+                Predicciones
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -667,7 +667,7 @@ export default function PorraHero() {
             <button
               type="button"
               onClick={handleShare}
-              aria-label="Invitar amigos a La Porra"
+              aria-label="Invitar amigos a Predicciones"
               className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap"
               style={{
                 background: shareCopied

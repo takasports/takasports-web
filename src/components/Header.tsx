@@ -28,7 +28,7 @@ const NAV_LINKS = [
   { label: 'Juegos',       href: '/juegos'        },
 ]
 
-const PORRA_LINK = { label: 'La Porra', href: '/predicciones' }
+const PORRA_LINK = { label: 'Predicciones', href: '/predicciones' }
 
 function isNavActive(href: string, pathname: string): boolean {
   if (href === '/') return pathname === '/'

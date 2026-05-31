@@ -26,22 +26,22 @@ export async function generateMetadata({
   const parsed = parseResultSlug(slug)
   const jornada = parsed?.jornadaSlug
     ? formatJornadaFromSlug(parsed.jornadaSlug)
-    : 'La Porra'
+    : 'Predicciones'
   const headline = parsed
     ? `${parsed.hits}/${parsed.total} aciertos · +${parsed.totalWon} pts`
-    : 'Resultado de La Porra'
+    : 'Resultado de Predicciones'
   return {
     title: `${headline} — ${jornada}`,
-    description: 'Compite gratis en La Porra de TakaSports.',
+    description: 'Compite gratis en las Predicciones de TakaSports.',
     openGraph: {
       title: `${headline} — ${jornada}`,
-      description: 'Compite gratis en La Porra de TakaSports.',
+      description: 'Compite gratis en las Predicciones de TakaSports.',
       type: 'article',
     },
     twitter: {
       card: 'summary_large_image',
       title: `${headline} — ${jornada}`,
-      description: 'Compite gratis en La Porra de TakaSports.',
+      description: 'Compite gratis en las Predicciones de TakaSports.',
     },
   }
 }
@@ -55,7 +55,7 @@ export default async function ResultadoPage({
   const parsed = parseResultSlug(slug)
   const jornada = parsed?.jornadaSlug
     ? formatJornadaFromSlug(parsed.jornadaSlug)
-    : 'La Porra'
+    : 'Predicciones'
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#09090F' }}>
@@ -77,7 +77,7 @@ export default async function ResultadoPage({
               color: '#C4B5FD', letterSpacing: '0.16em',
             }}
           >
-            LA PORRA · {jornada.toUpperCase()}
+            PREDICCIONES · {jornada.toUpperCase()}
           </p>
           {parsed ? (
             <>

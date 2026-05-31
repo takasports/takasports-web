@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { trackPorraCtaClick, type PorraUserState } from '@/lib/analytics'
+import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 
 export interface PorraMatch {
   home: string
@@ -101,11 +102,26 @@ function formatRemaining(deadlineIso: string): string | null {
   return `${Math.max(1, m)}M`
 }
 
+/**
+ * Estado fijo cuando Ranked Fútbol está pausado: reorienta el CTA al Mundial,
+ * que es el único producto de predicciones activo. Sin fetch, sin cache.
+ * Para revertir: poner RANKED_FUTBOL_ENABLED=true en feature-flags.ts.
+ */
+function deriveStateMundial(): BadgeState {
+  return {
+    label: 'Predicciones',
+    badge: 'MUNDIAL',
+    badgeTone: 'urgent',
+    pulseSpeed: 1.6,
+    dotColor: '#FBBF24',
+  }
+}
+
 function deriveState(s: PorraStatus | null): BadgeState {
   // Sin datos → guest neutro.
   if (!s || !s.jornada) {
     return {
-      label: 'La Porra',
+      label: 'Predicciones',
       badge: 'JUEGA',
       badgeTone: 'idle',
       pulseSpeed: 1.8,
@@ -116,7 +132,7 @@ function deriveState(s: PorraStatus | null): BadgeState {
   // Logueado + ya jugó → estado "hecho", calmado.
   if (s.isAuthed && s.hasPicked) {
     return {
-      label: 'La Porra',
+      label: 'Predicciones',
       badge: `${s.picksCount}/${s.totalMatches} ✓`,
       badgeTone: 'done',
       pulseSpeed: null,
@@ -134,7 +150,7 @@ function deriveState(s: PorraStatus | null): BadgeState {
   if (s.isAuthed && !s.hasPicked) {
     if (hoursLeft <= 24) {
       return {
-        label: 'La Porra',
+        label: 'Predicciones',
         badge: remaining ? `CIERRA ${remaining}` : 'TE FALTA',
         badgeTone: 'critical',
         pulseSpeed: 0.9,
@@ -142,7 +158,7 @@ function deriveState(s: PorraStatus | null): BadgeState {
       }
     }
     return {
-      label: 'La Porra',
+      label: 'Predicciones',
       badge: 'TE FALTA',
       badgeTone: 'urgent',
       pulseSpeed: 1.2,
@@ -153,7 +169,7 @@ function deriveState(s: PorraStatus | null): BadgeState {
   // Guest con jornada activa → mostrar deadline si <48h.
   if (hoursLeft <= 48 && remaining) {
     return {
-      label: 'La Porra',
+      label: 'Predicciones',
       badge: `CIERRA ${remaining}`,
       badgeTone: 'urgent',
       pulseSpeed: 1.2,
@@ -162,7 +178,7 @@ function deriveState(s: PorraStatus | null): BadgeState {
   }
 
   return {
-    label: 'La Porra',
+    label: 'Predicciones',
     badge: 'JUEGA GRATIS',
     badgeTone: 'idle',
     pulseSpeed: 1.8,
@@ -207,6 +223,10 @@ export default function PorraCTA({ href, active, variant, onNavigate }: Props) {
   const [status, setStatus] = useState<PorraStatus | null>(null)
 
   useEffect(() => {
+    // Mientras Ranked Fútbol esté pausado: no consultar el status de la
+    // quiniela (mostraría una jornada de fútbol que el user no puede jugar).
+    // El componente cae en deriveStateMundial() abajo.
+    if (!RANKED_FUTBOL_ENABLED) return
     let cancelled = false
     const cached = readCache()
     if (cached) {
@@ -232,7 +252,7 @@ export default function PorraCTA({ href, active, variant, onNavigate }: Props) {
     return () => clearInterval(id)
   }, [status?.deadline])
 
-  const state = deriveState(status)
+  const state = RANKED_FUTBOL_ENABLED ? deriveState(status) : deriveStateMundial()
 
   // Estado del user para analytics.
   const userState: PorraUserState | undefined = status

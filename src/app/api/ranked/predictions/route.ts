@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { adminSupabase } from '@/lib/supabase-admin'
 import { awardBadges, badgesEarnedOnRankedPick } from '@/lib/badge-awards'
 
 export const dynamic = 'force-dynamic'
@@ -154,30 +155,35 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Badges — solo en primera inserción ──────────────────────────
+  // Usamos adminSupabase() para bypassear RLS en quiniela_badges
+  // (la tabla no tiene política INSERT para usuarios — solo service role).
   try {
-    const eventSport = (event as { sport?: string }).sport ?? ''
+    const adm = adminSupabase()
+    if (adm) {
+      const eventSport = (event as { sport?: string }).sport ?? ''
 
-    const [{ count: totalCount }, { count: mundialCount }] = await Promise.all([
-      sb.from('ranked_predictions')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id),
-      eventSport === 'mundial'
-        ? sb.from('ranked_predictions')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .in('event_id',
-              (await sb.from('ranked_events').select('id').eq('sport', 'mundial'))
-                .data?.map((e: { id: string }) => e.id) ?? []
-            )
-        : Promise.resolve({ count: null }),
-    ])
+      const [{ count: totalCount }, { count: mundialCount }] = await Promise.all([
+        adm.from('ranked_predictions')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+        eventSport === 'mundial'
+          ? adm.from('ranked_predictions')
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', user.id)
+              .in('event_id',
+                (await adm.from('ranked_events').select('id').eq('sport', 'mundial'))
+                  .data?.map((e: { id: string }) => e.id) ?? []
+              )
+          : Promise.resolve({ count: null }),
+      ])
 
-    const isFirstPick    = (totalCount ?? 0) <= 1
-    const isFirstMundial = eventSport === 'mundial' && (mundialCount ?? 0) <= 1
+      const isFirstPick    = (totalCount ?? 0) <= 1
+      const isFirstMundial = eventSport === 'mundial' && (mundialCount ?? 0) <= 1
 
-    const earned = badgesEarnedOnRankedPick({ isFirstPick })
-    if (isFirstMundial) earned.push('mundialista_2026')
-    if (earned.length > 0) await awardBadges(sb, user.id, earned)
+      const earned = badgesEarnedOnRankedPick({ isFirstPick })
+      if (isFirstMundial) earned.push('mundialista_2026')
+      if (earned.length > 0) await awardBadges(adm, user.id, earned)
+    }
   } catch { /* badge fallo — nunca bloquea la respuesta */ }
 
   return NextResponse.json({ prediction }, { status: 201 })

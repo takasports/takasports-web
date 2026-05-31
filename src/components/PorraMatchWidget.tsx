@@ -243,7 +243,7 @@ export default function PorraMatchWidget({ title, tags }: Props) {
 
   return (
     <aside
-      aria-label="La Porra — apuesta este partido"
+      aria-label="Predicciones — apuesta este partido"
       className="my-6 rounded-2xl p-4 sm:p-5 not-prose"
       style={{
         background:
@@ -264,7 +264,7 @@ export default function PorraMatchWidget({ title, tags }: Props) {
             fontFamily: 'var(--font-sport)', fontWeight: 900, fontSize: 13,
             color: '#fff', letterSpacing: '0.04em',
           }}>
-            LA PORRA
+            PREDICCIONES
           </span>
           <span style={{
             fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
@@ -392,7 +392,7 @@ export default function PorraMatchWidget({ title, tags }: Props) {
           transition: 'background 200ms, box-shadow 200ms',
         }}
       >
-        {pick ? 'CONFIRMAR EN LA PORRA →' : 'ELIGE TU PRONÓSTICO'}
+        {pick ? 'CONFIRMAR EN PREDICCIONES →' : 'ELIGE TU PRONÓSTICO'}
       </Link>
 
       <p className="text-center mt-2" style={{

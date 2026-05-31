@@ -13,7 +13,7 @@ export default async function Image({ params }: { params: Promise<Params> }) {
   const parsed = parseResultSlug(slug)
   const jornada = parsed?.jornadaSlug
     ? formatJornadaFromSlug(parsed.jornadaSlug).toUpperCase()
-    : 'LA PORRA'
+    : 'PREDICCIONES'
 
   const hits = parsed?.hits ?? 0
   const total = parsed?.total ?? 0
@@ -92,7 +92,7 @@ export default async function Image({ params }: { params: Promise<Params> }) {
             fontWeight: 900,
             letterSpacing: 4,
           }}>
-            LA PORRA · TAKASPORTS
+            PREDICCIONES · TAKASPORTS
           </span>
         </div>
 

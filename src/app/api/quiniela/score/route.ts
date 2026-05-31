@@ -26,8 +26,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
-import { scorePicks, nameMatch as quinielaNameMatch, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
-import { getQuinielaData } from '../route'
+import { scorePicks, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
+import { enrichResultsWithFeatured } from '@/lib/quiniela-featured'
 import { awardBadges, badgesEarnedOnSettle } from '@/lib/badge-awards'
 import { fetchActiveSpecialBadgesForJornada, grantSpecialBadge, userMeetsCriteria } from '@/lib/special-badges'
 
@@ -128,24 +128,10 @@ async function fetchResults(origin: string): Promise<MatchResult[] | null> {
     const r = await fetch(`${origin}/api/quiniela/results`, { cache: 'no-store' })
     if (!r.ok) return null
     const results = await r.json() as MatchResult[]
-    // T — Marcar el partido featured de la jornada en los results. El
-    // pick que coincida con el featured y acierte recibirá x2 (lógica
-    // en scorePick). getQuinielaData() está cacheado, así que es barato.
-    try {
-      const jornadaData = await getQuinielaData()
-      const featuredMatch = jornadaData.matches?.find(m => m.isFeatured)
-      if (featuredMatch) {
-        for (const res of results) {
-          if (
-            quinielaNameMatch(res.home, featuredMatch.home) &&
-            quinielaNameMatch(res.away, featuredMatch.away)
-          ) {
-            res.featured = true
-            break
-          }
-        }
-      }
-    } catch { /* sin jornada → no aplica x2; degrada silencioso */ }
+    // T — Enriquecer con featured antes de score. Mismo helper que usa
+    // el cron de settle, así el x2 se aplica idénticamente en ambos
+    // caminos (cliente settle + batch cron).
+    await enrichResultsWithFeatured(results)
     return results
   } catch {
     return null

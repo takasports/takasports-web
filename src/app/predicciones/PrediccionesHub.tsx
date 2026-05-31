@@ -22,6 +22,7 @@ import { useStreak } from '@/hooks/useGameState'
 import { usePoints } from '@/hooks/useGameState'
 import RankedLeaderboard from '@/components/ranked/RankedLeaderboard'
 import PorraChallengeBanner from '@/components/PorraChallengeBanner'
+import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 
 // Carga dinámica — solo se carga el cliente activo
 const QuinielaClient = dynamic(
@@ -56,13 +57,13 @@ const SPORTS: {
   },
   {
     // Sistema completo armado (QuinielaClient + APIs + DB). Para reactivar:
-    // poner available:true y quitar badge. La UI ya está lista.
+    // poner RANKED_FUTBOL_ENABLED=true en src/lib/feature-flags.ts.
     id:        'futbol',
     label:     'Ranked Fútbol',
     emoji:     '⚽',
     accent:    '#4ADE80',
-    available: false,
-    badge:     'Pronto',
+    available: RANKED_FUTBOL_ENABLED,
+    badge:     RANKED_FUTBOL_ENABLED ? undefined : 'Pronto',
   },
   {
     id:        'ufc',
