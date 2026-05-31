@@ -125,22 +125,37 @@ export async function GET() {
         return tb.localeCompare(ta) // desc
       })
       const settledRow = settledRows[0]
-      if (settledRow) {
-        const arr = settledRow.picks?.picks ?? []
-        const totalPicks = Array.isArray(arr) ? arr.filter((p) => !!p?.pick).length : 0
+      if (settledRow && typeof settledRow.jornada === 'string' && settledRow.jornada.length > 0) {
+        const arr = Array.isArray(settledRow.picks?.picks) ? settledRow.picks!.picks! : []
+        const totalPicks = arr.filter((p) => !!p?.pick).length
         // Hits del breakdown: usa `breakdown.hits` (atajo) y si no hay,
         // cuenta `perPick.filter(p => p.hit && !p.cancelled)`.
-        const perPick = settledRow.picks?.breakdown?.perPick ?? []
-        const correctFromPerPick = Array.isArray(perPick)
-          ? perPick.filter((p) => p?.hit === true && p?.cancelled !== true).length
+        const perPick = Array.isArray(settledRow.picks?.breakdown?.perPick)
+          ? settledRow.picks!.breakdown!.perPick!
+          : []
+        const correctFromPerPick = perPick.filter((p) => p?.hit === true && p?.cancelled !== true).length
+        const hitsField = settledRow.picks?.breakdown?.hits
+        const correctCount = typeof hitsField === 'number' && Number.isFinite(hitsField)
+          ? hitsField
+          : correctFromPerPick
+        const totalWonField = settledRow.picks?.totalWon
+        const totalWon = typeof totalWonField === 'number' && Number.isFinite(totalWonField)
+          ? Math.max(0, Math.floor(totalWonField))
           : 0
-        const correctCount = settledRow.picks?.breakdown?.hits ?? correctFromPerPick
-        lastSettled = {
-          jornada: settledRow.jornada,
-          totalWon: settledRow.picks?.totalWon ?? 0,
-          correctCount,
-          totalPicks,
-          settledAt: settledRow.picks?.settledAt ?? null,
+        // Clamp defensivo: correctCount nunca puede superar totalPicks.
+        const safeCorrect = Math.max(0, Math.min(correctCount, totalPicks))
+        // Sólo publicamos lastSettled si tiene sentido (≥1 pick). Evita
+        // toasts con "0/0" si una jornada se persistió huérfana.
+        if (totalPicks > 0) {
+          lastSettled = {
+            jornada: settledRow.jornada,
+            totalWon,
+            correctCount: safeCorrect,
+            totalPicks,
+            settledAt: typeof settledRow.picks?.settledAt === 'string'
+              ? settledRow.picks!.settledAt!
+              : null,
+          }
         }
       }
     }

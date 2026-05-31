@@ -83,10 +83,16 @@ export default function PorraSettlementToast() {
     let cancelled = false
 
     function evaluate(data: PorraStatus | null) {
-      if (!data?.lastSettled) return
+      const s = data?.lastSettled
+      // Guards: necesitamos jornada válida y al menos un pick para que
+      // el copy del toast tenga sentido ("X/Y aciertos" con Y=0 es feo).
+      if (!s) return
+      if (typeof s.jornada !== 'string' || s.jornada.length === 0) return
+      if (typeof s.totalPicks !== 'number' || s.totalPicks <= 0) return
+      if (typeof s.correctCount !== 'number' || s.correctCount < 0) return
       const acked = readAcked()
-      if (acked === data.lastSettled.jornada) return
-      setSettled(data.lastSettled)
+      if (acked === s.jornada) return
+      setSettled(s)
     }
 
     const cached = readStatus()

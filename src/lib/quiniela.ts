@@ -42,7 +42,7 @@ export interface SavedPick {
 }
 
 // ── Normalización de nombres ─────────────────────────────────────
-const TEAM_ALIASES: Record<string, string> = {
+export const TEAM_ALIASES: Record<string, string> = {
   'psg':           'paris saint-germain',
   'paris':         'paris saint-germain',
   'bayern':        'bayern munich',

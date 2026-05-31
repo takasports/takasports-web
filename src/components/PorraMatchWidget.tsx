@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { PorraStatus, PorraMatch } from './PorraCTA'
+import { normalize as normalizeTeam, resolveAlias, TEAM_ALIASES } from '@/lib/quiniela'
 
 const STORAGE_KEY = 'porra:status:v1'
 const TTL_MS = 60_000
@@ -39,56 +40,95 @@ function writeCache(data: PorraStatus) {
   catch { /* quota / SSR */ }
 }
 
-/** Normaliza para matching: minúsculas, sin diacríticos, sin no-alfanumérico. */
-function norm(s: string): string {
+/** Normaliza el haystack del artículo igual que normalize() de lib/quiniela.
+ * Usamos la misma función para garantizar que TEAM_ALIASES (cuyas claves
+ * ya están en forma normalizada) matchean bit a bit. */
+function normalizeHaystack(s: string): string {
+  // normalize() de lib/quiniela hace lowercase + NFD + strip diacríticos
+  // + strip no-alfanumérico, pero comprime espacios eliminándolos. Aquí
+  // queremos preservar espacios para split por palabras, así que usamos
+  // una variante local idéntica salvo en el manejo de espacios.
   return s
     .toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/[^a-z0-9 ]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
 
-/** Palabras genéricas a ignorar: muy comunes y por sí solas crean falsos
- * positivos (ej. "Real" en cualquier artículo sobre fútbol español). */
+/** Stopwords: palabras genéricas que no identifican unívocamente a un
+ * equipo. Si aparecen solas (sin otra distintiva), no cuentan como hit. */
 const STOPWORDS = new Set([
-  'fc', 'cf', 'sc', 'ac', 'sd', 'cd', 'rcd', 'ud', 'club', 'real', 'sporting',
-  'atletico', 'athletic', 'deportivo', 'racing', 'united', 'city',
+  'fc', 'cf', 'sc', 'ac', 'sd', 'cd', 'rcd', 'ud', 'rc', 'rb',
+  'club', 'real', 'sporting', 'atletico', 'athletic', 'deportivo',
+  'racing', 'united', 'city', 'town', 'bayern', 'inter', 'milan',
+  'as', 'sl', 'ssc',
 ])
 
-/** Extrae las palabras distintivas (≥4 chars, no-stopword) de un nombre. */
-function distinctiveWords(team: string): string[] {
-  return norm(team)
-    .split(' ')
-    .filter((w) => w.length >= 4 && !STOPWORDS.has(w))
+/** Devuelve TODOS los nombres por los que se conoce a un equipo:
+ * canonical + claves de TEAM_ALIASES que apuntan a ese canonical.
+ * Esto permite matchear "psg" en un artículo aunque el match traiga
+ * "Paris Saint-Germain". */
+function knownNamesFor(team: string): string[] {
+  const canonical = resolveAlias(team) // ya normalizado
+  const names = new Set<string>([canonical])
+  // Reverse lookup en TEAM_ALIASES.
+  for (const [alias, target] of Object.entries(TEAM_ALIASES)) {
+    if (target === canonical) names.add(alias)
+  }
+  // También el nombre original tal cual viene de ESPN, por si tiene
+  // matices únicos (ej. "Brighton & Hove Albion" → palabras únicas).
+  names.add(normalizeTeam(team))
+  return [...names]
 }
 
-/** Devuelve true si al menos una palabra distintiva del equipo aparece
- * en el haystack. Si el equipo no tiene palabras distintivas (caso raro
- * tipo "Cádiz CF" → solo "cadiz" sirve, ≥4 → ok), cae a la palabra más
- * larga aunque sea stopword. */
-function teamInHaystack(team: string, haystack: string): boolean {
-  const distinctive = distinctiveWords(team)
-  if (distinctive.length > 0) {
-    return distinctive.some((w) => haystack.includes(w))
+/** Palabras distintivas: ≥4 chars y no en STOPWORDS. */
+function distinctiveWords(name: string): string[] {
+  return name.split(' ').filter((w) => w.length >= 4 && !STOPWORDS.has(w))
+}
+
+/** ¿Aparece el equipo en el haystack normalizado?
+ * Estrategia:
+ *  1. Para CADA nombre conocido del equipo, intenta substring match completo.
+ *     Ej.: si conocemos "psg" y haystack contiene " psg ", hit directo.
+ *  2. Si ningún nombre completo matchea, busca palabras distintivas (≥4 chars,
+ *     no-stopword) de cualquier nombre conocido.
+ */
+function teamInHaystack(team: string, haystack: string): { hit: boolean; score: number } {
+  const names = knownNamesFor(team)
+  // Padding para evitar matches parciales: " barca " no debe matchear "barcas".
+  const padded = ` ${haystack} `
+
+  let score = 0
+  for (const name of names) {
+    if (name.length >= 4 && padded.includes(` ${name} `)) {
+      score += name.length // matches completos pesan más
+    }
   }
-  // Fallback: palabra más larga ignorando stopwords cortos (≤2 chars).
-  const words = norm(team).split(' ').filter((w) => w.length >= 3)
-  const longest = words.sort((a, b) => b.length - a.length)[0]
-  return !!longest && haystack.includes(longest)
+  if (score > 0) return { hit: true, score }
+
+  // Fallback: palabras distintivas.
+  const distinctive = new Set<string>()
+  for (const name of names) {
+    for (const w of distinctiveWords(name)) distinctive.add(w)
+  }
+  for (const w of distinctive) {
+    if (padded.includes(` ${w} `)) score += 1
+  }
+  return { hit: score > 0, score }
 }
 
 function findMatch(matches: PorraMatch[], title: string, extra?: string[]): PorraMatch | null {
-  const haystack = norm([title, ...(extra ?? [])].join(' '))
-  // Si varios partidos matchean (ej. dos partidos del mismo equipo), nos
-  // quedamos con el que más palabras distintivas aporte — más fiable.
+  const haystack = normalizeHaystack([title, ...(extra ?? [])].join(' '))
   let best: { match: PorraMatch; score: number } | null = null
   for (const m of matches) {
-    if (!teamInHaystack(m.home, haystack) || !teamInHaystack(m.away, haystack)) continue
-    const score =
-      distinctiveWords(m.home).filter((w) => haystack.includes(w)).length +
-      distinctiveWords(m.away).filter((w) => haystack.includes(w)).length
-    if (!best || score > best.score) best = { match: m, score }
+    const h = teamInHaystack(m.home, haystack)
+    const a = teamInHaystack(m.away, haystack)
+    if (!h.hit || !a.hit) continue
+    // Score combinado: ambos equipos deben confirmarse; usamos el mínimo
+    // para evitar que un equipo muy citado y otro apenas mencionado pase.
+    const combined = Math.min(h.score, a.score) * 2 + h.score + a.score
+    if (!best || combined > best.score) best = { match: m, score: combined }
   }
   return best?.match ?? null
 }
