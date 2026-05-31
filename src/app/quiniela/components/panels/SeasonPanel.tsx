@@ -106,7 +106,7 @@ export function SeasonPanel({ user }: { user: User | null }) {
                     <span
                       className="text-[9px] font-black tabular-nums px-2 py-0.5 rounded-full"
                       style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}
-                      title="Monedas que recibís si acertás esta pregunta"
+                      title="Puntos que recibís si acertás esta pregunta"
                     >
                       +{q.prize_coins} pts si acertás
                     </span>

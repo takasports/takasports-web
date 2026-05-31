@@ -554,8 +554,8 @@ export async function POST(req: NextRequest) {
       // payload (este código solo corre una vez por jornada/user).
       if (totalWon > 0) {
         const title = breakdown.pleno
-          ? `🎯 ¡PLENO! +${totalWon}🪙`
-          : `🪙 +${totalWon} en la Quiniela`
+          ? `🎯 ¡PLENO! +${totalWon} pts`
+          : `⚡ +${totalWon} pts en La Porra`
         const pushBody = breakdown.pleno
           ? `Acertaste TODOS los ${persistedPicks.length} partidos · ${body.jornada}`
           : `${breakdown.hits}/${persistedPicks.length} aciertos · ${body.jornada}`

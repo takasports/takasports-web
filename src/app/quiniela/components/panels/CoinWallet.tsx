@@ -2,9 +2,12 @@
 
 import { useState } from 'react'
 import type { CoinTxn } from '../../lib/types'
+import TakaPoint from '@/components/TakaPoint'
 
 // ─────────────────────────────────────────────────────────────────
-// Wallet de monedas
+// Wallet de puntos (legacy CoinWallet — la variable interna sigue
+// llamándose `coins` por historia del código, pero el user solo ve
+// "puntos" como concepto unificado).
 // ─────────────────────────────────────────────────────────────────
 export function CoinWallet({ balance, txns }: { balance: number; txns: CoinTxn[] }) {
   const [open, setOpen] = useState(false)
@@ -15,11 +18,11 @@ export function CoinWallet({ balance, txns }: { balance: number; txns: CoinTxn[]
         className="w-full flex items-center gap-3 px-5 py-4 text-left transition-opacity hover:opacity-90"
         style={{ background: 'none', border: 'none', cursor: 'pointer' }}
       >
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)' }}>
-          <span style={{ fontSize: 17, lineHeight: 1 }}>🪙</span>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.28)' }}>
+          <TakaPoint size={18} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#78571A', fontFamily: 'var(--font-sport)' }}>Monedas</p>
+          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9B7CF6', fontFamily: 'var(--font-sport)' }}>Puntos</p>
           <p className="font-black leading-none tabular-nums" style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: '#fbbf24', letterSpacing: '-0.02em' }}>
             {balance.toLocaleString()}
           </p>
@@ -77,7 +80,7 @@ export function CoinWallet({ balance, txns }: { balance: number; txns: CoinTxn[]
           <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
             <span style={{ fontSize: 13 }}>⚡</span>
             <span style={{ fontSize: 9, color: '#78550A', fontFamily: 'var(--font-sport)', fontWeight: 700 }}>
-              Comodín cuesta <span style={{ color: '#fbbf24' }}>25 🪙</span> · Desbloquea consenso anticipado <span style={{ color: '#fbbf24' }}>10 🪙</span>
+              Comodín cuesta <span style={{ color: '#A78BFA', fontWeight: 900 }}>25 pts</span> · Desbloquea consenso anticipado <span style={{ color: '#A78BFA', fontWeight: 900 }}>10 pts</span>
             </span>
           </div>
         </div>

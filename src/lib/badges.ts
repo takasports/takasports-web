@@ -179,7 +179,7 @@ export const BADGES: Record<string, BadgeDef> = {
     emoji: '💎',
     color: '#22d3ee',
     bg: 'rgba(34,211,238,0.14)',
-    description: 'Apostaste 500🪙 o más en una sola jornada y ganaste.',
+    description: 'Apostaste 500 pts o más en una sola jornada y ganaste.',
     rarity: 'epic',
     category: 'jornada',
     unlocks: {

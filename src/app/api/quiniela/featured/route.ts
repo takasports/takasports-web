@@ -164,10 +164,10 @@ async function resolvePickLazy(
   // el flag `resolved` previene re-resolución.
   if (awarded > 0 && !existingTxn) {
     const title = myGoals >= 3
-      ? `⚽ ¡HAT-TRICK! +${awarded}🪙`
+      ? `⚽ ¡HAT-TRICK! +${awarded} pts`
       : myGoals === 2
-        ? `⚽ Doblete · +${awarded}🪙`
-        : `⚽ ¡Tu goleador marcó! +${awarded}🪙`
+        ? `⚽ Doblete · +${awarded} pts`
+        : `⚽ ¡Tu goleador marcó! +${awarded} pts`
     const pushBody = `${pick.player_name} hizo ${myGoals} ${myGoals === 1 ? 'gol' : 'goles'} · partido destacado de ${jornada}`
     import('@/lib/push-helper').then(({ sendPushToUser }) =>
       sendPushToUser(userId, {

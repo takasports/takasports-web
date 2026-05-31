@@ -666,13 +666,13 @@ function ResultScreen({
           role="status"
           aria-live="polite"
         >
-          <span style={{ fontSize: 28, lineHeight: 1 }}>🪙</span>
+          <span style={{ fontSize: 28, lineHeight: 1 }}>⚡</span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-black" style={{ color: '#FCD34D', fontFamily: 'var(--font-display)' }}>
-              +{awardedCoins} monedas al Ranked
+              +{awardedCoins} puntos al Ranked
             </p>
             <p className="text-[10px]" style={{ color: 'rgba(252,211,77,0.6)', fontFamily: 'var(--font-sport)' }}>
-              Las usás para apostar en la Quiniela Ranked
+              Los usás para apostar en la Quiniela Ranked
             </p>
           </div>
         </div>
