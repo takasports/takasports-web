@@ -318,21 +318,60 @@ export function MatchCard({
         {pick && (
           (() => {
             // Modo lectura — PicksSummary u otros consumidores read-only.
+            // AE — Si ya hay resultado final, mostrar feedback del exacto:
+            //   · ✓ clavado (verde, +3) cuando ambos goles coinciden
+            //   · marcador real (naranja) cuando tendencia OK pero exact mal
+            //   · neutro (gris) cuando ni tendencia ni exact
+            //   · pre-resultado: pill morada con la predicción
             if (!onExactScoreChange) {
               if (!exactScore) return null
+              const exactHit = !!finalScore &&
+                finalScore.homeGoals === exactScore.home &&
+                finalScore.awayGoals === exactScore.away
+              const trend = correct === true
+              // Selección de variante visual.
+              let bg = 'rgba(167,139,250,0.10)'
+              let border = 'rgba(167,139,250,0.32)'
+              let color = '#C4B5FD'
+              let suffix: React.ReactNode = null
+              if (finalScore) {
+                if (exactHit) {
+                  bg = 'rgba(34,197,94,0.16)'
+                  border = 'rgba(34,197,94,0.4)'
+                  color = '#86EFAC'
+                  suffix = (
+                    <span style={{ marginLeft: 4, color: '#BBF7D0', fontWeight: 900 }}>· +3 pts</span>
+                  )
+                } else if (trend) {
+                  bg = 'rgba(249,115,22,0.12)'
+                  border = 'rgba(249,115,22,0.32)'
+                  color = '#FED7AA'
+                  suffix = (
+                    <span style={{ marginLeft: 4, color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>
+                      · fue {finalScore.homeGoals}-{finalScore.awayGoals}
+                    </span>
+                  )
+                } else {
+                  bg = 'rgba(255,255,255,0.04)'
+                  border = 'rgba(255,255,255,0.1)'
+                  color = 'rgba(255,255,255,0.45)'
+                }
+              }
               return (
                 <div className="mt-2">
                   <span
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md"
                     style={{
-                      background: 'rgba(167,139,250,0.10)',
-                      border: '1px solid rgba(167,139,250,0.32)',
+                      background: bg,
+                      border: `1px solid ${border}`,
                       fontFamily: 'var(--font-sport)',
                       fontSize: 10, fontWeight: 800,
-                      color: '#C4B5FD', letterSpacing: '0.04em',
+                      color,
+                      letterSpacing: '0.04em',
                     }}
                   >
-                    🎯 EXACTO {exactScore.home}-{exactScore.away}
+                    {finalScore && exactHit ? '🎯 ✓' : '🎯'} EXACTO {exactScore.home}-{exactScore.away}
+                    {suffix}
                   </span>
                 </div>
               )

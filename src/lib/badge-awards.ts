@@ -39,6 +39,8 @@ const BADGE_PUSH_COPY: Record<string, { title: string; body: string }> = {
   primera_prediccion_correcta:{ title: '✅ ¡Primer acierto!',     body: 'Acertaste tu primera predicción Ranked. Badge desbloqueado.' },
   pleno_jornada:              { title: '🎯 ¡PLENO!',               body: 'Acertaste TODOS los partidos de la jornada. Badge épico desbloqueado.' },
   oraculo:                    { title: '🔮 Oráculo',               body: '4+ aciertos en una jornada. Tienes un don.' },
+  vidente:                    { title: '🔮 Vidente',               body: 'Clavaste tu primer marcador exacto. Tienes ojo.' },
+  clarividente:               { title: '✨ Clarividente',           body: 'Los 3 marcadores exactos de la jornada — épico.' },
   high_roller:                { title: '💎 High Roller',           body: 'Apuesta grande, victoria grande. Badge desbloqueado.' },
   racha_5:                    { title: '🔥 EN LLAMAS',             body: '5 jornadas seguidas ganando. Eso ya es nivel élite.' },
   racha_dias_7:               { title: '🔥 Semana en racha',       body: '7 días seguidos en TakaSports. Badge "Semana de Fuego" desbloqueado.' },
@@ -163,6 +165,10 @@ interface SettleBadgeContext {
   prevStreak: number
   isFirstBet: boolean
   isFirstWin: boolean
+  /** AB — Nº de marcadores exactos clavados en esta jornada (0..3).
+   *  ≥1 → badge `vidente` (idempotente; solo se otorga la primera vez).
+   *  =3 → badge `clarividente` (clavó los 3 posibles). */
+  exactHits?: number
 }
 
 export function badgesEarnedOnSettle(ctx: SettleBadgeContext): string[] {
@@ -190,6 +196,12 @@ export function badgesEarnedOnSettle(ctx: SettleBadgeContext): string[] {
     if (newStreak >= 3) earned.push('racha_3')
     if (newStreak >= 5) earned.push('racha_5')
   }
+
+  // AB — Marcador exacto. `vidente` se otorga al primer exact clavado
+  // (awardBadges es idempotente: si ya lo tiene, no pasa nada).
+  // `clarividente` solo cuando clavas los 3 posibles en una jornada.
+  if ((ctx.exactHits ?? 0) >= 1) earned.push('vidente')
+  if ((ctx.exactHits ?? 0) >= 3) earned.push('clarividente')
 
   return earned
 }

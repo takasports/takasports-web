@@ -488,6 +488,7 @@ export async function POST(req: NextRequest) {
           prevStreak,
           isFirstBet,
           isFirstWin,
+          exactHits: breakdown.exactHits ?? 0,
         })
 
         if (earned.length > 0) {

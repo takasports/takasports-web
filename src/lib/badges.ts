@@ -201,6 +201,35 @@ export const BADGES: Record<string, BadgeDef> = {
     },
   },
 
+  // ── Marcador exacto (AB) ────────────────────────────────────────
+  vidente: {
+    id: 'vidente',
+    name: 'Vidente',
+    emoji: '🔮',
+    color: '#A78BFA',
+    bg: 'rgba(167,139,250,0.14)',
+    description: 'Acertaste tu primer marcador exacto en una jornada.',
+    rarity: 'rare',
+    category: 'jornada',
+    unlocks: {
+      title: 'Vidente',
+    },
+  },
+  clarividente: {
+    id: 'clarividente',
+    name: 'Clarividente',
+    emoji: '✨',
+    color: '#C4B5FD',
+    bg: 'rgba(196,181,253,0.16)',
+    description: 'Clavaste los 3 marcadores exactos de una misma jornada.',
+    rarity: 'epic',
+    category: 'jornada',
+    unlocks: {
+      title: 'Clarividente',
+      frameColor: '#A78BFA',
+    },
+  },
+
   // ── Season (logros acumulativos de temporada) ───────────────────
   racha_3: {
     id: 'racha_3',
