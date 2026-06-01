@@ -509,10 +509,12 @@ export default async function NoticiaPage({
   const faqJsonLd = article.faq && article.faq.length > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
+    inLanguage: 'es-ES',
+    isPartOf: { '@id': canonical },
     mainEntity: article.faq.map((f) => ({
       '@type': 'Question',
       name: f.q,
-      acceptedAnswer: { '@type': 'Answer', text: f.a },
+      acceptedAnswer: { '@type': 'Answer', text: f.a, inLanguage: 'es-ES' },
     })),
   } : null
 

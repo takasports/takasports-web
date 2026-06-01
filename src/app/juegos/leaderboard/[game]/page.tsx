@@ -10,6 +10,7 @@ import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import LeaderboardFull from './LeaderboardFull'
 import type { GameId } from '@/lib/games-store'
+import { SITE_URL } from '@/lib/constants'
 
 const META: Record<GameId, { label: string; accent: string; href: string }> = {
   quiniela:    { label: 'Quiniela',       accent: '#A78BFA', href: '/quiniela' },
@@ -27,10 +28,18 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps) {
   const { game } = await params
   const meta = META[game as GameId]
-  if (!meta) return { title: 'Ranking · TakaSports' }
+  if (!meta) {
+    return {
+      title: 'Ranking · TakaSports',
+      robots: { index: false, follow: true },
+      alternates: { canonical: `${SITE_URL}/juegos/leaderboard/${game}` },
+    }
+  }
   return {
     title: `Ranking ${meta.label} · TakaSports`,
     description: `Top 100 jugadores de ${meta.label} en TakaSports.`,
+    // Self-canonical sobrescribe el de juegos/layout.tsx que apunta a /juegos
+    alternates: { canonical: `${SITE_URL}/juegos/leaderboard/${game}` },
   }
 }
 

@@ -1337,9 +1337,11 @@ export default async function MatchPage({
     STATUS_RAIN_DELAY: 'https://schema.org/EventPostponed',
   }
 
+  const sportsEventId = `${SITE_URL}/partido/${ref}#event`
   const sportsEventJsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
+    '@id': sportsEventId,
     name: match.homeTeam && match.awayTeam
       ? `${match.homeTeam} vs ${match.awayTeam}`
       : match.leagueLabel,
@@ -1378,6 +1380,53 @@ export default async function MatchPage({
     isPartOf: { '@id': `${SITE_URL}/#website` },
   }
 
+  // LiveBlogPosting: cuando el partido está en directo Y tiene scoring events.
+  // Permite que Google muestre el carrusel "En directo" en Top Stories y aparezca
+  // como cobertura live en Discover. Solo soccer por ahora (donde tenemos events
+  // estructurados). El @id del SportsEvent se referencia como `about`.
+  const isLive = match.status === 'STATUS_IN_PROGRESS'
+    || match.status === 'STATUS_HALFTIME'
+    || match.status === 'STATUS_SECOND_HALF'
+    || match.status === 'STATUS_END_PERIOD'
+    || match.status === 'STATUS_OVERTIME'
+    || match.status === 'STATUS_SHOOTOUT'
+  const soccerEvents = match.soccer?.scoring ?? []
+  const liveBlogJsonLd = isLive && soccerEvents.length > 0 && match.startDate
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'LiveBlogPosting',
+        headline: `Sigue en vivo: ${match.homeTeam} vs ${match.awayTeam}`,
+        description: `Cobertura en directo de ${match.homeTeam} vs ${match.awayTeam} — ${match.leagueLabel}. ${match.statusLabel}.`,
+        coverageStartTime: match.startDate,
+        coverageEndTime: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
+        url: `${SITE_URL}/partido/${ref}`,
+        inLanguage: 'es-ES',
+        about: { '@id': sportsEventId },
+        author: { '@id': `${SITE_URL}/autor/redaccion#author` },
+        publisher: { '@id': `${SITE_URL}/#organization` },
+        liveBlogUpdate: soccerEvents.slice(-20).map((ev, i) => {
+          const typeLabel = ev.type === 'goal' ? 'Gol'
+            : ev.type === 'penalty' ? 'Penalti'
+            : ev.type === 'own-goal' ? 'Gol en propia'
+            : ev.type === 'yellow' ? 'Tarjeta amarilla'
+            : ev.type === 'red' ? 'Tarjeta roja'
+            : ev.type
+          const team = ev.team === 'home' ? match.homeTeam : match.awayTeam
+          const headline = ev.player
+            ? `${typeLabel} de ${ev.player} (${team})${ev.clock ? ` · ${ev.clock}` : ''}`
+            : `${typeLabel} para ${team}${ev.clock ? ` · ${ev.clock}` : ''}`
+          return {
+            '@type': 'BlogPosting',
+            headline,
+            articleBody: headline,
+            // Sin timestamp real per-evento (ESPN no nos lo da exacto): usamos start + offset
+            datePublished: match.startDate,
+            position: i + 1,
+          }
+        }),
+      }
+    : null
+
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -1391,6 +1440,9 @@ export default async function MatchPage({
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }} className="flex flex-col">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEventJsonLd) }} />
+      {liveBlogJsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(liveBlogJsonLd) }} />
+      )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <Header />
       <LiveStrip />
