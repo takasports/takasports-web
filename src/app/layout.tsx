@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
 import { Barlow_Condensed, Bebas_Neue, Barlow_Semi_Condensed } from 'next/font/google'
-import { headers } from 'next/headers'
 import './globals.css'
 import BottomNav from '@/components/BottomNav'
 import ConsentBanner from '@/components/ConsentBanner'
@@ -105,12 +104,20 @@ export const viewport = {
   maximumScale: 5,
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const headersList = await headers()
-  const nonce = headersList.get('x-nonce') ?? ''
-
+  // F3.1 (jun 2026): root layout ya NO llama await headers() para leer el
+  // nonce CSP. Esa llamada marcaba TODA la app como dinámica → Next emitía
+  // `cache-control: no-store` por defecto, bloqueando cache CDN y degradando
+  // CWV. Trade-off consciente: los scripts inline del root (JSON-LD, SW
+  // register, GA via ConsentBanner) ya no llevan nonce. En rutas públicas
+  // funcionan porque next.config.ts global CSP incluye 'unsafe-inline'. En
+  // las 4 rutas auth (perfil/admin/quiniela/archivo) la CSP strict del
+  // middleware bloqueará GA/Clarity en navegación entrante directa — esas
+  // rutas son noindex y de uso interno, impacto SEO nulo. Si la analítica
+  // en esas rutas se vuelve crítica, se puede injectar nonce localmente vía
+  // (auth)/layout.tsx en route group separado más adelante.
   return (
     <html
       lang="es"
@@ -127,7 +134,6 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <script
           type="application/ld+json"
-          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@graph': [
@@ -183,10 +189,9 @@ export default async function RootLayout({
         <AutoTZInit />
         {children}
         <BottomNav />
-        <ConsentBanner gaId={GA_ID} clarityId={CLARITY_ID} nonce={nonce} />
+        <ConsentBanner gaId={GA_ID} clarityId={CLARITY_ID} />
         <ClientOnlyLayoutScripts />
         <script
-          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', () => { const reg = () => navigator.serviceWorker.register('/sw.js').catch(() => {}); 'requestIdleCallback' in window ? requestIdleCallback(reg) : setTimeout(reg, 2000) }) }`,
           }}
