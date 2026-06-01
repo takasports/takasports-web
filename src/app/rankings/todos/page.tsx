@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: 'El #1 de cada disciplina. Una foto del momento del deporte hispanohablante.',
 }
 
-export const revalidate = 1800
+export const revalidate = 120  // refresca cada 2 min para evitar cache stale tras cambios
 
 interface Row {
   id: string
@@ -46,7 +46,8 @@ async function loadKings(): Promise<Row[]> {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { auth: { persistSession: false } },
   )
-  // Para cada deporte traemos el top-1 entre jugadores/jugadoras
+  // Para cada deporte traemos el top-1 entre jugadores/jugadoras EXCLUSIVAMENTE.
+  // Defensa explícita: nunca traemos creadores/periodistas/clubes acá.
   const fetches = SPORTS_ORDER.map(({ sport }) =>
     sb.from('ranking_view')
       .select('id,name,subtitle,sport,category,score,rank,image_url,score_prev')
@@ -57,7 +58,9 @@ async function loadKings(): Promise<Row[]> {
       .then(({ data }) => (data ?? [])[0] as Row | undefined),
   )
   const results = await Promise.all(fetches)
-  return results.filter(Boolean) as Row[]
+  // Doble check defensivo — si algo escapa al filtro SQL, no se renderiza
+  return results
+    .filter((r): r is Row => !!r && (r.category === 'jugadores' || r.category === 'jugadoras'))
 }
 
 export default async function ReyesPage() {
