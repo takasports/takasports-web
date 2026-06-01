@@ -153,11 +153,12 @@ export default function PlacaPreviewPage() {
     <main
       className="min-h-screen"
       style={{
-        // Bg neutral con un tinte mínimo de tier-gold arriba — sin morado plano
+        // Página = obsidiana profunda con un solo spotlight muy sutil desde
+        // arriba. Sin gradientes coloreados que compitan con las cards.
+        // El contraste con el bg de las cards (más claro) hace que floten.
         background: `
-          radial-gradient(ellipse 80% 40% at 50% -10%, rgba(251,191,36,0.05) 0%, transparent 60%),
-          radial-gradient(ellipse 100% 60% at 50% 100%, rgba(34,211,238,0.03) 0%, transparent 70%),
-          linear-gradient(180deg, #0A0A12 0%, #07070C 100%)
+          radial-gradient(ellipse 50% 30% at 50% 0%, rgba(255,255,255,0.022) 0%, transparent 60%),
+          #050508
         `,
         padding: '60px 24px 100px',
       }}

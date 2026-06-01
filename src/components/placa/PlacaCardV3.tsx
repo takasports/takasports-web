@@ -138,8 +138,10 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
   const ref = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number | null>(null)
 
+  // Foil intensity por tier — rookie/crack casi sin foil (no compite con
+  // la luz interior), gold/diamond es donde el holo se nota.
   const foilOpacity: Record<typeof placa.tier, number> = {
-    bronze:  0.10, silver:  0.20, gold:    0.34, diamond: 0.55,
+    bronze:  0.04, silver:  0.10, gold:    0.22, diamond: 0.38,
   }
   const foilStrength = foilOpacity[placa.tier]
 
@@ -172,10 +174,12 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
   const width = 340
   const height = 480
 
-  // Cosméticos. Default neutral obsidian (sin tinte morado) — el color
-  // viene de los cosméticos equipados o del sport accent, no del bg base.
+  // Cosméticos. Default obsidiana con luz interior — claramente elevada
+  // sobre la página, gradient con depth (claro arriba, profundo abajo)
+  // para que sin cosméticos equipados la card no se sienta muerta.
+  // El color de identidad viene de los cosméticos o del sport accent.
   const cardBg = placa.cardBg?.gradient
-    ?? `linear-gradient(160deg, #0C0C12 0%, #16161E 55%, #06060A 100%)`
+    ?? `linear-gradient(155deg, #1E1E28 0%, #14141C 35%, #0A0A12 100%)`
   const frameColor = placa.frame?.color ?? tier.primary
   const titleText = placa.title?.text
   const titleColor = placa.title?.color ?? tier.primary
@@ -243,8 +247,13 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
           transform: `rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))`,
           transformStyle: 'preserve-3d',
           transition: 'transform 0.14s ease-out',
-          // doble glow exterior — uno tier, otro sport
-          filter: `drop-shadow(0 0 24px ${tier.glow}) drop-shadow(0 12px 28px rgba(0,0,0,0.6))`,
+          // Triple shadow: glow tier + sombra negra grande (eleva sobre página)
+          // + sombra cerca (sense of weight)
+          filter: `
+            drop-shadow(0 0 30px ${tier.glow})
+            drop-shadow(0 20px 40px rgba(0,0,0,0.85))
+            drop-shadow(0 4px 8px rgba(0,0,0,0.5))
+          `,
           color: '#E8E8F0',
           fontFamily: 'var(--font-sport)',
         } as React.CSSProperties}
@@ -293,14 +302,36 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
           />
         )}
 
-        {/* L2. Noise textura */}
+        {/* L2a. Luz interior desde arriba — depth sin tintar */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '55%',
+            background: `linear-gradient(180deg,
+              rgba(255,255,255,0.045) 0%,
+              rgba(255,255,255,0.015) 40%,
+              transparent 100%
+            )`,
+            pointerEvents: 'none',
+          }}
+        />
+        {/* L2b. Sheen sutil del tier en la mitad superior */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '40%',
+            background: `radial-gradient(ellipse 70% 100% at 50% 0%, ${tier.primary}12 0%, transparent 70%)`,
+            pointerEvents: 'none',
+            opacity: placa.cardBg ? 0 : 1,
+          }}
+        />
+        {/* L2c. Noise textura (mucho más sutil, sin overlay) */}
         <div
           aria-hidden="true"
           style={{
             position: 'absolute', inset: 0,
             backgroundImage: `url("${NOISE_SVG}")`,
-            opacity: 0.6,
-            mixBlendMode: 'overlay',
+            opacity: 0.22,
             pointerEvents: 'none',
           }}
         />
@@ -528,7 +559,7 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
                   position: 'absolute', inset: 0,
                   background: HOLO_GRADIENT,
                   opacity: foilStrength * 0.6,
-                  mixBlendMode: 'color-dodge',
+                  mixBlendMode: 'overlay',
                   pointerEvents: 'none',
                 }}
               />
@@ -625,7 +656,7 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
             position: 'absolute', inset: 0,
             background: HOLO_GRADIENT,
             opacity: foilStrength,
-            mixBlendMode: 'color-dodge',
+            mixBlendMode: 'overlay',
             pointerEvents: 'none',
             filter: 'blur(1px) saturate(1.4)',
             zIndex: 3,
