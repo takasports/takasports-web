@@ -325,6 +325,9 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
                 finalScore={visible && result && !cancelled ? { homeGoals: result.homeGoals, awayGoals: result.awayGoals } : undefined}
                 correct={visible && result && !cancelled ? correct : undefined}
                 friendPicks={friendPicksData.filter(m => m.picks[i] !== undefined).map(m => ({ name: m.nickname, pick: m.picks[i] })).slice(0, 3)}
+                // E3 — En el resumen post-sello mostramos el marcador exacto
+                // si el user lo guardó. Sin callback de cambio: lectura pura.
+                exactScore={p.exactScore}
               />
 
               {/* Overlay ANULADO: cuando el partido se postergó/canceló.

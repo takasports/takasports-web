@@ -45,10 +45,16 @@ export const ONBOARDING_STEPS: { emoji: string; title: string; body: string; hin
     hint: 'Default 10 pts por pick · podés bajarlo o subirlo en el panel «Tu apuesta».',
   },
   {
-    emoji: '⚽',
-    title: 'Goleador del partido destacado',
-    body: 'Cada jornada hay 1 partido destacado (el de mayor calidad). Podés elegir gratis quién marcará gol ahí: si tu jugador anota recibís bonus extra — 100 pts si marca 1, 200 pts si marca 2, 350 pts si hace hat-trick.',
-    hint: 'No cuesta nada participar · el partido destacado se autoselecciona cada jornada.',
+    emoji: '⭐',
+    title: 'Partido destacado · x2',
+    body: 'Cada jornada hay 1 partido destacado (el más reñido). Si aciertas su 1/X/2, tus puntos por ese pick se duplican. Encima, podés elegir gratis quién marcará gol ahí: si tu jugador anota, recibís bonus extra.',
+    hint: 'No cuesta nada · el destacado se autoselecciona cada jornada en función del equilibrio del partido.',
+  },
+  {
+    emoji: '🎯',
+    title: 'Marcador exacto · +3 pts',
+    body: 'Opcional: hasta 3 partidos por jornada podés añadir tu marcador exacto. Si clavás los goles Y la tendencia, te llevás +3 pts extra por pick. Si el partido es además el destacado, ese bonus también se duplica.',
+    hint: 'Toca «+ Marcador exacto» bajo los botones 1/X/2 · solo cuenta si la tendencia también es correcta.',
   },
   {
     emoji: '🏆',

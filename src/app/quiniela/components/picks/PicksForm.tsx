@@ -38,6 +38,9 @@ export function PicksForm({
 }) {
   const [picks, setPicks]             = useState<Record<number, Pick>>({})
   const [stakes, setStakes]           = useState<Record<number, number>>({})
+  // E3 — Marcador exacto opcional por pick. Mapa index → {home, away}.
+  // Solo entradas presentes cuentan al MAX_EXACT_PER_JORNADA.
+  const [exactScores, setExactScores] = useState<Record<number, { home: number; away: number }>>({})
   // Stake "bulk" para el control rápido "Aplicar a todos". Default al
   // mismo valor que cada pick individual. Cambia cuando el user usa
   // los botones del bulk picker arriba del listado de matches.
@@ -184,6 +187,8 @@ export function PicksForm({
         home: m.home, away: m.away, pick: picks[i],
         oddsAtPick: oddsForPick(m, picks[i]),
         stake: Math.max(0, Math.floor(stakes[i] ?? 0)),
+        // E3 — Incluir exactScore solo si el user lo definió.
+        ...(exactScores[i] ? { exactScore: exactScores[i] } : {}),
       })),
     }
 
@@ -337,6 +342,28 @@ export function PicksForm({
 
       <ProgressBar done={done} total={total} />
 
+      {/* E3 — Contador de marcadores exactos. Solo visible si el user ya
+          usó al menos uno o cuando todos los slots están ocupados. */}
+      {Object.keys(exactScores).length > 0 && (
+        <div className="flex items-center justify-between px-1 -mt-2">
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+            color: '#A78BFA', fontFamily: 'var(--font-sport)',
+          }}>
+            🎯 MARCADORES EXACTOS{' '}
+            <span style={{ color: '#fff', fontWeight: 900 }}>
+              {Object.keys(exactScores).length}/{SCORING.MAX_EXACT_PER_JORNADA}
+            </span>
+          </span>
+          <span style={{
+            fontSize: 9, color: 'rgba(255,255,255,0.4)',
+            fontFamily: 'var(--font-sport)', letterSpacing: '0.04em',
+          }}>
+            +3 pts por cada acierto
+          </span>
+        </div>
+      )}
+
       {/* Banner bloqueo por falta de cuotas (jornada en modo Ranked
           exige cuotas reales — si the-odds-api se cayó, no se sella) */}
       {!oddsAvailable && (
@@ -449,6 +476,19 @@ export function PicksForm({
             stakeMin={STAKE_MIN}
             stakeMax={STAKE_MAX}
             stakeDefault={STAKE_DEFAULT}
+            exactScore={exactScores[i]}
+            exactSlotAvailable={
+              !!exactScores[i] ||
+              Object.keys(exactScores).length < SCORING.MAX_EXACT_PER_JORNADA
+            }
+            onExactScoreChange={(v) => {
+              setExactScores((prev) => {
+                const next = { ...prev }
+                if (v == null) delete next[i]
+                else next[i] = v
+                return next
+              })
+            }}
             onFix={() => {
               setFixedPicks((prev) => {
                 const next = new Set(prev)

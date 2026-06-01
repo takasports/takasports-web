@@ -43,6 +43,13 @@ export interface SavedPick {
   // ignora — el scoring de standings no lo usa.
   // Min 1, max 200, default 10 — validado server-side.
   stake?: number
+  /** Marcador exacto predicho (opcional). Si el user lo añade Y la
+   *  tendencia es correcta Y los goles coinciden exactamente, gana
+   *  SCORING.EXACT_BONUS adicional (puntos y coins). Máximo 3 picks
+   *  con exactScore por jornada — validado server-side. Si está
+   *  presente pero no coincide o la tendencia falla, no aplica nada
+   *  y no hay penalty. Goles enteros 0-20 cada uno. */
+  exactScore?: { home: number; away: number }
 }
 
 // ── Normalización de nombres ─────────────────────────────────────
@@ -132,6 +139,14 @@ export const SCORING = {
   // Puntos (ligas privadas)
   TENDENCY: 1,
   PLENO_BONUS: 5,
+  /** Bonus por acertar el marcador EXACTO del partido. Se suma a
+   *  points y coins por separado. Solo aplica si la tendencia
+   *  también es correcta. Si el partido es featured, este bonus
+   *  también se duplica (mismo trato que TENDENCY). NO suma al
+   *  pleno (el pleno sigue siendo de tendencia). */
+  EXACT_BONUS: 3,
+  /** Máximo nº de picks con exactScore por jornada. Server-side. */
+  MAX_EXACT_PER_JORNADA: 3,
   // Coins (Ranked)
   COINS_PARTICIPATE: 5,
   /** Bonus mínimo de pleno: garantiza un piso para apostadores muy
@@ -150,14 +165,17 @@ export interface PickScore {
   /** true = el partido fue anulado. El stake se devuelve íntegro
    *  en `refund`, y el pick NO cuenta como hit ni como fallo. */
   cancelled: boolean
-  points: number       // puntos (ligas privadas) — 0 o TENDENCY (x2 si featured+hit)
-  coins: number        // monedas Ranked ganadas (stake × cuota) si acierta, 0 si no (x2 si featured+hit)
+  points: number       // puntos (ligas privadas) — 0 o TENDENCY (+EXACT_BONUS si exact, x2 si featured)
+  coins: number        // monedas Ranked ganadas (stake × cuota) si acierta, 0 si no (+EXACT_BONUS si exact, x2 si featured)
   refund: number       // stake devuelto si partido cancelado, 0 normalmente
   stake: number        // stake declarado del pick (0 si no se apostó / liga privada)
   oddsApplied: number  // cuota efectiva usada en el cálculo
   /** true cuando el partido era featured Y el user acertó → se aplicó x2.
    *  Sirve para que la UI muestre el badge "⭐ x2" sobre ese pick. */
   featuredBonus?: boolean
+  /** true cuando el user predijo marcador exacto Y coincide con el
+   *  resultado real Y la tendencia es correcta → se aplicó +EXACT_BONUS. */
+  exactBonus?: boolean
 }
 
 export interface ScoreBreakdown {
@@ -172,6 +190,9 @@ export interface ScoreBreakdown {
   /** true cuando el user acertó el partido featured y por tanto recibió
    *  el bonus x2. Solo uno por jornada como máximo. */
   featuredHit?: boolean
+  /** Nº de picks con marcador exacto acertado (tendencia correcta Y
+   *  goles exactos). 0..MAX_EXACT_PER_JORNADA. */
+  exactHits?: number
 }
 
 export function scorePick(
@@ -212,16 +233,37 @@ export function scorePick(
   // (el stake ya fue descontado al sellar, no se devuelve).
   let coins = hit && stake > 0 ? Math.round(stake * oddsApplied) : 0
 
+  // E1 — Bonus por marcador exacto. Solo aplica si:
+  //   1. tendencia es correcta (hit)
+  //   2. user predijo un marcador exacto (pick.exactScore)
+  //   3. los goles del resultado coinciden bit a bit con la predicción
+  // Si cualquiera de las 3 falla → no bonus, no penalty.
+  // Se suma a points y coins ANTES del multiplicador featured para que
+  // featured x2 doble también el bonus (consistente con T).
+  const exactBonus = !!(
+    hit &&
+    pick.exactScore &&
+    Number.isFinite(pick.exactScore.home) &&
+    Number.isFinite(pick.exactScore.away) &&
+    pick.exactScore.home === result.homeGoals &&
+    pick.exactScore.away === result.awayGoals
+  )
+  if (exactBonus) {
+    points += SCORING.EXACT_BONUS
+    coins  += SCORING.EXACT_BONUS
+  }
+
   // T — Bonus x2 sobre puntos Y coins si el partido era featured y se
   // acertó la tendencia. NO afecta stake ni refund: si fallas el featured
-  // no hay penalty extra. Solo el upside está duplicado.
+  // no hay penalty extra. Solo el upside está duplicado. Si encima clavaste
+  // el exact, ese bonus también se duplica (orden correcto arriba).
   const featuredBonus = hit && result.featured === true
   if (featuredBonus) {
     points *= 2
     coins *= 2
   }
 
-  return { hit, cancelled: false, points, coins, refund: 0, stake, oddsApplied, featuredBonus }
+  return { hit, cancelled: false, points, coins, refund: 0, stake, oddsApplied, featuredBonus, exactBonus }
 }
 
 export function scorePicks(
@@ -251,7 +293,8 @@ export function scorePicks(
     totalCoins  += Math.max(SCORING.COINS_PLENO_FLOOR, totalStake)
   }
   const featuredHit = perPick.some(s => s.featuredBonus === true)
-  return { perPick, hits, pleno, totalPoints, totalCoins, totalStake, totalRefund, cancelledCount, featuredHit }
+  const exactHits = perPick.filter(s => s.exactBonus === true).length
+  return { perPick, hits, pleno, totalPoints, totalCoins, totalStake, totalRefund, cancelledCount, featuredHit, exactHits }
 }
 
 // ── Validación de cierre por kickoff ─────────────────────────────

@@ -26,7 +26,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
-import { scorePicks, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
+import { scorePicks, SCORING, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
 import { enrichResultsWithFeatured } from '@/lib/quiniela-featured'
 import { awardBadges, badgesEarnedOnSettle } from '@/lib/badge-awards'
 import { fetchActiveSpecialBadgesForJornada, grantSpecialBadge, userMeetsCriteria } from '@/lib/special-badges'
@@ -96,6 +96,7 @@ function validateBody(body: ScoreBody): { status: number; error: string } | null
   }
 
   const seen = new Set<string>()
+  let exactCount = 0
   for (const p of body.picks) {
     if (!p || typeof p !== 'object') return { status: 400, error: 'invalid pick shape' }
     if (typeof p.home !== 'string' || typeof p.away !== 'string' ||
@@ -114,6 +115,26 @@ function validateBody(body: ScoreBody): { status: number; error: string } | null
       !Number.isFinite(p.stake) || p.stake < 0 || p.stake > MAX_STAKE
     )) {
       return { status: 400, error: 'invalid stake' }
+    }
+    // E2 — Marcador exacto: validar shape, rango entero [0, 20] y
+    // contar para enforzar MAX_EXACT_PER_JORNADA.
+    if (p.exactScore != null) {
+      const ex = p.exactScore as { home?: unknown; away?: unknown }
+      if (typeof ex !== 'object' || ex === null) {
+        return { status: 400, error: 'invalid exactScore shape' }
+      }
+      if (
+        typeof ex.home !== 'number' || !Number.isInteger(ex.home) ||
+        typeof ex.away !== 'number' || !Number.isInteger(ex.away) ||
+        ex.home < 0 || ex.home > 20 ||
+        ex.away < 0 || ex.away > 20
+      ) {
+        return { status: 400, error: 'invalid exactScore values' }
+      }
+      exactCount++
+      if (exactCount > SCORING.MAX_EXACT_PER_JORNADA) {
+        return { status: 400, error: `too many exact picks (max ${SCORING.MAX_EXACT_PER_JORNADA})` }
+      }
     }
     const key = matchKey(p.home, p.away)
     if (seen.has(key)) return { status: 400, error: 'duplicate match in batch' }

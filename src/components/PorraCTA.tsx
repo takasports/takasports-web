@@ -26,6 +26,8 @@ export interface PorraSettlement {
   settledAt: string | null
   /** true si el user acertó el partido featured y recibió el bonus x2 (T). */
   featuredHit?: boolean
+  /** Nº de marcadores exactos acertados en la jornada (E4). 0-3. */
+  exactHits?: number
 }
 
 export interface PorraStatus {

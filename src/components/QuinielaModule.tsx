@@ -34,7 +34,17 @@ export type Pick = '1' | 'X' | '2' | '1X' | 'X2'
 
 export type QuinielaSaved = {
   jornada: string
-  picks: { home: string; away: string; pick: Pick; oddsAtPick?: number; stake?: number }[]
+  picks: {
+    home: string
+    away: string
+    pick: Pick
+    oddsAtPick?: number
+    stake?: number
+    /** Marcador exacto opcional (E3). +3 pts si coincide y la tendencia
+     *  es correcta. Máximo 3 picks con exactScore por jornada — validado
+     *  server-side. */
+    exactScore?: { home: number; away: number }
+  }[]
 }
 
 // Sin fallback estático: si /api/quiniela aún no responde mostramos "Cargando…",

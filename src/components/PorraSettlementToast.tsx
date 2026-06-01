@@ -301,6 +301,20 @@ export default function PorraSettlementToast() {
                   }}>⭐ x2 DESTACADO</span>
                 </>
               )}
+              {typeof settled.exactHits === 'number' && settled.exactHits > 0 && (
+                <>
+                  {' · '}
+                  <span style={{
+                    display: 'inline-block',
+                    fontSize: 9, fontWeight: 900, letterSpacing: '0.08em',
+                    padding: '1px 5px', borderRadius: 3,
+                    background: 'rgba(167,139,250,0.22)', color: '#C4B5FD',
+                    border: '1px solid rgba(167,139,250,0.36)',
+                    fontFamily: 'var(--font-sport)',
+                    verticalAlign: 'middle',
+                  }}>🎯 {settled.exactHits} EXACTO{settled.exactHits === 1 ? '' : 'S'}</span>
+                </>
+              )}
             </p>
             {/* R — Ranking en mejor liga (prioridad sobre P si está top-3). */}
             {leagueRank && (

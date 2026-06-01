@@ -23,6 +23,9 @@ export function MatchCard({
   stake, onStakeChange, fixed, onFix, onEdit,
   stakeMin, stakeMax, stakeDefault,
   showStakeBar,
+  // E3 — Marcador exacto opcional por card. Se habilita cuando el padre
+  // dice que aún hay slot disponible (X/3 por jornada).
+  exactScore, onExactScoreChange, exactSlotAvailable,
 }: {
   match: { home: string; away: string; homeLogo?: string; awayLogo?: string; homeShort?: string; awayShort?: string }
   index: number; pick?: Pick; onPick: (p: Pick) => void
@@ -54,6 +57,14 @@ export function MatchCard({
   stakeDefault?: number
   /** Mostrar la barra de apuesta integrada. false en PicksSummary (lectura). */
   showStakeBar?: boolean
+  /** Marcador exacto seleccionado por el user (E3). */
+  exactScore?: { home: number; away: number }
+  /** Callback al setear o limpiar el marcador exacto. null = limpiar. */
+  onExactScoreChange?: (v: { home: number; away: number } | null) => void
+  /** true cuando aún hay slots disponibles para añadir un marcador
+   *  exacto en esta jornada (X/MAX_EXACT_PER_JORNADA). Si false y este
+   *  card aún no tiene exact, el link sale deshabilitado. */
+  exactSlotAvailable?: boolean
 }) {
   const num = String(index + 1).padStart(2, '0')
   const { started, soon, label: countdownLabel } = useMatchCountdown(isoDate)
@@ -289,6 +300,137 @@ export function MatchCard({
             )
           })}
         </div>
+
+        {/* ── MARCADOR EXACTO (E3) ──────────────────────────────────
+            Tres modos:
+              · Edición (con onExactScoreChange + sin lock): toggle/inputs
+              · Lectura (sin onExactScoreChange pero con exactScore): pill compacta
+              · Oculto: sin pick aún, o lock, o sin nada que mostrar */}
+        {pick && (
+          (() => {
+            // Modo lectura — PicksSummary u otros consumidores read-only.
+            if (!onExactScoreChange) {
+              if (!exactScore) return null
+              return (
+                <div className="mt-2">
+                  <span
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md"
+                    style={{
+                      background: 'rgba(167,139,250,0.10)',
+                      border: '1px solid rgba(167,139,250,0.32)',
+                      fontFamily: 'var(--font-sport)',
+                      fontSize: 10, fontWeight: 800,
+                      color: '#C4B5FD', letterSpacing: '0.04em',
+                    }}
+                  >
+                    🎯 EXACTO {exactScore.home}-{exactScore.away}
+                  </span>
+                </div>
+              )
+            }
+            // Modo edición — solo si no está locked.
+            if (locked) return null
+            return null // delegado al bloque siguiente
+          })()
+        )}
+        {pick && !locked && onExactScoreChange && (
+          <div className="mt-2">
+            {!exactScore ? (
+              <button
+                type="button"
+                onClick={() => exactSlotAvailable && onExactScoreChange({ home: 0, away: 0 })}
+                disabled={!exactSlotAvailable}
+                className="text-[10px] font-bold inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-opacity"
+                style={{
+                  background: exactSlotAvailable ? 'rgba(167,139,250,0.08)' : 'rgba(255,255,255,0.03)',
+                  border: exactSlotAvailable ? '1px solid rgba(167,139,250,0.22)' : '1px dashed rgba(255,255,255,0.08)',
+                  color: exactSlotAvailable ? '#A78BFA' : '#3A3A52',
+                  cursor: exactSlotAvailable ? 'pointer' : 'not-allowed',
+                  fontFamily: 'var(--font-sport)',
+                  letterSpacing: '0.04em',
+                }}
+                title={exactSlotAvailable
+                  ? '+3 pts si clavas el marcador exacto'
+                  : 'Ya tienes 3 marcadores exactos en esta jornada'}
+              >
+                <span aria-hidden>🎯</span>
+                {exactSlotAvailable ? '+ Marcador exacto · +3 pts' : 'Marcador exacto (3/3 usados)'}
+              </button>
+            ) : (
+              <div
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-md"
+                style={{
+                  background: 'rgba(167,139,250,0.10)',
+                  border: '1px solid rgba(167,139,250,0.32)',
+                }}
+              >
+                <span aria-hidden style={{ fontSize: 12, lineHeight: 1 }}>🎯</span>
+                <span style={{
+                  fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800,
+                  color: '#C4B5FD', letterSpacing: '0.06em',
+                }}>
+                  EXACTO
+                </span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={20}
+                  value={exactScore.home}
+                  aria-label={`Goles ${match.home}`}
+                  onChange={(e) => {
+                    const v = Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0)))
+                    onExactScoreChange({ home: v, away: exactScore.away })
+                  }}
+                  className="text-center font-black tabular-nums"
+                  style={{
+                    width: 32, height: 28, borderRadius: 6,
+                    background: 'rgba(0,0,0,0.3)',
+                    border: '1px solid rgba(167,139,250,0.32)',
+                    color: '#fff', fontSize: 14,
+                    fontFamily: 'var(--font-display)',
+                  }}
+                />
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700 }}>vs</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={20}
+                  value={exactScore.away}
+                  aria-label={`Goles ${match.away}`}
+                  onChange={(e) => {
+                    const v = Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0)))
+                    onExactScoreChange({ home: exactScore.home, away: v })
+                  }}
+                  className="text-center font-black tabular-nums"
+                  style={{
+                    width: 32, height: 28, borderRadius: 6,
+                    background: 'rgba(0,0,0,0.3)',
+                    border: '1px solid rgba(167,139,250,0.32)',
+                    color: '#fff', fontSize: 14,
+                    fontFamily: 'var(--font-display)',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => onExactScoreChange(null)}
+                  aria-label="Quitar marcador exacto"
+                  className="ml-auto"
+                  style={{
+                    width: 22, height: 22, borderRadius: 6,
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'rgba(255,255,255,0.55)',
+                    cursor: 'pointer', fontSize: 11, lineHeight: 1,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── BARRA DE APUESTA INTEGRADA (Ranked) ────────────────────
             Aparece solo si hay pick + props de stake habilitadas.

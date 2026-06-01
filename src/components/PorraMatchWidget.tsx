@@ -330,7 +330,7 @@ export default function PorraMatchWidget({ title, tags }: Props) {
               fontSize: 11, color: 'rgba(255,255,255,0.65)',
               margin: '2px 0 0', lineHeight: 1.3,
             }}>
-              Si clavas el 1/X/2 de este partido, tus puntos por este pick se duplican.
+              Si clavas el 1/X/2 tus puntos se duplican. Añade el marcador exacto y son <strong style={{ color: '#C4B5FD' }}>+3 más</strong> (×2 = +6).
             </p>
           </div>
         </div>

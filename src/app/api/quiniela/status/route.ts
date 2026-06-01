@@ -28,13 +28,15 @@ interface SettledRow {
   picks: {
     picks?: Array<{ pick?: string }>
     /** Estructura real (lib/quiniela.ts):
-     *   breakdown.perPick: Array<{ hit, cancelled, points, coins, featuredBonus, ... }>
+     *   breakdown.perPick: Array<{ hit, cancelled, points, coins, featuredBonus, exactBonus, ... }>
      *   breakdown.hits:    nº total de aciertos (atajo)
-     *   breakdown.featuredHit: true si el user clavó el featured (x2 aplicado) */
+     *   breakdown.featuredHit: true si el user clavó el featured (x2 aplicado)
+     *   breakdown.exactHits: nº de marcadores exactos acertados (E3) */
     breakdown?: {
-      perPick?: Array<{ hit?: boolean; cancelled?: boolean; featuredBonus?: boolean }>
+      perPick?: Array<{ hit?: boolean; cancelled?: boolean; featuredBonus?: boolean; exactBonus?: boolean }>
       hits?: number
       featuredHit?: boolean
+      exactHits?: number
     }
     settled?: boolean
     staked?: boolean
@@ -89,6 +91,7 @@ export async function GET() {
     totalPicks: number
     settledAt: string | null
     featuredHit?: boolean
+    exactHits?: number
   } | null = null
   /** Streak: nº de jornadas consecutivas selladas (staked=true) por el user
    *  ordenadas por stakedAt DESC. Si la última jornada cerrada no fue
@@ -226,6 +229,18 @@ export async function GET() {
               ? settledRow.picks!.settledAt!
               : null,
             featuredHit: settledRow.picks?.breakdown?.featuredHit === true,
+            exactHits: (() => {
+              // E4 — Si el cron escribió `exactHits` (lib actualizada), úsalo;
+              // si no, fallback contando flags en perPick (compat con rows
+              // viejas con breakdown sin el campo agregado).
+              const direct = settledRow.picks?.breakdown?.exactHits
+              if (typeof direct === 'number' && Number.isFinite(direct)) {
+                return Math.max(0, Math.floor(direct))
+              }
+              const arr = settledRow.picks?.breakdown?.perPick
+              if (!Array.isArray(arr)) return 0
+              return arr.filter((p) => p?.exactBonus === true).length
+            })(),
           }
         }
       }
