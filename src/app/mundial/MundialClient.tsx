@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TakaPoint from '@/components/TakaPoint'
+import { trackPorraExactAdded, trackPorraExactRemoved } from '@/lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -346,6 +347,7 @@ function ScoreStepper({
 function ExactScoreBlock({
   event, myPick, exactScore, isOpen, isLocked, isResolved, isClosed,
   winner, submitting, exactSlotAvailable, onSet,
+  showTooltip, onTooltipDismiss,
 }: {
   event: RankedEvent
   myPick: '1'|'X'|'2' | null
@@ -358,6 +360,8 @@ function ExactScoreBlock({
   submitting: boolean
   exactSlotAvailable: boolean
   onSet: (v: { home: number; away: number } | null) => void
+  showTooltip?: boolean
+  onTooltipDismiss?: () => void
 }) {
   const bonusValue = event.featured ? 6 : 3
   // Editor controlado por el user: lo abre al CREAR uno nuevo, lo cierra
@@ -476,17 +480,66 @@ function ExactScoreBlock({
   // ── 2. Con pick + sin exact → CTA llamativo ──
   if (!exactScore) {
     return (
+      <div style={{ position: 'relative', marginTop: 10 }}>
+        {/* AS3 — Tooltip de descubrimiento */}
+        {showTooltip && exactSlotAvailable && (
+          <div
+            role="tooltip"
+            style={{
+              position: 'absolute', bottom: '100%', left: 0, right: 0, marginBottom: 6,
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+              padding: '8px 10px', borderRadius: 10,
+              background: 'linear-gradient(145deg, rgba(167,139,250,0.28) 0%, rgba(124,58,237,0.18) 100%)',
+              border: '1px solid rgba(196,181,253,0.5)',
+              boxShadow: '0 10px 24px rgba(124,58,237,0.32)',
+              zIndex: 5,
+              animation: 'mFadeInUp 0.3s ease-out both',
+            }}
+          >
+            <span style={{ fontSize: 14, lineHeight: 1 }} aria-hidden>💡</span>
+            <p style={{
+              flex: 1, margin: 0,
+              fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 700,
+              color: '#fff', lineHeight: 1.35, letterSpacing: '0.01em',
+            }}>
+              ¿Te atreves con el marcador exacto? <strong style={{ color: '#FDE68A' }}>+{bonusValue} pts</strong> si lo clavas.
+            </p>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onTooltipDismiss?.() }}
+              aria-label="Cerrar consejo"
+              style={{
+                flexShrink: 0, width: 18, height: 18, borderRadius: 4,
+                background: 'transparent', border: 'none',
+                color: 'rgba(255,255,255,0.55)',
+                cursor: 'pointer', fontSize: 12, lineHeight: 1, padding: 0,
+              }}
+            >✕</button>
+            <span
+              aria-hidden
+              style={{
+                position: 'absolute', bottom: -5, left: 18,
+                width: 10, height: 10,
+                background: 'rgba(196,181,253,0.32)',
+                borderRight: '1px solid rgba(196,181,253,0.5)',
+                borderBottom: '1px solid rgba(196,181,253,0.5)',
+                transform: 'rotate(45deg)',
+              }}
+            />
+          </div>
+        )}
       <button
         type="button"
         onClick={() => {
           if (!exactSlotAvailable) return
           onSet({ home: 0, away: 0 })
           setEditorOpen(true)
+          onTooltipDismiss?.()
         }}
         disabled={!exactSlotAvailable || submitting}
         className="exact-cta"
         style={{
-          marginTop: 10, width: '100%',
+          width: '100%',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           padding: '10px 12px', borderRadius: 12,
           background: exactSlotAvailable
@@ -522,6 +575,7 @@ function ExactScoreBlock({
           </span>
         )}
       </button>
+      </div>
     )
   }
 
@@ -692,7 +746,8 @@ function ExactScoreBlock({
 // ── MatchCard ─────────────────────────────────────────────────────────────
 
 function MatchCard({
-  event, pred, submitting, onPick, onExactSet, activeExactCount, animDelay = 0,
+  event, pred, submitting, onPick, onExactSet, activeExactCount,
+  showExactTooltip, onExactTooltipDismiss, animDelay = 0,
 }: {
   event: RankedEvent; pred: PredictionRow | undefined
   submitting: boolean
@@ -701,6 +756,10 @@ function MatchCard({
   onExactSet: (id: string, exact: { home: number; away: number } | null) => void
   /** ME3 — Nº de exactos activos del user en eventos no resueltos (0..3). */
   activeExactCount: number
+  /** AS3 — Render tooltip de descubrimiento en este card (solo el primero). */
+  showExactTooltip?: boolean
+  /** AS3 — Callback al dismissear el tooltip (✕ o usar el CTA). */
+  onExactTooltipDismiss?: () => void
   animDelay?: number
 }) {
   const myPick     = pred?.prediction?.pick ?? null
@@ -882,6 +941,8 @@ function MatchCard({
         submitting={submitting}
         exactSlotAvailable={exactSlotAvailable}
         onSet={(v) => onExactSet(event.id, v)}
+        showTooltip={showExactTooltip === true}
+        onTooltipDismiss={onExactTooltipDismiss}
       />
 
       {/* ── Points earned ── */}
@@ -976,6 +1037,19 @@ export default function MundialClient() {
   const [error,      setError]      = useState<string | null>(null)
   const [showLogin,  setShowLogin]  = useState(false)
   const [tick,       setTick]       = useState(0)
+  // AS3 — Tooltip de descubrimiento del marcador exacto. Una sola vez por
+  // user, persistido en localStorage. Aparece en el primer evento donde
+  // el user tiene pick y todavía no añadió exacto.
+  const [exactTooltipDismissed, setExactTooltipDismissed] = useState<boolean>(() => {
+    try {
+      return typeof window !== 'undefined' &&
+        localStorage.getItem('mundial:exactTooltipDismissed') === '1'
+    } catch { return true }
+  })
+  const dismissExactTooltip = useCallback(() => {
+    setExactTooltipDismissed(true)
+    try { localStorage.setItem('mundial:exactTooltipDismissed', '1') } catch { /* */ }
+  }, [])
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const load = useCallback(async () => {
@@ -1064,8 +1138,26 @@ export default function MundialClient() {
     // pero por defensa, si falta, no hacemos nada.
     const currentPick = preds[eventId]?.prediction?.pick
     if (!currentPick) return
+    // AS4 — Analytics: solo eventos de transición (no spam al editar goles).
+    const prev = preds[eventId]?.prediction?.exactScore ?? null
+    if (!prev && exact) {
+      // Conteo "después" para el slot (activeExactCount es el "antes").
+      const ev = events.find(e => e.id === eventId)
+      const openIds = new Set(events.filter(e => e.status !== 'resolved').map(e => e.id))
+      const slotAfter = (openIds.has(eventId) ? 1 : 0) +
+        Object.entries(preds).filter(([eid, p]) =>
+          eid !== eventId && openIds.has(eid) && !!p?.prediction?.exactScore,
+        ).length
+      trackPorraExactAdded({ slot: slotAfter, featured: !!ev?.featured })
+    } else if (prev && !exact) {
+      const openIds = new Set(events.filter(e => e.status !== 'resolved').map(e => e.id))
+      const remainingAfter = Object.entries(preds).filter(([eid, p]) =>
+        eid !== eventId && openIds.has(eid) && !!p?.prediction?.exactScore,
+      ).length
+      trackPorraExactRemoved({ remaining: remainingAfter })
+    }
     void sendPrediction(eventId, currentPick, exact)
-  }, [preds, sendPrediction])
+  }, [preds, sendPrediction, events])
 
   // ME3 — Nº de exactos activos del user (en eventos NO resueltos). Sirve
   // para deshabilitar "+ Marcador exacto" cuando se alcanza el límite.
@@ -1078,6 +1170,22 @@ export default function MundialClient() {
     }
     return count
   }, [events, preds])
+
+  // AS3 — El primer evento (en orden de la grid) donde el user tiene pick
+  // pero NO tiene exact aún recibe el tooltip de descubrimiento. Solo uno.
+  const tooltipEventId = useMemo<string | null>(() => {
+    if (exactTooltipDismissed) return null
+    if (activeExactCount > 0) return null // ya usó al menos uno; ya descubrió
+    const sortedEvents = [...events].sort((a, b) =>
+      (a.event_date ?? '').localeCompare(b.event_date ?? ''),
+    )
+    for (const ev of sortedEvents) {
+      if (ev.status !== 'open') continue
+      const p = preds[ev.id]?.prediction
+      if (p?.pick && !p?.exactScore) return ev.id
+    }
+    return null
+  }, [events, preds, exactTooltipDismissed, activeExactCount])
 
   const grouped = useMemo(() => {
     const map = new Map<string, { label: string; events: RankedEvent[] }>()
@@ -1361,6 +1469,8 @@ export default function MundialClient() {
                     key={ev.id} event={ev} pred={preds[ev.id]}
                     submitting={submitting} onPick={handlePick}
                     onExactSet={handleExactSet} activeExactCount={activeExactCount}
+                    showExactTooltip={ev.id === tooltipEventId}
+                    onExactTooltipDismiss={dismissExactTooltip}
                     animDelay={gi * 55 + ci * 45}
                   />
                 ))}

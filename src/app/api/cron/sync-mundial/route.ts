@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
+import { awardBadges } from '@/lib/badge-awards'
 
 export const dynamic = 'force-dynamic'
 
@@ -210,6 +211,40 @@ async function handle(req: Request) {
             p_away_score: awayScore ?? null,
           })
           scored++
+
+          // AS1 — Otorgar badges vidente/clarividente a quienes clavaron
+          // el marcador exacto en este evento. La RPC escribió
+          // `context.exact_hit = true` en point_transactions para esos
+          // users, lo usamos como single source of truth.
+          // awardBadges es idempotente: si el user ya tiene el badge no
+          // se re-otorga ni se duplica push notification.
+          try {
+            const { data: exactRows } = await admin
+              .from('point_transactions')
+              .select('user_id')
+              .eq('source', 'ranked_prediction')
+              .filter('context->>event_id', 'eq', eventId)
+              .filter('context->>exact_hit', 'eq', 'true')
+            const exactUserIds = [...new Set(
+              (exactRows ?? [])
+                .map(r => (r as { user_id?: string }).user_id)
+                .filter((id): id is string => !!id),
+            )]
+            for (const userId of exactUserIds) {
+              // Vidente: 1er exacto clavado (idempotente, awardBadges lo gestiona).
+              await awardBadges(admin, userId, ['vidente'])
+              // Clarividente: si lleva ≥3 exact_hit acumulados en Mundial.
+              const { count } = await admin
+                .from('point_transactions')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .eq('source', 'ranked_prediction')
+                .filter('context->>exact_hit', 'eq', 'true')
+              if (typeof count === 'number' && count >= 3) {
+                await awardBadges(admin, userId, ['clarividente'])
+              }
+            }
+          } catch { /* badges nunca rompen el flow del cron */ }
         } catch { /* scoring falla silencioso — el upsert ya guardó el resultado */ }
       }
     }
