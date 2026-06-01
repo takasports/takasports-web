@@ -20,6 +20,7 @@ import { PlacaCardV3 } from './PlacaCardV3'
 import { PlacaWardrobe } from './PlacaWardrobe'
 import { buildPlacaData, type ApiEquipment } from './adapter'
 import type { LeaderboardBadge } from '@/lib/leaderboard-badges'
+import { SITE_URL } from '@/lib/constants'
 
 interface MeBadge {
   id: string; name: string; emoji: string
@@ -47,6 +48,7 @@ export function UserPlacaCard({ user, displayName, avatarUrl }: Props) {
   const [equipment, setEquipment] = useState<ApiEquipment | null>(null)
   const [loaded, setLoaded]       = useState(false)
   const [wardrobeOpen, setWardrobeOpen] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
 
   const refresh = useCallback(() => {
     Promise.all([
@@ -134,24 +136,60 @@ export function UserPlacaCard({ user, displayName, avatarUrl }: Props) {
           <PlacaCardV3 placa={placa} interactive />
         </button>
 
-        {/* CTA debajo */}
-        <button
-          type="button"
-          onClick={() => setWardrobeOpen(true)}
-          className="text-[10px] font-black uppercase tracking-[0.22em] transition-opacity hover:opacity-100"
-          style={{
-            background: 'rgba(167,139,250,0.10)',
-            border: '1px solid rgba(167,139,250,0.30)',
-            color: '#C4B5FD',
-            padding: '8px 18px',
-            borderRadius: 4,
-            cursor: 'pointer',
-            fontFamily: 'var(--font-headline)',
-            opacity: 0.92,
-          }}
-        >
-          Customizar placa →
-        </button>
+        {/* CTAs debajo: customizar + compartir */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setWardrobeOpen(true)}
+            className="text-[10px] font-black uppercase tracking-[0.22em] transition-opacity hover:opacity-100"
+            style={{
+              background: 'rgba(167,139,250,0.10)',
+              border: '1px solid rgba(167,139,250,0.30)',
+              color: '#C4B5FD',
+              padding: '8px 18px',
+              borderRadius: 4,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-headline)',
+              opacity: 0.92,
+            }}
+          >
+            Customizar →
+          </button>
+
+          <button
+            type="button"
+            onClick={async () => {
+              const url = `${SITE_URL}/perfil/${user.id}`
+              const shareData = {
+                title: `Mi placa · TakaSports`,
+                text:  `Mira mi placa en TakaSports`,
+                url,
+              }
+              try {
+                if (typeof navigator !== 'undefined' && navigator.share) {
+                  await navigator.share(shareData)
+                } else {
+                  await navigator.clipboard.writeText(url)
+                  setShareCopied(true)
+                  setTimeout(() => setShareCopied(false), 2500)
+                }
+              } catch { /* user canceled */ }
+            }}
+            className="text-[10px] font-black uppercase tracking-[0.22em] transition-opacity hover:opacity-100"
+            style={{
+              background: shareCopied ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
+              border:     shareCopied ? '1px solid rgba(34,197,94,0.35)' : '1px solid rgba(255,255,255,0.10)',
+              color:      shareCopied ? '#86efac' : '#9090B0',
+              padding: '8px 18px',
+              borderRadius: 4,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-headline)',
+              opacity: 0.92,
+            }}
+          >
+            {shareCopied ? '✓ Copiado' : 'Compartir →'}
+          </button>
+        </div>
       </div>
 
       {/* Modal vestidor */}

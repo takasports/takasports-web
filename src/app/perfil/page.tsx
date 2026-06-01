@@ -25,6 +25,7 @@ import { getBadge } from '@/lib/badges'
 import type { BadgeDef } from '@/lib/badges'
 import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 import { UserPlacaCard } from '@/components/placa/UserPlacaCard'
+import { SportPickPanel } from '@/components/placa/SportPickPanel'
 import TakaPoint from '@/components/TakaPoint'
 import { usePoints, useStreak } from '@/hooks/useGameState'
 
@@ -363,6 +364,15 @@ export default function PerfilPage() {
               displayName={name}
               avatarUrl={avatarUrl}
             />
+          </div>
+        )}
+
+        {/* Sport picker — desbloquea avatar_frame del deporte favorito.
+            Aparece junto a la placa para dar identidad visual inmediata
+            antes de tener badges. */}
+        {user && (
+          <div className="max-w-[420px] mx-auto pt-2 pb-6">
+            <SportPickPanel />
           </div>
         )}
 

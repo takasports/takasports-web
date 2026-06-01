@@ -239,6 +239,8 @@ const ICONS: Record<string, IconComponent> = {
   flame:                        IconFlame,
   star:                         IconStar,
   globe:                        IconGlobe,
+  eye:                          IconEye,
+  target:                       IconTarget,
 }
 
 // Fallback icon — círculo con interrogación implícita
