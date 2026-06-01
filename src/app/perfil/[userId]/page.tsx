@@ -13,6 +13,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
+import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 
 const GOLD   = '#FBBF24'
 const GOLD2  = '#F59E0B'
@@ -164,14 +165,17 @@ export default function PublicProfilePage() {
                         key={b.id}
                         title={`${b.name} · ${RARITY_LABEL[b.rarity] ?? b.rarity}`}
                         style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
                           padding: '3px 8px', borderRadius: 8,
                           background: b.bg, border: `1px solid ${b.color}35`,
                           fontSize: 11, fontWeight: 700, color: b.color,
                           fontFamily: 'var(--font-sport)',
                         }}
                       >
-                        {b.emoji} {b.name}
+                        {hasBadgeIcon(b.id)
+                          ? <BadgeIcon id={b.id} size={12} strokeWidth={1.7} />
+                          : b.emoji}
+                        {b.name}
                       </span>
                     ))}
                   </div>

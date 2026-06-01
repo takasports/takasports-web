@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 
 // ─────────────────────────────────────────────────────────────────
 // BadgesModal — catálogo completo de hitos del user.
@@ -185,7 +186,17 @@ export function BadgesModal({
                     fontFamily: 'var(--font-sport)',
                   }}
                 >
-                  {SLOT_LABEL[slot]}{equippedBadge ? `: ${equippedBadge.emoji}${equippedBadge.name}` : ': —'}
+                  {SLOT_LABEL[slot]}
+                  {equippedBadge
+                    ? <>
+                        : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, marginLeft: 2 }}>
+                          {hasBadgeIcon(equippedBadge.id)
+                            ? <BadgeIcon id={equippedBadge.id} size={9} strokeWidth={1.6} />
+                            : equippedBadge.emoji}
+                          {equippedBadge.name}
+                        </span>
+                      </>
+                    : ': —'}
                 </span>
               )
             })}
@@ -253,9 +264,12 @@ export function BadgesModal({
                         border: unlocked ? `1px solid ${b.color}` : '1px solid rgba(255,255,255,0.08)',
                         fontSize: 20,
                         filter: unlocked ? 'none' : 'grayscale(1)',
+                        color: unlocked ? b.color : '#5A5A78',
                       }}
                     >
-                      {b.emoji}
+                      {hasBadgeIcon(b.id)
+                        ? <BadgeIcon id={b.id} size={20} strokeWidth={1.7} />
+                        : b.emoji}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

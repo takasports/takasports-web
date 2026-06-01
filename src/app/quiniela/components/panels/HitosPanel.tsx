@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { BadgesModal } from '../BadgesModal'
+import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 
 // ─────────────────────────────────────────────────────────────────
 // Hitos Panel — sidebar de /quiniela.
@@ -205,9 +206,12 @@ export function HitosPanel({ user }: { user: User | null }) {
                     width: 26, height: 26, borderRadius: 7,
                     background: b.bg, border: `1px solid ${b.color}`,
                     fontSize: 14, lineHeight: 1,
+                    color: b.color,
                   }}
                 >
-                  {b.emoji}
+                  {hasBadgeIcon(b.id)
+                    ? <BadgeIcon id={b.id} size={14} strokeWidth={1.7} />
+                    : b.emoji}
                 </span>
               ))}
               {data.unlockedCount > unlockedBadges.length && (

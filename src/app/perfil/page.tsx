@@ -23,6 +23,7 @@ import { SportIcon, FireIcon, FootballIcon, StadiumIcon } from '@/components/ico
 import MyGamesActivity from '@/components/games/MyGamesActivity'
 import { getBadge } from '@/lib/badges'
 import type { BadgeDef } from '@/lib/badges'
+import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 import TakaPoint from '@/components/TakaPoint'
 import { usePoints, useStreak } from '@/hooks/useGameState'
 
@@ -1139,7 +1140,14 @@ export default function PerfilPage() {
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
                       style={{ background: badge.bg, border: `1px solid ${badge.color}28` }}
                     >
-                      <span className="text-lg flex-shrink-0">{badge.emoji}</span>
+                      <span
+                        className="flex-shrink-0 flex items-center justify-center"
+                        style={{ width: 22, height: 22, color: badge.color }}
+                      >
+                        {hasBadgeIcon(badge.id)
+                          ? <BadgeIcon id={badge.id} size={20} strokeWidth={1.7} />
+                          : <span style={{ fontSize: 18 }}>{badge.emoji}</span>}
+                      </span>
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] font-black leading-none mb-0.5" style={{ color: badge.color, fontFamily: 'var(--font-display)' }}>
                           {badge.name}

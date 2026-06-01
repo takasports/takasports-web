@@ -21,6 +21,7 @@
 
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 
 export interface UnlockedBadgeView {
   id:          string
@@ -144,7 +145,7 @@ export function BadgeUnlockModal({ badge, queueRemaining, onNext, onClose }: Pro
           {RARITY_TAGLINE[badge.rarity] ?? 'Badge desbloqueado'}
         </p>
 
-        {/* Emoji big */}
+        {/* Icon big — custom SVG si existe, emoji fallback */}
         <div
           className="mx-auto flex items-center justify-center rounded-full mb-5 badge-unlock-emoji"
           style={{
@@ -153,9 +154,12 @@ export function BadgeUnlockModal({ badge, queueRemaining, onNext, onClose }: Pro
             border: `2px solid ${badge.color}80`,
             boxShadow: `0 0 40px ${badge.color}55, inset 0 0 30px ${badge.color}22`,
             fontSize: 58, lineHeight: 1,
+            color: badge.color,
           }}
         >
-          {badge.emoji}
+          {hasBadgeIcon(badge.id)
+            ? <BadgeIcon id={badge.id} size={56} strokeWidth={2} />
+            : badge.emoji}
         </div>
 
         {/* Name + rarity pill */}

@@ -13,6 +13,7 @@ import Footer from '@/components/Footer'
 import { listAllBadges } from '@/lib/badges'
 import type { BadgeDef, BadgeCategory } from '@/lib/badges'
 import { createClient } from '@/lib/supabase'
+import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 
 const CATEGORY_LABELS: Record<BadgeCategory, string> = {
   milestone: 'Hitos',
@@ -262,10 +263,13 @@ export default function BadgesPage() {
                             background: unlocked ? badge.bg : 'rgba(255,255,255,0.04)',
                             border: `1px solid ${unlocked ? badge.color + '30' : 'rgba(255,255,255,0.08)'}`,
                             fontSize: 20,
-                            filter: unlocked ? 'none' : 'grayscale(1)',
+                            filter: unlocked ? 'none' : 'grayscale(1) opacity(0.7)',
+                            color: unlocked ? badge.color : '#5A5A78',
                           }}
                         >
-                          {badge.emoji}
+                          {hasBadgeIcon(badge.id)
+                            ? <BadgeIcon id={badge.id} size={20} strokeWidth={1.7} />
+                            : badge.emoji}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">

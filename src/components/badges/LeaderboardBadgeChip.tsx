@@ -9,6 +9,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import type { LeaderboardBadge, LeaderboardEquipment } from '@/lib/leaderboard-badges'
+import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 
 type ChipBadge =
   | LeaderboardBadge
@@ -22,6 +23,10 @@ interface Props {
 export function LeaderboardBadgeChip({ badge, size = 16 }: Props) {
   if (!badge) return null
   const name = 'name' in badge && badge.name ? badge.name : ''
+  // Si el badge tiene id registrado en BadgeIcon, usamos SVG custom.
+  // Fallback al emoji si no hay icono para ese id.
+  const badgeId = 'id' in badge ? badge.id : undefined
+  const useIcon = badgeId && hasBadgeIcon(badgeId)
   return (
     <span
       title={name}
@@ -32,9 +37,12 @@ export function LeaderboardBadgeChip({ badge, size = 16 }: Props) {
         background: badge.bg, border: `1px solid ${badge.color}`,
         fontSize: Math.max(8, size - 7), lineHeight: 1,
         flexShrink: 0,
+        color: badge.color,
       }}
     >
-      {badge.emoji}
+      {useIcon && badgeId
+        ? <BadgeIcon id={badgeId} size={Math.max(9, size - 5)} strokeWidth={1.6} />
+        : badge.emoji}
     </span>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 
 // ─────────────────────────────────────────────────────────────────
 // Leaderboard con tabs:
@@ -43,6 +44,8 @@ const TAB_KEY = 'ts_quiniela_lb_tab_v1'
 // Chip compacto que se renderiza junto al nickname en el ranking.
 function BadgeChip({ badge }: { badge: LBBadge | LBEquipment['badge'] }) {
   if (!badge) return null
+  const badgeId = 'id' in badge ? badge.id : undefined
+  const useIcon = badgeId && hasBadgeIcon(badgeId)
   return (
     <span
       title={'name' in badge ? badge.name : ''}
@@ -51,9 +54,12 @@ function BadgeChip({ badge }: { badge: LBBadge | LBEquipment['badge'] }) {
         width: 16, height: 16, borderRadius: 4,
         background: badge.bg, border: `1px solid ${badge.color}`,
         fontSize: 9, lineHeight: 1,
+        color: badge.color,
       }}
     >
-      {badge.emoji}
+      {useIcon && badgeId
+        ? <BadgeIcon id={badgeId} size={11} strokeWidth={1.6} />
+        : badge.emoji}
     </span>
   )
 }

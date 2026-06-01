@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 
 // ─────────────────────────────────────────────────────────────────
 // Ranking del Mundial 2026 — acumulado a través de TODAS las
@@ -34,7 +35,8 @@ interface MundialEntry {
   equipment?: MundialEquipment
 }
 
-function BadgeChip({ badge }: { badge: { emoji: string; color: string; bg: string; name?: string } }) {
+function BadgeChip({ badge }: { badge: { id?: string; emoji: string; color: string; bg: string; name?: string } }) {
+  const useIcon = badge.id && hasBadgeIcon(badge.id)
   return (
     <span
       title={badge.name ?? ''}
@@ -43,9 +45,12 @@ function BadgeChip({ badge }: { badge: { emoji: string; color: string; bg: strin
         width: 16, height: 16, borderRadius: 4,
         background: badge.bg, border: `1px solid ${badge.color}`,
         fontSize: 9, lineHeight: 1,
+        color: badge.color,
       }}
     >
-      {badge.emoji}
+      {useIcon && badge.id
+        ? <BadgeIcon id={badge.id} size={11} strokeWidth={1.6} />
+        : badge.emoji}
     </span>
   )
 }
