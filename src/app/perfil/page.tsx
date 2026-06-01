@@ -499,29 +499,63 @@ export default function PerfilPage() {
                       </span>
                     </div>
                   )}
-                  {streak && streak.current_streak > 0 && (
-                    <div
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
-                      style={{
-                        background: 'rgba(249,115,22,0.08)',
-                        border: '1px solid rgba(249,115,22,0.2)',
-                      }}
-                    >
-                      <span style={{ fontSize: 12 }}>🔥</span>
-                      <span
-                        className="text-[12px] font-black"
-                        style={{ fontFamily: 'var(--font-display)', color: '#F97316', letterSpacing: '-0.01em' }}
+                  {streak && streak.current_streak > 0 && (() => {
+                    // RT4 — Próximo hito de racha. Los hitos viven en
+                    // /api/games/streak.ts: 3d=+5, 7d=+10, 14d=+20, 30d=+50.
+                    const MILESTONES = [
+                      { days: 3,  bonus: 5  },
+                      { days: 7,  bonus: 10 },
+                      { days: 14, bonus: 20 },
+                      { days: 30, bonus: 50 },
+                    ]
+                    const next = MILESTONES.find(m => m.days > streak.current_streak)
+                    return (
+                      <div
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                        style={{
+                          background: 'rgba(249,115,22,0.08)',
+                          border: '1px solid rgba(249,115,22,0.2)',
+                        }}
                       >
-                        {streak.current_streak}
-                      </span>
-                      <span
-                        className="text-[10px]"
-                        style={{ color: 'rgba(249,115,22,0.6)', fontFamily: 'var(--font-sport)' }}
-                      >
-                        {streak.current_streak === 1 ? 'día' : 'días de racha'}
-                      </span>
-                    </div>
-                  )}
+                        <span style={{ fontSize: 12 }}>🔥</span>
+                        <span
+                          className="text-[12px] font-black"
+                          style={{ fontFamily: 'var(--font-display)', color: '#F97316', letterSpacing: '-0.01em' }}
+                        >
+                          {streak.current_streak}
+                        </span>
+                        <span
+                          className="text-[10px]"
+                          style={{ color: 'rgba(249,115,22,0.6)', fontFamily: 'var(--font-sport)' }}
+                        >
+                          {streak.current_streak === 1 ? 'día' : 'días'}
+                        </span>
+                        {next && (
+                          <>
+                            <span style={{
+                              color: 'rgba(255,255,255,0.18)',
+                              fontFamily: 'var(--font-sport)', fontSize: 9, margin: '0 1px',
+                            }}>·</span>
+                            <span
+                              className="text-[9px]"
+                              style={{ color: 'rgba(249,115,22,0.7)', fontFamily: 'var(--font-sport)', fontWeight: 700 }}
+                              title={`Cuando llegues a ${next.days} días seguidos te llevarás +${next.bonus} pts`}
+                            >
+                              +{next.bonus} pts a los {next.days}d
+                            </span>
+                          </>
+                        )}
+                        {!next && (
+                          <span
+                            className="text-[9px]"
+                            style={{ color: 'rgba(249,115,22,0.7)', fontFamily: 'var(--font-sport)', fontWeight: 700 }}
+                          >
+                            ¡máximo!
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
 

@@ -281,6 +281,17 @@ export const BADGES: Record<string, BadgeDef> = {
     category: 'milestone',
     unlocks: { title: 'Semana de Fuego' },
   },
+  racha_dias_14: {
+    id: 'racha_dias_14',
+    name: 'Quincena de Fuego',
+    emoji: '🔥',
+    color: '#dc2626',
+    bg: 'rgba(220,38,38,0.14)',
+    description: 'Dos semanas seguidas entrando cada día. Constancia épica.',
+    rarity: 'epic',
+    category: 'milestone',
+    unlocks: { title: 'La Constancia', frameColor: '#dc2626' },
+  },
   racha_dias_30: {
     id: 'racha_dias_30',
     name: 'Mes en racha',

@@ -75,7 +75,7 @@ export async function POST() {
   if (milestoneAwarded > 0 && streakData) {
     try {
       const { current_streak } = streakData
-      const badgeMap: Record<number, string> = { 3: 'racha_dias_3', 7: 'racha_dias_7', 30: 'racha_dias_30' }
+      const badgeMap: Record<number, string> = { 3: 'racha_dias_3', 7: 'racha_dias_7', 14: 'racha_dias_14', 30: 'racha_dias_30' }
       const badgeId = badgeMap[current_streak]
       if (badgeId) {
         const admin = adminSupabase()

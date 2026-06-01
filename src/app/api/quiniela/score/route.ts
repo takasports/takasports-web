@@ -321,6 +321,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'persist_failed', detail: upsertErr.message }, { status: 500 })
       }
 
+      // RT1 — Racha Taka unificada: el stake de una jornada cuenta como
+      // actividad diaria del user. ping_game_streak es idempotente (un
+      // ping por día por user) y lee auth.uid() internamente. Best-effort
+      // fire-and-forget para no bloquear la respuesta.
+      try { await sb.rpc('ping_game_streak') } catch { /* */ }
+
       return NextResponse.json({
         phase: 'stake',
         staked: true,

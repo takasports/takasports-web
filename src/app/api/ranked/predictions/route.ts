@@ -249,5 +249,13 @@ export async function POST(req: NextRequest) {
     }
   } catch { /* badge fallo — nunca bloquea la respuesta */ }
 
+  // RT1 — Racha Taka unificada: cualquier predicción cuenta como actividad
+  // diaria. ping_game_streak es idempotente (un ping por día por user) y
+  // usa auth.uid() internamente, así que la llamada va por el client del
+  // user (sb) — no adminSupabase. Best-effort, no bloquea la respuesta.
+  try {
+    await sb.rpc('ping_game_streak')
+  } catch { /* */ }
+
   return NextResponse.json({ prediction }, { status: 201 })
 }
