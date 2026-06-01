@@ -14,6 +14,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
+import { PublicPlacaCard } from '@/components/placa/PublicPlacaCard'
 
 const GOLD   = '#FBBF24'
 const GOLD2  = '#F59E0B'
@@ -119,6 +120,9 @@ export default function PublicProfilePage() {
         {/* ── Perfil ───────────────────────────────────────────── */}
         {profile && !loading && (
           <div className="flex flex-col gap-8">
+
+            {/* PLACA PERSONAL pública — render real desde /api/placa/[userId] */}
+            <PublicPlacaCard userId={userId} />
 
             {/* Header del perfil */}
             <div
