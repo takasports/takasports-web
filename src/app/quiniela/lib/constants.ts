@@ -47,7 +47,7 @@ export const ONBOARDING_STEPS: { emoji: string; title: string; body: string; hin
   {
     emoji: '⭐',
     title: 'Partido destacado · x2',
-    body: 'Cada jornada hay 1 partido destacado (el más reñido). Si aciertas su 1/X/2, tus puntos por ese pick se duplican. Encima, podés elegir gratis quién marcará gol ahí: si tu jugador anota, recibís bonus extra.',
+    body: 'Cada jornada hay 1 partido destacado (el más reñido). Si aciertas su 1/X/2, tus puntos por ese pick se duplican. Si encima clavas el marcador exacto, ese bonus también se dobla.',
     hint: 'No cuesta nada · el destacado se autoselecciona cada jornada en función del equilibrio del partido.',
   },
   {

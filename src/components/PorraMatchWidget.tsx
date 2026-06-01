@@ -307,9 +307,9 @@ export default function PorraMatchWidget({ title, tags }: Props) {
         })}
       </div>
 
-      {/* Bonus goleador — solo si el partido es el destacado de la jornada.
-          No es selección inline (el roster vive en /predicciones); aquí es
-          un teaser para subir intención. */}
+      {/* Pill destacado — solo si el partido es el de mayor calidad de la
+          jornada. Anuncia x2 en tendencia y la posibilidad de doblar el
+          bonus de marcador exacto. */}
       {match.featured && (
         <div
           className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg"

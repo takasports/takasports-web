@@ -22,7 +22,9 @@ import { usePushSubscription, useCoins } from './lib/hooks'
 import { usePoints } from '@/hooks/useGameState'
 import { PicksForm } from './components/picks/PicksForm'
 import { PicksSummary } from './components/picks/PicksSummary'
-import FeaturedGoalscorerCard from './components/featured/FeaturedGoalscorerCard'
+// FeaturedGoalscorerCard retirado del UI (Z3): el partido destacado ahora
+// solo paga por tendencia (x2) y marcador exacto. El componente y endpoint
+// /api/quiniela/featured quedan en el repo por seguridad (data legacy).
 import { MyLeagues } from './components/leagues/MyLeagues'
 import { CreateLeagueModal } from './components/leagues/CreateLeagueModal'
 import { BadgesPanel } from './components/panels/BadgesPanel'
@@ -388,9 +390,8 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                 ))}
               </div>
             )}
-            {activeTab === 'official' && hydrated && apiMatches.length > 0 && (
-              <FeaturedGoalscorerCard authed={!!user} />
-            )}
+            {/* Z3 — FeaturedGoalscorerCard retirado: el destacado se premia
+                ahora vía x2 en tendencia + bonus de marcador exacto. */}
             {activeTab === 'official' && hydrated && (
               saved
                 ? <PicksSummary

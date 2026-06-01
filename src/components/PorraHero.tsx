@@ -201,7 +201,7 @@ function MatchRow({ m, pickStatus }: { m: PorraMatch; pickStatus?: PickStatus })
       <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
         {m.featured && (
           <span
-            title="Partido destacado · Bonus goleador"
+            title="Partido destacado · x2 en tendencia"
             style={{
               fontSize: 9, fontWeight: 900, letterSpacing: '0.06em',
               padding: '2px 6px', borderRadius: 3,

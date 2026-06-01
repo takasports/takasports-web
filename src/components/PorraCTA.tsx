@@ -14,7 +14,8 @@ export interface PorraMatch {
   homeLogo?: string
   awayLogo?: string
   odds?: { home: number; draw: number; away: number }
-  /** Partido destacado de la jornada — habilita el bonus goleador. */
+  /** Partido destacado de la jornada — paga x2 en tendencia + dobla
+   *  el bonus de marcador exacto si lo añades. */
   featured?: boolean
 }
 
