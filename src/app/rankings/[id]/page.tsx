@@ -71,7 +71,17 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { id } = await params
   const entry = (await findEntryByIdFromDb(id)) ?? findEntryById(id)
-  if (!entry) return { title: 'Entry no encontrada — Índice Taka' }
+  if (!entry) {
+    // Entry no existe: marcar noindex Y self-canonical para evitar que Google
+    // la trate como duplicada del hub /rankings (hereda layout-canonical si no
+    // sobrescribimos). Bug relacionado: notFound() de Next 16 con ISR no propaga
+    // 404 status, así que la página sigue siendo 200 + content "no encontrada".
+    return {
+      title: 'Entry no encontrada — Índice Taka',
+      robots: { index: false, follow: true },
+      alternates: { canonical: `${SITE_URL}/rankings/${id}` },
+    }
+  }
 
   const score = getDisplayScore(entry).toFixed(1)
   const title = `${entry.name} · Índice Taka ${score} — TakaSports`
