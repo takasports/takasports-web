@@ -9,6 +9,7 @@ import BadgePill from './BadgePill'
 import PlayerAvatar from './PlayerAvatar'
 import ScoreBreakdown from './ScoreBreakdown'
 import ScoreSparkline from './ScoreSparkline'
+import FavoriteToggle from './FavoriteToggle'
 import { SportIcon } from '@/components/icons/GameIcons'
 import SocialHandles from './SocialHandles'
 
@@ -114,6 +115,9 @@ export default function RankRow({
           </div>
         )}
         <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+          <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
+            <FavoriteToggle entryId={entry.id} size={16} />
+          </div>
           <div className="flex flex-col items-end">
             <span className="font-black tabular-nums text-lg leading-none"
               style={{ fontFamily: 'var(--font-display)', color: sc }}>
