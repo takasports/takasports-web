@@ -39,12 +39,13 @@ export function PlacaRowV3({ placa, rank, score, scoreLabel = 'pts', sportAccent
   const accent = sportAccent ?? tier.primary
 
   const foilOpacity: Record<typeof placa.tier, number> = {
-    bronze: 0.06, silver: 0.10, gold: 0.18, diamond: 0.30,
+    bronze: 0.03, silver: 0.06, gold: 0.13, diamond: 0.22,
   }
   const foilStrength = foilOpacity[placa.tier]
 
+  // Default obsidiana con luz desde arriba — elevada sobre la página
   const cardBg = placa.cardBg?.gradient
-    ?? `linear-gradient(110deg, #0C0C12 0%, #14141C 60%, #06060A 100%)`
+    ?? `linear-gradient(135deg, #1C1C26 0%, #14141C 50%, #0A0A12 100%)`
   const frameColor = placa.frame?.color ?? tier.primary
   const titleText = placa.title?.text
   const titleColor = placa.title?.color ?? tier.primary
@@ -96,7 +97,7 @@ export function PlacaRowV3({ placa, rank, score, scoreLabel = 'pts', sportAccent
         height: 88,
         background: cardBg,
         clipPath: CLIP_PATH,
-        filter: `drop-shadow(0 6px 16px rgba(0,0,0,0.4)) drop-shadow(0 0 12px ${tier.glow})`,
+        filter: `drop-shadow(0 8px 20px rgba(0,0,0,0.7)) drop-shadow(0 0 14px ${tier.glow})`,
         position: 'relative',
         color: '#E8E8F0',
         fontFamily: 'var(--font-sport)',
@@ -138,14 +139,26 @@ export function PlacaRowV3({ placa, rank, score, scoreLabel = 'pts', sportAccent
         }}
       />
 
-      {/* Holo foil estático diagonal */}
+      {/* Luz interior desde arriba — depth */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '55%',
+          background: `linear-gradient(180deg, rgba(255,255,255,0.045) 0%, transparent 100%)`,
+          pointerEvents: 'none',
+          zIndex: 2,
+          clipPath: CLIP_PATH,
+        }}
+      />
+
+      {/* Holo foil estático diagonal — overlay blend (refinado) */}
       <div
         aria-hidden="true"
         style={{
           position: 'absolute', inset: 0,
           background: HOLO_GRADIENT_FLAT,
           opacity: foilStrength,
-          mixBlendMode: 'color-dodge',
+          mixBlendMode: 'overlay',
           pointerEvents: 'none',
           zIndex: 3,
           clipPath: CLIP_PATH,
