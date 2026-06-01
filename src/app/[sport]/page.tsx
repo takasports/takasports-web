@@ -28,7 +28,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { sport } = await params
   const label = SLUG_TO_LABEL[sport.toLowerCase()]
-  if (!label) return {}
+  if (!label) {
+    // Slug no reconocido: la page llama notFound() abajo pero Next 16 con ISR
+    // no propaga el 404 status. Sin override de canonical heredaríamos el de
+    // root layout (SITE_URL) → Google lo trataría como duplicado de la home.
+    // Detectado el 31/5/2026 en /f1 y /lucha-libre (slugs alternativos no
+    // mapeados en SLUG_TO_LABEL).
+    return {
+      title: 'Página no encontrada · TakaSports',
+      robots: { index: false, follow: true },
+      alternates: { canonical: `${SITE_URL}/${sport}` },
+    }
+  }
 
   const emoji = getSportEmoji(label)
   const title = `${label}: noticias, resultados y análisis`

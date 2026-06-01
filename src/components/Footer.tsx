@@ -2,34 +2,46 @@
 
 import { LogoFull } from './Logo'
 
+// SEO: usamos siempre el slug canónico (el que [sport]/page.tsx declara como
+// alternates.canonical) para evitar generar señales mixtas. Verificado en prod
+// el 31/5/2026: /formula1 y /wwe son canónicos; /f1 y /lucha-libre devuelven
+// canonical hacia home (bug pendiente fix en [sport]/page.tsx).
 const SPORTS_LINKS = [
   { label: 'Fútbol',     href: '/futbol' },
   { label: 'Baloncesto', href: '/baloncesto' },
   { label: 'F1',         href: '/formula1' },
+  { label: 'MotoGP',     href: '/motogp' },
   { label: 'UFC',        href: '/ufc' },
   { label: 'Tenis',      href: '/tenis' },
   { label: 'Lucha libre', href: '/wwe' },
   { label: 'Rugby',      href: '/rugby' },
 ]
+const LEAGUE_LINKS = [
+  { label: 'LaLiga',          href: '/liga/esp.1' },
+  { label: 'Premier League',  href: '/liga/eng.1' },
+  { label: 'Serie A',         href: '/liga/ita.1' },
+  { label: 'Bundesliga',      href: '/liga/ger.1' },
+  { label: 'Ligue 1',         href: '/liga/fra.1' },
+  { label: '🏆 Mundial 2026', href: '/mundial' },
+]
 const PLATFORM_LINKS = [
   { label: 'Inicio',       href: '/' },
   { label: 'Noticias',     href: '/noticias' },
-  { label: 'Archivo de noticias', href: '/archivo' },
   { label: 'Estadísticas', href: '/estadisticas' },
   { label: 'Rankings',     href: '/rankings' },
   { label: 'Calendario',   href: '/calendario' },
   { label: 'Glosario',     href: '/glosario' },
+  { label: 'Reels',        href: '/reels' },
   { label: 'Juegos',       href: '/juegos' },
-  { label: '🏆 Mundial 2026', href: '/mundial' },
   { label: 'Predicciones', href: '/predicciones' },
-  { label: 'Colección de Badges', href: '/badges' },
-  { label: 'Sobre TakaSports', href: '/sobre' },
-  { label: 'Redes sociales',   href: '/redes' },
+  { label: 'Archivo',      href: '/archivo' },
 ]
 const LEGAL_LINKS = [
+  { label: 'Sobre TakaSports',  href: '/sobre' },
+  { label: 'Equipo editorial',  href: '/autor/redaccion' },
   { label: 'Política editorial', href: '/politica-editorial' },
-  { label: 'Privacidad',         href: '/privacidad' },
-  { label: 'Equipo editorial',   href: '/autor/redaccion' },
+  { label: 'Privacidad',        href: '/privacidad' },
+  { label: 'Términos',          href: '/terminos' },
 ]
 
 const SOCIAL = [
@@ -111,7 +123,7 @@ export default function Footer() {
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pt-14 pb-10">
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 sm:gap-x-8 gap-y-10 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-x-4 sm:gap-x-8 gap-y-10 mb-12">
 
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
@@ -145,6 +157,20 @@ export default function Footer() {
             <FooterColHeader>Deportes</FooterColHeader>
             <ul className="flex flex-col gap-2.5">
               {SPORTS_LINKS.map(({ label, href }) => (
+                <li key={label}>
+                  <a href={href} className="text-xs transition-colors hover:text-white" style={{ color: 'var(--text-muted)' }}>
+                    {label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Ligas — distribuye autoridad a hubs de competición */}
+          <div>
+            <FooterColHeader>Ligas</FooterColHeader>
+            <ul className="flex flex-col gap-2.5">
+              {LEAGUE_LINKS.map(({ label, href }) => (
                 <li key={label}>
                   <a href={href} className="text-xs transition-colors hover:text-white" style={{ color: 'var(--text-muted)' }}>
                     {label}
