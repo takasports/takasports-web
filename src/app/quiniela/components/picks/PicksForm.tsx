@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { trackGameComplete } from '@/lib/analytics'
+import { trackGameComplete, trackPorraExactAdded, trackPorraExactRemoved } from '@/lib/analytics'
 import { QUINIELA_PICKS_KEY } from '@/components/QuinielaModule'
 import type { QuinielaMatch, QuinielaSaved, Pick } from '@/components/QuinielaModule'
 import { TUTORED_KEY, LEAGUES_KEY, STREAK_KEY } from '../../lib/constants'
@@ -41,6 +41,19 @@ export function PicksForm({
   // E3 — Marcador exacto opcional por pick. Mapa index → {home, away}.
   // Solo entradas presentes cuentan al MAX_EXACT_PER_JORNADA.
   const [exactScores, setExactScores] = useState<Record<number, { home: number; away: number }>>({})
+  // Z2 — Tooltip de descubrimiento del marcador exacto. Visible una sola
+  // vez por user, dismisseable con ✕ o usando el botón.
+  const [exactTooltipDismissed, setExactTooltipDismissed] = useState<boolean>(() => {
+    try {
+      return typeof window !== 'undefined' &&
+        localStorage.getItem('porra:exactTooltipDismissed') === '1'
+    } catch { return true }
+  })
+  function dismissExactTooltip() {
+    if (exactTooltipDismissed) return
+    setExactTooltipDismissed(true)
+    try { localStorage.setItem('porra:exactTooltipDismissed', '1') } catch { /* */ }
+  }
   // Stake "bulk" para el control rápido "Aplicar a todos". Default al
   // mismo valor que cada pick individual. Cambia cuando el user usa
   // los botones del bulk picker arriba del listado de matches.
@@ -481,11 +494,36 @@ export function PicksForm({
               !!exactScores[i] ||
               Object.keys(exactScores).length < SCORING.MAX_EXACT_PER_JORNADA
             }
+            showExactTooltip={
+              // Z2 — Solo en el PRIMER card que cumple las condiciones:
+              //  · user ya picked algo en este card (sin pick no tiene sentido)
+              //  · no tiene exact aún
+              //  · todavía hay slot
+              //  · tooltip no dismisseado nunca
+              //  · ningún exact usado en ningún card aún
+              !exactTooltipDismissed &&
+              !!picks[i] &&
+              !exactScores[i] &&
+              Object.keys(exactScores).length === 0 &&
+              matches.findIndex((_, j) => picks[j] && !exactScores[j]) === i
+            }
+            onExactTooltipDismiss={dismissExactTooltip}
             onExactScoreChange={(v) => {
               setExactScores((prev) => {
+                const wasPresent = prev[i] != null
                 const next = { ...prev }
                 if (v == null) delete next[i]
                 else next[i] = v
+                // Analytics: solo eventos de transición (no spam al editar goles).
+                if (!wasPresent && v != null) {
+                  // Añadido por primera vez en este card.
+                  trackPorraExactAdded({
+                    slot: Object.keys(next).length,
+                    featured: !!m.isFeatured,
+                  })
+                } else if (wasPresent && v == null) {
+                  trackPorraExactRemoved({ remaining: Object.keys(next).length })
+                }
                 return next
               })
             }}

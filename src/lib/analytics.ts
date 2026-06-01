@@ -138,3 +138,34 @@ export function trackPorraSettlementShown(params: {
 }) {
   track('porra_settlement_shown', params)
 }
+
+// ── Marcador exacto (E1-E5) ───────────────────────────────────────
+// Mide adopción del feature: cuántos lo descubren, cuántos lo usan,
+// cuántos clavan los exactos al final.
+
+/** El user añadió un marcador exacto en un partido (intent inicial). */
+export function trackPorraExactAdded(params: {
+  /** Posición del slot tras añadir: 1, 2 o 3. */
+  slot: number
+  /** Si el partido es el destacado (combo featured+exact). */
+  featured?: boolean
+}) {
+  track('porra_exact_added', params)
+}
+
+/** El user quitó un marcador exacto (cambio de opinión). */
+export function trackPorraExactRemoved(params: {
+  /** Slots restantes tras quitar: 0, 1 o 2. */
+  remaining: number
+}) {
+  track('porra_exact_removed', params)
+}
+
+/** Liquidación con N exactos acertados (0..3). Disparado por el toast. */
+export function trackPorraExactSettled(params: {
+  jornada: string
+  exactHits: number
+  totalPicks: number
+}) {
+  track('porra_exact_settled', params)
+}

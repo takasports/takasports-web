@@ -26,6 +26,7 @@ export function MatchCard({
   // E3 — Marcador exacto opcional por card. Se habilita cuando el padre
   // dice que aún hay slot disponible (X/3 por jornada).
   exactScore, onExactScoreChange, exactSlotAvailable,
+  showExactTooltip, onExactTooltipDismiss,
 }: {
   match: { home: string; away: string; homeLogo?: string; awayLogo?: string; homeShort?: string; awayShort?: string }
   index: number; pick?: Pick; onPick: (p: Pick) => void
@@ -65,6 +66,14 @@ export function MatchCard({
    *  exacto en esta jornada (X/MAX_EXACT_PER_JORNADA). Si false y este
    *  card aún no tiene exact, el link sale deshabilitado. */
   exactSlotAvailable?: boolean
+  /** Z2 — Mostrar tooltip de descubrimiento la primera vez. PicksForm lo
+   *  pone a true en el primer card con pick y sin exact, y solo si el
+   *  user no lo ha dismisseado nunca (persistido en localStorage). */
+  showExactTooltip?: boolean
+  /** Z2 — Callback cuando el tooltip se descarta (botón ✕, click en
+   *  el botón "+ Marcador exacto", o auto-dismiss). PicksForm persiste
+   *  el flag y no lo vuelve a mostrar. */
+  onExactTooltipDismiss?: () => void
 }) {
   const num = String(index + 1).padStart(2, '0')
   const { started, soon, label: countdownLabel } = useMatchCountdown(isoDate)
@@ -336,26 +345,101 @@ export function MatchCard({
         {pick && !locked && onExactScoreChange && (
           <div className="mt-2">
             {!exactScore ? (
-              <button
-                type="button"
-                onClick={() => exactSlotAvailable && onExactScoreChange({ home: 0, away: 0 })}
-                disabled={!exactSlotAvailable}
-                className="text-[10px] font-bold inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-opacity"
-                style={{
-                  background: exactSlotAvailable ? 'rgba(167,139,250,0.08)' : 'rgba(255,255,255,0.03)',
-                  border: exactSlotAvailable ? '1px solid rgba(167,139,250,0.22)' : '1px dashed rgba(255,255,255,0.08)',
-                  color: exactSlotAvailable ? '#A78BFA' : '#3A3A52',
-                  cursor: exactSlotAvailable ? 'pointer' : 'not-allowed',
-                  fontFamily: 'var(--font-sport)',
-                  letterSpacing: '0.04em',
-                }}
-                title={exactSlotAvailable
-                  ? '+3 pts si clavas el marcador exacto'
-                  : 'Ya tienes 3 marcadores exactos en esta jornada'}
-              >
-                <span aria-hidden>🎯</span>
-                {exactSlotAvailable ? '+ Marcador exacto · +3 pts' : 'Marcador exacto (3/3 usados)'}
-              </button>
+              <div className="relative inline-block">
+                {/* Z2 — Tooltip de descubrimiento. Solo en el primer card
+                    que cumple las condiciones (PicksForm decide cuál) y
+                    solo una vez por user (persistido en localStorage). */}
+                {showExactTooltip && exactSlotAvailable && (
+                  <div
+                    role="tooltip"
+                    className="absolute bottom-full left-0 mb-2 flex items-start gap-2 px-3 py-2 rounded-lg z-10"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(167,139,250,0.22) 0%, rgba(124,58,237,0.16) 100%)',
+                      border: '1px solid rgba(167,139,250,0.45)',
+                      boxShadow: '0 8px 20px rgba(124,58,237,0.25)',
+                      whiteSpace: 'normal',
+                      width: 'max-content',
+                      maxWidth: 260,
+                      animation: 'exactTooltipIn 280ms cubic-bezier(0.34,1.4,0.64,1) both',
+                    }}
+                  >
+                    <span style={{ fontSize: 14, lineHeight: 1 }} aria-hidden>💡</span>
+                    <p style={{
+                      flex: 1, margin: 0,
+                      fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 600,
+                      color: '#fff', letterSpacing: '0.01em', lineHeight: 1.35,
+                    }}>
+                      ¿Te atreves con el marcador exacto? <strong style={{ color: '#FDE68A' }}>+3 pts</strong> si lo clavas.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onExactTooltipDismiss?.()
+                      }}
+                      aria-label="Cerrar consejo"
+                      style={{
+                        flexShrink: 0, width: 18, height: 18, borderRadius: 4,
+                        background: 'transparent', border: 'none',
+                        color: 'rgba(255,255,255,0.55)',
+                        cursor: 'pointer', fontSize: 12, lineHeight: 1,
+                        padding: 0,
+                      }}
+                    >
+                      ✕
+                    </button>
+                    {/* flecha del tooltip */}
+                    <span
+                      aria-hidden
+                      style={{
+                        position: 'absolute',
+                        bottom: -5,
+                        left: 16,
+                        width: 10, height: 10,
+                        background: 'rgba(167,139,250,0.22)',
+                        borderRight: '1px solid rgba(167,139,250,0.45)',
+                        borderBottom: '1px solid rgba(167,139,250,0.45)',
+                        transform: 'rotate(45deg)',
+                      }}
+                    />
+                    <style>{`
+                      @keyframes exactTooltipIn {
+                        from { opacity: 0; transform: translateY(4px) scale(0.96); }
+                        to   { opacity: 1; transform: translateY(0) scale(1); }
+                      }
+                    `}</style>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!exactSlotAvailable) return
+                    onExactScoreChange({ home: 0, away: 0 })
+                    // Cualquier interacción con el botón también dismissea el tooltip.
+                    onExactTooltipDismiss?.()
+                  }}
+                  disabled={!exactSlotAvailable}
+                  className="text-[10px] font-bold inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-opacity"
+                  style={{
+                    background: exactSlotAvailable ? 'rgba(167,139,250,0.08)' : 'rgba(255,255,255,0.03)',
+                    border: exactSlotAvailable ? '1px solid rgba(167,139,250,0.22)' : '1px dashed rgba(255,255,255,0.08)',
+                    color: exactSlotAvailable ? '#A78BFA' : '#3A3A52',
+                    cursor: exactSlotAvailable ? 'pointer' : 'not-allowed',
+                    fontFamily: 'var(--font-sport)',
+                    letterSpacing: '0.04em',
+                    // Glow leve cuando el tooltip está visible para guiar el ojo.
+                    boxShadow: showExactTooltip && exactSlotAvailable
+                      ? '0 0 14px rgba(167,139,250,0.4)'
+                      : 'none',
+                  }}
+                  title={exactSlotAvailable
+                    ? '+3 pts si clavas el marcador exacto'
+                    : 'Ya tienes 3 marcadores exactos en esta jornada'}
+                >
+                  <span aria-hidden>🎯</span>
+                  {exactSlotAvailable ? '+ Marcador exacto · +3 pts' : 'Marcador exacto (3/3 usados)'}
+                </button>
+              </div>
             ) : (
               <div
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-md"

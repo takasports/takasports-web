@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { PorraStatus, PorraSettlement } from './PorraCTA'
-import { trackPorraCtaClick, trackPorraSettlementShown } from '@/lib/analytics'
+import { trackPorraCtaClick, trackPorraSettlementShown, trackPorraExactSettled } from '@/lib/analytics'
 import { buildResultSlug } from '@/lib/porra-result-slug'
 import { buildChallengeToken, buildChallengeUrl, buildChallengeText } from '@/lib/porra-challenge'
 import { fetchPorraStatus, readPorraCache } from '@/lib/porra-status-client'
@@ -210,6 +210,15 @@ export default function PorraSettlementToast() {
         total: settled.totalPicks,
         totalWon: settled.totalWon,
       })
+      // Z1 — Si el user clavó ≥1 marcador exacto, evento separado para
+      // poder embudar "exact_added → exact_settled" en GA y medir hit rate.
+      if (typeof settled.exactHits === 'number' && settled.exactHits > 0) {
+        trackPorraExactSettled({
+          jornada: settled.jornada,
+          exactHits: settled.exactHits,
+          totalPicks: settled.totalPicks,
+        })
+      }
     }
     const id = setTimeout(() => handleClose(), AUTO_DISMISS_MS)
     return () => clearTimeout(id)
