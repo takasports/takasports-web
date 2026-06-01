@@ -24,6 +24,29 @@ const OG_QUERY = `*[_type == "article" && (_id == $id || slug.current == $id)][0
   imageUrl,
 }`
 
+// HEAD-check con timeout corto.
+// Sin esto, ImageResponse intenta descargar la imagen y si el host de terceros
+// (twimg, fbcdn, etc.) responde 404 o lento, todo el rendering revienta con HTTP
+// 500 y Google marca la URL como "Error de servidor (5xx)" en GSC. Reportado en
+// notificación GSC del 30/5/2026 con 3 URLs afectadas — todas con imageUrl rota.
+async function safeImageUrl(url: string | null): Promise<string | null> {
+  if (!url || !/^https?:\/\//.test(url)) return null
+  try {
+    const r = await fetch(url, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(2000),
+      // Algunos CDNs bloquean HEAD sin UA → fingimos navegador
+      headers: { 'User-Agent': 'Mozilla/5.0 TakaSportsOG/1.0' },
+    })
+    if (!r.ok) return null
+    const ct = r.headers.get('content-type') ?? ''
+    if (!ct.startsWith('image/')) return null
+    return url
+  } catch {
+    return null
+  }
+}
+
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
@@ -38,7 +61,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const summary = article?.short_summary
   const sport   = article?.sport ?? article?.category
   const accent  = sport ? (SPORT_COLORS[sport] ?? '#7C3AED') : '#7C3AED'
-  const imgUrl  = article?.imageUrl ?? null
+  const imgUrl  = await safeImageUrl(article?.imageUrl ?? null)
 
   return new ImageResponse(
     (

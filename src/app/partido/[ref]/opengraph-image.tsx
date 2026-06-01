@@ -25,6 +25,25 @@ async function fetchMatch(ref: string): Promise<MatchDetail | null> {
   }
 }
 
+// HEAD-check con timeout para evitar 5xx en ImageResponse si el logo de ESPN
+// responde lento o 404 (típico con equipos nuevos o IDs viejos).
+async function safeImageUrl(url: string | null | undefined): Promise<string | null> {
+  if (!url || !/^https?:\/\//.test(url)) return null
+  try {
+    const r = await fetch(url, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(2000),
+      headers: { 'User-Agent': 'Mozilla/5.0 TakaSportsOG/1.0' },
+    })
+    if (!r.ok) return null
+    const ct = r.headers.get('content-type') ?? ''
+    if (!ct.startsWith('image/')) return null
+    return url
+  } catch {
+    return null
+  }
+}
+
 export default async function Image({ params }: { params: Promise<{ ref: string }> }) {
   const { ref } = await params
   const match = await fetchMatch(ref)
@@ -34,6 +53,11 @@ export default async function Image({ params }: { params: Promise<{ ref: string 
   const away = match?.awayTeam ?? '—'
   const hasScore = match?.homeScore != null && match?.awayScore != null
   const league = match?.leagueLabel ?? 'TakaSports'
+  // Validamos logos en paralelo
+  const [homeLogo, awayLogo] = await Promise.all([
+    safeImageUrl(match?.homeLogo),
+    safeImageUrl(match?.awayLogo),
+  ])
 
   return new ImageResponse(
     (
@@ -72,9 +96,9 @@ export default async function Image({ params }: { params: Promise<{ ref: string 
             flex: 1, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', gap: 16,
           }}>
-            {match?.homeLogo && (
+            {homeLogo && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={match.homeLogo} width={100} height={100}
+              <img src={homeLogo} width={100} height={100}
                 style={{ objectFit: 'contain' }} alt={home} />
             )}
             <span style={{
@@ -113,9 +137,9 @@ export default async function Image({ params }: { params: Promise<{ ref: string 
             flex: 1, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', gap: 16,
           }}>
-            {match?.awayLogo && (
+            {awayLogo && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={match.awayLogo} width={100} height={100}
+              <img src={awayLogo} width={100} height={100}
                 style={{ objectFit: 'contain' }} alt={away} />
             )}
             <span style={{
