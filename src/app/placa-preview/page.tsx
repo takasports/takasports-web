@@ -1,32 +1,47 @@
 'use client'
 
-// /placa-preview — Ruta oculta para revisar visualmente el diseño de
-// la PlacaCard. NO está enlazada desde el sitio. Acceso manual.
+// /placa-preview — Mockup de la placa personal. Ruta oculta.
 //
-// Muestra V2 (editorial + foil holográfico, dirección elegida) y debajo
-// la V1 (versión "standard" inicial) como referencia comparativa.
+// V3 destacada arriba (vertical full + horizontal ranking row).
+// V2 y V1 colapsadas debajo como histórico de iteración.
 
+import { useState } from 'react'
 import { PlacaCard } from '@/components/placa/PlacaCard'
 import { PlacaCardV2 } from '@/components/placa/PlacaCardV2'
+import { PlacaCardV3 } from '@/components/placa/PlacaCardV3'
+import { PlacaRowV3 } from '@/components/placa/PlacaRowV3'
 import type { PlacaData } from '@/components/placa/types'
 
-// Sport accent por variante — simula que el user "sigue" un deporte
 const SPORT_ACCENTS = {
   futbol:     '#22c55e',
   baloncesto: '#f59e0b',
   formula1:   '#ef4444',
   ufc:        '#f97316',
+  tenis:      '#d97706',
 }
 
-const VARIANTS: { label: string; description: string; placa: PlacaData; sport: string }[] = [
-  // ─── ROOKIE ───────────────────────────────────────────────────
+type SportArt = 'futbol' | 'basket' | 'f1' | 'ufc' | 'tenis' | 'rugby' | 'none'
+
+interface Variant {
+  label: string
+  description: string
+  placa: PlacaData
+  sport: string
+  sportArt: SportArt
+  score: number
+}
+
+const VARIANTS: Variant[] = [
+  // ── ROOKIE ────────────────────────────────────────────────────
   {
     label: 'Rookie',
-    description: 'L3 · Bronze · Solo el badge de bienvenida. Nada de foil pesado.',
+    description: 'L3 · Bronze · sport stripe verde fútbol. Casi sin foil, silueta simple, sin sticker.',
     sport: SPORT_ACCENTS.futbol,
+    sportArt: 'futbol',
+    score: 120,
     placa: {
-      displayName: 'Nuevo Fichaje',
-      handle: 'fichaje24',
+      displayName: 'Pablo Ramírez',
+      handle: 'pabloramz',
       level: 3,
       levelName: 'Rookie',
       tier: 'bronze',
@@ -34,14 +49,17 @@ const VARIANTS: { label: string; description: string; placa: PlacaData; sport: s
         id: 'nuevo_fichaje', emoji: '✍️', name: 'Nuevo fichaje',
         color: '#818cf8', bg: 'rgba(129,140,248,0.18)', rarity: 'common',
       },
+      signatureStat: { label: 'PARTIDOS', value: '5' },
     },
   },
 
-  // ─── CRACK ────────────────────────────────────────────────────
+  // ── CRACK ─────────────────────────────────────────────────────
   {
     label: 'Crack',
-    description: 'L18 · Silver · "El Oráculo", racha 5, foil presente pero contenido.',
-    sport: SPORT_ACCENTS.futbol,
+    description: 'L18 · Silver · sigue NBA. Title chevron equipado, foil sutil, racha 5 + primer acierto.',
+    sport: SPORT_ACCENTS.baloncesto,
+    sportArt: 'basket',
+    score: 2450,
     placa: {
       displayName: 'Marta García',
       handle: 'martag',
@@ -57,18 +75,17 @@ const VARIANTS: { label: string; description: string; placa: PlacaData; sport: s
         { id: 'racha_5', emoji: '🔥', name: 'En llamas', color: '#ef4444', bg: 'rgba(239,68,68,0.18)', rarity: 'epic' },
         { id: 'primera_prediccion_correcta', emoji: '✅', name: 'Primer acierto', color: '#34d399', bg: 'rgba(52,211,153,0.18)', rarity: 'common' },
       ],
-      signatureStat: {
-        label: 'Aciertos',
-        value: '47',
-      },
+      signatureStat: { label: 'ACIERTOS', value: '47' },
     },
   },
 
-  // ─── MAESTRO ──────────────────────────────────────────────────
+  // ── MAESTRO ───────────────────────────────────────────────────
   {
     label: 'Maestro',
-    description: 'L42 · Gold · Profeta del Mundial. Foil notable, card_bg dorado, corner sticker.',
-    sport: SPORT_ACCENTS.baloncesto,
+    description: 'L42 · Gold · sigue F1. Foil notable, card_bg dorada, name gradient áureo, sticker trofeo.',
+    sport: SPORT_ACCENTS.formula1,
+    sportArt: 'f1',
+    score: 8740,
     placa: {
       displayName: 'Diego Velasco',
       handle: 'diegoveloz',
@@ -81,9 +98,7 @@ const VARIANTS: { label: string; description: string; placa: PlacaData; sport: s
       },
       title: { text: 'El Profeta', color: '#fbbf24' },
       frame: { color: '#fbbf24' },
-      cardBg: {
-        gradient: 'linear-gradient(160deg, #1a0f00 0%, #2d1a00 45%, #06060E 100%)',
-      },
+      cardBg: { gradient: 'linear-gradient(160deg, #1a0f00 0%, #2d1a00 45%, #06060E 100%)' },
       cornerSticker: { emoji: '🏆', color: '#fbbf24' },
       avatarFrame: { color: '#fbbf24', style: 'gradient' },
       nameEffect: {
@@ -93,18 +108,17 @@ const VARIANTS: { label: string; description: string; placa: PlacaData; sport: s
         { id: 'mundialista_2026', emoji: '🌍', name: 'Mundialista', color: '#22c55e', bg: 'rgba(34,197,94,0.18)', rarity: 'rare' },
         { id: 'pleno_jornada', emoji: '🎯', name: 'Pleno', color: '#fbbf24', bg: 'rgba(251,191,36,0.20)', rarity: 'epic' },
       ],
-      signatureStat: {
-        label: 'Plenos',
-        value: 'x3',
-      },
+      signatureStat: { label: 'PLENOS', value: 'x3' },
     },
   },
 
-  // ─── LEYENDA ──────────────────────────────────────────────────
+  // ── LEYENDA ───────────────────────────────────────────────────
   {
     label: 'Leyenda',
-    description: 'L60 · Diamond · TOP 3 Mundial, foil máximo, name effect arco iris.',
-    sport: SPORT_ACCENTS.formula1,
+    description: 'L60 · Diamond · sigue UFC. Foil máximo, name arco iris, sticker corona, octágono fondo.',
+    sport: SPORT_ACCENTS.ufc,
+    sportArt: 'ufc',
+    score: 24890,
     placa: {
       displayName: 'Ana Suárez',
       handle: 'anasleyenda',
@@ -117,9 +131,7 @@ const VARIANTS: { label: string; description: string; placa: PlacaData; sport: s
       },
       title: { text: 'Podio Mundial', color: '#fbbf24' },
       frame: { color: '#22d3ee' },
-      cardBg: {
-        gradient: 'linear-gradient(160deg, #001a26 0%, #1a0033 45%, #260011 80%, #06060E 100%)',
-      },
+      cardBg: { gradient: 'linear-gradient(160deg, #001a26 0%, #1a0033 45%, #260011 80%, #06060E 100%)' },
       cornerSticker: { emoji: '👑', color: '#fbbf24' },
       avatarFrame: { color: '#22d3ee', style: 'gradient' },
       nameEffect: {
@@ -129,15 +141,14 @@ const VARIANTS: { label: string; description: string; placa: PlacaData; sport: s
         { id: 'profeta_mundial_2026', emoji: '🔮', name: 'Profeta', color: '#fbbf24', bg: 'rgba(251,191,36,0.22)', rarity: 'legendary' },
         { id: 'champion_weekly', emoji: '👑', name: 'Campeón semanal', color: '#fbbf24', bg: 'rgba(251,191,36,0.22)', rarity: 'epic' },
       ],
-      signatureStat: {
-        label: 'Mundial',
-        value: '#2',
-      },
+      signatureStat: { label: 'MUNDIAL', value: '#2' },
     },
   },
 ]
 
 export default function PlacaPreviewPage() {
+  const [showHistory, setShowHistory] = useState(false)
+
   return (
     <main
       className="min-h-screen"
@@ -147,12 +158,12 @@ export default function PlacaPreviewPage() {
       }}
     >
       <div className="max-w-[1400px] mx-auto">
-        <header className="mb-12 text-center">
+        <header className="mb-14 text-center">
           <p
             className="uppercase tracking-[0.3em] mb-2"
             style={{ color: '#7A7A92', fontSize: 11, fontFamily: 'var(--font-sport)', fontWeight: 800 }}
           >
-            Mockup — Iteración V2
+            Mockup · V3
           </p>
           <h1
             className="text-4xl font-black mb-2"
@@ -161,49 +172,42 @@ export default function PlacaPreviewPage() {
             Placa personal
           </h1>
           <p
-            className="max-w-[720px] mx-auto"
+            className="max-w-[760px] mx-auto"
             style={{ color: '#9090B0', fontSize: 14, fontFamily: 'var(--font-sport)', lineHeight: 1.6 }}
           >
-            Dirección editorial + foil holográfico. Pasa el cursor sobre una placa para ver el tilt 3D y el foil paralax.
-            La intensidad del foil escala con el tier: bronze casi mate → diamond máximo.
+            Dirección 2K llevada hasta el final: silueta con cortes asimétricos, avatar hexagonal,
+            LVL diamante, panel de stats parallelogram con foil interno, arte vectorial del deporte
+            favorito al fondo. Pasa el cursor por encima — tilt 3D + foil paralax solo en la vertical.
           </p>
         </header>
 
-        {/* V2 — DIRECCIÓN ELEGIDA */}
-        <section className="mb-20">
+        {/* ── V3 VERTICAL — full ─────────────────────────────────── */}
+        <section className="mb-16">
           <div className="flex items-center justify-center gap-3 mb-8">
-            <span style={{ height: 1, flex: 1, maxWidth: 80, background: 'rgba(167,139,250,0.3)' }} />
-            <p
-              className="uppercase tracking-[0.28em]"
-              style={{ color: '#A78BFA', fontSize: 11, fontFamily: 'var(--font-headline)' }}
-            >
-              V2 · Editorial holográfico
+            <span style={{ height: 1, flex: 1, maxWidth: 100, background: 'rgba(167,139,250,0.4)' }} />
+            <p className="uppercase tracking-[0.28em]" style={{ color: '#A78BFA', fontSize: 11, fontFamily: 'var(--font-headline)' }}>
+              V3 · Vista perfil
             </p>
-            <span style={{ height: 1, flex: 1, maxWidth: 80, background: 'rgba(167,139,250,0.3)' }} />
+            <span style={{ height: 1, flex: 1, maxWidth: 100, background: 'rgba(167,139,250,0.4)' }} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-10 place-items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-12 place-items-center">
             {VARIANTS.map(v => (
               <div key={v.label} className="flex flex-col items-center gap-4">
-                <PlacaCardV2 placa={v.placa} sportAccent={v.sport} />
-                <div className="text-center max-w-[300px]">
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-display)',
-                      fontSize: 14, fontWeight: 900,
-                      color: '#F0F0F8',
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
+                <PlacaCardV3 placa={v.placa} sportAccent={v.sport} sportArt={v.sportArt} />
+                <div className="text-center max-w-[320px]">
+                  <p style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 14, fontWeight: 900,
+                    color: '#F0F0F8', letterSpacing: '-0.01em',
+                  }}>
                     {v.label}
                   </p>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-sport)',
-                      fontSize: 11, color: '#7A7A92',
-                      marginTop: 4, lineHeight: 1.4,
-                    }}
-                  >
+                  <p style={{
+                    fontFamily: 'var(--font-sport)',
+                    fontSize: 11, color: '#7A7A92',
+                    marginTop: 4, lineHeight: 1.45,
+                  }}>
                     {v.description}
                   </p>
                 </div>
@@ -212,52 +216,109 @@ export default function PlacaPreviewPage() {
           </div>
         </section>
 
-        {/* V1 — referencia */}
-        <section className="mb-12">
+        {/* ── V3 HORIZONTAL — ranking ─────────────────────────────── */}
+        <section className="mb-16">
           <div className="flex items-center justify-center gap-3 mb-8">
-            <span style={{ height: 1, flex: 1, maxWidth: 80, background: 'rgba(255,255,255,0.08)' }} />
-            <p
-              className="uppercase tracking-[0.28em]"
-              style={{ color: '#5A5A78', fontSize: 11, fontFamily: 'var(--font-headline)' }}
-            >
-              V1 · Versión inicial (referencia)
+            <span style={{ height: 1, flex: 1, maxWidth: 100, background: 'rgba(167,139,250,0.4)' }} />
+            <p className="uppercase tracking-[0.28em]" style={{ color: '#A78BFA', fontSize: 11, fontFamily: 'var(--font-headline)' }}>
+              V3 · Vista ranking
             </p>
-            <span style={{ height: 1, flex: 1, maxWidth: 80, background: 'rgba(255,255,255,0.08)' }} />
+            <span style={{ height: 1, flex: 1, maxWidth: 100, background: 'rgba(167,139,250,0.4)' }} />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 place-items-center" style={{ opacity: 0.7 }}>
-            {VARIANTS.map(v => (
-              <PlacaCard key={v.label} placa={v.placa} size="full" />
+          <div className="flex flex-col items-center gap-4 max-w-[600px] mx-auto">
+            {VARIANTS.map((v, i) => (
+              <PlacaRowV3
+                key={v.label}
+                placa={v.placa}
+                rank={i + 1}
+                score={v.score}
+                scoreLabel={v.placa.signatureStat?.label ?? 'pts'}
+                sportAccent={v.sport}
+              />
             ))}
           </div>
+          <p
+            className="text-center mt-6"
+            style={{ color: '#5A5A78', fontSize: 11, fontFamily: 'var(--font-sport)' }}
+          >
+            Las filas mantienen el lenguaje visual de la card pero a 88px de alto · foil estático sin paralax (50 rows no pueden hacer cómputo de cursor).
+          </p>
         </section>
 
-        {/* Leyenda */}
+        {/* ── Histórico colapsable ────────────────────────────────── */}
+        <section className="mt-20">
+          <div className="text-center mb-8">
+            <button
+              type="button"
+              onClick={() => setShowHistory(s => !s)}
+              className="text-[10px] uppercase tracking-[0.28em] transition-opacity hover:opacity-80"
+              style={{
+                color: '#6A6A88',
+                fontFamily: 'var(--font-headline)',
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.08)',
+                padding: '8px 18px',
+                borderRadius: 3,
+                cursor: 'pointer',
+              }}
+            >
+              {showHistory ? 'Ocultar iteraciones anteriores' : 'Ver V1 y V2 (histórico iteración)'}
+            </button>
+          </div>
+
+          {showHistory && (
+            <div style={{ opacity: 0.6 }}>
+              {/* V2 */}
+              <div className="mb-10">
+                <p className="text-center mb-6 uppercase tracking-[0.24em]" style={{ color: '#5A5A78', fontSize: 10, fontFamily: 'var(--font-headline)' }}>
+                  V2 · Editorial holográfico (anterior)
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 place-items-center">
+                  {VARIANTS.map(v => (
+                    <PlacaCardV2 key={v.label} placa={v.placa} sportAccent={v.sport} interactive={false} />
+                  ))}
+                </div>
+              </div>
+
+              {/* V1 */}
+              <div className="mb-10">
+                <p className="text-center mb-6 uppercase tracking-[0.24em]" style={{ color: '#5A5A78', fontSize: 10, fontFamily: 'var(--font-headline)' }}>
+                  V1 · Versión inicial "standard"
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 place-items-center">
+                  {VARIANTS.map(v => (
+                    <PlacaCard key={v.label} placa={v.placa} size="full" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ── Notas técnicas ──────────────────────────────────────── */}
         <section
-          className="rounded-2xl p-6 mt-12"
+          className="rounded-2xl p-6 mt-16"
           style={{
             background: 'rgba(255,255,255,0.02)',
             border: '1px solid rgba(255,255,255,0.06)',
-            maxWidth: 820, margin: '60px auto 0',
+            maxWidth: 860, margin: '60px auto 0',
           }}
         >
-          <h2
-            className="text-lg font-black mb-3"
-            style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)' }}
-          >
-            Qué cambia entre V1 y V2
+          <h2 className="text-lg font-black mb-3" style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)' }}>
+            Qué hace V3 distinta
           </h2>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" style={{ fontSize: 12, color: '#9090B0', fontFamily: 'var(--font-sport)', lineHeight: 1.5 }}>
-            <li><strong style={{ color: '#C4B5FD' }}>Tipografía dramática</strong> — nombre 44-50px condensado, no 22px.</li>
-            <li><strong style={{ color: '#C4B5FD' }}>Layout asimétrico</strong> — todo a la izquierda, no centrado.</li>
-            <li><strong style={{ color: '#C4B5FD' }}>Stripe deportiva</strong> — color del deporte que sigue el user.</li>
-            <li><strong style={{ color: '#C4B5FD' }}>Foil holográfico</strong> — conic-gradient con paralax al cursor.</li>
-            <li><strong style={{ color: '#C4B5FD' }}>Tilt 3D</strong> — la card se inclina siguiendo el cursor.</li>
-            <li><strong style={{ color: '#C4B5FD' }}>Stat line tipo cromo</strong> — 3 columnas (LVL · stat · logros).</li>
-            <li><strong style={{ color: '#C4B5FD' }}>Texturas reales</strong> — noise SVG + líneas de cancha.</li>
-            <li><strong style={{ color: '#C4B5FD' }}>Tier por material</strong> — foil intensidad escala bronze→diamond.</li>
-            <li><strong style={{ color: '#C4B5FD' }}>Sticker rotado</strong> — diecut afuera del borde (gold/diamond).</li>
-            <li><strong style={{ color: '#C4B5FD' }}>LVL metal foil</strong> — gradient metálico en el número.</li>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" style={{ fontSize: 12, color: '#9090B0', fontFamily: 'var(--font-sport)', lineHeight: 1.55 }}>
+            <li><strong style={{ color: '#C4B5FD' }}>Silueta no-rectangular</strong> — cortes asimétricos top-right y bottom-left (clip-path polygon).</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Avatar hexagonal</strong> — geometría que evoca cromos / 2K.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>LVL diamante</strong> — número en geometría rombo con foil metálico.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Stat panel parallelogram</strong> — clip-path inclinado + foil interno.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Title chevron banner</strong> — apunta hacia adelante como en cromos.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Arte vectorial deportivo</strong> — silueta del deporte favorito tras el avatar.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Nombre como dorsal</strong> — apellido 54px, primer nombre arriba pequeño.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Tier stamp metálico</strong> — gradient embossed con inset shadows.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Versión horizontal</strong> — mismo lenguaje en 88px para ranking listings.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Foil paralax + tilt 3D</strong> — solo en vertical (rendimiento).</li>
           </ul>
         </section>
       </div>
