@@ -27,28 +27,23 @@ async function loadTop(limit = 50): Promise<Row[]> {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { auth: { persistSession: false } },
   )
-  // Tomamos los top 200 globales y mezclamos categorías que ya están ponderadas por la vista
-  const { data } = await sb
-    .from('ranking_view')
-    .select('id,name,subtitle,sport,category,score,rank,image_url,score_prev')
-    .in('category', ['jugadores', 'jugadoras', 'clubes', 'entrenadores', 'creadores', 'periodistas'])
-    .order('rank', { ascending: true })
-    .range(0, 999)
-  if (!data) return []
-  // Dedupe por id (un mismo jugador puede salir en jugadores y latam si quedara duplicado)
+  // El `rank` de la vista ya incluye los boosts aditivos de diversidad por
+  // sport (Antonelli/Sinner/SGA/Jones compiten con futbolistas en el top global).
+  // Sacamos top de cada categoría y mezclamos por rank.
+  const cats = ['jugadores', 'jugadoras', 'clubes', 'entrenadores', 'creadores', 'periodistas']
+  const fetches = cats.map(c =>
+    sb.from('ranking_view')
+      .select('id,name,subtitle,sport,category,score,rank,image_url,score_prev')
+      .eq('category', c)
+      .order('rank', { ascending: true })
+      .range(0, 49)
+      .then(({ data }) => (data ?? []) as Row[]),
+  )
+  const lists = await Promise.all(fetches)
+  const all = lists.flat()
   const seen = new Set<string>()
   const rows: Row[] = []
-  // Aplicamos peso por deporte aquí para coherencia con el resto del Índice
-  const weight: Record<string, number> = {
-    futbol: 1.00, baloncesto: 0.95, tenis: 0.93, motogp: 0.90, formula1: 0.88,
-    ufc: 0.85, boxeo: 0.85, beisbol: 0.85, futbol_americano: 0.85, atletismo: 0.85,
-    wwe: 0.82, padel: 0.82, ciclismo: 0.82, golf: 0.80,
-  }
-  const scored = data.map((r) => ({
-    r: r as Row,
-    weighted: Number(r.score) * (weight[r.sport ?? ''] ?? 0.80),
-  })).sort((a, b) => b.weighted - a.weighted)
-  for (const { r } of scored) {
+  for (const r of all.sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999))) {
     if (seen.has(r.id)) continue
     seen.add(r.id)
     rows.push(r)
