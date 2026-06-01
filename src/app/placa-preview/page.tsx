@@ -1,25 +1,29 @@
 'use client'
 
 // /placa-preview — Ruta oculta para revisar visualmente el diseño de
-// la PlacaCard. NO está enlazada desde el sitio. Acceso manual por URL.
+// la PlacaCard. NO está enlazada desde el sitio. Acceso manual.
 //
-// Muestra 4 variantes que representan el ciclo de progresión del user:
-//   · Rookie (L3, bronze) — empezando, casi sin cosméticos
-//   · Crack (L18, silver) — un par de logros, un title equipado
-//   · Maestro (L42, gold) — placa rica, varios slots ocupados
-//   · Leyenda (L60, diamond) — todos los slots, cosméticos legendarios
-//
-// La idea es validar visualmente la dirección antes de tocar DB ni
-// catálogo de cosméticos.
+// Muestra V2 (editorial + foil holográfico, dirección elegida) y debajo
+// la V1 (versión "standard" inicial) como referencia comparativa.
 
 import { PlacaCard } from '@/components/placa/PlacaCard'
+import { PlacaCardV2 } from '@/components/placa/PlacaCardV2'
 import type { PlacaData } from '@/components/placa/types'
 
-const VARIANTS: { label: string; description: string; placa: PlacaData }[] = [
+// Sport accent por variante — simula que el user "sigue" un deporte
+const SPORT_ACCENTS = {
+  futbol:     '#22c55e',
+  baloncesto: '#f59e0b',
+  formula1:   '#ef4444',
+  ufc:        '#f97316',
+}
+
+const VARIANTS: { label: string; description: string; placa: PlacaData; sport: string }[] = [
   // ─── ROOKIE ───────────────────────────────────────────────────
   {
     label: 'Rookie',
-    description: 'L3 · Bronze · Recién registrado, un badge de bienvenida, sin title equipado.',
+    description: 'L3 · Bronze · Solo el badge de bienvenida. Nada de foil pesado.',
+    sport: SPORT_ACCENTS.futbol,
     placa: {
       displayName: 'Nuevo Fichaje',
       handle: 'fichaje24',
@@ -36,7 +40,8 @@ const VARIANTS: { label: string; description: string; placa: PlacaData }[] = [
   // ─── CRACK ────────────────────────────────────────────────────
   {
     label: 'Crack',
-    description: 'L18 · Silver · "El Oráculo" desbloqueado, racha de 5, signature stat de aciertos.',
+    description: 'L18 · Silver · "El Oráculo", racha 5, foil presente pero contenido.',
+    sport: SPORT_ACCENTS.futbol,
     placa: {
       displayName: 'Marta García',
       handle: 'martag',
@@ -53,18 +58,17 @@ const VARIANTS: { label: string; description: string; placa: PlacaData }[] = [
         { id: 'primera_prediccion_correcta', emoji: '✅', name: 'Primer acierto', color: '#34d399', bg: 'rgba(52,211,153,0.18)', rarity: 'common' },
       ],
       signatureStat: {
-        label: 'Aciertos esta temporada',
+        label: 'Aciertos',
         value: '47',
-        emoji: '🎯',
       },
-      backgroundPattern: 'dots',
     },
   },
 
   // ─── MAESTRO ──────────────────────────────────────────────────
   {
     label: 'Maestro',
-    description: 'L42 · Gold · Profeta del Mundial. Frame épico, card_bg legendario, sticker de campeón.',
+    description: 'L42 · Gold · Profeta del Mundial. Foil notable, card_bg dorado, corner sticker.',
+    sport: SPORT_ACCENTS.baloncesto,
     placa: {
       displayName: 'Diego Velasco',
       handle: 'diegoveloz',
@@ -78,31 +82,29 @@ const VARIANTS: { label: string; description: string; placa: PlacaData }[] = [
       title: { text: 'El Profeta', color: '#fbbf24' },
       frame: { color: '#fbbf24' },
       cardBg: {
-        gradient: 'linear-gradient(165deg, #1a0f00 0%, #2d1a00 40%, #0a0612 100%)',
+        gradient: 'linear-gradient(160deg, #1a0f00 0%, #2d1a00 45%, #06060E 100%)',
       },
       cornerSticker: { emoji: '🏆', color: '#fbbf24' },
       avatarFrame: { color: '#fbbf24', style: 'gradient' },
       nameEffect: {
         gradient: 'linear-gradient(135deg, #fde68a 0%, #fbbf24 50%, #b45309 100%)',
-        glow: 'rgba(251,191,36,0.45)',
       },
       secondaryBadges: [
         { id: 'mundialista_2026', emoji: '🌍', name: 'Mundialista', color: '#22c55e', bg: 'rgba(34,197,94,0.18)', rarity: 'rare' },
         { id: 'pleno_jornada', emoji: '🎯', name: 'Pleno', color: '#fbbf24', bg: 'rgba(251,191,36,0.20)', rarity: 'epic' },
       ],
       signatureStat: {
-        label: 'Plenos conseguidos',
+        label: 'Plenos',
         value: 'x3',
-        emoji: '⚡',
       },
-      backgroundPattern: 'lines',
     },
   },
 
   // ─── LEYENDA ──────────────────────────────────────────────────
   {
     label: 'Leyenda',
-    description: 'L60 · Diamond · TOP 3 Mundial, todos los slots ocupados, name effect arco iris.',
+    description: 'L60 · Diamond · TOP 3 Mundial, foil máximo, name effect arco iris.',
+    sport: SPORT_ACCENTS.formula1,
     placa: {
       displayName: 'Ana Suárez',
       handle: 'anasleyenda',
@@ -116,24 +118,21 @@ const VARIANTS: { label: string; description: string; placa: PlacaData }[] = [
       title: { text: 'Podio Mundial', color: '#fbbf24' },
       frame: { color: '#22d3ee' },
       cardBg: {
-        gradient: 'linear-gradient(165deg, #001a26 0%, #1a0033 40%, #260011 80%, #0a0612 100%)',
+        gradient: 'linear-gradient(160deg, #001a26 0%, #1a0033 45%, #260011 80%, #06060E 100%)',
       },
       cornerSticker: { emoji: '👑', color: '#fbbf24' },
       avatarFrame: { color: '#22d3ee', style: 'gradient' },
       nameEffect: {
         gradient: 'linear-gradient(90deg, #22d3ee 0%, #c084fc 50%, #fbbf24 100%)',
-        glow: 'rgba(192,132,252,0.55)',
       },
       secondaryBadges: [
         { id: 'profeta_mundial_2026', emoji: '🔮', name: 'Profeta', color: '#fbbf24', bg: 'rgba(251,191,36,0.22)', rarity: 'legendary' },
         { id: 'champion_weekly', emoji: '👑', name: 'Campeón semanal', color: '#fbbf24', bg: 'rgba(251,191,36,0.22)', rarity: 'epic' },
       ],
       signatureStat: {
-        label: 'Posición Mundial 2026',
+        label: 'Mundial',
         value: '#2',
-        emoji: '🥈',
       },
-      backgroundPattern: 'stripes',
     },
   },
 ]
@@ -143,46 +142,51 @@ export default function PlacaPreviewPage() {
     <main
       className="min-h-screen"
       style={{
-        background: 'radial-gradient(circle at center, #0F0820 0%, #06060E 80%)',
-        padding: '60px 24px',
+        background: 'radial-gradient(circle at 50% 0%, #0F0820 0%, #06060E 80%)',
+        padding: '60px 24px 100px',
       }}
     >
-      <div className="max-w-[1200px] mx-auto">
-        <header className="mb-10 text-center">
+      <div className="max-w-[1400px] mx-auto">
+        <header className="mb-12 text-center">
           <p
             className="uppercase tracking-[0.3em] mb-2"
             style={{ color: '#7A7A92', fontSize: 11, fontFamily: 'var(--font-sport)', fontWeight: 800 }}
           >
-            Mockup
+            Mockup — Iteración V2
           </p>
           <h1
             className="text-4xl font-black mb-2"
             style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}
           >
-            Placa personal · Diseño en papel
+            Placa personal
           </h1>
           <p
-            className="max-w-[640px] mx-auto"
-            style={{ color: '#9090B0', fontSize: 13, fontFamily: 'var(--font-sport)' }}
+            className="max-w-[720px] mx-auto"
+            style={{ color: '#9090B0', fontSize: 14, fontFamily: 'var(--font-sport)', lineHeight: 1.6 }}
           >
-            La placa reúne todos los cosméticos equipados del usuario en una tarjeta vertical.
-            Cada variante muestra cómo escala la personalización con el progreso.
+            Dirección editorial + foil holográfico. Pasa el cursor sobre una placa para ver el tilt 3D y el foil paralax.
+            La intensidad del foil escala con el tier: bronze casi mate → diamond máximo.
           </p>
         </header>
 
-        {/* Tamaño full — fila principal */}
-        <section className="mb-16">
-          <p
-            className="uppercase tracking-[0.22em] mb-6 text-center"
-            style={{ color: '#A78BFA', fontSize: 10, fontFamily: 'var(--font-sport)', fontWeight: 900 }}
-          >
-            Vista completa (perfil)
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 place-items-center">
+        {/* V2 — DIRECCIÓN ELEGIDA */}
+        <section className="mb-20">
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <span style={{ height: 1, flex: 1, maxWidth: 80, background: 'rgba(167,139,250,0.3)' }} />
+            <p
+              className="uppercase tracking-[0.28em]"
+              style={{ color: '#A78BFA', fontSize: 11, fontFamily: 'var(--font-headline)' }}
+            >
+              V2 · Editorial holográfico
+            </p>
+            <span style={{ height: 1, flex: 1, maxWidth: 80, background: 'rgba(167,139,250,0.3)' }} />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-10 place-items-center">
             {VARIANTS.map(v => (
-              <div key={v.label} className="flex flex-col items-center gap-3">
-                <PlacaCard placa={v.placa} size="full" />
-                <div className="text-center max-w-[280px]">
+              <div key={v.label} className="flex flex-col items-center gap-4">
+                <PlacaCardV2 placa={v.placa} sportAccent={v.sport} />
+                <div className="text-center max-w-[300px]">
                   <p
                     style={{
                       fontFamily: 'var(--font-display)',
@@ -208,56 +212,53 @@ export default function PlacaPreviewPage() {
           </div>
         </section>
 
-        {/* Tamaño compact — para ranking */}
+        {/* V1 — referencia */}
         <section className="mb-12">
-          <p
-            className="uppercase tracking-[0.22em] mb-6 text-center"
-            style={{ color: '#A78BFA', fontSize: 10, fontFamily: 'var(--font-sport)', fontWeight: 900 }}
-          >
-            Vista compacta (mockup ranking)
-          </p>
-          <div className="flex flex-wrap gap-6 justify-center">
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <span style={{ height: 1, flex: 1, maxWidth: 80, background: 'rgba(255,255,255,0.08)' }} />
+            <p
+              className="uppercase tracking-[0.28em]"
+              style={{ color: '#5A5A78', fontSize: 11, fontFamily: 'var(--font-headline)' }}
+            >
+              V1 · Versión inicial (referencia)
+            </p>
+            <span style={{ height: 1, flex: 1, maxWidth: 80, background: 'rgba(255,255,255,0.08)' }} />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 place-items-center" style={{ opacity: 0.7 }}>
             {VARIANTS.map(v => (
-              <PlacaCard key={v.label} placa={v.placa} size="compact" />
+              <PlacaCard key={v.label} placa={v.placa} size="full" />
             ))}
           </div>
         </section>
 
-        {/* Leyenda de slots */}
+        {/* Leyenda */}
         <section
-          className="rounded-2xl p-6 mt-8"
+          className="rounded-2xl p-6 mt-12"
           style={{
             background: 'rgba(255,255,255,0.02)',
             border: '1px solid rgba(255,255,255,0.06)',
-            maxWidth: 760, margin: '40px auto 0',
+            maxWidth: 820, margin: '60px auto 0',
           }}
         >
           <h2
             className="text-lg font-black mb-3"
             style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)' }}
           >
-            Slots de personalización
+            Qué cambia entre V1 y V2
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ fontSize: 12, color: '#9090B0', fontFamily: 'var(--font-sport)' }}>
-            <div><strong style={{ color: '#C4B5FD' }}>tier_metal</strong> — bronce / plata / oro / diamante por nivel</div>
-            <div><strong style={{ color: '#C4B5FD' }}>badge</strong> — chip primario grande</div>
-            <div><strong style={{ color: '#C4B5FD' }}>title</strong> — epíteto bajo el nombre</div>
-            <div><strong style={{ color: '#C4B5FD' }}>frame</strong> — color del borde de la placa</div>
-            <div><strong style={{ color: '#C4B5FD' }}>card_bg</strong> — gradiente del fondo</div>
-            <div><strong style={{ color: '#C4B5FD' }}>avatar_frame</strong> — anillo del avatar</div>
-            <div><strong style={{ color: '#C4B5FD' }}>name_effect</strong> — gradient / glow del nombre</div>
-            <div><strong style={{ color: '#C4B5FD' }}>corner_sticker</strong> — pegatina decorativa esquina</div>
-            <div><strong style={{ color: '#C4B5FD' }}>signature_stat</strong> — stat firmado (ej: Plenos x3)</div>
-            <div><strong style={{ color: '#C4B5FD' }}>background_pattern</strong> — textura sutil overlay</div>
-            <div><strong style={{ color: '#C4B5FD' }}>secondary_badges</strong> — hasta 2 chips bajo el primario</div>
-          </div>
-          <p
-            className="mt-4 text-xs"
-            style={{ color: '#5A5A78', fontFamily: 'var(--font-sport)', lineHeight: 1.5 }}
-          >
-            En negrita los nuevos slots propuestos (no existen en DB todavía).
-            Los actuales en DB: <code>badge</code>, <code>title</code>, <code>frame</code>, <code>card_bg</code>.
-          </p>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" style={{ fontSize: 12, color: '#9090B0', fontFamily: 'var(--font-sport)', lineHeight: 1.5 }}>
+            <li><strong style={{ color: '#C4B5FD' }}>Tipografía dramática</strong> — nombre 44-50px condensado, no 22px.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Layout asimétrico</strong> — todo a la izquierda, no centrado.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Stripe deportiva</strong> — color del deporte que sigue el user.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Foil holográfico</strong> — conic-gradient con paralax al cursor.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Tilt 3D</strong> — la card se inclina siguiendo el cursor.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Stat line tipo cromo</strong> — 3 columnas (LVL · stat · logros).</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Texturas reales</strong> — noise SVG + líneas de cancha.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Tier por material</strong> — foil intensidad escala bronze→diamond.</li>
+            <li><strong style={{ color: '#C4B5FD' }}>Sticker rotado</strong> — diecut afuera del borde (gold/diamond).</li>
+            <li><strong style={{ color: '#C4B5FD' }}>LVL metal foil</strong> — gradient metálico en el número.</li>
+          </ul>
         </section>
       </div>
     </main>
