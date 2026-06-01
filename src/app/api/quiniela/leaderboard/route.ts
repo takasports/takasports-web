@@ -29,9 +29,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
-import { BADGES, selectDisplayBadges, type BadgeDef } from '@/lib/badges'
-import { fetchSpecialBadgeDefs } from '@/lib/special-badges'
 import { fetchEquipmentByUser } from '@/lib/equipment'
+import { fetchBadgesByUser as fetchBadgesByUserShared } from '@/lib/leaderboard-badges'
 
 export interface LeaderboardBadge {
   id: string
@@ -61,63 +60,14 @@ export interface LeaderboardEntry {
   equipment?: LeaderboardEquipment
 }
 
-// Helper compartido: fetch badges para un set de userIds y devuelve
-// un Map<userId, LeaderboardBadge[]>. Filtra IDs desconocidos y
-// limita a 3 por user (los más prestigiosos según selectDisplayBadges).
+// Helper local: delega en la implementación compartida pero acepta el tipo de
+// adminSupabase (que puede ser null). Mantiene la misma firma usada antes.
 async function fetchBadgesByUser(
   admin: ReturnType<typeof adminSupabase>,
   userIds: string[],
 ): Promise<Map<string, LeaderboardBadge[]>> {
-  const out = new Map<string, LeaderboardBadge[]>()
-  if (!admin || userIds.length === 0) return out
-  const { data } = await admin
-    .from('quiniela_badges')
-    .select('user_id, badge_id')
-    .in('user_id', userIds)
-  if (!data) return out
-  const byUser = new Map<string, string[]>()
-  const allIds = new Set<string>()
-  for (const row of data) {
-    const uid = row.user_id as string
-    const list = byUser.get(uid) ?? []
-    const bid = row.badge_id as string
-    list.push(bid)
-    allIds.add(bid)
-    byUser.set(uid, list)
-  }
-
-  // Fetch metadata de special badges para los IDs desconocidos al catálogo.
-  const unknownIds = [...allIds].filter(id => !BADGES[id])
-  const specialDefs = unknownIds.length > 0
-    ? await fetchSpecialBadgeDefs(admin, unknownIds)
-    : new Map<string, BadgeDef>()
-
-  // Helper: convierte ids → defs combinando catálogo + special.
-  const resolveDef = (id: string): BadgeDef | null =>
-    BADGES[id] ?? specialDefs.get(id) ?? null
-
-  for (const [uid, ids] of byUser.entries()) {
-    // Construimos defs resueltas inline (selectDisplayBadges solo conoce
-    // BADGES de código; aquí mezclamos con special)
-    const defs = ids
-      .map(resolveDef)
-      .filter((d): d is BadgeDef => d != null)
-      .sort((a, b) => {
-        const order: Record<string, number> = { legendary: 0, epic: 1, rare: 2, common: 3 }
-        return (order[a.rarity] ?? 9) - (order[b.rarity] ?? 9)
-      })
-      .slice(0, 3)
-    out.set(uid, defs.map(d => ({
-      id: d.id, name: d.name, emoji: d.emoji,
-      color: d.color, bg: d.bg, rarity: d.rarity,
-    })))
-  }
-  return out
+  return fetchBadgesByUserShared(admin, userIds, 3)
 }
-
-// Suppress unused warning — selectDisplayBadges retained for possible
-// future use by external consumers / tests.
-void selectDisplayBadges
 
 interface PickBreakdown {
   totalCoins?: number

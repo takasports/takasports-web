@@ -1037,7 +1037,21 @@ export default function PerfilPage() {
             {/* LOGROS / BADGES */}
             {badges.length > 0 && (
               <section>
-                <SectionHeader title="Logros" />
+                <div className="flex items-center justify-between">
+                  <SectionHeader title="Logros" />
+                  <Link
+                    href="/badges"
+                    className="text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-100"
+                    style={{
+                      color: '#A78BFA',
+                      fontFamily: 'var(--font-sport)',
+                      opacity: 0.8,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    Ver galería →
+                  </Link>
+                </div>
                 <div className="flex flex-col gap-1.5">
                   {badges.map((badge) => (
                     <div
@@ -1063,6 +1077,28 @@ export default function PerfilPage() {
                     </div>
                   ))}
                 </div>
+              </section>
+            )}
+            {/* Si no tiene badges aún, mostrar CTA hacia la galería */}
+            {badges.length === 0 && (
+              <section>
+                <SectionHeader title="Logros" />
+                <Link
+                  href="/badges"
+                  className="block rounded-xl px-4 py-3 transition-opacity hover:opacity-90"
+                  style={{
+                    background: 'rgba(124,58,237,0.06)',
+                    border: '1px solid rgba(124,58,237,0.2)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <p className="text-[11px] font-black" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
+                    Explora la colección de badges →
+                  </p>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                    Juega y desbloquea logros. Empieza por la quiniela o los juegos diarios.
+                  </p>
+                </Link>
               </section>
             )}
 

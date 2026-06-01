@@ -5,7 +5,8 @@
 // y /api/games/me para la fila del usuario.
 
 import { useLeaderboard, useMyPosition } from '@/hooks/useGameState'
-import type { GameId } from '@/lib/games-store'
+import type { GameId, LeaderboardBadgeMeta, LeaderboardEquipmentMeta } from '@/lib/games-store'
+import { LeaderboardBadgesRow, LeaderboardTitleLine } from '@/components/badges/LeaderboardBadgeChip'
 
 interface Props {
   gameId:    GameId
@@ -77,6 +78,8 @@ export default function Leaderboard({
                 score={e.score}
                 isMe={me.position === e.position}
                 accent={accent}
+                badges={e.badges}
+                equipment={e.equipment}
               />
             ))}
           </ul>
@@ -110,17 +113,25 @@ export default function Leaderboard({
   )
 }
 
-function Row({ position, name, avatar, score, isMe, accent }: {
+function Row({ position, name, avatar, score, isMe, accent, badges, equipment }: {
   position: number; name: string; avatar: string | null; score: number; isMe: boolean; accent: string;
+  badges?: LeaderboardBadgeMeta[]; equipment?: LeaderboardEquipmentMeta;
 }) {
   const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : null
+  const frameColor  = equipment?.frame?.color
+  const cardBg      = equipment?.card_bg?.gradient
+  const equipBadge  = equipment?.badge
+  const title       = equipment?.title
+
+  // Priority: equipped card_bg > "isMe" highlight > base
+  const bg = cardBg ?? (isMe ? `${accent}14` : 'rgba(255,255,255,0.02)')
+  // Priority: equipped frame > "isMe" border > transparent
+  const border = frameColor ? `1px solid ${frameColor}` : (isMe ? `1px solid ${accent}30` : '1px solid transparent')
+
   return (
     <li
       className="flex items-center gap-3 px-2.5 py-1.5 rounded-lg"
-      style={{
-        background: isMe ? `${accent}14` : 'rgba(255,255,255,0.02)',
-        border:     isMe ? `1px solid ${accent}30` : '1px solid transparent',
-      }}
+      style={{ background: bg, border }}
     >
       <span
         className="text-[10px] font-black w-6 text-center"
@@ -136,12 +147,18 @@ function Row({ position, name, avatar, score, isMe, accent }: {
         <span className="w-5 h-5 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }} />
       )}
 
-      <span
-        className="flex-1 text-[11px] font-black truncate"
-        style={{ color: isMe ? '#F0F0F5' : '#9090B0', fontFamily: 'var(--font-display)' }}
-      >
-        {name}
-      </span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span
+            className="truncate text-[11px] font-black"
+            style={{ color: isMe ? '#F0F0F5' : '#9090B0', fontFamily: 'var(--font-display)' }}
+          >
+            {name}
+          </span>
+          <LeaderboardBadgesRow badges={badges} equippedBadge={equipBadge} size={14} />
+        </div>
+        <LeaderboardTitleLine title={title} size={8} />
+      </div>
 
       <span
         className="text-[11px] font-black"

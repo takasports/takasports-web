@@ -1,10 +1,12 @@
 'use client'
 
 // /badges — Colección pública de badges de TakaSports.
-// Muestra todos los badges del catálogo agrupados por categoría.
-// Si el usuario está autenticado, marca los que ha desbloqueado (fetch /api/quiniela/me).
+// Muestra todos los badges del catálogo agrupados por categoría con
+// filtros (estado + categoría) y progreso por categoría.
+// Si el usuario está autenticado, marca los que ha desbloqueado (fetch
+// /api/quiniela/me).
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -34,11 +36,21 @@ const RARITY_COLOR: Record<string, string> = {
   legendary: '#fbbf24',
 }
 
+type StatusFilter = 'all' | 'unlocked' | 'locked'
+
+const STATUS_LABELS: Record<StatusFilter, string> = {
+  all:       'Todos',
+  unlocked:  'Desbloqueados',
+  locked:    'Bloqueados',
+}
+
 export default function BadgesPage() {
   const allBadges = listAllBadges()
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set())
   const [unlockedAt, setUnlockedAt]   = useState<Record<string, string>>({})
   const [authed, setAuthed] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [categoryFilter, setCategoryFilter] = useState<BadgeCategory | 'all'>('all')
 
   // Check auth + fetch unlocked badges
   useEffect(() => {
@@ -66,14 +78,29 @@ export default function BadgesPage() {
     })
   }, [])
 
-  // Group by category
-  const grouped = allBadges.reduce<Record<BadgeCategory, BadgeDef[]>>((acc, b) => {
-    if (!acc[b.category]) acc[b.category] = []
-    acc[b.category].push(b)
-    return acc
-  }, {} as Record<BadgeCategory, BadgeDef[]>)
+  // Group by category — antes de filtrar (para el contador por categoría)
+  const groupedAll = useMemo(() => {
+    return allBadges.reduce<Record<BadgeCategory, BadgeDef[]>>((acc, b) => {
+      if (!acc[b.category]) acc[b.category] = []
+      acc[b.category].push(b)
+      return acc
+    }, {} as Record<BadgeCategory, BadgeDef[]>)
+  }, [allBadges])
 
   const categoryOrder: BadgeCategory[] = ['milestone', 'jornada', 'season', 'mundial', 'special']
+
+  // Categorías presentes (con al menos un badge)
+  const visibleCategories = categoryOrder.filter(c => groupedAll[c]?.length)
+
+  // Filtrado
+  const isShown = (b: BadgeDef): boolean => {
+    if (statusFilter === 'unlocked' && !unlockedIds.has(b.id)) return false
+    if (statusFilter === 'locked'   && unlockedIds.has(b.id))  return false
+    if (categoryFilter !== 'all' && b.category !== categoryFilter) return false
+    return true
+  }
+
+  const totalUnlocked = unlockedIds.size
 
   return (
     <>
@@ -85,7 +112,7 @@ export default function BadgesPage() {
         <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-10">
 
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
               <Link href="/juegos" className="text-[11px] transition-opacity hover:opacity-70" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}>
                 Juegos
@@ -101,32 +128,131 @@ export default function BadgesPage() {
             </h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               {allBadges.length} badges disponibles
-              {authed && unlockedIds.size > 0 && ` · ${unlockedIds.size} desbloqueados`}
+              {authed && totalUnlocked > 0 && ` · ${totalUnlocked} desbloqueados`}
             </p>
+          </div>
+
+          {/* Filtros */}
+          <div className="flex flex-col gap-3 mb-7">
+            {/* Estado */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[9px] uppercase tracking-widest mr-1" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)' }}>
+                Estado
+              </span>
+              {(['all', 'unlocked', 'locked'] as StatusFilter[]).map(s => {
+                const active = statusFilter === s
+                const disabled = !authed && s !== 'all'
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => setStatusFilter(s)}
+                    className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full transition-opacity disabled:opacity-30"
+                    style={{
+                      background: active ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.03)',
+                      color: active ? '#C4B5FD' : '#7A7A92',
+                      border: active ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                      fontFamily: 'var(--font-sport)',
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {STATUS_LABELS[s]}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Categoría + progreso */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[9px] uppercase tracking-widest mr-1" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)' }}>
+                Categoría
+              </span>
+              <button
+                type="button"
+                onClick={() => setCategoryFilter('all')}
+                className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full transition-opacity"
+                style={{
+                  background: categoryFilter === 'all' ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.03)',
+                  color: categoryFilter === 'all' ? '#C4B5FD' : '#7A7A92',
+                  border: categoryFilter === 'all' ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                  fontFamily: 'var(--font-sport)',
+                  cursor: 'pointer',
+                }}
+              >
+                Todas
+              </button>
+              {visibleCategories.map(cat => {
+                const total = groupedAll[cat]?.length ?? 0
+                const unlockedHere = (groupedAll[cat] ?? []).filter(b => unlockedIds.has(b.id)).length
+                const active = categoryFilter === cat
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategoryFilter(cat)}
+                    className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full transition-opacity flex items-center gap-1.5"
+                    style={{
+                      background: active ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.03)',
+                      color: active ? '#C4B5FD' : '#7A7A92',
+                      border: active ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                      fontFamily: 'var(--font-sport)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span>{CATEGORY_LABELS[cat]}</span>
+                    {authed && (
+                      <span
+                        className="text-[8px] px-1 py-0.5 rounded-full"
+                        style={{
+                          background: 'rgba(255,255,255,0.06)',
+                          color: '#9090B0',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {unlockedHere}/{total}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           {/* Groups */}
           {categoryOrder.map(cat => {
-            const badges = grouped[cat]
+            const badges = groupedAll[cat]
             if (!badges?.length) return null
+            if (categoryFilter !== 'all' && categoryFilter !== cat) return null
+
+            const filtered = badges.filter(isShown)
+            if (filtered.length === 0) return null
+
+            const unlockedHere = badges.filter(b => unlockedIds.has(b.id)).length
+
             return (
               <section key={cat} className="mb-10">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="section-accent" />
                   <h2 className="section-label">{CATEGORY_LABELS[cat]}</h2>
+                  {authed && (
+                    <span className="text-[9px] ml-1" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)' }}>
+                      {unlockedHere}/{badges.length} desbloqueados
+                    </span>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {badges.map(badge => {
+                  {filtered.map(badge => {
                     const unlocked = unlockedIds.has(badge.id)
                     const date = unlockedAt[badge.id]
                     return (
                       <div
                         key={badge.id}
-                        className="rounded-2xl px-4 py-4 flex gap-3 items-start transition-opacity"
+                        className="rounded-2xl px-4 py-4 flex gap-3 items-start transition-all badge-card"
                         style={{
                           background: unlocked ? badge.bg : 'rgba(255,255,255,0.02)',
                           border: `1px solid ${unlocked ? badge.color + '40' : 'rgba(255,255,255,0.06)'}`,
-                          opacity: !authed || unlocked ? 1 : 0.45,
+                          opacity: !authed || unlocked ? 1 : 0.55,
                         }}
                       >
                         <div
@@ -213,6 +339,10 @@ export default function BadgesPage() {
         </div>
       </main>
       <Footer />
+      <style jsx>{`
+        .badge-card { transition: filter 0.18s ease, opacity 0.18s ease; }
+        .badge-card:hover { filter: brightness(1.18); }
+      `}</style>
     </>
   )
 }

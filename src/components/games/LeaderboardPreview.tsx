@@ -7,7 +7,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getGamePeriod } from '@/lib/games-periods'
-import type { GameId } from '@/lib/games-store'
+import type { GameId, LeaderboardBadgeMeta, LeaderboardEquipmentMeta } from '@/lib/games-store'
+import { LeaderboardBadgesRow, LeaderboardTitleLine } from '@/components/badges/LeaderboardBadgeChip'
 
 interface Entry {
   user_id: string
@@ -15,6 +16,8 @@ interface Entry {
   display_name: string | null
   avatar_url: string | null
   position: number
+  badges?: LeaderboardBadgeMeta[]
+  equipment?: LeaderboardEquipmentMeta
 }
 
 interface Props {
@@ -98,50 +101,66 @@ export default function LeaderboardPreview({ gameId, accent, label, href, cadenc
         </ul>
       ) : entries && entries.length > 0 ? (
         <ol className="flex flex-col gap-1.5" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {entries.map((e, i) => (
-            <li
-              key={e.user_id}
-              className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg"
-              style={{ background: 'rgba(255,255,255,0.03)' }}
-            >
-              <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1, width: 22, textAlign: 'center', flexShrink: 0 }}>
-                {PODIUM[i]}
-              </span>
-              {e.avatar_url ? (
-                <img
-                  src={e.avatar_url}
-                  alt=""
-                  width={24}
-                  height={24}
-                  style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: `${accent}20` }}
-                />
-              ) : (
-                <span
-                  style={{
-                    width: 24, height: 24, borderRadius: '50%',
-                    background: `${accent}25`, color: accent,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 900, fontFamily: 'var(--font-display)',
-                    flexShrink: 0,
-                  }}
-                >
-                  {(e.display_name ?? '?').charAt(0).toUpperCase()}
+          {entries.map((e, i) => {
+            const eq         = e.equipment
+            const frameColor = eq?.frame?.color
+            const cardBg     = eq?.card_bg?.gradient
+            const equipBadge = eq?.badge
+            return (
+              <li
+                key={e.user_id}
+                className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg"
+                style={{
+                  background: cardBg ?? 'rgba(255,255,255,0.03)',
+                  border: frameColor ? `1px solid ${frameColor}` : '1px solid transparent',
+                }}
+              >
+                <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1, width: 22, textAlign: 'center', flexShrink: 0 }}>
+                  {PODIUM[i]}
                 </span>
-              )}
-              <span
-                className="flex-1 min-w-0 truncate text-[12px] font-bold"
-                style={{ color: '#E8E8F0', fontFamily: 'var(--font-sport)' }}
-              >
-                {e.display_name ?? 'Anónimo'}
-              </span>
-              <span
-                className="tabular-nums text-[12px] font-black flex-shrink-0"
-                style={{ color: accent, fontFamily: 'var(--font-display)' }}
-              >
-                {e.score}
-              </span>
-            </li>
-          ))}
+                {e.avatar_url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={e.avatar_url}
+                    alt=""
+                    width={24}
+                    height={24}
+                    style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: `${accent}20` }}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      width: 24, height: 24, borderRadius: '50%',
+                      background: `${accent}25`, color: accent,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 11, fontWeight: 900, fontFamily: 'var(--font-display)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {(e.display_name ?? '?').charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="min-w-0 truncate text-[12px] font-bold"
+                      style={{ color: '#E8E8F0', fontFamily: 'var(--font-sport)' }}
+                    >
+                      {e.display_name ?? 'Anónimo'}
+                    </span>
+                    <LeaderboardBadgesRow badges={e.badges} equippedBadge={equipBadge} size={14} />
+                  </div>
+                  <LeaderboardTitleLine title={eq?.title} size={8} />
+                </div>
+                <span
+                  className="tabular-nums text-[12px] font-black flex-shrink-0"
+                  style={{ color: accent, fontFamily: 'var(--font-display)' }}
+                >
+                  {e.score}
+                </span>
+              </li>
+            )
+          })}
         </ol>
       ) : (
         <p className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>

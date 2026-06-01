@@ -6,6 +6,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import TakaPoint from '@/components/TakaPoint'
+import { LeaderboardBadgesRow, LeaderboardTitleLine } from '@/components/badges/LeaderboardBadgeChip'
+import type { LeaderboardBadge, LeaderboardEquipment } from '@/lib/leaderboard-badges'
 
 type RankedSport = 'global' | 'mundial' | 'futbol' | 'ufc'
 
@@ -15,6 +17,8 @@ interface RankedEntry {
   avatar_url:   string | null
   total:        number
   rank:         number
+  badges?:      LeaderboardBadge[]
+  equipment?:   LeaderboardEquipment
 }
 
 const TABS: { id: RankedSport; label: string; emoji: string; accent: string; available: boolean }[] = [
@@ -251,22 +255,40 @@ export default function RankedLeaderboard({ activeSport }: Props) {
             {entries.map((e, i) => {
               const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
               const isTop = i < 3
+              const eq          = e.equipment
+              const frameColor  = eq?.frame?.color
+              const cardBg      = eq?.card_bg?.gradient
+              const equipBadge  = eq?.badge
+              const title       = eq?.title
+
+              // Background priority: equipped card_bg > top-3 accent > base
+              const rowBg = cardBg
+                ? cardBg
+                : isTop ? `${accent}08` : 'rgba(255,255,255,0.015)'
+              // Border priority: equipped frame > top-3 accent > none
+              const rowBorder = frameColor
+                ? `1px solid ${frameColor}`
+                : isTop ? `1px solid ${accent}18` : '1px solid transparent'
+
               return (
                 <div
                   key={e.user_id ?? i}
                   className="flex items-center gap-3 px-3 py-2 rounded-xl"
-                  style={{
-                    background: isTop ? `${accent}08` : 'rgba(255,255,255,0.015)',
-                    border: isTop ? `1px solid ${accent}18` : '1px solid transparent',
-                  }}
+                  style={{ background: rowBg, border: rowBorder }}
                 >
                   <span style={{ fontSize: 11, fontWeight: 900, width: 20, textAlign: 'center', color: isTop ? accent : '#4A4A6A', fontFamily: 'var(--font-display)', flexShrink: 0 }}>
                     {medal ?? `${e.rank}`}
                   </span>
                   <Avatar url={e.avatar_url} name={e.display_name} />
-                  <span className="flex-1 truncate text-[12px] font-black" style={{ color: isTop ? '#F0F0F8' : '#8A8AAA', fontFamily: 'var(--font-display)' }}>
-                    {e.display_name ?? 'Anónimo'}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-[12px] font-black" style={{ color: isTop ? '#F0F0F8' : '#8A8AAA', fontFamily: 'var(--font-display)' }}>
+                        {e.display_name ?? 'Anónimo'}
+                      </span>
+                      <LeaderboardBadgesRow badges={e.badges} equippedBadge={equipBadge} />
+                    </div>
+                    <LeaderboardTitleLine title={title} />
+                  </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <TakaPoint size={11} />
                     <span className="text-[12px] font-black tabular-nums" style={{ color: isTop ? accent : '#6A6A8A', fontFamily: 'var(--font-display)' }}>

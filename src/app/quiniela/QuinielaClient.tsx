@@ -444,6 +444,10 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                             if ((json.totalWon ?? 0) > 0 || json.settled) {
                               await refreshPoints()
                             }
+                            // Notificar al BadgeUnlockProvider para que vuelva
+                            // a chequear /api/quiniela/me sin esperar al
+                            // visibilitychange (settle puede otorgar badges).
+                            try { window.dispatchEvent(new Event('taka:badge-check')) } catch { /* noop */ }
                           }
                         }
                       } catch { /* offline OK — el server settle es idempotente, retry en próxima visita */ }

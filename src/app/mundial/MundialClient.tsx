@@ -565,6 +565,10 @@ export default function MundialClient() {
             is_correct:     prev[eventId]?.is_correct ?? null,
           },
         }))
+        // Primera predicción + primera del Mundial pueden otorgar badges
+        // (primera_prediccion, mundialista_2026). Notificamos al provider
+        // sin esperar al visibilitychange.
+        try { window.dispatchEvent(new Event('taka:badge-check')) } catch { /* noop */ }
       }
     } catch { setError('No se pudo guardar la predicción.') }
     finally { setSubmitting(false) }

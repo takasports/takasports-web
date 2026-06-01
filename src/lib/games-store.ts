@@ -172,6 +172,12 @@ async function pingStreak(): Promise<Streak | null> {
     if (!res.ok) return null
     const data = await res.json() as { streak: Streak | null }
     if (data.streak) lsSet(STREAK_KEY, data.streak)
+    // Streak puede otorgar racha_dias_3/7/30 — notifica al provider.
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('taka:badge-check'))
+      }
+    } catch { /* noop */ }
     return data.streak
   } catch { return null }
 }
@@ -255,6 +261,21 @@ export async function getStreak(): Promise<Streak | null> {
   } catch { return lsGet<Streak>(STREAK_KEY) }
 }
 
+export interface LeaderboardBadgeMeta {
+  id:     string
+  name:   string
+  emoji:  string
+  color:  string
+  bg:     string
+  rarity: string
+}
+export interface LeaderboardEquipmentMeta {
+  badge?:   { emoji: string; color: string; bg: string; name: string }
+  title?:   { text: string; color: string }
+  frame?:   { color: string }
+  card_bg?: { gradient: string }
+}
+
 export interface LeaderboardEntry {
   user_id:      string
   score:        number
@@ -263,6 +284,10 @@ export interface LeaderboardEntry {
   avatar_url:   string | null
   position:     number
   created_at:   string
+  /** Hasta 3 badges (los más prestigiosos) — fallback si no hay equipment.badge. */
+  badges?:      LeaderboardBadgeMeta[]
+  /** Equipamiento activo del user (badge/title/frame/card_bg). */
+  equipment?:   LeaderboardEquipmentMeta
 }
 
 export async function getLeaderboard(gameId: GameId, period: string, limit = 50): Promise<LeaderboardEntry[]> {
