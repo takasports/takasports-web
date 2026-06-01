@@ -118,6 +118,21 @@ export default function RankRow({
           <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
             <FavoriteToggle entryId={entry.id} size={16} />
           </div>
+          <Link
+            href={`/rankings/comparar?a=${encodeURIComponent(entry.id)}`}
+            onClick={(e) => e.stopPropagation()}
+            title="Comparar con otra entry"
+            aria-label="Comparar con otra entry"
+            className="hidden sm:inline-flex items-center justify-center w-6 h-6 rounded-md flex-shrink-0 transition-all hover:brightness-150"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              color: '#5A5A72',
+              border: '1px solid rgba(255,255,255,0.07)',
+              fontSize: 12,
+            }}
+          >
+            ⚖
+          </Link>
           <div className="flex flex-col items-end">
             <span className="font-black tabular-nums text-lg leading-none"
               style={{ fontFamily: 'var(--font-display)', color: sc }}>

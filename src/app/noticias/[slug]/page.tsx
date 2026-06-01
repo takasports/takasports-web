@@ -26,6 +26,8 @@ import {
   type AutolinkContext,
 } from '@/lib/article-autolink'
 import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
+import RankingMentionCards from '@/components/articles/RankingMentionCards'
+import { matchEntriesInText } from '@/lib/rankings-match'
 
 export const revalidate = 3600
 
@@ -530,6 +532,19 @@ export default async function NoticiaPage({
   const autolinkCtx = autolinkIndex ? createAutolinkContext(article.sport ?? null) : null
   const autolink: { index: EntityIndex; ctx: AutolinkContext } | undefined =
     autolinkIndex && autolinkCtx ? { index: autolinkIndex, ctx: autolinkCtx } : undefined
+
+  // Matching de entries del Índice Taka mencionadas en el artículo → cards al final
+  const bodyTextForMatch = article.bodyText ??
+    (article.bodyPortable
+      ? article.bodyPortable
+          .filter((b) => b._type === 'block')
+          .flatMap((b) => (b as { children?: { text?: string }[] }).children ?? [])
+          .map((c) => c?.text ?? '')
+          .join(' ')
+      : '')
+  const rankingMentions = hasBody
+    ? await matchEntriesInText(article.title, bodyTextForMatch, article.tags ?? [], 3)
+    : []
 
   const wc = bodyWordCount()
   const minRead = wc ? Math.max(1, Math.round(wc / 200)) : readingTime(article.bodyText)
@@ -1106,6 +1121,10 @@ export default async function NoticiaPage({
                 </div>
               )}
             </div>
+
+            {rankingMentions.length > 0 && (
+              <RankingMentionCards entries={rankingMentions} />
+            )}
 
             <div style={{ maxWidth: 680 }}>
               <ArticleComments slug={article.slug ?? id} />
