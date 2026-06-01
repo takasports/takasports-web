@@ -344,13 +344,14 @@ function ScoreStepper({
 }
 
 function ExactScoreBlock({
-  event, myPick, exactScore, isOpen, isResolved, isClosed,
+  event, myPick, exactScore, isOpen, isLocked, isResolved, isClosed,
   winner, submitting, exactSlotAvailable, onSet,
 }: {
   event: RankedEvent
   myPick: '1'|'X'|'2' | null
   exactScore: { home: number; away: number } | null
   isOpen: boolean
+  isLocked: boolean
   isResolved: boolean
   isClosed: boolean
   winner: '1'|'X'|'2' | null
@@ -359,6 +360,10 @@ function ExactScoreBlock({
   onSet: (v: { home: number; away: number } | null) => void
 }) {
   const bonusValue = event.featured ? 6 : 3
+  // Editor controlado por el user: lo abre al CREAR uno nuevo, lo cierra
+  // con ✕ (sin borrar) y lo reabre con "Editar". Mientras quede tiempo
+  // (>1h antes del partido) siempre se puede reabrir.
+  const [editorOpen, setEditorOpen] = useState(false)
 
   // ── 4. Modo lectura (resolved/closed + tenía exact) ──
   if ((isResolved || isClosed) && exactScore) {
@@ -473,7 +478,11 @@ function ExactScoreBlock({
     return (
       <button
         type="button"
-        onClick={() => exactSlotAvailable && onSet({ home: 0, away: 0 })}
+        onClick={() => {
+          if (!exactSlotAvailable) return
+          onSet({ home: 0, away: 0 })
+          setEditorOpen(true)
+        }}
         disabled={!exactSlotAvailable || submitting}
         className="exact-cta"
         style={{
@@ -516,7 +525,53 @@ function ExactScoreBlock({
     )
   }
 
-  // ── 3. Editor scoreboard ──
+  // ── 3a. Con exact pero editor cerrado → summary compacto + "Editar" ──
+  if (!editorOpen) {
+    return (
+      <div style={{
+        marginTop: 10, padding: '8px 12px', borderRadius: 12,
+        background: 'linear-gradient(145deg, rgba(167,139,250,0.12) 0%, rgba(124,58,237,0.04) 100%)',
+        border: '1px solid rgba(167,139,250,0.32)',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <span style={{ fontSize: 14, lineHeight: 1 }} aria-hidden>🎯</span>
+        <span style={{
+          fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
+          color: '#C4B5FD', letterSpacing: '0.08em',
+        }}>
+          MI MARCADOR
+        </span>
+        <span style={{
+          fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 900,
+          color: '#fff', letterSpacing: '0.02em', lineHeight: 1,
+        }}>
+          {exactScore.home} - {exactScore.away}
+        </span>
+        <button
+          type="button"
+          onClick={() => setEditorOpen(true)}
+          disabled={submitting}
+          aria-label="Editar marcador exacto"
+          title="Puedes editarlo hasta 1h antes del partido"
+          style={{
+            marginLeft: 'auto',
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '4px 10px', borderRadius: 8,
+            background: 'rgba(196,181,253,0.14)',
+            border: '1px solid rgba(196,181,253,0.32)',
+            color: '#C4B5FD',
+            fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            cursor: submitting ? 'wait' : 'pointer',
+          }}
+        >
+          ✎ Editar
+        </button>
+      </div>
+    )
+  }
+
+  // ── 3b. Editor scoreboard abierto ──
   const homeLabel = event.team_home ?? 'Local'
   const awayLabel = event.team_away ?? 'Visita'
 
@@ -546,9 +601,10 @@ function ExactScoreBlock({
         </span>
         <button
           type="button"
-          onClick={() => onSet(null)}
+          onClick={() => setEditorOpen(false)}
           disabled={submitting}
-          aria-label="Quitar marcador exacto"
+          aria-label="Cerrar editor (mantiene tu marcador guardado)"
+          title="Cierra el editor. Tu marcador queda guardado y puedes volver a editarlo hasta 1h antes del partido."
           style={{
             marginLeft: 'auto',
             width: 22, height: 22, borderRadius: 6,
@@ -585,6 +641,49 @@ function ExactScoreBlock({
           label={shortName(awayLabel, 10)}
           disabled={submitting}
         />
+      </div>
+
+      {/* Footer: Quitar (link sutil) + Cerrar (CTA) */}
+      <div style={{
+        marginTop: 10, paddingTop: 8,
+        borderTop: '1px solid rgba(167,139,250,0.18)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+      }}>
+        <button
+          type="button"
+          onClick={() => {
+            onSet(null)
+            setEditorOpen(false)
+          }}
+          disabled={submitting}
+          style={{
+            background: 'transparent', border: 'none', padding: 0,
+            color: 'rgba(255,255,255,0.4)',
+            fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800,
+            letterSpacing: '0.06em', textTransform: 'uppercase',
+            cursor: submitting ? 'wait' : 'pointer',
+            textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.18)',
+            textUnderlineOffset: 3,
+          }}
+        >
+          Quitar marcador
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditorOpen(false)}
+          disabled={submitting}
+          style={{
+            padding: '5px 14px', borderRadius: 8,
+            background: 'rgba(196,181,253,0.18)',
+            border: '1px solid rgba(196,181,253,0.36)',
+            color: '#C4B5FD',
+            fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            cursor: submitting ? 'wait' : 'pointer',
+          }}
+        >
+          ✓ Cerrar
+        </button>
       </div>
     </div>
   )
@@ -776,6 +875,7 @@ function MatchCard({
         myPick={myPick}
         exactScore={exactScore}
         isOpen={isOpen}
+        isLocked={isLocked}
         isResolved={isResolved}
         isClosed={isClosed}
         winner={winner}
