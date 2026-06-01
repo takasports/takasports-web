@@ -80,6 +80,11 @@ export async function generateMetadata(
   return {
     title,
     description,
+    // Self-canonical: sobrescribe el canonical heredado de rankings/layout.tsx
+    // que apuntaba a `/rankings` (hub) → Google trataba TODAS las entries
+    // individuales como duplicadas del hub y no las indexaba. Mail GSC del
+    // 30/5/2026 reportó la primera URL afectada (/rankings/thegrefg).
+    alternates: { canonical: `${SITE_URL}/rankings/${id}` },
     openGraph: {
       title, description, type: 'profile',
       url: `${SITE_URL}/rankings/${id}`,

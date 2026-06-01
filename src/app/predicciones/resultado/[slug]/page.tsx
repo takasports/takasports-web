@@ -14,6 +14,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { parseResultSlug, formatJornadaFromSlug } from '@/lib/porra-result-slug'
+import { SITE_URL } from '@/lib/constants'
 
 interface Params { slug: string }
 
@@ -33,6 +34,8 @@ export async function generateMetadata({
   return {
     title: `${headline} — ${jornada}`,
     description: 'Compite gratis en las Predicciones de TakaSports.',
+    // Self-canonical: sobrescribe el del layout padre que apunta a /predicciones
+    alternates: { canonical: `${SITE_URL}/predicciones/resultado/${slug}` },
     openGraph: {
       title: `${headline} — ${jornada}`,
       description: 'Compite gratis en las Predicciones de TakaSports.',

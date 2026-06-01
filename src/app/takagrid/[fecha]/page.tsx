@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import GameLayout from '@/components/games/GameLayout'
 import { getDailyPuzzle, getValidAnswers } from '@/lib/takagrid-puzzles'
+import { SITE_URL } from '@/lib/constants'
 import ArchivePuzzleClient from './ArchivePuzzleClient'
 
 interface PageProps {
@@ -26,6 +27,8 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title: `TakaGrid · Archivo · ${fecha}`,
     description: `Resuelve el TakaGrid del ${fecha} sin presión: no cuenta para el ranking ni la racha.`,
+    // Self-canonical: sobrescribe el del layout padre que apunta a /takagrid
+    alternates: { canonical: `${SITE_URL}/takagrid/${fecha}` },
   }
 }
 
