@@ -442,11 +442,33 @@ function MatchCard({
       </div>
 
       {/* ── ME3/ME4 — Marcador exacto ──
-          · Aparece solo si hay pick y el evento está abierto (edición)
-            o resuelto/cerrado (lectura con feedback). */}
-      {myPick && (
+          · Si el evento está abierto: siempre visible para descubrimiento.
+            Disabled si todavía no eligió tendencia.
+          · Si está resuelto/cerrado: solo si predijo exactScore (lectura). */}
+      {(isOpen || ((isResolved || isClosed) && exactScore)) && (
         <div style={{ marginTop: 10 }}>
           {(() => {
+            // Si no hay pick aún en evento abierto: botón guía deshabilitado.
+            if (isOpen && !myPick) {
+              return (
+                <button
+                  type="button"
+                  disabled
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '4px 9px', borderRadius: 6,
+                    background: 'rgba(167,139,250,0.06)',
+                    border: '1px dashed rgba(167,139,250,0.22)',
+                    color: 'rgba(167,139,250,0.5)',
+                    cursor: 'not-allowed',
+                    fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
+                  }}
+                  title="Elige primero el ganador (Local / Empate / Visita)"
+                >
+                  🎯 + Marcador exacto · elige ganador primero
+                </button>
+              )
+            }
             // Modo lectura: resuelto/cerrado y hay exactScore predicho.
             if ((isResolved || isClosed) && exactScore) {
               const realHome = event.result?.home_score
