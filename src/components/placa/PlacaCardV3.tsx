@@ -26,6 +26,7 @@
 
 import { useRef, useCallback } from 'react'
 import { TIER_CONFIG, type PlacaData } from './types'
+import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 
 interface Props {
   placa: PlacaData
@@ -171,9 +172,10 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
   const width = 340
   const height = 480
 
-  // Cosméticos
+  // Cosméticos. Default neutral obsidian (sin tinte morado) — el color
+  // viene de los cosméticos equipados o del sport accent, no del bg base.
   const cardBg = placa.cardBg?.gradient
-    ?? `linear-gradient(160deg, #0F0820 0%, #1A0F2E 55%, #06060E 100%)`
+    ?? `linear-gradient(160deg, #0C0C12 0%, #16161E 55%, #06060A 100%)`
   const frameColor = placa.frame?.color ?? tier.primary
   const titleText = placa.title?.text
   const titleColor = placa.title?.color ?? tier.primary
@@ -550,16 +552,20 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
                 <div
                   title={placa.badge.name}
                   style={{
-                    width: 32, height: 32,
+                    width: 36, height: 36,
                     background: placa.badge.bg,
                     border: `1.5px solid ${placa.badge.color}`,
                     clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 16,
                     boxShadow: `0 0 12px ${placa.badge.color}55`,
+                    color: placa.badge.color,
                   }}
                 >
-                  {placa.badge.emoji}
+                  {hasBadgeIcon(placa.badge.iconId ?? placa.badge.id) ? (
+                    <BadgeIcon id={placa.badge.iconId ?? placa.badge.id} size={18} strokeWidth={1.8} />
+                  ) : (
+                    <span style={{ fontSize: 16 }}>{placa.badge.emoji}</span>
+                  )}
                 </div>
               )}
               {(placa.secondaryBadges ?? []).slice(0, 3).map((b, i) => (
@@ -567,15 +573,19 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
                   key={i}
                   title={b.name}
                   style={{
-                    width: 22, height: 22,
+                    width: 26, height: 26,
                     background: b.bg,
                     border: `1px solid ${b.color}99`,
                     clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11,
+                    color: b.color,
                   }}
                 >
-                  {b.emoji}
+                  {hasBadgeIcon(b.iconId ?? b.id) ? (
+                    <BadgeIcon id={b.iconId ?? b.id} size={13} strokeWidth={1.7} />
+                  ) : (
+                    <span style={{ fontSize: 11 }}>{b.emoji}</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -635,22 +645,25 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
         />
 
         {/* CORNER STICKER — encajado en el corte top-right (diecut) */}
-        {placa.cornerSticker && (
+        {placa.cornerSticker && (placa.cornerSticker.iconId || placa.cornerSticker.emoji) && (
           <div
             aria-hidden="true"
             style={{
               position: 'absolute',
               top: 6, right: 6,
-              width: 34, height: 34,
-              background: `radial-gradient(circle, ${placa.cornerSticker.color} 0%, ${placa.cornerSticker.color}77 65%, transparent 100%)`,
+              width: 36, height: 36,
+              background: `radial-gradient(circle, ${placa.cornerSticker.color}66 0%, ${placa.cornerSticker.color}33 60%, transparent 100%)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 17,
-              filter: `drop-shadow(0 4px 8px ${placa.cornerSticker.color}aa)`,
+              filter: `drop-shadow(0 4px 10px ${placa.cornerSticker.color}aa)`,
               zIndex: 6,
               transform: 'rotate(8deg)',
+              color: placa.cornerSticker.color,
             }}
           >
-            {placa.cornerSticker.emoji}
+            {placa.cornerSticker.iconId
+              ? <BadgeIcon id={placa.cornerSticker.iconId} size={20} strokeWidth={1.8} />
+              : <span style={{ fontSize: 17 }}>{placa.cornerSticker.emoji}</span>
+            }
           </div>
         )}
       </div>

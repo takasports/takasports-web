@@ -17,6 +17,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { TIER_CONFIG, type PlacaData } from './types'
+import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 
 interface Props {
   placa: PlacaData
@@ -43,7 +44,7 @@ export function PlacaRowV3({ placa, rank, score, scoreLabel = 'pts', sportAccent
   const foilStrength = foilOpacity[placa.tier]
 
   const cardBg = placa.cardBg?.gradient
-    ?? `linear-gradient(110deg, #0F0820 0%, #15102A 60%, #06060E 100%)`
+    ?? `linear-gradient(110deg, #0C0C12 0%, #14141C 60%, #06060A 100%)`
   const frameColor = placa.frame?.color ?? tier.primary
   const titleText = placa.title?.text
   const titleColor = placa.title?.color ?? tier.primary
@@ -252,31 +253,39 @@ export function PlacaRowV3({ placa, rank, score, scoreLabel = 'pts', sportAccent
             <div
               title={placa.badge.name}
               style={{
-                width: 22, height: 22,
+                width: 26, height: 26,
                 background: placa.badge.bg,
                 border: `1px solid ${placa.badge.color}`,
                 clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11,
                 boxShadow: `0 0 8px ${placa.badge.color}55`,
+                color: placa.badge.color,
               }}
             >
-              {placa.badge.emoji}
+              {hasBadgeIcon(placa.badge.iconId ?? placa.badge.id) ? (
+                <BadgeIcon id={placa.badge.iconId ?? placa.badge.id} size={13} strokeWidth={1.7} />
+              ) : (
+                <span style={{ fontSize: 11 }}>{placa.badge.emoji}</span>
+              )}
             </div>
             {(placa.secondaryBadges ?? []).slice(0, 1).map((b, i) => (
               <div
                 key={i}
                 title={b.name}
                 style={{
-                  width: 18, height: 18,
+                  width: 22, height: 22,
                   background: b.bg,
                   border: `1px solid ${b.color}99`,
                   clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 9,
+                  color: b.color,
                 }}
               >
-                {b.emoji}
+                {hasBadgeIcon(b.iconId ?? b.id) ? (
+                  <BadgeIcon id={b.iconId ?? b.id} size={11} strokeWidth={1.6} />
+                ) : (
+                  <span style={{ fontSize: 9 }}>{b.emoji}</span>
+                )}
               </div>
             ))}
           </div>

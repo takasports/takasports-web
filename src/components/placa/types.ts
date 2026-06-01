@@ -12,7 +12,10 @@ export type PlacaTier = 'bronze' | 'silver' | 'gold' | 'diamond'
 
 export interface PlacaBadge {
   id: string
+  /** Emoji legacy — fallback si no se renderiza con iconId. */
   emoji: string
+  /** ID del icono custom (BadgeIcon registry). Si está, se usa en lugar del emoji. */
+  iconId?: string
   name: string
   color: string
   bg: string
@@ -40,7 +43,7 @@ export interface PlacaData {
   // ── Slots propuestos (mockup) ──────────────────────────────────
   avatarFrame?:       { color: string; style?: 'solid' | 'gradient' | 'dashed' }
   nameEffect?:        { gradient?: string; glow?: string }
-  cornerSticker?:     { emoji: string; color: string }
+  cornerSticker?:     { emoji?: string; iconId?: string; color: string }
   signatureStat?:     { label: string; value: string; emoji?: string }
   backgroundPattern?: 'dots' | 'lines' | 'stripes' | 'none'
 

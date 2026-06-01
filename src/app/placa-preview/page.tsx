@@ -99,7 +99,7 @@ const VARIANTS: Variant[] = [
       title: { text: 'El Profeta', color: '#fbbf24' },
       frame: { color: '#fbbf24' },
       cardBg: { gradient: 'linear-gradient(160deg, #1a0f00 0%, #2d1a00 45%, #06060E 100%)' },
-      cornerSticker: { emoji: '🏆', color: '#fbbf24' },
+      cornerSticker: { iconId: 'trophy', color: '#fbbf24' },
       avatarFrame: { color: '#fbbf24', style: 'gradient' },
       nameEffect: {
         gradient: 'linear-gradient(135deg, #fde68a 0%, #fbbf24 50%, #b45309 100%)',
@@ -132,7 +132,7 @@ const VARIANTS: Variant[] = [
       title: { text: 'Podio Mundial', color: '#fbbf24' },
       frame: { color: '#22d3ee' },
       cardBg: { gradient: 'linear-gradient(160deg, #001a26 0%, #1a0033 45%, #260011 80%, #06060E 100%)' },
-      cornerSticker: { emoji: '👑', color: '#fbbf24' },
+      cornerSticker: { iconId: 'crown', color: '#fbbf24' },
       avatarFrame: { color: '#22d3ee', style: 'gradient' },
       nameEffect: {
         gradient: 'linear-gradient(90deg, #22d3ee 0%, #c084fc 50%, #fbbf24 100%)',
@@ -153,7 +153,12 @@ export default function PlacaPreviewPage() {
     <main
       className="min-h-screen"
       style={{
-        background: 'radial-gradient(circle at 50% 0%, #0F0820 0%, #06060E 80%)',
+        // Bg neutral con un tinte mínimo de tier-gold arriba — sin morado plano
+        background: `
+          radial-gradient(ellipse 80% 40% at 50% -10%, rgba(251,191,36,0.05) 0%, transparent 60%),
+          radial-gradient(ellipse 100% 60% at 50% 100%, rgba(34,211,238,0.03) 0%, transparent 70%),
+          linear-gradient(180deg, #0A0A12 0%, #07070C 100%)
+        `,
         padding: '60px 24px 100px',
       }}
     >
