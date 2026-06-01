@@ -168,17 +168,58 @@ export function CosmeticPreview({ cosmetic, locked = false, size = 56 }: Props) 
 
     case 'background_pattern': {
       const pattern = d.pattern ?? 'dots'
-      const patternBg =
-        pattern === 'dots'   ? 'radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1.5px)' :
-        pattern === 'lines'  ? 'repeating-linear-gradient(135deg, rgba(255,255,255,0.10) 0 1px, transparent 1px 6px)' :
-                               'repeating-linear-gradient(90deg, rgba(255,255,255,0.12) 0 2px, transparent 2px 10px)'
+      const baseBg = 'linear-gradient(135deg, #1a1a24, #0a0a12)'
+      let patternBg = ''
+      let patternSize: string | undefined
+      switch (pattern) {
+        case 'dots':
+          patternBg = 'radial-gradient(rgba(255,255,255,0.20) 1px, transparent 1.5px)'
+          patternSize = '7px 7px'
+          break
+        case 'lines':
+          patternBg = 'repeating-linear-gradient(135deg, rgba(255,255,255,0.12) 0 1px, transparent 1px 6px)'
+          break
+        case 'stripes':
+          patternBg = 'repeating-linear-gradient(90deg, rgba(255,255,255,0.14) 0 2px, transparent 2px 8px)'
+          break
+        case 'hex': {
+          const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='14' height='16' viewBox='0 0 14 16'><path d='M7 0 L 14 4 L 14 12 L 7 16 L 0 12 L 0 4 Z' fill='none' stroke='rgba(255,255,255,0.20)' stroke-width='1'/></svg>`
+          patternBg = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`
+          patternSize = '14px 16px'
+          break
+        }
+        case 'mesh':
+          patternBg = `
+            linear-gradient(45deg, rgba(255,255,255,0.14) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.14) 75%),
+            linear-gradient(-45deg, rgba(255,255,255,0.14) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.14) 75%)
+          `
+          patternSize = '8px 8px'
+          break
+        case 'waves': {
+          const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='8' viewBox='0 0 20 8'><path d='M0 4 Q 5 0 10 4 T 20 4' fill='none' stroke='rgba(255,255,255,0.22)' stroke-width='1'/></svg>`
+          patternBg = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`
+          patternSize = '20px 8px'
+          break
+        }
+        case 'grid':
+          patternBg = `
+            linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)
+          `
+          patternSize = '8px 8px'
+          break
+        default:
+          patternBg = ''
+      }
       return wrap(
         <div style={{
           width: size - 8, height: size - 8,
           borderRadius: 6,
-          backgroundImage: patternBg,
-          backgroundSize: pattern === 'dots' ? '8px 8px' : 'auto',
-          background: 'linear-gradient(135deg, #1a1a24, #0a0a12)',
+          backgroundImage: patternBg
+            ? `${patternBg}, ${baseBg}`
+            : baseBg,
+          backgroundSize: patternSize ?? 'auto',
+          backgroundRepeat: 'repeat',
           border: '1px solid rgba(255,255,255,0.08)',
         }} />
       )

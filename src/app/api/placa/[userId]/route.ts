@@ -35,19 +35,26 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
     return NextResponse.json({ error: 'not configured' }, { status: 503 })
   }
 
-  // ── Cuatro lecturas en paralelo ──────────────────────────────
+  // ── Lecturas en paralelo ─────────────────────────────────────
   const [
     profileRes,
     ptRes,
     badgeCountRes,
     badgesByUser,
     equipment,
+    predictionsRes,
+    plenoCountRes,
+    streakRes,
   ] = await Promise.all([
     admin.from('profiles').select('display_name, avatar_url').eq('id', userId).maybeSingle(),
     admin.from('point_transactions').select('amount').eq('user_id', userId).gt('amount', 0),
     admin.from('quiniela_badges').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     fetchBadgesByUser(admin, [userId], 5),
     fetchUserEquipment(admin, userId),
+    admin.from('ranked_predictions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+    admin.from('quiniela_badges').select('*', { count: 'exact', head: true })
+      .eq('user_id', userId).eq('badge_id', 'pleno_jornada'),
+    admin.from('game_streaks').select('current_streak').eq('user_id', userId).maybeSingle(),
   ])
 
   if (!profileRes.data) {
@@ -70,6 +77,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
 
   const badges = badgesByUser.get(userId) ?? []
 
+  // liveStats — alimenta los signature_stat con keys conocidos.
+  // Cada nuevo `signature_stat` cosmetic referencia un key aquí.
+  const predictions = predictionsRes.count ?? 0
+  const plenos      = plenoCountRes.count ?? 0
+  const racha       = (streakRes.data?.current_streak as number | undefined) ?? 0
+
   return NextResponse.json({
     displayName,
     handle,
@@ -80,7 +93,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
     equipment,
     badges,
     liveStats: {
-      xp: xp.toLocaleString('es-ES'),
+      xp:           xp.toLocaleString('es-ES'),
+      badgesCount:  String(badgeCount),
+      predictions:  String(predictions),
+      plenos:       plenos > 0 ? `x${plenos}` : '0',
+      racha:        String(racha),
     },
   }, {
     headers: {

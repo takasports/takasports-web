@@ -101,8 +101,18 @@ export function UserPlacaCard({ user, displayName, avatarUrl }: Props) {
       color: b.color, bg: b.bg, rarity: b.rarity,
     }))
 
+  // liveStats — keys alimentando los signature_stat cosmetic.
+  // badgesCount va directo desde unlockedBadges.length. Plenos/racha/
+  // predictions no se exponen en /api/quiniela/me todavía — quedan
+  // como '—' en la placa propia. La placa pública sí los tiene
+  // resueltos en /api/placa/[userId].
+  const plenosCount = unlockedBadges.filter(b => b.id === 'pleno_jornada').length
   const liveStats: Record<string, string | number> = {
-    xp: (me.xp ?? 0).toLocaleString('es-ES'),
+    xp:           (me.xp ?? 0).toLocaleString('es-ES'),
+    badgesCount:  String(unlockedBadges.length),
+    plenos:       plenosCount > 0 ? `x${plenosCount}` : '0',
+    racha:        '—',
+    predictions:  '—',
   }
 
   const placa = buildPlacaData({

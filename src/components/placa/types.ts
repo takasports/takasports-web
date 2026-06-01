@@ -45,7 +45,7 @@ export interface PlacaData {
   nameEffect?:        { gradient?: string; glow?: string }
   cornerSticker?:     { emoji?: string; iconId?: string; color: string }
   signatureStat?:     { label: string; value: string; emoji?: string }
-  backgroundPattern?: 'dots' | 'lines' | 'stripes' | 'none'
+  backgroundPattern?: 'dots' | 'lines' | 'stripes' | 'hex' | 'mesh' | 'waves' | 'grid' | 'none'
 
   // ── Badges secundarios (hasta 2 bajo el primario) ──────────────
   secondaryBadges?: PlacaBadge[]

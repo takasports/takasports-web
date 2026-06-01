@@ -132,6 +132,60 @@ const NOISE_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(`
   </svg>
 `)}`
 
+// Background patterns cosméticos — overlay decorativo del slot
+// backgroundPattern. Cada uno es un { backgroundImage, backgroundSize? }
+// listo para aplicar como estilo inline.
+function patternStyleFor(kind?: string): React.CSSProperties | null {
+  switch (kind) {
+    case 'dots':
+      return {
+        backgroundImage: 'radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1.5px)',
+        backgroundSize: '12px 12px',
+      }
+    case 'lines':
+      return {
+        backgroundImage: 'repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 10px)',
+      }
+    case 'stripes':
+      return {
+        backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0 2px, transparent 2px 14px)',
+      }
+    case 'hex': {
+      // Hex tile aproximado vía SVG inline
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='32' viewBox='0 0 28 32'><path d='M14 0 L 28 8 L 28 24 L 14 32 L 0 24 L 0 8 Z' fill='none' stroke='rgba(255,255,255,0.08)' stroke-width='1'/></svg>`
+      return {
+        backgroundImage: `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`,
+        backgroundSize: '28px 32px',
+      }
+    }
+    case 'mesh':
+      return {
+        backgroundImage: `
+          linear-gradient(45deg,  rgba(255,255,255,0.06) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.06) 75%),
+          linear-gradient(-45deg, rgba(255,255,255,0.06) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.06) 75%)
+        `,
+        backgroundSize: '14px 14px',
+      }
+    case 'waves': {
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='16' viewBox='0 0 40 16'><path d='M0 8 Q 10 0 20 8 T 40 8' fill='none' stroke='rgba(255,255,255,0.10)' stroke-width='1'/></svg>`
+      return {
+        backgroundImage: `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`,
+        backgroundSize: '40px 16px',
+      }
+    }
+    case 'grid':
+      return {
+        backgroundImage: `
+          linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)
+        `,
+        backgroundSize: '16px 16px',
+      }
+    default:
+      return null
+  }
+}
+
 export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interactive = true }: Props) {
   const tier = TIER_CONFIG[placa.tier]
   const accent = sportAccent ?? tier.primary
@@ -412,6 +466,23 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
             pointerEvents: 'none',
           }}
         />
+
+        {/* L2d. Background pattern cosmético — overlay decorativo si está equipado */}
+        {(() => {
+          const ptn = patternStyleFor(placa.backgroundPattern)
+          if (!ptn) return null
+          return (
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute', inset: 0,
+                ...ptn,
+                opacity: 0.7,
+                pointerEvents: 'none',
+              }}
+            />
+          )
+        })()}
 
         {/* L3. Sport stripe vertical izquierda */}
         <div
