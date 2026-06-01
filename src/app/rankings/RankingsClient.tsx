@@ -464,7 +464,19 @@ export default function RankingsClient({
               style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Rankings propios de Taka: rendimiento, estadística, influencia mediática y percepción pública.
             </p>
-            <div className="mt-4 flex justify-center">
+            <div className="mt-4 flex justify-center gap-2 flex-wrap">
+              <Link
+                href="/rankings/todos"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
+                style={{
+                  background: 'rgba(196,181,253,0.12)',
+                  color: '#C4B5FD',
+                  border: '1px solid rgba(196,181,253,0.3)',
+                  fontFamily: 'var(--font-sport)',
+                }}
+              >
+                👑 Reyes del deporte <span style={{ color: '#7C3AED' }}>→</span>
+              </Link>
               <Link
                 href="/rankings/comparar"
                 className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
@@ -476,6 +488,18 @@ export default function RankingsClient({
                 }}
               >
                 ⚖️ Comparador <span style={{ color: '#7C3AED' }}>→</span>
+              </Link>
+              <Link
+                href="/rankings/mi-top"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
+                style={{
+                  background: 'rgba(248,113,113,0.10)',
+                  color: '#fca5a5',
+                  border: '1px solid rgba(248,113,113,0.25)',
+                  fontFamily: 'var(--font-sport)',
+                }}
+              >
+                ❤ Mi Top
               </Link>
             </div>
           </div>
