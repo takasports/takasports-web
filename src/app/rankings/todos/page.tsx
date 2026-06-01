@@ -3,8 +3,8 @@ import type { Metadata } from 'next'
 import { createClient } from '@supabase/supabase-js'
 
 export const metadata: Metadata = {
-  title: 'Top global · Índice Taka',
-  description: 'El top global del deporte hispano — jugadores, clubes, entrenadores y creadores ordenados con peso por deporte.',
+  title: 'Reyes del deporte hispano · Índice Taka',
+  description: 'El #1 de cada disciplina. Una foto del momento del deporte hispanohablante.',
 }
 
 export const revalidate = 1800
@@ -21,44 +21,47 @@ interface Row {
   score_prev: number | null
 }
 
-async function loadTop(limit = 50): Promise<Row[]> {
+// Disciplinas en orden de relevancia para el lector hispano
+const SPORTS_ORDER = [
+  { sport: 'futbol',           label: 'Fútbol',           emoji: '⚽' },
+  { sport: 'tenis',            label: 'Tenis',            emoji: '🎾' },
+  { sport: 'baloncesto',       label: 'Baloncesto · NBA', emoji: '🏀' },
+  { sport: 'formula1',         label: 'Fórmula 1',        emoji: '🏎️' },
+  { sport: 'ufc',              label: 'UFC',              emoji: '🥊' },
+  { sport: 'motogp',           label: 'MotoGP',           emoji: '🏍️' },
+  { sport: 'wwe',              label: 'WWE',              emoji: '🤼' },
+  { sport: 'wrestling',        label: 'Wrestling',        emoji: '🤼' },
+  { sport: 'golf',             label: 'Golf',             emoji: '⛳' },
+  { sport: 'boxeo',            label: 'Boxeo',            emoji: '🥊' },
+  { sport: 'padel',            label: 'Pádel',            emoji: '🎾' },
+  { sport: 'ciclismo',         label: 'Ciclismo',         emoji: '🚴' },
+  { sport: 'beisbol',          label: 'Béisbol',          emoji: '⚾' },
+  { sport: 'futbol_americano', label: 'NFL',              emoji: '🏈' },
+  { sport: 'atletismo',        label: 'Atletismo',        emoji: '🏃' },
+]
+
+async function loadKings(): Promise<Row[]> {
   const sb = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { auth: { persistSession: false } },
   )
-  // El `rank` de la vista ya incluye los boosts aditivos de diversidad por
-  // sport (Antonelli/Sinner/SGA/Jones compiten con futbolistas en el top global).
-  // Sacamos top de cada categoría y mezclamos por rank.
-  const cats = ['jugadores', 'jugadoras', 'clubes', 'entrenadores', 'creadores', 'periodistas']
-  const fetches = cats.map(c =>
+  // Para cada deporte traemos el top-1 entre jugadores/jugadoras
+  const fetches = SPORTS_ORDER.map(({ sport }) =>
     sb.from('ranking_view')
       .select('id,name,subtitle,sport,category,score,rank,image_url,score_prev')
-      .eq('category', c)
-      .order('rank', { ascending: true })
-      .range(0, 49)
-      .then(({ data }) => (data ?? []) as Row[]),
+      .in('category', ['jugadores', 'jugadoras'])
+      .eq('sport', sport)
+      .order('score', { ascending: false })
+      .limit(1)
+      .then(({ data }) => (data ?? [])[0] as Row | undefined),
   )
-  const lists = await Promise.all(fetches)
-  const all = lists.flat()
-  const seen = new Set<string>()
-  const rows: Row[] = []
-  for (const r of all.sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999))) {
-    if (seen.has(r.id)) continue
-    seen.add(r.id)
-    rows.push(r)
-    if (rows.length >= limit) break
-  }
-  return rows
+  const results = await Promise.all(fetches)
+  return results.filter(Boolean) as Row[]
 }
 
-const CATEGORY_LABEL: Record<string, string> = {
-  jugadores: 'Jugador', jugadoras: 'Jugadora', clubes: 'Club',
-  entrenadores: 'Entrenador', creadores: 'Creador', periodistas: 'Periodista',
-}
-
-export default async function TopGlobalPage() {
-  const rows = await loadTop(50)
+export default async function ReyesPage() {
+  const kings = await loadKings()
   return (
     <main style={{ background: 'var(--bg-base)', minHeight: '100vh', padding: '24px 16px 80px' }}>
       <div className="max-w-3xl mx-auto">
@@ -69,15 +72,15 @@ export default async function TopGlobalPage() {
         </Link>
         <h1 className="text-3xl font-black mb-1"
           style={{ color: '#E8E8F0', fontFamily: 'var(--font-display)' }}>
-          Top <span style={{ color: '#C4B5FD' }}>50 global</span>
+          Reyes del <span style={{ color: '#C4B5FD' }}>deporte hispano</span>
         </h1>
         <p className="text-sm mb-6" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
-          Todo el deporte hispano en una sola lista. Score ponderado por deporte —
-          ver <Link href="/rankings/metodologia" style={{ color: '#7C3AED' }}>metodología</Link>.
+          El #1 de cada disciplina según el Índice Taka. Una foto del momento — actualizada cada semana.
         </p>
 
         <div className="space-y-2">
-          {rows.map((r, i) => {
+          {kings.map((r) => {
+            const meta = SPORTS_ORDER.find((s) => s.sport === r.sport)
             const delta = r.score_prev != null ? r.score - Number(r.score_prev) : null
             const deltaColor = delta != null && delta >= 0 ? '#22c55e' : '#f87171'
             return (
@@ -86,32 +89,35 @@ export default async function TopGlobalPage() {
                 style={{
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border)',
-                  borderLeft: i < 3 ? '3px solid #C4B5FD' : '3px solid #3A3A52',
+                  borderLeft: '3px solid #C4B5FD',
                   textDecoration: 'none',
                 }}>
                 <div className="flex items-center gap-3 px-4 py-2.5">
-                  <span className="font-black tabular-nums text-base w-7 text-center flex-shrink-0"
-                    style={{ fontFamily: 'var(--font-display)', color: i < 3 ? '#C4B5FD' : '#5A5A72' }}>
-                    {i + 1}
+                  <span className="text-lg flex-shrink-0" title={meta?.label}>
+                    {meta?.emoji ?? '🏅'}
                   </span>
                   {r.image_url ? (
-                    <img src={r.image_url} alt={r.name} width={36} height={36}
+                    <img src={r.image_url} alt={r.name} width={40} height={40}
                       style={{ borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
                   ) : (
-                    <div style={{ width: 36, height: 36, borderRadius: 10,
+                    <div style={{ width: 40, height: 40, borderRadius: 10,
                       background: 'rgba(124,58,237,0.18)', flexShrink: 0 }} />
                   )}
                   <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-black uppercase tracking-[0.15em]"
+                      style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
+                      {meta?.label ?? r.sport}
+                    </p>
                     <p className="text-sm font-bold truncate"
                       style={{ color: '#E8E8F0', fontFamily: 'var(--font-sport)' }}>
                       {r.name}
                     </p>
-                    <p className="text-[10px] truncate"
-                      style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
-                      <span style={{ color: '#7C3AED' }}>{CATEGORY_LABEL[r.category] ?? r.category}</span>
-                      {r.sport ? ' · ' + r.sport : ''}
-                      {r.subtitle ? ' · ' + r.subtitle : ''}
-                    </p>
+                    {r.subtitle && (
+                      <p className="text-[10px] truncate"
+                        style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                        {r.subtitle}
+                      </p>
+                    )}
                   </div>
                   <div className="text-right flex-shrink-0">
                     <span className="text-base font-black tabular-nums"
@@ -130,6 +136,13 @@ export default async function TopGlobalPage() {
             )
           })}
         </div>
+
+        <p className="text-[11px] mt-8 text-center"
+          style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+          El score se calcula igual entre deportes. El fútbol domina el top general porque
+          tiene más entries (3.000+) y mayor cobertura. Ver{' '}
+          <Link href="/rankings/metodologia" style={{ color: '#7C3AED' }}>metodología</Link>.
+        </p>
       </div>
     </main>
   )

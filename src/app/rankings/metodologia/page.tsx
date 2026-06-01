@@ -40,28 +40,14 @@ export default function MetodologiaPage() {
           </p>
         </Section>
 
-        <Section title="2. Peso por deporte">
-          <p>El ranking <strong>global</strong> aplica un peso por deporte para que el #1 mundial no sea siempre un piloto
-          de F1 (donde solo hay 20 puestos) sobre una estrella del fútbol. El score visible no cambia — solo la posición global.</p>
-          <table className="w-full mt-3 text-xs" style={{ fontFamily: 'var(--font-sport)' }}>
-            <thead><tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <th className="text-left py-1.5" style={{ color: '#5A5A72' }}>Deporte</th>
-              <th className="text-right py-1.5" style={{ color: '#5A5A72' }}>Peso</th>
-            </tr></thead>
-            <tbody>
-              {[
-                ['Fútbol', '1.00'], ['Baloncesto', '0.95'], ['Tenis', '0.93'],
-                ['MotoGP', '0.90'], ['Fórmula 1', '0.88'],
-                ['UFC / Boxeo / Béisbol / NFL / Atletismo', '0.85'],
-                ['WWE / Pádel / Ciclismo', '0.82'], ['Golf', '0.80'],
-              ].map(([s, p]) => (
-                <tr key={s} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td className="py-1.5" style={{ color: '#D0D0E0' }}>{s}</td>
-                  <td className="text-right py-1.5 tabular-nums" style={{ color: '#C4B5FD' }}>{p}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <Section title="2. Comparabilidad entre deportes">
+          <p>El score se calcula con la <strong>misma fórmula</strong> en todos los deportes — no aplicamos pesos ni boosts
+          artificiales. Una estrella de la NBA y un futbolista compiten por la misma escala 40-99.</p>
+          <p className="mt-3">Eso significa que el top global está dominado por fútbol, porque tenemos
+          ~3.000 futbolistas activos contra ~20 pilotos de F1. No es injusticia — es la realidad
+          mediática del deporte hispanohablante. Para ver la diversidad real, usa
+          <Link href="/rankings/todos" style={{ color: '#7C3AED' }}> Reyes del deporte hispano </Link>
+          (el #1 de cada disciplina) o filtra por deporte en el Índice principal.</p>
         </Section>
 
         <Section title="3. Capa automática + capa editorial">
