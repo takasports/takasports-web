@@ -12,6 +12,7 @@ import { getSportStyle } from '@/lib/sports'
 import ShareButton from './ShareButton'
 import PlayerAvatar from '@/components/rankings/PlayerAvatar'
 import ScoreHistoryChart from '@/components/rankings/ScoreHistoryChart'
+import ComputedBadges from '@/components/rankings/ComputedBadges'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import { Suspense } from 'react'
@@ -324,6 +325,11 @@ export default async function EntryDetailPage(
             )}
           </div>
         )}
+
+        {/* Badges computados */}
+        <div className="mb-4">
+          <ComputedBadges entryId={id} />
+        </div>
 
         {/* Histórico semanal */}
         <div className="rounded-2xl p-5 sm:p-6 mb-6"
