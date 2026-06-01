@@ -127,6 +127,14 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             <span style={{ fontSize: 28, color: '#5A5A72', fontWeight: 700 }}>
               / 100
             </span>
+            {entry?.scorePrev !== undefined && entry.scorePrev !== null && (
+              <span style={{
+                fontSize: 26, fontWeight: 900, marginLeft: 8,
+                color: score - entry.scorePrev >= 0 ? '#22c55e' : '#f87171',
+              }}>
+                {score - entry.scorePrev >= 0 ? '↑ +' : '↓ '}{(score - entry.scorePrev).toFixed(1)}
+              </span>
+            )}
           </div>
         </div>
       </div>

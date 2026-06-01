@@ -114,18 +114,38 @@ export async function GET(req: NextRequest) {
         { auth: { persistSession: false } },
       )
 
+      // Aliases: si la query matchea un apodo conocido, sumamos los entry_id directamente
+      let aliasEntryIds: string[] = []
+      try {
+        const { data: aliasRows } = await sb
+          .from('entry_aliases')
+          .select('entry_id')
+          .ilike('alias', `%${rawQ}%`)
+          .limit(20)
+        if (aliasRows) aliasEntryIds = aliasRows.map((r: { entry_id: string }) => r.entry_id)
+      } catch { /* opcional */ }
+
       // ilike es case-insensitive en Supabase, pero no quita acentos.
       // Hacemos una query amplia y filtramos en server por nombre normalizado.
+      const orFilter = aliasEntryIds.length > 0
+        ? `name.ilike.%${rawQ}%,subtitle.ilike.%${rawQ}%,id.in.(${aliasEntryIds.join(',')})`
+        : `name.ilike.%${rawQ}%,subtitle.ilike.%${rawQ}%`
+
       const { data, error } = await sb
         .from('ranking_view')
         .select('id,name,subtitle,sport,category,score,rank,emoji,image_url,country,badge')
-        .or(`name.ilike.%${rawQ}%,subtitle.ilike.%${rawQ}%`)
+        .or(orFilter)
         .order('score', { ascending: false })
         .limit(500)
 
       if (!error && data && data.length > 0) {
+        const aliasSet = new Set(aliasEntryIds)
         const dbHits: SearchHit[] = data
-          .filter((r) => norm(r.name ?? '').includes(q) || norm(r.subtitle ?? '').includes(q))
+          .filter((r) =>
+            aliasSet.has(r.id) ||
+            norm(r.name ?? '').includes(q) ||
+            norm(r.subtitle ?? '').includes(q)
+          )
           .map((r) => ({
             id:       r.id,
             name:     r.name,
