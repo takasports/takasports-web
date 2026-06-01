@@ -146,6 +146,23 @@ export const articlesByTagQuery = `*[_type == "article" && (status == "publicado
 // Todos los tags únicos — para el sitemap
 export const allTagsQuery = `array::unique(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(tags)].tags[])`
 
+// Feed de noticias relacionadas con una entidad (jugador, equipo, etc.).
+// Búsqueda por matching en campos prioritarios (title/headline > summary > body).
+// Parámetros:
+//   $needle: string con sufijo wildcard, ej. "lamine yamal*"
+//   $limit:  número (1-20)
+export const articlesByEntityQuery = `*[_type == "article"
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+  && (
+    title match $needle
+    || headline match $needle
+    || short_summary match $needle
+    || metaDescription match $needle
+  )
+] | order(publishedAt desc)[0...$limit] {
+  ${LISTING_FIELDS}
+}`
+
 // Breaking — ticker de últimas horas
 // Cubre: artículos viejos con type=="breaking" + artículos Taka con status=="breaking"
 export const breakingQuery = `*[_type == "article" && publishedAt > $since && (

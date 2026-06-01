@@ -8,6 +8,8 @@ import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import { ShareButton } from '@/components/ShareButton'
+import BreadcrumbsNav from '@/components/BreadcrumbsNav'
+import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
 
 export const revalidate = 1800
@@ -119,6 +121,19 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
+      {/* Breadcrumbs semánticos — mirror del BreadcrumbList JSON-LD */}
+      <BreadcrumbsNav
+        items={[
+          { label: 'Inicio', href: '/' },
+          { label: 'Estadísticas', href: '/estadisticas' },
+          ...(player.team
+            ? [{ label: player.team.name, href: `/equipo/${player.team.slug ?? player.team.id}` }]
+            : []),
+          { label: player.name },
+        ]}
+        className="mb-4 text-[11px] flex items-center gap-2 flex-wrap"
+      />
+
       {/* Back + Share */}
       <div className="flex items-center justify-between mb-6">
         <Link
@@ -271,9 +286,12 @@ export default async function JugadorPage({ params }: { params: Promise<{ slug: 
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: SITE_URL },
       { '@type': 'ListItem', position: 2, name: 'Estadísticas', item: `${SITE_URL}/estadisticas` },
-      { '@type': 'ListItem', position: 3, name: player.name, item: canonicalUrl },
+      ...(player.team
+        ? [{ '@type': 'ListItem', position: 3, name: player.team.name, item: `${SITE_URL}/equipo/${player.team.slug ?? player.team.id}` }]
+        : []),
+      { '@type': 'ListItem', position: player.team ? 4 : 3, name: player.name, item: canonicalUrl },
     ],
   }
 
@@ -287,6 +305,13 @@ export default async function JugadorPage({ params }: { params: Promise<{ slug: 
         <Suspense>
           <PlayerContent player={player} />
         </Suspense>
+        {/* Widget de noticias relacionadas con el jugador.
+            Distribuye autoridad del feed editorial al hub de la entidad. */}
+        <div className="max-w-2xl mx-auto px-4 pb-10">
+          <Suspense>
+            <RelatedArticlesByEntity entityName={player.name} limit={6} />
+          </Suspense>
+        </div>
       </main>
       <Footer />
     </>

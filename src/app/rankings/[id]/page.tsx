@@ -12,7 +12,9 @@ import { getSportStyle } from '@/lib/sports'
 import ShareButton from './ShareButton'
 import PlayerAvatar from '@/components/rankings/PlayerAvatar'
 import ScoreHistoryChart from '@/components/rankings/ScoreHistoryChart'
+import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
+import { Suspense } from 'react'
 
 // ── Helpers compartidos ───────────────────────────────────────────
 function getDisplayScore(entry: RankingEntry): number {
@@ -386,6 +388,12 @@ export default async function EntryDetailPage(
             ⚖️ Comparar con otro
           </Link>
         </div>
+
+        {/* Widget de noticias relacionadas con esta entry del ranking.
+            Distribuye autoridad desde el feed editorial al hub de la entidad. */}
+        <Suspense>
+          <RelatedArticlesByEntity entityName={entry.name} limit={6} />
+        </Suspense>
       </main>
 
       <ScrollToTop />
