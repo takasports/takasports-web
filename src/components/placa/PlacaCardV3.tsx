@@ -223,7 +223,41 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
     0 calc(100% - 32px)
   )`
 
+  // Clip interno (5px más adentro) para el área de contenido
+  const INNER_CLIP = `polygon(
+    0 0,
+    calc(100% - 23px) 0,
+    100% 23px,
+    100% 100%,
+    27px 100%,
+    0 calc(100% - 27px)
+  )`
+
   const sportSvg = sportArtSVG(sportArt, accent)
+
+  // ── Frame texture por tier — lo que hace que bronze se sienta mate y
+  // diamond crystalline. Patrón que se aplica como overlay sobre el ring.
+  const frameTexture: string = (() => {
+    switch (placa.tier) {
+      case 'bronze':
+        // Stipple matte — granito, sin brillo
+        return `radial-gradient(rgba(0,0,0,0.18) 1px, transparent 1.5px), radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1.5px)`
+      case 'silver':
+        // Sheen vertical — plata pulida con líneas finas
+        return `repeating-linear-gradient(180deg, rgba(255,255,255,0.10) 0px, transparent 1px, transparent 4px)`
+      case 'gold':
+        // Brushed metal horizontal — oro cepillado
+        return `repeating-linear-gradient(90deg, rgba(255,255,255,0.10) 0px, transparent 1.5px, transparent 5px), repeating-linear-gradient(90deg, rgba(0,0,0,0.08) 2px, transparent 2.5px, transparent 5px)`
+      case 'diamond':
+        // Crystalline facets — multi-direccional, simula facetas de gema
+        return `conic-gradient(from 45deg, rgba(255,255,255,0.22) 0deg, transparent 30deg, rgba(255,255,255,0.10) 60deg, transparent 90deg, rgba(255,255,255,0.18) 120deg, transparent 150deg, rgba(255,255,255,0.22) 180deg, transparent 210deg, rgba(255,255,255,0.10) 240deg, transparent 270deg, rgba(255,255,255,0.18) 300deg, transparent 330deg, rgba(255,255,255,0.22) 360deg)`
+    }
+  })()
+  const frameTextureSize = placa.tier === 'bronze'
+    ? '6px 6px, 4px 4px'
+    : placa.tier === 'silver' || placa.tier === 'gold'
+      ? 'auto'
+      : 'auto'
 
   return (
     <div
@@ -258,29 +292,72 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
           fontFamily: 'var(--font-sport)',
         } as React.CSSProperties}
       >
-        {/* L0. Borde foil — segundo elemento clipped que actúa como borde */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* FRAME SYSTEM — 5 capas, metálico 3D estilo 2K          */}
+        {/* ═══════════════════════════════════════════════════════ */}
+
+        {/* L0a. Frame base — gradient metálico tier ring 5px */}
         <div
           aria-hidden="true"
           style={{
             position: 'absolute', inset: 0,
             background: tier.ringStyle,
-            opacity: 0.5,
+            opacity: 0.92,
             clipPath: CLIP_PATH,
-            // Crear "borde" usando otro clip más pequeño superpuesto
           }}
         />
+
+        {/* L0b. Frame texture overlay — patrón por tier (matte/sheen/brushed/crystalline) */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: frameTexture,
+            backgroundSize: frameTextureSize,
+            clipPath: CLIP_PATH,
+            mixBlendMode: 'overlay',
+            opacity: 0.85,
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* L0c. Frame bevel — luz direccional desde top-left (3D feel) */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0,
+            background: `linear-gradient(135deg,
+              rgba(255,255,255,0.28) 0%,
+              rgba(255,255,255,0.10) 15%,
+              transparent 35%,
+              transparent 65%,
+              rgba(0,0,0,0.30) 85%,
+              rgba(0,0,0,0.55) 100%
+            )`,
+            clipPath: CLIP_PATH,
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* L0d. Frame inner shadow rim — sombra fina justo dentro del frame
+                   para que el contenido se vea "encajado" en la moldura */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 4,
+            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.45)',
+            clipPath: INNER_CLIP,
+            pointerEvents: 'none',
+            zIndex: 1,
+          }}
+        />
+
+        {/* L0e. CONTENT AREA — inset 5px con clip interno ajustado */}
         <div
           style={{
-            position: 'absolute', inset: 2,
+            position: 'absolute', inset: 5,
             background: cardBg,
-            clipPath: `polygon(
-              0 0,
-              calc(100% - 27px) 0,
-              100% 27px,
-              100% 100%,
-              31px 100%,
-              0 calc(100% - 31px)
-            )`,
+            clipPath: INNER_CLIP,
           }}
         />
 
@@ -356,33 +433,67 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
             display: 'flex', flexDirection: 'column',
           }}
         >
-          {/* TIER STAMP — header metálico */}
+          {/* TIER STAMP — placa metálica embossed con remaches y bevel */}
           <div
             style={{
+              position: 'relative',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '6px 10px',
-              background: `linear-gradient(135deg, ${tier.primary}25 0%, ${tier.primary}08 50%, ${tier.primary}25 100%)`,
-              border: `1px solid ${tier.primary}55`,
-              borderRadius: 2,
-              boxShadow: `inset 0 1px 0 ${tier.primary}55, inset 0 -1px 0 rgba(0,0,0,0.4)`,
+              padding: '8px 14px',
+              // Background metálico tier + sobrepuestos de luz/sombra
+              background: `
+                linear-gradient(180deg,
+                  rgba(255,255,255,0.18) 0%,
+                  transparent 35%,
+                  rgba(0,0,0,0.35) 100%
+                ),
+                ${tier.ringStyle}
+              `,
+              clipPath: `polygon(
+                4px 0,
+                calc(100% - 4px) 0,
+                100% 50%,
+                calc(100% - 4px) 100%,
+                4px 100%,
+                0 50%
+              )`,
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.45)`,
             }}
           >
+            {/* Remaches izq/der */}
+            <span aria-hidden="true" style={{
+              position: 'absolute', top: '50%', left: 10, transform: 'translateY(-50%)',
+              width: 3, height: 3, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.55)',
+              boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.35)',
+            }} />
+            <span aria-hidden="true" style={{
+              position: 'absolute', top: '50%', right: 10, transform: 'translateY(-50%)',
+              width: 3, height: 3, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.55)',
+              boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.35)',
+            }} />
+
             <span style={{
               fontFamily: 'var(--font-headline)',
               fontSize: 11,
               letterSpacing: '0.32em',
-              color: tier.primary,
-              textShadow: `0 1px 0 rgba(0,0,0,0.6), 0 0 10px ${tier.glow}`,
+              color: '#0A0612',
+              textShadow: '0 1px 0 rgba(255,255,255,0.30)',
               fontWeight: 400,
+              position: 'relative', zIndex: 1,
+              marginLeft: 6,
             }}>
               {tier.label}
             </span>
             <span style={{
               fontFamily: 'var(--font-display)',
               fontSize: 11, fontWeight: 900,
-              color: '#F0F0F8',
-              letterSpacing: '0.06em',
-              opacity: 0.85,
+              color: '#0A0612',
+              letterSpacing: '0.08em',
+              textShadow: '0 1px 0 rgba(255,255,255,0.28)',
+              opacity: 0.92,
+              position: 'relative', zIndex: 1,
+              marginRight: 6,
             }}>
               {placa.levelName?.toUpperCase()}
             </span>
@@ -622,29 +733,75 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
             </div>
           )}
 
-          {/* FOOTER */}
+          {/* NAME PLATE — placa metálica al pie con bevel + texto embossed */}
           <div
             style={{
               marginTop: 'auto',
-              paddingTop: 12,
-              borderTop: `1px solid ${frameColor}25`,
-              display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+              marginInline: -8,        // se extiende un poco al borde
+              marginBottom: -10,
+              position: 'relative',
+              height: 36,
+              display: 'flex', alignItems: 'center',
+              padding: '0 14px',
+              justifyContent: 'space-between',
+              // Background metálico — usa el ring style del tier al 60%
+              background: `
+                linear-gradient(180deg,
+                  rgba(255,255,255,0.10) 0%,
+                  transparent 40%,
+                  rgba(0,0,0,0.35) 100%
+                ),
+                ${tier.ringStyle}
+              `,
+              clipPath: `polygon(
+                0 6px,
+                8px 0,
+                calc(100% - 8px) 0,
+                100% 6px,
+                100% 100%,
+                0 100%
+              )`,
+              borderTop: `1px solid rgba(255,255,255,0.18)`,
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.4)`,
             }}
           >
+            {/* Rivets — pequeños puntos como remaches en las esquinas */}
+            <span aria-hidden="true" style={{
+              position: 'absolute', top: 4, left: 8,
+              width: 3, height: 3, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.6)',
+              boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.4)',
+            }} />
+            <span aria-hidden="true" style={{
+              position: 'absolute', top: 4, right: 8,
+              width: 3, height: 3, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.6)',
+              boxShadow: 'inset 0 0.5px 0 rgba(255,255,255,0.4)',
+            }} />
+
+            {/* Handle — etched effect */}
             <span style={{
               fontFamily: 'var(--font-sport)',
-              fontSize: 11, fontWeight: 700,
-              color: '#6A6A88', letterSpacing: '0.02em',
+              fontSize: 11, fontWeight: 800,
+              color: '#0A0612',
+              letterSpacing: '0.02em',
+              textShadow: '0 1px 0 rgba(255,255,255,0.18)',
+              position: 'relative', zIndex: 1,
             }}>
               @{placa.handle}
             </span>
+
+            {/* Tier name embossed — sustituye al "TAKA" wordmark */}
             <span style={{
               fontFamily: 'var(--font-headline)',
-              fontSize: 12, fontWeight: 400,
-              letterSpacing: '0.32em',
-              color: accent, opacity: 0.7,
+              fontSize: 11, fontWeight: 400,
+              letterSpacing: '0.3em',
+              color: '#0A0612',
+              textShadow: '0 1px 0 rgba(255,255,255,0.25)',
+              position: 'relative', zIndex: 1,
+              opacity: 0.85,
             }}>
-              TAKA
+              {tier.label}
             </span>
           </div>
         </div>
@@ -674,6 +831,39 @@ export function PlacaCardV3({ placa, sportAccent, sportArt = 'futbol', interacti
             zIndex: 4,
           }}
         />
+
+        {/* CORNER ORNAMENTS — labrado en las esquinas sharp del clip-path.
+            Top-left y bottom-right son ángulos rectos (los otros dos tienen
+            diecut). Detalles geométricos pequeños que dan craftsmanship. */}
+        <svg
+          aria-hidden="true"
+          width="22" height="22" viewBox="0 0 22 22" fill="none"
+          style={{
+            position: 'absolute', top: 4, left: 4, zIndex: 5,
+            color: tier.primary,
+            filter: `drop-shadow(0 1px 0 rgba(0,0,0,0.5))`,
+            opacity: 0.85,
+          }}
+        >
+          <path d="M0 22 L 0 6 L 6 0 L 22 0" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M3 22 L 3 8 L 8 3 L 22 3" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+          <circle cx="6" cy="6" r="1.4" fill="currentColor" />
+        </svg>
+        <svg
+          aria-hidden="true"
+          width="22" height="22" viewBox="0 0 22 22" fill="none"
+          style={{
+            position: 'absolute', bottom: 4, right: 4, zIndex: 5,
+            color: tier.primary,
+            filter: `drop-shadow(0 -1px 0 rgba(0,0,0,0.5))`,
+            opacity: 0.85,
+            transform: 'rotate(180deg)',
+          }}
+        >
+          <path d="M0 22 L 0 6 L 6 0 L 22 0" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M3 22 L 3 8 L 8 3 L 22 3" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+          <circle cx="6" cy="6" r="1.4" fill="currentColor" />
+        </svg>
 
         {/* CORNER STICKER — encajado en el corte top-right (diecut) */}
         {placa.cornerSticker && (placa.cornerSticker.iconId || placa.cornerSticker.emoji) && (
