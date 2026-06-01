@@ -56,6 +56,25 @@ export async function GET(req: NextRequest) {
 interface PickBody {
   event_id: string
   pick: '1' | 'X' | '2'
+  /** ME1 — Marcador exacto opcional. Si presente y la tendencia es correcta
+   *  Y los goles coinciden, +3 pts extra (o +6 si featured). Máx 3 activos
+   *  por user (en eventos status='open' / no resueltos). */
+  exactScore?: { home: number; away: number }
+}
+
+const MAX_EXACT_ACTIVE = 3
+
+function validateExactScore(v: unknown): { home: number; away: number } | null | 'invalid' {
+  if (v === undefined || v === null) return null
+  if (typeof v !== 'object') return 'invalid'
+  const o = v as { home?: unknown; away?: unknown }
+  if (
+    typeof o.home !== 'number' || !Number.isInteger(o.home) ||
+    typeof o.away !== 'number' || !Number.isInteger(o.away) ||
+    o.home < 0 || o.home > 20 ||
+    o.away < 0 || o.away > 20
+  ) return 'invalid'
+  return { home: o.home, away: o.away }
 }
 
 export async function POST(req: NextRequest) {
@@ -70,6 +89,11 @@ export async function POST(req: NextRequest) {
 
   if (!body?.event_id || !['1', 'X', '2'].includes(body.pick)) {
     return NextResponse.json({ error: 'invalid_body' }, { status: 400 })
+  }
+
+  const exactScore = validateExactScore(body.exactScore)
+  if (exactScore === 'invalid') {
+    return NextResponse.json({ error: 'invalid_exact_score' }, { status: 400 })
   }
 
   const sb = await createServerSupabaseClient()
@@ -111,13 +135,52 @@ export async function POST(req: NextRequest) {
     .eq('event_id', body.event_id)
     .maybeSingle()
 
+  const existingPrediction = (existing as { prediction?: { exactScore?: { home: number; away: number } } } | null)?.prediction
+  const hadExact = !!existingPrediction?.exactScore
+
+  // ME1 — Si se está añadiendo un exact NUEVO (no había antes en este evento),
+  // verificar que no excedemos MAX_EXACT_ACTIVE para el user.
+  if (exactScore && !hadExact) {
+    const { data: openEvents } = await sb
+      .from('ranked_events')
+      .select('id')
+      .eq('sport', ev.sport)
+      .neq('status', 'resolved')
+    const openIds = (openEvents ?? []).map((e: { id: string }) => e.id)
+    if (openIds.length > 0) {
+      const { data: activeExacts } = await sb
+        .from('ranked_predictions')
+        .select('event_id, prediction')
+        .eq('user_id', user.id)
+        .in('event_id', openIds)
+      const count = (activeExacts ?? [])
+        .filter((r) => !!(r as { prediction?: { exactScore?: unknown } }).prediction?.exactScore)
+        .length
+      if (count >= MAX_EXACT_ACTIVE) {
+        return NextResponse.json(
+          {
+            error: 'exact_limit',
+            message: `Ya tienes ${MAX_EXACT_ACTIVE} marcadores exactos activos. Espera al cierre de alguno antes de añadir otro.`,
+          },
+          { status: 409 },
+        )
+      }
+    }
+  }
+
+  // Construye el JSONB final. exactScore se omite si null para mantener
+  // el payload limpio (no { pick, exactScore: null }).
+  const predictionPayload = exactScore
+    ? { pick: body.pick, exactScore }
+    : { pick: body.pick }
+
   // ── Cambio de pick (el evento sigue open) ────────────────────────
   // Si ya hay predicción y el partido aún no ha empezado, permitimos
   // actualizarla. Los badges NO se re-disparan en actualizaciones.
   if (existing) {
     const { data: updated, error: updateErr } = await sb
       .from('ranked_predictions')
-      .update({ prediction: { pick: body.pick } })
+      .update({ prediction: predictionPayload })
       .eq('user_id', user.id)
       .eq('event_id', body.event_id)
       .select()
@@ -133,7 +196,7 @@ export async function POST(req: NextRequest) {
     .insert({
       user_id:    user.id,
       event_id:   body.event_id,
-      prediction: { pick: body.pick },
+      prediction: predictionPayload,
     })
     .select()
     .single()
@@ -144,7 +207,7 @@ export async function POST(req: NextRequest) {
     if (error.code === '23505') {
       const { data: fallback } = await sb
         .from('ranked_predictions')
-        .update({ prediction: { pick: body.pick } })
+        .update({ prediction: predictionPayload })
         .eq('user_id', user.id)
         .eq('event_id', body.event_id)
         .select()

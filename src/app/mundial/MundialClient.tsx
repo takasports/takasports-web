@@ -23,7 +23,13 @@ interface RankedEvent {
 
 interface PredictionRow {
   event_id:       string
-  prediction:     { pick: '1' | 'X' | '2' }
+  prediction:     {
+    pick: '1' | 'X' | '2'
+    /** ME1 — Marcador exacto opcional. +3 pts extra (+6 si featured)
+     *  cuando coincide con el resultado real Y la tendencia es correcta.
+     *  Máx 3 activos por user en eventos no resueltos. */
+    exactScore?: { home: number; away: number }
+  }
   points_awarded: number | null
   is_correct:     boolean | null
 }
@@ -257,17 +263,25 @@ function PickButton({
 // ── MatchCard ─────────────────────────────────────────────────────────────
 
 function MatchCard({
-  event, pred, submitting, onPick, animDelay = 0,
+  event, pred, submitting, onPick, onExactSet, activeExactCount, animDelay = 0,
 }: {
   event: RankedEvent; pred: PredictionRow | undefined
-  submitting: boolean; onPick: (id: string, pick: '1'|'X'|'2') => void; animDelay?: number
+  submitting: boolean
+  onPick: (id: string, pick: '1'|'X'|'2') => void
+  /** ME3 — Set/unset del marcador exacto. null = quitar. */
+  onExactSet: (id: string, exact: { home: number; away: number } | null) => void
+  /** ME3 — Nº de exactos activos del user en eventos no resueltos (0..3). */
+  activeExactCount: number
+  animDelay?: number
 }) {
   const myPick     = pred?.prediction?.pick ?? null
+  const exactScore = pred?.prediction?.exactScore ?? null
   const isResolved = event.status === 'resolved'
   const isClosed   = event.status === 'closed'
   const winner     = event.result?.winner ?? null
   const pts        = pred?.points_awarded ?? null
   const [shared, setShared] = useState(false)
+  const exactSlotAvailable = !!exactScore || activeExactCount < 3
 
   // Lock: 1h antes del partido (se recalcula en cada render por el tick)
   const lockMs  = msUntilLock(event.event_date)
@@ -427,6 +441,137 @@ function MatchCard({
         })}
       </div>
 
+      {/* ── ME3/ME4 — Marcador exacto ──
+          · Aparece solo si hay pick y el evento está abierto (edición)
+            o resuelto/cerrado (lectura con feedback). */}
+      {myPick && (
+        <div style={{ marginTop: 10 }}>
+          {(() => {
+            // Modo lectura: resuelto/cerrado y hay exactScore predicho.
+            if ((isResolved || isClosed) && exactScore) {
+              const realHome = event.result?.home_score
+              const realAway = event.result?.away_score
+              const exactHit =
+                realHome != null && realAway != null &&
+                exactScore.home === realHome && exactScore.away === realAway
+              const trendOk = isResolved && winner === myPick
+              let bg = 'rgba(167,139,250,0.10)'
+              let border = 'rgba(167,139,250,0.32)'
+              let color = '#C4B5FD'
+              let suffix: React.ReactNode = null
+              if (isResolved) {
+                if (exactHit) {
+                  bg = 'rgba(34,197,94,0.16)'; border = 'rgba(34,197,94,0.4)'; color = '#86EFAC'
+                  suffix = <span style={{ marginLeft: 4, color: '#BBF7D0', fontWeight: 900 }}>{event.featured ? '· +6 pts' : '· +3 pts'}</span>
+                } else if (trendOk && realHome != null) {
+                  bg = 'rgba(249,115,22,0.12)'; border = 'rgba(249,115,22,0.32)'; color = '#FED7AA'
+                  suffix = <span style={{ marginLeft: 4, color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>· fue {realHome}-{realAway}</span>
+                } else {
+                  bg = 'rgba(255,255,255,0.04)'; border = 'rgba(255,255,255,0.1)'; color = 'rgba(255,255,255,0.45)'
+                }
+              }
+              return (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '3px 8px', borderRadius: 6,
+                  background: bg, border: `1px solid ${border}`, color,
+                  fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
+                }}>
+                  {isResolved && exactHit ? '🎯 ✓' : '🎯'} EXACTO {exactScore.home}-{exactScore.away}{suffix}
+                </span>
+              )
+            }
+            // Modo edición: evento open (sin lock).
+            if (!isOpen) return null
+            if (!exactScore) {
+              return (
+                <button
+                  type="button"
+                  onClick={() => exactSlotAvailable && onExactSet(event.id, { home: 0, away: 0 })}
+                  disabled={!exactSlotAvailable || submitting}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '4px 9px', borderRadius: 6,
+                    background: exactSlotAvailable ? 'rgba(167,139,250,0.10)' : 'rgba(255,255,255,0.03)',
+                    border: exactSlotAvailable ? '1px solid rgba(167,139,250,0.28)' : '1px dashed rgba(255,255,255,0.08)',
+                    color: exactSlotAvailable ? '#A78BFA' : '#3A3A52',
+                    cursor: exactSlotAvailable && !submitting ? 'pointer' : 'not-allowed',
+                    fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
+                  }}
+                  title={exactSlotAvailable
+                    ? `+${event.featured ? 6 : 3} pts si clavas el marcador exacto`
+                    : 'Ya tienes 3 marcadores exactos activos. Espera al cierre de alguno.'}
+                >
+                  🎯 {exactSlotAvailable
+                    ? `+ Marcador exacto · +${event.featured ? 6 : 3} pts`
+                    : 'Marcador exacto (3/3)'}
+                </button>
+              )
+            }
+            // Editor: 2 inputs + quitar.
+            return (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 8px', borderRadius: 6,
+                background: 'rgba(167,139,250,0.12)',
+                border: '1px solid rgba(167,139,250,0.36)',
+              }}>
+                <span style={{ fontSize: 12, lineHeight: 1 }} aria-hidden>🎯</span>
+                <span style={{
+                  fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
+                  color: '#C4B5FD', letterSpacing: '0.06em',
+                }}>EXACTO</span>
+                <input
+                  type="number" inputMode="numeric" min={0} max={20}
+                  value={exactScore.home}
+                  disabled={submitting}
+                  aria-label="Goles local"
+                  onChange={(e) => {
+                    const v = Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0)))
+                    onExactSet(event.id, { home: v, away: exactScore.away })
+                  }}
+                  style={{
+                    width: 30, height: 24, borderRadius: 4, textAlign: 'center',
+                    background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(167,139,250,0.32)',
+                    color: '#fff', fontSize: 12, fontWeight: 900,
+                    fontFamily: 'var(--font-display)',
+                  }}
+                />
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700 }}>vs</span>
+                <input
+                  type="number" inputMode="numeric" min={0} max={20}
+                  value={exactScore.away}
+                  disabled={submitting}
+                  aria-label="Goles visitante"
+                  onChange={(e) => {
+                    const v = Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0)))
+                    onExactSet(event.id, { home: exactScore.home, away: v })
+                  }}
+                  style={{
+                    width: 30, height: 24, borderRadius: 4, textAlign: 'center',
+                    background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(167,139,250,0.32)',
+                    color: '#fff', fontSize: 12, fontWeight: 900,
+                    fontFamily: 'var(--font-display)',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => onExactSet(event.id, null)}
+                  disabled={submitting}
+                  aria-label="Quitar marcador exacto"
+                  style={{
+                    width: 18, height: 18, borderRadius: 4, marginLeft: 2,
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                    color: 'rgba(255,255,255,0.6)', cursor: submitting ? 'wait' : 'pointer',
+                    fontSize: 10, lineHeight: 1, padding: 0,
+                  }}
+                >✕</button>
+              </div>
+            )
+          })()}
+        </div>
+      )}
+
       {/* ── Points earned ── */}
       {isResolved && myPick && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
@@ -543,18 +688,40 @@ export default function MundialClient() {
     return () => { if (tickRef.current) clearInterval(tickRef.current) }
   }, [])
 
-  const handlePick = useCallback(async (eventId: string, pick: '1'|'X'|'2') => {
+  // Función interna: envía POST a /api/ranked/predictions con el pick
+  // actual + un exactScore opcional. La RPC del Mundial guarda el JSONB
+  // completo, así que siempre necesitamos pasar pick + exactScore (o sin
+  // exactScore si lo estamos quitando).
+  const sendPrediction = useCallback(async (
+    eventId: string,
+    pick: '1'|'X'|'2',
+    exactScore: { home: number; away: number } | null,
+  ) => {
     if (submitting) return
     setSubmitting(true)
     try {
+      const body: Record<string, unknown> = { event_id: eventId, pick }
+      if (exactScore) body.exactScore = exactScore
       const res = await fetch('/api/ranked/predictions', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ event_id: eventId, pick }),
+        body: JSON.stringify(body),
       })
       if (res.status === 401) { setShowLogin(true); return }
-      if (res.status === 409) { await load(); return }
+      if (res.status === 409) {
+        // Puede ser pick_locked, event_closed, o exact_limit.
+        try {
+          const json = await res.json() as { error?: string; message?: string }
+          if (json?.error === 'exact_limit') {
+            setError(json.message ?? 'Ya tienes 3 marcadores exactos activos.')
+            return
+          }
+        } catch { /* */ }
+        await load(); return
+      }
       if (!res.ok) throw new Error('error')
-      const data = await res.json() as { prediction?: { event_id: string; prediction: { pick: '1'|'X'|'2' } } }
+      const data = await res.json() as {
+        prediction?: { event_id: string; prediction: PredictionRow['prediction'] }
+      }
       if (data.prediction) {
         setPreds(prev => ({
           ...prev,
@@ -565,14 +732,40 @@ export default function MundialClient() {
             is_correct:     prev[eventId]?.is_correct ?? null,
           },
         }))
-        // Primera predicción + primera del Mundial pueden otorgar badges
-        // (primera_prediccion, mundialista_2026). Notificamos al provider
-        // sin esperar al visibilitychange.
         try { window.dispatchEvent(new Event('taka:badge-check')) } catch { /* noop */ }
       }
     } catch { setError('No se pudo guardar la predicción.') }
     finally { setSubmitting(false) }
   }, [submitting, load])
+
+  const handlePick = useCallback((eventId: string, pick: '1'|'X'|'2') => {
+    // Preservar exact actual al cambiar la tendencia.
+    const currentExact = preds[eventId]?.prediction?.exactScore ?? null
+    void sendPrediction(eventId, pick, currentExact)
+  }, [preds, sendPrediction])
+
+  const handleExactSet = useCallback((
+    eventId: string,
+    exact: { home: number; away: number } | null,
+  ) => {
+    // Necesitamos el pick actual; sin pick no se debería poder llegar aquí
+    // pero por defensa, si falta, no hacemos nada.
+    const currentPick = preds[eventId]?.prediction?.pick
+    if (!currentPick) return
+    void sendPrediction(eventId, currentPick, exact)
+  }, [preds, sendPrediction])
+
+  // ME3 — Nº de exactos activos del user (en eventos NO resueltos). Sirve
+  // para deshabilitar "+ Marcador exacto" cuando se alcanza el límite.
+  const activeExactCount = useMemo(() => {
+    const openIds = new Set(events.filter(e => e.status !== 'resolved').map(e => e.id))
+    let count = 0
+    for (const eid of Object.keys(preds)) {
+      if (!openIds.has(eid)) continue
+      if (preds[eid]?.prediction?.exactScore) count++
+    }
+    return count
+  }, [events, preds])
 
   const grouped = useMemo(() => {
     const map = new Map<string, { label: string; events: RankedEvent[] }>()
@@ -855,6 +1048,7 @@ export default function MundialClient() {
                   <MatchCard
                     key={ev.id} event={ev} pred={preds[ev.id]}
                     submitting={submitting} onPick={handlePick}
+                    onExactSet={handleExactSet} activeExactCount={activeExactCount}
                     animDelay={gi * 55 + ci * 45}
                   />
                 ))}
