@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { sanityClient, articlesQuery, articlesBySlugsQuery, reelsQuery, eventsQuery } from '@/lib/sanity'
-import { SLUG_TO_LABEL, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, CATEGORY_TO_SLUG } from '@/lib/sports'
+import { HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, CATEGORY_TO_SLUG } from '@/lib/sports'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents } from '@/lib/espn'
 import { fetchPublicReels } from '@/lib/instagram-public'
@@ -69,12 +69,12 @@ function sortForHome(articles: HomeArticle[]): HomeArticle[] {
   })
 }
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ sport?: string }>
-}) {
-  const { sport } = await searchParams
+export default async function Home() {
+  // F3.5 (jun 2026): el home ya NO lee searchParams en server. Antes hacía
+  // `await searchParams` para preseleccionar el filtro `?sport=X` → marcaba
+  // toda la home como dinámica → Vercel emitía Cache-Control: no-store →
+  // catastrófico para SEO + CWV (LCP 7.7s en mobile medido en PSI). Ahora
+  // el preseleccionado se lee client-side en HomeContent via useSearchParams.
 
   // Slugs canónicos de las categorías visibles en el home (incluye el "Más").
   // Para cada uno, también enviamos los aliases que pueden aparecer en Sanity
@@ -133,8 +133,7 @@ export default async function Home({
   const sanityIds = new Set(sanityEvents.map((e: { home: string; away: string | null }) => `${e.home}|${e.away}`))
   const events = [...sanityEvents, ...espnEvents.filter(e => !sanityIds.has(`${e.home}|${e.away}`))]
 
-  // Convertir slug de URL ('futbol') → label visual ('Fútbol') para el estado inicial
-  const initialSport = sport ? (SLUG_TO_LABEL[sport.toLowerCase()] ?? '') : ''
+  // F3.5: el initialSport ahora se calcula en HomeContent (client) leyendo `?sport=X`.
 
   // VideoObject JSON-LD: solo cuando tenemos reels reales de Sanity con datos suficientes
   interface SanityReel {
@@ -214,7 +213,7 @@ export default async function Home({
       <BreakingNewsBar items={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
       <LiveStrip />
       <PorraHero />
-      <HomeContent articles={articles} reels={reels} events={events} initialSport={initialSport} topPlayers={topPlayers} featuredBySport={featuredBySport} />
+      <HomeContent articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} />
       <NewsletterSection source="home" />
       <Footer />
     </div>

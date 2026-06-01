@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { sanityClient, articlesByTagQuery } from '@/lib/sanity'
+import { sanityClient, articlesByTagQuery, allTagsQuery } from '@/lib/sanity'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { timeAgo } from '@/lib/timeAgo'
 import Image from '@/components/DynamicImage'
@@ -13,6 +13,18 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 3600
+// Tags nuevos detectados en runtime también se renderizan vía ISR (no 404).
+export const dynamicParams = true
+
+// F3.5 (jun 2026): pre-generamos páginas de tags para que Next las trate
+// como SSG cacheables en lugar de Dynamic. Tags nuevos no listados aquí
+// caen al primer hit vía ISR (dynamicParams=true).
+export async function generateStaticParams() {
+  const tags = await sanityClient
+    .fetch<string[]>(allTagsQuery)
+    .catch(() => [] as string[])
+  return tags.filter(Boolean).slice(0, 200).map((tag) => ({ tag: encodeURIComponent(tag) }))
+}
 
 interface Article {
   _id: string

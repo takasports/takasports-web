@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import HeroBlock from '@/components/HeroBlock'
@@ -11,7 +11,7 @@ import Sidebar from '@/components/Sidebar'
 import type { RankingEntry } from '@/lib/rankings'
 import QuinielaTeaser from '@/components/QuinielaTeaser'
 import CategoriesFilter from '@/components/CategoriesFilter'
-import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
+import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, SLUG_TO_LABEL } from '@/lib/sports'
 import type { SportEvent } from '@/lib/types'
 import {
   IconCrackQuiz,
@@ -271,20 +271,32 @@ export default function HomeContent({
   articles,
   reels,
   events,
-  initialSport = '',
   topPlayers,
   featuredBySport = {},
 }: {
   articles: Article[]
   reels: SanityReel[]
   events: SportEvent[]
-  initialSport?: string
   topPlayers?: RankingEntry[]
   featuredBySport?: Record<string, Article[]>
 }) {
   const router = useRouter()
-  const [activeSport, setActiveSport] = useState<string>(initialSport || 'Todo')
+  const [activeSport, setActiveSport] = useState<string>('Todo')
   const [contentVisible, setContentVisible] = useState(true)
+
+  // F3.5 (jun 2026): preseleccionado por `?sport=X` se lee client-side al
+  // montar. Antes se leía via searchParams en el server (forzaba dynamic).
+  // Ahora el server page es estático y este efecto aplica el filtro tras
+  // hidratar. Trade-off: parpadeo brevísimo en hidratación si el user llega
+  // directo a /?sport=futbol — aceptable para ganar ISR + CDN caching.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const slug = params.get('sport')
+    if (!slug) return
+    const label = SLUG_TO_LABEL[slug.toLowerCase()]
+    if (label) setActiveSport(label)
+  }, [])
 
   const handleSportChange = useCallback((cat: string) => {
     setContentVisible(false)

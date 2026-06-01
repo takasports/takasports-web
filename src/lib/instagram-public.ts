@@ -116,9 +116,13 @@ function igHeaders(username: string) {
 
 async function resolveUserId(username: string): Promise<string | null> {
   try {
+    // El userId de Instagram es estable para un mismo username — cacheable
+    // 24h sin problema. ANTES `cache: 'no-store'` forzaba a Next a marcar
+    // toda página que invocara fetchPublicReels() como dynamic → home pasaba
+    // a no-store → catastrófico para SEO/CWV. Fix F3.5 (jun 2026).
     const res = await fetch(
       `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`,
-      { headers: igHeaders(username), signal: AbortSignal.timeout(6000), cache: 'no-store' },
+      { headers: igHeaders(username), signal: AbortSignal.timeout(6000), next: { revalidate: 86400 } },
     )
     if (!res.ok) return null
     const data = await res.json()
@@ -167,10 +171,12 @@ export async function fetchPublicReels(username = 'taka.sports'): Promise<Public
     if (maxId) url.searchParams.set('max_id', maxId)
 
     try {
+      // Reels — revalidate 30min: balance entre frescura del feed IG y
+      // no marcar la home como dynamic. Antes cache:'no-store' forzaba dynamic.
       const res = await fetch(url.toString(), {
         headers: igHeaders(username),
         signal: AbortSignal.timeout(7000),
-        cache: 'no-store',
+        next: { revalidate: 1800 },
       })
       if (!res.ok) {
         console.error('[Instagram public] HTTP', res.status, 'page', page)
