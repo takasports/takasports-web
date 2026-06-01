@@ -59,7 +59,12 @@ function SportPlaceholder({ sport, category, size = 'big' }: { sport?: string; c
 }
 
 // ── Card grande (top 2) ────────────────────────────────────────
-function BigCard({ article }: { article: Article }) {
+// F3.7 (jun 2026): solo el PRIMER big card recibe priority/fetchPriority=high.
+// Antes ambos cards (top 2) competían como LCP candidates en mobile 4G —
+// dos preloads de ~150 KiB cada uno simultáneos → LCP 14.7s catastrófico
+// medido en PSI. Ahora solo el #0 es high priority, el #1 carga eager pero
+// con prioridad auto, dejando al browser decidir cuándo descargarlo.
+function BigCard({ article, lcp = false }: { article: Article; lcp?: boolean }) {
   const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(800).height(520).url() : null)
@@ -78,9 +83,9 @@ function BigCard({ article }: { article: Article }) {
           fill
           sizes="(max-width: 1024px) 100vw, 48vw"
           className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-          priority
-          fetchPriority="high"
-          loading="eager"
+          priority={lcp}
+          fetchPriority={lcp ? 'high' : 'auto'}
+          loading={lcp ? 'eager' : 'lazy'}
           onError={() => setImgFailed(true)}
         />
       ) : (
@@ -268,7 +273,7 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
             className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-0"
             style={{ opacity: visible ? 1 : 0, transition: 'opacity 400ms ease' }}
           >
-            {big.map(a => <BigCard key={a._id} article={a} />)}
+            {big.map((a, i) => <BigCard key={a._id} article={a} lcp={i === 0} />)}
           </div>
 
           {/* Barra de progreso + contador + dots */}
