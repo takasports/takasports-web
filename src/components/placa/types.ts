@@ -87,9 +87,19 @@ export const TIER_CONFIG: Record<PlacaTier, {
   },
 }
 
+/**
+ * Mapeo nivel → tier visual de la placa.
+ * Coordinado con src/lib/levels.ts (L1-L9) y con los drops de cosmetics
+ * por nivel (migration 056).
+ *
+ *   Bronze  = L1-L3 (Novato, Aficionado, Pronosticador)
+ *   Silver  = L4-L5 (Analista, Experto)
+ *   Gold    = L6-L7 (Crack, Maestro)
+ *   Diamond = L8-L9 (Leyenda, Mito)
+ */
 export function tierFromLevel(level: number): PlacaTier {
-  if (level >= 50) return 'diamond'
-  if (level >= 25) return 'gold'
-  if (level >= 10) return 'silver'
+  if (level >= 8) return 'diamond'
+  if (level >= 6) return 'gold'
+  if (level >= 4) return 'silver'
   return 'bronze'
 }

@@ -24,6 +24,7 @@ import MyGamesActivity from '@/components/games/MyGamesActivity'
 import { getBadge } from '@/lib/badges'
 import type { BadgeDef } from '@/lib/badges'
 import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
+import { UserPlacaCard } from '@/components/placa/UserPlacaCard'
 import TakaPoint from '@/components/TakaPoint'
 import { usePoints, useStreak } from '@/hooks/useGameState'
 
@@ -350,6 +351,20 @@ export default function PerfilPage() {
       <LiveStrip />
 
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+
+        {/* ── PLACA PERSONAL ───────────────────────────────
+            Placa identitaria del user. Solo visible con sesión.
+            Render REAL — consume /api/cosmetics/me + /api/quiniela/me
+            y muestra el equipment del user con cosmetics desbloqueados. */}
+        {user && (
+          <div className="pt-8 pb-2">
+            <UserPlacaCard
+              user={user}
+              displayName={name}
+              avatarUrl={avatarUrl}
+            />
+          </div>
+        )}
 
         {/* ── HERO CABECERA ─────────────────────────────── */}
         <div className="relative pt-10 pb-10">
