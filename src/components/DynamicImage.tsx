@@ -50,6 +50,25 @@ function toProxyUrl(src: string): string {
 }
 
 /**
+ * Resuelve la URL FINAL que el navegador descargará para una imagen src.
+ * Sirve para preloads `<link rel="preload">` que deben apuntar a la misma URL
+ * que el `<img>` real, no a la URL original. ANTES la home preloadeaba la URL
+ * original (estoesatleti.es) pero el `<img>` cargaba /api/image-proxy → doble
+ * descarga compitiendo en mobile. Fix F3.7 (jun 2026).
+ *
+ * Devuelve `null` si src no es una URL http válida (no preload necesario).
+ */
+export function resolveImageUrl(src: string | null | undefined): string | null {
+  if (!src || !src.startsWith('http')) return null
+  let hostname = ''
+  try { hostname = new URL(src).hostname } catch { return null }
+  // OPTIMIZED y TRUSTED: el browser descarga la URL original directamente.
+  if (needsOptimization(hostname) || isTrusted(hostname)) return src
+  // Tercero desconocido: el `<img>` carga via proxy → preload debe apuntar allí.
+  return toProxyUrl(src)
+}
+
+/**
  * Drop-in replacement for next/image con tres modos:
  *
  * 1. CDN conocido (Sanity, Instagram…)  → next/image con optimización
