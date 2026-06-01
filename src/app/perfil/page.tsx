@@ -97,6 +97,16 @@ export default function PerfilPage() {
     bySport: Record<string, { total: number; correct: number }>
   } | null>(null)
 
+  // AC — Marcador exacto stats (Predicciones de jornada)
+  const [exactStats, setExactStats] = useState<{
+    totalAttempts: number
+    totalHits: number
+    hitRate: number
+    jornadasPlayed: number
+    bestJornadaCount: number
+    bestJornada: string | null
+  } | null>(null)
+
   // Game stats
   const [quizStats, setQuizStats] = useState<{ streak: number; bestStreak: number; bestScore: number; totalCorrect: number; totalPlayed: number; lastPlayedDate: string } | null>(null)
   const [gridStats, setGridStats] = useState<{ dayKey: string; solved: number; finished: boolean } | null>(null)
@@ -175,6 +185,30 @@ export default function PerfilPage() {
           correct:  d.correct  ?? 0,
           accuracy: d.accuracy ?? 0,
           bySport:  d.bySport  ?? {},
+        })
+      })
+      .catch(() => { /* ignore */ })
+  }, [user])
+
+  // ── AC — Marcador exacto stats (track-record histórico) ─────────
+  useEffect(() => {
+    if (!user) return
+    fetch('/api/quiniela/me/exact-stats')
+      .then(r => r.ok ? r.json() : null)
+      .then((d: {
+        totalAttempts?: number; totalHits?: number; hitRate?: number
+        jornadasPlayed?: number; bestJornadaCount?: number; bestJornada?: string | null
+      } | null) => {
+        if (!d) return
+        // Solo guardamos si el user ha jugado al menos una vez con exact.
+        if ((d.totalAttempts ?? 0) <= 0) return
+        setExactStats({
+          totalAttempts:    d.totalAttempts    ?? 0,
+          totalHits:        d.totalHits        ?? 0,
+          hitRate:          d.hitRate          ?? 0,
+          jornadasPlayed:   d.jornadasPlayed   ?? 0,
+          bestJornadaCount: d.bestJornadaCount ?? 0,
+          bestJornada:      d.bestJornada      ?? null,
         })
       })
       .catch(() => { /* ignore */ })
@@ -499,6 +533,52 @@ export default function PerfilPage() {
                       ? `${meData.xp.toLocaleString('es-ES')} XP · faltan ${meData.xpToNext.toLocaleString('es-ES')} para el siguiente`
                       : `${meData.xp.toLocaleString('es-ES')} XP · Nivel máximo`}
                   </span>
+                </div>
+              )}
+
+              {/* AC — Marcador exacto (Predicciones) */}
+              {exactStats && exactStats.totalAttempts > 0 && (
+                <div
+                  className="flex flex-col gap-2 px-3 py-2.5 rounded-xl mt-1"
+                  style={{ background: 'rgba(167,139,250,0.05)', border: '1px solid rgba(167,139,250,0.22)' }}
+                >
+                  <span
+                    className="text-[10px] font-black"
+                    style={{ color: '#A78BFA', fontFamily: 'var(--font-display)', letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                  >
+                    🎯 Marcadores Exactos
+                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className="text-[11px] px-2 py-0.5 rounded-md"
+                      style={{ background: 'rgba(167,139,250,0.10)', color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
+                      title="Marcadores exactos clavados"
+                    >
+                      {exactStats.totalHits}/{exactStats.totalAttempts} clavados
+                    </span>
+                    <span
+                      className="text-[11px] px-2 py-0.5 rounded-md"
+                      style={{ background: 'rgba(167,139,250,0.10)', color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
+                    >
+                      {(exactStats.hitRate * 100).toFixed(0)}% precisión
+                    </span>
+                    {exactStats.jornadasPlayed > 0 && (
+                      <span
+                        className="text-[11px] px-2 py-0.5 rounded-md"
+                        style={{ background: 'rgba(167,139,250,0.10)', color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
+                      >
+                        {exactStats.jornadasPlayed} jornada{exactStats.jornadasPlayed === 1 ? '' : 's'}
+                      </span>
+                    )}
+                  </div>
+                  {exactStats.bestJornadaCount >= 2 && exactStats.bestJornada && (
+                    <span
+                      className="text-[10px]"
+                      style={{ color: 'rgba(196,181,253,0.65)', fontFamily: 'var(--font-sport)' }}
+                    >
+                      🏆 Mejor jornada: {exactStats.bestJornadaCount} exactos en {exactStats.bestJornada}
+                    </span>
+                  )}
                 </div>
               )}
 
