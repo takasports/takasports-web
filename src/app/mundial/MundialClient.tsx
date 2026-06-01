@@ -260,6 +260,336 @@ function PickButton({
   )
 }
 
+// ── ExactScoreBlock ───────────────────────────────────────────────────────
+// Bloque del marcador exacto: discoverable, intuitivo, con estilo coherente
+// (oro/morado, scoreboard real con steppers +/-).
+//
+// 4 estados visuales:
+//   1. Sin pick + open → hint sutil "🎯 +N pts si clavas el marcador"
+//   2. Con pick + sin exact + open → CTA gold "🎯 PREDECIR MARCADOR · +N pts"
+//   3. Con pick + con exact + open → scoreboard editable con steppers
+//   4. Resolved/closed + tenía exact → pill resultado (verde/naranja/gris)
+
+function ScoreStepper({
+  value, onChange, label, disabled,
+}: {
+  value: number
+  onChange: (v: number) => void
+  label: string
+  disabled: boolean
+}) {
+  const clamp = (n: number) => Math.max(0, Math.min(20, n))
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+      flex: 1, minWidth: 0,
+    }}>
+      <span style={{
+        fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800,
+        color: 'rgba(167,139,250,0.7)', letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {label}
+      </span>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        padding: 3, borderRadius: 10,
+        background: 'rgba(0,0,0,0.32)',
+        border: '1px solid rgba(167,139,250,0.28)',
+      }}>
+        <button
+          type="button"
+          onClick={() => onChange(clamp(value - 1))}
+          disabled={disabled || value <= 0}
+          aria-label={`Restar gol a ${label}`}
+          style={{
+            width: 22, height: 28, borderRadius: 6,
+            background: value > 0 ? 'rgba(167,139,250,0.16)' : 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(167,139,250,0.22)',
+            color: value > 0 ? '#C4B5FD' : 'rgba(255,255,255,0.2)',
+            fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900,
+            cursor: disabled || value <= 0 ? 'not-allowed' : 'pointer',
+            lineHeight: 1, padding: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >−</button>
+        <span style={{
+          minWidth: 26, textAlign: 'center',
+          fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 900,
+          color: '#fff', letterSpacing: '-0.02em', lineHeight: 1,
+          fontVariantNumeric: 'tabular-nums',
+        }}>
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={() => onChange(clamp(value + 1))}
+          disabled={disabled || value >= 20}
+          aria-label={`Sumar gol a ${label}`}
+          style={{
+            width: 22, height: 28, borderRadius: 6,
+            background: value < 20 ? 'rgba(167,139,250,0.16)' : 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(167,139,250,0.22)',
+            color: value < 20 ? '#C4B5FD' : 'rgba(255,255,255,0.2)',
+            fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900,
+            cursor: disabled || value >= 20 ? 'not-allowed' : 'pointer',
+            lineHeight: 1, padding: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >+</button>
+      </div>
+    </div>
+  )
+}
+
+function ExactScoreBlock({
+  event, myPick, exactScore, isOpen, isResolved, isClosed,
+  winner, submitting, exactSlotAvailable, onSet,
+}: {
+  event: RankedEvent
+  myPick: '1'|'X'|'2' | null
+  exactScore: { home: number; away: number } | null
+  isOpen: boolean
+  isResolved: boolean
+  isClosed: boolean
+  winner: '1'|'X'|'2' | null
+  submitting: boolean
+  exactSlotAvailable: boolean
+  onSet: (v: { home: number; away: number } | null) => void
+}) {
+  const bonusValue = event.featured ? 6 : 3
+
+  // ── 4. Modo lectura (resolved/closed + tenía exact) ──
+  if ((isResolved || isClosed) && exactScore) {
+    const realHome = event.result?.home_score
+    const realAway = event.result?.away_score
+    const exactHit =
+      realHome != null && realAway != null &&
+      exactScore.home === realHome && exactScore.away === realAway
+    const trendOk = isResolved && winner === myPick
+
+    let bg = 'linear-gradient(145deg, rgba(167,139,250,0.14) 0%, rgba(124,58,237,0.06) 100%)'
+    let border = 'rgba(167,139,250,0.3)'
+    let labelColor = '#C4B5FD'
+    let statusText: React.ReactNode = `${exactScore.home} - ${exactScore.away}`
+    let badge: React.ReactNode = null
+
+    if (isResolved) {
+      if (exactHit) {
+        bg = 'linear-gradient(145deg, rgba(34,197,94,0.20) 0%, rgba(22,163,74,0.08) 100%)'
+        border = 'rgba(74,222,128,0.5)'
+        labelColor = '#86EFAC'
+        badge = (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            padding: '2px 7px', borderRadius: 999,
+            background: 'rgba(74,222,128,0.22)',
+            color: '#86EFAC',
+            fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
+            letterSpacing: '0.08em',
+          }}>
+            ✓ CLAVADO · +{bonusValue} PTS
+          </span>
+        )
+      } else if (trendOk && realHome != null) {
+        bg = 'rgba(249,115,22,0.08)'
+        border = 'rgba(249,115,22,0.28)'
+        labelColor = '#FED7AA'
+        badge = (
+          <span style={{
+            fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 700,
+            color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em',
+          }}>
+            fue {realHome}-{realAway}
+          </span>
+        )
+        statusText = `${exactScore.home} - ${exactScore.away}`
+      } else {
+        bg = 'rgba(255,255,255,0.03)'
+        border = 'rgba(255,255,255,0.08)'
+        labelColor = 'rgba(255,255,255,0.4)'
+        statusText = `${exactScore.home} - ${exactScore.away}`
+      }
+    }
+
+    return (
+      <div style={{
+        marginTop: 10, padding: '8px 10px', borderRadius: 12,
+        background: bg, border: `1px solid ${border}`,
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        <span style={{ fontSize: 14, lineHeight: 1 }} aria-hidden>🎯</span>
+        <span style={{
+          fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
+          color: labelColor, letterSpacing: '0.08em',
+        }}>
+          MI MARCADOR
+        </span>
+        <span style={{
+          fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900,
+          color: '#fff', letterSpacing: '0.02em',
+        }}>
+          {statusText}
+        </span>
+        <span style={{ marginLeft: 'auto' }}>{badge}</span>
+      </div>
+    )
+  }
+
+  // Solo seguimos en eventos abiertos.
+  if (!isOpen) return null
+
+  // ── 1. Sin pick aún → hint sutil ──
+  if (!myPick) {
+    return (
+      <div style={{
+        marginTop: 10, padding: '8px 10px', borderRadius: 10,
+        background: 'rgba(167,139,250,0.04)',
+        border: '1px dashed rgba(167,139,250,0.18)',
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        <span style={{ fontSize: 12, lineHeight: 1, opacity: 0.6 }} aria-hidden>🎯</span>
+        <span style={{
+          flex: 1,
+          fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 700,
+          color: 'rgba(167,139,250,0.65)', letterSpacing: '0.02em',
+        }}>
+          Marcador exacto · <strong style={{ color: '#C4B5FD' }}>+{bonusValue} pts</strong> si lo clavas
+        </span>
+        <span style={{
+          fontFamily: 'var(--font-sport)', fontSize: 8, fontWeight: 800,
+          color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+        }}>
+          Elige ganador primero
+        </span>
+      </div>
+    )
+  }
+
+  // ── 2. Con pick + sin exact → CTA llamativo ──
+  if (!exactScore) {
+    return (
+      <button
+        type="button"
+        onClick={() => exactSlotAvailable && onSet({ home: 0, away: 0 })}
+        disabled={!exactSlotAvailable || submitting}
+        className="exact-cta"
+        style={{
+          marginTop: 10, width: '100%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          padding: '10px 12px', borderRadius: 12,
+          background: exactSlotAvailable
+            ? 'linear-gradient(145deg, rgba(167,139,250,0.18) 0%, rgba(124,58,237,0.08) 100%)'
+            : 'rgba(255,255,255,0.025)',
+          border: exactSlotAvailable
+            ? '1px solid rgba(167,139,250,0.4)'
+            : '1px dashed rgba(255,255,255,0.08)',
+          color: exactSlotAvailable ? '#E9D5FF' : 'rgba(255,255,255,0.3)',
+          cursor: exactSlotAvailable && !submitting ? 'pointer' : 'not-allowed',
+          fontFamily: 'var(--font-sport)',
+          boxShadow: exactSlotAvailable
+            ? 'inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 12px rgba(124,58,237,0.12)'
+            : 'none',
+          transition: 'transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease',
+        }}
+      >
+        <span style={{ fontSize: 14, lineHeight: 1 }} aria-hidden>🎯</span>
+        <span style={{
+          fontSize: 11, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase',
+        }}>
+          {exactSlotAvailable ? 'Predecir marcador' : 'Marcador exacto (3/3 usados)'}
+        </span>
+        {exactSlotAvailable && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            padding: '2px 7px', borderRadius: 999,
+            background: 'rgba(196,181,253,0.16)',
+            color: '#C4B5FD',
+            fontSize: 9, fontWeight: 900, letterSpacing: '0.06em',
+          }}>
+            +{bonusValue} PTS
+          </span>
+        )}
+      </button>
+    )
+  }
+
+  // ── 3. Editor scoreboard ──
+  const homeLabel = event.team_home ?? 'Local'
+  const awayLabel = event.team_away ?? 'Visita'
+
+  return (
+    <div style={{
+      marginTop: 10, padding: '10px 12px', borderRadius: 14,
+      background: 'linear-gradient(145deg, rgba(167,139,250,0.16) 0%, rgba(124,58,237,0.08) 100%)',
+      border: '1px solid rgba(167,139,250,0.4)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 16px rgba(124,58,237,0.12)',
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8,
+      }}>
+        <span style={{ fontSize: 12, lineHeight: 1 }} aria-hidden>🎯</span>
+        <span style={{
+          fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
+          color: '#C4B5FD', letterSpacing: '0.1em',
+        }}>
+          MI MARCADOR
+        </span>
+        <span style={{
+          fontFamily: 'var(--font-sport)', fontSize: 8, fontWeight: 800,
+          color: 'rgba(196,181,253,0.5)', letterSpacing: '0.06em',
+        }}>
+          +{bonusValue} PTS SI LO CLAVAS
+        </span>
+        <button
+          type="button"
+          onClick={() => onSet(null)}
+          disabled={submitting}
+          aria-label="Quitar marcador exacto"
+          style={{
+            marginLeft: 'auto',
+            width: 22, height: 22, borderRadius: 6,
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.5)',
+            cursor: submitting ? 'wait' : 'pointer',
+            fontSize: 12, lineHeight: 1, padding: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >✕</button>
+      </div>
+
+      {/* Scoreboard: home vs away */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-end', gap: 10,
+      }}>
+        <ScoreStepper
+          value={exactScore.home}
+          onChange={(v) => onSet({ home: v, away: exactScore.away })}
+          label={shortName(homeLabel, 10)}
+          disabled={submitting}
+        />
+        <span style={{
+          fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900,
+          color: 'rgba(255,255,255,0.3)', alignSelf: 'center', paddingBottom: 4,
+          letterSpacing: '0.05em',
+        }}>
+          –
+        </span>
+        <ScoreStepper
+          value={exactScore.away}
+          onChange={(v) => onSet({ home: exactScore.home, away: v })}
+          label={shortName(awayLabel, 10)}
+          disabled={submitting}
+        />
+      </div>
+    </div>
+  )
+}
+
 // ── MatchCard ─────────────────────────────────────────────────────────────
 
 function MatchCard({
@@ -441,158 +771,18 @@ function MatchCard({
         })}
       </div>
 
-      {/* ── ME3/ME4 — Marcador exacto ──
-          · Si el evento está abierto: siempre visible para descubrimiento.
-            Disabled si todavía no eligió tendencia.
-          · Si está resuelto/cerrado: solo si predijo exactScore (lectura). */}
-      {(isOpen || ((isResolved || isClosed) && exactScore)) && (
-        <div style={{ marginTop: 10 }}>
-          {(() => {
-            // Si no hay pick aún en evento abierto: botón guía deshabilitado.
-            if (isOpen && !myPick) {
-              return (
-                <button
-                  type="button"
-                  disabled
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    padding: '4px 9px', borderRadius: 6,
-                    background: 'rgba(167,139,250,0.06)',
-                    border: '1px dashed rgba(167,139,250,0.22)',
-                    color: 'rgba(167,139,250,0.5)',
-                    cursor: 'not-allowed',
-                    fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
-                  }}
-                  title="Elige primero el ganador (Local / Empate / Visita)"
-                >
-                  🎯 + Marcador exacto · elige ganador primero
-                </button>
-              )
-            }
-            // Modo lectura: resuelto/cerrado y hay exactScore predicho.
-            if ((isResolved || isClosed) && exactScore) {
-              const realHome = event.result?.home_score
-              const realAway = event.result?.away_score
-              const exactHit =
-                realHome != null && realAway != null &&
-                exactScore.home === realHome && exactScore.away === realAway
-              const trendOk = isResolved && winner === myPick
-              let bg = 'rgba(167,139,250,0.10)'
-              let border = 'rgba(167,139,250,0.32)'
-              let color = '#C4B5FD'
-              let suffix: React.ReactNode = null
-              if (isResolved) {
-                if (exactHit) {
-                  bg = 'rgba(34,197,94,0.16)'; border = 'rgba(34,197,94,0.4)'; color = '#86EFAC'
-                  suffix = <span style={{ marginLeft: 4, color: '#BBF7D0', fontWeight: 900 }}>{event.featured ? '· +6 pts' : '· +3 pts'}</span>
-                } else if (trendOk && realHome != null) {
-                  bg = 'rgba(249,115,22,0.12)'; border = 'rgba(249,115,22,0.32)'; color = '#FED7AA'
-                  suffix = <span style={{ marginLeft: 4, color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>· fue {realHome}-{realAway}</span>
-                } else {
-                  bg = 'rgba(255,255,255,0.04)'; border = 'rgba(255,255,255,0.1)'; color = 'rgba(255,255,255,0.45)'
-                }
-              }
-              return (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '3px 8px', borderRadius: 6,
-                  background: bg, border: `1px solid ${border}`, color,
-                  fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
-                }}>
-                  {isResolved && exactHit ? '🎯 ✓' : '🎯'} EXACTO {exactScore.home}-{exactScore.away}{suffix}
-                </span>
-              )
-            }
-            // Modo edición: evento open (sin lock).
-            if (!isOpen) return null
-            if (!exactScore) {
-              return (
-                <button
-                  type="button"
-                  onClick={() => exactSlotAvailable && onExactSet(event.id, { home: 0, away: 0 })}
-                  disabled={!exactSlotAvailable || submitting}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    padding: '4px 9px', borderRadius: 6,
-                    background: exactSlotAvailable ? 'rgba(167,139,250,0.10)' : 'rgba(255,255,255,0.03)',
-                    border: exactSlotAvailable ? '1px solid rgba(167,139,250,0.28)' : '1px dashed rgba(255,255,255,0.08)',
-                    color: exactSlotAvailable ? '#A78BFA' : '#3A3A52',
-                    cursor: exactSlotAvailable && !submitting ? 'pointer' : 'not-allowed',
-                    fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 800, letterSpacing: '0.04em',
-                  }}
-                  title={exactSlotAvailable
-                    ? `+${event.featured ? 6 : 3} pts si clavas el marcador exacto`
-                    : 'Ya tienes 3 marcadores exactos activos. Espera al cierre de alguno.'}
-                >
-                  🎯 {exactSlotAvailable
-                    ? `+ Marcador exacto · +${event.featured ? 6 : 3} pts`
-                    : 'Marcador exacto (3/3)'}
-                </button>
-              )
-            }
-            // Editor: 2 inputs + quitar.
-            return (
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '4px 8px', borderRadius: 6,
-                background: 'rgba(167,139,250,0.12)',
-                border: '1px solid rgba(167,139,250,0.36)',
-              }}>
-                <span style={{ fontSize: 12, lineHeight: 1 }} aria-hidden>🎯</span>
-                <span style={{
-                  fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
-                  color: '#C4B5FD', letterSpacing: '0.06em',
-                }}>EXACTO</span>
-                <input
-                  type="number" inputMode="numeric" min={0} max={20}
-                  value={exactScore.home}
-                  disabled={submitting}
-                  aria-label="Goles local"
-                  onChange={(e) => {
-                    const v = Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0)))
-                    onExactSet(event.id, { home: v, away: exactScore.away })
-                  }}
-                  style={{
-                    width: 30, height: 24, borderRadius: 4, textAlign: 'center',
-                    background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(167,139,250,0.32)',
-                    color: '#fff', fontSize: 12, fontWeight: 900,
-                    fontFamily: 'var(--font-display)',
-                  }}
-                />
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 700 }}>vs</span>
-                <input
-                  type="number" inputMode="numeric" min={0} max={20}
-                  value={exactScore.away}
-                  disabled={submitting}
-                  aria-label="Goles visitante"
-                  onChange={(e) => {
-                    const v = Math.max(0, Math.min(20, Math.floor(Number(e.target.value) || 0)))
-                    onExactSet(event.id, { home: exactScore.home, away: v })
-                  }}
-                  style={{
-                    width: 30, height: 24, borderRadius: 4, textAlign: 'center',
-                    background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(167,139,250,0.32)',
-                    color: '#fff', fontSize: 12, fontWeight: 900,
-                    fontFamily: 'var(--font-display)',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => onExactSet(event.id, null)}
-                  disabled={submitting}
-                  aria-label="Quitar marcador exacto"
-                  style={{
-                    width: 18, height: 18, borderRadius: 4, marginLeft: 2,
-                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-                    color: 'rgba(255,255,255,0.6)', cursor: submitting ? 'wait' : 'pointer',
-                    fontSize: 10, lineHeight: 1, padding: 0,
-                  }}
-                >✕</button>
-              </div>
-            )
-          })()}
-        </div>
-      )}
+      <ExactScoreBlock
+        event={event}
+        myPick={myPick}
+        exactScore={exactScore}
+        isOpen={isOpen}
+        isResolved={isResolved}
+        isClosed={isClosed}
+        winner={winner}
+        submitting={submitting}
+        exactSlotAvailable={exactSlotAvailable}
+        onSet={(v) => onExactSet(event.id, v)}
+      />
 
       {/* ── Points earned ── */}
       {isResolved && myPick && (
