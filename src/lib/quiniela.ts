@@ -195,9 +195,18 @@ export interface ScoreBreakdown {
   exactHits?: number
 }
 
+export interface ScoreOptions {
+  /** AD — Si false, el bonus de marcador exacto NO se suma a `points`
+   *  (sí a `coins`, que es el wallet personal). Sirve para que el
+   *  ranking de una liga con `exact_enabled=false` ignore este bonus
+   *  sin afectar al wallet del user. Default: true. */
+  countExactInPoints?: boolean
+}
+
 export function scorePick(
   pick: SavedPick,
   result: MatchResult | undefined,
+  opts?: ScoreOptions,
 ): PickScore {
   const stake = pick.stake ?? 0
   if (!result) {
@@ -249,7 +258,10 @@ export function scorePick(
     pick.exactScore.away === result.awayGoals
   )
   if (exactBonus) {
-    points += SCORING.EXACT_BONUS
+    // El bonus se suma a coins (wallet personal) siempre. Para points
+    // (ranking de liga / display), respeta el flag countExactInPoints
+    // para que ligas con exact_enabled=false ignoren el bonus.
+    if (opts?.countExactInPoints !== false) points += SCORING.EXACT_BONUS
     coins  += SCORING.EXACT_BONUS
   }
 
@@ -269,10 +281,11 @@ export function scorePick(
 export function scorePicks(
   picks: SavedPick[],
   results: MatchResult[],
+  opts?: ScoreOptions,
 ): ScoreBreakdown {
   const perPick = picks.map(p => {
     const r = results.find(rr => nameMatch(rr.home, p.home) && nameMatch(rr.away, p.away))
-    return scorePick(p, r)
+    return scorePick(p, r, opts)
   })
   const hits = perPick.filter(s => s.hit).length
   const cancelledCount = perPick.filter(s => s.cancelled).length

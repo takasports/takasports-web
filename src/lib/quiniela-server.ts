@@ -47,7 +47,7 @@ export async function persistLeagueScores(
 
   const { data: league } = await sb
     .from('quiniela_leagues')
-    .select('jornada, match_keys')
+    .select('jornada, match_keys, exact_enabled')
     .eq('id', leagueId)
     .maybeSingle()
   if (!league) return { persisted: 0, skipped: 0, jornada: null }
@@ -55,6 +55,10 @@ export async function persistLeagueScores(
   const matchKeys = (league.match_keys ?? []) as LeagueMatchKey[]
   const jornada = String(league.jornada ?? '')
   if (matchKeys.length === 0 || !jornada) return { persisted: 0, skipped: 0, jornada }
+  // AD — Si la liga desactivó el marcador exacto, el bonus +3 no se
+  // suma al points del ranking. exact_enabled puede no existir en
+  // rows pre-migración 053 → default true (consistente con la columna).
+  const exactInPoints = (league as { exact_enabled?: boolean }).exact_enabled !== false
 
   const { data: members } = await sb
     .from('quiniela_league_members')
@@ -94,7 +98,8 @@ export async function persistLeagueScores(
       }
     }
 
-    const breakdown = scorePicks(indexedPicks, results)
+    // AD — points respeta el toggle de la liga; exacts es informativo.
+    const breakdown = scorePicks(indexedPicks, results, { countExactInPoints: exactInPoints })
 
     return {
       league_id: leagueId,
@@ -102,10 +107,10 @@ export async function persistLeagueScores(
       jornada,
       points: Math.round(breakdown.totalPoints * 100) / 100,
       hits: breakdown.hits,
-      // exacts dejado en 0 — el modelo de ligas privadas ya no tiene
-      // exacto, pero la columna sigue existiendo en la migración 032
-      // (no toco la DB para evitar cambios destructivos).
-      exacts: 0,
+      // AD — `exacts` ahora SÍ se popula con el nº de marcadores exactos
+      // clavados por el miembro en esta jornada. Es informativo (siempre
+      // se cuenta), no afecta al ranking — eso depende de exact_enabled.
+      exacts: breakdown.exactHits ?? 0,
       // Pleno solo si llenó TODOS los partidos de la liga (no solo los suyos).
       pleno: breakdown.pleno && indexedPicks.length === matchKeys.length,
       computed_at: nowIso,

@@ -169,6 +169,11 @@ export async function GET(req: NextRequest) {
       jornada: league.jornada,
       matchKeys: league.match_keys,
       createdAt: league.created_at,
+      // AD — expone ownerId y exactEnabled para que la UI sepa
+      // (a) si mostrar el toggle (solo si user es owner) y
+      // (b) el badge "Con/Sin marcador exacto" para todos los miembros.
+      ownerId: (league as { owner_id?: string | null }).owner_id ?? null,
+      exactEnabled: (league as { exact_enabled?: boolean }).exact_enabled !== false,
       members: (members ?? []).map(m => ({
         nickname: m.nickname,
         picks: m.picks ?? {},
@@ -176,7 +181,8 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // Fallback
+  // Fallback in-memory: el toggle real vive en Supabase, así que aquí
+  // siempre devolvemos exactEnabled=true (default consistente).
   const mem = memStore.get(id)
   if (!mem) return NextResponse.json({ error: 'not found' }, { status: 404 })
   return NextResponse.json({
@@ -185,6 +191,8 @@ export async function GET(req: NextRequest) {
     jornada: mem.row.jornada,
     matchKeys: mem.row.match_keys,
     createdAt: mem.row.created_at,
+    ownerId: mem.row.owner_id,
+    exactEnabled: true,
     members: [...mem.members.values()].map(m => ({
       nickname: m.nickname, picks: m.picks,
     })),
