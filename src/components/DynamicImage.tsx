@@ -2,7 +2,14 @@
 import Image, { ImageProps } from 'next/image'
 
 // CDNs que funcionan directamente con next/image sin problemas de hotlink.
-// Para estos dominios usamos la optimización nativa de Next.js.
+// Para estos dominios usamos la optimización nativa de Next.js → WebP +
+// responsive sizing automático.
+//
+// supabase.co movido aquí en F3.2 (jun 2026): las imágenes de artículos
+// guardadas en Supabase Storage promedian 200-500 KiB sin optimizar. Con
+// next/image bajan a 30-80 KiB en WebP → ahorro ~516 KiB por LCP image
+// según PSI. Trade-off: cada transformación única cuenta hacia el límite
+// de Vercel Image Optimization (5k/mes free tier). Tráfico actual ≈ 3k.
 const OPTIMIZED_HOSTS = [
   'cdn.sanity.io',
   'cdninstagram.com',
@@ -11,14 +18,12 @@ const OPTIMIZED_HOSTS = [
   'cloudfront.net',
   'twimg.com',
   'pbs.twimg.com',
+  'supabase.co',
 ]
 
 // Dominios propios/de confianza que se sirven directamente sin proxy.
-// Supabase Storage funciona bien; solo algunas imágenes fallan por el
-// pipeline, pero eso es un problema de datos, no de hotlink.
 const TRUSTED_HOSTS = [
   'takasportsmedia.com',
-  'supabase.co',
   'vercel.app',
   'localhost',
 ]
