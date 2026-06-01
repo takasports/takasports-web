@@ -11,13 +11,13 @@
 // Si el user no tiene sesión o /me devuelve 401, no renderiza nada
 // (la /perfil page ya tiene su propio empty state para guest).
 //
-// Renderiza PlacaCardV3 con datos REALES. Es el primer punto de
-// contacto del user con el sistema de personalización en producción.
+// Click en la placa → abre el vestidor (PlacaWardrobe) para customizar.
 // ─────────────────────────────────────────────────────────────────
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { PlacaCardV3 } from './PlacaCardV3'
+import { PlacaWardrobe } from './PlacaWardrobe'
 import { buildPlacaData, type ApiEquipment } from './adapter'
 import type { LeaderboardBadge } from '@/lib/leaderboard-badges'
 
@@ -46,6 +46,18 @@ export function UserPlacaCard({ user, displayName, avatarUrl }: Props) {
   const [me, setMe]               = useState<MeResponse | null>(null)
   const [equipment, setEquipment] = useState<ApiEquipment | null>(null)
   const [loaded, setLoaded]       = useState(false)
+  const [wardrobeOpen, setWardrobeOpen] = useState(false)
+
+  const refresh = useCallback(() => {
+    Promise.all([
+      fetch('/api/quiniela/me',  { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+      fetch('/api/cosmetics/me', { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+    ]).then(([meData, cosmData]) => {
+      setMe(meData ?? null)
+      setEquipment((cosmData as CosmeticsMeResponse | null)?.equipment ?? null)
+      setLoaded(true)
+    }).catch(() => setLoaded(true))
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -75,15 +87,11 @@ export function UserPlacaCard({ user, displayName, avatarUrl }: Props) {
     )
   }
 
-  // Sin meData → no podemos render. Fallback silencioso (perfil sigue
-  // mostrando el resto del contenido legacy).
   if (!me) return null
 
-  // Handle desde email o display_name slugified
   const handle = (user.email?.split('@')[0] ?? displayName.toLowerCase().replace(/\s+/g, ''))
     .slice(0, 20)
 
-  // Badges desbloqueados → LeaderboardBadge shape para el adapter
   const unlockedBadges: LeaderboardBadge[] = (me.badges ?? [])
     .filter(b => b.unlockedAt)
     .map(b => ({
@@ -91,7 +99,6 @@ export function UserPlacaCard({ user, displayName, avatarUrl }: Props) {
       color: b.color, bg: b.bg, rarity: b.rarity,
     }))
 
-  // Live stats — sólo XP por ahora (único signature_stat seedeado)
   const liveStats: Record<string, string | number> = {
     xp: (me.xp ?? 0).toLocaleString('es-ES'),
   }
@@ -109,8 +116,57 @@ export function UserPlacaCard({ user, displayName, avatarUrl }: Props) {
   })
 
   return (
-    <div className="flex justify-center" style={{ padding: '8px 0' }}>
-      <PlacaCardV3 placa={placa} interactive />
-    </div>
+    <>
+      <div className="flex flex-col items-center" style={{ padding: '8px 0', gap: 12 }}>
+        {/* Placa clickable */}
+        <button
+          type="button"
+          onClick={() => setWardrobeOpen(true)}
+          aria-label="Customizar mi placa"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          <PlacaCardV3 placa={placa} interactive />
+        </button>
+
+        {/* CTA debajo */}
+        <button
+          type="button"
+          onClick={() => setWardrobeOpen(true)}
+          className="text-[10px] font-black uppercase tracking-[0.22em] transition-opacity hover:opacity-100"
+          style={{
+            background: 'rgba(167,139,250,0.10)',
+            border: '1px solid rgba(167,139,250,0.30)',
+            color: '#C4B5FD',
+            padding: '8px 18px',
+            borderRadius: 4,
+            cursor: 'pointer',
+            fontFamily: 'var(--font-headline)',
+            opacity: 0.92,
+          }}
+        >
+          Customizar placa →
+        </button>
+      </div>
+
+      {/* Modal vestidor */}
+      <PlacaWardrobe
+        open={wardrobeOpen}
+        onClose={() => { setWardrobeOpen(false); refresh() }}
+        displayName={displayName}
+        handle={handle}
+        avatarUrl={avatarUrl}
+        level={me.level ?? 1}
+        levelName={me.levelName ?? 'Novato'}
+        badges={unlockedBadges}
+        liveStats={liveStats}
+        onEquipmentChange={(eq) => setEquipment(eq)}
+      />
+    </>
   )
 }
