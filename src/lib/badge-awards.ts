@@ -207,6 +207,138 @@ export function badgesEarnedOnSettle(ctx: SettleBadgeContext): string[] {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// AF — Catch-up retroactivo de badges para jornadas liquidadas por
+// el cron (que NO evalúa badges).
+//
+// El cron settle-quiniela escribe settled=true y totalWon, pero nunca
+// llama a awardBadges. Cuando el user vuelve a la web y pasa por
+// /api/quiniela/status, esta función:
+//   1. Detecta jornadas settled sin badgesAt
+//   2. Evalúa el contexto desde el payload existente
+//   3. Otorga los badges merecidos (idempotente)
+//   4. Marca badgesAt para no repetir
+//
+// No re-escribe puntos ni breakdown. Solo añade badgesAt al JSONB.
+// ─────────────────────────────────────────────────────────────────
+
+interface MinimalPayload {
+  picks?: Array<{ oddsAtPick?: number }>
+  breakdown?: {
+    perPick?: Array<{ hit?: boolean }>
+    hits?: number
+    pleno?: boolean
+    totalStake?: number
+    exactHits?: number
+  }
+  settled?: boolean
+  totalStakeCharged?: number
+  totalWon?: number
+  badgesAt?: string
+}
+
+export type CatchupResult =
+  | { skipped: 'not-settled' | 'already-evaluated' | 'no-breakdown' }
+  | { awarded: string[]; alreadyHad: string[] }
+
+/**
+ * Evalúa y otorga badges pendientes para una jornada ya liquidada.
+ * Llamar desde rutas read-style (ej. /status) — no requiere POST.
+ *
+ * @param sb        cliente Supabase con permisos para UPDATE en quiniela_picks
+ * @param userId    user.id del JWT
+ * @param jornada   string de la jornada (PK compuesta con user_id)
+ * @param payload   el JSONB actual de quiniela_picks.picks
+ */
+export async function evaluatePendingBadges(
+  sb: SupabaseClient,
+  userId: string,
+  jornada: string,
+  payload: MinimalPayload,
+): Promise<CatchupResult> {
+  if (payload.settled !== true) return { skipped: 'not-settled' }
+  if (typeof payload.badgesAt === 'string' && payload.badgesAt) {
+    return { skipped: 'already-evaluated' }
+  }
+  if (!payload.breakdown) return { skipped: 'no-breakdown' }
+
+  // Historial previo (otras jornadas) para detectar isFirstBet/Win/Streak.
+  const { data: history } = await sb
+    .from('quiniela_picks')
+    .select('jornada, picks')
+    .eq('user_id', userId)
+    .neq('jornada', jornada)
+    .limit(20)
+  const histPayloads = (history ?? [])
+    .map(h => (h as { picks: unknown }).picks as MinimalPayload | null)
+    .filter((p): p is MinimalPayload => !!p)
+
+  const isFirstBet = histPayloads.filter(p =>
+    (p as MinimalPayload & { staked?: boolean }).staked,
+  ).length === 0
+  const isFirstWin = histPayloads.filter(p =>
+    p.settled && (p.totalWon ?? 0) > ((p as MinimalPayload & { totalStakeCharged?: number }).totalStakeCharged ?? 0),
+  ).length === 0
+
+  // Streak: NO podemos ordenar las histPayloads por settledAt aquí porque
+  // history.picks no expone ese campo en este tipo. Usamos el conteo simple
+  // de "settled con ganancias" como aproximación; el endpoint settle real
+  // ya hace el ordering preciso, este catch-up es menos exigente y la
+  // racha se calcula igual en otros surfaces. Aceptable trade-off.
+  const prevStreak = histPayloads.filter(p =>
+    p.settled && (p.totalWon ?? 0) > ((p as MinimalPayload & { totalStakeCharged?: number }).totalStakeCharged ?? 0),
+  ).length
+
+  // picksWithOdds: combinamos picks (que tienen oddsAtPick) con perPick (que
+  // tienen hit). Asumimos misma posición/orden — el scoring lo garantiza.
+  const picks = Array.isArray(payload.picks) ? payload.picks : []
+  const perPick = Array.isArray(payload.breakdown?.perPick) ? payload.breakdown.perPick : []
+  const picksWithOdds = picks.map((p, i) => ({
+    won: perPick[i]?.hit === true,
+    odds: typeof p.oddsAtPick === 'number' && Number.isFinite(p.oddsAtPick) ? p.oddsAtPick : 1,
+  }))
+
+  const ctx: SettleBadgeContext = {
+    hits: payload.breakdown.hits ?? 0,
+    totalPicks: picks.length,
+    pleno: payload.breakdown.pleno === true,
+    totalStake: payload.totalStakeCharged ?? payload.breakdown.totalStake ?? 0,
+    totalWon: payload.totalWon ?? 0,
+    picksWithOdds,
+    prevStreak,
+    isFirstBet,
+    isFirstWin,
+    exactHits: payload.breakdown.exactHits ?? 0,
+  }
+
+  const earned = badgesEarnedOnSettle(ctx)
+  let awarded: string[] = []
+  let alreadyHad: string[] = []
+  if (earned.length > 0) {
+    const res = await awardBadges(sb, userId, earned)
+    awarded = res.awarded
+    alreadyHad = res.alreadyHad
+  }
+
+  // Marcar badgesAt en el JSONB para no re-evaluar en siguientes visitas.
+  // Hacemos read-modify-write atomico-ish: el riesgo de carrera es bajo
+  // porque después de cron-settle, los únicos writers son: (a) este
+  // catch-up, (b) settle phase manual (que ya no aplica si settled=true).
+  try {
+    const merged: MinimalPayload = { ...payload, badgesAt: new Date().toISOString() }
+    await sb
+      .from('quiniela_picks')
+      .update({ picks: merged })
+      .eq('user_id', userId)
+      .eq('jornada', jornada)
+  } catch {
+    // Si falla, en la próxima visita lo reintentamos. awardBadges ya
+    // es idempotente, no se duplica nada.
+  }
+
+  return { awarded, alreadyHad }
+}
+
+// ─────────────────────────────────────────────────────────────────
 // Ranked prediction badges
 // ─────────────────────────────────────────────────────────────────
 

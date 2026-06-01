@@ -51,6 +51,12 @@ interface StoredPayload {
   totalRefunded?: number
   stakedAt?: string
   settledAt?: string
+  /** AF — Timestamp ISO cuando se evaluaron y otorgaron los badges de esta
+   *  jornada. Su ausencia significa pending; al estar presente el catch-up
+   *  no re-procesa. Importante: el cron settle-quiniela no lo escribe
+   *  (no evalúa badges), así que las jornadas liquidadas por cron quedan
+   *  pending hasta que el user pase por /api/quiniela/status. */
+  badgesAt?: string
 }
 
 const VALID_PICKS = new Set(['1', 'X', '2', '1X', 'X2'])
@@ -494,6 +500,19 @@ export async function POST(req: NextRequest) {
         if (earned.length > 0) {
           await awardBadges(sb, user.id, earned)
         }
+
+        // AF — Marcar el JSONB con badgesAt para que el catch-up del
+        // /status no vuelva a evaluar esta jornada. Sin esto, cada visita
+        // al status re-procesaría queries y awards (idempotente pero
+        // ineficiente).
+        try {
+          const finalPayload: StoredPayload = { ...updatedPayload, badgesAt: new Date().toISOString() }
+          await sb
+            .from('quiniela_picks')
+            .update({ picks: finalPayload })
+            .eq('user_id', user.id)
+            .eq('jornada', body.jornada)
+        } catch { /* silencioso — la flag es de optimización, no de correctness */ }
 
         // ── Special badges (DB-defined, admin-created) ─────────────
         // Para criterios que NO requieren ranking cross-user (pleno,

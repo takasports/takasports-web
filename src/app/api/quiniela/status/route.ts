@@ -13,6 +13,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { getQuinielaData } from '@/app/api/quiniela/route'
+import { evaluatePendingBadges } from '@/lib/badge-awards'
 
 export const dynamic = 'force-dynamic'
 
@@ -241,6 +242,23 @@ export async function GET() {
               if (!Array.isArray(arr)) return 0
               return arr.filter((p) => p?.exactBonus === true).length
             })(),
+          }
+
+          // AF — Catch-up: si esta jornada fue liquidada por el cron
+          // (settled=true sin badgesAt), evaluamos badges ahora. Fire-
+          // and-forget para no bloquear la respuesta de /status. Errores
+          // no propagan: el peor caso es reintentar en la siguiente visita.
+          const payloadForBadges = settledRow.picks
+          if (
+            payloadForBadges &&
+            typeof (payloadForBadges as { badgesAt?: unknown }).badgesAt !== 'string'
+          ) {
+            evaluatePendingBadges(
+              sb,
+              user.id,
+              settledRow.jornada,
+              payloadForBadges as Parameters<typeof evaluatePendingBadges>[3],
+            ).catch(() => { /* silencioso */ })
           }
         }
       }
