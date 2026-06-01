@@ -29,6 +29,7 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { scorePicks, SCORING, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
 import { enrichResultsWithFeatured } from '@/lib/quiniela-featured'
 import { awardBadges, badgesEarnedOnSettle } from '@/lib/badge-awards'
+import { processLevelProgression } from '@/lib/level-progression'
 import { fetchActiveSpecialBadgesForJornada, grantSpecialBadge, userMeetsCriteria } from '@/lib/special-badges'
 
 type Phase = 'stake' | 'settle'
@@ -500,6 +501,14 @@ export async function POST(req: NextRequest) {
         if (earned.length > 0) {
           await awardBadges(sb, user.id, earned)
         }
+
+        // Level progression — recompone XP y otorga cosméticos por nivel
+        // que el user todavía no tenga. Idempotente y fire-and-forget.
+        // Va siempre (no solo si earned.length>0) porque award_points
+        // del settle ya cambió el XP aunque no haya badge nuevo.
+        void processLevelProgression(sb, user.id).catch(err => {
+          console.warn('[score/settle] level progression failed', { uid: user.id, err: err?.message })
+        })
 
         // AF — Marcar el JSONB con badgesAt para que el catch-up del
         // /status no vuelva a evaluar esta jornada. Sin esto, cada visita

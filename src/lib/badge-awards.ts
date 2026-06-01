@@ -31,6 +31,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { BADGES, getBadge } from './badges'
 import { sendPushToUser } from './push-helper'
 import { sendBadgeEmail } from './email-helper'
+import { unlockCosmeticsForBadge } from './cosmetics'
 
 // Copy para push de badge — solo los que más engagement generan.
 // El resto usan el genérico.
@@ -137,6 +138,14 @@ export async function awardBadges(
         rarity:     def.rarity,
       })
     }
+
+    // Cosmetics — fire-and-forget. Cada badge tiene cero o más cosméticos
+    // asociados (catálogo en DB tabla `cosmetics` con unlock_source='badge').
+    // Si la migración 055/056 no está aplicada, la tabla no existe y esto
+    // loguea silenciosamente sin romper el award del badge.
+    void unlockCosmeticsForBadge(sb, userId, badgeId).catch(err => {
+      console.warn('[awardBadges] cosmetic unlock failed', { userId, badgeId, err: err?.message })
+    })
   }
 
   return result

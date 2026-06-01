@@ -15,6 +15,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { awardBadges, badgesEarnedOnRankedCorrect } from '@/lib/badge-awards'
+import { processLevelProgression } from '@/lib/level-progression'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,6 +98,10 @@ export async function POST(req: NextRequest) {
       const isFirstCorrect = (count ?? 0) <= 1
       const earned = badgesEarnedOnRankedCorrect({ isFirstCorrect })
       if (earned.length > 0) await awardBadges(admin, uid, earned)
+
+      // Level progression — points del settle pueden haber subido al user
+      // a un nuevo tier. Otorga cosméticos por nivel idempotente.
+      void processLevelProgression(admin, uid).catch(() => {})
     }
   } catch { /* badge fallo — nunca bloquea la respuesta */ }
 
