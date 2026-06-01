@@ -17,7 +17,13 @@ import { SITE_URL } from './constants'
 
 const ENTITY_CACHE_TTL = 60 * 60 // 1h
 
-const MAX_AUTOLINKS_PER_ARTICLE = 5
+// Cap de enlaces auto por artículo. Subido de 5 → 8 en F2.4 (jun 2026) para
+// dar más linking interno a hubs de entidad. Trade-off vs sobre-linkeo:
+//   - 5 era conservador (evitar parecer spam)
+//   - 8 todavía está dentro del rango seguro para artículos de 1500+ palabras
+//   - Long-form de TakaSports promedia 1500-1800 palabras → 8 enlaces ≈ 1 cada
+//     200 palabras = densidad natural editorial
+const MAX_AUTOLINKS_PER_ARTICLE = 8
 const MIN_TEAM_NAME_LENGTH = 8
 
 const STOPWORDS = new Set([
