@@ -24,19 +24,22 @@ const OG_QUERY = `*[_type == "article" && (_id == $id || slug.current == $id)][0
   imageUrl,
 }`
 
-// Ver opengraph-image.tsx de noticias/[slug] para el contexto del fix.
-async function safeImageUrl(url: string | null): Promise<string | null> {
+// Ver opengraph-image.tsx de noticias/[slug] para el contexto completo del fix.
+// Fetcheamos los bytes a un data URI para que satori no haga su propio fetch
+// (que escaparía del try/catch y devolvería 500 si la imagen falla).
+async function fetchImageDataUri(url: string | null): Promise<string | null> {
   if (!url || !/^https?:\/\//.test(url)) return null
   try {
     const r = await fetch(url, {
-      method: 'HEAD',
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(3500),
       headers: { 'User-Agent': 'Mozilla/5.0 TakaSportsOG/1.0' },
     })
     if (!r.ok) return null
     const ct = r.headers.get('content-type') ?? ''
     if (!ct.startsWith('image/')) return null
-    return url
+    const buf = await r.arrayBuffer()
+    if (buf.byteLength === 0 || buf.byteLength > 3_000_000) return null
+    return `data:${ct};base64,${Buffer.from(buf).toString('base64')}`
   } catch {
     return null
   }
@@ -56,7 +59,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const summary = article?.short_summary
   const sport   = article?.sport ?? article?.category
   const accent  = sport ? (SPORT_COLORS[sport] ?? '#7C3AED') : '#7C3AED'
-  const imgUrl  = await safeImageUrl(article?.imageUrl ?? null)
+  const imgUrl  = await fetchImageDataUri(article?.imageUrl ?? null)
 
   return new ImageResponse(
     (

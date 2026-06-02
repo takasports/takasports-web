@@ -24,24 +24,30 @@ const OG_QUERY = `*[_type == "article" && (_id == $id || slug.current == $id)][0
   imageUrl,
 }`
 
-// HEAD-check con timeout corto.
-// Sin esto, ImageResponse intenta descargar la imagen y si el host de terceros
-// (twimg, fbcdn, etc.) responde 404 o lento, todo el rendering revienta con HTTP
-// 500 y Google marca la URL como "Error de servidor (5xx)" en GSC. Reportado en
-// notificación GSC del 30/5/2026 con 3 URLs afectadas — todas con imageUrl rota.
-async function safeImageUrl(url: string | null): Promise<string | null> {
+// Descarga la imagen a un data URI base64. CRÍTICO: NO basta con validar la URL
+// y pasarla a <img src> — ImageResponse (satori) hace su propio fetch de forma
+// lazy al streamear la respuesta, así que si ese fetch falla el error escapa de
+// cualquier try/catch y devuelve HTTP 500 ("Error de servidor 5xx" en GSC).
+//
+// Solución: fetcheamos los bytes NOSOTROS con timeout. Si falla (404, timeout,
+// content-type no-imagen, GET≠HEAD), devolvemos null → OG se renderiza sin foto
+// (fallback con branding + gradient, siempre 200). Al pasar un data: URI, satori
+// embebe los bytes directamente sin volver a fetchear → imposible que crashee.
+async function fetchImageDataUri(url: string | null): Promise<string | null> {
   if (!url || !/^https?:\/\//.test(url)) return null
   try {
     const r = await fetch(url, {
-      method: 'HEAD',
-      signal: AbortSignal.timeout(2000),
-      // Algunos CDNs bloquean HEAD sin UA → fingimos navegador
+      signal: AbortSignal.timeout(3500),
       headers: { 'User-Agent': 'Mozilla/5.0 TakaSportsOG/1.0' },
     })
     if (!r.ok) return null
     const ct = r.headers.get('content-type') ?? ''
     if (!ct.startsWith('image/')) return null
-    return url
+    const buf = await r.arrayBuffer()
+    // Cap a 3MB para no inflar el render de satori ni la memoria de la función
+    if (buf.byteLength === 0 || buf.byteLength > 3_000_000) return null
+    const base64 = Buffer.from(buf).toString('base64')
+    return `data:${ct};base64,${base64}`
   } catch {
     return null
   }
@@ -61,7 +67,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const summary = article?.short_summary
   const sport   = article?.sport ?? article?.category
   const accent  = sport ? (SPORT_COLORS[sport] ?? '#7C3AED') : '#7C3AED'
-  const imgUrl  = await safeImageUrl(article?.imageUrl ?? null)
+  const imgUrl  = await fetchImageDataUri(article?.imageUrl ?? null)
 
   return new ImageResponse(
     (
