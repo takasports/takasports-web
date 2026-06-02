@@ -1321,7 +1321,7 @@ export const RANKING_CREADORES_WWE: RankingEntry[] = [
     sport: 'wwe', score: 80.0, trend: 'up', featured: true,
     insight: 'El referente del wrestling en español. Comunidad hispanohablante consolidada y tono propio inconfundible.',
     emoji: '🇲🇽', country: '🇲🇽',
-    image: 'https://yt3.ggpht.com/ytc/AIdro_nozqy4OCJU140sAsPlSJqxZuc1HEEAqlhBbhB5=s400-c-k-c0x00ffffff-no-rj',
+    image: 'https://unavatar.io/youtube/@misterpopotillo',
     scorePrev: 78.4, trendReason: 'Sigue siendo el referente del wrestling en español — comunidad consolidada',
     factors: { rendimiento: 82, contexto: 78, mediatico: 80, narrativa: 82 },
   },
