@@ -9,7 +9,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from 'react'
-import { PlacaCardV3 } from './PlacaCardV3'
+import { PlacaCardV4 } from './PlacaCardV4'
 import { buildPlacaData, type ApiEquipment } from './adapter'
 import type { LeaderboardBadge } from '@/lib/leaderboard-badges'
 
@@ -73,7 +73,7 @@ export function PublicPlacaCard({ userId }: Props) {
 
   return (
     <div className="flex justify-center" style={{ padding: '8px 0' }}>
-      <PlacaCardV3 placa={placa} interactive />
+      <PlacaCardV4 placa={placa} interactive />
     </div>
   )
 }

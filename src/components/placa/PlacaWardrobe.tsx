@@ -17,7 +17,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { PlacaCardV3 } from './PlacaCardV3'
+import { PlacaCardV4 } from './PlacaCardV4'
 import { CosmeticPreview, type CosmeticForPreview } from './CosmeticPreview'
 import { buildPlacaData, type ApiEquipment } from './adapter'
 import type { LeaderboardBadge } from '@/lib/leaderboard-badges'
@@ -61,22 +61,21 @@ const TYPE_TO_SLOT: Record<string, EquipSlot> = {
 }
 
 const SLOT_LABEL: Record<string, string> = {
-  badge:              'Chips',
-  title:              'Títulos',
-  frame:              'Marcos',
-  card_bg:            'Fondos',
-  avatar_frame:       'Anillos',
-  name_effect:        'Nombre',
-  corner_sticker:     'Pegatinas',
-  signature_stat:     'Stat',
-  background_pattern: 'Patrones',
+  frame:        'Marco',
+  card_bg:      'Fondo',
+  avatar_frame: 'Anillo',
+  name_effect:  'Nombre',
+  title:        'Título',
 }
 
-const SLOT_ORDER: EquipSlot[] = [
-  'avatar_frame', 'name_effect', 'frame', 'card_bg',
-  'corner_sticker', 'signature_stat', 'background_pattern',
-  'title', 'badge',
+// Los 5 slots de personalización (consolidación 2026-06-02).
+// Slots legacy ocultos del vestidor: badge_chip, corner_sticker,
+// signature_stat, background_pattern (fusionado en card_bg). Quedan
+// en DB pero no se ofrecen — la placa V4 tampoco los renderiza.
+const VISIBLE_SLOTS: EquipSlot[] = [
+  'frame', 'card_bg', 'avatar_frame', 'name_effect', 'title',
 ]
+const SLOT_ORDER: EquipSlot[] = VISIBLE_SLOTS
 
 const RARITY_COLOR: Record<string, string> = {
   common:    '#94a3b8',
@@ -166,28 +165,44 @@ export function PlacaWardrobe({
   }, [equipment])
 
   // ── Catálogo filtrado ─────────────────────────────────────────
+  // Solo los 5 slots visibles (consolidación). Cosmetics de tipos
+  // legacy (chip/sticker/stat/pattern) se ocultan del vestidor.
   const filteredCatalog = useMemo(() => {
     return catalog.filter(c => {
+      const itemSlot = TYPE_TO_SLOT[c.type]
+      if (!itemSlot || !VISIBLE_SLOTS.includes(itemSlot)) return false
       const isUnlocked = unlocked.has(c.id)
       if (statusFilter === 'unlocked' && !isUnlocked) return false
       if (statusFilter === 'locked'   && isUnlocked)  return false
-      if (slotFilter !== 'all') {
-        const itemSlot = TYPE_TO_SLOT[c.type]
-        if (itemSlot !== slotFilter) return false
-      }
+      if (slotFilter !== 'all' && itemSlot !== slotFilter) return false
       return true
     })
   }, [catalog, unlocked, statusFilter, slotFilter])
 
+  // Catálogo de los 5 slots visibles (sin filtros de estado) — base
+  // para contadores honestos.
+  const catalogVisible = useMemo(
+    () => catalog.filter(c => {
+      const s = TYPE_TO_SLOT[c.type]
+      return s && VISIBLE_SLOTS.includes(s)
+    }),
+    [catalog],
+  )
+  const visibleCount = catalogVisible.length
+  const unlockedVisible = useMemo(
+    () => catalogVisible.filter(c => unlocked.has(c.id)).length,
+    [catalogVisible, unlocked],
+  )
+
   // Slots presentes (con ≥1 cosmético) para los filtros
   const visibleSlots = useMemo(() => {
     const set = new Set<EquipSlot>()
-    for (const c of catalog) {
+    for (const c of catalogVisible) {
       const s = TYPE_TO_SLOT[c.type]
       if (s) set.add(s)
     }
     return SLOT_ORDER.filter(s => set.has(s))
-  }, [catalog])
+  }, [catalogVisible])
 
   // ── Acción: equipar / desequipar ──────────────────────────────
   const equipCosmetic = useCallback(async (c: Cosmetic) => {
@@ -359,7 +374,7 @@ export function PlacaWardrobe({
               overflowY: 'auto',
             }}
           >
-            <PlacaCardV3 placa={placaPreview} interactive />
+            <PlacaCardV4 placa={placaPreview} interactive />
             <p
               className="text-center mt-6"
               style={{
@@ -401,9 +416,9 @@ export function PlacaWardrobe({
                       fontFamily: 'var(--font-sport)', cursor: 'pointer',
                     }}
                   >
-                    {s === 'all' ? `Todos · ${catalog.length}`
-                      : s === 'unlocked' ? `Desbloqueados · ${unlocked.size}`
-                      : `Bloqueados · ${catalog.length - unlocked.size}`}
+                    {s === 'all' ? `Todos · ${visibleCount}`
+                      : s === 'unlocked' ? `Desbloqueados · ${unlockedVisible}`
+                      : `Bloqueados · ${visibleCount - unlockedVisible}`}
                   </button>
                 ))}
               </div>

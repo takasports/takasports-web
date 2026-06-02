@@ -16,7 +16,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { PlacaCardV3 } from './PlacaCardV3'
+import { PlacaCardV4 } from './PlacaCardV4'
 import { PlacaWardrobe } from './PlacaWardrobe'
 import { buildPlacaData, type ApiEquipment } from './adapter'
 import type { LeaderboardBadge } from '@/lib/leaderboard-badges'
@@ -144,7 +144,7 @@ export function UserPlacaCard({ user, displayName, avatarUrl }: Props) {
             fontFamily: 'inherit',
           }}
         >
-          <PlacaCardV3 placa={placa} interactive />
+          <PlacaCardV4 placa={placa} interactive />
         </button>
 
         {/* CTAs debajo: customizar + compartir */}
