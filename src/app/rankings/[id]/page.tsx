@@ -59,7 +59,7 @@ const SOURCE_LABELS: Record<string, string> = {
 
 // ── SSG: top 500 por score en build time; el resto on-demand via ISR ─
 // Revalidar perfiles cada 2h (scores cambian ~semanalmente)
-export const revalidate = 7200
+export const revalidate = 300  // 5 min — antes 2h, bajado para reflejar fotos nuevas
 export const dynamicParams = true
 export async function generateStaticParams() {
   const staticIds = getAllRankingEntries().map(e => e.id)

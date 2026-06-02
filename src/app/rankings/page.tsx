@@ -3,7 +3,7 @@ import RankingsClient from './RankingsClient'
 import { getTopMovers, getAllRankings, getLastIngestTime, type RankingCategory } from '@/lib/rankings-data'
 
 // Rankings: cachear 5 min para reflejar cambios editoriales rápidamente
-export const revalidate = 300
+export const revalidate = 60  // 1 min — forzar refresh tras actualizaciones de fotos
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import {
   RANKING_JUGADORES, RANKING_CLUBES, RANKING_ENTRENADORES,
