@@ -29,7 +29,7 @@ const TABS: { id: RankedSport; label: string; emoji: string; accent: string; ava
   { id: 'global',  label: 'Global',        emoji: '⚡', accent: '#A78BFA', available: true },
   { id: 'mundial', label: 'Mundial 2026',  emoji: '🏆', accent: '#FBBF24', available: true },
   { id: 'futbol',  label: 'Ranked Fútbol', emoji: '⚽', accent: '#4ADE80', available: true },
-  { id: 'ufc',     label: 'Ranked UFC',    emoji: '🥊', accent: '#F87171', available: false },
+  { id: 'ufc',     label: 'Ranked UFC',    emoji: '🥊', accent: '#F87171', available: true },
 ]
 
 function Avatar({ url, name }: { url: string | null; name: string | null }) {
@@ -66,9 +66,6 @@ export default function RankedLeaderboard({ activeSport }: Props) {
   const [entries, setEntries]   = useState<RankedEntry[]>([])
   const [loading, setLoading]   = useState(true)
   const [hasLive, setHasLive]   = useState(false)  // true si hay partidos en curso
-  const [ufcEmail, setUfcEmail]         = useState('')
-  const [ufcSubmitted, setUfcSubmitted] = useState(false)
-  const [ufcSubmitting, setUfcSubmitting] = useState(false)
 
   useEffect(() => {
     setTab(defaultTab)
@@ -172,50 +169,22 @@ export default function RankedLeaderboard({ activeSport }: Props) {
           </div>
         )}
 
-        {/* UFC waitlist */}
-        {!loading && tab === 'ufc' && (
+        {/* UFC — mismo estado vacío que los demás deportes; se rellena cuando haya picks resueltos */}
+        {false && (
           <div className="px-5 py-8 flex flex-col items-center gap-4">
+            {/* waitlist eliminada — UFC ya está activo */}
             <span style={{ fontSize: 32 }}>🥊</span>
-            <p className="text-sm font-black" style={{ color: '#F87171', fontFamily: 'var(--font-display)' }}>Ranked UFC</p>
             <p className="text-[11px] text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', maxWidth: 220 }}>
-              Predicciones por PPV. Muy pronto. Déjanos tu email y te avisamos en el lanzamiento.
+              Placeholder eliminado
             </p>
-            {ufcSubmitted ? (
-              <div
-                className="flex items-center gap-2 px-4 py-2 rounded-xl"
-                style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.25)' }}
-              >
-                <span style={{ fontSize: 14 }}>✅</span>
-                <span className="text-[12px] font-black" style={{ color: '#F87171', fontFamily: 'var(--font-display)' }}>
-                  Te avisamos cuando lancemos UFC
-                </span>
-              </div>
-            ) : (
+            {false && (
               <form
-                onSubmit={async (e) => {
-                  e.preventDefault()
-                  if (!ufcEmail.trim() || ufcSubmitting) return
-                  setUfcSubmitting(true)
-                  try {
-                    await fetch('/api/ranked/ufc-waitlist', {
-                      method: 'POST',
-                      headers: { 'content-type': 'application/json' },
-                      body: JSON.stringify({ email: ufcEmail.trim() }),
-                    })
-                    setUfcSubmitted(true)
-                  } catch { /* ignore */ } finally {
-                    setUfcSubmitting(false)
-                  }
-                }}
                 className="flex gap-2 w-full"
                 style={{ maxWidth: 280 }}
               >
                 <input
                   type="email"
-                  required
-                  value={ufcEmail}
-                  onChange={e => setUfcEmail(e.target.value)}
-                  placeholder="tu@email.com"
+                  placeholder="placeholder"
                   className="flex-1 rounded-xl px-3 py-2 text-[12px] outline-none"
                   style={{
                     background: 'rgba(248,113,113,0.07)',
@@ -226,8 +195,7 @@ export default function RankedLeaderboard({ activeSport }: Props) {
                 />
                 <button
                   type="submit"
-                  disabled={ufcSubmitting}
-                  className="px-3 py-2 rounded-xl text-[11px] font-black transition-opacity hover:opacity-80 disabled:opacity-40"
+                  className="px-3 py-2 rounded-xl text-[11px] font-black"
                   style={{
                     background: 'rgba(248,113,113,0.15)',
                     border: '1px solid rgba(248,113,113,0.35)',
@@ -245,7 +213,7 @@ export default function RankedLeaderboard({ activeSport }: Props) {
         )}
 
         {/* Empty */}
-        {!loading && tab !== 'ufc' && entries.length === 0 && (
+        {!loading && entries.length === 0 && (
           <div className="px-5 py-10 text-center">
             <p className="text-[12px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Nadie en el ranking todavía · Sé el primero
