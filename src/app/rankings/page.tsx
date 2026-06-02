@@ -173,42 +173,15 @@ function buildItemListJsonLd(sp: SP) {
 // Las omitidas no se serializan al HTML — el cliente cae al STATIC_FALLBACK
 // que ya vive en el bundle JS. Default: jugadores + jugadoras (vista inicial).
 function categoriesForView(sp: SP): RankingCategory[] {
-  const tab = pickStr(sp, 'tab') || 'jugadores'
-  const gender = pickStr(sp, 'gender')
-  const scope = pickStr(sp, 'scope')
-  const deporte = pickStr(sp, 'deporte')
-
-  const set = new Set<RankingCategory>()
-
-  if (tab === 'jugadores') {
-    set.add('jugadores')
-    // Cargamos también la versión opuesta de gender para que el toggle
-    // sea inmediato (sin refetch) en la mayoría de combinaciones.
-    if (gender === 'f') set.add('jugadores')
-    set.add('jugadoras')
-    if (scope === 'sub21') set.add('sub21')
-    if (scope === 'pais') {
-      set.add('latam')
-      set.add('concacaf')
-    }
-    if (deporte === 'ufc' && gender === 'f') set.add('luchadoras_ufc')
-    if (deporte === 'wwe') set.add('creadores_wwe')
-  } else if (tab === 'clubes') {
-    set.add('clubes')
-    set.add('clubes_femenino')
-  } else if (tab === 'entrenadores') {
-    set.add('entrenadores')
-  } else if (tab === 'creadores' || tab === 'periodistas') {
-    // contenidoTypeMap necesita las 3 para clasificar Creador/Periodista
-    set.add('creadores')
-    set.add('periodistas')
-    set.add('creadores_wwe')
-  } else {
-    set.add('jugadores')
-    set.add('jugadoras')
-  }
-
-  return Array.from(set)
+  // Siempre cargamos TODAS las categorías desde DB para que image_url
+  // sea siempre el valor real de Supabase (con fotos actualizadas).
+  // Sin esto el cliente cae al fallback estático de rankings.ts (URLs antiguas).
+  const ALL: RankingCategory[] = [
+    'jugadores', 'jugadoras', 'clubes', 'clubes_femenino',
+    'entrenadores', 'creadores', 'periodistas', 'luchadoras_ufc',
+    'creadores_wwe', 'sub21', 'latam', 'concacaf',
+  ]
+  return ALL
 }
 
 // ── Página (server) ────────────────────────────────────────────────
