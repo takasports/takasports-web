@@ -53,16 +53,31 @@ export async function GET(req: NextRequest) {
 }
 
 // ── POST ──────────────────────────────────────────────────────────────────
+//
+// Acepta 2 shapes según el sport del evento:
+//
+//   Mundial / Ranked Fútbol (sport='mundial'):
+//     { event_id, pick: '1'|'X'|'2', exactScore?: {home, away} }
+//
+//   UFC (sport='ufc'):
+//     { event_id, pick: 'a'|'b', method?: 'KO'|'SUB'|'DEC' }
+//
+// El sport se lee del evento — el cliente no lo declara para evitar
+// inconsistencias.
 interface PickBody {
   event_id: string
-  pick: '1' | 'X' | '2'
-  /** ME1 — Marcador exacto opcional. Si presente y la tendencia es correcta
-   *  Y los goles coinciden, +3 pts extra (o +6 si featured). Máx 3 activos
-   *  por user (en eventos status='open' / no resueltos). */
+  pick: '1' | 'X' | '2' | 'a' | 'b'
+  /** ME1 — Marcador exacto opcional (solo Mundial). */
   exactScore?: { home: number; away: number }
+  /** UF3 — Método de victoria predicho (solo UFC, opcional). */
+  method?: 'KO' | 'SUB' | 'DEC'
 }
 
 const MAX_EXACT_ACTIVE = 3
+const SOCCER_PICKS = new Set(['1', 'X', '2'])
+const UFC_PICKS    = new Set(['a', 'b'])
+const UFC_METHODS  = new Set(['KO', 'SUB', 'DEC'])
+const UFC_LOCK_MS  = 30 * 60 * 1000   // 30 min antes del fight
 
 function validateExactScore(v: unknown): { home: number; away: number } | null | 'invalid' {
   if (v === undefined || v === null) return null
@@ -87,13 +102,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 })
   }
 
-  if (!body?.event_id || !['1', 'X', '2'].includes(body.pick)) {
+  // Validación inicial del pick: acepta tanto 1/X/2 (fútbol) como a/b (UFC).
+  // El cruce pick↔sport se valida después de leer el evento.
+  if (!body?.event_id || ![...SOCCER_PICKS, ...UFC_PICKS].includes(body.pick)) {
     return NextResponse.json({ error: 'invalid_body' }, { status: 400 })
   }
 
   const exactScore = validateExactScore(body.exactScore)
   if (exactScore === 'invalid') {
     return NextResponse.json({ error: 'invalid_exact_score' }, { status: 400 })
+  }
+
+  if (body.method !== undefined && !UFC_METHODS.has(body.method)) {
+    return NextResponse.json({ error: 'invalid_method' }, { status: 400 })
   }
 
   const sb = await createServerSupabaseClient()
@@ -115,14 +136,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'event_closed', status: ev.status }, { status: 409 })
   }
 
-  // Lock picks 60 minutos antes del inicio del partido
+  // UF3 — cruce pick↔sport
+  const isUfc = ev.sport === 'ufc'
+  if (isUfc && !UFC_PICKS.has(body.pick)) {
+    return NextResponse.json({ error: 'invalid_pick_for_ufc' }, { status: 400 })
+  }
+  if (!isUfc && !SOCCER_PICKS.has(body.pick)) {
+    return NextResponse.json({ error: 'invalid_pick_for_soccer' }, { status: 400 })
+  }
+  // method solo aplica a UFC
+  if (!isUfc && body.method !== undefined) {
+    return NextResponse.json({ error: 'method_not_allowed_for_soccer' }, { status: 400 })
+  }
+  // exactScore solo aplica a fútbol
+  if (isUfc && exactScore) {
+    return NextResponse.json({ error: 'exact_not_allowed_for_ufc' }, { status: 400 })
+  }
+
+  // Lock picks: 30 min antes (UFC) / 60 min antes (fútbol).
+  const lockOffsetMs = isUfc ? UFC_LOCK_MS : 60 * 60 * 1000
   const matchStart   = new Date(ev.event_date).getTime()
-  const lockAt       = matchStart - 60 * 60 * 1000   // 1 hora antes
+  const lockAt       = matchStart - lockOffsetMs
   const nowMs        = Date.now()
   if (nowMs >= lockAt) {
     const minsLeft = Math.max(0, Math.ceil((matchStart - nowMs) / 60_000))
+    const lockMins = Math.round(lockOffsetMs / 60_000)
     return NextResponse.json(
-      { error: 'pick_locked', message: `Las predicciones se bloquean 1 hora antes del partido. Quedan ${minsLeft} min.` },
+      { error: 'pick_locked', message: `Las predicciones se bloquean ${lockMins} min antes. Quedan ${minsLeft} min.` },
       { status: 409 }
     )
   }
@@ -168,11 +208,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Construye el JSONB final. exactScore se omite si null para mantener
-  // el payload limpio (no { pick, exactScore: null }).
-  const predictionPayload = exactScore
-    ? { pick: body.pick, exactScore }
-    : { pick: body.pick }
+  // Construye el JSONB final. Las keys opcionales se omiten cuando faltan.
+  //   Fútbol: { pick: '1'|'X'|'2', exactScore?: {home, away} }
+  //   UFC:    { pick: 'a'|'b',     method?: 'KO'|'SUB'|'DEC' }
+  const predictionPayload: Record<string, unknown> = { pick: body.pick }
+  if (exactScore) predictionPayload.exactScore = exactScore
+  if (isUfc && body.method) predictionPayload.method = body.method
 
   // ── Cambio de pick (el evento sigue open) ────────────────────────
   // Si ya hay predicción y el partido aún no ha empezado, permitimos

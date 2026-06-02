@@ -30,6 +30,10 @@
       "schedule": "*/30 * * 6,7 *"
     },
     {
+      "path": "/api/cron/sync-ufc",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron/mundial-reminders",
       "schedule": "*/30 * * 6,7 *"
     },

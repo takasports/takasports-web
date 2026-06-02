@@ -35,6 +35,11 @@ const MundialClient = dynamic(
   { ssr: false, loading: () => <QuinielaLoadingShim /> }
 )
 
+const UfcClient = dynamic(
+  () => import('@/app/ufc/UfcClient'),
+  { ssr: false, loading: () => <QuinielaLoadingShim /> }
+)
+
 // ── Tipos ────────────────────────────────────────────────────────────
 type HubTab   = 'ranked' | 'creadores' | 'privadas'
 type SportTab = 'futbol' | 'ufc' | 'mundial'
@@ -70,8 +75,7 @@ const SPORTS: {
     label:     'Ranked UFC',
     emoji:     '🥊',
     accent:    '#F87171',
-    available: false,
-    badge:     'Pronto',
+    available: true,
   },
 ]
 
@@ -257,7 +261,7 @@ export default function PrediccionesHub() {
               ? <QuinielaClient embedded />
               : <SportComingSoon sport="Ranked Fútbol" emoji="⚽" accent="#4ADE80" />
           )}
-          {sportTab === 'ufc'    && <SportComingSoon sport="Ranked UFC" emoji="🥊" accent="#F87171" />}
+          {sportTab === 'ufc'    && <UfcClient />}
           {sportTab === 'mundial' && <MundialClient />}
           <RankedLeaderboard activeSport={sportTab} />
         </>
