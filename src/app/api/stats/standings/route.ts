@@ -81,10 +81,15 @@ export interface StatsStandingsResponse {
   updatedAt: string
 }
 
-// Page-level revalidate kept low so live blocks (NBA playoffs at 60s, WC knockout at 300s,
-// UCL/UEL/UECL fixtures at 300s) can refresh on schedule. Slow blocks
-// (FedEx Cup, FIFA ranking) carry their own longer fetch-level revalidate.
-export const revalidate = 300
+// force-dynamic: esta ruta NO se prerendea en build. Crítico — durante
+// Roland Garros (jun 2026) los scoreboards de tenis de ESPN superan 2MB,
+// Next no puede cachearlos, y los ~1000 renders paralelos del build
+// re-fetchean en cascada saturando ESPN → la ruta excede el límite de 60s
+// de Vercel y ROMPE TODO el build. La ruta solo se consume client-side
+// (la página /estadisticas la llama por fetch), así que generarla on-demand
+// es correcto. Las fetches internas conservan su `next:{revalidate}` para
+// cachear los datos en runtime. (fix jun 2026, deploys rotos 23h)
+export const dynamic = 'force-dynamic'
 
 const BASE = 'https://site.web.api.espn.com/apis/v2/sports'
 

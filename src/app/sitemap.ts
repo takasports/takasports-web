@@ -31,9 +31,14 @@ function mostRecent(items: Array<{ publishedAt?: string; _updatedAt?: string }>)
 // Player/team detail pages (deep, automated stat pages — high SEO value).
 async function statRoutes(): Promise<MetadataRoute.Sitemap> {
   try {
+    // Timeout de 20s: durante Roland Garros las fetches a /api/stats/* pueden
+    // colgarse >60s y romper el build entero. Si tardan, devolvemos sitemap
+    // parcial (sin URLs de equipo/jugador) en lugar de bloquear el deploy.
+    // Estas URLs ya se descubren vía crawl normal, así que el coste SEO de
+    // omitirlas en un build puntual es mínimo. (fix jun 2026)
     const [standRes, playRes] = await Promise.all([
-      fetch(`${BASE_URL}/api/stats/standings`, { next: { revalidate: 3600 } }),
-      fetch(`${BASE_URL}/api/stats/players`, { next: { revalidate: 3600 } }),
+      fetch(`${BASE_URL}/api/stats/standings`, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(20000) }),
+      fetch(`${BASE_URL}/api/stats/players`, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(20000) }),
     ])
     const teamUrls = new Set<string>()
     const playerUrls = new Set<string>()

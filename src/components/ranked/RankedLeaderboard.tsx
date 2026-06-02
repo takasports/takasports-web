@@ -205,7 +205,10 @@ export default function RankedLeaderboard({ activeSport }: Props) {
                     flexShrink: 0,
                   }}
                 >
-                  {ufcSubmitting ? '…' : 'Avisarme'}
+                  {/* ufcSubmitting state eliminado con la waitlist UFC; este
+                      bloque es dead code (gated por {false &&}). Hardcode para
+                      no romper el typecheck del build. (fix jun 2026) */}
+                  Avisarme
                 </button>
               </form>
             )}

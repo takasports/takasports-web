@@ -44,8 +44,10 @@ function seasonStartYear(): number {
 const SEASON_START = seasonStartYear()
 const SEASON_LABEL = `${SEASON_START}-${String((SEASON_START + 1) % 100).padStart(2, '0')}`
 
-// Player tables update slowly; ESPN goals/assists revalidate at 30 min.
-export const revalidate = 1800
+// force-dynamic: igual que standings — no prerendear en build para no romper
+// el deploy con fetches lentas a ESPN. Solo se consume client-side. Las fetches
+// internas conservan su revalidate de 30 min. (fix jun 2026)
+export const dynamic = 'force-dynamic'
 
 // ── ESPN ──────────────────────────────────────────────────────────────────────
 
