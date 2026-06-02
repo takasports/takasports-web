@@ -8,6 +8,8 @@ import { useState, useEffect, useCallback } from 'react'
 import TakaPoint from '@/components/TakaPoint'
 import { LeaderboardBadgesRow, LeaderboardTitleLine } from '@/components/badges/LeaderboardBadgeChip'
 import type { LeaderboardBadge, LeaderboardEquipment } from '@/lib/leaderboard-badges'
+import { PlacaRowV3 } from '@/components/placa/PlacaRowV3'
+import { buildPlacaData, type ApiEquipment } from '@/components/placa/adapter'
 
 type RankedSport = 'global' | 'mundial' | 'futbol' | 'ufc'
 
@@ -17,8 +19,10 @@ interface RankedEntry {
   avatar_url:   string | null
   total:        number
   rank:         number
+  level?:       number
+  levelName?:   string
   badges?:      LeaderboardBadge[]
-  equipment?:   LeaderboardEquipment
+  equipment?:   LeaderboardEquipment & ApiEquipment
 }
 
 const TABS: { id: RankedSport; label: string; emoji: string; accent: string; available: boolean }[] = [
@@ -251,24 +255,53 @@ export default function RankedLeaderboard({ activeSport }: Props) {
 
         {/* Rows */}
         {!loading && entries.length > 0 && (
-          <div className="px-4 py-3 flex flex-col gap-1">
-            {entries.map((e, i) => {
-              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
-              const isTop = i < 3
+          <div className="px-4 py-3 flex flex-col gap-2">
+
+            {/* PODIO — top 3 como PlacaRowV3 (showcase premium de la placa) */}
+            {entries.slice(0, 3).map((e, i) => {
+              const placa = buildPlacaData({
+                displayName: e.display_name ?? 'Anónimo',
+                handle:      (e.display_name ?? 'takero').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'takero',
+                avatarUrl:   e.avatar_url,
+                level:       e.level ?? 1,
+                levelName:   e.levelName ?? 'Novato',
+                equipment:   e.equipment as ApiEquipment | undefined,
+                badges:      e.badges,
+              })
+              return (
+                <PlacaRowV3
+                  key={e.user_id ?? i}
+                  placa={placa}
+                  rank={e.rank}
+                  score={e.total}
+                  scoreLabel="pts"
+                  sportAccent={accent}
+                />
+              )
+            })}
+
+            {/* Separador si hay más de 3 */}
+            {entries.length > 3 && (
+              <div className="flex items-center gap-2 px-2 my-1" aria-hidden="true">
+                <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+                <span style={{ fontSize: 9, color: '#4A4A6A', fontFamily: 'var(--font-sport)', letterSpacing: '0.1em' }}>
+                  CLASIFICACIÓN
+                </span>
+                <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+              </div>
+            )}
+
+            {/* RESTO — filas compactas (4º en adelante) */}
+            {entries.slice(3).map((e, idx) => {
+              const i = idx + 3
               const eq          = e.equipment
               const frameColor  = eq?.frame?.color
               const cardBg      = eq?.card_bg?.gradient
               const equipBadge  = eq?.badge
               const title       = eq?.title
 
-              // Background priority: equipped card_bg > top-3 accent > base
-              const rowBg = cardBg
-                ? cardBg
-                : isTop ? `${accent}08` : 'rgba(255,255,255,0.015)'
-              // Border priority: equipped frame > top-3 accent > none
-              const rowBorder = frameColor
-                ? `1px solid ${frameColor}`
-                : isTop ? `1px solid ${accent}18` : '1px solid transparent'
+              const rowBg = cardBg ?? 'rgba(255,255,255,0.015)'
+              const rowBorder = frameColor ? `1px solid ${frameColor}` : '1px solid transparent'
 
               return (
                 <div
@@ -276,13 +309,13 @@ export default function RankedLeaderboard({ activeSport }: Props) {
                   className="flex items-center gap-3 px-3 py-2 rounded-xl"
                   style={{ background: rowBg, border: rowBorder }}
                 >
-                  <span style={{ fontSize: 11, fontWeight: 900, width: 20, textAlign: 'center', color: isTop ? accent : '#4A4A6A', fontFamily: 'var(--font-display)', flexShrink: 0 }}>
-                    {medal ?? `${e.rank}`}
+                  <span style={{ fontSize: 11, fontWeight: 900, width: 20, textAlign: 'center', color: '#4A4A6A', fontFamily: 'var(--font-display)', flexShrink: 0 }}>
+                    {e.rank}
                   </span>
                   <Avatar url={e.avatar_url} name={e.display_name} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="truncate text-[12px] font-black" style={{ color: isTop ? '#F0F0F8' : '#8A8AAA', fontFamily: 'var(--font-display)' }}>
+                      <span className="truncate text-[12px] font-black" style={{ color: '#8A8AAA', fontFamily: 'var(--font-display)' }}>
                         {e.display_name ?? 'Anónimo'}
                       </span>
                       <LeaderboardBadgesRow badges={e.badges} equippedBadge={equipBadge} />
@@ -291,7 +324,7 @@ export default function RankedLeaderboard({ activeSport }: Props) {
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <TakaPoint size={11} />
-                    <span className="text-[12px] font-black tabular-nums" style={{ color: isTop ? accent : '#6A6A8A', fontFamily: 'var(--font-display)' }}>
+                    <span className="text-[12px] font-black tabular-nums" style={{ color: '#6A6A8A', fontFamily: 'var(--font-display)' }}>
                       {e.total.toLocaleString('es-ES')}
                     </span>
                   </div>

@@ -131,6 +131,18 @@ export async function GET() {
     toMeBadge(def, unlockedMap.get(def.id) ?? null),
   )
 
+  // Stats extra para los signature_stat cosmetics:
+  //   · predictions  → total de predicciones ranked
+  //   · racha        → racha actual de juegos diarios
+  // Lecturas en paralelo, fallar silenciosamente si las tablas no
+  // están disponibles.
+  const [predictionsRes, streakRes] = await Promise.all([
+    sb.from('ranked_predictions').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+    sb.from('game_streaks').select('current_streak').eq('user_id', user.id).maybeSingle(),
+  ])
+  const predictionsTotal = predictionsRes.count ?? 0
+  const currentStreak    = (streakRes.data?.current_streak as number | undefined) ?? 0
+
   // Equipamiento activo del user
   const { data: equipRows } = await sb
     .from('quiniela_user_equipment')
@@ -165,5 +177,9 @@ export async function GET() {
     unlockedCount: unlockedDefs.length,
     totalBadges: allBadges.length,
     equipment,
+    stats: {
+      predictions: predictionsTotal,
+      racha:       currentStreak,
+    },
   })
 }

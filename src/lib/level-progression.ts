@@ -25,6 +25,47 @@ export interface LevelProgressionResult {
 }
 
 /**
+ * Batch: computa el nivel de varios users de una vez (para leaderboards).
+ * Devuelve Map<userId, { level, levelName, xp }>.
+ *
+ * Dos queries totales (no por user):
+ *   1. sum(amount) positivos de point_transactions agrupado por user
+ *   2. count de quiniela_badges agrupado por user
+ *
+ * No otorga cosméticos — es solo lectura (read-only display).
+ */
+export async function fetchLevelsByUser(
+  sb: SupabaseClient,
+  userIds: string[],
+): Promise<Map<string, { level: number; levelName: string; xp: number }>> {
+  const out = new Map<string, { level: number; levelName: string; xp: number }>()
+  if (userIds.length === 0) return out
+
+  const [ptRes, badgeRes] = await Promise.all([
+    sb.from('point_transactions').select('user_id, amount').in('user_id', userIds).gt('amount', 0),
+    sb.from('quiniela_badges').select('user_id').in('user_id', userIds),
+  ])
+
+  const ptByUser = new Map<string, number>()
+  for (const r of ptRes.data ?? []) {
+    const uid = r.user_id as string
+    ptByUser.set(uid, (ptByUser.get(uid) ?? 0) + ((r.amount as number) ?? 0))
+  }
+  const badgeCountByUser = new Map<string, number>()
+  for (const r of badgeRes.data ?? []) {
+    const uid = r.user_id as string
+    badgeCountByUser.set(uid, (badgeCountByUser.get(uid) ?? 0) + 1)
+  }
+
+  for (const uid of userIds) {
+    const xp = (ptByUser.get(uid) ?? 0) + (badgeCountByUser.get(uid) ?? 0) * XP_PER_BADGE
+    const info = computeLevel(xp)
+    out.set(uid, { level: info.current.level, levelName: info.current.name, xp })
+  }
+  return out
+}
+
+/**
  * Recompone XP del user, calcula su nivel actual y otorga cualquier
  * cosmético por nivel que todavía no tenga. Fire-and-forget seguro.
  *

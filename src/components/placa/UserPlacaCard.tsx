@@ -32,6 +32,10 @@ interface MeResponse {
   levelName?: string
   xp?: number
   badges?: MeBadge[]
+  stats?: {
+    predictions?: number
+    racha?: number
+  }
 }
 interface CosmeticsMeResponse {
   equipment?: ApiEquipment
@@ -102,17 +106,14 @@ export function UserPlacaCard({ user, displayName, avatarUrl }: Props) {
     }))
 
   // liveStats — keys alimentando los signature_stat cosmetic.
-  // badgesCount va directo desde unlockedBadges.length. Plenos/racha/
-  // predictions no se exponen en /api/quiniela/me todavía — quedan
-  // como '—' en la placa propia. La placa pública sí los tiene
-  // resueltos en /api/placa/[userId].
+  // Todos resueltos desde /api/quiniela/me (incluye stats {predictions, racha}).
   const plenosCount = unlockedBadges.filter(b => b.id === 'pleno_jornada').length
   const liveStats: Record<string, string | number> = {
     xp:           (me.xp ?? 0).toLocaleString('es-ES'),
     badgesCount:  String(unlockedBadges.length),
     plenos:       plenosCount > 0 ? `x${plenosCount}` : '0',
-    racha:        '—',
-    predictions:  '—',
+    racha:        String(me.stats?.racha ?? 0),
+    predictions:  String(me.stats?.predictions ?? 0),
   }
 
   const placa = buildPlacaData({

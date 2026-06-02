@@ -13,7 +13,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { fetchEquipmentByUser, type UserEquipment } from '@/lib/equipment'
-import { fetchBadgesByUser, type LeaderboardBadge, type LeaderboardEquipment } from '@/lib/leaderboard-badges'
+import { fetchBadgesByUser, type LeaderboardBadge } from '@/lib/leaderboard-badges'
+import { fetchLevelsByUser } from '@/lib/level-progression'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,16 +26,22 @@ interface LeaderboardEntry {
   rank:         number
 }
 
-/** Reduce UserEquipment a la forma serializable que consume el cliente. */
-function serializeEquipment(eq: UserEquipment | undefined): LeaderboardEquipment | undefined {
+/** Reduce UserEquipment a forma serializable (9 slots) para el cliente.
+ *  Compatible con LeaderboardEquipment (4 legacy) + slots nuevos para que
+ *  PlacaRowV3 pueda construir la placa completa. */
+function serializeEquipment(eq: UserEquipment | undefined): Record<string, unknown> | undefined {
   if (!eq) return undefined
-  const out: LeaderboardEquipment = {}
+  const out: Record<string, unknown> = {}
   if (eq.badge)   out.badge   = { emoji: eq.badge.emoji, color: eq.badge.color, bg: eq.badge.bg, name: eq.badge.name }
   if (eq.title)   out.title   = { text:  eq.title.text,  color: eq.title.color }
   if (eq.frame)   out.frame   = { color: eq.frame.color }
   if (eq.card_bg) out.card_bg = { gradient: eq.card_bg.gradient }
-  if (!out.badge && !out.title && !out.frame && !out.card_bg) return undefined
-  return out
+  if (eq.avatar_frame)       out.avatar_frame       = eq.avatar_frame
+  if (eq.name_effect)        out.name_effect        = eq.name_effect
+  if (eq.corner_sticker)     out.corner_sticker     = eq.corner_sticker
+  if (eq.signature_stat)     out.signature_stat     = eq.signature_stat
+  if (eq.background_pattern) out.background_pattern = eq.background_pattern
+  return Object.keys(out).length > 0 ? out : undefined
 }
 
 export async function GET(req: NextRequest) {
@@ -69,20 +76,24 @@ export async function GET(req: NextRequest) {
   // Fetch badges + equipment en paralelo. Si no hay admin client (env sin
   // service role), devolvemos los rows sin enriquecer — la UI tiene fallback.
   const admin = adminSupabase()
-  const [badgesByUser, equipByUser] = await Promise.all([
+  const [badgesByUser, equipByUser, levelsByUser] = await Promise.all([
     fetchBadgesByUser(admin, userIds, 3),
     admin ? fetchEquipmentByUser(admin, userIds) : Promise.resolve(new Map<string, UserEquipment>()),
+    admin ? fetchLevelsByUser(admin, userIds)    : Promise.resolve(new Map<string, { level: number; levelName: string; xp: number }>()),
   ])
 
   const entries = rows.map((e, i) => {
     const equipment = serializeEquipment(equipByUser.get(e.user_id))
     const badges: LeaderboardBadge[] = badgesByUser.get(e.user_id) ?? []
+    const lvl = levelsByUser.get(e.user_id)
     return {
       user_id:      e.user_id,
       display_name: e.display_name,
       avatar_url:   e.avatar_url,
       total:        e.total_points,
       rank:         e.rank ?? i + 1,
+      level:        lvl?.level ?? 1,
+      levelName:    lvl?.levelName ?? 'Novato',
       badges:       badges.length > 0 ? badges : undefined,
       equipment,
     }
