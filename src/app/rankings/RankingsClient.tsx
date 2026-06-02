@@ -78,13 +78,19 @@ const SUB_ENTITY_TABS: Record<string, { id: string; label: string }[]> = {
 }
 
 // Contenidos: sólo los 3 deportes con sección propia
-const CONTENIDO_SPORTS = ['futbol', 'ufc', 'wwe']
+const CONTENIDO_SPORTS = ['futbol', 'mundial', 'ufc', 'wwe', 'baloncesto', 'formula1', 'tenis', 'padel', 'golf']
 
 const SPORT_FILTERS_CONTENIDO = [
-  { label: 'Todos',  slug: '' },
-  { label: 'Fútbol', slug: 'futbol' },
-  { label: 'UFC',    slug: 'ufc' },
-  { label: 'WWE',    slug: 'wwe' },
+  { label: 'Todos',    slug: '' },
+  { label: 'Fútbol',  slug: 'futbol' },
+  { label: 'Mundial', slug: 'mundial' },
+  { label: 'UFC',     slug: 'ufc' },
+  { label: 'WWE',     slug: 'wwe' },
+  { label: 'NBA',     slug: 'baloncesto' },
+  { label: 'F1',      slug: 'formula1' },
+  { label: 'Tenis',   slug: 'tenis' },
+  { label: 'Pádel',   slug: 'padel' },
+  { label: 'Golf',    slug: 'golf' },
 ]
 
 const JUGADORES_SCOPES_FOR_SPORT: Record<string, JugadoresScope[]> = {

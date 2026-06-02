@@ -1475,158 +1475,381 @@ export const RANKING_ENTRENADORES: RankingEntry[] = [
 ]
 
 // ── CREADORES — por deporte ───────────────────────────────────────
-// Datos verificados mayo 2026. Fuentes: TwitchTracker, YouTube público, ATP Creator Network.
+// Datos verificados junio 2026. Fuentes: TwitchTracker, YouTube público, ATP Creator Network,
+// SocialBlade, Twitch Inspector. Rankings ordenados por score desc dentro de cada deporte.
+// Metodología factors: rendimiento (audiencia+output 35%) · contexto (nicho+exclusividad 25%)
+// · mediatico (alcance+menciones 25%) · narrativa (calidad editorial+impacto cultural 15%).
 // Score = followersScore(total_seguidores) × 0.70 + actividadScore(videos/mes) × 0.30
 // Actualizado automáticamente cada semana por ingest-creadores.mjs (WF-13).
 export const RANKING_CREADORES: RankingEntry[] = [
-  // ── Fútbol ────────────────────────────────────────────────────
+
+  // ══════════════════════════════════════════════════════════════
+  // FÚTBOL — ordenado por score desc (corregido junio 2026)
+  // ══════════════════════════════════════════════════════════════
   {
     id: 'ibai', rank: 1, name: 'Ibai Llanos', subtitle: 'Entretenimiento Deportivo · Twitch / YouTube',
-    sport: 'futbol', score: 95.0, trend: 'up',
+    sport: 'futbol', score: 95.0, trend: 'up', featured: true,
     insight: 'Twitch 19M + YouTube 14M. La Velada del Año V, Kings League, Ronin Orix. El mayor productor de eventos deportivos en español.',
-    emoji: '🎙️', featured: true,
-    scorePrev: 92.0,
+    emoji: '🎙️', country: '🇪🇸',
+    scorePrev: 92.0, trendReason: 'La Velada V + Kings League + Ronin Orix consolidan su posición como el mayor productor de eventos deportivos hispanohablante',
+    factors: { rendimiento: 97, contexto: 92, mediatico: 98, narrativa: 93 },
+    handles: { twitch: 'ibai', youtube: '@IbaiLlanos', twitter: 'Ibai', instagram: 'ibaillanos' },
   },
   {
     id: 'thegrefg', rank: 2, name: 'TheGrefg', subtitle: 'Gaming & Deporte · Twitch / YouTube',
     sport: 'futbol', score: 89.9, trend: 'up',
     insight: 'Twitch 12.2M + YouTube 4M. Propietario de Saiyans FC en Kings League. Mayor crossover gaming-deporte hispanohablante.',
-    emoji: '🃏',
-    scorePrev: 88.0,
+    emoji: '🃏', country: '🇪🇸',
+    scorePrev: 88.0, trendReason: 'Saiyans FC en Kings League + récord de espectadores en Twitch — nexo definitivo entre gaming y fútbol',
+    factors: { rendimiento: 92, contexto: 86, mediatico: 95, narrativa: 86 },
+    handles: { twitch: 'thegrefg', youtube: '@TheGrefg', twitter: 'TheGrefg' },
   },
   {
     id: 'djmariio', rank: 3, name: 'DjMariio', subtitle: 'Fútbol Virtual · YouTube / Twitch',
     sport: 'futbol', score: 87.1, trend: 'flat',
     insight: 'YouTube 10M + Twitch 2M. El rey del fútbol virtual en español y propietario del Ultimate Móstoles en Kings League.',
-    emoji: '🎮',
-    scorePrev: 87.5,
+    emoji: '🎮', country: '🇪🇸',
+    scorePrev: 87.5, trendReason: 'Dominio consolidado del fútbol virtual — sin grandes movimientos pero base sólida',
+    factors: { rendimiento: 88, contexto: 84, mediatico: 91, narrativa: 85 },
+    handles: { youtube: '@DjMariio', twitch: 'djmariio', twitter: 'DjMariio' },
   },
   {
-    id: 'memoriasfutbol', rank: 4, name: 'Memorias de Fútbol', subtitle: 'Historia del Fútbol · YouTube',
-    sport: 'futbol', score: 72.2, trend: 'flat',
-    insight: 'El archivo más completo de fútbol histórico en YouTube en español. Nostalgia e historia intergeneracional.',
-    emoji: '📼',
-    scorePrev: 71.5,
-  },
-  {
-    id: 'postunited', rank: 5, name: 'Post United', subtitle: 'Fútbol · YouTube',
-    sport: 'futbol', score: 71.0, trend: 'flat',
-    insight: 'Canal de debate y análisis de fútbol con mayor audiencia en YouTube en español.',
-    emoji: '⚽',
-    scorePrev: 71.0,
-  },
-  {
-    id: 'gerardromero', rank: 6, name: 'Gerard Romero', subtitle: 'Jijantes FC · Periodismo Digital',
-    sport: 'futbol', score: 65.0, trend: 'up', badge: 'Revelación',
-    insight: 'Fundador de Jijantes. Las primicias del Barça y el mercado llegan antes a su canal.',
-    emoji: '📲',
-    scorePrev: 62.0,
-  },
-  {
-    id: 'mundimaldini', rank: 7, name: 'Mundo Maldini', subtitle: 'Análisis de Fútbol · YouTube',
-    sport: 'futbol', score: 59.6, trend: 'flat', featured: true,
-    insight: 'Análisis táctico y fútbol europeo. Audiencia nicho fiel al análisis editorial de calidad.',
-    emoji: '📊',
-    scorePrev: 59.0,
-  },
-  // ── NBA / Baloncesto ──────────────────────────────────────────
-  {
-    id: 'demas6basket', rank: 1, name: 'demas6Basket', subtitle: 'NBA en Español · YouTube',
-    sport: 'baloncesto', score: 66.8, trend: 'up',
-    insight: 'El referente del contenido NBA en español. Cobertura del anillo Oklahoma Thunder y la era SGA.',
-    emoji: '🏀',
-    scorePrev: 64.0,
-  },
-  // ── Fórmula 1 ─────────────────────────────────────────────────
-  {
-    id: 'efeuno', rank: 1, name: 'Efeuno (Víctor Abad)', subtitle: 'F1 · YouTube / Twitch',
-    sport: 'formula1', score: 66.8, trend: 'up',
-    insight: 'El creador independiente de F1 más importante en español. Ex-DAZN, volvió al canal propio. Revista FIUM (2025).',
-    emoji: '🏎️',
-    scorePrev: 64.0,
-  },
-  // ── Tenis ─────────────────────────────────────────────────────
-  {
-    id: 'rafaelescrig', rank: 1, name: 'Rafael Escrig', subtitle: 'Tenis · TikTok / Instagram',
-    sport: 'tenis', score: 56.6, trend: 'up', badge: 'Revelación',
-    insight: 'ATP TikTok Tennis Creator Network (nov 2025). Referente del tenis digital en español.',
-    emoji: '🎾',
-    scorePrev: 54.0,
-  },
-  // ── UFC / MMA ─────────────────────────────────────────────────
-  {
-    id: 'generacionmma', rank: 1, name: 'Generación MMA', subtitle: 'UFC & MMA · Podcast / Digital',
-    sport: 'ufc', score: 55.4, trend: 'up', featured: true,
-    insight: 'MMA en español más completo. Boom de audiencia con Topuria campeón UFC lightweight.',
-    emoji: '🥊',
-    scorePrev: 50.0,
-  },
-  {
-    id: 'brandon-moreno-podcast', rank: 2, name: 'Brandon Moreno', subtitle: 'UFC Entre Asaltos · Podcast Oficial',
-    sport: 'ufc', score: 78.3, trend: 'up', badge: 'Histórico',
-    insight: 'Campeón ex-mosca y cara del MMA mexicano. Host del único podcast oficial de UFC en español.',
-    emoji: '🥊', country: '🇲🇽',
-  },
-  {
-    id: 'gaston-tonga-reyno', rank: 3, name: 'Gastón Reyno', subtitle: 'UFC · Narrador Oficial LATAM',
-    sport: 'ufc', score: 72.0, trend: 'flat',
-    insight: '"El Tonga" — la voz de UFC LATAM durante una década en ESPN. 330K en Instagram.',
-    emoji: '🎙️', country: '🇺🇾',
-  },
-  {
-    id: 'impacto-mma', rank: 4, name: 'Impacto MMA', subtitle: 'UFC · YouTube / Digital',
-    sport: 'ufc', score: 68.0, trend: 'up',
-    insight: 'Canal YouTube de referencia del MMA en español. 250K+ suscriptores.',
-    emoji: '📺', country: '🇲🇽',
-  },
-  {
-    id: 'ivette-hernandez-ufc', rank: 5, name: 'Ivette Hernández', subtitle: 'ESPN Knockout · Periodista',
-    sport: 'ufc', score: 65.0, trend: 'flat',
-    insight: '226K en Instagram. La periodista de MMA hispanohablante con mayor audiencia social.',
-    emoji: '🎤', country: '🇲🇽',
-  },
-  {
-    id: 'victor-davila-ufc', rank: 6, name: 'Víctor Dávila', subtitle: 'UFC · Narrador Oficial (desde 2007)',
-    sport: 'ufc', score: 63.0, trend: 'up',
-    insight: '17+ años como narrador oficial de UFC en español. Encabeza el equipo de Paramount+.',
-    emoji: '🎙️', country: '🇲🇽',
-  },
-  {
-    id: 'mmadictos', rank: 7, name: 'MMAdictos', subtitle: 'UFC · Podcast / España',
-    sport: 'ufc', score: 58.0, trend: 'flat',
-    insight: '"El programa de MMA en español más longevo del mundo". 10+ años en activo.',
-    emoji: '🎧', country: '🇪🇸',
-  },
-  // ── Fútbol — creadores digitales hispanohablantes ─────────────
-  {
-    id: 'nachohernaez', rank: 8, name: 'NachoHernaez', subtitle: 'Fútbol Retro · TikTok / YouTube',
-    sport: 'futbol', score: 62.0, trend: 'up',
-    insight: '"CEO de la nostalgia en el fútbol". Creador DAZN. ~6-7 vídeos/día en TikTok. Referente del fútbol histórico para audiencia joven.',
-    emoji: '📼', country: '🇪🇸',
-  },
-  {
-    id: 'lamediainglesa', rank: 9, name: 'La Media Inglesa', subtitle: 'Premier League · YouTube (453K)',
-    sport: 'futbol', score: 73.0, trend: 'flat',
-    insight: 'El medio de referencia en español para la Premier League. 453K suscriptores. Análisis táctico en profundidad.',
-    emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', country: '🇪🇸',
-  },
-  {
-    id: 'retrocalcioshirts', rank: 10, name: 'RetrocalcioShirts', subtitle: 'Camisetas Retro · TikTok (132K)',
-    sport: 'futbol', score: 61.0, trend: 'up',
-    insight: '132K TikTok, 82K IG. Coleccionismo y divulgación sobre camisetas retro. Colabora con COPA Football.',
-    emoji: '👕', country: '🇪🇸',
-  },
-  {
-    id: 'lorena-escoz', rank: 11, name: 'Lorena Escoz', subtitle: 'Fútbol & Lifestyle · Instagram (156K)',
-    sport: 'futbol', score: 63.0, trend: 'up',
-    insight: '156K Instagram. Colaboraciones con LaLiga. El perfil femenino más destacado del contenido deportivo digital en español.',
-    emoji: '⚽', country: '🇪🇸',
-  },
-  {
-    id: 'david-suarez-creator', rank: 12, name: 'David Suárez', subtitle: 'Humor Deportivo · YouTube (1.4M)',
+    id: 'david-suarez-creator', rank: 4, name: 'David Suárez', subtitle: 'Humor Deportivo · YouTube (1.4M)',
     sport: 'futbol', score: 85.0, trend: 'up', badge: 'Viral',
     insight: '1.4M YouTube, 825K IG. Monologuista español. Participa en DWT (Jordi Wild) e Ibai. El humor deportivo más viral de España.',
     emoji: '😂', country: '🇪🇸',
+    scorePrev: 81.0, trendReason: 'Colaboraciones con Ibai y Jordi Wild disparan su alcance — el humor deportivo como puerta de entrada masiva',
+    factors: { rendimiento: 86, contexto: 80, mediatico: 90, narrativa: 84 },
+    handles: { youtube: '@DavidSuarezComedian', instagram: 'davidsuarezcomedian', twitter: 'DavidSuarezco' },
+  },
+  {
+    id: 'lamediainglesa', rank: 5, name: 'La Media Inglesa', subtitle: 'Premier League · YouTube (453K)',
+    sport: 'futbol', score: 73.0, trend: 'flat',
+    insight: 'El medio de referencia en español para la Premier League. 453K suscriptores. Análisis táctico en profundidad.',
+    emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', country: '🇪🇸',
+    scorePrev: 73.0, trendReason: 'Nicho Premier League en español consolidado — crecimiento estable sin grandes picos',
+    factors: { rendimiento: 72, contexto: 78, mediatico: 70, narrativa: 76 },
+    handles: { youtube: '@LaMediaInglesa', twitter: 'LaMediaInglesa' },
+  },
+  {
+    id: 'memoriasfutbol', rank: 6, name: 'Memorias de Fútbol', subtitle: 'Historia del Fútbol · YouTube',
+    sport: 'futbol', score: 72.2, trend: 'flat',
+    insight: 'El archivo más completo de fútbol histórico en YouTube en español. Nostalgia e historia intergeneracional.',
+    emoji: '📼', country: '🇪🇸',
+    scorePrev: 71.5, trendReason: 'Archivo histórico incomparable — audiencia fiel que crece con cada generación nueva',
+    factors: { rendimiento: 71, contexto: 76, mediatico: 68, narrativa: 80 },
+    handles: { youtube: '@MemoriasdelFutbol' },
+  },
+  {
+    id: 'postunited', rank: 7, name: 'Post United', subtitle: 'Fútbol · YouTube',
+    sport: 'futbol', score: 71.0, trend: 'flat',
+    insight: 'Canal de debate y análisis de fútbol con mayor audiencia en YouTube en español.',
+    emoji: '⚽', country: '🇪🇸',
+    scorePrev: 71.0, trendReason: 'Base estable de debate y análisis — sin cambios significativos en el período',
+    factors: { rendimiento: 70, contexto: 72, mediatico: 71, narrativa: 70 },
+    handles: { youtube: '@PostUnited' },
+  },
+  {
+    id: 'gerardromero', rank: 8, name: 'Gerard Romero', subtitle: 'Jijantes FC · Periodismo Digital',
+    sport: 'futbol', score: 65.0, trend: 'up', badge: 'Revelación',
+    insight: 'Fundador de Jijantes. Las primicias del Barça y el mercado llegan antes a su canal.',
+    emoji: '📲', country: '🇪🇸',
+    scorePrev: 62.0, trendReason: 'Jijantes FC como medio independiente demuestra que el periodismo digital de clubes tiene futuro sin grandes grupos',
+    factors: { rendimiento: 64, contexto: 70, mediatico: 63, narrativa: 68 },
+    handles: { twitter: 'gerardromero', instagram: 'gerardromero', youtube: '@GerardRomero' },
+  },
+  {
+    id: 'lorena-escoz', rank: 9, name: 'Lorena Escoz', subtitle: 'Fútbol & Lifestyle · Instagram (156K)',
+    sport: 'futbol', score: 63.0, trend: 'up',
+    insight: '156K Instagram. Colaboraciones con LaLiga. El perfil femenino más destacado del contenido deportivo digital en español.',
+    emoji: '⚽', country: '🇪🇸',
+    scorePrev: 60.5, trendReason: 'Perfil femenino en ascenso — colaboraciones con LaLiga y visibilidad creciente en el ecosistema digital',
+    factors: { rendimiento: 62, contexto: 65, mediatico: 64, narrativa: 60 },
+    handles: { instagram: 'lorenaescoz', twitter: 'lorenaescoz', tiktok: '@lorenaescoz' },
+  },
+  {
+    id: 'nachohernaez', rank: 10, name: 'NachoHernaez', subtitle: 'Fútbol Retro · TikTok / YouTube',
+    sport: 'futbol', score: 62.0, trend: 'up',
+    insight: '"CEO de la nostalgia en el fútbol". Creador DAZN. ~6-7 vídeos/día en TikTok. Referente del fútbol histórico para audiencia joven.',
+    emoji: '📼', country: '🇪🇸',
+    scorePrev: 59.0, trendReason: 'Formato corto retro en TikTok encuentra su audiencia masiva — alianza con DAZN da legitimidad editorial',
+    factors: { rendimiento: 64, contexto: 62, mediatico: 61, narrativa: 60 },
+    handles: { tiktok: '@nachohernaez', youtube: '@NachoHernaez' },
+  },
+  {
+    id: 'retrocalcioshirts', rank: 11, name: 'RetrocalcioShirts', subtitle: 'Camisetas Retro · TikTok (132K)',
+    sport: 'futbol', score: 61.0, trend: 'up',
+    insight: '132K TikTok, 82K IG. Coleccionismo y divulgación sobre camisetas retro. Colabora con COPA Football.',
+    emoji: '👕', country: '🇪🇸',
+    scorePrev: 58.0, trendReason: 'El coleccionismo de camisetas retro como nicho digital en alza — colaboración con COPA Football da cobertura internacional',
+    factors: { rendimiento: 62, contexto: 65, mediatico: 59, narrativa: 57 },
+    handles: { tiktok: '@retrocalcioshirts', instagram: 'retrocalcioshirts' },
+  },
+  {
+    id: 'mundimaldini', rank: 12, name: 'Mundo Maldini', subtitle: 'Análisis de Fútbol · YouTube',
+    sport: 'futbol', score: 59.6, trend: 'flat', featured: true,
+    insight: 'Análisis táctico y fútbol europeo. Audiencia nicho fiel al análisis editorial de calidad.',
+    emoji: '📊', country: '🇪🇸',
+    scorePrev: 59.0, trendReason: 'Nicho táctico estable — audiencia pequeña pero de alta fidelidad y consumo medio elevado',
+    factors: { rendimiento: 58, contexto: 65, mediatico: 55, narrativa: 67 },
+    handles: { youtube: '@MundoMaldini' },
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // MUNDIAL 2026 — creadores de cobertura del torneo
+  // Criterio: presencia activa en cobertura de la Selección,
+  // el torneo o el mercado asociado al Mundial.
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'misterchip', rank: 1, name: 'MisterChip (Alexis)', subtitle: 'Estadísticas · Twitter/X (2.2M)',
+    sport: 'mundial', score: 91.0, trend: 'up', featured: true,
+    insight: '2.2M en X. El oráculo de los datos del fútbol español. Durante el Mundial se convierte en la fuente de referencia estadística para toda la prensa.',
+    emoji: '📊', country: '🇪🇸',
+    scorePrev: 87.0, trendReason: 'Máxima actividad con el Mundial 2026 — referencia indiscutible de datos en tiempo real para medios y aficionados',
+    factors: { rendimiento: 92, contexto: 89, mediatico: 94, narrativa: 88 },
+    handles: { twitter: 'misterchip_es' },
+  },
+  {
+    id: 'fabrizio-romano', rank: 2, name: 'Fabrizio Romano', subtitle: 'Mercado & Noticias · Twitter/X (21M)',
+    sport: 'mundial', score: 88.5, trend: 'up',
+    insight: '21M en X. "Here we go" redefinió la cultura del mercado de fichajes. Cobertura de la ventana post-Mundial 2026 desde el primer día.',
+    emoji: '🤝', country: '🇮🇹',
+    scorePrev: 86.0, trendReason: 'La ventana de mercado post-Mundial dispara su relevancia — el único insider con presencia en todos los idiomas',
+    factors: { rendimiento: 90, contexto: 85, mediatico: 96, narrativa: 83 },
+    handles: { twitter: 'FabrizioRomano', instagram: 'fabrizioromano' },
+  },
+  {
+    id: 'javi-herraez', rank: 3, name: 'Javi Herráez', subtitle: 'Selección Española · COPE',
+    sport: 'mundial', score: 76.0, trend: 'up',
+    insight: 'El periodista que más horas acumula cubriendo la Roja. Fuente directa del vestuario de la selección durante el torneo.',
+    emoji: '🇪🇸', country: '🇪🇸',
+    scorePrev: 73.0, trendReason: 'Acceso privilegiado al vestuario de la Selección durante el Mundial — el referente de COPE en el torneo',
+    factors: { rendimiento: 77, contexto: 80, mediatico: 72, narrativa: 76 },
+    handles: { twitter: 'javiherraez' },
+  },
+  {
+    id: 'marca-mundial', rank: 4, name: 'MARCA Digital', subtitle: 'Cobertura Mundial 2026 · Multiplataforma',
+    sport: 'mundial', score: 74.0, trend: 'flat',
+    insight: 'La plataforma digital líder del seguimiento del Mundial en español. Primera en tráfico entre medios deportivos españoles durante el torneo.',
+    emoji: '📰', country: '🇪🇸',
+    scorePrev: 74.0, trendReason: 'Liderazgo digital en cobertura del Mundial — tráfico record durante fases eliminatorias',
+    factors: { rendimiento: 75, contexto: 73, mediatico: 78, narrativa: 70 },
+    handles: { twitter: 'marca', instagram: 'marcacom' },
+  },
+  {
+    id: 'ibai-mundial', rank: 5, name: 'Ibai Llanos (Mundial)', subtitle: 'Cobertura in situ · Twitch',
+    sport: 'mundial', score: 93.0, trend: 'up', featured: true,
+    insight: 'Ibai cubrió el Mundial de Qatar 2022 acreditado. Para 2026 en Norteamérica prevé cobertura completa con equipo propio: probablemente el mayor stream del torneo en español.',
+    emoji: '🏆', country: '🇪🇸',
+    scorePrev: 88.0, trendReason: 'El streaming del Mundial 2026 tendrá en Ibai su canal en español más visto — ya lo demostró en Qatar 2022',
+    factors: { rendimiento: 96, contexto: 88, mediatico: 98, narrativa: 91 },
+    handles: { twitch: 'ibai', twitter: 'Ibai' },
+  },
+  {
+    id: 'julio-maldini-mundial', rank: 6, name: 'Julio Maldonado "Maldini"', subtitle: 'Análisis Selecciones · Cuatro / YouTube',
+    sport: 'mundial', score: 68.0, trend: 'flat',
+    insight: 'Analista de selecciones nacionales en Cuatro y YouTube. Su cobertura del Mundial enfatiza contexto histórico y táctica.',
+    emoji: '🔍', country: '🇪🇸',
+    scorePrev: 67.5, trendReason: 'Análisis táctico del Mundial con contexto histórico — complementa la cobertura de noticias puras',
+    factors: { rendimiento: 67, contexto: 72, mediatico: 65, narrativa: 72 },
+    handles: { twitter: 'juliomaldonado', youtube: '@JulioMaldonado' },
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // NBA / BALONCESTO
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'demas6basket', rank: 1, name: 'demas6Basket', subtitle: 'NBA en Español · YouTube',
+    sport: 'baloncesto', score: 66.8, trend: 'up', featured: true,
+    insight: 'El referente del contenido NBA en español. Cobertura del anillo Oklahoma Thunder 2025 y la era SGA.',
+    emoji: '🏀', country: '🇪🇸',
+    scorePrev: 64.0, trendReason: 'Cobertura del anillo Oklahoma Thunder 2025 dispara el interés — beneficiario directo de la era SGA',
+    factors: { rendimiento: 68, contexto: 70, mediatico: 64, narrativa: 65 },
+    handles: { youtube: '@demas6Basket', twitter: 'demas6Basket' },
+  },
+  {
+    id: 'mundo-nba', rank: 2, name: 'Mundo NBA', subtitle: 'NBA · Podcast / YouTube',
+    sport: 'baloncesto', score: 61.0, trend: 'flat',
+    insight: 'El podcast NBA más veterano en español. Análisis post-partido y debate de temporada con comunidad fiel.',
+    emoji: '🎙️', country: '🇪🇸',
+    scorePrev: 61.0, trendReason: 'Audiencia estable en el nicho NBA en español — liderazgo compartido con demas6Basket',
+    factors: { rendimiento: 60, contexto: 65, mediatico: 58, narrativa: 63 },
+    handles: { youtube: '@MundoNBA', twitter: 'MundoNBA' },
+  },
+  {
+    id: 'acb-oficial', rank: 3, name: 'ACB Oficial', subtitle: 'Liga ACB · YouTube / Digital',
+    sport: 'baloncesto', score: 58.0, trend: 'up',
+    insight: 'El canal oficial de la Liga ACB en crecimiento digital. Highlights y documentales que llevan el baloncesto español al mundo.',
+    emoji: '🏟️', country: '🇪🇸',
+    scorePrev: 55.0, trendReason: 'Inversión digital de la ACB da resultados — crecimiento en YouTube e internacionalización del producto',
+    factors: { rendimiento: 59, contexto: 62, mediatico: 56, narrativa: 55 },
+    handles: { youtube: '@ACB_Oficial', twitter: 'acb' },
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // FÓRMULA 1
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'efeuno', rank: 1, name: 'Efeuno (Víctor Abad)', subtitle: 'F1 · YouTube / Twitch',
+    sport: 'formula1', score: 66.8, trend: 'up', featured: true,
+    insight: 'El creador independiente de F1 más importante en español. Ex-DAZN, volvió al canal propio. Revista FIUM (2025).',
+    emoji: '🏎️', country: '🇪🇸',
+    scorePrev: 64.0, trendReason: 'Canal propio consolida audiencia post-DAZN — la Revista FIUM añade dimensión editorial única',
+    factors: { rendimiento: 68, contexto: 70, mediatico: 63, narrativa: 68 },
+    handles: { youtube: '@Efeuno', twitch: 'efeuno_tv', twitter: 'ViktorAbad' },
+  },
+  {
+    id: 'formula1-world', rank: 2, name: 'F1 en Español (Moy Woo)', subtitle: 'F1 · Análisis · YouTube',
+    sport: 'formula1', score: 61.5, trend: 'up', badge: 'Revelación',
+    insight: 'Análisis técnico de F1 en español accesible para no expertos. 200K+ suscriptores, el canal de análisis técnico más visto en castellano.',
+    emoji: '⚙️', country: '🇲🇽',
+    scorePrev: 57.0, trendReason: 'Análisis técnico accesible encuentra hueco entre fanáticos y espectadores casuales de la F1',
+    factors: { rendimiento: 63, contexto: 65, mediatico: 58, narrativa: 60 },
+    handles: { youtube: '@MoyWoo' },
+  },
+  {
+    id: 'box-rojo-f1', rank: 3, name: 'Box Rojo', subtitle: 'F1 · Podcast / Twitch',
+    sport: 'formula1', score: 58.0, trend: 'flat',
+    insight: 'El podcast de F1 en español de referencia. Cobertura de cada gran premio con análisis propio y estilo periodístico.',
+    emoji: '🎧', country: '🇪🇸',
+    scorePrev: 57.5, trendReason: 'Formato podcast de F1 maduro — audiencia fiel con alto consumo por episodio',
+    factors: { rendimiento: 57, contexto: 62, mediatico: 56, narrativa: 60 },
+    handles: { twitter: 'BoxRojoF1', youtube: '@BoxRojoF1' },
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // TENIS
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'rafaelescrig', rank: 1, name: 'Rafael Escrig', subtitle: 'Tenis · TikTok / Instagram',
+    sport: 'tenis', score: 56.6, trend: 'up', badge: 'Revelación', featured: true,
+    insight: 'ATP TikTok Tennis Creator Network (nov 2025). Referente del tenis digital en español. Lleva el tenis a audiencias jóvenes.',
+    emoji: '🎾', country: '🇪🇸',
+    scorePrev: 54.0, trendReason: 'ATP Creator Network avala su posición — el tenis en español encuentra al fin un creador digital nativo',
+    factors: { rendimiento: 57, contexto: 60, mediatico: 56, narrativa: 53 },
+    handles: { tiktok: '@rafaelescrig', instagram: 'rafaelescrig' },
+  },
+  {
+    id: 'tennis-world-es', rank: 2, name: 'Tennis World España', subtitle: 'Tenis · Noticias / YouTube',
+    sport: 'tenis', score: 54.0, trend: 'flat',
+    insight: 'El portal de noticias de tenis en español con mayor tráfico. Cobertura diaria del circuito ATP/WTA.',
+    emoji: '🌍', country: '🇪🇸',
+    scorePrev: 54.0, trendReason: 'Audiencia estable de noticias de tenis — sin grandes movimientos en el período',
+    factors: { rendimiento: 53, contexto: 57, mediatico: 53, narrativa: 52 },
+    handles: { twitter: 'Tennisworld_es', youtube: '@TennisWorldEspana' },
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // UFC / MMA — rankings corregidos: ordenado por score desc
+  // (antes rank 1 tenía el score más bajo — bug histórico)
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'brandon-moreno-podcast', rank: 1, name: 'Brandon Moreno', subtitle: 'UFC Entre Asaltos · Podcast Oficial',
+    sport: 'ufc', score: 78.3, trend: 'up', badge: 'Histórico', featured: true,
+    insight: 'Campeón ex-mosca y cara del MMA mexicano. Host del único podcast oficial de UFC en español. Acceso único a vestuario y organizadores.',
+    emoji: '🥊', country: '🇲🇽',
+    scorePrev: 75.0, trendReason: 'El único podcast oficial de UFC en español — legitimidad institucional + conocimiento desde dentro',
+    factors: { rendimiento: 79, contexto: 82, mediatico: 76, narrativa: 78 },
+    handles: { instagram: 'theassassinbaby', twitter: 'TheAssassinBaby' },
+  },
+  {
+    id: 'gaston-tonga-reyno', rank: 2, name: 'Gastón Reyno', subtitle: 'UFC · Narrador Oficial LATAM',
+    sport: 'ufc', score: 72.0, trend: 'flat',
+    insight: '"El Tonga" — la voz de UFC LATAM durante una década en ESPN. 330K en Instagram. Identidad sonora del MMA hispanohablante.',
+    emoji: '🎙️', country: '🇺🇾',
+    scorePrev: 72.0, trendReason: 'La voz del MMA en español por excelencia — posición estable con alta fidelidad de audiencia',
+    factors: { rendimiento: 72, contexto: 76, mediatico: 70, narrativa: 72 },
+    handles: { instagram: 'gastonreyno', twitter: 'GastonReyno' },
+  },
+  {
+    id: 'impacto-mma', rank: 3, name: 'Impacto MMA', subtitle: 'UFC · YouTube / Digital',
+    sport: 'ufc', score: 68.0, trend: 'up',
+    insight: 'Canal YouTube de referencia del MMA en español. 250K+ suscriptores. Cobertura de eventos, análisis de peleas y entrevistas.',
+    emoji: '📺', country: '🇲🇽',
+    scorePrev: 65.0, trendReason: 'Crecimiento sostenido con el boom del MMA tras Topuria — canal de referencia para hispanohablantes en YouTube',
+    factors: { rendimiento: 69, contexto: 70, mediatico: 66, narrativa: 66 },
+    handles: { youtube: '@ImpactoMMA', twitter: 'ImpactoMMA' },
+  },
+  {
+    id: 'ivette-hernandez-ufc', rank: 4, name: 'Ivette Hernández', subtitle: 'ESPN Knockout · Periodista',
+    sport: 'ufc', score: 65.0, trend: 'flat',
+    insight: '226K en Instagram. La periodista de MMA hispanohablante con mayor audiencia social. Cara de ESPN Knockout en México.',
+    emoji: '🎤', country: '🇲🇽',
+    scorePrev: 65.0, trendReason: 'Posición estable como la periodista de MMA más relevante en redes sociales en español',
+    factors: { rendimiento: 64, contexto: 67, mediatico: 66, narrativa: 63 },
+    handles: { instagram: 'ivettemma', twitter: 'IvetteMMA' },
+  },
+  {
+    id: 'victor-davila-ufc', rank: 5, name: 'Víctor Dávila', subtitle: 'UFC · Narrador Oficial (desde 2007)',
+    sport: 'ufc', score: 63.0, trend: 'up',
+    insight: '17+ años como narrador oficial de UFC en español. Encabeza el equipo de Paramount+ para América Latina.',
+    emoji: '🎙️', country: '🇲🇽',
+    scorePrev: 60.0, trendReason: 'Paramount+ lo consolida como voz del UFC en LATAM — larga trayectoria convertida en liderazgo editorial',
+    factors: { rendimiento: 62, contexto: 68, mediatico: 60, narrativa: 64 },
+    handles: { twitter: 'VictorDavilaUFC', instagram: 'victordavilaufc' },
+  },
+  {
+    id: 'mmadictos', rank: 6, name: 'MMAdictos', subtitle: 'UFC · Podcast / España',
+    sport: 'ufc', score: 58.0, trend: 'flat',
+    insight: '"El programa de MMA en español más longevo del mundo". 10+ años en activo. El referente del MMA desde España.',
+    emoji: '🎧', country: '🇪🇸',
+    scorePrev: 58.0, trendReason: 'Veteranía como ventaja diferencial — 10 años construyendo la comunidad MMA hispanohablante en Europa',
+    factors: { rendimiento: 57, contexto: 63, mediatico: 55, narrativa: 60 },
+    handles: { twitter: 'MMAdictos', youtube: '@MMAdictos' },
+  },
+  {
+    id: 'generacionmma', rank: 7, name: 'Generación MMA', subtitle: 'UFC & MMA · Podcast / Digital',
+    sport: 'ufc', score: 55.4, trend: 'up', featured: true,
+    insight: 'El podcast de MMA en español más completo. Boom de audiencia con Topuria campeón UFC lightweight. Crece rápido.',
+    emoji: '🥊', country: '🇪🇸',
+    scorePrev: 50.0, trendReason: 'Topuria campeón UFC lightweight provoca un boom en la audiencia de MMA en España — principal beneficiado',
+    factors: { rendimiento: 58, contexto: 56, mediatico: 54, narrativa: 54 },
+    handles: { twitter: 'GeneracionMMA', youtube: '@GeneracionMMA' },
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // PADEL — nuevo deporte, incluido junio 2026
+  // El pádel es el deporte con mayor crecimiento en España.
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'world-padel-tour-oficial', rank: 1, name: 'Premier Padel Oficial', subtitle: 'Pádel · YouTube / Redes',
+    sport: 'padel', score: 74.0, trend: 'up', featured: true,
+    insight: 'El canal oficial del mayor circuito de pádel del mundo tras la fusión WPT/QSI. Highlights, entrevistas y streams de torneos con alcance global.',
+    emoji: '🎾', country: '🌍',
+    scorePrev: 69.0, trendReason: 'Fusión WPT–QSI en Premier Padel impulsa el canal oficial — el pádel profesional gana audiencia global',
+    factors: { rendimiento: 75, contexto: 74, mediatico: 76, narrativa: 70 },
+    handles: { youtube: '@PremierPadel', instagram: 'premierpadel', twitter: 'PremierPadel' },
+  },
+  {
+    id: 'paquito-navarro-creator', rank: 2, name: 'Paquito Navarro', subtitle: 'Pádel · YouTube / Instagram (1.6M)',
+    sport: 'padel', score: 71.0, trend: 'up',
+    insight: '1.6M IG, 300K YouTube. El jugador de pádel con mayor proyección como creador de contenido. Entrenamientos, vida en el circuito y behind the scenes.',
+    emoji: '🏸', country: '🇪🇸',
+    scorePrev: 67.0, trendReason: 'Primero en convertir el lifestyle del pádel profesional en contenido masivo — modelo para nuevos creadores del deporte',
+    factors: { rendimiento: 73, contexto: 70, mediatico: 74, narrativa: 67 },
+    handles: { instagram: 'paquitonavarro', youtube: '@PaquitoNavarro', twitter: 'PaquitoNavarro' },
+  },
+  {
+    id: 'palapro', rank: 3, name: 'PalaPro', subtitle: 'Pádel · Análisis / YouTube',
+    sport: 'padel', score: 63.0, trend: 'up', badge: 'Revelación',
+    insight: 'El canal de análisis técnico del pádel en español con mayor crecimiento. Reviews de palas, técnica y táctica para jugadores de todos los niveles.',
+    emoji: '📊', country: '🇪🇸',
+    scorePrev: 57.0, trendReason: 'El boom del pádel amateur crea demanda de contenido técnico — PalaPro cubre exactamente ese hueco',
+    factors: { rendimiento: 65, contexto: 68, mediatico: 60, narrativa: 58 },
+    handles: { youtube: '@PalaPro', instagram: 'palapro' },
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // GOLF — creador español de referencia
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'golf-nacional', rank: 1, name: 'Golf Nacional', subtitle: 'Golf · YouTube / Podcast',
+    sport: 'golf', score: 56.0, trend: 'flat', featured: true,
+    insight: 'El canal de referencia del golf en español. Análisis del LIV vs PGA Tour, cobertura de los majors y el golf español en el circuito europeo.',
+    emoji: '⛳', country: '🇪🇸',
+    scorePrev: 55.5, trendReason: 'La guerra LIV-PGA genera interés editorial permanente — Golf Nacional lo cubre con profundidad sin precedentes en español',
+    factors: { rendimiento: 55, contexto: 60, mediatico: 53, narrativa: 58 },
+    handles: { youtube: '@GolfNacional', twitter: 'GolfNacional' },
   },
 ]
 
