@@ -1,72 +1,10 @@
 'use client'
 import Image, { ImageProps } from 'next/image'
+import { needsOptimization, isTrusted, toProxyUrl } from '@/lib/image-url'
 
-// CDNs que funcionan directamente con next/image sin problemas de hotlink.
-// Para estos dominios usamos la optimización nativa de Next.js → WebP +
-// responsive sizing automático.
-//
-// supabase.co movido aquí en F3.2 (jun 2026): las imágenes de artículos
-// guardadas en Supabase Storage promedian 200-500 KiB sin optimizar. Con
-// next/image bajan a 30-80 KiB en WebP → ahorro ~516 KiB por LCP image
-// según PSI. Trade-off: cada transformación única cuenta hacia el límite
-// de Vercel Image Optimization (5k/mes free tier). Tráfico actual ≈ 3k.
-const OPTIMIZED_HOSTS = [
-  'cdn.sanity.io',
-  'cdninstagram.com',
-  'fbcdn.net',
-  'api-sports.io',
-  'cloudfront.net',
-  'twimg.com',
-  'pbs.twimg.com',
-  'supabase.co',
-]
-
-// Dominios propios/de confianza que se sirven directamente sin proxy.
-const TRUSTED_HOSTS = [
-  'takasportsmedia.com',
-  'vercel.app',
-  'localhost',
-]
-
-function hostMatches(hostname: string, list: string[]): boolean {
-  return list.some(h => hostname === h || hostname.endsWith(`.${h}`))
-}
-
-function needsOptimization(hostname: string): boolean {
-  return hostMatches(hostname, OPTIMIZED_HOSTS)
-}
-
-function isTrusted(hostname: string): boolean {
-  return hostMatches(hostname, TRUSTED_HOSTS)
-}
-
-/**
- * Convierte una URL externa de tercero en una URL de nuestro proxy.
- * El proxy descarga con cabeceras de navegador real → bypassa hotlink blocking.
- * Cache 24 h en Vercel CDN → 1 descarga por URL al día máximo.
- */
-function toProxyUrl(src: string): string {
-  return `/api/image-proxy?url=${encodeURIComponent(src)}`
-}
-
-/**
- * Resuelve la URL FINAL que el navegador descargará para una imagen src.
- * Sirve para preloads `<link rel="preload">` que deben apuntar a la misma URL
- * que el `<img>` real, no a la URL original. ANTES la home preloadeaba la URL
- * original (estoesatleti.es) pero el `<img>` cargaba /api/image-proxy → doble
- * descarga compitiendo en mobile. Fix F3.7 (jun 2026).
- *
- * Devuelve `null` si src no es una URL http válida (no preload necesario).
- */
-export function resolveImageUrl(src: string | null | undefined): string | null {
-  if (!src || !src.startsWith('http')) return null
-  let hostname = ''
-  try { hostname = new URL(src).hostname } catch { return null }
-  // OPTIMIZED y TRUSTED: el browser descarga la URL original directamente.
-  if (needsOptimization(hostname) || isTrusted(hostname)) return src
-  // Tercero desconocido: el `<img>` carga via proxy → preload debe apuntar allí.
-  return toProxyUrl(src)
-}
+// La lógica de host detection vive en src/lib/image-url.ts para que sea
+// importable desde Server Components (page.tsx) también — un archivo
+// 'use client' no exporta funciones usables desde server.
 
 /**
  * Drop-in replacement for next/image con tres modos:

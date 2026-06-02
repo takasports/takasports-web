@@ -14,7 +14,7 @@ import PorraHero from '@/components/PorraHero'
 import Footer from '@/components/Footer'
 import NewsletterSection from '@/components/NewsletterSection'
 import { urlFor } from '@/lib/sanity'
-import { resolveImageUrl } from '@/components/DynamicImage'
+import { resolveImageUrl } from '@/lib/image-url'
 import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 300
