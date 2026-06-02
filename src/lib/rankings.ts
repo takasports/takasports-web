@@ -1281,18 +1281,18 @@ export const RANKING_CREADORES_WWE: RankingEntry[] = [
     factors: { rendimiento: 88, contexto: 86, mediatico: 88, narrativa: 87 },
   },
   {
-    id: 'wregret', rank: 3, name: 'Wrestling with Wregret', subtitle: 'WWE · YouTube',
+    id: 'wregret', rank: 3, name: 'Wrestling with Wregret', subtitle: 'WWE · YouTube (389K)',
     sport: 'wwe', score: 83.6, trend: 'flat',
-    insight: 'El crítico más influyente del wrestling clásico. Su archivo de reviews define el canon del fan exigente.',
+    insight: 'El crítico más influyente del wrestling clásico. Archivo de reviews canónico, aunque crecimiento estancado en el último año (+6K subs).',
     emoji: '📼', country: '🇺🇸',
     image: 'https://yt3.ggpht.com/ytc/AIdro_nV4KK0WQtaFcHF9oMuCGfRAm_ZmLya7fUq9FeUVmgpFFA=s400-c-k-c0x00ffffff-no-rj',
-    scorePrev: 83.6, trendReason: 'El crítico más influyente del wrestling clásico — define el canon del fan exigente',
+    scorePrev: 83.6, trendReason: 'Archivo canónico del wrestling clásico — crecimiento estancado (+6K en 12 meses)',
     factors: { rendimiento: 84, contexto: 83, mediatico: 82, narrativa: 86 },
   },
   {
-    id: 'wrestlelamia', rank: 4, name: 'Wrestlelamia', subtitle: 'WWE · YouTube / Shorts',
+    id: 'wrestlelamia', rank: 4, name: 'Wrestlelamia', subtitle: 'WWE · YouTube / Shorts (2.2M)',
     sport: 'wwe', score: 81.0, trend: 'up', badge: 'Revelación',
-    insight: 'Domina el formato corto aplicado al wrestling. Shorts y reels que llevan el deporte a nuevas audiencias jóvenes.',
+    insight: 'Domina el formato corto aplicado al wrestling. Canal principal + XL acumulan 2.2M subs. Shorts y reels que llevan WWE a nuevas audiencias jóvenes.',
     emoji: '⚡', country: '🇬🇧',
     scorePrev: 80.2, trendReason: 'Sigue dominando el formato corto para wrestling — Shorts y Reels llegan a nuevas audiencias',
     factors: { rendimiento: 83, contexto: 78, mediatico: 84, narrativa: 79 },
@@ -1335,9 +1335,9 @@ export const RANKING_CREADORES_WWE: RankingEntry[] = [
   },
   // ── Hispanohablantes WWE ─────────────────────────────────────
   {
-    id: 'falbak-wwe', rank: 7, name: 'Falbak', subtitle: 'WWE · YouTube (638K suscriptores)',
+    id: 'falbak-wwe', rank: 7, name: 'Falbak', subtitle: 'WWE · YouTube (661K suscriptores)',
     sport: 'wwe', score: 75.0, trend: 'up', badge: 'Histórico',
-    insight: 'El mayor canal de wrestling en español. 638K subs, 295M views. Análisis y retros desde 2016.',
+    insight: 'El mayor canal de wrestling en español. 661K subs, 295M views. Análisis y retros desde 2016.',
     emoji: '🎬', country: '🇪🇸',
     scorePrev: 72.0,
   },
@@ -1395,6 +1395,31 @@ export const RANKING_CREADORES_WWE: RankingEntry[] = [
     sport: 'wwe', score: 50.0, trend: 'up',
     insight: 'Creador de contenido de lucha libre y wrestling en español. Cubre WWE, AAA y lucha libre mexicana.',
     emoji: '🥊', country: '🇲🇽',
+  },
+  // ── Adiciones junio 2026 — periodismo y media internacional ──
+  {
+    id: 'wrestletalk', rank: 5, name: 'WrestleTalk', subtitle: 'WWE · YouTube / Podcast (863K)',
+    sport: 'wwe', score: 86.5, trend: 'up',
+    insight: 'Referente mundial de noticias y debate wrestling. Su podcast diario marca la agenda informativa del fandom angloparlante.',
+    emoji: '🎙️', country: '🇬🇧',
+  },
+  {
+    id: 'sean-ross-sapp-wwe', rank: 6, name: 'Sean Ross Sapp', subtitle: 'WWE · Fightful · Insider / Podcast',
+    sport: 'wwe', score: 84.0, trend: 'flat', badge: 'Histórico',
+    insight: 'Autoridad insider del wrestling moderno. Fightful Select adelanta las grandes historias que luego confirma todo el sector.',
+    emoji: '📰', country: '🇺🇸',
+  },
+  {
+    id: 'denise-salcedo-wwe', rank: 0, name: 'Denise Salcedo', subtitle: 'WWE · Instinct Culture · YouTube (252K)',
+    sport: 'wwe', score: 80.0, trend: 'up', badge: 'Revelación', featured: true,
+    insight: 'La periodista wrestling más visible del circuito angloparlante. Entrevistas exclusivas y opinión sin filtros desde Instinct Culture.',
+    emoji: '🎤', country: '🇺🇸',
+  },
+  {
+    id: 'lucha-libre-online', rank: 16, name: 'Lucha Libre Online', subtitle: 'WWE & Lucha Libre · YouTube en español',
+    sport: 'wwe', score: 67.0, trend: 'up',
+    insight: 'Canal hispano activo de wrestling cubriendo WWE, AAA, CMLL y NJPW. Cobertura diaria con base sólida en LATAM.',
+    emoji: '🌎', country: '🇲🇽',
   },
 ]
 
