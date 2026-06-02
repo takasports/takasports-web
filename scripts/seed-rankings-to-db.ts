@@ -61,7 +61,8 @@ function entryToRow(e: RankingEntry, category: string) {
     subtitle: e.subtitle ?? null,
     sport: e.sport ?? null,
     emoji: e.emoji ?? null,
-    image_url: e.image ?? null,
+    // Si el source no tiene imagen, no sobreescribir la image_url existente en DB
+    ...(e.image !== undefined ? { image_url: e.image } : {}),
     country: e.country ?? null,
     league: e.league ?? null,
     position: e.position ?? null,
