@@ -14,7 +14,7 @@ function hasEnv() {
 // ── GET ───────────────────────────────────────────────────────────────────
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!hasEnv()) return NextResponse.json({ error: 'no_config' }, { status: 503 })
 
@@ -22,7 +22,7 @@ export async function GET(
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
 
-  const leagueId = params.id
+  const { id: leagueId } = await params
 
   // Verificar que el user es miembro
   const { data: membership } = await sb
@@ -62,7 +62,7 @@ export async function GET(
 // ── DELETE ────────────────────────────────────────────────────────────────
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!hasEnv()) return NextResponse.json({ error: 'no_config' }, { status: 503 })
 
@@ -70,7 +70,7 @@ export async function DELETE(
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
 
-  const leagueId = params.id
+  const { id: leagueId } = await params
 
   // Solo el owner puede eliminar
   const { data: league } = await sb

@@ -45,6 +45,11 @@ const PrivadasClient = dynamic(
   { ssr: false, loading: () => <QuinielaLoadingShim /> }
 )
 
+const CreadoresClient = dynamic(
+  () => import('./CreadoresClient'),
+  { ssr: false, loading: () => <QuinielaLoadingShim /> }
+)
+
 // ── Tipos ────────────────────────────────────────────────────────────
 type HubTab   = 'ranked' | 'creadores' | 'privadas'
 type SportTab = 'futbol' | 'ufc' | 'mundial'
@@ -272,7 +277,7 @@ export default function PrediccionesHub() {
         </>
       )}
 
-      {hubTab === 'creadores' && <HubComingSoon title="Ligas de Creadores" description="Únete a la liga de tu creador favorito y compite con su comunidad. Patrocinadores, branding propio y rankings exclusivos." emoji="🎙️" />}
+      {hubTab === 'creadores' && <CreadoresClient />}
       {hubTab === 'privadas'  && <PrivadasClient />}
 
       <NewsletterSection source="predicciones" />

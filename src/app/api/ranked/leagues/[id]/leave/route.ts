@@ -9,13 +9,13 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const sb = await createServerSupabaseClient()
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
 
-  const leagueId = params.id
+  const { id: leagueId } = await params
 
   // Owner no puede salir — debe eliminar la liga
   const { data: league } = await sb
