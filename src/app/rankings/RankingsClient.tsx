@@ -78,7 +78,9 @@ const SUB_ENTITY_TABS: Record<string, { id: string; label: string }[]> = {
 }
 
 // Contenidos: sólo los 3 deportes con sección propia
-const CONTENIDO_SPORTS = ['futbol', 'mundial', 'ufc', 'wwe', 'baloncesto', 'formula1', 'tenis', 'padel', 'golf']
+// Deportes con sección de Contenido. Otros deportes (baloncesto, F1, tenis, padel, golf)
+// se reactivarán cuando tengamos creadores curados — junio 2026.
+const CONTENIDO_SPORTS = ['futbol', 'mundial', 'ufc', 'wwe']
 
 const SPORT_FILTERS_CONTENIDO = [
   { label: 'Todos',    slug: '' },
