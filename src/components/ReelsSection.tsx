@@ -143,10 +143,11 @@ function ReelModal({ reel, onClose }: { reel: Reel; onClose: () => void }) {
         className="relative flex flex-col"
         style={{
           width: '100%',
-          maxWidth: 420,
-          borderRadius: 20,
-          overflow: 'hidden',
-          boxShadow: `0 32px 72px rgba(0,0,0,0.8), 0 0 0 1px ${accent}30`,
+          maxWidth: 384,
+          borderRadius: 52,
+          padding: 12,
+          background: 'linear-gradient(155deg,#2a2a3e 0%,#16161f 42%,#0b0b12 100%)',
+          boxShadow: `0 40px 90px rgba(0,0,0,0.85), inset 0 0 0 1.5px rgba(255,255,255,0.07), 0 0 0 1px ${accent}33`,
           animation: 'reelModalIn 280ms cubic-bezier(0.34,1.15,0.64,1) forwards',
         }}
         onClick={e => e.stopPropagation()}
@@ -157,6 +158,15 @@ function ReelModal({ reel, onClose }: { reel: Reel; onClose: () => void }) {
             to   { opacity:1; transform:scale(1) translateY(0); }
           }
         `}</style>
+
+        {/* Notch del teléfono */}
+        <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', width: 122, height: 22, background: '#0b0b12', borderRadius: '0 0 14px 14px', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+          <span style={{ width: 36, height: 4, borderRadius: 4, background: 'rgba(255,255,255,0.16)' }} />
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }} />
+        </div>
+
+        {/* Pantalla */}
+        <div className="relative flex flex-col" style={{ borderRadius: 40, overflow: 'hidden', background: '#0D0D18' }}>
 
         {/* Header */}
         <div
@@ -257,6 +267,7 @@ function ReelModal({ reel, onClose }: { reel: Reel; onClose: () => void }) {
             )}
           </div>
         )}
+        </div>{/* /Pantalla */}
       </div>
     </div>
   )
