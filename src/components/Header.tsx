@@ -475,23 +475,43 @@ export default function Header() {
   const [authOpen, setAuthOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [levelData, setLevelData] = useState<LevelData | null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
   const [levelUpToast, setLevelUpToast] = useState<{ level: number; levelName: string; color: string } | null>(null)
+
+  // Pinta el último nivel conocido AL INSTANTE desde localStorage (sin esperar
+  // a auth + /api/quiniela/me). Evita que la barra XP "salte" al entrar. Se
+  // refresca con datos reales en cuanto resuelve el fetch; se limpia al cerrar sesión.
+  const LEVELCHIP_CACHE = 'ts_levelchip'
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(LEVELCHIP_CACHE)
+      if (cached) setLevelData(JSON.parse(cached) as LevelData)
+    } catch { /* ignore */ }
+  }, [])
 
   useEffect(() => { setMenuOpen(false) }, [pathname])
 
   useEffect(() => {
     const supabase = createClient()
     if (!supabase) return
-    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null))
+    supabase.auth.getUser().then(({ data }) => { setUser(data.user ?? null); setAuthChecked(true) })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      setUser(session?.user ?? null); setAuthChecked(true)
     })
     return () => subscription.unsubscribe()
   }, [])
 
   // Fetch level data cuando hay sesión — con detección de level-up
   useEffect(() => {
-    if (!user) { setLevelData(null); return }
+    if (!user) {
+      // Solo limpiamos (y borramos la caché) cuando la auth YA se resolvió a
+      // "sin sesión". Mientras carga, conservamos el valor optimista de caché.
+      if (authChecked) {
+        setLevelData(null)
+        try { localStorage.removeItem(LEVELCHIP_CACHE) } catch { /* ignore */ }
+      }
+      return
+    }
     const LEVEL_KEY = `ts_level_${user.id}`
     fetch('/api/quiniela/me', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
@@ -507,6 +527,7 @@ export default function Header() {
             xpToNext:   d.xpToNext   ?? 0,
           }
           setLevelData(newData)
+          try { localStorage.setItem(LEVELCHIP_CACHE, JSON.stringify(newData)) } catch { /* ignore */ }
 
           // Detectar level-up comparando con el nivel anterior guardado
           try {
@@ -620,7 +641,7 @@ export default function Header() {
             </button>
 
             {/* Level + XP chip — solo para usuarios autenticados */}
-            {user && levelData && <LevelChip data={levelData} />}
+            {levelData && <LevelChip data={levelData} />}
 
             {user ? (
               <Link
