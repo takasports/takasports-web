@@ -67,6 +67,7 @@ export const articleDetailQuery = `*[_type == "article" && (slug.current == $id 
   _updatedAt,
   "slug": slug.current,
   "title": select(defined(headline) => headline, title),
+  "seoTitle": select(defined(headline) => seoTitle, null),
   "subtitle": select(defined(headline) => null, subtitle),
   "short_summary": select(defined(headline) => metaDescription, short_summary),
   "imageUrl": select(defined(headline) => imageUrl, null),

@@ -70,6 +70,7 @@ interface Article {
   _updatedAt?: string
   slug?: string
   title: string
+  seoTitle?: string | null
   subtitle?: string
   bodyText?: string
   bodyPortable?: Array<{ _type: string; _key?: string; [key: string]: unknown }>
@@ -107,16 +108,19 @@ export async function generateMetadata({
   const canonical = `${SITE_URL}/noticias/${article.slug ?? slug}`
   const keywordList = [article.focusKeyword, ...(article.secondaryKeywords ?? []), ...(article.tags ?? [])]
     .filter((k): k is string => Boolean(k))
+  // Título para buscadores/redes: usa seoTitle si el editor lo definió (optimizado
+  // para CTR), si no cae al titular del artículo (H1). El H1 nunca cambia.
+  const metaTitle = (article.seoTitle?.trim() || article.title)
 
   return {
-    title: article.title,
+    title: metaTitle,
     description: article.short_summary ?? article.subtitle,
     authors: [{ name: article.author ?? 'Redacción TakaSports' }],
     alternates: { canonical },
     keywords: keywordList.length > 0 ? keywordList : undefined,
     other: keywordList.length > 0 ? { news_keywords: keywordList.slice(0, 10).join(', ') } : undefined,
     openGraph: {
-      title: article.title,
+      title: metaTitle,
       description: article.short_summary ?? article.subtitle,
       url: canonical,
       // No se especifican images para que Next.js use automáticamente
@@ -130,7 +134,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: article.title,
+      title: metaTitle,
       description: article.short_summary ?? article.subtitle,
       // twitter:image se genera automáticamente desde opengraph-image.tsx
       site: '@takasportsx',
