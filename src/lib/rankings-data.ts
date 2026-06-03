@@ -141,6 +141,50 @@ function countryToFlag(country: string | undefined): string | undefined {
   return COUNTRY_FLAG_MAP[key] ?? undefined
 }
 
+// Normaliza nombre para hacer match entre DB y dato estático (sin acentos,
+// minúsculas). Los ids de la DB (ESPN) no coinciden con los ids curados,
+// pero el nombre sí es estable.
+function normName(name: string | undefined): string {
+  return (name ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+}
+
+// Imágenes curadas adicionales (Wikimedia, verificadas) para jugadores del
+// Índice que rotan en la DB y no están en el dataset estático. Si un jugador
+// sale del top, simplemente cae al avatar de fallback (sin romper nada).
+const EXTRA_INDEX_IMAGES: Record<string, string> = {
+  'harry kane':   'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Harry_Kane_on_October_10%2C_2023.jpg/330px-Harry_Kane_on_October_10%2C_2023.jpg',
+  'ferran torres':'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Ferran_Torres_2019.png/330px-Ferran_Torres_2019.png',
+  'luis diaz':    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/FC_RB_Salzburg_gegen_FC_Bayern_M%C3%BCnchen_%282026-01-06_Testspiel%29_40_%28Luiz_D%C3%ADaz%29.jpg/330px-FC_RB_Salzburg_gegen_FC_Bayern_M%C3%BCnchen_%282026-01-06_Testspiel%29_40_%28Luiz_D%C3%ADaz%29.jpg',
+}
+
+// Imagen curada estática (Wikimedia, fiables) indexada por id y por nombre.
+// Sirve de fallback cuando la DB trae una imagen rota o ausente.
+const STATIC_IMAGE_BY_ID: Record<string, string> = {}
+const STATIC_IMAGE_BY_NAME: Record<string, string> = { ...EXTRA_INDEX_IMAGES }
+for (const list of Object.values(STATIC_FALLBACK)) {
+  for (const e of list) {
+    if (!e.image) continue
+    if (e.id && !STATIC_IMAGE_BY_ID[e.id]) STATIC_IMAGE_BY_ID[e.id] = e.image
+    const nk = normName(e.name)
+    if (nk && !STATIC_IMAGE_BY_NAME[nk]) STATIC_IMAGE_BY_NAME[nk] = e.image
+  }
+}
+
+// Los headshots de ESPN (a.espncdn.com/.../headshots/.../<id>.png) devuelven
+// 404 para la mayoría de futbolistas → imagen rota en el Índice. Si la DB trae
+// uno de esos (o no trae imagen), preferimos la imagen curada estática (por id
+// o por nombre); si no existe, devolvemos undefined para que la UI pinte el
+// avatar de fallback en lugar de una imagen rota.
+function pickImage(id: string | undefined, name: string | undefined, dbUrl: string | null | undefined): string | undefined {
+  const url = dbUrl ?? undefined
+  const isEspnHeadshot = url ? /espncdn\.com\/.*headshots\/.*\/\d+\.png/i.test(url) : false
+  if (isEspnHeadshot || !url) {
+    const curated = (id ? STATIC_IMAGE_BY_ID[id] : undefined) ?? STATIC_IMAGE_BY_NAME[normName(name)]
+    return curated ?? (isEspnHeadshot ? undefined : url)
+  }
+  return url
+}
+
 // Mapea fila de la vista `ranking_view` → RankingEntry
 function rowToEntry(row: any): RankingEntry {
   const league = normalizeLeague(row.league ?? undefined)
@@ -171,7 +215,7 @@ function rowToEntry(row: any): RankingEntry {
     trend:        (row.trend ?? 'flat') as RankingEntry['trend'],
     insight:      row.insight ?? '',
     emoji:        row.emoji ?? undefined,
-    image:        row.image_url ?? undefined,
+    image:        pickImage(row.id, row.name, row.image_url),
     badge:        row.badge ?? undefined,
     region:       row.region ?? undefined,
     country:      countryToFlag(deriveCountry(league, row.country ?? undefined)),
