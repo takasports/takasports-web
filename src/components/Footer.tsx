@@ -10,7 +10,6 @@ const SPORTS_LINKS = [
   { label: 'Fútbol',     href: '/futbol' },
   { label: 'Baloncesto', href: '/baloncesto' },
   { label: 'F1',         href: '/formula1' },
-  { label: 'MotoGP',     href: '/motogp' },
   { label: 'UFC',        href: '/ufc' },
   { label: 'Tenis',      href: '/tenis' },
   { label: 'Lucha libre', href: '/wwe' },

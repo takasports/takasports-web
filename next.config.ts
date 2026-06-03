@@ -33,6 +33,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "media.diariolasamericas.com" },
       { protocol: "https", hostname: "*.rtve.es" },
       { protocol: "https", hostname: "www.fichajes.net" },
+      // Avatares de creadores/jugadores (rankings, buscador) vía unavatar.io
+      { protocol: "https", hostname: "unavatar.io" },
       // Supabase Storage — habilitado en F3.2 (jun 2026) para optimizar
       // imágenes de artículos via Next/Image (WebP + responsive sizing).
       // Ahorro medido en PSI: ~516 KiB por imagen hero. Tráfico actual

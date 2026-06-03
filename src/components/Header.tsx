@@ -245,7 +245,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                     <div className="flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center text-base"
                       style={{ width: 38, height: 38, background: `${accent}18`, border: `1px solid ${accent}30` }}>
                       {player.photo
-                        ? <Image src={player.photo} alt={player.name} width={34} height={34} className="w-full h-full object-cover" />
+                        ? <Image src={player.photo} alt={player.name} width={34} height={34} unoptimized className="w-full h-full object-cover" />
                         : <span style={{ color: accent }}>{player.emoji ?? <PersonIcon size={20} />}</span>
                       }
                     </div>

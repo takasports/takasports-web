@@ -64,6 +64,13 @@ const SPORT_FAQS: Record<string, Array<{ q: string; a: string }>> = {
   ],
 }
 
+// Etiqueta del ranking en el banner por deporte. La mayoría muestran el
+// "Índice Taka"; los deportes con ranking propio (UFC = libra por libra)
+// usan su nomenclatura específica.
+const RANKING_LABEL: Record<string, string> = {
+  ufc: 'Libra por libra',
+}
+
 const TREND_ICON: Record<string, string> = {
   up2: '⬆', up: '↑', flat: '→', down: '↓', down2: '⬇',
 }
@@ -91,6 +98,7 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
   const accent = style.accent
   const description = SPORT_DESCRIPTIONS[sport] ?? `Últimas noticias, resultados y análisis de ${label}.`
   const top5 = topRankings.slice(0, 5)
+  const rankingLabel = RANKING_LABEL[sport] ?? 'Índice Taka'
   const rankingsHref = `/rankings?deporte=${sport}&tab=jugadores`
 
   // FAQ JSON-LD — dinámico: primera pregunta usa el jugador #1 si hay ranking
@@ -206,7 +214,7 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold tracking-widest uppercase" style={{ color: accent }}>
-                    Índice Taka · Top {top5.length}
+                    {rankingLabel} · Top {top5.length}
                   </span>
                   <Link
                     href={rankingsHref}

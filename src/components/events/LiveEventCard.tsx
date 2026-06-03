@@ -42,6 +42,7 @@ export interface UpcomingEvent {
   awayLogo?: string
   homeAbbr?: string
   awayAbbr?: string
+  matchRef?: string   // "{sport}_{league}_{espnId}" → página de detalle
 }
 
 // ── helpers internos ────────────────────────────────────────────
@@ -251,7 +252,7 @@ export function LiveEventCard({ fix }: { fix: LiveFixture }) {
 
   return fix.matchRef
     ? <Link href={`/partido/${fix.matchRef}`} className="hover:opacity-80 transition-opacity">{inner}</Link>
-    : inner
+    : <Link href="/calendario" aria-label={`Ver en la agenda: ${ariaLabel}`} className="hover:opacity-80 transition-opacity">{inner}</Link>
 }
 
 // ── Upcoming (sin score, solo hora + fecha) ─────────────────────
@@ -270,7 +271,7 @@ export function UpcomingEventCard({ ev }: { ev: UpcomingEvent }) {
         ? `${short(ev.homeTeam, ev.homeAbbr)} vs ${short(ev.awayTeam, ev.awayAbbr)}`
         : ev.homeTeam
 
-  return (
+  const inner = (
     <div className="flex items-center gap-1.5">
       <span style={{ color: col }}>
         <SportIcon sport={ev.sport} size={13} />
@@ -297,4 +298,9 @@ export function UpcomingEventCard({ ev }: { ev: UpcomingEvent }) {
       </span>
     </div>
   )
+
+  // Clicable: a la página de detalle si hay matchRef; si no, a la agenda.
+  return ev.matchRef
+    ? <Link href={`/partido/${ev.matchRef}`} aria-label={`Ver detalle: ${label}`} className="hover:opacity-80 transition-opacity">{inner}</Link>
+    : <Link href="/calendario" aria-label={`Ver en la agenda: ${label}`} className="hover:opacity-80 transition-opacity">{inner}</Link>
 }

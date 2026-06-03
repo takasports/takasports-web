@@ -172,6 +172,66 @@ const SECONDARY_GAMES = [
   },
 ]
 
+// ── Banner Predicciones Mundial ─────────────────────────────────
+// CTA destacado sobre la sección de Juegos. Lleva al predictor del Mundial.
+function MundialBanner() {
+  return (
+    <Link
+      href="/mundial"
+      className="group block mt-8 rounded-2xl overflow-hidden relative transition-all hover:-translate-y-0.5"
+      style={{
+        background: 'linear-gradient(110deg, #1a0b3d 0%, #2d0f55 45%, #4c1d95 100%)',
+        border: '1px solid rgba(167,139,250,0.35)',
+        boxShadow: '0 8px 32px rgba(76,29,149,0.35)',
+        textDecoration: 'none',
+      }}
+    >
+      {/* glow decorativo */}
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-60"
+        style={{ background: 'radial-gradient(120% 120% at 90% 0%, rgba(167,139,250,0.25), transparent 55%)' }}
+      />
+      <div className="relative flex items-center gap-4 px-5 py-4 sm:px-7 sm:py-5">
+        <div
+          className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl"
+          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+        >
+          🏆
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span
+              className="text-[9px] font-black uppercase tracking-[0.18em] px-2 py-0.5 rounded"
+              style={{ color: '#0a0a0f', background: '#facc15', fontFamily: 'var(--font-sport)' }}
+            >
+              Nuevo
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
+              Mundial 2026
+            </span>
+          </div>
+          <h3 className="text-base sm:text-xl font-black truncate" style={{ color: '#fff', fontFamily: 'var(--font-display)', letterSpacing: '0.01em' }}>
+            Predicciones del Mundial
+          </h3>
+          <p className="text-[11px] sm:text-xs mt-0.5 truncate" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            Predice cada partido, suma puntos y escala en la clasificación Taka.
+          </p>
+        </div>
+        <span
+          className="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-transform group-hover:translate-x-0.5"
+          style={{ background: '#fff', color: '#2d0f55', fontFamily: 'var(--font-sport)' }}
+        >
+          Jugar
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+            <path d="M2 5.5h6.5M5.5 2.5l3 3-3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </div>
+    </Link>
+  )
+}
+
 function GamesSection() {
   return (
     <section className="mt-8">
@@ -439,6 +499,9 @@ export default function HomeContent({
         <div className="mt-6">
           <ReelsSection reels={filteredReels} initialSport={activeSlug} />
         </div>
+
+        {/* ── 3.4 BANNER PREDICCIONES MUNDIAL ────────────────────── */}
+        <MundialBanner />
 
         {/* ── 3.5 JUEGOS ─────────────────────────────────────────── */}
         <GamesSection />
