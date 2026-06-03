@@ -147,7 +147,7 @@ export default function SobrePage() {
               </a>
               {' '}o síguenos en{' '}
               <a
-                href="https://www.instagram.com/takasportsmedia"
+                href="https://www.instagram.com/taka.sports"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: '#7C3AED', textDecoration: 'underline' }}
@@ -165,6 +165,10 @@ export default function SobrePage() {
               </a>.
             </p>
           </section>
+
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
+            Última actualización: 3 de junio de 2026.
+          </p>
         </div>
       </main>
 
