@@ -150,6 +150,23 @@ async function fetchFromStorage(): Promise<PublicReel[]> {
   }
 }
 
+// Las URLs de thumbnail de Instagram llevan `oe` (expiración, hex unix). Una
+// vez caducadas, el CDN devuelve 403 → card en blanco en el home (reels viejos
+// que el pipeline no refrescó). Detectamos las caducadas para descartar esos
+// reels y mostrar solo los que sí previsualizan.
+function thumbnailExpired(thumb: string | null | undefined): boolean {
+  if (!thumb) return false
+  try {
+    let ig = thumb
+    const m = thumb.match(/[?&]url=([^&]+)/)   // proxy /api/instagram/thumbnail?url=<ig>
+    if (m) ig = decodeURIComponent(m[1])
+    const oe = new URL(ig).searchParams.get('oe')
+    if (!oe) return false
+    const expMs = parseInt(oe, 16) * 1000
+    return Number.isFinite(expMs) && expMs < Date.now()
+  } catch { return false }
+}
+
 function merge(...sources: PublicReel[][]): PublicReel[] {
   const seen = new Map<string, PublicReel>()
   const now = Date.now()
@@ -160,6 +177,7 @@ function merge(...sources: PublicReel[][]): PublicReel[] {
       if (seen.has(key)) continue
       const ms = tsToMs(r.timestamp)
       if (ms > 0 && now - ms > FRESHNESS_MAX_AGE_MS) continue
+      if (thumbnailExpired(r.thumbnail_url)) continue   // sin preview → fuera
       seen.set(key, r)
     }
   }
