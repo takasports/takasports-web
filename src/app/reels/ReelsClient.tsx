@@ -86,17 +86,45 @@ export default function ReelsClient({ reels }: { reels: PublicReel[] }) {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="reels-scroll"
-      style={{
-        height: 'calc(100dvh - 56px)',
-        overflowY: 'scroll',
-        scrollSnapType: 'y mandatory',
-        background: '#000',
-        WebkitOverflowScrolling: 'touch',
-      }}
-    >
+    <div className="reels-stage">
+      <style>{`
+        .reels-stage { height: calc(100dvh - 56px); background:#000; display:flex; align-items:center; justify-content:center; }
+        .reels-phone { position:relative; width:100%; height:100%; }
+        .reels-screen { height:100%; background:#000; }
+        .reels-notch { display:none; }
+        /* Marco de teléfono solo en pantallas grandes (en móvil ya es full-screen) */
+        @media (min-width: 768px) {
+          .reels-stage { background: radial-gradient(circle at 50% 28%, #14141d 0%, #07070b 72%); padding:16px; }
+          .reels-phone {
+            width: min(94vw, 392px);
+            height: min(calc(100dvh - 92px), 820px);
+            padding:12px; border-radius:50px;
+            background: linear-gradient(155deg,#2b2b40 0%,#17171f 46%,#0b0b12 100%);
+            box-shadow: 0 40px 90px rgba(0,0,0,0.7), inset 0 0 0 1.5px rgba(255,255,255,0.06), 0 0 0 1px rgba(167,139,250,0.18);
+          }
+          .reels-screen { border-radius:40px; overflow:hidden; }
+          .reels-notch {
+            display:flex; position:absolute; top:12px; left:50%; transform:translateX(-50%);
+            width:122px; height:22px; background:#0b0b12; border-radius:0 0 14px 14px;
+            z-index:6; align-items:center; justify-content:center; gap:7px;
+          }
+          .reels-notch-bar { width:36px; height:4px; border-radius:4px; background:rgba(255,255,255,0.16); }
+          .reels-notch-dot { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.12); }
+        }
+      `}</style>
+      <div className="reels-phone">
+        <div className="reels-notch" aria-hidden="true">
+          <span className="reels-notch-bar" /><span className="reels-notch-dot" />
+        </div>
+        <div
+          ref={containerRef}
+          className="reels-scroll reels-screen"
+          style={{
+            overflowY: 'scroll',
+            scrollSnapType: 'y mandatory',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
       {reels.map((reel, i) => {
         const near = Math.abs(i - activeIdx) <= 1
         const { accent } = getSportStyle(reel.sport)
@@ -244,6 +272,8 @@ export default function ReelsClient({ reels }: { reels: PublicReel[] }) {
           </section>
         )
       })}
+        </div>{/* /reels-screen */}
+      </div>{/* /reels-phone */}
     </div>
   )
 }
