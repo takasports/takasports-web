@@ -581,20 +581,6 @@ export default function Header() {
             onClick={pathname === '/' ? () => window.scrollTo({ top: 0, behavior: 'smooth' }) : undefined}
           />
 
-          {/* Buscador — esquina superior izquierda, junto al logo */}
-          <button
-            aria-label="Buscar"
-            onClick={openSearch}
-            className="search-bar hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors hover:border-white/15 flex-shrink-0"
-            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#7A7A8E' }}
-          >
-            <SearchIcon />
-            <span className="text-xs" style={{ color: '#7A7A8E' }}>Buscar jugadores, noticias...</span>
-            <kbd className="hidden md:block text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#5A5A6E' }}>
-              ⌘K
-            </kbd>
-          </button>
-
           {/* Nav desktop */}
           <nav className="hidden lg:flex items-center gap-0 flex-1" aria-label="Navegación principal">
             {NAV_LINKS.map(({ label, href }) => {
@@ -631,11 +617,13 @@ export default function Header() {
 
           {/* Right */}
           <div className="flex items-center gap-2 ml-auto">
-            {/* Search icon — solo visible en < xl (en ≥xl el buscador está a la izquierda) */}
+            {/* Buscador — lupa que despliega el modal. A la izquierda de la barra
+                de nivel. Reemplaza la barra completa (saturaba el header). */}
             <button
               aria-label="Buscar"
               onClick={openSearch}
-              className="xl:hidden flex items-center justify-center rounded-lg flex-shrink-0"
+              title="Buscar (⌘K)"
+              className="flex items-center justify-center rounded-lg flex-shrink-0 transition-colors hover:border-white/15"
               style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#7A7A8E' }}
             >
               <SearchIcon />
