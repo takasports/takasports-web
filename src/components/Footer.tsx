@@ -21,7 +21,7 @@ const LEAGUE_LINKS = [
   { label: 'Serie A',         href: '/liga/ita.1' },
   { label: 'Bundesliga',      href: '/liga/ger.1' },
   { label: 'Ligue 1',         href: '/liga/fra.1' },
-  { label: '🏆 Mundial 2026', href: '/mundial' },
+  { label: '🏆 Mundial 2026', href: '/mundial/fixture' },
 ]
 const PLATFORM_LINKS = [
   { label: 'Inicio',       href: '/' },

@@ -155,36 +155,45 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
         </div>
       )}
 
-      {/* ── Quiniela CTA ── */}
+      {/* ── Predicciones Mundial CTA ── */}
       <div>
-        <SectionHeader>Quiniela</SectionHeader>
+        <SectionHeader>Predicciones</SectionHeader>
         <Link
-          href="/quiniela"
+          href="/mundial"
           className="block p-4 rounded-xl transition-all hover:brightness-110"
           style={{
-            background: 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(59,7,100,0.08) 100%)',
-            border: '1px solid rgba(124,58,237,0.22)',
+            background: 'linear-gradient(135deg, rgba(167,139,250,0.16) 0%, rgba(76,29,149,0.12) 100%)',
+            border: '1px solid rgba(167,139,250,0.28)',
             textDecoration: 'none',
           }}
         >
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span style={{ fontSize: 15, lineHeight: 1 }}>🏆</span>
+            <span
+              className="text-[9px] font-black uppercase tracking-widest"
+              style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
+            >
+              Mundial 2026
+            </span>
+          </div>
           <p
             className="font-black text-[13px] mb-1"
             style={{
-              color: '#C4B5FD',
+              color: '#E9E2FF',
               fontFamily: 'var(--font-display)',
               letterSpacing: '-0.01em',
             }}
           >
-            Haz tu quiniela
+            Predicciones del Mundial
           </p>
-          <p className="text-[11px]" style={{ color: '#5A5A72' }}>
-            Predice los resultados de la jornada
+          <p className="text-[11px]" style={{ color: '#6A6288' }}>
+            Acierta cada partido y sube en la clasificación Taka
           </p>
           <span
             className="inline-flex items-center gap-1.5 mt-2.5 text-[10px] font-black uppercase tracking-widest"
-            style={{ color: '#8B5CF6', fontFamily: 'var(--font-sport)' }}
+            style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}
           >
-            Participar
+            Jugar
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
               <path d="M2 5h6M5 2l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
