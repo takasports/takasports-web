@@ -198,20 +198,24 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
 
   const card = (
     <div
-      className="flex-shrink-0 overflow-hidden transition-all hover:scale-[1.012] hover:shadow-lg"
+      className="group/card relative flex-shrink-0 overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5"
       style={{
-        width: 'clamp(190px, 56vw, 220px)',
-        borderRadius: 14,
+        width: 'clamp(198px, 56vw, 228px)',
+        borderRadius: 16,
         background: isLive
-          ? 'linear-gradient(160deg, rgba(74,222,128,0.07) 0%, var(--bg-card) 60%)'
-          : 'var(--bg-card)',
-        border: isLive ? '1px solid rgba(74,222,128,0.2)' : '1px solid rgba(255,255,255,0.06)',
-        borderTop: `2px solid ${isLive ? '#4ade80' : compColor}`,
-        boxShadow: isLive ? '0 4px 20px rgba(74,222,128,0.08)' : '0 4px 20px rgba(0,0,0,0.3)',
+          ? 'linear-gradient(160deg, rgba(74,222,128,0.10) 0%, var(--bg-card) 58%)'
+          : `linear-gradient(165deg, ${compColor}14 0%, var(--bg-card) 52%)`,
+        border: isLive ? '1px solid rgba(74,222,128,0.25)' : `1px solid ${compColor}22`,
+        borderTop: `2.5px solid ${isLive ? '#4ade80' : compColor}`,
+        boxShadow: isLive ? '0 6px 26px rgba(74,222,128,0.12)' : '0 6px 24px rgba(0,0,0,0.32)',
         cursor: matchRef ? 'pointer' : 'default',
       }}
     >
-      <div className="px-4 pt-3.5 pb-4 flex flex-col gap-2.5">
+      {/* Glow decorativo por color de competición */}
+      <div aria-hidden className="absolute pointer-events-none opacity-70"
+        style={{ top: -28, right: -28, width: 110, height: 110, borderRadius: '50%',
+          background: `radial-gradient(circle, ${isLive ? 'rgba(74,222,128,0.18)' : compColor + '22'} 0%, transparent 70%)` }} />
+      <div className="relative px-4 pt-3.5 pb-4 flex flex-col gap-2.5">
 
         {/* Sport + competition */}
         <div className="flex items-center justify-between">
@@ -233,18 +237,21 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
 
         {/* Matchup with logos */}
         {showLogos ? (
-          <div className="flex items-center gap-2.5">
-            <div className="flex flex-col items-center gap-1 flex-1">
-              <TeamLogo logo={homeLogo} name={event.home} size={28} />
-              <p className="font-black text-center leading-tight w-full text-[11px]"
+          <div className="flex items-center gap-2 py-0.5">
+            <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+              <TeamLogo logo={homeLogo} name={event.home} size={34} />
+              <p className="font-black text-center leading-tight w-full text-[11px] truncate"
                 style={{ color: '#F0F0F5', fontFamily: 'var(--font-sport)' }}>
                 {event.homeAbbr ?? event.home.split(' ').slice(-1)[0]}
               </p>
             </div>
-            <span className="text-[9px] font-semibold flex-shrink-0" style={{ color: '#3A3A52' }}>vs</span>
-            <div className="flex flex-col items-center gap-1 flex-1">
-              <TeamLogo logo={awayLogo} name={event.away!} size={28} />
-              <p className="font-black text-center leading-tight w-full text-[11px]"
+            <span className="flex-shrink-0 flex items-center justify-center text-[8px] font-black rounded-full"
+              style={{ width: 20, height: 20, color: compColor, background: `${compColor}1a`, border: `1px solid ${compColor}33`, fontFamily: 'var(--font-display)' }}>
+              VS
+            </span>
+            <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+              <TeamLogo logo={awayLogo} name={event.away!} size={34} />
+              <p className="font-black text-center leading-tight w-full text-[11px] truncate"
                 style={{ color: '#C0C0D4', fontFamily: 'var(--font-sport)' }}>
                 {event.awayAbbr ?? event.away!.split(' ').slice(-1)[0]}
               </p>
@@ -429,12 +436,12 @@ export default function LiveEventsSection({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-              <circle cx="6" cy="6" r="5" stroke="#8E8E9E" strokeWidth="1.3" />
-              <path d="M6 3.5v2.8l1.5 1.5" stroke="#8E8E9E" strokeWidth="1.3" strokeLinecap="round" />
+            style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.16), rgba(124,58,237,0.06))', border: '1px solid rgba(124,58,237,0.28)' }}>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              <circle cx="6" cy="6" r="5" stroke="#A78BFA" strokeWidth="1.4" />
+              <path d="M6 3.5v2.8l1.5 1.5" stroke="#A78BFA" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
-            <h2 className="section-label" style={{ color: '#8E8E9E', fontSize: 13 }}>Calendario</h2>
+            <h2 className="section-label" style={{ color: '#C4B5FD', fontSize: 13 }}>Calendario</h2>
           </div>
           {events.length > 0 && (
             <>

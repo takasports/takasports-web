@@ -91,6 +91,15 @@ export default function GlosarioIndexPage() {
   }, {})
 
   const order: GlosarioSport[] = ['futbol', 'baloncesto', 'f1', 'tenis', 'ufc', 'general']
+  const SPORT_META: Record<GlosarioSport, { emoji: string; accent: string }> = {
+    futbol:     { emoji: '⚽',  accent: '#22c55e' },
+    baloncesto: { emoji: '🏀',  accent: '#f59e0b' },
+    f1:         { emoji: '🏎️',  accent: '#ef4444' },
+    tenis:      { emoji: '🎾',  accent: '#d97706' },
+    ufc:        { emoji: '🥊',  accent: '#f97316' },
+    general:    { emoji: '📘',  accent: '#7C3AED' },
+  }
+  const activeSports = order.filter((s) => bySport[s]?.length)
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
@@ -99,7 +108,7 @@ export default function GlosarioIndexPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       <Header />
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 pt-12 pb-20">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-20">
 
         <div className="mb-10">
           <div className="flex items-center gap-2.5 mb-4">
@@ -122,30 +131,60 @@ export default function GlosarioIndexPage() {
             explicados de forma clara y breve. ¿Qué es el VAR? ¿Cómo funciona el DRS?
             ¿Qué es un Grand Slam? Empieza por aquí.
           </p>
+
+          {/* Nav de categorías — salto a cada sección */}
+          <div className="flex flex-wrap gap-2 mt-6">
+            {activeSports.map((sport) => {
+              const { emoji, accent } = SPORT_META[sport]
+              return (
+                <a
+                  key={sport}
+                  href={`#${sport}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold transition-all hover:brightness-125"
+                  style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}33`, fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
+                >
+                  <span>{emoji}</span>
+                  {SPORT_LABEL[sport]}
+                  <span className="tabular-nums" style={{ opacity: 0.6 }}>{bySport[sport].length}</span>
+                </a>
+              )
+            })}
+          </div>
         </div>
 
-        <div className="flex flex-col gap-10">
-          {order.filter((s) => bySport[s]?.length).map((sport) => (
-            <section key={sport}>
-              <h2 style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: '1.4rem',
-                fontWeight: 800,
-                color: '#E8E8F4',
-                marginBottom: '0.75rem',
-              }}>
-                {SPORT_LABEL[sport]}
-              </h2>
-              <ul className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-12">
+          {activeSports.map((sport) => {
+            const { emoji, accent } = SPORT_META[sport]
+            return (
+            <section key={sport} id={sport} style={{ scrollMarginTop: 90 }}>
+              <div className="flex items-center gap-3 mb-4">
+                <span
+                  className="flex items-center justify-center rounded-xl text-xl flex-shrink-0"
+                  style={{ width: 40, height: 40, background: `${accent}18`, border: `1px solid ${accent}33` }}
+                >
+                  {emoji}
+                </span>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 800, color: '#F0F0FA', letterSpacing: '-0.01em' }}>
+                  {SPORT_LABEL[sport]}
+                </h2>
+                <span
+                  className="text-[11px] font-black px-2 py-0.5 rounded-full"
+                  style={{ background: `${accent}14`, color: accent, fontFamily: 'var(--font-sport)' }}
+                >
+                  {bySport[sport].length} términos
+                </span>
+                <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${accent}33, transparent)` }} />
+              </div>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {bySport[sport].map((t) => (
                   <li key={t.slug}>
                     <Link
                       href={`/glosario/${t.slug}`}
-                      className="block rounded-xl px-4 py-3 transition-colors"
-                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                      className="group block h-full rounded-xl px-4 py-3 transition-all hover:-translate-y-0.5"
+                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderLeft: `2.5px solid ${accent}`, textDecoration: 'none' }}
                     >
-                      <p className="text-sm font-semibold" style={{ color: '#E8E8F4', marginBottom: 2 }}>{t.term}</p>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      <p className="text-sm font-bold mb-1 transition-colors" style={{ color: '#F0F0FA' }}>{t.term}</p>
+                      <p className="text-xs line-clamp-2" style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}>
                         {t.summary}
                       </p>
                     </Link>
@@ -153,7 +192,8 @@ export default function GlosarioIndexPage() {
                 ))}
               </ul>
             </section>
-          ))}
+            )
+          })}
         </div>
 
       </main>
