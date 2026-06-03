@@ -7,7 +7,9 @@ import { getSportStyle, getSportLabel } from '@/lib/sports'
 
 // Categorías que aparecen siempre en los tabs de Reels (independiente de si
 // hay contenido en este instante). Se ordenan: las que tienen reels primero.
-const REELS_TAB_SLUGS = ['futbol', 'wwe', 'ufc']
+// Pestañas fijas de reels. WWE concentra la mayoría del contenido de lucha;
+// UFC apenas tiene reels, así que no lleva pestaña propia (sigue visible en "Todos").
+const REELS_TAB_SLUGS = ['futbol', 'wwe']
 import { useTilt } from '@/hooks/useTilt'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { SportIcon } from '@/components/icons/GameIcons'
@@ -534,7 +536,7 @@ export default function ReelsSection({
 
   const hasReels = reels.length > 0
 
-  // Tabs fijos: Fútbol, WWE, UFC. Los que tienen reels actualmente van primero.
+  // Tabs fijos: Fútbol, WWE. Los que tienen reels actualmente van primero.
   const reelsBySport = new Set(reels.map(r => r.sport).filter(Boolean) as string[])
   const availableSports = [
     ...REELS_TAB_SLUGS.filter(s => reelsBySport.has(s)),
