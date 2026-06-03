@@ -359,26 +359,20 @@ export default function HomeContent({
   }, [])
 
   const handleSportChange = useCallback((cat: string) => {
-    // "Todo" resetea el home in-place. Cualquier otro deporte navega a su
-    // hub dedicado (/futbol, /ufc…) — la misma pantalla que el selector del
-    // pie de página, con banner (Índice/Libra por libra), eventos y noticias.
-    if (cat === 'Todo') {
-      setContentVisible(false)
-      setTimeout(() => {
-        setActiveSport('Todo')
-        setContentVisible(true)
+    // Los chips del home FILTRAN las noticias in-place (no navegan). Las
+    // pantallas tipo hub (banner + índice + eventos) se reservan a los enlaces
+    // de deporte del footer (/futbol, /ufc…).
+    setContentVisible(false)
+    setTimeout(() => {
+      setActiveSport(cat)
+      setContentVisible(true)
+      const slug = CATEGORY_TO_SLUG[cat]
+      if (slug) {
+        router.replace(`/?sport=${slug}`, { scroll: false })
+      } else {
         router.replace('/', { scroll: false })
-      }, 110)
-      return
-    }
-    const slug = CATEGORY_TO_SLUG[cat]
-    if (slug) {
-      router.push(`/${slug}`)
-    } else {
-      // Categoría sin slug de hub conocido: filtra in-place como fallback.
-      setContentVisible(false)
-      setTimeout(() => { setActiveSport(cat); setContentVisible(true) }, 110)
-    }
+      }
+    }, 110)
   }, [router])
 
   // Filtrar artículos por deporte activo (con aliases: nba→baloncesto, wrestling→wwe, f1→formula1)
