@@ -21,28 +21,49 @@ export async function GET(request: Request) {
   const allowed = ALLOWED_HOSTS.some(h => parsed.hostname.includes(h))
   if (!allowed) return new Response('Forbidden', { status: 403 })
 
-  try {
-    const res = await fetch(url, {
+  async function fetchImage() {
+    return fetch(url!, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Referer':    'https://www.instagram.com/',
         'Accept':     'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
       },
     })
+  }
 
-    if (!res.ok) return new Response('CDN error', { status: res.status })
+  try {
+    let res = await fetchImage()
+    // Instagram limita por IP: al cargar el home se piden ~16 thumbnails de la
+    // misma IP de Vercel y rechaza varias (403/429). Reintento una vez con una
+    // pausa breve para esquivar el burst.
+    if ((res.status === 403 || res.status === 429)) {
+      await new Promise(r => setTimeout(r, 350))
+      res = await fetchImage()
+    }
+
+    if (!res.ok) {
+      // No cacheamos el error en el CDN (cache corto) para que se reintente pronto.
+      return new Response('CDN error', {
+        status: res.status,
+        headers: { 'Cache-Control': 'public, max-age=0, s-maxage=30' },
+      })
+    }
 
     const buf = await res.arrayBuffer()
     const ct  = res.headers.get('content-type') ?? 'image/jpeg'
 
+    // s-maxage hace que el CDN de Vercel cachee la imagen (antes solo cacheaba
+    // el navegador → cada visita re-golpeaba a Instagram y disparaba el
+    // rate-limit). Las URLs de IG cambian con cada refresco de reels.json, así
+    // que cachear por-URL una semana es seguro y elimina los thumbnails en blanco.
     return new Response(buf, {
       headers: {
         'Content-Type':  ct,
-        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        'Cache-Control': 'public, max-age=3600, s-maxage=604800, stale-while-revalidate=604800',
       },
     })
   } catch (err) {
     console.error('[thumbnail proxy]', err)
-    return new Response('Error', { status: 500 })
+    return new Response('Error', { status: 500, headers: { 'Cache-Control': 'public, max-age=0, s-maxage=30' } })
   }
 }
