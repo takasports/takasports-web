@@ -61,6 +61,26 @@ function SectionHeader({ label, sub }: { label: string; sub?: string }) {
   )
 }
 
+// ── Federaciones de lucha libre ─────────────────────────────────
+// Los artículos de wrestling traen la federación en `category` (mapeado
+// desde `competition` en Sanity: "WWE Raw", "AEW Double or Nothing"…).
+// Derivamos la federación para ofrecer sub-filtros WWE / AAA / AEW.
+type Federation = 'Todo' | 'WWE' | 'AAA' | 'AEW'
+const WRESTLING_FEDERATIONS: Federation[] = ['Todo', 'WWE', 'AAA', 'AEW']
+
+function getFederation(category?: string): Federation | null {
+  if (!category) return null
+  const c = category.toUpperCase()
+  if (c.includes('AEW')) return 'AEW'
+  if (c.includes('AAA') || c.includes('TRIPLEMAN')) return 'AAA'
+  if (c.includes('WWE') || c.includes('NXT') || c.includes('RAW') || c.includes('SMACKDOWN')) return 'WWE'
+  return null
+}
+
+const FEDERATION_ACCENT: Record<Federation, string> = {
+  Todo: '#facc15', WWE: '#e11d2a', AAA: '#22c55e', AEW: '#d4af37',
+}
+
 type TimeFilter = 'todo' | 'hoy' | 'semana'
 
 function filterByTime<T extends { publishedAt?: string }>(items: T[], tf: TimeFilter): T[] {
@@ -84,6 +104,7 @@ export default function NoticiasContent({
   const router = useRouter()
   const [activeCategory, setActiveCategory] = useState(initialCategory)
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('todo')
+  const [federation, setFederation] = useState<Federation>('Todo')
   const [contentVisible, setContentVisible] = useState(true)
   const [allArticles, setAllArticles] = useState<Article[]>(articles)
   // SSR ya carga 40 artículos (pages 1+2 del API con pageSize 20).
@@ -98,6 +119,7 @@ export default function NoticiasContent({
     setTimeout(async () => {
       setActiveCategory(cat)
       setTimeFilter('todo')
+      setFederation('Todo')
       setContentVisible(true)
       const slug = CATEGORY_TO_SLUG[cat]?.toLowerCase() ?? ''
       activeSportRef.current = slug
@@ -140,9 +162,13 @@ export default function NoticiasContent({
   }, [loadingMore, hasMore, page])
 
   const activeSlug = CATEGORY_TO_SLUG[activeCategory]?.toLowerCase() ?? ''
+  const isWrestling = activeSlug === 'wwe'
   // allArticles already filtered by sport (fetched via API on category change)
   // For the initial SSR render with "Todo", filter client-side by time only
-  const filteredArticles = filterByTime(allArticles, timeFilter)
+  const timeFiltered = filterByTime(allArticles, timeFilter)
+  const filteredArticles = isWrestling && federation !== 'Todo'
+    ? timeFiltered.filter(a => getFederation(a.category) === federation)
+    : timeFiltered
 
   const now = Date.now()
   const hasToday = allArticles.some(a => a.publishedAt && (now - new Date(a.publishedAt).getTime()) / 86_400_000 < 1)
@@ -205,6 +231,36 @@ export default function NoticiasContent({
         className="px-4 sm:px-6 xl:px-10"
         style={{ opacity: contentVisible ? 1 : 0, transition: 'opacity 110ms ease' }}
       >
+
+      {/* ── SUB-FILTRO FEDERACIÓN (solo lucha libre) ── */}
+      {isWrestling && (
+        <div className="flex items-center gap-1.5 mt-4 mb-1 overflow-x-auto scrollbar-hide">
+          {WRESTLING_FEDERATIONS.map((fed) => {
+            const isActive = federation === fed
+            const accent = FEDERATION_ACCENT[fed]
+            const count = fed === 'Todo'
+              ? timeFiltered.length
+              : timeFiltered.filter(a => getFederation(a.category) === fed).length
+            return (
+              <button
+                key={fed}
+                onClick={() => setFederation(fed)}
+                className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all"
+                style={{
+                  background: isActive ? `${accent}22` : 'rgba(255,255,255,0.04)',
+                  color: isActive ? accent : '#6A6A82',
+                  border: isActive ? `1px solid ${accent}55` : '1px solid rgba(255,255,255,0.06)',
+                  fontFamily: 'var(--font-sport)',
+                  cursor: 'pointer',
+                }}
+              >
+                {fed === 'Todo' ? 'Todas' : fed}
+                <span className="tabular-nums" style={{ opacity: 0.6 }}>{count}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* ── FILTRO TEMPORAL ── */}
       {showTimePills && (
