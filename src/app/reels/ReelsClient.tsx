@@ -126,7 +126,10 @@ export default function ReelsClient({ reels }: { reels: PublicReel[] }) {
           }}
         >
       {reels.map((reel, i) => {
-        const near = Math.abs(i - activeIdx) <= 1
+        // Solo el reel ACTIVO monta el iframe del embed. Así, al hacer scroll,
+        // el de arriba se desmonta (se para el vídeo/audio) y nunca suenan dos
+        // a la vez. Los demás muestran su thumbnail.
+        const isActive = i === activeIdx
         const { accent } = getSportStyle(reel.sport)
         const thumb = reel.thumbnail_url ?? null
         return (
@@ -156,8 +159,9 @@ export default function ReelsClient({ reels }: { reels: PublicReel[] }) {
                 position: 'relative',
               }}
             >
-              {near ? (
+              {isActive ? (
                 <iframe
+                  key={`active-${reel.id}`}
                   src={toEmbedUrl(reel.instagram_url)}
                   title={reel.title || `Reel ${i + 1}`}
                   loading="lazy"
