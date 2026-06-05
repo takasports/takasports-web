@@ -122,7 +122,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     displayName: 'Copa del Rey',
     shortName: 'Copa Rey',
     sport: 'Fútbol',
-    matchComp: 'Copa del Rey',
+    matchComp: 'Copa Rey',
     description: 'Calendario de la Copa del Rey: rondas, horarios y dónde ver los partidos de la competición del KO del fútbol español.',
     seasonLabel: '2025-2026',
   },

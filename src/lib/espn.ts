@@ -21,6 +21,7 @@ const SOURCES: EspnSource[] = [
   { slug: 'soccer/ita.1',             sport: 'Fútbol',  comp: 'Serie A',    teamSport: true  },
   { slug: 'soccer/ger.1',             sport: 'Fútbol',  comp: 'Bundesliga', teamSport: true  },
   { slug: 'soccer/fra.1',             sport: 'Fútbol',  comp: 'Ligue 1',    teamSport: true  },
+  { slug: 'soccer/esp.copa_del_rey',  sport: 'Fútbol',  comp: 'Copa Rey',   teamSport: true  },
   { slug: 'basketball/nba',           sport: 'NBA',     comp: 'NBA',        teamSport: true  },
   { slug: 'racing/f1',                sport: 'F1',      comp: 'Fórmula 1',  teamSport: false },
   { slug: 'mma/ufc',                  sport: 'UFC',     comp: 'UFC',        teamSport: false },

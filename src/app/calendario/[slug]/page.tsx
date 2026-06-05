@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { cache } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Header from '@/components/Header'
@@ -13,6 +14,7 @@ import {
   COMPETITIONS,
   getCompetition,
   matchesCompetition,
+  type CompetitionConfig,
 } from '@/lib/calendar-competitions'
 
 // ISR cada hora — competiciones evergreen, no necesitan revalidación rápida.
@@ -21,6 +23,28 @@ export const revalidate = 3600
 export async function generateStaticParams() {
   return COMPETITIONS.map((c) => ({ slug: c.slug }))
 }
+
+// Carga + filtra los eventos de una competición. Memoizado por request con
+// React.cache para que generateMetadata y la página no dupliquen el fetch.
+const loadCompetitionEvents = cache(async (comp: CompetitionConfig): Promise<SportEvent[]> => {
+  const [espnRes, sanityRes, padelRes] = await Promise.allSettled([
+    fetchEspnEvents(),
+    sanityClient.fetch(eventsQuery),
+    fetchPadelEvents(),
+  ])
+  const espn   = espnRes.status   === 'fulfilled' ? espnRes.value   : []
+  const padel  = padelRes.status  === 'fulfilled' ? padelRes.value  : []
+  const sanity = sanityRes.status === 'fulfilled' && Array.isArray(sanityRes.value)
+    ? sanityRes.value.map(normalizeEvent)
+    : []
+  return [...sanity, ...espn, ...padel]
+    .filter((e) => matchesCompetition(comp, e))
+    .sort((a, b) => {
+      const ta = a.isoDate ? new Date(a.isoDate).getTime() : 0
+      const tb = b.isoDate ? new Date(b.isoDate).getTime() : 0
+      return ta - tb
+    })
+})
 
 export async function generateMetadata({
   params,
@@ -33,10 +57,14 @@ export async function generateMetadata({
   const title = `Calendario ${comp.displayName} ${comp.seasonLabel} — Partidos y horarios`
   const description = `${comp.description} Temporada ${comp.seasonLabel}.`
   const canonical = `${SITE_URL}/calendario/${comp.slug}`
+  // Sin eventos (off-season) → no indexar: evita páginas vacías en el índice de
+  // Google. Vuelve a indexarse sola cuando la competición tiene partidos.
+  const hasEvents = (await loadCompetitionEvents(comp)).length > 0
   return {
     title,
     description,
     alternates: { canonical },
+    robots: hasEvents ? undefined : { index: false, follow: true },
     openGraph: {
       title,
       description,
@@ -88,27 +116,7 @@ export default async function CompetitionCalendarPage({
   const comp = getCompetition(slug)
   if (!comp) notFound()
 
-  const [espnRes, sanityRes, padelRes] = await Promise.allSettled([
-    fetchEspnEvents(),
-    sanityClient.fetch(eventsQuery),
-    fetchPadelEvents(),
-  ])
-
-  const espn   = espnRes.status   === 'fulfilled' ? espnRes.value   : []
-  const padel  = padelRes.status  === 'fulfilled' ? padelRes.value  : []
-  const sanity = sanityRes.status === 'fulfilled' && Array.isArray(sanityRes.value)
-    ? sanityRes.value.map(normalizeEvent)
-    : []
-
-  const all: SportEvent[] = [...sanity, ...espn, ...padel]
-  const filtered = all.filter((e) => matchesCompetition(comp, e))
-
-  // Orden cronológico ascendente para cara al futuro.
-  filtered.sort((a, b) => {
-    const ta = a.isoDate ? new Date(a.isoDate).getTime() : 0
-    const tb = b.isoDate ? new Date(b.isoDate).getTime() : 0
-    return ta - tb
-  })
+  const filtered = await loadCompetitionEvents(comp)
 
   // Agrupar por día.
   const groupedByDay = new Map<string, SportEvent[]>()
