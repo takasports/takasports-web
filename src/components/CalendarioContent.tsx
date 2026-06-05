@@ -2113,7 +2113,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             const remCount = remindedEvents.length
             return (
               <button
-                onClick={() => setView(isActive ? 'destacados' : 'recordatorios')}
+                onClick={() => setView(isActive ? 'todos' : 'recordatorios')}
                 aria-label="Alertas"
                 title="Mis recordatorios"
                 className="relative flex items-center justify-center rounded-full flex-shrink-0 transition-all"

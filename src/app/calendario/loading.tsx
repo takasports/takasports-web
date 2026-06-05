@@ -85,9 +85,8 @@ export default function CalendarioLoading() {
         {/* Tabs row */}
         <div className="flex items-center justify-between gap-2 mt-5">
           <div className="flex gap-2">
-            <div style={{ height: 32, width: 80, background: 'rgba(124,58,237,0.18)', borderRadius: 999, border: '1px solid rgba(124,58,237,0.4)' }} />
-            <div style={{ height: 32, width: 96, background: bar, borderRadius: 999 }} />
-            <div style={{ height: 32, width: 96, background: bar, borderRadius: 999 }} />
+            <div style={{ height: 32, width: 104, background: 'rgba(124,58,237,0.18)', borderRadius: 999, border: '1px solid rgba(124,58,237,0.4)' }} />
+            <div style={{ height: 32, width: 100, background: bar, borderRadius: 999 }} />
           </div>
           <div style={{ width: 36, height: 36, background: bar, borderRadius: 999 }} />
         </div>
