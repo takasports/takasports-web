@@ -2463,6 +2463,64 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             </section>
           )}
 
+          {/* Tus equipos — resumen de favoritos (chips con su próximo partido).
+              Recuperado en el tab Calendario: cumple lo que promete el onboarding. */}
+          {favorites.size > 0 && !onlyLive && !selectedDate && (
+            <FavoritesSection
+              favoriteEvents={favoriteEvents}
+              favorites={favorites}
+              liveScores={liveScores}
+              reminders={reminders}
+              flashIds={flashIds}
+              recentForms={recentForms}
+              tz={tz}
+              toggleReminder={toggleReminder}
+              toggleFavorite={toggleFavorite}
+              setSelectedUFCDate={setSelectedUFCDate}
+              onEdit={() => setShowOnboarding(true)}
+              filterActive={activeFilter !== 'Todo' || !!search}
+              chipsOnly
+            />
+          )}
+
+          {/* CTA — invita a elegir equipos cuando aún no hay favoritos */}
+          {favorites.size === 0 && !onlyLive && !selectedDate && filtered.length > 0 && (
+            <section
+              className="rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4"
+              style={{
+                background: 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(244,114,182,0.08) 100%)',
+                border: '1px solid rgba(124,58,237,0.28)',
+              }}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em]"
+                    style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
+                    Sigue a tus equipos
+                  </span>
+                </div>
+                <p className="text-[14px] leading-snug font-bold mb-1" style={{ color: '#F0F0FA', fontFamily: 'var(--font-sport)' }}>
+                  Elige tus equipos favoritos y tendrás aquí arriba un acceso rápido a cuándo juega cada uno, con aviso antes de empezar.
+                </p>
+                <p className="text-[11px]" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
+                  Lleva 30 segundos · puedes cambiarlo cuando quieras.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowOnboarding(true)}
+                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[11px] font-black uppercase tracking-[0.16em] transition-all"
+                style={{
+                  background: '#7C3AED', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  fontFamily: 'var(--font-sport)', cursor: 'pointer',
+                  boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
+                }}
+              >
+                ♥ Elegir equipos
+              </button>
+            </section>
+          )}
+
           {orderedDates.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
               <p className="mb-2 flex justify-center" style={{ color: '#5A5A6A' }}>
