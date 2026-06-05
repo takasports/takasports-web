@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import PlayerAvatar from '@/components/PlayerAvatar'
 import type { PlayerDetail } from '@/app/api/jugador/[slug]/route'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
@@ -60,19 +61,12 @@ function num(v: string): number | null {
 }
 
 function PlayerHead({ p }: { p: PlayerDetail }) {
-  const img = p.headshot ?? p.team?.logo
   return (
     <div className="flex flex-col items-center text-center gap-2 flex-1 min-w-0">
       <div className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center"
         style={{ background: 'rgba(124,58,237,0.12)' }}>
-        {img ? (
-          <Image src={img} alt={p.name} width={64} height={64} unoptimized
-            style={{ objectFit: p.headshot ? 'cover' : 'contain', width: 64, height: 64 }} />
-        ) : (
-          <span className="font-black text-2xl" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
-            {p.name.charAt(0)}
-          </span>
-        )}
+        <PlayerAvatar headshot={p.headshot} teamLogo={p.team?.logo} teamName={p.team?.name}
+          name={p.name} accent="#C4B5FD" headshotSize={64} logoSize={56} textClass="text-2xl" />
       </div>
       <div className="min-w-0">
         <Link href={`/jugador/${p.leagueSlug.replaceAll('/', '_')}_${p.id}`}

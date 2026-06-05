@@ -18,12 +18,21 @@ export default function PlayerAvatar({
   teamName,
   name,
   accent,
+  headshotSize = 80,
+  logoSize = 56,
+  textClass = 'text-3xl',
 }: {
   headshot?: string
   teamLogo?: string
   teamName?: string
   name: string
   accent: string
+  /** px del headshot (cuadrado). */
+  headshotSize?: number
+  /** px del escudo del club (cuadrado). */
+  logoSize?: number
+  /** clase de tamaño para la inicial de fallback. */
+  textClass?: string
 }) {
   const [headFailed, setHeadFailed] = useState(false)
   const [logoFailed, setLogoFailed] = useState(false)
@@ -33,11 +42,11 @@ export default function PlayerAvatar({
       <Image
         src={headshot}
         alt={name}
-        width={80}
-        height={80}
+        width={headshotSize}
+        height={headshotSize}
         unoptimized
         onError={() => setHeadFailed(true)}
-        style={{ objectFit: 'cover', width: 80, height: 80 }}
+        style={{ objectFit: 'cover', width: headshotSize, height: headshotSize }}
       />
     )
   }
@@ -46,8 +55,8 @@ export default function PlayerAvatar({
       <Image
         src={teamLogo}
         alt={teamName ?? name}
-        width={56}
-        height={56}
+        width={logoSize}
+        height={logoSize}
         unoptimized
         onError={() => setLogoFailed(true)}
         style={{ objectFit: 'contain' }}
@@ -55,7 +64,7 @@ export default function PlayerAvatar({
     )
   }
   return (
-    <span className="font-black text-3xl" style={{ color: accent, fontFamily: 'var(--font-display)' }}>
+    <span className={`font-black ${textClass}`} style={{ color: accent, fontFamily: 'var(--font-display)' }}>
       {name.charAt(0)}
     </span>
   )

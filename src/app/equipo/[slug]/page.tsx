@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import PlayerAvatar from '@/components/PlayerAvatar'
 import type { TeamDetail, TeamResult, RosterPlayer } from '@/app/api/team/[slug]/route'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
@@ -313,10 +314,8 @@ function TeamContent({ team }: { team: TeamDetail }) {
           className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 p-2"
           style={{ background: `${accent}18` }}
         >
-          {team.logo && (
-            <Image src={team.logo} alt={team.name} width={64} height={64} unoptimized
-              style={{ objectFit: 'contain' }} />
-          )}
+          <PlayerAvatar teamLogo={team.logo} teamName={team.name} name={team.name}
+            accent={accent} logoSize={64} />
         </div>
 
         {/* Info */}

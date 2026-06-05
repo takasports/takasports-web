@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import PlayerAvatar from '@/components/PlayerAvatar'
 import type { TeamDetail } from '@/app/api/team/[slug]/route'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
@@ -89,9 +90,8 @@ function TeamHead({ t }: { t: TeamDetail }) {
     <div className="flex flex-col items-center text-center gap-2 flex-1 min-w-0">
       <div className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center p-1.5"
         style={{ background: 'rgba(124,58,237,0.12)' }}>
-        {t.logo
-          ? <Image src={t.logo} alt={t.name} width={56} height={56} unoptimized style={{ objectFit: 'contain' }} />
-          : <span className="font-black text-2xl" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>{t.name.charAt(0)}</span>}
+        <PlayerAvatar teamLogo={t.logo} teamName={t.name} name={t.name}
+          accent="#C4B5FD" logoSize={56} textClass="text-2xl" />
       </div>
       <div className="min-w-0">
         <Link href={`/equipo/${t.leagueSlug.replaceAll('/', '_')}_${t.id}`}
