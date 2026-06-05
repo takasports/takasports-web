@@ -65,3 +65,18 @@ export const FOOTBALL_LEAGUES: FootballLeague[] = [
 
 /** Subconjunto que entra en el feed en vivo. */
 export const LIVE_FOOTBALL = FOOTBALL_LEAGUES.filter((l) => l.live)
+
+/** Ligas regulares (round-robin) con clasificación disponible en ESPN. Las
+ *  copas y torneos de selecciones se excluyen (no tienen tabla simple). Se usa
+ *  en el detalle de partido (/partido) para mostrar la tabla de la liga. */
+export const TABLE_LEAGUE_SLUGS = new Set<string>([
+  'soccer/uefa.champions',
+  'soccer/esp.1', 'soccer/eng.1', 'soccer/ita.1', 'soccer/ger.1', 'soccer/fra.1',
+  'soccer/por.1', 'soccer/ned.1', 'soccer/eng.2', 'soccer/esp.2', 'soccer/tur.1',
+  'soccer/bel.1', 'soccer/sco.1', 'soccer/usa.1', 'soccer/mex.1', 'soccer/bra.1',
+  'soccer/arg.1', 'soccer/ksa.1', 'soccer/jpn.1',
+])
+
+/** Mapa slug → nombre mostrado, para etiquetar el detalle de partido. */
+export const LEAGUE_LABEL_BY_SLUG: Record<string, string> =
+  Object.fromEntries(FOOTBALL_LEAGUES.map((l) => [l.slug, l.comp]))

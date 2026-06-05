@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getZone } from '@/lib/league-zones'
 import type { StandingZone } from '@/lib/league-zones'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
+import { TABLE_LEAGUE_SLUGS, LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
 export type { StandingZone }
 
 export type SportKind = 'soccer' | 'basketball' | 'mma' | 'racing' | 'tennis' | 'golf' | 'other'
@@ -288,13 +289,9 @@ function buildLineups(json: Record<string, unknown>): MatchDetail['lineups'] | u
 }
 
 // ── League table ─────────────────────────────────────────────────────
-const TABLE_SLUGS = new Set([
-  'soccer/esp.1', 'soccer/eng.1', 'soccer/ita.1',
-  'soccer/ger.1', 'soccer/fra.1', 'soccer/uefa.champions',
-])
-
+// Ligas con clasificación: lib/football-leagues (TABLE_LEAGUE_SLUGS).
 async function fetchLeagueTableRows(leagueSlug: string): Promise<Omit<LeagueTableRow, 'highlight'>[]> {
-  if (!TABLE_SLUGS.has(leagueSlug)) return []
+  if (!TABLE_LEAGUE_SLUGS.has(leagueSlug)) return []
   try {
     const res = await fetch(
       `https://site.web.api.espn.com/apis/v2/sports/${leagueSlug}/standings`,
@@ -657,7 +654,7 @@ export async function GET(
   const eventId    = parts[parts.length - 1]
   const leagueSlug = parts.slice(0, -1).join('/')
   const sport      = detectSport(leagueSlug)
-  const leagueLabel = COMP_LABELS[leagueSlug] ?? parts.slice(0, -1).join(' · ')
+  const leagueLabel = COMP_LABELS[leagueSlug] ?? LEAGUE_LABEL_BY_SLUG[leagueSlug] ?? parts.slice(0, -1).join(' · ')
 
   try {
     // ─── MMA: needs scoreboard fallback (summary returns 404) ────────
