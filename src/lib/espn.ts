@@ -403,13 +403,124 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
   return results
 }
 
+// ── Tennis past (resultados del torneo top en curso) ───────────────────────
+// El endpoint de tenis ignora ?dates= y devuelve el torneo activo con todos sus
+// matches; filtramos por estado final y ventana temporal en memoria. Los sets
+// ganados se cuentan desde linescores[].winner (games por set con flag).
+function countTennisSets(competitor: Record<string, unknown> | undefined): number | null {
+  const ls = competitor?.linescores as Array<{ winner?: boolean }> | undefined
+  if (!Array.isArray(ls) || ls.length === 0) return null
+  return ls.filter(s => s?.winner === true).length
+}
+
+async function fetchTennisPast(slug: string, daysBack = 10): Promise<RawEvent[]> {
+  const { accent } = getSportStyle('Tenis')
+  const isWta = slug.includes('wta')
+  const comp = isWta ? 'WTA' : 'ATP'
+  const shortSlug = isWta ? 'wta' : 'atp'
+  // Cada tour aporta su propio cuadro individual: en Grand Slams combinados los
+  // dos endpoints devuelven el torneo entero, así que de /atp tomamos men's y de
+  // /wta women's para no duplicar. Fuera de GS cada endpoint ya trae solo su género.
+  const wantGrouping = isWta ? 'womens-singles' : 'mens-singles'
+  const url = `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`
+
+  let json: Record<string, unknown>
+  try {
+    const res = await fetch(url, { next: { revalidate: 300 } })
+    if (!res.ok) return []
+    json = await res.json()
+  } catch {
+    return []
+  }
+
+  const cutoff = Date.now() - daysBack * 86_400_000
+  const results: RawEvent[] = []
+  const espnEvents = (json.events as unknown[]) ?? []
+
+  for (const rawEv of espnEvents) {
+    const ev = rawEv as Record<string, unknown>
+    const tournamentName = (ev.name as string) ?? (ev.shortName as string) ?? comp
+    if (!isTennisTopTournament(tournamentName)) continue
+
+    const groupings = (ev.groupings as unknown[]) ?? []
+    for (const rawG of groupings) {
+      const g = rawG as Record<string, unknown>
+      const gSlug = (g.grouping as Record<string, unknown> | undefined)?.slug as string | undefined
+      if (gSlug !== wantGrouping) continue   // solo el cuadro individual del tour
+      const competitions = (g.competitions as unknown[]) ?? []
+
+      for (const rawM of competitions) {
+        const m = rawM as Record<string, unknown>
+        const isoDate = m.date as string | undefined
+        if (!isoDate || new Date(isoDate).getTime() < cutoff) continue
+
+        // Excluir la fase previa (qualifying): solo cuadro final.
+        const roundName = ((m.round as Record<string, unknown>)?.displayName as string) ?? ''
+        if (/qualif/i.test(roundName)) continue
+
+        const statusName = ((m.status as Record<string, unknown>)?.type as Record<string, unknown>)?.name as string | undefined
+        if (!statusName || !FINAL_STATUSES.has(statusName)) continue
+
+        const competitors = (m.competitors as Record<string, unknown>[]) ?? []
+        if (competitors.length < 2) continue
+
+        const home = ((competitors[0]?.athlete as Record<string, unknown>)?.displayName as string | undefined)
+                  ?? (competitors[0]?.displayName as string | undefined)
+        const away = ((competitors[1]?.athlete as Record<string, unknown>)?.displayName as string | undefined)
+                  ?? (competitors[1]?.displayName as string | undefined)
+        if (!home || !away || home === 'TBD' || away === 'TBD') continue
+        if (isTennisDoubles(home, away)) continue
+
+        const matchId  = m.id as string
+        const matchRef = `tennis_${shortSlug}_${matchId}`
+
+        results.push({
+          isoDate,
+          event: {
+            id:        `espn-past-tennis-${matchId}`,
+            home,
+            away,
+            sport:     'Tenis',
+            comp:      tournamentName,
+            date:      toDateLabel(isoDate),
+            time:      toTimeStr(isoDate),
+            accent,
+            isoDate,
+            matchRef,
+            homeScore: countTennisSets(competitors[0]),
+            awayScore: countTennisSets(competitors[1]),
+            isPast:    true,
+            source:    'espn' as const,
+          },
+        })
+      }
+    }
+  }
+
+  // Cap por tour: evita inundar el histórico con rondas completas (qualy/1ª ronda).
+  results.sort((a, b) => b.isoDate.localeCompare(a.isoDate))
+  return results.slice(0, 40)
+}
+
 export async function fetchEspnPastEvents(): Promise<SportEvent[]> {
-  const leagueResults = await Promise.allSettled(SOURCES.map(s => fetchLeaguePast(s, 10)))
+  const [leagueResults, tennisResults] = await Promise.all([
+    Promise.allSettled(SOURCES.map(s => fetchLeaguePast(s, 10))),
+    Promise.allSettled(TENNIS_SLUGS.map(s => fetchTennisPast(s, 10))),
+  ])
   const raw: RawEvent[] = []
   for (const r of leagueResults) {
     if (r.status === 'fulfilled') raw.push(...r.value)
   }
+  for (const r of tennisResults) {
+    if (r.status === 'fulfilled') raw.push(...r.value)
+  }
   // Most recent first
   raw.sort((a, b) => b.isoDate.localeCompare(a.isoDate))
-  return raw.map(r => r.event)
+  // Dedup por id (un mismo partido de un Grand Slam puede llegar por ambos tours).
+  const seen = new Set<string>()
+  return raw.filter(r => {
+    if (seen.has(r.event.id)) return false
+    seen.add(r.event.id)
+    return true
+  }).map(r => r.event)
 }
