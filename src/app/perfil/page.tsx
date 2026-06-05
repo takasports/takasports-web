@@ -7,7 +7,7 @@ import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import AuthModal from '@/components/AuthModal'
-import { ALL_EVENTS } from '@/lib/events'
+import type { SportEvent } from '@/lib/types'
 import { QUINIELA_PICKS_KEY } from '@/components/QuinielaModule'
 import type { QuinielaSaved } from '@/components/QuinielaModule'
 import type { ReadItem } from '@/app/article/[id]/ReadTracker'
@@ -30,6 +30,7 @@ import TakaPoint from '@/components/TakaPoint'
 import { usePoints, useStreak } from '@/hooks/useGameState'
 
 const REMINDERS_KEY = 'ts_reminders'
+const REMINDERS_DATA_KEY = 'ts_reminders_data'
 const PROFILE_NAME_KEY = 'ts_profile_name'
 
 const PICK_LABEL: Record<string, string> = { '1': 'Local', X: 'Empate', '2': 'Visitante' }
@@ -73,6 +74,7 @@ function EmptyState({ icon, text, cta, href }: { icon: React.ReactNode; text: st
 // ─────────────────────────────────────────────────────────────────
 export default function PerfilPage() {
   const [reminderIds, setReminderIds] = useState<string[]>([])
+  const [reminderData, setReminderData] = useState<Record<string, SportEvent>>({})
   const [quinielaSaved, setQuinielaSaved] = useState<QuinielaSaved | null>(null)
   const [name, setName] = useState('Mi Perfil')
   const [seguimientoTab, setSeguimientoTab] = useState<'deportes' | 'ligas' | 'clubs'>('deportes')
@@ -223,6 +225,8 @@ export default function PerfilPage() {
       try {
         const r = JSON.parse(localStorage.getItem(REMINDERS_KEY) ?? '[]')
         setReminderIds(Array.isArray(r) ? r : [])
+        const d = JSON.parse(localStorage.getItem(REMINDERS_DATA_KEY) ?? '{}')
+        setReminderData(d && typeof d === 'object' ? d : {})
       } catch { /* ignore */ }
     }
 
@@ -296,7 +300,11 @@ export default function PerfilPage() {
     }
   }, [])
 
-  const savedEvents = ALL_EVENTS.filter((e) => reminderIds.includes(e.id))
+  // Eventos guardados desde el snapshot que el calendario escribe al recordar.
+  // Se ignoran los ids sin snapshot (recordatorios antiguos aún no resincronizados).
+  const savedEvents = reminderIds
+    .map((id) => reminderData[id])
+    .filter((e): e is SportEvent => Boolean(e))
 
   // Datos para el bloque de seguimiento
   const savedSports = [...new Set(savedEvents.map((e) => e.sport))]
@@ -307,6 +315,13 @@ export default function PerfilPage() {
     const updated = reminderIds.filter((r) => r !== id)
     setReminderIds(updated)
     localStorage.setItem(REMINDERS_KEY, JSON.stringify(updated))
+    try {
+      const data = JSON.parse(localStorage.getItem(REMINDERS_DATA_KEY) ?? '{}')
+      delete data[id]
+      localStorage.setItem(REMINDERS_DATA_KEY, JSON.stringify(data))
+      setReminderData(data)
+    } catch { /* ignore */ }
+    window.dispatchEvent(new CustomEvent('ts-reminders-change'))
   }
 
   const handleTzChange = (newTz: string) => {
@@ -936,7 +951,9 @@ export default function PerfilPage() {
                       <path d="M6.5 10.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5" stroke="#7C3AED" strokeWidth="1.2" strokeLinecap="round" opacity="0.6" />
                     </svg>
                   }
-                  text="No tienes ningún recordatorio activado."
+                  text={reminderIds.length > 0
+                    ? 'Abre el calendario para sincronizar tus recordatorios.'
+                    : 'No tienes ningún recordatorio activado.'}
                   cta="Ver calendario"
                   href="/calendario"
                 />

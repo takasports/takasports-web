@@ -1615,10 +1615,38 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         requestNotifPermission().then(() => scheduleNotif(id))
       }
       localStorage.setItem('ts_reminders', JSON.stringify([...next]))
+      // Snapshot del evento junto al id: el perfil lee 'ts_reminders_data' para
+      // pintar el recordatorio (los ids reales espn-* no existen en mock data).
+      try {
+        const data = JSON.parse(localStorage.getItem('ts_reminders_data') ?? '{}')
+        if (next.has(id)) {
+          const ev = events.find(e => e.id === id)
+          if (ev) data[id] = ev
+        } else {
+          delete data[id]
+        }
+        localStorage.setItem('ts_reminders_data', JSON.stringify(data))
+      } catch { /* ignore */ }
       window.dispatchEvent(new CustomEvent('ts-reminders-change'))
       return next
     })
-  }, [requestNotifPermission, scheduleNotif])
+  }, [requestNotifPermission, scheduleNotif, events])
+
+  // Sync de snapshots: rellena 'ts_reminders_data' para los recordatorios
+  // activos cuyo evento siga en el feed. Cubre recordatorios creados antes de
+  // que existiera este store, para que el perfil pueda mostrarlos igualmente.
+  useEffect(() => {
+    if (reminders.size === 0) return
+    try {
+      const data = JSON.parse(localStorage.getItem('ts_reminders_data') ?? '{}')
+      let changed = false
+      for (const id of reminders) {
+        const ev = events.find(e => e.id === id)
+        if (ev) { data[id] = ev; changed = true }
+      }
+      if (changed) localStorage.setItem('ts_reminders_data', JSON.stringify(data))
+    } catch { /* ignore */ }
+  }, [reminders, events])
 
   // Destacados es un chip especial — no es un deporte sino un modo curado
   // que limita a los top 4 partidos por día por prestigio de liga + favoritos.
