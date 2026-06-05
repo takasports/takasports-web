@@ -1155,6 +1155,11 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     r: resolveSnapshot(div.blockId, [], `ufc.com · ${div.label}`, ''),
   }))
   const fifaR            = resolveSnapshot('ranking-fifa',        FIFA_RANKING,        'FIFA',         FIFA_RANKING_AS_OF)
+  // El snapshot del Elo puede traer banderas regional-indicator inválidas para
+  // subdivisiones británicas (England → 🇪🇳, que renderiza como letras "EN").
+  // Forzamos la bandera canónica por nombre desde WC_NATIONS (nationMeta acepta
+  // nombre en inglés y en español); el resto de selecciones conservan la suya.
+  fifaR.rows = fifaR.rows.map(r => { const m = nationMeta(r.name); return m?.flag ? { ...r, flag: m.flag } : r })
   // MotoGP solo tiene datos vía cron Vercel → snapshot Supabase. Si snapshot
   // ausente, devuelve [] y meta='unavailable' (UI lo oculta con toggle).
   const motogpRidersR    = resolveSnapshot('motogp-pilotos',       [], 'motogp.com', '')

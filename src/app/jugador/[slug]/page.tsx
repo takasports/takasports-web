@@ -18,8 +18,9 @@ export const revalidate = 1800
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const player = await fetchPlayer(slug)
-  if (!player) return { title: 'Jugador | TakaSports' }
-  const title = `${player.name} · ${player.leagueLabel} | TakaSports`
+  if (!player) return { title: 'Jugador' }
+  // Sin sufijo " | TakaSports": el root layout ya aplica title.template '%s | TakaSports'.
+  const title = `${player.name} · ${player.leagueLabel}`
   const description = `${player.name}${player.position ? ` · ${player.position}` : ''}${
     player.team ? ` · ${player.team.name}` : ''
   } — estadísticas de la temporada en ${player.leagueLabel}`

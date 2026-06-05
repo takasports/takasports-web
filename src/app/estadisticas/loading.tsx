@@ -1,3 +1,6 @@
+import Header from '@/components/Header'
+import LiveStrip from '@/components/LiveStrip'
+
 function SkeletonBlock({ rows = 5, wide = false }: { rows?: number; wide?: boolean }) {
   return (
     <div
@@ -25,7 +28,12 @@ function SkeletonBlock({ rows = 5, wide = false }: { rows?: number; wide?: boole
 
 export default function EstadisticasLoading() {
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24 animate-pulse" style={{ paddingTop: 40 }}>
+    <>
+      {/* Header + LiveStrip reales: ocupan su sitio desde el primer paint para que
+          al hidratar el contenido no haya salto de layout (CLS). */}
+      <Header />
+      <LiveStrip />
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24 animate-pulse" style={{ paddingTop: 32 }}>
       {/* Title + subtitle */}
       <div className="rounded-xl mb-2" style={{ width: 220, height: 34, background: 'rgba(255,255,255,0.07)' }} />
       <div className="rounded-lg mb-8" style={{ width: 340, height: 16, background: 'rgba(255,255,255,0.04)' }} />
@@ -65,5 +73,6 @@ export default function EstadisticasLoading() {
         <SkeletonBlock rows={5} />
       </div>
     </div>
+    </>
   )
 }

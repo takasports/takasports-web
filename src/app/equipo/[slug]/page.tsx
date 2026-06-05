@@ -20,8 +20,9 @@ export const revalidate = 300
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const team = await fetchTeamDetail(slug)
-  if (!team) return { title: 'Equipo | TakaSports' }
-  const title = `${team.name} · ${team.leagueLabel} | TakaSports`
+  if (!team) return { title: 'Equipo' }
+  // Sin sufijo " | TakaSports": el root layout ya aplica title.template '%s | TakaSports'.
+  const title = `${team.name} · ${team.leagueLabel}`
   const description = team.standingSummary
     ? `${team.name} — ${team.standingSummary}. ${team.record?.summary ?? ''} en ${team.leagueLabel}`
     : `${team.name} · ${team.leagueLabel} en TakaSports`
