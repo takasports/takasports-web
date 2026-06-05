@@ -872,10 +872,11 @@ function formatFetchedAt(iso?: string): string {
   } catch { return '' }
 }
 
-function BlockJsonLd({ block, rows }: { block: StatBlock; rows: StatRow[] }) {
+function BlockJsonLd({ block, rows, isLive }: { block: StatBlock; rows: StatRow[]; isLive?: boolean }) {
   // Emit a structured ItemList per stats block so search engines can parse rankings.
-  // Only produce schema for blocks with real data and where ranks are meaningful.
-  if (!rows.length || block.placeholder) return null
+  // Solo para bloques realmente EN VIVO: no inyectamos a Google rankings obsoletos
+  // ni el fallback hardcodeado (no mentir / evita rich-results incorrectos).
+  if (!isLive || !rows.length || block.placeholder) return null
   const json = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -1286,7 +1287,7 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
           {expanded ? 'Ver menos ↑' : `Ver todos (${filteredRows.length}) ↓`}
         </button>
       )}
-      <BlockJsonLd block={block} rows={displayRows} />
+      <BlockJsonLd block={block} rows={displayRows} isLive={isLive} />
     </section>
   )
 }
@@ -2246,6 +2247,14 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         const { block: updated, isLive } = applyLivePlayerToBlock(block, livePlayerData, leagueFilter)
         if (isLive) return updated
       }
+      // No mentir: si el servidor marca el bloque 'unavailable' (su fuente devolvió
+      // vacío), NO mostramos las filas hardcodeadas del config como si fueran
+      // actuales. Las vaciamos → el bloque pinta "Datos no disponibles" y el toggle
+      // de vacíos lo oculta, en vez de datos viejos (NBA 24/25, femenino Sam Kerr…).
+      if (liveData && !block.placeholder && block.rows.length > 0) {
+        const m = getBlockMeta(block.id, liveData.meta, block.cardType)
+        if (m?.status === 'unavailable') return { ...block, rows: [] }
+      }
       return block
     })
   }
@@ -2632,7 +2641,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
             {applyLive(FUTBOL_FEMENINO_BLOCKS).map(block => (
               <StatBlockBoundary key={block.id} blockId={block.id}>
-                <StatBlockCard block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={LIVE_BLOCK_IDS.has(block.id) && !!liveData} meta={getBlockMeta(block.id, liveData?.meta)} isFav={favorites.has(block.id)} onToggleFav={() => toggleFav(block.id)} />
+                <StatBlockCard block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={isBlockLive(block)} meta={getBlockMeta(block.id, liveData?.meta)} isFav={favorites.has(block.id)} onToggleFav={() => toggleFav(block.id)} />
               </StatBlockBoundary>
             ))}
           </div>
