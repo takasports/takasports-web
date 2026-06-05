@@ -15,27 +15,6 @@ export function localDateToIso(localDate: string): Date {
   return new Date(`${year}-${month}-${day}T12:00:00Z`)
 }
 
-export function getDateLabel(idx: number): string {
-  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-  const today = new Date(isoToLocalDate(new Date().toISOString()) + 'T12:00:00Z')
-  const target = new Date(today)
-  target.setDate(target.getDate() + idx)
-  const dayName = days[target.getUTCDay()]
-  const dayNum = target.getUTCDate()
-  return idx === 0 ? 'Hoy' : idx === 1 ? 'Mañana' : `${dayName} ${dayNum}`
-}
-
-export function generateWeek(): { iso: string; label: string }[] {
-  const todayIso = isoToLocalDate(new Date().toISOString())
-  return Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(todayIso + 'T12:00:00Z')
-    d.setDate(d.getDate() + i)
-    const iso = d.toISOString().split('T')[0]
-    const label = getDateLabel(i)
-    return { iso, label }
-  })
-}
-
 export function normalizeStr(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '')
 }
@@ -80,39 +59,4 @@ export function formatDateLabel(localDate: string): string {
   const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
   const d = new Date(localDate + 'T12:00:00Z')
   return `${days[d.getUTCDay()]} ${d.getUTCDate()} ${months[d.getUTCMonth()]}`
-}
-
-// Make Google Calendar URL
-export function makeGoogleCalendarUrl(event: SportEvent, tz: string): string {
-  if (!event.isoDate) return '#'
-  const start = new Date(event.isoDate)
-  const end = new Date(start.getTime() + 2 * 3_600_000)
-  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z'
-  const title = event.away ? `${event.home} vs ${event.away}` : event.home
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: title,
-    dates: `${fmt(start)}/${fmt(end)}`,
-    details: `${event.sport} · ${event.comp}`,
-    ctz: tz,
-  })
-  return `https://calendar.google.com/calendar/render?${params.toString()}`
-}
-
-// Schedule browser notification
-export async function requestAndScheduleNotif(event: SportEvent): Promise<ReturnType<typeof setTimeout> | null> {
-  if (typeof window === 'undefined' || !('Notification' in window) || !event.isoDate) return null
-  const perm = Notification.permission === 'granted'
-    ? 'granted'
-    : await Notification.requestPermission()
-  if (perm !== 'granted') return null
-  const delay = new Date(event.isoDate).getTime() - Date.now() - 15 * 60_000
-  if (delay < 0) return null
-  const title = event.away ? `${event.home} vs ${event.away}` : event.home
-  return setTimeout(() => {
-    new Notification(`⏰ En 15 min: ${title}`, {
-      body: `${event.comp} · ${event.time}`,
-      icon: '/favicon.ico',
-    })
-  }, delay)
 }

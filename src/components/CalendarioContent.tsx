@@ -4,14 +4,14 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
-import { getCompAccent, getLeagueScore, getEventHighlightScore, SPORT_EMOJI, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
+import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
 import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime } from '@/lib/timezone'
 import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
-import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, TrophyIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
+import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
 
 // ── Favorites helpers ──────────────────────────────────────────
 function isFavorite(favorites: Set<string>, name: string | null | undefined): boolean {
@@ -429,35 +429,6 @@ function BroadcastChip({ comp, sport, tz, fallback }: {
       <span className="inline-flex items-center"><TvIcon size={11} /></span>
       <span className="truncate max-w-[110px]">{channel}</span>
     </span>
-  )
-}
-
-// ─── Skeleton row (loading state) ─────────────────────────────────────────
-function SkeletonRow() {
-  return (
-    <div
-      className="grid items-center gap-3 px-3 py-2.5 rounded-lg animate-pulse"
-      style={{
-        gridTemplateColumns: '1fr auto auto',
-        background: 'rgba(255,255,255,0.025)',
-        borderLeft: '3px solid rgba(255,255,255,0.06)',
-      }}
-    >
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-2">
-          <div style={{ width: 24, height: 24, background: 'rgba(255,255,255,0.08)', borderRadius: '50%', flexShrink: 0 }} />
-          <div style={{ height: 11, width: '55%', background: 'rgba(255,255,255,0.07)', borderRadius: 3 }} />
-        </div>
-        <div className="flex items-center gap-2">
-          <div style={{ width: 24, height: 24, background: 'rgba(255,255,255,0.08)', borderRadius: '50%', flexShrink: 0 }} />
-          <div style={{ height: 11, width: '45%', background: 'rgba(255,255,255,0.07)', borderRadius: 3 }} />
-        </div>
-      </div>
-      <div className="flex flex-col items-end gap-1">
-        <div style={{ height: 10, width: 40, background: 'rgba(255,255,255,0.06)', borderRadius: 3 }} />
-      </div>
-      <div style={{ width: 28, height: 28, background: 'rgba(255,255,255,0.05)', borderRadius: 6 }} />
-    </div>
   )
 }
 
@@ -1400,7 +1371,7 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
-type ViewType = 'destacados' | 'todos' | 'en-vivo' | 'resultados' | 'recordatorios'
+type ViewType = 'todos' | 'resultados' | 'recordatorios'
 
 type FormResult = 'W' | 'D' | 'L'
 
@@ -1424,7 +1395,6 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const [onlyLive, setOnlyLive] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set())
-  const [hasLoaded, setHasLoaded] = useState(false)
   // Histórico extendido (pestaña Resultados) — busca/pagina contra /api/events/past
   const [pastRange, setPastRange] = useState<'10d' | '30d' | '90d' | 'all'>('10d')
   const [extraPast, setExtraPast] = useState<SportEvent[]>([])
@@ -1457,7 +1427,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       // ── Restore prefs: URL takes priority over localStorage ─────
       const params = new URLSearchParams(window.location.search)
 
-      const urlView   = params.get('v') as ViewType | null
+      const urlView   = params.get('v')
       const urlSport  = params.get('sport')
       const urlDate   = params.get('d')
 
@@ -1473,18 +1443,19 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         localStorage.setItem('ts_cal_v3_chip', '1')
       }
 
-      const savedView  = v3Migrated ? (localStorage.getItem('ts_cal_view') as ViewType | null) : null
+      const savedView  = v3Migrated ? localStorage.getItem('ts_cal_view') : null
       const savedSport = v3Migrated ? localStorage.getItem('ts_cal_sport') : null
 
       // Legacy aliases: 'en-vivo' e 'destacados' (Inicio) fueron absorbidos
       // por el chip Destacados dentro del tab Calendario. Cualquier URL o
       // localStorage que apunte a esos valores cae a 'todos' (Calendario).
-      const normalizedView: ViewType | null =
-        (urlView === 'en-vivo' || urlView === 'destacados') ? 'todos' : urlView
-      if (normalizedView && ['todos','resultados','recordatorios'].includes(normalizedView)) {
-        setView(normalizedView)
-      } else if (savedView && savedView !== ('en-vivo' as ViewType) && savedView !== ('destacados' as ViewType)) {
-        setView(savedView)
+      // Legacy: 'en-vivo'/'destacados' (vistas retiradas) caen a 'todos'.
+      const VALID_VIEWS: ViewType[] = ['todos', 'resultados', 'recordatorios']
+      const normalizedView = (urlView === 'en-vivo' || urlView === 'destacados') ? 'todos' : urlView
+      if (normalizedView && VALID_VIEWS.includes(normalizedView as ViewType)) {
+        setView(normalizedView as ViewType)
+      } else if (savedView && VALID_VIEWS.includes(savedView as ViewType)) {
+        setView(savedView as ViewType)
       }
 
       if (urlSport) setActiveFilter(urlSport)
@@ -1502,7 +1473,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       localStorage.setItem('ts_cal_view', view)
       localStorage.setItem('ts_cal_sport', activeFilter)
       const params = new URLSearchParams(window.location.search)
-      if (view !== 'destacados') params.set('v', view); else params.delete('v')
+      if (view !== 'todos') params.set('v', view); else params.delete('v')
       if (activeFilter !== 'Todo') params.set('sport', activeFilter); else params.delete('sport')
       if (selectedDate) params.set('d', selectedDate); else params.delete('d')
       const qs = params.toString()
@@ -1516,14 +1487,6 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     const t = setTimeout(() => setSearch(searchRaw), 220)
     return () => clearTimeout(t)
   }, [searchRaw])
-
-  // Mark first liveScores arrival so we can hide skeletons
-  useEffect(() => {
-    if (!hasLoaded) {
-      const t = setTimeout(() => setHasLoaded(true), 400)
-      return () => clearTimeout(t)
-    }
-  }, [hasLoaded])
 
   // Detect score changes → trigger flash animation
   useEffect(() => {
@@ -1652,17 +1615,6 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // que limita a los top 4 partidos por día por prestigio de liga + favoritos.
   const sports = ['Destacados', 'Todo', ...new Set([...events, ...pastEvents].map(e => e.sport)).values()]
 
-  // Count events per sport for the current view (upcoming events). Used in the
-  // sport filter chips so the user sees how many events each category has.
-  const sportCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const ev of events) {
-      counts[ev.sport] = (counts[ev.sport] ?? 0) + 1
-    }
-    counts['Todo'] = events.length
-    return counts
-  }, [events])
-
   const filtered = useMemo(() => {
     const matchesSearch = (e: SportEvent) =>
       !search
@@ -1733,68 +1685,6 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     () => filtered.filter(e => liveScores.has(e.id) && !FINISHED.has(liveScores.get(e.id)?.status ?? '')),
     [filtered, liveScores]
   )
-
-  const topUpcoming = useMemo(() => {
-    const liveIds = new Set(liveEventsInList.map(e => e.id))
-    const list = filtered
-      .filter(e => !liveIds.has(e.id))
-      .sort((a, b) => {
-        if (selectedDate) {
-          return (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
-        }
-        const sA = getLeagueScore(a.comp)
-        const sB = getLeagueScore(b.comp)
-        if (sA !== sB) return sB - sA
-        return (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
-      })
-    return selectedDate ? list : list.slice(0, 20)
-  }, [filtered, liveEventsInList, selectedDate])
-
-  // Inferimos los deportes que le interesan al usuario a partir de sus
-  // equipos favoritos: cada deporte donde aparece al menos un evento
-  // con un equipo favorito. Si el usuario filtró por deporte, respetamos
-  // el filtro y solo devolvemos ese.
-  const favoriteSports = useMemo(() => {
-    if (activeFilter !== 'Todo') return new Set<string>([activeFilter])
-    if (favorites.size === 0) return new Set<string>()
-    const set = new Set<string>()
-    for (const ev of events) {
-      if (eventHasFavorite(favorites, ev)) set.add(ev.sport)
-    }
-    return set
-  }, [events, favorites, activeFilter])
-
-  // Listado único de destacados para la pestaña Inicio.
-  // Mezcla en una sola lista corta priorizando: favoritos del usuario →
-  // top de sus deportes favoritos → top general. Sin duplicar IDs y
-  // excluyendo lo que ya está en vivo (que vive en la franja superior).
-  // El cap (~12) evita la sensación de scroll infinito al entrar.
-  const destacadosFeed = useMemo(() => {
-    if (selectedDate) return topUpcoming
-    const liveIds = new Set(liveEventsInList.map(e => e.id))
-    const seen = new Set<string>()
-    const out: SportEvent[] = []
-    const CAP = 12
-    const add = (events: SportEvent[], maxN: number) => {
-      let n = 0
-      for (const ev of events) {
-        if (out.length >= CAP || n >= maxN) break
-        if (seen.has(ev.id) || liveIds.has(ev.id)) continue
-        seen.add(ev.id)
-        out.push(ev)
-        n++
-      }
-    }
-    // 1. Favoritos primero (proximidad temporal)
-    add(favoriteEvents, 4)
-    // 2. Top de cada deporte favorito (2 por deporte)
-    for (const sport of favoriteSports) {
-      add(topUpcoming.filter(e => e.sport === sport), 2)
-    }
-    // 3. Top general — rellenar hasta el cap
-    add(topUpcoming, CAP - out.length)
-    return out
-  }, [favoriteEvents, favoriteSports, topUpcoming, liveEventsInList, selectedDate])
 
   const orphanFixtures = useMemo(() => {
     const LIVE_TO_SPORT: Record<string, string> = {
@@ -2166,7 +2056,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       </div>
 
       {/* Day chips + Toolbar (sticky on scroll) */}
-      {view !== 'en-vivo' && view !== 'recordatorios' && view !== 'resultados' && (
+      {view === 'todos' && (
         <div
           className="mb-4 -mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-4 sm:px-6 xl:px-10 pt-2 pb-3"
           style={{
@@ -2286,201 +2176,6 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       )}
 
       {/* Content */}
-      {view === 'destacados' && (
-        <div className="space-y-7">
-          {/* 1. En Vivo Ahora — siempre arriba si hay vivos */}
-          {liveCount > 0 && (
-            <section>
-              <SectionHeader
-                icon={<LiveDotIcon size={8} />}
-                label="En Vivo Ahora"
-                color="#EF4444"
-                count={liveCount}
-                hint={liveCount > 3 ? '← desliza →' : undefined}
-              />
-              <LiveHeroStrip items={liveHeroCards} />
-            </section>
-          )}
-
-          {/* Skeleton mientras carga la primera tanda de live data */}
-          {!hasLoaded && liveCount === 0 && (
-            <section>
-              <SectionHeader icon="⏳" label="Cargando…" color="#5A5A6A" />
-              <div className="space-y-1.5">
-                {[1,2,3].map(i => <SkeletonRow key={i} />)}
-              </div>
-            </section>
-          )}
-
-          {/* 2. CTA para usuarios nuevos sin favoritos */}
-          {favorites.size === 0 && filtered.length > 0 && !onlyLive && (
-            <section
-              className="rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4"
-              style={{
-                background: 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(244,114,182,0.08) 100%)',
-                border: '1px solid rgba(124,58,237,0.28)',
-              }}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em]"
-                    style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
-                    Personaliza tu Inicio
-                  </span>
-                </div>
-                <p className="text-[14px] leading-snug font-bold mb-1" style={{ color: '#F0F0FA', fontFamily: 'var(--font-sport)' }}>
-                  Elige tus equipos favoritos y verás aquí sus próximos partidos, formaciones recientes y aviso cuando estén por jugar.
-                </p>
-                <p className="text-[11px]" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
-                  Lleva 30 segundos · puedes cambiarlo cuando quieras.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowOnboarding(true)}
-                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[11px] font-black uppercase tracking-[0.16em] transition-all"
-                style={{
-                  background: '#7C3AED', color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  fontFamily: 'var(--font-sport)', cursor: 'pointer',
-                  boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
-                }}
-              >
-                ♥ Elegir equipos
-              </button>
-            </section>
-          )}
-
-          {/* 3. Estado de tus equipos — solo los chips para tener visibilidad
-              rápida; los partidos se mezclan en el feed unificado de abajo. */}
-          {favorites.size > 0 && !onlyLive && !selectedDate && (
-            <FavoritesSection
-              favoriteEvents={favoriteEvents}
-              favorites={favorites}
-              liveScores={liveScores}
-              reminders={reminders}
-              flashIds={flashIds}
-              recentForms={recentForms}
-              tz={tz}
-              toggleReminder={toggleReminder}
-              toggleFavorite={toggleFavorite}
-              setSelectedUFCDate={setSelectedUFCDate}
-              onEdit={() => setShowOnboarding(true)}
-              filterActive={activeFilter !== 'Todo' || !!search}
-              chipsOnly
-            />
-          )}
-
-          {/* 4. Partidos destacados — listado único curado, máximo 12 */}
-          {destacadosFeed.length > 0 && (
-            <section>
-              <SectionHeader
-                icon="⭐"
-                label={selectedDate
-                  ? `Partidos · ${formatDateLabel(selectedDate)}`
-                  : favorites.size > 0
-                    ? 'Para ti'
-                    : 'Partidos destacados'}
-                color="#C4B5FD"
-                count={destacadosFeed.length}
-              />
-              <div className="space-y-1.5">
-                {destacadosFeed.map(event => {
-                  const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
-                  const today = isoToLocalDate(new Date().toISOString())
-                  const dateLabel = !selectedDate && evDate && evDate !== today ? formatDateLabel(evDate) : undefined
-                  const fav = eventHasFavorite(favorites, event)
-                  return (
-                    <MatchRow
-                      key={event.id}
-                      event={event}
-                      liveScore={liveScores.get(event.id)}
-                      isReminded={reminders.has(event.id)}
-                      onToggleReminder={() => toggleReminder(event.id)}
-                      dateLabel={dateLabel}
-                      onClickUFC={setSelectedUFCDate}
-                      flashing={flashIds.has(event.id)}
-                      isFav={fav}
-                      onToggleFav={() => toggleFavorite(event.home)}
-                      formHome={recentForms[event.home]}
-                      formAway={event.away ? recentForms[event.away] : undefined}
-                      showComp
-                      tz={tz}
-                    />
-                  )
-                })}
-              </div>
-              {!selectedDate && (
-                <div className="flex justify-center mt-4">
-                  <button
-                    onClick={() => setView('todos')}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.16em] transition-all"
-                    style={{
-                      color: '#C4B5FD',
-                      background: 'rgba(124,58,237,0.12)',
-                      border: '1px solid rgba(124,58,237,0.32)',
-                      fontFamily: 'var(--font-sport)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Ver toda la agenda
-                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                      <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-            </section>
-          )}
-
-          {filtered.length === 0 && liveCount === 0 && (
-            <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="mb-2 flex justify-center" style={{ color: '#5A5A6A' }}>
-                {search
-                  ? <SearchIcon size={32} />
-                  : activeFilter !== 'Todo'
-                    ? <SportIcon sport={activeFilter} size={32} />
-                    : <CalendarIcon size={32} />}
-              </p>
-              <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
-                {search
-                  ? `Sin resultados para "${search}"`
-                  : activeFilter !== 'Todo'
-                    ? `No hay eventos de ${activeFilter} en los próximos días`
-                    : 'No se encontraron eventos'}
-              </p>
-              {search && (
-                <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>Prueba con el nombre del equipo o la competición</p>
-              )}
-              {!search && activeFilter !== 'Todo' && (
-                <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>Prueba seleccionando otra fecha o cambia el filtro</p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {view === 'en-vivo' && (
-        <div>
-          {liveCount === 0 ? (
-            <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="mb-2 flex justify-center" style={{ color: '#5A5A6A' }}><TvIcon size={28} /></p>
-              <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
-                No hay partidos en vivo ahora
-              </p>
-              <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>
-                Vuelve más tarde o explora los próximos eventos
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-              {liveHeroCards.map((card, i) => (
-                <div key={i} className="contents">{card}</div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {view === 'todos' && (
         <div className="space-y-10">
           {/* Live strip at top of TODOS view */}
