@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { tfetch } from '@/lib/stats-cache'
 import { SOCCER_LEAGUES } from '@/lib/stats-leagues'
 
 export interface PlayerLeader {
@@ -85,7 +86,7 @@ async function fetchEspnLeague(
 ): Promise<Pick<LeaguePlayerData, 'id' | 'label' | 'goals' | 'assists'>> {
   const url = `https://site.api.espn.com/apis/site/v2/sports/${league.slug}/statistics`
   try {
-    const res = await fetch(url, { next: { revalidate: 1800 } })
+    const res = await tfetch(url, { next: { revalidate: 1800 } })
     if (!res.ok) return { id: league.id, label: league.label, goals: [], assists: [] }
     const json = await res.json()
     const stats = (json.stats ?? []) as EspnStat[]
@@ -131,7 +132,7 @@ async function fetchCoreLeaders(
   const url = `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${league.id}/seasons/${SEASON_START}/types/1/leaders?lang=en`
   const out: Record<string, RawEntry[]> = {}
   try {
-    const res = await fetch(url, { next: { revalidate: 86400 } })
+    const res = await tfetch(url, { next: { revalidate: 86400 } })
     if (!res.ok) return out
     const json = await res.json()
     const cats = (json.categories ?? []) as CoreCategory[]
@@ -157,7 +158,7 @@ async function resolveAthleteName(slug: string, id: string): Promise<string> {
   // slug is "soccer/esp.1" → core path needs sports/<sport>/leagues/<leagueId>
   const [sport, leagueId] = slug.split('/')
   try {
-    const r = await fetch(
+    const r = await tfetch(
       `https://sports.core.api.espn.com/v2/sports/${sport}/leagues/${leagueId}/seasons/${SEASON_START}/athletes/${id}?lang=en`,
       { next: { revalidate: 86400 } },
     )
@@ -218,5 +219,6 @@ export async function GET() {
   ])
   return NextResponse.json(
     { leagues, combined, season: SEASON_LABEL, updatedAt: new Date().toISOString() } satisfies PlayersResponse,
+    { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } },
   )
 }

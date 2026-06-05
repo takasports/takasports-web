@@ -6,7 +6,7 @@ import {
   type StandingRow,
 } from '@/lib/stats-editorial'
 export type { StandingRow } from '@/lib/stats-editorial'
-import { withStaleFallback } from '@/lib/stats-cache'
+import { withStaleFallback, tfetch } from '@/lib/stats-cache'
 import { espnStandingsSchema, jolpicaDriverStandingsSchema, safeParse } from '@/lib/stats-schemas'
 import { loadAllSnapshots, type StatSnapshot } from '@/lib/stat-snapshots'
 import { UFC_DIVISIONS } from '@/lib/ufc-scraper'
@@ -112,7 +112,7 @@ async function fetchFootball(slug: string, id: string, label: string): Promise<L
     `football:${slug}`,
     30 * 60_000,
     async () => {
-      const res = await fetch(`${BASE}/${slug}/standings`, { next: { revalidate: 1800 } })
+      const res = await tfetch(`${BASE}/${slug}/standings`, { next: { revalidate: 1800 } })
       if (!res.ok) throw new Error(`espn ${res.status}`)
       const json = await res.json()
       const parsed = safeParse(espnStandingsSchema, json, `football:${slug}`)
@@ -148,6 +148,7 @@ async function fetchFootball(slug: string, id: string, label: string): Promise<L
     fallback,
   )
   if (result.stale) staleSet.add(id)
+  else staleSet.delete(id)   // se recuperó: deja de marcarlo stale (antes quedaba pegado)
   return result.data
 }
 
@@ -174,7 +175,7 @@ const CTOR_ABBR: Record<string, string> = {
 async function fetchF1All(): Promise<F1Result> {
   const empty: F1Result = { drivers: [], constructors: [], poles: [], fastestLaps: [], season: '', round: '' }
   try {
-    const dr = await fetch('https://api.jolpi.ca/ergast/f1/current/driverstandings.json', { next: { revalidate: 3600 } })
+    const dr = await tfetch('https://api.jolpi.ca/ergast/f1/current/driverstandings.json', { next: { revalidate: 3600 } })
     if (!dr.ok) return empty
     const dj = await dr.json()
     const validated = safeParse(jolpicaDriverStandingsSchema, dj, 'f1:drivers')
@@ -196,7 +197,7 @@ async function fetchF1All(): Promise<F1Result> {
       }
     })
 
-    const cr = await fetch('https://api.jolpi.ca/ergast/f1/current/constructorstandings.json', { next: { revalidate: 3600 } })
+    const cr = await tfetch('https://api.jolpi.ca/ergast/f1/current/constructorstandings.json', { next: { revalidate: 3600 } })
     let constructors: StandingRow[] = []
     if (cr.ok) {
       const cj = await cr.json()
@@ -231,7 +232,7 @@ async function fetchF1All(): Promise<F1Result> {
 async function fetchF1Poles(season: string): Promise<StandingRow[]> {
   if (!season) return []
   try {
-    const res = await fetch(`https://api.jolpi.ca/ergast/f1/${season}/qualifying.json?limit=100`, { next: { revalidate: 86400 } })
+    const res = await tfetch(`https://api.jolpi.ca/ergast/f1/${season}/qualifying.json?limit=100`, { next: { revalidate: 86400 } })
     if (!res.ok) return []
     const json = await res.json()
     const races = (json.MRData?.RaceTable?.Races ?? []) as Record<string, unknown>[]
@@ -255,7 +256,7 @@ async function fetchF1Poles(season: string): Promise<StandingRow[]> {
 async function fetchF1FastestLaps(season: string): Promise<StandingRow[]> {
   if (!season) return []
   try {
-    const res = await fetch(`https://api.jolpi.ca/ergast/f1/${season}/fastest/1/results.json?limit=100`, { next: { revalidate: 86400 } })
+    const res = await tfetch(`https://api.jolpi.ca/ergast/f1/${season}/fastest/1/results.json?limit=100`, { next: { revalidate: 86400 } })
     if (!res.ok) return []
     const json = await res.json()
     const races = (json.MRData?.RaceTable?.Races ?? []) as Record<string, unknown>[]
@@ -284,7 +285,7 @@ async function fetchNBA(): Promise<{ east: StandingRow[]; west: StandingRow[] }>
     'nba:standings',
     30 * 60_000,
     async () => {
-      const res = await fetch(`${BASE}/basketball/nba/standings`, { next: { revalidate: 1800 } })
+      const res = await tfetch(`${BASE}/basketball/nba/standings`, { next: { revalidate: 1800 } })
       if (!res.ok) throw new Error(`espn ${res.status}`)
       const json = await res.json()
       const children = (json?.children as Record<string, unknown>[]) ?? []
@@ -323,6 +324,7 @@ async function fetchNBA(): Promise<{ east: StandingRow[]; west: StandingRow[] }>
     fallback,
   )
   if (result.stale) { staleSet.add('nbaEast'); staleSet.add('nbaWest') }
+  else { staleSet.delete('nbaEast'); staleSet.delete('nbaWest') }
   return result.data
 }
 
@@ -339,7 +341,7 @@ function nbaSeasonLabel(): string {
 
 async function fetchNBAStatCategory(stat: string, season: string, scope: 'S' | 'Rookies' = 'S'): Promise<StandingRow[]> {
   try {
-    const res = await fetch(
+    const res = await tfetch(
       `https://stats.nba.com/stats/leagueleaders?LeagueID=00&PerMode=PerGame&Scope=${scope}&Season=${season}&SeasonType=Regular+Season&StatCategory=${stat}`,
       {
         headers: {
@@ -397,7 +399,7 @@ function fetchUFCP4P(): Promise<StandingRow[]> {
 
 async function fetchWomenLigaF(): Promise<StandingRow[]> {
   try {
-    const res = await fetch(`${BASE}/soccer/esp.w.1/standings`, { next: { revalidate: 3600 } })
+    const res = await tfetch(`${BASE}/soccer/esp.w.1/standings`, { next: { revalidate: 3600 } })
     if (!res.ok) return []
     const json = await res.json()
     const firstChild = ((json?.children as Record<string, unknown>[] | undefined)?.[0]) as Record<string, unknown> | undefined
@@ -422,7 +424,7 @@ async function fetchWomenLigaF(): Promise<StandingRow[]> {
 async function fetchWomenStats(): Promise<{ goals: StandingRow[]; assists: StandingRow[] }> {
   const empty = { goals: [], assists: [] }
   try {
-    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/esp.w.1/statistics', { next: { revalidate: 3600 } })
+    const res = await tfetch('https://site.api.espn.com/apis/site/v2/sports/soccer/esp.w.1/statistics', { next: { revalidate: 3600 } })
     if (!res.ok) return empty
     const json = await res.json()
     const stats = (json.stats ?? []) as Array<{ name: string; displayName: string; leaders: Array<{ displayValue: string; value: number; athlete: { displayName: string; team?: { displayName: string } } }> }>
@@ -445,7 +447,7 @@ async function fetchTennis(): Promise<{ atp: StandingRow[]; wta: StandingRow[] }
   const fallback = { atp: [], wta: [] }
   const parse = async (tour: 'atp' | 'wta'): Promise<StandingRow[]> => {
     try {
-      const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/tennis/${tour}/rankings`, { next: { revalidate: 1800 } })
+      const res = await tfetch(`https://site.api.espn.com/apis/site/v2/sports/tennis/${tour}/rankings`, { next: { revalidate: 1800 } })
       if (!res.ok) return []
       const json = await res.json()
       const ranks: Record<string, unknown>[] = (json?.rankings?.[0]?.ranks as Record<string, unknown>[]) ?? []
@@ -491,7 +493,7 @@ function soccerSeasonShort(): string {
 async function fetchCoachRecords(): Promise<StandingRow[]> {
   const results = await Promise.allSettled(
     COACH_CONFIG.map(async coach => {
-      const res = await fetch(
+      const res = await tfetch(
         `https://site.api.espn.com/apis/site/v2/sports/soccer/${coach.league}/teams/${coach.teamId}`,
         { next: { revalidate: 3600 } }
       )
@@ -533,7 +535,7 @@ async function fetchCoachRecords(): Promise<StandingRow[]> {
 
 async function fetchWorldCup(): Promise<LeagueStandings[]> {
   try {
-    const res = await fetch(`${BASE}/soccer/fifa.world/standings`, { next: { revalidate: 1800 } })
+    const res = await tfetch(`${BASE}/soccer/fifa.world/standings`, { next: { revalidate: 1800 } })
     if (!res.ok) return []
     const json = await res.json()
     const children = (json.children as Record<string, unknown>[]) ?? []
@@ -577,7 +579,7 @@ async function fetchWorldCup(): Promise<LeagueStandings[]> {
 
 async function fetchWorldCupKnockout(): Promise<StandingRow[]> {
   try {
-    const res = await fetch(
+    const res = await tfetch(
       'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard',
       { next: { revalidate: 300 } },
     )
@@ -643,7 +645,7 @@ async function fetchWorldCupKnockout(): Promise<StandingRow[]> {
 
 async function fetchEuropeanCupFixtures(slug: string): Promise<StandingRow[]> {
   try {
-    const res = await fetch(
+    const res = await tfetch(
       `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
       { next: { revalidate: 300 } },
     )
@@ -717,7 +719,7 @@ async function fetchEuropeanCupLeaders(
   kind: 'goals' | 'assists',
 ): Promise<StandingRow[]> {
   try {
-    const res = await fetch(
+    const res = await tfetch(
       `https://site.api.espn.com/apis/site/v2/sports/${slug}/statistics`,
       { next: { revalidate: 1800 } },
     )
@@ -747,7 +749,7 @@ async function fetchEuropeanCupLeaders(
 async function fetchF1Calendar(season: string): Promise<StandingRow[]> {
   if (!season) return []
   try {
-    const res = await fetch(`https://api.jolpi.ca/ergast/f1/${season}.json`, { next: { revalidate: 86400 } })
+    const res = await tfetch(`https://api.jolpi.ca/ergast/f1/${season}.json`, { next: { revalidate: 86400 } })
     if (!res.ok) return []
     const json = await res.json()
     const races = (json.MRData?.RaceTable?.Races ?? []) as Record<string, unknown>[]
@@ -780,7 +782,7 @@ async function fetchF1Calendar(season: string): Promise<StandingRow[]> {
 async function fetchF1Sprints(season: string): Promise<StandingRow[]> {
   if (!season) return []
   try {
-    const res = await fetch(`https://api.jolpi.ca/ergast/f1/${season}/sprint.json?limit=100`, {
+    const res = await tfetch(`https://api.jolpi.ca/ergast/f1/${season}/sprint.json?limit=100`, {
       next: { revalidate: 86400 },
     })
     if (!res.ok) return []
@@ -1033,7 +1035,7 @@ async function fetchWorldCupSchedule(): Promise<StandingRow[]> {
     const start = now < new Date('2026-06-11') ? new Date('2026-06-11') : now
     const end = new Date(start.getTime() + 14 * 86400_000)
     const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
-    const res = await fetch(
+    const res = await tfetch(
       `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${fmt(start)}-${fmt(end)}`,
       { next: { revalidate: 600 } },
     )
@@ -1330,8 +1332,12 @@ export function shardStandingsForSport(
 export async function GET(req: NextRequest) {
   const data = await getStandingsData()
   const sport = req.nextUrl.searchParams.get('sport')?.toLowerCase()
+  // El CDN sirve la misma respuesta ~60s a todos los clientes (evita reconstruir
+  // el árbol de ~40 fetches en cada request). Los datos ya tienen su propio
+  // revalidate por fetch, así que 60s extra de caché de respuesta es inocuo.
+  const headers = { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' }
   if (sport && SPORT_KEYS[sport]) {
-    return NextResponse.json(shardStandingsForSport(data, sport))
+    return NextResponse.json(shardStandingsForSport(data, sport), { headers })
   }
-  return NextResponse.json(data)
+  return NextResponse.json(data, { headers })
 }

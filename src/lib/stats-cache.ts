@@ -48,3 +48,17 @@ export async function withStaleFallback<T>(
     return { data: fallback, stale: false }
   }
 }
+
+/** Deadline por fetch: evita que un upstream colgado (acepta la conexión pero no
+ *  responde) bloquee toda la ruta hasta el límite de la función serverless. */
+export const FETCH_TIMEOUT_MS = 6000
+
+/**
+ * `fetch` con timeout. Si el upstream no responde en FETCH_TIMEOUT_MS, el
+ * AbortSignal aborta y el fetch rechaza; lo atrapan los try/catch de cada
+ * fetcher (o withStaleFallback) → devuelven vacío/stale, nunca un 500.
+ * Conserva las opciones de Next (`next: { revalidate }`, headers, etc.).
+ */
+export function tfetch(input: string, init?: RequestInit): Promise<Response> {
+  return fetch(input, { ...init, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
+}
