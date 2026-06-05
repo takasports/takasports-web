@@ -22,6 +22,11 @@ const SOURCES: EspnSource[] = [
   { slug: 'soccer/ger.1',             sport: 'Fútbol',  comp: 'Bundesliga', teamSport: true  },
   { slug: 'soccer/fra.1',             sport: 'Fútbol',  comp: 'Ligue 1',    teamSport: true  },
   { slug: 'soccer/esp.copa_del_rey',  sport: 'Fútbol',  comp: 'Copa Rey',   teamSport: true  },
+  // Selecciones y torneos FIFA (Mundial 2026, amistosos de fechas FIFA, Mundial de Clubes)
+  { slug: 'soccer/fifa.world',        sport: 'Fútbol',  comp: 'Mundial',           teamSport: true  },
+  { slug: 'soccer/fifa.cwc',          sport: 'Fútbol',  comp: 'Mundial de Clubes', teamSport: true  },
+  { slug: 'soccer/fifa.friendly',     sport: 'Fútbol',  comp: 'Amistoso',          teamSport: true  },
+  { slug: 'soccer/fifa.friendly.w',   sport: 'Fútbol',  comp: 'Amistoso (F)',      teamSport: true  },
   { slug: 'basketball/nba',           sport: 'NBA',     comp: 'NBA',        teamSport: true  },
   { slug: 'racing/f1',                sport: 'F1',      comp: 'Fórmula 1',  teamSport: false },
   { slug: 'mma/ufc',                  sport: 'UFC',     comp: 'UFC',        teamSport: false },

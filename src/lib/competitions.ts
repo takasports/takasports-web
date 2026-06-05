@@ -23,6 +23,10 @@ export const COMP_ACCENT: Record<string, string> = {
   'WPT': '#22d3ee',
   'Pádel': '#22d3ee',
   'Premier Padel': '#06b6d4',
+  // Selecciones / FIFA — 'Mundial de Clubes' antes que 'Mundial' (match por substring)
+  'Mundial de Clubes': '#0EA5E9',
+  'Mundial': '#16A34A',
+  'Amistoso': '#94A3B8',
 }
 
 export function getCompAccent(comp: string, fallback = '#7C3AED'): string {
@@ -84,6 +88,10 @@ export const LEAGUE_IMPORTANCE: Record<string, number> = {
   'WPT': 6,
   'Pádel': 5,
   'Europa': 6,
+  // Selecciones / FIFA — 'Mundial de Clubes' antes que 'Mundial' (match por substring)
+  'Mundial de Clubes': 9,
+  'Mundial': 12,
+  'Amistoso': 3,
 }
 
 export function getLeagueScore(comp: string): number {
