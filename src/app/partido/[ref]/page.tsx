@@ -700,15 +700,17 @@ function getFormationPositions(formation: string | undefined, side: 'home' | 'aw
   const lines = raw.length > 0 ? raw : [4, 4, 2]
   const positions: [number, number][] = []
 
-  // GK
-  positions.push([50, side === 'home' ? 88 : 12])
+  // GK — cada equipo pegado a su portería
+  positions.push([50, side === 'home' ? 93 : 7])
 
   for (let li = 0; li < lines.length; li++) {
     const count = lines[li]
     const ratio = lines.length > 1 ? li / (lines.length - 1) : 0
+    // Cada equipo se queda en SU mitad; los delanteros se encuentran cerca del
+    // centro sin invadir la mitad rival (evita que se mezclen las dos plantillas).
     const y = side === 'home'
-      ? 72 - ratio * 44   // defenders → 72%, forwards → 28%
-      : 28 + ratio * 44   // defenders → 28%, forwards → 72%
+      ? 80 - ratio * 25   // home: defensas 80% → delanteros 55%
+      : 20 + ratio * 25   // away: defensas 20% → delanteros 45%
     for (let i = 0; i < count; i++) {
       const x = (i + 1) * 100 / (count + 1)
       positions.push([x, y])
@@ -727,17 +729,59 @@ function lineupHref(leagueSlug: string | undefined, p: LineupPlayer): string | u
   return leagueSlug && p.id ? `/jugador/${leagueSlug.replace('/', '_')}_${p.id}` : undefined
 }
 
-function PlayerDot({ player, x, y, side, leagueSlug }: {
+interface PlayerMarks { goals: number; yellow: boolean; red: boolean }
+
+function normName(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+// Cruce tolerante entre el nombre del evento (goleador / amonestado) y el de la
+// alineación: igualdad, inclusión, o coincidencia del último apellido.
+function playerMatches(eventPlayer: string, lineupName: string): boolean {
+  const a = normName(eventPlayer), b = normName(lineupName)
+  if (!a || !b) return false
+  if (a === b || a.includes(b) || b.includes(a)) return true
+  const aLast = a.split(' ').pop() ?? '', bLast = b.split(' ').pop() ?? ''
+  return aLast.length > 2 && aLast === bLast
+}
+
+function marksFor(events: ScoringEvent[], p: LineupPlayer): PlayerMarks {
+  let goals = 0, yellow = false, red = false
+  for (const e of events) {
+    if (!e.player) continue
+    const hit = playerMatches(e.player, p.name) || (!!p.shortName && playerMatches(e.player, p.shortName))
+    if (!hit) continue
+    if (e.type === 'goal' || e.type === 'penalty') goals++
+    else if (e.type === 'yellow') yellow = true
+    else if (e.type === 'red') red = true
+  }
+  return { goals, yellow, red }
+}
+
+function CardBadge({ color }: { color: string }) {
+  return (
+    <span style={{
+      display: 'block', width: 6, height: 8, borderRadius: 1,
+      background: color, boxShadow: '0 1px 2px rgba(0,0,0,0.55)',
+    }} />
+  )
+}
+
+function PlayerDot({ player, x, y, side, leagueSlug, marks }: {
   player: LineupPlayer
   x: number
   y: number
   side: 'home' | 'away'
   leagueSlug?: string
+  marks?: PlayerMarks
 }) {
   const color  = side === 'home' ? '#A78BFA' : '#F59E0B'
   const label  = playerDisplayName(player)
   const jersey = player.jersey ?? label.slice(0, 2).toUpperCase()
   const href   = lineupHref(leagueSlug, player)
+  const goals  = marks?.goals ?? 0
+  const hasBadge = goals > 0 || !!marks?.yellow || !!marks?.red
 
   const dot = (
     <div
@@ -749,33 +793,45 @@ function PlayerDot({ player, x, y, side, leagueSlug }: {
         zIndex: 2,
       }}
     >
-      <div
-        className="flex items-center justify-center rounded-full font-black text-[10px] tabular-nums"
-        style={{
-          width: 26,
-          height: 26,
-          background: color,
-          color: '#0A0A12',
-          border: '2px solid rgba(255,255,255,0.25)',
-          boxShadow: `0 2px 8px ${color}55`,
-          flexShrink: 0,
-        }}
-      >
-        {jersey}
+      <div className="relative" style={{ flexShrink: 0 }}>
+        <div
+          className="flex items-center justify-center rounded-full font-black text-[10px] tabular-nums"
+          style={{
+            width: 26,
+            height: 26,
+            background: color,
+            color: '#0A0A12',
+            border: '2px solid rgba(255,255,255,0.28)',
+            boxShadow: `0 2px 8px ${color}66`,
+          }}
+        >
+          {jersey}
+        </div>
+        {hasBadge && (
+          <div className="absolute flex flex-col items-end gap-[1px]" style={{ top: -5, right: -6, zIndex: 3 }}>
+            {goals > 0 && (
+              <span className="flex items-center" style={{ lineHeight: 1, filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.7))' }}>
+                <span style={{ fontSize: 10 }}>⚽</span>
+                {goals > 1 && <b style={{ fontSize: 8, color: '#fff', marginLeft: 1, textShadow: '0 1px 2px #000' }}>{goals}</b>}
+              </span>
+            )}
+            {marks?.red ? <CardBadge color="#EF4444" /> : marks?.yellow ? <CardBadge color="#FBBF24" /> : null}
+          </div>
+        )}
       </div>
       <span
         className="mt-0.5 text-center font-bold leading-tight"
         style={{
           fontSize: 8,
-          color: 'rgba(255,255,255,0.9)',
-          textShadow: '0 1px 4px rgba(0,0,0,0.9)',
-          maxWidth: 48,
+          color: 'rgba(255,255,255,0.92)',
+          textShadow: '0 1px 4px rgba(0,0,0,0.95)',
+          maxWidth: 44,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
         }}
       >
-        {label.length > 9 ? label.slice(0, 9) + '.' : label}
+        {label.length > 8 ? label.slice(0, 8) + '.' : label}
       </span>
     </div>
   )
@@ -872,14 +928,17 @@ function BenchSection({ home, away, homeTeam, awayTeam, leagueSlug }: {
   )
 }
 
-function LineupField({ lineups, homeTeam, awayTeam, leagueSlug }: {
+function LineupField({ lineups, homeTeam, awayTeam, leagueSlug, scoring }: {
   lineups: NonNullable<MatchDetail['lineups']>
   homeTeam?: string
   awayTeam?: string
   leagueSlug?: string
+  scoring?: ScoringEvent[]
 }) {
   const homePositions = getFormationPositions(lineups.home.formation, 'home')
   const awayPositions = getFormationPositions(lineups.away.formation, 'away')
+  const homeScoring = (scoring ?? []).filter(e => e.team === 'home')
+  const awayScoring = (scoring ?? []).filter(e => e.team === 'away')
 
   return (
     <div>
@@ -931,13 +990,13 @@ function LineupField({ lineups, homeTeam, awayTeam, leagueSlug }: {
         {/* Away players (top) */}
         {lineups.away.starters.map((player, i) => {
           const [x, y] = awayPositions[i] ?? [50, 20]
-          return <PlayerDot key={`away-${i}`} player={player} x={x} y={y} side="away" leagueSlug={leagueSlug} />
+          return <PlayerDot key={`away-${i}`} player={player} x={x} y={y} side="away" leagueSlug={leagueSlug} marks={marksFor(awayScoring, player)} />
         })}
 
         {/* Home players (bottom) */}
         {lineups.home.starters.map((player, i) => {
           const [x, y] = homePositions[i] ?? [50, 80]
-          return <PlayerDot key={`home-${i}`} player={player} x={x} y={y} side="home" leagueSlug={leagueSlug} />
+          return <PlayerDot key={`home-${i}`} player={player} x={x} y={y} side="home" leagueSlug={leagueSlug} marks={marksFor(homeScoring, player)} />
         })}
       </div>
 
@@ -1239,6 +1298,7 @@ function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | nul
               homeTeam={match.homeTeam}
               awayTeam={match.awayTeam}
               leagueSlug={match.leagueSlug}
+              scoring={match.soccer?.scoring}
             />
           ) : (
             <EmptyState message="Alineación no disponible aún" />
