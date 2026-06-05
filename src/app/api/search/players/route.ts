@@ -64,7 +64,7 @@ export async function GET(req: Request) {
       if (!supported) continue
 
       const sportSeg = sport === 'soccer' ? 'soccer' : 'basketball'
-      const leagueSeg = league.replace('/', '_')
+      const leagueSeg = league.replaceAll('/', '_')
 
       if (g.type === 'player') {
         const id = idFromUid(uid, 'a')

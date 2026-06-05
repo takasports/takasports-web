@@ -43,7 +43,7 @@ async function fetchCandidates(): Promise<TeamCandidate[]> {
         if (!r.teamId) continue
         out.push({
           name: r.name,
-          slug: `${ls.replace('/', '_')}_${r.teamId}`,
+          slug: `${ls.replaceAll('/', '_')}_${r.teamId}`,
           logo: r.logo,
           league: g.label,
         })
@@ -94,7 +94,7 @@ function TeamHead({ t }: { t: TeamDetail }) {
           : <span className="font-black text-2xl" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>{t.name.charAt(0)}</span>}
       </div>
       <div className="min-w-0">
-        <Link href={`/equipo/${t.leagueSlug.replace('/', '_')}_${t.id}`}
+        <Link href={`/equipo/${t.leagueSlug.replaceAll('/', '_')}_${t.id}`}
           className="font-black text-[15px] text-white leading-tight hover:underline block truncate"
           style={{ fontFamily: 'var(--font-display)' }}>
           {t.name}

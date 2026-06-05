@@ -1551,7 +1551,7 @@ interface PlayerLeader {
 // Build the /jugador deep-link slug from an ESPN league slug + athlete id.
 function playerHref(p: { playerId?: string; leagueSlug?: string }): string | undefined {
   if (!p.playerId || !p.leagueSlug) return undefined
-  return `/jugador/${p.leagueSlug.replace('/', '_')}_${p.playerId}`
+  return `/jugador/${p.leagueSlug.replaceAll('/', '_')}_${p.playerId}`
 }
 interface LeaguePlayerData {
   id: string; label: string
@@ -1660,7 +1660,7 @@ function toStatRows(rows: LiveStandingRow[], teamKey?: string, leagueSlug?: stri
     value: r.value, sub: r.sub, trend: r.trend ?? 'flat',
     extra: Object.fromEntries(Object.entries(r.extra).filter(([k]) => k !== teamKey)),
     href: leagueSlug && r.teamId
-      ? `/equipo/${leagueSlug.replace('/', '_')}_${r.teamId}`
+      ? `/equipo/${leagueSlug.replaceAll('/', '_')}_${r.teamId}`
       : undefined,
     logo: r.logo,
   }))
@@ -1679,6 +1679,7 @@ interface SummaryCard {
   rows: { rank: number; name: string; sub: string; value: string; flag?: string }[]
   meta?: BlockMeta
   sectionTarget?: string
+  gender?: 'm' | 'f'
 }
 
 function buildSummaryCards(
@@ -1753,7 +1754,7 @@ function buildSummaryCards(
         rank: r.rank, name: r.name, sub: r.sub, value: r.value,
       })),
       meta: meta.nbaEast,
-      sectionTarget: 'conferencias',
+      sectionTarget: 'equipos',
     })
   }
 
@@ -1766,7 +1767,7 @@ function buildSummaryCards(
         rank: r.rank, name: r.name, sub: r.sub, value: r.value,
       })),
       meta: meta.nbaWest,
-      sectionTarget: 'conferencias',
+      sectionTarget: 'equipos',
     })
   }
 
@@ -1779,7 +1780,7 @@ function buildSummaryCards(
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
       })),
       meta: meta.f1Drivers,
-      sectionTarget: 'campeonato',
+      sectionTarget: 'pilotos',
     })
   }
 
@@ -1792,7 +1793,7 @@ function buildSummaryCards(
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
       })),
       meta: meta.atpRanking,
-      sectionTarget: 'ranking',
+      sectionTarget: 'atp',
     })
   }
 
@@ -1805,7 +1806,7 @@ function buildSummaryCards(
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
       })),
       meta: meta.wtaRanking,
-      sectionTarget: 'ranking',
+      sectionTarget: 'wta',
     })
   }
 
@@ -1831,7 +1832,8 @@ function buildSummaryCards(
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value,
       })),
       meta: meta.womenGoals,
-      sectionTarget: 'femenino',
+      sectionTarget: 'jugadores',
+      gender: 'f',
     })
   }
 
@@ -1953,7 +1955,7 @@ function ResumenView({
   liveData: LiveStandingsData | null
   livePlayerData: LivePlayerData | null
   lastUpdated: Date | null
-  onPickSport: (sportId: string, sectionId?: string) => void
+  onPickSport: (sportId: string, sectionId?: string, gender?: 'm' | 'f') => void
 }) {
   const cards = React.useMemo(
     () => buildSummaryCards(liveData, livePlayerData),
@@ -2002,7 +2004,7 @@ function ResumenView({
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {cards.map((c, i) => (
             <ResumenCard key={`${c.sportId}-${c.title}-${i}`} card={c}
-              onOpen={() => onPickSport(c.sportId, c.sectionTarget)} />
+              onOpen={() => onPickSport(c.sportId, c.sectionTarget, c.gender)} />
           ))}
         </div>
       )}
@@ -2030,7 +2032,10 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
     return firstGroupId ? { [firstGroupId]: true } : {}
   })
   const [leagueFilter, setLeagueFilter]       = useState('General')
-  const [gender, setGender]                   = useState<'m' | 'f'>('m')
+  const [gender, setGender]                   = useState<'m' | 'f'>(() => {
+    const sp = searchParams.get('sport') ?? ''
+    return sp === 'futbol' && searchParams.get('gender') === 'f' ? 'f' : 'm'
+  })
   const [liveData, setLiveData]               = useState<LiveStandingsData | null>(initialData ?? null)
   const [livePlayerData, setLivePlayerData]   = useState<LivePlayerData | null>(null)
   const [lastUpdated, setLastUpdated]         = useState<Date | null>(null)
@@ -2273,19 +2278,21 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   const sport = SPORTS.find(s => s.id === sportId) ?? SPORTS[0]
   const isFemenino = gender === 'f' && sportId === 'futbol'
 
-  const handleSportChange = (id: string, targetSection?: string) => {
+  const handleSportChange = (id: string, targetSection?: string, targetGender?: 'm' | 'f') => {
     const nextSport = SPORTS.find(s => s.id === id)
     const sec = (targetSection && nextSport?.sections.find(s => s.id === targetSection))
       ? nextSport.sections.find(s => s.id === targetSection)!
       : nextSport?.sections[0]
+    // El femenino solo existe en fútbol; en cualquier otro deporte volvemos a 'm'.
+    const g: 'm' | 'f' = (id === 'futbol' && targetGender === 'f') ? 'f' : 'm'
     setSportId(id)
-    setGender('m')
+    setGender(g)
     setSectionId(sec?.id ?? 'jugadores')
     setExpandedBlocks({})
     setExpandedGroups(sec?.groups ? { [sec.groups[0]?.id ?? '']: true } : {})
     setLeagueFilter('General')
     const qs = sec ? `?sport=${id}&section=${sec.id}` : `?sport=${id}`
-    router.push(`/estadisticas${qs}`, { scroll: false })
+    router.push(`/estadisticas${qs}${g === 'f' ? '&gender=f' : ''}`, { scroll: false })
   }
 
   const handleSectionChange = (id: string) => {
@@ -2294,7 +2301,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
     setExpandedBlocks({})
     setExpandedGroups(sec?.groups ? { [sec.groups[0]?.id ?? '']: true } : {})
     setLeagueFilter('General')
-    router.push(`/estadisticas?sport=${sportId}&section=${id}`, { scroll: false })
+    router.push(`/estadisticas?sport=${sportId}&section=${id}${gender === 'f' ? '&gender=f' : ''}`, { scroll: false })
   }
 
   const section = sport.sections.find(s => s.id === sectionId) ?? sport.sections[0]
@@ -2621,7 +2628,10 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
             {(['m', 'f'] as const).map(g => {
               const isActive = gender === g
               return (
-                <button key={g} onClick={() => { setGender(g); setExpandedBlocks({}) }}
+                <button key={g} onClick={() => {
+                  setGender(g); setExpandedBlocks({})
+                  router.push(`/estadisticas?sport=${sportId}&section=${sectionId}${g === 'f' ? '&gender=f' : ''}`, { scroll: false })
+                }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
                   style={{
                     background: isActive ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.04)',

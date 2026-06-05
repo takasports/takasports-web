@@ -44,7 +44,7 @@ async function fetchCandidates(): Promise<Candidate[]> {
         seen.add(p.playerId)
         out.push({
           name: p.name,
-          slug: `${p.leagueSlug.replace('/', '_')}_${p.playerId}`,
+          slug: `${p.leagueSlug.replaceAll('/', '_')}_${p.playerId}`,
           logo: p.teamLogo,
           team: p.team || lg.label,
         })
@@ -75,7 +75,7 @@ function PlayerHead({ p }: { p: PlayerDetail }) {
         )}
       </div>
       <div className="min-w-0">
-        <Link href={`/jugador/${p.leagueSlug.replace('/', '_')}_${p.id}`}
+        <Link href={`/jugador/${p.leagueSlug.replaceAll('/', '_')}_${p.id}`}
           className="font-black text-[15px] text-white leading-tight hover:underline block truncate"
           style={{ fontFamily: 'var(--font-display)' }}>
           {p.name}

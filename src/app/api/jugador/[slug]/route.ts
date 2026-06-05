@@ -246,7 +246,7 @@ export async function GET(
   const teamLogo = teamId
     ? `https://a.espncdn.com/i/teamlogos/soccer/500/${teamId}.png`
     : undefined
-  const teamSlug = teamId ? `${leagueSlug.replace('/', '_')}_${teamId}` : undefined
+  const teamSlug = teamId ? `${leagueSlug.replaceAll('/', '_')}_${teamId}` : undefined
   const position = asObj(ath.position)
   const citizenshipEn = asString(ath.citizenship)
   const flag = asObj(ath.flag)
