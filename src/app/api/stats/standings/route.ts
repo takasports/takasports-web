@@ -376,7 +376,68 @@ async function fetchNBAStatCategory(stat: string, season: string, scope: 'S' | '
   }
 }
 
-async function fetchNBALeaders(season: string): Promise<{ scoring: StandingRow[]; rebounds: StandingRow[]; assists: StandingRow[]; blocks: StandingRow[]; steals: StandingRow[]; efficiency: StandingRow[]; threePt: StandingRow[] }> {
+type NbaLeaders = {
+  scoring: StandingRow[]; rebounds: StandingRow[]; assists: StandingRow[]
+  blocks: StandingRow[]; steals: StandingRow[]; efficiency: StandingRow[]; threePt: StandingRow[]
+}
+
+// ── Fallback GRATIS de líderes NBA vía ESPN ──────────────────────────────────
+// stats.nba.com bloquea con 403 las IPs de datacenter (Vercel) de forma
+// intermitente. Cuando eso pasa, en vez de dejar los bloques NBA "no disponible"
+// caemos a la API pública de ESPN (que no bloquea a Vercel). ESPN no expone
+// "efficiency", así que ese único bloque se queda como esté en ese caso.
+const ESPN_NBA_LEADERS: { key: keyof NbaLeaders; sort: string; group: string; stat: string }[] = [
+  { key: 'scoring',  sort: 'offensive.avgPoints',                   group: 'offensive', stat: 'avgPoints' },
+  { key: 'rebounds', sort: 'general.avgRebounds',                   group: 'general',   stat: 'avgRebounds' },
+  { key: 'assists',  sort: 'offensive.avgAssists',                  group: 'offensive', stat: 'avgAssists' },
+  { key: 'blocks',   sort: 'defensive.avgBlocks',                   group: 'defensive', stat: 'avgBlocks' },
+  { key: 'steals',   sort: 'defensive.avgSteals',                   group: 'defensive', stat: 'avgSteals' },
+  { key: 'threePt',  sort: 'offensive.avgThreePointFieldGoalsMade', group: 'offensive', stat: 'avgThreePointFieldGoalsMade' },
+]
+
+async function fetchEspnNbaLeaderCategory(sort: string, group: string, stat: string): Promise<StandingRow[]> {
+  try {
+    const res = await tfetch(
+      `https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byathlete?region=us&lang=en&contentorigin=espn&isqualified=true&limit=15&sort=${sort}:desc`,
+      { next: { revalidate: 3600 } },
+    )
+    if (!res.ok) return []
+    const json = (await res.json()) as {
+      categories?: { name: string; names?: string[] }[]
+      athletes?: { athlete?: { displayName?: string; teamShortName?: string }; categories?: { name: string; totals?: string[] }[] }[]
+    }
+    // El índice de la columna se deriva de los `names` de la propia respuesta
+    // (robusto ante reordenamientos de ESPN), no de un índice hardcodeado.
+    const idx = ((json.categories ?? []).find(c => c.name === group)?.names ?? []).indexOf(stat)
+    if (idx < 0) return []
+    return (json.athletes ?? []).slice(0, 10).map((a, i) => {
+      const totals = a.categories?.find(c => c.name === group)?.totals ?? []
+      const num = parseFloat(totals[idx] ?? '')
+      const team = a.athlete?.teamShortName ?? ''
+      return {
+        rank:  i + 1,
+        name:  a.athlete?.displayName ?? '—',
+        abbr:  team,
+        value: Number.isFinite(num) ? (num % 1 === 0 ? String(num) : num.toFixed(1)) : '—',
+        sub:   team,
+        trend: 'flat' as const,
+        extra: {},
+      }
+    })
+  } catch (err) {
+    console.error(`[standings] ESPN NBA leaders (${sort}) failed:`, err)
+    return []
+  }
+}
+
+async function fetchEspnNbaLeaders(): Promise<Partial<NbaLeaders>> {
+  const rows = await Promise.all(ESPN_NBA_LEADERS.map(l => fetchEspnNbaLeaderCategory(l.sort, l.group, l.stat)))
+  const out: Partial<NbaLeaders> = {}
+  ESPN_NBA_LEADERS.forEach((l, i) => { out[l.key] = rows[i] })
+  return out
+}
+
+async function fetchNBALeaders(season: string): Promise<NbaLeaders> {
   const [scoring, rebounds, assists, blocks, steals, efficiency, threePt] = await Promise.all([
     fetchNBAStatCategory('PTS', season),
     fetchNBAStatCategory('REB', season),
@@ -386,6 +447,19 @@ async function fetchNBALeaders(season: string): Promise<{ scoring: StandingRow[]
     fetchNBAStatCategory('EFF', season),
     fetchNBAStatCategory('FG3M', season),
   ])
+  // NBA.com 403 desde Vercel → todo vacío. Caemos a ESPN (gratis) por bloque.
+  if (!scoring.length && !rebounds.length && !assists.length) {
+    const espn = await fetchEspnNbaLeaders()
+    return {
+      scoring:  espn.scoring?.length  ? espn.scoring  : scoring,
+      rebounds: espn.rebounds?.length ? espn.rebounds : rebounds,
+      assists:  espn.assists?.length  ? espn.assists  : assists,
+      blocks:   espn.blocks?.length   ? espn.blocks   : blocks,
+      steals:   espn.steals?.length   ? espn.steals   : steals,
+      efficiency, // ESPN no expone efficiency
+      threePt:  espn.threePt?.length  ? espn.threePt  : threePt,
+    }
+  }
   return { scoring, rebounds, assists, blocks, steals, efficiency, threePt }
 }
 
