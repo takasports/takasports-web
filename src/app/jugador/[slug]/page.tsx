@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { PlayerDetail } from '@/app/api/jugador/[slug]/route'
+import PlayerAvatar from '@/components/PlayerAvatar'
 import type { TeamResult } from '@/app/api/team/[slug]/route'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
@@ -165,17 +166,8 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
           className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0"
           style={{ background: `${accent}18` }}
         >
-          {player.headshot ? (
-            <Image src={player.headshot} alt={player.name} width={80} height={80} unoptimized
-              style={{ objectFit: 'cover', width: 80, height: 80 }} />
-          ) : player.team?.logo ? (
-            <Image src={player.team.logo} alt={player.team.name} width={56} height={56} unoptimized
-              style={{ objectFit: 'contain' }} />
-          ) : (
-            <span className="font-black text-3xl" style={{ color: accent, fontFamily: 'var(--font-display)' }}>
-              {player.name.charAt(0)}
-            </span>
-          )}
+          <PlayerAvatar headshot={player.headshot} teamLogo={player.team?.logo}
+            teamName={player.team?.name} name={player.name} accent={accent} />
         </div>
         <div className="flex-1 min-w-0">
           <div
