@@ -2519,6 +2519,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
               const isActive = sportId === s.id
               return (
                 <button key={s.id} onClick={() => handleSportChange(s.id)}
+                  aria-label={isEmpty ? `${s.label}, sin datos verificables hoy` : `${s.label}, ${count} ${count === 1 ? 'bloque' : 'bloques'} con datos`}
+                  aria-current={isActive ? 'true' : undefined}
                   className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
                   style={{
                     fontFamily: 'var(--font-sport)',
@@ -2563,6 +2565,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                 {sport.sections.map(sec => (
                   <button key={sec.id}
                     onClick={() => handleSectionChange(sec.id)}
+                    aria-label={`${sec.label}, ${SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`) ?? 0} tablas`}
+                    aria-current={sectionId === sec.id ? 'true' : undefined}
                     className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
                     style={{
                       background: sectionId === sec.id ? `${sport.accent}18` : 'transparent',
@@ -2763,7 +2767,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
               { icon: '📊', label: 'Gráficos de evolución', sub: 'Por temporada' },
               { icon: '⚔️', label: 'Comparativas H2H', sub: 'Jugador vs jugador' },
               { icon: '🗂️', label: 'Fichas individuales', sub: 'Historial completo' },
-              { icon: '🌐', label: 'APIs en tiempo real', sub: 'Opta · StatsBomb · NBA.com' },
+              { icon: '🌐', label: 'Datos avanzados', sub: 'Opta · StatsBomb · WhoScored' },
               { icon: '📈', label: 'Rendimiento reciente', sub: 'Últimos 5 partidos' },
               { icon: '🏅', label: 'Palmarés histórico', sub: 'Títulos y logros' },
               { icon: '📐', label: 'Mapas de calor', sub: 'Posicionamiento' },
