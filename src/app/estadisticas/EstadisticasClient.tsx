@@ -942,13 +942,16 @@ function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: BlockMeta }
 const WC_START = new Date('2026-06-11T17:00:00Z')
 
 function WorldCupCountdown() {
-  const [now, setNow] = useState(() => new Date())
+  // now arranca en null para que SSR y el primer render de cliente coincidan
+  // (placeholder "--"); los dígitos reales aparecen tras montar. Evita #418.
+  const [now, setNow] = useState<Date | null>(null)
   useEffect(() => {
+    setNow(new Date())
     const t = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(t)
   }, [])
 
-  const diff = WC_START.getTime() - now.getTime()
+  const diff = now ? WC_START.getTime() - now.getTime() : 1
   if (diff <= 0) return (
     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full"
       style={{ background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
@@ -965,7 +968,7 @@ function WorldCupCountdown() {
         <div key={l} className="text-center min-w-[2rem]">
           <div className="text-2xl font-black tabular-nums leading-none"
             style={{ fontFamily: 'var(--font-sport)', color: '#f59e0b' }}>
-            {String(v).padStart(2, '0')}
+            {now ? String(v).padStart(2, '0') : '--'}
           </div>
           <div className="text-[9px] uppercase tracking-widest mt-0.5"
             style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
@@ -2029,7 +2032,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   const [gender, setGender]                   = useState<'m' | 'f'>('m')
   const [liveData, setLiveData]               = useState<LiveStandingsData | null>(initialData ?? null)
   const [livePlayerData, setLivePlayerData]   = useState<LivePlayerData | null>(null)
-  const [lastUpdated, setLastUpdated]         = useState<Date | null>(initialData ? new Date() : null)
+  const [lastUpdated, setLastUpdated]         = useState<Date | null>(null)
   const [fetchError, setFetchError]           = useState<string | null>(null)
   const [refreshing, setRefreshing]           = useState(false)
   const [updatedFlash, setUpdatedFlash]       = useState(false)
@@ -2053,6 +2056,14 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   useEffect(() => {
     try { localStorage.setItem('ts_stats_hide_unavailable', hideUnavailable ? '1' : '0') } catch { /* ignore */ }
   }, [hideUnavailable])
+
+  // Sello "última actualización" solo en cliente: el valor inicial se calcula
+  // tras montar para evitar un mismatch de hidratación (hora UTC del servidor en
+  // SSR ≠ hora local del cliente, que se renderiza con toLocaleTimeString).
+  useEffect(() => {
+    if (initialData) setLastUpdated(new Date())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const toggleFav = React.useCallback((blockId: string) => {
     setFavorites(prev => {
@@ -2097,7 +2108,17 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
       }
     }
     refreshOnceRef.current = fetchStandings
-    if (!initialData) fetchStandings()
+    // initialData puede venir "shardeado" a un solo deporte (SSR de ?sport=X):
+    // faltan las keys del resto de deportes. Sin un fetch full tras hidratar,
+    // cambiar de pestaña renderiza un deporte sin datos. Traemos el payload
+    // completo en background si detectamos un shard parcial.
+    const partial = initialData as Partial<LiveStandingsData> | null | undefined
+    const isPartialShard = !!partial && (
+      partial.football === undefined ||
+      partial.nbaEast === undefined ||
+      partial.f1Drivers === undefined
+    )
+    if (!initialData || isPartialShard) fetchStandings()
     const interval = setInterval(fetchStandings, POLL_MS)
     return () => { cancelled = true; clearInterval(interval) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2125,17 +2146,17 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
     return blocks.map(block => {
       // Standings data
       if (liveData) {
-        const league = liveData.football.find(l => l.id === block.id)
+        const league = liveData.football?.find(l => l.id === block.id)
         if (league?.rows.length) return { ...block, rows: toStatRows(league.rows, undefined, league.leagueSlug), placeholder: false }
         // Knockout phase: standings empty → fallback to live fixtures
         if (block.id === 'tabla-ucl' && liveData.uclFixtures?.length)
           return { ...block, title: 'Champions League · Fase KO', rows: toStatRows(liveData.uclFixtures), placeholder: false, cardType: 'fixtures' }
         if (block.id === 'tabla-uel' && liveData.uelFixtures?.length)
           return { ...block, title: 'Europa League · Fase KO', rows: toStatRows(liveData.uelFixtures), placeholder: false, cardType: 'fixtures' }
-        if (block.id === 'nba-este'        && liveData.nbaEast.length)         return { ...block, rows: toStatRows(liveData.nbaEast, undefined, 'basketball/nba') }
-        if (block.id === 'nba-oeste'       && liveData.nbaWest.length)         return { ...block, rows: toStatRows(liveData.nbaWest, undefined, 'basketball/nba') }
-        if (block.id === 'f1-campeonato'   && liveData.f1Drivers.length)       return { ...block, rows: toStatRows(liveData.f1Drivers, 'Escudería') }
-        if (block.id === 'f1-constructores'&& liveData.f1Constructors.length)  return { ...block, rows: toStatRows(liveData.f1Constructors) }
+        if (block.id === 'nba-este'        && liveData.nbaEast?.length)         return { ...block, rows: toStatRows(liveData.nbaEast, undefined, 'basketball/nba') }
+        if (block.id === 'nba-oeste'       && liveData.nbaWest?.length)         return { ...block, rows: toStatRows(liveData.nbaWest, undefined, 'basketball/nba') }
+        if (block.id === 'f1-campeonato'   && liveData.f1Drivers?.length)       return { ...block, rows: toStatRows(liveData.f1Drivers, 'Escudería') }
+        if (block.id === 'f1-constructores'&& liveData.f1Constructors?.length)  return { ...block, rows: toStatRows(liveData.f1Constructors) }
         if (block.id === 'atp-ranking'       && liveData.atpRanking?.length)     return { ...block, rows: toStatRows(liveData.atpRanking) }
         if (block.id === 'wta-ranking'       && liveData.wtaRanking?.length)     return { ...block, rows: toStatRows(liveData.wtaRanking) }
         if (block.id === 'f1-poles'          && liveData.f1Poles?.length)        return { ...block, rows: toStatRows(liveData.f1Poles, 'Escudería') }
@@ -2153,7 +2174,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         if (block.id === 'stats-dt'          && liveData.coachesWinRate?.length)      return { ...block, rows: toStatRows(liveData.coachesWinRate!, 'Club') }
 
         if (block.id === 'goles-equipo') {
-          const allTeams = liveData.football.flatMap(league =>
+          const allTeams = (liveData.football ?? []).flatMap(league =>
             league.rows.map(row => {
               const gf = parseInt(row.extra?.GF ?? '0') || 0
               const gp = (parseInt(row.extra?.V ?? '0') || 0) + (parseInt(row.extra?.E ?? '0') || 0) + (parseInt(row.extra?.D ?? '0') || 0)
@@ -2169,7 +2190,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
         }
 
         if (block.id === 'menos-goles') {
-          const allTeams = liveData.football.flatMap(league =>
+          const allTeams = (liveData.football ?? []).flatMap(league =>
             league.rows.map(row => {
               const gc = parseInt(row.extra?.GC ?? '0') || 0
               const gp = (parseInt(row.extra?.V ?? '0') || 0) + (parseInt(row.extra?.E ?? '0') || 0) + (parseInt(row.extra?.D ?? '0') || 0)
