@@ -159,8 +159,42 @@ function base64url(input: Buffer | string): string {
   return Buffer.from(input).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-/** Mint de access token a partir del service account (RS256, sin googleapis). */
+/**
+ * Access token para la Search Console API. Prioriza OAuth (cuenta de usuario)
+ * porque las cuentas de servicio creadas tras abril/2026 no se pueden añadir a
+ * Search Console (bug conocido de Google). Si no hay OAuth, cae al service
+ * account (para cuando Google arregle el bug).
+ */
 async function getGscAccessToken(): Promise<string | null> {
+  const oauth = await getOauthAccessToken()
+  if (oauth) return oauth
+  return getServiceAccountAccessToken()
+}
+
+/** OAuth 2.0: intercambia el refresh token del usuario por un access token. */
+async function getOauthAccessToken(): Promise<string | null> {
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET
+  const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN
+  if (!clientId || !clientSecret || !refreshToken) return null
+
+  const res = await timedFetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+    }),
+  })
+  if (!res.ok) throw new Error(`oauth refresh ${res.status}: ${(await res.text()).slice(0, 200)}`)
+  const data = (await res.json()) as { access_token?: string }
+  return data.access_token ?? null
+}
+
+/** Mint de access token a partir del service account (RS256, sin googleapis). */
+async function getServiceAccountAccessToken(): Promise<string | null> {
   const clientEmail = process.env.GSC_CLIENT_EMAIL
   let privateKey = process.env.GSC_PRIVATE_KEY
   if (!clientEmail || !privateKey) return null
@@ -236,7 +270,7 @@ export async function getTrafficSummary(): Promise<TrafficSummary> {
   } catch (e) {
     return { available: false, note: `auth GSC: ${e instanceof Error ? e.message : String(e)}` }
   }
-  if (!token) return { available: false, note: 'GSC_CLIENT_EMAIL / GSC_PRIVATE_KEY no configurados' }
+  if (!token) return { available: false, note: 'Google sin configurar (OAuth o service account)' }
 
   try {
     // 1) Serie diaria de los últimos ~16 días (GSC va con 2-3 días de retraso).
