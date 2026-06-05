@@ -176,3 +176,20 @@ export function isSameDay(timeStr: string, targetTZ: string): boolean {
     return true
   }
 }
+
+/** Diferencia de día calendario entre SOURCE_TZ y targetTZ para un instante
+ *  concreto (ISO). Devuelve -1, 0 o +1: cuántos días se desplaza la fecha del
+ *  evento al verlo en la zona del usuario. Útil para avisar "+1 día" / "−1 día"
+ *  cuando la hora local cae en otra jornada. */
+export function dayDeltaForIso(isoDate: string | undefined, targetTZ: string): number {
+  if (!isoDate || targetTZ === SOURCE_TZ) return 0
+  try {
+    const d = new Date(isoDate)
+    const srcDay = new Intl.DateTimeFormat('en-CA', { timeZone: SOURCE_TZ }).format(d)
+    const tgtDay = new Intl.DateTimeFormat('en-CA', { timeZone: targetTZ }).format(d)
+    if (srcDay === tgtDay) return 0
+    return tgtDay < srcDay ? -1 : 1
+  } catch {
+    return 0
+  }
+}

@@ -7,7 +7,7 @@ import type { SportEvent } from '@/lib/types'
 import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
-import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime } from '@/lib/timezone'
+import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime, dayDeltaForIso } from '@/lib/timezone'
 import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
@@ -648,6 +648,8 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   // not provided or matches source, returns the original string. Falls back
   // gracefully on parse errors inside the helper.
   const displayTime = tz && tz !== SOURCE_TZ ? convertEventTime(event.time, tz) : event.time
+  // Si la hora local cae en otra jornada (zona ≠ Madrid), avisamos +1/−1 día.
+  const dayDelta = tz ? dayDeltaForIso(event.isoDate, tz) : 0
   const isLive  = !!liveScore && !FINISHED.has(liveScore.status)
   const isFinal = !!liveScore && (liveScore.status === 'FT' || liveScore.status === 'Final' || liveScore.status === 'STATUS_FINAL') && liveScore.homeGoals !== null
   const showScore = isLive || isFinal
@@ -744,6 +746,13 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
             style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {displayTime}
           </span>
+          {dayDelta !== 0 && (
+            <span className="text-[8.5px] font-black uppercase tracking-wide leading-none px-1 py-0.5 rounded mt-0.5"
+              style={{ color: '#C4B5FD', background: 'rgba(124,58,237,0.16)', fontFamily: 'var(--font-sport)' }}
+              title="El partido cae en otro día en tu zona horaria">
+              {dayDelta > 0 ? '+1 día' : '−1 día'}
+            </span>
+          )}
           {hasVs && (
             combat ? (
               <span
@@ -1484,7 +1493,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
   // Debounce search input — avoid filtering on every keystroke
   useEffect(() => {
-    const t = setTimeout(() => setSearch(searchRaw), 220)
+    // Mínimo 2 caracteres para filtrar: con 1 letra el match por inclusión
+    // devolvía casi todo (ruido). searchRaw sigue mostrándose en el input.
+    const t = setTimeout(() => setSearch(searchRaw.trim().length >= 2 ? searchRaw : ''), 220)
     return () => clearTimeout(t)
   }, [searchRaw])
 
