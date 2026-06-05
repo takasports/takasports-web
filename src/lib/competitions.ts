@@ -27,6 +27,14 @@ export const COMP_ACCENT: Record<string, string> = {
   'Mundial de Clubes': '#0EA5E9',
   'Mundial': '#16A34A',
   'Amistoso': '#94A3B8',
+  'Eurocopa': '#0B5CD6',
+  'Copa América': '#1FA35A',
+  'Libertadores': '#E07B00',
+  'Gold Cup': '#B8860B',
+  'FA Cup': '#C8102E',
+  'MLS': '#1B458F',
+  'Liga MX': '#1A8754',
+  'Brasileirão': '#1C7C3F',
 }
 
 export function getCompAccent(comp: string, fallback = '#7C3AED'): string {
@@ -92,6 +100,22 @@ export const LEAGUE_IMPORTANCE: Record<string, number> = {
   'Mundial de Clubes': 9,
   'Mundial': 12,
   'Amistoso': 3,
+  // Resto del set amplio
+  'Eurocopa': 11,
+  'Copa América': 10,
+  'Libertadores': 9,
+  'Nations': 8,
+  'Gold Cup': 7,
+  'FA Cup': 7,
+  'MLS': 7,
+  'Liga MX': 7,
+  'Brasileirão': 7,
+  'Concacaf': 6,
+  'Primeira': 6,
+  'Eredivisie': 6,
+  'Copa Italia': 6,
+  'DFB Pokal': 6,
+  'Copa Francia': 6,
 }
 
 export function getLeagueScore(comp: string): number {

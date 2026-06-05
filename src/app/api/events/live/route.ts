@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { normalizeTeam, normalizeAthlete, type NormalizedTeam } from '@/lib/teams-catalog'
+import { LIVE_FOOTBALL } from '@/lib/football-leagues'
 
 export interface LiveScore {
   id: string
@@ -42,18 +43,10 @@ const TERMINAL_STATUSES = new Set([
 ])
 
 const ESPN_TEAM_LEAGUES = [
-  { slug: 'soccer/uefa.champions',   sport: 'soccer',     comp: 'Champions'  },
-  { slug: 'soccer/uefa.europa',      sport: 'soccer',     comp: 'Europa'     },
-  { slug: 'soccer/uefa.europa.conf', sport: 'soccer',     comp: 'Conference' },
-  { slug: 'soccer/uefa.super_cup',   sport: 'soccer',     comp: 'Super Cup'  },
-  { slug: 'soccer/uefa.nations',     sport: 'soccer',     comp: 'Nations'    },
-  { slug: 'soccer/esp.1',            sport: 'soccer',     comp: 'LaLiga'     },
-  { slug: 'soccer/eng.1',            sport: 'soccer',     comp: 'Premier'    },
-  { slug: 'soccer/ita.1',            sport: 'soccer',     comp: 'Serie A'    },
-  { slug: 'soccer/ger.1',            sport: 'soccer',     comp: 'Bundesliga' },
-  { slug: 'soccer/fra.1',            sport: 'soccer',     comp: 'Ligue 1'    },
-  { slug: 'basketball/nba',          sport: 'basketball', comp: 'NBA'        },
-] as const
+  // Fútbol en vivo desde la lista maestra (subconjunto live)
+  ...LIVE_FOOTBALL.map((l) => ({ slug: l.slug, sport: 'soccer', comp: l.comp })),
+  { slug: 'basketball/nba', sport: 'basketball', comp: 'NBA' },
+]
 
 const TENNIS_SLUGS = ['tennis/atp', 'tennis/wta'] as const
 

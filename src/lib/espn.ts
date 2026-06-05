@@ -2,6 +2,7 @@ import type { SportEvent } from './types'
 import { getSportStyle } from './sports'
 import { SOURCE_TZ } from './timezone'
 import { getSpanishBroadcast } from './broadcasts'
+import { FOOTBALL_LEAGUES } from './football-leagues'
 
 interface EspnSource {
   slug: string
@@ -11,22 +12,8 @@ interface EspnSource {
 }
 
 const SOURCES: EspnSource[] = [
-  { slug: 'soccer/uefa.champions',    sport: 'Fútbol',  comp: 'Champions',  teamSport: true  },
-  { slug: 'soccer/uefa.europa',       sport: 'Fútbol',  comp: 'Europa',     teamSport: true  },
-  { slug: 'soccer/uefa.europa.conf',  sport: 'Fútbol',  comp: 'Conference', teamSport: true  },
-  { slug: 'soccer/uefa.super_cup',    sport: 'Fútbol',  comp: 'Super Cup',  teamSport: true  },
-  { slug: 'soccer/uefa.nations',      sport: 'Fútbol',  comp: 'Nations',    teamSport: true  },
-  { slug: 'soccer/esp.1',             sport: 'Fútbol',  comp: 'LaLiga',     teamSport: true  },
-  { slug: 'soccer/eng.1',             sport: 'Fútbol',  comp: 'Premier',    teamSport: true  },
-  { slug: 'soccer/ita.1',             sport: 'Fútbol',  comp: 'Serie A',    teamSport: true  },
-  { slug: 'soccer/ger.1',             sport: 'Fútbol',  comp: 'Bundesliga', teamSport: true  },
-  { slug: 'soccer/fra.1',             sport: 'Fútbol',  comp: 'Ligue 1',    teamSport: true  },
-  { slug: 'soccer/esp.copa_del_rey',  sport: 'Fútbol',  comp: 'Copa Rey',   teamSport: true  },
-  // Selecciones y torneos FIFA (Mundial 2026, amistosos de fechas FIFA, Mundial de Clubes)
-  { slug: 'soccer/fifa.world',        sport: 'Fútbol',  comp: 'Mundial',           teamSport: true  },
-  { slug: 'soccer/fifa.cwc',          sport: 'Fútbol',  comp: 'Mundial de Clubes', teamSport: true  },
-  { slug: 'soccer/fifa.friendly',     sport: 'Fútbol',  comp: 'Amistoso',          teamSport: true  },
-  { slug: 'soccer/fifa.friendly.w',   sport: 'Fútbol',  comp: 'Amistoso (F)',      teamSport: true  },
+  // Fútbol — lista maestra compartida (lib/football-leagues)
+  ...FOOTBALL_LEAGUES.map((l): EspnSource => ({ slug: l.slug, sport: 'Fútbol', comp: l.comp, teamSport: true })),
   { slug: 'basketball/nba',           sport: 'NBA',     comp: 'NBA',        teamSport: true  },
   { slug: 'racing/f1',                sport: 'F1',      comp: 'Fórmula 1',  teamSport: false },
   { slug: 'mma/ufc',                  sport: 'UFC',     comp: 'UFC',        teamSport: false },

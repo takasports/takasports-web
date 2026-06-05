@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { SOURCE_TZ } from '@/lib/timezone'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
+import { FOOTBALL_LEAGUES } from '@/lib/football-leagues'
 
 export interface UpcomingEvent {
   id: string
@@ -25,19 +26,9 @@ let staleCache: CacheEntry | null = null
 const CACHE_TTL  = 5 * 60_000  // 5 min fresh
 const STALE_MAX  = 30 * 60_000 // serve stale up to 30 min after expiry
 
-// Ordered by display priority
+// Fútbol desde la lista maestra; resto de deportes específicos. Orden = prioridad.
 const SOURCES = [
-  { slug: 'soccer/uefa.champions',   sport: 'soccer',     comp: 'Champions'  },
-  { slug: 'soccer/uefa.europa',      sport: 'soccer',     comp: 'Europa'     },
-  { slug: 'soccer/uefa.europa.conf', sport: 'soccer',     comp: 'Conference' },
-  { slug: 'soccer/uefa.super_cup',   sport: 'soccer',     comp: 'Super Cup'  },
-  { slug: 'soccer/uefa.nations',     sport: 'soccer',     comp: 'Nations'    },
-  { slug: 'soccer/esp.copa_del_rey', sport: 'soccer',     comp: 'Copa Rey'   },
-  { slug: 'soccer/esp.1',           sport: 'soccer',     comp: 'LaLiga'     },
-  { slug: 'soccer/eng.1',           sport: 'soccer',     comp: 'Premier'    },
-  { slug: 'soccer/ita.1',           sport: 'soccer',     comp: 'Serie A'    },
-  { slug: 'soccer/ger.1',           sport: 'soccer',     comp: 'Bundesliga' },
-  { slug: 'soccer/fra.1',           sport: 'soccer',     comp: 'Ligue 1'    },
+  ...FOOTBALL_LEAGUES.map((l) => ({ slug: l.slug, sport: 'soccer', comp: l.comp })),
   { slug: 'basketball/nba',         sport: 'basketball', comp: 'NBA'        },
   { slug: 'racing/f1',              sport: 'racing',     comp: 'F1'         },
   { slug: 'mma/ufc',                sport: 'mma',        comp: 'UFC'        },
