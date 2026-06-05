@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { sanityClient, articlesQuery, reelsQuery, urlFor } from '@/lib/sanity'
+import { sanityClient, articlesQuery, articlesBySportQuery, reelsQuery, urlFor } from '@/lib/sanity'
 import { SLUG_TO_LABEL } from '@/lib/sports'
 import reelsData from '@/lib/reels-data.json'
 import Header from '@/components/Header'
@@ -34,11 +34,18 @@ export default async function NoticiasPage({
   searchParams: Promise<{ sport?: string }>
 }) {
   const { sport } = await searchParams
+  // F2 — Deep-link por deporte: si llega ?sport=<slug válido>, filtramos el feed
+  // YA en SSR para que el enlace directo/compartido muestre el deporte correcto
+  // (antes el chip salía activo pero el feed era el global → parecía "muestra fútbol").
+  const sportSlug = sport?.toLowerCase()
+  const validSport = sportSlug && SLUG_TO_LABEL[sportSlug] ? sportSlug : undefined
   const [articles, reels] = await Promise.all([
-    sanityClient.fetch(articlesQuery),
+    validSport
+      ? sanityClient.fetch(articlesBySportQuery, { sport: validSport })
+      : sanityClient.fetch(articlesQuery),
     sanityClient.fetch(reelsQuery),
   ])
-  const initialCategory = sport ? (SLUG_TO_LABEL[sport.toLowerCase()] ?? 'Todo') : 'Todo'
+  const initialCategory = validSport ? SLUG_TO_LABEL[validSport] : 'Todo'
 
   const igReels = (reels as unknown[]).length > 0 ? reels : reelsData
 
