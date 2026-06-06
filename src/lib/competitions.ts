@@ -153,6 +153,27 @@ function isMarquee(name: string | null | undefined): boolean {
   return MARQUEE_TEAMS.some(t => n.includes(t))
 }
 
+// Selecciones nacionales importantes. ESPN las nombra en inglés ("Spain",
+// "United States", "South Korea"…). Sirve para que sus partidos —sobre todo los
+// amistosos de parón FIFA, que de base puntúan muy bajo (3)— entren en
+// Destacados, que es lo que el usuario espera ver durante una fecha FIFA.
+const MARQUEE_NATIONS = [
+  'spain', 'france', 'england', 'argentina', 'brazil', 'portugal',
+  'netherlands', 'belgium', 'italy', 'germany', 'croatia', 'uruguay',
+  'colombia', 'mexico', 'united states', 'morocco', 'japan', 'south korea',
+  'switzerland', 'denmark', 'senegal', 'serbia', 'poland', 'ecuador',
+  'nigeria', 'australia', 'canada', 'ukraine',
+  // Sudamérica relevante para la audiencia hispanohablante
+  'chile', 'peru', 'paraguay', 'venezuela',
+]
+
+// Match EXACTO (los amistosos enfrentan país vs país, sin sufijos) para evitar
+// falsos positivos con clubes cuyo nombre contenga un país (p. ej. "Real España").
+function isMarqueeNation(name: string | null | undefined): boolean {
+  if (!name) return false
+  return MARQUEE_NATIONS.includes(name.trim().toLowerCase())
+}
+
 // Detecta fases finales en el nombre de competición o stage del evento.
 function stageBoost(comp: string, stage?: string): number {
   const txt = `${comp} ${stage ?? ''}`.toLowerCase()
@@ -175,6 +196,13 @@ export function getEventHighlightScore(args: {
 }): number {
   let score = getLeagueScore(args.comp)
   if (isMarquee(args.home) || isMarquee(args.away)) score += 2
+  // Selecciones importantes: aunque sea un amistoso (base 3), debe destacar.
+  // +5 si juega una; +6 si se enfrentan dos (p. ej. Brasil vs EE. UU.). Así un
+  // España–Brasil amistoso (8-9) supera a las ligas medias y a los amistosos
+  // menores (3), pero sigue por debajo de Champions/Mundial/LaLiga (11-12).
+  const nations = (isMarqueeNation(args.home) ? 1 : 0) + (isMarqueeNation(args.away) ? 1 : 0)
+  if (nations >= 2) score += 6
+  else if (nations === 1) score += 5
   score += stageBoost(args.comp, args.stage)
   if (args.isLive) score += 1.5
   // Prime time 18:00–23:00 hora Madrid: +0.5 para que un Real Madrid 21h
