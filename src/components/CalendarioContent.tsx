@@ -335,7 +335,7 @@ function LiveHeroCard(p: HeroProps) {
           ) : (
             <>
               {tennis && (
-                <span className="text-[7.5px] font-black uppercase tracking-[0.2em]"
+                <span className="text-[8px] font-black uppercase tracking-[0.2em]"
                   style={{ color: '#FBBF24', fontFamily: 'var(--font-sport)' }}>
                   Sets
                 </span>
@@ -1966,7 +1966,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               <span className="text-[17px] font-black tabular-nums leading-none" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
                 {filtered.length}
               </span>
-              <span className="text-[7.5px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
+              <span className="text-[8.5px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>
                 eventos
               </span>
             </div>
@@ -1977,7 +1977,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                   <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
                   {liveCount}
                 </span>
-                <span className="text-[7.5px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#7A2A2A', fontFamily: 'var(--font-sport)' }}>
+                <span className="text-[8.5px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#D69A9A', fontFamily: 'var(--font-sport)' }}>
                   en vivo
                 </span>
               </div>
@@ -2272,10 +2272,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     : 'No se encontraron eventos'}
               </p>
               {search && (
-                <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>Prueba con el nombre del equipo o la competición</p>
+                <p className="text-[10px] mt-1.5" style={{ color: '#7A7A8E' }}>Prueba con el nombre del equipo o la competición</p>
               )}
               {!search && (activeFilter !== 'Todo' && activeFilter !== 'Destacados') && (
-                <p className="text-[10px] mt-1.5" style={{ color: '#4A4A5A' }}>Prueba seleccionando otra fecha o cambia el filtro</p>
+                <p className="text-[10px] mt-1.5" style={{ color: '#7A7A8E' }}>Prueba seleccionando otra fecha o cambia el filtro</p>
               )}
             </div>
           ) : (
@@ -2358,7 +2358,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
                 No tienes recordatorios activos
               </p>
-              <p className="text-[10px] mt-1.5 flex items-center justify-center gap-1" style={{ color: '#4A4A5A' }}>
+              <p className="text-[10px] mt-1.5 flex items-center justify-center gap-1" style={{ color: '#7A7A8E' }}>
                 Pulsa <BellIcon size={10} /> en cualquier partido para recordarlo
               </p>
             </div>
