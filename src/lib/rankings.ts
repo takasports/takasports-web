@@ -102,6 +102,23 @@ export function calcScore(
   return Math.round(Math.max(0, Math.min(100, total)) * 10) / 10
 }
 
+// Índice de Contenido (creadores/periodistas): criterio PROPIO, paralelo al
+// deportivo. Audiencia manda; luego contenido, momento y profundidad.
+// Pesos: mediático(Audiencia)×0.50 + rendimiento(Contenido)×0.30 +
+//        narrativa(Momento)×0.15 + contexto(Profundidad)×0.05 + editorialBoost.
+export function calcCreatorScore(
+  factors: NonNullable<RankingEntry['factors']>,
+  editorialBoost?: number
+): number {
+  const base =
+    factors.mediatico   * 0.50 +
+    factors.rendimiento * 0.30 +
+    factors.narrativa   * 0.15 +
+    factors.contexto    * 0.05
+  const total = base + (editorialBoost ?? 0)
+  return Math.round(Math.max(0, Math.min(100, total)) * 10) / 10
+}
+
 // ── JUGADORES — GLOBAL ────────────────────────────────────────────
 export const RANKING_JUGADORES: RankingEntry[] = [
   {

@@ -5,7 +5,7 @@ import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
-import { calcScore, type RankingEntry } from '@/lib/rankings'
+import { getDisplayScore, scoreColor, isCreatorEntry } from '@/lib/rankings-ui'
 import { findEntryById, getEntrySources, getAllRankingEntries } from '@/lib/rankings-search'
 import { findEntryByIdFromDb, getAllEntryIdsFromDb } from '@/lib/rankings-data'
 import { getSportStyle } from '@/lib/sports'
@@ -17,18 +17,7 @@ import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import { Suspense } from 'react'
 
-// ── Helpers compartidos ───────────────────────────────────────────
-function getDisplayScore(entry: RankingEntry): number {
-  return entry.factors ? calcScore(entry.factors, entry.editorialBoost) : entry.score
-}
-function scoreColor(score: number): string {
-  if (score >= 95) return '#22c55e'
-  if (score >= 90) return '#86efac'
-  if (score >= 85) return '#f59e0b'
-  if (score >= 80) return '#f97316'
-  if (score >= 75) return '#fb923c'
-  return '#f87171'
-}
+// ── Helpers de score/color: fuente única en rankings-ui (track-aware) ──
 
 const SPORT_EMOJI: Record<string, string> = {
   futbol: '⚽', baloncesto: '🏀', formula1: '🏎️', tenis: '🎾',
@@ -39,6 +28,13 @@ const FACTOR_DEFS = [
   { key: 'contexto',    label: 'Contexto',    pct: 20, color: '#60a5fa' },
   { key: 'mediatico',   label: 'Mediático',   pct: 25, color: '#f59e0b' },
   { key: 'narrativa',   label: 'Narrativa',   pct: 15, color: '#c084fc' },
+] as const
+// Contenido (creadores/periodistas): criterio propio, audiencia-heavy
+const FACTOR_DEFS_CREATOR = [
+  { key: 'mediatico',   label: 'Audiencia',   pct: 50, color: '#f59e0b' },
+  { key: 'rendimiento', label: 'Contenido',   pct: 30, color: '#22c55e' },
+  { key: 'narrativa',   label: 'Momento',     pct: 15, color: '#c084fc' },
+  { key: 'contexto',    label: 'Profundidad', pct:  5, color: '#60a5fa' },
 ] as const
 type FactorKey = typeof FACTOR_DEFS[number]['key']
 
@@ -285,10 +281,10 @@ export default async function EntryDetailPage(
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-4"
               style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
-              Desglose · 4 factores objetivos
+              {isCreatorEntry(entry) ? 'Desglose · Índice de Contenido' : 'Desglose · 4 factores objetivos'}
             </p>
             <div className="flex flex-col gap-4">
-              {FACTOR_DEFS.map(({ key, label, pct, color }) => (
+              {(isCreatorEntry(entry) ? FACTOR_DEFS_CREATOR : FACTOR_DEFS).map(({ key, label, pct, color }) => (
                 <FactorBar
                   key={key}
                   value={factors[key as FactorKey]}

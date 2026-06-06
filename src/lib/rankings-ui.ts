@@ -2,10 +2,29 @@
 // Vivían inline en RankingsClient.tsx; extraídos para reutilizar en
 // componentes desacoplados (RankRow, TopOneRow, MovimientoSemana, etc.).
 
-import { calcScore, calcTrend, type RankingEntry, type Trend } from './rankings'
+import {
+  calcScore, calcCreatorScore, type RankingEntry, type Trend,
+  RANKING_CREADORES, RANKING_PERIODISTAS, RANKING_CREADORES_WWE,
+} from './rankings'
 
+// ── Track "contenido" (creadores/periodistas) ──────────────────────
+// Listado paralelo al deportivo, con criterio de score PROPIO. La DB trae
+// `category`; los arrays estáticos no, así que también reconocemos por id.
+const CREATOR_CATEGORIES = new Set(['creadores', 'periodistas', 'creadores_wwe'])
+const CREATOR_IDS = new Set<string>(
+  [...RANKING_CREADORES, ...RANKING_PERIODISTAS, ...RANKING_CREADORES_WWE].map(e => e.id),
+)
+export function isCreatorEntry(entry: Pick<RankingEntry, 'id' | 'category'>): boolean {
+  return CREATOR_CATEGORIES.has(entry.category ?? '') || CREATOR_IDS.has(entry.id)
+}
+
+// Índice mostrado: cada track con su criterio (deportistas 40/20/25/15,
+// contenido 50/30/15/5). Único punto de verdad — ScoreBreakdown usa lo mismo.
 export function getDisplayScore(entry: RankingEntry): number {
-  return entry.factors ? calcScore(entry.factors, entry.editorialBoost) : entry.score
+  if (!entry.factors) return entry.score
+  return isCreatorEntry(entry)
+    ? calcCreatorScore(entry.factors, entry.editorialBoost)
+    : calcScore(entry.factors, entry.editorialBoost)
 }
 
 // Score específico del deporte: rendimiento-heavy (r×0.50 + c×0.30 + m×0.15 + n×0.05)
@@ -17,9 +36,10 @@ export function getSportScore(entry: RankingEntry): number {
   return Math.round((rendimiento * 0.50 + contexto * 0.30 + mediatico * 0.15 + narrativa * 0.05) * 10) / 10
 }
 
+// La flecha refleja la tendencia editorial/DB (coherente con el insight),
+// no un recálculo que podía contradecir el texto curado.
 export function getEffectiveTrend(entry: RankingEntry): Trend {
-  const s = getDisplayScore(entry)
-  return entry.scorePrev !== undefined ? calcTrend(s, entry.scorePrev) : entry.trend
+  return entry.trend
 }
 
 export function trendIcon(trend: Trend) {

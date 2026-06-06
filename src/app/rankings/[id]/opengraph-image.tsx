@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { findEntryById } from '@/lib/rankings-search'
 import { findEntryByIdFromDb } from '@/lib/rankings-data'
-import { calcScore, type RankingEntry } from '@/lib/rankings'
+import { getDisplayScore, scoreColor } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
 
 export const runtime = 'edge'
@@ -14,17 +14,7 @@ const SPORT_EMOJI: Record<string, string> = {
   ufc: '🥊', wwe: '🤼', contenido: '✍️',
 }
 
-function getDisplayScore(entry: RankingEntry): number {
-  return entry.factors ? calcScore(entry.factors, entry.editorialBoost) : entry.score
-}
-function scoreColor(score: number): string {
-  if (score >= 95) return '#22c55e'
-  if (score >= 90) return '#86efac'
-  if (score >= 85) return '#f59e0b'
-  if (score >= 80) return '#f97316'
-  if (score >= 75) return '#fb923c'
-  return '#f87171'
-}
+// score/color desde rankings-ui (track-aware) — fuente única
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

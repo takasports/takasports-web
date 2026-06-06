@@ -243,6 +243,7 @@ export default function RankingsClient({
   if (activeSport === 'wwe') {
     if (subEntity === 'creadores') {
       entries = db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => !e.featured)
+        .sort((a, b) => getDisplayScore(b) - getDisplayScore(a))
       featuredEntries = db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => e.featured)
     } else {
       const wweBase = dbSportFilter('jugadores', RANKING_JUGADORES, 'wwe')

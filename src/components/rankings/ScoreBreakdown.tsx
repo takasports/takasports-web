@@ -2,11 +2,8 @@
 
 import Link from 'next/link'
 import type { RankingEntry } from '@/lib/rankings'
-import { scoreColor } from '@/lib/rankings-ui'
+import { scoreColor, isCreatorEntry } from '@/lib/rankings-ui'
 import { PinIcon } from '@/components/icons/GameIcons'
-
-// Categorías editoriales (creadores de contenido)
-const CREATOR_CATEGORIES = new Set(['creadores', 'periodistas', 'creadores_wwe'])
 
 const FACTOR_META_ATHLETE = [
   { key: 'rendimiento', label: 'Rendimiento', pct: '40%', color: '#22c55e',
@@ -41,7 +38,7 @@ export default function ScoreBreakdown({
 }) {
   if (!entry.factors) return null
 
-  const isCreator = CREATOR_CATEGORIES.has(entry.category ?? '')
+  const isCreator = isCreatorEntry(entry)
   const FACTOR_META = isCreator ? FACTOR_META_CREATOR : FACTOR_META_ATHLETE
 
   const base = Math.round((isCreator

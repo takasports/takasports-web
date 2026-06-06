@@ -7,22 +7,12 @@ import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
-import { calcScore, type RankingEntry } from '@/lib/rankings'
+import { type RankingEntry } from '@/lib/rankings'
+import { getDisplayScore, scoreColor } from '@/lib/rankings-ui'
 import { getAllRankingEntries } from '@/lib/rankings-search'
 import { getSportStyle } from '@/lib/sports'
 
-// ── Helpers (alineados con /rankings/page.tsx) ───────────────────────
-function getDisplayScore(entry: RankingEntry): number {
-  return entry.factors ? calcScore(entry.factors, entry.editorialBoost) : entry.score
-}
-function scoreColor(score: number): string {
-  if (score >= 95) return '#22c55e'
-  if (score >= 90) return '#86efac'
-  if (score >= 85) return '#f59e0b'
-  if (score >= 80) return '#f97316'
-  if (score >= 75) return '#fb923c'
-  return '#f87171'
-}
+// ── Score/color: fuente única en rankings-ui (track-aware) ───────────
 
 const SPORT_EMOJI: Record<string, string> = {
   futbol: '⚽', baloncesto: '🏀', formula1: '🏎️', tenis: '🎾',
@@ -30,8 +20,8 @@ const SPORT_EMOJI: Record<string, string> = {
 }
 
 const FACTOR_DEFS = [
-  { key: 'rendimiento', label: 'Rendimiento', pct: '35%', color: '#22c55e' },
-  { key: 'contexto',    label: 'Contexto',    pct: '25%', color: '#60a5fa' },
+  { key: 'rendimiento', label: 'Rendimiento', pct: '40%', color: '#22c55e' },
+  { key: 'contexto',    label: 'Contexto',    pct: '20%', color: '#60a5fa' },
   { key: 'mediatico',   label: 'Mediático',   pct: '25%', color: '#f59e0b' },
   { key: 'narrativa',   label: 'Narrativa',   pct: '15%', color: '#c084fc' },
 ] as const
