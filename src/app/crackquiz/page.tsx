@@ -1308,18 +1308,23 @@ export default function CrackQuizPage() {
                   }
                 }
 
+                // Feedback NO cromático (a11y): ✓/✗ + aria-label, no solo color.
+                const isCorrect = revealed && i === q.correctIndex
+                const isWrongPick = revealed && selectedOption === i && i !== q.correctIndex
+
                 return (
                   <button
                     key={i}
                     disabled={revealed || showIntro}
                     onClick={() => handleReveal(i)}
-                    className="text-left px-5 py-4 rounded-xl font-medium transition-all"
+                    aria-label={isCorrect ? `Respuesta correcta: ${opt}` : isWrongPick ? `Tu respuesta, incorrecta: ${opt}` : undefined}
+                    className="text-left px-5 py-4 rounded-xl font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                     style={{ background: bg, border, color: textColor, cursor }}
                   >
                     <span className="inline-flex items-center gap-3">
                       <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ background: 'rgba(255,255,255,0.08)' }}>
-                        {String.fromCharCode(65 + i)}
+                        style={{ background: 'rgba(255,255,255,0.08)' }} aria-hidden>
+                        {isCorrect ? '✓' : isWrongPick ? '✗' : String.fromCharCode(65 + i)}
                       </span>
                       {opt}
                     </span>
