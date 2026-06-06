@@ -44,12 +44,6 @@ export async function generateStaticParams() {
   return slugs.filter(s => s.slug).map(s => ({ slug: s.slug }))
 }
 
-function readingTime(body?: string | null): number | null {
-  if (!body || body.trim().length === 0) return null
-  const words = body.trim().split(/\s+/).length
-  return Math.max(1, Math.round(words / 200))
-}
-
 interface FaqItem { q: string; a: string }
 interface SourceRef { name?: string; url?: string }
 
@@ -550,8 +544,6 @@ export default async function NoticiaPage({
     ? await matchEntriesInText(article.title, bodyTextForMatch, article.tags ?? [], 3)
     : []
 
-  const wc = bodyWordCount()
-  const minRead = wc ? Math.max(1, Math.round(wc / 200)) : readingTime(article.bodyText)
   const { accent } = getSportStyle(article.sport, article.category)
   const badgeColor = accent
   const badgeBg = `${badgeColor}18`
@@ -619,14 +611,6 @@ export default async function NoticiaPage({
                     {timeAgo(article.publishedAt)}
                   </time>
                 )}
-                {minRead && (
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: 'var(--font-sport)' }}
-                  >
-                    {minRead} min
-                  </span>
-                )}
               </div>
               <ShareButton title={article.title} />
             </div>
@@ -643,8 +627,9 @@ export default async function NoticiaPage({
                   {getSportLabel(article.sport, article.category)}
                 </span>
               )}
-              {minRead && (
-                <span
+              {article.publishedAt && (
+                <time
+                  dateTime={article.publishedAt}
                   className="text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5"
                   style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: 'var(--font-sport)' }}
                 >
@@ -652,8 +637,8 @@ export default async function NoticiaPage({
                     <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2" />
                     <path d="M6 3.5v2.8l1.8 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                   </svg>
-                  {minRead} min de lectura
-                </span>
+                  {timeAgo(article.publishedAt)}
+                </time>
               )}
             </div>
 
