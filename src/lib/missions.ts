@@ -9,7 +9,11 @@ import type { GameId } from './games-store'
 import { addXp } from './meta-progression'
 
 const STORAGE_KEY = 'ts_missions'
-const SCHEMA_VERSION = 1
+// v2 (Fase 2 auditoría): d-hawkeye fuera del pool (TakaGrid 9/9 hoy es
+// incompletable + bug de score ×2 en hard) y w-once pasa a "completar" en vez
+// de "11/11 perfecto" (la escala de score de Mi Once la rehace la Fase 4).
+// El bump fuerza a todos los clientes a regenerar misiones corregidas.
+const SCHEMA_VERSION = 2
 const CHANGED_EVENT = 'ts:missions-changed'
 
 export type MissionPeriod = 'daily' | 'weekly'
@@ -63,6 +67,9 @@ export const TEMPLATES: Record<string, MissionTemplate> = {
     id: 'd-warmup', title: 'Calienta motores', description: 'Termina 2 partidas hoy (cualquier juego)',
     emoji: '🔥', goal: { kind: 'play-any', target: 2 }, rewardXp: 30, period: 'daily',
   },
+  // DESHABILITADA (fuera de DAILY_POOL) hasta Fase 3: TakaGrid 9/9 hoy es
+  // incompletable (catálogo roto) y min:90 se cumple con 5/9 en modo hard
+  // (score = solved×20). Reactivar con una meta tipo "solved===9" tras el fix.
   'd-hawkeye': {
     id: 'd-hawkeye', title: 'Ojo de halcón', description: 'Resuelve TakaGrid 9/9',
     emoji: '🦅', goal: { kind: 'score-at-least', gameId: 'takagrid', min: 90 }, rewardXp: 60, period: 'daily',
@@ -76,8 +83,8 @@ export const TEMPLATES: Record<string, MissionTemplate> = {
     emoji: '🎲', goal: { kind: 'play-game', gameId: 'crackquiz', target: 2 }, rewardXp: 40, period: 'daily',
   },
   'w-once': {
-    id: 'w-once', title: 'Once perfecto', description: 'Completa Mi Once al 100% (11/11)',
-    emoji: '🏆', goal: { kind: 'score-at-least', gameId: 'mionce', min: 110 }, rewardXp: 150, period: 'weekly',
+    id: 'w-once', title: 'Once de la semana', description: 'Completa tu Once de la semana (los 11 jugadores)',
+    emoji: '🏆', goal: { kind: 'play-game', gameId: 'mionce', target: 1 }, rewardXp: 120, period: 'weekly',
   },
   'w-sopa': {
     id: 'w-sopa', title: 'Sopa limpia', description: 'Resuelve la Sopa semanal completa',
@@ -85,7 +92,7 @@ export const TEMPLATES: Record<string, MissionTemplate> = {
   },
 }
 
-const DAILY_POOL: string[]  = ['d-quad', 'd-trivia7', 'd-warmup', 'd-hawkeye', 'd-combo', 'd-double-quiz']
+const DAILY_POOL: string[]  = ['d-quad', 'd-trivia7', 'd-warmup', 'd-combo', 'd-double-quiz'] // d-hawkeye deshabilitada hasta Fase 3
 const WEEKLY_POOL: string[] = ['w-once', 'w-sopa']
 const DAILY_COUNT = 2
 const WEEKLY_COUNT = 1
