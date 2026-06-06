@@ -138,6 +138,7 @@ const STORAGE_KEY = 'ts_sopa_cracks_state'
 const HINT_PENALTY_SECONDS = 30
 const TIME_ATTACK_LIMIT = 3 * 60   // 3 minutos
 const INTRUDER_BONUS_PTS = 20      // Bonus visual al encontrar la intrusa
+const POINTS_PER_WORD = 10         // Escala única de puntos por palabra: sidebar, recordPlay y modal final
 const COLOR_INTRUDER = '#A78BFA'   // violeta, distinto del verde clásico
 
 // Busca un jugador en el catálogo que case con el "nombre crudo" que aparece
@@ -391,13 +392,31 @@ export default function SopaCracksPage() {
   const [endCell, setEndCell] = useState<Cell | null>(null)
   const dragging = useRef(false)
   const gridRef = useRef<HTMLDivElement>(null)
+  // Marca que el fin de partida ya se contabilizó para el puzzle activo.
+  const wonRef = useRef(false)
 
-  // Hidratación
+  // Hidratación + reset de ronda al cambiar de puzzle.
+  // El featured llega tras el mount, así que puzzle.id cambia en caliente:
+  // cargamos el progreso guardado de ESE puzzle y devolvemos a cero todo el
+  // estado de la ronda (cronómetro, pistas, intrusa, selección, contrarreloj)
+  // para que no queden pegados los valores del puzzle anterior.
   useEffect(() => {
     const s = loadState(puzzle.id)
     setFound(s.found)
     setBestSeconds(s.bestSeconds)
     setRunning(s.found.length < activeWords.length)
+    setSeconds(0)
+    setPaused(false)
+    setHintsUsed(0)
+    setRevealedFirstCells(new Set())
+    setIntruderFound(false)
+    setTimeOver(false)
+    setTimeAttack(false)
+    setJustFound(null)
+    setPlayerInfo(null)
+    setStartCell(null)
+    setEndCell(null)
+    wonRef.current = false
     setHydrated(true)
   }, [puzzle.id, activeWords.length])
 
@@ -450,7 +469,6 @@ export default function SopaCracksPage() {
   // Detener cronómetro y disparar fin de partida cuando la ronda termina.
   // En modo contrarreloj, "ganar" no requiere todas las palabras: el ranking
   // semanal usa el periodo distinto para no mezclarse con la modalidad normal.
-  const wonRef = useRef(false)
   useEffect(() => {
     if (roundDone && !wonRef.current && hydrated) {
       wonRef.current = true
@@ -464,7 +482,7 @@ export default function SopaCracksPage() {
       // Sync con games-store. En contrarreloj el periodo se diferencia para
       // no contaminar el leaderboard normal (mismo cronómetro pero meta opuesta).
       const period = timeAttack ? `${currentWeekISO()}-TA` : currentWeekISO()
-      const score = (timeAttack ? foundCount : activeWords.length) * 10
+      const score = (timeAttack ? foundCount : activeWords.length) * POINTS_PER_WORD
       recordPlay({
         gameId:     'sopacracks',
         period,
@@ -1045,7 +1063,7 @@ export default function SopaCracksPage() {
                     className="font-black tabular-nums"
                     style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: '#9090B0' }}
                   >
-                    {found.length * 8}<span style={{ fontSize: 12, color: '#3A3A52' }}>/80</span>
+                    {found.length * POINTS_PER_WORD}<span style={{ fontSize: 12, color: '#3A3A52' }}>/{activeWords.length * POINTS_PER_WORD}</span>
                   </p>
                 </div>
               </div>
@@ -1130,7 +1148,7 @@ export default function SopaCracksPage() {
           play={{
             game_id:     'sopacracks',
             period:      currentWeekISO(),
-            score:       activeWords.length * 10,
+            score:       activeWords.length * POINTS_PER_WORD,
             payload:     { found: activeWords.length, total: activeWords.length, seconds },
             duration_ms: seconds * 1000,
           } as GamePlay}
