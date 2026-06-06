@@ -242,6 +242,27 @@ function asArr(v: unknown): unknown[] {
   return Array.isArray(v) ? v : []
 }
 
+// Escudo del equipo. En el summary de ESPN, logo/logoDark a veces vienen null
+// (NBA) y el escudo está en el array `logos` (con variante 'dark' para fondo
+// oscuro). Además ESPN guarda los logos de NBA en la ruta 'nba', no 'basketball'.
+const LOGO_PATH: Record<string, string> = { basketball: 'nba' }
+function pickTeamLogo(teamObj: Record<string, unknown> | undefined, sport: SportKind): string | undefined {
+  if (!teamObj) return undefined
+  const direct = asString(teamObj.logoDark) ?? asString(teamObj.logo)
+  if (direct) return direct
+  const logos = asArr(teamObj.logos) as Record<string, unknown>[]
+  if (logos.length) {
+    const rels = (l: Record<string, unknown>) => asArr(l.rel).map(r => String(r))
+    const dark = logos.find(l => rels(l).includes('dark') && !rels(l).includes('scoreboard'))
+    const def  = logos.find(l => rels(l).includes('default'))
+    const href = asString((dark ?? def ?? logos[0])?.href)
+    if (href) return href
+  }
+  const id = asString(teamObj.id)
+  if (id) return `https://a.espncdn.com/i/teamlogos/${LOGO_PATH[sport] ?? sport}/500/${id}.png`
+  return undefined
+}
+
 async function espnJson(url: string): Promise<Record<string, unknown> | null> {
   try {
     const r = await fetch(url, { next: { revalidate: 30 } })
@@ -761,10 +782,8 @@ export async function GET(
       awayTeam:    asString(awayTeamObj?.displayName) ?? '—',
       homeAbbr:    asString(homeTeamObj?.abbreviation),
       awayAbbr:    asString(awayTeamObj?.abbreviation),
-      homeLogo:    asString(homeTeamObj?.logoDark) ?? asString(homeTeamObj?.logo)
-                   ?? (homeTeamObj?.id ? `https://a.espncdn.com/i/teamlogos/${sport}/500/${homeTeamObj.id}.png` : undefined),
-      awayLogo:    asString(awayTeamObj?.logoDark) ?? asString(awayTeamObj?.logo)
-                   ?? (awayTeamObj?.id ? `https://a.espncdn.com/i/teamlogos/${sport}/500/${awayTeamObj.id}.png` : undefined),
+      homeLogo:    pickTeamLogo(homeTeamObj, sport),
+      awayLogo:    pickTeamLogo(awayTeamObj, sport),
       homeTeamId:  asString(homeTeamObj?.id),
       awayTeamId:  asString(awayTeamObj?.id),
       homeScore:   homeComp?.score != null ? Number(homeComp.score) : null,
