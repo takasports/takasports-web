@@ -1207,7 +1207,7 @@ function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | nul
   if (!usesTabs) {
     return (
       <div className="max-w-2xl mx-auto px-4 pb-16">
-        <LiveRefresh isLive={live} />
+        <LiveRefresh isLive={live} startDate={match.startDate} />
         {backLink}
         {leaguePills}
         <InfoRow match={match} />
@@ -1229,7 +1229,7 @@ function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | nul
 
   return (
     <div className="max-w-2xl mx-auto px-4 pb-16">
-      <LiveRefresh isLive={live} />
+      <LiveRefresh isLive={live} startDate={match.startDate} />
       {backLink}
       {leaguePills}
       <div data-match-hero>
