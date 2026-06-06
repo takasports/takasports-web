@@ -10,15 +10,6 @@ interface TickerItem {
   slug?: string
 }
 
-const FALLBACK_ITEMS: TickerItem[] = [
-  { title: 'Mbappé anota hat-trick en el Clásico y Real Madrid remonta al Barça', sport: 'futbol' },
-  { title: 'Celtics avanzan a las Finales del Este por segundo año consecutivo', sport: 'baloncesto' },
-  { title: 'Verstappen domina los libres del GP de España — Leclerc a 0.3s', sport: 'formula1' },
-  { title: 'Alcaraz y Sinner confirman semis en Roland Garros', sport: 'tenis' },
-  { title: 'UFC 302: Makhachev retiene el cinturón peso ligero con TKO', sport: 'ufc' },
-  { title: 'Lewis Hamilton debuta en rojo: primer test oficial con Ferrari', sport: 'formula1' },
-]
-
 export default function BreakingNewsBar({
   items,
   titles,
@@ -26,12 +17,15 @@ export default function BreakingNewsBar({
   items?: TickerItem[]
   titles?: string[]
 }) {
+  // Sin fallback hardcodeado: si no hay breaking real, NO se muestra la barra (no inventar noticias).
   const resolved: TickerItem[] =
     items && items.length > 0
       ? items
       : titles && titles.length > 0
         ? titles.map(t => ({ title: t }))
-        : FALLBACK_ITEMS
+        : []
+
+  if (resolved.length === 0) return null
 
   // Duplicate items so the ticker scrolls seamlessly
   const doubled = [...resolved, ...resolved]

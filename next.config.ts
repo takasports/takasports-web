@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         destination: '/noticias/:slug',
         permanent: true,
       },
+      // Alias naturales de hubs de deporte → slug canónico (antes daban 404)
+      { source: '/f1', destination: '/formula1', permanent: true },
+      { source: '/mma', destination: '/ufc', permanent: true },
+      { source: '/lucha-libre', destination: '/wwe', permanent: true },
     ]
   },
   images: {

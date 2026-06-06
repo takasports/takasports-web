@@ -181,6 +181,10 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
               TakaSports
             </Link>
             <span style={{ color: 'var(--text-faint, #55556a)' }}>/</span>
+            <Link href="/noticias" className="hover:opacity-70 transition-opacity" style={{ color: 'var(--text-faint, #55556a)', textDecoration: 'none' }}>
+              Noticias
+            </Link>
+            <span style={{ color: 'var(--text-faint, #55556a)' }}>/</span>
             <span className="font-semibold" style={{ color: accent }}>{label}</span>
           </nav>
 

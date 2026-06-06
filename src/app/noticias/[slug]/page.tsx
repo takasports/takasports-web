@@ -1024,6 +1024,42 @@ export default async function NoticiaPage({
               </p>
             )}
 
+            {article.faq && article.faq.length > 0 && (
+              <section className="mt-12" style={{ maxWidth: 680 }} aria-label="Preguntas frecuentes">
+                <h2
+                  className="text-[10px] font-black uppercase tracking-widest mb-4"
+                  style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}
+                >
+                  Preguntas frecuentes
+                </h2>
+                <div className="flex flex-col gap-2.5">
+                  {article.faq.map((f, i) => (
+                    <details
+                      key={i}
+                      className="rounded-xl overflow-hidden group"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}
+                    >
+                      <summary
+                        className="cursor-pointer list-none [&::-webkit-details-marker]:hidden px-4 py-3 text-sm font-semibold flex justify-between items-center gap-3"
+                        style={{ color: '#E4E4F0' }}
+                      >
+                        <span>{f.q}</span>
+                        <span
+                          className="transition-transform group-open:rotate-45"
+                          style={{ color: badgeColor, flexShrink: 0, fontWeight: 800 }}
+                        >
+                          +
+                        </span>
+                      </summary>
+                      <div className="px-4 pb-4 text-sm" style={{ color: '#B8B8CC', lineHeight: 1.6 }}>
+                        {f.a}
+                      </div>
+                    </details>
+                  ))}
+                </div>
+              </section>
+            )}
+
             <div className="lg:hidden">
               {article.tags && article.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-10">
