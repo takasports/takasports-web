@@ -13,123 +13,14 @@ import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 import GameCoinsToast from '@/components/games/GameCoinsToast'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
-import { searchPlayers, type Player } from '@/lib/players-catalog'
+import { type Player } from '@/lib/players-catalog'
+import { PUZZLES, findPlayerForWord, type Puzzle } from '@/lib/sopa-puzzles'
 import { CountryFlag } from '@/components/icons/GameIcons'
 
 // ── Tipos y datos ─────────────────────────────────────────────
 
 type Cell = { r: number; c: number }
 type Placed = { word: string; cells: Cell[]; intruder?: boolean }
-
-interface Puzzle {
-  id: string
-  title: string
-  subtitle: string
-  size: number
-  words: string[]
-  /** Palabra "intrusa": no se anuncia en la sidebar pero está escondida
-   * en el grid. Encontrarla da bonus pero no es obligatoria para ganar. */
-  intruder?: string
-}
-
-const PUZZLES: Puzzle[] = [
-  {
-    id: 'leyendas-laliga',
-    title: 'Leyendas de LaLiga',
-    subtitle: 'Diez cracks que dejaron huella en España',
-    size: 13,
-    words: ['MESSI', 'RAUL', 'ZIDANE', 'PUYOL', 'INIESTA', 'XAVI', 'CASILLAS', 'KROOS', 'MODRIC', 'RONALDO'],
-    intruder: 'HIERRO',
-  },
-  {
-    id: 'pichichis-historicos',
-    title: 'Pichichis históricos',
-    subtitle: 'Goleadores que reinaron en LaLiga',
-    size: 13,
-    words: ['ZARRA', 'MESSI', 'CRISTIANO', 'BENZEMA', 'SUAREZ', 'FORLAN', 'VILLA', 'AGUERO', 'ETOO'],
-    intruder: 'HIGUAIN',
-  },
-  {
-    id: 'leyendas-mundiales',
-    title: 'Leyendas mundiales',
-    subtitle: 'Iconos del fútbol global',
-    size: 14,
-    words: ['MARADONA', 'PELE', 'CRUYFF', 'BECKENBAUER', 'PLATINI', 'ZICO', 'ROMARIO', 'MALDINI', 'BAGGIO'],
-    intruder: 'STOICHKOV',
-  },
-  {
-    id: 'champions-goleadores',
-    title: 'Reyes de la Champions',
-    subtitle: 'Los máximos goleadores de la historia europea',
-    size: 13,
-    words: ['RONALDO', 'MESSI', 'BENZEMA', 'RAUL', 'MORIENTES', 'HENRY', 'SHEVCHENKO', 'INZAGHI'],
-    intruder: 'LEWANDOWSKI',
-  },
-  {
-    id: 'porteros-leyenda',
-    title: 'Porteros de leyenda',
-    subtitle: 'Los mejores guardametas de la historia',
-    size: 13,
-    words: ['CASILLAS', 'BUFFON', 'NEUER', 'YASHIN', 'ZOFF', 'SCHMEICHEL', 'KAHN', 'SEAMAN'],
-    intruder: 'COURTOIS',
-  },
-  {
-    id: 'seleccion-espana',
-    title: 'La Roja campeona',
-    subtitle: 'Héroes de los Mundiales y Europas de España',
-    size: 13,
-    words: ['XAVI', 'INIESTA', 'VILLA', 'CASILLAS', 'PUYOL', 'TORRES', 'BUSQUETS', 'FABREGAS', 'RAMOS'],
-    intruder: 'PIQUE',
-  },
-  {
-    id: 'crack-premier',
-    title: 'Estrellas de la Premier',
-    subtitle: 'Cracks que brillaron en Inglaterra',
-    size: 13,
-    words: ['HENRY', 'BERGKAMP', 'GERRARD', 'LAMPARD', 'SCHOLES', 'SHEARER', 'GIGGS', 'BECKHAM'],
-    intruder: 'KEANE',
-  },
-  {
-    id: 'generacion-argentina',
-    title: 'Argentina de oro',
-    subtitle: 'Mitos del fútbol albiceleste',
-    size: 13,
-    words: ['MARADONA', 'MESSI', 'BATISTUTA', 'CANIGGIA', 'RIQUELME', 'TEVEZ', 'AGUERO', 'VERON'],
-    intruder: 'ZANETTI',
-  },
-  {
-    id: 'entrenadores-historia',
-    title: 'Genios del banquillo',
-    subtitle: 'Los mejores entrenadores de la historia',
-    size: 14,
-    words: ['MOURINHO', 'ANCELOTTI', 'GUARDIOLA', 'FERGUSON', 'CAPELLO', 'CRUYFF', 'MICHELS', 'SACCHI'],
-    intruder: 'BIELSA',
-  },
-  {
-    id: 'brasil-magico',
-    title: 'Brasil mágico',
-    subtitle: 'La Canarinha en estado puro',
-    size: 13,
-    words: ['PELE', 'RONALDO', 'RONALDINHO', 'ZICO', 'ROMARIO', 'CAFU', 'ROBERTO', 'RIVALDO'],
-    intruder: 'NEYMAR',
-  },
-  {
-    id: 'bundesliga-cracks',
-    title: 'Leyendas de la Bundesliga',
-    subtitle: 'Los mejores de Alemania',
-    size: 13,
-    words: ['MULLER', 'BECKENBAUER', 'RUMMENIGGE', 'ROBBEN', 'RIBERY', 'LEWANDOWSKI', 'NEUER', 'KAHN'],
-    intruder: 'REUS',
-  },
-  {
-    id: 'italia-calcio',
-    title: 'El Calcio eterno',
-    subtitle: 'Ídolos del fútbol italiano',
-    size: 13,
-    words: ['MALDINI', 'BUFFON', 'TOTTI', 'DELPIERO', 'BAGGIO', 'BARESI', 'ZOLA', 'PIRLO'],
-    intruder: 'VIERI',
-  },
-]
 
 const COLOR_ACCENT = '#6EE7B7'
 const COLOR_ACCENT_DIM = '#059669'
@@ -140,18 +31,6 @@ const TIME_ATTACK_LIMIT = 3 * 60   // 3 minutos
 const INTRUDER_BONUS_PTS = 20      // Bonus visual al encontrar la intrusa
 const POINTS_PER_WORD = 10         // Escala única de puntos por palabra: sidebar, recordPlay y modal final
 const COLOR_INTRUDER = '#A78BFA'   // violeta, distinto del verde clásico
-
-// Busca un jugador en el catálogo que case con el "nombre crudo" que aparece
-// en la sopa (suele ser apellido). Devuelve el mejor match o null.
-function findPlayerForWord(word: string): Player | null {
-  if (!word || word.length < 3) return null
-  const res = searchPlayers(word, { limit: 5 })
-  if (res.length === 0) return null
-  // Preferimos a quien tenga la palabra como token (apellido o nombre) exacto.
-  const target = word.toLowerCase()
-  const exact = res.find(p => p.name.toLowerCase().split(/\s+/).includes(target))
-  return exact ?? res[0]
-}
 
 // ── Selección de puzzle por semana ────────────────────────────
 
@@ -343,6 +222,7 @@ export default function SopaCracksPage() {
           size:     typeof p.size === 'number' && p.size >= 10 && p.size <= 16 ? p.size : 13,
           words:    p.words.filter((w: unknown): w is string => typeof w === 'string'),
           intruder: typeof p.intruder === 'string' ? p.intruder : undefined,
+          playerIds: (p.playerIds && typeof p.playerIds === 'object') ? p.playerIds as Record<string, string> : undefined,
         })
       })
       .catch(() => { /* silencioso */ })
@@ -544,7 +424,7 @@ export default function SopaCracksPage() {
         }
         setJustFound(p.word)
         // Mini-bio (8.1): popover con el jugador asociado
-        const player = findPlayerForWord(p.word)
+        const player = findPlayerForWord(p.word, puzzle.playerIds)
         if (player) {
           if (playerInfoTimeoutRef.current) clearTimeout(playerInfoTimeoutRef.current)
           setPlayerInfo({ player, word: p.word, intruder: !!p.intruder })
@@ -560,7 +440,7 @@ export default function SopaCracksPage() {
       }
     }
     return false
-  }, [letters, placed, found, running, allFound, intruderFound])
+  }, [letters, placed, found, running, allFound, intruderFound, puzzle.playerIds])
 
   // Bifurcación de input:
   //  - Mouse/pen: drag continuo (down → enter celdas → up).
