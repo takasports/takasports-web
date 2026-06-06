@@ -81,7 +81,7 @@ export default function MetodologiaPage() {
         <Section title="5. Cuándo se actualiza">
           <ul className="space-y-1">
             <li>• <strong>Domingo 22:00</strong> — ligas europeas + tenis (WF-11)</li>
-            <li>• <strong>Domingo 23:15</strong> — NBA, F1, UFC, clubes, entrenadores (WF-12)</li>
+            <li>• <strong>Domingo 23:15</strong> — NBA, F1, UFC y clubes (WF-12)</li>
             <li>• Creadores y periodistas — overrides editoriales en tiempo real desde el admin.</li>
           </ul>
         </Section>

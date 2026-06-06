@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import {
   RANKING_JUGADORES, RANKING_JUGADORAS, RANKING_CLUBES,
-  RANKING_LUCHADORAS_UFC, RANKING_ENTRENADORES,
+  RANKING_LUCHADORAS_UFC,
   RANKING_CREADORES, RANKING_PERIODISTAS, RANKING_CREADORES_WWE,
   type RankingEntry,
 } from '@/lib/rankings'
@@ -15,7 +15,7 @@ import type { MoverEntry } from '@/lib/rankings-data'
 function getStaticMovers(limit: number): { movers: MoverEntry[]; fallers: MoverEntry[] } {
   const allEntries: RankingEntry[] = [
     ...RANKING_JUGADORES, ...RANKING_JUGADORAS, ...RANKING_CLUBES,
-    ...RANKING_LUCHADORAS_UFC, ...RANKING_ENTRENADORES,
+    ...RANKING_LUCHADORAS_UFC,
     ...RANKING_CREADORES, ...RANKING_PERIODISTAS, ...RANKING_CREADORES_WWE,
   ]
   const withPrev = allEntries.filter(e => e.scorePrev !== undefined)

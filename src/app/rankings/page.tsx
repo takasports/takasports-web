@@ -6,7 +6,7 @@ import { getTopMovers, getAllRankings, getLastIngestTime, type RankingCategory }
 export const revalidate = 60  // 1 min — forzar refresh tras actualizaciones de fotos
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import {
-  RANKING_JUGADORES, RANKING_CLUBES, RANKING_ENTRENADORES,
+  RANKING_JUGADORES, RANKING_CLUBES,
   RANKING_CREADORES, RANKING_PERIODISTAS, RANKING_JUGADORAS,
   RANKING_CLUBES_FEMENINO, RANKING_LUCHADORAS_UFC, RANKING_CREADORES_WWE,
   RANKING_JUGADORES_SUB21, RANKING_JUGADORES_LATAM,
@@ -19,7 +19,7 @@ const SPORT_LABELS: Record<string, string> = {
   ufc: 'UFC', wwe: 'WWE', contenido: 'Contenido',
 }
 const TAB_LABELS: Record<string, string> = {
-  jugadores: 'jugadores', clubes: 'clubes', entrenadores: 'entrenadores',
+  jugadores: 'jugadores', clubes: 'clubes',
   creadores: 'creadores', periodistas: 'periodistas',
 }
 const LIGA_LABELS: Record<string, string> = {
@@ -47,9 +47,6 @@ function selectBase(deporte: string, tab: string, scope: string, gender: string)
   const isFemenino = gender === 'f'
   if (tab === 'creadores') return RANKING_CREADORES
   if (tab === 'periodistas') return RANKING_PERIODISTAS
-  if (tab === 'entrenadores') {
-    return deporte ? RANKING_ENTRENADORES.filter(e => e.sport === deporte) : RANKING_ENTRENADORES
-  }
   if (tab === 'clubes') {
     const base = isFemenino ? RANKING_CLUBES_FEMENINO : RANKING_CLUBES
     return deporte ? base.filter(e => e.sport === deporte) : base
@@ -178,7 +175,7 @@ function categoriesForView(sp: SP): RankingCategory[] {
   // Sin esto el cliente cae al fallback estático de rankings.ts (URLs antiguas).
   const ALL: RankingCategory[] = [
     'jugadores', 'jugadoras', 'clubes', 'clubes_femenino',
-    'entrenadores', 'creadores', 'periodistas', 'luchadoras_ufc',
+    'creadores', 'periodistas', 'luchadoras_ufc',
     'creadores_wwe', 'sub21', 'latam', 'concacaf',
   ]
   return ALL

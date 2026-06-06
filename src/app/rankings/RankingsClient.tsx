@@ -12,7 +12,7 @@ import {
   RANKINGS_BY_TAB, RANKING_JUGADORES, RANKING_JUGADORES_SUB21,
   RANKING_JUGADORES_LATAM, RANKING_JUGADORES_CONCACAF, RANKING_CLUBES,
   RANKING_JUGADORAS, RANKING_CLUBES_FEMENINO, RANKING_LUCHADORAS_UFC,
-  RANKING_ENTRENADORES, RANKING_CREADORES, RANKING_PERIODISTAS, RANKING_CREADORES_WWE,
+  RANKING_CREADORES, RANKING_PERIODISTAS, RANKING_CREADORES_WWE,
   JUGADORES_SCOPE_TABS, CLUBES_SCOPE_TABS,
   CLUBES_LIGA_FILTERS, CLUBES_PAIS_FILTERS, CLUBES_FEMENINO_LIGA_FILTERS,
   JUGADORAS_LIGA_FILTERS, JUGADORES_PAIS_REGIONS, JUGADORES_POSITION_FILTERS,
@@ -40,19 +40,13 @@ import AppliedFiltersBar, { type AppliedFilter } from '@/components/rankings/App
 const ENTITY_CONFIG: Record<string, { id: RankingTab; label: string }[]> = {
   '': [
     { id: 'jugadores',    label: 'Jugadores'    },
-    { id: 'clubes',       label: 'Clubes'       },
-    { id: 'entrenadores', label: 'Entrenadores' },
-  ],
+    { id: 'clubes',       label: 'Clubes'       },  ],
   futbol: [
     { id: 'jugadores',    label: 'Jugadores'    },
-    { id: 'clubes',       label: 'Clubes'       },
-    { id: 'entrenadores', label: 'Entrenadores' },
-  ],
+    { id: 'clubes',       label: 'Clubes'       },  ],
   baloncesto: [
     { id: 'jugadores',    label: 'Jugadores'    },
-    { id: 'clubes',       label: 'Equipos'      },
-    { id: 'entrenadores', label: 'Entrenadores' },
-  ],
+    { id: 'clubes',       label: 'Equipos'      },  ],
   formula1: [
     { id: 'jugadores',    label: 'Pilotos'       },
     { id: 'clubes',       label: 'Constructores' },
@@ -329,9 +323,6 @@ export default function RankingsClient({
         entries = clubesBase.filter(e => e.country === paisClubes || e.country === flagEquiv)
       }
     }
-  } else if (activeTab === 'entrenadores') {
-    const base = db('entrenadores', RANKINGS_BY_TAB.entrenadores)
-    entries = activeSport ? base.filter(e => e.sport === activeSport) : base
   }
 
   // Cuando hay filtro de deporte activo en jugadores: reordenar por score

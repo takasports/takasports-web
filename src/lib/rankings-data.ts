@@ -387,7 +387,7 @@ export interface MoverEntry {
 // Un cambio semanal mayor que esto casi siempre es un artefacto de baseline
 // obsoleto, no movimiento real → se descarta.
 const MAX_WEEKLY_DELTA = 8
-const MOVER_CATEGORIES = ['jugadores', 'jugadoras', 'sub21', 'latam', 'concacaf', 'clubes', 'entrenadores']
+const MOVER_CATEGORIES = ['jugadores', 'jugadoras', 'sub21', 'latam', 'concacaf', 'clubes']
 
 export async function getTopMovers(limit = 3): Promise<{ movers: MoverEntry[]; fallers: MoverEntry[] }> {
   if (!supabaseConfigured()) return { movers: [], fallers: [] }
@@ -515,6 +515,7 @@ export async function getTopEntriesForCompare(limit = 600): Promise<RankingEntry
     const { data, error } = await sb
       .from('ranking_view')
       .select('id,name,subtitle,sport,emoji,country,score,score_prev,factors,editorial_boost,editorial_note,trend,badge,image_url,position,gender,region,league,category')
+      .neq('category', 'entrenadores')
       .order('score', { ascending: false })
       .limit(limit)
     if (error || !data) return []
