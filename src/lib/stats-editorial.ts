@@ -48,13 +48,8 @@ export const COACH_CONFIG: CoachEntry[] = [
   { name: 'Arne Slot',       team: 'Liverpool',     flag: '🇳🇱', league: 'eng.1', teamId: '364'  },
 ]
 
-// ─── Tenis · calendario Grand Slams 2026 ──────────────────────────────────
-export const TENNIS_SLAMS_2026: StandingRow[] = [
-  { rank: 1, name: 'Australian Open · Melbourne', abbr: '🇦🇺', value: '19 ene – 1 feb', sub: 'Pista dura',       trend: 'flat', extra: {} },
-  { rank: 2, name: 'Roland Garros · París',        abbr: '🇫🇷', value: '24 may – 7 jun', sub: 'Tierra batida',    trend: 'up',   extra: {} },
-  { rank: 3, name: 'Wimbledon · Londres',          abbr: '🇬🇧', value: '29 jun – 12 jul', sub: 'Hierba',          trend: 'flat', extra: {} },
-  { rank: 4, name: 'US Open · Nueva York',         abbr: '🇺🇸', value: '24 ago – 6 sep', sub: 'Pista dura',       trend: 'flat', extra: {} },
-]
+// (TENNIS_SLAMS_2026 eliminado: era un calendario hardcodeado no automatizable.
+//  La sección de tenis sirve solo ATP/WTA en vivo desde ESPN.)
 
 // ─── Mundial 2026 — anfitriones (siempre clasificados) ────────────────────
 export const WC_HOSTS = new Set<string>(['Estados Unidos', 'EEUU', 'USA', 'Canadá', 'Canada', 'México', 'Mexico'])

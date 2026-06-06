@@ -716,18 +716,6 @@ const SPORTS: SportConfig[] = [
           },
         ],
       },
-      {
-        id: 'grand-slams', label: 'Grand Slams', icon: '🏆',
-        blocks: [{
-          id: 'tenis-slams', title: 'Calendario Grand Slams 2026', metric: 'Fecha',
-          rows: [
-            { rank: 1, name: 'Australian Open · Melbourne',  value: '19 ene – 1 feb', sub: 'Pista dura · Completado',  trend: 'flat' },
-            { rank: 2, name: 'Roland Garros · París',         value: '24 may – 7 jun', sub: 'Tierra batida · Próximo',  trend: 'up' },
-            { rank: 3, name: 'Wimbledon · Londres',           value: '29 jun – 12 jul', sub: 'Hierba',                  trend: 'flat' },
-            { rank: 4, name: 'US Open · Nueva York',          value: '24 ago – 6 sep', sub: 'Pista dura',               trend: 'flat' },
-          ],
-        }],
-      },
     ],
   },
   {

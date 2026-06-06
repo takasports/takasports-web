@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { SOCCER_LEAGUES, EUROPEAN_CUPS } from '@/lib/stats-leagues'
 import {
   FIFA_RANKING, FIFA_RANKING_AS_OF, UFC_P4P, UFC_P4P_AS_OF, COACH_CONFIG,
-  TENNIS_SLAMS_2026,
   type StandingRow,
 } from '@/lib/stats-editorial'
 export type { StandingRow } from '@/lib/stats-editorial'
@@ -76,7 +75,6 @@ export interface StatsStandingsResponse {
   worldCupQualified: StandingRow[]
   motogpRiders: StandingRow[]
   motogpConstructors: StandingRow[]
-  tennisSlams: StandingRow[]
   meta: Record<string, BlockMeta>
   updatedAt: string
 }
@@ -1167,8 +1165,8 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   football: ['football', 'uclScorers', 'uelScorers', 'uclAssists', 'uelAssists'],
   nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaMvpRace', 'nbaDpoyRace', 'nbaRookieRace'],
   f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps', 'f1Calendar', 'f1Sprints'],
-  tenis: ['atpRanking', 'wtaRanking', 'tennisSlams'],
-  tennis: ['atpRanking', 'wtaRanking', 'tennisSlams'],
+  tenis: ['atpRanking', 'wtaRanking'],
+  tennis: ['atpRanking', 'wtaRanking'],
   ufc: ['ufcP4P', 'ufcChampions', 'ufcDivisions'],
   selecciones: ['fifaRanking'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
@@ -1250,7 +1248,16 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   const live    = (source: string, key?: string): BlockMeta =>
     (key && staleSet.has(key)) ? stale(source) : ({ status: 'live', source, fetchedAt: now })
   const unavail = (source: string): BlockMeta => ({ status: 'unavailable', source, fetchedAt: now })
-  const histor  = (source: string, asOf: string): BlockMeta => ({ status: 'historical', source, fetchedAt: now, asOf })
+  // Snapshots (UFC/MotoGP/Elo desde el cron a Supabase): si llevan ≥ SNAP_STALE_DAYS
+  // sin refrescarse (el cron semanal pudo fallar para ese bloque), no los etiquetamos
+  // "live" — mostramos su antigüedad real para no presentar datos viejos como actuales.
+  const SNAP_STALE_DAYS = 8
+  const snapMeta = (snap: StatSnapshot): BlockMeta => {
+    const days = Math.floor((Date.now() - new Date(snap.updatedAt).getTime()) / 86_400_000)
+    return Number.isFinite(days) && days >= SNAP_STALE_DAYS
+      ? { status: 'stale', source: snap.source, fetchedAt: now, asOf: `hace ${days} días` }
+      : { status: 'live', source: snap.source, fetchedAt: now }
+  }
 
   const wcStarted = worldCup.some(g => g.rows.some(r => r.sub !== 'Sin jugar'))
 
@@ -1273,9 +1280,9 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     atpRanking:      tennis.atp.length ? live('ESPN') : unavail('ESPN'),
     wtaRanking:      tennis.wta.length ? live('ESPN') : unavail('ESPN'),
     // Sin fallback hardcoded: si snapshot ausente → unavailable (no datos viejos disfrazados de live).
-    fifaRanking:     fifaR.snap ? live(fifaR.snap.source) : unavail('Sin snapshot — esperando cron diario Elo'),
-    ufcP4P:          ufcP4PR.snap ? live(ufcP4PR.snap.source) : unavail('Sin snapshot — esperando cron lunes UFC'),
-    ufcChampions:    ufcChampionsR.snap ? live(ufcChampionsR.snap.source) : unavail('Sin snapshot — ejecutar cron UFC'),
+    fifaRanking:     fifaR.snap ? snapMeta(fifaR.snap) : unavail('Sin snapshot — esperando cron diario Elo'),
+    ufcP4P:          ufcP4PR.snap ? snapMeta(ufcP4PR.snap) : unavail('Sin snapshot — esperando cron lunes UFC'),
+    ufcChampions:    ufcChampionsR.snap ? snapMeta(ufcChampionsR.snap) : unavail('Sin snapshot — ejecutar cron UFC'),
     // Meta de cada división se inyecta debajo en el for-loop (no cabe aquí).
     womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
     womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
@@ -1305,9 +1312,8 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     uelAssists:        uelAssists.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
     worldCupQualified: worldCupQualified.length ? live('Auto · FIFA World Cup 2026') : unavail('ESPN'),
     worldCupSchedule:  worldCupSchedule.length  ? live('ESPN · scoreboard')          : unavail('ESPN'),
-    motogpRiders:        motogpRidersR.rows.length    ? live(motogpRidersR.snap?.source ?? 'MotoGP.com') : unavail('Sin snapshot — ejecutar cron MotoGP'),
-    motogpConstructors:  motogpConstructR.rows.length ? live(motogpConstructR.snap?.source ?? 'MotoGP.com') : unavail('Sin snapshot — ejecutar cron MotoGP'),
-    tennisSlams:         TENNIS_SLAMS_2026.length     ? histor('ATP/WTA · calendario', '2026') : unavail('Calendario no disponible'),
+    motogpRiders:        motogpRidersR.snap    ? snapMeta(motogpRidersR.snap)    : unavail('Sin snapshot — ejecutar cron MotoGP'),
+    motogpConstructors:  motogpConstructR.snap ? snapMeta(motogpConstructR.snap) : unavail('Sin snapshot — ejecutar cron MotoGP'),
   }
 
   // Per-UFC-division meta + payload aggregator
@@ -1315,7 +1321,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   for (const { div, r } of ufcDivisionsResolved) {
     ufcDivisions[div.blockId] = r.rows
     meta[div.blockId] = r.snap
-      ? live(r.snap.source)
+      ? snapMeta(r.snap)
       : unavail('Sin snapshot — ejecutar cron UFC')
   }
 
@@ -1370,7 +1376,6 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     worldCupQualified,
     motogpRiders:       motogpRidersR.rows,
     motogpConstructors: motogpConstructR.rows,
-    tennisSlams:        TENNIS_SLAMS_2026,
     meta,
     updatedAt:          now,
   }
