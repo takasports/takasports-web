@@ -358,6 +358,15 @@ export default function SopaCracksPage() {
 
   const { letters, placed } = useMemo(() => buildGrid(puzzle, seed), [puzzle, seed])
 
+  // Palabras realmente colocadas en el grid (buildGrid descarta las que no
+  // caben). El completado, el conteo y la puntuación se calculan sobre ESTAS,
+  // no sobre puzzle.words, para que un featured con una palabra que no entra
+  // nunca deje el puzzle inalcanzable.
+  const activeWords = useMemo(() => {
+    const placedSet = new Set(placed.filter(p => !p.intruder).map(p => p.word))
+    return puzzle.words.filter(w => placedSet.has(w))
+  }, [placed, puzzle.words])
+
   const [found, setFound] = useState<string[]>([])
   const [seconds, setSeconds] = useState(0)
   const [running, setRunning] = useState(false)
@@ -391,9 +400,9 @@ export default function SopaCracksPage() {
     const s = loadState(puzzle.id)
     setFound(s.found)
     setBestSeconds(s.bestSeconds)
-    setRunning(s.found.length < puzzle.words.length)
+    setRunning(s.found.length < activeWords.length)
     setHydrated(true)
-  }, [puzzle.id, puzzle.words.length])
+  }, [puzzle.id, activeWords.length])
 
   // Timer
   useEffect(() => {
@@ -437,7 +446,7 @@ export default function SopaCracksPage() {
     saveState({ puzzleId: puzzle.id, found, bestSeconds })
   }, [found, bestSeconds, hydrated, puzzle.id])
 
-  const allFound = found.length === puzzle.words.length
+  const allFound = found.length === activeWords.length
   // En contrarreloj puede acabar antes (timeOver) o al encontrar todo
   const roundDone = allFound || timeOver
 
@@ -450,7 +459,7 @@ export default function SopaCracksPage() {
       wonRef.current = true
       setRunning(false)
       const foundCount = found.length
-      trackGameComplete({ game: 'sopa_cracks', score: seconds, total: puzzle.words.length })
+      trackGameComplete({ game: 'sopa_cracks', score: seconds, total: activeWords.length })
       if (allFound) {
         setBestSeconds(prev => prev == null ? seconds : Math.min(prev, seconds))
       }
@@ -458,14 +467,14 @@ export default function SopaCracksPage() {
       // Sync con games-store. En contrarreloj el periodo se diferencia para
       // no contaminar el leaderboard normal (mismo cronómetro pero meta opuesta).
       const period = timeAttack ? `${currentWeekISO()}-TA` : currentWeekISO()
-      const score = (timeAttack ? foundCount : puzzle.words.length) * 10
+      const score = (timeAttack ? foundCount : activeWords.length) * 10
       recordPlay({
         gameId:     'sopacracks',
         period,
         score,
         payload:    {
           found:      foundCount,
-          total:      puzzle.words.length,
+          total:      activeWords.length,
           seconds,
           intruder:   intruderFound,
           timeAttack,
@@ -718,7 +727,7 @@ export default function SopaCracksPage() {
                   style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.05)' }}
                 >
                   <span className="text-[11px] font-black" style={{ color: '#9090B0', fontFamily: 'var(--font-sport)' }}>
-                    {found.length}/{puzzle.words.length} encontrados
+                    {found.length}/{activeWords.length} encontrados
                   </span>
                 </div>
                 {puzzle.intruder && intruderFound && (
@@ -939,7 +948,7 @@ export default function SopaCracksPage() {
                 <h2 className="section-label">Cracks por encontrar</h2>
               </div>
               <ul className="grid grid-cols-2 gap-2">
-                {puzzle.words.map(w => {
+                {activeWords.map(w => {
                   const ok = found.includes(w)
                   return (
                     <li
@@ -1059,7 +1068,7 @@ export default function SopaCracksPage() {
                     ¡Completado!
                   </p>
                   <p className="text-[11px]" style={{ color: '#9090B0' }}>
-                    Has encontrado a los {puzzle.words.length} cracks en {fmtTime(seconds)}.
+                    Has encontrado a los {activeWords.length} cracks en {fmtTime(seconds)}.
                   </p>
                 </div>
               )}
@@ -1072,7 +1081,7 @@ export default function SopaCracksPage() {
                     {allFound ? '¡Pleno antes de tiempo!' : '¡Tiempo!'}
                   </p>
                   <p className="text-[11px]" style={{ color: '#9090B0' }}>
-                    {found.length}/{puzzle.words.length} encontrados en {fmtTime(Math.min(seconds, TIME_ATTACK_LIMIT))}.
+                    {found.length}/{activeWords.length} encontrados en {fmtTime(Math.min(seconds, TIME_ATTACK_LIMIT))}.
                   </p>
                 </div>
               )}
@@ -1124,8 +1133,8 @@ export default function SopaCracksPage() {
           play={{
             game_id:     'sopacracks',
             period:      currentWeekISO(),
-            score:       puzzle.words.length * 10,
-            payload:     { found: puzzle.words.length, total: puzzle.words.length, seconds },
+            score:       activeWords.length * 10,
+            payload:     { found: activeWords.length, total: activeWords.length, seconds },
             duration_ms: seconds * 1000,
           } as GamePlay}
         />

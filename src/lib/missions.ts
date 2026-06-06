@@ -9,11 +9,11 @@ import type { GameId } from './games-store'
 import { addXp } from './meta-progression'
 
 const STORAGE_KEY = 'ts_missions'
-// v2 (Fase 2 auditoría): d-hawkeye fuera del pool (TakaGrid 9/9 hoy es
-// incompletable + bug de score ×2 en hard) y w-once pasa a "completar" en vez
-// de "11/11 perfecto" (la escala de score de Mi Once la rehace la Fase 4).
+// v3 (Fase 3·parte 2): d-hawkeye vuelve al pool con meta `solved-exact`
+// (payload.solved===9), ahora que los 50 grids de TakaGrid son resolubles.
+// v2 (Fase 2): d-hawkeye fuera + w-once "completar" en vez de "11/11 perfecto".
 // El bump fuerza a todos los clientes a regenerar misiones corregidas.
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
 const CHANGED_EVENT = 'ts:missions-changed'
 
 export type MissionPeriod = 'daily' | 'weekly'
@@ -23,6 +23,7 @@ export type MissionGoal =
   | { kind: 'play-game'; gameId: GameId; target: number }
   | { kind: 'play-all-four' }
   | { kind: 'score-at-least'; gameId: GameId; min: number }
+  | { kind: 'solved-exact'; gameId: GameId; solved: number }
 
 export interface MissionTemplate {
   id: string
@@ -67,12 +68,12 @@ export const TEMPLATES: Record<string, MissionTemplate> = {
     id: 'd-warmup', title: 'Calienta motores', description: 'Termina 2 partidas hoy (cualquier juego)',
     emoji: '🔥', goal: { kind: 'play-any', target: 2 }, rewardXp: 30, period: 'daily',
   },
-  // DESHABILITADA (fuera de DAILY_POOL) hasta Fase 3: TakaGrid 9/9 hoy es
-  // incompletable (catálogo roto) y min:90 se cumple con 5/9 en modo hard
-  // (score = solved×20). Reactivar con una meta tipo "solved===9" tras el fix.
+  // Reactivada en Fase 3·parte 2: los 50 grids son resolubles (test de solvencia)
+  // y la meta es `solved-exact` (payload.solved===9), independiente del modo hard
+  // (antes min:90 se cumplía con 5/9 en hard porque score = solved×20).
   'd-hawkeye': {
     id: 'd-hawkeye', title: 'Ojo de halcón', description: 'Resuelve TakaGrid 9/9',
-    emoji: '🦅', goal: { kind: 'score-at-least', gameId: 'takagrid', min: 90 }, rewardXp: 60, period: 'daily',
+    emoji: '🦅', goal: { kind: 'solved-exact', gameId: 'takagrid', solved: 9 }, rewardXp: 60, period: 'daily',
   },
   'd-combo': {
     id: 'd-combo', title: 'Combo de fuego', description: 'Saca ≥100 pts en CrackQuiz',
@@ -92,7 +93,7 @@ export const TEMPLATES: Record<string, MissionTemplate> = {
   },
 }
 
-const DAILY_POOL: string[]  = ['d-quad', 'd-trivia7', 'd-warmup', 'd-combo', 'd-double-quiz'] // d-hawkeye deshabilitada hasta Fase 3
+const DAILY_POOL: string[]  = ['d-quad', 'd-trivia7', 'd-warmup', 'd-combo', 'd-double-quiz', 'd-hawkeye']
 const WEEKLY_POOL: string[] = ['w-once', 'w-sopa']
 const DAILY_COUNT = 2
 const WEEKLY_COUNT = 1
@@ -136,6 +137,7 @@ function targetOf(g: MissionGoal): number {
     case 'play-game':      return g.target
     case 'play-all-four':  return 4
     case 'score-at-least': return 1
+    case 'solved-exact':   return 1
   }
 }
 
@@ -224,6 +226,8 @@ export function getActiveMissions(): Array<{ mission: MissionInstance; template:
 export interface PlayReport {
   /** Score normalizado de la partida (ej. CrackQuiz 0–~200, TakaGrid solved*10). */
   score: number
+  /** Celdas resueltas (TakaGrid): nº de aciertos 0..9, para metas exactas. */
+  solved?: number
 }
 
 /**
@@ -266,6 +270,12 @@ export function reportPlay(gameId: GameId, p: PlayReport): void {
       }
       case 'score-at-least':
         if (g.gameId === gameId && p.score >= g.min) {
+          inst.progress = 1
+          advanced = true
+        }
+        break
+      case 'solved-exact':
+        if (g.gameId === gameId && p.solved === g.solved) {
           inst.progress = 1
           advanced = true
         }

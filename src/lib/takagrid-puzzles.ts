@@ -62,7 +62,7 @@ const fromCountries = (id: string, label: string, emoji: string, countries: stri
 
 // ── Definiciones de condiciones ──────────────────────────────────
 
-const C = {
+export const C = {
   // Clubes — LaLiga
   realMadrid:   club('Real Madrid',       '⚪',  /Real Madrid/i),
   barcelona:    club('FC Barcelona',      '🔴',  /FC Barcelona/i),
@@ -136,257 +136,106 @@ const C = {
 // ── Puzzles definidos ─────────────────────────────────────────────
 
 export const PUZZLES: GridPuzzle[] = [
-  // 0 — Clásico español
-  {
-    rows: [C.realMadrid, C.barcelona, C.atletico],
-    cols: [C.spain, C.brasil, C.fwd],
-  },
-  // 1 — Premier league
-  {
-    rows: [C.manUtd, C.liverpool, C.arsenal],
-    cols: [C.england, C.france, C.def],
-  },
-  // 2 — Serie A
-  {
-    rows: [C.juventus, C.milan, C.inter],
-    cols: [C.italy, C.brasil, C.mid],
-  },
-  // 3 — Mezclado europeo
-  {
-    rows: [C.realMadrid, C.manCity, C.bayern],
-    cols: [C.france, C.southAmerica, C.gk],
-  },
-  // 4 — España vs Premier
-  {
-    rows: [C.barcelona, C.arsenal, C.chelsea],
-    cols: [C.spain, C.netherlands, C.historic],
-  },
-  // 5 — Nacionales europeos
-  {
-    rows: [C.realMadrid, C.psg, C.inter],
-    cols: [C.portugal, C.argentina, C.current],
-  },
-  // 6 — Clásico histórico
-  {
-    rows: [C.manUtd, C.juventus, C.milan],
-    cols: [C.italy, C.netherlands, C.fwd],
-  },
-  // 7 — Mix moderno
-  {
-    rows: [C.liverpool, C.manCity, C.barcelona],
-    cols: [C.brasil, C.england, C.def],
-  },
-  // 8 — Ibérico
-  {
-    rows: [C.realMadrid, C.atletico, C.villarreal],
-    cols: [C.iberia, C.argentina, C.mid],
-  },
-  // 9 — Bundesliga + Serie A
-  {
-    rows: [C.bayern, C.dortmund, C.napoli],
-    cols: [C.germany, C.italy, C.fwd],
-  },
-  // 10 — Premier puro
-  {
-    rows: [C.manCity, C.chelsea, C.tottenham],
-    cols: [C.england, C.brasil, C.gk],
-  },
-  // 11 — Latinoamérica
-  {
-    rows: [C.realMadrid, C.barcelona, C.psg],
-    cols: [C.latin, C.croatia, C.current],
-  },
-  // 12 — Histórico legendario
-  {
-    rows: [C.manUtd, C.milan, C.realMadrid],
-    cols: [C.historic, C.italy, C.mid],
-  },
-  // 13 — Mix defensivo
-  {
-    rows: [C.liverpool, C.juventus, C.atletico],
-    cols: [C.def, C.spain, C.brasil],
-  },
-  // 14 — Modernos
-  {
-    rows: [C.arsenal, C.leverkusen, C.inter],
-    cols: [C.current, C.england, C.fwd],
-  },
-
-  // 15 — Premier clásico
-  {
-    rows: [C.manUtd, C.liverpool, C.arsenal],
-    cols: [C.england, C.spain, C.def],
-  },
-  // 16 — Chelsea y el dinero
-  {
-    rows: [C.chelsea, C.manCity, C.tottenham],
-    cols: [C.france, C.brasil, C.mid],
-  },
-  // 17 — Premier goleadores
-  {
-    rows: [C.arsenal, C.chelsea, C.liverpool],
-    cols: [C.netherlands, C.brasil, C.fwd],
-  },
-  // 18 — Premier porteros
-  {
-    rows: [C.manUtd, C.manCity, C.arsenal],
-    cols: [C.england, C.spain, C.gk],
-  },
-  // 19 — Español profundo
-  {
-    rows: [C.realMadrid, C.barcelona, C.atletico],
-    cols: [C.germany, C.portugal, C.def],
-  },
-  // 20 — LaLiga vs Sudamérica
-  {
-    rows: [C.realMadrid, C.barcelona, C.sevilla],
-    cols: [C.argentina, C.brasil, C.mid],
-  },
-  // 21 — España periférica
-  {
-    rows: [C.athletic, C.realSociedad, C.villarreal],
-    cols: [C.spain, C.southAmerica, C.fwd],
-  },
-  // 22 — Madrid y la Premier
-  {
-    rows: [C.realMadrid, C.manUtd, C.liverpool],
-    cols: [C.portugal, C.france, C.mid],
-  },
-  // 23 — Italia clásica
-  {
-    rows: [C.juventus, C.milan, C.inter],
-    cols: [C.argentina, C.france, C.gk],
-  },
-  // 24 — Serie A defensores
-  {
-    rows: [C.juventus, C.inter, C.napoli],
-    cols: [C.italy, C.brasil, C.def],
-  },
-  // 25 — Serie A delanteros
-  {
-    rows: [C.milan, C.roma, C.napoli],
-    cols: [C.italy, C.southAmerica, C.fwd],
-  },
-  // 26 — Bundesliga y Champions
-  {
-    rows: [C.bayern, C.dortmund, C.leverkusen],
-    cols: [C.germany, C.spain, C.mid],
-  },
-  // 27 — Alemania vs Premier
-  {
-    rows: [C.bayern, C.manCity, C.arsenal],
-    cols: [C.germany, C.france, C.def],
-  },
-  // 28 — PSG y élite europea
-  {
-    rows: [C.psg, C.barcelona, C.juventus],
-    cols: [C.brasil, C.france, C.fwd],
-  },
-  // 29 — Tríada continental
-  {
-    rows: [C.realMadrid, C.juventus, C.bayern],
-    cols: [C.germany, C.argentina, C.mid],
-  },
-  // 30 — Liverpool histórico
-  {
-    rows: [C.liverpool, C.juventus, C.inter],
-    cols: [C.italy, C.england, C.fwd],
-  },
-  // 31 — Barça y sus rivales
-  {
-    rows: [C.barcelona, C.manUtd, C.psg],
-    cols: [C.france, C.portugal, C.mid],
-  },
-  // 32 — Galácticos comparados
-  {
-    rows: [C.realMadrid, C.manUtd, C.psg],
-    cols: [C.france, C.portugal, C.gk],
-  },
-  // 33 — Europa clásica
-  {
-    rows: [C.arsenal, C.milan, C.inter],
-    cols: [C.netherlands, C.italy, C.fwd],
-  },
-  // 34 — Mix moderno
-  {
-    rows: [C.chelsea, C.manCity, C.psg],
-    cols: [C.brasil, C.france, C.def],
-  },
-  // 35 — Iberia en Europa
-  {
-    rows: [C.realMadrid, C.barcelona, C.psg],
-    cols: [C.iberia, C.brasil, C.def],
-  },
-  // 36 — Belgas en la élite
-  {
-    rows: [C.manCity, C.chelsea, C.atletico],
-    cols: [C.belgium, C.spain, C.mid],
-  },
-  // 37 — Leyendas holandesas
-  {
-    rows: [C.barcelona, C.manUtd, C.arsenal],
-    cols: [C.netherlands, C.france, C.fwd],
-  },
-  // 38 — Uruguay en Europa
-  {
-    rows: [C.barcelona, C.psg, C.atletico],
-    cols: [C.uruguay, C.argentina, C.fwd],
-  },
-  // 39 — Colombianos en la élite
-  {
-    rows: [C.realMadrid, C.atletico, C.juventus],
-    cols: [C.colombia, C.southAmerica, C.mid],
-  },
-  // 40 — Porteros míticos
-  {
-    rows: [C.realMadrid, C.manUtd, C.juventus],
-    cols: [C.gk, C.spain, C.italy],
-  },
-  // 41 — Defensas históricos
-  {
-    rows: [C.milan, C.barcelona, C.liverpool],
-    cols: [C.def, C.italy, C.historic],
-  },
-  // 42 — Centrocampistas de oro
-  {
-    rows: [C.barcelona, C.realMadrid, C.manUtd],
-    cols: [C.mid, C.spain, C.historic],
-  },
-  // 43 — Delanteros actuales
-  {
-    rows: [C.manCity, C.psg, C.inter],
-    cols: [C.current, C.fwd, C.southAmerica],
-  },
-  // 44 — España en la Premier
-  {
-    rows: [C.liverpool, C.arsenal, C.manCity],
-    cols: [C.spain, C.southAmerica, C.mid],
-  },
-  // 45 — Brasil en Italia
-  {
-    rows: [C.milan, C.inter, C.roma],
-    cols: [C.brasil, C.italy, C.mid],
-  },
-  // 46 — Serie A histórica
-  {
-    rows: [C.juventus, C.milan, C.inter],
-    cols: [C.historic, C.france, C.def],
-  },
-  // 47 — Bundesliga histórica
-  {
-    rows: [C.bayern, C.dortmund, C.leverkusen],
-    cols: [C.historic, C.brasil, C.fwd],
-  },
-  // 48 — Europa del Este
-  {
-    rows: [C.barcelona, C.realMadrid, C.inter],
-    cols: [C.eastEurope, C.argentina, C.mid],
-  },
-  // 49 — Top europeo mixto
-  {
-    rows: [C.manCity, C.barcelona, C.napoli],
-    cols: [C.argentina, C.spain, C.fwd],
-  },
+  // 0 — Real Madrid · Chelsea · Paris SG  ×  Latino · Defensas · Centrocampistas  (min 5)
+  { rows: [C.realMadrid, C.chelsea, C.psg], cols: [C.latin, C.def, C.mid] },
+  // 1 — Inter · AC Milan · Juventus  ×  Italia · Delanteros · Leyenda histórica  (min 7)
+  { rows: [C.inter, C.milan, C.juventus], cols: [C.italy, C.fwd, C.historic] },
+  // 2 — FC Barcelona · Manchester City · Bayern Múnich  ×  Defensas · Centrocampistas · En activo  (min 6)
+  { rows: [C.barcelona, C.manCity, C.bayern], cols: [C.def, C.mid, C.current] },
+  // 3 — Manchester United · Liverpool · Arsenal  ×  Inglaterra · Sudamérica · Defensas  (min 4)
+  { rows: [C.manUtd, C.liverpool, C.arsenal], cols: [C.england, C.southAmerica, C.def] },
+  // 4 — Atlético de Madrid · Liverpool · Real Sociedad  ×  España · España o Portugal · En activo  (min 4)
+  { rows: [C.atletico, C.liverpool, C.realSociedad], cols: [C.spain, C.iberia, C.current] },
+  // 5 — Valencia · Napoli · Chelsea  ×  Sudamérica · Delanteros · Leyenda histórica  (min 3)
+  { rows: [C.valenciaClub, C.napoli, C.chelsea], cols: [C.southAmerica, C.fwd, C.historic] },
+  // 6 — Juventus · AC Milan · Inter  ×  Italia · Defensas · Delanteros  (min 7)
+  { rows: [C.juventus, C.milan, C.inter], cols: [C.italy, C.def, C.fwd] },
+  // 7 — Real Madrid · Arsenal · Paris SG  ×  Brasil · Francia · Centrocampistas  (min 4)
+  { rows: [C.realMadrid, C.arsenal, C.psg], cols: [C.brasil, C.france, C.mid] },
+  // 8 — Tottenham · Atlético de Madrid · Bayern Múnich  ×  Defensas · Delanteros · En activo  (min 3)
+  { rows: [C.tottenham, C.atletico, C.bayern], cols: [C.def, C.fwd, C.current] },
+  // 9 — Roma · FC Barcelona · Manchester City  ×  Sudamérica · Centrocampistas · Leyenda histórica  (min 3)
+  { rows: [C.roma, C.barcelona, C.manCity], cols: [C.southAmerica, C.mid, C.historic] },
+  // 10 — Manchester United · Valencia · Napoli  ×  Argentina · Sudamérica · Leyenda histórica  (min 3)
+  { rows: [C.manUtd, C.valenciaClub, C.napoli], cols: [C.argentina, C.southAmerica, C.historic] },
+  // 11 — Dortmund · Real Madrid · Arsenal  ×  Alemania · Delanteros · En activo  (min 3)
+  { rows: [C.dortmund, C.realMadrid, C.arsenal], cols: [C.germany, C.fwd, C.current] },
+  // 12 — Athletic Club · Liverpool · FC Barcelona  ×  España · España o Portugal · Delanteros  (min 3)
+  { rows: [C.athletic, C.liverpool, C.barcelona], cols: [C.spain, C.iberia, C.fwd] },
+  // 13 — Inter · AC Milan · Juventus  ×  Francia · Italia · Latino  (min 3)
+  { rows: [C.inter, C.milan, C.juventus], cols: [C.france, C.italy, C.latin] },
+  // 14 — Manchester City · Paris SG · Atlético de Madrid  ×  Sudamérica · Defensas · Delanteros  (min 4)
+  { rows: [C.manCity, C.psg, C.atletico], cols: [C.southAmerica, C.def, C.fwd] },
+  // 15 — Manchester United · Chelsea · Arsenal  ×  Francia · Inglaterra · Leyenda histórica  (min 3)
+  { rows: [C.manUtd, C.chelsea, C.arsenal], cols: [C.france, C.england, C.historic] },
+  // 16 — Athletic Club · Bayern Múnich · Liverpool  ×  España o Portugal · Delanteros · En activo  (min 3)
+  { rows: [C.athletic, C.bayern, C.liverpool], cols: [C.iberia, C.fwd, C.current] },
+  // 17 — Roma · FC Barcelona · Paris SG  ×  Brasil · Centrocampistas · Leyenda histórica  (min 3)
+  { rows: [C.roma, C.barcelona, C.psg], cols: [C.brasil, C.mid, C.historic] },
+  // 18 — Valencia · Napoli · Manchester United  ×  Argentina · Latino · Leyenda histórica  (min 3)
+  { rows: [C.valenciaClub, C.napoli, C.manUtd], cols: [C.argentina, C.latin, C.historic] },
+  // 19 — Juventus · AC Milan · Inter  ×  Italia · Defensas · Centrocampistas  (min 7)
+  { rows: [C.juventus, C.milan, C.inter], cols: [C.italy, C.def, C.mid] },
+  // 20 — Real Sociedad · Liverpool · Real Madrid  ×  España · España o Portugal · Centrocampistas  (min 3)
+  { rows: [C.realSociedad, C.liverpool, C.realMadrid], cols: [C.spain, C.iberia, C.mid] },
+  // 21 — Chelsea · Atlético de Madrid · Bayern Múnich  ×  Centrocampistas · Delanteros · En activo  (min 4)
+  { rows: [C.chelsea, C.atletico, C.bayern], cols: [C.mid, C.fwd, C.current] },
+  // 22 — Real Sociedad · Manchester City · AC Milan  ×  España o Portugal · Centrocampistas · En activo  (min 3)
+  { rows: [C.realSociedad, C.manCity, C.milan], cols: [C.iberia, C.mid, C.current] },
+  // 23 — Paris SG · FC Barcelona · Real Madrid  ×  Brasil · Francia · Portugal  (min 3)
+  { rows: [C.psg, C.barcelona, C.realMadrid], cols: [C.brasil, C.france, C.portugal] },
+  // 24 — Napoli · Valencia · Manchester United  ×  Argentina · Delanteros · Leyenda histórica  (min 3)
+  { rows: [C.napoli, C.valenciaClub, C.manUtd], cols: [C.argentina, C.fwd, C.historic] },
+  // 25 — Arsenal · Manchester City · Chelsea  ×  Inglaterra · Centrocampistas · Delanteros  (min 4)
+  { rows: [C.arsenal, C.manCity, C.chelsea], cols: [C.england, C.mid, C.fwd] },
+  // 26 — Bayern Múnich · Atlético de Madrid · Juventus  ×  España o Portugal · Centrocampistas · Delanteros  (min 3)
+  { rows: [C.bayern, C.atletico, C.juventus], cols: [C.iberia, C.mid, C.fwd] },
+  // 27 — Inter · AC Milan · Juventus  ×  Francia · Italia · Centrocampistas  (min 3)
+  { rows: [C.inter, C.milan, C.juventus], cols: [C.france, C.italy, C.mid] },
+  // 28 — Roma · Real Madrid · Arsenal  ×  Brasil · Latino · Leyenda histórica  (min 3)
+  { rows: [C.roma, C.realMadrid, C.arsenal], cols: [C.brasil, C.latin, C.historic] },
+  // 29 — Paris SG · Manchester United · FC Barcelona  ×  Francia · Portugal · Sudamérica  (min 3)
+  { rows: [C.psg, C.manUtd, C.barcelona], cols: [C.france, C.portugal, C.southAmerica] },
+  // 30 — Athletic Club · Liverpool · Atlético de Madrid  ×  España · Delanteros · En activo  (min 3)
+  { rows: [C.athletic, C.liverpool, C.atletico], cols: [C.spain, C.fwd, C.current] },
+  // 31 — Tottenham · Inter · Bayern Múnich  ×  Defensas · Delanteros · En activo  (min 3)
+  { rows: [C.tottenham, C.inter, C.bayern], cols: [C.def, C.fwd, C.current] },
+  // 32 — Valencia · Napoli · Manchester United  ×  Argentina · Latino · Delanteros  (min 3)
+  { rows: [C.valenciaClub, C.napoli, C.manUtd], cols: [C.argentina, C.latin, C.fwd] },
+  // 33 — Roma · Chelsea · Paris SG  ×  Latino · Centrocampistas · Leyenda histórica  (min 3)
+  { rows: [C.roma, C.chelsea, C.psg], cols: [C.latin, C.mid, C.historic] },
+  // 34 — Athletic Club · Liverpool · Real Sociedad  ×  España · España o Portugal · En activo  (min 3)
+  { rows: [C.athletic, C.liverpool, C.realSociedad], cols: [C.spain, C.iberia, C.current] },
+  // 35 — Real Madrid · AC Milan · Arsenal  ×  Brasil · Francia · Países Bajos  (min 3)
+  { rows: [C.realMadrid, C.milan, C.arsenal], cols: [C.brasil, C.france, C.netherlands] },
+  // 36 — Manchester City · Atlético de Madrid · Inter  ×  Sudamérica · Defensas · Centrocampistas  (min 4)
+  { rows: [C.manCity, C.atletico, C.inter], cols: [C.southAmerica, C.def, C.mid] },
+  // 37 — Roma · FC Barcelona · Paris SG  ×  Brasil · Sudamérica · Centrocampistas  (min 3)
+  { rows: [C.roma, C.barcelona, C.psg], cols: [C.brasil, C.southAmerica, C.mid] },
+  // 38 — Villarreal · Tottenham · Roma  ×  Sudamérica · Defensas · Leyenda histórica  (min 2)
+  { rows: [C.villarreal, C.tottenham, C.roma], cols: [C.southAmerica, C.def, C.historic] },
+  // 39 — Dortmund · Tottenham · Juventus  ×  Defensas · Delanteros · Leyenda histórica  (min 2)
+  { rows: [C.dortmund, C.tottenham, C.juventus], cols: [C.def, C.fwd, C.historic] },
+  // 40 — Villarreal · Tottenham · Roma  ×  Latino · Defensas · Leyenda histórica  (min 2)
+  { rows: [C.villarreal, C.tottenham, C.roma], cols: [C.latin, C.def, C.historic] },
+  // 41 — Dortmund · Arsenal · FC Barcelona  ×  Alemania · Defensas · Delanteros  (min 2)
+  { rows: [C.dortmund, C.arsenal, C.barcelona], cols: [C.germany, C.def, C.fwd] },
+  // 42 — Bayer Leverkusen · Tottenham · Atlético de Madrid  ×  Defensas · Centrocampistas · En activo  (min 2)
+  { rows: [C.leverkusen, C.tottenham, C.atletico], cols: [C.def, C.mid, C.current] },
+  // 43 — Villarreal · Napoli · Chelsea  ×  Argentina · Sudamérica · Leyenda histórica  (min 2)
+  { rows: [C.villarreal, C.napoli, C.chelsea], cols: [C.argentina, C.southAmerica, C.historic] },
+  // 44 — Villarreal · Manchester City · Inter  ×  Argentina · Latino · Defensas  (min 2)
+  { rows: [C.villarreal, C.manCity, C.inter], cols: [C.argentina, C.latin, C.def] },
+  // 45 — Dortmund · Real Madrid · Arsenal  ×  Alemania · Defensas · En activo  (min 2)
+  { rows: [C.dortmund, C.realMadrid, C.arsenal], cols: [C.germany, C.def, C.current] },
+  // 46 — Bayer Leverkusen · Tottenham · AC Milan  ×  Defensas · Centrocampistas · En activo  (min 2)
+  { rows: [C.leverkusen, C.tottenham, C.milan], cols: [C.def, C.mid, C.current] },
+  // 47 — Villarreal · Chelsea · Juventus  ×  Argentina · Defensas · Leyenda histórica  (min 2)
+  { rows: [C.villarreal, C.chelsea, C.juventus], cols: [C.argentina, C.def, C.historic] },
+  // 48 — Villarreal · Manchester City · Inter  ×  Argentina · Sudamérica · Defensas  (min 2)
+  { rows: [C.villarreal, C.manCity, C.inter], cols: [C.argentina, C.southAmerica, C.def] },
+  // 49 — Villarreal · Napoli · Manchester United  ×  Argentina · Latino · Leyenda histórica  (min 2)
+  { rows: [C.villarreal, C.napoli, C.manUtd], cols: [C.argentina, C.latin, C.historic] },
 ]
 
 

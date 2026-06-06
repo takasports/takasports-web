@@ -870,7 +870,7 @@ export default function TakaGridPage() {
           payload: { solved: solvedArr, hardMode },
         })
         addXp('takagrid', xpForTakagrid(solvedCount) + (hardMode ? 15 : 0))
-        reportPlay('takagrid', { score })
+        reportPlay('takagrid', { score, solved: solvedCount })
         trackGameEvent({ gameId: 'takagrid', event: 'completed', period, meta: { solved: solvedCount, hardMode } })
 
         const prev = loadStreak()

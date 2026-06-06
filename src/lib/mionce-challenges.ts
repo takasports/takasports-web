@@ -215,26 +215,6 @@ export const CHALLENGES: Challenge[] = [
       rw:  TAG.club('Real Madrid',   '⚪', /Real Madrid/i),
     },
   },
-  {
-    id: 'laliga-posicion',
-    title: 'LaLiga por club y posición',
-    tagline: 'Cada puesto, un grande de España',
-    description: 'Coloca un jugador de cada uno de los clubes históricos de LaLiga en su posición. Sin repetir club.',
-    recommendedFormation: '4-4-2',
-    slotTags: {
-      gk:  TAG.club('Real Madrid',   '⚪', /Real Madrid/i),
-      lb:  TAG.club('Atlético',      '🔴', /Atlético de Madrid/i),
-      cb1: TAG.club('Barcelona',     '🔵', /FC Barcelona/i),
-      cb2: TAG.club('Valencia',      '🦇', /Valencia/i),
-      rb:  TAG.club('Sevilla',       '🔴', /Sevilla/i),
-      lm:  TAG.club('Athletic',      '🔴', /Athletic/i),
-      cm1: TAG.club('Villarreal',    '🟡', /Villarreal/i),
-      cm2: TAG.club('Real Betis',    '🟢', /Real Betis/i),
-      rm:  TAG.club('Real Sociedad', '🔵', /Real Sociedad/i),
-      st1: TAG.club('Deportivo',     '⚪', /Deportivo/i),
-      st2: TAG.club('Espanyol',      '🔵', /Espanyol/i),
-    },
-  },
 ]
 
 // PRNG determinista por semana ISO (mulberry32)

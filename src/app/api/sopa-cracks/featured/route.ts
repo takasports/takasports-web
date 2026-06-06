@@ -55,7 +55,11 @@ function validate(body: unknown): FeaturedPuzzle | null {
   }
   if (words.length < 5 || words.length > 14) return null
   const intruder = sanitizeWord(b.intruder) ?? undefined
-  return { title, subtitle, size, words, intruder }
+  // El grid debe caber la palabra más larga: si no, sería incolocable y el
+  // puzzle quedaría incompletable. Subimos `size` a maxLen (+2 de margen) ≤ 16.
+  const maxLen = Math.max(...words.map(w => w.length), intruder?.length ?? 0)
+  const fitSize = Math.min(16, Math.max(size, maxLen + 2))
+  return { title, subtitle, size: fitSize, words, intruder }
 }
 
 export async function GET(req: NextRequest) {

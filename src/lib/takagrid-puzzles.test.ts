@@ -27,62 +27,16 @@ const FORMATION_POSITIONS: Record<FormationId, Record<string, PlayerPosition>> =
   '4-2-3-1': { gk: 'GK', lb: 'DEF', cb1: 'DEF', cb2: 'DEF', rb: 'DEF', dm1: 'MID', dm2: 'MID', lam: 'MID', cam: 'MID', ram: 'MID', st: 'FWD' },
 }
 
-// Puzzles que aún incumplen el ≥2 y esperan regeneración en Fase 3 · parte 2
-// (sub-tarea 3d). "imposible" = tiene alguna celda con 0 soluciones (9/9 NO
-// alcanzable hoy); "1 sol" = completable pero con respuesta forzada (injusto).
-// Allowlist auto-limpiable: si uno se arregla el test avisa para sacarlo; si uno
-// nuevo se rompe (no listado), también falla. Medido el 2026-06-06 tras 3b+3c.
-const KNOWN_BROKEN_PUZZLES: Record<number, string> = {
-  0:  'Atlético×Brasil (imposible)',
-  1:  'Liverpool×Francia (1 sol)',
-  2:  'Juventus×Brasil (1 sol)',
-  3:  'Bayern×Sudamérica imposible; ManCity×Francia/Porteros (1 sol)',
-  4:  'Chelsea×España/P.Bajos (1 sol)',
-  5:  'PSG×Argentina (imposible)',
-  6:  'ManUtd×Italia (imposible)',
-  7:  'Barça×Inglaterra (imposible)',
-  8:  'Villarreal×Iberia/Medios (1 sol)',
-  9:  'Bayern/Dortmund×Italia + Napoli×Alemania/Italia (imposibles)',
-  10: 'ManCity×Porteros, Tottenham×Inglaterra/Brasil (1 sol)',
-  11: 'Barça/PSG×Croacia (imposibles)',
-  12: 'ManUtd×Italia imposible; RM×Italia (1 sol)',
-  13: 'Atlético×Brasil imposible; Juventus×España/Brasil (1 sol)',
-  14: 'Leverkusen/Inter×Inglaterra (imposibles)',
-  15: 'ManUtd×España (imposible)',
-  16: 'ManCity/Tottenham×Francia, Tottenham×Brasil (1 sol)',
-  17: 'Chelsea×P.Bajos (1 sol)',
-  18: 'ManUtd×España imposible; ManCity×Porteros (1 sol)',
-  19: 'Atlético×Alemania imposible; Atlético×Portugal (1 sol)',
-  20: 'Sevilla×* (imposible — catálogo sin jugadores del Sevilla)',
-  21: 'Athletic/RealSociedad×Sudamérica + Villarreal×Delanteros (imposibles)',
-  22: 'Liverpool×Portugal/Francia (1 sol)',
-  23: 'Milan×Porteros (1 sol)',
-  24: 'Napoli×Italia/Brasil/Defensas (imposibles)',
-  25: 'Napoli×Italia imposible; Roma×Delanteros (1 sol)',
-  26: 'Dortmund×España imposible; resto (1 sol)',
-  27: 'ManCity×Alemania imposible; ManCity×Francia (1 sol)',
-  28: 'Juventus×Brasil (1 sol)',
-  29: 'Juventus×Alemania + Bayern×Argentina (imposibles)',
-  30: 'Juventus/Inter×Inglaterra imposibles; Liverpool×Italia (1 sol)',
-  32: 'PSG×Porteros (1 sol)',
-  33: 'Arsenal×Italia (imposible)',
-  34: 'ManCity×Francia (1 sol)',
-  36: 'Atlético×Bélgica imposible; Chelsea×España (1 sol)',
-  38: 'PSG×Argentina imposible; PSG×Uruguay (1 sol)',
-  39: 'Juventus×Colombia imposible; RM/Atlético×Colombia (1 sol)',
-  40: 'ManUtd×España/Italia imposibles; resto (1 sol)',
-  41: 'Barça×Italia imposible; Liverpool×Italia (1 sol)',
-  42: 'ManUtd×España (imposible)',
-  47: 'Bayern/Dortmund/Leverkusen×Brasil + Leverkusen×Leyenda (imposibles)',
-  48: 'Barça/Inter×Europa del Este (1 sol)',
-  49: 'Napoli×España (imposible)',
-}
+// Puzzles sin solución pendientes de regeneración (3d). VACÍO desde la parte 2:
+// los 50 grids se regeneraron con scripts/gen-takagrid-puzzles.ts garantizando
+// ≥2 candidatos por celda. La allowlist sigue como red: si alguien introduce un
+// grid imposible, el test falla aquí en vez de llegar a producción.
+const KNOWN_BROKEN_PUZZLES: Record<number, string> = {}
 
-// Retos tagged de Mi Once aún sin solución. `laliga-posicion` se retira de la
-// rotación en 3f (parte 2) / rework de Mi Once.
-const KNOWN_BROKEN_CHALLENGES: Record<string, string> = {
-  'laliga-posicion': 'Sevilla/Athletic-MID/Deportivo/Espanyol sin jugadores — se retira en 3f',
-}
+// Retos tagged de Mi Once sin solución. VACÍO: `laliga-posicion` se retiró de la
+// rotación en 3f (catálogo sin jugadores de Sevilla/Deportivo/Espanyol ni MID del
+// Athletic). Si un reto tagged queda sin solución, el test lo caza aquí.
+const KNOWN_BROKEN_CHALLENGES: Record<string, string> = {}
 
 // ── Integridad del catálogo ──────────────────────────────────────────────────
 
