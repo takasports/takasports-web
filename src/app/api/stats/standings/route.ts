@@ -531,7 +531,7 @@ async function fetchTennis(): Promise<{ atp: StandingRow[]; wta: StandingRow[] }
         return {
           rank:  Number(r.current ?? 99),
           name:  (ath?.displayName as string) ?? '—',
-          abbr:  cc,
+          abbr:  cc.toUpperCase(),
           value: String(r.points ?? 0),
           sub:   `${r.points ?? 0} pts`,
           trend: 'flat' as const,

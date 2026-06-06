@@ -421,25 +421,17 @@ const SPORTS: SportConfig[] = [
           },
           {
             id: 'pichichi-laliga', title: 'Pichichi LaLiga', metric: 'Goles', league: 'LaLiga',
+            // Placeholder hasta que /api/stats/players responda (applyLivePlayerToBlock
+            // lo reemplaza con el Pichichi en vivo). Antes había un snapshot hardcodeado
+            // (Lewandowski 26) que se mostraba como real mientras la API cargaba.
             rows: [
-              { rank: 1, name: 'Robert Lewandowski', team: 'FC Barcelona', value: '26', sub: '30 PJ', flag: '🇵🇱', trend: 'flat' },
-              { rank: 2, name: 'Kylian Mbappé',      team: 'Real Madrid',  value: '21', sub: '27 PJ', flag: '🇫🇷', trend: 'up' },
-              { rank: 3, name: 'Vinicius Jr',         team: 'Real Madrid',  value: '16', sub: '26 PJ', flag: '🇧🇷', trend: 'flat' },
-              { rank: 4, name: 'Antoine Griezmann',   team: 'Atlético',     value: '15', sub: '28 PJ', flag: '🇫🇷', trend: 'up' },
-              { rank: 5, name: 'Lamine Yamal',        team: 'FC Barcelona', value: '12', sub: '30 PJ', flag: '🇪🇸', trend: 'up' },
-              { rank: 6, name: 'Alexander Sørloth',   team: 'Villarreal',   value: '11', sub: '26 PJ', flag: '🇳🇴', trend: 'up' },
-              { rank: 7, name: 'Gorka Guruzeta',      team: 'Athletic Club',value: '10', sub: '28 PJ', flag: '🇪🇸', trend: 'up' },
+              { rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN · LaLiga', trend: 'flat' },
             ],
           },
           {
             id: 'bota-oro', title: 'Bota de Oro Europa', metric: 'Goles×2',
             rows: [
-              { rank: 1, name: 'Erling Haaland',    team: 'Man City · Premier',    value: '54', sub: '27 goles', flag: '🇳🇴', trend: 'up' },
-              { rank: 2, name: 'Harry Kane',         team: 'Bayern · Bundesliga',   value: '52', sub: '26 goles', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'flat' },
-              { rank: 3, name: 'Robert Lewandowski', team: 'Barcelona · LaLiga',    value: '52', sub: '26 goles', flag: '🇵🇱', trend: 'up' },
-              { rank: 4, name: 'Jonathan David',     team: 'Lille · Ligue 1',       value: '48', sub: '24 goles', flag: '🇨🇦', trend: 'up' },
-              { rank: 5, name: 'Lautaro Martínez',   team: 'Inter · Serie A',       value: '44', sub: '22 goles', flag: '🇦🇷', trend: 'up' },
-              { rank: 6, name: 'Kylian Mbappé',      team: 'Real Madrid · LaLiga',  value: '42', sub: '21 goles', flag: '🇫🇷', trend: 'up' },
+              { rank: 1, name: 'Cargando…', value: '—', sub: 'ESPN · 5 grandes ligas', trend: 'flat' },
             ],
           },
         ],
