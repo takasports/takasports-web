@@ -38,6 +38,17 @@ export default function MetodologiaPage() {
           <p className="mt-3 text-[11px]" style={{ color: '#5A5A72' }}>
             Score = (Rend × 0.40) + (Ctx × 0.20) + (Med × 0.25) + (Narr × 0.15)
           </p>
+          <p className="mt-4">Para <strong>creadores y periodistas</strong> aplicamos un criterio
+          paralelo, centrado en su oficio y no en resultados deportivos:</p>
+          <ul className="space-y-2 mt-3">
+            <Factor name="Audiencia" pct="50%" desc="Seguidores y suscriptores totales, ponderados por plataforma (YouTube, Instagram, TikTok, Twitch, X)." />
+            <Factor name="Contenido" pct="30%" desc="Calidad, frecuencia y engagement de lo que publican." />
+            <Factor name="Momento" pct="15%" desc="Crecimiento, viralidad reciente y relevancia en el debate actual." />
+            <Factor name="Profundidad" pct="5%" desc="Nivel de análisis y conocimiento del deporte que cubren." />
+          </ul>
+          <p className="mt-3 text-[11px]" style={{ color: '#5A5A72' }}>
+            Índice de Contenido = (Aud × 0.50) + (Cont × 0.30) + (Mom × 0.15) + (Prof × 0.05)
+          </p>
         </Section>
 
         <Section title="2. Comparabilidad entre deportes">

@@ -41,9 +41,16 @@ async function checkAuth(req: NextRequest): Promise<boolean> {
   })
 }
 
-// Fórmula canónica del Índice Taka (espejada de rankings.ts:calcScore)
-function calcScore(f: { rendimiento: number; contexto: number; mediatico: number; narrativa: number }) {
-  const base = f.rendimiento * 0.35 + f.contexto * 0.25 + f.mediatico * 0.25 + f.narrativa * 0.15
+// Fórmula canónica del Índice por TRACK (espejo de rankings.ts). El trigger
+// f_recompute_score_auto recalcula igual en DB; esto solo fija rank_auto.
+const CREATOR_CATS = new Set(['creadores', 'periodistas', 'creadores_wwe'])
+function calcScore(
+  f: { rendimiento: number; contexto: number; mediatico: number; narrativa: number },
+  category: string,
+) {
+  const base = CREATOR_CATS.has(category)
+    ? f.mediatico * 0.50 + f.rendimiento * 0.30 + f.narrativa * 0.15 + f.contexto * 0.05
+    : f.rendimiento * 0.40 + f.contexto * 0.20 + f.mediatico * 0.25 + f.narrativa * 0.15
   return Math.round(Math.max(0, Math.min(100, base)) * 10) / 10
 }
 
@@ -82,7 +89,7 @@ export async function POST(req: NextRequest) {
   // Asignar rank_auto por orden de score_auto descendente
   const computed = entries.map((e: any) => {
     const factors = e.factors ?? { rendimiento: 0, contexto: 0, mediatico: 0, narrativa: 0 }
-    return { ...e, _score: calcScore(factors), _factors: factors }
+    return { ...e, _score: calcScore(factors, category), _factors: factors }
   })
   computed.sort((a: any, b: any) => b._score - a._score)
   computed.forEach((e: any, i: number) => { e._rank = i + 1 })

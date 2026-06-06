@@ -19,7 +19,7 @@ import {
   type RankingEntry, type RankingTab,
   type JugadoresScope, type ClubesScope,
 } from '@/lib/rankings'
-import { getDisplayScore, getSportScore } from '@/lib/rankings-ui'
+import { getDisplayScore } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
 import { SearchIcon, CrownIcon, FireIcon, TennisIcon, StarIcon } from '@/components/icons/GameIcons'
 import RankRow from '@/components/rankings/RankRow'
@@ -93,6 +93,28 @@ const SPORT_FILTERS_CONTENIDO = [
   { label: 'Tenis',   slug: 'tenis' },
   { label: 'Pádel',   slug: 'padel' },
   { label: 'Golf',    slug: 'golf' },
+]
+
+// Tarjetas explicativas del Índice por track (deportistas vs contenido)
+const FACTOR_CARDS_ATLETA = [
+  { label: 'Rendimiento', pct: '40%', color: '#22c55e',
+    desc: 'Stats reales del deporte: goles, asistencias, PPG, victorias, podios. Es el peso principal.' },
+  { label: 'Contexto', pct: '20%', color: '#60a5fa',
+    desc: 'Nivel de la competición y posición de su equipo en la tabla. Jugar en Top-4 pesa más.' },
+  { label: 'Mediático', pct: '25%', color: '#f59e0b',
+    desc: 'Alcance en redes sociales, búsquedas en Google y menciones en prensa especializada.' },
+  { label: 'Narrativa', pct: '15%', color: '#c084fc',
+    desc: 'Momento de carrera, hitos históricos y peso simbólico. Lectura editorial transparente.' },
+]
+const FACTOR_CARDS_CONTENIDO = [
+  { label: 'Audiencia', pct: '50%', color: '#f59e0b',
+    desc: 'Seguidores y suscriptores ponderados por plataforma (YouTube, Instagram, TikTok, Twitch, X). Es el peso principal.' },
+  { label: 'Contenido', pct: '30%', color: '#22c55e',
+    desc: 'Calidad, frecuencia y engagement de lo que publica.' },
+  { label: 'Momento', pct: '15%', color: '#c084fc',
+    desc: 'Crecimiento, viralidad reciente y relevancia en el debate actual.' },
+  { label: 'Profundidad', pct: '5%', color: '#60a5fa',
+    desc: 'Nivel de análisis y conocimiento del deporte que cubre.' },
 ]
 
 const JUGADORES_SCOPES_FOR_SPORT: Record<string, JugadoresScope[]> = {
@@ -317,7 +339,7 @@ export default function RankingsClient({
   const sportFilterActive = !!activeSport && !isSpecialSport && !isContenido
   if (sportFilterActive && activeTab === 'jugadores' && jugadoresScope === 'global') {
     entries = [...entries]
-      .sort((a, b) => getSportScore(b) - getSportScore(a))
+      .sort((a, b) => getDisplayScore(b) - getDisplayScore(a))
       .map((e, i) => ({ ...e, rank: i + 1, _globalRank: e.rank }))
   }
 
@@ -946,23 +968,14 @@ export default function RankingsClient({
                 Cómo funciona el Índice Taka
               </p>
               <p className="text-xs leading-relaxed" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
-                Cada deportista recibe una puntuación de 0 a 100 ponderada en cuatro dimensiones. Toca el
+                {isContenido ? 'Cada creador o periodista' : 'Cada deportista'} recibe una puntuación de 0 a 100 ponderada en cuatro dimensiones. Toca el
                 botón <span className="font-bold" style={{ color: '#C4B5FD' }}>▾ Desglose</span> de cualquier
                 fila para ver los valores reales y el ajuste editorial (si lo hay).
               </p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {([
-              { label: 'Rendimiento', pct: '40%', color: '#22c55e',
-                desc: 'Stats reales del deporte: goles, asistencias, PPG, victorias, podios. Es el peso principal.' },
-              { label: 'Contexto', pct: '20%', color: '#60a5fa',
-                desc: 'Nivel de la competición y posición de su equipo en la tabla. Jugar en Top-4 pesa más.' },
-              { label: 'Mediático', pct: '25%', color: '#f59e0b',
-                desc: 'Alcance en redes sociales, búsquedas en Google y menciones en prensa especializada.' },
-              { label: 'Narrativa', pct: '15%', color: '#c084fc',
-                desc: 'Momento de carrera, hitos históricos y peso simbólico. Lectura editorial transparente.' },
-            ] as const).map(f => (
+            {(isContenido ? FACTOR_CARDS_CONTENIDO : FACTOR_CARDS_ATLETA).map(f => (
               <div key={f.label} className="rounded-xl px-3 py-2.5"
                 style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${f.color}1F` }}>
                 <div className="flex items-center justify-between mb-1">

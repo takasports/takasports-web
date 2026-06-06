@@ -18,22 +18,16 @@ export function isCreatorEntry(entry: Pick<RankingEntry, 'id' | 'category'>): bo
   return CREATOR_CATEGORIES.has(entry.category ?? '') || CREATOR_IDS.has(entry.id)
 }
 
-// Índice mostrado: cada track con su criterio (deportistas 40/20/25/15,
-// contenido 50/30/15/5). Único punto de verdad — ScoreBreakdown usa lo mismo.
+// Índice mostrado: la DB/curado ya traen el valor canónico — `score_auto` se
+// calcula por track en la DB (deportistas 40/20/25/15, contenido 50/30/15/5) y
+// `score_manual` lo pisa. Confiamos en ese número; el recálculo por track queda
+// como red de seguridad para entradas sin score persistido.
 export function getDisplayScore(entry: RankingEntry): number {
+  if (typeof entry.score === 'number' && entry.score > 0) return entry.score
   if (!entry.factors) return entry.score
   return isCreatorEntry(entry)
     ? calcCreatorScore(entry.factors, entry.editorialBoost)
     : calcScore(entry.factors, entry.editorialBoost)
-}
-
-// Score específico del deporte: rendimiento-heavy (r×0.50 + c×0.30 + m×0.15 + n×0.05)
-// Se usa cuando hay un filtro de deporte activo en el ranking.
-export function getSportScore(entry: RankingEntry): number {
-  if (entry.scoreSport !== undefined) return entry.scoreSport
-  if (!entry.factors) return entry.score
-  const { rendimiento, contexto, mediatico, narrativa } = entry.factors
-  return Math.round((rendimiento * 0.50 + contexto * 0.30 + mediatico * 0.15 + narrativa * 0.05) * 10) / 10
 }
 
 // La flecha refleja la tendencia editorial/DB (coherente con el insight),

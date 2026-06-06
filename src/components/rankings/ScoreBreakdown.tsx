@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import type { RankingEntry } from '@/lib/rankings'
-import { scoreColor, isCreatorEntry } from '@/lib/rankings-ui'
+import { scoreColor, isCreatorEntry, getDisplayScore } from '@/lib/rankings-ui'
 import { PinIcon } from '@/components/icons/GameIcons'
 
 const FACTOR_META_ATHLETE = [
@@ -41,18 +41,11 @@ export default function ScoreBreakdown({
   const isCreator = isCreatorEntry(entry)
   const FACTOR_META = isCreator ? FACTOR_META_CREATOR : FACTOR_META_ATHLETE
 
-  const base = Math.round((isCreator
-    ? entry.factors.mediatico   * 0.50 +
-      entry.factors.rendimiento * 0.30 +
-      entry.factors.narrativa   * 0.15 +
-      entry.factors.contexto    * 0.05
-    : entry.factors.rendimiento * 0.40 +
-      entry.factors.contexto    * 0.20 +
-      entry.factors.mediatico   * 0.25 +
-      entry.factors.narrativa   * 0.15
-  ) * 10) / 10
+  // El total es SIEMPRE el Índice mostrado (DB/curado, con override aplicado),
+  // para que la fila y el desglose nunca se contradigan.
+  const total = getDisplayScore(entry)
   const boost = entry.editorialBoost ?? 0
-  const total = Math.round(Math.max(0, Math.min(100, base + boost)) * 10) / 10
+  const base = Math.round((total - boost) * 10) / 10
 
   return (
     <div className={compact ? 'pt-1' : 'pt-2'}>
