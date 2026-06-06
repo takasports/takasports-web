@@ -37,8 +37,9 @@ export const articlesQuery = `*[_type == "article" && (status == "publicado" || 
   "priority": select(defined(headline) => "destacado", priority)
 }`
 
-// Feed por deporte — para páginas /[sport]: solo ese deporte, más artículos
-export const articlesBySportQuery = `*[_type == "article" && sport == $sport && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...40] {
+// Feed por deporte — para páginas /[sport] y /noticias?sport=. A2 (2026-06-06): mira sport
+// Y competition (igual que /api/articles), para no perder artículos cuyo deporte va en competition.
+export const articlesBySportQuery = `*[_type == "article" && (sport == $sport || competition == $sport) && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...40] {
   ${LISTING_FIELDS},
   "priority": select(defined(headline) => "destacado", priority)
 }`

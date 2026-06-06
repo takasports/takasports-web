@@ -13,7 +13,7 @@ import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 300
 
-export const metadata: Metadata = {
+const baseMetadata: Metadata = {
   title: 'Noticias deportivas en tiempo real',
   description: 'Todas las noticias del deporte al minuto: fútbol, NBA, F1, Tenis, UFC, WWE y más. Actualizado cada hora.',
   alternates: { canonical: `${SITE_URL}/noticias` },
@@ -26,6 +26,24 @@ export const metadata: Metadata = {
     type: 'website',
   },
   twitter: { card: 'summary_large_image', title: 'Noticias deportivas — TakaSports', site: '@takasportsx' },
+}
+
+// A1 (2026-06-06): la vista filtrada /noticias?sport=X NO se indexa para no competir con el
+// hub canónico /[sport] (la página rica del deporte: ranking + eventos + noticias). El
+// canonical de la variante apunta a ese hub; el listado base /noticias se indexa normal.
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ sport?: string }> }): Promise<Metadata> {
+  const { sport } = await searchParams
+  const slug = sport?.toLowerCase()
+  const valid = slug && SLUG_TO_LABEL[slug] ? slug : undefined
+  if (!valid) return baseMetadata
+  const label = SLUG_TO_LABEL[valid]
+  return {
+    ...baseMetadata,
+    title: `Noticias de ${label}`,
+    description: `Últimas noticias de ${label}: actualidad, fichajes, resultados y análisis en TakaSports.`,
+    robots: { index: false, follow: true },
+    alternates: { canonical: `${SITE_URL}/${valid}` },
+  }
 }
 
 export default async function NoticiasPage({
