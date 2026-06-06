@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { normalizeTeam, normalizeAthlete, type NormalizedTeam } from '@/lib/teams-catalog'
-import { LIVE_FOOTBALL } from '@/lib/football-leagues'
+import { FOOTBALL_LEAGUES } from '@/lib/football-leagues'
 
 export interface LiveScore {
   id: string
@@ -43,8 +43,12 @@ const TERMINAL_STATUSES = new Set([
 ])
 
 const ESPN_TEAM_LEAGUES = [
-  // Fútbol en vivo desde la lista maestra (subconjunto live)
-  ...LIVE_FOOTBALL.map((l) => ({ slug: l.slug, sport: 'soccer', comp: l.comp })),
+  // TODAS las ligas de fútbol de la lista maestra (no solo el subconjunto
+  // live:true). Qué liga está "en temporada" cambia a lo largo del año, así que
+  // el filtro real es por estado del partido (en curso / reciente) en
+  // fetchTeamLeague. Así una liga que se está jugando (p. ej. J-League o la liga
+  // argentina, marcadas live:false) nunca se queda fuera del ticker "En vivo".
+  ...FOOTBALL_LEAGUES.map((l) => ({ slug: l.slug, sport: 'soccer', comp: l.comp })),
   { slug: 'basketball/nba', sport: 'basketball', comp: 'NBA' },
 ]
 
@@ -58,7 +62,7 @@ const _liveWarnedStatuses = new Set<string>()
 function warnUnknownLiveStatus(status: string, sport: string) {
   const KNOWN_LIVE = new Set([
     'STATUS_SCHEDULED', 'STATUS_PRE_GAME', 'STATUS_DELAYED', 'STATUS_RAIN_DELAY',
-    'STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_SECOND_HALF',
+    'STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_FIRST_HALF', 'STATUS_SECOND_HALF',
     'STATUS_END_PERIOD', 'STATUS_END_OF_PERIOD', 'STATUS_OVERTIME', 'STATUS_SHOOTOUT',
     'STATUS_FULL_TIME', 'STATUS_FINAL', 'STATUS_FINAL_PEN', 'STATUS_FINAL_AET',
     'STATUS_POST_GAME', 'STATUS_END_OF_REGULATION',
@@ -82,6 +86,9 @@ function mapStatus(espnStatus: string, sport: string, period?: number, completed
     if (sport === 'tennis') return 'LIVE'
     return '1H'
   }
+  // ESPN usa STATUS_FIRST_HALF / STATUS_SECOND_HALF en algunas ligas (p. ej.
+  // J-League) en vez de STATUS_IN_PROGRESS — sin esto caían al crudo "FIRST_HALF".
+  if (espnStatus === 'STATUS_FIRST_HALF')  return '1H'
   if (espnStatus === 'STATUS_HALFTIME')    return 'HT'
   if (espnStatus === 'STATUS_SECOND_HALF') return '2H'
   if (espnStatus === 'STATUS_END_PERIOD') {
@@ -199,6 +206,16 @@ async function fetchTeamLeague(slug: string, sport: string, comp: string, league
       const completed = statusType?.completed === true
       const state = statusType?.state
       if (statusName === 'STATUS_SCHEDULED' || statusName === 'STATUS_POSTPONED') continue
+
+      // Descarta partidos YA finalizados que no son de las últimas ~30h. En
+      // off-season el scoreboard de ESPN devuelve la última final jugada (de
+      // hace semanas) y ensuciaría el ticker "En vivo" (y empujaría fuera a los
+      // partidos realmente en curso). Los partidos en juego (state !== 'post')
+      // nunca se descartan aquí.
+      if (completed === true || state === 'post') {
+        const evMs = ev.date ? Date.parse(String(ev.date)) : NaN
+        if (Number.isNaN(evMs) || Date.now() - evMs > 30 * 60 * 60 * 1000) continue
+      }
 
       const competitors: RawCompetitor[] = competition.competitors ?? []
       const homeRaw = competitors.find((c) => c.homeAway === 'home') ?? competitors[0]

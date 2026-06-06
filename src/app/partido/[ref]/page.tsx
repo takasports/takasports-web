@@ -76,7 +76,7 @@ export async function generateMetadata({
 }
 
 const LIVE_STATUSES = new Set([
-  'STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_SECOND_HALF',
+  'STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_FIRST_HALF', 'STATUS_SECOND_HALF',
   'STATUS_END_PERIOD', 'STATUS_OVERTIME', 'STATUS_SHOOTOUT',
 ])
 const isLive = (s: string) => LIVE_STATUSES.has(s)
@@ -1385,6 +1385,7 @@ export default async function MatchPage({
     STATUS_RETIRED: 'https://schema.org/EventCompleted',
     STATUS_IN_PROGRESS: 'https://schema.org/EventScheduled',
     STATUS_HALFTIME: 'https://schema.org/EventScheduled',
+    STATUS_FIRST_HALF: 'https://schema.org/EventScheduled',
     STATUS_SECOND_HALF: 'https://schema.org/EventScheduled',
     STATUS_END_PERIOD: 'https://schema.org/EventScheduled',
     STATUS_OVERTIME: 'https://schema.org/EventScheduled',
@@ -1446,6 +1447,7 @@ export default async function MatchPage({
   // estructurados). El @id del SportsEvent se referencia como `about`.
   const isLive = match.status === 'STATUS_IN_PROGRESS'
     || match.status === 'STATUS_HALFTIME'
+    || match.status === 'STATUS_FIRST_HALF'
     || match.status === 'STATUS_SECOND_HALF'
     || match.status === 'STATUS_END_PERIOD'
     || match.status === 'STATUS_OVERTIME'

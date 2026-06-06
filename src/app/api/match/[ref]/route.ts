@@ -181,7 +181,7 @@ function detectSport(leagueSlug: string): SportKind {
 // esperar a un bug visible en producción.
 const KNOWN_STATUSES = new Set([
   'STATUS_SCHEDULED', 'STATUS_PRE_GAME', 'STATUS_DELAYED', 'STATUS_RAIN_DELAY',
-  'STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_SECOND_HALF',
+  'STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_FIRST_HALF', 'STATUS_SECOND_HALF',
   'STATUS_END_PERIOD', 'STATUS_END_OF_PERIOD', 'STATUS_OVERTIME', 'STATUS_SHOOTOUT',
   'STATUS_FULL_TIME', 'STATUS_FINAL', 'STATUS_FINAL_PEN', 'STATUS_FINAL_AET',
   'STATUS_POST_GAME', 'STATUS_END_OF_REGULATION',
@@ -214,6 +214,7 @@ function mapStatusLabel(espnStatus: string, period?: number, clock?: string, spo
   // Live
   if (sport === 'soccer') {
     if (espnStatus === 'STATUS_HALFTIME')    return 'Descanso'
+    if (espnStatus === 'STATUS_FIRST_HALF')  return `1T ${clock ?? ''}`.trim()
     if (espnStatus === 'STATUS_SECOND_HALF') return `2T ${clock ?? ''}`.trim()
     if (espnStatus === 'STATUS_IN_PROGRESS') return `${period === 2 ? '2T' : '1T'} ${clock ?? ''}`.trim()
     if (espnStatus === 'STATUS_OVERTIME')    return `Prórr. ${clock ?? ''}`.trim()
