@@ -145,6 +145,16 @@ export default async function EntryDetailPage(
 
   const sources = getEntrySources(id)
   const factors = entry.factors
+  // Base objetiva (suma ponderada de factores) y ajuste editorial = lo que la
+  // separa del Índice mostrado (editorial_boost y/o score_manual). Reconcilia
+  // las barras con el número grande cuando hay override editorial.
+  const factorBase = factors
+    ? Math.round((isCreatorEntry(entry)
+        ? factors.mediatico * 0.50 + factors.rendimiento * 0.30 + factors.narrativa * 0.15 + factors.contexto * 0.05
+        : factors.rendimiento * 0.40 + factors.contexto * 0.20 + factors.mediatico * 0.25 + factors.narrativa * 0.15
+      ) * 10) / 10
+    : ds
+  const editorialAdj = Math.round((ds - factorBase) * 10) / 10
 
   // JSON-LD por entry — tipo correcto según categoría
   const cat = entry.category ?? (sources.length > 0 ? sources[0] : '')
@@ -296,8 +306,16 @@ export default async function EntryDetailPage(
                 />
               ))}
             </div>
-            {entry.editorialBoost !== undefined && entry.editorialBoost !== 0 && (
-              <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            {Math.abs(editorialAdj) >= 0.1 && (
+              <div className="mt-4 pt-4 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px]" style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
+                    Base objetiva (factores)
+                  </span>
+                  <span className="text-sm tabular-nums font-bold" style={{ color: '#8A8AA0', fontFamily: 'var(--font-display)' }}>
+                    {factorBase.toFixed(1)}
+                  </span>
+                </div>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest mb-1"
@@ -313,10 +331,10 @@ export default async function EntryDetailPage(
                   </div>
                   <span className="text-base tabular-nums font-black flex-shrink-0"
                     style={{
-                      color: entry.editorialBoost > 0 ? '#22c55e' : '#f87171',
+                      color: editorialAdj > 0 ? '#22c55e' : '#f87171',
                       fontFamily: 'var(--font-display)',
                     }}>
-                    {entry.editorialBoost > 0 ? '+' : ''}{entry.editorialBoost.toFixed(1)}
+                    {editorialAdj > 0 ? '+' : ''}{editorialAdj.toFixed(1)}
                   </span>
                 </div>
               </div>

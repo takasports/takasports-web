@@ -41,11 +41,22 @@ export default function ScoreBreakdown({
   const isCreator = isCreatorEntry(entry)
   const FACTOR_META = isCreator ? FACTOR_META_CREATOR : FACTOR_META_ATHLETE
 
-  // El total es SIEMPRE el Índice mostrado (DB/curado, con override aplicado),
-  // para que la fila y el desglose nunca se contradigan.
+  // Base objetiva = suma ponderada de los factores (coincide con las barras).
+  const base = Math.round((isCreator
+    ? entry.factors.mediatico   * 0.50 +
+      entry.factors.rendimiento * 0.30 +
+      entry.factors.narrativa   * 0.15 +
+      entry.factors.contexto    * 0.05
+    : entry.factors.rendimiento * 0.40 +
+      entry.factors.contexto    * 0.20 +
+      entry.factors.mediatico   * 0.25 +
+      entry.factors.narrativa   * 0.15
+  ) * 10) / 10
+  // Total = el Índice mostrado (DB/curado, con override editorial aplicado).
   const total = getDisplayScore(entry)
-  const boost = entry.editorialBoost ?? 0
-  const base = Math.round((total - boost) * 10) / 10
+  // Ajuste editorial = lo que separa la base objetiva del total mostrado
+  // (incluye editorial_boost y/o un score_manual). Así el desglose siempre cuadra.
+  const boost = Math.round((total - base) * 10) / 10
 
   return (
     <div className={compact ? 'pt-1' : 'pt-2'}>
