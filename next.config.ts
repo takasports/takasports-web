@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
       { source: '/f1', destination: '/formula1', permanent: true },
       { source: '/mma', destination: '/ufc', permanent: true },
       { source: '/lucha-libre', destination: '/wwe', permanent: true },
+      // /login no es una ruta real; varios componentes redirigen aquí en 401.
+      // Lo enviamos al AuthModal (/auth/login → /perfil) en vez de dar 404.
+      { source: '/login', destination: '/auth/login', permanent: false },
     ]
   },
   images: {

@@ -35,6 +35,7 @@ import SportSelector from '@/components/rankings/SportSelector'
 import EntityTabBar from '@/components/rankings/EntityTabBar'
 import GlobalSearchResults from '@/components/rankings/GlobalSearchResults'
 import AppliedFiltersBar, { type AppliedFilter } from '@/components/rankings/AppliedFiltersBar'
+import PredictWidget from '@/components/rankings/PredictWidget'
 
 // ── Config por deporte ────────────────────────────────────────────────
 const ENTITY_CONFIG: Record<string, { id: RankingTab; label: string }[]> = {
@@ -275,11 +276,15 @@ export default function RankingsClient({
     const contenidoBase = (e: RankingEntry) =>
       CONTENIDO_SPORTS.includes(e.sport ?? '') &&
       (!contenidoSport || e.sport === contenidoSport)
-    entries = [
+    // Dedupe por id (algunos ids viven en dos arrays a la vez): último gana,
+    // coherente con contenidoTypeMap — evita pintar a la misma persona 2 veces.
+    const contenidoById = new Map<string, RankingEntry>()
+    for (const e of [
       ...db('creadores',     RANKING_CREADORES).filter(e => !e.featured),
       ...db('periodistas',   RANKING_PERIODISTAS).filter(e => !e.featured),
       ...db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => !e.featured),
-    ]
+    ]) contenidoById.set(e.id, e)
+    entries = [...contenidoById.values()]
       .filter(contenidoBase)
       .sort((a, b) => getDisplayScore(b) - getDisplayScore(a))
   } else if (activeTab === 'jugadores') {
@@ -925,6 +930,19 @@ export default function RankingsClient({
               </>
             )}
           </>
+        )}
+
+        {/* ── PREDICCIÓN (¿quién será #1 el próximo lunes?) ──────── */}
+        {!searchQuery.trim() && (
+          <PredictWidget category={
+            isContenido ? 'creadores'
+              : activeSport === 'wwe' ? (subEntity === 'creadores' ? 'creadores_wwe' : 'jugadores')
+              : activeTab === 'clubes' ? (isFemenino ? 'clubes_femenino' : 'clubes')
+              : isFemenino ? (activeSport === 'ufc' ? 'luchadoras_ufc' : 'jugadoras')
+              : jugadoresScope === 'sub21' ? 'sub21'
+              : jugadoresScope === 'pais' ? (paisJugadores === 'latam' ? 'latam' : paisJugadores === 'concacaf' ? 'concacaf' : 'jugadores')
+              : 'jugadores'
+          } />
         )}
 
         {/* ── DESTACADOS (solo contenido creadores/periodistas) ─── */}
