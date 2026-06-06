@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { PortableText } from '@portabletext/react'
+import { EmbeddedTweet } from 'react-tweet'
+import { getTweet, type Tweet } from 'react-tweet/api'
 import { sanityClient, articleDetailQuery, relatedArticlesQuery, nextArticleQuery, urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
@@ -380,6 +382,21 @@ export default async function NoticiaPage({
 
   const article = await sanityClient.fetch<Article>(articleDetailQuery, { id })
   if (!article) return notFound()
+
+  // Tweets embebidos del cuerpo: se pre-cargan en el servidor (react-tweet) para
+  // renderizarlos DENTRO de la noticia. Si X falla, cada bloque cae a un enlace.
+  const tweetMap = new Map<string, Tweet>()
+  if (article.bodyPortable) {
+    const ids = [...new Set(
+      article.bodyPortable
+        .filter((b) => b._type === 'videoEmbed' && (b as { kind?: string }).kind === 'tweet')
+        .map((b) => (b as { videoId?: string }).videoId)
+        .filter((x): x is string => Boolean(x)),
+    )]
+    await Promise.all(ids.map(async (tid) => {
+      try { const t = await getTweet(tid); if (t) tweetMap.set(tid, t) } catch { /* fallback a enlace */ }
+    }))
+  }
 
   // Usar picks editoriales si existen; si no, query dinámica por sport/category
   const [relatedFinal, nextArticle] = await Promise.all([
@@ -841,19 +858,29 @@ export default async function NoticiaPage({
                             </figure>
                           )
                         }
-                        if (v?.kind === 'tweet' && v.url) {
-                          return (
-                            <figure style={{ margin: '2.25rem 0', textAlign: 'center' }}>
-                              <a
-                                href={v.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ color: '#A78BFA', textDecoration: 'underline' }}
-                              >
-                                Ver publicación original ↗
-                              </a>
-                            </figure>
-                          )
+                        if (v?.kind === 'tweet') {
+                          const tw = v.videoId ? tweetMap.get(v.videoId) : undefined
+                          if (tw) {
+                            return (
+                              <figure data-theme="dark" className="flex justify-center" style={{ margin: '2.25rem 0' }}>
+                                <EmbeddedTweet tweet={tw} />
+                              </figure>
+                            )
+                          }
+                          if (v.url) {
+                            return (
+                              <figure style={{ margin: '2.25rem 0', textAlign: 'center' }}>
+                                <a
+                                  href={v.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: '#A78BFA', textDecoration: 'underline' }}
+                                >
+                                  Ver publicación original ↗
+                                </a>
+                              </figure>
+                            )
+                          }
                         }
                         return null
                       },
