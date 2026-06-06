@@ -14,7 +14,7 @@ import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: 'Juegos · Predicciones, trivia y fantasy deportivo — TakaSports',
-  description: 'Quiniela, CrackQuiz, Mi Once, Sopa de Cracks y TakaGrid. Compite cada semana en el ranking global de TakaSports.',
+  description: 'Mundial, Predicciones, CrackQuiz, Mi Once, Sopa de Cracks y TakaGrid. Compite cada semana en el ranking global de TakaSports.',
   alternates: { canonical: `${SITE_URL}/juegos` },
   openGraph: {
     type:        'website',
@@ -36,17 +36,18 @@ const JSON_LD = {
   '@type':    'CollectionPage',
   url:        `${SITE_URL}/juegos`,
   name:       'Juegos de TakaSports',
-  description: 'Colección de juegos deportivos: Quiniela, CrackQuiz, Mi Once, Sopa de Cracks, TakaGrid.',
+  description: 'Colección de juegos deportivos: Mundial, Predicciones, CrackQuiz, Mi Once, Sopa de Cracks, TakaGrid.',
   publisher:  { '@type': 'Organization', name: 'TakaSports', url: SITE_URL },
   mainEntity: {
     '@type':           'ItemList',
-    numberOfItems:     5,
+    numberOfItems:     6,
     itemListElement: [
-      { '@type': 'ListItem', position: 1, item: { '@type': 'VideoGame', name: 'Quiniela',       url: `${SITE_URL}/quiniela`,    genre: 'Predicción', applicationCategory: 'Game' } },
-      { '@type': 'ListItem', position: 2, item: { '@type': 'VideoGame', name: 'CrackQuiz',      url: `${SITE_URL}/crackquiz`,   genre: 'Trivia',     applicationCategory: 'Game' } },
-      { '@type': 'ListItem', position: 3, item: { '@type': 'VideoGame', name: 'Mi Once',        url: `${SITE_URL}/mionce`,      genre: 'Fantasy',    applicationCategory: 'Game' } },
-      { '@type': 'ListItem', position: 4, item: { '@type': 'VideoGame', name: 'Sopa de Cracks', url: `${SITE_URL}/sopa-cracks`, genre: 'Puzzle',     applicationCategory: 'Game' } },
-      { '@type': 'ListItem', position: 5, item: { '@type': 'VideoGame', name: 'TakaGrid',       url: `${SITE_URL}/takagrid`,    genre: 'Grid',       applicationCategory: 'Game' } },
+      { '@type': 'ListItem', position: 1, item: { '@type': 'VideoGame', name: 'Mundial',        url: `${SITE_URL}/mundial`,     genre: 'Predicción', applicationCategory: 'Game' } },
+      { '@type': 'ListItem', position: 2, item: { '@type': 'VideoGame', name: 'Predicciones',   url: `${SITE_URL}/quiniela`,    genre: 'Predicción', applicationCategory: 'Game' } },
+      { '@type': 'ListItem', position: 3, item: { '@type': 'VideoGame', name: 'CrackQuiz',      url: `${SITE_URL}/crackquiz`,   genre: 'Trivia',     applicationCategory: 'Game' } },
+      { '@type': 'ListItem', position: 4, item: { '@type': 'VideoGame', name: 'Mi Once',        url: `${SITE_URL}/mionce`,      genre: 'Fantasy',    applicationCategory: 'Game' } },
+      { '@type': 'ListItem', position: 5, item: { '@type': 'VideoGame', name: 'Sopa de Cracks', url: `${SITE_URL}/sopa-cracks`, genre: 'Puzzle',     applicationCategory: 'Game' } },
+      { '@type': 'ListItem', position: 6, item: { '@type': 'VideoGame', name: 'TakaGrid',       url: `${SITE_URL}/takagrid`,    genre: 'Grid',       applicationCategory: 'Game' } },
     ],
   },
 }

@@ -7,7 +7,6 @@ import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
-import { QUINIELA_PICKS_KEY, QUINIELA_MATCHES, MATCH_STATUS } from '@/components/QuinielaModule'
 import {
   IconQuiniela,
   IconCrackQuiz,
@@ -27,14 +26,10 @@ import MetaProgressionStrip from '@/components/games/MetaProgressionStrip'
 import MissionsCard from '@/components/games/MissionsCard'
 import TuDiaTaka from '@/components/games/TuDiaTaka'
 import StreakAtRiskBanner from '@/components/games/StreakAtRiskBanner'
-import LeaderboardPreview from '@/components/games/LeaderboardPreview'
 import PushOptIn from '@/components/games/PushOptIn'
 import GameStatusBadge from '@/components/games/GameStatusBadge'
 import LeaderboardTabs from '@/components/games/LeaderboardTabs'
-import GamesFilterBar from '@/components/games/GamesFilterBar'
 import GuestRankingHint from '@/components/games/GuestRankingHint'
-import { useGamesFilter } from '@/hooks/useGamesFilter'
-import { useMyPlayedGames } from '@/hooks/useMyPlayedGames'
 import { getGamePeriod } from '@/lib/games-periods'
 import type { GameId } from '@/lib/games-store'
 
@@ -72,24 +67,70 @@ interface Game {
   timeEst: string       // "~2 min" · "~5 min"
   pts: number           // puntos máximos por sesión
   releaseTarget?: string // Solo coming — etiqueta de fecha estimada ("Q3 2026", "Verano 2026")
+  heroNote?: string      // Solo featured — línea bajo el título del banner destacado
+  ctaLabel?: string      // Solo featured — texto del botón principal del banner
+}
+
+function IconMundial({ size = 26 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M3 12h18" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M12 3c2.6 2.4 4 5.6 4 9s-1.4 6.6-4 9c-2.6-2.4-4-5.6-4-9s1.4-6.6 4-9z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
 }
 
 const GAMES: Game[] = [
   {
+    id: 'mundial',
+    name: 'Mundial',
+    tagline: 'Vive el Mundial partido a partido.',
+    description: 'Predice el resultado de cada partido del Mundial y compite en el ranking global. Los partidos destacados puntúan doble.',
+    accent: '#FBBF24',
+    accentDim: '#B45309',
+    status: 'active',
+    href: '/mundial',
+    icon: <IconMundial />,
+    heroNote: 'Mundial 2026 · Predicciones abiertas',
+    ctaLabel: 'Jugar el Mundial',
+    format: 'Por partido',
+    category: 'Predicciones',
+    difficulty: 2,
+    timeEst: '~2 min',
+    pts: 300,
+  },
+  {
     id: 'quiniela',
-    name: 'Quiniela',
+    name: 'Predicciones',
     tagline: 'Predice. Acumula. Domina.',
     description: 'Elige el resultado de cada partido de la jornada y compite en el ranking semanal con todos los usuarios.',
     accent: '#A78BFA',
     accentDim: '#7C3AED',
-    status: 'active',
+    status: 'live',
     href: '/quiniela',
     icon: <IconQuiniela />,
     format: 'Semanal',
-    category: 'Predicción',
+    category: 'Predicciones',
     difficulty: 2,
     timeEst: '~2 min',
     pts: 100,
+  },
+  {
+    id: 'ranked-futbol',
+    name: 'Ranked Fútbol',
+    tagline: 'Acierta los partidos destacados.',
+    description: 'Predice los partidos destacados de cada jornada y escala en el ranking. Los duelos top puntúan doble.',
+    accent: '#86EFAC',
+    accentDim: '#16A34A',
+    status: 'coming',
+    icon: <IconQuiniela />,
+    format: 'Por jornada',
+    category: 'Predicciones',
+    difficulty: 2,
+    timeEst: '~2 min',
+    releaseTarget: 'Pronto',
+    pts: 200,
   },
   {
     id: 'crackquiz',
@@ -198,13 +239,13 @@ const GAMES: Game[] = [
     id: 'ufcranked',
     name: 'UFC Ranked',
     tagline: 'Predice. Puntúa. Domina.',
-    description: 'Predice el resultado de cada combate UFC y sube en el ranking global. Puntos según tu precisión.',
+    description: 'Predice la cartelera de cada evento UFC: ganador y método de victoria. Los combates destacados puntúan doble.',
     accent: '#FB923C',
     accentDim: '#C2410C',
     status: 'coming',
     icon: <IconUFCPrediction />,
     format: 'Por evento',
-    category: 'Predicción',
+    category: 'Predicciones',
     difficulty: 3,
     timeEst: '~3 min',
     releaseTarget: 'Q3 2026',
@@ -241,10 +282,7 @@ function Badge({ label, color = 'rgba(255,255,255,0.06)', textColor = '#5A5A7A' 
 
 // ── Card activo hero ──────────────────────────────────────────
 
-function ActiveGameCard({ game, voted, matches }: { game: Game; voted: boolean; matches: typeof QUINIELA_MATCHES }) {
-  const previewMatches = matches.slice(0, 3)
-  const isOpen = MATCH_STATUS === 'open'
-
+function FeaturedGameCard({ game }: { game: Game }) {
   return (
     <Link
       href={game.href!}
@@ -267,7 +305,7 @@ function ActiveGameCard({ game, voted, matches }: { game: Game; voted: boolean; 
             className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
             style={{ background: `${game.accentDim}28`, color: game.accent, border: `1px solid ${game.accentDim}30` }}
           >
-            <IconQuiniela size={28} />
+            {game.icon}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center flex-wrap gap-2 mb-1.5">
@@ -292,15 +330,6 @@ function ActiveGameCard({ game, voted, matches }: { game: Game; voted: boolean; 
             </p>
           </div>
 
-          {voted && (
-            <span
-              className="flex-shrink-0 text-[10px] font-black px-3 py-1.5 rounded-full flex items-center gap-1.5"
-              style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.2)', fontFamily: 'var(--font-sport)' }}
-            >
-              <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#4ade80" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              Picks enviados
-            </span>
-          )}
         </div>
 
         {/* Stats strip */}
@@ -317,10 +346,14 @@ function ActiveGameCard({ game, voted, matches }: { game: Game; voted: boolean; 
             <span className="text-[10px]" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Dificultad</span>
             <DifficultyDots level={game.difficulty} />
           </div>
-          <div className="w-px h-3 bg-white opacity-[0.06]" />
-          <span className="text-[10px]" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
-            Jornada 38 · LaLiga EA Sports
-          </span>
+          {game.heroNote && (
+            <>
+              <div className="w-px h-3 bg-white opacity-[0.06]" />
+              <span className="text-[10px]" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
+                {game.heroNote}
+              </span>
+            </>
+          )}
         </div>
 
         {/* CTA */}
@@ -335,57 +368,12 @@ function ActiveGameCard({ game, voted, matches }: { game: Game; voted: boolean; 
               boxShadow: `0 4px 20px ${game.accentDim}40`,
             }}
           >
-            {voted ? 'Ver mis predicciones' : 'Hacer predicción'}
+            {game.ctaLabel ?? 'Jugar'}
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </span>
         </div>
       </div>
 
-      {/* Right — match preview panel */}
-      <div
-        className="relative z-10 lg:w-72 flex flex-col justify-center p-5 lg:p-6"
-        style={{ borderLeft: '1px solid rgba(124,58,237,0.12)' }}
-      >
-        <p className="text-[9px] font-black uppercase tracking-widest mb-3" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
-          Partidos de la jornada
-        </p>
-        <div className="flex flex-col gap-2">
-          {previewMatches.map((m, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl"
-              style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.04)' }}
-            >
-              <span className="flex-1 text-right text-[10px] font-black truncate" style={{ color: '#9090B8', fontFamily: 'var(--font-display)' }}>
-                {m.home}
-              </span>
-              <span
-                className="flex-shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded"
-                style={{ background: 'rgba(124,58,237,0.12)', color: '#3A2860', fontFamily: 'var(--font-sport)' }}
-              >
-                VS
-              </span>
-              <span className="flex-1 text-[10px] font-black truncate" style={{ color: '#9090B8', fontFamily: 'var(--font-display)' }}>
-                {m.away}
-              </span>
-            </div>
-          ))}
-          {matches.length > 3 && (
-            <p className="text-center text-[9px] mt-0.5" style={{ color: '#2A2A42', fontFamily: 'var(--font-sport)' }}>
-              +{matches.length - 3} partidos más
-            </p>
-          )}
-        </div>
-
-        {isOpen && (
-          <div className="mt-4 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
-            <span className="text-[9px]" style={{ color: '#2A6040', fontFamily: 'var(--font-sport)' }}>
-              Predicciones abiertas
-            </span>
-          </div>
-        )}
-      </div>
     </Link>
   )
 }
@@ -873,34 +861,22 @@ function ExternalGameCard({ game }: { game: Game }) {
 // ── Page ──────────────────────────────────────────────────────
 
 export default function JuegosPageClient() {
-  const [voted, setVoted] = useState(false)
-  const [quinielaMatches, setQuinielaMatches] = useState(QUINIELA_MATCHES)
   const [quinielaJornada, setQuinielaJornada] = useState<string | undefined>(undefined)
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(QUINIELA_PICKS_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        if (parsed?.picks && Array.isArray(parsed.picks)) setVoted(true)
-      }
-    } catch { /* ignore */ }
-
     fetch('/api/quiniela')
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data?.matches?.length) setQuinielaMatches(data.matches)
         if (typeof data?.jornada === 'string') setQuinielaJornada(data.jornada)
       })
       .catch(() => { /* use fallback */ })
   }, [])
 
-  const activeGame = GAMES.find(g => g.status === 'active')!
-  const allLive    = GAMES.filter(g => g.status === 'live')
-  const allComing  = GAMES.filter(g => g.status === 'coming')
-  const playedGames = useMyPlayedGames()
-  const liveGames   = useGamesFilter(allLive,   playedGames)
-  const comingGames = useGamesFilter(allComing, playedGames)
+  const mundialGame     = GAMES.find(g => g.id === 'mundial')!
+  const prediccionGames = GAMES.filter(g => g.category === 'Predicciones' && g.id !== 'mundial')
+  const minijuegos      = GAMES.filter(g => g.status === 'live' && !g.externalLinks && g.category !== 'Predicciones')
+  const partnerGames    = GAMES.filter(g => !!g.externalLinks)
+  const comingGames     = GAMES.filter(g => g.status === 'coming' && g.category !== 'Predicciones')
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
@@ -965,77 +941,76 @@ export default function JuegosPageClient() {
           <MissionsCard />
         </section>
 
-        {/* ── TOP 3 DEL DÍA / SEMANA ───────────────────────── */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10">
-          <LeaderboardPreview
-            gameId="crackquiz"
-            accent="#FCD34D"
-            label="CrackQuiz"
-          />
-          <LeaderboardPreview
-            gameId="mionce"
-            accent="#93C5FD"
-            label="Mi Once"
-          />
-        </section>
-
-        {/* ── JUEGO ACTIVO ─────────────────────────────────── */}
+        {/* PREDICCIONES — categoría destacada */}
         <section className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            <span
-              className="text-[10px] font-black uppercase tracking-widest"
-              style={{ color: '#4ade80', fontFamily: 'var(--font-sport)' }}
-            >
-              En vivo ahora
-            </span>
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <span className="section-accent" />
+              <h2 className="section-label">Predicciones</h2>
+              <span
+                className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest"
+                style={{ background: 'rgba(124,58,237,0.12)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.25)', fontFamily: 'var(--font-sport)' }}
+              >
+                Lo más jugado
+              </span>
+            </div>
+            <p className="text-[10px] hidden sm:block" style={{ color: '#2A2A40', fontFamily: 'var(--font-sport)' }}>
+              Mundial, ranked y más
+            </p>
           </div>
-          <ActiveGameCard game={activeGame} voted={voted} matches={quinielaMatches} />
+
+          <div className="mb-4">
+            <FeaturedGameCard game={mundialGame} />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {prediccionGames.map(game => (
+              game.status === 'live'
+                ? <LiveGameCard key={game.id} game={game} />
+                : <ComingGameCard key={game.id} game={game} />
+            ))}
+          </div>
         </section>
 
-        {/* ── FILTROS ─────────────────────────────────────── */}
-        <GamesFilterBar />
-
-        {liveGames.length === 0 && comingGames.length === 0 && (
-          <p className="text-center text-sm py-12" style={{ color: 'var(--text-muted)' }}>
-            Ningún juego coincide con los filtros. Prueba a quitar alguno.
-          </p>
-        )}
-
-        {/* ── DISPONIBLES ─────────────────────────────────── */}
-        {liveGames.length > 0 && (
+        {/* MINIJUEGOS */}
+        {minijuegos.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
                 <span className="section-accent" />
-                <h2 className="section-label">A jugar</h2>
+                <h2 className="section-label">Minijuegos</h2>
                 <span
                   className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest"
                   style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.2)', fontFamily: 'var(--font-sport)' }}
                 >
-                  {liveGames.length} {liveGames.length === 1 ? 'juego' : 'juegos'}
+                  {minijuegos.length} juegos
                 </span>
               </div>
               <p className="text-[10px] hidden sm:block" style={{ color: '#2A2A40', fontFamily: 'var(--font-sport)' }}>
-                Listos para jugar
+                Suma puntos a tu Liga Taka
               </p>
             </div>
 
-            {/* Apps amigas: banner full-width encima del grid */}
-            {liveGames.filter(g => g.externalLinks).map(game => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {minijuegos.map(game => (
+                <LiveGameCard key={game.id} game={game} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* APP AMIGA */}
+        {partnerGames.length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center gap-2.5 mb-5">
+              <span className="section-accent" />
+              <h2 className="section-label">App amiga</h2>
+            </div>
+            {partnerGames.map(game => (
               <div key={game.id} className="mb-4">
                 <ExternalGameCard game={game} />
               </div>
             ))}
-
-            {/* Juegos propios: grid estándar */}
-            {liveGames.filter(g => !g.externalLinks).length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {liveGames.filter(g => !g.externalLinks).map(game => (
-                  <LiveGameCard key={game.id} game={game} />
-                ))}
-              </div>
-            )}
           </section>
         )}
 
