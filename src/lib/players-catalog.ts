@@ -1,6 +1,8 @@
 // Catálogo de jugadores para Mi Once. Mezcla de leyendas históricas y jugadores
 // actuales. El campo `club` es el más reconocido del jugador (no necesariamente
-// el actual). `country` se usa para mostrar bandera. `era` permite filtrar retos.
+// el actual); `altClubs` añade otros clubes históricos relevantes para los grids
+// de TakaGrid y los slots de club de Mi Once (multiclub). `country` se usa para
+// mostrar bandera. `era` permite filtrar retos.
 
 export type PlayerPosition = 'GK' | 'DEF' | 'MID' | 'FWD'
 export type PlayerEra = 'historic' | 'current'
@@ -9,6 +11,9 @@ export interface Player {
   id: string
   name: string
   club: string
+  // Otros clubes reconocidos (opcional). Para "¿juega en el club X?" cuenta
+  // cualquiera de `[club, ...altClubs]`. No afecta a display ni a noRepeatClub.
+  altClubs?: string[]
   country: string
   position: PlayerPosition
   era: PlayerEra
@@ -109,8 +114,8 @@ const DEF: Player[] = [
   { id: 'barzagli', name: 'Andrea Barzagli', club: 'Juventus', country: 'Italia', position: 'DEF', era: 'historic' },
   { id: 'zambrotta', name: 'Gianluca Zambrotta', club: 'Juventus', country: 'Italia', position: 'DEF', era: 'historic' },
   { id: 'maicon', name: 'Maicon', club: 'Internazionale', country: 'Brasil', position: 'DEF', era: 'historic' },
-  { id: 'thiago-silva', name: 'Thiago Silva', club: 'Paris Saint-Germain', country: 'Brasil', position: 'DEF', era: 'historic' },
-  { id: 'david-luiz', name: 'David Luiz', club: 'Chelsea', country: 'Brasil', position: 'DEF', era: 'historic' },
+  { id: 'thiago-silva', name: 'Thiago Silva', club: 'Paris Saint-Germain', country: 'Brasil', position: 'DEF', era: 'historic', altClubs: ['Milan', 'Chelsea'] },
+  { id: 'david-luiz', name: 'David Luiz', club: 'Chelsea', country: 'Brasil', position: 'DEF', era: 'historic', altClubs: ['Paris Saint-Germain', 'Arsenal'] },
   { id: 'dani-alves', name: 'Dani Alves', club: 'FC Barcelona', country: 'Brasil', position: 'DEF', era: 'historic' },
   { id: 'marcelo', name: 'Marcelo', club: 'Real Madrid', country: 'Brasil', position: 'DEF', era: 'historic' },
   { id: 'pepe', name: 'Pepe', club: 'Real Madrid', country: 'Portugal', position: 'DEF', era: 'historic' },
@@ -131,7 +136,7 @@ const DEF: Player[] = [
   { id: 'balde', name: 'Alejandro Balde', club: 'FC Barcelona', country: 'España', position: 'DEF', era: 'current' },
   { id: 'cubarsi', name: 'Pau Cubarsí', club: 'FC Barcelona', country: 'España', position: 'DEF', era: 'current' },
   { id: 'christensen', name: 'Andreas Christensen', club: 'FC Barcelona', country: 'Dinamarca', position: 'DEF', era: 'current' },
-  { id: 'cancelo', name: 'João Cancelo', club: 'FC Barcelona', country: 'Portugal', position: 'DEF', era: 'current' },
+  { id: 'cancelo', name: 'João Cancelo', club: 'FC Barcelona', country: 'Portugal', position: 'DEF', era: 'current', altClubs: ['Manchester City', 'Juventus'] },
   { id: 'gimenez', name: 'José María Giménez', club: 'Atlético de Madrid', country: 'Uruguay', position: 'DEF', era: 'current' },
   { id: 'savic', name: 'Stefan Savić', club: 'Atlético de Madrid', country: 'Montenegro', position: 'DEF', era: 'current' },
   { id: 'hermoso', name: 'Mario Hermoso', club: 'Atlético de Madrid', country: 'España', position: 'DEF', era: 'current' },
@@ -206,8 +211,8 @@ const MID: Player[] = [
   { id: 'zico', name: 'Zico', club: 'Flamengo', country: 'Brasil', position: 'MID', era: 'historic' },
   { id: 'falcao', name: 'Paulo Roberto Falcão', club: 'Roma', country: 'Brasil', position: 'MID', era: 'historic' },
   { id: 'rivaldo', name: 'Rivaldo', club: 'FC Barcelona', country: 'Brasil', position: 'MID', era: 'historic' },
-  { id: 'ronaldinho', name: 'Ronaldinho', club: 'FC Barcelona', country: 'Brasil', position: 'MID', era: 'historic' },
-  { id: 'kaka', name: 'Kaká', club: 'Milan', country: 'Brasil', position: 'MID', era: 'historic' },
+  { id: 'ronaldinho', name: 'Ronaldinho', club: 'FC Barcelona', country: 'Brasil', position: 'MID', era: 'historic', altClubs: ['Milan', 'Paris Saint-Germain'] },
+  { id: 'kaka', name: 'Kaká', club: 'Milan', country: 'Brasil', position: 'MID', era: 'historic', altClubs: ['Real Madrid'] },
   { id: 'gerson', name: 'Gérson', club: 'Botafogo', country: 'Brasil', position: 'MID', era: 'historic' },
   { id: 'didi', name: 'Didi', club: 'Botafogo', country: 'Brasil', position: 'MID', era: 'historic' },
   { id: 'beckham', name: 'David Beckham', club: 'Manchester United', country: 'Inglaterra', position: 'MID', era: 'historic' },
@@ -215,14 +220,14 @@ const MID: Player[] = [
   { id: 'gerrard', name: 'Steven Gerrard', club: 'Liverpool', country: 'Inglaterra', position: 'MID', era: 'historic' },
   { id: 'lampard', name: 'Frank Lampard', club: 'Chelsea', country: 'Inglaterra', position: 'MID', era: 'historic' },
   { id: 'keane', name: 'Roy Keane', club: 'Manchester United', country: 'Irlanda', position: 'MID', era: 'historic' },
-  { id: 'vieira', name: 'Patrick Vieira', club: 'Arsenal', country: 'Francia', position: 'MID', era: 'historic' },
+  { id: 'vieira', name: 'Patrick Vieira', club: 'Arsenal', country: 'Francia', position: 'MID', era: 'historic', altClubs: ['Juventus', 'Internazionale', 'Manchester City'] },
   { id: 'henry-thierry', name: 'Robert Pirès', club: 'Arsenal', country: 'Francia', position: 'MID', era: 'historic' },
-  { id: 'makelele', name: 'Claude Makélélé', club: 'Real Madrid', country: 'Francia', position: 'MID', era: 'historic' },
+  { id: 'makelele', name: 'Claude Makélélé', club: 'Real Madrid', country: 'Francia', position: 'MID', era: 'historic', altClubs: ['Chelsea'] },
   { id: 'deschamps', name: 'Didier Deschamps', club: 'Juventus', country: 'Francia', position: 'MID', era: 'historic' },
   { id: 'petit', name: 'Emmanuel Petit', club: 'Arsenal', country: 'Francia', position: 'MID', era: 'historic' },
   { id: 'zambrano', name: 'Yaya Touré', club: 'Manchester City', country: 'Costa de Marfil', position: 'MID', era: 'historic' },
   { id: 'essien', name: 'Michael Essien', club: 'Chelsea', country: 'Ghana', position: 'MID', era: 'historic' },
-  { id: 'pirlo', name: 'Andrea Pirlo', club: 'Milan', country: 'Italia', position: 'MID', era: 'historic' },
+  { id: 'pirlo', name: 'Andrea Pirlo', club: 'Milan', country: 'Italia', position: 'MID', era: 'historic', altClubs: ['Juventus', 'Internazionale'] },
   { id: 'gattuso', name: 'Gennaro Gattuso', club: 'Milan', country: 'Italia', position: 'MID', era: 'historic' },
   { id: 'totti', name: 'Francesco Totti', club: 'Roma', country: 'Italia', position: 'MID', era: 'historic' },
   { id: 'del-piero', name: 'Alessandro Del Piero', club: 'Juventus', country: 'Italia', position: 'MID', era: 'historic' },
@@ -233,25 +238,25 @@ const MID: Player[] = [
   { id: 'iniesta', name: 'Andrés Iniesta', club: 'FC Barcelona', country: 'España', position: 'MID', era: 'historic' },
   { id: 'busquets', name: 'Sergio Busquets', club: 'FC Barcelona', country: 'España', position: 'MID', era: 'historic' },
   { id: 'fabregas', name: 'Cesc Fàbregas', club: 'Arsenal', country: 'España', position: 'MID', era: 'historic' },
-  { id: 'alonso-x', name: 'Xabi Alonso', club: 'Liverpool', country: 'España', position: 'MID', era: 'historic' },
+  { id: 'alonso-x', name: 'Xabi Alonso', club: 'Liverpool', country: 'España', position: 'MID', era: 'historic', altClubs: ['Real Madrid', 'Bayern Múnich'] },
   { id: 'silva-d', name: 'David Silva', club: 'Manchester City', country: 'España', position: 'MID', era: 'historic' },
   { id: 'guardiola', name: 'Pep Guardiola', club: 'FC Barcelona', country: 'España', position: 'MID', era: 'historic' },
   { id: 'redondo', name: 'Fernando Redondo', club: 'Real Madrid', country: 'Argentina', position: 'MID', era: 'historic' },
   { id: 'verón', name: 'Juan Sebastián Verón', club: 'Lazio', country: 'Argentina', position: 'MID', era: 'historic' },
-  { id: 'riquelme', name: 'Juan Román Riquelme', club: 'Villarreal', country: 'Argentina', position: 'MID', era: 'historic' },
+  { id: 'riquelme', name: 'Juan Román Riquelme', club: 'Villarreal', country: 'Argentina', position: 'MID', era: 'historic', altClubs: ['FC Barcelona'] },
   { id: 'aimar', name: 'Pablo Aimar', club: 'Valencia', country: 'Argentina', position: 'MID', era: 'historic' },
   { id: 'ortega', name: 'Ariel Ortega', club: 'River Plate', country: 'Argentina', position: 'MID', era: 'historic' },
-  { id: 'figo', name: 'Luís Figo', club: 'Real Madrid', country: 'Portugal', position: 'MID', era: 'historic' },
+  { id: 'figo', name: 'Luís Figo', club: 'Real Madrid', country: 'Portugal', position: 'MID', era: 'historic', altClubs: ['FC Barcelona', 'Internazionale'] },
   { id: 'rui-costa', name: 'Rui Costa', club: 'Milan', country: 'Portugal', position: 'MID', era: 'historic' },
   { id: 'deco', name: 'Deco', club: 'FC Barcelona', country: 'Portugal', position: 'MID', era: 'historic' },
   { id: 'effenberg', name: 'Stefan Effenberg', club: 'Bayern Múnich', country: 'Alemania', position: 'MID', era: 'historic' },
   { id: 'ballack', name: 'Michael Ballack', club: 'Bayern Múnich', country: 'Alemania', position: 'MID', era: 'historic' },
   { id: 'schweinsteiger', name: 'Bastian Schweinsteiger', club: 'Bayern Múnich', country: 'Alemania', position: 'MID', era: 'historic' },
-  { id: 'ozil', name: 'Mesut Özil', club: 'Real Madrid', country: 'Alemania', position: 'MID', era: 'historic' },
+  { id: 'ozil', name: 'Mesut Özil', club: 'Real Madrid', country: 'Alemania', position: 'MID', era: 'historic', altClubs: ['Arsenal'] },
   { id: 'kroos', name: 'Toni Kroos', club: 'Real Madrid', country: 'Alemania', position: 'MID', era: 'historic' },
   { id: 'davids', name: 'Edgar Davids', club: 'Juventus', country: 'Países Bajos', position: 'MID', era: 'historic' },
-  { id: 'seedorf', name: 'Clarence Seedorf', club: 'Milan', country: 'Países Bajos', position: 'MID', era: 'historic' },
-  { id: 'sneijder', name: 'Wesley Sneijder', club: 'Internazionale', country: 'Países Bajos', position: 'MID', era: 'historic' },
+  { id: 'seedorf', name: 'Clarence Seedorf', club: 'Milan', country: 'Países Bajos', position: 'MID', era: 'historic', altClubs: ['Real Madrid', 'Internazionale'] },
+  { id: 'sneijder', name: 'Wesley Sneijder', club: 'Internazionale', country: 'Países Bajos', position: 'MID', era: 'historic', altClubs: ['Real Madrid'] },
   { id: 'van-bommel', name: 'Mark van Bommel', club: 'Bayern Múnich', country: 'Países Bajos', position: 'MID', era: 'historic' },
 
   // Actuales
@@ -315,12 +320,12 @@ const MID: Player[] = [
   { id: 'isco', name: 'Isco', club: 'Real Betis', country: 'España', position: 'MID', era: 'current' },
   { id: 'guler', name: 'Arda Güler', club: 'Real Madrid', country: 'Turquía', position: 'MID', era: 'current' },
   { id: 'ceballos', name: 'Dani Ceballos', club: 'Real Madrid', country: 'España', position: 'MID', era: 'current' },
-  { id: 'thiago', name: 'Thiago Alcântara', club: 'Liverpool', country: 'España', position: 'MID', era: 'historic' },
+  { id: 'thiago', name: 'Thiago Alcântara', club: 'Liverpool', country: 'España', position: 'MID', era: 'historic', altClubs: ['Bayern Múnich', 'FC Barcelona'] },
   { id: 'verratti', name: 'Marco Verratti', club: 'Paris Saint-Germain', country: 'Italia', position: 'MID', era: 'historic' },
-  { id: 'pogba', name: 'Paul Pogba', club: 'Juventus', country: 'Francia', position: 'MID', era: 'historic' },
+  { id: 'pogba', name: 'Paul Pogba', club: 'Juventus', country: 'Francia', position: 'MID', era: 'historic', altClubs: ['Manchester United'] },
   { id: 'kante', name: "N'Golo Kanté", club: 'Chelsea', country: 'Francia', position: 'MID', era: 'historic' },
   { id: 'matuidi', name: 'Blaise Matuidi', club: 'Paris Saint-Germain', country: 'Francia', position: 'MID', era: 'historic' },
-  { id: 'griezmann', name: 'Antoine Griezmann', club: 'Atlético de Madrid', country: 'Francia', position: 'MID', era: 'current' },
+  { id: 'griezmann', name: 'Antoine Griezmann', club: 'Atlético de Madrid', country: 'Francia', position: 'MID', era: 'current', altClubs: ['FC Barcelona', 'Real Sociedad'] },
   { id: 'james-r2', name: 'James Rodríguez', club: 'Real Madrid', country: 'Colombia', position: 'MID', era: 'historic' },
 ]
 
@@ -331,10 +336,10 @@ const FWD: Player[] = [
   { id: 'cruyff-fwd', name: 'Garrincha', club: 'Botafogo', country: 'Brasil', position: 'FWD', era: 'historic' },
   { id: 'muller', name: 'Gerd Müller', club: 'Bayern Múnich', country: 'Alemania', position: 'FWD', era: 'historic' },
   { id: 'romario', name: 'Romário', club: 'FC Barcelona', country: 'Brasil', position: 'FWD', era: 'historic' },
-  { id: 'ronaldo-r9', name: 'Ronaldo Nazário', club: 'Real Madrid', country: 'Brasil', position: 'FWD', era: 'historic' },
-  { id: 'ronaldo-cr7', name: 'Cristiano Ronaldo', club: 'Real Madrid', country: 'Portugal', position: 'FWD', era: 'historic' },
-  { id: 'messi', name: 'Lionel Messi', club: 'FC Barcelona', country: 'Argentina', position: 'FWD', era: 'historic' },
-  { id: 'henry', name: 'Thierry Henry', club: 'Arsenal', country: 'Francia', position: 'FWD', era: 'historic' },
+  { id: 'ronaldo-r9', name: 'Ronaldo Nazário', club: 'Real Madrid', country: 'Brasil', position: 'FWD', era: 'historic', altClubs: ['FC Barcelona', 'Internazionale', 'Milan'] },
+  { id: 'ronaldo-cr7', name: 'Cristiano Ronaldo', club: 'Real Madrid', country: 'Portugal', position: 'FWD', era: 'current', altClubs: ['Manchester United', 'Juventus'] },
+  { id: 'messi', name: 'Lionel Messi', club: 'FC Barcelona', country: 'Argentina', position: 'FWD', era: 'current' },
+  { id: 'henry', name: 'Thierry Henry', club: 'Arsenal', country: 'Francia', position: 'FWD', era: 'historic', altClubs: ['FC Barcelona', 'Juventus'] },
   { id: 'shearer', name: 'Alan Shearer', club: 'Newcastle', country: 'Inglaterra', position: 'FWD', era: 'historic' },
   { id: 'owen', name: 'Michael Owen', club: 'Liverpool', country: 'Inglaterra', position: 'FWD', era: 'historic' },
   { id: 'rooney', name: 'Wayne Rooney', club: 'Manchester United', country: 'Inglaterra', position: 'FWD', era: 'historic' },
@@ -345,7 +350,7 @@ const FWD: Player[] = [
   { id: 'van-nistelrooy', name: 'Ruud van Nistelrooy', club: 'Manchester United', country: 'Países Bajos', position: 'FWD', era: 'historic' },
   { id: 'kluivert', name: 'Patrick Kluivert', club: 'FC Barcelona', country: 'Países Bajos', position: 'FWD', era: 'historic' },
   { id: 'van-persie', name: 'Robin van Persie', club: 'Arsenal', country: 'Países Bajos', position: 'FWD', era: 'historic' },
-  { id: 'robben', name: 'Arjen Robben', club: 'Bayern Múnich', country: 'Países Bajos', position: 'FWD', era: 'historic' },
+  { id: 'robben', name: 'Arjen Robben', club: 'Bayern Múnich', country: 'Países Bajos', position: 'FWD', era: 'historic', altClubs: ['Chelsea', 'Real Madrid'] },
   { id: 'overmars', name: 'Marc Overmars', club: 'Arsenal', country: 'Países Bajos', position: 'FWD', era: 'historic' },
   { id: 'raul', name: 'Raúl González', club: 'Real Madrid', country: 'España', position: 'FWD', era: 'historic' },
   { id: 'butragueno', name: 'Emilio Butragueño', club: 'Real Madrid', country: 'España', position: 'FWD', era: 'historic' },
@@ -358,16 +363,16 @@ const FWD: Player[] = [
   { id: 'stoichkov', name: 'Hristo Stoichkov', club: 'FC Barcelona', country: 'Bulgaria', position: 'FWD', era: 'historic' },
   { id: 'baggio-d', name: 'Christian Vieri', club: 'Internazionale', country: 'Italia', position: 'FWD', era: 'historic' },
   { id: 'inzaghi-f', name: 'Filippo Inzaghi', club: 'Milan', country: 'Italia', position: 'FWD', era: 'historic' },
-  { id: 'shevchenko', name: 'Andriy Shevchenko', club: 'Milan', country: 'Ucrania', position: 'FWD', era: 'historic' },
+  { id: 'shevchenko', name: 'Andriy Shevchenko', club: 'Milan', country: 'Ucrania', position: 'FWD', era: 'historic', altClubs: ['Chelsea'] },
   { id: 'weah', name: 'George Weah', club: 'Milan', country: 'Liberia', position: 'FWD', era: 'historic' },
   { id: 'ronaldo-luiz', name: 'Adriano', club: 'Internazionale', country: 'Brasil', position: 'FWD', era: 'historic' },
-  { id: 'crespo', name: 'Hernán Crespo', club: 'Lazio', country: 'Argentina', position: 'FWD', era: 'historic' },
+  { id: 'crespo', name: 'Hernán Crespo', club: 'Lazio', country: 'Argentina', position: 'FWD', era: 'historic', altClubs: ['Internazionale', 'Milan', 'Chelsea'] },
   { id: 'batistuta', name: 'Gabriel Batistuta', club: 'Fiorentina', country: 'Argentina', position: 'FWD', era: 'historic' },
   { id: 'kempes', name: 'Mario Kempes', club: 'Valencia', country: 'Argentina', position: 'FWD', era: 'historic' },
-  { id: 'tevez', name: 'Carlos Tevez', club: 'Manchester United', country: 'Argentina', position: 'FWD', era: 'historic' },
+  { id: 'tevez', name: 'Carlos Tevez', club: 'Manchester United', country: 'Argentina', position: 'FWD', era: 'historic', altClubs: ['Manchester City', 'Juventus'] },
   { id: 'aguero', name: 'Sergio Agüero', club: 'Manchester City', country: 'Argentina', position: 'FWD', era: 'historic' },
-  { id: 'higuain', name: 'Gonzalo Higuaín', club: 'Real Madrid', country: 'Argentina', position: 'FWD', era: 'historic' },
-  { id: 'ibra', name: 'Zlatan Ibrahimović', club: 'Milan', country: 'Suecia', position: 'FWD', era: 'historic' },
+  { id: 'higuain', name: 'Gonzalo Higuaín', club: 'Real Madrid', country: 'Argentina', position: 'FWD', era: 'historic', altClubs: ['Napoli', 'Juventus', 'Milan'] },
+  { id: 'ibra', name: 'Zlatan Ibrahimović', club: 'Milan', country: 'Suecia', position: 'FWD', era: 'historic', altClubs: ['Juventus', 'Internazionale', 'FC Barcelona', 'Paris Saint-Germain', 'Manchester United'] },
   { id: 'larsson', name: 'Henrik Larsson', club: 'Celtic', country: 'Suecia', position: 'FWD', era: 'historic' },
   { id: 'klinsmann', name: 'Jürgen Klinsmann', club: 'Tottenham', country: 'Alemania', position: 'FWD', era: 'historic' },
   { id: 'gomez-m', name: 'Mario Gómez', club: 'Bayern Múnich', country: 'Alemania', position: 'FWD', era: 'historic' },
@@ -377,7 +382,7 @@ const FWD: Player[] = [
   { id: 'eusebio2', name: 'Mário Jardel', club: 'Sporting CP', country: 'Brasil', position: 'FWD', era: 'historic' },
   { id: 'forlan', name: 'Diego Forlán', club: 'Atlético de Madrid', country: 'Uruguay', position: 'FWD', era: 'historic' },
   { id: 'francescoli', name: 'Enzo Francescoli', club: 'River Plate', country: 'Uruguay', position: 'FWD', era: 'historic' },
-  { id: 'eto-o', name: "Samuel Eto'o", club: 'FC Barcelona', country: 'Camerún', position: 'FWD', era: 'historic' },
+  { id: 'eto-o', name: "Samuel Eto'o", club: 'FC Barcelona', country: 'Camerún', position: 'FWD', era: 'historic', altClubs: ['Internazionale'] },
   { id: 'drogba', name: 'Didier Drogba', club: 'Chelsea', country: 'Costa de Marfil', position: 'FWD', era: 'historic' },
   { id: 'okocha', name: 'Jay-Jay Okocha', club: 'Bolton', country: 'Nigeria', position: 'FWD', era: 'historic' },
   { id: 'kanu', name: 'Nwankwo Kanu', club: 'Arsenal', country: 'Nigeria', position: 'FWD', era: 'historic' },
@@ -390,12 +395,12 @@ const FWD: Player[] = [
   { id: 'salenko', name: 'Oleg Salenko', club: 'Valencia', country: 'Rusia', position: 'FWD', era: 'historic' },
   { id: 'davor-suker', name: 'Davor Šuker', club: 'Real Madrid', country: 'Croacia', position: 'FWD', era: 'historic' },
   { id: 'boban', name: 'Zvonimir Boban', club: 'Milan', country: 'Croacia', position: 'FWD', era: 'historic' },
-  { id: 'hazard', name: 'Eden Hazard', club: 'Chelsea', country: 'Bélgica', position: 'FWD', era: 'historic' },
-  { id: 'lukaku', name: 'Romelu Lukaku', club: 'Internazionale', country: 'Bélgica', position: 'FWD', era: 'historic' },
+  { id: 'hazard', name: 'Eden Hazard', club: 'Chelsea', country: 'Bélgica', position: 'FWD', era: 'historic', altClubs: ['Real Madrid'] },
+  { id: 'lukaku', name: 'Romelu Lukaku', club: 'Internazionale', country: 'Bélgica', position: 'FWD', era: 'historic', altClubs: ['Manchester United', 'Chelsea', 'Napoli', 'Roma'] },
   { id: 'mertens', name: 'Dries Mertens', club: 'Napoli', country: 'Bélgica', position: 'FWD', era: 'historic' },
-  { id: 'suarez-l', name: 'Luis Suárez', club: 'FC Barcelona', country: 'Uruguay', position: 'FWD', era: 'historic' },
+  { id: 'suarez-l', name: 'Luis Suárez', club: 'FC Barcelona', country: 'Uruguay', position: 'FWD', era: 'historic', altClubs: ['Liverpool', 'Atlético de Madrid'] },
   { id: 'cavani', name: 'Edinson Cavani', club: 'Paris Saint-Germain', country: 'Uruguay', position: 'FWD', era: 'historic' },
-  { id: 'neymar', name: 'Neymar Jr.', club: 'FC Barcelona', country: 'Brasil', position: 'FWD', era: 'historic' },
+  { id: 'neymar', name: 'Neymar Jr.', club: 'FC Barcelona', country: 'Brasil', position: 'FWD', era: 'historic', altClubs: ['Paris Saint-Germain'] },
   { id: 'ronaldinho-2', name: 'Robinho', club: 'Real Madrid', country: 'Brasil', position: 'FWD', era: 'historic' },
   { id: 'fred', name: 'Fred', club: 'Fluminense', country: 'Brasil', position: 'FWD', era: 'historic' },
   { id: 'pato', name: 'Alexandre Pato', club: 'Milan', country: 'Brasil', position: 'FWD', era: 'historic' },
@@ -412,14 +417,14 @@ const FWD: Player[] = [
   { id: 'raphinha', name: 'Raphinha', club: 'FC Barcelona', country: 'Brasil', position: 'FWD', era: 'current' },
   { id: 'yamal', name: 'Lamine Yamal', club: 'FC Barcelona', country: 'España', position: 'FWD', era: 'current' },
   { id: 'lewa-ferran', name: 'Ferran Torres', club: 'FC Barcelona', country: 'España', position: 'FWD', era: 'current' },
-  { id: 'griezmann2', name: 'Álvaro Morata', club: 'Milan', country: 'España', position: 'FWD', era: 'current' },
+  { id: 'griezmann2', name: 'Álvaro Morata', club: 'Milan', country: 'España', position: 'FWD', era: 'current', altClubs: ['Real Madrid', 'Juventus', 'Atlético de Madrid'] },
   { id: 'felix', name: 'João Félix', club: 'Atlético de Madrid', country: 'Portugal', position: 'FWD', era: 'current' },
   { id: 'depay', name: 'Memphis Depay', club: 'Atlético de Madrid', country: 'Países Bajos', position: 'FWD', era: 'current' },
   { id: 'sorloth', name: 'Alexander Sørloth', club: 'Atlético de Madrid', country: 'Noruega', position: 'FWD', era: 'current' },
   { id: 'correa', name: 'Ángel Correa', club: 'Atlético de Madrid', country: 'Argentina', position: 'FWD', era: 'current' },
   { id: 'salah', name: 'Mohamed Salah', club: 'Liverpool', country: 'Egipto', position: 'FWD', era: 'current' },
-  { id: 'mane', name: 'Sadio Mané', club: 'Liverpool', country: 'Senegal', position: 'FWD', era: 'historic' },
-  { id: 'firmino', name: 'Roberto Firmino', club: 'Liverpool', country: 'Brasil', position: 'FWD', era: 'historic' },
+  { id: 'mane', name: 'Sadio Mané', club: 'Liverpool', country: 'Senegal', position: 'FWD', era: 'current' },
+  { id: 'firmino', name: 'Roberto Firmino', club: 'Liverpool', country: 'Brasil', position: 'FWD', era: 'current' },
   { id: 'nunez', name: 'Darwin Núñez', club: 'Liverpool', country: 'Uruguay', position: 'FWD', era: 'current' },
   { id: 'diaz-l', name: 'Luis Díaz', club: 'Liverpool', country: 'Colombia', position: 'FWD', era: 'current' },
   { id: 'jota-d', name: 'Diogo Jota', club: 'Liverpool', country: 'Portugal', position: 'FWD', era: 'current' },
@@ -446,7 +451,7 @@ const FWD: Player[] = [
   { id: 'lautaro', name: 'Lautaro Martínez', club: 'Internazionale', country: 'Argentina', position: 'FWD', era: 'current' },
   { id: 'taremi', name: 'Mehdi Taremi', club: 'Internazionale', country: 'Irán', position: 'FWD', era: 'current' },
   { id: 'leao', name: 'Rafael Leão', club: 'Milan', country: 'Portugal', position: 'FWD', era: 'current' },
-  { id: 'giroud', name: 'Olivier Giroud', club: 'LAFC', country: 'Francia', position: 'FWD', era: 'historic' },
+  { id: 'giroud', name: 'Olivier Giroud', club: 'LAFC', country: 'Francia', position: 'FWD', era: 'current' },
   { id: 'osimhen', name: 'Victor Osimhen', club: 'Napoli', country: 'Nigeria', position: 'FWD', era: 'current' },
   { id: 'kvara', name: 'Khvicha Kvaratskhelia', club: 'Napoli', country: 'Georgia', position: 'FWD', era: 'current' },
   { id: 'lookman', name: 'Ademola Lookman', club: 'Atalanta', country: 'Nigeria', position: 'FWD', era: 'current' },
@@ -485,7 +490,7 @@ const FWD: Player[] = [
   { id: 'gimenez-s', name: 'Santiago Giménez', club: 'Feyenoord', country: 'México', position: 'FWD', era: 'current' },
   { id: 'guirassy', name: 'Serhou Guirassy', club: 'Borussia Dortmund', country: 'Guinea', position: 'FWD', era: 'current' },
   { id: 'sabitzer', name: 'Marcel Sabitzer', club: 'Borussia Dortmund', country: 'Austria', position: 'MID', era: 'current' },
-  { id: 'reus', name: 'Marco Reus', club: 'LA Galaxy', country: 'Alemania', position: 'FWD', era: 'historic' },
+  { id: 'reus', name: 'Marco Reus', club: 'LA Galaxy', country: 'Alemania', position: 'FWD', era: 'current' },
   { id: 'sancho', name: 'Jadon Sancho', club: 'Borussia Dortmund', country: 'Inglaterra', position: 'FWD', era: 'current' },
   { id: 'adeyemi', name: 'Karim Adeyemi', club: 'Borussia Dortmund', country: 'Alemania', position: 'FWD', era: 'current' },
   { id: 'fullkrug', name: 'Niclas Füllkrug', club: 'West Ham', country: 'Alemania', position: 'FWD', era: 'current' },
@@ -495,11 +500,10 @@ const FWD: Player[] = [
   { id: 'moukoko', name: 'Youssoufa Moukoko', club: 'Niza', country: 'Alemania', position: 'FWD', era: 'current' },
   { id: 'colo', name: 'Folarin Balogun', club: 'Mónaco', country: 'Estados Unidos', position: 'FWD', era: 'current' },
   { id: 'thauvin', name: 'Florian Thauvin', club: 'Udinese', country: 'Francia', position: 'FWD', era: 'current' },
-  { id: 'benzema', name: 'Karim Benzema', club: 'Al-Ittihad', country: 'Francia', position: 'FWD', era: 'historic' },
+  { id: 'benzema', name: 'Karim Benzema', club: 'Al-Ittihad', country: 'Francia', position: 'FWD', era: 'current' },
   { id: 'jovic', name: 'Luka Jović', club: 'Milan', country: 'Serbia', position: 'FWD', era: 'current' },
   { id: 'kean', name: 'Moise Kean', club: 'Fiorentina', country: 'Italia', position: 'FWD', era: 'current' },
   { id: 'zaniolo', name: 'Nicolò Zaniolo', club: 'Fiorentina', country: 'Italia', position: 'FWD', era: 'current' },
-  { id: 'banzai', name: 'Mateo Kovačić', club: 'Manchester City', country: 'Croacia', position: 'MID', era: 'current' },
   { id: 'modeste', name: 'Anthony Modeste', club: 'St. Pauli', country: 'Francia', position: 'FWD', era: 'current' },
 ]
 
@@ -569,6 +573,14 @@ export function searchPlayers(query: string, opts: SearchOptions = {}): Player[]
 
 export function getPlayerById(id: string): Player | undefined {
   return PLAYERS_DEDUP.find(p => p.id === id)
+}
+
+// Lista de clubes reconocidos de un jugador: el principal (`club`, usado para
+// display, búsqueda y noRepeatClub) más los `altClubs` opcionales. Para resolver
+// condiciones "X × club" (TakaGrid) o slots de club (Mi Once) basta con cumplir
+// CUALQUIERA de ellos.
+export function playerClubs(p: Player): string[] {
+  return p.altClubs && p.altClubs.length > 0 ? [p.club, ...p.altClubs] : [p.club]
 }
 
 // Levenshtein distance with early exit at `cap`

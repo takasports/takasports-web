@@ -2,7 +2,7 @@
 // Cada puzzle define un grid 3×3: 3 filas (clubes) × 3 columnas (categorías).
 // Un jugador es válido en una celda si cumple AMBAS condiciones: fila y columna.
 
-import { PLAYERS_DEDUP, type Player } from './players-catalog'
+import { PLAYERS_DEDUP, playerClubs, type Player } from './players-catalog'
 
 // ── Tipos ────────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ const club = (name: string, emoji: string, pattern: RegExp): GridCondition => ({
   id: `club-${name.toLowerCase().replace(/\s/g, '-')}`,
   label: name,
   emoji,
-  test: p => pattern.test(p.club),
+  test: p => playerClubs(p).some(c => pattern.test(c)),
 })
 
 // Países

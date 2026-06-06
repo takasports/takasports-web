@@ -1,7 +1,7 @@
 // Retos semanales rotativos para Mi Once. Cada lunes ISO se elige uno
 // determinísticamente según la semana del año, igual que en Sopa de Cracks.
 
-import type { Player } from './players-catalog'
+import { playerClubs, type Player } from './players-catalog'
 
 export type FormationId = '4-3-3' | '4-4-2' | '3-5-2' | '4-2-3-1'
 
@@ -30,7 +30,7 @@ export const TAG = {
     id: `club:${label}`,
     label,
     emoji,
-    match: p => pattern.test(p.club),
+    match: p => playerClubs(p).some(c => pattern.test(c)),
   }),
 }
 
@@ -64,7 +64,7 @@ export const CHALLENGES: Challenge[] = [
     title: 'Once histórico de LaLiga',
     tagline: 'Solo Real Madrid, Barça, Atleti, Valencia… leyendas españolas',
     description: 'Únicamente jugadores asociados a clubes de LaLiga.',
-    filter: p => /Real Madrid|FC Barcelona|Atlético|Valencia|Sevilla|Villarreal|Athletic|Real Sociedad|Real Betis|Celta|Deportivo|Espanyol|Málaga|Mallorca|Las Palmas|Getafe|Osasuna|Rayo|Cádiz|Alavés/i.test(p.club),
+    filter: p => /Real Madrid|FC Barcelona|Atlético de Madrid|Valencia|Sevilla|Villarreal|Athletic|Real Sociedad|Real Betis|Celta|Deportivo|Espanyol|Málaga|Mallorca|Las Palmas|Getafe|Osasuna|Rayo|Cádiz|Alavés/i.test(p.club),
     recommendedFormation: '4-3-3',
   },
   {
@@ -190,7 +190,7 @@ export const CHALLENGES: Challenge[] = [
       cm2: TAG.club('PSG',           '🔵', /Paris Saint-Germain/i),
       cm3: TAG.club('Arsenal',       '🔴', /Arsenal/i),
       lw:  TAG.club('Inter',         '⚫', /Internazionale/i),
-      st:  TAG.club('Atlético',      '🔴', /Atlético/i),
+      st:  TAG.club('Atlético',      '🔴', /Atlético de Madrid/i),
       rw:  TAG.club('Chelsea',       '🔵', /Chelsea/i),
     },
   },
@@ -223,7 +223,7 @@ export const CHALLENGES: Challenge[] = [
     recommendedFormation: '4-4-2',
     slotTags: {
       gk:  TAG.club('Real Madrid',   '⚪', /Real Madrid/i),
-      lb:  TAG.club('Atlético',      '🔴', /Atlético/i),
+      lb:  TAG.club('Atlético',      '🔴', /Atlético de Madrid/i),
       cb1: TAG.club('Barcelona',     '🔵', /FC Barcelona/i),
       cb2: TAG.club('Valencia',      '🦇', /Valencia/i),
       rb:  TAG.club('Sevilla',       '🔴', /Sevilla/i),
