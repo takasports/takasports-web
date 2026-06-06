@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import NoticiasPortada from '@/components/NoticiasPortada'
 import NewsPageFeed from '@/components/NewsPageFeed'
 import NewsSidebar from '@/components/NewsSidebar'
 import ReelsSection from '@/components/ReelsSection'
 import CategoriesFilter from '@/components/CategoriesFilter'
-import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
+import { CATEGORY_TO_SLUG, SLUG_TO_LABEL, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
 import { SearchIcon } from '@/components/icons/GameIcons'
 
 interface Article {
@@ -141,6 +141,18 @@ export default function NoticiasContent({
       } catch { /* keep SSR articles */ }
     }, 110)
   }, [router])
+
+  // B (2026-06-06): la página /noticias es estática (cacheable); el filtro por ?sport=
+  // (deep-link o enlace compartido) se aplica AQUÍ tras hidratar, cargando las noticias
+  // del deporte. Parpadeo brevísimo aceptable a cambio de ISR + caché CDN.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const slug = new URLSearchParams(window.location.search).get('sport')
+    if (!slug) return
+    const label = SLUG_TO_LABEL[slug.toLowerCase()]
+    if (label && label !== activeCategory) handleCategoryChange(label)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return

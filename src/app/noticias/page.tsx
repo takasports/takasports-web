@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { sanityClient, articlesQuery, articlesBySportQuery, reelsQuery, urlFor } from '@/lib/sanity'
-import { SLUG_TO_LABEL } from '@/lib/sports'
+import { sanityClient, articlesQuery, reelsQuery, urlFor } from '@/lib/sanity'
 import reelsData from '@/lib/reels-data.json'
 import Header from '@/components/Header'
 import BreakingNewsBar from '@/components/BreakingNewsBar'
@@ -13,7 +12,7 @@ import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 300
 
-const baseMetadata: Metadata = {
+export const metadata: Metadata = {
   title: 'Noticias deportivas en tiempo real',
   description: 'Todas las noticias del deporte al minuto: fútbol, NBA, F1, Tenis, UFC, WWE y más. Actualizado cada hora.',
   alternates: { canonical: `${SITE_URL}/noticias` },
@@ -28,42 +27,16 @@ const baseMetadata: Metadata = {
   twitter: { card: 'summary_large_image', title: 'Noticias deportivas — TakaSports', site: '@takasportsx' },
 }
 
-// A1 (2026-06-06): la vista filtrada /noticias?sport=X NO se indexa para no competir con el
-// hub canónico /[sport] (la página rica del deporte: ranking + eventos + noticias). El
-// canonical de la variante apunta a ese hub; el listado base /noticias se indexa normal.
-export async function generateMetadata({ searchParams }: { searchParams: Promise<{ sport?: string }> }): Promise<Metadata> {
-  const { sport } = await searchParams
-  const slug = sport?.toLowerCase()
-  const valid = slug && SLUG_TO_LABEL[slug] ? slug : undefined
-  if (!valid) return baseMetadata
-  const label = SLUG_TO_LABEL[valid]
-  return {
-    ...baseMetadata,
-    title: `Noticias de ${label}`,
-    description: `Últimas noticias de ${label}: actualidad, fichajes, resultados y análisis en TakaSports.`,
-    robots: { index: false, follow: true },
-    alternates: { canonical: `${SITE_URL}/${valid}` },
-  }
-}
-
-export default async function NoticiasPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ sport?: string }>
-}) {
-  const { sport } = await searchParams
-  // F2 — Deep-link por deporte: si llega ?sport=<slug válido>, filtramos el feed
-  // YA en SSR para que el enlace directo/compartido muestre el deporte correcto
-  // (antes el chip salía activo pero el feed era el global → parecía "muestra fútbol").
-  const sportSlug = sport?.toLowerCase()
-  const validSport = sportSlug && SLUG_TO_LABEL[sportSlug] ? sportSlug : undefined
+export default async function NoticiasPage() {
+  // B (2026-06-06): el filtro por ?sport= se aplica en CLIENTE (NoticiasContent) para que
+  // esta página sea estática/ISR (cacheable, rápida — antes era no-store por leer searchParams).
+  // El deep-link/compartido sigue funcionando: tras hidratar, el chip del deporte se activa y
+  // carga sus noticias. El canonical fijo a /noticias evita competir con los hubs /[sport],
+  // y la vista filtrada deja de ser una URL distinta indexable (sustituye al noindex anterior).
   const [articles, reels] = await Promise.all([
-    validSport
-      ? sanityClient.fetch(articlesBySportQuery, { sport: validSport })
-      : sanityClient.fetch(articlesQuery),
+    sanityClient.fetch(articlesQuery),
     sanityClient.fetch(reelsQuery),
   ])
-  const initialCategory = validSport ? SLUG_TO_LABEL[validSport] : 'Todo'
 
   const igReels = (reels as unknown[]).length > 0 ? reels : reelsData
 
@@ -107,7 +80,6 @@ export default async function NoticiasPage({
         <NoticiasContent
           articles={articles}
           reels={igReels as typeof reels}
-          initialCategory={initialCategory}
         />
       </main>
 
