@@ -456,23 +456,6 @@ const SPORTS: SportConfig[] = [
           },
         ],
       },
-      {
-        id: 'entrenadores', label: 'Entrenadores', icon: '🧠',
-        blocks: [
-          {
-            id: 'stats-dt', title: 'Rendimiento entrenadores · % victorias', metric: '% Vic.',
-            rows: [
-              { rank: 1, name: 'Hansi Flick',        team: 'FC Barcelona', value: '73%', sub: 'Temp. 25/26', flag: '🇩🇪', trend: 'up',   extra: { GF: '2.88', GC: '0.74' } },
-              { rank: 2, name: 'Luis Enrique',        team: 'PSG',          value: '70%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'up',   extra: { GF: '2.44', GC: '0.82' } },
-              { rank: 3, name: 'Pep Guardiola',       team: 'Man City',     value: '68%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'flat', extra: { GF: '2.54', GC: '0.74' } },
-              { rank: 4, name: 'Mikel Arteta',        team: 'Arsenal',      value: '66%', sub: 'Temp. 25/26', flag: '🇪🇸', trend: 'up',   extra: { GF: '2.41', GC: '0.66' } },
-              { rank: 5, name: 'Vincent Kompany',     team: 'Bayern Munich',value: '61%', sub: 'Temp. 25/26', flag: '🇧🇪', trend: 'up',   extra: { GF: '2.31', GC: '0.98' } },
-              { rank: 6, name: 'Diego Simeone',       team: 'Atlético',     value: '58%', sub: 'Temp. 25/26', flag: '🇦🇷', trend: 'flat', extra: { GF: '1.82', GC: '0.91' } },
-              { rank: 7, name: 'Arne Slot',           team: 'Liverpool',    value: '53%', sub: 'Temp. 25/26', flag: '🇳🇱', trend: 'flat', extra: { GF: '1.74', GC: '1.12' } },
-            ],
-          },
-        ],
-      },
     ],
   },
   {

@@ -30,23 +30,8 @@ export const FIFA_RANKING: StandingRow[] = []
 export const UFC_P4P_AS_OF = ''
 export const UFC_P4P: StandingRow[] = []
 
-export interface CoachEntry {
-  name: string
-  team: string
-  flag: string
-  league: 'esp.1' | 'eng.1' | 'ger.1' | 'fra.1' | 'ita.1'
-  teamId: string
-}
-
-export const COACH_CONFIG: CoachEntry[] = [
-  { name: 'Hansi Flick',     team: 'FC Barcelona',  flag: '🇩🇪', league: 'esp.1', teamId: '83'   },
-  { name: 'Vincent Kompany', team: 'Bayern Munich', flag: '🇧🇪', league: 'ger.1', teamId: '132'  },
-  { name: 'Luis Enrique',    team: 'PSG',           flag: '🇪🇸', league: 'fra.1', teamId: '160'  },
-  { name: 'Pep Guardiola',   team: 'Man City',      flag: '🇪🇸', league: 'eng.1', teamId: '382'  },
-  { name: 'Mikel Arteta',    team: 'Arsenal',       flag: '🇪🇸', league: 'eng.1', teamId: '359'  },
-  { name: 'Diego Simeone',   team: 'Atlético',      flag: '🇦🇷', league: 'esp.1', teamId: '1068' },
-  { name: 'Arne Slot',       team: 'Liverpool',     flag: '🇳🇱', league: 'eng.1', teamId: '364'  },
-]
+// (CoachEntry/COACH_CONFIG eliminados: el bloque "Entrenadores" se quitó —
+//  los nombres eran manuales y ESPN no expone el entrenador.)
 
 // (TENNIS_SLAMS_2026 eliminado: era un calendario hardcodeado no automatizable.
 //  La sección de tenis sirve solo ATP/WTA en vivo desde ESPN.)

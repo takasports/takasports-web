@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SOCCER_LEAGUES, EUROPEAN_CUPS } from '@/lib/stats-leagues'
 import {
-  FIFA_RANKING, FIFA_RANKING_AS_OF, UFC_P4P, UFC_P4P_AS_OF, COACH_CONFIG,
+  FIFA_RANKING, FIFA_RANKING_AS_OF, UFC_P4P, UFC_P4P_AS_OF,
   type StandingRow,
 } from '@/lib/stats-editorial'
 export type { StandingRow } from '@/lib/stats-editorial'
@@ -56,7 +56,6 @@ export interface StatsStandingsResponse {
   womenLigaF: StandingRow[]
   womenGoals: StandingRow[]
   womenAssists: StandingRow[]
-  coachesWinRate: StandingRow[]
   worldCup: LeagueStandings[]
   worldCupKnockout: StandingRow[]
   worldCupSchedule: StandingRow[]
@@ -546,62 +545,6 @@ async function fetchTennis(): Promise<{ atp: StandingRow[]; wta: StandingRow[] }
 // can update one file. Future: cron pulls from Supabase Storage and overwrites.
 
 // ── UEFA Nations League via ESPN ──────────────────────────────────────────────
-
-// ── Coaches win-rate via ESPN team records ────────────────────────────────────
-// Update coach names here when managers change. Win% auto-fetches from ESPN.
-
-// COACH_CONFIG lives in @/lib/stats-editorial.ts — update there when sackings happen.
-
-// European seasons run Aug→May. Aug-Dec → "yy/yy+1"; Jan-Jul → "yy-1/yy".
-function soccerSeasonShort(): string {
-  const now = new Date()
-  const y = now.getUTCFullYear()
-  const startYear = now.getUTCMonth() >= 7 ? y : y - 1
-  const a = String(startYear % 100).padStart(2, '0')
-  const b = String((startYear + 1) % 100).padStart(2, '0')
-  return `${a}/${b}`
-}
-
-async function fetchCoachRecords(): Promise<StandingRow[]> {
-  const results = await Promise.allSettled(
-    COACH_CONFIG.map(async coach => {
-      const res = await tfetch(
-        `https://site.api.espn.com/apis/site/v2/sports/soccer/${coach.league}/teams/${coach.teamId}`,
-        { next: { revalidate: 3600 } }
-      )
-      if (!res.ok) return null
-      const d = await res.json()
-      const team = d.team ?? d
-      const items: Record<string, unknown>[] = team?.record?.items ?? []
-      const total = (items.find((i: Record<string, unknown>) => i.type === 'total') ?? items[0]) as Record<string, unknown> | undefined
-      if (!total) return null
-      const parts = String(total.summary ?? '').split('-').map(Number)
-      const w = parts[0] || 0; const dr = parts[1] || 0; const l = parts[2] || 0
-      const gp = w + dr + l
-      if (gp === 0) return null
-      const winPct = Math.round((w / gp) * 100)
-      const stats = (total.stats as Record<string, unknown>[]) ?? []
-      const sv2 = (name: string) => Number((stats.find((s: Record<string, unknown>) => s.name === name) as Record<string, unknown> | undefined)?.value ?? 0)
-      const gf = sv2('pointsFor'); const gc = sv2('pointsAgainst')
-      const gpFull = sv2('gamesPlayed') || gp
-      return {
-        rank:  0,
-        name:  coach.name,
-        abbr:  coach.team,
-        flag:  coach.flag,
-        value: `${winPct}%`,
-        sub:   `Temp. ${soccerSeasonShort()} · ${gpFull} PJ`,
-        trend: 'flat' as const,
-        extra: { GF: (gf / gpFull).toFixed(2), GC: (gc / gpFull).toFixed(2), Club: coach.team },
-      } satisfies StandingRow
-    })
-  )
-  return results
-    .map(r => r.status === 'fulfilled' ? r.value : null)
-    .filter((r): r is NonNullable<typeof r> => r !== null)
-    .sort((a, b) => parseFloat(b!.value) - parseFloat(a!.value))
-    .map((r, i) => ({ ...r!, rank: i + 1 })) as StandingRow[]
-}
 
 // ── World Cup 2026 via ESPN ───────────────────────────────────────────────────
 
@@ -1159,7 +1102,6 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
     'uclScorers', 'uelScorers',
     'uclAssists', 'uelAssists',
     'fifaRanking',
-    'coachesWinRate',
     'womenLigaF', 'womenGoals', 'womenAssists',
   ],
   football: ['football', 'uclScorers', 'uelScorers', 'uclAssists', 'uelAssists'],
@@ -1175,7 +1117,7 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
 }
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
-  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, coaches, worldCup, worldCupKnockout, worldCupSchedule, uclFixtures, uelFixtures] = await Promise.all([
+  const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, worldCup, worldCupKnockout, worldCupSchedule, uclFixtures, uelFixtures] = await Promise.all([
     Promise.allSettled(FOOTBALL_LEAGUES.map(l => fetchFootball(l.slug, l.id, l.label))),
     fetchF1All(),
     fetchNBA(),
@@ -1184,7 +1126,6 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchUFCP4P(),
     fetchWomenLigaF(),
     fetchWomenStats(),
-    fetchCoachRecords(),
     fetchWorldCup(),
     fetchWorldCupKnockout(),
     fetchWorldCupSchedule(),
@@ -1287,7 +1228,6 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
     womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
     womenAssists:        womenStats.assists.length     ? live('ESPN') : unavail('ESPN'),
-    coachesWinRate:   coaches.length ? live('ESPN') : unavail('ESPN'),
     worldCup:         worldCup.length
       ? wcStarted ? live('ESPN · FIFA World Cup 2026') : ({ status: 'stale', source: 'ESPN · FIFA World Cup 2026', fetchedAt: now, asOf: 'Grupos confirmados — torneo inicia 11 jun 2026' } satisfies BlockMeta)
       : unavail('ESPN'),
@@ -1358,7 +1298,6 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     womenLigaF,
     womenGoals:          womenStats.goals,
     womenAssists:        womenStats.assists,
-    coachesWinRate:      coaches,
     worldCup,
     worldCupKnockout,
     worldCupSchedule,
