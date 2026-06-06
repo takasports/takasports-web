@@ -3,6 +3,7 @@
 // Un jugador es válido en una celda si cumple AMBAS condiciones: fila y columna.
 
 import { PLAYERS_DEDUP, playerClubs, type Player } from './players-catalog'
+import { madridParts, madridDayISO } from './taka-time'
 
 // ── Tipos ────────────────────────────────────────────────────────
 
@@ -258,11 +259,8 @@ export interface DayKey {
 }
 
 export function getTodayKey(d: Date = new Date()): DayKey {
-  const year = d.getFullYear()
-  const month = d.getMonth() + 1
-  const day = d.getDate()
-  const key = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  return { year, month, day, key }
+  const p = madridParts(d)
+  return { year: p.year, month: p.month, day: p.day, key: madridDayISO(d) }
 }
 
 export function getDailyPuzzle(d: Date = new Date()): { puzzle: GridPuzzle; dayKey: DayKey } {

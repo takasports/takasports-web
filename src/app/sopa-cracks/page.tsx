@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import GameLayout from '@/components/games/GameLayout'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
+import { madridWeekNumber } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { addXp, xpForSopacracks } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
@@ -153,13 +154,9 @@ function findPlayerForWord(word: string): Player | null {
 
 // ── Selección de puzzle por semana ────────────────────────────
 
+// Semana ISO en hora Taka (Madrid), fuente única en taka-time.
 function getISOWeek(d: Date): number {
-  const target = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-  const dayNr = (target.getUTCDay() + 6) % 7
-  target.setUTCDate(target.getUTCDate() - dayNr + 3)
-  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4))
-  const diff = (target.getTime() - firstThursday.getTime()) / 86400000
-  return 1 + Math.round((diff - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7)
+  return madridWeekNumber(d)
 }
 
 function getCurrentPuzzle(): Puzzle {

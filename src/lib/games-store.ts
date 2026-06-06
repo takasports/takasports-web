@@ -17,6 +17,8 @@
 // localStorage / window van guardados detrás de `typeof window !==
 // 'undefined'`).
 
+import { madridDayISO, madridWeekISO } from './taka-time'
+
 export const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
 export type GameId = typeof GAME_IDS[number]
 
@@ -70,23 +72,14 @@ function playKey(gameId: GameId, period: string): string {
 
 // ── Helpers de periodo ───────────────────────────────────────────
 
-/** "2026-W20" — ISO week en TZ del navegador. */
+/** "2026-W20" — semana ISO en hora Taka (Europe/Madrid). */
 export function currentWeekISO(d: Date = new Date()): string {
-  // ISO week: jueves de la semana ancla el año.
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-  const day  = date.getUTCDay() || 7
-  date.setUTCDate(date.getUTCDate() + 4 - day)
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
-  const week = Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
-  return `${date.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
+  return madridWeekISO(d)
 }
 
-/** "2026-05-15" — fecha local YYYY-MM-DD. */
+/** "2026-05-15" — día en hora Taka (Europe/Madrid). */
 export function currentDayISO(d: Date = new Date()): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${dd}`
+  return madridDayISO(d)
 }
 
 // ── Safe storage wrappers ────────────────────────────────────────

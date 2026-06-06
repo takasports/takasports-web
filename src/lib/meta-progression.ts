@@ -8,6 +8,7 @@
 'use client'
 
 import type { GameId } from './games-store'
+import { madridDayISO } from './taka-time'
 
 const STORAGE_KEY = 'ts_meta_progression'
 const SCHEMA_VERSION = 1
@@ -38,7 +39,7 @@ function dayDiff(fromKey: string, toKey: string): number {
 }
 
 function todayKey(): string {
-  return new Date().toISOString().slice(0, 10)
+  return madridDayISO()
 }
 
 // ── API pública ──────────────────────────────────────────────────

@@ -1,3 +1,5 @@
+import { madridDayISO } from './taka-time'
+
 export type QuizCategory =
   | 'historia'
   | 'records'
@@ -990,7 +992,7 @@ function mulberry32(seed: number) {
 
 /** Returns today's ISO date string YYYY-MM-DD */
 export function todayKey(): string {
-  return new Date().toISOString().slice(0, 10)
+  return madridDayISO()
 }
 
 /** Returns a seeded daily selection of N questions */

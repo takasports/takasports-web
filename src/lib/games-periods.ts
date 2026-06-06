@@ -6,10 +6,11 @@
 //   · Jornada -> "<comp>-Jxx"     (Quiniela; el código de fuera lo provee)
 //   · None    -> ""               (Striker Rush — sin ventana)
 //
-// nextResetMs() devuelve los ms hasta el próximo cierre en UTC. UI usa
-// esto para countdowns ("Cierra en 4h 12m"). Returns 0 si no aplica.
+// nextResetMs() devuelve los ms hasta el próximo cierre en hora Taka (Madrid).
+// UI usa esto para countdowns ("Cierra en 4h 12m"). Returns 0 si no aplica.
 
 import { currentDayISO, currentWeekISO, type GameId } from './games-store'
+import { msUntilMadridMidnight, msUntilNextMadridMonday } from './taka-time'
 
 export type Cadence = 'daily' | 'weekly' | 'jornada' | 'none'
 
@@ -17,7 +18,7 @@ export interface GamePeriod {
   cadence: Cadence
   /** Identificador legible para Supabase + UI. */
   period:  string
-  /** ms hasta el reset (00:00 UTC del día o lunes de semana). 0 si none. */
+  /** ms hasta el reset (00:00 Madrid del día o lunes de semana). 0 si none. */
   nextResetMs: number
 }
 
@@ -30,18 +31,8 @@ const CADENCE: Record<GameId, Cadence> = {
   strikerrush: 'none',
 }
 
-function msUntilTomorrowUTC(now: Date): number {
-  const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
-  return tomorrow.getTime() - now.getTime()
-}
-
-function msUntilNextMondayUTC(now: Date): number {
-  // ISO week resets on Monday 00:00 UTC.
-  const day = now.getUTCDay() || 7        // Sun=0 -> 7; Mon=1 .. Sun=7
-  const daysToMonday = 8 - day            // 1..7
-  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysToMonday))
-  return next.getTime() - now.getTime()
-}
+// Los resets (medianoche del día / lunes de semana, en hora Taka = Madrid) los
+// calcula taka-time, fuente única de fecha de todos los juegos.
 
 /**
  * @param gameId  Juego.
@@ -53,9 +44,9 @@ export function getGamePeriod(gameId: GameId, jornada?: string, now: Date = new 
   const cad = CADENCE[gameId]
   switch (cad) {
     case 'daily':
-      return { cadence: 'daily',   period: currentDayISO(now),  nextResetMs: msUntilTomorrowUTC(now) }
+      return { cadence: 'daily',   period: currentDayISO(now),  nextResetMs: msUntilMadridMidnight(now) }
     case 'weekly':
-      return { cadence: 'weekly',  period: currentWeekISO(now), nextResetMs: msUntilNextMondayUTC(now) }
+      return { cadence: 'weekly',  period: currentWeekISO(now), nextResetMs: msUntilNextMadridMonday(now) }
     case 'jornada':
       return { cadence: 'jornada', period: jornada ?? 'unknown', nextResetMs: 0 }
     case 'none':

@@ -7,6 +7,7 @@
 
 import type { GameId } from './games-store'
 import { addXp } from './meta-progression'
+import { madridDayISO, madridWeekISO } from './taka-time'
 
 const STORAGE_KEY = 'ts_missions'
 // v3 (Fase 3·parte 2): d-hawkeye vuelve al pool con meta `solved-exact`
@@ -101,19 +102,11 @@ const WEEKLY_COUNT = 1
 // ── Helpers internos ─────────────────────────────────────────────
 
 function todayKey(): string {
-  return new Date().toISOString().slice(0, 10)
+  return madridDayISO()
 }
 
-// ISO week key (YYYY-Www) — implementación local para evitar import circular
 function weekKey(): string {
-  const d = new Date()
-  const tmp = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
-  const dayNr = (tmp.getUTCDay() + 6) % 7
-  tmp.setUTCDate(tmp.getUTCDate() - dayNr + 3)
-  const firstThursday = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 4))
-  const diff = (tmp.getTime() - firstThursday.getTime()) / 86400000
-  const week = 1 + Math.round((diff - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7)
-  return `${tmp.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
+  return madridWeekISO()
 }
 
 function seedFromKey(k: string): number {

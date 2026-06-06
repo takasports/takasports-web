@@ -7,6 +7,7 @@ import { getDailyQuestions, getPracticeQuestions, listCategories, todayKey, type
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import { TrophyIcon, FireIcon, ClapIcon, FlexIcon } from '@/components/icons/GameIcons'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
+import { madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { addXp, xpForCrackquiz } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
@@ -278,7 +279,7 @@ function HistoryCalendar({ history }: { history: Array<HistoryEntry> }) {
   for (let i = 27; i >= 0; i--) {
     const d = new Date()
     d.setDate(d.getDate() - i)
-    const key = d.toISOString().slice(0, 10)
+    const key = madridDayISO(d)
     const label = d.toLocaleDateString('es-ES', { weekday: 'short' }).slice(0, 1).toUpperCase()
     days.push({ date: key, label })
   }
