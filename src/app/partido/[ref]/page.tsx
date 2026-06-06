@@ -98,7 +98,7 @@ async function fetchMatchDetail(ref: string): Promise<MatchDetail | null> {
   try {
     const base = process.env.NEXT_PUBLIC_SITE_URL
       ?? (process.env.NODE_ENV === 'production' ? SITE_URL : 'http://localhost:3000')
-    const res  = await fetch(`${base}/api/match/${ref}`, { next: { revalidate: 30 } })
+    const res  = await fetch(`${base}/api/match/${ref}`, { next: { revalidate: 15 } })
     if (!res.ok) return null
     return res.json()
   } catch {

@@ -265,7 +265,7 @@ function pickTeamLogo(teamObj: Record<string, unknown> | undefined, sport: Sport
 
 async function espnJson(url: string): Promise<Record<string, unknown> | null> {
   try {
-    const r = await fetch(url, { next: { revalidate: 30 } })
+    const r = await fetch(url, { next: { revalidate: 15 } })
     if (!r.ok) return null
     return await r.json()
   } catch {
