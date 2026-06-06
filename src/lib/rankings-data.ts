@@ -384,30 +384,50 @@ export interface MoverEntry {
  * Si la DB no tiene datos con score_prev, devuelve arrays vacíos
  * (el componente cae al estático).
  */
+// Un cambio semanal mayor que esto casi siempre es un artefacto de baseline
+// obsoleto, no movimiento real → se descarta.
+const MAX_WEEKLY_DELTA = 8
+const MOVER_CATEGORIES = ['jugadores', 'jugadoras', 'sub21', 'latam', 'concacaf', 'clubes', 'entrenadores']
+
 export async function getTopMovers(limit = 3): Promise<{ movers: MoverEntry[]; fallers: MoverEntry[] }> {
   if (!supabaseConfigured()) return { movers: [], fallers: [] }
   try {
     const sb = getReadClient()
+    // `delta_week` = cambio del score MOSTRADO capturado en el último recompute
+    // (no el delta en vivo, que el snapshot colapsa a 0). Solo entradas:
+    //   · con delta_week (recomputado),
+    //   · con histórico real (rank_prev no nulo),
+    //   · re-ingestadas en la última semana+ (frescas — si una categoría se
+    //     queda obsoleta se excluye en vez de inflar el delta).
+    const freshSince = new Date(Date.now() - 9 * 86400000).toISOString()
     const { data, error } = await sb
       .from('ranking_view')
-      .select('id,name,subtitle,sport,emoji,country,trend_reason,score,score_prev')
-      .not('score_prev', 'is', null)
-      .in('category', ['jugadores', 'jugadoras', 'sub21', 'latam', 'concacaf', 'clubes', 'entrenadores'])
+      .select('id,name,subtitle,sport,emoji,country,trend_reason,score,delta_week,rank_prev,editorial_locked,last_auto_update')
+      .not('delta_week', 'is', null)
+      .not('rank_prev', 'is', null)
+      .gte('last_auto_update', freshSince)
+      .in('category', MOVER_CATEGORIES)
       .range(0, 999)
     if (error || !data || data.length === 0) return { movers: [], fallers: [] }
 
-    const entries: MoverEntry[] = data.map((r: any) => ({
-      id:          r.id,
-      name:        r.name,
-      subtitle:    r.subtitle ?? '',
-      sport:       r.sport ?? undefined,
-      emoji:       r.emoji ?? undefined,
-      country:     countryToFlag(r.country ?? undefined),
-      trendReason: r.trend_reason ?? undefined,
-      score:       Number(r.score),
-      scorePrev:   Number(r.score_prev),
-      delta:       Math.round((Number(r.score) - Number(r.score_prev)) * 10) / 10,
-    }))
+    const entries: MoverEntry[] = data
+      .filter((r: any) => r.editorial_locked !== true) // pinneadas a mano no "se mueven"
+      .map((r: any) => {
+        const delta = Math.round(Number(r.delta_week) * 10) / 10
+        return {
+          id:          r.id,
+          name:        r.name,
+          subtitle:    r.subtitle ?? '',
+          sport:       r.sport ?? undefined,
+          emoji:       r.emoji ?? undefined,
+          country:     countryToFlag(r.country ?? undefined),
+          trendReason: r.trend_reason ?? undefined,
+          score:       Number(r.score),
+          scorePrev:   Math.round((Number(r.score) - delta) * 10) / 10,
+          delta,
+        }
+      })
+      .filter(e => Math.abs(e.delta) >= 1 && Math.abs(e.delta) <= MAX_WEEKLY_DELTA)
 
     const sorted = [...entries].sort((a, b) => b.delta - a.delta)
     return {
