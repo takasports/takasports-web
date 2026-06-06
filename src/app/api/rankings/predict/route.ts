@@ -64,6 +64,18 @@ export async function POST(req: NextRequest) {
   if (!entryId) return NextResponse.json({ error: 'entry_id requerido' }, { status: 400 })
 
   const week = nextMonday()
+
+  // Valida que entry_id esté entre las opciones reales (top-5 de la categoría),
+  // como hace poll — evita predicciones sobre entradas que no están en juego.
+  const { data: top } = await sb
+    .from('ranking_view').select('id')
+    .eq('category', category)
+    .order('score', { ascending: false })
+    .limit(5)
+  if (!top?.some((t: { id: string }) => t.id === entryId)) {
+    return NextResponse.json({ error: 'entry_id no está entre las opciones' }, { status: 400 })
+  }
+
   const { error } = await sb.from('index_predictions').upsert(
     { user_id: user.id, week_start: week, category, predicted_entry_id: entryId },
     { onConflict: 'user_id,week_start,category' },

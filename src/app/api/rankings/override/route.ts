@@ -39,6 +39,16 @@ function tokenHash(req: NextRequest): string | null {
   return createHash('sha256').update(token).digest('hex').slice(0, 12)
 }
 
+// CSRF: las mutaciones por sesión (cookie) deben venir del propio sitio. Las
+// llamadas server-to-server con x-admin-token no llevan Origin y las cubre la
+// auth por token, así que se permiten.
+function sameOriginOk(req: NextRequest): boolean {
+  if (req.headers.get('x-admin-token')) return true
+  const origin = req.headers.get('origin')
+  if (!origin) return true
+  try { return new URL(origin).host === req.headers.get('host') } catch { return false }
+}
+
 const OVERRIDE_FIELDS = [
   'rank_manual',
   'score_manual',
@@ -93,6 +103,7 @@ async function logEdits(
 
 export async function POST(req: NextRequest) {
   if (!(await checkAuth(req))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!sameOriginOk(req)) return NextResponse.json({ error: 'bad origin' }, { status: 403 })
 
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'supabase not configured' }, { status: 500 })
@@ -177,6 +188,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   if (!(await checkAuth(req))) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!sameOriginOk(req)) return NextResponse.json({ error: 'bad origin' }, { status: 403 })
 
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'supabase not configured' }, { status: 500 })

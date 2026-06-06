@@ -25,7 +25,14 @@ type Mover = {
   delta: number
 }
 
-const CATS = ['jugadores', 'jugadoras', 'clubes', 'entrenadores', 'creadores', 'periodistas'] as const
+const CATS = ['jugadores', 'jugadoras', 'clubes'] as const
+
+// Escapa texto para interpolarlo en HTML sin riesgo de inyección.
+function esc(s: string): string {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
+  ))
+}
 
 async function getMovers(limit = 5): Promise<{ up: Mover[]; down: Mover[] }> {
   const sb = createClient(
@@ -33,28 +40,39 @@ async function getMovers(limit = 5): Promise<{ up: Mover[]; down: Mover[] }> {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { auth: { persistSession: false } },
   )
+  // delta_week = magnitud real del cambio semanal (el delta en vivo lo colapsa
+  // el snapshot). Mismos filtros anti-artefacto que getTopMovers.
+  const freshSince = new Date(Date.now() - 9 * 86400000).toISOString()
   const { data, error } = await sb
     .from('ranking_view')
-    .select('id,name,subtitle,sport,category,emoji,country,trend_reason,score,score_prev')
-    .not('score_prev', 'is', null)
+    .select('id,name,subtitle,sport,category,emoji,country,trend_reason,score,delta_week,rank_prev,editorial_locked,last_auto_update')
+    .not('delta_week', 'is', null)
+    .not('rank_prev', 'is', null)
+    .gte('last_auto_update', freshSince)
     .in('category', CATS as unknown as string[])
     .range(0, 1999)
 
   if (error || !data) return { up: [], down: [] }
 
-  const movers: Mover[] = data.map((r) => ({
-    id: r.id,
-    name: r.name,
-    subtitle: r.subtitle,
-    sport: r.sport,
-    category: r.category,
-    emoji: r.emoji,
-    country: r.country,
-    trend_reason: r.trend_reason,
-    score: Number(r.score),
-    score_prev: Number(r.score_prev),
-    delta: Math.round((Number(r.score) - Number(r.score_prev)) * 10) / 10,
-  }))
+  const movers: Mover[] = data
+    .filter((r) => r.editorial_locked !== true)
+    .map((r) => {
+      const delta = Math.round(Number(r.delta_week) * 10) / 10
+      return {
+        id: r.id,
+        name: r.name,
+        subtitle: r.subtitle,
+        sport: r.sport,
+        category: r.category,
+        emoji: r.emoji,
+        country: r.country,
+        trend_reason: r.trend_reason,
+        score: Number(r.score),
+        score_prev: Math.round((Number(r.score) - delta) * 10) / 10,
+        delta,
+      }
+    })
+    .filter((m) => Math.abs(m.delta) <= 8)
 
   return {
     up: [...movers].sort((a, b) => b.delta - a.delta).filter(m => m.delta >= 1).slice(0, limit),
@@ -66,17 +84,17 @@ function renderHtml(up: Mover[], down: Mover[]): string {
   const row = (m: Mover, sign: '+' | '-') => `
     <tr>
       <td style="padding:8px 0;color:#D0D0E0;font-family:system-ui,sans-serif;">
-        <a href="https://takasportsmedia.com/rankings/${m.id}" style="color:#C4B5FD;text-decoration:none;">
-          ${m.country ?? ''} <strong>${m.name}</strong>
+        <a href="https://takasportsmedia.com/rankings/${encodeURIComponent(m.id)}" style="color:#C4B5FD;text-decoration:none;">
+          ${esc(m.country ?? '')} <strong>${esc(m.name)}</strong>
         </a>
-        <span style="font-size:11px;color:#5A5A72;"> · ${m.subtitle ?? ''}</span>
+        <span style="font-size:11px;color:#5A5A72;"> · ${esc(m.subtitle ?? '')}</span>
       </td>
       <td style="padding:8px 0;text-align:right;font-family:system-ui,sans-serif;">
         <strong style="color:${sign === '+' ? '#22c55e' : '#f87171'};">${sign}${Math.abs(m.delta).toFixed(1)}</strong>
         <span style="color:#5A5A72;font-size:11px;"> · ${m.score.toFixed(1)}</span>
       </td>
     </tr>
-    ${m.trend_reason ? `<tr><td colspan="2" style="padding:0 0 8px 0;font-size:11px;color:#8E8E9E;font-family:system-ui,sans-serif;">${m.trend_reason}</td></tr>` : ''}
+    ${m.trend_reason ? `<tr><td colspan="2" style="padding:0 0 8px 0;font-size:11px;color:#8E8E9E;font-family:system-ui,sans-serif;">${esc(m.trend_reason)}</td></tr>` : ''}
   `
 
   return `<!doctype html>

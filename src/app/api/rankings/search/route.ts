@@ -125,16 +125,26 @@ export async function GET(req: NextRequest) {
         if (aliasRows) aliasEntryIds = aliasRows.map((r: { entry_id: string }) => r.entry_id)
       } catch { /* opcional */ }
 
-      // ilike es case-insensitive en Supabase, pero no quita acentos.
-      // Hacemos una query amplia y filtramos en server por nombre normalizado.
-      const orFilter = aliasEntryIds.length > 0
-        ? `name.ilike.%${rawQ}%,subtitle.ilike.%${rawQ}%,id.in.(${aliasEntryIds.join(',')})`
-        : `name.ilike.%${rawQ}%,subtitle.ilike.%${rawQ}%`
+      // Saneamos rawQ: los caracteres con significado en la gramática de .or()
+      // (`,` `(` `)` `.` `:` `*` `%` `"` `'` `\`) se sustituyen por espacio para
+      // evitar inyección en el filtro PostgREST. Los entry_id de alias se validan
+      // contra un patrón seguro antes de meterlos en `id.in.(…)`.
+      const safeQ = rawQ.replace(/[,()%*:."'\\]/g, ' ').trim()
+      const idList = aliasEntryIds.filter((id) => /^[\w-]+$/.test(id))
+      const orParts: string[] = []
+      if (safeQ.length >= 2) orParts.push(`name.ilike.%${safeQ}%`, `subtitle.ilike.%${safeQ}%`)
+      if (idList.length > 0) orParts.push(`id.in.(${idList.join(',')})`)
+
+      // Si tras sanear no queda nada buscable en DB, vamos directos al estático.
+      if (orParts.length === 0) {
+        const hits = searchStatic(q, limit)
+        return NextResponse.json({ q: rawQ, hits, source: 'static', total: hits.length })
+      }
 
       const { data, error } = await sb
         .from('ranking_view')
         .select('id,name,subtitle,sport,category,score,rank,emoji,image_url,country,badge')
-        .or(orFilter)
+        .or(orParts.join(','))
         .order('score', { ascending: false })
         .limit(500)
 
