@@ -27,6 +27,8 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title: `TakaGrid · Archivo · ${fecha}`,
     description: `Resuelve el TakaGrid del ${fecha} sin presión: no cuenta para el ranking ni la racha.`,
+    // Archivo rejugable: no indexar (cualquier fecha genera una URL casi idéntica → thin/duplicate content).
+    robots: { index: false, follow: true },
     // Self-canonical: sobrescribe el del layout padre que apunta a /takagrid
     alternates: { canonical: `${SITE_URL}/takagrid/${fecha}` },
   }

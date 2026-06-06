@@ -10,8 +10,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import JuegosPageClient from './JuegosPageClient'
-
-const SITE_URL = 'https://takasportsmedia.com'
+import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: 'Juegos · Predicciones, trivia y fantasy deportivo — TakaSports',

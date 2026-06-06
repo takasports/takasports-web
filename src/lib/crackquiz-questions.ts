@@ -521,15 +521,6 @@ export const QUESTIONS: QuizQuestion[] = [
 
   // ── Champions League (extra) ────────────────────────────────────
   {
-    id: 'q054',
-    question: '¿Cuántas Champions League ha ganado el Real Madrid (hasta 2024)?',
-    options: ['13', '14', '15', '16'],
-    correctIndex: 2,
-    category: 'champions',
-    sport: 'football',
-    difficulty: 2,
-  },
-  {
     id: 'q055',
     question: '¿Qué equipo ganó la Champions League 2018-19?',
     options: ['Ajax', 'Barcelona', 'Liverpool', 'Tottenham'],
@@ -555,15 +546,6 @@ export const QUESTIONS: QuizQuestion[] = [
     category: 'champions',
     sport: 'football',
     difficulty: 1,
-  },
-  {
-    id: 'q058',
-    question: '¿Cuántas Champions seguidas ganó el Real Madrid entre 2016 y 2018?',
-    options: ['2', '3', '4', '1'],
-    correctIndex: 1,
-    category: 'champions',
-    sport: 'football',
-    difficulty: 2,
   },
   {
     id: 'q059',
@@ -786,15 +768,6 @@ export const QUESTIONS: QuizQuestion[] = [
     category: 'selecciones',
     sport: 'football',
     difficulty: 1,
-  },
-  {
-    id: 'q083',
-    question: '¿Cuántas Copas América ha ganado Argentina?',
-    options: ['13', '14', '15', '16'],
-    correctIndex: 2,
-    category: 'selecciones',
-    sport: 'football',
-    difficulty: 2,
   },
   {
     id: 'q084',

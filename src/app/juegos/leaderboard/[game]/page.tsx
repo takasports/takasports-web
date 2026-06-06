@@ -12,13 +12,14 @@ import LeaderboardFull from './LeaderboardFull'
 import type { GameId } from '@/lib/games-store'
 import { SITE_URL } from '@/lib/constants'
 
-const META: Record<GameId, { label: string; accent: string; href: string }> = {
+// Striker Rush queda fuera a propósito: aún no existe /strikerrush, así que su
+// leaderboard debe devolver 404 (no un ranking fantasma con CTA a una página rota).
+const META: Partial<Record<GameId, { label: string; accent: string; href: string }>> = {
   quiniela:    { label: 'Quiniela',       accent: '#A78BFA', href: '/quiniela' },
   crackquiz:   { label: 'CrackQuiz',      accent: '#FCD34D', href: '/crackquiz' },
   mionce:      { label: 'Mi Once',        accent: '#93C5FD', href: '/mionce' },
   sopacracks:  { label: 'Sopa de Cracks', accent: '#6EE7B7', href: '/sopa-cracks' },
   takagrid:    { label: 'TakaGrid',       accent: '#FDBA74', href: '/takagrid' },
-  strikerrush: { label: 'Striker Rush',   accent: '#FCA5A5', href: '/strikerrush' },
 }
 
 interface PageProps {

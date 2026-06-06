@@ -9,7 +9,7 @@ export default function Image() {
   return buildGameOgImage({
     emoji: '🔲',
     title: 'TakaGrid',
-    description: 'El Wordle del fútbol. Adivina el jugador cada día.',
-    accentColor: '#a78bfa',
+    description: 'Cruza club y categoría: encuentra al jugador que encaja. Reto diario.',
+    accentColor: '#FDBA74',
   })
 }

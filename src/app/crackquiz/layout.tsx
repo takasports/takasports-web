@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/crackquiz` },
   openGraph: {
     title: 'CrackQuiz — trivia deportiva diaria',
-    description: '¿Cuánto sabes de fútbol? 10 preguntas, 30 segundos cada una. Reto diario de trivia deportiva.',
+    description: '¿Cuánto sabes de fútbol? 10 preguntas, 20 segundos cada una. Reto diario de trivia deportiva.',
     url: `${SITE_URL}/crackquiz`,
     siteName: 'TakaSports',
     locale: 'es_ES',
@@ -25,7 +25,7 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   name: 'CrackQuiz',
-  description: 'Trivia deportiva diaria. 10 preguntas, 30 segundos cada una. Reto de conocimiento futbolístico.',
+  description: 'Trivia deportiva diaria. 10 preguntas, 20 segundos cada una. Reto de conocimiento futbolístico.',
   url: `${SITE_URL}/crackquiz`,
   applicationCategory: 'GameApplication',
   genre: 'Sports',
