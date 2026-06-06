@@ -289,6 +289,14 @@ async function fetchTeamTable(leagueSlug: string, teamId: string): Promise<TeamT
     const entries = asArr(asObj(groups[0]?.standings)?.entries) as Record<string, unknown>[]
     if (!entries.length) return []
 
+    // ESPN no siempre devuelve las entradas ordenadas por posición (p. ej. MLS),
+    // y abajo usamos el índice como puesto. Ordenamos por el stat 'rank' de ESPN.
+    const rankOf = (e: Record<string, unknown>) => {
+      const st = asArr(e.stats) as Array<{ name: string; value?: number }>
+      return (st.find(s => s.name === 'rank')?.value as number) ?? 999
+    }
+    entries.sort((a, b) => rankOf(a) - rankOf(b))
+
     return entries.map((e, i) => {
       const team  = asObj(e.team) ?? {}
       const stats = asArr(e.stats) as Array<{ name: string; value?: number }>
