@@ -10,6 +10,6 @@ export default function Image() {
     emoji: '⚽',
     title: 'Mi Once',
     description: 'Monta tu equipo ideal y compite en el reto semanal.',
-    accentColor: '#22c55e',
+    accentColor: '#93C5FD',
   })
 }

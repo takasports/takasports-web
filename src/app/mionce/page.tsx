@@ -1090,8 +1090,8 @@ export default function MiOncePage() {
         ctaFinal="Crear mi once"
         steps={[
           { emoji: '⚽', title: 'Tu once de la semana', body: 'Elige una formación (4-3-3, 4-4-2, etc.) y rellena los 11 puestos con jugadores reales de cualquier liga.' },
-          { emoji: '©', title: 'Capitán × 2', body: 'Marca un jugador como capitán: sus puntos cuentan doble en el ranking semanal.' },
-          { emoji: '💾', title: 'Guarda y compite', body: 'Tu once queda sellado al cerrar el reto. Al final de la semana se compara con el resto de la comunidad.' },
+          { emoji: '🎯', title: 'Reto de la semana', body: 'Cada semana cambia el tema: once histórico, solo LaLiga, sudamericano… ajusta tu once al reto.' },
+          { emoji: '💾', title: 'Guarda y compite', body: 'Tu once se guarda solo. Al final de la semana se compara con el del resto de la comunidad.' },
         ]}
       />
       <GameLayout accent="#93C5FD" accentDim="#60A5FA">

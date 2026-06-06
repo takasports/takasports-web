@@ -579,7 +579,7 @@ function ComingGameCard({ game }: { game: Game }) {
               cursor: notified ? 'default' : 'pointer',
             }}
           >
-            {justSaved ? '✓ ¡Apuntado!' : notified ? 'Te avisaremos' : 'Notificarme →'}
+            {justSaved ? '✓ ¡Anotado!' : notified ? '✓ Anotado' : 'Me interesa →'}
           </button>
         )}
       </div>

@@ -10,6 +10,6 @@ export default function Image() {
     emoji: '🔤',
     title: 'Sopa de Cracks',
     description: 'Encuentra a las leyendas del fútbol. Puzzle semanal.',
-    accentColor: '#06b6d4',
+    accentColor: '#6EE7B7',
   })
 }
