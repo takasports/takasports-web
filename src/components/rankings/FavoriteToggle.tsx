@@ -11,19 +11,30 @@ interface Props {
   size?: number
 }
 
+// Cache compartida a nivel de módulo: TODAS las filas comparten UNA sola
+// petición a /api/rankings/favorites (antes cada fila hacía la suya → N+1:
+// una vista de 50 filas disparaba 50 fetches idénticos).
+let favoritesCache: Promise<Set<string>> | null = null
+function loadFavorites(): Promise<Set<string>> {
+  if (!favoritesCache) {
+    favoritesCache = fetch('/api/rankings/favorites', { credentials: 'same-origin' })
+      .then(r => (r.ok ? r.json() : { favorites: [] }))
+      .then((j: { favorites?: { entry_id: string }[] }) =>
+        new Set((j.favorites ?? []).map(f => f.entry_id)))
+      .catch(() => new Set<string>())
+  }
+  return favoritesCache
+}
+function updateFavoritesCache(id: string, add: boolean) {
+  favoritesCache?.then(set => { if (add) set.add(id); else set.delete(id) })
+}
+
 export default function FavoriteToggle({ entryId, size = 18 }: Props) {
   const [active, setActive] = useState<boolean | null>(null)  // null = aún cargando
 
   useEffect(() => {
     let alive = true
-    fetch('/api/rankings/favorites', { credentials: 'same-origin' })
-      .then(r => r.ok ? r.json() : { favorites: [] })
-      .then((j: { favorites: { entry_id: string }[] }) => {
-        if (!alive) return
-        const has = j.favorites?.some(f => f.entry_id === entryId) ?? false
-        setActive(has)
-      })
-      .catch(() => { if (alive) setActive(false) })
+    loadFavorites().then(set => { if (alive) setActive(set.has(entryId)) })
     return () => { alive = false }
   }, [entryId])
 
@@ -48,6 +59,7 @@ export default function FavoriteToggle({ entryId, size = 18 }: Props) {
         return
       }
       if (!res.ok) setActive(wasActive)
+      else updateFavoritesCache(entryId, !wasActive)
     } catch {
       setActive(wasActive)
     }

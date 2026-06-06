@@ -142,7 +142,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const allRankingIds = [
     ...getAllRankingEntries().map(e => e.id),
     ...dbIds.filter(id => !staticIds.has(id)),
-  ]
+  ].filter(id => !id.startsWith('coach-'))  // entrenadores fuera del ranking → no indexar sus fichas
   const rankingDetailRoutes: MetadataRoute.Sitemap = allRankingIds.map(id => ({
     url: `${BASE_URL}/rankings/${id}`,
     lastModified: RANKINGS_LASTMOD,

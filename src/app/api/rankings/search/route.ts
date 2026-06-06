@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import {
   RANKING_JUGADORES, RANKING_JUGADORAS, RANKING_CLUBES, RANKING_CLUBES_FEMENINO,
-  RANKING_ENTRENADORES, RANKING_CREADORES, RANKING_PERIODISTAS, RANKING_LUCHADORAS_UFC,
+  RANKING_CREADORES, RANKING_PERIODISTAS, RANKING_LUCHADORAS_UFC,
   RANKING_CREADORES_WWE, RANKING_JUGADORES_SUB21, RANKING_JUGADORES_LATAM, RANKING_JUGADORES_CONCACAF,
   type RankingEntry,
 } from '@/lib/rankings'
@@ -60,7 +60,6 @@ const STATIC_SOURCES: { category: string; entries: RankingEntry[] }[] = [
   { category: 'concacaf',        entries: RANKING_JUGADORES_CONCACAF },
   { category: 'clubes',          entries: RANKING_CLUBES },
   { category: 'clubes_femenino', entries: RANKING_CLUBES_FEMENINO },
-  { category: 'entrenadores',    entries: RANKING_ENTRENADORES },
   { category: 'creadores',       entries: RANKING_CREADORES },
   { category: 'periodistas',     entries: RANKING_PERIODISTAS },
   { category: 'luchadoras_ufc',  entries: RANKING_LUCHADORAS_UFC },
@@ -145,6 +144,7 @@ export async function GET(req: NextRequest) {
         .from('ranking_view')
         .select('id,name,subtitle,sport,category,score,rank,emoji,image_url,country,badge')
         .or(orParts.join(','))
+        .neq('category', 'entrenadores')
         .order('score', { ascending: false })
         .limit(500)
 

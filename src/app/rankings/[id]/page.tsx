@@ -89,6 +89,8 @@ export async function generateMetadata(
   return {
     title,
     description,
+    // Entrenadores ya no forman parte del ranking público → sus fichas no se indexan.
+    ...((entry.category === 'entrenadores' || id.startsWith('coach-')) ? { robots: { index: false, follow: true } } : {}),
     // Self-canonical: sobrescribe el canonical heredado de rankings/layout.tsx
     // que apuntaba a `/rankings` (hub) → Google trataba TODAS las entries
     // individuales como duplicadas del hub y no las indexaba. Mail GSC del
