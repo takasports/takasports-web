@@ -2232,7 +2232,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
       ? ({ 'tabla-ucl': 'uclFixtures', 'tabla-uel': 'uelFixtures' } as Record<string, string>)[block.id] ?? BLOCK_TO_META_KEY[block.id]
       : BLOCK_TO_META_KEY[block.id]
     const meta = liveData?.meta?.[metaKey]
-    if (meta?.status === 'unavailable' || meta?.status === 'stale') return false
+    if (meta?.status === 'unavailable' || meta?.status === 'stale' || meta?.status === 'historical') return false
     if (liveData && LIVE_BLOCK_IDS.has(block.id) && block.rows.length > 0) return true
     if (livePlayerData && LIVE_PLAYER_BLOCK_IDS.has(block.id) && block.rows.length > 0) return true
     return false

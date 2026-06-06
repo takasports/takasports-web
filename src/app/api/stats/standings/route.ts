@@ -1196,7 +1196,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   const snapMeta = (snap: StatSnapshot): BlockMeta => {
     const days = Math.floor((Date.now() - new Date(snap.updatedAt).getTime()) / 86_400_000)
     return Number.isFinite(days) && days >= SNAP_STALE_DAYS
-      ? { status: 'stale', source: snap.source, fetchedAt: now, asOf: `hace ${days} días` }
+      ? { status: 'historical', source: snap.source, fetchedAt: now, asOf: `hace ${days} días` }
       : { status: 'live', source: snap.source, fetchedAt: now }
   }
 
