@@ -35,7 +35,6 @@ export interface StatsStandingsResponse {
   f1Drivers: StandingRow[]
   f1Constructors: StandingRow[]
   f1Poles: StandingRow[]
-  f1FastestLaps: StandingRow[]
   nbaEast: StandingRow[]
   nbaWest: StandingRow[]
   nbaScoring: StandingRow[]
@@ -158,7 +157,6 @@ interface F1Result {
   drivers: StandingRow[]
   constructors: StandingRow[]
   poles: StandingRow[]
-  fastestLaps: StandingRow[]
   season: string
   round: string
 }
@@ -170,7 +168,7 @@ const CTOR_ABBR: Record<string, string> = {
 }
 
 async function fetchF1All(): Promise<F1Result> {
-  const empty: F1Result = { drivers: [], constructors: [], poles: [], fastestLaps: [], season: '', round: '' }
+  const empty: F1Result = { drivers: [], constructors: [], poles: [], season: '', round: '' }
   try {
     const dr = await tfetch('https://api.jolpi.ca/ergast/f1/current/driverstandings.json', { next: { revalidate: 3600 } })
     if (!dr.ok) return empty
@@ -214,12 +212,9 @@ async function fetchF1All(): Promise<F1Result> {
       })
     }
 
-    const [poles, fastestLaps] = await Promise.all([
-      fetchF1Poles(season),
-      fetchF1FastestLaps(season),
-    ])
+    const poles = await fetchF1Poles(season)
 
-    return { drivers, constructors, poles, fastestLaps, season, round }
+    return { drivers, constructors, poles, season, round }
   } catch (err) {
     console.error('[standings] F1 (Jolpica) failed:', err)
     return empty
@@ -239,30 +234,6 @@ async function fetchF1Poles(season: string): Promise<StandingRow[]> {
       if (!pole) continue
       const d = pole.Driver as JolpicaDriver
       const c = pole.Constructor as JolpicaCtor
-      const name = `${d.givenName} ${d.familyName}`
-      counts[name] ??= { name, team: c.name, n: 0 }
-      counts[name].n++
-    }
-    return Object.values(counts).sort((a, b) => b.n - a.n).map((d, i) => ({
-      rank: i + 1, name: d.name, abbr: d.team,
-      value: String(d.n), sub: `Temp. ${season}`, trend: 'flat' as const, extra: { Escudería: d.team },
-    }))
-  } catch { return [] }
-}
-
-async function fetchF1FastestLaps(season: string): Promise<StandingRow[]> {
-  if (!season) return []
-  try {
-    const res = await tfetch(`https://api.jolpi.ca/ergast/f1/${season}/fastest/1/results.json?limit=100`, { next: { revalidate: 86400 } })
-    if (!res.ok) return []
-    const json = await res.json()
-    const races = (json.MRData?.RaceTable?.Races ?? []) as Record<string, unknown>[]
-    const counts: Record<string, { name: string; team: string; n: number }> = {}
-    for (const race of races) {
-      const result = ((race.Results as Record<string, unknown>[])?.[0]) as Record<string, unknown> | undefined
-      if (!result) continue
-      const d = result.Driver as JolpicaDriver
-      const c = result.Constructor as JolpicaCtor
       const name = `${d.givenName} ${d.familyName}`
       counts[name] ??= { name, team: c.name, n: 0 }
       counts[name].n++
@@ -1106,7 +1077,7 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   ],
   football: ['football', 'uclScorers', 'uelScorers', 'uclAssists', 'uelAssists'],
   nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaMvpRace', 'nbaDpoyRace', 'nbaRookieRace'],
-  f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1FastestLaps', 'f1Calendar', 'f1Sprints'],
+  f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1Calendar', 'f1Sprints'],
   tenis: ['atpRanking', 'wtaRanking'],
   tennis: ['atpRanking', 'wtaRanking'],
   ufc: ['ufcP4P', 'ufcChampions', 'ufcDivisions'],
@@ -1208,7 +1179,6 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     f1Drivers:       f1.drivers.length      ? live(`Jolpica · ${f1.season} R${f1.round}`) : unavail('Jolpica'),
     f1Constructors:  f1.constructors.length ? live(`Jolpica · ${f1.season} R${f1.round}`) : unavail('Jolpica'),
     f1Poles:         f1.poles.length        ? live(`Jolpica · ${f1.season}`)              : unavail('Jolpica'),
-    f1FastestLaps:   f1.fastestLaps.length  ? live(`Jolpica · ${f1.season}`)              : unavail('Jolpica'),
     nbaEast:         nba.east.length        ? live('ESPN', 'nbaEast') : unavail('ESPN'),
     nbaWest:         nba.west.length        ? live('ESPN', 'nbaWest') : unavail('ESPN'),
     nbaScoring:      nbaLeaders.scoring.length    ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
@@ -1271,6 +1241,11 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
       meta[league.id] = { status: 'stale', source: 'ESPN · caché reciente', fetchedAt: now, asOf: 'fallback' }
     } else if (league.rows.length) {
       meta[league.id] = { status: 'live', source: 'ESPN', fetchedAt: now }
+    } else {
+      // Liga sin filas (p.ej. ESPN aún no publica la tabla de la nueva temporada):
+      // marcar 'unavailable' para que el cliente vacíe el fallback hardcodeado en
+      // vez de mostrarlo como ● LIVE. (fix Serie A jun 2026)
+      meta[league.id] = unavail('ESPN · sin tabla esta temporada')
     }
   }
 
@@ -1279,7 +1254,6 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     f1Drivers:      f1.drivers,
     f1Constructors: f1.constructors,
     f1Poles:        f1.poles,
-    f1FastestLaps:  f1.fastestLaps,
     nbaEast:        nba.east,
     nbaWest:        nba.west,
     nbaScoring:     nbaLeaders.scoring,

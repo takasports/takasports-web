@@ -1404,7 +1404,7 @@ interface BlockMeta { status: FreshnessStatus; source: string; fetchedAt: string
 interface LiveStandingsData {
   football: LiveLeague[]
   f1Drivers: LiveStandingRow[]; f1Constructors: LiveStandingRow[]
-  f1Poles: LiveStandingRow[];   f1FastestLaps: LiveStandingRow[]
+  f1Poles: LiveStandingRow[]
   nbaEast: LiveStandingRow[];   nbaWest: LiveStandingRow[]
   nbaScoring: LiveStandingRow[];nbaRebounds: LiveStandingRow[]
   nbaAssists: LiveStandingRow[];nbaBlocks: LiveStandingRow[]
@@ -1443,8 +1443,11 @@ interface LiveStandingsData {
 
 // Map block.id -> standings payload key (for meta lookup)
 const BLOCK_TO_META_KEY: Record<string, string> = {
-  'tabla-laliga': 'football', 'tabla-premier': 'football', 'tabla-serie-a': 'football',
-  'tabla-bundesliga': 'football', 'tabla-ligue1': 'football', 'tabla-ucl': 'football', 'tabla-uel': 'football',
+  // Cada liga lee su PROPIA meta (no la genérica 'football') para que, si ESPN
+  // devuelve una liga vacía, el bloque se marque 'unavailable' y NO muestre el
+  // fallback hardcodeado como ● LIVE. (fix Serie A jun 2026)
+  'tabla-laliga': 'tabla-laliga', 'tabla-premier': 'tabla-premier', 'tabla-serie-a': 'tabla-serie-a',
+  'tabla-bundesliga': 'tabla-bundesliga', 'tabla-ligue1': 'tabla-ligue1', 'tabla-ucl': 'football', 'tabla-uel': 'football',
   'goles-equipo': 'football', 'menos-goles': 'football',
   'nba-este': 'nbaEast', 'nba-oeste': 'nbaWest',
   'nba-scoring': 'nbaScoring', 'nba-rebounds': 'nbaRebounds', 'nba-assists': 'nbaAssists',

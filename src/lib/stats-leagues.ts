@@ -21,5 +21,6 @@ export const SOCCER_LEAGUES: SoccerLeague[] = [
 export const EUROPEAN_CUPS = [
   { id: 'tabla-ucl',  label: 'Champions League', espnSlug: 'soccer/uefa.champions'  },
   { id: 'tabla-uel',  label: 'Europa League',    espnSlug: 'soccer/uefa.europa'     },
-  { id: 'tabla-uecl', label: 'Conference League',espnSlug: 'soccer/uefa.conference' },
+  // Conference League (uefa.conference) se omite: no hay bloque que la muestre en
+  // /estadisticas, así que fetchearla en cada request era trabajo desperdiciado.
 ] as const
