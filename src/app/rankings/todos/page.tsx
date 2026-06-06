@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { createClient } from '@supabase/supabase-js'
+import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: 'Reyes del deporte hispano · Índice Taka',
   description: 'El #1 de cada disciplina. Una foto del momento del deporte hispanohablante.',
+  alternates: { canonical: `${SITE_URL}/rankings/todos` },
 }
 
 export const revalidate = 120  // refresca cada 2 min para evitar cache stale tras cambios
@@ -21,23 +23,15 @@ interface Row {
   score_prev: number | null
 }
 
-// Disciplinas en orden de relevancia para el lector hispano
+// Solo disciplinas con datos reales (jugadores/jugadoras) en el Índice — el
+// resto no tiene ingest, así que iterarlas era pedir queries siempre vacías.
 const SPORTS_ORDER = [
-  { sport: 'futbol',           label: 'Fútbol',           emoji: '⚽' },
-  { sport: 'tenis',            label: 'Tenis',            emoji: '🎾' },
-  { sport: 'baloncesto',       label: 'Baloncesto · NBA', emoji: '🏀' },
-  { sport: 'formula1',         label: 'Fórmula 1',        emoji: '🏎️' },
-  { sport: 'ufc',              label: 'UFC',              emoji: '🥊' },
-  { sport: 'motogp',           label: 'MotoGP',           emoji: '🏍️' },
-  { sport: 'wwe',              label: 'WWE',              emoji: '🤼' },
-  { sport: 'wrestling',        label: 'Wrestling',        emoji: '🤼' },
-  { sport: 'golf',             label: 'Golf',             emoji: '⛳' },
-  { sport: 'boxeo',            label: 'Boxeo',            emoji: '🥊' },
-  { sport: 'padel',            label: 'Pádel',            emoji: '🎾' },
-  { sport: 'ciclismo',         label: 'Ciclismo',         emoji: '🚴' },
-  { sport: 'beisbol',          label: 'Béisbol',          emoji: '⚾' },
-  { sport: 'futbol_americano', label: 'NFL',              emoji: '🏈' },
-  { sport: 'atletismo',        label: 'Atletismo',        emoji: '🏃' },
+  { sport: 'futbol',     label: 'Fútbol',           emoji: '⚽' },
+  { sport: 'tenis',      label: 'Tenis',            emoji: '🎾' },
+  { sport: 'baloncesto', label: 'Baloncesto · NBA', emoji: '🏀' },
+  { sport: 'formula1',   label: 'Fórmula 1',        emoji: '🏎️' },
+  { sport: 'ufc',        label: 'UFC',              emoji: '🥊' },
+  { sport: 'wwe',        label: 'WWE',              emoji: '🤼' },
 ]
 
 async function loadKings(): Promise<Row[]> {

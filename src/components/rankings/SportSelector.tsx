@@ -1,7 +1,7 @@
 'use client'
 
 import { getSportStyle } from '@/lib/sports'
-import { SportIcon, MedalIcon, FootballIcon, BasketballIcon, F1Icon, TennisIcon, UFCIcon, WWEIcon } from '@/components/icons/GameIcons'
+import { MedalIcon, FootballIcon, BasketballIcon, F1Icon, TennisIcon, UFCIcon, WWEIcon } from '@/components/icons/GameIcons'
 
 type IconC = React.ComponentType<{ size?: number }>
 

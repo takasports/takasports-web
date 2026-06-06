@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: 'Metodología · Índice Taka',
   description: 'Cómo se calcula el Índice Taka — factores, pesos por deporte, capa editorial y reglas de actualización.',
+  alternates: { canonical: `${SITE_URL}/rankings/metodologia` },
 }
 
 export default function MetodologiaPage() {

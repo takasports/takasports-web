@@ -176,21 +176,6 @@ export default function RankRow({
               {expanded ? '▴' : '▾'}
             </button>
           )}
-          <Link
-            href={`/rankings/comparar?a=${entry.id}`}
-            onClick={e => e.stopPropagation()}
-            className="hidden sm:flex items-center justify-center w-6 h-6 rounded-md transition-all hover:brightness-150"
-            style={{
-              background: 'rgba(34,211,238,0.08)',
-              color: '#67e8f9',
-              border: '1px solid rgba(34,211,238,0.2)',
-              fontFamily: 'var(--font-sport)',
-              fontSize: 11,
-            }}
-            title={`Comparar ${entry.name} con otro`}
-          >
-            ⚖
-          </Link>
         </div>
       </div>
       {expanded && entry.insight && (

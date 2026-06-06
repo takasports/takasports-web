@@ -88,6 +88,7 @@ export default function SocialHandles({ handles }: { handles: Handles }) {
             target="_blank"
             rel="noopener noreferrer"
             title={`${s.label}: ${handle}`}
+            aria-label={`${s.label}: ${handle}`}
             className="flex items-center justify-center rounded transition-all hover:brightness-125"
             style={{
               width: 22,

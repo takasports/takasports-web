@@ -862,7 +862,7 @@ export default function RankingsClient({
         )}
 
         {/* ── SIN RESULTADOS ───────────────────────────────────── */}
-        {finalEntries.length === 0 && (
+        {searchQuery.trim().length < 2 && finalEntries.length === 0 && (
           <div className="py-16 text-center flex flex-col items-center gap-2">
             <span style={{ color: '#5A5A72' }}><SearchIcon size={28} /></span>
             <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
@@ -877,7 +877,7 @@ export default function RankingsClient({
         )}
 
         {/* ── LISTADO PRINCIPAL ─────────────────────────────────── */}
-        {finalEntries.length > 0 && (
+        {searchQuery.trim().length < 2 && finalEntries.length > 0 && (
           <>
             <div className="flex items-center gap-3 px-4 pb-2 mb-1">
               <span className="w-7 flex-shrink-0" /><span className="w-9 flex-shrink-0" />

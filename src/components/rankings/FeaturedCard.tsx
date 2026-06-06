@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import type { RankingEntry } from '@/lib/rankings'
 import { trendIcon } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
@@ -23,9 +24,9 @@ export default function FeaturedCard({ entry }: { entry: RankingEntry }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-          <span className="text-[13px] font-bold truncate" style={{ color: '#C0C0D0', fontFamily: 'var(--font-sport)' }}>
+          <Link href={`/rankings/${entry.id}`} className="text-[13px] font-bold truncate hover:brightness-125 transition-all" style={{ color: '#C0C0D0', fontFamily: 'var(--font-sport)' }}>
             {entry.name}
-          </span>
+          </Link>
           {entry.badge && <BadgePill text={entry.badge} />}
         </div>
         <p className="text-[10px] truncate" style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>{entry.subtitle}</p>

@@ -8,6 +8,8 @@ import BadgePill from './BadgePill'
 import PlayerAvatar from './PlayerAvatar'
 import ScoreBreakdown from './ScoreBreakdown'
 import ScoreSparkline from './ScoreSparkline'
+import Link from 'next/link'
+import FavoriteToggle from './FavoriteToggle'
 import { CrownIcon } from '@/components/icons/GameIcons'
 
 export default function TopOneRow({ entry, showSportEmoji = false }: { entry: RankingEntry; showSportEmoji?: boolean }) {
@@ -74,6 +76,18 @@ export default function TopOneRow({ entry, showSportEmoji = false }: { entry: Ra
           </div>
         )}
         <div className="flex-shrink-0 flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2 mb-0.5">
+            <FavoriteToggle entryId={entry.id} size={16} />
+            <Link
+              href={`/rankings/comparar?a=${encodeURIComponent(entry.id)}`}
+              title="Comparar con otra entry"
+              aria-label="Comparar con otra entry"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-md transition-all hover:brightness-150"
+              style={{ background: 'rgba(255,255,255,0.05)', color: '#7A7A92', border: '1px solid rgba(255,255,255,0.1)', fontSize: 12 }}
+            >
+              ⚖
+            </Link>
+          </div>
           <span className="font-black tabular-nums"
             style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: sc, letterSpacing: '-0.03em', lineHeight: 1 }}>
             {displayScore.toFixed(1)}

@@ -712,7 +712,7 @@ export const RANKING_JUGADORAS: RankingEntry[] = [
     id: 'hampton', rank: 7, name: 'Hannah Hampton', subtitle: 'Chelsea Women · Portera',
     sport: 'futbol', score: 82.6, trend: 'up2', gender: 'f', region: 'europa', badge: 'Revelación',
     insight: 'Player of the Match de la final de la Eurocopa: paró dos penaltis ante España. La nueva referencia bajo palos del fútbol femenino.',
-    emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', league: 'championsf', position: 'portera',
+    emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', league: 'championsf', position: 'portero',
     image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/20250510-Hannah_Hampton_%28cropped_-_portrait%29.jpg/330px-20250510-Hannah_Hampton_%28cropped_-_portrait%29.jpg',
     scorePrev: 65.0, trendReason: 'Player of the Match en la final Eurocopa — paró dos penaltis a España',
     factors: { rendimiento: 88, contexto: 84, mediatico: 76, narrativa: 84 },
@@ -871,8 +871,6 @@ export const RANKING_JUGADORES_SUB21: RankingEntry[] = [
   },
 ]
 
-// ── JUGADORES — EUROPA ────────────────────────────────────────────
-export const RANKING_JUGADORES_EUROPA: RankingEntry[] = RANKING_JUGADORES.filter(j => j.region === 'europa' || j.sport === 'futbol').slice(0, 7)
 
 // ── JUGADORES — LATAM ─────────────────────────────────────────────
 export const RANKING_JUGADORES_LATAM: RankingEntry[] = [
@@ -2102,14 +2100,13 @@ export const JUGADORES_LIGA_FILTERS = [
   { label: 'MLS',        slug: 'mls' },
 ]
 
+// Jugadoras: el fútbol femenino en la DB usa los slugs de país (laliga/premier/
+// ligue1). El tenis (WTA) se filtra con el toggle ATP/WTA, no por liga.
 export const JUGADORAS_LIGA_FILTERS = [
-  { label: 'Todas',        slug: '' },
-  { label: 'Liga F',       slug: 'ligaf' },
-  { label: 'WSL',          slug: 'wsl' },
-  { label: 'NWSL',         slug: 'nwsl' },
-  { label: 'Division 1 F', slug: 'div1f' },
-  { label: 'Champions F',  slug: 'championsf' },
-  { label: 'Frauen-BL',    slug: 'frauenbl' },
+  { label: 'Todas',          slug: '' },
+  { label: 'Liga F',         slug: 'laliga' },
+  { label: 'WSL',            slug: 'premier' },
+  { label: 'Première Ligue', slug: 'ligue1' },
 ]
 
 export const CLUBES_LIGA_FILTERS = [
@@ -2124,11 +2121,12 @@ export const CLUBES_LIGA_FILTERS = [
 ]
 
 export const CLUBES_FEMENINO_LIGA_FILTERS = [
-  { label: 'Todas',       slug: '' },
-  { label: 'Liga F',      slug: 'ligaf' },
-  { label: 'Champions F', slug: 'championsf' },
-  { label: 'WSL',         slug: 'wsl' },
-  { label: 'Frauen-BL',   slug: 'frauenbl' },
+  { label: 'Todas',        slug: '' },
+  { label: 'Liga F',       slug: 'ligaf' },
+  { label: 'WSL',          slug: 'wsl' },
+  { label: 'NWSL',         slug: 'nwsl' },
+  { label: 'Division 1 F', slug: 'div1f' },
+  { label: 'Champions F',  slug: 'championsf' },
 ]
 
 export const CLUBES_PAIS_FILTERS = [
