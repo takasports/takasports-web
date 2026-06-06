@@ -73,6 +73,7 @@ export interface SportEvent {
   homeScore?: number | null
   awayScore?: number | null
   isPast?: boolean
+  resultNote?: string     // F1/UFC pasados: ganador del evento (no hay marcador)
 }
 
 // Evento desde Sanity (futuro)

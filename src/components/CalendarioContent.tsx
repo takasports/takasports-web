@@ -844,15 +844,30 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
             {racing ? <F1Icon size={14} /> : tennis ? <TennisIcon size={14} /> : <SportIcon sport={event.sport} size={14} />}
           </span>
           <div className="min-w-0">
-            <span className="text-[10px] font-bold uppercase tracking-[0.12em] truncate block"
-              style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-              {racing ? 'Carrera' : tennis ? 'Individual' : combat ? 'Cartelera' : 'Evento'}
-            </span>
-            {event.comp && (
-              <span className="text-[9px] truncate block mt-0.5"
-                style={{ color: compColor, fontFamily: 'var(--font-sport)' }}>
-                {event.comp}
-              </span>
+            {event.resultNote ? (
+              <>
+                <span className="text-[8.5px] font-black uppercase tracking-[0.14em] block"
+                  style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+                  Ganador
+                </span>
+                <span className="text-[12px] font-bold truncate block leading-snug"
+                  style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+                  🏆 {event.resultNote}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-[10px] font-bold uppercase tracking-[0.12em] truncate block"
+                  style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+                  {racing ? 'Carrera' : tennis ? 'Individual' : combat ? 'Cartelera' : 'Evento'}
+                </span>
+                {event.comp && (
+                  <span className="text-[9px] truncate block mt-0.5"
+                    style={{ color: compColor, fontFamily: 'var(--font-sport)' }}>
+                    {event.comp}
+                  </span>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1339,7 +1354,7 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
             <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
             <span>{as_}</span>
           </span>
-        ) : (
+        ) : event.resultNote ? null : (
           <span className="text-[14px] font-bold" style={{ color: '#5A5A6A' }}>–</span>
         )}
       </div>
@@ -1358,15 +1373,30 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
             {racing ? <F1Icon size={14} /> : tennis ? <TennisIcon size={14} /> : <SportIcon sport={event.sport} size={14} />}
           </span>
           <div className="min-w-0">
-            <span className="text-[10px] font-bold uppercase tracking-[0.12em] truncate block"
-              style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-              {racing ? 'Carrera' : tennis ? 'Individual' : combat ? 'Cartelera' : 'Evento'}
-            </span>
-            {event.comp && (
-              <span className="text-[9px] truncate block mt-0.5"
-                style={{ color: compColor, fontFamily: 'var(--font-sport)' }}>
-                {event.comp}
-              </span>
+            {event.resultNote ? (
+              <>
+                <span className="text-[8.5px] font-black uppercase tracking-[0.14em] block"
+                  style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+                  Ganador
+                </span>
+                <span className="text-[12px] font-bold truncate block leading-snug"
+                  style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
+                  🏆 {event.resultNote}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-[10px] font-bold uppercase tracking-[0.12em] truncate block"
+                  style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+                  {racing ? 'Carrera' : tennis ? 'Individual' : combat ? 'Cartelera' : 'Evento'}
+                </span>
+                {event.comp && (
+                  <span className="text-[9px] truncate block mt-0.5"
+                    style={{ color: compColor, fontFamily: 'var(--font-sport)' }}>
+                    {event.comp}
+                  </span>
+                )}
+              </>
             )}
           </div>
         </div>

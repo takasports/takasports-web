@@ -307,6 +307,38 @@ export async function fetchEspnEvents(): Promise<SportEvent[]> {
     })
 }
 
+// Ganador de un evento individual pasado (F1: 1º por 'order'; UFC: ganador del
+// combate estelar, identificado porque sus peleadores aparecen en el nombre del
+// cartel). Devuelve undefined si no se puede determinar.
+function pastWinner(ev: Record<string, unknown>, comp: Record<string, unknown> | undefined, sport: string): string | undefined {
+  try {
+    if (sport === 'F1') {
+      const cs = (comp?.competitors as Record<string, unknown>[]) ?? []
+      const first = [...cs].sort((a, b) => Number(a.order ?? 99) - Number(b.order ?? 99))[0]
+      const name = ((first?.athlete as Record<string, unknown> | undefined)?.displayName as string | undefined)
+                ?? (first?.displayName as string | undefined)
+      return name || undefined
+    }
+    if (sport === 'UFC') {
+      const card = ((ev.name as string) ?? '').toLowerCase()
+      for (const f of (ev.competitions as Record<string, unknown>[]) ?? []) {
+        const cs = (f.competitors as Record<string, unknown>[]) ?? []
+        if (cs.length < 2) continue
+        const names = cs.map(c => ((c.athlete as Record<string, unknown> | undefined)?.displayName as string) ?? '')
+        const inCard = names.filter(n => {
+          const last = n.split(' ').pop()?.toLowerCase() ?? ''
+          return last.length > 2 && card.includes(last)
+        })
+        if (inCard.length >= 2) {
+          const win = cs.find(c => c.winner === true)
+          return ((win?.athlete as Record<string, unknown> | undefined)?.displayName as string) || undefined
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  return undefined
+}
+
 // ── Past results (last N days) ────────────────────────────────────────────
 async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEvent[]> {
   const { accent } = getSportStyle(source.sport)
@@ -344,6 +376,7 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
     let awayAbbr: string | undefined
     let homeScore: number | null = null
     let awayScore: number | null = null
+    let resultNote: string | undefined
 
     if (source.teamSport && competitors.length >= 2) {
       const homeComp = competitors.find(c => c.homeAway === 'home') ?? competitors[0]
@@ -360,6 +393,7 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
       awayScore = parseScore(awayComp.score)
     } else {
       home = (ev.name as string) ?? (ev.shortName as string) ?? source.sport
+      resultNote = pastWinner(ev, comp, source.sport)
     }
 
     if (!home) continue
@@ -388,6 +422,7 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
         homeScore,
         awayScore,
         isPast:    true,
+        resultNote,
         source:    'espn' as const,
       },
     })
