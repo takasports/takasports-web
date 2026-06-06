@@ -198,10 +198,13 @@ function rowToEntry(row: any): RankingEntry {
     rawF.mediatico   !== null || rawF.narrativa !== null
   )
     ? {
-      rendimiento: Number(rawF.rendimiento ?? 0),
-      contexto:    Number(rawF.contexto    ?? 0),
-      mediatico:   Number(rawF.mediatico   ?? 0),
-      narrativa:   Number(rawF.narrativa   ?? 0),
+      // Hueco (null) → 50, igual que el trigger de la DB (COALESCE …,50), para
+      // que el desglose por factores cuadre con el score en entradas con
+      // factores incompletos (típico en contenido: sin contexto/narrativa).
+      rendimiento: Number(rawF.rendimiento ?? 50),
+      contexto:    Number(rawF.contexto    ?? 50),
+      mediatico:   Number(rawF.mediatico   ?? 50),
+      narrativa:   Number(rawF.narrativa   ?? 50),
     }
     : undefined
 
