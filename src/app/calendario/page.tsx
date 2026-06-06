@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import { sanityClient, eventsQuery } from '@/lib/sanity'
 import { normalizeEvent } from '@/lib/events'
-import { fetchEspnEvents, fetchEspnPastEvents } from '@/lib/espn'
+import { fetchEspnEvents } from '@/lib/espn'
 import { fetchPadelEvents } from '@/lib/padel'
 import { fetchRecentFormByTeams } from '@/lib/past-events'
 import { TZ_KEY, SOURCE_TZ } from '@/lib/timezone'
@@ -29,11 +29,13 @@ function norm(s: string): string {
 }
 
 export default async function CalendarioPage() {
-  const [espnEvents, rawSanity, padelEvents, espnPast] = await Promise.allSettled([
+  // Los resultados pasados ya NO se traen en el SSR (lo hacía 1 fetch por liga,
+  // ~38, y la mayoría de usuarios no abre la pestaña Resultados). Se cargan en
+  // cliente vía /api/events/past?live=1 cuando hace falta. Aligera HTML y render.
+  const [espnEvents, rawSanity, padelEvents] = await Promise.allSettled([
     fetchEspnEvents(),
     sanityClient.fetch(eventsQuery),
     fetchPadelEvents(),
-    fetchEspnPastEvents(),
   ])
 
   const sanityEvents = rawSanity.status === 'fulfilled' && Array.isArray(rawSanity.value) && rawSanity.value.length > 0
@@ -42,7 +44,6 @@ export default async function CalendarioPage() {
 
   const espn   = espnEvents.status === 'fulfilled'  ? espnEvents.value  : []
   const padel  = padelEvents.status === 'fulfilled' ? padelEvents.value : []
-  const past   = espnPast.status === 'fulfilled'    ? espnPast.value    : []
 
   // Build a set of match fingerprints from curated Sanity events.
   // Key = normalized(home)|normalized(away)|YYYY-MM-DD  (or date string)
@@ -146,7 +147,6 @@ export default async function CalendarioPage() {
       <LiveStrip />
       <CalendarioContent
         events={events}
-        pastEvents={past}
         recentForms={recentForms}
         initialTz={initialTz}
       />

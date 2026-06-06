@@ -1440,6 +1440,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const [pastNextCursor, setPastNextCursor] = useState<string | null>(null)
   const [pastLoading, setPastLoading] = useState(false)
   const [pastError, setPastError] = useState<string | null>(null)
+  // Resultados rango "10 días": se cargan en cliente (no en SSR) para aligerar la
+  // página. Vía /api/events/past?live=1 → ESPN en vivo (tenis + ganador F1/UFC).
+  const [recentPast, setRecentPast] = useState<SportEvent[]>(pastEvents)
   const notifTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
   const prevScoresRef = useRef<Map<string, string>>(new Map())
 
@@ -1520,6 +1523,19 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       window.history.replaceState(null, '', newUrl)
     } catch { /* ignore */ }
   }, [view, activeFilter, selectedDate])
+
+  // Resultados (10 días): cargados en cliente vía ESPN en vivo (live=1) para no
+  // hacer ~38 fetches de pasados en el SSR. Conserva tenis y ganador F1/UFC. Si
+  // falla, la pestaña Resultados 10d queda vacía pero los rangos mayores siguen.
+  useEffect(() => {
+    const ctrl = new AbortController()
+    const from = new Date(Date.now() - 10 * 86_400_000).toISOString()
+    fetch(`/api/events/past?live=1&from=${encodeURIComponent(from)}&limit=200`, { signal: ctrl.signal })
+      .then(r => (r.ok ? r.json() : null))
+      .then((data: { events?: SportEvent[] } | null) => { if (data?.events) setRecentPast(data.events) })
+      .catch(() => { /* ignore */ })
+    return () => ctrl.abort()
+  }, [])
 
   // Debounce search input — avoid filtering on every keystroke
   useEffect(() => {
@@ -1654,7 +1670,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
   // Destacados es un chip especial — no es un deporte sino un modo curado
   // que limita a los top 4 partidos por día por prestigio de liga + favoritos.
-  const sports = ['Destacados', 'Todo', ...new Set([...events, ...pastEvents].map(e => e.sport)).values()]
+  const sports = ['Destacados', 'Todo', ...new Set([...events, ...recentPast].map(e => e.sport)).values()]
 
   const filtered = useMemo(() => {
     const matchesSearch = (e: SportEvent) =>
@@ -1799,7 +1815,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
   // Histórico: 10d usa lo que entró por SSR; rangos mayores cargan desde la API.
   const useExtendedPast = pastRange !== '10d'
-  const pastSource = useExtendedPast ? extraPast : pastEvents
+  const pastSource = useExtendedPast ? extraPast : recentPast
 
   // Fetch del histórico extendido cuando cambia rango / deporte / búsqueda.
   useEffect(() => {

@@ -18,8 +18,11 @@ export async function GET(req: Request) {
   const q      = searchParams.get('q')      || undefined
   const cursor = searchParams.get('cursor') || undefined
   const limit  = Math.min(parseInt(searchParams.get('limit') || '60', 10) || 60, 200)
+  // ?live=1 → fuerza la rama ESPN en vivo (incluye tenis y ganador F1/UFC),
+  // saltando Supabase. Lo usa el calendario para el rango "10 días".
+  const live   = searchParams.get('live') === '1'
 
-  if (pastEventsConfigured()) {
+  if (!live && pastEventsConfigured()) {
     const result = await searchPastEvents({ from, to, sport, comp, q, cursor, limit })
     if (result) {
       return NextResponse.json(result, {
