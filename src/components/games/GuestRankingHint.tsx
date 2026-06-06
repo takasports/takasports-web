@@ -64,10 +64,10 @@ export default function GuestRankingHint() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
-            Compite en el ranking
+            Suma a la Liga Taka
           </p>
           <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Entra y que tus picks cuenten de verdad en el ranking semanal.
+            Entra para guardar tu racha y que tus puntos cuenten de verdad en la Liga Taka.
           </p>
         </div>
         <button

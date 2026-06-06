@@ -8,8 +8,8 @@
 //
 // El modal se muestra UNA sola vez por (gameId, period): tras cerrarlo,
 // se persiste un flag en localStorage para no volver a abrirlo en la
-// misma ronda. Si el usuario es invitado (no_session), no abre nada
-// (lo cubre el GuestRankingHint en /juegos).
+// misma ronda. Al invitado (sin posición en el ranking) se le muestra un CTA
+// para registrarse y no perder el progreso (racha + puntos a la Liga Taka).
 //
 // Patrón de uso desde un juego:
 //
@@ -133,7 +133,7 @@ export default function PostGameResultModal({
                 No pierdas tu progreso
               </p>
               <p className="text-[10px] mb-3" style={{ color: 'var(--text-muted)' }}>
-                Tu partida está guardada en este navegador. Regístrate para entrar al ranking y mantener tu racha.
+                Tu partida está guardada en este navegador. Regístrate para guardar tu racha y sumar tus puntos a la Liga Taka.
               </p>
               <Link
                 href="/auth?from=game"
