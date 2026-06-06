@@ -89,6 +89,13 @@ export const dynamic = 'force-dynamic'
 
 const BASE = 'https://site.web.api.espn.com/apis/v2/sports'
 
+// ESPN devuelve `season` a veces como número (2025) y a veces como objeto
+// ({year:2026}). Normaliza a número para el fallback de temporada (offseason).
+function espnSeasonYear(json: unknown): number | undefined {
+  const s = (json as { season?: unknown } | null | undefined)?.season
+  return typeof s === 'number' ? s : (s as { year?: number } | null | undefined)?.year
+}
+
 const FOOTBALL_LEAGUES = [
   ...SOCCER_LEAGUES.map(l => ({ slug: l.espnSlug, id: l.blockId, label: l.label })),
   ...EUROPEAN_CUPS.map(l => ({ slug: l.espnSlug, id: l.id, label: l.label })),
@@ -452,12 +459,21 @@ function fetchUFCP4P(): Promise<StandingRow[]> {
 
 async function fetchWomenLigaF(): Promise<StandingRow[]> {
   try {
-    const res = await tfetch(`${BASE}/soccer/esp.w.1/standings`, { next: { revalidate: 3600 } })
-    if (!res.ok) return []
-    const json = await res.json()
-    const firstChild = ((json?.children as Record<string, unknown>[] | undefined)?.[0]) as Record<string, unknown> | undefined
-    const standings = firstChild?.standings as Record<string, unknown> | undefined
-    const entries: Record<string, unknown>[] = (standings?.entries as Record<string, unknown>[] | undefined) ?? []
+    const grab = async (season?: number) => {
+      const url = season ? `${BASE}/soccer/esp.w.1/standings?season=${season}` : `${BASE}/soccer/esp.w.1/standings`
+      const res = await tfetch(url, { next: { revalidate: 3600 } })
+      if (!res.ok) return { entries: [] as Record<string, unknown>[], yr: undefined as number | undefined }
+      const json = await res.json()
+      const firstChild = ((json?.children as Record<string, unknown>[] | undefined)?.[0]) as Record<string, unknown> | undefined
+      const standings = firstChild?.standings as Record<string, unknown> | undefined
+      const entries = (standings?.entries as Record<string, unknown>[] | undefined) ?? []
+      return { entries, yr: espnSeasonYear(json) }
+    }
+    const first = await grab()
+    let entries = first.entries
+    // Mismo rollover de verano que las ligas masculinas: si ESPN ya pasó Liga F a
+    // la nueva temporada (tabla vacía), caemos a season-1 para conservar la tabla.
+    if (!entries.length && first.yr) entries = (await grab(first.yr - 1)).entries
     if (!entries.length) return []
     return entries.slice(0, 10).map((e, i) => {
       const team  = e.team as Record<string, unknown>
@@ -475,22 +491,30 @@ async function fetchWomenLigaF(): Promise<StandingRow[]> {
 }
 
 async function fetchWomenStats(): Promise<{ goals: StandingRow[]; assists: StandingRow[] }> {
-  const empty = { goals: [], assists: [] }
+  const empty = { goals: [] as StandingRow[], assists: [] as StandingRow[] }
+  const STAT_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.w.1/statistics'
   try {
-    const res = await tfetch('https://site.api.espn.com/apis/site/v2/sports/soccer/esp.w.1/statistics', { next: { revalidate: 3600 } })
-    if (!res.ok) return empty
-    const json = await res.json()
-    const stats = (json.stats ?? []) as Array<{ name: string; displayName: string; leaders: Array<{ displayValue: string; value: number; athlete: { displayName: string; team?: { displayName: string } } }> }>
-    const parse = (catName: string): StandingRow[] => {
-      const cat = stats.find(c => c.displayName === catName || c.name === catName.toLowerCase())
-      if (!cat) return []
-      return cat.leaders.slice(0, 10).map((l, i) => ({
-        rank: i + 1, name: l.athlete.displayName, abbr: l.athlete.team?.displayName ?? '',
-        value: String(Math.round(l.value)), sub: l.athlete.team?.displayName ?? '',
-        trend: 'flat' as const, extra: {},
-      }))
+    const grab = async (season?: number): Promise<{ goals: StandingRow[]; assists: StandingRow[]; yr?: number } | null> => {
+      const res = await tfetch(season ? `${STAT_URL}?season=${season}` : STAT_URL, { next: { revalidate: 3600 } })
+      if (!res.ok) return null
+      const json = await res.json()
+      const stats = (json.stats ?? []) as Array<{ name: string; displayName: string; leaders: Array<{ displayValue: string; value: number; athlete: { displayName: string; team?: { displayName: string } } }> }>
+      const parse = (catName: string): StandingRow[] => {
+        const cat = stats.find(c => c.displayName === catName || c.name === catName.toLowerCase())
+        if (!cat) return []
+        return cat.leaders.slice(0, 10).map((l, i) => ({
+          rank: i + 1, name: l.athlete.displayName, abbr: l.athlete.team?.displayName ?? '',
+          value: String(Math.round(l.value)), sub: l.athlete.team?.displayName ?? '',
+          trend: 'flat' as const, extra: {},
+        }))
+      }
+      return { goals: parse('Goals'), assists: parse('Assists'), yr: espnSeasonYear(json) }
     }
-    return { goals: parse('Goals'), assists: parse('Assists') }
+    const first = await grab()
+    let out = first
+    // Offseason rollover → cae a season-1 (igual que tabla y ligas masculinas).
+    if ((!out || (!out.goals.length && !out.assists.length)) && first?.yr) out = await grab(first.yr - 1)
+    return out ? { goals: out.goals, assists: out.assists } : empty
   } catch { return empty }
 }
 
@@ -715,18 +739,14 @@ async function fetchEuropeanCupLeaders(
   slug: string,
   kind: 'goals' | 'assists',
 ): Promise<StandingRow[]> {
-  try {
-    const res = await tfetch(
-      `https://site.api.espn.com/apis/site/v2/sports/${slug}/statistics`,
-      { next: { revalidate: 1800 } },
-    )
-    if (!res.ok) return []
-    const json = await res.json() as { stats?: EspnStatCat[] }
-    const cats = json.stats ?? []
-    const target = kind === 'goals' ? 'Goals' : 'Assists'
-    const cat = cats.find(c => c.displayName === target || c.name === kind)
-    const leaders = cat?.leaders ?? []
-    return leaders.slice(0, 10).map((l, i) => ({
+  const base = `https://site.api.espn.com/apis/site/v2/sports/${slug}/statistics`
+  const target = kind === 'goals' ? 'Goals' : 'Assists'
+  const grab = async (season?: number): Promise<{ rows: StandingRow[]; yr?: number } | null> => {
+    const res = await tfetch(season ? `${base}?season=${season}` : base, { next: { revalidate: 1800 } })
+    if (!res.ok) return null
+    const json = await res.json() as { stats?: EspnStatCat[]; season?: unknown }
+    const cat = (json.stats ?? []).find(c => c.displayName === target || c.name === kind)
+    const rows = (cat?.leaders ?? []).slice(0, 10).map((l, i) => ({
       rank: i + 1,
       name: l.athlete?.displayName ?? '—',
       abbr: l.athlete?.team?.abbreviation ?? l.athlete?.team?.displayName ?? '',
@@ -735,6 +755,14 @@ async function fetchEuropeanCupLeaders(
       trend: 'flat' as const,
       extra: {},
     }))
+    return { rows, yr: espnSeasonYear(json) }
+  }
+  try {
+    const first = await grab()
+    let out = first
+    // Offseason rollover → cae a season-1 (UCL/UEL ya terminadas en verano).
+    if ((!out || !out.rows.length) && first?.yr) out = await grab(first.yr - 1)
+    return out?.rows ?? []
   } catch {
     return []
   }

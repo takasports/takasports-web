@@ -9,6 +9,9 @@ const ZONE_COLOR: Record<StandingZone, string> = {
   champions:          '#3b82f6',
   europa:             '#f97316',
   conference:         '#10b981',
+  promotion:          '#22c55e',
+  promotion_playoff:  '#3b82f6',
+  playoffs:           '#3b82f6',
   relegation_playoff: '#F59E0B',
   relegation:         '#ef4444',
 }
@@ -17,6 +20,9 @@ const ZONE_LABEL: Record<StandingZone, string> = {
   champions:          'Champions League',
   europa:             'Europa League',
   conference:         'Conference League',
+  promotion:          'Ascenso',
+  promotion_playoff:  'Play-off ascenso',
+  playoffs:           'Playoffs',
   relegation_playoff: 'Play-off descenso',
   relegation:         'Descenso',
 }
@@ -182,8 +188,9 @@ export function LeagueTableBlock({
         if (!usedZones.length) return null
         const ZONE_LABEL: Record<StandingZone, string> = {
           champions: 'Champions', europa: 'Europa League',
-          conference: 'Conference', relegation_playoff: 'Play-off',
-          relegation: 'Descenso',
+          conference: 'Conference', promotion: 'Ascenso',
+          promotion_playoff: 'Play-off asc.', playoffs: 'Playoffs',
+          relegation_playoff: 'Play-off', relegation: 'Descenso',
         }
         return (
           <div className="flex flex-wrap gap-x-3 gap-y-1 pt-2">

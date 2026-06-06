@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getZone } from '@/lib/league-zones'
+import { getZone, zoneFromNote } from '@/lib/league-zones'
 import type { StandingZone } from '@/lib/league-zones'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
 import { TABLE_LEAGUE_SLUGS, LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
@@ -339,7 +339,7 @@ async function fetchLeagueTableRows(leagueSlug: string): Promise<Omit<LeagueTabl
         logo: asString(logos[0]?.href),
         teamId: asString(team.id),
         pts, gp: w + d + l, w, d, l, gf, gc, gd,
-        zone: getZone(leagueSlug, i + 1),
+        zone: zoneFromNote(asString(asObj(e.note)?.description)) ?? getZone(leagueSlug, i + 1),
       }
     })
   } catch { return [] }

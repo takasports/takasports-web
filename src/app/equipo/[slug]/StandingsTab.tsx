@@ -8,6 +8,9 @@ const ZONE_COLOR: Record<StandingZone, string> = {
   champions:          '#3b82f6',
   europa:             '#f97316',
   conference:         '#10b981',
+  promotion:          '#22c55e',
+  promotion_playoff:  '#3b82f6',
+  playoffs:           '#3b82f6',
   relegation_playoff: '#f59e0b',
   relegation:         '#ef4444',
 }
@@ -16,6 +19,9 @@ const ZONE_LABEL: Record<StandingZone, string> = {
   champions:          'Champions League',
   europa:             'Europa League',
   conference:         'Conference League',
+  promotion:          'Ascenso',
+  promotion_playoff:  'Play-off ascenso',
+  playoffs:           'Playoffs',
   relegation_playoff: 'Play-off descenso',
   relegation:         'Descenso',
 }

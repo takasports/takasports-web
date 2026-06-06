@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getZone } from '@/lib/league-zones'
+import { getZone, zoneFromNote } from '@/lib/league-zones'
 import type { StandingZone } from '@/lib/league-zones'
 export type { StandingZone }
 
@@ -306,7 +306,7 @@ async function fetchTeamTable(leagueSlug: string, teamId: string): Promise<TeamT
         teamId: rowTeamId,
         pts, gp: w + d + l, w, d, l, gf, gc, gd,
         isMain: rowTeamId === teamId,
-        zone: getZone(leagueSlug, i + 1),
+        zone: zoneFromNote(asString(asObj(e.note)?.description)) ?? getZone(leagueSlug, i + 1),
       }
     })
   } catch { return [] }
