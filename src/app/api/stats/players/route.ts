@@ -84,19 +84,25 @@ function parseLeaders(cat: EspnStat | undefined, leagueSlug: string): PlayerLead
 async function fetchEspnLeague(
   league: typeof LEAGUES[0],
 ): Promise<Pick<LeaguePlayerData, 'id' | 'label' | 'goals' | 'assists'>> {
-  const url = `https://site.api.espn.com/apis/site/v2/sports/${league.slug}/statistics`
-  try {
-    const res = await tfetch(url, { next: { revalidate: 1800 } })
-    if (!res.ok) return { id: league.id, label: league.label, goals: [], assists: [] }
+  const base = `https://site.api.espn.com/apis/site/v2/sports/${league.slug}/statistics`
+  // Pide explícitamente la temporada vigente (SEASON_START). En el parón de
+  // verano ESPN rota la liga a la nueva temporada (sin goleadores aún); si la
+  // vigente viene vacía, caemos a la anterior. Sin esto Serie A se quedaba a 0
+  // tras el rollover de jun 2026. Blinda a las 5 grandes ligas.
+  const grab = async (season: number) => {
+    const res = await tfetch(`${base}?season=${season}`, { next: { revalidate: 1800 } })
+    if (!res.ok) return null
     const json = await res.json()
     const stats = (json.stats ?? []) as EspnStat[]
     const goalscat   = stats.find(c => c.displayName === 'Goals'   || c.name === 'goals')
     const assistscat = stats.find(c => c.displayName === 'Assists' || c.name === 'assists')
-    return {
-      id: league.id, label: league.label,
-      goals: parseLeaders(goalscat, league.slug),
-      assists: parseLeaders(assistscat, league.slug),
-    }
+    const goals   = parseLeaders(goalscat, league.slug)
+    const assists = parseLeaders(assistscat, league.slug)
+    return (goals.length || assists.length) ? { goals, assists } : null
+  }
+  try {
+    const data = (await grab(SEASON_START)) ?? (await grab(SEASON_START - 1))
+    return { id: league.id, label: league.label, goals: data?.goals ?? [], assists: data?.assists ?? [] }
   } catch {
     return { id: league.id, label: league.label, goals: [], assists: [] }
   }

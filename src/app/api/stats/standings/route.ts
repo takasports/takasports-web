@@ -108,12 +108,23 @@ async function fetchFootball(slug: string, id: string, label: string): Promise<L
     `football:${slug}`,
     30 * 60_000,
     async () => {
-      const res = await tfetch(`${BASE}/${slug}/standings`, { next: { revalidate: 1800 } })
-      if (!res.ok) throw new Error(`espn ${res.status}`)
-      const json = await res.json()
-      const parsed = safeParse(espnStandingsSchema, json, `football:${slug}`)
-      const firstChild = parsed?.children?.[0]
-      const entries = firstChild?.standings?.entries ?? []
+      // Trae las entries de una temporada (sin param = la "actual" según ESPN).
+      const grab = async (season?: number) => {
+        const url = season ? `${BASE}/${slug}/standings?season=${season}` : `${BASE}/${slug}/standings`
+        const res = await tfetch(url, { next: { revalidate: 1800 } })
+        if (!res.ok) throw new Error(`espn ${res.status}`)
+        const json = await res.json()
+        const parsed = safeParse(espnStandingsSchema, json, `football:${slug}`)
+        const yr = typeof json?.season === 'number' ? json.season : (json?.season?.year as number | undefined)
+        return { entries: parsed?.children?.[0]?.standings?.entries ?? [], yr }
+      }
+      const first = await grab()
+      let entries = first.entries
+      // Offseason rollover: ESPN pasa la liga a la nueva temporada (0 partidos →
+      // tabla vacía) mientras la anterior sigue siendo la relevante. Caemos a
+      // season-1 para no perder la tabla. Ocurre escalonado may-jul → blinda a las
+      // 5 grandes ligas. (fix Serie A jun 2026: ESPN rotó ita.1 a 2026-27 el 5-jun)
+      if (!entries.length && first.yr) entries = (await grab(first.yr - 1)).entries
       if (!entries.length) return null
 
       const rows: StandingRow[] = entries.map((e, i) => {
