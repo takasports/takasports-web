@@ -4,7 +4,7 @@
 // puzzle del día: sin pistas de catálogo, sin un-solo-intento, sin
 // persistencia. Sirve para repasar puzzles pasados y entrenar.
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CountryFlag } from '@/components/icons/GameIcons'
 import { searchPlayers, getPlayerById, type Player } from '@/lib/players-catalog'
 import {
@@ -149,6 +149,8 @@ export default function ArchivePuzzleClient({ puzzle, dayKey, validAnswers }: Pr
                   <ArchiveCell
                     key={c}
                     cell={cell}
+                    rowLabel={row.label}
+                    colLabel={puzzle.cols[c].label}
                     revealHint={revealAll ? validAnswers[r][c] : null}
                     onClick={() => setActiveCell({ row: r as 0|1|2, col: c as 0|1|2 })}
                   />
@@ -177,11 +179,13 @@ export default function ArchivePuzzleClient({ puzzle, dayKey, validAnswers }: Pr
 // ── Cell ─────────────────────────────────────────────────────────
 
 function ArchiveCell({
-  cell, revealHint, onClick,
+  cell, revealHint, onClick, rowLabel, colLabel,
 }: {
   cell: CellState
   revealHint: Player[] | null
   onClick: () => void
+  rowLabel: string
+  colLabel: string
 }) {
   const player = cell.playerId ? getPlayerById(cell.playerId) : null
 
@@ -189,6 +193,7 @@ function ArchiveCell({
     return (
       <button
         onClick={onClick}
+        aria-label={`${rowLabel} y ${colLabel}: ${player.name}. Pulsa para cambiar`}
         className="flex flex-col items-center justify-center gap-1 rounded-xl p-2 text-center transition-transform hover:scale-[1.02]"
         style={{ background: `linear-gradient(135deg, ${ACCENT_DIM}30, ${ACCENT_DIM}10)`, border: `1px solid ${ACCENT}60`, minHeight: 90 }}
       >
@@ -231,6 +236,7 @@ function ArchiveCell({
     return (
       <button
         onClick={onClick}
+        aria-label={`${rowLabel} y ${colLabel}: respuesta no válida, reintenta`}
         className="rounded-xl p-2 text-center flex flex-col items-center justify-center"
         style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', minHeight: 90 }}
       >
@@ -242,6 +248,7 @@ function ArchiveCell({
   return (
     <button
       onClick={onClick}
+      aria-label={`Elegir jugador para ${rowLabel} y ${colLabel}`}
       className="rounded-xl p-2 text-center flex flex-col items-center justify-center gap-1.5"
       style={{
         background: 'rgba(255,255,255,0.03)',
@@ -271,10 +278,37 @@ function ArchiveSearchModal({
   onClose: () => void
 }) {
   const [query, setQuery] = useState('')
+  const modalRef = useRef<HTMLDivElement>(null)
   const results = useMemo(
     () => searchPlayers(query, { excludeIds: usedIds, limit: 30 }),
     [query, usedIds],
   )
+
+  // Diálogo accesible: bloqueo de scroll, Escape para cerrar, Tab atrapado dentro
+  // y devolución del foco a la celda al cerrar. (El input ya usa autoFocus.)
+  useEffect(() => {
+    const prevFocused = document.activeElement as HTMLElement | null
+    document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return }
+      if (e.key === 'Tab' && modalRef.current) {
+        const f = Array.from(
+          modalRef.current.querySelectorAll<HTMLElement>('button, input, [tabindex]:not([tabindex="-1"])'),
+        ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null)
+        if (f.length === 0) return
+        const first = f[0]
+        const last = f[f.length - 1]
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+      prevFocused?.focus?.()
+    }
+  }, [onClose])
 
   return (
     <div
@@ -283,6 +317,10 @@ function ArchiveSearchModal({
       onClick={onClose}
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Elegir jugador para ${rowLabel} y ${colLabel}`}
         className="w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col"
         style={{ background: 'var(--bg-card)', border: `1px solid ${ACCENT_DIM}40`, maxHeight: '85vh' }}
         onClick={e => e.stopPropagation()}
