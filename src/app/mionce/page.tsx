@@ -21,6 +21,7 @@ import GameCoinsToast from '@/components/games/GameCoinsToast'
 // ── Constants ────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'ts_mionce_state'
+const SCORED_KEY = 'ts_mionce_scored'  // guard anti-farmeo: última semana ISO puntuada + mejor score
 const ACCENT = '#93C5FD'
 const ACCENT_DIM = '#2563EB'
 
@@ -115,6 +116,27 @@ function loadState(): StoredState | null {
 function saveState(s: StoredState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(s))
+  } catch { /* ignore */ }
+}
+
+// Guard anti-farmeo: marca de la última semana ISO puntuada + mejor score de esa
+// semana. Clave separada de StoredState para no acoplarse al orden del efecto de
+// persistencia de slots (que corre antes que el efecto de cierre).
+interface ScoredState { week: string; best: number }
+
+function loadScored(): ScoredState | null {
+  try {
+    const raw = localStorage.getItem(SCORED_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+function saveScored(s: ScoredState) {
+  try {
+    localStorage.setItem(SCORED_KEY, JSON.stringify(s))
   } catch { /* ignore */ }
 }
 
@@ -783,6 +805,10 @@ export default function MiOncePage() {
   // Monedas acreditadas al Ranked tras recordPlay (auto-dismiss 5s en
   // GameCoinsToast; null = sin respuesta o sin coins por idempotencia/cap).
   const [awardedCoins, setAwardedCoins] = useState<number | null>(null)
+  // Anti-farmeo (ver loadScored): la última semana ya puntuada y la mejor marca.
+  // Persisten en localStorage para sobrevivir a recargas y a quitar+poner.
+  const scoredWeekRef = useRef<string | null>(null)
+  const bestScoreRef = useRef(0)
 
   const { challenge, week } = useMemo(() => getWeeklyChallenge(), [])
   const searchParams = useSearchParams()
@@ -797,6 +823,16 @@ export default function MiOncePage() {
     } else {
       setFormation(challenge.recommendedFormation)
       setSlots({})
+    }
+    // Anti-farmeo: rehidrata el guard "ya puntuado" SOLO si es la misma semana;
+    // si la semana cambió, se resetea (vuelve a poder puntuar esta semana).
+    const sc = loadScored()
+    if (sc && sc.week === week.key) {
+      scoredWeekRef.current = sc.week
+      bestScoreRef.current = sc.best
+    } else {
+      scoredWeekRef.current = null
+      bestScoreRef.current = 0
     }
     setHydrated(true)
   }, [week.key, challenge.recommendedFormation])
@@ -869,11 +905,18 @@ export default function MiOncePage() {
       trackGameStart('mi_once')
       trackGameEvent({ gameId: 'mionce', event: 'started', period })
     }
-    if (!prevFilledRef.current || prevFilledRef.current < 11) {
-      if (filledCount === 11) {
-        trackGameComplete({ game: 'mi_once', correct: validCount, total: 11 })
-        // Sync con games-store. En modo etiquetado el score depende de los
-        // slots válidos; en clásico, de los rellenos. Payload guarda ambos.
+    if (filledCount === 11) {
+      // Anti-farmeo: el premio de Liga Taka (XP + misión + racha) se otorga UNA
+      // sola vez por semana ISO. Como prevFilledRef se reinicia a 0 en cada
+      // montaje, sin este guard recargar con el once completo en localStorage —o
+      // quitar y volver a poner un jugador— re-disparaba addXp/reportPlay. Los
+      // coins y el ranking ya eran idempotentes server-side; el daño era XP/
+      // misión/racha, que sí inflaban la Liga Taka.
+      const alreadyScored = scoredWeekRef.current === week.key
+      const isNewBest = score > bestScoreRef.current
+      // Ranking (server: greatest + idempotente): registra solo una mejor marca
+      // semanal, para que mejorar el once siga subiendo en la tabla.
+      if (!alreadyScored || isNewBest) {
         recordPlay({
           gameId:  'mionce',
           period,
@@ -881,10 +924,17 @@ export default function MiOncePage() {
           payload: { formation, filled: filledCount, valid: validCount, tagged: isTagged, slots },
         }).then(r => { if (r.awarded > 0) setAwardedCoins(r.awarded) })
           .catch(() => { /* sin toast — el resto del flujo no se afecta */ })
+        bestScoreRef.current = Math.max(bestScoreRef.current, score)
+      }
+      // XP + misión + racha + evento "completed": exactamente 1 vez por semana.
+      if (!alreadyScored) {
+        trackGameComplete({ game: 'mi_once', correct: validCount, total: 11 })
         addXp('mionce', xpForMionce(isTagged ? validCount : filledCount))
         reportPlay('mionce', { score })
         trackGameEvent({ gameId: 'mionce', event: 'completed', period, meta: { formation, filled: filledCount, valid: validCount, tagged: isTagged } })
+        scoredWeekRef.current = week.key
       }
+      saveScored({ week: week.key, best: bestScoreRef.current })
     }
     prevFilledRef.current = filledCount
   // eslint-disable-next-line react-hooks/exhaustive-deps
