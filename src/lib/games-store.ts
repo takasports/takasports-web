@@ -270,7 +270,9 @@ export interface LeaderboardEquipmentMeta {
 }
 
 export interface LeaderboardEntry {
-  user_id:      string
+  /** Identificador público opaco (hash del user_id), NO el UUID de auth.
+   *  Sirve como key estable en el cliente; el resaltado "tú" va por posición. */
+  pid:          string
   score:        number
   duration_ms:  number | null
   display_name: string | null

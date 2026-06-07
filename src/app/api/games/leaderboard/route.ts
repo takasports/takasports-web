@@ -5,6 +5,7 @@
 // (badge/title/frame/card_bg). El cache sigue siendo público — los badges/
 // equipment no son secretos.
 
+import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
@@ -13,6 +14,13 @@ import { fetchBadgesByUser, type LeaderboardBadge, type LeaderboardEquipment } f
 
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
 type GameId = typeof GAME_IDS[number]
+
+// Identificador público opaco: hash no-reversible del user_id. Permite al
+// cliente keyear/deduplicar la fila sin exponer el UUID de auth (que se usa
+// en RLS/joins y no debe salir en un endpoint público y cacheado).
+function publicId(userId: string): string {
+  return createHash('sha256').update(userId).digest('hex').slice(0, 16)
+}
 
 function hasSupabaseEnv(): boolean {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -72,8 +80,16 @@ export async function GET(req: NextRequest) {
     const uid = r.user_id as string
     const badges: LeaderboardBadge[] = badgesByUser.get(uid) ?? []
     const equipment = serializeEquipment(equipByUser.get(uid))
+    // Construcción explícita: NO se incluye `user_id` (UUID de auth). Se
+    // expone solo `pid`, un hash opaco que basta como key en el cliente.
     return {
-      ...r,
+      pid:          uid ? publicId(uid) : '',
+      score:        r.score,
+      duration_ms:  r.duration_ms,
+      display_name: r.display_name,
+      avatar_url:   r.avatar_url,
+      position:     r.position,
+      created_at:   r.created_at,
       badges: badges.length > 0 ? badges : undefined,
       equipment,
     }

@@ -11,7 +11,7 @@ import type { GameId, LeaderboardBadgeMeta, LeaderboardEquipmentMeta } from '@/l
 import { LeaderboardBadgesRow, LeaderboardTitleLine } from '@/components/badges/LeaderboardBadgeChip'
 
 interface Entry {
-  user_id: string
+  pid: string
   score: number
   display_name: string | null
   avatar_url: string | null
@@ -108,7 +108,7 @@ export default function LeaderboardPreview({ gameId, accent, label, href, cadenc
             const equipBadge = eq?.badge
             return (
               <li
-                key={e.user_id}
+                key={e.pid}
                 className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg"
                 style={{
                   background: cardBg ?? 'rgba(255,255,255,0.03)',

@@ -71,7 +71,7 @@ export default function Leaderboard({
           <ul className="space-y-1.5">
             {entries.slice(0, limit).map(e => (
               <Row
-                key={e.user_id}
+                key={e.pid}
                 position={e.position}
                 name={e.display_name ?? 'Jugador'}
                 avatar={e.avatar_url}
