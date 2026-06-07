@@ -153,3 +153,16 @@ export function findPlayerForWord(word: string, playerIds?: Record<string, strin
   const exact = res.find(p => p.name.toLowerCase().split(/\s+/).includes(target))
   return exact ?? res[0]
 }
+
+// Mueve el cursor del teclado en la cuadrícula (a11y). Las flechas desplazan una
+// celda; cualquier otra tecla no cambia la posición. Se mantiene dentro de
+// [0, size-1] en ambos ejes (no hace wrap). Pura → testeable.
+export function moveCursor(cursor: { r: number; c: number }, key: string, size: number): { r: number; c: number } {
+  let { r, c } = cursor
+  if (key === 'ArrowUp') r -= 1
+  else if (key === 'ArrowDown') r += 1
+  else if (key === 'ArrowLeft') c -= 1
+  else if (key === 'ArrowRight') c += 1
+  const clamp = (n: number) => Math.max(0, Math.min(size - 1, n))
+  return { r: clamp(r), c: clamp(c) }
+}

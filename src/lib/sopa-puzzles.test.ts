@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { PUZZLES, findPlayerForWord } from './sopa-puzzles'
+import { PUZZLES, findPlayerForWord, moveCursor } from './sopa-puzzles'
 import { getPlayerById } from './players-catalog'
 
 // Forma comparable: minúsculas, sin acentos, sin espacios ni signos.
@@ -59,5 +59,26 @@ describe('sopa-cracks · findPlayerForWord', () => {
   it('cae al heurístico por nombre cuando no hay entrada (featured editorial)', () => {
     // Sin playerIds, un apellido inequívoco se resuelve igual por nombre.
     expect(findPlayerForWord('MALDINI')?.id).toBe('maldini')
+  })
+})
+
+describe('sopa-cracks · moveCursor (teclado)', () => {
+  it('desplaza una celda por flecha', () => {
+    expect(moveCursor({ r: 5, c: 5 }, 'ArrowUp', 13)).toEqual({ r: 4, c: 5 })
+    expect(moveCursor({ r: 5, c: 5 }, 'ArrowDown', 13)).toEqual({ r: 6, c: 5 })
+    expect(moveCursor({ r: 5, c: 5 }, 'ArrowLeft', 13)).toEqual({ r: 5, c: 4 })
+    expect(moveCursor({ r: 5, c: 5 }, 'ArrowRight', 13)).toEqual({ r: 5, c: 6 })
+  })
+
+  it('se mantiene dentro de los bordes (sin wrap)', () => {
+    expect(moveCursor({ r: 0, c: 0 }, 'ArrowUp', 13)).toEqual({ r: 0, c: 0 })
+    expect(moveCursor({ r: 0, c: 0 }, 'ArrowLeft', 13)).toEqual({ r: 0, c: 0 })
+    expect(moveCursor({ r: 12, c: 12 }, 'ArrowDown', 13)).toEqual({ r: 12, c: 12 })
+    expect(moveCursor({ r: 12, c: 12 }, 'ArrowRight', 13)).toEqual({ r: 12, c: 12 })
+  })
+
+  it('ignora teclas que no son flechas', () => {
+    expect(moveCursor({ r: 3, c: 7 }, 'Enter', 13)).toEqual({ r: 3, c: 7 })
+    expect(moveCursor({ r: 3, c: 7 }, 'a', 13)).toEqual({ r: 3, c: 7 })
   })
 })

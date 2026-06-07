@@ -14,7 +14,7 @@ import PostGameResultModal from '@/components/games/PostGameResultModal'
 import GameCoinsToast from '@/components/games/GameCoinsToast'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
 import { type Player } from '@/lib/players-catalog'
-import { PUZZLES, findPlayerForWord, type Puzzle } from '@/lib/sopa-puzzles'
+import { PUZZLES, findPlayerForWord, moveCursor, type Puzzle } from '@/lib/sopa-puzzles'
 import { CountryFlag } from '@/components/icons/GameIcons'
 
 // ── Tipos y datos ─────────────────────────────────────────────
@@ -270,6 +270,8 @@ export default function SopaCracksPage() {
   // Selección
   const [startCell, setStartCell] = useState<Cell | null>(null)
   const [endCell, setEndCell] = useState<Cell | null>(null)
+  // Cursor de teclado (a11y): celda enfocada para navegación con flechas.
+  const [cursor, setCursor] = useState<Cell>({ r: 0, c: 0 })
   const dragging = useRef(false)
   const gridRef = useRef<HTMLDivElement>(null)
   // Marca que el fin de partida ya se contabilizó para el puzzle activo.
@@ -296,6 +298,7 @@ export default function SopaCracksPage() {
     setPlayerInfo(null)
     setStartCell(null)
     setEndCell(null)
+    setCursor({ r: 0, c: 0 })
     wonRef.current = false
     setHydrated(true)
   }, [puzzle.id, activeWords.length])
@@ -494,6 +497,33 @@ export default function SopaCracksPage() {
     setEndCell({ r, c })
   }
 
+  // Teclado (a11y): flechas mueven el cursor/foco; Enter o Espacio marca el
+  // inicio y luego el final (igual que el doble tap táctil); Escape cancela el
+  // inicio. Aditivo: no altera el camino de puntero.
+  const onCellKeyDown = (e: React.KeyboardEvent, r: number, c: number) => {
+    const k = e.key
+    if (k === 'ArrowUp' || k === 'ArrowDown' || k === 'ArrowLeft' || k === 'ArrowRight') {
+      e.preventDefault()
+      const next = moveCursor({ r, c }, k, puzzle.size)
+      setCursor(next)
+      if (startCell) setEndCell(next)   // previsualiza la línea desde el inicio
+      gridRef.current?.querySelector<HTMLElement>(`[data-cell="${next.r},${next.c}"]`)?.focus()
+      return
+    }
+    if (k === 'Enter' || k === ' ' || k === 'Spacebar') {
+      e.preventDefault()
+      if (allFound || paused) return
+      if (!running) setRunning(true)
+      if (!startCell) { setStartCell({ r, c }); setEndCell({ r, c }); return }
+      if (startCell.r === r && startCell.c === c) { setStartCell(null); setEndCell(null); return }
+      const sel = lineBetween(startCell, { r, c })
+      if (sel && sel.length > 1) { validateSelection(sel); setStartCell(null); setEndCell(null) }
+      else { setStartCell({ r, c }); setEndCell({ r, c }) }
+      return
+    }
+    if (k === 'Escape' && startCell) { e.preventDefault(); setStartCell(null); setEndCell(null) }
+  }
+
   const onPointerUp = useCallback(() => {
     // Si no hay drag en curso (ej: tap-mode touch), no resetear nada.
     if (!dragging.current) return
@@ -581,7 +611,7 @@ export default function SopaCracksPage() {
             {puzzle.title}
           </h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)', maxWidth: 520 }}>
-            {puzzle.subtitle}. Arrastra desde la primera letra hasta la última para marcar cada nombre.
+            {puzzle.subtitle}. Arrastra desde la primera letra hasta la última para marcar cada nombre, o usa las flechas del teclado y Enter (inicio y final).
           </p>
         </div>
 
@@ -698,9 +728,12 @@ export default function SopaCracksPage() {
               className="relative z-10"
               style={expanded ? { overflowX: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' } : undefined}
             >
+              <style>{`.sopa-grid [data-cell]:focus-visible{outline:2px solid ${COLOR_ACCENT};outline-offset:-2px;border-radius:6px}`}</style>
               <div
                 ref={gridRef}
-                className="select-none mx-auto"
+                role="grid"
+                aria-label="Sopa de letras. Usa las flechas para moverte por la cuadrícula y Enter para marcar el inicio y el final de cada nombre."
+                className="sopa-grid select-none mx-auto"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: `repeat(${puzzle.size}, minmax(0,1fr))`,
@@ -714,8 +747,9 @@ export default function SopaCracksPage() {
                 }}
                 onPointerLeave={() => { /* mantenemos selección, el pointerup global la valida */ }}
               >
-                {letters.map((row, r) =>
-                  row.map((ch, c) => {
+                {letters.map((row, r) => (
+                  <div key={`row-${r}`} role="row" style={{ display: 'contents' }}>
+                    {row.map((ch, c) => {
                     const key = `${r},${c}`
                     const solved = solvedCells.has(key)
                     const inSelection = selectionSet.has(key)
@@ -724,8 +758,14 @@ export default function SopaCracksPage() {
                       <div
                         key={key}
                         data-cell={key}
+                        role="gridcell"
+                        aria-label={`Fila ${r + 1}, columna ${c + 1}, letra ${ch}${solved ? ', encontrada' : ''}`}
+                        aria-selected={solved}
+                        tabIndex={cursor.r === r && cursor.c === c ? 0 : -1}
                         onPointerDown={(e) => { e.preventDefault(); onCellDown(e, r, c) }}
                         onPointerEnter={(e) => onCellEnter(e, r, c)}
+                        onKeyDown={(e) => onCellKeyDown(e, r, c)}
+                        onFocus={() => setCursor(cur => (cur.r === r && cur.c === c ? cur : { r, c }))}
                         className="aspect-square flex items-center justify-center font-black cursor-pointer transition-colors"
                         style={{
                           background: solved
@@ -753,8 +793,9 @@ export default function SopaCracksPage() {
                         {ch}
                       </div>
                     )
-                  })
-                )}
+                  })}
+                  </div>
+                ))}
               </div>
             </div>
 
