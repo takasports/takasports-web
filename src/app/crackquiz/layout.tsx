@@ -3,11 +3,11 @@ import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: 'CrackQuiz — trivia deportiva diaria',
-  description: 'Trivia de fútbol y deporte general. Rondas diarias cronometradas, racha de aciertos y puntuación máxima.',
+  description: 'Trivia de fútbol, baloncesto, tenis, motor, UFC y más. Rondas diarias cronometradas, racha de aciertos y puntuación máxima.',
   alternates: { canonical: `${SITE_URL}/crackquiz` },
   openGraph: {
     title: 'CrackQuiz — trivia deportiva diaria',
-    description: '¿Cuánto sabes de fútbol? 10 preguntas, 20 segundos cada una. Reto diario de trivia deportiva.',
+    description: '¿Cuánto sabes de deporte? 10 preguntas, 20 segundos cada una. Fútbol, baloncesto, tenis, motor, UFC y más.',
     url: `${SITE_URL}/crackquiz`,
     siteName: 'TakaSports',
     locale: 'es_ES',
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'CrackQuiz — trivia deportiva diaria',
-    description: '¿Cuánto sabes de fútbol? Trivia deportiva diaria.',
+    description: '¿Cuánto sabes de deporte? Trivia diaria: fútbol, baloncesto, tenis, motor, UFC y más.',
     site: '@takasportsx',
   },
 }
@@ -25,7 +25,7 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   name: 'CrackQuiz',
-  description: 'Trivia deportiva diaria. 10 preguntas, 20 segundos cada una. Reto de conocimiento futbolístico.',
+  description: 'Trivia deportiva diaria. 10 preguntas, 20 segundos cada una. Fútbol, baloncesto, tenis, motor, UFC y más.',
   url: `${SITE_URL}/crackquiz`,
   applicationCategory: 'GameApplication',
   genre: 'Sports',

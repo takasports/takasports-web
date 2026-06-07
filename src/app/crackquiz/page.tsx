@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import GameLayout from '@/components/games/GameLayout'
-import { getDailyQuestions, getPracticeQuestions, listCategories, todayKey, type QuizQuestion, type QuizCategory } from '@/lib/crackquiz-questions'
+import { getDailyQuestions, getPracticeQuestions, listCategories, todayKey, type QuizQuestion, type QuizCategory, type QuizSport } from '@/lib/crackquiz-questions'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import { TrophyIcon, FireIcon, ClapIcon, FlexIcon } from '@/components/icons/GameIcons'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
@@ -427,6 +427,36 @@ const CATEGORY_LABEL: Record<string, string> = {
   records:     'Récords',
   reglas:      'Reglas',
   selecciones: 'Selecciones',
+}
+
+const SPORT_LABEL: Record<QuizSport, string> = {
+  football:   'Fútbol',
+  basketball: 'Baloncesto',
+  tennis:     'Tenis',
+  motor:      'Motor',
+  mma:        'UFC/MMA',
+  golf:       'Golf',
+  cycling:    'Ciclismo',
+  general:    'Multideporte',
+}
+
+const DIFFICULTY_LABEL: Record<number, string> = { 1: 'Fácil', 2: 'Media', 3: 'Difícil' }
+
+// Indicador de dificultad (3 puntos). Usa el campo `difficulty` de la pregunta.
+function DifficultyMeter({ level }: { level: number }) {
+  const label = DIFFICULTY_LABEL[level] ?? 'desconocida'
+  return (
+    <span className="inline-flex items-center gap-1" title={`Dificultad: ${label}`} aria-label={`Dificultad: ${label}`}>
+      {[1, 2, 3].map(i => (
+        <span
+          key={i}
+          className="rounded-full"
+          style={{ width: 6, height: 6, background: i <= level ? '#FCD34D' : 'rgba(255,255,255,0.18)' }}
+          aria-hidden
+        />
+      ))}
+    </span>
+  )
 }
 
 function IdleScreen({
@@ -1239,16 +1269,28 @@ export default function CrackQuizPage() {
                     Categoría
                   </p>
                   <p className="text-2xl font-black" style={{ fontFamily: 'var(--font-display)', color: '#FCD34D' }}>
-                    {q.category}
+                    {CATEGORY_LABEL[q.category] ?? q.category}
                   </p>
+                  {q.sport && SPORT_LABEL[q.sport] && (
+                    <p className="text-xs mt-2 font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                      {SPORT_LABEL[q.sport]}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-2xl p-6 my-6" style={{ background: 'rgba(252,211,77,0.05)', border: '1px solid rgba(252,211,77,0.1)' }}>
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full"
                       style={{ background: 'rgba(252,211,77,0.1)', color: '#FCD34D' }}>
-                      {q.category}
+                      {CATEGORY_LABEL[q.category] ?? q.category}
                     </span>
+                    {q.sport && SPORT_LABEL[q.sport] && (
+                      <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        {SPORT_LABEL[q.sport]}
+                      </span>
+                    )}
+                    {q.difficulty ? <DifficultyMeter level={q.difficulty} /> : null}
                     <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
                       <IconTime />
                       <span>{QUESTION_TIME}s</span>

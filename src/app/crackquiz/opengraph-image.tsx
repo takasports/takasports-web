@@ -9,7 +9,7 @@ export default function Image() {
   return buildGameOgImage({
     emoji: '🧠',
     title: 'CrackQuiz',
-    description: '¿Cuánto sabes de fútbol? Trivia deportiva diaria.',
+    description: '¿Cuánto sabes de deporte? Trivia diaria multideporte.',
     accentColor: '#f59e0b',
   })
 }
