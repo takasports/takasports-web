@@ -286,7 +286,10 @@ export default function SopaCracksPage() {
     const s = loadState(puzzle.id)
     setFound(s.found)
     setBestSeconds(s.bestSeconds)
-    setRunning(s.found.length < activeWords.length)
+    // Solo reanuda el cronómetro si hay partida a medias; un puzzle fresco
+    // (found=0) arranca PARADO → Contrarreloj disponible "antes de empezar"
+    // (lo que dice toggleTimeAttack) y el timer no pre-tickea sin interacción.
+    setRunning(s.found.length > 0 && s.found.length < activeWords.length)
     setSeconds(0)
     setPaused(false)
     setHintsUsed(0)
