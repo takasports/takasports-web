@@ -390,7 +390,7 @@ function SearchModal({ cell, puzzle, usedIds, validCount, onSelect, onClose }: S
                 <span className="text-[12px] font-black" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>{colCond.label}</span>
               </div>
             </div>
-            <p className="text-[9px]" style={{ color: validCount <= 3 ? ACCENT : '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-[9px]" style={{ color: validCount <= 3 ? ACCENT : '#9090A4', fontFamily: 'var(--font-sport)' }}>
               {validCount === 0 ? '⚠️ Ninguno en catálogo — prueba igualmente' : validCount === 1 ? '🔥 Solo 1 jugador en catálogo' : validCount <= 3 ? `🔥 Solo ${validCount} en catálogo` : `${validCount} jugadores posibles en catálogo`}
             </p>
           </div>
@@ -735,7 +735,7 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
                   <div />
                 )}
               </div>
-              <p className="text-[10px]" style={{ color: '#2A2A40', fontFamily: 'var(--font-sport)' }}>Nuevo puzzle mañana</p>
+              <p className="text-[10px]" style={{ color: '#9090A4', fontFamily: 'var(--font-sport)' }}>Nuevo puzzle mañana</p>
             </div>
           ) : (
             <div className="p-4">
@@ -1110,7 +1110,7 @@ export default function TakaGridPage() {
                   </Fragment>
                 ))}
               </div>
-              <p className="text-[9px] mt-2" style={{ color: '#2A2A40', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[9px] mt-2" style={{ color: '#9090A4', fontFamily: 'var(--font-sport)' }}>
                 Número de jugadores en nuestro catálogo que encajan. En rojo = ninguno en el catálogo (busca igualmente, puede que lo tengamos).
               </p>
             </div>

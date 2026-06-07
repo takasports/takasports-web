@@ -591,7 +591,7 @@ export default function SopaCracksPage() {
         {/* HERO */}
         <div className="relative pt-10 pb-8">
           <div className="flex items-center gap-2.5 mb-3">
-            <Link href="/juegos" className="text-[10px] font-black uppercase tracking-widest hover:opacity-100 transition-opacity" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)', opacity: 0.7 }}>
+            <Link href="/juegos" className="text-[10px] font-black uppercase tracking-widest hover:opacity-100 transition-opacity" style={{ color: '#9090A4', fontFamily: 'var(--font-sport)', opacity: 0.7 }}>
               ← Juegos
             </Link>
             <span style={{ color: '#3A3A52' }}>/</span>
@@ -966,7 +966,7 @@ export default function SopaCracksPage() {
               </div>
               <div className="flex items-end justify-between">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)' }}>
+                  <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: '#9090A4', fontFamily: 'var(--font-sport)' }}>
                     Mejor tiempo
                   </p>
                   <p
@@ -977,7 +977,7 @@ export default function SopaCracksPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)' }}>
+                  <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: '#9090A4', fontFamily: 'var(--font-sport)' }}>
                     Puntos
                   </p>
                   <p
@@ -1049,7 +1049,7 @@ export default function SopaCracksPage() {
               className="rounded-2xl p-5 text-center"
               style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.06)' }}
             >
-              <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: '#9090A4', fontFamily: 'var(--font-sport)' }}>
                 Próximo puzzle
               </p>
               <p className="text-[11px]" style={{ color: '#9090B0' }}>
