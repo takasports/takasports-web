@@ -399,15 +399,29 @@ interface SearchModalProps {
 function PlayerSearchModal({ slot, challenge, slotTag, excludeIds, excludedClubs, onSelect, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // a11y: recuerda quién abrió el diálogo para devolverle el foco al cerrar.
+    const opener = document.activeElement as HTMLElement | null
     inputRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return }
+      // Focus trap: Tab cicla dentro del diálogo.
+      if (e.key === 'Tab' && containerRef.current) {
+        const f = containerRef.current.querySelectorAll<HTMLElement>('button, input, [href], [tabindex]:not([tabindex="-1"])')
+        if (f.length === 0) return
+        const first = f[0], last = f[f.length - 1]
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
+    }
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
+      opener?.focus?.()   // devuelve el foco al hueco que abrió el buscador
     }
   }, [onClose])
 
@@ -428,6 +442,10 @@ function PlayerSearchModal({ slot, challenge, slotTag, excludeIds, excludedClubs
       onClick={onClose}
     >
       <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mionce-search-title"
         className="w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col"
         style={{ background: 'var(--bg-card)', border: `1px solid ${ACCENT_DIM}40`, maxHeight: '85vh' }}
         onClick={e => e.stopPropagation()}
@@ -441,7 +459,7 @@ function PlayerSearchModal({ slot, challenge, slotTag, excludeIds, excludedClubs
             {slot.label}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+            <p id="mionce-search-title" className="text-[10px] font-black uppercase tracking-widest" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
               Buscar {slot.position === 'GK' ? 'portero' : slot.position === 'DEF' ? 'defensa' : slot.position === 'MID' ? 'centrocampista' : 'delantero'}
             </p>
             {slotTag ? (
@@ -529,7 +547,14 @@ function PlayerSearchModal({ slot, challenge, slotTag, excludeIds, excludedClubs
                         <span className="truncate">{p.name}</span>
                       </p>
                       <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
-                        {p.club}
+                        {slotTag && p.club !== slotTag.label ? (
+                          <>
+                            <span style={{ color: '#F0F0F5' }}>{slotTag.label}</span>
+                            <span> · también en {p.club}</span>
+                          </>
+                        ) : (
+                          p.club
+                        )}
                       </p>
                     </div>
                     <span
@@ -574,6 +599,7 @@ function PitchSlot({ slot, player, slotTag, isValid, onClick, onClear }: PitchSl
         <div className="relative group">
           <button
             onClick={onClick}
+            aria-label={`${player.name} en ${slot.label}${slotTag ? ` (${slotTag.label})` : ''}: ${isValid ? 'válido' : 'no válido'}. Pulsa para cambiar.`}
             className="flex flex-col items-center gap-1 transition-transform hover:scale-105"
           >
             <div
@@ -603,9 +629,16 @@ function PitchSlot({ slot, player, slotTag, isValid, onClick, onClear }: PitchSl
               <span className="truncate">{player.name.split(' ').slice(-1)[0]}</span>
             </div>
           </button>
+          <span
+            aria-hidden
+            className="absolute -top-1 -left-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black"
+            style={{ background: isValid ? ACCENT_DIM : '#7F1D1D', color: '#fff', border: '2px solid #0F0A20' }}
+          >
+            {isValid ? '✓' : '✗'}
+          </span>
           <button
             onClick={(e) => { e.stopPropagation(); onClear() }}
-            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
             style={{ background: '#DC2626', color: '#fff', border: '2px solid #0F0A20' }}
             aria-label="Quitar jugador"
           >
@@ -783,13 +816,19 @@ export default function MiOncePage() {
     if (!loadId) return
     const entry = loadSavedLineups().find(e => e.id === loadId)
     if (entry) {
-      setFormation(entry.formation)
-      setSlots(entry.slots ?? {})
-      setShareToast(`Cargado "${entry.name}"`)
+      // El reto de la semana fija la formación; un once guardado de otra
+      // formación no encaja en los huecos → avisamos en vez de romper el tablero.
+      if (entry.formation !== challenge.recommendedFormation) {
+        setShareToast(`"${entry.name}" es de otra formación (${entry.formation}); esta semana el reto usa ${challenge.recommendedFormation}`)
+      } else {
+        setFormation(entry.formation)
+        setSlots(entry.slots ?? {})
+        setShareToast(`Cargado "${entry.name}"`)
+      }
     }
     // Limpiar el query param para que un reload no recargue otra vez
     router.replace('/mionce')
-  }, [searchParams, router])
+  }, [searchParams, router, challenge.recommendedFormation])
 
   // Persist
   useEffect(() => {
@@ -1079,9 +1118,9 @@ export default function MiOncePage() {
         accent="#93C5FD"
         ctaFinal="Crear mi once"
         steps={[
-          { emoji: '⚽', title: 'Tu once de la semana', body: 'Elige una formación (4-3-3, 4-4-2, etc.) y rellena los 11 puestos con jugadores reales de cualquier liga.' },
-          { emoji: '🎯', title: 'Reto de la semana', body: 'Cada semana cambia el tema: once histórico, solo LaLiga, sudamericano… ajusta tu once al reto.' },
-          { emoji: '💾', title: 'Guarda y compite', body: 'Tu once se guarda solo. Al final de la semana se compara con el del resto de la comunidad.' },
+          { emoji: '⚽', title: 'Una posición, un club', body: 'El reto fija una formación y un club en cada hueco. Pon a un jugador que jugó en esa posición y ese club en algún momento de su carrera.' },
+          { emoji: '🌍', title: 'Vale toda su carrera', body: 'Cuenta cualquier club por el que pasó el jugador, no solo el actual. Acierta los 11 sin repetir jugador.' },
+          { emoji: '💾', title: 'Se guarda solo', body: 'Tu once se guarda automáticamente y puedes comparar tus elecciones con las de la comunidad en el mapa de calor.' },
         ]}
       />
       <GameLayout accent="#93C5FD" accentDim="#60A5FA">
