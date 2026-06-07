@@ -305,20 +305,44 @@ function SearchModal({ cell, puzzle, usedIds, validCount, onSelect, onClose }: S
   const [query, setQuery] = useState('')
   const [pending, setPending] = useState<Player | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
   const rowCond = puzzle.rows[cell.row]
   const colCond = puzzle.cols[cell.col]
 
+  // Foco inicial en el buscador, bloqueo de scroll y devolución del foco a la
+  // celda que abrió el diálogo al cerrarse (mount/unmount).
   useEffect(() => {
+    const prevFocused = document.activeElement as HTMLElement | null
     inputRef.current?.focus()
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = ''
+      prevFocused?.focus?.()
+    }
+  }, [])
+
+  // Teclado: Escape cierra (o cancela la confirmación) y Tab queda atrapado
+  // dentro del diálogo (no se escapa al fondo).
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (pending) setPending(null)
         else onClose()
+        return
+      }
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusables = Array.from(
+          modalRef.current.querySelectorAll<HTMLElement>('button, input, [tabindex]:not([tabindex="-1"])'),
+        ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null)
+        if (focusables.length === 0) return
+        const first = focusables[0]
+        const last = focusables[focusables.length - 1]
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
       }
     }
     window.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
-    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
+    return () => window.removeEventListener('keydown', onKey)
   }, [onClose, pending])
 
   const results = useMemo(() =>
@@ -341,6 +365,10 @@ function SearchModal({ cell, puzzle, usedIds, validCount, onSelect, onClose }: S
       onClick={onClose}
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Elegir jugador para ${rowCond.label} y ${colCond.label}`}
         className="w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col"
         style={{ background: 'var(--bg-card)', border: `1px solid ${ACCENT_DIM}40`, maxHeight: '85vh' }}
         onClick={e => e.stopPropagation()}
@@ -366,7 +394,7 @@ function SearchModal({ cell, puzzle, usedIds, validCount, onSelect, onClose }: S
               {validCount === 0 ? '⚠️ Ninguno en catálogo — prueba igualmente' : validCount === 1 ? '🔥 Solo 1 jugador en catálogo' : validCount <= 3 ? `🔥 Solo ${validCount} en catálogo` : `${validCount} jugadores posibles en catálogo`}
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)' }}>
+          <button onClick={onClose} aria-label="Cerrar" className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)' }}>
             <IconClose />
           </button>
         </div>
@@ -503,15 +531,19 @@ interface GridCellProps {
   isFinished: boolean
   hintLetter?: string | null
   pickingHint?: boolean
+  rowLabel: string
+  colLabel: string
 }
 
-function GridCell({ cell, onClick, isFinished, hintLetter, pickingHint }: GridCellProps) {
+function GridCell({ cell, onClick, isFinished, hintLetter, pickingHint, rowLabel, colLabel }: GridCellProps) {
   const player = cell.playerId ? getPlayerById(cell.playerId) : null
   const canClick = !cell.locked && !isFinished
 
   if (player) {
     return (
       <div
+        role="img"
+        aria-label={`${rowLabel} y ${colLabel}: ${player.name}, correcto`}
         className="flex flex-col items-center justify-center gap-1 rounded-xl p-2 text-center"
         style={{ background: `linear-gradient(135deg, ${ACCENT_DIM}30, ${ACCENT_DIM}10)`, border: `1px solid ${ACCENT}60`, minHeight: 90 }}
       >
@@ -533,6 +565,8 @@ function GridCell({ cell, onClick, isFinished, hintLetter, pickingHint }: GridCe
   if (cell.wrong !== null) {
     return (
       <div
+        role="img"
+        aria-label={`${rowLabel} y ${colLabel}: ${cell.wrong}, no válido`}
         className="flex flex-col items-center justify-center gap-1 rounded-xl p-2 text-center"
         style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.3)', minHeight: 90 }}
       >
@@ -552,6 +586,7 @@ function GridCell({ cell, onClick, isFinished, hintLetter, pickingHint }: GridCe
     <button
       onClick={canClick ? onClick : undefined}
       disabled={!canClick}
+      aria-label={hinted ? `Elegir jugador para ${rowLabel} y ${colLabel}. Pista: empieza por ${hintLetter}` : `Elegir jugador para ${rowLabel} y ${colLabel}`}
       className="flex flex-col items-center justify-center gap-1 rounded-xl transition-all disabled:opacity-40"
       style={{
         background: hinted ? `${HINT_COLOR}12` : 'rgba(255,255,255,0.03)',
@@ -1027,6 +1062,8 @@ export default function TakaGridPage() {
                       <GridCell
                         key={c}
                         cell={grid[r][c]}
+                        rowLabel={row.label}
+                        colLabel={puzzle.cols[c].label}
                         onClick={() => handleCellClick(r as 0|1|2, c as 0|1|2)}
                         isFinished={finished}
                         hintLetter={isHintCell ? pistaLetter : null}
