@@ -21,10 +21,11 @@
 //                                              (lógica histórica, ahora
 //                                              también usa esta función)
 //
-// Trigger pendiente (Fase 5):
-//   · admin/mundial/close                   → mundialista_2026 (todos los
-//                                              que jugaron ≥1 jornada),
-//                                              top3_mundial_2026 (TOP 3)
+//   · ranked/predictions/route.ts          → mundialista_2026 (canónico,
+//                                              al primer pick del Mundial)
+//   · admin/mundial/close                   → top3_mundial_2026 (TOP 3 del
+//                                              podio) + mundialista_2026 como
+//                                              backstop idempotente
 // ─────────────────────────────────────────────────────────────────
 
 import type { SupabaseClient } from '@supabase/supabase-js'
