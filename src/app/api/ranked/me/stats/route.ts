@@ -22,14 +22,32 @@ export async function GET() {
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
+  // ranked_predictions NO tiene columna `sport` (el deporte vive en
+  // ranked_events). Traemos las predicciones del user y resolvemos el
+  // sport por event_id con una segunda query. Antes se hacía
+  // .select('sport, …') → 400 (columna inexistente) → el endpoint
+  // entero fallaba y el bloque de stats del perfil salía vacío.
   const { data, error } = await sb
     .from('ranked_predictions')
-    .select('sport, is_correct')
+    .select('event_id, is_correct')
     .eq('user_id', user.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const rows = (data ?? []) as { sport: string; is_correct: boolean | null }[]
+  const rows = (data ?? []) as { event_id: string; is_correct: boolean | null }[]
+
+  // Mapa event_id → sport (solo de los eventos realmente referenciados).
+  const eventIds = [...new Set(rows.map(r => r.event_id))]
+  const sportByEvent = new Map<string, string>()
+  if (eventIds.length > 0) {
+    const { data: events } = await sb
+      .from('ranked_events')
+      .select('id, sport')
+      .in('id', eventIds)
+    for (const e of (events ?? []) as { id: string; sport: string | null }[]) {
+      sportByEvent.set(e.id, e.sport ?? 'otro')
+    }
+  }
 
   const total   = rows.length
   const correct = rows.filter(r => r.is_correct === true).length
@@ -37,7 +55,7 @@ export async function GET() {
 
   const bySport: Record<string, { total: number; correct: number }> = {}
   for (const row of rows) {
-    const sport = row.sport ?? 'otro'
+    const sport = sportByEvent.get(row.event_id) ?? 'otro'
     if (!bySport[sport]) bySport[sport] = { total: 0, correct: 0 }
     bySport[sport].total++
     if (row.is_correct === true) bySport[sport].correct++

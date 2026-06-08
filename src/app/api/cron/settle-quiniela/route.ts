@@ -19,7 +19,7 @@ import { NextResponse }       from 'next/server'
 import { adminSupabase }      from '@/lib/supabase-admin'
 import { scorePicks }         from '@/lib/quiniela'
 import { enrichResultsWithFeatured } from '@/lib/quiniela-featured'
-import type { SavedPick, MatchResult } from '@/lib/quiniela'
+import type { SavedPick, MatchResult, ScoreBreakdown } from '@/lib/quiniela'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 
 export const dynamic = 'force-dynamic'
@@ -115,6 +115,8 @@ interface QuinielaPicks {
   picks:              SavedPick[]
   staked:             boolean
   settled:            boolean
+  /** Recibo del scoring. Lo necesita el catch-up de badges (/status). */
+  breakdown?:         ScoreBreakdown
   totalStakeCharged?: number
   totalWon?:          number
   totalRefunded?:     number
@@ -213,7 +215,38 @@ async function handle(req: Request) {
       const breakdown = scorePicks(savedPicks, results)
       const totalPoints = breakdown.totalPoints
 
-      // Acreditación de puntos fijos
+      // ── CLAIM atómico (lock por `settled`) ──────────────────────────
+      // Marcamos settled=true + guardamos `breakdown` ANTES de acreditar, y
+      // SOLO si la jornada seguía sin cerrar. Si el cliente (o este mismo
+      // cron en otra pasada) ya la cerró, el UPDATE afecta 0 filas y
+      // saltamos → cierra la ventana de doble acreditación (award_points NO
+      // es idempotente). Guardar `breakdown` además permite que el catch-up
+      // de badges (/api/quiniela/status) las otorgue después.
+      const claimedPayload: QuinielaPicks = {
+        ...payload,
+        breakdown,
+        settled:   true,
+        totalWon:  totalPoints,
+        settledAt: new Date().toISOString(),
+      }
+      const { data: claimed, error: claimErr } = await admin
+        .from('quiniela_picks')
+        .update({ picks: claimedPayload })
+        .eq('id', row.id)
+        .or('picks->>settled.is.null,picks->>settled.eq.false')
+        .select('id')
+
+      if (claimErr) {
+        errors.push(`user ${row.user_id} claim failed: ${claimErr.message}`)
+        continue
+      }
+      if (!claimed || claimed.length === 0) {
+        // Otro proceso (cliente settle) ya cerró esta jornada — no re-acreditar.
+        skippedCount++
+        continue
+      }
+
+      // Ya somos dueños del cierre → acreditar los puntos fijos.
       if (totalPoints > 0) {
         const reason = `Quiniela ${row.jornada}: ${breakdown.hits}/${savedPicks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`
         const { error: ptErr } = await admin.rpc('award_points', {
@@ -225,13 +258,15 @@ async function handle(req: Request) {
           p_context: { jornada: row.jornada, hits: breakdown.hits, pleno: breakdown.pleno, totalPoints },
         })
         if (ptErr) {
+          // La acreditación falló: deshacemos el claim para reintentar en la
+          // próxima pasada (vuelve a quedar settled=false, sin puntos).
+          await admin.from('quiniela_picks').update({ picks: payload }).eq('id', row.id)
           errors.push(`user ${row.user_id} jornada ${row.jornada}: ${ptErr.message}`)
           continue
         }
       }
 
-      // También acreditar puntos Taka (1 pt por participar en quiniela)
-      // + record game_play para el leaderboard de juegos
+      // record_game_play para el leaderboard de juegos (best-effort).
       try {
         await admin.rpc('record_game_play', {
           p_game_id: 'quiniela',
@@ -245,23 +280,6 @@ async function handle(req: Request) {
           p_duration_ms: null,
         })
       } catch { /* stats best-effort */ }
-
-      // Marcar settled
-      const updatedPayload: QuinielaPicks = {
-        ...payload,
-        settled:    true,
-        totalWon:   totalPoints,
-        settledAt:  new Date().toISOString(),
-      }
-      const { error: updateErr } = await admin
-        .from('quiniela_picks')
-        .update({ picks: updatedPayload })
-        .eq('id', row.id)
-
-      if (updateErr) {
-        errors.push(`user ${row.user_id} update failed: ${updateErr.message}`)
-        continue
-      }
 
       settledCount++
 

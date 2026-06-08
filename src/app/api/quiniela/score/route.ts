@@ -53,9 +53,9 @@ interface StoredPayload {
   settledAt?: string
   /** AF — Timestamp ISO cuando se evaluaron y otorgaron los badges de esta
    *  jornada. Su ausencia significa pending; al estar presente el catch-up
-   *  no re-procesa. Importante: el cron settle-quiniela no lo escribe
-   *  (no evalúa badges), así que las jornadas liquidadas por cron quedan
-   *  pending hasta que el user pase por /api/quiniela/status. */
+   *  no re-procesa. El cron settle-quiniela NO lo escribe (no evalúa badges
+   *  inline), pero SÍ guarda `breakdown`, así que el catch-up de
+   *  /api/quiniela/status puede otorgarlas cuando el user pase por allí. */
   badgesAt?: string
 }
 
@@ -313,11 +313,54 @@ export async function POST(req: NextRequest) {
       // de llamar phase=settle.
       void allResolved
 
-      // Acreditar los PUNTOS FIJOS a la Liga Taka. Una sola llamada award_points.
+      // ── CLAIM atómico (lock por `settled`) ───────────────────────
+      // Marcamos settled=true + guardamos breakdown ANTES de acreditar, y
+      // SOLO si la jornada seguía sin cerrar. Cierra la carrera con el cron
+      // settle-quiniela: ambos usan el mismo lock por `settled`, así que el
+      // que cierra primero es el único que acredita (award_points NO es
+      // idempotente). `totalWon` conserva el nombre histórico pero guarda
+      // los PUNTOS fijos.
+      const updatedPayload: StoredPayload = {
+        ...prevPayload,
+        breakdown,
+        settled: true,
+        totalWon: totalPoints,
+        settledAt: new Date().toISOString(),
+      }
+      const { data: claimed } = await sb
+        .from('quiniela_picks')
+        .update({ picks: updatedPayload })
+        .eq('user_id', user.id)
+        .eq('jornada', body.jornada)
+        .or('picks->>settled.is.null,picks->>settled.eq.false')
+        .select('id')
+
+      if (!claimed || claimed.length === 0) {
+        // El cron (u otra pestaña) cerró esta jornada entre el check inicial
+        // y aquí. Releemos y devolvemos lo guardado (idempotente, sin re-acreditar).
+        const { data: fresh } = await sb
+          .from('quiniela_picks')
+          .select('picks')
+          .eq('user_id', user.id)
+          .eq('jornada', body.jornada)
+          .maybeSingle()
+        const fp = (fresh?.picks ?? null) as StoredPayload | null
+        return NextResponse.json({
+          phase: 'settle',
+          settled: true,
+          alreadySettled: true,
+          breakdown: fp?.breakdown ?? breakdown,
+          totalWon: fp?.totalWon ?? 0,
+        })
+      }
+
+      // Ya somos dueños del cierre → acreditar los PUNTOS FIJOS a la Liga Taka.
       if (totalPoints > 0) {
         const reason = `Quiniela ${body.jornada}: ${breakdown.hits}/${persistedPicks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`
         const adminSbCredit = adminSupabase()
         if (!adminSbCredit) {
+          // Deshacemos el claim: no dejar la jornada cerrada sin acreditar.
+          await sb.from('quiniela_picks').update({ picks: prevPayload }).eq('user_id', user.id).eq('jornada', body.jornada)
           return NextResponse.json({ error: 'service_unavailable' }, { status: 503 })
         }
         const { error: creditErr } = await adminSbCredit.rpc('award_points', {
@@ -329,26 +372,11 @@ export async function POST(req: NextRequest) {
           p_context: { jornada: body.jornada, hits: breakdown.hits, pleno: breakdown.pleno, totalPoints },
         })
         if (creditErr) {
-          // No marcamos settled si la acreditación falló — el cliente
-          // puede reintentar settle más tarde.
+          // Acreditación falló: deshacemos el claim para permitir reintento.
+          await sb.from('quiniela_picks').update({ picks: prevPayload }).eq('user_id', user.id).eq('jornada', body.jornada)
           return NextResponse.json({ error: 'credit_failed', detail: creditErr.message }, { status: 500 })
         }
       }
-
-      // Marcar settled + guardar breakdown final. `totalWon` conserva el
-      // nombre del campo histórico, pero ahora guarda los PUNTOS fijos.
-      const updatedPayload: StoredPayload = {
-        ...prevPayload,
-        breakdown,
-        settled: true,
-        totalWon: totalPoints,
-        settledAt: new Date().toISOString(),
-      }
-      await sb.from('quiniela_picks').upsert({
-        user_id: user.id,
-        jornada: body.jornada,
-        picks: updatedPayload,
-      }, { onConflict: 'user_id,jornada' })
 
       // ── Badge awards (fire-and-forget) ───────────────────────────
       // Detectamos qué badges merece el user tras este settle y los
