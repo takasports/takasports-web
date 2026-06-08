@@ -4,9 +4,9 @@
 // La racha global cuenta cualquier juego: si juegas hoy, la racha se mantiene.
 // Llamar al POST al completar cualquier partida (idempotente para el mismo día).
 //
-// Milestone bonuses (idempotentes por user+streak+date):
-//   3 días  → +5 pts  |  7 días → +10 pts
-//   14 días → +20 pts |  30 días → +50 pts
+// Milestone bonuses (idempotentes por user+streak+date) — escala baja Liga Taka:
+//   3 días  → +3 pts  |  7 días → +5 pts
+//   14 días → +8 pts  |  30 días → +12 pts
 
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
@@ -19,10 +19,10 @@ function hasSupabaseEnv(): boolean {
 
 // Días de racha → puntos bonus
 const STREAK_MILESTONES: Record<number, number> = {
-  3:  5,
-  7:  10,
-  14: 20,
-  30: 50,
+  3:  3,
+  7:  5,
+  14: 8,
+  30: 12,
 }
 
 export async function POST() {

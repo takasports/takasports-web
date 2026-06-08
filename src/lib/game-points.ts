@@ -1,34 +1,40 @@
 // ─────────────────────────────────────────────────────────────────
-// Tarifa de puntos por juego (Ranked).
+// Tarifa de puntos por juego (Liga Taka).
 //
-// Se calcula en el server tras un record_game_play exitoso, y se
-// envía como p_amount al RPC award_game_coins (que tiene cap diario
-// y idempotencia por (user, game, period)). Mantener esto en TS y
-// no en SQL nos deja iterar/tunear sin migración.
+// Se calcula en el server tras un record_game_play exitoso y se envía
+// como p_amount al RPC award_game_points (idempotente por (user, game,
+// period), mejor-marca-gana: solo suma el delta al mejorar). Mantener
+// esto en TS y no en SQL nos deja iterar/tunear sin migración.
 //
-// Empezamos solo con CrackQuiz para validar el patrón end-to-end.
-// Cuando funcione limpio en prod, expandimos a los otros juegos
-// añadiéndolos a POINTS_ENABLED_GAMES + su rama en pointsFor().
+// ESCALA ACORDADA (dígitos bajos — los minijuegos son el «daily/weekly
+// login bonus», el grueso de la Liga Taka son las Predicciones):
+//   · CrackQuiz / TakaGrid  — diarios  —  jugar 1 → perfecto 5
+//   · Mi Once / Sopa        — semanales — jugar 2 → perfecto 12
+// El floor (solo jugar) se paga siempre; el techo se alcanza al 100%.
+//
+// OJO: el `score` (0–110/0–180…) va a record_game_play con su propio
+// techo antifraude (migr. 062). Aquí razonamos en aciertos/ratio, NO
+// en ese score, para que la tarifa no herede su escala.
 // ─────────────────────────────────────────────────────────────────
 
 export type GameId = 'quiniela' | 'crackquiz' | 'mionce' | 'sopacracks' | 'takagrid' | 'strikerrush'
 
-// Whitelist. Quiniela tiene su propio camino (api/quiniela/score),
-// así que no entra aquí — su balance se sigue acreditando directo via add_coins.
+// Whitelist de juegos que acreditan a la Liga Taka. Quiniela tiene su
+// propio camino (api/quiniela/score → award_points con puntos fijos),
+// así que no entra aquí.
 export const POINTS_ENABLED_GAMES: ReadonlySet<GameId> = new Set<GameId>([
   'crackquiz',
+  'takagrid',
   'mionce',
   'sopacracks',
 ])
 
 /**
- * Tarifa por juego. Devuelve int >= 0; el RPC se encarga de truncar
- * por el cap diario. Mantener tarifas conservadoras al principio:
- * el grueso de la economía es quiniela, los juegos diarios son
- * el «daily login bonus».
+ * Tarifa por juego. Devuelve un int bajo >= 0 (el RPC aplica idempotencia
+ * y mejor-marca-gana). Diarios 1→5, semanales 2→12.
  *
  * @param payload  Payload completo del play (mismo que se envía a record_game_play).
- *                 Permite tarifas basadas en aciertos / combo, no solo score.
+ *                 Permite tarifas basadas en aciertos/ratio, no solo score.
  */
 export function pointsFor(
   gameId: GameId,
@@ -39,52 +45,49 @@ export function pointsFor(
   if (!Number.isFinite(score) || score < 0) return 0
 
   if (gameId === 'crackquiz') {
-    // CrackQuiz: ronda diaria de 10 preguntas. Score máx típico ~150.
-    //   · base    = 5  (recompensa solo por participar)
-    //   · perf    = floor(score / 10)   → 0 a ~15
-    //   · combo   = +5 si combo ≥ 5      → premia constancia, no suerte
-    //   · perfecto = +10 si correct === total → bonus por 10/10
-    // Total típico: 8–25 puntos por partida.
-    const base = 5
-    const perf = Math.floor(Math.max(0, score) / 10)
-    const combo = Number(payload?.combo ?? 0) >= 5 ? 5 : 0
+    // Diario · 1 → 5. base 1 (participar) + hasta +4 según aciertos.
+    // payload: { correct, total } (ronda de 10 preguntas).
     const total = Number(payload?.total ?? 0)
     const correct = Number(payload?.correct ?? 0)
-    const perfecto = total > 0 && correct === total ? 10 : 0
-    return base + perf + combo + perfecto
+    const ratio = total > 0 ? clamp01(correct / total) : 0
+    return 1 + Math.round(ratio * 4)
+  }
+
+  if (gameId === 'takagrid') {
+    // Diario · 1 → 5. base 1 + hasta +4 según celdas resueltas (0–9).
+    // payload.solved = boolean[9] (row-major); fallback desde el score
+    // (= solved × (hardMode ? 20 : 10)).
+    const raw = payload?.solved
+    let solved: number
+    if (Array.isArray(raw)) solved = raw.filter(Boolean).length
+    else if (typeof raw === 'number' && Number.isFinite(raw)) solved = raw
+    else solved = Math.round(score / (payload?.hardMode ? 20 : 10))
+    solved = Math.max(0, Math.min(9, solved))
+    return 1 + Math.round((solved / 9) * 4)
   }
 
   if (gameId === 'mionce') {
-    // Mi Once: reto SEMANAL — armar un 11 en una formación con reglas.
-    // Tras el rework M1 todo tablero es tagged: el cliente manda
-    // score = válidos × 10 (0–110, mismo valor que va a record_game_play).
-    // Aquí lo normalizamos a válidos (0–11) para la tarifa: sin esto,
-    // perf saturaba con 2 jugadores (min(11,score) con score≥11) y
-    // "perfecto" saltaba sin el 11/11 real.
-    //   · base       = 10  (entrar y dejar el lineup armado)
-    //   · perf       = válidos * 2  → 0–22
-    //   · perfecto   = +15 si válidos === 11 (lineup completo válido)
-    // Total: 10–47 puntos/semana. (No toca el score 0–110 del ranking.)
+    // Semanal · 2 → 12. base 2 + hasta +10 según válidos (0–11).
+    // El cliente manda score = válidos × 10 (0–110); lo normalizamos.
     const valid = Math.max(0, Math.min(11, Math.round(score / 10)))
-    const base = 10
-    const perf = valid * 2
-    const perfecto = valid >= 11 ? 15 : 0
-    return base + perf + perfecto
+    return 2 + Math.round((valid / 11) * 10)
   }
 
   if (gameId === 'sopacracks') {
-    // Sopa de Cracks: SEMANAL. Score = palabras encontradas × 10 (0–~100).
-    //   · base       = 10
-    //   · perf       = floor(score / 10)   → 0–10
-    //   · intruder   = +10 si encontró al jugador intruso del puzzle
-    //   · timeAttack = +5 modo contrarreloj (más difícil)
-    // Total típico: 10–35 puntos/semana.
-    const base = 10
-    const perf = Math.floor(Math.max(0, score) / 10)
-    const intruder = payload?.intruder === true ? 10 : 0
-    const timeAttack = payload?.timeAttack === true ? 5 : 0
-    return base + perf + intruder + timeAttack
+    // Semanal · 2 → 12. base 2 + hasta +10 según palabras encontradas.
+    // payload: { found, total }; fallback desde el score (= found × 10).
+    const total = Number(payload?.total ?? 0)
+    const found = Number(payload?.found ?? 0)
+    const ratio = total > 0
+      ? clamp01(found / total)
+      : clamp01(Math.floor(Math.max(0, score) / 10) / 10)
+    return 2 + Math.round(ratio * 10)
   }
 
   return 0
+}
+
+function clamp01(n: number): number {
+  if (!Number.isFinite(n)) return 0
+  return Math.max(0, Math.min(1, n))
 }
