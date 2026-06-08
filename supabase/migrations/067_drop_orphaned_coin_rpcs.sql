@@ -1,0 +1,60 @@
+-- 067_drop_orphaned_coin_rpcs.sql
+-- Dropea 2 RPC legacy HUÉRFANOS tras T3 (minijuegos→award_game_points) y T5
+-- (Quiniela sin apuestas). Verificado el 2026-06-08:
+--   · 0 callers en la app (grep src/)
+--   · 0 referencias en otras funciones de la DB (pg_proc.prosrc)
+-- DROP sin CASCADE (no tienen dependientes). Las defs ORIGINALES van abajo en
+-- comentario: NO estaban en git (se aplicaron por MCP), así que este archivo es
+-- la única copia recuperable. Para restaurar, descomentar y re-aplicar.
+
+DROP FUNCTION IF EXISTS public.award_game_coins(p_game_id text, p_amount integer, p_period text, p_user_id uuid);
+DROP FUNCTION IF EXISTS public.spend_points(p_user_id uuid, p_amount integer, p_sport text, p_source text, p_reason text, p_context jsonb);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- DEFS ORIGINALES (recuperación)
+-- ─────────────────────────────────────────────────────────────────────────────
+-- award_game_coins: crédito legacy minijuego → quiniela_coin_txns (cap diario
+--   24h de 200), reemplazado por award_game_points (point_transactions = Liga Taka).
+--
+-- CREATE OR REPLACE FUNCTION public.award_game_coins(p_game_id text, p_amount integer, p_period text, p_user_id uuid DEFAULT NULL::uuid)
+--  RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+-- AS $function$
+-- declare
+--   uid uuid; daily_cap int := 200; spent_24h int; effective int; already_has boolean;
+-- begin
+--   if p_user_id is not null then
+--     if current_role != 'service_role' then raise exception 'p_user_id solo permitido para service_role'; end if;
+--     uid := p_user_id;
+--   else uid := auth.uid(); end if;
+--   if uid is null then raise exception 'auth required'; end if;
+--   if p_amount is null or p_amount <= 0 then return 0; end if;
+--   if p_game_id is null or p_period is null then raise exception 'game_id and period required'; end if;
+--   if p_game_id not in ('quiniela','crackquiz','mionce','sopacracks','takagrid','strikerrush') then raise exception 'unknown game_id %', p_game_id; end if;
+--   if p_amount > 500 then raise exception 'amount out of range'; end if;
+--   select exists(select 1 from public.quiniela_coin_txns where user_id = uid and (context->>'source')='game' and (context->>'game_id')=p_game_id and (context->>'period')=p_period) into already_has;
+--   if already_has then return 0; end if;
+--   select coalesce(sum(amount),0)::int into spent_24h from public.quiniela_coin_txns where user_id = uid and (context->>'source')='game' and (context->>'game_id')=p_game_id and created_at >= now() - interval '24 hours';
+--   effective := least(p_amount, greatest(0, daily_cap - spent_24h));
+--   if effective <= 0 then return 0; end if;
+--   insert into public.quiniela_coin_txns(user_id, amount, reason, context) values (
+--     uid, effective,
+--     case when p_game_id='crackquiz' then 'CrackQuiz · '||p_period when p_game_id='mionce' then 'Mi Once · '||p_period when p_game_id='sopacracks' then 'Sopa de Cracks · '||p_period when p_game_id='takagrid' then 'TakaGrid · '||p_period when p_game_id='strikerrush' then 'Striker Rush · '||p_period else p_game_id||' · '||p_period end,
+--     jsonb_build_object('source','game','game_id',p_game_id,'period',p_period,'amount_requested',p_amount,'amount_capped',effective < p_amount));
+--   return effective;
+-- end; $function$;
+--
+-- spend_points: descuento de stake en profiles.points_balance + txn negativa en
+--   point_transactions (apuesta Quiniela), retirado en T5 (sellar es gratis).
+--
+-- CREATE OR REPLACE FUNCTION public.spend_points(p_user_id uuid, p_amount integer, p_sport text DEFAULT 'futbol'::text, p_source text DEFAULT 'stake'::text, p_reason text DEFAULT NULL::text, p_context jsonb DEFAULT '{}'::jsonb)
+--  RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+-- AS $function$
+-- DECLARE cur_balance integer;
+-- BEGIN
+--   IF p_amount IS NULL OR p_amount <= 0 THEN RETURN; END IF;
+--   IF p_amount > 10000 THEN RAISE EXCEPTION 'spend_points: amount % exceeds cap 10000', p_amount; END IF;
+--   SELECT points_balance INTO cur_balance FROM profiles WHERE id = p_user_id FOR UPDATE;
+--   IF cur_balance IS NULL OR cur_balance < p_amount THEN RAISE EXCEPTION 'insufficient_balance'; END IF;
+--   INSERT INTO point_transactions (user_id, amount, sport, source, context) VALUES (p_user_id, -p_amount, p_sport, p_source, p_context || CASE WHEN p_reason IS NOT NULL THEN jsonb_build_object('reason', p_reason) ELSE '{}'::jsonb END);
+--   UPDATE profiles SET points_balance = points_balance - p_amount WHERE id = p_user_id;
+-- END; $function$;
