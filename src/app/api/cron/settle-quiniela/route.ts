@@ -208,33 +208,21 @@ async function handle(req: Request) {
         continue
       }
 
-      // Scoring
+      // Scoring — modelo SIN apuestas: la Liga Taka recibe los PUNTOS FIJOS
+      // (tendencia 1 ×2 destacado + exacto 3 + pleno 5), no stake×cuota.
       const breakdown = scorePicks(savedPicks, results)
-      const totalWon      = breakdown.totalCoins
-      const totalRefunded = breakdown.totalRefund
+      const totalPoints = breakdown.totalPoints
 
-      // Refund de partidos cancelados
-      if (totalRefunded > 0) {
-        await admin.rpc('award_points', {
-          p_user_id: row.user_id,
-          p_amount:  totalRefunded,
-          p_sport:   'futbol',
-          p_source:  'quiniela_refund',
-          p_reason:  `Quiniela ${row.jornada}: devolución por partidos anulados`,
-          p_context: { jornada: row.jornada, totalRefunded },
-        })
-      }
-
-      // Acreditación de ganancias
-      if (totalWon > 0) {
+      // Acreditación de puntos fijos
+      if (totalPoints > 0) {
         const reason = `Quiniela ${row.jornada}: ${breakdown.hits}/${savedPicks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`
         const { error: ptErr } = await admin.rpc('award_points', {
           p_user_id: row.user_id,
-          p_amount:  totalWon,
+          p_amount:  totalPoints,
           p_sport:   'futbol',
           p_source:  'quiniela_settle',
           p_reason:  reason,
-          p_context: { jornada: row.jornada, hits: breakdown.hits, pleno: breakdown.pleno, totalWon },
+          p_context: { jornada: row.jornada, hits: breakdown.hits, pleno: breakdown.pleno, totalPoints },
         })
         if (ptErr) {
           errors.push(`user ${row.user_id} jornada ${row.jornada}: ${ptErr.message}`)
@@ -252,7 +240,7 @@ async function handle(req: Request) {
           p_payload: {
             picks:   savedPicks.map(p => p.pick),
             pleno:   breakdown.pleno,
-            totalWon,
+            totalWon: totalPoints,
           },
           p_duration_ms: null,
         })
@@ -262,8 +250,7 @@ async function handle(req: Request) {
       const updatedPayload: QuinielaPicks = {
         ...payload,
         settled:    true,
-        totalWon,
-        totalRefunded,
+        totalWon:   totalPoints,
         settledAt:  new Date().toISOString(),
       }
       const { error: updateErr } = await admin
@@ -279,10 +266,10 @@ async function handle(req: Request) {
       settledCount++
 
       // Push notification (fire-and-forget, best-effort)
-      if (totalWon > 0) {
+      if (totalPoints > 0) {
         import('@/lib/push-helper').then(({ sendPushToUser }) =>
           sendPushToUser(row.user_id, {
-            title:  breakdown.pleno ? `🎯 ¡PLENO! +${totalWon} pts` : `⚡ +${totalWon} pts en La Porra`,
+            title:  breakdown.pleno ? `🎯 ¡PLENO! +${totalPoints} pts` : `⚡ +${totalPoints} pts en La Porra`,
             body:   `${breakdown.hits}/${savedPicks.length} aciertos · ${row.jornada}`,
             url:    '/predicciones',
             tag:    `quiniela-settle-${row.jornada}`,

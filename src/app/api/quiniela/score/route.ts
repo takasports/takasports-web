@@ -2,23 +2,22 @@
 //
 // El endpoint opera en DOS FASES según el body.phase:
 //
-//   · phase='stake'   → al sellar la quiniela en PicksForm. Valida saldo
-//                       y cuotas, descuenta totalStake vía spend_points
-//                       (txn negativa en point_transactions), persiste
-//                       quiniela_picks con {staked:true, settled:false}.
-//                       No calcula ganancias (los partidos aún no pasaron).
+//   · phase='stake'   → al sellar el pronóstico en PicksForm. Modelo SIN
+//                       apuestas: NO valida saldo ni descuenta nada — solo
+//                       persiste quiniela_picks con {staked:true,
+//                       settled:false, totalStakeCharged:0}.
 //
 //   · phase='settle'  → al cierre, cuando PicksSummary detecta que TODOS
 //                       los picks tienen resultado oficial. Lee los picks
 //                       persistidos (NO los del body, evita tampering),
-//                       calcula scorePicks con results de ESPN, acredita
-//                       ganancias vía award_points y marca {settled:true}.
-//                       Idempotente: re-llamadas devuelven el resultado
-//                       guardado sin re-acreditar.
+//                       calcula scorePicks con results de ESPN y acredita los
+//                       PUNTOS FIJOS (breakdown.totalPoints = tendencia 1 ×2
+//                       destacado + exacto 3 + pleno 5) a la Liga Taka vía
+//                       award_points; marca {settled:true}. Idempotente:
+//                       re-llamadas devuelven el resultado guardado.
 //
 //   · phase=undefined → legacy/invitado. Calcula breakdown y devuelve
-//                       sin persistir ni descontar/acreditar nada.
-//                       Mantiene compatibilidad con clientes antiguos.
+//                       sin persistir ni acreditar nada.
 //
 // La idempotencia vive en dos flags del JSONB quiniela_picks.picks:
 // `staked` y `settled`. No requiere migración SQL nueva.
@@ -64,7 +63,6 @@ const VALID_PICKS = new Set(['1', 'X', '2', '1X', 'X2'])
 const VALID_PHASES = new Set<Phase>(['stake', 'settle'])
 const MAX_ODDS = 100
 const MAX_PICKS = 20
-const MIN_STAKE = 1
 const MAX_STAKE = 200
 const MAX_TEAM_LEN = 80
 const MAX_JORNADA_LEN = 64
@@ -229,73 +227,15 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Cuotas obligatorias en todos los picks (modelo Ranked).
-      const missingOdds = body.picks.some(p =>
-        p.oddsAtPick == null || !Number.isFinite(p.oddsAtPick) || p.oddsAtPick < 1
-      )
-      if (missingOdds) {
-        return NextResponse.json(
-          { error: 'odds_unavailable', reason: 'jornada bloqueada por falta de cuotas' },
-          { status: 422 },
-        )
-      }
-
-      // Stake mínimo por pick en cada uno que tenga stake > 0.
-      // Permitimos stake=0/undefined (no apuesta en ese pick), pero al
-      // menos UNO debe ser > 0 para que tenga sentido sellar.
-      for (const p of body.picks) {
-        const s = p.stake ?? 0
-        if (s > 0 && s < MIN_STAKE) {
-          return NextResponse.json({ error: 'stake below minimum' }, { status: 400 })
-        }
-      }
-      const totalStake = body.picks.reduce((sum, p) => sum + Math.floor(p.stake ?? 0), 0)
-      if (totalStake <= 0) {
-        return NextResponse.json({ error: 'no stake to bet' }, { status: 400 })
-      }
-
-      // Validar saldo desde profiles.points_balance (fuente única de verdad).
-      const { data: profRow } = await sb
-        .from('profiles')
-        .select('points_balance')
-        .eq('id', user.id)
-        .maybeSingle()
-      const balance = (profRow as { points_balance?: number } | null)?.points_balance ?? 0
-      if (balance < totalStake) {
-        return NextResponse.json(
-          { error: 'insufficient_balance', needed: totalStake, balance },
-          { status: 422 },
-        )
-      }
-
-      // Descontar totalStake vía spend_points (atómico, inserta txn negativa).
-      const adminSb = adminSupabase()
-      if (!adminSb) {
-        return NextResponse.json({ error: 'service_unavailable' }, { status: 503 })
-      }
-      const { error: chargeErr } = await adminSb.rpc('spend_points', {
-        p_user_id: user.id,
-        p_amount:  totalStake,
-        p_sport:   'futbol',
-        p_source:  'quiniela_stake',
-        p_reason:  `Quiniela ${body.jornada}: apuesta sellada`,
-        p_context: { jornada: body.jornada, totalStake },
-      })
-      if (chargeErr) {
-        const isInsufficient = chargeErr.message?.includes('insufficient_balance')
-        return NextResponse.json(
-          { error: isInsufficient ? 'insufficient_balance' : 'charge_failed', detail: chargeErr.message },
-          { status: isInsufficient ? 422 : 500 },
-        )
-      }
-
-      // Persistir picks con flag staked. Si falla, devolvemos los puntos
-      // vía award_points (best-effort rollback).
+      // Modelo SIN apuestas: sellar es GRATIS. No se valida saldo ni se
+      // descuenta nada. Las cuotas, si las hay, quedan solo como dato
+      // informativo / para el x2 del destacado; su ausencia ya NO bloquea
+      // la jornada (antes el modelo Ranked exigía cuota para apostar).
       const payload: StoredPayload = {
         picks: body.picks,
         staked: true,
         settled: false,
-        totalStakeCharged: totalStake,
+        totalStakeCharged: 0,
         stakedAt: new Date().toISOString(),
       }
       const { error: upsertErr } = await sb.from('quiniela_picks').upsert({
@@ -305,34 +245,17 @@ export async function POST(req: NextRequest) {
       }, { onConflict: 'user_id,jornada' })
 
       if (upsertErr) {
-        // Rollback best-effort: devolver los puntos descontados.
-        // Si este rollback también falla queda un cobro huérfano para
-        // intervención manual via SQL.
-        try {
-          await adminSb.rpc('award_points', {
-            p_user_id: user.id,
-            p_amount:  totalStake,
-            p_sport:   'futbol',
-            p_source:  'quiniela_stake_rollback',
-            p_reason:  `Rollback Quiniela ${body.jornada} (persistencia fallida)`,
-            p_context: { jornada: body.jornada },
-          })
-        } catch { /* swallow */ }
         return NextResponse.json({ error: 'persist_failed', detail: upsertErr.message }, { status: 500 })
       }
 
-      // RT1 — Racha Taka unificada: el stake de una jornada cuenta como
+      // RT1 — Racha Taka unificada: sellar el pronóstico cuenta como
       // actividad diaria del user. ping_game_streak es idempotente (un
-      // ping por día por user) y lee auth.uid() internamente. Best-effort
-      // fire-and-forget para no bloquear la respuesta.
+      // ping por día) y lee auth.uid() internamente. Best-effort.
       try { await sb.rpc('ping_game_streak') } catch { /* */ }
 
       return NextResponse.json({
         phase: 'stake',
         staked: true,
-        totalStake,
-        totalStakeCharged: totalStake,
-        balanceAfter: balance - totalStake,
       })
     }
 
@@ -379,8 +302,9 @@ export async function POST(req: NextRequest) {
       // no jugado/cancelado equivale a perder el stake).
 
       const breakdown = scorePicks(persistedPicks, results)
-      const totalWon = breakdown.totalCoins
-      const totalRefunded = breakdown.totalRefund
+      // Modelo SIN apuestas: la Liga Taka recibe los PUNTOS FIJOS
+      // (TENDENCY 1 ×2 destacado + EXACTO 3 + PLENO 5), no stake×cuota.
+      const totalPoints = breakdown.totalPoints
 
       // Solo bloquear settle si NO hay ningún resultado finalizado
       // — los parciales se cierran con lo que hay (los picks sin
@@ -389,30 +313,8 @@ export async function POST(req: NextRequest) {
       // de llamar phase=settle.
       void allResolved
 
-      // Refund de partidos anulados (pospuestos/cancelados): se hace
-      // ANTES de la acreditación de ganancias en una RPC separada
-      // para que aparezca como txn distinta en el ledger del user.
-      if (totalRefunded > 0) {
-        const refundReason = `Quiniela ${body.jornada}: stake devuelto · ${breakdown.cancelledCount} partido${breakdown.cancelledCount === 1 ? '' : 's'} anulado${breakdown.cancelledCount === 1 ? '' : 's'}`
-        const adminSbSettle = adminSupabase()
-        if (!adminSbSettle) {
-          return NextResponse.json({ error: 'service_unavailable' }, { status: 503 })
-        }
-        const { error: refundErr } = await adminSbSettle.rpc('award_points', {
-          p_user_id: user.id,
-          p_amount:  totalRefunded,
-          p_sport:   'futbol',
-          p_source:  'quiniela_refund',
-          p_reason:  refundReason,
-          p_context: { jornada: body.jornada, cancelledCount: breakdown.cancelledCount, totalRefunded },
-        })
-        if (refundErr) {
-          return NextResponse.json({ error: 'refund_failed', detail: refundErr.message }, { status: 500 })
-        }
-      }
-
-      // Acreditar ganancias si las hay. Una sola llamada award_points.
-      if (totalWon > 0) {
+      // Acreditar los PUNTOS FIJOS a la Liga Taka. Una sola llamada award_points.
+      if (totalPoints > 0) {
         const reason = `Quiniela ${body.jornada}: ${breakdown.hits}/${persistedPicks.length} aciertos${breakdown.pleno ? ' · ¡PLENO!' : ''}`
         const adminSbCredit = adminSupabase()
         if (!adminSbCredit) {
@@ -420,11 +322,11 @@ export async function POST(req: NextRequest) {
         }
         const { error: creditErr } = await adminSbCredit.rpc('award_points', {
           p_user_id: user.id,
-          p_amount:  totalWon,
+          p_amount:  totalPoints,
           p_sport:   'futbol',
           p_source:  'quiniela_settle',
           p_reason:  reason,
-          p_context: { jornada: body.jornada, hits: breakdown.hits, pleno: breakdown.pleno, totalWon },
+          p_context: { jornada: body.jornada, hits: breakdown.hits, pleno: breakdown.pleno, totalPoints },
         })
         if (creditErr) {
           // No marcamos settled si la acreditación falló — el cliente
@@ -433,13 +335,13 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Marcar settled + guardar breakdown final.
+      // Marcar settled + guardar breakdown final. `totalWon` conserva el
+      // nombre del campo histórico, pero ahora guarda los PUNTOS fijos.
       const updatedPayload: StoredPayload = {
         ...prevPayload,
         breakdown,
         settled: true,
-        totalWon,
-        totalRefunded,
+        totalWon: totalPoints,
         settledAt: new Date().toISOString(),
       }
       await sb.from('quiniela_picks').upsert({
@@ -496,7 +398,7 @@ export async function POST(req: NextRequest) {
           totalPicks: persistedPicks.length,
           pleno: breakdown.pleno,
           totalStake: prevPayload.totalStakeCharged ?? breakdown.totalStake,
-          totalWon,
+          totalWon: totalPoints,
           picksWithOdds,
           prevStreak,
           isFirstBet,
@@ -586,7 +488,7 @@ export async function POST(req: NextRequest) {
           picks:   persistedPicks.map(p => p.pick ?? null),
           results: results.map(r => r.outcome ?? null),
           pleno:   breakdown.pleno,
-          totalWon,
+          totalWon: totalPoints,
         },
         p_duration_ms: null,
       })
@@ -594,10 +496,10 @@ export async function POST(req: NextRequest) {
       // Push notification fire-and-forget — solo si ganó algo. La
       // idempotencia ya está garantizada por el flag `settled` del
       // payload (este código solo corre una vez por jornada/user).
-      if (totalWon > 0) {
+      if (totalPoints > 0) {
         const title = breakdown.pleno
-          ? `🎯 ¡PLENO! +${totalWon} pts`
-          : `⚡ +${totalWon} pts en La Porra`
+          ? `🎯 ¡PLENO! +${totalPoints} pts`
+          : `⚡ +${totalPoints} pts en La Porra`
         const pushBody = breakdown.pleno
           ? `Acertaste TODOS los ${persistedPicks.length} partidos · ${body.jornada}`
           : `${breakdown.hits}/${persistedPicks.length} aciertos · ${body.jornada}`
@@ -616,7 +518,7 @@ export async function POST(req: NextRequest) {
         phase: 'settle',
         settled: true,
         breakdown,
-        totalWon,
+        totalWon: totalPoints,
       })
     }
 
