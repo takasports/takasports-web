@@ -6,10 +6,11 @@
 // para preservar el modo invitado / dev local.
 //
 // Adicional (Bloque cross-game puntos): tras un record_game_play OK, si el
-// juego está en POINTS_ENABLED_GAMES, llamamos award_game_coins para
-// acreditar puntos al Ranked. La llamada va en try/catch — si la RPC
-// no existe (migración 033 no aplicada) o falla, el play sigue
-// persistido y solo no se acreditan puntos (awarded: 0).
+// juego está en POINTS_ENABLED_GAMES, llamamos award_game_points (migr. 065:
+// idempotente por user+game+period, mejor-marca-gana, service_role-only) para
+// acreditar la tarifa a la Liga Taka. La llamada va en try/catch — si la RPC
+// no existe o falla, el play sigue persistido y solo no se acreditan puntos
+// (awarded: 0).
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
@@ -67,10 +68,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // ── Cross-game puntos ──────────────────────────────────────────
+    // ── Cross-game puntos (Liga Taka) ──────────────────────────────
     // Solo para juegos en la whitelist. Defensivo: si la RPC no existe
-    // (migración 033 sin aplicar) o falla, devolvemos awarded:0 y el
-    // play sigue persistido normalmente — la UI no se rompe.
+    // o falla, devolvemos awarded:0 y el play sigue persistido
+    // normalmente — la UI no se rompe.
     let awarded = 0
     if (POINTS_ENABLED_GAMES.has(body.game_id as PointsGameId)) {
       const amount = pointsFor(body.game_id as PointsGameId, body.score, body.payload)
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
         try {
           const admin = adminSupabase()
           if (admin) {
-            const { data: credited, error: pointsErr } = await admin.rpc('award_game_coins', {
+            const { data: credited, error: pointsErr } = await admin.rpc('award_game_points', {
               p_game_id: body.game_id,
               p_amount:  amount,
               p_period:  body.period,
