@@ -36,18 +36,23 @@ export async function POST() {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // ── Milestone bonus points ────────────────────────────────────────
+  // El importe es SERVER-autoritativo: lo decide `current_streak` (que calcula
+  // ping_game_streak desde game_streaks vía auth.uid()) contra el mapa fijo, NUNCA
+  // el cliente. La ESCRITURA va con service_role (admin), no con el cliente del
+  // usuario: así point_transactions y increment_points_balance se pueden cerrar a
+  // inserción/llamada directa del cliente (RLS + grants) sin que nadie se infle puntos.
+  const admin = adminSupabase()
   let milestoneAwarded = 0
   const streakData = data as { current_streak: number; last_played_date: string } | null
-  if (streakData) {
+  if (streakData && admin) {
     const { current_streak, last_played_date } = streakData
     const bonusPoints = STREAK_MILESTONES[current_streak]
 
     if (bonusPoints && last_played_date) {
-      // Un UNIQUE INDEX parcial en point_transactions garantiza idempotencia a
-      // nivel DB: (user_id, context->>'streak', context->>'date') WHERE source='streak_milestone'.
-      // Si dos requests simultáneos llegan, solo uno insertará — el otro obtendrá
-      // un error 23505 (unique_violation) que capturamos para no acreditar dos veces.
-      const { error: txnErr } = await sb.from('point_transactions').insert({
+      // Idempotencia a nivel DB: UNIQUE INDEX parcial
+      // (user_id, context->>'streak', context->>'date') WHERE source='streak_milestone'.
+      // Un segundo request simultáneo da 23505 (unique_violation) → no se duplica.
+      const { error: txnErr } = await admin.from('point_transactions').insert({
         user_id: user.id,
         amount:  bonusPoints,
         source:  'streak_milestone',
@@ -56,31 +61,27 @@ export async function POST() {
       })
 
       if (!txnErr) {
-        // Fila insertada → acreditar puntos atómicamente
-        const { error: rpcErr } = await sb.rpc('increment_points_balance', {
+        // Fila insertada → acreditar el balance (atómico, mismo importe)
+        const { error: rpcErr } = await admin.rpc('increment_points_balance', {
           p_user_id: user.id,
           p_amount:  bonusPoints,
         })
         // Solo informamos milestone_awarded si el balance realmente se incrementó.
-        // Si el RPC falla, la transacción en point_transactions queda registrada
-        // pero los puntos no se acreditaron — se detecta en el siguiente ping.
+        // Si el RPC falla, la txn queda registrada pero el balance no — se
+        // reconcilia en el siguiente ping (la txn idempotente no se duplica).
         if (!rpcErr) milestoneAwarded = bonusPoints
       }
-      // Si txnErr.code === '23505' → ya acreditado (idempotente, silencioso)
-      // Cualquier otro error se ignora (milestone es best-effort)
+      // 23505 → ya acreditado (idempotente, silencioso). Otros errores: best-effort.
     }
   }
 
   // ── Milestone badge awards ────────────────────────────────────────
-  if (milestoneAwarded > 0 && streakData) {
+  if (milestoneAwarded > 0 && streakData && admin) {
     try {
       const { current_streak } = streakData
       const badgeMap: Record<number, string> = { 3: 'racha_dias_3', 7: 'racha_dias_7', 14: 'racha_dias_14', 30: 'racha_dias_30' }
       const badgeId = badgeMap[current_streak]
-      if (badgeId) {
-        const admin = adminSupabase()
-        if (admin) await awardBadges(admin, user.id, [badgeId])
-      }
+      if (badgeId) await awardBadges(admin, user.id, [badgeId])
     } catch { /* badge fallo — silencioso */ }
   }
 
