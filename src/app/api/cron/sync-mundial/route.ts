@@ -10,7 +10,6 @@
 
 import { NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { awardBadges } from '@/lib/badge-awards'
 
@@ -127,9 +126,8 @@ async function handle(req: Request) {
   let upserted = 0
   let scored   = 0
 
-  // Cerrar partidos iniciados (vía anon client que puede llamar la función SECURITY DEFINER)
-  const sb = await createServerSupabaseClient()
-  try { await sb.rpc('close_started_ranked_events') } catch { /* no-op */ }
+  // Cerrar partidos iniciados (vía admin: la función ya no es ejecutable por anon/auth).
+  try { await admin.rpc('close_started_ranked_events') } catch { /* no-op */ }
 
   // Pre-fetch IDs ya resueltos para evitar regresión de status (resolved → open)
   // cuando ESPN devuelve datos desactualizados en la misma pasada.

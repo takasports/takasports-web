@@ -58,10 +58,12 @@ export async function GET(
     return { ...rest, pid: user_id ? publicId(user_id) : '' }
   })
 
+  // No exponer owner_id crudo (UUID auth) — is_owner ya lo deriva.
+  const { owner_id: leagueOwnerId, ...leagueSafe } = league as { owner_id?: string } & Record<string, unknown>
   return NextResponse.json({
     league: {
-      ...league,
-      is_owner:     league.owner_id === user.id,
+      ...leagueSafe,
+      is_owner:     leagueOwnerId === user.id,
       my_pid:       publicId(user.id),
     },
     leaderboard: safeLeaderboard,

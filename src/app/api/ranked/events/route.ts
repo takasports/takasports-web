@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { adminSupabase } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,8 +23,11 @@ export async function GET(req: NextRequest) {
 
   const sb = await createServerSupabaseClient()
 
-  // Cierra automáticamente partidos ya iniciados hace > 60 min
-  try { await sb.rpc('close_started_ranked_events') } catch { /* no-op */ }
+  // Cierra automáticamente partidos ya iniciados hace > 60 min. Vía admin
+  // (service_role): close_started_ranked_events ya no es ejecutable por
+  // anon/authenticated (hardening migr. 070). Best-effort, no bloquea.
+  const admin = adminSupabase()
+  if (admin) { try { await admin.rpc('close_started_ranked_events') } catch { /* no-op */ } }
 
   let q = sb
     .from('ranked_events')

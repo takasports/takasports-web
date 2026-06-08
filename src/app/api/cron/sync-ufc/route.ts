@@ -18,7 +18,6 @@
 
 import { NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 
 export const dynamic = 'force-dynamic'
@@ -121,9 +120,8 @@ async function handle(req: Request) {
   let upserted = 0
   let scored   = 0
 
-  // Cerrar fights iniciados.
-  const sb = await createServerSupabaseClient()
-  try { await sb.rpc('close_started_ranked_events') } catch { /* */ }
+  // Cerrar fights iniciados (vía admin: la función ya no es ejecutable por anon/auth).
+  try { await admin.rpc('close_started_ranked_events') } catch { /* */ }
 
   // Pre-fetch IDs ya resueltos.
   const { data: resolvedRows } = await admin

@@ -57,10 +57,12 @@ export async function GET() {
           .eq('league_id', l.id)
         memberCount = count ?? 0
       }
+      // No exponer owner_id crudo (UUID auth de terceros) — is_owner ya basta.
+      const { owner_id, ...rest } = l as { owner_id?: string } & Record<string, unknown>
       return {
-        ...l,
+        ...rest,
         member_count: memberCount,
-        is_owner: l.owner_id === user.id,
+        is_owner: owner_id === user.id,
       }
     })
   )
@@ -124,5 +126,8 @@ export async function POST(req: Request) {
   // El creador se añade como primer miembro
   await sb.from('ranked_league_members').insert({ league_id: leagueId, user_id: user.id })
 
-  return NextResponse.json({ league: { ...league, member_count: 1, is_owner: true } }, { status: 201 })
+  // No exponer owner_id crudo en la respuesta (es el propio user, pero por consistencia).
+  const leagueSafe: Record<string, unknown> = { ...league }
+  delete leagueSafe.owner_id
+  return NextResponse.json({ league: { ...leagueSafe, member_count: 1, is_owner: true } }, { status: 201 })
 }
