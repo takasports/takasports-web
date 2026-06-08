@@ -988,7 +988,7 @@ export default function MiOncePage() {
   // Once editorial canónico (publicado por la redacción) + heatmap social
   // por slot. Ambos se piden al montar; si la semana aún no tiene datos
   // simplemente no se renderizan los paneles.
-  const [editorial, setEditorial] = useState<{ title: string; formation: string; slots: Record<string, string>; note: string | null } | null>(null)
+  const [editorial, setEditorial] = useState<{ title: string; formation: string; slots: Record<string, string>; note: string | null; source?: 'editorial' | 'auto' } | null>(null)
   const [slotHeatmap, setSlotHeatmap] = useState<{ bySlot: Record<string, Record<string, number>>; totalPlays: number } | null>(null)
 
   useEffect(() => {
@@ -1293,7 +1293,7 @@ export default function MiOncePage() {
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
-                    Once editorial
+                    {editorial.source === 'auto' ? 'Once de referencia' : 'Once editorial'}
                   </p>
                   <span
                     className="text-[10px] font-black px-2 py-0.5 rounded"
@@ -1315,7 +1315,7 @@ export default function MiOncePage() {
                 )}
                 <details className="mt-2">
                   <summary className="text-[10px] font-black uppercase tracking-widest cursor-pointer" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-                    Ver canónico ({editorial.formation})
+                    {editorial.source === 'auto' ? 'Ver alineación' : 'Ver canónico'} ({editorial.formation})
                   </summary>
                   <ul className="mt-2 grid grid-cols-1 gap-1">
                     {Object.entries(editorial.slots).map(([sid, pid]) => {

@@ -123,7 +123,7 @@ export const BOARDS: PositionClubBoard[] = [
 // Convierte un tablero en un Challenge: cada slot recibe un tag de club con match
 // EXACTO contra playerClubs (club principal + altClubs). La posición la exige la
 // formación (FORMATIONS en mionce-formations.ts) vía el buscador y validBySlot.
-function boardToChallenge(b: PositionClubBoard): Challenge {
+export function boardToChallenge(b: PositionClubBoard): Challenge {
   const slotTags: Record<string, SlotTag> = {}
   for (const [slotId, club] of Object.entries(b.clubs)) {
     slotTags[slotId] = {
@@ -171,4 +171,16 @@ export function getWeeklyChallenge(d: Date = new Date()): { challenge: Challenge
   const rand = mulberry32(seed)
   const idx = Math.floor(rand() * BOARDS.length)
   return { challenge: boardToChallenge(BOARDS[idx]), week }
+}
+
+// Igual que getWeeklyChallenge pero a partir de la clave ISO "YYYY-Www" (sin
+// Date). Mismo seed → MISMO tablero, para que el servidor calcule el reto/once
+// de una semana dada sin depender de la zona horaria del runtime.
+export function getChallengeForWeek(key: string): Challenge | null {
+  const m = /^(\d{4})-W(\d{2})$/.exec(key)
+  if (!m) return null
+  const seed = Number(m[1]) * 100 + Number(m[2])
+  const rand = mulberry32(seed)
+  const idx = Math.floor(rand() * BOARDS.length)
+  return boardToChallenge(BOARDS[idx])
 }

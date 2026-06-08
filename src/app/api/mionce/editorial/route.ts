@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { isAdminRequest } from '@/lib/admin-auth'
+import { computeReferenceOnce } from '@/lib/mionce-reference-once'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,31 +57,42 @@ export async function GET(req: NextRequest) {
   if (!assertWeek(week)) {
     return NextResponse.json({ error: 'week (YYYY-Www) required' }, { status: 400 })
   }
+  const cache = { 'Cache-Control': 'public, max-age=120, stale-while-revalidate=300' }
+
+  // Once humano publicado por la redacción (prioridad).
   const admin = adminSupabase()
-  if (!admin) return NextResponse.json({ editorial: null })
-
-  const { data } = await admin
-    .from('mionce_editorial')
-    .select('title, formation, slots, note')
-    .eq('week_iso', week)
-    .maybeSingle()
-
-  if (!data) {
-    return NextResponse.json({ editorial: null }, {
-      headers: { 'Cache-Control': 'public, max-age=120, stale-while-revalidate=300' },
-    })
+  if (admin) {
+    const { data } = await admin
+      .from('mionce_editorial')
+      .select('title, formation, slots, note')
+      .eq('week_iso', week)
+      .maybeSingle()
+    if (data) {
+      return NextResponse.json({
+        editorial: {
+          title:     data.title,
+          formation: data.formation,
+          slots:     data.slots ?? {},
+          note:      data.note ?? null,
+          source:    'editorial' as const,
+        },
+      }, { headers: cache })
+    }
   }
 
+  // Fallback determinista: once de referencia del tablero de la semana ($0, sin
+  // cron ni IA). Garantiza que el panel de comparación nunca quede vacío.
+  const ref = computeReferenceOnce(week)
+  if (!ref) return NextResponse.json({ editorial: null }, { headers: cache })
   return NextResponse.json({
     editorial: {
-      title:     data.title,
-      formation: data.formation,
-      slots:     data.slots ?? {},
-      note:      data.note ?? null,
+      title:     ref.title,
+      formation: ref.formation,
+      slots:     ref.slots,
+      note:      ref.note,
+      source:    'auto' as const,
     },
-  }, {
-    headers: { 'Cache-Control': 'public, max-age=120, stale-while-revalidate=300' },
-  })
+  }, { headers: cache })
 }
 
 export async function POST(req: NextRequest) {
