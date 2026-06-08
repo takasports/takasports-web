@@ -1014,6 +1014,46 @@ export default function JuegosPageClient() {
           </section>
         )}
 
+        {/* ── LIGA TAKA (ranking general) ───────────────────── */}
+        <section className="mb-12">
+          <div className="flex items-center gap-2.5 mb-5">
+            <span className="section-accent" />
+            <h2 className="section-label">Liga Taka</h2>
+          </div>
+          <Link
+            href="/predicciones"
+            className="group block rounded-2xl p-5 sm:p-6 transition-transform hover:translate-y-[-2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            style={{
+              background: 'linear-gradient(135deg, rgba(147,197,253,0.12), rgba(167,139,250,0.08))',
+              border: '1px solid rgba(147,197,253,0.25)',
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 text-2xl"
+                style={{ background: 'rgba(147,197,253,0.15)', border: '1px solid rgba(147,197,253,0.3)' }}
+                aria-hidden="true"
+              >
+                ⚡
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-black leading-tight mb-1" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.05rem, 2.5vw, 1.35rem)', color: '#F0F0F5' }}>
+                  El ranking general de TakaSports
+                </h3>
+                <p className="text-[13px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                  Reúne todos tus puntos en una sola tabla. Hoy suma <strong style={{ color: '#F0F0F5' }}>Predicciones</strong> y <strong style={{ color: '#F0F0F5' }}>Mundial</strong>; muy pronto, también los minijuegos.
+                </p>
+              </div>
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest flex-shrink-0 transition-opacity group-hover:opacity-80" style={{ color: '#93C5FD', fontFamily: 'var(--font-sport)' }}>
+                Ver ranking general →
+              </span>
+            </div>
+            <span className="sm:hidden inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest mt-3" style={{ color: '#93C5FD', fontFamily: 'var(--font-sport)' }}>
+              Ver ranking general →
+            </span>
+          </Link>
+        </section>
+
         {/* ── RANKINGS ──────────────────────────────────────── */}
         <LeaderboardTabs quinielaJornada={quinielaJornada} />
 
