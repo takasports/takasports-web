@@ -56,15 +56,19 @@ export function coinAmountFor(
 
   if (gameId === 'mionce') {
     // Mi Once: reto SEMANAL — armar un 11 en una formación con reglas.
-    // Score = válidos (modo tagged) o rellenos (modo clásico), 0–11.
-    // Como es semanal y se entra menos, premiamos más por completar.
+    // Tras el rework M1 todo tablero es tagged: el cliente manda
+    // score = válidos × 10 (0–110, mismo valor que va a record_game_play).
+    // Aquí lo normalizamos a válidos (0–11) para la tarifa: sin esto,
+    // perf saturaba con 2 jugadores (min(11,score) con score≥11) y
+    // "perfecto" saltaba sin el 11/11 real.
     //   · base       = 10  (entrar y dejar el lineup armado)
-    //   · perf       = score * 2  → 0–22
-    //   · perfecto   = +15 si score === 11 (lineup completo válido)
-    // Total típico: 10–47 monedas/semana.
+    //   · perf       = válidos * 2  → 0–22
+    //   · perfecto   = +15 si válidos === 11 (lineup completo válido)
+    // Total: 10–47 puntos/semana. (No toca el score 0–110 del ranking.)
+    const valid = Math.max(0, Math.min(11, Math.round(score / 10)))
     const base = 10
-    const perf = Math.max(0, Math.min(11, score)) * 2
-    const perfecto = score >= 11 ? 15 : 0
+    const perf = valid * 2
+    const perfecto = valid >= 11 ? 15 : 0
     return base + perf + perfecto
   }
 
