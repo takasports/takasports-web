@@ -32,7 +32,7 @@ interface CreatorLeague {
 }
 
 interface LeaderboardEntry {
-  user_id:      string
+  pid:      string
   display_name: string | null
   avatar_url:   string | null
   total:        number
@@ -61,10 +61,10 @@ const ANIMATIONS = `
 // ── LeagueLeaderboard (inline) ────────────────────────────────────────────
 
 function LeagueLeaderboard({
-  leagueId, myUserId,
+  leagueId, myPid,
 }: {
   leagueId:  string
-  myUserId:  string | null
+  myPid:  string | null
 }) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -97,9 +97,9 @@ function LeagueLeaderboard({
   return (
     <div style={{ padding: '6px 0' }}>
       {entries.slice(0, 20).map((entry, i) => {
-        const isMe = entry.user_id === myUserId
+        const isMe = entry.pid === myPid
         return (
-          <div key={entry.user_id} style={{
+          <div key={entry.pid} style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '7px 16px',
             background: isMe ? 'rgba(167,139,250,0.06)' : 'transparent',
@@ -158,11 +158,11 @@ function LeagueLeaderboard({
 
 function CreatorCard({
   league,
-  myUserId,
+  myPid,
   onJoin,
 }: {
   league:   CreatorLeague
-  myUserId: string | null
+  myPid: string | null
   onJoin:   (id: string) => void
 }) {
   const [expanded,  setExpanded]  = useState(false)
@@ -173,7 +173,7 @@ function CreatorCard({
   const meta = sportMeta(league.sport)
 
   async function handleJoin() {
-    if (!myUserId) { window.location.href = '/auth'; return }
+    if (!myPid) { window.location.href = '/auth'; return }
     setJoining(true)
     try {
       const res = await fetch(`/api/ranked/leagues/${league.id}/join`, {
@@ -304,7 +304,7 @@ function CreatorCard({
       {/* Leaderboard desplegable */}
       {expanded && (
         <div style={{ borderTop: `1px solid ${meta.accent}15` }}>
-          <LeagueLeaderboard leagueId={league.id} myUserId={myUserId} />
+          <LeagueLeaderboard leagueId={league.id} myPid={myPid} />
         </div>
       )}
     </div>
@@ -316,7 +316,7 @@ function CreatorCard({
 export default function CreadoresClient() {
   const [leagues,    setLeagues]    = useState<CreatorLeague[]>([])
   const [loading,    setLoading]    = useState(true)
-  const [myUserId,   setMyUserId]   = useState<string | null>(null)
+  const [myPid,   setMyPid]   = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -329,8 +329,8 @@ export default function CreadoresClient() {
         setLeagues(arr ?? [])
       }
       if (meRes.ok) {
-        const me = await meRes.json() as { user_id?: string }
-        if (me.user_id) setMyUserId(me.user_id)
+        const me = await meRes.json() as { pid?: string }
+        if (me.pid) setMyPid(me.pid)
       }
     } finally {
       setLoading(false)
@@ -406,7 +406,7 @@ export default function CreadoresClient() {
               <div key={league.id} style={{ animationDelay: `${i * 0.07}s` }}>
                 <CreatorCard
                   league={league}
-                  myUserId={myUserId}
+                  myPid={myPid}
                   onJoin={() => { /* optimistic ya hecho en el card */ }}
                 />
               </div>

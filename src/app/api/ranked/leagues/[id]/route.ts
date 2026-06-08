@@ -4,6 +4,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { publicId } from '@/lib/public-id'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,13 +50,21 @@ export async function GET(
 
   if (lbErr) return NextResponse.json({ error: lbErr.message }, { status: 500 })
 
+  // El leaderboard del RPC trae user_id crudo por miembro. Lo cambiamos por
+  // un pid opaco (sha256) para no exponer UUIDs de auth de terceros; my_pid
+  // deja al cliente marcar su propia fila ("tú") comparando pids.
+  const safeLeaderboard = (entries ?? []).map((e: Record<string, unknown>) => {
+    const { user_id, ...rest } = e as { user_id?: string } & Record<string, unknown>
+    return { ...rest, pid: user_id ? publicId(user_id) : '' }
+  })
+
   return NextResponse.json({
     league: {
       ...league,
       is_owner:     league.owner_id === user.id,
-      my_user_id:   user.id,
+      my_pid:       publicId(user.id),
     },
-    leaderboard: entries ?? [],
+    leaderboard: safeLeaderboard,
   })
 }
 

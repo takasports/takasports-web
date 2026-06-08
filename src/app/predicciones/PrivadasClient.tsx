@@ -26,7 +26,7 @@ interface RankedLeague {
 }
 
 interface LeaderboardEntry {
-  user_id:      string
+  pid:      string
   display_name: string | null
   avatar_url:   string | null
   total:        number
@@ -156,16 +156,14 @@ function LeagueCard({
 
 function LeagueDetail({
   leagueId,
-  myUserId,
   onLeave,
   onDelete,
 }: {
   leagueId:  string
-  myUserId:  string
   onLeave:   () => void
   onDelete:  () => void
 }) {
-  const [data, setData]   = useState<{ league: RankedLeague & { my_user_id: string }; leaderboard: LeaderboardEntry[] } | null>(null)
+  const [data, setData]   = useState<{ league: RankedLeague & { my_pid: string }; leaderboard: LeaderboardEntry[] } | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied]   = useState(false)
   const [leaving, setLeaving] = useState(false)
@@ -300,10 +298,10 @@ function LeagueDetail({
           </div>
         )}
         {leaderboard.map((entry, i) => {
-          const isMe = entry.user_id === myUserId
+          const isMe = entry.pid === league.my_pid
           return (
             <div
-              key={entry.user_id}
+              key={entry.pid}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '8px 16px',
@@ -826,7 +824,6 @@ export default function PrivadasClient() {
                     {openId === league.id && (
                       <LeagueDetail
                         leagueId={league.id}
-                        myUserId={league.owner_id /* fallback — sobreescrito por API */}
                         onLeave={() => handleLeft(league.id)}
                         onDelete={() => handleLeft(league.id)}
                       />

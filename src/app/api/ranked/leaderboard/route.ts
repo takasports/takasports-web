@@ -15,6 +15,7 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { fetchEquipmentByUser, type UserEquipment } from '@/lib/equipment'
 import { fetchBadgesByUser, type LeaderboardBadge } from '@/lib/leaderboard-badges'
 import { fetchLevelsByUser } from '@/lib/level-progression'
+import { publicId } from '@/lib/public-id'
 
 export const dynamic = 'force-dynamic'
 
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
     const badges: LeaderboardBadge[] = badgesByUser.get(e.user_id) ?? []
     const lvl = levelsByUser.get(e.user_id)
     return {
-      user_id:      e.user_id,
+      pid:          e.user_id ? publicId(e.user_id) : '',
       display_name: e.display_name,
       avatar_url:   e.avatar_url,
       total:        e.total_points,

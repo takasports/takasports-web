@@ -5,8 +5,8 @@
 // (badge/title/frame/card_bg). El cache sigue siendo público — los badges/
 // equipment no son secretos.
 
-import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
+import { publicId } from '@/lib/public-id'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { fetchEquipmentByUser, type UserEquipment } from '@/lib/equipment'
@@ -15,12 +15,8 @@ import { fetchBadgesByUser, type LeaderboardBadge, type LeaderboardEquipment } f
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
 type GameId = typeof GAME_IDS[number]
 
-// Identificador público opaco: hash no-reversible del user_id. Permite al
-// cliente keyear/deduplicar la fila sin exponer el UUID de auth (que se usa
-// en RLS/joins y no debe salir en un endpoint público y cacheado).
-function publicId(userId: string): string {
-  return createHash('sha256').update(userId).digest('hex').slice(0, 16)
-}
+// publicId() vive en @/lib/public-id (fuente única, compartida con los
+// leaderboards de Ranked).
 
 function hasSupabaseEnv(): boolean {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)

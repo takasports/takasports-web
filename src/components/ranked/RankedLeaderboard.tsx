@@ -14,7 +14,7 @@ import { buildPlacaData, type ApiEquipment } from '@/components/placa/adapter'
 type RankedSport = 'global' | 'mundial' | 'futbol' | 'ufc'
 
 interface RankedEntry {
-  user_id:      string
+  pid:          string
   display_name: string | null
   avatar_url:   string | null
   total:        number
@@ -241,7 +241,7 @@ export default function RankedLeaderboard({ activeSport }: Props) {
               })
               return (
                 <PlacaRowV3
-                  key={e.user_id ?? i}
+                  key={e.pid ?? i}
                   placa={placa}
                   rank={e.rank}
                   score={e.total}
@@ -276,7 +276,7 @@ export default function RankedLeaderboard({ activeSport }: Props) {
 
               return (
                 <div
-                  key={e.user_id ?? i}
+                  key={e.pid ?? i}
                   className="flex items-center gap-3 px-3 py-2 rounded-xl"
                   style={{ background: rowBg, border: rowBorder }}
                 >
