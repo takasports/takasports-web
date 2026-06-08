@@ -460,7 +460,6 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                     matches={apiMatches}
                     jornada={apiJornada}
                     streakCurrent={streak.current}
-                    coinBalance={pointsBalance ?? 0}
                     authed={!!user}
                     onParticipation={(_j) => { void refreshPoints() }}
                     onSubmit={(s) => {

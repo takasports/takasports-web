@@ -1,18 +1,16 @@
 'use client'
 
 // ─────────────────────────────────────────────────────────────────
-// Sticky betslip — footer fijo con progreso + CTA "Cerrar apuesta"
+// Sticky footer — progreso + CTA "Sellar predicción"
 // ─────────────────────────────────────────────────────────────────
-// El modelo Ranked apuesta monedas por pick. El footer muestra
-// cuántos picks van, el total apostado en la fecha y el CTA para
-// cerrar y enviar al server.
+// Modelo SIN apuestas: el footer muestra cuántos picks van y los puntos
+// POSIBLES si aciertas toda la jornada (fijos), y el CTA para sellar.
 //   · `done`      = picks con elección 1X2 hechos
 //   · `total`     = picks totales disponibles
 //   · `allDone`   = canSeal (validación combinada de PicksForm)
-//   · `potential` = monedas potenciales si acertás todos (stake × cuota)
-//   · `totalStake`= monedas apostadas en total en la fecha (sumado)
+//   · `potential` = puntos fijos si aciertas todo
 export function StickyBetslip({
-  done, total, allDone, captainSet, onSubmit, urgent, potential, totalStake,
+  done, total, allDone, captainSet, onSubmit, urgent, potential,
 }: {
   done: number
   total: number
@@ -22,16 +20,11 @@ export function StickyBetslip({
   onSubmit: () => void
   urgent: boolean
   potential: number
-  /** Suma de stakes apostados en todos los picks (Ranked). Default 0. */
-  totalStake?: number
 }) {
   void captainSet
-  const stake = totalStake ?? 0
   const cta = !allDone
     ? `Te quedan ${total - done} partido${total - done !== 1 ? 's' : ''}`
-    : stake > 0
-      ? `🎫 Cerrar apuesta · ${stake} pts`
-      : '🎯 Sellar predicción'
+    : '🎯 Sellar predicción'
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
   return (
     <div className="qn-betslip-sticky left-0 right-0 z-30 -mx-1 pt-3 pb-3" style={{ background: 'linear-gradient(to top, #060010 0%, #060010 60%, transparent 100%)' }}>
@@ -41,26 +34,19 @@ export function StickyBetslip({
             <div className="flex items-baseline gap-1.5">
               <span className="font-black tabular-nums" style={{ fontSize: 18, color: '#F8F8FF', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>{done}/{total}</span>
               <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>picks</span>
-              {stake > 0 && (
-                <>
-                  <span className="text-[10px]" style={{ color: '#3A3050' }}>·</span>
-                  <span className="font-black tabular-nums" style={{ fontSize: 13, color: '#86efac', fontFamily: 'var(--font-display)' }}>
-                    {stake} pts
-                  </span>
-                  <span className="text-[9px] uppercase tracking-widest" style={{ color: '#3A5A48', fontFamily: 'var(--font-sport)' }}>apostado</span>
-                </>
-              )}
             </div>
             <div className="mt-1.5 w-full rounded-full overflow-hidden" style={{ height: 3, background: 'rgba(255,255,255,0.06)' }}>
               <div style={{ width: `${pct}%`, height: '100%', background: allDone ? 'linear-gradient(90deg,#22c55e,#16a34a)' : 'linear-gradient(90deg,#7C3AED,#A78BFA)', transition: 'width 0.3s' }} />
             </div>
           </div>
-          <div className="flex flex-col items-end flex-shrink-0">
-            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Si aciertas todo</span>
-            <span className="font-black tabular-nums" style={{ fontSize: 16, color: '#fbbf24', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
-              {potential} pts
-            </span>
-          </div>
+          {potential > 0 && (
+            <div className="flex flex-col items-end flex-shrink-0">
+              <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Si aciertas todo</span>
+              <span className="font-black tabular-nums" style={{ fontSize: 16, color: '#fbbf24', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
+                {potential} pts
+              </span>
+            </div>
+          )}
         </div>
         <button
           onClick={onSubmit}

@@ -27,27 +27,27 @@ export const LEAGUES_KEY = 'ts_quiniela_leagues'
 export const ALIAS_KEY = 'ts_quiniela_alias'
 
 // ─────────────────────────────────────────────────────────────────
-// Onboarding steps — refleja el modelo Ranked actual (apuesta con
-// monedas + cuota como multiplicador + bonus de jornada + ligas
-// privadas por puntos).
+// Onboarding steps — modelo SIN apuestas: predices gratis y sumas
+// PUNTOS FIJOS a la Liga Taka (tendencia 1 · destacado ×2 · marcador
+// exacto +3 · pleno +5). Sin stake, sin saldo, sin cuotas que paguen.
 // ─────────────────────────────────────────────────────────────────
 export const ONBOARDING_STEPS: { emoji: string; title: string; body: string; hint?: string }[] = [
   {
     emoji: '🎯',
     title: 'Predice cada partido',
-    body: 'En cada tarjeta tocá L (gana local), E (empate) o V (gana visitante). Cada opción tiene su cuota (el multiplicador estilo casa de apuestas).',
-    hint: 'Las cuotas se mueven en vivo según el consenso real del resto de jugadores.',
+    body: 'En cada tarjeta tocá L (gana local), E (empate) o V (gana visitante). No apuestas nada: predecir es gratis.',
+    hint: 'La cuota que ves es solo orientativa (el consenso del resto de jugadores), no multiplica tus puntos.',
   },
   {
-    emoji: '💰',
-    title: 'Apostá tus puntos',
-    body: 'Decidí cuántos puntos apostar en cada pick (entre 1 y 200). Si aciertas, ganás stake × cuota. Si fallás, perdés el stake. Apostar a una cuota alta paga mucho más, pero es más arriesgado.',
-    hint: 'Default 10 pts por pick · podés bajarlo o subirlo en el panel «Tu apuesta».',
+    emoji: '🏆',
+    title: 'Suma puntos por acertar',
+    body: 'Cada tendencia acertada te da 1 punto para la Liga Taka. No pierdes nada si fallas. Acierta toda la jornada (pleno) y te llevas +5 puntos extra.',
+    hint: 'Los puntos van al ranking general de TakaSports, junto con el Mundial y los minijuegos.',
   },
   {
     emoji: '⭐',
     title: 'Partido destacado · x2',
-    body: 'Cada jornada hay 1 partido destacado (el más reñido). Si aciertas su 1/X/2, tus puntos por ese pick se duplican. Si encima clavas el marcador exacto, ese bonus también se dobla.',
+    body: 'Cada jornada hay 1 partido destacado (el más reñido). Si aciertas su 1/X/2, ese punto se duplica. Si encima clavas el marcador exacto, ese bonus también se dobla.',
     hint: 'No cuesta nada · el destacado se autoselecciona cada jornada en función del equilibrio del partido.',
   },
   {
@@ -59,7 +59,7 @@ export const ONBOARDING_STEPS: { emoji: string; title: string; body: string; hin
   {
     emoji: '🏆',
     title: 'Liga general + amigos',
-    body: 'En el Ranked competís contra todos por puntos acumulados. En ligas privadas armás un grupo con amigos por código/link y compiten por puntos internos (sin apuesta).',
+    body: 'En el Ranked compites contra todos por puntos acumulados. En ligas privadas armás un grupo con amigos por código/link y compiten por puntos internos.',
     hint: 'Los juegos diarios (CrackQuiz, Mi Once, Sopa de Cracks) también te dan puntos Taka en el Ranked.',
   },
 ]

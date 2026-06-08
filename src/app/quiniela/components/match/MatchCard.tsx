@@ -28,7 +28,7 @@ export function MatchCard({
   exactScore, onExactScoreChange, exactSlotAvailable,
   showExactTooltip, onExactTooltipDismiss,
 }: {
-  match: { home: string; away: string; homeLogo?: string; awayLogo?: string; homeShort?: string; awayShort?: string }
+  match: { home: string; away: string; homeLogo?: string; awayLogo?: string; homeShort?: string; awayShort?: string; isFeatured?: boolean }
   index: number; pick?: Pick; onPick: (p: Pick) => void
   forceLocked?: boolean; showOverlay?: boolean
   comp?: string; time?: string
@@ -293,18 +293,13 @@ export function MatchCard({
                     {sublabel}
                   </span>
                 )}
-                {!locked && (() => {
-                  // "Si acertás +X🪙" en cada botón: usa el stake del card si
-                  // está definido (modo Ranked con apuesta integrada), o el
-                  // default 10 como aproximación si todavía no se eligió stake.
-                  const effectiveStake = stake ?? stakeDefault ?? 10
-                  const ret = odd ? Math.round(effectiveStake * odd) : effectiveStake
-                  return (
-                    <span style={{ fontSize: 7, fontFamily: 'var(--font-sport)', fontWeight: 900, color: selected ? PICK_COLOR[opt] : '#2A2A42', opacity: selected ? 0.85 : 0.45, marginTop: 1 }}>
-                      +{ret} pts
-                    </span>
-                  )
-                })()}
+                {!locked && (
+                  // Modelo SIN apuestas: acertar la tendencia da 1 punto fijo
+                  // a la Liga Taka (×2 si el partido es el destacado).
+                  <span style={{ fontSize: 7, fontFamily: 'var(--font-sport)', fontWeight: 900, color: selected ? PICK_COLOR[opt] : '#2A2A42', opacity: selected ? 0.85 : 0.45, marginTop: 1 }}>
+                    +{match.isFeatured ? 2 : 1} pt{match.isFeatured ? ' ⭐' : ''}
+                  </span>
+                )}
               </button>
             )
           })}
