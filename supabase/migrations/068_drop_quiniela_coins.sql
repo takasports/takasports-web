@@ -1,0 +1,61 @@
+-- 068 — Retira la economía de "monedas" de la Quiniela (modelo SIN monedas).
+--
+-- El código de la web ya NO referencia estos objetos (commit 342d178, vivo en
+-- prod verificado). quiniela_coin_txns tiene 0 filas; NADA más depende de la
+-- tabla/vista/función (verificado vía pg_depend + pg_proc).
+-- Bonus: borrar la vista quiniela_coin_balance quita 1 de las 6 vistas
+-- SECURITY DEFINER del advisor.
+--
+-- DROP es irreversible → se preservan abajo las DEFINICIONES ORIGINALES por si
+-- alguna vez hubiera que recrearlas.
+--
+-- ════════════════════════════════════════════════════════════════════════
+-- [PRESERVED] TABLE public.quiniela_coin_txns
+--   CREATE TABLE public.quiniela_coin_txns (
+--     id         uuid NOT NULL DEFAULT gen_random_uuid(),
+--     user_id    uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+--     amount     integer NOT NULL,
+--     reason     text NOT NULL,
+--     context    jsonb,
+--     created_at timestamptz DEFAULT now(),
+--     CONSTRAINT quiniela_coin_txns_pkey PRIMARY KEY (id)
+--   );
+--   ALTER TABLE public.quiniela_coin_txns ENABLE ROW LEVEL SECURITY;
+--   CREATE POLICY qct_read ON public.quiniela_coin_txns FOR SELECT USING (auth.uid() = user_id);
+--   CREATE INDEX qct_user_time ON public.quiniela_coin_txns (user_id, created_at DESC);
+--   CREATE INDEX qct_game_period_idx ON public.quiniela_coin_txns
+--     ((context->>'source'),(context->>'game_id'),(context->>'period')) WHERE (context->>'source')='game';
+--   CREATE INDEX qct_game_24h_idx ON public.quiniela_coin_txns
+--     (user_id,(context->>'game_id'),created_at DESC) WHERE (context->>'source')='game';
+--
+-- [PRESERVED] VIEW public.quiniela_coin_balance
+--   CREATE VIEW public.quiniela_coin_balance AS
+--     SELECT user_id, GREATEST(0::bigint, COALESCE(sum(amount), 0::bigint))::integer AS balance
+--     FROM quiniela_coin_txns GROUP BY user_id;
+--
+-- [PRESERVED] FUNCTION public.add_coins(integer, text, jsonb, uuid)
+--   CREATE OR REPLACE FUNCTION public.add_coins(p_amount integer, p_reason text DEFAULT ''::text,
+--     p_context jsonb DEFAULT '{}'::jsonb, p_user_id uuid DEFAULT NULL::uuid)
+--     RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
+--   DECLARE uid uuid; current_balance integer; new_balance integer;
+--   BEGIN
+--     uid := COALESCE(p_user_id, auth.uid());
+--     IF uid IS NULL THEN RAISE EXCEPTION 'auth required'; END IF;
+--     IF p_amount = 0 THEN RETURN 0; END IF;
+--     IF abs(p_amount) > 5000 THEN RAISE EXCEPTION 'amount out of range'; END IF;
+--     PERFORM pg_advisory_xact_lock(('x' || substr(md5(uid::text), 1, 15))::bit(60)::bigint);
+--     SELECT GREATEST(0, COALESCE(SUM(amount), 0)) INTO current_balance
+--       FROM public.quiniela_coin_txns WHERE user_id = uid;
+--     IF p_amount < 0 AND (current_balance + p_amount) < 0 THEN
+--       RAISE EXCEPTION 'insufficient_balance: need % have %', abs(p_amount), current_balance; END IF;
+--     INSERT INTO public.quiniela_coin_txns (user_id, amount, reason, context)
+--       VALUES (uid, p_amount, p_reason, COALESCE(p_context, '{}'::jsonb));
+--     new_balance := GREATEST(0, current_balance + p_amount);
+--     RETURN new_balance;
+--   END; $function$;
+-- ════════════════════════════════════════════════════════════════════════
+
+-- Orden: vista (depende de la tabla) → función (escribe en la tabla) → tabla.
+DROP VIEW     IF EXISTS public.quiniela_coin_balance;
+DROP FUNCTION IF EXISTS public.add_coins(integer, text, jsonb, uuid);
+DROP TABLE    IF EXISTS public.quiniela_coin_txns;
