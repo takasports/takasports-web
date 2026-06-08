@@ -1041,7 +1041,7 @@ export default function JuegosPageClient() {
                   El ranking general de TakaSports
                 </h3>
                 <p className="text-[13px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
-                  Reúne todos tus puntos en una sola tabla. Hoy suma <strong style={{ color: '#F0F0F5' }}>Predicciones</strong> y <strong style={{ color: '#F0F0F5' }}>Mundial</strong>; muy pronto, también los minijuegos.
+                  Reúne todos tus puntos en una sola tabla: <strong style={{ color: '#F0F0F5' }}>Predicciones</strong>, <strong style={{ color: '#F0F0F5' }}>Mundial</strong> y <strong style={{ color: '#F0F0F5' }}>minijuegos</strong>.
                 </p>
               </div>
               <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest flex-shrink-0 transition-opacity group-hover:opacity-80" style={{ color: '#93C5FD', fontFamily: 'var(--font-sport)' }}>

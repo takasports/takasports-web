@@ -77,7 +77,7 @@ export default function TimeAttackInfoModal({ open, accent, onConfirm, onClose }
           <ul className="mt-3 w-full flex flex-col gap-2 text-left">
             {[
               ['🏁', 'Ranking semanal propio, aparte del modo normal.'],
-              ['⭐', '+5 puntos extra a tu Liga Taka por jugar a reloj.'],
+              ['⭐', 'Tus aciertos siguen sumando a tu Liga Taka.'],
             ].map(([emoji, text]) => (
               <li key={text} className="flex items-start gap-2.5 rounded-xl px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)' }}>
                 <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1.4 }}>{emoji}</span>
