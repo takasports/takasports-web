@@ -11,7 +11,7 @@ import { addXp, xpForSopacracks } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
-import GameCoinsToast from '@/components/games/GameCoinsToast'
+import GamePointsToast from '@/components/games/GamePointsToast'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
 import TimeAttackInfoModal from '@/components/games/TimeAttackInfoModal'
 import { type Player } from '@/lib/players-catalog'
@@ -268,9 +268,9 @@ export default function SopaCracksPage() {
   const [showTaInfo, setShowTaInfo] = useState(false)
   // Clasificación del sidebar: semanal normal vs contrarreloj (periodo -TA).
   const [lbMode, setLbMode] = useState<'week' | 'ta'>('week')
-  // Monedas acreditadas al Ranked tras recordPlay (auto-dismiss 5s en
-  // GameCoinsToast; null = sin respuesta o sin coins por idempotencia/cap).
-  const [awardedCoins, setAwardedCoins] = useState<number | null>(null)
+  // Puntos acreditadas al Ranked tras recordPlay (auto-dismiss 5s en
+  // GamePointsToast; null = sin respuesta o sin puntos por idempotencia/cap).
+  const [awardedPoints, setAwardedPoints] = useState<number | null>(null)
 
   // Selección
   const [startCell, setStartCell] = useState<Cell | null>(null)
@@ -386,7 +386,7 @@ export default function SopaCracksPage() {
           timeAttack,
         },
         durationMs: seconds * 1000,
-      }).then(r => { if (r.awarded > 0) setAwardedCoins(r.awarded) })
+      }).then(r => { if (r.awarded > 0) setAwardedPoints(r.awarded) })
         .catch(() => { /* sin toast — el resto del flujo no se afecta */ })
       addXp('sopacracks', xpForSopacracks(foundCount) + (intruderFound ? INTRUDER_BONUS_PTS : 0))
       reportPlay('sopacracks', { score })
@@ -1132,10 +1132,10 @@ export default function SopaCracksPage() {
         onClose={() => setShowTaInfo(false)}
       />
 
-      <GameCoinsToast
-        awarded={awardedCoins}
+      <GamePointsToast
+        awarded={awardedPoints}
         accent="#6EE7B7"
-        onDismiss={() => setAwardedCoins(null)}
+        onDismiss={() => setAwardedPoints(null)}
       />
       </>
     </GameLayout>

@@ -24,7 +24,7 @@ interface Props {
   accent?: string
 }
 
-export default function GameCoinsToast({
+export default function GamePointsToast({
   awarded,
   onDismiss,
   accent = '#A78BFA',

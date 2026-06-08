@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────
-// Tarifa de monedas por juego (Ranked).
+// Tarifa de puntos por juego (Ranked).
 //
 // Se calcula en el server tras un record_game_play exitoso, y se
 // envía como p_amount al RPC award_game_coins (que tiene cap diario
@@ -8,14 +8,14 @@
 //
 // Empezamos solo con CrackQuiz para validar el patrón end-to-end.
 // Cuando funcione limpio en prod, expandimos a los otros juegos
-// añadiéndolos a COINS_ENABLED_GAMES + su rama en coinAmountFor().
+// añadiéndolos a POINTS_ENABLED_GAMES + su rama en pointsFor().
 // ─────────────────────────────────────────────────────────────────
 
 export type GameId = 'quiniela' | 'crackquiz' | 'mionce' | 'sopacracks' | 'takagrid' | 'strikerrush'
 
 // Whitelist. Quiniela tiene su propio camino (api/quiniela/score),
 // así que no entra aquí — su balance se sigue acreditando directo via add_coins.
-export const COINS_ENABLED_GAMES: ReadonlySet<GameId> = new Set<GameId>([
+export const POINTS_ENABLED_GAMES: ReadonlySet<GameId> = new Set<GameId>([
   'crackquiz',
   'mionce',
   'sopacracks',
@@ -30,12 +30,12 @@ export const COINS_ENABLED_GAMES: ReadonlySet<GameId> = new Set<GameId>([
  * @param payload  Payload completo del play (mismo que se envía a record_game_play).
  *                 Permite tarifas basadas en aciertos / combo, no solo score.
  */
-export function coinAmountFor(
+export function pointsFor(
   gameId: GameId,
   score: number,
   payload?: Record<string, unknown>,
 ): number {
-  if (!COINS_ENABLED_GAMES.has(gameId)) return 0
+  if (!POINTS_ENABLED_GAMES.has(gameId)) return 0
   if (!Number.isFinite(score) || score < 0) return 0
 
   if (gameId === 'crackquiz') {
@@ -44,7 +44,7 @@ export function coinAmountFor(
     //   · perf    = floor(score / 10)   → 0 a ~15
     //   · combo   = +5 si combo ≥ 5      → premia constancia, no suerte
     //   · perfecto = +10 si correct === total → bonus por 10/10
-    // Total típico: 8–25 monedas por partida.
+    // Total típico: 8–25 puntos por partida.
     const base = 5
     const perf = Math.floor(Math.max(0, score) / 10)
     const combo = Number(payload?.combo ?? 0) >= 5 ? 5 : 0
@@ -78,7 +78,7 @@ export function coinAmountFor(
     //   · perf       = floor(score / 10)   → 0–10
     //   · intruder   = +10 si encontró al jugador intruso del puzzle
     //   · timeAttack = +5 modo contrarreloj (más difícil)
-    // Total típico: 10–35 monedas/semana.
+    // Total típico: 10–35 puntos/semana.
     const base = 10
     const perf = Math.floor(Math.max(0, score) / 10)
     const intruder = payload?.intruder === true ? 10 : 0

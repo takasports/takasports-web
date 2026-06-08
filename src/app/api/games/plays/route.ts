@@ -5,16 +5,16 @@
 // Si Supabase no está configurado, devuelve { persisted: false } sin error
 // para preservar el modo invitado / dev local.
 //
-// Adicional (Bloque cross-game coins): tras un record_game_play OK, si el
-// juego está en COINS_ENABLED_GAMES, llamamos award_game_coins para
-// acreditar monedas al Ranked. La llamada va en try/catch — si la RPC
+// Adicional (Bloque cross-game puntos): tras un record_game_play OK, si el
+// juego está en POINTS_ENABLED_GAMES, llamamos award_game_coins para
+// acreditar puntos al Ranked. La llamada va en try/catch — si la RPC
 // no existe (migración 033 no aplicada) o falla, el play sigue
-// persistido y solo no se acreditan monedas (awarded: 0).
+// persistido y solo no se acreditan puntos (awarded: 0).
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
-import { COINS_ENABLED_GAMES, coinAmountFor, type GameId as CoinGameId } from '@/lib/game-coins'
+import { POINTS_ENABLED_GAMES, pointsFor, type GameId as PointsGameId } from '@/lib/game-points'
 
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
 type GameId = typeof GAME_IDS[number]
@@ -67,26 +67,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // ── Cross-game coins ──────────────────────────────────────────
+    // ── Cross-game puntos ──────────────────────────────────────────
     // Solo para juegos en la whitelist. Defensivo: si la RPC no existe
     // (migración 033 sin aplicar) o falla, devolvemos awarded:0 y el
     // play sigue persistido normalmente — la UI no se rompe.
     let awarded = 0
-    if (COINS_ENABLED_GAMES.has(body.game_id as CoinGameId)) {
-      const amount = coinAmountFor(body.game_id as CoinGameId, body.score, body.payload)
+    if (POINTS_ENABLED_GAMES.has(body.game_id as PointsGameId)) {
+      const amount = pointsFor(body.game_id as PointsGameId, body.score, body.payload)
       if (amount > 0) {
         try {
           const admin = adminSupabase()
           if (admin) {
-            const { data: credited, error: coinErr } = await admin.rpc('award_game_coins', {
+            const { data: credited, error: pointsErr } = await admin.rpc('award_game_coins', {
               p_game_id: body.game_id,
               p_amount:  amount,
               p_period:  body.period,
               p_user_id: user.id,
             })
-            if (!coinErr && typeof credited === 'number') awarded = credited
+            if (!pointsErr && typeof credited === 'number') awarded = credited
           }
-        } catch { /* RPC ausente o error transitorio — sin coins, todo lo demás OK */ }
+        } catch { /* RPC ausente o error transitorio — sin puntos, todo lo demás OK */ }
       }
     }
 

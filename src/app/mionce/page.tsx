@@ -17,7 +17,7 @@ import { collectPlayer } from '@/lib/album'
 import { saveLineup, SAVED_LINEUP_LIMIT, loadSavedLineups } from '@/lib/mionce-saved'
 import { useSearchParams, useRouter } from 'next/navigation'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
-import GameCoinsToast from '@/components/games/GameCoinsToast'
+import GamePointsToast from '@/components/games/GamePointsToast'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -774,9 +774,9 @@ export default function MiOncePage() {
   const [slots, setSlots] = useState<Record<string, string>>({})
   const [activeSlot, setActiveSlot] = useState<SlotDef | null>(null)
   const [shareToast, setShareToast] = useState<string | null>(null)
-  // Monedas acreditadas al Ranked tras recordPlay (auto-dismiss 5s en
-  // GameCoinsToast; null = sin respuesta o sin coins por idempotencia/cap).
-  const [awardedCoins, setAwardedCoins] = useState<number | null>(null)
+  // Puntos acreditadas al Ranked tras recordPlay (auto-dismiss 5s en
+  // GamePointsToast; null = sin respuesta o sin puntos por idempotencia/cap).
+  const [awardedPoints, setAwardedPoints] = useState<number | null>(null)
   // Anti-farmeo (ver loadScored): la última semana ya puntuada y la mejor marca.
   // Persisten en localStorage para sobrevivir a recargas y a quitar+poner.
   const scoredWeekRef = useRef<string | null>(null)
@@ -889,7 +889,7 @@ export default function MiOncePage() {
       // sola vez por semana ISO. Como prevFilledRef se reinicia a 0 en cada
       // montaje, sin este guard recargar con el once completo en localStorage —o
       // quitar y volver a poner un jugador— re-disparaba addXp/reportPlay. Los
-      // coins y el ranking ya eran idempotentes server-side; el daño era XP/
+      // puntos y el ranking ya eran idempotentes server-side; el daño era XP/
       // misión/racha, que sí inflaban la Liga Taka.
       const alreadyScored = scoredWeekRef.current === week.key
       const isNewBest = score > bestScoreRef.current
@@ -901,7 +901,7 @@ export default function MiOncePage() {
           period,
           score,
           payload: { formation, filled: filledCount, valid: validCount, tagged: isTagged, slots },
-        }).then(r => { if (r.awarded > 0) setAwardedCoins(r.awarded) })
+        }).then(r => { if (r.awarded > 0) setAwardedPoints(r.awarded) })
           .catch(() => { /* sin toast — el resto del flujo no se afecta */ })
         bestScoreRef.current = Math.max(bestScoreRef.current, score)
       }
@@ -1622,10 +1622,10 @@ export default function MiOncePage() {
         </div>
       )}
 
-      <GameCoinsToast
-        awarded={awardedCoins}
+      <GamePointsToast
+        awarded={awardedPoints}
         accent={ACCENT}
-        onDismiss={() => setAwardedCoins(null)}
+        onDismiss={() => setAwardedPoints(null)}
       />
       </GameLayout>
     </>
