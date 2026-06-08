@@ -9,9 +9,9 @@ import { CountryFlag } from '@/components/icons/GameIcons'
 import { searchPlayers, getPlayerById, type Player } from '@/lib/players-catalog'
 import {
   isValidAnswer,
+  getDailyPuzzle,
+  getValidAnswers,
   type CellCoord,
-  type GridPuzzle,
-  type DayKey,
 } from '@/lib/takagrid-puzzles'
 
 const ACCENT = '#FDBA74'
@@ -29,12 +29,16 @@ function emptyGrid(): CellState[][] {
 }
 
 interface Props {
-  puzzle: GridPuzzle
-  dayKey: DayKey
-  validAnswers: Player[][][]
+  /** Fecha YYYY-MM-DD ya validada en el servidor. El puzzle se computa aquí
+   *  (cliente) porque sus filas/cols llevan funciones `test` no serializables. */
+  fecha: string
 }
 
-export default function ArchivePuzzleClient({ puzzle, dayKey, validAnswers }: Props) {
+export default function ArchivePuzzleClient({ fecha }: Props) {
+  // Mismo puzzle determinista que el del día, regenerado desde la fecha.
+  // Mediodía UTC para que getTodayKey (hora Madrid) caiga en el día correcto.
+  const { puzzle, dayKey } = useMemo(() => getDailyPuzzle(new Date(fecha + 'T12:00:00Z')), [fecha])
+  const validAnswers = useMemo(() => getValidAnswers(puzzle), [puzzle])
   const [grid, setGrid] = useState<CellState[][]>(emptyGrid)
   const [activeCell, setActiveCell] = useState<CellCoord | null>(null)
   const [revealAll, setRevealAll] = useState(false)

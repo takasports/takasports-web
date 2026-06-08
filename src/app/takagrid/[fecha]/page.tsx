@@ -5,7 +5,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import GameLayout from '@/components/games/GameLayout'
-import { getDailyPuzzle, getValidAnswers } from '@/lib/takagrid-puzzles'
 import { SITE_URL } from '@/lib/constants'
 import ArchivePuzzleClient from './ArchivePuzzleClient'
 
@@ -36,11 +35,10 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function Page({ params }: PageProps) {
   const { fecha } = await params
-  const date = parseDayParam(fecha)
-  if (!date) notFound()
-
-  const { puzzle, dayKey } = getDailyPuzzle(date)
-  const validAnswers = getValidAnswers(puzzle)
+  // Validación server-side (formato + no futuro). El puzzle se computa en el
+  // cliente a partir de la fecha: el grid lleva funciones `test` en filas/cols,
+  // que NO se pueden serializar a través del límite servidor→cliente (RSC).
+  if (!parseDayParam(fecha)) notFound()
 
   return (
     <GameLayout accent="#FDBA74" accentDim="#F97316">
@@ -53,7 +51,7 @@ export default async function Page({ params }: PageProps) {
           ← Volver al TakaGrid de hoy
         </Link>
       </div>
-      <ArchivePuzzleClient puzzle={puzzle} dayKey={dayKey} validAnswers={validAnswers} />
+      <ArchivePuzzleClient fecha={fecha} />
     </GameLayout>
   )
 }

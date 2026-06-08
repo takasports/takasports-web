@@ -11,6 +11,7 @@ import { searchPlayers, fuzzySearchPlayers, getPlayerById, type Player } from '@
 import { getDailyPuzzle, isValidAnswer, getValidAnswers, type CellCoord, type GridPuzzle } from '@/lib/takagrid-puzzles'
 import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag } from '@/components/icons/GameIcons'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
+import { madridParts, madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { addXp, xpForTakagrid } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
@@ -25,6 +26,21 @@ const HARD_PREF_KEY = 'ts_takagrid_hard_mode'
 const ACCENT = '#FDBA74'
 const ACCENT_DIM = '#EA580C'
 const HINT_COLOR = '#FCD34D'
+
+// Últimas N fechas (YYYY-MM-DD, hora Madrid) para el archivo de puzzles.
+// Mediodía UTC como ancla → sin bordes de medianoche/DST al restar días.
+function recentArchiveDates(count = 7): string[] {
+  const t = madridParts()
+  const base = Date.UTC(t.year, t.month - 1, t.day, 12)
+  return Array.from({ length: count }, (_, i) => madridDayISO(new Date(base - (i + 1) * 86400000)))
+}
+
+function archiveDateLabel(iso: string, idx: number): string {
+  if (idx === 0) return 'Ayer'
+  const [y, m, d] = iso.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d, 12))
+  return new Intl.DateTimeFormat('es-ES', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Madrid' }).format(dt)
+}
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -1116,6 +1132,33 @@ export default function TakaGridPage() {
             </div>
           )}
         </div>
+
+        {/* Puzzles anteriores (archivo) — repaso libre, no cuenta para racha/ranking */}
+        {hydrated && (
+          <section className="mt-14 max-w-[560px] mx-auto w-full">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: ACCENT }} />
+              <h2 className="text-[10px] font-black uppercase tracking-widest" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+                Puzzles anteriores
+              </h2>
+            </div>
+            <p className="text-[11px] mb-3.5" style={{ color: 'var(--text-muted)' }}>
+              Repasa o entrena con los grids de días pasados. El archivo es libre: no cuenta para tu racha ni el ranking.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {recentArchiveDates(7).map((iso, i) => (
+                <Link
+                  key={iso}
+                  href={`/takagrid/${iso}`}
+                  className="text-[11px] font-black px-3 py-1.5 rounded-xl transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                  style={{ background: 'rgba(255,255,255,0.04)', color: '#C8C8D8', border: '1px solid rgba(255,255,255,0.07)', fontFamily: 'var(--font-sport)' }}
+                >
+                  {archiveDateLabel(iso, i)}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Search modal */}
