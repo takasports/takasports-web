@@ -1,7 +1,7 @@
 'use client'
 
 // Leaderboard unificado del sistema Ranked.
-// 4 pestañas: Global (todos los deportes) | Mundial | Fútbol | UFC (pronto)
+// 4 pestañas: Global (todos los deportes) | Mundial | Fútbol (pronto) | UFC
 // Consume /api/ranked/leaderboard?sport=<sport>
 
 import { useState, useEffect, useCallback } from 'react'
@@ -10,6 +10,7 @@ import { LeaderboardBadgesRow, LeaderboardTitleLine } from '@/components/badges/
 import type { LeaderboardBadge, LeaderboardEquipment } from '@/lib/leaderboard-badges'
 import { PlacaRowV3 } from '@/components/placa/PlacaRowV3'
 import { buildPlacaData, type ApiEquipment } from '@/components/placa/adapter'
+import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 
 type RankedSport = 'global' | 'mundial' | 'futbol' | 'ufc'
 
@@ -28,7 +29,7 @@ interface RankedEntry {
 const TABS: { id: RankedSport; label: string; emoji: string; accent: string; available: boolean }[] = [
   { id: 'global',  label: 'Global',        emoji: '⚡', accent: '#A78BFA', available: true },
   { id: 'mundial', label: 'Mundial 2026',  emoji: '🏆', accent: '#FBBF24', available: true },
-  { id: 'futbol',  label: 'Ranked Fútbol', emoji: '⚽', accent: '#4ADE80', available: true },
+  { id: 'futbol',  label: 'Ranked Fútbol', emoji: '⚽', accent: '#4ADE80', available: RANKED_FUTBOL_ENABLED },
   { id: 'ufc',     label: 'Ranked UFC',    emoji: '🥊', accent: '#F87171', available: true },
 ]
 
@@ -59,7 +60,9 @@ interface Props {
 
 export default function RankedLeaderboard({ activeSport }: Props) {
   const defaultTab: RankedSport = activeSport === 'mundial' ? 'mundial'
-    : activeSport === 'futbol' ? 'futbol'
+    // Solo abrir en Fútbol si la función está encendida; si no, Global
+    // (evita aterrizar en una pestaña deshabilitada con clasificación vacía).
+    : (activeSport === 'futbol' && RANKED_FUTBOL_ENABLED) ? 'futbol'
     : 'global'
 
   const [tab, setTab]           = useState<RankedSport>(defaultTab)
