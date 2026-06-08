@@ -4,16 +4,15 @@ import { useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 
 // ─────────────────────────────────────────────────────────────────
-// Stats personales del Ranked
+// Stats personales de Predicciones
 //
 // Lee /api/quiniela/stats (autenticado). Muestra:
-//   · ROI grande (verde positivo / rojo negativo / gris cero)
-//   · Total apostado vs ganado
-//   · Jornadas jugadas · % aciertos · racha actual
-//   · Mejor jornada (con # de coins ganados)
+//   · Puntos ganados (total acumulado en las jornadas jugadas)
+//   · % aciertos · racha · plenos
+//   · Mejor jornada (con puntos ganados)
 //
-// Si no hay auth o no hay datos todavía → renderiza nada (componente
-// silencioso, no estorba a usuarios nuevos).
+// Modelo SIN apuestas: nada de ROI/stake/neto (retirados en T5).
+// Si no hay auth o no hay datos todavía → renderiza nada.
 // ─────────────────────────────────────────────────────────────────
 
 interface QuinielaStats {
@@ -49,23 +48,7 @@ export function PersonalStatsPanel({ user }: { user: User | null }) {
   // Usuarios nuevos no ven una card vacía deprimente — primero juegan.
   if (!user || !stats || !stats.authed || stats.jornadasPlayed === 0) return null
 
-  const { roi, net, totalStaked, totalWon, jornadasPlayed, hitRate, currentStreak, bestJornada, plenos } = stats
-  // Color del ROI según signo
-  const roiColor = roi == null ? '#5A4878' : roi > 0 ? '#4ade80' : roi < 0 ? '#f87171' : '#9090A4'
-  const roiBg = roi == null
-    ? 'rgba(124,58,237,0.06)'
-    : roi > 0
-      ? 'rgba(34,197,94,0.08)'
-      : roi < 0
-        ? 'rgba(239,68,68,0.07)'
-        : 'rgba(144,144,164,0.06)'
-  const roiBorder = roi == null
-    ? '1px solid rgba(124,58,237,0.18)'
-    : roi > 0
-      ? '1px solid rgba(34,197,94,0.22)'
-      : roi < 0
-        ? '1px solid rgba(239,68,68,0.22)'
-        : '1px solid rgba(144,144,164,0.18)'
+  const { totalWon, jornadasPlayed, hitRate, currentStreak, bestJornada, plenos } = stats
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
@@ -78,29 +61,24 @@ export function PersonalStatsPanel({ user }: { user: User | null }) {
         </span>
       </div>
 
-      {/* ROI grande */}
+      {/* Puntos ganados */}
       <div className="px-4 pt-4 pb-3">
         <div
           className="rounded-xl px-4 py-3 flex flex-col items-center text-center"
-          style={{ background: roiBg, border: roiBorder }}
+          style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.18)' }}
         >
-          <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: roi == null ? '#5A4878' : '#5A7068', fontFamily: 'var(--font-sport)' }}>
-            ROI
+          <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>
+            Puntos ganados
           </span>
           <span
             className="font-black tabular-nums leading-none"
-            style={{ fontSize: 30, color: roiColor, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', marginTop: 4 }}
+            style={{ fontSize: 30, color: '#A78BFA', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', marginTop: 4 }}
           >
-            {roi == null ? '—' : roi > 0 ? `+${roi}%` : `${roi}%`}
+            {totalWon}
           </span>
           <span className="text-[10px] tabular-nums mt-1.5" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)' }}>
-            {totalStaked} pts apostado · {totalWon} pts ganado
+            en {jornadasPlayed} jornada{jornadasPlayed !== 1 ? 's' : ''}
           </span>
-          {net !== 0 && (
-            <span className="text-[9px] font-black tabular-nums mt-0.5" style={{ color: net > 0 ? '#4ade80' : '#f87171', fontFamily: 'var(--font-sport)' }}>
-              {net > 0 ? `+${net}` : net} pts neto
-            </span>
-          )}
         </div>
       </div>
 

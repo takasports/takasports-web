@@ -3,9 +3,9 @@
 // Ranking de jugadores. Tres modos:
 //
 // MODO RANKED + jornada (default) — Liga General de una jornada concreta:
-//   · Score = MONEDAS reales ganadas por el usuario en esa jornada.
-//   · Fuente: quiniela_picks.picks.breakdown.totalCoins.
-//   · Top N ordenado por monedas desc, desempate por hits desc.
+//   · Score = PUNTOS fijos ganados por el usuario en esa jornada.
+//   · Fuente: quiniela_picks.picks.totalWon (puntos fijos del settle).
+//   · Top N ordenado por puntos desc, desempate por hits desc.
 //
 // MODO TOURNAMENT — ranking acumulado a través de TODAS las jornadas
 // del torneo (e.g. Mundial 2026). Filtro por prefijo en la label
@@ -50,7 +50,7 @@ export interface LeaderboardEquipment {
 
 export interface LeaderboardEntry {
   nickname: string
-  score: number          // ranked: monedas | legacy: pickCount
+  score: number          // ranked: puntos | legacy: pickCount
   total: number          // ranked: hits  | legacy: 10 (placeholder)
   captainUsed: boolean
   isMe?: boolean
@@ -78,6 +78,10 @@ interface PickBreakdown {
 interface StoredPicks {
   picks?: unknown
   breakdown?: PickBreakdown
+  /** Puntos fijos acreditados a la Liga Taka en el settle (lo escribe
+   *  tanto el cliente como el cron). Sustituye al viejo breakdown.totalCoins
+   *  (monedas, retiradas en T5 → siempre 0). */
+  totalWon?: number
 }
 
 // Prefijo en la columna `jornada` que identifica al torneo.
@@ -121,7 +125,7 @@ export async function GET(req: NextRequest) {
         const b = stored.breakdown ?? {}
         const uid = r.user_id as string
         const prev = byUser.get(uid) ?? { coins: 0, jornadas: 0, hits: 0 }
-        prev.coins += b.totalCoins ?? 0
+        prev.coins += stored.totalWon ?? 0
         prev.hits += b.hits ?? 0
         prev.jornadas += 1
         byUser.set(uid, prev)
@@ -184,7 +188,7 @@ export async function GET(req: NextRequest) {
         const b = stored.breakdown ?? {}
         const uid = r.user_id as string
         const prev = byUser.get(uid) ?? { coins: 0, jornadas: 0, hits: 0 }
-        prev.coins += b.totalCoins ?? 0
+        prev.coins += stored.totalWon ?? 0
         prev.hits += b.hits ?? 0
         prev.jornadas += 1
         byUser.set(uid, prev)
@@ -249,7 +253,7 @@ export async function GET(req: NextRequest) {
           const uid = r.user_id as string
           return {
             nickname: nameById.get(uid) ?? `Jugador-${uid.slice(0, 6)}`,
-            score: b.totalCoins ?? 0,
+            score: stored.totalWon ?? 0,
             total: b.hits ?? 0,
             captainUsed: false,
             badges: badgesByUser.get(uid) ?? [],

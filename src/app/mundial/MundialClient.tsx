@@ -92,15 +92,26 @@ function shortName(name: string, max = 12): string {
 
 const DAYS_ES   = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MONTHS_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
-
-function toDateKey(iso: string): string { return iso.slice(0, 10) }
+// Fechas/horas en Europe/Madrid (no UTC). El agrupado por día (toDateKey) y
+// su etiqueta (toDateLabel) usan la MISMA zona → quedan coherentes.
+const WD_INDEX: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
+const MADRID_FMT = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Europe/Madrid', weekday: 'short', day: '2-digit', month: '2-digit',
+  year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+})
+function madridParts(iso: string) {
+  const parts = MADRID_FMT.formatToParts(new Date(iso))
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? ''
+  return { y: get('year'), mo: get('month'), d: get('day'), wd: WD_INDEX[get('weekday')] ?? 0, mon: Number(get('month')) - 1, hh: get('hour'), mm: get('minute') }
+}
+function toDateKey(iso: string): string { const p = madridParts(iso); return `${p.y}-${p.mo}-${p.d}` }
 function toDateLabel(iso: string): string {
-  const d = new Date(iso)
-  return `${DAYS_ES[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS_ES[d.getUTCMonth()]}`
+  const p = madridParts(iso)
+  return `${DAYS_ES[p.wd]} ${Number(p.d)} ${MONTHS_ES[p.mon]}`
 }
 function toTimeLabel(iso: string): string {
-  const d = new Date(iso)
-  return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')} UTC`
+  const p = madridParts(iso)
+  return `${p.hh}:${p.mm}`
 }
 
 /** Devuelve ms hasta el lock (1h antes del partido). Negativo si ya está bloqueado. */

@@ -34,6 +34,9 @@ export async function generateMetadata({
   return {
     title: `${headline} — ${jornada}`,
     description: 'Compite gratis en las Predicciones de TakaSports.',
+    // Páginas de "compartir resultado" (slug libre = thin content): noindex
+    // pero follow, para no contaminar el índice con casi-duplicados.
+    robots: { index: false, follow: true },
     // Self-canonical: sobrescribe el del layout padre que apunta a /predicciones
     alternates: { canonical: `${SITE_URL}/predicciones/resultado/${slug}` },
     openGraph: {

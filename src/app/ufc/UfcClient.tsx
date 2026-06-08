@@ -8,9 +8,9 @@
 // Lock: 30 min antes del fight
 // Featured = main event (doble puntos)
 //
-// Puntos:
-//   Ganador correcto:        2 pts normal / 4 pts featured
-//   Ganador + método:        3 pts normal / 6 pts featured
+// Puntos (escala migración 066):
+//   Ganador correcto:        1 pt normal  / 2 pts featured
+//   Ganador + método:        3 pts normal / 4 pts featured  (método = +2 plano)
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TakaPoint from '@/components/TakaPoint'
@@ -44,18 +44,29 @@ type PredMap = Record<string, UfcPredRow>
 
 type Method = 'KO' | 'SUB' | 'DEC'
 
-// ── Date helpers ──────────────────────────────────────────────────────────
+// ── Date helpers (Europe/Madrid, no UTC) ───────────────────────────────────
+// Antes se mostraba la hora en UTC ("21:00 UTC"), confuso para el usuario
+// español. Formateamos en la zona de Madrid, como el resto del ecosistema.
 
 const DAYS_ES   = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MONTHS_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
-
+const WD_INDEX: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
+const MADRID_FMT = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Europe/Madrid', weekday: 'short', day: '2-digit',
+  month: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+})
+function madridParts(iso: string) {
+  const parts = MADRID_FMT.formatToParts(new Date(iso))
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? ''
+  return { wd: WD_INDEX[get('weekday')] ?? 0, day: Number(get('day')), mon: Number(get('month')) - 1, hh: get('hour'), mm: get('minute') }
+}
 function toDateLabel(iso: string): string {
-  const d = new Date(iso)
-  return `${DAYS_ES[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS_ES[d.getUTCMonth()]}`
+  const p = madridParts(iso)
+  return `${DAYS_ES[p.wd]} ${p.day} ${MONTHS_ES[p.mon]}`
 }
 function toTimeLabel(iso: string): string {
-  const d = new Date(iso)
-  return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')} UTC`
+  const p = madridParts(iso)
+  return `${p.hh}:${p.mm}`
 }
 
 /** Devuelve ms hasta el lock (30 min antes del fight). Negativo si ya bloqueado. */
@@ -236,7 +247,7 @@ function MethodPicker({
           🎯 Método de victoria
         </span>
         <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontFamily: 'var(--font-sport)' }}>
-          +1 pt extra
+          +2 pts extra
         </span>
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
@@ -506,7 +517,7 @@ function FightCard({
               fontSize: 9, fontFamily: 'var(--font-sport)',
               color: 'rgba(248,113,113,0.7)', letterSpacing: '0.06em',
             }}>
-              Main event · Puntos x2 · +4 pts (o +6 con método)
+              Main event · Ganador x2 · +2 pts (o +4 con método)
             </span>
           </div>
         )}
@@ -567,7 +578,7 @@ function FightCard({
               fontSize: 9, color: 'rgba(248,113,113,0.45)',
               fontFamily: 'var(--font-sport)', letterSpacing: '0.06em',
             }}>
-              🎯 Elige al ganador para añadir también el método (+1 pt extra)
+              🎯 Elige al ganador para añadir también el método (+2 pts extra)
             </span>
           </div>
         </div>
@@ -732,7 +743,7 @@ export default function UfcClient() {
               maxWidth: 380,
               margin: '8px auto 0',
             }}>
-              Predice al ganador de cada combate. +1 pt extra si aciertas el método.
+              Predice al ganador de cada combate. +2 pts extra si aciertas el método.
               Main event vale el doble.
             </p>
           </div>
