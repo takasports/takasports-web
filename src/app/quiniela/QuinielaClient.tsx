@@ -18,7 +18,7 @@ import {
   computeStreak, isCorrect, computeNewBadges,
   getDivision, getPlayerAlias, setPlayerAlias,
 } from './lib/helpers'
-import { usePushSubscription, useCoins } from './lib/hooks'
+import { usePushSubscription } from './lib/hooks'
 import { usePoints } from '@/hooks/useGameState'
 import { PicksForm } from './components/picks/PicksForm'
 import { PicksSummary } from './components/picks/PicksSummary'
@@ -84,8 +84,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
   const [showAuthBanner, setShowAuthBanner] = useState(false)
   // S — Banner de onboarding cuando auto-creamos la primera liga del user.
   const [autoLeague, setAutoLeague] = useState<{ id: string; name: string } | null>(null)
-  const coins = useCoins(user)
-  const { points: pointsBalance, refresh: refreshPoints } = usePoints()
+  const { refresh: refreshPoints } = usePoints()
   const push = usePushSubscription()
 
   useEffect(() => {
@@ -398,8 +397,6 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                     saved={saved}
                     matches={apiMatches}
                     onReset={handleReset}
-                    onUpdateSaved={(s) => setSaved(s)}
-                    coins={coins}
                     onScore={async (correct, total, results) => {
                       setMyScore(correct)
                       setHistory(prev => {

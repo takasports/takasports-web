@@ -1,13 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { QUINIELA_PICKS_KEY } from '@/components/QuinielaModule'
 import type { QuinielaMatch, QuinielaSaved, Pick } from '@/components/QuinielaModule'
 import { nameMatch } from '@/lib/quiniela'
 import { LEAGUES_KEY } from '../../lib/constants'
 import type { League, MatchResult } from '../../lib/types'
 import { isCorrect } from '../../lib/helpers'
-import type { UseCoinsApi } from '../../lib/hooks'
 import { MatchCard } from '../match/MatchCard'
 import { ConsensusBar } from '../match/ConsensusBar'
 import { ResultToast } from '../match/ResultToast'
@@ -15,13 +13,11 @@ import { RevealCeremony } from './RevealCeremony'
 
 interface ServerMember { nickname: string; picks: Record<number, string> }
 
-export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, coins }: {
+export function PicksSummary({ saved, matches, onReset, onScore }: {
   saved: QuinielaSaved
   matches: QuinielaMatch[]
   onReset: () => void
   onScore?: (correct: number, total: number, results: MatchResult[]) => void
-  onUpdateSaved?: (s: QuinielaSaved) => void
-  coins: UseCoinsApi
 }) {
   const [confirmReset, setConfirmReset] = useState(false)
   const [results, setResults] = useState<MatchResult[]>([])
@@ -38,15 +34,6 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
     try { return typeof window !== 'undefined' && !!localStorage.getItem(REVEAL_KEY) } catch { return false }
   })
   const [showCeremony, setShowCeremony] = useState(false)
-
-  // ── Comodín ──────────────────────────────────────────────────────
-  const COMODIN_KEY = `ts_quiniela_comodin_${saved.jornada}`
-  const COMODIN_COST = 25
-  const [comodinUsed, setComodinUsed] = useState(() => {
-    try { return typeof window !== 'undefined' && !!localStorage.getItem(COMODIN_KEY) } catch { return false }
-  })
-  const [comodinTarget, setComodinTarget] = useState<number | null>(null)
-  const coinBalance = coins.balance
 
   useEffect(() => {
     // Load friend picks from first joined league
@@ -163,16 +150,6 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
     return revealed
   }
 
-  const handleComodinPick = (idx: number, newPick: Pick) => {
-    const newPicks = saved.picks.map((p, i) => i === idx ? { ...p, pick: newPick } : p)
-    const newSaved = { ...saved, picks: newPicks }
-    try { localStorage.setItem(QUINIELA_PICKS_KEY, JSON.stringify(newSaved)) } catch {}
-    onUpdateSaved?.(newSaved)
-    void coins.add(-COMODIN_COST, 'Comodín usado')
-    setComodinUsed(true)
-    setComodinTarget(null)
-    try { localStorage.setItem(COMODIN_KEY, '1') } catch {}
-  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -298,8 +275,6 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
         const cancelled = !!result?.cancelled
         const correct   = result && !cancelled ? isCorrect(p.pick as Pick, result.outcome) : false
         const visible   = isResultVisible(i)
-        const isComodinTarget = comodinTarget === i
-        const matchStarted = !!(matchData.isoDate && new Date(matchData.isoDate).getTime() < Date.now())
         const stake = p.stake ?? 0
 
         return (
@@ -309,18 +284,13 @@ export function PicksSummary({ saved, matches, onReset, onScore, onUpdateSaved, 
                 match={{ home: p.home, away: p.away, homeLogo: matchData.homeLogo, awayLogo: matchData.awayLogo, homeShort: matchData.homeShort, awayShort: matchData.awayShort }}
                 index={i}
                 pick={p.pick as Pick}
-                onPick={(newPick) => isComodinTarget && handleComodinPick(i, newPick)}
-                forceLocked={!isComodinTarget}
+                onPick={() => {}}
+                forceLocked
                 comp={matchData.comp}
                 time={matchData.time}
                 isoDate={matchData.isoDate}
                 odds={matchData.odds}
                 oddsSource={matchData.oddsSource}
-                comodinAvailable={!comodinUsed && !comodinTarget && matchStarted && !cancelled}
-                isComodinUnlocked={isComodinTarget}
-                onUseComodin={() => setComodinTarget(i)}
-                comodinCost={COMODIN_COST}
-                coinBalance={coinBalance}
                 liveScore={live && live.homeGoals != null ? { homeGoals: live.homeGoals, awayGoals: live.awayGoals, elapsed: live.elapsed, status: live.status } : undefined}
                 finalScore={visible && result && !cancelled ? { homeGoals: result.homeGoals, awayGoals: result.awayGoals } : undefined}
                 correct={visible && result && !cancelled ? correct : undefined}
