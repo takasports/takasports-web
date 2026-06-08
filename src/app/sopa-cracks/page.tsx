@@ -13,6 +13,7 @@ import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 import GameCoinsToast from '@/components/games/GameCoinsToast'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
+import TimeAttackInfoModal from '@/components/games/TimeAttackInfoModal'
 import { type Player } from '@/lib/players-catalog'
 import { PUZZLES, findPlayerForWord, moveCursor, type Puzzle } from '@/lib/sopa-puzzles'
 import { CountryFlag } from '@/components/icons/GameIcons'
@@ -263,6 +264,10 @@ export default function SopaCracksPage() {
   // 8.3 contrarreloj
   const [timeAttack, setTimeAttack] = useState(false)
   const [timeOver, setTimeOver] = useState(false)
+  // Modal explicativo que hace de puerta al activar el contrarreloj.
+  const [showTaInfo, setShowTaInfo] = useState(false)
+  // Clasificación del sidebar: semanal normal vs contrarreloj (periodo -TA).
+  const [lbMode, setLbMode] = useState<'week' | 'ta'>('week')
   // Monedas acreditadas al Ranked tras recordPlay (auto-dismiss 5s en
   // GameCoinsToast; null = sin respuesta o sin coins por idempotencia/cap).
   const [awardedCoins, setAwardedCoins] = useState<number | null>(null)
@@ -583,7 +588,15 @@ export default function SopaCracksPage() {
   const toggleTimeAttack = () => {
     // Sólo permitimos cambiar de modo antes de empezar o tras reiniciar
     if (running || roundDone) return
-    setTimeAttack(t => !t)
+    // Desactivar es directo; activar pasa por el modal explicativo.
+    if (timeAttack) setTimeAttack(false)
+    else setShowTaInfo(true)
+  }
+
+  const confirmTimeAttack = () => {
+    setShowTaInfo(false)
+    if (running || roundDone) return
+    setTimeAttack(true)
   }
 
   // ── Render ─────────────────────────────────────────────────
@@ -702,7 +715,7 @@ export default function SopaCracksPage() {
                     border: timeAttack ? `1px solid ${COLOR_INTRUDER}60` : '1px solid rgba(255,255,255,0.06)',
                     fontFamily: 'var(--font-sport)',
                   }}
-                  title="Modo contrarreloj: 3 minutos para encontrar el máximo de palabras"
+                  title={timeAttack ? 'Desactivar contrarreloj' : 'Modo contrarreloj: 3 minutos para encontrar el máximo de palabras (ver reglas)'}
                   aria-pressed={timeAttack}
                 >
                   {timeAttack ? '⚡ Contrarreloj 3:00' : '⚡ Contrarreloj'}
@@ -1034,17 +1047,50 @@ export default function SopaCracksPage() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="section-accent" />
-                  <h3 className="section-label">Clasificación semanal</h3>
+                  <h3 className="section-label">Clasificación</h3>
                 </div>
                 <Link
-                  href="/juegos/leaderboard/sopacracks"
+                  href={lbMode === 'ta' ? '/juegos/leaderboard/sopacracks?mode=ta' : '/juegos/leaderboard/sopacracks'}
                   className="text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-80"
-                  style={{ color: COLOR_ACCENT, fontFamily: 'var(--font-sport)' }}
+                  style={{ color: lbMode === 'ta' ? COLOR_INTRUDER : COLOR_ACCENT, fontFamily: 'var(--font-sport)' }}
                 >
                   Ver →
                 </Link>
               </div>
-              <MyPositionBanner gameId="sopacracks" period={currentWeekISO()} accent={COLOR_ACCENT} />
+              {/* Toggle semanal normal vs contrarreloj (rankings de periodo distinto: -TA) */}
+              <div className="flex gap-1.5 mb-3">
+                {([['week', 'Semanal', COLOR_ACCENT], ['ta', 'Contrarreloj', COLOR_INTRUDER]] as const).map(([mode, label, color]) => {
+                  const on = lbMode === mode
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => setLbMode(mode)}
+                      className="flex-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-lg transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                      style={{
+                        background: on ? `${color}20` : 'rgba(255,255,255,0.03)',
+                        color: on ? color : '#9090B0',
+                        border: on ? `1px solid ${color}50` : '1px solid rgba(255,255,255,0.06)',
+                        fontFamily: 'var(--font-sport)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+              <MyPositionBanner
+                gameId="sopacracks"
+                period={lbMode === 'ta' ? `${currentWeekISO()}-TA` : currentWeekISO()}
+                accent={lbMode === 'ta' ? COLOR_INTRUDER : COLOR_ACCENT}
+              />
+              <p className="text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>
+                {lbMode === 'ta'
+                  ? 'Ranking del modo contrarreloj, aparte del semanal normal.'
+                  : 'Ranking semanal del modo normal.'}
+              </p>
             </div>
 
             {/* Próximo puzzle */}
@@ -1078,6 +1124,13 @@ export default function SopaCracksPage() {
           } as GamePlay}
         />
       )}
+
+      <TimeAttackInfoModal
+        open={showTaInfo}
+        accent={COLOR_INTRUDER}
+        onConfirm={confirmTimeAttack}
+        onClose={() => setShowTaInfo(false)}
+      />
 
       <GameCoinsToast
         awarded={awardedCoins}

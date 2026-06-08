@@ -10,10 +10,15 @@ import type { GameId } from '@/lib/games-store'
 interface Props {
   gameId: GameId
   accent: string
+  /** Periodo explícito (ej. Sopa contrarreloj usa "YYYY-Www-TA"). Si se omite,
+   *  se usa el periodo actual estándar del juego. */
+  periodOverride?: string
+  title?: string
+  periodLabel?: string
 }
 
-export default function LeaderboardFull({ gameId, accent }: Props) {
-  const period = getGamePeriod(gameId).period
+export default function LeaderboardFull({ gameId, accent, periodOverride, title, periodLabel }: Props) {
+  const period = periodOverride ?? getGamePeriod(gameId).period
   return (
     <Leaderboard
       gameId={gameId}
@@ -21,8 +26,8 @@ export default function LeaderboardFull({ gameId, accent }: Props) {
       limit={100}
       accent={accent}
       refreshMs={30_000}
-      title="Top 100"
-      periodLabel={gameId === 'quiniela' && period ? 'Jornada actual' : undefined}
+      title={title ?? 'Top 100'}
+      periodLabel={periodLabel ?? (gameId === 'quiniela' && period ? 'Jornada actual' : undefined)}
     />
   )
 }
