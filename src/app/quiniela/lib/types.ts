@@ -14,8 +14,6 @@ export const BADGE_DEFS = [
 
 export type BadgeId = typeof BADGE_DEFS[number]['id']
 
-export interface CoinTxn { amount: number; reason: string; ts: number }
-
 export interface League {
   id: string
   name: string

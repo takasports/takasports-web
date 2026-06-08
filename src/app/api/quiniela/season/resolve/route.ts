@@ -1,7 +1,7 @@
 // POST /api/quiniela/season/resolve
 //
 // Resuelve una pregunta del torneo (campeón, bota de oro, etc.) y
-// acredita monedas a los acertantes. Restringido a admin (header
+// acredita PUNTOS Taka a los acertantes. Restringido a admin (header
 // X-Admin-Secret) — el cron-like endpoint que crea/resuelve preguntas
 // debe vivir aparte del flujo del user.
 //
@@ -14,7 +14,7 @@
 //   3. Marca question.resolved = winner.
 //   4. Lee todas las predictions de esa pregunta con answer=winner AND
 //      prize_credited=false (idempotencia).
-//   5. Para cada acertante: add_coins(prize_coins, reason, context).
+//   5. Para cada acertante: award_points(prize_coins/100, reason, context).
 //   6. Marca prize_credited=true en cada prediction acreditada.
 //   7. Si es del torneo Mundial Y todas las preguntas del tournament
 //      ya están resolved, scan badges: cada user con ≥3 aciertos
@@ -110,23 +110,28 @@ export async function POST(req: NextRequest) {
   if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 })
 
   const prize = q.prize_coins as number
+  // Modelo SIN monedas: el premio (prize_coins, escala vieja) se acredita como
+  // PUNTOS Taka en escala baja = /100, mínimo 1 (500/1000/1500 → 5/10/15).
+  const prizePoints = prize > 0 ? Math.max(1, Math.round(prize / 100)) : 0
   const reason = `Predicción acertada: ${q.question} → ${winnerOption.label}`
   let credited = 0
   let creditFailed = 0
 
-  // 5. Acreditar uno por uno usando add_coins con p_user_id (bypass auth.uid).
-  if (prize > 0 && winners && winners.length > 0) {
+  // 5. Acreditar PUNTOS uno por uno con p_user_id (bypass auth.uid).
+  if (prizePoints > 0 && winners && winners.length > 0) {
     for (const w of winners) {
-      const { error: insErr } = await admin.rpc('add_coins', {
-        p_amount: prize,
-        p_reason: reason,
-        p_context: {
-          source: 'season_question',
-          question_id: body.questionId,
-          tournament: q.tournament,
-          answer: body.winner,
-        },
+      const { error: insErr } = await admin.rpc('award_points', {
         p_user_id: w.user_id,
+        p_amount:  prizePoints,
+        p_sport:   'futbol',
+        p_source:  'quiniela_season',
+        p_reason:  reason,
+        p_context: {
+          question_id: body.questionId,
+          tournament:  q.tournament,
+          answer:      body.winner,
+          prize_coins: prize,
+        },
       })
       if (insErr) { creditFailed += 1; continue }
       // Marcar prize_credited
@@ -190,7 +195,8 @@ export async function POST(req: NextRequest) {
     ok: true,
     questionId: body.questionId,
     winner: body.winner,
-    prize,
+    prize,             // prize_coins crudo (config)
+    prizePoints,       // puntos realmente acreditados por acertante
     credited,
     creditFailed,
     badgesGranted,

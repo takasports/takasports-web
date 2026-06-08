@@ -2,7 +2,6 @@
 //
 // Endpoint agregador para el panel de Hitos del user logueado.
 // Devuelve en UNA sola request:
-//   · balance actual de monedas
 //   · XP lifetime + level + progreso al siguiente
 //   · lista de badges desbloqueados (con metadata del catálogo)
 //   · lista de badges aún por desbloquear (locked, del catálogo)
@@ -71,14 +70,6 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: 'auth required' }, { status: 401 })
   }
-
-  // Balance actual
-  const { data: balRow } = await sb
-    .from('quiniela_coin_balance')
-    .select('balance')
-    .eq('user_id', user.id)
-    .maybeSingle()
-  const balance = balRow?.balance ?? 0
 
   // Lifetime positivo en point_transactions (fuente universal de puntos Taka)
   const { data: ptRows } = await sb
@@ -160,7 +151,6 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    balance,
     xp,
     level: levelInfo.current.level,
     levelName: levelInfo.current.name,

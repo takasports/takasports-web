@@ -5,13 +5,17 @@
 //
 // Acciones:
 //   1. Verifica que existe completion sin claimed_at.
-//   2. Acredita coin_bonus vía add_coins (si > 0).
+//   2. Acredita el premio como PUNTOS Taka vía award_points (si > 0).
 //   3. Otorga el badge (awardBadges — idempotente).
-//   4. Marca claimed_at = now() y coins_awarded.
+//   4. Marca claimed_at = now() y coins_awarded (= puntos otorgados).
 //
 // Body: { badgeId: string, jornada: string }
 //
 // Respuesta: { ok, coinsAwarded, badgeId, badgeName, badgeEmoji }
+//
+// Modelo SIN monedas: el premio del reto (columna coin_bonus, escala
+// vieja de "monedas") se acredita como PUNTOS en escala baja = coin_bonus/10
+// (mín. 1) — antes iba a add_coins (moneda muerta) mientras la UI decía "pts".
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
@@ -72,19 +76,22 @@ export async function POST(req: NextRequest) {
   }
 
   const coinBonus = (spBadge.coin_bonus as number) ?? 0
+  // Escala baja: el coin_bonus (escala vieja) → puntos = /10, mínimo 1.
+  const points = coinBonus > 0 ? Math.max(1, Math.round(coinBonus / 10)) : 0
 
-  // 3. Acreditar coins si hay bonus
-  if (coinBonus > 0) {
-    const { error: creditErr } = await admin!.rpc('add_coins', {
-      p_amount: coinBonus,
-      p_reason: `Desafío completado: ${spBadge.name}`,
+  // 3. Acreditar PUNTOS Taka si hay premio
+  if (points > 0) {
+    const { error: creditErr } = await admin!.rpc('award_points', {
+      p_user_id: user.id,
+      p_amount:  points,
+      p_sport:   'futbol',
+      p_source:  'quiniela_challenge',
+      p_reason:  `Desafío completado: ${spBadge.name}`,
       p_context: {
-        source: 'challenge_claim',
-        badge_id: body.badgeId,
-        jornada: body.jornada,
+        badge_id:   body.badgeId,
+        jornada:    body.jornada,
         coin_bonus: coinBonus,
       },
-      p_user_id: user.id,
     })
     if (creditErr) {
       return NextResponse.json({ error: 'credit_failed', detail: creditErr.message }, { status: 500 })
@@ -98,17 +105,18 @@ export async function POST(req: NextRequest) {
     await awardBadges(admin2, user.id, [body.badgeId])
   }
 
-  // 5. Marcar como claimed
+  // 5. Marcar como claimed (coins_awarded conserva el nombre de columna pero
+  //    guarda los PUNTOS otorgados; lo mismo el campo coinsAwarded de la API).
   await sb
     .from('quiniela_challenge_completions')
-    .update({ claimed_at: new Date().toISOString(), coins_awarded: coinBonus })
+    .update({ claimed_at: new Date().toISOString(), coins_awarded: points })
     .eq('user_id', user.id)
     .eq('badge_id', body.badgeId)
     .eq('jornada', body.jornada)
 
   return NextResponse.json({
     ok: true,
-    coinsAwarded: coinBonus,
+    coinsAwarded: points,
     badgeId: body.badgeId,
     badgeName: spBadge.name as string,
     badgeEmoji: spBadge.emoji as string,

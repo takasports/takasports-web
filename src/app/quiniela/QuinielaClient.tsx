@@ -22,9 +22,9 @@ import { usePushSubscription } from './lib/hooks'
 import { usePoints } from '@/hooks/useGameState'
 import { PicksForm } from './components/picks/PicksForm'
 import { PicksSummary } from './components/picks/PicksSummary'
-// FeaturedGoalscorerCard retirado del UI (Z3): el partido destacado ahora
-// solo paga por tendencia (x2) y marcador exacto. El componente y endpoint
-// /api/quiniela/featured quedan en el repo por seguridad (data legacy).
+// FeaturedGoalscorerCard eliminado (modelo sin monedas): el partido
+// destacado se premia vía x2 en tendencia + bonus de marcador exacto.
+// El componente y el endpoint /api/quiniela/featured se retiraron.
 import { MyLeagues } from './components/leagues/MyLeagues'
 import { CreateLeagueModal } from './components/leagues/CreateLeagueModal'
 import { BadgesPanel } from './components/panels/BadgesPanel'
@@ -142,18 +142,15 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
       const nextUser = session?.user ?? null
       const prevUser = user
       setUser(nextUser)
-      // Si acaba de hacer login, migrar datos localStorage → Supabase
+      // Si acaba de hacer login, migrar badges localStorage → Supabase
+      // (el modo invitado ya no acumula "monedas" que migrar).
       if (nextUser && !prevUser) {
         try {
-          // Lee el balance local (legacy localStorage) y se lo manda al server
-          // para que migre como una sola transacción de monedas (audit RPC).
-          const raw = localStorage.getItem('ts_quiniela_coins')
-          const coinBal = raw ? parseInt(raw, 10) : 0
           const badgeList: string[] = JSON.parse(localStorage.getItem(BADGES_KEY) ?? '[]')
           fetch('/api/quiniela/migrate', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ coinBalance: coinBal, badges: badgeList }),
+            body: JSON.stringify({ badges: badgeList }),
           }).then(() => refreshPoints()).catch(() => {})
         } catch { /* ignore */ }
         setShowAuthBanner(false)

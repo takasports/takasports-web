@@ -9,13 +9,10 @@ export const PICK_BORDER: Record<Pick, string> = { '1': 'rgba(34,197,94,0.38)', 
 export const PICK_GLOW: Record<Pick, string>   = { '1': 'rgba(34,197,94,0.18)',  '1X': 'rgba(110,231,183,0.12)', X: 'rgba(245,158,11,0.18)',  'X2': 'rgba(251,146,60,0.12)', '2': 'rgba(239,68,68,0.18)' }
 
 // ─────────────────────────────────────────────────────────────────
-// Badge system / coins / streak / tutorial / leagues keys
+// Badge system / streak / tutorial / leagues keys
+// (El sistema de "monedas" se retiró por completo — todo es PUNTOS Taka.)
 // ─────────────────────────────────────────────────────────────────
 export const BADGES_KEY = 'ts_quiniela_badges'
-
-export const COINS_KEY     = 'ts_quiniela_coins'
-export const COINS_TXN_KEY = 'ts_quiniela_coins_txn'
-export const COINS_INITIAL = 100
 
 export const STREAK_KEY = 'ts_quiniela_streak'
 export const TUTORED_KEY = 'ts_quiniela_tutored'

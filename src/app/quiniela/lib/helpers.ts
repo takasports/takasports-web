@@ -46,10 +46,9 @@ export function isCorrect(pick: Pick, outcome: '1' | 'X' | '2'): boolean {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Sistema de monedas internas — vive en `useCoins` (./hooks).
 // (La función legacy computeCoinRewards fue eliminada en el rediseño
-// de scoring; ya no quedan callers. lib/quiniela.scorePicks es la
-// fuente única.)
+// de scoring; lib/quiniela.scorePicks es la fuente única. El sistema
+// de "monedas" se retiró por completo — todo es PUNTOS Taka.)
 // ─────────────────────────────────────────────────────────────────
 
 export function computeNewBadges(
