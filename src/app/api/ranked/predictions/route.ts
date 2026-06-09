@@ -300,3 +300,55 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ prediction }, { status: 201 })
 }
+
+// ── DELETE ──────────────────────────────────────────────────────────────────
+//   body: { event_id }
+//   Borra mi predicción para ese evento ("des-elegir" un pick). Solo si el
+//   evento sigue open y dentro de la ventana de picks (mismo lock que el POST:
+//   30 min UFC / 60 min fútbol). La RLS (rp_delete_own, migr. 073) ya limita
+//   a filas propias + eventos open; aquí añadimos el lock fino por tiempo.
+export async function DELETE(req: NextRequest) {
+  if (!hasEnv()) return NextResponse.json({ error: 'no_config' }, { status: 503 })
+
+  let body: { event_id?: string }
+  try {
+    body = await req.json() as { event_id?: string }
+  } catch {
+    return NextResponse.json({ error: 'invalid_json' }, { status: 400 })
+  }
+  if (!body?.event_id) return NextResponse.json({ error: 'invalid_body' }, { status: 400 })
+
+  const sb = await createServerSupabaseClient()
+  const { data: { user } } = await sb.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
+
+  const { data: event } = await sb
+    .from('ranked_events')
+    .select('id, status, sport, event_date')
+    .eq('id', body.event_id)
+    .single()
+  if (!event) return NextResponse.json({ error: 'event_not_found' }, { status: 404 })
+
+  const ev = event as { status: string; sport: string; event_date: string }
+  if (ev.status !== 'open') {
+    return NextResponse.json({ error: 'event_closed', status: ev.status }, { status: 409 })
+  }
+
+  const lockOffsetMs = ev.sport === 'ufc' ? UFC_LOCK_MS : 60 * 60 * 1000
+  const lockAt       = new Date(ev.event_date).getTime() - lockOffsetMs
+  if (Date.now() >= lockAt) {
+    return NextResponse.json(
+      { error: 'pick_locked', message: 'El combate ya está bloqueado; no puedes quitar el pick.' },
+      { status: 409 },
+    )
+  }
+
+  const { error } = await sb
+    .from('ranked_predictions')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('event_id', body.event_id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ ok: true, cleared: true }, { status: 200 })
+}

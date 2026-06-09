@@ -27,7 +27,7 @@ interface UfcEvent {
   featured:    boolean
   status:      'open' | 'closed' | 'resolved'
   result:      { winner: 'a' | 'b'; method: 'KO' | 'SUB' | 'DEC' | null } | null
-  meta:        { venue?: string; city?: string; espn_id?: string; ppv_id?: string } | null
+  meta:        { venue?: string; city?: string; espn_id?: string; ppv_id?: string; card_position?: number; card_total?: number } | null
 }
 
 interface UfcPredRow {
@@ -646,6 +646,104 @@ function FightCard({
   )
 }
 
+// ── HistorialSection ──────────────────────────────────────────────────────
+// Veladas ya disputadas. Colapsado por defecto para no estorbar la vista
+// principal (decisión del user). Cada fila: fecha · nombre · puntos del user.
+
+function HistorialSection({ veladas, predictions }: { veladas: Velada[]; predictions: PredMap }) {
+  const [open, setOpen] = useState(false)
+
+  const rows = veladas.map(v => {
+    let pts = 0, picks = 0
+    for (const f of v.fights) {
+      const p = predictions[f.id]
+      if (p) { picks++; pts += p.points_awarded ?? 0 }
+    }
+    return { v, pts, picks }
+  })
+  const totalPts = rows.reduce((a, r) => a + r.pts, 0)
+
+  return (
+    <div style={{ marginTop: 8, marginBottom: 24 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 8, padding: '12px 16px', borderRadius: 12,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          color: 'rgba(255,255,255,0.55)', cursor: 'pointer',
+          fontFamily: 'var(--font-sport)', fontSize: 11,
+          letterSpacing: '0.06em', textTransform: 'uppercase',
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          🗂 Historial
+          <span style={{ color: 'rgba(255,255,255,0.3)' }}>
+            {veladas.length} velada{veladas.length === 1 ? '' : 's'}
+          </span>
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {totalPts > 0 && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#A78BFA' }}>
+              <TakaPoint size={13} /> {totalPts}
+            </span>
+          )}
+          <span style={{ color: 'rgba(255,255,255,0.3)' }}>{open ? '▲' : '▼'}</span>
+        </span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {rows.map(({ v, pts, picks }) => (
+            <div
+              key={v.key}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 12, padding: '10px 14px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.05)',
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div style={{
+                  fontSize: 9, color: 'rgba(255,255,255,0.35)',
+                  fontFamily: 'var(--font-sport)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                }}>
+                  {toDateLabel(new Date(v.maxDate).toISOString())}
+                </div>
+                <div style={{
+                  fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 700,
+                  fontFamily: 'var(--font-sport)', whiteSpace: 'nowrap',
+                  overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60vw',
+                }}>
+                  {v.name}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                {picks > 0 ? (
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    fontFamily: 'var(--font-display)', fontWeight: 900,
+                    color: pts > 0 ? '#A78BFA' : 'rgba(255,255,255,0.4)', fontSize: 14,
+                  }}>
+                    <TakaPoint size={13} /> {pts}
+                  </div>
+                ) : (
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-sport)' }}>
+                    Sin picks
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── UfcClient (main) ──────────────────────────────────────────────────────
 
 export default function UfcClient() {
@@ -731,25 +829,81 @@ export default function UfcClient() {
     }
   }, [hasSession, load])
 
-  // ── Agrupar por PPV (competition) ────────────────────────────────────
-  const ppvGroups = useMemo(() => {
-    const map = new Map<string, UfcEvent[]>()
-    for (const ev of events) {
-      const key = ev.competition
-      if (!map.has(key)) map.set(key, [])
-      map.get(key)!.push(ev)
+  // ── Quitar pick (des-elegir) ─────────────────────────────────────────
+  const handleClear = useCallback(async (eventId: string) => {
+    if (!hasSession) return
+    setSubmitting(eventId)
+    try {
+      const res = await fetch('/api/ranked/predictions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_id: eventId }),
+      })
+      if (res.ok) {
+        setPredictions(prev => {
+          const next = { ...prev }
+          delete next[eventId]
+          return next
+        })
+      } else if (res.status === 409) {
+        void load()   // ya bloqueado/cerrado — refrescar estado
+      }
+    } finally {
+      setSubmitting(null)
     }
-    // Orden: primero upcoming/live, luego resolved
-    const sorted = Array.from(map.entries()).sort(([, aEvs], [, bEvs]) => {
-      const aDate = new Date(aEvs[0].event_date).getTime()
-      const bDate = new Date(bEvs[0].event_date).getTime()
-      const aResolved = aEvs.every(e => e.status === 'resolved')
-      const bResolved = bEvs.every(e => e.status === 'resolved')
-      if (aResolved !== bResolved) return aResolved ? 1 : -1
-      return aDate - bDate
-    })
-    return sorted
+  }, [hasSession, load])
+
+  // ── Velada actual + historial ────────────────────────────────────────
+  // El usuario solo quiere ver la PRÓXIMA velada (cartel completo). Las ya
+  // disputadas van a un historial aparte. Agrupamos por evento ESPN (ppv_id):
+  // antes se agrupaba por nombre y todas las "UFC Fight Night" se fundían.
+  const { currentEvent, pastEvents } = useMemo(() => {
+    const groups = new Map<string, UfcEvent[]>()
+    for (const ev of events) {
+      const key = ev.meta?.ppv_id ?? ev.competition
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key)!.push(ev)
+    }
+
+    const list: Velada[] = []
+    for (const [key, fights] of groups) {
+      const dates = fights.map(f => new Date(f.event_date).getTime())
+      list.push({
+        key,
+        name: fights[0].competition,
+        fights,
+        minDate: Math.min(...dates),
+        maxDate: Math.max(...dates),
+        allResolved: fights.every(f => f.status === 'resolved'),
+      })
+    }
+
+    const now   = Date.now()
+    const GRACE = 24 * 60 * 60 * 1000   // margen tras el último combate
+
+    // Actual = velada más próxima que aún no ha terminado del todo.
+    const current = list
+      .filter(v => !v.allResolved && v.maxDate >= now - GRACE)
+      .sort((a, b) => a.minDate - b.minDate)[0] ?? null
+
+    // Pasadas = resueltas o ya disputadas (≠ actual), recientes primero.
+    const past = list
+      .filter(v => v !== current && (v.allResolved || v.maxDate < now - GRACE))
+      .sort((a, b) => b.maxDate - a.maxDate)
+
+    return { currentEvent: current, pastEvents: past }
   }, [events])
+
+  // Combates de la velada actual en orden de cartel (estelar arriba).
+  const cardFights = useMemo(() => {
+    if (!currentEvent) return []
+    return [...currentEvent.fights].sort((a, b) => {
+      const pa = a.meta?.card_position ?? (a.featured ? 0 : 999)
+      const pb = b.meta?.card_position ?? (b.featured ? 0 : 999)
+      if (pa !== pb) return pa - pb
+      return new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+    })
+  }, [currentEvent])
 
   const totalPredicted = Object.keys(predictions).length
   const totalPoints = Object.values(predictions)
@@ -896,8 +1050,8 @@ export default function UfcClient() {
           </div>
         )}
 
-        {/* Sin events */}
-        {!loading && !error && events.length === 0 && (
+        {/* Sin velada próxima */}
+        {!loading && !error && !currentEvent && (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>🥊</span>
             <h2 style={{
@@ -912,92 +1066,74 @@ export default function UfcClient() {
           </div>
         )}
 
-        {/* Grupos PPV */}
-        {ppvGroups.map(([ppvName, fights], gi) => {
-          const allResolved = fights.every(f => f.status === 'resolved')
-          const hasLive     = fights.some(f => f.status === 'closed')
-
+        {/* ── Velada actual — cartel completo (estelar arriba) ─────── */}
+        {currentEvent && (() => {
+          const hasLive = currentEvent.fights.some(f => f.status === 'closed')
           return (
-            <div
-              key={ppvName}
-              className="u-group"
-              style={{
-                marginBottom: 40,
-                animationDelay: `${gi * 0.08}s`,
-              }}
-            >
-              {/* PPV header */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                marginBottom: 16,
-              }}>
+            <div className="u-group" style={{ marginBottom: 40 }}>
+              {/* Cabecera de la velada */}
+              <div style={{ textAlign: 'center', marginBottom: 22 }}>
                 <div style={{
-                  height: 1, flex: 1,
-                  background: 'linear-gradient(to right, rgba(248,113,113,0.3), transparent)',
-                }} />
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '4px 14px', borderRadius: 20,
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  padding: '5px 16px', borderRadius: 20, marginBottom: 12,
                   background: 'rgba(248,113,113,0.08)',
                   border: '1px solid rgba(248,113,113,0.2)',
                 }}>
                   <span style={{ fontSize: 12 }}>🥊</span>
                   <span style={{
-                    fontFamily: 'var(--font-sport)', fontSize: 10,
-                    fontWeight: 900, color: RED,
-                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                    fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
+                    color: RED, letterSpacing: '0.1em', textTransform: 'uppercase',
                   }}>
-                    {ppvName}
+                    {hasLive ? 'En vivo' : 'Próxima velada'}
                   </span>
                   {hasLive && (
-                    <span
-                      className="u-live"
-                      style={{
-                        width: 6, height: 6, borderRadius: '50%',
-                        background: '#EF4444',
-                        boxShadow: '0 0 6px #EF4444',
-                        display: 'inline-block',
-                      }}
-                    />
-                  )}
-                  {allResolved && (
-                    <span style={{
-                      fontSize: 8, color: 'rgba(255,255,255,0.3)',
-                      fontFamily: 'var(--font-sport)', letterSpacing: '0.08em',
-                    }}>
-                      FINALIZADO
-                    </span>
+                    <span className="u-live" style={{
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: '#EF4444', boxShadow: '0 0 6px #EF4444',
+                      display: 'inline-block',
+                    }} />
                   )}
                 </div>
+                <h2 style={{
+                  fontFamily: 'var(--font-display)', fontSize: 'clamp(1.3rem, 3vw, 2rem)',
+                  fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1,
+                }}>
+                  {currentEvent.name}
+                </h2>
                 <div style={{
-                  height: 1, flex: 1,
-                  background: 'linear-gradient(to left, rgba(248,113,113,0.3), transparent)',
-                }} />
+                  marginTop: 6, fontSize: 11, color: 'rgba(255,255,255,0.4)',
+                  fontFamily: 'var(--font-sport)', letterSpacing: '0.06em', textTransform: 'uppercase',
+                }}>
+                  {toDateLabel(new Date(currentEvent.minDate).toISOString())} · {cardFights.length} combate{cardFights.length === 1 ? '' : 's'}
+                </div>
               </div>
 
-              {/* Fight cards */}
+              {/* Cartel completo */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
                 gap: 16,
               }}>
-                {fights
-                  // Main event primero
-                  .sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
-                  .map((fight, fi) => (
-                    <div key={fight.id} style={{ position: 'relative', animationDelay: `${fi * 0.06}s` }}>
-                      <FightCard
-                        event={fight}
-                        prediction={predictions[fight.id]}
-                        submitting={submitting}
-                        onPick={handlePick}
-                      />
-                    </div>
-                  ))}
+                {cardFights.map((fight, fi) => (
+                  <div key={fight.id} style={{ position: 'relative', animationDelay: `${fi * 0.06}s` }}>
+                    <FightCard
+                      event={fight}
+                      prediction={predictions[fight.id]}
+                      submitting={submitting}
+                      onPick={handlePick}
+                      onClear={handleClear}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           )
-        })}
+        })()}
+
+        {/* ── Historial — colapsable, sin estorbar ─────────────────── */}
+        {pastEvents.length > 0 && (
+          <HistorialSection veladas={pastEvents} predictions={predictions} />
+        )}
       </div>
     </>
   )

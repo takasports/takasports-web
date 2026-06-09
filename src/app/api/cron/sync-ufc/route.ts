@@ -101,6 +101,15 @@ function toUfcWinner(
   return null
 }
 
+/**
+ * ESPN usa "TBA" / "Opponent TBA" / "TBD" para combates aún sin rival
+ * confirmado (veladas lejanas con el cartel a medio cerrar). No los guardamos:
+ * no se puede predecir un combate sin luchadores.
+ */
+function isPlaceholderFighter(name: string): boolean {
+  return /\b(tba|tbd)\b/i.test(name) || /to be announced/i.test(name)
+}
+
 async function handle(req: Request) {
   if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
@@ -132,26 +141,21 @@ async function handle(req: Request) {
   const resolvedIds = new Set((resolvedRows ?? []).map((r: { id: string }) => r.id))
 
   for (const ppv of ppvEvents) {
-    const ppvName = ppv.shortName ?? ppv.name
+    // Nombre COMPLETO de la velada (p.ej. "UFC Fight Night: Kape vs. Horiguchi").
+    // Antes se usaba shortName ("UFC Fight Night"), idéntico para TODAS las
+    // veladas Fight Night → la UI las fusionaba en un único bloque gigante.
+    const ppvName = ppv.name ?? ppv.shortName ?? 'UFC'
     const fights = ppv.competitions ?? []
 
-    // Featured: main event = el fight con order=1, o el último si no hay order.
-    // ESPN ordena las competitions desde main event hacia abajo (order=1 primero).
-    const mainEventFightIds = new Set<string>()
-    for (const f of fights) {
-      const minOrder = Math.min(...fights.map(x =>
-        Math.min(x.competitors?.[0]?.order ?? 99, x.competitors?.[1]?.order ?? 99),
-      ))
-      const fightOrder = Math.min(
-        f.competitors?.[0]?.order ?? 99,
-        f.competitors?.[1]?.order ?? 99,
-      )
-      if (fightOrder === minOrder && Number.isFinite(minOrder)) {
-        mainEventFightIds.add(f.id ?? '')
-      }
-    }
+    // ESPN devuelve las competitions en orden de cartel inverso: preliminares
+    // primero y combate estelar al FINAL. competitor.order es solo la esquina
+    // (1/2) dentro del combate, NO la posición en el cartel — por eso la
+    // detección anterior marcaba todos como featured. El estelar real es el
+    // último combate del array.
+    const lastIdx = fights.length - 1
 
-    for (const fight of fights) {
+    for (let idx = 0; idx < fights.length; idx++) {
+      const fight = fights[idx]
       const competitors = fight.competitors ?? []
       const fighterA = competitors[0]
       const fighterB = competitors[1]
@@ -160,6 +164,8 @@ async function handle(req: Request) {
       const nameA = fighterA.athlete?.displayName ?? fighterA.team?.displayName ?? ''
       const nameB = fighterB.athlete?.displayName ?? fighterB.team?.displayName ?? ''
       if (!nameA || !nameB) continue
+      // Combates aún sin rival cerrado: no se pueden predecir, los saltamos.
+      if (isPlaceholderFighter(nameA) || isPlaceholderFighter(nameB)) continue
 
       const statusName = fight.status?.type?.name ?? ''
       const statusState = fight.status?.type?.state ?? ''
@@ -189,14 +195,17 @@ async function handle(req: Request) {
         // debe leer fighter_a/fighter_b cuando sport='ufc'.
         team_home:   null,
         team_away:   null,
-        featured:    mainEventFightIds.has(fight.id ?? ''),
+        featured:    idx === lastIdx,   // estelar = último combate del cartel
         status,
         result,
         meta: {
-          venue:   fight.venue?.fullName ?? null,
-          city:    fight.venue?.address?.city ?? null,
-          espn_id: fight.id ?? null,
-          ppv_id:  ppv.id,
+          venue:         fight.venue?.fullName ?? null,
+          city:          fight.venue?.address?.city ?? null,
+          espn_id:       fight.id ?? null,
+          ppv_id:        ppv.id,
+          // Posición en el cartel: 1 = estelar, 2 = coestelar … (mayor = preliminar).
+          card_position: fights.length - idx,
+          card_total:    fights.length,
         },
       }
 
