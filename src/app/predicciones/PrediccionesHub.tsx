@@ -10,7 +10,7 @@
 // renderiza su cliente correspondiente (QuinielaClient para fútbol,
 // placeholders para el resto).
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, type KeyboardEvent } from 'react'
 import dynamic from 'next/dynamic'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
@@ -89,6 +89,13 @@ const SPORTS: {
   },
 ]
 
+// Tabs del hub (todas disponibles)
+const HUB_TABS: { id: HubTab; label: string }[] = [
+  { id: 'ranked',    label: 'Ranked' },
+  { id: 'creadores', label: 'Ligas Creadores' },
+  { id: 'privadas',  label: 'Ligas Privadas' },
+]
+
 // Mundial es la tab por defecto cuando está disponible
 
 // ── Componente principal ─────────────────────────────────────────────
@@ -97,6 +104,39 @@ export default function PrediccionesHub() {
   const [sportTab, setSportTab] = useState<SportTab>('mundial')
   const { streak }              = useStreak()
   const { points }              = usePoints()
+
+  // Navegación por teclado del tablist del hub (WAI-ARIA): flechas/Home/End
+  // ciclan entre las 3 secciones y trasladan el foco a la recién activada.
+  function onHubKeyDown(e: KeyboardEvent<HTMLButtonElement>, idx: number) {
+    let next = -1
+    if (e.key === 'ArrowRight') next = (idx + 1) % HUB_TABS.length
+    else if (e.key === 'ArrowLeft') next = (idx - 1 + HUB_TABS.length) % HUB_TABS.length
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = HUB_TABS.length - 1
+    else return
+    e.preventDefault()
+    const t = HUB_TABS[next]
+    setHubTab(t.id)
+    if (typeof document !== 'undefined') document.getElementById(`hubtab-${t.id}`)?.focus()
+  }
+
+  // Selector de deporte: navegación SOLO entre deportes disponibles (salta
+  // los marcados 'Pronto', igual que RankedLeaderboard).
+  function onSportKeyDown(e: KeyboardEvent<HTMLButtonElement>, idx: number) {
+    const avail = SPORTS.map((s, i) => ({ s, i })).filter(x => x.s.available)
+    const pos = avail.findIndex(x => x.i === idx)
+    if (pos === -1) return
+    let nextPos = -1
+    if (e.key === 'ArrowRight') nextPos = (pos + 1) % avail.length
+    else if (e.key === 'ArrowLeft') nextPos = (pos - 1 + avail.length) % avail.length
+    else if (e.key === 'Home') nextPos = 0
+    else if (e.key === 'End') nextPos = avail.length - 1
+    else return
+    e.preventDefault()
+    const target = avail[nextPos].s
+    setSportTab(target.id)
+    if (typeof document !== 'undefined') document.getElementById(`sporttab-${target.id}`)?.focus()
+  }
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
@@ -115,50 +155,63 @@ export default function PrediccionesHub() {
         style={{ background: 'var(--bg-base)', borderColor: 'rgba(255,255,255,0.06)' }}
       >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10">
-          <div className="flex gap-0 overflow-x-auto scrollbar-none">
-            {(
-              [
-                { id: 'ranked' as HubTab,    label: 'Ranked' },
-                { id: 'creadores' as HubTab, label: 'Ligas Creadores' },
-                { id: 'privadas' as HubTab,  label: 'Ligas Privadas' },
-              ] as const
-            ).map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setHubTab(tab.id)}
-                className="relative flex-shrink-0 px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-colors"
-                style={{
-                  color: hubTab === tab.id ? '#F0F0F8' : 'var(--text-muted)',
-                  fontFamily: 'var(--font-sport)',
-                  borderBottom: hubTab === tab.id
-                    ? '2px solid var(--accent)'
-                    : '2px solid transparent',
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div className="flex gap-0 overflow-x-auto scrollbar-none" role="tablist" aria-label="Secciones de predicciones">
+            {HUB_TABS.map((tab, idx) => {
+              const on = hubTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  id={`hubtab-${tab.id}`}
+                  role="tab"
+                  aria-selected={on}
+                  aria-controls="hubpanel"
+                  tabIndex={on ? 0 : -1}
+                  onClick={() => setHubTab(tab.id)}
+                  onKeyDown={e => onHubKeyDown(e, idx)}
+                  className="relative flex-shrink-0 px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-inset"
+                  style={{
+                    color: on ? '#F0F0F8' : 'var(--text-muted)',
+                    fontFamily: 'var(--font-sport)',
+                    borderBottom: on
+                      ? '2px solid var(--accent)'
+                      : '2px solid transparent',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
 
-      {/* ── Contenido ─────────────────────────────────────────────── */}
+      {/* ── Contenido (tabpanel del hub) ──────────────────────────── */}
+      <div role="tabpanel" id="hubpanel" aria-labelledby={`hubtab-${hubTab}`} tabIndex={0} className="focus-visible:outline-none">
       {hubTab === 'ranked' && (
         <>
           {/* Sport selector */}
           <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pt-4 pb-2">
-            <div className="flex gap-2 overflow-x-auto scrollbar-none">
-              {SPORTS.map(sport => (
+            <div className="flex gap-2 overflow-x-auto scrollbar-none" role="tablist" aria-label="Deporte">
+              {SPORTS.map((sport, idx) => {
+                const on = sportTab === sport.id && sport.available
+                return (
                 <button
                   key={sport.id}
+                  id={`sporttab-${sport.id}`}
+                  role="tab"
+                  aria-selected={on}
+                  aria-controls="sportpanel"
+                  aria-disabled={!sport.available || undefined}
+                  tabIndex={sportTab === sport.id ? 0 : -1}
                   onClick={() => sport.available && setSportTab(sport.id)}
-                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all"
+                  onKeyDown={e => onSportKeyDown(e, idx)}
+                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                   style={{
-                    background: sportTab === sport.id && sport.available
+                    background: on
                       ? `${sport.accent}18`
                       : 'rgba(255,255,255,0.03)',
                     border: `1.5px solid ${
-                      sportTab === sport.id && sport.available
+                      on
                         ? `${sport.accent}50`
                         : 'rgba(255,255,255,0.06)'
                     }`,
@@ -170,7 +223,7 @@ export default function PrediccionesHub() {
                     opacity: sport.available ? 1 : 0.6,
                   }}
                 >
-                  <span>{sport.emoji}</span>
+                  <span aria-hidden="true">{sport.emoji}</span>
                   <span>{sport.label}</span>
                   {sport.badge && (
                     <span
@@ -185,7 +238,8 @@ export default function PrediccionesHub() {
                     </span>
                   )}
                 </button>
-              ))}
+                )
+              })}
             </div>
           </div>
 
@@ -263,7 +317,8 @@ export default function PrediccionesHub() {
             </div>
           )}
 
-          {/* Sport content */}
+          {/* Sport content (tabpanel del selector de deporte) */}
+          <div role="tabpanel" id="sportpanel" aria-labelledby={`sporttab-${sportTab}`} tabIndex={0} className="focus-visible:outline-none">
           {/* Ranked Fútbol — actualmente "Pronto". Para reactivar: cambiar
               available:true en SPORTS arriba y dejar este render activo. */}
           {sportTab === 'futbol' && (
@@ -274,11 +329,13 @@ export default function PrediccionesHub() {
           {sportTab === 'ufc'    && <UfcClient />}
           {sportTab === 'mundial' && <MundialClient />}
           <RankedLeaderboard activeSport={sportTab} />
+          </div>
         </>
       )}
 
       {hubTab === 'creadores' && <CreadoresClient />}
       {hubTab === 'privadas'  && <PrivadasClient />}
+      </div>
 
       <NewsletterSection source="predicciones" />
       <Footer />

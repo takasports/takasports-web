@@ -44,6 +44,16 @@ type PredMap = Record<string, UfcPredRow>
 
 type Method = 'KO' | 'SUB' | 'DEC'
 
+/** Una velada UFC = todos los combates de un mismo evento ESPN. */
+interface Velada {
+  key:         string
+  name:        string
+  fights:      UfcEvent[]
+  minDate:     number
+  maxDate:     number
+  allResolved: boolean
+}
+
 // ── Date helpers (Europe/Madrid, no UTC) ───────────────────────────────────
 // Antes se mostraba la hora en UTC ("21:00 UTC"), confuso para el usuario
 // español. Formateamos en la zona de Madrid, como el resto del ecosistema.
@@ -181,6 +191,8 @@ function FighterPickButton({
       className="fight-pick-btn"
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={active}
+      aria-label={`${name}, ${side === 'a' ? 'luchador A' : 'luchador B'}${correct ? ', acertaste' : wrong ? ', fallaste' : active ? ', elegido' : ''}`}
       style={{
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -215,7 +227,7 @@ function FighterPickButton({
         textTransform: 'uppercase',
         color: active || correct ? color : 'rgba(255,255,255,0.2)',
       }}>
-        {correct ? '✓ CORRECTO' : active ? '✓ ELEGIDO' : 'GANA'}
+        {correct ? '✓ CORRECTO' : wrong ? '✗ FALLADO' : active ? '✓ ELEGIDO' : 'GANA'}
       </span>
     </button>
   )
@@ -277,6 +289,8 @@ function MethodPicker({
               key={m.id}
               onClick={() => !disabled && onChange(isActive ? null : m.id)}
               disabled={disabled}
+              aria-pressed={isActive}
+              aria-label={`Método ${m.label} (${m.sublabel})${isCorrect ? ', acertaste' : isWrong ? ', fallaste' : isActive ? ', elegido' : ''}`}
               style={{
                 flex: 1, padding: '8px 4px',
                 borderRadius: 10, border: `1px solid ${border}`,
@@ -295,6 +309,7 @@ function MethodPicker({
                 {m.sublabel}
               </span>
               {isCorrect && <span style={{ fontSize: 7, color: '#4ADE80' }}>✓ HIT</span>}
+              {isWrong && <span style={{ fontSize: 7, color: 'rgba(239,68,68,0.6)' }}>✗ FALLO</span>}
               {isReal && !isActive && <span style={{ fontSize: 7, color: 'rgba(74,222,128,0.55)' }}>← real</span>}
             </button>
           )
@@ -303,6 +318,7 @@ function MethodPicker({
         {value !== null && !disabled && (
           <button
             onClick={() => onChange(null)}
+            aria-label="Quitar método elegido"
             style={{
               padding: '8px 6px', borderRadius: 10,
               border: '1px solid rgba(255,255,255,0.06)',
@@ -329,11 +345,13 @@ function FightCard({
   prediction,
   submitting,
   onPick,
+  onClear,
 }: {
   event:      UfcEvent
   prediction: UfcPredRow | undefined
   submitting: string | null
   onPick:     (eventId: string, pick: 'a' | 'b', method: Method | null) => void
+  onClear:    (eventId: string) => void
 }) {
   const now   = Date.now()
   const lockMs = msUntilLock(event.event_date)
@@ -373,8 +391,18 @@ function FightCard({
   const pointsAwarded = prediction?.points_awarded
   const isCorrect     = prediction?.is_correct
 
-  function handlePickA() { if (!isDisabled) onPick(event.id, 'a', localMethod) }
-  function handlePickB() { if (!isDisabled) onPick(event.id, 'b', localMethod) }
+  // Re-pulsar el luchador ya elegido = quitar el pick (toggle off). Antes solo
+  // se podía cambiar de luchador, nunca des-elegir.
+  function handlePickA() {
+    if (isDisabled) return
+    if (isA) { onClear(event.id); return }
+    onPick(event.id, 'a', localMethod)
+  }
+  function handlePickB() {
+    if (isDisabled) return
+    if (isB) { onClear(event.id); return }
+    onPick(event.id, 'b', localMethod)
+  }
 
   function handleMethodChange(m: Method | null) {
     setLocalMethod(m)
@@ -501,6 +529,26 @@ function FightCard({
             onClick={handlePickB}
           />
         </div>
+
+        {/* Quitar pick — fix del "no me deja des-clickear" */}
+        {myPick && isOpen && !isLocked && !isResolved && (
+          <button
+            onClick={() => onClear(event.id)}
+            disabled={isDisabled}
+            aria-label="Quitar mi pick de este combate"
+            style={{
+              marginTop: 10, width: '100%', padding: '7px 10px',
+              borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.03)',
+              color: 'rgba(255,255,255,0.45)',
+              cursor: isDisabled ? 'default' : 'pointer',
+              fontFamily: 'var(--font-sport)', fontSize: 9,
+              fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+            }}
+          >
+            ✕ Quitar pick
+          </button>
+        )}
 
         {/* Featured points hint */}
         {event.featured && !isResolved && (

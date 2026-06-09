@@ -233,6 +233,8 @@ function PickButton({
       className="pick-btn"
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={active}
+      aria-label={`${label}${correct ? ', acertaste' : wrong ? ', fallaste' : active ? ', elegido' : ''}`}
       style={{
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 5,
@@ -246,7 +248,7 @@ function PickButton({
       }}
     >
       {/* Flag */}
-      <span style={{ fontSize: 22, lineHeight: 1, opacity: parseFloat(flagOp) }}>
+      <span aria-hidden="true" style={{ fontSize: 22, lineHeight: 1, opacity: parseFloat(flagOp) }}>
         {flagEmoji}
       </span>
       {/* Label */}
@@ -262,12 +264,20 @@ function PickButton({
           {shortName(sublabel)}
         </span>
       )}
-      {/* Active indicator */}
-      {active && (
+      {/* Estado: acierto / fallo / elegido — no solo por color (✓/✗) */}
+      {correct ? (
+        <span style={{ fontSize: 8, color, letterSpacing: '0.12em', fontWeight: 900, marginTop: 1 }}>
+          ✓ CORRECTO
+        </span>
+      ) : wrong ? (
+        <span style={{ fontSize: 8, color, letterSpacing: '0.12em', fontWeight: 900, marginTop: 1 }}>
+          ✗ FALLADO
+        </span>
+      ) : active ? (
         <span style={{ fontSize: 8, color: GOLD, letterSpacing: '0.12em', fontWeight: 900, marginTop: 1 }}>
           ✓ ELEGIDO
         </span>
-      )}
+      ) : null}
     </button>
   )
 }
