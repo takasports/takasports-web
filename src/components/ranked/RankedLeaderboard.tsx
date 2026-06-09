@@ -4,7 +4,7 @@
 // 4 pestañas: Global (todos los deportes) | Mundial | Fútbol (pronto) | UFC
 // Consume /api/ranked/leaderboard?sport=<sport>
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, type KeyboardEvent } from 'react'
 import TakaPoint from '@/components/TakaPoint'
 import { LeaderboardBadgesRow, LeaderboardTitleLine } from '@/components/badges/LeaderboardBadgeChip'
 import type { LeaderboardBadge, LeaderboardEquipment } from '@/lib/leaderboard-badges'
@@ -104,6 +104,24 @@ export default function RankedLeaderboard({ activeSport }: Props) {
   const activeTabInfo = TABS.find(t => t.id === tab)!
   const accent = activeTabInfo.accent
 
+  // Navegación por teclado del tablist (WAI-ARIA): flechas/Home/End se mueven
+  // SOLO entre tabs disponibles y trasladan el foco al recién activado.
+  function onTabKeyDown(e: KeyboardEvent<HTMLButtonElement>, idx: number) {
+    const avail = TABS.map((t, i) => ({ t, i })).filter(x => x.t.available)
+    const pos = avail.findIndex(x => x.i === idx)
+    if (pos === -1) return
+    let nextPos = -1
+    if (e.key === 'ArrowRight') nextPos = (pos + 1) % avail.length
+    else if (e.key === 'ArrowLeft') nextPos = (pos - 1 + avail.length) % avail.length
+    else if (e.key === 'Home') nextPos = 0
+    else if (e.key === 'End') nextPos = avail.length - 1
+    else return
+    e.preventDefault()
+    const target = avail[nextPos].t
+    setTab(target.id)
+    if (typeof document !== 'undefined') document.getElementById(`rktab-${target.id}`)?.focus()
+  }
+
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-8 mt-2">
       {/* Header */}
@@ -115,12 +133,19 @@ export default function RankedLeaderboard({ activeSport }: Props) {
       </div>
 
       {/* Tab pills */}
-      <div className="flex gap-1.5 flex-wrap mb-4">
-        {TABS.map(t => (
+      <div className="flex gap-1.5 flex-wrap mb-4" role="tablist" aria-label="Clasificación por deporte">
+        {TABS.map((t, idx) => (
           <button
             key={t.id}
+            id={`rktab-${t.id}`}
+            role="tab"
+            aria-selected={tab === t.id}
+            aria-controls="rkpanel"
+            aria-disabled={!t.available || undefined}
+            tabIndex={tab === t.id ? 0 : -1}
             onClick={() => t.available && setTab(t.id)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+            onKeyDown={e => onTabKeyDown(e, idx)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             style={{
               background: tab === t.id && t.available
                 ? `${t.accent}18`
@@ -143,9 +168,13 @@ export default function RankedLeaderboard({ activeSport }: Props) {
         ))}
       </div>
 
-      {/* Leaderboard card */}
+      {/* Leaderboard card (= tabpanel del tablist) */}
       <div
-        className="rounded-2xl overflow-hidden"
+        role="tabpanel"
+        id="rkpanel"
+        aria-labelledby={`rktab-${tab}`}
+        tabIndex={0}
+        className="rounded-2xl overflow-hidden focus-visible:outline-none"
         style={{
           background: `linear-gradient(160deg, ${accent}07 0%, rgba(8,0,15,0.55) 100%)`,
           border: `1px solid ${accent}20`,
