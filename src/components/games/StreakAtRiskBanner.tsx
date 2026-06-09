@@ -1,49 +1,42 @@
 'use client'
 
 // Banner de urgencia: aparece cuando el usuario lleva 2+ días de racha
-// activa y aún NO ha jugado nada hoy. Se oculta si:
-//  - No hay racha relevante (current < 2)
-//  - Ya ha jugado hoy (lastPlayedDate === today)
+// y aún NO ha jugado hoy (día de Madrid). Lee la racha AUTORITATIVA del
+// servidor (game_streaks vía useStreak) — antes leía la racha local del
+// navegador, que podía divergir de la real. Se oculta si:
+//  - No hay racha relevante (current < 2) o no hay sesión
+//  - Ya ha jugado hoy (last_played_date === hoy en Madrid)
 //  - El usuario lo cerró hoy (persistido en localStorage)
-//
-// Es client-only (lee localStorage) y self-contained.
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { loadMeta, onMetaChange } from '@/lib/meta-progression'
+import { useStreak } from '@/hooks/useGameState'
+import { madridDayISO } from '@/lib/taka-time'
 
 const HIDE_KEY = 'taka-streak-banner-hidden-on'
 
-function todayKey(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 export default function StreakAtRiskBanner() {
-  // 'pending' antes del primer effect — evita flash y mismatch SSR/CSR.
-  const [decision, setDecision] = useState<'pending' | 'show' | 'hide'>('pending')
-  const [streak, setStreak] = useState(0)
+  const { streak, loading } = useStreak()
+  // undefined = aún no leído el flag de localStorage (evita flash SSR/CSR)
+  const [hiddenOn, setHiddenOn] = useState<string | null | undefined>(undefined)
 
   useEffect(() => {
-    const evaluate = () => {
-      const meta = loadMeta()
-      const today = todayKey()
-      const atRisk = meta.streak.current >= 2 && meta.streak.lastPlayedDate !== today
-      const hidden = (() => {
-        try { return window.localStorage.getItem(HIDE_KEY) === today } catch { return false }
-      })()
-      setStreak(meta.streak.current)
-      setDecision(atRisk && !hidden ? 'show' : 'hide')
-    }
-    evaluate()
-    const off = onMetaChange(evaluate)
-    return off
+    let v: string | null = null
+    try { v = window.localStorage.getItem(HIDE_KEY) } catch { /* ignore */ }
+    setHiddenOn(v)
   }, [])
 
-  if (decision !== 'show') return null
+  // Esperar a tener racha del servidor Y el flag de "ocultado hoy".
+  if (loading || !streak || hiddenOn === undefined) return null
+
+  const today  = madridDayISO()
+  const atRisk = streak.current_streak >= 2 && streak.last_played_date !== today
+  if (!atRisk || hiddenOn === today) return null
 
   const handleHide = () => {
-    try { window.localStorage.setItem(HIDE_KEY, todayKey()) } catch { /* ignore */ }
-    setDecision('hide')
+    const day = madridDayISO()
+    try { window.localStorage.setItem(HIDE_KEY, day) } catch { /* ignore */ }
+    setHiddenOn(day)
   }
 
   return (
@@ -84,7 +77,7 @@ export default function StreakAtRiskBanner() {
             fontWeight: 600,
           }}
         >
-          Llevas <strong style={{ color: '#FCD34D' }}>{streak} días seguidos</strong>. Juega cualquiera de hoy
+          Llevas <strong style={{ color: '#FCD34D' }}>{streak.current_streak} días seguidos</strong>. Juega cualquiera de hoy
           antes de medianoche para no romperla.
         </p>
       </div>
