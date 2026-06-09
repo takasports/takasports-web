@@ -36,11 +36,19 @@ function pct(n: number, total: number): string {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
 
-  const name    = searchParams.get('name')    ?? 'Takero'
-  const picks   = parseInt(searchParams.get('picks')   ?? '0', 10)
-  const correct = parseInt(searchParams.get('correct') ?? '0', 10)
-  const pts     = parseInt(searchParams.get('pts')     ?? '0', 10)
-  const rank    = searchParams.get('rank')
+  // Saneado: la imagen es una tarjeta compartible con cifras que pasa el
+  // cliente. No toca el ledger, pero acotamos los valores para evitar
+  // tarjetas absurdas/NaN (correctos ≤ picks, sin negativos, tope superior).
+  const clampInt = (raw: string | null, lo: number, hi: number): number => {
+    const n = parseInt(raw ?? '0', 10)
+    return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : lo
+  }
+  const name    = (searchParams.get('name') ?? 'Takero').slice(0, 40)
+  const picks   = clampInt(searchParams.get('picks'), 0, 9999)
+  const correct = clampInt(searchParams.get('correct'), 0, picks)
+  const pts     = clampInt(searchParams.get('pts'), 0, 9_999_999)
+  const rankRaw = searchParams.get('rank')
+  const rank    = rankRaw ? String(clampInt(rankRaw, 1, 999_999)) : null
 
   const accuracy = pct(correct, picks)
 

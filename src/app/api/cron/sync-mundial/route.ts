@@ -48,7 +48,7 @@ interface EspnEvent {
 async function fetchWcFixtures(): Promise<EspnEvent[]> {
   const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${WC_START}-${WC_END}&limit=200`
   try {
-    const res = await fetch(url, { next: { revalidate: 0 } })
+    const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(10_000) })
     if (!res.ok) return []
     const json = await res.json() as { events?: EspnEvent[] }
     return json.events ?? []
