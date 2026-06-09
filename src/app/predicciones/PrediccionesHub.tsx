@@ -330,47 +330,6 @@ function SportComingSoon({
   )
 }
 
-function HubComingSoon({
-  title,
-  description,
-  emoji,
-}: {
-  title: string
-  description: string
-  emoji: string
-}) {
-  return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 py-24 flex flex-col items-center gap-4 text-center">
-      <span style={{ fontSize: 56 }}>{emoji}</span>
-      <h2
-        className="font-black"
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
-          color: '#F0F0F8',
-          letterSpacing: '-0.02em',
-        }}
-      >
-        {title}
-      </h2>
-      <p style={{ color: 'var(--text-muted)', maxWidth: 400, fontSize: 14, lineHeight: 1.6 }}>
-        {description}
-      </p>
-      <span
-        className="mt-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest"
-        style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          color: 'var(--text-muted)',
-          fontFamily: 'var(--font-sport)',
-        }}
-      >
-        Próximamente
-      </span>
-    </div>
-  )
-}
-
 // ── Loading shim (mientras carga QuinielaClient) ──────────────────────
 function QuinielaLoadingShim() {
   return (

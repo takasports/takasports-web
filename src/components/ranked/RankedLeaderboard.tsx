@@ -172,52 +172,6 @@ export default function RankedLeaderboard({ activeSport }: Props) {
           </div>
         )}
 
-        {/* UFC — mismo estado vacío que los demás deportes; se rellena cuando haya picks resueltos */}
-        {false && (
-          <div className="px-5 py-8 flex flex-col items-center gap-4">
-            {/* waitlist eliminada — UFC ya está activo */}
-            <span style={{ fontSize: 32 }}>🥊</span>
-            <p className="text-[11px] text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', maxWidth: 220 }}>
-              Placeholder eliminado
-            </p>
-            {false && (
-              <form
-                className="flex gap-2 w-full"
-                style={{ maxWidth: 280 }}
-              >
-                <input
-                  type="email"
-                  placeholder="placeholder"
-                  className="flex-1 rounded-xl px-3 py-2 text-[12px] outline-none"
-                  style={{
-                    background: 'rgba(248,113,113,0.07)',
-                    border: '1px solid rgba(248,113,113,0.22)',
-                    color: '#F0F0F8',
-                    fontFamily: 'var(--font-sport)',
-                  }}
-                />
-                <button
-                  type="submit"
-                  className="px-3 py-2 rounded-xl text-[11px] font-black"
-                  style={{
-                    background: 'rgba(248,113,113,0.15)',
-                    border: '1px solid rgba(248,113,113,0.35)',
-                    color: '#F87171',
-                    fontFamily: 'var(--font-display)',
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                  }}
-                >
-                  {/* ufcSubmitting state eliminado con la waitlist UFC; este
-                      bloque es dead code (gated por {false &&}). Hardcode para
-                      no romper el typecheck del build. (fix jun 2026) */}
-                  Avisarme
-                </button>
-              </form>
-            )}
-          </div>
-        )}
-
         {/* Empty */}
         {!loading && entries.length === 0 && (
           <div className="px-5 py-10 text-center">

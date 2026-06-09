@@ -16,7 +16,7 @@ import { WinProbabilityBar } from '../atoms/WinProbabilityBar'
 // ─────────────────────────────────────────────────────────────────
 export function MatchCard({
   match, index, pick, onPick, forceLocked, showOverlay, comp, time, odds, oddsSource, isoDate,
-  comodinAvailable, isComodinUnlocked, onUseComodin, comodinCost, coinBalance, liveScore, finalScore, correct, friendPicks,
+  liveScore, finalScore, correct, friendPicks,
   jornada,
   // Sistema de apuesta integrada (Ranked). Si stake/onStakeChange están
   // definidos, el card muestra la barra de apuesta debajo de los picks.
@@ -37,11 +37,6 @@ export function MatchCard({
   oddsSource?: 'bookmaker' | 'internal'
   isoDate?: string
   jornada?: string
-  comodinAvailable?: boolean
-  isComodinUnlocked?: boolean
-  onUseComodin?: () => void
-  comodinCost?: number
-  coinBalance?: number
   liveScore?: { homeGoals: number | null; awayGoals: number | null; elapsed?: number | null; status?: string }
   finalScore?: { homeGoals: number; awayGoals: number }
   correct?: boolean
@@ -77,7 +72,7 @@ export function MatchCard({
 }) {
   const num = String(index + 1).padStart(2, '0')
   const { started, soon, label: countdownLabel } = useMatchCountdown(isoDate)
-  const locked = forceLocked || (started && !isComodinUnlocked)
+  const locked = forceLocked || started
   const [animPick, setAnimPick] = useState<Pick | null>(null)
   const homeColors = getClubColors(match.home)
   const awayColors = getClubColors(match.away)
@@ -708,29 +703,12 @@ export function MatchCard({
         )}
       </div>
 
-      {(showOverlay || (started && !isComodinUnlocked)) && (
+      {(showOverlay || started) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-20" style={{ background: 'rgba(8,0,15,0.55)', backdropFilter: 'blur(2px)' }}>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}>
             <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block animate-pulse" />
             <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#f87171', fontFamily: 'var(--font-sport)' }}>En curso · bloqueado</span>
           </div>
-          {!forceLocked && comodinAvailable && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onUseComodin?.() }}
-              disabled={comodinCost != null && (coinBalance ?? 0) < comodinCost}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-transform hover:scale-105 active:scale-95"
-              style={{
-                background: (comodinCost != null && (coinBalance ?? 0) < comodinCost) ? 'rgba(255,255,255,0.04)' : 'rgba(245,158,11,0.18)',
-                color: (comodinCost != null && (coinBalance ?? 0) < comodinCost) ? '#3A3A4A' : '#fbbf24',
-                border: (comodinCost != null && (coinBalance ?? 0) < comodinCost) ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(245,158,11,0.45)',
-                fontFamily: 'var(--font-sport)',
-                boxShadow: (comodinCost != null && (coinBalance ?? 0) < comodinCost) ? 'none' : '0 0 16px rgba(245,158,11,0.25)',
-                cursor: (comodinCost != null && (coinBalance ?? 0) < comodinCost) ? 'not-allowed' : 'pointer',
-              }}
-            >
-              ⚡ Usar comodín {comodinCost != null && <span style={{ opacity: 0.7 }}>· {comodinCost} pts</span>}
-            </button>
-          )}
         </div>
       )}
     </div>
