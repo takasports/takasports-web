@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { normalizeTeam, normalizeAthlete, type NormalizedTeam } from '@/lib/teams-catalog'
 import { FOOTBALL_LEAGUES } from '@/lib/football-leagues'
+import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
 
 export interface LiveScore {
   id: string
@@ -233,6 +234,13 @@ async function fetchTeamLeague(slug: string, sport: string, comp: string, league
         logo: (awayRaw.team as Record<string, unknown>)?.logo as string | undefined,
       })
       if (!home || !away) continue
+      // Selecciones → español (Brazil→Brasil…); clubes intactos. No toca el
+      // matchRef (id), solo el nombre mostrado en el ticker/huérfanos en vivo,
+      // y mantiene la coincidencia con el calendario (también en español).
+      if (NATIONAL_TEAM_COMPS.has(comp)) {
+        home.name = toSpanishNation(home.name)
+        away.name = toSpanishNation(away.name)
+      }
 
       const homeScore = homeRaw.score !== undefined ? Number(homeRaw.score) : null
       const awayScore = awayRaw.score !== undefined ? Number(awayRaw.score) : null

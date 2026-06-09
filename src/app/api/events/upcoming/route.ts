@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { SOURCE_TZ } from '@/lib/timezone'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
 import { FOOTBALL_LEAGUES } from '@/lib/football-leagues'
+import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
 
 export interface UpcomingEvent {
   id: string
@@ -113,6 +114,11 @@ async function fetchUpcomingFromLeague(
       }
 
       if (!homeTeam) continue
+      // Selecciones → español (clubes intactos)
+      if (NATIONAL_TEAM_COMPS.has(comp)) {
+        homeTeam = toSpanishNation(homeTeam)
+        awayTeam = toSpanishNation(awayTeam)
+      }
 
       results.push({
         id: String(ev.id),

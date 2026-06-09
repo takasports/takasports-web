@@ -1763,7 +1763,12 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         if (mapped !== activeFilter) return false
       }
       const matched = liveEventsInList.find(e =>
-        namesMatch(e.home, f.homeTeam) && namesMatch(e.away ?? '', f.awayTeam)
+        // Cruce por matchRef (id canónico, inmune al idioma): el feed en vivo
+        // trae el nombre de selección en inglés y el calendario en español, así
+        // que un namesMatch solo duplicaría esos partidos. matchRef es idéntico
+        // en ambos lados (slug_id). namesMatch queda de respaldo.
+        (f.matchRef != null && e.matchRef === f.matchRef) ||
+        (namesMatch(e.home, f.homeTeam) && namesMatch(e.away ?? '', f.awayTeam))
       )
       return !matched
     })
