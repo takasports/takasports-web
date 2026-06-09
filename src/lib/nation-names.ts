@@ -1,0 +1,222 @@
+// ── Nombres de selecciones en español ───────────────────────────────────────
+// ESPN devuelve los nombres de las selecciones en inglés ("Brazil", "Germany",
+// "Türkiye"…). En una web en español queremos verlos traducidos ("Brasil",
+// "Alemania", "Turquía"). Este módulo traduce SOLO competiciones de selecciones
+// (Mundial, amistosos, Nations, Eurocopa, Copa América, Gold Cup); los clubes se
+// dejan tal cual (son nombres propios: "Real Madrid", "Bayern Munich"…).
+//
+// Importante: el scoring de Destacados (getEventHighlightScore → isMarqueeNation)
+// compara contra nombres en ESPAÑOL, así que MARQUEE_NATIONS en competitions.ts
+// debe usar las mismas grafías que produce este mapa.
+
+/** Competiciones cuyos participantes son selecciones (se traducen). */
+export const NATIONAL_TEAM_COMPS: ReadonlySet<string> = new Set([
+  'Mundial',
+  'Amistoso',
+  'Amistoso (F)',
+  'Nations',
+  'Eurocopa',
+  'Copa América',
+  'Gold Cup',
+])
+
+/** Mapa nombre ESPN (inglés) → español. Cubre los 48 del Mundial 2026 y los
+ *  rivales habituales de amistosos. Claves extra como alias defensivos. */
+const NATION_ES: Record<string, string> = {
+  'Afghanistan': 'Afganistán',
+  'Albania': 'Albania',
+  'Algeria': 'Argelia',
+  'Andorra': 'Andorra',
+  'Angola': 'Angola',
+  'Argentina': 'Argentina',
+  'Armenia': 'Armenia',
+  'Aruba': 'Aruba',
+  'Australia': 'Australia',
+  'Austria': 'Austria',
+  'Azerbaijan': 'Azerbaiyán',
+  'Bahrain': 'Baréin',
+  'Bangladesh': 'Bangladés',
+  'Belarus': 'Bielorrusia',
+  'Belgium': 'Bélgica',
+  'Bhutan': 'Bután',
+  'Bolivia': 'Bolivia',
+  'Bosnia-Herzegovina': 'Bosnia y Herzegovina',
+  'Botswana': 'Botsuana',
+  'Brazil': 'Brasil',
+  'British Virgin Islands': 'Islas Vírgenes Británicas',
+  'Bulgaria': 'Bulgaria',
+  'Burkina Faso': 'Burkina Faso',
+  'Burundi': 'Burundi',
+  'Cambodia': 'Camboya',
+  'Cameroon': 'Camerún',
+  'Canada': 'Canadá',
+  'Cape Verde': 'Cabo Verde',
+  'Cayman Islands': 'Islas Caimán',
+  'Central African Republic': 'República Centroafricana',
+  'Chile': 'Chile',
+  'China': 'China',
+  'Colombia': 'Colombia',
+  'Comoros': 'Comoras',
+  'Congo': 'Congo',
+  'Congo DR': 'RD Congo',
+  'Costa Rica': 'Costa Rica',
+  'Croatia': 'Croacia',
+  'Curaçao': 'Curazao',
+  'Cyprus': 'Chipre',
+  'Czechia': 'Chequia',
+  'Czech Republic': 'Chequia',
+  'Denmark': 'Dinamarca',
+  'Dominican Republic': 'República Dominicana',
+  'Ecuador': 'Ecuador',
+  'Egypt': 'Egipto',
+  'El Salvador': 'El Salvador',
+  'England': 'Inglaterra',
+  'Equatorial Guinea': 'Guinea Ecuatorial',
+  'Estonia': 'Estonia',
+  'Ethiopia': 'Etiopía',
+  'Faroe Islands': 'Islas Feroe',
+  'Fiji': 'Fiyi',
+  'Finland': 'Finlandia',
+  'France': 'Francia',
+  'Gabon': 'Gabón',
+  'Georgia': 'Georgia',
+  'Germany': 'Alemania',
+  'Ghana': 'Ghana',
+  'Gibraltar': 'Gibraltar',
+  'Greece': 'Grecia',
+  'Guam': 'Guam',
+  'Guatemala': 'Guatemala',
+  'Guinea': 'Guinea',
+  'Guinea-Bissau': 'Guinea-Bisáu',
+  'Haiti': 'Haití',
+  'Honduras': 'Honduras',
+  'Hong Kong': 'Hong Kong',
+  'Hungary': 'Hungría',
+  'Iceland': 'Islandia',
+  'India': 'India',
+  'Indonesia': 'Indonesia',
+  'Iran': 'Irán',
+  'IR Iran': 'Irán',
+  'Iraq': 'Irak',
+  'Israel': 'Israel',
+  'Italy': 'Italia',
+  'Ivory Coast': 'Costa de Marfil',
+  "Côte d'Ivoire": 'Costa de Marfil',
+  'Jamaica': 'Jamaica',
+  'Japan': 'Japón',
+  'Jordan': 'Jordania',
+  'Kazakhstan': 'Kazajistán',
+  'Kenya': 'Kenia',
+  'Kosovo': 'Kosovo',
+  'Kuwait': 'Kuwait',
+  'Kyrgyz Republic': 'Kirguistán',
+  'Kyrgyzstan': 'Kirguistán',
+  'Latvia': 'Letonia',
+  'Lesotho': 'Lesoto',
+  'Liechtenstein': 'Liechtenstein',
+  'Lithuania': 'Lituania',
+  'Luxembourg': 'Luxemburgo',
+  'Madagascar': 'Madagascar',
+  'Malawi': 'Malaui',
+  'Malaysia': 'Malasia',
+  'Maldives': 'Maldivas',
+  'Mali': 'Malí',
+  'Malta': 'Malta',
+  'Mauritania': 'Mauritania',
+  'Mexico': 'México',
+  'Moldova': 'Moldavia',
+  'Mongolia': 'Mongolia',
+  'Montenegro': 'Montenegro',
+  'Morocco': 'Marruecos',
+  'Mozambique': 'Mozambique',
+  'Myanmar': 'Myanmar',
+  'Namibia': 'Namibia',
+  'Netherlands': 'Países Bajos',
+  'New Zealand': 'Nueva Zelanda',
+  'Nicaragua': 'Nicaragua',
+  'Niger': 'Níger',
+  'Nigeria': 'Nigeria',
+  'North Korea': 'Corea del Norte',
+  'Korea DPR': 'Corea del Norte',
+  'North Macedonia': 'Macedonia del Norte',
+  'Northern Ireland': 'Irlanda del Norte',
+  'Norway': 'Noruega',
+  'Oman': 'Omán',
+  'Pakistan': 'Pakistán',
+  'Palestine': 'Palestina',
+  'Panama': 'Panamá',
+  'Paraguay': 'Paraguay',
+  'Peru': 'Perú',
+  'Philippines': 'Filipinas',
+  'Poland': 'Polonia',
+  'Portugal': 'Portugal',
+  'Puerto Rico': 'Puerto Rico',
+  'Qatar': 'Catar',
+  'Republic of Ireland': 'Irlanda',
+  'Romania': 'Rumanía',
+  'Russia': 'Rusia',
+  'Rwanda': 'Ruanda',
+  'San Marino': 'San Marino',
+  'Saudi Arabia': 'Arabia Saudí',
+  'Scotland': 'Escocia',
+  'Senegal': 'Senegal',
+  'Serbia': 'Serbia',
+  'Sierra Leone': 'Sierra Leona',
+  'Singapore': 'Singapur',
+  'Slovakia': 'Eslovaquia',
+  'Slovenia': 'Eslovenia',
+  'South Africa': 'Sudáfrica',
+  'South Korea': 'Corea del Sur',
+  'Korea Republic': 'Corea del Sur',
+  'Spain': 'España',
+  'Sweden': 'Suecia',
+  'Switzerland': 'Suiza',
+  'Syria': 'Siria',
+  'Tanzania': 'Tanzania',
+  'Thailand': 'Tailandia',
+  'Togo': 'Togo',
+  'Trinidad and Tobago': 'Trinidad y Tobago',
+  'Tunisia': 'Túnez',
+  'Türkiye': 'Turquía',
+  'Turkey': 'Turquía',
+  'Uganda': 'Uganda',
+  'Ukraine': 'Ucrania',
+  'United Arab Emirates': 'Emiratos Árabes Unidos',
+  'United States': 'Estados Unidos',
+  'USA': 'Estados Unidos',
+  'Uruguay': 'Uruguay',
+  'Uzbekistan': 'Uzbekistán',
+  'Vanuatu': 'Vanuatu',
+  'Venezuela': 'Venezuela',
+  'Vietnam': 'Vietnam',
+  'Wales': 'Gales',
+  'Zambia': 'Zambia',
+  'Zimbabwe': 'Zimbabue',
+}
+
+// Placeholders de eliminatorias del Mundial (los equipos aún no están
+// definidos): ESPN los nombra "Group A Winner", "Round of 32 5 Winner",
+// "Third Place Group A/B/C/D/F"… Los traducimos por patrón.
+function translateBracketPlaceholder(name: string): string | null {
+  let m: RegExpExecArray | null
+  if ((m = /^Group ([A-L]) Winner$/.exec(name))) return `1.º Grupo ${m[1]}`
+  if ((m = /^Group ([A-L]) 2nd Place$/.exec(name))) return `2.º Grupo ${m[1]}`
+  if ((m = /^Round of 32 (\d+) Winner$/.exec(name))) return `Ganador 1/16 (${m[1]})`
+  if ((m = /^Round of 16 (\d+) Winner$/.exec(name))) return `Ganador octavos (${m[1]})`
+  if ((m = /^Quarterfinal (\d+) Winner$/.exec(name))) return `Ganador cuartos (${m[1]})`
+  if ((m = /^Semifinal (\d+) Winner$/.exec(name))) return `Ganador semifinal (${m[1]})`
+  if ((m = /^Third Place Group (.+)$/.exec(name))) return `Mejor 3.º (${m[1]})`
+  return null
+}
+
+/** Traduce el nombre de una selección a español. Devuelve el original si no se
+ *  reconoce (clubes, nombres nuevos…). Conserva null/undefined. */
+export function toSpanishNation<T extends string | null | undefined>(name: T): T {
+  if (!name) return name
+  const trimmed = name.trim()
+  const direct = NATION_ES[trimmed]
+  if (direct) return direct as T
+  const bracket = translateBracketPlaceholder(trimmed)
+  if (bracket) return bracket as T
+  return name
+}

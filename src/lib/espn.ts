@@ -3,6 +3,7 @@ import { getSportStyle } from './sports'
 import { SOURCE_TZ } from './timezone'
 import { getSpanishBroadcast } from './broadcasts'
 import { FOOTBALL_LEAGUES } from './football-leagues'
+import { NATIONAL_TEAM_COMPS, toSpanishNation } from './nation-names'
 
 interface EspnSource {
   slug: string
@@ -149,6 +150,11 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
       const awayTeamObj = awayComp.team as Record<string, unknown>
       home      = (homeTeamObj?.displayName as string) ?? ''
       away      = (awayTeamObj?.displayName as string) ?? null
+      // Selecciones → español (Brazil→Brasil…); clubes se dejan tal cual.
+      if (NATIONAL_TEAM_COMPS.has(source.comp)) {
+        home = toSpanishNation(home)
+        away = toSpanishNation(away)
+      }
       homeAbbr  = homeTeamObj?.abbreviation as string | undefined
       awayAbbr  = awayTeamObj?.abbreviation as string | undefined
       homeLogo  = (homeTeamObj?.logoDark ?? homeTeamObj?.logo) as string | undefined
@@ -385,6 +391,11 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
       const awayTeamObj = awayComp.team as Record<string, unknown>
       home      = (homeTeamObj?.displayName as string) ?? ''
       away      = (awayTeamObj?.displayName as string) ?? null
+      // Selecciones → español (Brazil→Brasil…); clubes se dejan tal cual.
+      if (NATIONAL_TEAM_COMPS.has(source.comp)) {
+        home = toSpanishNation(home)
+        away = toSpanishNation(away)
+      }
       homeAbbr  = homeTeamObj?.abbreviation as string | undefined
       awayAbbr  = awayTeamObj?.abbreviation as string | undefined
       homeLogo  = (homeTeamObj?.logoDark ?? homeTeamObj?.logo) as string | undefined

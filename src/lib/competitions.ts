@@ -153,18 +153,18 @@ function isMarquee(name: string | null | undefined): boolean {
   return MARQUEE_TEAMS.some(t => n.includes(t))
 }
 
-// Selecciones nacionales importantes. ESPN las nombra en inglés ("Spain",
-// "United States", "South Korea"…). Sirve para que sus partidos —sobre todo los
-// amistosos de parón FIFA, que de base puntúan muy bajo (3)— entren en
-// Destacados, que es lo que el usuario espera ver durante una fecha FIFA.
+// Selecciones nacionales importantes. Los nombres llegan ya traducidos a español
+// (lib/nation-names traduce "Brazil"→"Brasil"… en el origen), así que la lista va
+// en español. Sirve para que sus partidos —sobre todo los amistosos de parón
+// FIFA, que de base puntúan muy bajo (3)— entren en Destacados.
 const MARQUEE_NATIONS = [
-  'spain', 'france', 'england', 'argentina', 'brazil', 'portugal',
-  'netherlands', 'belgium', 'italy', 'germany', 'croatia', 'uruguay',
-  'colombia', 'mexico', 'united states', 'morocco', 'japan', 'south korea',
-  'switzerland', 'denmark', 'senegal', 'serbia', 'poland', 'ecuador',
-  'nigeria', 'australia', 'canada', 'ukraine',
+  'españa', 'francia', 'inglaterra', 'argentina', 'brasil', 'portugal',
+  'países bajos', 'bélgica', 'italia', 'alemania', 'croacia', 'uruguay',
+  'colombia', 'méxico', 'estados unidos', 'marruecos', 'japón', 'corea del sur',
+  'suiza', 'dinamarca', 'senegal', 'serbia', 'polonia', 'ecuador',
+  'nigeria', 'australia', 'canadá', 'ucrania',
   // Sudamérica relevante para la audiencia hispanohablante
-  'chile', 'peru', 'paraguay', 'venezuela',
+  'chile', 'perú', 'paraguay', 'venezuela',
 ]
 
 // Match EXACTO (los amistosos enfrentan país vs país, sin sufijos) para evitar

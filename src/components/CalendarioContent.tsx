@@ -58,6 +58,15 @@ interface LiveScore {
 
 const FINISHED = new Set(['FT', 'Final', 'FINAL', 'FINAL_PEN', 'FINAL_AET', 'STATUS_FINAL', 'POST_GAME', 'END_OF_REGULATION', 'NS'])
 
+// Modo Destacados: cuántos partidos mostrar por día.
+//   · MIN  → mínimo garantizado aunque el día sea flojo.
+//   · ELITE→ umbral de "cartel top": en días de Mundial/Champions casi todos los
+//            partidos llegan a 12, así que se muestran todos (no se cortan a 4).
+//   · MAX  → tope de seguridad para días desbordados (amistosos masivos, etc.).
+const DESTACADOS_MIN = 4
+const DESTACADOS_ELITE = 12
+const DESTACADOS_MAX = 8
+
 // ─── Hooks ────────────────────────────────────────────────────────────────
 // Helper: ejecuta `tick` cada `ms` solo cuando la pestaña está visible.
 // Al volver de oculto-a-visible hace un fetch inmediato.
@@ -1760,13 +1769,16 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     })
   }, [liveFixtures, liveEventsInList, activeFilter])
 
-  // Si el chip Destacados está activo, en la vista Calendario se muestran
-  // solo los top 4 partidos por día. Criterio combinado:
+  // Si el chip Destacados está activo, en la vista Calendario se muestran los
+  // partidos más importantes de cada día. Criterio combinado:
   //   1. Favoritos del usuario primero (siempre)
   //   2. Highlight score: prestigio de liga + boost por marquee team
   //      (+2), fase final/semifinal/cuartos (+4/+3/+2), live (+1.5),
   //      prime time 18-23h Madrid (+0.5)
   //   3. Empate → hora más temprana
+  // Cuántos por día: al menos DESTACADOS_MIN, pero se amplía para no cortar los
+  // carteles élite (score ≥ DESTACADOS_ELITE: Mundial, Champions, fases finales).
+  // En plena fase de grupos del Mundial (5-6 partidos top/día) se muestran todos.
   const filteredForGrouping = useMemo(() => {
     if (activeFilter !== 'Destacados') return filtered
     const byDay = new Map<string, SportEvent[]>()
@@ -1776,9 +1788,12 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       arr.push(ev)
       byDay.set(day, arr)
     }
+    const scoreCache = new Map<string, number>()
     const scoreFor = (ev: SportEvent) => {
+      const cached = scoreCache.get(ev.id)
+      if (cached !== undefined) return cached
       const live = liveScores.has(ev.id) && !FINISHED.has(liveScores.get(ev.id)?.status ?? '')
-      return getEventHighlightScore({
+      const s = getEventHighlightScore({
         comp: ev.comp,
         home: ev.home,
         away: ev.away,
@@ -1786,6 +1801,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         isoDate: ev.isoDate,
         isLive: live,
       })
+      scoreCache.set(ev.id, s)
+      return s
     }
     const out: SportEvent[] = []
     for (const evs of byDay.values()) {
@@ -1798,7 +1815,18 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         if (sA !== sB) return sB - sA
         return (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
       })
-      out.push(...sorted.slice(0, 4))
+      // Al menos MIN; se extiende mientras el siguiente siga siendo favorito o
+      // élite (≥ ELITE), hasta MAX. Ordenado desc. → en cuanto uno no cualifica,
+      // el resto tampoco: corte limpio.
+      let keep = Math.min(DESTACADOS_MIN, sorted.length)
+      while (
+        keep < sorted.length &&
+        keep < DESTACADOS_MAX &&
+        (eventHasFavorite(favorites, sorted[keep]) || scoreFor(sorted[keep]) >= DESTACADOS_ELITE)
+      ) {
+        keep++
+      }
+      out.push(...sorted.slice(0, keep))
     }
     return out
   }, [filtered, activeFilter, favorites, liveScores])
@@ -2373,7 +2401,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           {activeFilter === 'Destacados' && orderedDates.length > 0 && filtered.length > filteredForGrouping.length && (
             <div className="flex flex-col items-center gap-1.5 pt-2">
               <p className="text-[11px]" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-                Mostrando los 4 más destacados por día
+                Mostrando lo más destacado de cada día
               </p>
               <button
                 onClick={() => setActiveFilter('Todo')}
