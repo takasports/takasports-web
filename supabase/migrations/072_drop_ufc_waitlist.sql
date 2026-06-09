@@ -1,0 +1,24 @@
+-- 072_drop_ufc_waitlist.sql
+-- Elimina la tabla huérfana `ufc_waitlist` (lista de espera Ranked UFC, retirada).
+-- Estado verificado en prod antes del DROP: 0 filas, RLS enabled sin policies
+-- (advisor rls_enabled_no_policy / INFO), grants solo postgres+service_role.
+-- Sin consumidores en código: la ruta /api/ranked/ufc-waitlist y los componentes
+-- muertos se borraron en dbd39df (F7); cero referencias .ts/.tsx restantes.
+--
+-- DROP es irreversible → la def original queda preservada abajo (copiada de
+-- 049_ufc_waitlist.sql + 052_enable_rls_ufc_waitlist.sql) para recrearla idéntica
+-- si la waitlist se reactivara algún día. NO se ejecuta; es solo referencia.
+--
+-- ── Definición original (referencia, NO ejecutar) ───────────────────────────────
+-- CREATE TABLE IF NOT EXISTS ufc_waitlist (
+--   email      text PRIMARY KEY,
+--   created_at timestamptz DEFAULT now() NOT NULL
+-- );
+-- REVOKE ALL ON TABLE ufc_waitlist FROM PUBLIC, anon, authenticated;
+-- GRANT SELECT, INSERT ON TABLE ufc_waitlist TO service_role;
+-- ALTER TABLE public.ufc_waitlist ENABLE ROW LEVEL SECURITY;
+-- COMMENT ON TABLE public.ufc_waitlist IS
+--   'Lista de espera Ranked UFC. RLS enabled sin policies — acceso solo vía service_role desde /api/ranked/ufc-waitlist.';
+-- ────────────────────────────────────────────────────────────────────────────────
+
+DROP TABLE IF EXISTS public.ufc_waitlist;
