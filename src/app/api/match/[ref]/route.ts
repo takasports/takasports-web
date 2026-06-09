@@ -3,6 +3,7 @@ import { getZone, zoneFromNote } from '@/lib/league-zones'
 import type { StandingZone } from '@/lib/league-zones'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
 import { TABLE_LEAGUE_SLUGS, LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
+import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
 export type { StandingZone }
 
 export type SportKind = 'soccer' | 'basketball' | 'mma' | 'racing' | 'tennis' | 'golf' | 'other'
@@ -686,6 +687,15 @@ export async function GET(
   const sport      = detectSport(leagueSlug)
   const leagueLabel = COMP_LABELS[leagueSlug] ?? LEAGUE_LABEL_BY_SLUG[leagueSlug] ?? parts.slice(0, -1).join(' · ')
 
+  // Selecciones → español (Brazil→Brasil…); los clubes se dejan tal cual (son
+  // nombres propios). Mismo criterio que lib/espn.ts: el slug ESPN mapea a su
+  // nombre de competición vía LEAGUE_LABEL_BY_SLUG y solo se traduce si está en
+  // NATIONAL_TEAM_COMPS (Mundial, Amistoso, Nations, Eurocopa…). Así el detalle
+  // queda coherente con el calendario, que ya traduce en fetchLeague.
+  const isNationalTeam = NATIONAL_TEAM_COMPS.has(LEAGUE_LABEL_BY_SLUG[leagueSlug] ?? '')
+  const nat = <T extends string | null | undefined>(name: T): T =>
+    isNationalTeam ? toSpanishNation(name) : name
+
   try {
     // ─── MMA: needs scoreboard fallback (summary returns 404) ────────
     if (sport === 'mma') {
@@ -787,8 +797,8 @@ export async function GET(
       sport,
       leagueSlug,
       leagueLabel,
-      homeTeam:    asString(homeTeamObj?.displayName) ?? '—',
-      awayTeam:    asString(awayTeamObj?.displayName) ?? '—',
+      homeTeam:    nat(asString(homeTeamObj?.displayName)) ?? '—',
+      awayTeam:    nat(asString(awayTeamObj?.displayName)) ?? '—',
       homeAbbr:    asString(homeTeamObj?.abbreviation),
       awayAbbr:    asString(awayTeamObj?.abbreviation),
       homeLogo:    pickTeamLogo(homeTeamObj, sport),
