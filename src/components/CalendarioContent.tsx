@@ -1299,7 +1299,14 @@ function DayChips({ days, value, onChange }: {
   })()
 
   const eventDays = useMemo(() => new Set(days.map(d => d.key)), [days])
-  const isCalActive = showCalendar || (value !== null && value !== today && value !== tomorrow)
+  const DOW = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+  const dayLabel = (key: string) => {
+    if (key === today) return 'Hoy'
+    if (key === tomorrow) return 'Mañana'
+    const dt = new Date(key + 'T12:00:00Z')
+    return `${DOW[dt.getUTCDay()]} ${dt.getUTCDate()}`
+  }
+  const isCalActive = showCalendar || (value !== null && !eventDays.has(value))
 
   const chipStyle = (active: boolean) => ({
     background: active ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.04)',
@@ -1311,18 +1318,27 @@ function DayChips({ days, value, onChange }: {
   })
 
   return (
-    <div className="flex items-center gap-1.5 pb-1" style={{ position: 'relative' }}>
-      {(['Todos', 'Hoy', 'Mañana'] as const).map(label => {
-        const key = label === 'Todos' ? null : label === 'Hoy' ? today : tomorrow
-        const active = value === key
+    <div className="flex items-center gap-1.5 pb-1 overflow-x-auto scrollbar-hide" style={{ position: 'relative' }}>
+      {/* "Todos" + un chip por día disponible (con su nº de eventos): barra de
+          días deslizable, la "columna vertebral" de las portadas tipo 365scores. */}
+      <button
+        onClick={() => { onChange(null); setShowCalendar(false) }}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+        style={chipStyle(value === null)}
+      >
+        Todos
+      </button>
+      {days.map(d => {
+        const active = value === d.key
         return (
           <button
-            key={label}
-            onClick={() => { onChange(key); setShowCalendar(false) }}
+            key={d.key}
+            onClick={() => { onChange(d.key); setShowCalendar(false) }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
             style={chipStyle(active)}
           >
-            {label}
+            {dayLabel(d.key)}
+            <span className="tabular-nums" style={{ opacity: 0.6, fontWeight: 700 }}>{d.count}</span>
           </button>
         )
       })}
