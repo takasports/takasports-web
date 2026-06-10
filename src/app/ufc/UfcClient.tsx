@@ -160,16 +160,20 @@ const ANIMATIONS = `
 // ── FighterPickButton ─────────────────────────────────────────────────────
 
 function FighterPickButton({
-  name, side, active, correct, wrong, disabled, onClick,
+  name, side, active, correct, wrong, disabled, onClick, photoUrl, record, flag,
 }: {
-  name:     string
-  side:     'a' | 'b'
-  active:   boolean
-  correct:  boolean
-  wrong:    boolean
-  disabled: boolean
-  onClick:  () => void
+  name:      string
+  side:      'a' | 'b'
+  active:    boolean
+  correct:   boolean
+  wrong:     boolean
+  disabled:  boolean
+  onClick:   () => void
+  photoUrl?: string | null
+  record?:   string | null
+  flag?:     string | null
 }) {
+  const [imgErr, setImgErr] = useState(false)
   let bg     = 'rgba(255,255,255,0.05)'
   let border = 'rgba(255,255,255,0.12)'
   let color  = 'rgba(255,255,255,0.55)'
@@ -214,6 +218,31 @@ function FighterPickButton({
         boxShadow: shadow,
       }}
     >
+      {/* Foto del luchador (fotos ESPN, redimensionadas; tinte rojo para cohesión) */}
+      <div style={{
+        width: 62, height: 62, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+        border: `2px solid ${correct ? 'rgba(74,222,128,0.6)' : wrong ? 'rgba(239,68,68,0.4)' : active ? `${RED}` : 'rgba(255,255,255,0.14)'}`,
+        background: 'linear-gradient(145deg, rgba(248,113,113,0.14), rgba(15,8,8,0.92))',
+        boxShadow: active ? `0 0 16px ${RED}40` : '0 4px 12px rgba(0,0,0,0.4)',
+        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {photoUrl && !imgErr ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photoUrl} alt="" loading="lazy" onError={() => setImgErr(true)}
+            style={{
+              width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center',
+              filter: wrong ? 'grayscale(0.6) brightness(0.8)' : 'contrast(1.05) saturate(0.95)',
+            }}
+          />
+        ) : (
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 900, color: 'rgba(255,255,255,0.7)' }}>
+            {name.split(' ').filter(Boolean).map(p => p[0]).slice(0, 2).join('').toUpperCase()}
+          </span>
+        )}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 45%, rgba(248,113,113,0.22))', pointerEvents: 'none' }} />
+      </div>
+
       {/* Side indicator */}
       <span style={{
         fontSize: 9, fontWeight: 900, letterSpacing: '0.12em',
@@ -230,6 +259,16 @@ function FighterPickButton({
       }}>
         {shortFighterName(name)}
       </span>
+      {/* Bandera · récord */}
+      {(flag || record) && (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, opacity: 0.72 }}>
+          {flag && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={flag} alt="" width={15} height={11} style={{ borderRadius: 2, objectFit: 'cover' }} />
+          )}
+          {record && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.03em' }}>{record}</span>}
+        </span>
+      )}
       {/* Gana badge */}
       <span style={{
         fontSize: 8, fontWeight: 700, letterSpacing: '0.1em',
@@ -391,6 +430,12 @@ function FightCard({
   const fighterA = event.fighter_a ?? 'Fighter A'
   const fighterB = event.fighter_b ?? 'Fighter B'
 
+  // Datos de luchador para la carta (foto redimensionada ESPN ~28KB, récord, bandera).
+  const fmA = event.meta?.fighters?.a
+  const fmB = event.meta?.fighters?.b
+  const cardPhoto = (id?: string | null) =>
+    id ? `https://a.espncdn.com/combiner/i?img=/i/headshots/mma/players/full/${id}.png&w=140&h=140` : null
+
   const isA = myPick === 'a'
   const isB = myPick === 'b'
 
@@ -509,6 +554,9 @@ function FightCard({
             wrong={wrongA}
             disabled={isDisabled}
             onClick={handlePickA}
+            photoUrl={cardPhoto(fmA?.id)}
+            record={fmA?.record}
+            flag={fmA?.flag}
           />
 
           {/* VS divider */}
@@ -542,6 +590,9 @@ function FightCard({
             wrong={wrongB}
             disabled={isDisabled}
             onClick={handlePickB}
+            photoUrl={cardPhoto(fmB?.id)}
+            record={fmB?.record}
+            flag={fmB?.flag}
           />
         </div>
 
