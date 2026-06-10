@@ -1187,7 +1187,9 @@ function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect }: {
             return (
               <button
                 key={iso}
-                onClick={() => { onChange(iso); onClose() }}
+                onClick={isPast ? undefined : () => { onChange(iso); onClose() }}
+                disabled={isPast}
+                title={isPast ? 'Los resultados anteriores están en la pestaña Resultados' : undefined}
                 className="relative flex flex-col items-center justify-center rounded-lg transition-all"
                 style={{
                   height: 30,
@@ -1208,7 +1210,7 @@ function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect }: {
                       : hasEvents
                         ? '#D0D0F0'
                         : '#6A6A80',
-                  cursor: 'pointer',
+                  cursor: isPast ? 'not-allowed' : 'pointer',
                 }}
               >
                 <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-sport)', lineHeight: 1 }}>
@@ -2170,6 +2172,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             <div className="flex-shrink-0 w-px h-4" style={{ background: 'rgba(255,255,255,0.08)' }} />
             <button
               onClick={() => setOnlyLive(v => !v)}
+              aria-pressed={onlyLive}
+              aria-label="Mostrar solo partidos en vivo"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
               style={{
                 background: onlyLive ? 'rgba(74,222,128,0.18)' : 'rgba(255,255,255,0.04)',
@@ -2222,6 +2226,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                   <button
                     key={sport}
                     onClick={() => setActiveFilter(sport)}
+                    aria-pressed={active}
                     className="relative flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-black uppercase tracking-[0.12em] transition-all flex-shrink-0"
                     style={{
                       color: active ? '#fff' : '#C4B5FD',
@@ -2244,6 +2249,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 <button
                   key={sport}
                   onClick={() => setActiveFilter(sport)}
+                  aria-pressed={active}
                   className="relative px-3 py-2.5 text-[13px] font-semibold transition-colors flex-shrink-0"
                   style={{
                     color: active ? '#F0F0FA' : '#7A7A8E',
@@ -2336,25 +2342,45 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
           {orderedDates.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="mb-2 flex justify-center" style={{ color: '#5A5A6A' }}>
-                {search
-                  ? <SearchIcon size={32} />
-                  : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')
-                    ? <SportIcon sport={activeFilter} size={32} />
-                    : <CalendarIcon size={32} />}
+              <p className="mb-2 flex justify-center" style={{ color: onlyLive ? '#4ade80' : '#5A5A6A' }}>
+                {onlyLive
+                  ? <LiveDotIcon size={32} />
+                  : search
+                    ? <SearchIcon size={32} />
+                    : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')
+                      ? <SportIcon sport={activeFilter} size={32} />
+                      : <CalendarIcon size={32} />}
               </p>
               <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
-                {search
-                  ? `Sin resultados para "${search}"`
-                  : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')
-                    ? `No hay eventos de ${activeFilter} en los próximos días`
-                    : 'No se encontraron eventos'}
+                {onlyLive
+                  ? 'No hay partidos en vivo ahora mismo'
+                  : search
+                    ? `Sin resultados para "${search}"`
+                    : selectedDate
+                      ? 'No hay partidos para esa fecha'
+                      : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')
+                        ? `No hay eventos de ${activeFilter} en los próximos días`
+                        : 'No se encontraron eventos'}
               </p>
-              {search && (
-                <p className="text-[10px] mt-1.5" style={{ color: '#7A7A8E' }}>Prueba con el nombre del equipo o la competición</p>
-              )}
-              {!search && (activeFilter !== 'Todo' && activeFilter !== 'Destacados') && (
-                <p className="text-[10px] mt-1.5" style={{ color: '#7A7A8E' }}>Prueba seleccionando otra fecha o cambia el filtro</p>
+              <p className="text-[10px] mt-1.5" style={{ color: '#7A7A8E' }}>
+                {onlyLive
+                  ? 'Cuando arranque un partido aparecerá aquí. Quita el filtro para ver toda la agenda.'
+                  : search
+                    ? 'Prueba con el nombre del equipo o la competición'
+                    : selectedDate
+                      ? 'Mostramos las próximas ~3 semanas. Los resultados anteriores están en la pestaña Resultados.'
+                      : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')
+                        ? 'Prueba seleccionando otra fecha o cambia el filtro'
+                        : 'Vuelve a intentarlo en unos minutos'}
+              </p>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="mt-4 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all hover:brightness-125"
+                  style={{ background: 'rgba(124,58,237,0.16)', color: '#C4B5FD', border: '1px solid rgba(124,58,237,0.4)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
+                >
+                  ✕ Quitar filtros
+                </button>
               )}
             </div>
           ) : (
