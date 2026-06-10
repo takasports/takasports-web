@@ -22,8 +22,14 @@ export interface CompetitionConfig {
   description: string
   /** Etiqueta de temporada actual mostrada en H1 e itemListJsonLd. */
   seasonLabel: string
-  /** Logo opcional para schema (URL absoluta). */
+  /** Logo opcional para schema/OG (URL absoluta). */
   logo?: string
+  /** Banner decorativo (fondo abstracto generado con IA) para la cabecera.
+   *  Ruta local servida desde /public (WebP ligero). */
+  banner?: string
+  /** Escudo/logo oficial de la competición (URL) para superponer sobre el
+   *  banner de cabecera — uso editorial/informativo. */
+  crest?: string
 }
 
 export const COMPETITIONS: CompetitionConfig[] = [
@@ -35,6 +41,8 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchComp: 'LaLiga',
     description: 'Todos los partidos de la temporada de LaLiga: fechas, horarios, estadios y dónde verlos.',
     seasonLabel: '2025-2026',
+    banner: '/banners/laliga.webp',
+    crest: 'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/15.png',
   },
   {
     slug: 'champions',

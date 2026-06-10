@@ -189,6 +189,39 @@ export default async function CompetitionCalendarPage({
           <span style={{ color: 'var(--text-secondary)' }}>{comp.displayName}</span>
         </nav>
 
+        {/* Hero: fondo decorativo (generado con IA) + escudo oficial superpuesto.
+            Solo si la competición tiene banner configurado. WebP ligero + lazy → 0 impacto. */}
+        {comp.banner && (
+          <div className="relative overflow-hidden rounded-2xl mb-7" style={{ border: '1px solid var(--border)' }}>
+            <div className="relative w-full" style={{ aspectRatio: '1200 / 300' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={comp.banner}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div
+                className="absolute inset-0"
+                style={{ background: 'linear-gradient(90deg, rgba(7,7,12,0.92) 0%, rgba(7,7,12,0.5) 48%, rgba(7,7,12,0.32) 100%)' }}
+              />
+              {comp.crest && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={comp.crest}
+                  alt={comp.displayName}
+                  loading="lazy"
+                  decoding="async"
+                  className="absolute object-contain"
+                  style={{ left: '6%', top: '50%', transform: 'translateY(-50%)', height: '58%', maxWidth: '42%' }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
         <header className="mb-10">
           <div className="flex items-center gap-2.5 mb-3">
             <span className="section-accent" />
