@@ -346,13 +346,19 @@ function FightCard({
   submitting,
   onPick,
   onClear,
+  isMainEvent,
 }: {
   event:      UfcEvent
   prediction: UfcPredRow | undefined
   submitting: string | null
   onPick:     (eventId: string, pick: 'a' | 'b', method: Method | null) => void
   onClear:    (eventId: string) => void
+  isMainEvent?: boolean
 }) {
+  // Estelar fiable: lo decide el padre (combate con card_position===1). Si no
+  // llega, cae a event.featured. Blinda contra ⭐ falsos en veladas con datos
+  // viejos (sin posición de cartel) donde varios combates salen featured.
+  const showMain = isMainEvent ?? event.featured
   const now   = Date.now()
   const lockMs = msUntilLock(event.event_date)
   const isOpen     = event.status === 'open'
@@ -417,21 +423,21 @@ function FightCard({
       className="fight-card"
       style={{
         borderRadius: 20,
-        background: event.featured ? BG_FEAT : BG_CARD,
-        border: `1.5px solid ${event.featured ? 'rgba(248,113,113,0.25)' : 'rgba(255,255,255,0.07)'}`,
+        background: showMain ? BG_FEAT : BG_CARD,
+        border: `1.5px solid ${showMain ? 'rgba(248,113,113,0.25)' : 'rgba(255,255,255,0.07)'}`,
         overflow: 'hidden',
-        boxShadow: event.featured ? '0 4px 32px rgba(248,113,113,0.08)' : '0 2px 16px rgba(0,0,0,0.3)',
+        boxShadow: showMain ? '0 4px 32px rgba(248,113,113,0.08)' : '0 2px 16px rgba(0,0,0,0.3)',
         animation: 'uCardIn 0.4s ease-out both',
       }}
     >
       {/* Header */}
       <div style={{
         padding: '12px 16px 10px',
-        borderBottom: `1px solid ${event.featured ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.05)'}`,
+        borderBottom: `1px solid ${showMain ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.05)'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          {event.featured && (
+          {showMain && (
             <span
               className="u-feat"
               style={{
@@ -551,7 +557,7 @@ function FightCard({
         )}
 
         {/* Featured points hint */}
-        {event.featured && !isResolved && (
+        {showMain && !isResolved && (
           <div style={{
             marginTop: 10,
             padding: '6px 10px',
@@ -642,6 +648,57 @@ function FightCard({
           <span style={{ fontSize: 20, animation: 'uLivePulse 0.8s infinite' }}>🥊</span>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── CardSection ───────────────────────────────────────────────────────────
+// Un tramo del cartel: "Cartelera estelar" o "Preliminares". title=null → sin
+// cabecera (cartel pequeño o velada sin posiciones de cartel todavía).
+function CardSection({
+  title, fights, mainEventId, predictions, submitting, onPick, onClear,
+}: {
+  title:       string | null
+  fights:      UfcEvent[]
+  mainEventId: string | null
+  predictions: PredMap
+  submitting:  string | null
+  onPick:      (eventId: string, pick: 'a' | 'b', method: Method | null) => void
+  onClear:     (eventId: string) => void
+}) {
+  if (fights.length === 0) return null
+  return (
+    <div style={{ marginBottom: 24 }}>
+      {title && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          <div style={{ height: 1, flex: 1, background: 'linear-gradient(to right, rgba(248,113,113,0.25), transparent)' }} />
+          <span style={{
+            fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
+            color: 'rgba(248,113,113,0.85)', letterSpacing: '0.12em', textTransform: 'uppercase',
+          }}>
+            {title}
+          </span>
+          <div style={{ height: 1, flex: 1, background: 'linear-gradient(to left, rgba(248,113,113,0.25), transparent)' }} />
+        </div>
+      )}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+        gap: 16,
+      }}>
+        {fights.map((fight, fi) => (
+          <div key={fight.id} style={{ position: 'relative', animationDelay: `${fi * 0.06}s` }}>
+            <FightCard
+              event={fight}
+              prediction={predictions[fight.id]}
+              submitting={submitting}
+              onPick={onPick}
+              onClear={onClear}
+              isMainEvent={fight.id === mainEventId}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -1108,24 +1165,42 @@ export default function UfcClient() {
                 </div>
               </div>
 
-              {/* Cartel completo */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                gap: 16,
-              }}>
-                {cardFights.map((fight, fi) => (
-                  <div key={fight.id} style={{ position: 'relative', animationDelay: `${fi * 0.06}s` }}>
-                    <FightCard
-                      event={fight}
-                      prediction={predictions[fight.id]}
+              {/* Cartel: estelar arriba, preliminares debajo */}
+              {(() => {
+                const MAIN_CARD = 5
+                const hasPos = cardFights.some(f => f.meta?.card_position != null)
+                const main    = hasPos ? cardFights.filter(f => (f.meta?.card_position ?? 99) <= MAIN_CARD) : cardFights
+                const prelims = hasPos ? cardFights.filter(f => (f.meta?.card_position ?? 99) >  MAIN_CARD) : []
+                // Estelar fiable = combate en card_position 1. Si la velada aún
+                // no tiene posiciones (datos viejos), solo lo honramos si hay UN
+                // único featured; si hay varios (anomalía) → sin estelar (blindaje).
+                const featuredOnes = cardFights.filter(f => f.featured)
+                const mainEventId  = hasPos
+                  ? (cardFights.find(f => f.meta?.card_position === 1)?.id ?? null)
+                  : (featuredOnes.length === 1 ? featuredOnes[0].id : null)
+                return (
+                  <>
+                    <CardSection
+                      title={prelims.length > 0 ? 'Cartelera estelar' : null}
+                      fights={main}
+                      mainEventId={mainEventId}
+                      predictions={predictions}
                       submitting={submitting}
                       onPick={handlePick}
                       onClear={handleClear}
                     />
-                  </div>
-                ))}
-              </div>
+                    <CardSection
+                      title="Preliminares"
+                      fights={prelims}
+                      mainEventId={mainEventId}
+                      predictions={predictions}
+                      submitting={submitting}
+                      onPick={handlePick}
+                      onClear={handleClear}
+                    />
+                  </>
+                )
+              })()}
             </div>
           )
         })()}
