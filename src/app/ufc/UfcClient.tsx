@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TakaPoint from '@/components/TakaPoint'
+import EventHero from './EventHero'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -27,7 +28,15 @@ interface UfcEvent {
   featured:    boolean
   status:      'open' | 'closed' | 'resolved'
   result:      { winner: 'a' | 'b'; method: 'KO' | 'SUB' | 'DEC' | null } | null
-  meta:        { venue?: string; city?: string; espn_id?: string; ppv_id?: string; card_position?: number; card_total?: number } | null
+  meta:        {
+    venue?: string; city?: string; espn_id?: string; ppv_id?: string
+    card_position?: number; card_total?: number
+    poster_url?: string | null
+    fighters?: {
+      a?: { id?: string | null; flag?: string | null; belt?: string | null; record?: string | null }
+      b?: { id?: string | null; flag?: string | null; belt?: string | null; record?: string | null }
+    }
+  } | null
 }
 
 interface UfcPredRow {
@@ -962,6 +971,32 @@ export default function UfcClient() {
     })
   }, [currentEvent])
 
+  // Datos del banner cara-a-cara: el combate estelar de la velada actual.
+  const heroData = useMemo(() => {
+    if (!currentEvent || cardFights.length === 0) return null
+    const hf = cardFights.find(f => f.meta?.card_position === 1)
+            ?? cardFights.find(f => f.featured)
+            ?? cardFights[0]
+    const face = (s: 'a' | 'b') => ({
+      name:   (s === 'a' ? hf.fighter_a : hf.fighter_b) ?? (s === 'a' ? 'Luchador A' : 'Luchador B'),
+      id:     hf.meta?.fighters?.[s]?.id     ?? null,
+      flag:   hf.meta?.fighters?.[s]?.flag   ?? null,
+      belt:   hf.meta?.fighters?.[s]?.belt   ?? null,
+      record: hf.meta?.fighters?.[s]?.record ?? null,
+    })
+    return {
+      eventName:  currentEvent.name,
+      dateLabel:  toDateLabel(hf.event_date),
+      timeLabel:  toTimeLabel(hf.event_date),
+      venue:      hf.meta?.venue ?? null,
+      fightCount: cardFights.length,
+      isLive:     currentEvent.fights.some(f => f.status === 'closed'),
+      fighterA:   face('a'),
+      fighterB:   face('b'),
+      posterUrl:  hf.meta?.poster_url ?? null,
+    }
+  }, [currentEvent, cardFights])
+
   const totalPredicted = Object.keys(predictions).length
   const totalPoints = Object.values(predictions)
     .reduce((acc, p) => acc + (p.points_awarded ?? 0), 0)
@@ -982,30 +1017,36 @@ export default function UfcClient() {
         }}
       >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10">
-          {/* Title */}
-          <div className="u-title" style={{ textAlign: 'center', marginBottom: 20 }}>
-            <div className="u-glove" style={{ fontSize: 48, marginBottom: 8 }}>🥊</div>
-            <h1 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(1.8rem, 4vw, 3rem)',
-              fontWeight: 900,
-              letterSpacing: '-0.03em',
-              lineHeight: 1,
-              color: '#fff',
-            }}>
-              Ranked UFC
-            </h1>
-            <p style={{
-              marginTop: 8,
-              color: 'rgba(255,255,255,0.45)',
-              fontSize: 13,
-              maxWidth: 380,
-              margin: '8px auto 0',
-            }}>
-              Predice al ganador de cada combate. +2 pts extra si aciertas el método.
-              Main event vale el doble.
-            </p>
-          </div>
+          {/* Banner del evento (faceoff/póster) o título genérico si no hay velada */}
+          {currentEvent && heroData ? (
+            <div className="u-title">
+              <EventHero {...heroData} />
+            </div>
+          ) : (
+            <div className="u-title" style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div className="u-glove" style={{ fontSize: 48, marginBottom: 8 }}>🥊</div>
+              <h1 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(1.8rem, 4vw, 3rem)',
+                fontWeight: 900,
+                letterSpacing: '-0.03em',
+                lineHeight: 1,
+                color: '#fff',
+              }}>
+                Ranked UFC
+              </h1>
+              <p style={{
+                marginTop: 8,
+                color: 'rgba(255,255,255,0.45)',
+                fontSize: 13,
+                maxWidth: 380,
+                margin: '8px auto 0',
+              }}>
+                Predice al ganador de cada combate. +2 pts extra si aciertas el método.
+                Main event vale el doble.
+              </p>
+            </div>
+          )}
 
           {/* Stats strip — si hay sesión */}
           {hasSession && (totalPredicted > 0 || totalPoints > 0) && (
@@ -1125,47 +1166,9 @@ export default function UfcClient() {
 
         {/* ── Velada actual — cartel completo (estelar arriba) ─────── */}
         {currentEvent && (() => {
-          const hasLive = currentEvent.fights.some(f => f.status === 'closed')
           return (
             <div className="u-group" style={{ marginBottom: 40 }}>
-              {/* Cabecera de la velada */}
-              <div style={{ textAlign: 'center', marginBottom: 22 }}>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  padding: '5px 16px', borderRadius: 20, marginBottom: 12,
-                  background: 'rgba(248,113,113,0.08)',
-                  border: '1px solid rgba(248,113,113,0.2)',
-                }}>
-                  <span style={{ fontSize: 12 }}>🥊</span>
-                  <span style={{
-                    fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
-                    color: RED, letterSpacing: '0.1em', textTransform: 'uppercase',
-                  }}>
-                    {hasLive ? 'En vivo' : 'Próxima velada'}
-                  </span>
-                  {hasLive && (
-                    <span className="u-live" style={{
-                      width: 6, height: 6, borderRadius: '50%',
-                      background: '#EF4444', boxShadow: '0 0 6px #EF4444',
-                      display: 'inline-block',
-                    }} />
-                  )}
-                </div>
-                <h2 style={{
-                  fontFamily: 'var(--font-display)', fontSize: 'clamp(1.3rem, 3vw, 2rem)',
-                  fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1,
-                }}>
-                  {currentEvent.name}
-                </h2>
-                <div style={{
-                  marginTop: 6, fontSize: 11, color: 'rgba(255,255,255,0.4)',
-                  fontFamily: 'var(--font-sport)', letterSpacing: '0.06em', textTransform: 'uppercase',
-                }}>
-                  {toDateLabel(new Date(currentEvent.minDate).toISOString())} · {cardFights.length} combate{cardFights.length === 1 ? '' : 's'}
-                </div>
-              </div>
-
-              {/* Cartel: estelar arriba, preliminares debajo */}
+              {/* Cartel: estelar arriba, preliminares debajo (cabecera = EventHero arriba) */}
               {(() => {
                 const MAIN_CARD = 5
                 const hasPos = cardFights.some(f => f.meta?.card_position != null)

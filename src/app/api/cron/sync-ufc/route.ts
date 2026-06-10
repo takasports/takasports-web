@@ -23,13 +23,19 @@ import { checkBearerOrHeader } from '@/lib/auth-utils'
 export const dynamic = 'force-dynamic'
 
 interface EspnCompetitor {
-  id?:      string
+  id?:      string  // = athleteId → foto: a.espncdn.com/i/headshots/mma/players/full/{id}.png
   homeAway: string
-  athlete?: { displayName?: string; shortName?: string }
+  athlete?: {
+    displayName?: string
+    shortName?:   string
+    flag?:        { href?: string }
+    accolades?:   { name?: string; type?: string }[]
+  }
   team?:    { displayName?: string }
   score?:   string | { value: number }
   winner?:  boolean
   order?:   number  // Posición en el card (1 = main event)
+  records?: { summary?: string }[]
 }
 
 interface EspnStatusType {
@@ -108,6 +114,19 @@ function toUfcWinner(
  */
 function isPlaceholderFighter(name: string): boolean {
   return /\b(tba|tbd)\b/i.test(name) || /to be announced/i.test(name)
+}
+
+/**
+ * Datos del luchador para el banner cara-a-cara del evento (Fase 1).
+ * competitor.id es el athleteId → la foto se arma en el cliente.
+ */
+function fighterMeta(c: EspnCompetitor | undefined) {
+  return {
+    id:     c?.id ?? null,
+    flag:   c?.athlete?.flag?.href ?? null,
+    belt:   c?.athlete?.accolades?.find(a => a?.type === 'Belt')?.name ?? null,
+    record: c?.records?.find(r => r?.summary)?.summary ?? null,
+  }
 }
 
 async function handle(req: Request) {
@@ -206,6 +225,8 @@ async function handle(req: Request) {
           // Posición en el cartel: 1 = estelar, 2 = coestelar … (mayor = preliminar).
           card_position: fights.length - idx,
           card_total:    fights.length,
+          // Datos para el banner cara-a-cara (foto/bandera/cinturón/récord).
+          fighters: { a: fighterMeta(fighterA), b: fighterMeta(fighterB) },
         },
       }
 
