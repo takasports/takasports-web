@@ -433,8 +433,10 @@ function FightCard({
   // Datos de luchador para la carta (foto redimensionada ESPN ~28KB, récord, bandera).
   const fmA = event.meta?.fighters?.a
   const fmB = event.meta?.fighters?.b
+  // Solo ancho → el combiner PRESERVA la proporción (600×436). Forzar w=h lo
+  // estiraba a cuadrado y deformaba la cara. object-fit:cover recorta el círculo.
   const cardPhoto = (id?: string | null) =>
-    id ? `https://a.espncdn.com/combiner/i?img=/i/headshots/mma/players/full/${id}.png&w=140&h=140` : null
+    id ? `https://a.espncdn.com/combiner/i?img=/i/headshots/mma/players/full/${id}.png&w=160` : null
 
   const isA = myPick === 'a'
   const isB = myPick === 'b'
