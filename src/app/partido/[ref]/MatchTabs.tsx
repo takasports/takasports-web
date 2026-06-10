@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 
 export interface TabDef {
   id: string
@@ -19,13 +19,41 @@ export function MatchTabs({
 }) {
   const firstAvailableIdx = tabs.findIndex(t => t.available)
   const [activeIdx, setActiveIdx] = useState(firstAvailableIdx >= 0 ? firstAvailableIdx : 0)
-  const activeRef = useRef<HTMLButtonElement | null>(null)
-  const barRef    = useRef<HTMLDivElement | null>(null)
+  const btnRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   // Scroll active tab into view on mobile when switching
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    btnRefs.current[activeIdx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
   }, [activeIdx])
+
+  // Teclado: flechas ←/→ navegan entre pestañas disponibles (patrón WAI-ARIA
+  // tabs), Home/End saltan a la primera/última disponible. Mueve foco + activa.
+  const focusActivate = useCallback((i: number) => {
+    setActiveIdx(i)
+    btnRefs.current[i]?.focus()
+  }, [])
+
+  const step = useCallback((dir: 1 | -1) => {
+    const n = tabs.length
+    let i = activeIdx
+    for (let s = 0; s < n; s++) {
+      i = (i + dir + n) % n
+      if (tabs[i]?.available) { focusActivate(i); return }
+    }
+  }, [activeIdx, tabs, focusActivate])
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); step(1) }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); step(-1) }
+    else if (e.key === 'Home') {
+      e.preventDefault()
+      const i = tabs.findIndex(t => t.available)
+      if (i >= 0) focusActivate(i)
+    } else if (e.key === 'End') {
+      e.preventDefault()
+      for (let i = tabs.length - 1; i >= 0; i--) if (tabs[i].available) { focusActivate(i); break }
+    }
+  }
 
   return (
     <div>
@@ -42,7 +70,9 @@ export function MatchTabs({
       >
         {topSlot}
         <div
-          ref={barRef}
+          role="tablist"
+          aria-label="Secciones del partido"
+          onKeyDown={onKeyDown}
           className="flex gap-1 overflow-x-auto p-1 rounded-xl"
           style={{
             scrollbarWidth: 'none',
@@ -56,7 +86,13 @@ export function MatchTabs({
             return (
               <button
                 key={tab.id}
-                ref={isActive ? activeRef : null}
+                ref={(el) => { btnRefs.current[i] = el }}
+                role="tab"
+                id={`match-tab-${tab.id}`}
+                aria-selected={isActive}
+                aria-controls={`match-panel-${tab.id}`}
+                aria-disabled={isDisabled || undefined}
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => !isDisabled && setActiveIdx(i)}
                 disabled={isDisabled}
                 className="relative px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] transition-all whitespace-nowrap flex-shrink-0 rounded-lg"
@@ -78,11 +114,21 @@ export function MatchTabs({
 
       {/* Tab content — all rendered, visibility toggled. Margin top compensates for sticky pb-2 */}
       <div className="mt-4">
-        {children.map((child, i) => (
-          <div key={i} style={{ display: activeIdx === i ? 'block' : 'none' }}>
-            {child}
-          </div>
-        ))}
+        {children.map((child, i) => {
+          const tab = tabs[i]
+          return (
+            <div
+              key={i}
+              role="tabpanel"
+              id={tab ? `match-panel-${tab.id}` : undefined}
+              aria-labelledby={tab ? `match-tab-${tab.id}` : undefined}
+              hidden={activeIdx !== i}
+              tabIndex={0}
+            >
+              {child}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

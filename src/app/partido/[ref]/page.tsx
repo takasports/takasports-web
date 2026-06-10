@@ -15,10 +15,11 @@ import { LiveRefresh } from './LiveRefresh'
 import { StickyScoreBar } from './StickyScoreBar'
 import { ShareButton } from '@/components/ShareButton'
 import { AddToCalendarButton } from '@/components/AddToCalendarButton'
+import MatchNews from '@/components/MatchNews'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import { isSplitBroadcast } from '@/lib/broadcasts'
 import { GoalIcon, YellowCardIcon, RedCardIcon } from '@/components/icons/GameIcons'
-import { fetchH2H, type H2HResult } from '@/lib/past-events'
+import { fetchH2H, fetchRecentFormByTeams, type H2HResult, type FormResult } from '@/lib/past-events'
 
 // Cache 2 min en ISR. Partidos en vivo se refrescan a 30s vía LiveRefresh
 // (router.refresh client-side), partidos finalizados aprovechan el cache.
@@ -1016,6 +1017,58 @@ function LineupField({ lineups, homeTeam, awayTeam, leagueSlug, scoring }: {
 }
 
 // ── Head-to-head block ─────────────────────────────────────────────
+// ── Forma reciente (últimos resultados de cada equipo) ──────────────
+function FormPips({ form }: { form: FormResult[] }) {
+  // Llegan más-reciente-primero; mostramos antiguo→reciente (último a la derecha).
+  const ordered = [...form].reverse()
+  return (
+    <div className="flex items-center gap-1">
+      {ordered.map((r, i) => {
+        const c = r === 'W' ? '#86EFAC' : r === 'L' ? '#FCA5A5' : '#FBBF24'
+        const label = r === 'W' ? 'Victoria' : r === 'L' ? 'Derrota' : 'Empate'
+        return (
+          <span
+            key={i}
+            title={label}
+            aria-label={label}
+            className="inline-flex items-center justify-center font-black text-[9px]"
+            style={{ width: 16, height: 16, borderRadius: 4, background: `${c}22`, color: c, border: `1px solid ${c}40`, fontFamily: 'var(--font-sport)' }}
+          >
+            {r}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+function FormGuide({ homeTeam, awayTeam, forms }: { homeTeam?: string; awayTeam?: string; forms: Record<string, FormResult[]> }) {
+  const hf = (homeTeam && forms[homeTeam]) || []
+  const af = (awayTeam && forms[awayTeam]) || []
+  if (hf.length === 0 && af.length === 0) return null
+  return (
+    <Section title="Forma reciente">
+      <div className="flex flex-col gap-2.5">
+        {hf.length > 0 && (
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[12px] font-bold truncate" style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>{homeTeam}</span>
+            <FormPips form={hf} />
+          </div>
+        )}
+        {af.length > 0 && (
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[12px] font-bold truncate" style={{ color: '#F59E0B', fontFamily: 'var(--font-sport)' }}>{awayTeam}</span>
+            <FormPips form={af} />
+          </div>
+        )}
+      </div>
+      <p className="text-[10px] mt-3" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+        Últimos resultados · más reciente a la derecha
+      </p>
+    </Section>
+  )
+}
+
 function H2HBlock({ h2h, homeTeam, awayTeam }: { h2h: H2HResult; homeTeam: string; awayTeam: string }) {
   if (h2h.matches.length === 0) {
     return <EmptyState message="Sin enfrentamientos previos registrados" />
@@ -1135,7 +1188,7 @@ function H2HBlock({ h2h, homeTeam, awayTeam }: { h2h: H2HResult; homeTeam: strin
 }
 
 // ── Main match content ─────────────────────────────────────────────
-function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | null }) {
+function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResult | null; forms: Record<string, FormResult[]> }) {
   const live       = isLive(match.status)
   const isSoccer   = match.sport === 'soccer'
   const isBasket   = match.sport === 'basketball'
@@ -1218,6 +1271,7 @@ function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | nul
         {match.sport === 'mma'        && <MmaBlock     match={match} />}
         {match.sport === 'racing'     && <RacingBlock  match={match} />}
         {match.sport === 'golf'       && <GolfBlock    match={match} />}
+        <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
       </div>
     )
   }
@@ -1239,6 +1293,8 @@ function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | nul
         <TeamScoreboard match={match} />
       </div>
       <InfoRow match={match} />
+
+      <FormGuide homeTeam={match.homeTeam} awayTeam={match.awayTeam} forms={forms} />
 
       <MatchTabs
         tabs={tabs}
@@ -1304,7 +1360,11 @@ function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | nul
               scoring={match.soccer?.scoring}
             />
           ) : (
-            <EmptyState message="Alineación no disponible aún" />
+            <EmptyState message={
+              !finishedStatus && !live
+                ? 'Las alineaciones se publican habitualmente ~1 h antes del inicio. Vuelve a abrir el partido cerca del comienzo.'
+                : 'Alineaciones no disponibles para este partido.'
+            } />
           )}
         </div>
 
@@ -1332,7 +1392,11 @@ function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | nul
               </div>
             </Section>
           )}
-          {!hasStats && <EmptyState message="Estadísticas no disponibles" />}
+          {!hasStats && <EmptyState message={
+            live
+              ? 'Las estadísticas aparecerán a medida que avance el partido.'
+              : 'Estadísticas no disponibles para este partido.'
+          } />}
         </div>
 
         {/* ── Tab 3: H2H ───────────────────────────────── */}
@@ -1353,6 +1417,7 @@ function MatchContent({ match, h2h }: { match: MatchDetail; h2h: H2HResult | nul
           )}
         </div>
       </MatchTabs>
+      <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
     </div>
   )
 }
@@ -1371,10 +1436,21 @@ export default async function MatchPage({
   // H2H: last meetings between the two teams (soccer team sports only). Pulled
   // from our own past_events cache so it's free and fast. If Supabase isn't
   // configured the function returns null and the tab is hidden.
-  const h2h = (match.sport === 'soccer' || match.sport === 'basketball')
-    && match.homeTeam && match.awayTeam
-      ? await fetchH2H(match.homeTeam, match.awayTeam, { limit: 5, excludeId: match.id })
-      : null
+  // Para deportes de equipo (fútbol/básket) traemos H2H (últimos 10) + forma
+  // reciente (últimos 5 de cada equipo) en paralelo desde nuestra caché propia
+  // past_events. Si Supabase no está configurado, h2h=null y forms={} → la UI
+  // degrada (oculta tab H2H / no muestra forma). Coste 0.
+  const teamPair = (match.sport === 'soccer' || match.sport === 'basketball') && match.homeTeam && match.awayTeam
+    ? { home: match.homeTeam, away: match.awayTeam }
+    : null
+  const [h2h, forms] = await Promise.all([
+    teamPair
+      ? fetchH2H(teamPair.home, teamPair.away, { limit: 10, excludeId: match.id })
+      : Promise.resolve(null),
+    teamPair
+      ? fetchRecentFormByTeams([teamPair.home, teamPair.away], 5).then((m) => m ?? {})
+      : Promise.resolve({} as Record<string, FormResult[]>),
+  ])
 
   const STATUS_MAP: Record<string, string> = {
     STATUS_FINAL: 'https://schema.org/EventCompleted',
@@ -1513,7 +1589,7 @@ export default async function MatchPage({
       <LiveStrip />
       <main className="flex-1">
         <Suspense>
-          <MatchContent match={match} h2h={h2h} />
+          <MatchContent match={match} h2h={h2h} forms={forms} />
         </Suspense>
       </main>
       <Footer />

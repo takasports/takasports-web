@@ -165,6 +165,20 @@ export const articlesByEntityQuery = `*[_type == "article"
   ${LISTING_FIELDS}
 }`
 
+// Noticias relacionadas con un partido: artículos que mencionan a cualquiera
+// de los dos equipos/jugadores (match prefijo en title/headline/summary/meta).
+// Alimenta el bloque "Noticias relacionadas" de /partido — enlace interno
+// editorial→fixture, ventaja única de Taka por ser también redacción.
+export const articlesByMatchQuery = `*[_type == "article"
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+  && (
+    title match $home || headline match $home || short_summary match $home || metaDescription match $home
+    || title match $away || headline match $away || short_summary match $away || metaDescription match $away
+  )
+] | order(publishedAt desc)[0...$limit] {
+  ${LISTING_FIELDS}
+}`
+
 // Breaking — ticker de últimas horas
 // Cubre: artículos viejos con type=="breaking" + artículos Taka con status=="breaking"
 export const breakingQuery = `*[_type == "article" && publishedAt > $since && (
