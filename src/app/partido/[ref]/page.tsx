@@ -120,7 +120,13 @@ function TeamLogo({ logo, name, size = 56 }: { logo?: string; name: string; size
   }
   return (
     <div className="flex items-center justify-center rounded-2xl font-black text-xl"
-      style={{ width: size, height: size, background: 'rgba(255,255,255,0.06)', color: '#555' }}>
+      style={{
+        width: size, height: size,
+        background: 'radial-gradient(circle at 50% 32%, rgba(124,58,237,0.18), rgba(255,255,255,0.035))',
+        border: '1px solid rgba(255,255,255,0.08)',
+        color: '#A7A7C0',
+        letterSpacing: '0.02em',
+      }}>
       {name.slice(0, 2).toUpperCase()}
     </div>
   )
@@ -153,11 +159,37 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function EmptyState({ message }: { message: string }) {
+// Ilustraciones monolínea ligeras (inline SVG, ~0 peso) para los estados vacíos.
+// Dan contexto visual sin coste ni red. Tinte muy tenue para no competir con el
+// contenido real cuando llega.
+type EmptyKind = 'lineup' | 'stats' | 'h2h' | 'events' | 'table'
+function EmptyGlyph({ kind, size = 40 }: { kind?: EmptyKind; size?: number }) {
+  const p = {
+    width: size, height: size, viewBox: '0 0 48 48', fill: 'none',
+    stroke: 'currentColor', strokeWidth: 1.6,
+    strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
+  }
+  switch (kind) {
+    case 'lineup':
+      return (<svg {...p}><rect x="6" y="9" width="36" height="30" rx="3" /><path d="M24 9v30" /><circle cx="24" cy="24" r="5" /><path d="M6 17h5v14H6M42 17h-5v14h5" /></svg>)
+    case 'stats':
+      return (<svg {...p}><path d="M6 41h36" /><path d="M12 41V25M22 41V11M32 41V19" /></svg>)
+    case 'h2h':
+      return (<svg {...p}><circle cx="17" cy="24" r="8.5" /><circle cx="31" cy="24" r="8.5" /></svg>)
+    case 'table':
+      return (<svg {...p}><rect x="8" y="11" width="32" height="26" rx="2.5" /><path d="M8 20h32M8 28.5h32M17 11v26" /></svg>)
+    case 'events':
+    default:
+      return (<svg {...p}><circle cx="24" cy="24" r="15" /><path d="M24 15v9l6 4" /></svg>)
+  }
+}
+
+function EmptyState({ message, kind }: { message: string; kind?: EmptyKind }) {
   return (
-    <div className="text-center py-12 rounded-xl"
+    <div className="text-center py-12 rounded-xl flex flex-col items-center gap-3"
       style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.07)' }}>
-      <p className="text-[12px] font-semibold" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+      <span style={{ color: '#3A3A48' }} aria-hidden><EmptyGlyph kind={kind} /></span>
+      <p className="text-[12px] font-semibold max-w-xs" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
         {message}
       </p>
     </div>
@@ -1071,7 +1103,7 @@ function FormGuide({ homeTeam, awayTeam, forms }: { homeTeam?: string; awayTeam?
 
 function H2HBlock({ h2h, homeTeam, awayTeam }: { h2h: H2HResult; homeTeam: string; awayTeam: string }) {
   if (h2h.matches.length === 0) {
-    return <EmptyState message="Sin enfrentamientos previos registrados" />
+    return <EmptyState message="Sin enfrentamientos previos registrados" kind="h2h" />
   }
 
   const total = h2h.wins + h2h.draws + h2h.losses || 1
@@ -1345,7 +1377,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
             </>
           )}
           {!hasSoccerScoring && !isBasket && (
-            <EmptyState message="Sin eventos registrados aún" />
+            <EmptyState message="Sin eventos registrados aún" kind="events" />
           )}
         </div>
 
@@ -1364,7 +1396,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
               !finishedStatus && !live
                 ? 'Las alineaciones se publican habitualmente ~1 h antes del inicio. Vuelve a abrir el partido cerca del comienzo.'
                 : 'Alineaciones no disponibles para este partido.'
-            } />
+            } kind="lineup" />
           )}
         </div>
 
@@ -1396,7 +1428,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
             live
               ? 'Las estadísticas aparecerán a medida que avance el partido.'
               : 'Estadísticas no disponibles para este partido.'
-          } />}
+          } kind="stats" />}
         </div>
 
         {/* ── Tab 3: H2H ───────────────────────────────── */}
@@ -1404,7 +1436,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
           {hasH2H && match.homeTeam && match.awayTeam ? (
             <H2HBlock h2h={h2h!} homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
           ) : (
-            <EmptyState message="Sin enfrentamientos previos registrados" />
+            <EmptyState message="Sin enfrentamientos previos registrados" kind="h2h" />
           )}
         </div>
 
@@ -1413,7 +1445,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
           {hasTable ? (
             <LeagueTableBlock rows={match.leagueTable!} leagueLabel={match.leagueLabel} leagueSlug={match.leagueSlug} />
           ) : (
-            <EmptyState message="Clasificación no disponible" />
+            <EmptyState message="Clasificación no disponible" kind="table" />
           )}
         </div>
       </MatchTabs>
