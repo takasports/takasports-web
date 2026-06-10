@@ -12,6 +12,7 @@ import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
 import CompetitionRail from '@/components/CompetitionRail'
+import { COMPETITIONS } from '@/lib/calendar-competitions'
 import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
 
 // ── Favorites helpers ──────────────────────────────────────────
@@ -442,20 +443,50 @@ function BroadcastChip({ comp, sport, tz, fallback }: {
   )
 }
 
+// Config de competición (página + escudo) para un grupo del feed, si existe.
+// Match PRECISO (no substring) para no enlazar mal: nombre exacto de la comp
+// (ligas de fútbol) o deporte exacto (NBA/F1/UFC). Así "Premier Padel" no cae
+// en Premier League ni "LaLiga 2" en LaLiga.
+function compConfigForGroup(comp: string, sport?: string) {
+  const cl = comp.trim().toLowerCase()
+  const sl = sport?.trim().toLowerCase()
+  return COMPETITIONS.find((c) =>
+    (c.matchComp && c.matchComp.toLowerCase() === cl) ||
+    (c.matchSport && sl && c.matchSport.toLowerCase() === sl)
+  ) ?? null
+}
+
 // ─── Competition sub-header ───────────────────────────────────────────────
-function CompGroupHeader({ comp, accent, count, first }: { comp: string; accent: string; count: number; first?: boolean }) {
-  return (
+// Si la competición tiene página propia, la cabecera lleva su escudo oficial y
+// es un enlace a /calendario/[slug] (anclaje visual + descubrimiento).
+function CompGroupHeader({ comp, accent, count, first, crest, slug }: {
+  comp: string; accent: string; count: number; first?: boolean; crest?: string; slug?: string
+}) {
+  const inner = (
     <div className={`flex items-center gap-2.5 px-1 pb-2 ${first ? 'pt-1' : 'pt-4'}`}>
       <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 14, background: accent, boxShadow: `0 0 8px ${accent}66` }} />
+      {crest && (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={crest} alt="" aria-hidden="true" width={16} height={16} loading="lazy" decoding="async"
+          style={{ objectFit: 'contain', width: 16, height: 16, flexShrink: 0 }} />
+      )}
       <span className="text-[11px] font-bold uppercase tracking-[0.12em] truncate flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
         {comp}
       </span>
+      {slug && (
+        <svg width="9" height="9" viewBox="0 0 12 12" fill="none" className="flex-shrink-0" aria-hidden style={{ opacity: 0.55 }}>
+          <path d="M4.5 2L8 6l-3.5 4" stroke={accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
       <span className="text-[9px] font-bold tabular-nums px-2 py-0.5 rounded-full flex-shrink-0"
         style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
         {count}
       </span>
     </div>
   )
+  return slug
+    ? <Link href={`/calendario/${slug}`} prefetch={false} className="block no-underline transition-all hover:brightness-125" aria-label={`Ver calendario de ${comp}`}>{inner}</Link>
+    : inner
 }
 
 // Inline strip of 5 W/D/L chips for a team's recent form. Renders nothing
@@ -1486,8 +1517,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       setReminders(new Set(stored))
       const favs = JSON.parse(localStorage.getItem('ts_favorites') ?? '[]')
       setFavorites(new Set(favs))
-      const onboarded = localStorage.getItem('ts_onboarded')
-      if (!onboarded) setShowOnboarding(true)
+      // El onboarding de favoritos ya NO se auto-abre: antes tapaba todo el
+      // calendario en la 1ª visita (fricción). La invitación vive en el CTA
+      // "Elegir equipos" del feed; el modal solo abre si el usuario lo pulsa.
 
       // ── Restore prefs: URL takes priority over localStorage ─────
       const params = new URLSearchParams(window.location.search)
@@ -2274,7 +2306,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     background: 'transparent',
                     border: 'none',
                   }}>
-                  {sport}
+                  <span className="inline-flex items-center gap-1.5">
+                    {sport !== 'Todo' && <SportIcon sport={sport} size={13} />}
+                    {sport}
+                  </span>
                   {active && (
                     <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full"
                       style={{ background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
@@ -2420,9 +2455,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                   {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     const accent = getCompAccent(comp, compEvents[0]?.accent)
+                    const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
                     return (
                       <div key={comp} className="mb-2 relative">
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <MatchRow
@@ -2651,9 +2687,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                   {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     const accent = getCompAccent(comp, compEvents[0]?.accent)
+                    const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
                     return (
                       <div key={comp} className="mb-2 relative">
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <PastMatchRow
