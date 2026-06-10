@@ -33,7 +33,9 @@ export async function generateMetadata({
 }) {
   const { ref } = await params
   const match    = await fetchMatchDetail(ref)
-  if (!match) return { title: 'Partido | TakaSports' }
+  // Nota: el título NO debe llevar "| TakaSports" — la plantilla del layout raíz
+  // (title.template '%s | TakaSports') ya lo añade. Incluirlo aquí lo duplicaba.
+  if (!match) return { title: 'Partido' }
 
   let title = ''
   let description = ''
@@ -42,19 +44,21 @@ export async function generateMetadata({
     const score = match.homeScore != null && match.awayScore != null
       ? ` ${match.homeScore}–${match.awayScore}`
       : ''
-    title = `${match.homeTeam}${score} ${match.awayTeam} · ${match.leagueLabel} | TakaSports`
+    title = `${match.homeTeam}${score} ${match.awayTeam} · ${match.leagueLabel}`
     description = `${match.statusLabel} · ${match.homeTeam} vs ${match.awayTeam}${match.venue ? ` en ${match.venue}` : ''}`
   } else if (match.mma?.fighters?.length) {
     const [a, b] = match.mma.fighters
-    title = `${a?.name ?? '?'} vs ${b?.name ?? '?'} · UFC | TakaSports`
+    title = `${a?.name ?? '?'} vs ${b?.name ?? '?'} · UFC`
     description = `${match.mma.weightClass ?? 'UFC'} · ${match.statusLabel}`
   } else {
-    title = `${match.leagueLabel} | TakaSports`
+    title = match.leagueLabel
     description = match.statusLabel
   }
 
-  const ogImage = match.homeLogo ?? `${SITE_URL}/taka-icon.png`
-
+  // No fijamos openGraph.images ni twitter.images aquí: dejamos que el archivo
+  // opengraph-image.tsx (1200×630, tarjeta grande con escudos+marcador) los
+  // genere. Antes se pisaba con el logo de ESPN a 200×200 → preview borroso en
+  // redes pese a declarar summary_large_image.
   return {
     title,
     description,
@@ -62,7 +66,6 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      images: [{ url: ogImage, width: 200, height: 200 }],
       type: 'website',
       siteName: 'TakaSports',
     },

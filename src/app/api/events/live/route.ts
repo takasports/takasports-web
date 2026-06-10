@@ -193,7 +193,7 @@ async function fetchTeamLeague(slug: string, sport: string, comp: string, league
   try {
     const res = await fetch(
       `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
-      { next: { revalidate: 30 } }
+      { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }
     )
     if (!res.ok) return []
     const json = await res.json()
@@ -286,7 +286,7 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
   try {
     const res = await fetch(
       `https://site.api.espn.com/apis/site/v2/sports/${slug}/events?limit=50`,
-      { next: { revalidate: 30 } }
+      { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }
     )
     if (!res.ok) return []
     const json = await res.json()
@@ -355,7 +355,7 @@ async function fetchUfcLive(): Promise<LiveScore[]> {
   try {
     const res = await fetch(
       'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
-      { next: { revalidate: 30 } }
+      { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }
     )
     if (!res.ok) return []
     const json = await res.json()
@@ -428,7 +428,7 @@ async function fetchF1Live(): Promise<LiveScore[]> {
   try {
     const res = await fetch(
       'https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard',
-      { next: { revalidate: 30 } }
+      { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }
     )
     if (!res.ok) return []
     const json = await res.json()

@@ -102,13 +102,21 @@ interface RawEvent {
   event: SportEvent
 }
 
+// Aborta el fetch a ESPN si tarda más de `ms`. Sin esto, una sola liga colgada
+// bloquea todo el Promise.allSettled (hasta el timeout de socket de Node, ~2min)
+// y congela el render del calendario. Al abortar, fetch lanza → el caller lo
+// captura y sigue con el resto. Conserva el revalidate 300 de la caché de Next.
+async function espnFetch(url: string, ms = 8000): Promise<Response> {
+  return fetch(url, { next: { revalidate: 300 }, signal: AbortSignal.timeout(ms) })
+}
+
 async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
   const { accent } = getSportStyle(source.sport)
   const url = `https://site.api.espn.com/apis/site/v2/sports/${source.slug}/scoreboard?dates=${dateRangeParam(21)}&limit=30`
 
   let json: Record<string, unknown>
   try {
-    const res = await fetch(url, { next: { revalidate: 300 } })
+    const res = await espnFetch(url)
     if (!res.ok) return []
     json = await res.json()
   } catch {
@@ -205,7 +213,7 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
 
   let json: Record<string, unknown>
   try {
-    const res = await fetch(url, { next: { revalidate: 300 } })
+    const res = await espnFetch(url)
     if (!res.ok) return []
     json = await res.json()
   } catch {
@@ -352,7 +360,7 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
 
   let json: Record<string, unknown>
   try {
-    const res = await fetch(url, { next: { revalidate: 300 } })
+    const res = await espnFetch(url)
     if (!res.ok) return []
     json = await res.json()
   } catch {
@@ -465,7 +473,7 @@ async function fetchTennisPast(slug: string, daysBack = 10): Promise<RawEvent[]>
 
   let json: Record<string, unknown>
   try {
-    const res = await fetch(url, { next: { revalidate: 300 } })
+    const res = await espnFetch(url)
     if (!res.ok) return []
     json = await res.json()
   } catch {
