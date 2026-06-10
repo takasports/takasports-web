@@ -21,6 +21,7 @@ import { scorePicks }         from '@/lib/quiniela'
 import { enrichResultsWithFeatured } from '@/lib/quiniela-featured'
 import type { SavedPick, MatchResult, ScoreBreakdown } from '@/lib/quiniela'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
+import { evaluateTopNBadges } from '@/lib/special-badges'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60  // hasta 1 min — puede procesar muchos usuarios
@@ -299,6 +300,17 @@ async function handle(req: Request) {
     }
   }
 
+  // ── Special badges top_n (cross-user) ──────────────────────────────
+  // Tras liquidar, otorga los badges "TOP N del ranking semanal" de las
+  // jornadas que ya cerraron del todo. Best-effort: no debe romper el
+  // settle. Normalmente no-op (0 badges top_n activos).
+  let topN: Awaited<ReturnType<typeof evaluateTopNBadges>> | undefined
+  try {
+    topN = await evaluateTopNBadges(admin)
+  } catch (e) {
+    errors.push(`top_n eval failed: ${String(e)}`)
+  }
+
   return NextResponse.json({
     ok:            true,
     pending_found: pending.length,
@@ -306,6 +318,7 @@ async function handle(req: Request) {
     skipped_count: skippedCount,
     errors:        errors.length > 0 ? errors.slice(0, 10) : undefined,
     results_available: results.length,
+    top_n:         topN,
   })
 }
 

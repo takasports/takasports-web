@@ -400,7 +400,7 @@ export async function POST(req: NextRequest) {
 
         const isFirstBet = histPayloads.filter(p => p.staked).length === 0
         const isFirstWin = histPayloads.filter(p =>
-          p.settled && (p.totalWon ?? 0) > (p.totalStakeCharged ?? 0)
+          p.settled && (p.totalWon ?? 0) > 0
         ).length === 0
 
         // Streak: cuántas jornadas consecutivas previas (settled) tuvieron win.
@@ -500,9 +500,9 @@ export async function POST(req: NextRequest) {
             await grantSpecialBadge(sb, sp, user.id)
           }
         }
-        // Nota: top_n se evalúa en un job separado tras cierre completo
-        // de la jornada (no en cada settle individual). Pendiente: cron
-        // o trigger admin manual.
+        // Nota: top_n NO se evalúa aquí (requiere rankear cross-user). Se
+        // otorga desde el cron settle-quiniela (evaluateTopNBadges) una vez
+        // la jornada cierra del todo — ver lib/special-badges.ts.
       } catch (badgeErr) {
         console.error('[score/settle] badge award failed', badgeErr)
       }

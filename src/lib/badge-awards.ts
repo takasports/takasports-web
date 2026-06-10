@@ -43,7 +43,7 @@ const BADGE_PUSH_COPY: Record<string, { title: string; body: string }> = {
   oraculo:                    { title: '🔮 Oráculo',               body: '4+ aciertos en una jornada. Tienes un don.' },
   vidente:                    { title: '🔮 Vidente',               body: 'Clavaste tu primer marcador exacto. Tienes ojo.' },
   clarividente:               { title: '✨ Clarividente',           body: 'Los 3 marcadores exactos de la jornada — épico.' },
-  high_roller:                { title: '💎 High Roller',           body: 'Apuesta grande, victoria grande. Badge desbloqueado.' },
+  high_roller:                { title: '💎 Gran jornada',          body: 'Una jornada para enmarcar. Badge desbloqueado.' },
   racha_5:                    { title: '🔥 EN LLAMAS',             body: '5 jornadas seguidas ganando. Eso ya es nivel élite.' },
   racha_dias_7:               { title: '🔥 Semana en racha',       body: '7 días seguidos en TakaSports. Badge "Semana de Fuego" desbloqueado.' },
   racha_dias_30:              { title: '💥 Mes en racha',          body: '30 días seguidos. Eres imparable.' },
@@ -158,8 +158,8 @@ export async function awardBadges(
 //
 // Inputs:
 //   · breakdown:   resultado de scorePicks
-//   · totalStake:  monedas apostadas (para high_roller)
-//   · totalWon:    monedas ganadas (para first_win)
+//   · totalStake:  (legado) monedas apostadas — hoy siempre 0 (sin apuestas)
+//   · totalWon:    puntos ganados en la jornada (first_win, high_roller)
 //   · picks:       picks con oddsAtPick para detectar underdog
 //   · prevStreak:  nº de jornadas consecutivas con ganancias ANTES de esta
 //                  (0 = no streak previa)
@@ -181,16 +181,28 @@ interface SettleBadgeContext {
   exactHits?: number
 }
 
+// Umbral de la badge "Gran jornada" (💎, antes high_roller): puntos en una
+// sola jornada. Calibrado para jornadas de 5–10 partidos (1/acierto, +3 exacto,
+// ×2 destacado, +5 pleno → un pleno de 10 partidos = 15, máximo realista ~28).
+// 15 = "pleno de jornada grande o jornada cargada de exactos". Ajustable.
+const HIGH_ROLLER_MIN_POINTS = 15
+
 export function badgesEarnedOnSettle(ctx: SettleBadgeContext): string[] {
   const earned: string[] = []
 
   if (ctx.isFirstBet) earned.push('first_bet')
-  if (ctx.isFirstWin && ctx.totalWon > ctx.totalStake) earned.push('first_win')
+  // first_win: primera jornada en la que sumas puntos (≥1). Distinta de
+  // first_bet (que es solo sellar, aunque saques 0). Sin apuestas, "ganar"
+  // = puntuar; el viejo `totalWon > totalStake` era trivial con stake=0.
+  if (ctx.isFirstWin && ctx.totalWon > 0) earned.push('first_win')
 
   if (ctx.pleno && ctx.totalPicks > 0) earned.push('pleno_jornada')
   if (ctx.hits >= 4) earned.push('oraculo')
 
-  if (ctx.totalStake >= 500 && ctx.totalWon > ctx.totalStake) {
+  // Gran jornada (💎): una jornada de muchos puntos. Reemplaza el viejo
+  // criterio de apuesta (stake≥500) — inalcanzable desde que se retiraron
+  // las apuestas — por puntería pura.
+  if (ctx.totalWon >= HIGH_ROLLER_MIN_POINTS) {
     earned.push('high_roller')
   }
 
