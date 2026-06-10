@@ -44,7 +44,9 @@ export default function CompetitionRail({ events }: { events: SportEvent[] }) {
               className="group flex items-center gap-2.5 flex-shrink-0 rounded-xl pl-2.5 pr-3 py-2 transition-all hover:brightness-125 no-underline"
               style={{
                 background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.07)',
+                borderTop: '1px solid rgba(255,255,255,0.07)',
+                borderRight: '1px solid rgba(255,255,255,0.07)',
+                borderBottom: '1px solid rgba(255,255,255,0.07)',
                 borderLeft: `3px solid ${accent}`,
               }}
             >

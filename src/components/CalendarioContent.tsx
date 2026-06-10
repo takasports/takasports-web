@@ -459,8 +459,9 @@ function compConfigForGroup(comp: string, sport?: string) {
 // ─── Competition sub-header ───────────────────────────────────────────────
 // Si la competición tiene página propia, la cabecera lleva su escudo oficial y
 // es un enlace a /calendario/[slug] (anclaje visual + descubrimiento).
-function CompGroupHeader({ comp, accent, count, first, crest, slug }: {
+function CompGroupHeader({ comp, accent, count, first, crest, slug, pinned, onTogglePin }: {
   comp: string; accent: string; count: number; first?: boolean; crest?: string; slug?: string
+  pinned?: boolean; onTogglePin?: () => void
 }) {
   const inner = (
     <div className={`flex items-center gap-2.5 px-1 pb-2 ${first ? 'pt-1' : 'pt-4'}`}>
@@ -473,6 +474,24 @@ function CompGroupHeader({ comp, accent, count, first, crest, slug }: {
       <span className="text-[11px] font-bold uppercase tracking-[0.12em] truncate flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
         {comp}
       </span>
+      {pinned && (
+        <span className="text-[8px] font-black uppercase tracking-wider flex-shrink-0" style={{ color: accent, fontFamily: 'var(--font-sport)', opacity: 0.85 }}>
+          Fijada
+        </span>
+      )}
+      {onTogglePin && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTogglePin() }}
+          aria-label={pinned ? `Dejar de fijar ${comp}` : `Fijar ${comp} arriba`}
+          aria-pressed={!!pinned}
+          className="flex items-center justify-center flex-shrink-0 rounded-md transition-all"
+          style={{ width: 22, height: 22, cursor: 'pointer', background: pinned ? `${accent}22` : 'transparent', border: 'none' }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill={pinned ? accent : 'none'} stroke={pinned ? accent : '#6A6A80'} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+            <path d="M12 2.5l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 16.8 6.4 19.7l1.1-6.2L3 9.1l6.2-.9L12 2.5z" />
+          </svg>
+        </button>
+      )}
       {slug && (
         <svg width="9" height="9" viewBox="0 0 12 12" fill="none" className="flex-shrink-0" aria-hidden style={{ opacity: 0.55 }}>
           <path d="M4.5 2L8 6l-3.5 4" stroke={accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -851,9 +870,10 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
         background: isLive
           ? 'linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(255,255,255,0.02) 100%)'
           : 'rgba(255,255,255,0.025)',
-        border: `1px solid ${isLive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
-        borderLeftWidth: 3,
-        borderLeftColor: accent,
+        borderTop: `1px solid ${isLive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
+        borderRight: `1px solid ${isLive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
+        borderBottom: `1px solid ${isLive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
+        borderLeft: `3px solid ${accent}`,
         boxShadow: isLive ? `0 0 16px ${accent}12` : 'none',
       }}
     >
@@ -1501,6 +1521,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const [selectedUFCDate, setSelectedUFCDate] = useState<string | null>(null) // UFC modal date
   const [reminders, setReminders] = useState<Set<string>>(new Set())
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
+  const [favComps, setFavComps] = useState<Set<string>>(new Set())   // ligas fijadas (slugs)
   const [onlyLive, setOnlyLive] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set())
@@ -1533,6 +1554,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       setReminders(new Set(stored))
       const favs = JSON.parse(localStorage.getItem('ts_favorites') ?? '[]')
       setFavorites(new Set(favs))
+      const favC = JSON.parse(localStorage.getItem('ts_fav_comps') ?? '[]')
+      setFavComps(new Set(favC))
       // El onboarding de favoritos ya NO se auto-abre: antes tapaba todo el
       // calendario en la 1ª visita (fricción). La invitación vive en el CTA
       // "Elegir equipos" del feed; el modal solo abre si el usuario lo pulsa.
@@ -1650,6 +1673,19 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       if (next.has(name)) next.delete(name)
       else next.add(name)
       localStorage.setItem('ts_favorites', JSON.stringify([...next]))
+      return next
+    })
+  }, [])
+
+  // Fijar / dejar de fijar una competición (slug). Las fijadas suben al principio
+  // de cada día en el feed. Persistido en localStorage.
+  const togglePinComp = useCallback((slug: string) => {
+    if (!slug) return
+    setFavComps(prev => {
+      const next = new Set(prev)
+      if (next.has(slug)) next.delete(slug)
+      else next.add(slug)
+      localStorage.setItem('ts_fav_comps', JSON.stringify([...next]))
       return next
     })
   }, [])
@@ -2465,6 +2501,12 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 if (!byComp[ev.comp]) { byComp[ev.comp] = []; compOrder.push(ev.comp) }
                 byComp[ev.comp].push(ev)
               }
+              // Ligas fijadas primero (orden estable; el resto, primera aparición).
+              compOrder.sort((a, b) => {
+                const pa = favComps.has(compConfigForGroup(a, byComp[a][0]?.sport)?.slug ?? '') ? 1 : 0
+                const pb = favComps.has(compConfigForGroup(b, byComp[b][0]?.sport)?.slug ?? '') ? 1 : 0
+                return pb - pa
+              })
               return (
                 <section key={dateKey}>
                   <DaySeparator dateKey={dateKey} count={dayEvents.length} />
@@ -2474,7 +2516,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
                     return (
                       <div key={comp} className="mb-2 relative">
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <MatchRow
@@ -2697,6 +2739,12 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 if (!byComp[ev.comp]) { byComp[ev.comp] = []; compOrder.push(ev.comp) }
                 byComp[ev.comp].push(ev)
               }
+              // Ligas fijadas primero (orden estable; el resto, primera aparición).
+              compOrder.sort((a, b) => {
+                const pa = favComps.has(compConfigForGroup(a, byComp[a][0]?.sport)?.slug ?? '') ? 1 : 0
+                const pb = favComps.has(compConfigForGroup(b, byComp[b][0]?.sport)?.slug ?? '') ? 1 : 0
+                return pb - pa
+              })
               return (
                 <section key={dateKey}>
                   <DaySeparator dateKey={dateKey} count={dayEvents.length} tone="past" />
@@ -2706,7 +2754,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
                     return (
                       <div key={comp} className="mb-2 relative">
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <PastMatchRow
