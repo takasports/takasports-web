@@ -11,6 +11,7 @@ import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime, dayDelta
 import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
+import CompetitionRail from '@/components/CompetitionRail'
 import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
 
 // ── Favorites helpers ──────────────────────────────────────────
@@ -678,7 +679,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   }) : ''
 
   const scoreBlock = (
-    <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 min-w-[88px] px-2">
+    <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 min-w-[52px] px-1">
       {showComp && event.comp && (
         <span className="text-[8px] font-black uppercase tracking-[0.16em] truncate max-w-[110px] mb-0.5"
           style={{ color: compColor, fontFamily: 'var(--font-sport)' }}>
@@ -751,7 +752,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
               {dateLabel}
             </span>
           )}
-          <span className="text-[20px] font-bold tabular-nums leading-none"
+          <span className="text-[17px] sm:text-[20px] font-bold tabular-nums leading-none"
             style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {displayTime}
           </span>
@@ -792,24 +793,30 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           )}
         </>
       )}
-      <div className="mt-0.5">
-        <BroadcastChip comp={event.comp} sport={event.sport} tz={tz} fallback={event.broadcast} />
-      </div>
     </div>
   )
 
+  // Acciones (favorito + recordatorio) como columna del grid (antes overlay
+  // absoluto que obligaba a reservar 68px y cortaba el nombre del visitante).
   const actions = (
-    <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+    <div className="flex items-center gap-0.5 flex-shrink-0 justify-self-end">
       {onToggleFav && <FavoriteHeart active={!!isFav} onClick={onToggleFav} />}
       <ReminderButton active={isReminded} onClick={onToggleReminder} color={event.accent} />
     </div>
   )
 
+  // Canal de TV en una línea aparte debajo (libera ancho del centro → los dos
+  // equipos se leen completos en móvil).
+  const broadcastBar = (
+    <div className="mt-1.5 flex justify-center">
+      <BroadcastChip comp={event.comp} sport={event.sport} tz={tz} fallback={event.broadcast} />
+    </div>
+  )
+
   const inner = (
     <div
-      className={`relative grid items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2.5 sm:py-3 rounded-xl transition-all hover:brightness-105 ${flashing ? 'ts-flash' : ''}`}
+      className={`relative px-2.5 sm:px-3 py-2.5 sm:py-3 rounded-xl transition-all hover:brightness-105 ${flashing ? 'ts-flash' : ''}`}
       style={{
-        gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)',
         background: isLive
           ? 'linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(255,255,255,0.02) 100%)'
           : 'rgba(255,255,255,0.025)',
@@ -819,7 +826,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
         boxShadow: isLive ? `0 0 16px ${accent}12` : 'none',
       }}
     >
-      {actions}
+      <div className="grid items-center gap-1.5 sm:gap-2" style={{ gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr) auto' }}>
 
       {/* Home (or solo entity) */}
       <div className="flex items-center gap-2 min-w-0 justify-end text-right pr-1">
@@ -837,7 +844,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
 
       {/* Away (vs match) or sport vignette (solo event) — mantiene la simetría */}
       {hasVs ? (
-        <div className="flex items-center gap-2 min-w-0 pl-1 pr-[68px] sm:pr-2">
+        <div className="flex items-center gap-2 min-w-0 pl-1">
           <TeamLogo logo={event.awayLogo} photo={event.awayPhoto} name={event.away!} size={28} sport={event.sport} />
           <div className="min-w-0">
             <span className="text-[12px] sm:text-[13px] font-bold truncate block leading-snug" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
@@ -847,7 +854,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-2 min-w-0 pl-1 pr-[68px] sm:pr-2 opacity-60">
+        <div className="flex items-center gap-2 min-w-0 pl-1 opacity-60">
           <span className="inline-flex items-center justify-center rounded-full flex-shrink-0"
             style={{ width: 28, height: 28, background: `${compColor}14`, border: `1px solid ${compColor}28`, color: compColor }}>
             {racing ? <F1Icon size={14} /> : tennis ? <TennisIcon size={14} /> : <SportIcon sport={event.sport} size={14} />}
@@ -881,6 +888,11 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           </div>
         </div>
       )}
+
+        {actions}
+      </div>
+
+      {broadcastBar}
     </div>
   )
 
@@ -1716,10 +1728,13 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       .slice(0, 8)
   }, [events, favorites])
 
-  const hasActiveFilters = !!selectedDate || activeFilter !== 'Todo' || !!searchRaw || onlyLive
+  // "Destacados" y "Todo" son vistas por defecto (no son un filtro que el
+  // usuario "active"), así que NO disparan el botón Limpiar. Solo lo hacen un
+  // deporte concreto, una fecha, una búsqueda o el toggle En vivo.
+  const hasActiveFilters = !!selectedDate || (activeFilter !== 'Todo' && activeFilter !== 'Destacados') || !!searchRaw || onlyLive
   const clearFilters = useCallback(() => {
     setSelectedDate(null)
-    setActiveFilter('Todo')
+    setActiveFilter('Destacados')
     setSearchRaw('')
     setSearch('')
     setOnlyLive(false)
@@ -2280,6 +2295,12 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               <SectionHeader icon={<LiveDotIcon size={8} />} label="En Vivo" color="#4ade80" count={liveCount} hint={liveCount > 3 ? '← desliza →' : undefined} />
               <LiveHeroStrip items={liveHeroCards} />
             </section>
+          )}
+
+          {/* Por competición — trae las competiciones (LaLiga, Champions, NBA…)
+              al frente de la principal en vez de esconderlas en sub-páginas. */}
+          {(activeFilter === 'Destacados' || activeFilter === 'Todo') && !onlyLive && !selectedDate && !search && (
+            <CompetitionRail events={events} />
           )}
 
           {/* Tus equipos — resumen de favoritos (chips con su próximo partido).

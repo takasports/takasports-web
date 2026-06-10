@@ -172,6 +172,28 @@ export const COMPETITIONS: CompetitionConfig[] = [
   },
 ]
 
+// Logos oficiales (CDN ESPN, uso editorial) por slug. Alimentan el rail "Por
+// competición" de la principal y la cabecera de cada página de competición.
+// Se inyectan en `crest` al cargar el módulo (sin pisar los ya definidos).
+const CREST_BY_SLUG: Record<string, string> = {
+  laliga:         'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/15.png',
+  champions:      'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/2.png',
+  'premier-league':'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/23.png',
+  'serie-a':      'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/12.png',
+  bundesliga:     'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/10.png',
+  'ligue-1':      'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/9.png',
+  'europa-league':'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/2310.png',
+  'copa-del-rey': 'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/80.png',
+  'copa-america': 'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/83.png',
+  'nations-league':'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/2395.png',
+  nba:            'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500-dark/nba.png&w=500&h=500&transparent=true',
+  f1:             'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/f1.png&w=500&h=500&transparent=true',
+  ufc:            'https://a.espncdn.com/i/teamlogos/leagues/500/ufc.png',
+}
+for (const c of COMPETITIONS) {
+  if (!c.crest && CREST_BY_SLUG[c.slug]) c.crest = CREST_BY_SLUG[c.slug]
+}
+
 export function getCompetition(slug: string): CompetitionConfig | null {
   return COMPETITIONS.find((c) => c.slug === slug) ?? null
 }
