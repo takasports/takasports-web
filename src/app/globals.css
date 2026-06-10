@@ -600,10 +600,140 @@ textarea:focus-visible,
   .feed-animate,
   [data-reveal],
   [data-counter],
-  .ts-flash {
+  .ts-flash,
+  .cal-ambient {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
   }
+  .cal-card { transition: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CALENDARIO — Paquete gráfico de retransmisión TakaSports
+   ───────────────────────────────────────────────────────────────────────
+   Identidad: "sala de control de TV, de noche". Tema por deporte vía
+   [data-sport] → el cambio de deporte es solo un swap de variables CSS
+   (instantáneo, 0 fetch). Texturas SVG inline ($0), aplicadas como máscara
+   sobre el color de acento (así la textura se tiñe y transiciona con el
+   acento). Legibilidad sagrada: texturas/tintes a baja opacidad detrás del
+   contenido; nunca compiten con marcadores/horas/nombres.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Acento registrado → transiciona suave al cambiar de deporte (los consumidores
+   de var(--cal-accent) se re-evalúan por frame). Fallback: si el navegador no
+   soporta @property, sigue siendo una custom property normal (sin transición). */
+@property --cal-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #7C3AED;
+}
+
+.cal-root {
+  /* Defaults = tema marca púrpura (Destacados/Todo). */
+  --cal-accent: #7C3AED;
+  /* Derivados del acento → se tiñen y transicionan solos. */
+  --cal-tint: radial-gradient(ellipse 120% 70% at 50% 0%,
+              color-mix(in srgb, var(--cal-accent) 13%, transparent) 0%,
+              transparent 62%);
+  --cal-glow: color-mix(in srgb, var(--cal-accent) 30%, transparent);
+  transition: --cal-accent var(--duration-slow) var(--ease-standard);
+}
+.cal-root, .cal-root * { -webkit-tap-highlight-color: transparent; }
+
+/* Texturas características por deporte (máscara: alpha de los trazos blancos).
+   Solo cambia el patrón; el color lo pone var(--cal-accent). */
+.cal-root[data-sport="default"] { --cal-accent: #7C3AED;
+  --cal-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Cg fill='none' stroke='white' stroke-width='1'%3E%3Cpath d='M0 32 32 0M-8 8 8 -8M24 40 40 24'/%3E%3C/g%3E%3C/svg%3E"); }
+.cal-root[data-sport="futbol"] { --cal-accent: #34D399;
+  --cal-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cg fill='none' stroke='white' stroke-width='1.5'%3E%3Cpath d='M0 0V48M24 0V48'/%3E%3C/g%3E%3C/svg%3E"); }
+.cal-root[data-sport="nba"] { --cal-accent: #F59E0B;
+  --cal-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='20'%3E%3Cg fill='none' stroke='white' stroke-width='1.2'%3E%3Cpath d='M0 0H44M0 10H44M0 20H44'/%3E%3Cpath d='M11 0V10M33 0V10M22 10V20'/%3E%3C/g%3E%3C/svg%3E"); }
+.cal-root[data-sport="f1"] { --cal-accent: #EF4444;
+  --cal-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cg fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M-4 8 8 -4M-4 20 20 -4M8 28 28 8M20 28 28 20'/%3E%3C/g%3E%3C/svg%3E"); }
+.cal-root[data-sport="ufc"] { --cal-accent: #D4AF37;
+  --cal-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cg fill='none' stroke='white' stroke-width='1.4'%3E%3Cpath d='M12 2 H28 L38 12 V28 L28 38 H12 L2 28 V12 Z'/%3E%3C/g%3E%3C/svg%3E"); }
+.cal-root[data-sport="tenis"] { --cal-accent: #E0B33A;
+  --cal-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='40'%3E%3Cg fill='none' stroke='white' stroke-width='1.2'%3E%3Crect x='4' y='4' width='52' height='32'/%3E%3Cpath d='M30 4V36M4 20H56'/%3E%3C/g%3E%3C/svg%3E"); }
+.cal-root[data-sport="padel"] { --cal-accent: #22D3EE;
+  --cal-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cg fill='none' stroke='white' stroke-width='1.2'%3E%3Cpath d='M0 0H30V30H0Z'/%3E%3Cpath d='M15 0V30M0 15H30'/%3E%3C/g%3E%3C/svg%3E"); }
+
+/* Capa ambiente: tinte + textura característica detrás de la cabecera, que se
+   desvanece hacia abajo. Una sola capa (performante). `key={themeKey}` en React
+   la re-monta → crossfade al cambiar de deporte. */
+.cal-ambient {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 460px;
+  pointer-events: none;
+  background: var(--cal-tint);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 38%, transparent 100%);
+          mask-image: linear-gradient(180deg, #000 0%, #000 38%, transparent 100%);
+  animation: calThemeFade var(--duration-slow) var(--ease-standard);
+}
+.cal-ambient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--cal-accent);
+  opacity: 0.055;
+  -webkit-mask-image: var(--cal-texture);
+          mask-image: var(--cal-texture);
+  -webkit-mask-repeat: repeat;
+          mask-repeat: repeat;
+  -webkit-mask-size: auto;
+          mask-size: auto;
+}
+@keyframes calThemeFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Tarjeta de partido — silueta "broadcast" con profundidad. Mantiene box-shadow
+   (barato) en vez de clip-path (que la eliminaría); la firma de forma es la
+   muesca diagonal de acento abajo-derecha (::after) y el borde de acento. */
+.cal-card {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.30), 0 10px 24px rgba(0,0,0,0.18);
+  transition: transform var(--duration-base) var(--ease-bounce),
+              box-shadow var(--duration-base) var(--ease-bounce),
+              filter var(--duration-fast) var(--ease-standard);
+}
+/* Muesca diagonal abizcochada (firma de forma) en abajo-derecha, color = liga. */
+.cal-card::after {
+  content: '';
+  position: absolute;
+  right: 0; bottom: 0;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 0 11px 11px;
+  border-color: transparent transparent var(--row-accent, var(--cal-accent)) transparent;
+  opacity: 0.45;
+  pointer-events: none;
+}
+.cal-card--live { box-shadow: 0 2px 6px rgba(0,0,0,0.30), 0 0 18px rgba(239,68,68,0.14); }
+@media (hover: hover) {
+  .cal-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.34),
+                0 18px 40px color-mix(in srgb, var(--row-accent, var(--cal-accent)) 20%, transparent);
+  }
+  .cal-card:hover::after { opacity: 0.75; }
+}
+.cal-card:active {
+  transform: translateY(0) scale(0.992);
+  transition-duration: 90ms;
+}
+
+/* Pennant de acento (separador de día / cabeceras) — chevron de retransmisión. */
+.cal-pennant {
+  clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
+  border-radius: 0 !important;
+}
+
+/* Etiqueta "broadcast" con borde derecho cortado en diagonal (chips en vivo). */
+.cal-live-tag {
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
 }
 

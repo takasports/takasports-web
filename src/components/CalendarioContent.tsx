@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
-import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
+import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey } from '@/lib/competitions'
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
 import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime, dayDeltaForIso } from '@/lib/timezone'
@@ -287,13 +287,13 @@ function LiveHeroCard(p: HeroProps) {
 
   const inner = (
     <div
-      className={`relative rounded-xl overflow-hidden flex flex-col transition-all hover:brightness-110 ${p.flashing ? 'ts-flash' : ''}`}
+      className={`cal-card cal-card--live rounded-xl flex flex-col hover:brightness-110 ${p.flashing ? 'ts-flash' : ''}`}
       style={{
+        ['--row-accent' as string]: '#4ade80',
         width: 300,
         flexShrink: 0,
         background: 'linear-gradient(145deg, rgba(74,222,128,0.10) 0%, rgba(20,30,25,0.85) 60%, rgba(15,15,22,0.9) 100%)',
         border: '1px solid rgba(74,222,128,0.25)',
-        boxShadow: '0 0 24px rgba(74,222,128,0.06), inset 0 1px 0 rgba(255,255,255,0.04)',
       }}
     >
       {/* Halo animado */}
@@ -303,7 +303,7 @@ function LiveHeroCard(p: HeroProps) {
       {/* Header */}
       <div className="relative flex items-center justify-between px-3.5 pt-3 pb-2">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[8.5px] font-black uppercase"
+          <span className="cal-live-tag flex items-center gap-1 pl-1.5 pr-2.5 py-0.5 text-[8.5px] font-black uppercase"
             style={{ background: 'rgba(74,222,128,0.18)', color: '#4ade80', fontFamily: 'var(--font-sport)', letterSpacing: '0.1em' }}>
             <span className="w-1 h-1 rounded-full animate-pulse" style={{ background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
             EN VIVO
@@ -865,8 +865,9 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
 
   const inner = (
     <div
-      className={`relative px-2.5 sm:px-3 py-2.5 sm:py-3 rounded-xl transition-all hover:brightness-105 ${flashing ? 'ts-flash' : ''}`}
+      className={`cal-card${isLive ? ' cal-card--live' : ''} px-2.5 sm:px-3 py-2.5 sm:py-3 rounded-xl hover:brightness-105 ${flashing ? 'ts-flash' : ''}`}
       style={{
+        ['--row-accent' as string]: accent,
         background: isLive
           ? 'linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(255,255,255,0.02) 100%)'
           : 'rgba(255,255,255,0.025)',
@@ -874,7 +875,6 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
         borderRight: `1px solid ${isLive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
         borderBottom: `1px solid ${isLive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
         borderLeft: `3px solid ${accent}`,
-        boxShadow: isLive ? `0 0 16px ${accent}12` : 'none',
       }}
     >
       <div className="grid items-center gap-1.5 sm:gap-2" style={{ gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr) auto' }}>
@@ -1015,17 +1015,19 @@ function DaySeparator({ dateKey, count, tone = 'upcoming' }: {
 }) {
   const today = isoToLocalDate(new Date().toISOString())
   const isToday = dateKey === today
-  const accent = tone === 'past' ? '#FCA5A5' : isToday ? '#C4B5FD' : '#7C3AED'
+  // El acento del día sigue el tema del deporte activo (var(--cal-accent)); hoy
+  // se ilumina mezclando con blanco. Los pasados van en rojo suave.
+  const accent = tone === 'past' ? '#FCA5A5' : isToday ? 'color-mix(in srgb, var(--cal-accent) 58%, #ffffff)' : 'var(--cal-accent)'
   const subtitle = formatDateSubtitle(dateKey)
   const label = formatDateLabel(dateKey)
 
   return (
     <div className="relative pt-7 pb-4 mb-3">
-      {/* Top divider — grueso para marcar bien el cambio de día */}
-      <div className="absolute top-0 left-0 right-0" style={{ height: 2, background: 'linear-gradient(90deg, rgba(124,58,237,0.32) 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.04) 100%)' }} />
+      {/* Top divider angulado — el acento del tema arranca a la izquierda */}
+      <div className="absolute top-0 left-0 right-0" style={{ height: 2, background: `linear-gradient(90deg, ${accent} 0%, color-mix(in srgb, ${accent} 30%, transparent) 18%, rgba(255,255,255,0.07) 38%, rgba(255,255,255,0.03) 100%)` }} />
       <div className="flex items-end justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 18, background: accent, boxShadow: `0 0 10px ${accent}55` }} />
+          <span className="cal-pennant block flex-shrink-0" style={{ width: 6, height: 20, background: accent, boxShadow: `0 0 12px color-mix(in srgb, ${accent} 45%, transparent)` }} />
           <div className="min-w-0">
             <h2 className="font-black leading-none uppercase tracking-[0.18em]"
               style={{ fontFamily: 'var(--font-sport)', fontSize: 14, color: '#F0F0FA' }}>
@@ -1039,7 +1041,7 @@ function DaySeparator({ dateKey, count, tone = 'upcoming' }: {
           </div>
         </div>
         <span className="flex items-center justify-center min-w-[26px] h-[22px] px-2 rounded-full text-[10px] font-black tabular-nums flex-shrink-0"
-          style={{ background: `${accent}1a`, color: accent, border: `1px solid ${accent}33`, fontFamily: 'var(--font-sport)' }}>
+          style={{ background: `color-mix(in srgb, ${accent} 12%, transparent)`, color: accent, border: `1px solid color-mix(in srgb, ${accent} 28%, transparent)`, fontFamily: 'var(--font-sport)' }}>
           {count}
         </span>
       </div>
@@ -2117,10 +2119,21 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveEventsInList, orphanFixtures, reminders, liveScores, tz])
 
+  // Tema por deporte: deriva del filtro activo. El cambio = solo swap de
+  // variables CSS (instantáneo). La capa .cal-ambient se re-monta con key para
+  // un crossfade suave de la textura característica.
+  const themeKey = sportThemeKey(activeFilter)
+
   return (
-    <main className="max-w-[1280px] mx-auto px-4 sm:px-6 xl:px-10 pb-28">
+    <main
+      className="cal-root relative max-w-[1280px] mx-auto px-4 sm:px-6 xl:px-10 pb-28"
+      data-sport={themeKey}
+      style={{ isolation: 'isolate' }}
+    >
+      {/* Capa ambiente del tema (tinte + textura broadcast, detrás del hero) */}
+      <div key={themeKey} className="cal-ambient" style={{ zIndex: 0 }} aria-hidden />
       {/* Header */}
-      <div className="relative pt-6 pb-4">
+      <div className="relative pt-6 pb-4" style={{ zIndex: 1 }}>
         {/* Ambient glow */}
         <div className="absolute -top-8 left-0 w-96 h-56 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at 15% 45%, rgba(124,58,237,0.09) 0%, transparent 70%)', filter: 'blur(20px)' }} />
@@ -2364,7 +2377,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                   </span>
                   {active && (
                     <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full"
-                      style={{ background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
+                      style={{ background: 'var(--cal-accent)', boxShadow: '0 0 8px color-mix(in srgb, var(--cal-accent) 50%, transparent)' }} />
                   )}
                 </button>
               )
@@ -2375,7 +2388,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
       {/* Content */}
       {view === 'todos' && (
-        <div className="space-y-10">
+        <div className="relative z-[1] space-y-10">
           {/* Live strip at top of TODOS view */}
           {liveCount > 0 && !selectedDate && (
             <section>
@@ -2571,7 +2584,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       )}
 
       {view === 'recordatorios' && (
-        <div className="space-y-5">
+        <div className="relative z-[1] space-y-5">
           {remindedEvents.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
               <p className="mb-3 flex justify-center" style={{ color: '#FBBF24', opacity: 0.6 }}><BellIcon size={32} /></p>
@@ -2615,7 +2628,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       )}
 
       {view === 'resultados' && (
-        <div className="space-y-10">
+        <div className="relative z-[1] space-y-10">
           {/* Compact sport + search toolbar */}
           <div
             className="-mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-4 sm:px-6 xl:px-10 pt-2 pb-3 mb-1"

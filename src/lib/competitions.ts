@@ -266,6 +266,47 @@ export function getSportColor(sport: string): string {
   return SPORT_COLOR[sport] ?? '#a78bfa'
 }
 
+// ─── Tema por deporte (paquete gráfico de retransmisión) ───────────────────
+// Cada tema da identidad a la sección /calendario al filtrar por un deporte.
+// El "accent" lo consume el código (chip activo, etc.); el resto de variables
+// visuales (tinte, textura SVG, glow) viven en globals.css bajo
+// `.cal-root[data-sport="…"]` para que el cambio de deporte sea solo un swap de
+// variables CSS (instantáneo, 0 fetch). `backdrop` se reserva para la Fase C
+// (imagen IA estática lazy). Mantener sincronizado el `accent` con globals.css.
+export type SportThemeKey = 'default' | 'futbol' | 'nba' | 'f1' | 'ufc' | 'tenis' | 'padel'
+
+export interface SportTheme {
+  /** Color de acento (hex). Debe coincidir con `--cal-accent` en globals.css. */
+  accent: string
+  /** Etiqueta legible del tema. */
+  label: string
+  /** Ruta WebP estática (fondo IA). Opcional — se cablea en la Fase C. */
+  backdrop?: string
+}
+
+export const SPORT_THEME: Record<SportThemeKey, SportTheme> = {
+  default: { accent: '#7C3AED', label: 'Taka' },
+  futbol:  { accent: '#34D399', label: 'Fútbol' },
+  nba:     { accent: '#F59E0B', label: 'NBA' },
+  f1:      { accent: '#EF4444', label: 'Fórmula 1' },
+  ufc:     { accent: '#D4AF37', label: 'UFC' },
+  tenis:   { accent: '#E0B33A', label: 'Tenis' },
+  padel:   { accent: '#22D3EE', label: 'Pádel' },
+}
+
+// Normaliza el filtro activo de la UI ('Destacados'/'Todo'/'Fútbol'/'NBA'/…) a
+// una de las claves de tema. Lo niche (Golf, Rugby, Béisbol…) cae al tema marca.
+export function sportThemeKey(filter: string | null | undefined): SportThemeKey {
+  const f = (filter ?? '').toLowerCase()
+  if (/fútbol|futbol|soccer/.test(f)) return 'futbol'
+  if (/nba|baloncesto|basket|euroliga|euroleague/.test(f)) return 'nba'
+  if (/f1|fórmula|formula|motogp|moto|racing/.test(f)) return 'f1'
+  if (/ufc|mma|boxe|combat/.test(f)) return 'ufc'
+  if (/tenis|tennis|atp|wta/.test(f)) return 'tenis'
+  if (/pádel|padel/.test(f)) return 'padel'
+  return 'default'
+}
+
 // Match status labels
 export const STATUS_LABELS: Record<string, string> = {
   'FT': 'Final',
