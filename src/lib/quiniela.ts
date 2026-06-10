@@ -104,10 +104,37 @@ export function resolveAlias(name: string): string {
   return TEAM_ALIASES[n] ?? n
 }
 
+// Empareja dos nombres de equipo tolerando variantes (alias, acentos,
+// puntuación y sufijos/prefijos "FC"/"CF"/"United"/"AFC"…). Empareja por
+// PALABRA COMPLETA, no por subcadena suelta: así "Brighton" casa con
+// "Brighton & Hove Albion" y "Real Betis" con "Real Betis Balompié", pero
+// los nombres cortos (sobre todo de selección) no colisionan por azar
+// — "US" NO casa con "Australia", ni "Mali" con "Somalia". Normalizamos
+// el alias resuelto in situ (sin tocar resolveAlias, cuyo valor crudo lo
+// usan otros consumidores) para que "PSG" case con "Paris Saint-Germain".
 export function nameMatch(a: string, b: string): boolean {
-  const na = resolveAlias(a), nb = resolveAlias(b)
-  if (!na || !nb) return false
-  return na === nb || na.includes(nb) || nb.includes(na)
+  const ta = normalize(resolveAlias(a)).split(' ').filter(Boolean)
+  const tb = normalize(resolveAlias(b)).split(' ').filter(Boolean)
+  if (ta.length === 0 || tb.length === 0) return false
+  // Igualdad (misma longitud) o contención de una secuencia contigua de
+  // palabras completas de una dentro de la otra.
+  return tokenRunContains(ta, tb) || tokenRunContains(tb, ta)
+}
+
+/** ¿Aparecen TODAS las palabras de `inner`, en orden y contiguas, dentro
+ *  de `outer`? Con misma longitud equivale a igualdad. Comparar por
+ *  palabra completa (no subcadena) elimina los falsos positivos de
+ *  nombres cortos preservando los sufijos/prefijos legítimos. */
+function tokenRunContains(outer: string[], inner: string[]): boolean {
+  if (inner.length === 0 || inner.length > outer.length) return false
+  for (let i = 0; i + inner.length <= outer.length; i++) {
+    let ok = true
+    for (let j = 0; j < inner.length; j++) {
+      if (outer[i + j] !== inner[j]) { ok = false; break }
+    }
+    if (ok) return true
+  }
+  return false
 }
 
 // ── Validación de pick contra resultado ──────────────────────────
