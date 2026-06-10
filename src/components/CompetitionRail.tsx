@@ -28,7 +28,7 @@ export default function CompetitionRail({ events }: { events: SportEvent[] }) {
       </div>
 
       <div
-        className="flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide"
+        className="cal-rail flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide"
         style={{
           maskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 20px), transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 20px), transparent 100%)',

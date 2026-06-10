@@ -1099,7 +1099,7 @@ function LiveHeroStrip({ items }: { items: React.ReactNode[] }) {
     <div className="relative">
       <div
         ref={ref}
-        className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth"
+        className="cal-rail flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth"
         style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
       >
         {items.map((item, i) => <div key={i}>{item}</div>)}
@@ -1352,12 +1352,12 @@ function DayChips({ days, value, onChange }: {
   })
 
   return (
-    <div className="flex items-center gap-1.5 pb-1 overflow-x-auto scrollbar-hide" style={{ position: 'relative' }}>
+    <div className="cal-rail flex items-center gap-1.5 pb-1 overflow-x-auto scrollbar-hide" style={{ position: 'relative' }}>
       {/* "Todos" + un chip por día disponible (con su nº de eventos): barra de
           días deslizable, la "columna vertebral" de las portadas tipo 365scores. */}
       <button
         onClick={() => { onChange(null); setShowCalendar(false) }}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+        className="cal-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
         style={chipStyle(value === null)}
       >
         Todos
@@ -1368,7 +1368,7 @@ function DayChips({ days, value, onChange }: {
           <button
             key={d.key}
             onClick={() => { onChange(d.key); setShowCalendar(false) }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+            className="cal-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
             style={chipStyle(active)}
           >
             {dayLabel(d.key)}
@@ -2219,7 +2219,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 <button
                   key={tab}
                   onClick={() => setView(tab)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all flex-shrink-0"
+                  className="cal-press flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all flex-shrink-0"
                   style={{
                     scrollSnapAlign: 'start',
                     background: isActive
@@ -2361,7 +2361,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     key={sport}
                     onClick={() => setActiveFilter(sport)}
                     aria-pressed={active}
-                    className="relative flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-black uppercase tracking-[0.12em] transition-all flex-shrink-0"
+                    className="cal-press relative flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-black uppercase tracking-[0.12em] transition-all flex-shrink-0"
                     style={{
                       color: active ? '#fff' : '#C4B5FD',
                       background: active ? '#7C3AED' : 'rgba(124,58,237,0.16)',
@@ -2384,7 +2384,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                   key={sport}
                   onClick={() => setActiveFilter(sport)}
                   aria-pressed={active}
-                  className="relative px-3 py-2.5 text-[13px] font-semibold transition-colors flex-shrink-0"
+                  className="cal-press relative px-3 py-2.5 text-[13px] font-semibold transition-colors flex-shrink-0"
                   style={{
                     color: active ? '#F0F0FA' : '#7A7A8E',
                     fontFamily: 'var(--font-sport)',
@@ -2543,14 +2543,17 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 return pb - pa
               })
               return (
-                <section key={dateKey}>
+                // key incluye el filtro/fecha/onlyLive: al cambiarlos la sección
+                // se re-monta y dispara la entrada en cascada (Fase B). No incluye
+                // search ni liveScores → no re-anima al teclear ni en cada poll.
+                <section key={`${activeFilter}|${selectedDate ?? ''}|${onlyLive ? 'L' : ''}|${dateKey}`}>
                   <DaySeparator dateKey={dateKey} count={dayEvents.length} />
                   {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     const accent = getCompAccent(comp, compEvents[0]?.accent)
                     const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
                     return (
-                      <div key={comp} className="mb-2 relative">
+                      <div key={comp} className="mb-2 relative cal-anim-in" style={{ animationDelay: `${Math.min(compIdx * 55, 280)}ms` }}>
                         <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (

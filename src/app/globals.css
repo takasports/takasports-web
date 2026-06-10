@@ -780,3 +780,57 @@ textarea:focus-visible,
   clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
 }
 
+/* ── FASE B — Movimiento "broadcast" ───────────────────────────────────────
+   Entrada en cascada de secciones, scroll-snap + máscara en los rails,
+   feedback táctil y shimmer de carga. Todo se neutraliza con reduced-motion. */
+
+/* Entrada en cascada: cada grupo de competición aparece con un leve empuje
+   hacia arriba. El stagger lo da un animation-delay inline por índice. Se
+   re-dispara al cambiar de filtro/fecha porque la sección se re-monta (key). */
+@keyframes calRowIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.cal-anim-in {
+  animation: calRowIn 440ms var(--ease-emphasis) both;
+  will-change: transform, opacity;
+}
+
+/* Rail horizontal: scroll-snap suave + máscara de desvanecido en el borde
+   derecho que insinúa que hay más contenido al deslizar. */
+.cal-rail {
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 8px;
+  -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 22px), transparent 100%);
+          mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 22px), transparent 100%);
+}
+.cal-rail > * { scroll-snap-align: start; }
+
+/* Feedback táctil: micro-hundido al pulsar chips/pestañas. */
+.cal-press { transition: transform 110ms var(--ease-standard); }
+.cal-press:active { transform: scale(0.93); }
+
+/* Skeleton shimmer para estados de carga. */
+@keyframes calShimmer {
+  0%   { background-position: -160% 0; }
+  100% { background-position: 160% 0; }
+}
+.cal-skeleton {
+  background: linear-gradient(100deg,
+    rgba(255,255,255,0.03) 30%,
+    rgba(124,58,237,0.10) 50%,
+    rgba(255,255,255,0.03) 70%);
+  background-size: 220% 100%;
+  animation: calShimmer 1.4s linear infinite;
+  border-radius: var(--radius-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-anim-in { animation: none; opacity: 1; transform: none; }
+  .cal-press { transition: none; }
+  .cal-press:active { transform: none; }
+  .cal-skeleton { animation: none; }
+  .cal-rail { scroll-snap-type: none; }
+}
+
