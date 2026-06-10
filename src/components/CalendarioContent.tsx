@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
-import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey } from '@/lib/competitions'
+import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME } from '@/lib/competitions'
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
 import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime, dayDeltaForIso } from '@/lib/timezone'
@@ -846,11 +846,20 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
     </div>
   )
 
-  // Acciones (favorito + recordatorio) como columna del grid (antes overlay
-  // absoluto que obligaba a reservar 68px y cortaba el nombre del visitante).
-  const actions = (
-    <div className="flex items-center gap-0.5 flex-shrink-0 justify-self-end">
-      {onToggleFav && <FavoriteHeart active={!!isFav} onClick={onToggleFav} />}
+  // Acciones repartidas a ambos lados del marcador para que la columna central
+  // (hora/marcador) quede EXACTAMENTE centrada en la tarjeta y alineada con el
+  // canal de debajo: corazón (favorito) a la izquierda, campana (recordatorio) a
+  // la derecha. Ambos miden 34px → equilibran la fila sin malgastar espacio. Si
+  // no hay favorito, un hueco de 34px conserva la simetría.
+  const actionHeart = (
+    <div className="flex items-center justify-self-start flex-shrink-0">
+      {onToggleFav
+        ? <FavoriteHeart active={!!isFav} onClick={onToggleFav} />
+        : <span aria-hidden style={{ width: 34, height: 34, display: 'block' }} />}
+    </div>
+  )
+  const actionBell = (
+    <div className="flex items-center justify-self-end flex-shrink-0">
       <ReminderButton active={isReminded} onClick={onToggleReminder} color={event.accent} />
     </div>
   )
@@ -877,7 +886,10 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
         borderLeft: `3px solid ${accent}`,
       }}
     >
-      <div className="grid items-center gap-1.5 sm:gap-2" style={{ gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr) auto' }}>
+      <div className="grid items-center gap-1.5 sm:gap-2" style={{ gridTemplateColumns: 'auto minmax(0,1fr) auto minmax(0,1fr) auto' }}>
+
+      {/* Favorito (izquierda) — equilibra la campana de la derecha y centra el marcador */}
+      {actionHeart}
 
       {/* Home (or solo entity) */}
       <div className="flex items-center gap-2 min-w-0 justify-end text-right pr-1">
@@ -940,7 +952,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
         </div>
       )}
 
-        {actions}
+        {actionBell}
       </div>
 
       {broadcastBar}
@@ -2130,8 +2142,18 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       data-sport={themeKey}
       style={{ isolation: 'isolate' }}
     >
-      {/* Capa ambiente del tema (tinte + textura broadcast, detrás del hero) */}
-      <div key={themeKey} className="cal-ambient" style={{ zIndex: 0 }} aria-hidden />
+      {/* Capa ambiente del tema (foto IA + tinte + textura broadcast, detrás del
+          hero). Solo el tema activo está montado → su foto carga lazy; el resto
+          ni se pide. Sin foto configurada, caen solo tinte + textura. */}
+      <div key={themeKey} className="cal-ambient" style={{ zIndex: 0 }} aria-hidden>
+        {SPORT_THEME[themeKey].backdrop && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="cal-backdrop" src={SPORT_THEME[themeKey].backdrop} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+            <div className="cal-backdrop-scrim" aria-hidden />
+          </>
+        )}
+      </div>
       {/* Header */}
       <div className="relative pt-6 pb-4" style={{ zIndex: 1 }}>
         {/* Ambient glow */}

@@ -285,13 +285,13 @@ export interface SportTheme {
 }
 
 export const SPORT_THEME: Record<SportThemeKey, SportTheme> = {
-  default: { accent: '#7C3AED', label: 'Taka' },
-  futbol:  { accent: '#34D399', label: 'Fútbol' },
-  nba:     { accent: '#F59E0B', label: 'NBA' },
-  f1:      { accent: '#EF4444', label: 'Fórmula 1' },
-  ufc:     { accent: '#D4AF37', label: 'UFC' },
-  tenis:   { accent: '#E0B33A', label: 'Tenis' },
-  padel:   { accent: '#22D3EE', label: 'Pádel' },
+  default: { accent: '#7C3AED', label: 'Taka',      backdrop: '/banners/backdrop-default.webp' },
+  futbol:  { accent: '#34D399', label: 'Fútbol',    backdrop: '/banners/backdrop-futbol.webp' },
+  nba:     { accent: '#F59E0B', label: 'NBA',       backdrop: '/banners/backdrop-nba.webp' },
+  f1:      { accent: '#EF4444', label: 'Fórmula 1', backdrop: '/banners/backdrop-f1.webp' },
+  ufc:     { accent: '#D4AF37', label: 'UFC',       backdrop: '/banners/backdrop-ufc.webp' },
+  tenis:   { accent: '#E0B33A', label: 'Tenis',     backdrop: '/banners/backdrop-tenis.webp' },
+  padel:   { accent: '#22D3EE', label: 'Pádel',     backdrop: '/banners/backdrop-padel.webp' },
 }
 
 // Normaliza el filtro activo de la UI ('Destacados'/'Todo'/'Fútbol'/'NBA'/…) a
