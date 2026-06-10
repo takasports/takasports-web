@@ -11,7 +11,6 @@ import ScrollToTop from '@/components/ScrollToTop'
 import LeaderboardFull from './LeaderboardFull'
 import type { GameId } from '@/lib/games-store'
 import { SITE_URL } from '@/lib/constants'
-import { madridWeekISO } from '@/lib/taka-time'
 
 // Striker Rush queda fuera a propósito: aún no existe /strikerrush, así que su
 // leaderboard debe devolver 404 (no un ranking fantasma con CTA a una página rota).
@@ -25,7 +24,6 @@ const META: Partial<Record<GameId, { label: string; accent: string; href: string
 
 interface PageProps {
   params: Promise<{ game: string }>
-  searchParams: Promise<{ mode?: string }>
 }
 
 export async function generateMetadata({ params }: PageProps) {
@@ -46,15 +44,10 @@ export async function generateMetadata({ params }: PageProps) {
   }
 }
 
-export default async function LeaderboardPage({ params, searchParams }: PageProps) {
+export default async function LeaderboardPage({ params }: PageProps) {
   const { game } = await params
-  const { mode } = await searchParams
   const meta = META[game as GameId]
   if (!meta) notFound()
-
-  // Sopa de Cracks tiene un ranking de contrarreloj con periodo aparte (-TA).
-  const ta = game === 'sopacracks' && mode === 'ta'
-  const periodOverride = ta ? `${madridWeekISO()}-TA` : undefined
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
@@ -81,21 +74,16 @@ export default async function LeaderboardPage({ params, searchParams }: PageProp
             className="font-black leading-none mb-2"
             style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4vw, 3rem)', color: '#F8F8FF', letterSpacing: '-0.02em' }}
           >
-            {meta.label}{ta ? ' · Contrarreloj' : ''}
+            {meta.label}
           </h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)', maxWidth: 460 }}>
-            {ta
-              ? 'Top 100 del modo contrarreloj: más palabras en 3:00. Ranking semanal aparte del normal.'
-              : 'Top 100 jugadores del periodo actual. Actualizado en directo.'}
+            Top 100 jugadores del periodo actual. Actualizado en directo.
           </p>
         </div>
 
         <LeaderboardFull
           gameId={game as GameId}
-          accent={ta ? '#A78BFA' : meta.accent}
-          periodOverride={periodOverride}
-          title={ta ? 'Top 100 · Contrarreloj' : undefined}
-          periodLabel={ta ? 'Contrarreloj · semanal' : undefined}
+          accent={meta.accent}
         />
 
         <div className="mt-8 flex items-center justify-center">

@@ -2,7 +2,7 @@
 
 // Modal explicativo del modo Contrarreloj de Sopa de Cracks. Se abre al
 // intentar ACTIVAR el modo (no al desactivarlo) y hace de puerta de
-// confirmación: explica las reglas + su ranking semanal aparte, y solo al
+// confirmación: explica las reglas del reto contrarreloj, y solo al
 // pulsar "Activar" enciende el modo. Diálogo accesible (role=dialog,
 // aria-modal, Escape, focus-trap y devolución de foco al disparador).
 
@@ -76,8 +76,8 @@ export default function TimeAttackInfoModal({ open, accent, onConfirm, onClose }
           </p>
           <ul className="mt-3 w-full flex flex-col gap-2 text-left">
             {[
-              ['🏁', 'Ranking semanal propio, aparte del modo normal.'],
-              ['⭐', 'Tus aciertos siguen sumando a tu Liga Taka.'],
+              ['🏁', 'Reto a contrarreloj: 3:00 para tu máximo de palabras.'],
+              ['⭐', 'Tus aciertos suman a tu Liga Taka, igual que el modo normal.'],
             ].map(([emoji, text]) => (
               <li key={text} className="flex items-start gap-2.5 rounded-xl px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)' }}>
                 <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1.4 }}>{emoji}</span>

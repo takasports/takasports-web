@@ -266,8 +266,6 @@ export default function SopaCracksPage() {
   const [timeOver, setTimeOver] = useState(false)
   // Modal explicativo que hace de puerta al activar el contrarreloj.
   const [showTaInfo, setShowTaInfo] = useState(false)
-  // Clasificación del sidebar: semanal normal vs contrarreloj (periodo -TA).
-  const [lbMode, setLbMode] = useState<'week' | 'ta'>('week')
   // Puntos acreditadas al Ranked tras recordPlay (auto-dismiss 5s en
   // GamePointsToast; null = sin respuesta o sin puntos por idempotencia/cap).
   const [awardedPoints, setAwardedPoints] = useState<number | null>(null)
@@ -370,9 +368,11 @@ export default function SopaCracksPage() {
         setBestSeconds(prev => prev == null ? seconds : Math.min(prev, seconds))
       }
 
-      // Sync con games-store. En contrarreloj el periodo se diferencia para
-      // no contaminar el leaderboard normal (mismo cronómetro pero meta opuesta).
-      const period = timeAttack ? `${currentWeekISO()}-TA` : currentWeekISO()
+      // Sync con games-store. Contrarreloj y normal comparten el periodo
+      // semanal: una sola aportación a la Liga Taka (best-mark-wins dedup, sin
+      // doble pago) y un único ranking — el contrarreloj es otra forma de
+      // jugar, no un ranking aparte.
+      const period = currentWeekISO()
       const score = (timeAttack ? foundCount : activeWords.length) * POINTS_PER_WORD
       recordPlay({
         gameId:     'sopacracks',
@@ -1039,7 +1039,7 @@ export default function SopaCracksPage() {
               )}
             </div>
 
-            {/* Ranking semanal */}
+            {/* Ranking semanal (único — suma a la Liga Taka) */}
             <div
               className="rounded-2xl p-5"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
@@ -1050,46 +1050,20 @@ export default function SopaCracksPage() {
                   <h3 className="section-label">Clasificación</h3>
                 </div>
                 <Link
-                  href={lbMode === 'ta' ? '/juegos/leaderboard/sopacracks?mode=ta' : '/juegos/leaderboard/sopacracks'}
+                  href="/juegos/leaderboard/sopacracks"
                   className="text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-80"
-                  style={{ color: lbMode === 'ta' ? COLOR_INTRUDER : COLOR_ACCENT, fontFamily: 'var(--font-sport)' }}
+                  style={{ color: COLOR_ACCENT, fontFamily: 'var(--font-sport)' }}
                 >
                   Ver →
                 </Link>
               </div>
-              {/* Toggle semanal normal vs contrarreloj (rankings de periodo distinto: -TA) */}
-              <div className="flex gap-1.5 mb-3">
-                {([['week', 'Semanal', COLOR_ACCENT], ['ta', 'Contrarreloj', COLOR_INTRUDER]] as const).map(([mode, label, color]) => {
-                  const on = lbMode === mode
-                  return (
-                    <button
-                      key={mode}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => setLbMode(mode)}
-                      className="flex-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-lg transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-                      style={{
-                        background: on ? `${color}20` : 'rgba(255,255,255,0.03)',
-                        color: on ? color : '#9090B0',
-                        border: on ? `1px solid ${color}50` : '1px solid rgba(255,255,255,0.06)',
-                        fontFamily: 'var(--font-sport)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
-              </div>
               <MyPositionBanner
                 gameId="sopacracks"
-                period={lbMode === 'ta' ? `${currentWeekISO()}-TA` : currentWeekISO()}
-                accent={lbMode === 'ta' ? COLOR_INTRUDER : COLOR_ACCENT}
+                period={currentWeekISO()}
+                accent={COLOR_ACCENT}
               />
               <p className="text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>
-                {lbMode === 'ta'
-                  ? 'Ranking del modo contrarreloj, aparte del semanal normal.'
-                  : 'Ranking semanal del modo normal.'}
+                Ranking semanal de Sopa — tus aciertos suman a tu Liga Taka.
               </p>
             </div>
 
