@@ -153,7 +153,7 @@ function renderBodyBlock(
           fontFamily: 'var(--font-display)',
           fontSize: '1.3rem',
           fontWeight: 800,
-          color: '#E8E8F4',
+          color: 'var(--body-heading)',
           letterSpacing: '-0.01em',
           marginTop: '1.75rem',
           marginBottom: '-0.5rem',
@@ -167,14 +167,14 @@ function renderBodyBlock(
     ? autolinkSegments(text, autolink.index, autolink.ctx)
     : [{ type: 'text' as const, text }]
   return (
-    <p key={i} style={{ color: '#B8B8D0', fontSize: '1.125rem', lineHeight: 1.8 }}>
+    <p key={i} style={{ color: 'var(--body-text)', fontSize: '1.125rem', lineHeight: 1.8 }}>
       {segments.map((seg, j) =>
         seg.type === 'link' && seg.url ? (
           <Link
             key={j}
             href={seg.url}
             className="hover:underline"
-            style={{ color: '#A78BFA', textDecorationColor: 'rgba(167,139,250,0.4)' }}
+            style={{ color: 'var(--body-link)', textDecorationColor: 'rgba(167,139,250,0.4)' }}
           >
             {seg.text}
           </Link>
@@ -728,7 +728,7 @@ export default async function NoticiaPage({
                 </p>
                 <ul className="flex flex-col gap-2">
                   {article.tldr.map((item, i) => (
-                    <li key={i} className="flex gap-2.5" style={{ color: '#D4D4E5', fontSize: '0.95rem', lineHeight: 1.55 }}>
+                    <li key={i} className="flex gap-2.5" style={{ color: 'var(--body-list)', fontSize: '0.95rem', lineHeight: 1.55 }}>
                       <span style={{ color: badgeColor, flexShrink: 0, fontWeight: 800 }}>›</span>
                       <span>{item}</span>
                     </li>
@@ -746,7 +746,7 @@ export default async function NoticiaPage({
                 className="leading-relaxed mb-8 pl-5"
                 style={{
                   fontSize: '1.125rem',
-                  color: '#B0B0CC',
+                  color: 'var(--body-lede)',
                   borderLeft: `3px solid ${badgeColor}`,
                   fontStyle: 'italic',
                   maxWidth: 680,
@@ -891,7 +891,7 @@ export default async function NoticiaPage({
                                   href={v.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  style={{ color: '#A78BFA', textDecoration: 'underline' }}
+                                  style={{ color: 'var(--body-link)', textDecoration: 'underline' }}
                                 >
                                   Ver publicación original ↗
                                 </a>
@@ -904,7 +904,7 @@ export default async function NoticiaPage({
                     },
                     block: {
                       normal: ({ children, value }) => {
-                        const pStyle = { color: '#B8B8D0', fontSize: '1.125rem', lineHeight: 1.8, marginBottom: '1.5rem' }
+                        const pStyle = { color: 'var(--body-text)', fontSize: '1.125rem', lineHeight: 1.8, marginBottom: '1.5rem' }
                         // Autolink solo en párrafos sin marks (negrita, cursiva, links manuales)
                         // para no romper el formato editorial existente.
                         if (autolink) {
@@ -925,7 +925,7 @@ export default async function NoticiaPage({
                                         key={j}
                                         href={seg.url}
                                         className="hover:underline"
-                                        style={{ color: '#A78BFA', textDecorationColor: 'rgba(167,139,250,0.4)' }}
+                                        style={{ color: 'var(--body-link)', textDecorationColor: 'rgba(167,139,250,0.4)' }}
                                       >
                                         {seg.text}
                                       </Link>
@@ -941,7 +941,7 @@ export default async function NoticiaPage({
                         return <p style={pStyle}>{children}</p>
                       },
                       h1: ({ children }) => (
-                        <h1 style={{ color: '#E8E8F4', fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.015em', marginTop: '2rem', marginBottom: '0.75rem' }}>{children}</h1>
+                        <h1 style={{ color: 'var(--body-heading)', fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.015em', marginTop: '2rem', marginBottom: '0.75rem' }}>{children}</h1>
                       ),
                       h2: ({ children, value }) => {
                         const key = (value as { _key?: string })?._key
@@ -949,7 +949,7 @@ export default async function NoticiaPage({
                         return (
                           <h2
                             id={id}
-                            style={{ color: '#E8E8F4', fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', marginTop: '1.75rem', marginBottom: '0.5rem', scrollMarginTop: '80px' }}
+                            style={{ color: 'var(--body-heading)', fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', marginTop: '1.75rem', marginBottom: '0.5rem', scrollMarginTop: '80px' }}
                           >
                             {children}
                           </h2>
@@ -961,7 +961,7 @@ export default async function NoticiaPage({
                         return (
                           <h3
                             id={id}
-                            style={{ color: '#E8E8F4', fontSize: '1.2rem', fontWeight: 700, fontFamily: 'var(--font-display)', marginTop: '1.5rem', marginBottom: '0.5rem', scrollMarginTop: '80px' }}
+                            style={{ color: 'var(--body-heading)', fontSize: '1.2rem', fontWeight: 700, fontFamily: 'var(--font-display)', marginTop: '1.5rem', marginBottom: '0.5rem', scrollMarginTop: '80px' }}
                           >
                             {children}
                           </h3>
@@ -977,7 +977,7 @@ export default async function NoticiaPage({
                             background: `linear-gradient(135deg, ${badgeColor}0F, ${badgeColor}05)`,
                             borderLeft: `3px solid ${badgeColor}`,
                             borderRadius: 'var(--radius-md)',
-                            color: '#D4D4E5',
+                            color: 'var(--body-list)',
                             fontStyle: 'italic',
                             fontSize: '1.1rem',
                             lineHeight: 1.6,
@@ -1005,8 +1005,8 @@ export default async function NoticiaPage({
                       ),
                     },
                     marks: {
-                      strong: ({ children }) => <strong style={{ color: '#F0F0F8', fontWeight: 700 }}>{children}</strong>,
-                      em: ({ children }) => <em style={{ color: '#C4B5FD' }}>{children}</em>,
+                      strong: ({ children }) => <strong style={{ color: 'var(--body-strong)', fontWeight: 700 }}>{children}</strong>,
+                      em: ({ children }) => <em style={{ color: 'var(--body-em)' }}>{children}</em>,
                       link: ({ value, children }) => {
                         const href = value?.href ?? '#'
                         // Si es interno (mismo dominio o ruta relativa), no abrir en nueva pestaña.
@@ -1070,7 +1070,7 @@ export default async function NoticiaPage({
                     >
                       <summary
                         className="cursor-pointer list-none [&::-webkit-details-marker]:hidden px-4 py-3 text-sm font-semibold flex justify-between items-center gap-3"
-                        style={{ color: '#E4E4F0' }}
+                        style={{ color: 'var(--body-heading)' }}
                       >
                         <span>{f.q}</span>
                         <span
@@ -1080,7 +1080,7 @@ export default async function NoticiaPage({
                           +
                         </span>
                       </summary>
-                      <div className="px-4 pb-4 text-sm" style={{ color: '#B8B8CC', lineHeight: 1.6 }}>
+                      <div className="px-4 pb-4 text-sm" style={{ color: 'var(--body-text)', lineHeight: 1.6 }}>
                         {f.a}
                       </div>
                     </details>

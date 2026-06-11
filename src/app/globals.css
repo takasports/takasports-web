@@ -30,6 +30,17 @@
   --text-muted: #7C7C8C;
   --text-faint: #38384A;
 
+  /* Lector de noticias — cuerpo del artículo (paleta azulada-fría, distinta de
+     los grises neutros de arriba; cada valor = el hex que ya estaba inline, así
+     que tokenizar NO cambia el color visible, solo centraliza). */
+  --body-text:    #B8B8D0;  /* párrafo de lectura + respuesta FAQ */
+  --body-heading: #E8E8F4;  /* h1/h2/h3 del cuerpo + pregunta FAQ (≈ --text-primary) */
+  --body-strong:  #F0F0F8;  /* <strong> */
+  --body-list:    #D4D4E5;  /* claves TLDR + blockquote */
+  --body-link:    #A78BFA;  /* autolink violeta del cuerpo */
+  --body-em:      #C4B5FD;  /* énfasis cursiva <em> */
+  --body-lede:    #B0B0CC;  /* entradilla en cursiva (short_summary) */
+
   /* Borders */
   --border: rgba(255,255,255,0.06);
   --border-subtle: rgba(255,255,255,0.04);
