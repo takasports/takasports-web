@@ -1,6 +1,4 @@
 import type { Metadata } from 'next'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import CookieConsentControl from '@/components/CookieConsentControl'
 import { SITE_URL } from '@/lib/constants'
 
@@ -15,9 +13,7 @@ const LAST_UPDATED = '15 de mayo de 2026'
 
 export default function PrivacidadPage() {
   return (
-    <>
-      <Header />
-      <main className="mx-auto max-w-3xl px-4 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12">
         <h1 className="text-4xl font-black tracking-tight mb-2">Política de privacidad</h1>
         <p className="text-sm text-text-muted mb-10">Última actualización: {LAST_UPDATED}</p>
 
@@ -184,8 +180,6 @@ export default function PrivacidadPage() {
             </a>
           </p>
         </div>
-      </main>
-      <Footer />
-    </>
+    </div>
   )
 }
