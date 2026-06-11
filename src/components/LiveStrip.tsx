@@ -142,25 +142,25 @@ export default function LiveStrip() {
             className="flex items-center gap-1.5 flex-shrink-0 px-2 py-0.5 rounded"
             style={
               isLive
-                ? { background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)' }
+                ? { background: 'rgba(255,77,46,0.14)', border: '1px solid rgba(255,77,46,0.32)' }
                 : { background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }
             }
           >
             <span
               className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
               style={{
-                background: isLive ? '#4ade80' : '#7C3AED',
-                boxShadow:  isLive ? '0 0 6px #4ade80' : '0 0 6px #7C3AED',
+                background: isLive ? 'var(--color-live)' : '#7C3AED',
+                boxShadow:  isLive ? '0 0 7px var(--color-live)' : '0 0 6px #7C3AED',
               }}
             />
             <span
               className="text-[8px] font-black uppercase tracking-[0.2em]"
               style={{
-                color: isLive ? '#4ade80' : '#9B6DB5',
+                color: isLive ? 'var(--color-live)' : '#9B6DB5',
                 fontFamily: 'var(--font-sport)',
               }}
             >
-              {isLive ? 'En Vivo' : 'Próximo'}
+              {isLive ? 'En Directo' : 'Próximo'}
             </span>
           </div>
 
