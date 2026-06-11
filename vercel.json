@@ -10,6 +10,10 @@
       "schedule": "45 6 * * 1"
     },
     {
+      "path": "/api/cron/stat-snapshots?sport=ufc",
+      "schedule": "45 6 * * 4"
+    },
+    {
       "path": "/api/cron/stat-snapshots?sport=fifa",
       "schedule": "0 7 * * *"
     },

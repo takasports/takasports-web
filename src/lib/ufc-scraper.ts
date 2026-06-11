@@ -24,6 +24,14 @@ function decodeEntities(s: string): string {
   return out
 }
 
+// Normaliza el nombre de división para un match resiliente a variaciones de
+// ufc.com (apóstrofes “'” vs “’”, espacios dobles, mayúsculas). Sin esto, las
+// divisiones femeninas ("Women's …") fallaban el match exacto a ratos y el
+// snapshot quedaba viejo una semana entera.
+function normDiv(s: string): string {
+  return s.toLowerCase().replace(/['’`]/g, '').replace(/\s+/g, ' ').trim()
+}
+
 function parseUfcRankings(html: string): DivisionBlock[] {
   const segments = html.split('<div class="view-grouping-header">').slice(1)
   const out: DivisionBlock[] = []
@@ -130,12 +138,12 @@ export const UFC_DIVISIONS: DivisionConfig[] = [
 export async function fetchUfcChampions(): Promise<ScrapeResult | null> {
   const blocks = await getRankings()
   if (!blocks.length) return null
-  const byName = new Map(blocks.map(b => [b.name, b]))
+  const byName = new Map(blocks.map(b => [normDiv(b.name), b]))
 
   const rows: StandingRow[] = []
   let rank = 1
   for (const div of UFC_DIVISIONS) {
-    const b = byName.get(div.ufcName)
+    const b = byName.get(normDiv(div.ufcName))
     if (!b || !b.champion) continue
     rows.push({
       rank,
@@ -157,7 +165,7 @@ export function makeDivisionFetcher(div: DivisionConfig) {
   return async (): Promise<ScrapeResult | null> => {
     const blocks = await getRankings()
     if (!blocks.length) return null
-    const block = blocks.find(b => b.name === div.ufcName)
+    const block = blocks.find(b => normDiv(b.name) === normDiv(div.ufcName))
     if (!block) return null
 
     const rows: StandingRow[] = []

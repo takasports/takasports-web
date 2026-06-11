@@ -16,6 +16,7 @@ import { fetchMotogpRiders, fetchMotogpConstructors, type ScrapeResult } from '@
 import { fetchUfcP4P, fetchUfcChampions, makeDivisionFetcher, UFC_DIVISIONS } from '@/lib/ufc-scraper'
 import { fetchEloWorldRanking } from '@/lib/elo-scraper'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
+import { sendTelegram } from '@/lib/telegram'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -54,7 +55,11 @@ async function runJob(job: ScraperJob): Promise<UpsertResult> {
   if (!result || result.rows.length === 0) {
     return { ok: false, blockId: job.blockId, rows: 0, error: 'scrape_failed_or_empty' }
   }
-  return upsertSnapshot(job.blockId, result.rows, result.source, result.asOf)
+  // Guarda con UN reintento: cubre fallos transitorios de la BD (el caso real de
+  // ufc-w-flw, que quedó 10 días viejo mientras el resto del run sí se guardó).
+  let res = await upsertSnapshot(job.blockId, result.rows, result.source, result.asOf)
+  if (!res.ok) res = await upsertSnapshot(job.blockId, result.rows, result.source, result.asOf)
+  return res
 }
 
 async function handle(req: Request) {
@@ -70,6 +75,19 @@ async function handle(req: Request) {
 
   const results = await Promise.all(jobs.map(runJob))
   const ok = results.every(r => r.ok)
+
+  // Aviso si algún bloque no se actualizó: el dato anterior se mantiene (no se
+  // borra), pero conviene enterarse el mismo día para reintentar a mano, en vez
+  // de descubrir una semana después que un ranking quedó congelado.
+  const failed = results.filter(r => !r.ok)
+  if (failed.length > 0) {
+    await sendTelegram(
+      `⚠️ <b>stat-snapshots</b> (${sport}): ${failed.length} bloque(s) sin actualizar\n` +
+      failed.map(f => `• <code>${f.blockId}</code> — ${f.error ?? 'error'}`).join('\n') +
+      `\nEl dato anterior se mantiene. Reintentar: <code>?sport=${sport}</code>`,
+    )
+  }
+
   return NextResponse.json({ ok, sport, results })
 }
 

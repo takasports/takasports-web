@@ -13,6 +13,7 @@
 // Sin dependencias nuevas: el JWT del service account se firma con `crypto`.
 
 import { createSign } from 'crypto'
+import { sendTelegram } from './telegram'
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -343,27 +344,9 @@ export async function getTrafficSummary(): Promise<TrafficSummary> {
 
 // ── Telegram ─────────────────────────────────────────────────────────────────
 
-export async function sendTelegram(text: string): Promise<{ sent: boolean; note?: string }> {
-  const token = process.env.TELEGRAM_BOT_TOKEN
-  const chatId = process.env.TELEGRAM_CHAT_ID
-  if (!token || !chatId) return { sent: false, note: 'TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID no configurados' }
-  try {
-    const res = await timedFetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: 'HTML',
-        disable_web_page_preview: true,
-      }),
-    })
-    if (!res.ok) return { sent: false, note: `Telegram ${res.status}: ${(await res.text()).slice(0, 150)}` }
-    return { sent: true }
-  } catch (e) {
-    return { sent: false, note: e instanceof Error ? e.message : String(e) }
-  }
-}
+// sendTelegram vive ahora en ./telegram (módulo ligero reutilizable por crons).
+// Se reexporta para no romper imports existentes desde '@/lib/seo-audit'.
+export { sendTelegram }
 
 // ── Composición del mensaje ──────────────────────────────────────────────────
 
