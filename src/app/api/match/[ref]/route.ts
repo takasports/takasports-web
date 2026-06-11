@@ -20,6 +20,7 @@ export interface MatchStat {
 export interface ScoringEvent {
   team: 'home' | 'away'
   player?: string
+  playerId?: string   // id ESPN del atleta → enlace a /jugador
   clock?: string
   type: string   // 'goal' | 'yellow' | 'red' | 'penalty' | 'own-goal'
 }
@@ -28,6 +29,7 @@ export interface BasketballLeader {
   team: 'home' | 'away'
   category: string
   player: string
+  playerId?: string   // id ESPN del atleta → enlace a /jugador
   headshot?: string
   value: string
   summary?: string
@@ -347,10 +349,12 @@ function buildSoccer(json: Record<string, unknown>, homeId?: string): MatchDetai
     const shortText = asString(ev.shortText) ?? ''
     const playerFromShort = shortText.replace(/ (Goal|Yellow Card|Red Card|Own Goal|Penalty)$/i, '').trim()
     const player = playerFromParticipant || playerFromShort || undefined
+    const playerId = asString(asObj(firstParticipant?.athlete)?.id)
     const clock = asString(asObj(ev.clock)?.displayValue)
     scoring.push({
       team:   asString(team?.id) === homeId ? 'home' : 'away',
       player,
+      playerId,
       clock,
       type:   typeKey === 'yellow-card' ? 'yellow'
             : (typeKey === 'red-card' || typeKey === 'yellow-red-card') ? 'red'
@@ -433,6 +437,7 @@ function buildBasketball(
         team: side,
         category: asString(cat.displayName) ?? asString(cat.name) ?? '',
         player,
+        playerId: asString(athlete?.id),
         headshot,
         value,
         summary,

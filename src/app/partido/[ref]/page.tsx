@@ -350,7 +350,30 @@ function StatBar({ stat }: { stat: MatchStat }) {
 }
 
 // ── Soccer blocks ──────────────────────────────────────────────────
-function ScoringTimeline({ events, homeTeam, awayTeam }: { events: ScoringEvent[]; homeTeam: string; awayTeam: string }) {
+// Nombre de jugador → enlace a su ficha /jugador cuando conocemos su id ESPN.
+// Hereda color/tipografía del contenedor; sin id, texto plano. El slug sigue el
+// mismo formato que la alineación: '<sport>_<league>_<athleteId>'.
+function PlayerName({ name, playerId, leagueSlug, className }: {
+  name: string
+  playerId?: string
+  leagueSlug?: string
+  className?: string
+}) {
+  if (playerId && leagueSlug) {
+    return (
+      <Link
+        href={`/jugador/${leagueSlug.replace('/', '_')}_${playerId}`}
+        className={`hover:underline ${className ?? ''}`}
+        style={{ color: 'inherit', textDecoration: 'none' }}
+      >
+        {name}
+      </Link>
+    )
+  }
+  return <>{name}</>
+}
+
+function ScoringTimeline({ events, homeTeam, awayTeam, leagueSlug }: { events: ScoringEvent[]; homeTeam: string; awayTeam: string; leagueSlug?: string }) {
   if (events.length === 0) return null
 
   const iconFor = (type: string) => {
@@ -401,7 +424,7 @@ function ScoringTimeline({ events, homeTeam, awayTeam }: { events: ScoringEvent[
                     <div className="min-w-0 flex flex-col items-end">
                       <span className="text-[12px] font-bold leading-tight truncate"
                         style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-                        {ev.player ?? homeTeam}
+                        <PlayerName name={ev.player ?? homeTeam} playerId={ev.playerId} leagueSlug={leagueSlug} />
                       </span>
                       {sub && (
                         <span className="text-[9px] uppercase tracking-wider mt-0.5"
@@ -444,7 +467,7 @@ function ScoringTimeline({ events, homeTeam, awayTeam }: { events: ScoringEvent[
                     <div className="min-w-0 flex flex-col">
                       <span className="text-[12px] font-bold leading-tight truncate"
                         style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-                        {ev.player ?? awayTeam}
+                        <PlayerName name={ev.player ?? awayTeam} playerId={ev.playerId} leagueSlug={leagueSlug} />
                       </span>
                       {sub && (
                         <span className="text-[9px] uppercase tracking-wider mt-0.5"
@@ -499,7 +522,7 @@ function QuarterTable({ home, away, homeAbbr, awayAbbr }: {
   )
 }
 
-function LeaderCard({ leader }: { leader: BasketballLeader }) {
+function LeaderCard({ leader, leagueSlug }: { leader: BasketballLeader; leagueSlug?: string }) {
   const accent = leader.team === 'home' ? '#A78BFA' : '#F59E0B'
   return (
     <div className="flex items-center gap-3 p-2.5 rounded-lg"
@@ -509,7 +532,9 @@ function LeaderCard({ leader }: { leader: BasketballLeader }) {
         : <div className="w-9 h-9 rounded-full" style={{ background: '#1A1A28' }} />
       }
       <div className="flex-1 min-w-0">
-        <p className="text-[11px] font-black truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>{leader.player}</p>
+        <p className="text-[11px] font-black truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
+          <PlayerName name={leader.player} playerId={leader.playerId} leagueSlug={leagueSlug} />
+        </p>
         <p className="text-[9px] uppercase tracking-widest" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>{leader.category}</p>
       </div>
       <div className="text-right">
@@ -1352,6 +1377,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
                 events={match.soccer!.scoring}
                 homeTeam={match.homeTeam ?? ''}
                 awayTeam={match.awayTeam ?? ''}
+                leagueSlug={match.leagueSlug}
               />
             </Section>
           )}
@@ -1370,7 +1396,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
               {match.basketball.leaders.length > 0 && (
                 <Section title="Líderes del partido">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {match.basketball.leaders.map((l, i) => <LeaderCard key={i} leader={l} />)}
+                    {match.basketball.leaders.map((l, i) => <LeaderCard key={i} leader={l} leagueSlug={match.leagueSlug} />)}
                   </div>
                 </Section>
               )}
