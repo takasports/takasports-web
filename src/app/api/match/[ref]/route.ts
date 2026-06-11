@@ -420,7 +420,7 @@ const COMMENTARY_KEY = new Set([
   'substitution', 'penalty', 'penalty-won', 'penalty-missed', 'penalty-saved',
 ])
 
-function buildSoccerCommentary(json: Record<string, unknown>, homeName?: string): CommentaryEntry[] {
+function buildSoccerCommentary(json: Record<string, unknown>, homeName?: string, awayName?: string): CommentaryEntry[] {
   const out: CommentaryEntry[] = []
   for (const c of asArr(json.commentary) as Record<string, unknown>[]) {
     const play = asObj(c.play)
@@ -432,8 +432,12 @@ function buildSoccerCommentary(json: Record<string, unknown>, homeName?: string)
     const minute = asString(asObj(c.time)?.displayValue)
                 ?? asString(asObj(play?.clock)?.displayValue)
     const teamName = asString(asObj(play?.team)?.displayName)
+    // Mapeo por nombre contra AMBOS equipos (commentary.play.team no trae id):
+    // si solo coincide uno, queda undefined en vez de etiquetar mal como 'away'.
     const team: 'home' | 'away' | undefined =
-      teamName ? (teamName === homeName ? 'home' : 'away') : undefined
+      teamName && teamName === homeName ? 'home'
+      : teamName && teamName === awayName ? 'away'
+      : undefined
     const parts = asArr(play?.participants) as Record<string, unknown>[]
     const player = asString(asObj(parts[0]?.athlete)?.displayName)
     const isGoal = typeKey.includes('goal')
@@ -442,9 +446,11 @@ function buildSoccerCommentary(json: Record<string, unknown>, homeName?: string)
                    : typeKey.startsWith('var') ? 'var' : typeKey
 
     // ESPN registra cada falta dos veces (la falta + «X gana un libre»), mismo
-    // tipo y jugador → colapsa consecutivas idénticas para no repetir filas.
+    // tipo, jugador Y equipo → colapsa consecutivas idénticas para no repetir
+    // filas (incluye el equipo para no fusionar eventos de equipos distintos).
     const prev = out[out.length - 1]
-    if (prev && prev.minute === minute && prev.type === normType && prev.player === player) continue
+    if (prev && prev.minute === minute && prev.type === normType
+        && prev.player === player && prev.team === team) continue
 
     out.push({
       minute,
@@ -881,9 +887,13 @@ export async function GET(
 
     if (sport === 'soccer') {
       const soccer = buildSoccer(json, asString(homeTeamObj?.id))
-      // Side mapping con el nombre ORIGINAL (sin traducir), que es el que trae
-      // commentary.play.team.displayName.
-      soccer.commentary = buildSoccerCommentary(json, asString(homeTeamObj?.displayName))
+      // Side mapping con los nombres ORIGINALES (sin traducir), que son los que
+      // trae commentary.play.team.displayName.
+      soccer.commentary = buildSoccerCommentary(
+        json,
+        asString(homeTeamObj?.displayName),
+        asString(awayTeamObj?.displayName),
+      )
       detail.soccer  = soccer
       detail.lineups = buildLineups(json)
       if (tableRows.length) {

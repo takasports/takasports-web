@@ -488,9 +488,7 @@ function ScoringTimeline({ events, homeTeam, awayTeam, leagueSlug }: { events: S
 }
 
 // ── Minuto a minuto (commentary) ───────────────────────────────────
-function CommentaryFeed({ entries, homeTeam, awayTeam }: {
-  entries: CommentaryEntry[]; homeTeam?: string; awayTeam?: string
-}) {
+function CommentaryFeed({ entries }: { entries: CommentaryEntry[] }) {
   if (!entries.length) return null
 
   const colorFor = (e: CommentaryEntry): string => {
@@ -527,8 +525,10 @@ function CommentaryFeed({ entries, homeTeam, awayTeam }: {
           style={{ left: 51, width: 1, background: 'linear-gradient(180deg, transparent, rgba(124,58,237,0.18) 6%, rgba(124,58,237,0.18) 94%, transparent)' }} />
         {entries.map((e, i) => {
           const accent = colorFor(e)
-          // Marcadores sin equipo (Descanso, 2ª parte, Final) → fila centrada.
-          if (!e.team) {
+          // Marcadores (Descanso, 2ª parte, Final): sin equipo NI jugador →
+          // fila centrada. Un evento con jugador pero equipo no resuelto se
+          // renderiza como fila normal (sin la bolita de equipo), no como marca.
+          if (!e.team && !e.player) {
             return (
               <li key={i} className="flex justify-center py-2.5">
                 <span className="text-[9px] font-black uppercase tracking-[0.18em] px-3 py-1 rounded-full"
@@ -564,9 +564,10 @@ function CommentaryFeed({ entries, homeTeam, awayTeam }: {
                     {' '}(asist. {e.assist})
                   </span>
                 )}
-                <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full align-middle"
-                  style={{ background: e.team === 'home' ? '#A78BFA' : '#F59E0B', opacity: 0.7 }}
-                  title={e.team === 'home' ? homeTeam : awayTeam} />
+                {e.team && (
+                  <span aria-hidden className="ml-2 inline-block w-1.5 h-1.5 rounded-full align-middle"
+                    style={{ background: e.team === 'home' ? '#A78BFA' : '#F59E0B', opacity: 0.7 }} />
+                )}
               </div>
             </li>
           )
@@ -1530,11 +1531,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
         {/* ── Tab 1: Minuto a minuto ───────────────────── */}
         <div>
           {hasCommentary ? (
-            <CommentaryFeed
-              entries={match.soccer!.commentary!}
-              homeTeam={match.homeTeam}
-              awayTeam={match.awayTeam}
-            />
+            <CommentaryFeed entries={match.soccer!.commentary!} />
           ) : (
             <EmptyState message="El minuto a minuto aparecerá cuando arranque el partido." kind="events" />
           )}
