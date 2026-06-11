@@ -99,3 +99,16 @@ export const WOMENS_SLUGS: ReadonlySet<string> = new Set(
 export function isWomensSlug(slug: string | undefined | null): boolean {
   return !!slug && WOMENS_SLUGS.has(slug)
 }
+
+/** Etiquetas `comp` de competiciones femeninas (derivado del flag `women`).
+ *  En el calendario los eventos llevan `comp` (no slug), así que esta es la
+ *  vía para saber el género de un evento y no cruzar su forma reciente con la
+ *  del equipo masculino homónimo. */
+export const WOMENS_COMPS: ReadonlySet<string> = new Set(
+  FOOTBALL_LEAGUES.filter((l) => l.women).map((l) => l.comp),
+)
+
+/** ¿La etiqueta de competición es femenina? */
+export function isWomensComp(comp: string | undefined | null): boolean {
+  return !!comp && WOMENS_COMPS.has(comp)
+}

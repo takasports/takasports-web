@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { WOMENS_SLUGS, isWomensSlug } from './football-leagues'
+import { WOMENS_SLUGS, isWomensSlug, WOMENS_COMPS, isWomensComp } from './football-leagues'
 import { isWomensPastRow } from './past-events'
 
 // Reproduce EXACTAMENTE cómo el job de sync (lib/espn.ts · fetchLeaguePast)
@@ -32,6 +32,24 @@ describe('género de liga · isWomensSlug / WOMENS_SLUGS', () => {
   it('WOMENS_SLUGS deriva del flag y no incluye al masculino homónimo', () => {
     expect(WOMENS_SLUGS.has('soccer/esp.w.1')).toBe(true)
     expect(WOMENS_SLUGS.has('soccer/esp.1')).toBe(false)
+  })
+})
+
+describe('género por etiqueta · WOMENS_COMPS / isWomensComp', () => {
+  // El calendario solo tiene `comp` (no slug) en cada evento; esta es la vía
+  // para no cruzar la forma del club masculino con su homónimo femenino.
+  it('reconoce las etiquetas de competición femeninas', () => {
+    expect(isWomensComp('Liga F')).toBe(true)
+    expect(isWomensComp('Amistoso (F)')).toBe(true)
+    expect(WOMENS_COMPS.has('Liga F')).toBe(true)
+  })
+
+  it('NO marca etiquetas masculinas/mixtas', () => {
+    for (const comp of ['LaLiga', 'Premier', 'Amistoso', 'Champions', 'NBA']) {
+      expect(isWomensComp(comp), comp).toBe(false)
+    }
+    expect(isWomensComp(undefined)).toBe(false)
+    expect(isWomensComp(null)).toBe(false)
   })
 })
 

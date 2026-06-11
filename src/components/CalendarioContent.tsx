@@ -13,6 +13,7 @@ import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
 import CompetitionRail from '@/components/CompetitionRail'
 import { COMPETITIONS } from '@/lib/calendar-competitions'
+import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
 
 // ── Favorites helpers ──────────────────────────────────────────
@@ -28,6 +29,13 @@ function isFavorite(favorites: Set<string>, name: string | null | undefined): bo
 
 function eventHasFavorite(favorites: Set<string>, ev: SportEvent): boolean {
   return isFavorite(favorites, ev.home) || isFavorite(favorites, ev.away)
+}
+
+// Clave de forma reciente con prefijo de género. El calendario recibe la forma
+// indexada `w:`/`m:` + nombre (ver calendario/page.tsx) para no cruzar el club
+// masculino con su homónimo femenino — comparten nombre, distinto equipo.
+function formKey(ev: SportEvent, name: string): string {
+  return `${WOMENS_COMPS.has(ev.comp ?? '') ? 'w' : 'm'}:${name}`
 }
 
 interface RawLiveFixture {
@@ -653,8 +661,8 @@ function FavoritesSection({
                   flashing={flashIds.has(event.id)}
                   isFav={true}
                   onToggleFav={() => toggleFavorite(event.home)}
-                  formHome={recentForms[event.home]}
-                  formAway={event.away ? recentForms[event.away] : undefined}
+                  formHome={recentForms[formKey(event, event.home)]}
+                  formAway={event.away ? recentForms[formKey(event, event.away)] : undefined}
                   showComp
                   tz={tz}
                 />
@@ -2587,8 +2595,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                               flashing={flashIds.has(event.id)}
                               isFav={eventHasFavorite(favorites, event)}
                               onToggleFav={() => toggleFavorite(event.home)}
-                              formHome={recentForms[event.home]}
-                              formAway={event.away ? recentForms[event.away] : undefined}
+                              formHome={recentForms[formKey(event, event.home)]}
+                              formAway={event.away ? recentForms[formKey(event, event.away)] : undefined}
                               showReason={activeFilter === 'Destacados'}
                               tz={tz}
                             />
@@ -2661,8 +2669,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                       flashing={flashIds.has(event.id)}
                       isFav={eventHasFavorite(favorites, event)}
                       onToggleFav={() => toggleFavorite(event.home)}
-                      formHome={recentForms[event.home]}
-                      formAway={event.away ? recentForms[event.away] : undefined}
+                      formHome={recentForms[formKey(event, event.home)]}
+                      formAway={event.away ? recentForms[formKey(event, event.away)] : undefined}
                       tz={tz}
                     />
                   )

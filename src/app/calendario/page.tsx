@@ -3,7 +3,8 @@ import { sanityClient, eventsQuery } from '@/lib/sanity'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents } from '@/lib/espn'
 import { fetchPadelEvents } from '@/lib/padel'
-import { fetchRecentFormByTeams } from '@/lib/past-events'
+import { fetchRecentFormByTeams, type FormResult } from '@/lib/past-events'
+import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { TZ_KEY, SOURCE_TZ } from '@/lib/timezone'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
@@ -81,13 +82,35 @@ export default async function CalendarioPage() {
     return true
   })
 
-  // Recent form (last 5 W/D/L) for every team that appears in the upcoming
-  // events list. One bulk query to past_events; missing teams or unconfigured
-  // Supabase result in empty arrays — UI degrades gracefully.
-  const teamNames = Array.from(new Set(
-    events.flatMap(e => [e.home, e.away].filter(Boolean) as string[])
-  ))
-  const recentForms = (await fetchRecentFormByTeams(teamNames, 5)) ?? {}
+  // Recent form (last 5 W/D/L) for every team. El mismo nombre de club existe
+  // en masculino y femenino ("Real Madrid", "Barcelona"…), así que no podemos
+  // indexar solo por nombre: separamos los equipos por el género del evento en
+  // que aparecen y lanzamos una consulta por género (femenino → solo filas
+  // femeninas; resto → filas femeninas excluidas). El mapa fundido se indexa
+  // `w:`/`m:` + nombre, y el cliente busca con el mismo prefijo por evento.
+  // Ver isWomensComp / isWomensPastRow. Un club que juega en ambos géneros el
+  // mismo día aparece en las dos consultas → tiene su forma correcta en cada uno.
+  const womensNames = new Set<string>()
+  const otherNames  = new Set<string>()
+  for (const e of events) {
+    const target = WOMENS_COMPS.has(e.comp ?? '') ? womensNames : otherNames
+    if (e.home) target.add(e.home)
+    if (e.away) target.add(e.away)
+  }
+  // Cualquier slug femenino activa el filtro "solo mujeres"; cualquiera
+  // masculino lo desactiva (excluye filas femeninas). Los equipos no-fútbol del
+  // grupo "resto" no se ven afectados (isWomensPastRow=false para sus filas).
+  const [womensForms, otherForms] = await Promise.all([
+    womensNames.size
+      ? fetchRecentFormByTeams([...womensNames], 5, 'soccer/esp.w.1')
+      : Promise.resolve<Record<string, FormResult[]> | null>({}),
+    otherNames.size
+      ? fetchRecentFormByTeams([...otherNames], 5, 'soccer/esp.1')
+      : Promise.resolve<Record<string, FormResult[]> | null>({}),
+  ])
+  const recentForms: Record<string, FormResult[]> = {}
+  for (const [name, form] of Object.entries(womensForms ?? {})) recentForms[`w:${name}`] = form
+  for (const [name, form] of Object.entries(otherForms ?? {}))  recentForms[`m:${name}`] = form
 
   // Read TZ preference from cookie so the very first render already uses it
   // and we avoid the hydration flash from Madrid → browser TZ on mount.
