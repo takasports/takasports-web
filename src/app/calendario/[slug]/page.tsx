@@ -259,10 +259,17 @@ export default async function CompetitionCalendarPage({
         {filtered.length === 0 ? (
           <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p style={{ color: 'var(--text-secondary)' }}>
-              No hay eventos disponibles ahora mismo. Vuelve a comprobarlo en unas horas o consulta el{' '}
-              <Link href="/calendario" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
-                calendario completo
-              </Link>.
+              {tableRows.length > 0 || scorers.length > 0 ? (
+                <>
+                  Ahora mismo no hay partidos programados. Más abajo tienes la clasificación y los goleadores al día, o consulta el{' '}
+                  <Link href="/calendario" style={{ color: '#7C3AED', textDecoration: 'underline' }}>calendario completo</Link>.
+                </>
+              ) : (
+                <>
+                  Aún no hay partidos programados para esta competición. Consulta el{' '}
+                  <Link href="/calendario" style={{ color: '#7C3AED', textDecoration: 'underline' }}>calendario completo</Link>{' '}o busca otra desde la portada.
+                </>
+              )}
             </p>
           </div>
         ) : (

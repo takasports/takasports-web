@@ -55,6 +55,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchComp: 'Champions',
     description: 'Calendario completo de la UEFA Champions League: fase liga, eliminatorias y final.',
     seasonLabel: '2025-2026',
+    banner: '/banners/champions.webp',
   },
   {
     slug: 'premier-league',
@@ -64,6 +65,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchComp: 'Premier',
     description: 'Calendario de la Premier League inglesa: todos los partidos de la temporada con horarios.',
     seasonLabel: '2025-2026',
+    banner: '/banners/premier-league.webp',
   },
   {
     slug: 'serie-a',
@@ -73,6 +75,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchComp: 'Serie A',
     description: 'Calendario de la Serie A italiana: fechas y horarios de todos los partidos.',
     seasonLabel: '2025-2026',
+    banner: '/banners/serie-a.webp',
   },
   {
     slug: 'bundesliga',
@@ -82,6 +85,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchComp: 'Bundesliga',
     description: 'Calendario de la Bundesliga alemana: jornadas, horarios y dónde verlas.',
     seasonLabel: '2025-2026',
+    banner: '/banners/bundesliga.webp',
   },
   {
     slug: 'ligue-1',
@@ -91,6 +95,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchComp: 'Ligue 1',
     description: 'Calendario de la Ligue 1 francesa: todos los partidos con fecha y hora.',
     seasonLabel: '2025-2026',
+    banner: '/banners/ligue-1.webp',
   },
   {
     slug: 'europa-league',
@@ -109,6 +114,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchSport: 'NBA',
     description: 'Calendario NBA: partidos de regular season y playoffs con horarios España.',
     seasonLabel: '2025-2026',
+    banner: '/banners/backdrop-nba.webp',
   },
   {
     slug: 'f1',
@@ -118,6 +124,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchSport: 'F1',
     description: 'Calendario completo de la Fórmula 1: Grandes Premios, clasificaciones, sprints y carreras.',
     seasonLabel: '2026',
+    banner: '/banners/backdrop-f1.webp',
   },
   {
     slug: 'ufc',
@@ -127,6 +134,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchSport: 'UFC',
     description: 'Calendario UFC: próximos eventos, peleas estelares y horarios.',
     seasonLabel: '2026',
+    banner: '/banners/backdrop-ufc.webp',
   },
   {
     slug: 'copa-del-rey',
