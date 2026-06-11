@@ -217,6 +217,9 @@ export default function RankingsClient({
   const clubesScopeTabs    = CLUBES_SCOPE_TABS.filter(t => availableClubesScopes.includes(t.id))
 
   const sportAccent = activeSport ? getSportStyle(activeSport).accent : '#7C3AED'
+  // Fondo atmosférico por deporte para el hero (reusa los WebP de /calendario).
+  // Solo cuando hay un deporte con asset; en "global" se mantiene el look morado.
+  const sportBackdrop = ({ futbol: 'futbol', baloncesto: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc', padel: 'padel' } as Record<string, string>)[activeSport] ?? null
 
   // Build type map for contenido total view (estable entre renders)
   const contenidoTypeMap = useMemo(() => {
@@ -451,7 +454,7 @@ export default function RankingsClient({
   ) && featuredEntries.length > 0
 
   return (
-    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+    <div data-sport={activeSport || undefined} style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />
       <LiveStrip />
 
@@ -459,6 +462,22 @@ export default function RankingsClient({
 
         {/* ── HERO ─────────────────────────────────────────────── */}
         <div className="relative pt-6 pb-4 overflow-hidden">
+          {/* Fondo atmosférico del deporte (broadcast) — solo con filtro de
+              deporte activo; en "global" queda el look morado de marca. */}
+          {sportBackdrop && (
+            <>
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 pointer-events-none"
+                style={{ backgroundImage: `url(/banners/backdrop-${sportBackdrop}.webp)`, backgroundSize: 'cover', backgroundPosition: 'center 30%', opacity: 0.22 }}
+              />
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: 'linear-gradient(180deg, rgba(9,9,15,0.45) 0%, rgba(9,9,15,0.72) 60%, var(--bg-base) 100%)' }}
+              />
+            </>
+          )}
           <div
             className="absolute -top-12 left-1/2 -translate-x-1/2 w-[600px] h-[280px] pointer-events-none"
             style={{ background: `radial-gradient(ellipse at 50% 30%, ${sportAccent}18 0%, transparent 65%)`, filter: 'blur(20px)', transition: 'all 0.4s ease' }}
