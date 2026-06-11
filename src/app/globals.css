@@ -199,6 +199,29 @@ html[data-cap="full"] .ts-navline {
   .ts-navline { transition: none !important; }
 }
 
+/* ── Skip-link (a11y) ── visible solo al enfocar con teclado ── */
+.skip-link {
+  position: fixed;
+  top: -120px;
+  left: 12px;
+  z-index: 100;
+  padding: 10px 16px;
+  background: var(--accent-action, #FF4D2E);
+  color: #fff;
+  font-family: var(--font-sport), sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  text-decoration: none;
+  transition: top 150ms var(--ease-standard, ease);
+}
+.skip-link:focus {
+  top: 0;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
 /* ── Search bar ── */
 .search-bar {
   transition: background var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
