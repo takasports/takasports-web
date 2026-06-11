@@ -25,6 +25,21 @@ export interface ScoringEvent {
   type: string   // 'goal' | 'yellow' | 'red' | 'penalty' | 'own-goal'
 }
 
+// Entrada del minuto a minuto (commentary de ESPN, ya localizada). El texto
+// original viene en inglés → no se usa: se reconstruye una etiqueta en español
+// a partir del tipo estructurado de jugada + equipo + jugador. ESPN no da el id
+// del atleta en commentary, así que el feed no enlaza (los goles sí enlazan en
+// el "Resumen" vía keyEvents).
+export interface CommentaryEntry {
+  minute?: string
+  type: string          // tipo ESPN normalizado (goal, foul, shot-on-target…)
+  label: string         // etiqueta en español
+  team?: 'home' | 'away'
+  player?: string
+  assist?: string       // segundo participante en goles (asistencia)
+  key: boolean          // evento destacado (gol/tarjeta/cambio/penalti/VAR)
+}
+
 export interface BasketballLeader {
   team: 'home' | 'away'
   category: string
@@ -103,6 +118,7 @@ export interface MatchDetail {
   soccer?: {
     stats: MatchStat[]
     scoring: ScoringEvent[]
+    commentary?: CommentaryEntry[]
   }
   basketball?: {
     stats: MatchStat[]
@@ -317,7 +333,7 @@ const SOCCER_LABELS: Record<string, string> = {
   offsides:       'Fuera de juego',
 }
 
-function buildSoccer(json: Record<string, unknown>, homeId?: string): MatchDetail['soccer'] {
+function buildSoccer(json: Record<string, unknown>, homeId?: string): NonNullable<MatchDetail['soccer']> {
   const stats: MatchStat[] = []
   const boxTeams = asArr(asObj(json.boxscore)?.teams) as Record<string, unknown>[]
   if (boxTeams.length >= 2) {
@@ -365,6 +381,80 @@ function buildSoccer(json: Record<string, unknown>, homeId?: string): MatchDetai
   }
 
   return { stats, scoring }
+}
+
+// Minuto a minuto. ESPN da `commentary` en orden ascendente con texto inglés;
+// reconstruimos una etiqueta en español desde el tipo estructurado de jugada y
+// devolvemos lo más reciente primero (estilo directo). Tipos no mapeados (saque
+// de banda, saque de puerta, ruido «noplay») se descartan para no colar inglés.
+const COMMENTARY_LABELS: Record<string, string> = {
+  'goal':            'Gol',
+  'penalty-goal':    'Gol de penalti',
+  'own-goal':        'Gol en propia',
+  'owngoal':         'Gol en propia',
+  'yellow-card':     'Tarjeta amarilla',
+  'red-card':        'Tarjeta roja',
+  'yellow-red-card': 'Doble amarilla',
+  'substitution':    'Cambio',
+  'penalty':         'Penalti',
+  'penalty-won':     'Penalti',
+  'penalty-missed':  'Penalti fallado',
+  'penalty-saved':   'Penalti parado',
+  'shot-on-target':  'Tiro a puerta',
+  'shot-off-target': 'Tiro desviado',
+  'shot-blocked':    'Tiro bloqueado',
+  'corner-awarded':  'Córner',
+  'offside':         'Fuera de juego',
+  'foul':            'Falta',
+  'handball':        'Mano',
+  'halftime':        'Descanso',
+  'start-2nd-half':  'Comienza la 2ª parte',
+  'fulltime':        'Final del partido',
+}
+const COMMENTARY_KEY = new Set([
+  'goal', 'penalty-goal', 'own-goal', 'owngoal',
+  'yellow-card', 'red-card', 'yellow-red-card',
+  'substitution', 'penalty', 'penalty-won', 'penalty-missed', 'penalty-saved',
+])
+
+function buildSoccerCommentary(json: Record<string, unknown>, homeName?: string): CommentaryEntry[] {
+  const out: CommentaryEntry[] = []
+  for (const c of asArr(json.commentary) as Record<string, unknown>[]) {
+    const play = asObj(c.play)
+    const typeKey = asString(asObj(play?.type)?.type) ?? ''
+    let label = COMMENTARY_LABELS[typeKey]
+    if (!label && typeKey.startsWith('var')) label = 'Revisión VAR'
+    if (!label) continue   // descarta noplay/desconocidos (evita texto inglés)
+
+    const minute = asString(asObj(c.time)?.displayValue)
+                ?? asString(asObj(play?.clock)?.displayValue)
+    const teamName = asString(asObj(play?.team)?.displayName)
+    const team: 'home' | 'away' | undefined =
+      teamName ? (teamName === homeName ? 'home' : 'away') : undefined
+    const parts = asArr(play?.participants) as Record<string, unknown>[]
+    const player = asString(asObj(parts[0]?.athlete)?.displayName)
+    const isGoal = typeKey.includes('goal')
+    const assist = isGoal ? asString(asObj(parts[1]?.athlete)?.displayName) : undefined
+    const normType = typeKey === 'owngoal' ? 'own-goal'
+                   : typeKey.startsWith('var') ? 'var' : typeKey
+
+    // ESPN registra cada falta dos veces (la falta + «X gana un libre»), mismo
+    // tipo y jugador → colapsa consecutivas idénticas para no repetir filas.
+    const prev = out[out.length - 1]
+    if (prev && prev.minute === minute && prev.type === normType && prev.player === player) continue
+
+    out.push({
+      minute,
+      type: normType,
+      label,
+      team,
+      player,
+      assist,
+      key: COMMENTARY_KEY.has(typeKey),
+    })
+  }
+  // Más reciente primero; tope defensivo de 130 entradas.
+  return out.reverse().slice(0, 130)
 }
 
 // ── Basketball ──────────────────────────────────────────────────────
@@ -761,7 +851,11 @@ export async function GET(
     }
 
     if (sport === 'soccer') {
-      detail.soccer  = buildSoccer(json, asString(homeTeamObj?.id))
+      const soccer = buildSoccer(json, asString(homeTeamObj?.id))
+      // Side mapping con el nombre ORIGINAL (sin traducir), que es el que trae
+      // commentary.play.team.displayName.
+      soccer.commentary = buildSoccerCommentary(json, asString(homeTeamObj?.displayName))
+      detail.soccer  = soccer
       detail.lineups = buildLineups(json)
       if (tableRows.length) {
         const homeTeamName = asString(homeTeamObj?.displayName)

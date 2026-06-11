@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type {
   MatchDetail, MatchStat, ScoringEvent, BasketballLeader, MmaFighter,
-  RacingResult, GolfLeader, LineupPlayer, TeamLineup,
+  RacingResult, GolfLeader, LineupPlayer, TeamLineup, CommentaryEntry,
 } from '@/app/api/match/[ref]/route'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
@@ -484,6 +484,95 @@ function ScoringTimeline({ events, homeTeam, awayTeam, leagueSlug }: { events: S
         })}
       </div>
     </div>
+  )
+}
+
+// ── Minuto a minuto (commentary) ───────────────────────────────────
+function CommentaryFeed({ entries, homeTeam, awayTeam }: {
+  entries: CommentaryEntry[]; homeTeam?: string; awayTeam?: string
+}) {
+  if (!entries.length) return null
+
+  const colorFor = (e: CommentaryEntry): string => {
+    if (e.type === 'goal' || e.type === 'penalty-goal' || e.type === 'penalty') return '#86EFAC'
+    if (e.type === 'own-goal') return '#FCA5A5'
+    if (e.type === 'yellow-card') return '#FBBF24'
+    if (e.type === 'red-card' || e.type === 'yellow-red-card') return '#EF4444'
+    if (e.type === 'substitution') return '#34D399'
+    if (e.type === 'var') return '#C4B5FD'
+    return e.team === 'home' ? '#A78BFA' : e.team === 'away' ? '#F59E0B' : '#5A5A6A'
+  }
+
+  const iconFor = (e: CommentaryEntry, accent: string) => {
+    if (e.type === 'goal' || e.type === 'penalty-goal' || e.type === 'penalty')
+      return <span style={{ color: '#86EFAC', display: 'inline-flex' }}><GoalIcon size={13} /></span>
+    if (e.type === 'own-goal')
+      return <span style={{ color: '#FCA5A5', display: 'inline-flex' }}><GoalIcon size={13} /></span>
+    if (e.type === 'yellow-card') return <YellowCardIcon size={12} />
+    if (e.type === 'red-card' || e.type === 'yellow-red-card') return <RedCardIcon size={12} />
+    if (e.type === 'substitution')
+      return (
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
+          <path d="M3 4h6l-2-2M11 10H5l2 2" stroke={accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )
+    return <span className="w-1.5 h-1.5 rounded-full" style={{ background: accent }} />
+  }
+
+  return (
+    <Section title="Minuto a minuto">
+      <ol className="relative flex flex-col">
+        {/* Rail vertical */}
+        <span aria-hidden className="absolute top-1 bottom-1 pointer-events-none"
+          style={{ left: 51, width: 1, background: 'linear-gradient(180deg, transparent, rgba(124,58,237,0.18) 6%, rgba(124,58,237,0.18) 94%, transparent)' }} />
+        {entries.map((e, i) => {
+          const accent = colorFor(e)
+          // Marcadores sin equipo (Descanso, 2ª parte, Final) → fila centrada.
+          if (!e.team) {
+            return (
+              <li key={i} className="flex justify-center py-2.5">
+                <span className="text-[9px] font-black uppercase tracking-[0.18em] px-3 py-1 rounded-full"
+                  style={{ color: '#8A8AA0', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', fontFamily: 'var(--font-sport)' }}>
+                  {[e.minute, e.label].filter(Boolean).join('  ·  ')}
+                </span>
+              </li>
+            )
+          }
+          return (
+            <li key={i} className="relative grid items-center gap-2 py-1.5"
+              style={{ gridTemplateColumns: '40px 24px 1fr' }}>
+              <span className="text-right tabular-nums text-[10px] font-black"
+                style={{ color: e.key ? '#C4B5FD' : '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+                {e.minute ?? ''}
+              </span>
+              <span className="inline-flex items-center justify-center flex-shrink-0 z-10"
+                style={{ width: 22, height: 22, borderRadius: 999, background: e.key ? `${accent}1a` : 'var(--bg-base)', border: `1px solid ${accent}${e.key ? '40' : '26'}` }}>
+                {iconFor(e, accent)}
+              </span>
+              <div className="min-w-0">
+                <span className={e.key ? 'text-[12px] font-black' : 'text-[11px] font-semibold'}
+                  style={{ color: e.key ? '#E8E8F4' : '#9A9AB0', fontFamily: 'var(--font-sport)' }}>
+                  {e.label}
+                </span>
+                {e.player && (
+                  <span className="text-[11px]" style={{ color: e.key ? '#C0C0D4' : '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+                    {' · '}{e.player}
+                  </span>
+                )}
+                {e.assist && (
+                  <span className="text-[10px]" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+                    {' '}(asist. {e.assist})
+                  </span>
+                )}
+                <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full align-middle"
+                  style={{ background: e.team === 'home' ? '#A78BFA' : '#F59E0B', opacity: 0.7 }}
+                  title={e.team === 'home' ? homeTeam : awayTeam} />
+              </div>
+            </li>
+          )
+        })}
+      </ol>
+    </Section>
   )
 }
 
@@ -1255,6 +1344,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
   const hasSoccerStats    = isSoccer && (match.soccer?.stats.length ?? 0) > 0
   const hasBasketStats    = isBasket && (match.basketball?.stats.length ?? 0) > 0
   const hasSoccerScoring  = isSoccer && (match.soccer?.scoring.length ?? 0) > 0
+  const hasCommentary     = isSoccer && (match.soccer?.commentary?.length ?? 0) > 0
   const hasStats   = hasSoccerStats || hasBasketStats
   const hasTable   = (match.leagueTable?.length ?? 0) > 0
   const hasH2H     = (h2h?.matches.length ?? 0) > 0
@@ -1334,11 +1424,12 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
   }
 
   const tabs = [
-    { id: 'resumen',      label: 'Resumen',       available: true },
-    { id: 'alineacion',   label: 'Alineación',    available: hasLineups },
-    { id: 'estadisticas', label: 'Estadísticas',  available: hasStats },
-    { id: 'h2h',          label: 'H2H',           available: hasH2H },
-    { id: 'clasificacion',label: 'Clasificación', available: hasTable },
+    { id: 'resumen',      label: 'Resumen',         available: true },
+    { id: 'minuto',       label: 'Minuto a minuto', available: hasCommentary },
+    { id: 'alineacion',   label: 'Alineación',      available: hasLineups },
+    { id: 'estadisticas', label: 'Estadísticas',    available: hasStats },
+    { id: 'h2h',          label: 'H2H',             available: hasH2H },
+    { id: 'clasificacion',label: 'Clasificación',   available: hasTable },
   ]
 
   return (
@@ -1407,7 +1498,20 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
           )}
         </div>
 
-        {/* ── Tab 1: Alineación ────────────────────────── */}
+        {/* ── Tab 1: Minuto a minuto ───────────────────── */}
+        <div>
+          {hasCommentary ? (
+            <CommentaryFeed
+              entries={match.soccer!.commentary!}
+              homeTeam={match.homeTeam}
+              awayTeam={match.awayTeam}
+            />
+          ) : (
+            <EmptyState message="El minuto a minuto aparecerá cuando arranque el partido." kind="events" />
+          )}
+        </div>
+
+        {/* ── Tab 2: Alineación ────────────────────────── */}
         <div>
           {hasLineups ? (
             <LineupField
@@ -1426,7 +1530,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
           )}
         </div>
 
-        {/* ── Tab 2: Estadísticas ──────────────────────── */}
+        {/* ── Tab 3: Estadísticas ──────────────────────── */}
         <div>
           {hasSoccerStats && (
             <Section title="Estadísticas del partido">
@@ -1457,7 +1561,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
           } kind="stats" />}
         </div>
 
-        {/* ── Tab 3: H2H ───────────────────────────────── */}
+        {/* ── Tab 4: H2H ───────────────────────────────── */}
         <div>
           {hasH2H && match.homeTeam && match.awayTeam ? (
             <H2HBlock h2h={h2h!} homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
@@ -1466,7 +1570,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
           )}
         </div>
 
-        {/* ── Tab 4: Clasificación ─────────────────────── */}
+        {/* ── Tab 5: Clasificación ─────────────────────── */}
         <div>
           {hasTable ? (
             <LeagueTableBlock rows={match.leagueTable!} leagueLabel={match.leagueLabel} leagueSlug={match.leagueSlug} />
