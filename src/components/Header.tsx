@@ -11,6 +11,7 @@ import { trackSearch } from '@/lib/analytics'
 import type { User } from '@supabase/supabase-js'
 import { PersonIcon } from '@/components/icons/GameIcons'
 import PorraCTA from '@/components/PorraCTA'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { SearchHit } from '@/app/api/search/players/route'
 import dynamic from 'next/dynamic'
 
@@ -83,11 +84,15 @@ function SearchModal({ onClose }: { onClose: () => void }) {
   const [espnHits, setEspnHits] = useState<SearchHit[]>([])
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 50)
   }, [])
+
+  // Atrapa el Tab dentro del modal (ya tiene su propio Escape + foco inicial al input)
+  useFocusTrap(true, modalRef, onClose, { initialFocus: false, escape: false })
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -138,6 +143,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="search-overlay" onClick={onClose} aria-hidden="true">
       <div
+        ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-label="Buscar en TakaSports"
@@ -476,6 +482,8 @@ export default function Header() {
   const [levelData, setLevelData] = useState<LevelData | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [levelUpToast, setLevelUpToast] = useState<{ level: number; levelName: string; color: string } | null>(null)
+  const drawerRef = useRef<HTMLElement>(null)
+  const hamburgerRef = useRef<HTMLButtonElement>(null)
 
   // Pinta el último nivel conocido AL INSTANTE desde localStorage (sin esperar
   // a auth + /api/quiniela/me). Evita que la barra XP "salte" al entrar. Se
@@ -575,6 +583,11 @@ export default function Header() {
 
   const openSearch = useCallback(() => setSearchOpen(true), [])
   const closeSearch = useCallback(() => setSearchOpen(false), [])
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+  // Drawer móvil: atrapa el foco, Escape cierra, y devuelve el foco a la
+  // hamburguesa al cerrar (patrón WAI-ARIA para menús desplegables).
+  useFocusTrap(menuOpen, drawerRef, closeMenu, { returnRef: hamburgerRef })
 
   return (
     <>
@@ -685,7 +698,10 @@ export default function Header() {
 
             {/* Hamburger */}
             <button
+              ref={hamburgerRef}
               aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-drawer"
               onClick={() => setMenuOpen((v) => !v)}
               className="lg:hidden flex items-center justify-center rounded-lg flex-shrink-0"
               style={{ width: 38, height: 38, background: menuOpen ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
@@ -710,7 +726,7 @@ export default function Header() {
       {menuOpen && (
         <>
           <div className="drawer-backdrop" onClick={() => setMenuOpen(false)} aria-hidden="true" />
-          <nav className="drawer-panel" aria-label="Menú de navegación">
+          <nav ref={drawerRef} id="mobile-drawer" tabIndex={-1} className="drawer-panel" aria-label="Menú de navegación" style={{ outline: 'none' }}>
             <div style={{ background: 'rgba(13,13,20,0.98)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="px-4 sm:px-6 py-4 flex flex-col gap-1">
 
