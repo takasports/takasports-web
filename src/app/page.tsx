@@ -10,7 +10,6 @@ import Header from '@/components/Header'
 import BreakingNewsBar from '@/components/BreakingNewsBar'
 import LiveStrip from '@/components/LiveStrip'
 import HomeContent from '@/components/HomeContent'
-import PorraHero from '@/components/PorraHero'
 import Footer from '@/components/Footer'
 import NewsletterSection from '@/components/NewsletterSection'
 import { urlFor } from '@/lib/sanity'
@@ -219,7 +218,6 @@ export default async function Home() {
       <h1 className="sr-only">TakaSports — Noticias deportivas en tiempo real</h1>
       <BreakingNewsBar items={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
       <LiveStrip />
-      <PorraHero />
       <HomeContent articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} />
       <NewsletterSection source="home" />
       <Footer />
