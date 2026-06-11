@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { LogoFull } from './Logo'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { createClient } from '@/lib/supabase'
 import { trackSearch } from '@/lib/analytics'
 import type { User } from '@supabase/supabase-js'
 import { PersonIcon } from '@/components/icons/GameIcons'
@@ -492,13 +491,28 @@ export default function Header() {
   useEffect(() => { setMenuOpen(false) }, [pathname])
 
   useEffect(() => {
-    const supabase = createClient()
-    if (!supabase) return
-    supabase.auth.getUser().then(({ data }) => { setUser(data.user ?? null); setAuthChecked(true) })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null); setAuthChecked(true)
+    // Supabase se carga de forma DIFERIDA (dynamic import) para sacar
+    // @supabase/ssr + supabase-js (~60-70 KiB gzip) del First Load. El Header
+    // está montado en todas las páginas, así que esto aligera TODA la web. El
+    // level chip ya pinta desde cache localStorage (ts_levelchip) → sin parpadeo.
+    // El cleanup de useEffect debe ser síncrono: guardamos la subscription en
+    // una variable mutable y un flag `cancelled` cubre el desmontaje durante la
+    // carga del chunk.
+    let subscription: { unsubscribe: () => void } | null = null
+    let cancelled = false
+    import('@/lib/supabase').then(({ createClient }) => {
+      if (cancelled) return
+      const supabase = createClient()
+      if (!supabase) return
+      supabase.auth.getUser().then(({ data }) => { setUser(data.user ?? null); setAuthChecked(true) })
+      subscription = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null); setAuthChecked(true)
+      }).data.subscription
     })
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      subscription?.unsubscribe()
+    }
   }, [])
 
   // Fetch level data cuando hay sesión — con detección de level-up
