@@ -436,6 +436,28 @@ export function LightbulbIcon({ size = 32, className }: IconProps) {
   )
 }
 
+export function ChartIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M5 27h22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <rect x="7" y="17" width="4.5" height="9" rx="1" fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="1.9" />
+      <rect x="13.75" y="11" width="4.5" height="15" rx="1" fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="1.9" />
+      <rect x="20.5" y="6" width="4.5" height="20" rx="1" fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="1.9" />
+    </svg>
+  )
+}
+
+export function ControllerIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M11 9h10a7 7 0 0 1 7 7v3.4a4 4 0 0 1-7 2.7l-1.5-1.6h-7l-1.5 1.6A4 4 0 0 1 4 19.4V16a7 7 0 0 1 7-7Z" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M9 15v4M7 17h4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      <circle cx="21" cy="15.5" r="1.4" fill="currentColor" />
+      <circle cx="24" cy="18" r="1.4" fill="currentColor" />
+    </svg>
+  )
+}
+
 export function MedalIcon({ size = 32, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>

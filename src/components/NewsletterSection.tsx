@@ -3,6 +3,7 @@
 // Se apoya en NewsletterForm (client) para la lógica de suscripción.
 
 import NewsletterForm from './NewsletterForm'
+import { TvIcon, ChartIcon, ControllerIcon } from './icons/GameIcons'
 
 interface Props {
   source?: string   // analytics source tag: 'home' | 'noticias' | 'estadisticas' | etc.
@@ -68,12 +69,14 @@ export default function NewsletterSection({ source = 'page' }: Props) {
             {/* Beneficios */}
             <ul className="flex flex-col gap-2">
               {[
-                { icon: '⚽', text: 'Resumen de fútbol, NBA, F1, UFC y más' },
-                { icon: '📊', text: 'Estadísticas y rankings semanales' },
-                { icon: '🎮', text: 'Acceso anticipado a nuevos juegos y funciones' },
-              ].map(({ icon, text }) => (
+                { Icon: TvIcon,         text: 'Resumen de fútbol, NBA, F1, UFC y más' },
+                { Icon: ChartIcon,      text: 'Estadísticas y rankings semanales' },
+                { Icon: ControllerIcon, text: 'Acceso anticipado a nuevos juegos y funciones' },
+              ].map(({ Icon, text }) => (
                 <li key={text} className="flex items-center gap-2.5">
-                  <span className="text-sm leading-none">{icon}</span>
+                  <span className="flex-shrink-0" style={{ color: '#A78BFA', lineHeight: 0 }}>
+                    <Icon size={17} />
+                  </span>
                   <span
                     className="text-[12px]"
                     style={{ color: 'var(--text-muted)' }}
