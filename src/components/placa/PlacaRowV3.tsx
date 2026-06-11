@@ -18,6 +18,7 @@
 
 import { TIER_CONFIG, type PlacaData } from './types'
 import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
+import { PodiumMedal } from '@/components/icons/GameIcons'
 
 interface Props {
   placa: PlacaData
@@ -54,7 +55,7 @@ export function PlacaRowV3({ placa, rank, score, scoreLabel = 'pts', sportAccent
     ?? placa.displayName.split(' ').map(w => w[0]).join('').slice(0, 2)
     ?? '?').toUpperCase()
 
-  const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null
+  const medal = rank <= 3 ? <PodiumMedal position={rank} size={22} /> : null
 
   // Silueta horizontal con cortes asimétricos
   const CLIP_PATH = `polygon(

@@ -9,6 +9,7 @@
 //   · Liga abierta → leaderboard interno + share link + salir/eliminar
 
 import { useCallback, useEffect, useState } from 'react'
+import { PodiumMedal } from '@/components/icons/GameIcons'
 import TakaPoint from '@/components/TakaPoint'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -221,8 +222,6 @@ function LeagueDetail({
     } finally { setDeleting(false) }
   }
 
-  const MEDAL = ['🥇', '🥈', '🥉']
-
   return (
     <div style={{
       marginTop: 8, borderRadius: 16,
@@ -315,7 +314,7 @@ function LeagueDetail({
                 color: i < 3 ? undefined : 'rgba(255,255,255,0.3)',
                 fontFamily: 'var(--font-display)',
               }}>
-                {i < 3 ? MEDAL[i] : entry.rank}
+                {i < 3 ? <PodiumMedal position={i + 1} size={15} className="inline-block align-middle" /> : entry.rank}
               </span>
 
               <Avatar url={entry.avatar_url} name={entry.display_name} size={28} />

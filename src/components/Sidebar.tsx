@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
 import { RANKING_JUGADORES, type RankingEntry } from '@/lib/rankings'
-import { PersonIcon } from '@/components/icons/GameIcons'
+import { PersonIcon, PodiumMedal } from '@/components/icons/GameIcons'
 
 function SectionHeader({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
@@ -74,7 +74,7 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
                     textShadow: i < 3 ? `0 0 8px ${medalColor.badge}88` : 'none',
                   }}
                 >
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                  {i < 3 ? <PodiumMedal position={i + 1} size={15} className="inline-block align-middle" /> : i + 1}
                 </span>
                 {/* Avatar */}
                 {player.image ? (

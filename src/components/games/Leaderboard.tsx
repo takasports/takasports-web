@@ -7,6 +7,7 @@
 import { useLeaderboard, useMyPosition } from '@/hooks/useGameState'
 import type { GameId, LeaderboardBadgeMeta, LeaderboardEquipmentMeta } from '@/lib/games-store'
 import { LeaderboardBadgesRow, LeaderboardTitleLine } from '@/components/badges/LeaderboardBadgeChip'
+import { PodiumMedal } from '@/components/icons/GameIcons'
 
 interface Props {
   gameId:    GameId
@@ -117,7 +118,7 @@ function Row({ position, name, avatar, score, isMe, accent, badges, equipment }:
   position: number; name: string; avatar: string | null; score: number; isMe: boolean; accent: string;
   badges?: LeaderboardBadgeMeta[]; equipment?: LeaderboardEquipmentMeta;
 }) {
-  const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : null
+  const medal = position <= 3 ? <PodiumMedal position={position} size={16} className="inline-block align-middle" /> : null
   const frameColor  = equipment?.frame?.color
   const cardBg      = equipment?.card_bg?.gradient
   const equipBadge  = equipment?.badge

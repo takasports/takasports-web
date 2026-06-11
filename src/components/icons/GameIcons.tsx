@@ -486,6 +486,25 @@ export function MedalIcon({ size = 32, className }: IconProps) {
   )
 }
 
+// Medalla de podio teñida por puesto (oro/plata/bronce). A diferencia de
+// MedalIcon (que hereda currentColor), ésta lleva el color del puesto fijo
+// — sustituye los emojis 🥇🥈🥉 en clasificaciones y leaderboards.
+const PODIUM_MEDAL_COLOR: Record<number, string> = { 1: '#F4C95D', 2: '#C8CDD6', 3: '#CD7F4A' }
+export function getPodiumMedalColor(position: number): string {
+  return PODIUM_MEDAL_COLOR[position] ?? '#7C7C8C'
+}
+export function PodiumMedal({ position, size = 20, className }: { position: number; size?: number; className?: string }) {
+  const c = getPodiumMedalColor(position)
+  const label = position === 1 ? 'Oro' : position === 2 ? 'Plata' : position === 3 ? 'Bronce' : `${position}º`
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className} role="img" aria-label={label}>
+      <path d="M10 3l4 9M22 3l-4 9" stroke={c} strokeWidth="2" strokeLinecap="round" />
+      <circle cx="16" cy="21" r="8" fill={c} fillOpacity="0.22" stroke={c} strokeWidth="2" />
+      <circle cx="16" cy="21" r="3.6" fill={c} fillOpacity="0.35" stroke={c} strokeWidth="1.6" />
+    </svg>
+  )
+}
+
 export function HomeIcon({ size = 32, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>

@@ -15,6 +15,7 @@
 //   3. Click "Ver ranking" → leaderboard interno desplegable
 
 import { useCallback, useEffect, useState } from 'react'
+import { PodiumMedal } from '@/components/icons/GameIcons'
 import TakaPoint from '@/components/TakaPoint'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -78,8 +79,6 @@ function LeagueLeaderboard({
       .finally(() => setLoading(false))
   }, [leagueId])
 
-  const MEDAL = ['🥇', '🥈', '🥉']
-
   if (loading) return (
     <div style={{ padding: '16px', textAlign: 'center' }}>
       <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-sport)' }}>Cargando ranking…</span>
@@ -110,7 +109,7 @@ function LeagueLeaderboard({
               color: i < 3 ? undefined : 'rgba(255,255,255,0.3)',
               fontFamily: 'var(--font-display)',
             }}>
-              {i < 3 ? MEDAL[i] : entry.rank}
+              {i < 3 ? <PodiumMedal position={i + 1} size={15} className="inline-block align-middle" /> : entry.rank}
             </span>
 
             {/* Avatar */}

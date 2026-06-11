@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { getGamePeriod } from '@/lib/games-periods'
 import type { GameId, LeaderboardBadgeMeta, LeaderboardEquipmentMeta } from '@/lib/games-store'
 import { LeaderboardBadgesRow, LeaderboardTitleLine } from '@/components/badges/LeaderboardBadgeChip'
+import { PodiumMedal } from '@/components/icons/GameIcons'
 
 interface Entry {
   pid: string
@@ -27,8 +28,6 @@ interface Props {
   href?: string                   // dónde lleva el "Ver todos" (default: /juegos/leaderboard/{gameId})
   cadenceLabel?: string           // "Hoy" | "Esta semana" — override visual
 }
-
-const PODIUM = ['🥇', '🥈', '🥉']
 
 export default function LeaderboardPreview({ gameId, accent, label, href, cadenceLabel }: Props) {
   const [entries, setEntries] = useState<Entry[] | null>(null)
@@ -115,8 +114,8 @@ export default function LeaderboardPreview({ gameId, accent, label, href, cadenc
                   border: frameColor ? `1px solid ${frameColor}` : '1px solid transparent',
                 }}
               >
-                <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1, width: 22, textAlign: 'center', flexShrink: 0 }}>
-                  {PODIUM[i]}
+                <span style={{ width: 22, display: 'inline-flex', justifyContent: 'center', flexShrink: 0 }}>
+                  <PodiumMedal position={i + 1} size={16} />
                 </span>
                 {e.avatar_url ? (
                   /* eslint-disable-next-line @next/next/no-img-element */

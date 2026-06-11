@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { PodiumMedal } from '@/components/icons/GameIcons'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
@@ -761,9 +762,7 @@ function TrendArrow({ trend }: { trend?: 'up' | 'down' | 'flat' }) {
 }
 
 function MedalBadge({ rank }: { rank: number }) {
-  if (rank === 1) return <span className="text-sm leading-none">🥇</span>
-  if (rank === 2) return <span className="text-sm leading-none">🥈</span>
-  if (rank === 3) return <span className="text-sm leading-none">🥉</span>
+  if (rank <= 3) return <PodiumMedal position={rank} size={18} />
   return (
     <span className="font-black tabular-nums text-xs w-5 text-center" style={{ color: '#3A3A52', fontFamily: 'var(--font-display)' }}>
       {rank}
