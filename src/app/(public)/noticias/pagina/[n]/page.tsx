@@ -5,8 +5,6 @@ import Image from '@/components/DynamicImage'
 import { sanityClient, urlFor } from '@/lib/sanity'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { timeAgo } from '@/lib/timeAgo'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import LiveStrip from '@/components/LiveStrip'
 import { SITE_URL } from '@/lib/constants'
@@ -125,10 +123,9 @@ export default async function NoticiasPageN({
       {/* Señalización rel=prev/next para crawlers (Bing/Yandex la usan; Google ignora pero no daña) */}
       <link rel="prev" href={prevHref(page)} />
       {hasNext && <link rel="next" href={`${SITE_URL}/noticias/pagina/${page + 1}`} />}
-      <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20 pt-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20 pt-8">
         <div className="flex items-center gap-2.5 mb-6">
           <span className="section-accent" />
           <h1 className="section-label" style={{ fontFamily: 'var(--font-sport)' }}>
@@ -199,9 +196,8 @@ export default async function NoticiasPageN({
             </Link>
           )}
         </nav>
-      </main>
+      </div>
 
-      <Footer />
       <ScrollToTop />
     </div>
   )

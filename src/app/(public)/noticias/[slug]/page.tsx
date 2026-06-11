@@ -8,8 +8,6 @@ import { getTweet, type Tweet } from 'react-tweet/api'
 import { sanityClient, articleDetailQuery, relatedArticlesQuery, nextArticleQuery, urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import NewsletterSection from '@/components/NewsletterSection'
 import ShareButton from '@/app/article/[id]/ShareButton'
 import BackButton from '@/app/article/[id]/BackButton'
@@ -605,9 +603,8 @@ export default async function NoticiaPage({
         publishedAt: article.publishedAt,
         imageUrl: (imgUrl as string | undefined) ?? undefined,
       }} />
-      <Header />
 
-      <main
+      <div
         data-sport={sportSlug || undefined}
         className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20"
         style={{
@@ -1362,10 +1359,9 @@ export default async function NoticiaPage({
           </div>
         )}
 
-      </main>
+      </div>
 
       <NewsletterSection source="articulo" />
-      <Footer />
       <ScrollToTop />
     </div>
   )

@@ -1,11 +1,9 @@
 import type { Metadata } from 'next'
 import { sanityClient, articlesQuery, reelsQuery, urlFor } from '@/lib/sanity'
 import reelsData from '@/lib/reels-data.json'
-import Header from '@/components/Header'
 import BreakingNewsBar from '@/components/BreakingNewsBar'
 import LiveStrip from '@/components/LiveStrip'
 import NoticiasContent from '@/components/NoticiasContent'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
 import { SITE_URL } from '@/lib/constants'
@@ -69,22 +67,20 @@ export default async function NoticiasPage() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
-      <Header />
       <BreakingNewsBar items={[
         ...articles.filter((a: { takaStatus?: string | null }) => a.takaStatus === 'breaking'),
         ...articles.filter((a: { takaStatus?: string | null }) => a.takaStatus !== 'breaking'),
       ].slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto pb-24">
+      <div className="max-w-[1440px] mx-auto pb-24">
         <NoticiasContent
           articles={articles}
           reels={igReels as typeof reels}
         />
-      </main>
+      </div>
 
       <NewsletterSection source="noticias" />
-      <Footer />
       <ScrollToTop />
     </div>
   )
