@@ -1000,3 +1000,18 @@ html[data-cap="full"] .ts-keys__dot {
   html[data-cap="full"] .ts-keys__dot { animation: none !important; opacity: 1 !important; }
 }
 
+/* Letra capitular del cuerpo — 1ª letra del 1er párrafo real del artículo.
+   --sport-accent se hereda del data-sport del <main>. 0 KB, sin JS, estático. */
+.ts-dropcap::first-letter {
+  float: left;
+  font-family: var(--font-display, system-ui);
+  font-weight: 800;
+  color: var(--sport-accent);
+  -webkit-text-fill-color: var(--sport-accent);
+  font-size: 3.4em;
+  line-height: 0.82;
+  padding: 0.04em 0.12em 0 0;
+  margin-top: 0.02em;
+  letter-spacing: -0.02em;
+}
+

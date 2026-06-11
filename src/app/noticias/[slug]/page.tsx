@@ -143,6 +143,7 @@ function renderBodyBlock(
   text: string,
   i: number,
   autolink?: { index: EntityIndex; ctx: AutolinkContext },
+  isFirst?: boolean,
 ) {
   if (/^\*\*(.+)\*\*$/.test(text)) {
     const heading = text.slice(2, -2)
@@ -167,7 +168,7 @@ function renderBodyBlock(
     ? autolinkSegments(text, autolink.index, autolink.ctx)
     : [{ type: 'text' as const, text }]
   return (
-    <p key={i} style={{ color: 'var(--body-text)', fontSize: '1.125rem', lineHeight: 1.8 }}>
+    <p key={i} className={isFirst ? 'ts-dropcap' : undefined} style={{ color: 'var(--body-text)', fontSize: '1.125rem', lineHeight: 1.8 }}>
       {segments.map((seg, j) =>
         seg.type === 'link' && seg.url ? (
           <Link
@@ -538,6 +539,19 @@ export default async function NoticiaPage({
   const paragraphs = article.bodyText
     ? article.bodyText.split('\n').filter((p) => p.trim().length > 0)
     : []
+  // Índice del primer párrafo REAL (no heading **...**) → recibe la capitular.
+  const firstBodyParagraphIndex = paragraphs.findIndex(
+    (p) => !/^\*\*(.+)\*\*$/.test(p.trim()),
+  )
+  // Camino PortableText: _key del primer bloque de texto normal (no heading,
+  // no lista, no imagen/embed) → ese párrafo recibe la capitular.
+  const firstNormalKey = (() => {
+    const blocks = (article.bodyPortable ?? []) as Array<{ _type?: string; _key?: string; style?: string; listItem?: string }>
+    const first = blocks.find(
+      (b) => b._type === 'block' && !b.listItem && (b.style === 'normal' || b.style === undefined),
+    )
+    return first?._key
+  })()
 
   // Auto-interlinking: cargamos el índice una vez por render y lo pasamos a
   // los renders de párrafo. Aplica tanto a bodyText como a bodyPortable.
@@ -922,6 +936,9 @@ export default async function NoticiaPage({
                     block: {
                       normal: ({ children, value }) => {
                         const pStyle = { color: 'var(--body-text)', fontSize: '1.125rem', lineHeight: 1.8, marginBottom: '1.5rem' }
+                        // Letra capitular solo en el primer párrafo real del cuerpo.
+                        const pKey = (value as { _key?: string })?._key
+                        const pClass = (!!firstNormalKey && pKey === firstNormalKey) ? 'ts-dropcap' : undefined
                         // Autolink solo en párrafos sin marks (negrita, cursiva, links manuales)
                         // para no romper el formato editorial existente.
                         if (autolink) {
@@ -935,7 +952,7 @@ export default async function NoticiaPage({
                             const segments = autolinkSegments(rawText, autolink.index, autolink.ctx)
                             if (segments.some(s => s.type === 'link')) {
                               return (
-                                <p style={pStyle}>
+                                <p className={pClass} style={pStyle}>
                                   {segments.map((seg, j) =>
                                     seg.type === 'link' && seg.url ? (
                                       <Link
@@ -955,7 +972,7 @@ export default async function NoticiaPage({
                             }
                           }
                         }
-                        return <p style={pStyle}>{children}</p>
+                        return <p className={pClass} style={pStyle}>{children}</p>
                       },
                       h1: ({ children }) => (
                         <h1 style={{ color: 'var(--body-heading)', fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.015em', marginTop: '2rem', marginBottom: '0.75rem' }}>{children}</h1>
@@ -1062,7 +1079,7 @@ export default async function NoticiaPage({
               </div>
             ) : paragraphs.length > 0 ? (
               <div className="flex flex-col gap-6" style={{ maxWidth: 680 }}>
-                {paragraphs.map((p, i) => renderBodyBlock(p, i, autolink))}
+                {paragraphs.map((p, i) => renderBodyBlock(p, i, autolink, i === firstBodyParagraphIndex))}
               </div>
             ) : (
               <p className="text-sm italic" style={{ color: 'var(--text-muted)', maxWidth: 680 }}>
