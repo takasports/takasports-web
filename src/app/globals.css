@@ -1001,9 +1001,54 @@ textarea:focus-visible,
 }
 .ts-score-in { animation: tsScoreIn 0.5s var(--ease-bounce, ease) both; }
 
+/* "Flip" de dígito del marcador (TeamScoreboard + StickyScoreBar comparten
+   <ScoreFlip>): vuelco vertical estilo panel de aeropuerto cada vez que cambia
+   un tanteo en vivo (re-disparado remontando el dígito). Doble como entrada en
+   el primer pintado. Solo transform/opacity → compositor, $0. */
+@keyframes tsScoreFlip {
+  0%   { transform: rotateX(-90deg); opacity: 0; }
+  55%  { transform: rotateX(14deg);  opacity: 1; }
+  100% { transform: rotateX(0deg);   opacity: 1; }
+}
+.ts-score-flip {
+  display: inline-block;
+  transform-origin: center;
+  backface-visibility: hidden;
+  animation: tsScoreFlip 0.5s var(--ease-bounce, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ts-bar-fill { animation: none; clip-path: none; }
   .ts-score-in { animation: none; }
+  .ts-score-flip { animation: none; }
+}
+
+/* ── Campo de alineación 2.5D (perspectiva "broadcast") ──────────────
+   El césped + líneas + fichas viven en un "escenario" inclinado en 3D para dar
+   sensación de cámara de TV (la portería rival se aleja, la propia se acerca).
+   Las fichas contrarrotan el mismo ángulo (billboard) para seguir de cara a
+   cámara y quedar legibles. Solo en data-cap="full"; en perfiles lite o con
+   prefers-reduced-motion el campo queda PLANO (cenital), que ya es legible.
+   Transform estático (no animación), compositado en GPU → $0. */
+.ts-pitch { perspective: 1300px; perspective-origin: 50% 30%; }
+.ts-pitch__stage { position: absolute; inset: 0; transform-style: preserve-3d; }
+.ts-pitch__chip { transform: translate(-50%, -50%); }
+html[data-cap="full"] .ts-pitch__stage {
+  inset: 0 -2%;
+  transform: rotateX(22deg);
+  transform-origin: 50% 100%;
+}
+/* Las fichas son "standees" sobre el césped: translateZ las despega del plano
+   (si no, al contrarrotar su mitad inferior se hundiría DETRÁS del césped y se
+   vería media cúpula). Luego contrarrotan para mirar a cámara; el pivote en el
+   centro del dorsal (≈13px) deja la etiqueta del nombre recta debajo. */
+html[data-cap="full"] .ts-pitch__chip {
+  transform: translate(-50%, -50%) translateZ(20px) rotateX(-22deg);
+  transform-origin: 50% 13px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-cap="full"] .ts-pitch__stage { inset: 0; transform: none; }
+  html[data-cap="full"] .ts-pitch__chip { transform: translate(-50%, -50%); transform-origin: 50% 50%; }
 }
 
 /* ═══ NOTICIA — Panel "Claves en 30 segundos" estilo teletexto/broadcast ═══

@@ -13,6 +13,7 @@ import { MatchTabs } from './MatchTabs'
 import { LeagueTableBlock } from './LeagueTable'
 import { LiveRefresh } from './LiveRefresh'
 import { StickyScoreBar } from './StickyScoreBar'
+import { ScoreFlip } from './ScoreFlip'
 import { ShareButton } from '@/components/ShareButton'
 import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import MatchNews from '@/components/MatchNews'
@@ -255,12 +256,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
             </span>
           )}
           {hasScore ? (
-            <p className="ts-score-in font-black tabular-nums flex items-center gap-3 leading-none"
-              style={{ color: '#F0F0FA', fontFamily: 'var(--font-headline)', fontSize: 'clamp(38px, 9vw, 56px)' }}>
-              <span>{match.homeScore}</span>
-              <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
-              <span>{match.awayScore}</span>
-            </p>
+            <ScoreFlip home={match.homeScore!} away={match.awayScore!} variant="hero" />
           ) : (
             // "VS" broadcast: diagonal + acento del DEPORTE (no de los clubes,
             // que los datos no traen → no inventamos colores). Gesto de cartel.
@@ -987,11 +983,10 @@ function PlayerDot({ player, x, y, side, leagueSlug, marks }: {
 
   const dot = (
     <div
-      className={`absolute flex flex-col items-center${href ? '' : ' pointer-events-none'}`}
+      className={`ts-pitch__chip absolute flex flex-col items-center${href ? '' : ' pointer-events-none'}`}
       style={{
         left: `${x}%`,
         top: `${y}%`,
-        transform: 'translate(-50%, -50%)',
         zIndex: 2,
       }}
     >
@@ -1167,39 +1162,48 @@ function LineupField({ lineups, homeTeam, awayTeam, leagueSlug, scoring }: {
         </div>
       </div>
 
-      {/* Field */}
+      {/* Field — escenario 2.5D inclinado (degrada a plano sin data-cap=full
+          o con prefers-reduced-motion; ver .ts-pitch en globals.css). El bg
+          oscuro del contenedor cubre la zona "lejana" que recede al inclinar. */}
       <div
-        className="relative w-full overflow-hidden rounded-xl"
+        className="ts-pitch relative w-full overflow-hidden rounded-xl"
         style={{
           aspectRatio: '2/3',
-          background: 'linear-gradient(180deg, #1b4a1b 0%, #1e5a1e 48%, #1b5018 52%, #1b4a1b 100%)',
-          boxShadow: 'inset 0 0 40px rgba(0,0,0,0.4)',
+          background: '#0c1f0c',
+          boxShadow: 'inset 0 0 44px rgba(0,0,0,0.55)',
         }}
       >
-        {/* Grass stripes */}
-        {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="absolute w-full pointer-events-none"
-            style={{
-              top: `${i * 10}%`,
-              height: '10%',
-              background: i % 2 === 0 ? 'rgba(0,0,0,0.07)' : 'transparent',
-            }}
-          />
-        ))}
+        <div
+          className="ts-pitch__stage"
+          style={{
+            background: 'linear-gradient(180deg, #1b4a1b 0%, #1e5a1e 48%, #1b5018 52%, #1b4a1b 100%)',
+          }}
+        >
+          {/* Grass stripes */}
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="absolute w-full pointer-events-none"
+              style={{
+                top: `${i * 10}%`,
+                height: '10%',
+                background: i % 2 === 0 ? 'rgba(0,0,0,0.07)' : 'transparent',
+              }}
+            />
+          ))}
 
-        <FieldMarkings />
+          <FieldMarkings />
 
-        {/* Away players (top) */}
-        {lineups.away.starters.map((player, i) => {
-          const [x, y] = awayPositions[i] ?? [50, 20]
-          return <PlayerDot key={`away-${i}`} player={player} x={x} y={y} side="away" leagueSlug={leagueSlug} marks={marksFor(awayScoring, player)} />
-        })}
+          {/* Away players (top) */}
+          {lineups.away.starters.map((player, i) => {
+            const [x, y] = awayPositions[i] ?? [50, 20]
+            return <PlayerDot key={`away-${i}`} player={player} x={x} y={y} side="away" leagueSlug={leagueSlug} marks={marksFor(awayScoring, player)} />
+          })}
 
-        {/* Home players (bottom) */}
-        {lineups.home.starters.map((player, i) => {
-          const [x, y] = homePositions[i] ?? [50, 80]
-          return <PlayerDot key={`home-${i}`} player={player} x={x} y={y} side="home" leagueSlug={leagueSlug} marks={marksFor(homeScoring, player)} />
-        })}
+          {/* Home players (bottom) */}
+          {lineups.home.starters.map((player, i) => {
+            const [x, y] = homePositions[i] ?? [50, 80]
+            return <PlayerDot key={`home-${i}`} player={player} x={x} y={y} side="home" leagueSlug={leagueSlug} marks={marksFor(homeScoring, player)} />
+          })}
+        </div>
       </div>
 
       {/* Bench */}

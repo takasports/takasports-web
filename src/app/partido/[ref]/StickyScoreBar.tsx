@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { ScoreFlip } from './ScoreFlip'
 
 interface Props {
   homeLogo?: string
@@ -70,11 +71,8 @@ export function StickyScoreBar(props: Props) {
             </span>
           )}
           {hasScore ? (
-            <span className="font-black tabular-nums flex items-center gap-1.5 leading-none mt-0.5"
-              style={{ color: '#F0F0FA', fontFamily: 'var(--font-headline)', fontSize: 22 }}>
-              <span>{homeScore}</span>
-              <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
-              <span>{awayScore}</span>
+            <span className="mt-0.5">
+              <ScoreFlip home={homeScore!} away={awayScore!} variant="compact" />
             </span>
           ) : (
             <span className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
