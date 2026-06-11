@@ -8,6 +8,7 @@ import { searchPlayers, getPlayerById, type Player, type PlayerPosition } from '
 import { getWeeklyChallenge, type FormationId, type Challenge, type SlotTag } from '@/lib/mionce-challenges'
 import { FORMATIONS, FORMATION_LIST, type SlotDef } from '@/lib/mionce-formations'
 import { CountryFlag, LockIcon, ClipboardIcon } from '@/components/icons/GameIcons'
+import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import GameOnboarding from '@/components/games/GameOnboarding'
@@ -885,6 +886,12 @@ export default function MiOncePage() {
       trackGameEvent({ gameId: 'mionce', event: 'started', period })
     }
     if (filledCount === 11) {
+      // Victoria al colocar el 11º jugador (transición 10→11): confeti + fanfarria.
+      // Solo en la transición real, no al hidratar un once ya completo (0→11).
+      if (prevFilledRef.current === 10) {
+        fireConfetti()
+        if (getSoundPref()) { ensureAudio(); winFanfare() }
+      }
       // Anti-farmeo: el premio de Liga Taka (XP + misión + racha) se otorga UNA
       // sola vez por semana ISO. Como prevFilledRef se reinicia a 0 en cada
       // montaje, sin este guard recargar con el once completo en localStorage —o

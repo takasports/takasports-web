@@ -10,6 +10,7 @@ import GameOnboarding from '@/components/games/GameOnboarding'
 import { searchPlayers, fuzzySearchPlayers, getPlayerById, type Player } from '@/lib/players-catalog'
 import { getDailyPuzzle, isValidAnswer, getValidAnswers, type CellCoord, type GridPuzzle } from '@/lib/takagrid-puzzles'
 import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag, AlertIcon, CameraIcon, BoltIcon, LightbulbIcon } from '@/components/icons/GameIcons'
+import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { madridParts, madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
@@ -822,6 +823,7 @@ export default function TakaGridPage() {
   const [finished, setFinished] = useState(false)
   const [activeCell, setActiveCell] = useState<CellCoord | null>(null)
   const [showResult, setShowResult] = useState(false)
+  const celebratedRef = useRef(false)
   const [streakState, setStreakState] = useState<StreakState>({ streak: 0, bestStreak: 0, lastFinishedDate: '', history: [] })
   const [hardMode, setHardMode] = useState(false)
   const [pistaCell, setPistaCell] = useState<CellCoord | null>(null)
@@ -909,6 +911,15 @@ export default function TakaGridPage() {
         setFinished(true)
         // Update streak
         const solvedCount = current.flat().filter(c => c.playerId !== null).length
+
+        // Victoria (≥6/9): confeti + fanfarria. celebratedRef evita el doble
+        // disparo del updater en StrictMode; la hidratación de un grid ya
+        // terminado va por otra rama, así que no dispara al cargar.
+        if (!celebratedRef.current && solvedCount >= 6) {
+          celebratedRef.current = true
+          fireConfetti()
+          if (getSoundPref()) { ensureAudio(); winFanfare() }
+        }
 
         // Sync con backend unificado. payload.solved = bool[9] row-major.
         const solvedArr = current.flat().map(c => c.playerId !== null)

@@ -17,6 +17,7 @@ import TimeAttackInfoModal from '@/components/games/TimeAttackInfoModal'
 import { type Player } from '@/lib/players-catalog'
 import { PUZZLES, findPlayerForWord, moveCursor, type Puzzle } from '@/lib/sopa-puzzles'
 import { CountryFlag, TargetIcon, BoltIcon } from '@/components/icons/GameIcons'
+import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 
 // ── Tipos y datos ─────────────────────────────────────────────
 
@@ -366,6 +367,9 @@ export default function SopaCracksPage() {
       trackGameComplete({ game: 'sopa_cracks', score: seconds, total: activeWords.length })
       if (allFound) {
         setBestSeconds(prev => prev == null ? seconds : Math.min(prev, seconds))
+        // Victoria: confeti (visual) + fanfarria si el sonido está activado.
+        fireConfetti()
+        if (getSoundPref()) { ensureAudio(); winFanfare() }
       }
 
       // Sync con games-store. Contrarreloj y normal comparten el periodo
