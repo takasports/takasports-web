@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
-import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME } from '@/lib/competitions'
+import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME, highlightReason } from '@/lib/competitions'
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
 import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime, dayDeltaForIso } from '@/lib/timezone'
@@ -689,7 +689,7 @@ function FavoritesSection({
 }
 
 // ─── Compact list row (non-live or in TODOS) ──────────────────────────────
-function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, onToggleFav, formHome, formAway, showComp, tz }: {
+function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, onToggleFav, formHome, formAway, showComp, showReason, tz }: {
   event: SportEvent
   liveScore?: LiveScore
   isReminded: boolean
@@ -702,6 +702,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   formHome?: ('W'|'D'|'L')[]
   formAway?: ('W'|'D'|'L')[]
   showComp?: boolean
+  showReason?: boolean
   tz?: string
 }) {
   // Convert event time (Madrid source) to user's selected timezone. If tz is
@@ -806,6 +807,15 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
             style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {displayTime}
           </span>
+          {/* Hora de Madrid (origen de la emisión) junto a la local, para la
+              audiencia LatAm que sigue las retransmisiones españolas. */}
+          {tz && tz !== SOURCE_TZ && (
+            <span className="text-[8px] font-bold uppercase tracking-wide tabular-nums leading-none mt-0.5"
+              style={{ color: '#6A6A80', fontFamily: 'var(--font-sport)' }}
+              title="Hora en Madrid (origen de la emisión)">
+              {event.time} MAD
+            </span>
+          )}
           {dayDelta !== 0 && (
             <span className="text-[8.5px] font-black uppercase tracking-wide leading-none px-1 py-0.5 rounded mt-0.5"
               style={{ color: '#C4B5FD', background: 'rgba(124,58,237,0.16)', fontFamily: 'var(--font-sport)' }}
@@ -864,10 +874,21 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
     </div>
   )
 
+  // Razón "por qué es Destacado" (solo en modo Destacados, y si hay un motivo
+  // claro: final, selección, cartelazo). La mayoría de filas no llevan badge.
+  const reason = showReason ? highlightReason({ comp: event.comp, home: event.home, away: event.away }) : null
+
   // Canal de TV en una línea aparte debajo (libera ancho del centro → los dos
-  // equipos se leen completos en móvil).
+  // equipos se leen completos en móvil). En Destacados, badge de motivo delante.
   const broadcastBar = (
-    <div className="mt-1.5 flex justify-center">
+    <div className="mt-1.5 flex justify-center items-center gap-1.5 flex-wrap">
+      {reason && (
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.12em] flex-shrink-0"
+          style={{ color: '#C4B5FD', background: 'rgba(124,58,237,0.14)', border: '1px solid rgba(124,58,237,0.32)', fontFamily: 'var(--font-sport)' }}>
+          <svg width="7" height="7" viewBox="0 0 12 12" fill="currentColor" aria-hidden><path d="M6 1l1.5 3.2 3.5.5-2.5 2.4.6 3.4L6 8.9 2.9 10.5l.6-3.4L1 4.7l3.5-.5L6 1z" /></svg>
+          {reason}
+        </span>
+      )}
       <BroadcastChip comp={event.comp} sport={event.sport} tz={tz} fallback={event.broadcast} />
     </div>
   )
@@ -1647,9 +1668,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
   // Debounce search input — avoid filtering on every keystroke
   useEffect(() => {
-    // Mínimo 2 caracteres para filtrar: con 1 letra el match por inclusión
-    // devolvía casi todo (ruido). searchRaw sigue mostrándose en el input.
-    const t = setTimeout(() => setSearch(searchRaw.trim().length >= 2 ? searchRaw : ''), 220)
+    // Búsqueda instantánea desde la 1ª letra (sin mínimo de 2), debounce corto.
+    const t = setTimeout(() => setSearch(searchRaw.trim().length >= 1 ? searchRaw : ''), 140)
     return () => clearTimeout(t)
   }, [searchRaw])
 
@@ -2569,6 +2589,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                               onToggleFav={() => toggleFavorite(event.home)}
                               formHome={recentForms[event.home]}
                               formAway={event.away ? recentForms[event.away] : undefined}
+                              showReason={activeFilter === 'Destacados'}
                               tz={tz}
                             />
                           ))}

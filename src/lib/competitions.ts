@@ -219,6 +219,24 @@ export function getEventHighlightScore(args: {
   return score
 }
 
+// Razón corta de "por qué es Destacado" para el badge del modo Destacados.
+// Solo devuelve algo cuando hay un motivo claro (final, selección, cartelazo,
+// en vivo) → no satura: la mayoría de tarjetas no llevan badge.
+export function highlightReason(args: {
+  comp: string
+  home?: string
+  away?: string | null
+  stage?: string
+}): string | null {
+  const txt = `${args.comp} ${args.stage ?? ''}`.toLowerCase()
+  if (/\bfinal\b|gran final/.test(txt)) return 'Final'
+  if (/semifinal|semis/.test(txt)) return 'Semifinal'
+  const nations = (isMarqueeNation(args.home) ? 1 : 0) + (isMarqueeNation(args.away) ? 1 : 0)
+  if (nations >= 1) return 'Selección'
+  if (isMarquee(args.home) || isMarquee(args.away)) return 'Cartelazo'
+  return null
+}
+
 // Sport emoji and colors — keys match event.sport labels (Spanish)
 export const SPORT_EMOJI: Record<string, string> = {
   'Fútbol':      '⚽',
