@@ -13,7 +13,7 @@ import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
 import CompetitionSelector from '@/components/CompetitionSelector'
 import CompetitionBanner from '@/components/CompetitionBanner'
-import { COMPETITIONS, getCompetition, matchesCompetition } from '@/lib/calendar-competitions'
+import { COMPETITIONS, FEATURED_COMPETITIONS, getCompetition, matchesCompetition } from '@/lib/calendar-competitions'
 import { subscribeToPush } from '@/lib/push-client'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
@@ -1879,7 +1879,13 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
   // Destacados es un chip especial — no es un deporte sino un modo curado
   // que limita a los top 4 partidos por día por prestigio de liga + favoritos.
+  // Deportes que son 1:1 con una competición destacada (NBA, F1, UFC): ya viven
+  // en el selector "Por competición" con su escudo, así que NO se repiten como
+  // chip de deporte. Los deportes-paraguas (Fútbol, Tenis, Pádel…), que agrupan
+  // varias competiciones, sí se quedan como chip.
+  const singleCompSports = FEATURED_COMPETITIONS.filter(c => c.sport !== 'Fútbol').map(c => c.sport as string)
   const sports = ['Destacados', 'Todo', ...new Set([...events, ...recentPast].map(e => e.sport)).values()]
+    .filter(s => !singleCompSports.includes(s))
 
   // Competición seleccionada en el selector "Por competición": filtra el feed en
   // el sitio + muestra su banner. null = sin filtro de competición.
