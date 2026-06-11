@@ -3,6 +3,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import type { TeamDetail } from '@/app/api/team/[slug]/route'
+import DivergentBar from '@/components/comparators/DivergentBar'
+import { getSportStyle } from '@/lib/sports'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
@@ -108,8 +110,18 @@ function TeamHead({ t }: { t: TeamDetail }) {
   )
 }
 
+// Magnitud absoluta del valor mostrado (para la longitud de la barra): "1º"→1,
+// "+12"→12, "66%"→66, "—"→0. La dirección del ganador sale de `n`, no de aquí.
+function mag(value: string): number {
+  const m = value.match(/-?\d+(?:\.\d+)?/)
+  return m ? Math.abs(parseFloat(m[0])) : 0
+}
+// Métricas donde MENOS es mejor (su `n` ya viene negado en teamStats).
+const TEAM_LESS_IS_BETTER = new Set(['Posición', 'Derrotas', 'GC'])
+
 function Comparison({ a, b }: { a: TeamDetail; b: TeamDetail }) {
   const sa = teamStats(a); const sb = teamStats(b)
+  const accent = getSportStyle(a.leagueSlug.split('/')[0] === 'soccer' ? 'futbol' : '').accent
   return (
     <div className="rounded-2xl overflow-hidden mb-6"
       style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -117,22 +129,22 @@ function Comparison({ a, b }: { a: TeamDetail; b: TeamDetail }) {
         const other = sb[i]
         const aWins = row.n != null && other.n != null && row.n > other.n
         const bWins = row.n != null && other.n != null && other.n > row.n
+        const magA = mag(row.value), magB = mag(other.value)
         return (
-          <div key={row.label} className="flex items-center text-[13px]"
-            style={{ borderBottom: i < sa.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-            <div className="flex-1 text-right px-3 py-2.5 tabular-nums font-bold"
-              style={{ color: aWins ? '#fff' : '#8A8AA0', background: aWins ? 'rgba(124,58,237,0.10)' : 'transparent' }}>
-              {row.value}
-            </div>
-            <div className="w-32 text-center text-[10px] uppercase tracking-wide flex-shrink-0 px-1"
-              style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
-              {row.label}
-            </div>
-            <div className="flex-1 px-3 py-2.5 tabular-nums font-bold"
-              style={{ color: bWins ? '#fff' : '#8A8AA0', background: bWins ? 'rgba(124,58,237,0.10)' : 'transparent' }}>
-              {other.value}
-            </div>
-          </div>
+          <DivergentBar
+            key={row.label}
+            label={row.label}
+            displayA={row.value}
+            displayB={other.value}
+            magA={magA}
+            magB={magB}
+            max={Math.max(magA, magB)}
+            aWins={aWins}
+            bWins={bWins}
+            accent={accent}
+            note={TEAM_LESS_IS_BETTER.has(row.label) ? 'menos = mejor' : undefined}
+            last={i === sa.length - 1}
+          />
         )
       })}
     </div>
