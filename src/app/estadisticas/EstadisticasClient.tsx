@@ -2216,6 +2216,8 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   }
 
   const sport = SPORTS.find(s => s.id === sportId) ?? SPORTS[0]
+  // Fondo atmosférico por deporte para el hero (reusa los WebP de /calendario).
+  const statsBackdrop = ({ futbol: 'futbol', baloncesto: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc' } as Record<string, string>)[sportId] ?? null
   const isFemenino = gender === 'f' && sportId === 'futbol'
 
   const handleSportChange = (id: string, targetSection?: string, targetGender?: 'm' | 'f') => {
@@ -2360,14 +2362,24 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
   return (
     <TeamLeagueContext.Provider value={teamLeague}>
     <StatsSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} rows={searchableRows} onPick={handleSearchPick} />
-    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+    <div data-sport={sportId || undefined} style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <Header />
       <LiveStrip />
 
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
         {/* ── HERO ──────────────────────────────────────── */}
-        <div className="relative pt-8 pb-5">
+        <div className="relative pt-8 pb-5 overflow-hidden">
+          {/* Fondo atmosférico del deporte (broadcast) — solo en deportes con
+              asset; en Destacados/Mundial/MotoGP queda el look base. */}
+          {statsBackdrop && (
+            <>
+              <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
+                style={{ backgroundImage: `url(/banners/backdrop-${statsBackdrop}.webp)`, backgroundSize: 'cover', backgroundPosition: 'center 30%', opacity: 0.2 }} />
+              <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
+                style={{ background: 'linear-gradient(180deg, rgba(9,9,15,0.40) 0%, rgba(9,9,15,0.72) 62%, var(--bg-base) 100%)' }} />
+            </>
+          )}
           {/* Accent glow */}
           <div className="absolute -top-8 left-0 w-[500px] h-64 pointer-events-none"
             style={{ background: `radial-gradient(ellipse at 15% 50%, ${sport.accent}12 0%, transparent 65%)`, filter: 'blur(24px)', transition: 'background 0.5s ease' }} />
