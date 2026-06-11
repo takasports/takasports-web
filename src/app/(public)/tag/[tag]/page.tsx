@@ -6,9 +6,7 @@ import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { timeAgo } from '@/lib/timeAgo'
 import Image from '@/components/DynamicImage'
 import { urlFor } from '@/lib/sanity'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { SITE_URL } from '@/lib/constants'
 
@@ -150,10 +148,9 @@ export default async function TagPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
-      <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20">
 
         {/* Header */}
         <div className="pt-10 pb-8">
@@ -275,9 +272,8 @@ export default async function TagPage({
           })}
         </div>
 
-      </main>
+      </div>
 
-      <Footer />
       <ScrollToTop />
     </div>
   )

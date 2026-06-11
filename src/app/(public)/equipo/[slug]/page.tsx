@@ -4,9 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import type { TeamDetail, TeamResult, RosterPlayer } from '@/app/api/team/[slug]/route'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import { TeamTabs } from './TeamTabs'
 import { StandingsTab } from './StandingsTab'
 import { RosterTab } from './RosterTab'
@@ -487,8 +485,7 @@ export default async function EquipoPage({ params }: { params: Promise<{ slug: s
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(teamJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <LiveStrip />
-      <Header />
-      <main style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
         <Suspense>
           <TeamContent team={team} />
         </Suspense>
@@ -499,8 +496,7 @@ export default async function EquipoPage({ params }: { params: Promise<{ slug: s
             <RelatedArticlesByEntity entityName={team.name} limit={6} />
           </Suspense>
         </div>
-      </main>
-      <Footer />
+      </div>
     </>
   )
 }

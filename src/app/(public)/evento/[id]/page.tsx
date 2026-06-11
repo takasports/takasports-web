@@ -3,9 +3,7 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { sanityClient, eventDetailQuery, relatedByEventQuery, urlFor } from '@/lib/sanity'
 import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import { SOURCE_TZ } from '@/lib/timezone'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
@@ -249,10 +247,9 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }} className="flex flex-col">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEventJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <Header />
       <LiveStrip />
 
-      <main className="flex-1">
+      <div className="flex-1">
         <div className="max-w-2xl mx-auto px-4 pb-20">
           {/* Back */}
           <div className="py-5">
@@ -371,9 +368,8 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
             </div>
           )}
         </div>
-      </main>
+      </div>
 
-      <Footer />
     </div>
   )
 }
