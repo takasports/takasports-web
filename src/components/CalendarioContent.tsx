@@ -11,8 +11,9 @@ import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime, dayDelta
 import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
-import CompetitionRail from '@/components/CompetitionRail'
-import { COMPETITIONS } from '@/lib/calendar-competitions'
+import CompetitionSelector from '@/components/CompetitionSelector'
+import CompetitionBanner from '@/components/CompetitionBanner'
+import { COMPETITIONS, getCompetition, matchesCompetition } from '@/lib/calendar-competitions'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
 
@@ -1560,6 +1561,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const [searchRaw, setSearchRaw] = useState('')
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('Destacados')
+  const [activeComp, setActiveComp] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)   // YYYY-MM-DD or null for all
   const [selectedUFCDate, setSelectedUFCDate] = useState<string | null>(null) // UFC modal date
   const [reminders, setReminders] = useState<Set<string>>(new Set())
@@ -1821,6 +1823,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // que limita a los top 4 partidos por día por prestigio de liga + favoritos.
   const sports = ['Destacados', 'Todo', ...new Set([...events, ...recentPast].map(e => e.sport)).values()]
 
+  // Competición seleccionada en el selector "Por competición": filtra el feed en
+  // el sitio + muestra su banner. null = sin filtro de competición.
+  const activeCompCfg = useMemo(() => (activeComp ? getCompetition(activeComp) : null), [activeComp])
+
   const filtered = useMemo(() => {
     const matchesSearch = (e: SportEvent) =>
       !search
@@ -1840,8 +1846,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       const score = liveScores.get(e.id)
       return !!score && !FINISHED.has(score.status)
     }
-    return events.filter(e => matchesSport(e) && matchesSearch(e) && matchesDate(e) && matchesLive(e))
-  }, [events, search, activeFilter, selectedDate, onlyLive, liveScores])
+    const matchesComp = (e: SportEvent) => !activeCompCfg || matchesCompetition(activeCompCfg, e)
+    return events.filter(e => matchesSport(e) && matchesComp(e) && matchesSearch(e) && matchesDate(e) && matchesLive(e))
+  }, [events, search, activeFilter, activeCompCfg, selectedDate, onlyLive, liveScores])
 
   // Upcoming events featuring favorite teams (across all dates)
   const favoriteEvents = useMemo(() => {
@@ -1857,10 +1864,11 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // "Destacados" y "Todo" son vistas por defecto (no son un filtro que el
   // usuario "active"), así que NO disparan el botón Limpiar. Solo lo hacen un
   // deporte concreto, una fecha, una búsqueda o el toggle En vivo.
-  const hasActiveFilters = !!selectedDate || (activeFilter !== 'Todo' && activeFilter !== 'Destacados') || !!searchRaw || onlyLive
+  const hasActiveFilters = !!selectedDate || (activeFilter !== 'Todo' && activeFilter !== 'Destacados') || !!searchRaw || onlyLive || !!activeComp
   const clearFilters = useCallback(() => {
     setSelectedDate(null)
     setActiveFilter('Destacados')
+    setActiveComp(null)
     setSearchRaw('')
     setSearch('')
     setOnlyLive(false)
@@ -1878,7 +1886,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       activeFilter === 'Todo' || activeFilter === 'Destacados' || e.sport === activeFilter
     const counts: Record<string, number> = {}
     for (const e of events) {
-      if (!matchesSport(e) || !matchesSearch(e) || !e.isoDate) continue
+      if (!matchesSport(e) || (activeCompCfg && !matchesCompetition(activeCompCfg, e)) || !matchesSearch(e) || !e.isoDate) continue
       const k = isoToLocalDate(e.isoDate)
       counts[k] = (counts[k] ?? 0) + 1
     }
@@ -1888,7 +1896,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       .sort((a, b) => a.localeCompare(b))
       .slice(0, 14)
       .map(k => ({ key: k, label: formatDateLabel(k), count: counts[k] }))
-  }, [events, search, activeFilter])
+  }, [events, search, activeFilter, activeCompCfg])
 
   const liveEventsInList = useMemo(
     () => filtered.filter(e => liveScores.has(e.id) && !FINISHED.has(liveScores.get(e.id)?.status ?? '')),
@@ -1928,7 +1936,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // carteles élite (score ≥ DESTACADOS_ELITE: Mundial, Champions, fases finales).
   // En plena fase de grupos del Mundial (5-6 partidos top/día) se muestran todos.
   const filteredForGrouping = useMemo(() => {
-    if (activeFilter !== 'Destacados') return filtered
+    // Con una competición seleccionada se muestran TODOS sus partidos (no se aplica
+    // la curación de Destacados, que recorta a los top del día).
+    if (activeFilter !== 'Destacados' || activeComp) return filtered
     const byDay = new Map<string, SportEvent[]>()
     for (const ev of filtered) {
       const day = ev.isoDate ? isoToLocalDate(ev.isoDate) : 'unknown'
@@ -1977,7 +1987,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       out.push(...sorted.slice(0, keep))
     }
     return out
-  }, [filtered, activeFilter, favorites, liveScores])
+  }, [filtered, activeFilter, activeComp, favorites, liveScores])
 
   const grouped = useMemo(() => groupEventsByDate(filteredForGrouping), [filteredForGrouping])
   const orderedDates = useMemo(() => orderedDateKeys(grouped), [grouped])
@@ -2162,7 +2172,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // Tema por deporte: deriva del filtro activo. El cambio = solo swap de
   // variables CSS (instantáneo). La capa .cal-ambient se re-monta con key para
   // un crossfade suave de la textura característica.
-  const themeKey = sportThemeKey(activeFilter)
+  // Si hay competición seleccionada, su deporte manda (el ambiente casa con su
+  // banner); si no, deriva del filtro de deporte.
+  const themeKey = sportThemeKey(activeCompCfg?.sport ?? activeFilter)
 
   return (
     <main
@@ -2447,10 +2459,14 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             </section>
           )}
 
-          {/* Por competición — trae las competiciones (LaLiga, Champions, NBA…)
-              al frente de la principal en vez de esconderlas en sub-páginas. */}
-          {(activeFilter === 'Destacados' || activeFilter === 'Todo') && !onlyLive && !selectedDate && !search && (
-            <CompetitionRail events={events} />
+          {/* Por competición — selector EN EL SITIO (no saca a sub-páginas): las
+              destacadas siempre + las que tengan eventos. Al elegir una, filtra el
+              feed y aparece su banner con la foto + el escudo oficial. */}
+          {!onlyLive && !selectedDate && !search && (
+            <CompetitionSelector events={events} activeComp={activeComp} onSelect={setActiveComp} />
+          )}
+          {activeCompCfg && !onlyLive && !selectedDate && (
+            <CompetitionBanner comp={activeCompCfg} count={filtered.length} onClear={() => setActiveComp(null)} />
           )}
 
           {/* Tus equipos — resumen de favoritos (chips con su próximo partido).
@@ -2529,9 +2545,11 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     ? `Sin resultados para "${search}"`
                     : selectedDate
                       ? 'No hay partidos para esa fecha'
-                      : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')
-                        ? `No hay eventos de ${activeFilter} en los próximos días`
-                        : 'No se encontraron eventos'}
+                      : activeCompCfg
+                        ? `No hay partidos de ${activeCompCfg.shortName} programados ahora`
+                        : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')
+                          ? `No hay eventos de ${activeFilter} en los próximos días`
+                          : 'No se encontraron eventos'}
               </p>
               <p className="text-[10px] mt-1.5" style={{ color: '#7A7A8E' }}>
                 {onlyLive
@@ -2540,9 +2558,11 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     ? 'Prueba con el nombre del equipo o la competición'
                     : selectedDate
                       ? 'Mostramos las próximas ~3 semanas. Los resultados anteriores están en la pestaña Resultados.'
-                      : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')
-                        ? 'Prueba seleccionando otra fecha o cambia el filtro'
-                        : 'Vuelve a intentarlo en unos minutos'}
+                      : activeCompCfg
+                        ? 'Mira su clasificación y todo el calendario en el banner de arriba ↑'
+                        : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')
+                          ? 'Prueba seleccionando otra fecha o cambia el filtro'
+                          : 'Vuelve a intentarlo en unos minutos'}
               </p>
               {hasActiveFilters && (
                 <button

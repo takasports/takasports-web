@@ -33,6 +33,10 @@ export interface CompetitionConfig {
   /** Slug ESPN (p.ej. 'soccer/esp.1') para enriquecer la página con
    *  clasificación + máximos goleadores. Solo ligas de fútbol con datos. */
   espnSlug?: string
+  /** Competición destacada → aparece SIEMPRE en el selector "Por competición"
+   *  de la portada del calendario (entrada evergreen, con backdrop propio).
+   *  Las no destacadas se descubren por el buscador o si tienen eventos. */
+  featured?: boolean
 }
 
 export const COMPETITIONS: CompetitionConfig[] = [
@@ -231,6 +235,20 @@ const ESPN_SLUG_BY_SLUG: Record<string, string> = {
 for (const c of COMPETITIONS) {
   if (!c.espnSlug && ESPN_SLUG_BY_SLUG[c.slug]) c.espnSlug = ESPN_SLUG_BY_SLUG[c.slug]
 }
+
+// Competiciones destacadas (las que tienen backdrop propio + entrada fija en el
+// selector de la portada del calendario): las 5 grandes ligas + Champions + los
+// 3 grandes deportes. El resto se descubre por el buscador o si tienen eventos.
+const FEATURED_SLUGS = new Set([
+  'laliga', 'champions', 'premier-league', 'serie-a', 'bundesliga', 'ligue-1',
+  'nba', 'f1', 'ufc',
+])
+for (const c of COMPETITIONS) {
+  if (FEATURED_SLUGS.has(c.slug)) c.featured = true
+}
+
+/** Competiciones destacadas, en el orden de declaración de COMPETITIONS. */
+export const FEATURED_COMPETITIONS: CompetitionConfig[] = COMPETITIONS.filter((c) => c.featured)
 
 export function getCompetition(slug: string): CompetitionConfig | null {
   return COMPETITIONS.find((c) => c.slug === slug) ?? null

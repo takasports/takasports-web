@@ -206,7 +206,7 @@ export default async function CompetitionCalendarPage({
             Solo si la competición tiene banner configurado. WebP ligero + lazy → 0 impacto. */}
         {comp.banner && (
           <div className="relative overflow-hidden rounded-2xl mb-7" style={{ border: '1px solid var(--border)' }}>
-            <div className="relative w-full" style={{ aspectRatio: '1200 / 300' }}>
+            <div className="relative w-full aspect-[2/1] sm:aspect-[5/2]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={comp.banner}
@@ -215,6 +215,7 @@ export default async function CompetitionCalendarPage({
                 loading="lazy"
                 decoding="async"
                 className="absolute inset-0 w-full h-full object-cover"
+                style={{ objectPosition: '50% 62%' }}
               />
               <div
                 className="absolute inset-0"

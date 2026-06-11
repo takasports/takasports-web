@@ -15,12 +15,14 @@ const SPORTS_LINKS = [
   { label: 'Lucha libre', href: '/wwe' },
   { label: 'Rugby',      href: '/rugby' },
 ]
+// Apuntan al calendario por competición (con backdrop + clasificación), la
+// navegación que el cliente usa de verdad — en vez de a los hubs /liga/*.
 const LEAGUE_LINKS = [
-  { label: 'LaLiga',          href: '/liga/esp.1' },
-  { label: 'Premier League',  href: '/liga/eng.1' },
-  { label: 'Serie A',         href: '/liga/ita.1' },
-  { label: 'Bundesliga',      href: '/liga/ger.1' },
-  { label: 'Ligue 1',         href: '/liga/fra.1' },
+  { label: 'LaLiga',          href: '/calendario/laliga' },
+  { label: 'Premier League',  href: '/calendario/premier-league' },
+  { label: 'Serie A',         href: '/calendario/serie-a' },
+  { label: 'Bundesliga',      href: '/calendario/bundesliga' },
+  { label: 'Ligue 1',         href: '/calendario/ligue-1' },
   { label: '🏆 Mundial 2026', href: '/mundial/fixture' },
 ]
 const PLATFORM_LINKS = [
