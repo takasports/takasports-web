@@ -5,9 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { PodiumMedal } from '@/components/icons/GameIcons'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import NewsletterSection from '@/components/NewsletterSection'
 import ScrollToTop from '@/components/ScrollToTop'
 import { StatBlockBoundary } from '@/components/StatBlockBoundary'
@@ -2362,10 +2360,9 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
     <TeamLeagueContext.Provider value={teamLeague}>
     <StatsSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} rows={searchableRows} onPick={handleSearchPick} />
     <div data-sport={sportId || undefined} style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
         {/* ── HERO ──────────────────────────────────────── */}
         <div className="relative pt-8 pb-5 overflow-hidden">
@@ -2736,10 +2733,9 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           </div>
         </div>
 
-      </main>
+      </div>
 
       <NewsletterSection source="estadisticas" />
-      <Footer />
       <ScrollToTop />
     </div>
     </TeamLeagueContext.Provider>
