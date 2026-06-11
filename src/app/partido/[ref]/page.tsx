@@ -20,6 +20,7 @@ import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/c
 import { isSplitBroadcast } from '@/lib/broadcasts'
 import { GoalIcon, YellowCardIcon, RedCardIcon } from '@/components/icons/GameIcons'
 import { fetchH2H, fetchRecentFormByTeams, type H2HResult, type FormResult } from '@/lib/past-events'
+import { estimateOutcome, matchDominance, type OutcomeEstimate, type Dominance } from '@/lib/match-estimate'
 
 // Cache 2 min en ISR. Partidos en vivo se refrescan a 30s vía LiveRefresh
 // (router.refresh client-side), partidos finalizados aprovechan el cache.
@@ -1218,6 +1219,65 @@ function FormPips({ form }: { form: FormResult[] }) {
   )
 }
 
+// ── Pulso del partido (probabilidad estimada / dominio) ────────────
+// Dos lecturas SIEMPRE orientativas: antes del partido, probabilidad 1·X·2
+// estimada (clasificación + forma); con el partido en juego/acabado, dominio
+// (posesión + tiros). Nunca se presenta como pronóstico de apuesta.
+function MatchPulse({ estimate, dominance, homeAbbr, awayAbbr }: {
+  estimate: OutcomeEstimate | null
+  dominance: Dominance | null
+  homeAbbr: string
+  awayAbbr: string
+}) {
+  const HOME = '#A78BFA'; const AWAY = '#F59E0B'; const DRAW = '#6A6A7A'
+
+  if (dominance) {
+    return (
+      <Section title="Dominio del partido">
+        <div className="flex items-center justify-between mb-2 text-[11px] font-black" style={{ fontFamily: 'var(--font-sport)' }}>
+          <span style={{ color: HOME }}>{homeAbbr} · {dominance.home}%</span>
+          <span style={{ color: AWAY }}>{dominance.away}% · {awayAbbr}</span>
+        </div>
+        <div className="flex h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+          <div style={{ width: `${dominance.home}%`, background: HOME }} />
+          <div style={{ width: `${dominance.away}%`, background: AWAY }} />
+        </div>
+        <p className="text-[10px] mt-2.5" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+          Reparto de {dominance.basis.join(' y ')}. Orientativo.
+        </p>
+      </Section>
+    )
+  }
+
+  if (estimate) {
+    const seg = [
+      { k: 'home', label: homeAbbr, pct: estimate.home, color: HOME },
+      { k: 'draw', label: 'Empate', pct: estimate.draw, color: DRAW },
+      { k: 'away', label: awayAbbr, pct: estimate.away, color: AWAY },
+    ]
+    return (
+      <Section title="Probabilidad estimada">
+        <div className="flex h-2.5 rounded-full overflow-hidden mb-3" style={{ background: 'rgba(255,255,255,0.05)' }}>
+          {seg.map(s => <div key={s.k} style={{ width: `${s.pct}%`, background: s.color }} />)}
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {seg.map(s => (
+            <div key={s.k} className="text-center">
+              <p className="text-[18px] font-black tabular-nums leading-none" style={{ color: s.color, fontFamily: 'var(--font-display)' }}>{s.pct}%</p>
+              <p className="text-[9px] uppercase tracking-widest mt-1 truncate" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] mt-3" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+          Estimación a partir de la clasificación y la forma reciente. Orientativa — no es un pronóstico de apuesta.
+        </p>
+      </Section>
+    )
+  }
+
+  return null
+}
+
 function FormGuide({ homeTeam, awayTeam, forms }: { homeTeam?: string; awayTeam?: string; forms: Record<string, FormResult[]> }) {
   const hf = (homeTeam && forms[homeTeam]) || []
   const af = (awayTeam && forms[awayTeam]) || []
@@ -1379,6 +1439,26 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
   const hasTable   = (match.leagueTable?.length ?? 0) > 0
   const hasH2H     = (h2h?.matches.length ?? 0) > 0
 
+  // Pulso del partido (solo fútbol): dominio (posesión+tiros) cuando ya hay
+  // juego con stats; si no, y aún no ha terminado, probabilidad estimada
+  // (clasificación + forma). Ambas SIEMPRE orientativas.
+  const startedMatch = live || isFinished(match.status)
+  const homeRow = match.leagueTable?.find(r => r.highlight === 'home')
+  const awayRow = match.leagueTable?.find(r => r.highlight === 'away')
+  const ppgOf = (r?: { pts: number; gp: number }) => (r && r.gp > 0 ? r.pts / r.gp : undefined)
+  const dominance = isSoccer && startedMatch && hasSoccerStats
+    ? matchDominance(match.soccer!.stats)
+    : null
+  const estimate = isSoccer && !dominance && !isFinished(match.status)
+    ? estimateOutcome({
+        homePpg: ppgOf(homeRow),
+        awayPpg: ppgOf(awayRow),
+        homeForm: match.homeTeam ? forms[match.homeTeam] : undefined,
+        awayForm: match.awayTeam ? forms[match.awayTeam] : undefined,
+      })
+    : null
+  const hasPulse = !!(dominance || estimate)
+
   const shareTitle = match.homeTeam && match.awayTeam
     ? `${match.homeTeam} vs ${match.awayTeam} · ${match.leagueLabel}`
     : match.leagueLabel
@@ -1492,6 +1572,14 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
       >
         {/* ── Tab 0: Resumen ───────────────────────────── */}
         <div>
+          {hasPulse && (
+            <MatchPulse
+              estimate={estimate}
+              dominance={dominance}
+              homeAbbr={match.homeAbbr ?? match.homeTeam ?? '—'}
+              awayAbbr={match.awayAbbr ?? match.awayTeam ?? '—'}
+            />
+          )}
           {hasSoccerScoring && (
             <Section title="Eventos del partido">
               <ScoringTimeline
@@ -1631,12 +1719,16 @@ export default async function MatchPage({
   const teamPair = (match.sport === 'soccer' || match.sport === 'basketball') && match.homeTeam && match.awayTeam
     ? { home: match.homeTeam, away: match.awayTeam }
     : null
+  // leagueSlug → filtro de género: el femenino (Liga F, amistosos F) comparte
+  // nombre de club/selección con el masculino, así que sin esto el H2H/forma de
+  // un partido femenino mostraría datos del equipo masculino homónimo (y al
+  // revés). Ver isWomensPastRow en lib/past-events.
   const [h2h, forms] = await Promise.all([
     teamPair
-      ? fetchH2H(teamPair.home, teamPair.away, { limit: 10, excludeId: match.id })
+      ? fetchH2H(teamPair.home, teamPair.away, { limit: 10, excludeId: match.id, leagueSlug: match.leagueSlug })
       : Promise.resolve(null),
     teamPair
-      ? fetchRecentFormByTeams([teamPair.home, teamPair.away], 5).then((m) => m ?? {})
+      ? fetchRecentFormByTeams([teamPair.home, teamPair.away], 5, match.leagueSlug).then((m) => m ?? {})
       : Promise.resolve({} as Record<string, FormResult[]>),
   ])
 
