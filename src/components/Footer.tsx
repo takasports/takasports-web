@@ -1,6 +1,7 @@
 'use client'
 
 import { LogoFull } from './Logo'
+import { TrophyIcon } from './icons/GameIcons'
 
 // SEO: usamos siempre el slug canónico (el que [sport]/page.tsx declara como
 // alternates.canonical) para evitar generar señales mixtas. Verificado en prod
@@ -17,13 +18,13 @@ const SPORTS_LINKS = [
 ]
 // Apuntan al calendario por competición (con backdrop + clasificación), la
 // navegación que el cliente usa de verdad — en vez de a los hubs /liga/*.
-const LEAGUE_LINKS = [
+const LEAGUE_LINKS: { label: string; href: string; trophy?: boolean }[] = [
   { label: 'LaLiga',          href: '/calendario/laliga' },
   { label: 'Premier League',  href: '/calendario/premier-league' },
   { label: 'Serie A',         href: '/calendario/serie-a' },
   { label: 'Bundesliga',      href: '/calendario/bundesliga' },
   { label: 'Ligue 1',         href: '/calendario/ligue-1' },
-  { label: '🏆 Mundial 2026', href: '/mundial/fixture' },
+  { label: 'Mundial 2026',    href: '/mundial/fixture', trophy: true },
 ]
 const PLATFORM_LINKS = [
   { label: 'Inicio',       href: '/' },
@@ -171,9 +172,10 @@ export default function Footer() {
           <div>
             <FooterColHeader>Ligas</FooterColHeader>
             <ul className="flex flex-col gap-2.5">
-              {LEAGUE_LINKS.map(({ label, href }) => (
+              {LEAGUE_LINKS.map(({ label, href, trophy }) => (
                 <li key={label}>
-                  <a href={href} className="text-xs transition-colors hover:text-white" style={{ color: 'var(--text-muted)' }}>
+                  <a href={href} className="text-xs transition-colors hover:text-white inline-flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {trophy && <TrophyIcon size={14} className="shrink-0" />}
                     {label}
                   </a>
                 </li>
