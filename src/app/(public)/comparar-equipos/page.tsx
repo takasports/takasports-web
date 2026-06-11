@@ -28,28 +28,42 @@ async function fetchTeam(slug: string): Promise<TeamDetail | null> {
   } catch { return null }
 }
 
-interface TeamCandidate { name: string; slug: string; logo?: string; league: string }
+interface TeamCandidate { name: string; slug: string; logo?: string; league: string; sport: 'futbol' | 'baloncesto' }
 
 async function fetchCandidates(): Promise<TeamCandidate[]> {
   try {
     const res = await fetch(`${apiBase()}/api/stats/standings`, { next: { revalidate: 3600 } })
     if (!res.ok) return []
     const d = await res.json()
-    const out: TeamCandidate[] = []
+    const soccer: TeamCandidate[] = []
     for (const g of d.football ?? []) {
       const ls = g.leagueSlug as string | undefined
       if (!ls) continue
-      for (const r of (g.rows ?? []).slice(0, 6)) {
+      for (const r of (g.rows ?? []).slice(0, 10)) {
         if (!r.teamId) continue
-        out.push({
+        soccer.push({
           name: r.name,
           slug: `${ls.replaceAll('/', '_')}_${r.teamId}`,
           logo: r.logo,
           league: g.label,
+          sport: 'futbol',
         })
       }
     }
-    return out.slice(0, 30)
+    // NBA: las dos conferencias traen teamId + logo (la viz y /api/team soportan
+    // baloncesto). slug 'basketball_nba_<teamId>'.
+    const nba: TeamCandidate[] = []
+    for (const r of [...(d.nbaEast ?? []), ...(d.nbaWest ?? [])]) {
+      if (!r.teamId) continue
+      nba.push({
+        name: r.name,
+        slug: `basketball_nba_${r.teamId}`,
+        logo: r.logo,
+        league: 'NBA',
+        sport: 'baloncesto',
+      })
+    }
+    return [...soccer.slice(0, 50), ...nba]
   } catch { return [] }
 }
 
@@ -69,6 +83,18 @@ function teamStats(t: TeamDetail): { label: string; value: string; n?: number }[
   const gd = r?.gd ?? 0
   const ppp = gp > 0 ? +(pts / gp).toFixed(2) : 0
   const winPct = gp > 0 ? Math.round((w / gp) * 100) : 0
+  const isBasket = t.leagueSlug.split('/')[0] === 'basketball'
+  // NBA: sin GF/GC/DG/Empates ni Puntos/Pts-PJ (conceptos de fútbol) — esas
+  // filas salían a 0 o mal etiquetadas (p.ej. "GF 9418" = puntos, no goles).
+  if (isBasket) {
+    return [
+      { label: 'Posición',   value: r?.rank ? `${r.rank}º` : '—', n: r?.rank ? -r.rank : undefined },
+      { label: 'Partidos',   value: String(gp), n: gp },
+      { label: 'Victorias',  value: String(w),  n: w },
+      { label: 'Derrotas',   value: String(l),  n: -l },
+      { label: '% Victorias', value: gp ? `${winPct}%` : '—', n: winPct },
+    ]
+  }
   return [
     { label: 'Posición', value: r?.rank ? `${r.rank}º` : '—', n: r?.rank ? -r.rank : undefined },
     { label: 'Puntos',   value: String(pts), n: pts },
@@ -118,12 +144,17 @@ const TEAM_LESS_IS_BETTER = new Set(['Posición', 'Derrotas', 'GC'])
 
 function Comparison({ a, b }: { a: TeamDetail; b: TeamDetail }) {
   const sa = teamStats(a); const sb = teamStats(b)
-  const accent = getSportStyle(a.leagueSlug.split('/')[0] === 'soccer' ? 'futbol' : '').accent
+  const seg = a.leagueSlug.split('/')[0]
+  const accent = getSportStyle(seg === 'soccer' ? 'futbol' : seg === 'basketball' ? 'baloncesto' : '').accent
+  // Emparejamos por etiqueta (no por índice): así una ficha NBA (5 stats) y una
+  // de fútbol (11) no se descuadran ni rompen si alguien compara cruzado.
+  const rows = sa
+    .map(row => ({ row, other: sb.find(s => s.label === row.label) }))
+    .filter((x): x is { row: typeof sa[number]; other: typeof sb[number] } => !!x.other)
   return (
     <div className="rounded-2xl overflow-hidden mb-6"
       style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
-      {sa.map((row, i) => {
-        const other = sb[i]
+      {rows.map(({ row, other }, i) => {
         const aWins = row.n != null && other.n != null && row.n > other.n
         const bWins = row.n != null && other.n != null && other.n > row.n
         const magA = mag(row.value), magB = mag(other.value)
@@ -140,7 +171,7 @@ function Comparison({ a, b }: { a: TeamDetail; b: TeamDetail }) {
             bWins={bWins}
             accent={accent}
             note={TEAM_LESS_IS_BETTER.has(row.label) ? 'menos = mejor' : undefined}
-            last={i === sa.length - 1}
+            last={i === rows.length - 1}
           />
         )
       })}
@@ -149,33 +180,45 @@ function Comparison({ a, b }: { a: TeamDetail; b: TeamDetail }) {
 }
 
 function CandidateGrid({ candidates, t1 }: { candidates: TeamCandidate[]; t1?: string }) {
+  const groups = [
+    { label: 'Fútbol', items: candidates.filter(c => c.sport === 'futbol') },
+    { label: 'NBA', items: candidates.filter(c => c.sport === 'baloncesto') },
+  ].filter(g => g.items.length)
   return (
-    <div>
-      <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
+    <div className="flex flex-col gap-5">
+      <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]"
         style={{ fontFamily: 'var(--font-sport)' }}>
         {t1 ? 'Elige el segundo equipo' : 'Elige un equipo para comparar'}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {candidates.map(c => {
-          const href = t1
-            ? `/comparar-equipos?t1=${encodeURIComponent(t1)}&t2=${encodeURIComponent(c.slug)}`
-            : `/comparar-equipos?t1=${encodeURIComponent(c.slug)}`
-          return (
-            <Link key={c.slug} href={href}
-              className="flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all hover:bg-white/5"
-              style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              {c.logo && (
-                <Image src={c.logo} alt="" width={22} height={22} unoptimized
-                  style={{ objectFit: 'contain', flexShrink: 0 }} />
-              )}
-              <div className="min-w-0">
-                <div className="text-[12px] font-semibold text-white truncate">{c.name}</div>
-                <div className="text-[10px] text-[var(--text-muted)] truncate">{c.league}</div>
-              </div>
-            </Link>
-          )
-        })}
-      </div>
+      {groups.map(g => (
+        <div key={g.label}>
+          {groups.length > 1 && (
+            <div className="text-[9px] font-black uppercase tracking-widest mb-2"
+              style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>{g.label}</div>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {g.items.map(c => {
+              const href = t1
+                ? `/comparar-equipos?t1=${encodeURIComponent(t1)}&t2=${encodeURIComponent(c.slug)}`
+                : `/comparar-equipos?t1=${encodeURIComponent(c.slug)}`
+              return (
+                <Link key={c.slug} href={href}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all hover:bg-white/5"
+                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  {c.logo && (
+                    <Image src={c.logo} alt="" width={22} height={22} unoptimized
+                      style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-semibold text-white truncate">{c.name}</div>
+                    <div className="text-[10px] text-[var(--text-muted)] truncate">{c.league}</div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

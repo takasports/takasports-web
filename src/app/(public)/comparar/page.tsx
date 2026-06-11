@@ -28,9 +28,10 @@ async function fetchPlayer(slug: string): Promise<PlayerDetail | null> {
   } catch { return null }
 }
 
-interface Candidate { name: string; slug: string; logo?: string; team: string }
+interface Candidate { name: string; slug: string; logo?: string; team: string; sport: 'futbol' | 'baloncesto' }
 
-async function fetchCandidates(): Promise<Candidate[]> {
+// Jugadores de fútbol (líderes de goles/asistencias por liga, vía nuestra API).
+async function fetchSoccerCandidates(): Promise<Candidate[]> {
   try {
     const res = await fetch(`${apiBase()}/api/stats/players`, { next: { revalidate: 1800 } })
     if (!res.ok) return []
@@ -38,7 +39,7 @@ async function fetchCandidates(): Promise<Candidate[]> {
     const seen = new Set<string>()
     const out: Candidate[] = []
     for (const lg of d.leagues ?? []) {
-      for (const p of [...(lg.goals ?? []).slice(0, 8), ...(lg.assists ?? []).slice(0, 4)]) {
+      for (const p of [...(lg.goals ?? []).slice(0, 12), ...(lg.assists ?? []).slice(0, 8)]) {
         if (!p.playerId || !p.leagueSlug || seen.has(p.playerId)) continue
         seen.add(p.playerId)
         out.push({
@@ -46,11 +47,45 @@ async function fetchCandidates(): Promise<Candidate[]> {
           slug: `${p.leagueSlug.replaceAll('/', '_')}_${p.playerId}`,
           logo: p.teamLogo,
           team: p.team || lg.label,
+          sport: 'futbol',
         })
       }
     }
-    return out.slice(0, 40)
+    return out.slice(0, 60)
   } catch { return [] }
+}
+
+// Jugadores NBA (líderes de anotación, vía ESPN byathlete — no bloquea a Vercel,
+// trae athlete.id → slug 'basketball_nba_<id>' que /api/jugador resuelve).
+async function fetchNbaCandidates(): Promise<Candidate[]> {
+  try {
+    const res = await fetch(
+      'https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byathlete?region=us&lang=en&contentorigin=espn&isqualified=true&limit=30&sort=offensive.avgPoints:desc',
+      { next: { revalidate: 1800 } },
+    )
+    if (!res.ok) return []
+    const j = (await res.json()) as { athletes?: { athlete?: { id?: string; displayName?: string; teamShortName?: string; headshot?: { href?: string } } }[] }
+    const seen = new Set<string>()
+    const out: Candidate[] = []
+    for (const a of j.athletes ?? []) {
+      const id = a.athlete?.id
+      if (!id || seen.has(id)) continue
+      seen.add(id)
+      out.push({
+        name: a.athlete?.displayName ?? '—',
+        slug: `basketball_nba_${id}`,
+        logo: a.athlete?.headshot?.href,
+        team: a.athlete?.teamShortName ?? 'NBA',
+        sport: 'baloncesto',
+      })
+    }
+    return out.slice(0, 24)
+  } catch { return [] }
+}
+
+async function fetchCandidates(): Promise<Candidate[]> {
+  const [soccer, nba] = await Promise.all([fetchSoccerCandidates(), fetchNbaCandidates()])
+  return [...soccer, ...nba]
 }
 
 function num(v: string): number | null {
@@ -154,33 +189,45 @@ function Comparison({ a, b }: { a: PlayerDetail; b: PlayerDetail }) {
 }
 
 function CandidateGrid({ candidates, p1 }: { candidates: Candidate[]; p1?: string }) {
+  const groups = [
+    { label: 'Fútbol', items: candidates.filter(c => c.sport === 'futbol') },
+    { label: 'NBA', items: candidates.filter(c => c.sport === 'baloncesto') },
+  ].filter(g => g.items.length)
   return (
-    <div>
-      <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
+    <div className="flex flex-col gap-5">
+      <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]"
         style={{ fontFamily: 'var(--font-sport)' }}>
         {p1 ? 'Elige el segundo jugador' : 'Elige un jugador para comparar'}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {candidates.map(c => {
-          const href = p1
-            ? `/comparar?p1=${encodeURIComponent(p1)}&p2=${encodeURIComponent(c.slug)}`
-            : `/comparar?p1=${encodeURIComponent(c.slug)}`
-          return (
-            <Link key={c.slug} href={href}
-              className="flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all hover:bg-white/5"
-              style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              {c.logo && (
-                <Image src={c.logo} alt="" width={22} height={22} unoptimized
-                  style={{ objectFit: 'contain', flexShrink: 0 }} />
-              )}
-              <div className="min-w-0">
-                <div className="text-[12px] font-semibold text-white truncate">{c.name}</div>
-                <div className="text-[10px] text-[var(--text-muted)] truncate">{c.team}</div>
-              </div>
-            </Link>
-          )
-        })}
-      </div>
+      {groups.map(g => (
+        <div key={g.label}>
+          {groups.length > 1 && (
+            <div className="text-[9px] font-black uppercase tracking-widest mb-2"
+              style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>{g.label}</div>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {g.items.map(c => {
+              const href = p1
+                ? `/comparar?p1=${encodeURIComponent(p1)}&p2=${encodeURIComponent(c.slug)}`
+                : `/comparar?p1=${encodeURIComponent(c.slug)}`
+              return (
+                <Link key={c.slug} href={href}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all hover:bg-white/5"
+                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  {c.logo && (
+                    <Image src={c.logo} alt="" width={22} height={22} unoptimized
+                      style={{ objectFit: 'contain', flexShrink: 0 }} />
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-semibold text-white truncate">{c.name}</div>
+                    <div className="text-[10px] text-[var(--text-muted)] truncate">{c.team}</div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
