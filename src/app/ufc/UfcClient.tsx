@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TakaPoint from '@/components/TakaPoint'
+import { StarIcon, LiveDotIcon, TimerIcon, LockIcon, TargetIcon, GlovesIcon, FilesIcon } from '@/components/icons/GameIcons'
 import EventHero from './EventHero'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -304,7 +305,7 @@ function MethodPicker({
         display: 'flex', alignItems: 'center', gap: 6,
       }}>
         <span style={{ fontSize: 9, fontWeight: 800, color: 'rgba(248,113,113,0.6)', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-sport)' }}>
-          🎯 Método de victoria
+          <TargetIcon size={11} className="inline-block align-middle mr-1" />Método de victoria
         </span>
         <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontFamily: 'var(--font-sport)' }}>
           +2 pts extra
@@ -505,7 +506,7 @@ function FightCard({
                 flexShrink: 0,
               }}
             >
-              ⭐ MAIN EVENT
+              <StarIcon size={9} className="inline-block align-middle mr-1" />MAIN EVENT
             </span>
           )}
           {/* Fecha / hora */}
@@ -521,7 +522,7 @@ function FightCard({
         <div style={{ flexShrink: 0 }}>
           {isClosed && (
             <span style={{ fontSize: 9, color: '#F59E0B', fontFamily: 'var(--font-sport)', fontWeight: 700 }}>
-              🔴 EN VIVO
+              <LiveDotIcon size={7} className="align-middle mr-1" />EN VIVO
             </span>
           )}
           {isResolved && (
@@ -534,12 +535,12 @@ function FightCard({
           )}
           {isOpen && !isLocked && lockMs < 3 * 60 * 60 * 1000 && (
             <span style={{ fontSize: 9, color: '#F59E0B', fontFamily: 'var(--font-sport)', fontWeight: 700 }}>
-              ⏱ {formatLock(lockMs)}
+              <TimerIcon size={10} className="inline-block align-middle mr-1" />{formatLock(lockMs)}
             </span>
           )}
           {isLocked && (
             <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-sport)' }}>
-              🔒 CERRADO
+              <LockIcon size={10} className="inline-block align-middle mr-1" />CERRADO
             </span>
           )}
         </div>
@@ -628,7 +629,7 @@ function FightCard({
             border: '1px solid rgba(248,113,113,0.15)',
             display: 'flex', alignItems: 'center', gap: 6,
           }}>
-            <span style={{ fontSize: 10 }}>⭐</span>
+            <span style={{ display: 'inline-flex', color: 'rgba(248,113,113,0.7)' }}><StarIcon size={12} /></span>
             <span style={{
               fontSize: 9, fontFamily: 'var(--font-sport)',
               color: 'rgba(248,113,113,0.7)', letterSpacing: '0.06em',
@@ -694,7 +695,7 @@ function FightCard({
               fontSize: 9, color: 'rgba(248,113,113,0.45)',
               fontFamily: 'var(--font-sport)', letterSpacing: '0.06em',
             }}>
-              🎯 Elige al ganador para añadir también el método (+2 pts extra)
+              <TargetIcon size={11} className="inline-block align-middle mr-1" />Elige al ganador para añadir también el método (+2 pts extra)
             </span>
           </div>
         </div>
@@ -707,7 +708,7 @@ function FightCard({
           background: 'rgba(0,0,0,0.4)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <span style={{ fontSize: 20, animation: 'uLivePulse 0.8s infinite' }}>🥊</span>
+          <span style={{ animation: 'uLivePulse 0.8s infinite', color: RED, display: 'inline-flex' }}><GlovesIcon size={22} /></span>
         </div>
       )}
     </div>
@@ -798,7 +799,7 @@ function HistorialSection({ veladas, predictions }: { veladas: Velada[]; predict
         }}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          🗂 Historial
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><FilesIcon size={14} /> Historial</span>
           <span style={{ color: 'rgba(255,255,255,0.3)' }}>
             {veladas.length} velada{veladas.length === 1 ? '' : 's'}
           </span>
@@ -1077,7 +1078,7 @@ export default function UfcClient() {
             </div>
           ) : (
             <div className="u-title" style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div className="u-glove" style={{ fontSize: 48, marginBottom: 8 }}>🥊</div>
+              <div className="u-glove" style={{ marginBottom: 8, color: RED, display: 'flex', justifyContent: 'center' }}><GlovesIcon size={52} /></div>
               <h1 style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: 'clamp(1.8rem, 4vw, 3rem)',
@@ -1161,7 +1162,7 @@ export default function UfcClient() {
             background: 'rgba(248,113,113,0.05)',
             border: '1px solid rgba(248,113,113,0.12)',
           }}>
-            <span style={{ fontSize: 32, display: 'block', marginBottom: 10 }}>🔒</span>
+            <span style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, color: 'rgba(255,255,255,0.4)' }}><LockIcon size={40} /></span>
             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 16 }}>
               Inicia sesión para guardar tus predicciones y competir en el ranking
             </p>
@@ -1183,7 +1184,7 @@ export default function UfcClient() {
         {/* Loading */}
         {loading && (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <span style={{ fontSize: 36 }}>🥊</span>
+            <span style={{ color: RED, display: 'inline-flex' }}><GlovesIcon size={40} /></span>
             <p style={{ color: 'rgba(255,255,255,0.3)', marginTop: 12, fontSize: 13, fontFamily: 'var(--font-sport)' }}>
               Cargando combates…
             </p>
@@ -1204,7 +1205,7 @@ export default function UfcClient() {
         {/* Sin velada próxima */}
         {!loading && !error && !currentEvent && (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>🥊</span>
+            <span style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: 'rgba(255,255,255,0.3)' }}><GlovesIcon size={52} /></span>
             <h2 style={{
               fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900,
               color: 'rgba(255,255,255,0.5)',
