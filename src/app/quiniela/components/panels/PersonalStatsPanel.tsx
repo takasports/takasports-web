@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
+import { FireIcon, TrophyIcon } from '@/components/icons/GameIcons'
 
 // ─────────────────────────────────────────────────────────────────
 // Stats personales de Predicciones
@@ -86,7 +87,7 @@ export function PersonalStatsPanel({ user }: { user: User | null }) {
       <div className="px-4 pb-3 grid grid-cols-3 gap-1.5">
         <StatBox label="Aciertos" value={hitRate != null ? `${hitRate}%` : '—'} accent="#A78BFA" />
         <StatBox
-          label={currentStreak > 0 ? '🔥 Racha' : 'Racha'}
+          label={currentStreak > 0 ? <><FireIcon size={10} className="inline-block align-middle mr-1" />Racha</> : 'Racha'}
           value={`${currentStreak}`}
           accent={currentStreak > 0 ? '#fb923c' : '#4A4A6A'}
         />
@@ -96,7 +97,7 @@ export function PersonalStatsPanel({ user }: { user: User | null }) {
       {/* Mejor jornada */}
       {bestJornada && (
         <div className="mx-4 mb-4 rounded-xl px-3 py-2.5 flex items-center gap-2.5" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)' }}>
-          <span style={{ fontSize: 18, lineHeight: 1 }}>🏆</span>
+          <span style={{ display: 'inline-flex', lineHeight: 1, color: '#fbbf24' }}><TrophyIcon size={18} /></span>
           <div className="flex-1 min-w-0">
             <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#6A5020', fontFamily: 'var(--font-sport)' }}>
               Mejor jornada
@@ -117,7 +118,7 @@ export function PersonalStatsPanel({ user }: { user: User | null }) {
   )
 }
 
-function StatBox({ label, value, accent }: { label: string; value: string; accent: string }) {
+function StatBox({ label, value, accent }: { label: ReactNode; value: string; accent: string }) {
   return (
     <div
       className="rounded-lg px-2 py-2 flex flex-col items-center"

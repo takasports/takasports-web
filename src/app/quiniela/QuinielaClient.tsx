@@ -9,6 +9,7 @@ import type { QuinielaMatch, QuinielaSaved, Pick } from '@/components/QuinielaMo
 import { nameMatch } from '@/lib/quiniela'
 import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
+import { TrophyIcon, FireIcon, LockIcon } from '@/components/icons/GameIcons'
 import {
   BADGES_KEY,
   STREAK_KEY, LEAGUES_KEY,
@@ -288,7 +289,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                       className="text-[9px] font-black uppercase tracking-[0.18em] px-2.5 py-1 rounded-full"
                       style={{ background: 'rgba(245,158,11,0.18)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.4)', fontFamily: 'var(--font-sport)' }}
                     >
-                      🏆 Copa 2026
+                      <TrophyIcon size={11} className="inline-block align-middle mr-1" />Copa 2026
                     </span>
                   )}
                   {statusOpen && (
@@ -343,7 +344,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                     {streak.current > 0 ? streak.current : (streak.best || '—')}
                   </span>
                   <span className="text-[9px] font-semibold mt-1 uppercase tracking-widest" style={{ color: streak.current > 0 ? '#6A3010' : '#6A5020', fontFamily: 'var(--font-sport)' }}>
-                    {streak.current > 0 ? '🔥 racha' : 'mejor racha'}
+                    {streak.current > 0 ? <><FireIcon size={10} className="inline-block align-middle mr-1" />racha</> : 'mejor racha'}
                   </span>
                 </div>
               </div>
@@ -541,7 +542,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                 className="rounded-2xl px-5 py-4 flex items-center gap-3"
                 style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)', animation: 'fadeIn 0.4s ease both' }}
               >
-                <span style={{ fontSize: 22 }}>🔒</span>
+                <span style={{ display: 'inline-flex', color: '#A78BFA' }}><LockIcon size={22} /></span>
                 <div className="flex-1 min-w-0">
                   <p className="font-black text-xs mb-0.5" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
                     Guarda tu progreso
@@ -622,7 +623,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
             {/* Racha semanal */}
             {streak.current > 0 && (
               <div className="rounded-2xl px-5 py-4 flex items-center gap-4" style={{ background: 'rgba(251,146,60,0.07)', border: '1px solid rgba(251,146,60,0.2)' }}>
-                <span style={{ fontSize: 28, lineHeight: 1 }}>🔥</span>
+                <span style={{ display: 'inline-flex', lineHeight: 1, color: '#FB923C' }}><FireIcon size={28} /></span>
                 <div className="flex-1 min-w-0">
                   <p className="font-black text-sm" style={{ color: '#fdba74', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
                     {streak.current} jornada{streak.current !== 1 ? 's' : ''} seguida{streak.current !== 1 ? 's' : ''}

@@ -6,6 +6,7 @@ import { computeStandings, getPlayerAlias } from '../../lib/helpers'
 import type { LeagueMatchKey, LeagueMemberLite } from '../../lib/helpers'
 import { LeagueChat } from './LeagueChat'
 import { createClient } from '@/lib/supabase'
+import { TargetIcon } from '@/components/icons/GameIcons'
 
 export function LeagueExpanded({ league, localResults }: { league: League; localResults: MatchResult[] }) {
   const [members, setMembers] = useState<LeagueMemberLite[]>([])
@@ -118,7 +119,7 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
             letterSpacing: '0.04em',
           }}
         >
-          🎯 {exactEnabled ? 'Con marcador exacto' : 'Sin marcador exacto'}
+          <TargetIcon size={11} className="inline-block align-middle mr-1" />{exactEnabled ? 'Con marcador exacto' : 'Sin marcador exacto'}
         </span>
         {isOwner && (
           <button
@@ -183,7 +184,7 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
                 </span>
                 <span className="flex-1 text-[11px] font-bold" style={{ color: gold || isMe ? '#F0F0F5' : '#8080A0', fontFamily: 'var(--font-display)' }}>
                   {r.name}
-                  {r.pleno && <span style={{ marginLeft: 4, fontSize: 9 }}>🎯</span>}
+                  {r.pleno && <span style={{ marginLeft: 4, display: 'inline-flex', verticalAlign: 'middle' }}><TargetIcon size={10} /></span>}
                   {isMe && <span style={{ color: '#A78BFA', marginLeft: 4, fontSize: 8 }}>tú</span>}
                 </span>
                 {hasResults && (

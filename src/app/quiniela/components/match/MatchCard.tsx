@@ -10,6 +10,7 @@ import { nameMatch, OUTCOME_LABEL } from '@/lib/quiniela'
 import { useMatchCountdown } from '../../lib/hooks'
 import { TeamBadge } from '../atoms/TeamBadge'
 import { WinProbabilityBar } from '../atoms/WinProbabilityBar'
+import { TimerIcon, TargetIcon } from '@/components/icons/GameIcons'
 
 // ─────────────────────────────────────────────────────────────────
 // Match Card con camisetas
@@ -153,7 +154,7 @@ export function MatchCard({
               </span>
             ) : soon && countdownLabel ? (
               <span className="text-[9px] font-black tabular-nums px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.1)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.2)', fontFamily: 'var(--font-sport)' }}>
-                ⏱ {countdownLabel}
+                <TimerIcon size={10} className="inline-block align-middle mr-1" />{countdownLabel}
               </span>
             ) : (
               time && <span className="text-[10px] font-black tabular-nums" style={{ color: '#4A4A6A', fontFamily: 'var(--font-display)' }}>{time}</span>
@@ -360,7 +361,7 @@ export function MatchCard({
                       letterSpacing: '0.04em',
                     }}
                   >
-                    {finalScore && exactHit ? '🎯 ✓' : '🎯'} EXACTO {exactScore.home}-{exactScore.away}
+                    <TargetIcon size={10} className="inline-block align-middle mr-1" />{finalScore && exactHit ? '✓ ' : ''}EXACTO {exactScore.home}-{exactScore.away}
                     {suffix}
                   </span>
                 </div>
@@ -465,7 +466,7 @@ export function MatchCard({
                     ? '+3 pts si clavas el marcador exacto'
                     : 'Ya tienes 3 marcadores exactos en esta jornada'}
                 >
-                  <span aria-hidden>🎯</span>
+                  <span aria-hidden className="inline-flex"><TargetIcon size={12} /></span>
                   {exactSlotAvailable ? '+ Marcador exacto · +3 pts' : 'Marcador exacto (3/3 usados)'}
                 </button>
               </div>
@@ -477,7 +478,7 @@ export function MatchCard({
                   border: '1px solid rgba(167,139,250,0.32)',
                 }}
               >
-                <span aria-hidden style={{ fontSize: 12, lineHeight: 1 }}>🎯</span>
+                <span aria-hidden style={{ display: 'inline-flex', lineHeight: 1, color: '#C4B5FD' }}><TargetIcon size={12} /></span>
                 <span style={{
                   fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800,
                   color: '#C4B5FD', letterSpacing: '0.06em',
