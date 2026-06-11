@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TakaPoint from '@/components/TakaPoint'
+import { TargetIcon, LightbulbIcon, StarIcon, LiveDotIcon, LockIcon, TrophyIcon, GalleryIcon, FootballIcon } from '@/components/icons/GameIcons'
 import { trackPorraExactAdded, trackPorraExactRemoved } from '@/lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -449,7 +450,7 @@ function ExactScoreBlock({
         background: bg, border: `1px solid ${border}`,
         display: 'flex', alignItems: 'center', gap: 8,
       }}>
-        <span style={{ fontSize: 14, lineHeight: 1 }} aria-hidden>🎯</span>
+        <span style={{ display: 'inline-flex', lineHeight: 1 }} aria-hidden><TargetIcon size={14} /></span>
         <span style={{
           fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
           color: labelColor, letterSpacing: '0.08em',
@@ -479,7 +480,7 @@ function ExactScoreBlock({
         border: '1px dashed rgba(167,139,250,0.18)',
         display: 'flex', alignItems: 'center', gap: 8,
       }}>
-        <span style={{ fontSize: 12, lineHeight: 1, opacity: 0.6 }} aria-hidden>🎯</span>
+        <span style={{ display: 'inline-flex', lineHeight: 1, opacity: 0.6 }} aria-hidden><TargetIcon size={12} /></span>
         <span style={{
           flex: 1,
           fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 700,
@@ -517,7 +518,7 @@ function ExactScoreBlock({
               animation: 'mFadeInUp 0.3s ease-out both',
             }}
           >
-            <span style={{ fontSize: 14, lineHeight: 1 }} aria-hidden>💡</span>
+            <span style={{ display: 'inline-flex', lineHeight: 1 }} aria-hidden><LightbulbIcon size={14} /></span>
             <p style={{
               flex: 1, margin: 0,
               fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 700,
@@ -578,7 +579,7 @@ function ExactScoreBlock({
           transition: 'transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease',
         }}
       >
-        <span style={{ fontSize: 14, lineHeight: 1 }} aria-hidden>🎯</span>
+        <span style={{ display: 'inline-flex', lineHeight: 1 }} aria-hidden><TargetIcon size={14} /></span>
         <span style={{
           fontSize: 11, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase',
         }}>
@@ -609,7 +610,7 @@ function ExactScoreBlock({
         border: '1px solid rgba(167,139,250,0.32)',
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
-        <span style={{ fontSize: 14, lineHeight: 1 }} aria-hidden>🎯</span>
+        <span style={{ display: 'inline-flex', lineHeight: 1 }} aria-hidden><TargetIcon size={14} /></span>
         <span style={{
           fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
           color: '#C4B5FD', letterSpacing: '0.08em',
@@ -661,7 +662,7 @@ function ExactScoreBlock({
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8,
       }}>
-        <span style={{ fontSize: 12, lineHeight: 1 }} aria-hidden>🎯</span>
+        <span style={{ display: 'inline-flex', lineHeight: 1 }} aria-hidden><TargetIcon size={12} /></span>
         <span style={{
           fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
           color: '#C4B5FD', letterSpacing: '0.1em',
@@ -837,7 +838,7 @@ function MatchCard({
             background: `linear-gradient(90deg,${GOLD}2A,${GOLD}14)`,
             border: `1px solid ${GOLD}55`, color: GOLD,
             fontFamily: 'var(--font-sport)', letterSpacing: '0.07em',
-          }}>⭐ DOBLE PUNTOS</span>
+          }}><StarIcon size={9} className="inline-block align-middle mr-1" />DOBLE PUNTOS</span>
         )}
         {(event.meta?.group || event.meta?.city) && (
           <span style={{
@@ -849,12 +850,12 @@ function MatchCard({
         )}
         {isClosed && (
           <span className="m-live" style={{ fontSize: 9, color: '#F87171', fontFamily: 'var(--font-sport)', fontWeight: 900, letterSpacing: '0.07em' }}>
-            🔴 EN VIVO
+            <LiveDotIcon size={7} className="align-middle mr-1" />EN VIVO
           </span>
         )}
         {isLocked && event.status === 'open' && (
           <span style={{ fontSize: 9, color: 'rgba(251,191,36,0.6)', fontFamily: 'var(--font-sport)', fontWeight: 700, letterSpacing: '0.06em' }}>
-            🔒 PICKS BLOQUEADOS
+            <LockIcon size={9} className="inline-block align-middle mr-1" />PICKS BLOQUEADOS
           </span>
         )}
         {showLockWarning && (
@@ -1279,7 +1280,7 @@ export default function MundialClient() {
               </span>
 
               <div className="flex items-end gap-3">
-                <span className="m-trophy" style={{ fontSize: 54, lineHeight: 1 }}>🏆</span>
+                <span className="m-trophy" style={{ lineHeight: 1, color: GOLD, display: 'inline-flex' }}><TrophyIcon size={54} /></span>
                 <div>
                   <h1 style={{
                     fontFamily: 'var(--font-display)',
@@ -1370,9 +1371,9 @@ export default function MundialClient() {
 
           {/* Strip de puntos */}
           <div className="m-strip flex items-center gap-5 flex-wrap pb-5 pt-3">
-            {[{icon:'⚽',text:'Resultado correcto',pts:'3 pts'},{icon:'⭐',text:'Partido destacado',pts:'6 pts'}].map(item => (
+            {[{Icon:FootballIcon,text:'Resultado correcto',pts:'3 pts'},{Icon:StarIcon,text:'Partido destacado',pts:'6 pts'}].map(item => (
               <div key={item.text} className="flex items-center gap-1.5">
-                <span style={{ fontSize:12 }}>{item.icon}</span>
+                <span style={{ display:'inline-flex', color:'rgba(255,255,255,0.45)' }}><item.Icon size={12} /></span>
                 <span style={{ fontSize:10, color:'rgba(255,255,255,0.35)', fontFamily:'var(--font-sport)' }}>{item.text}</span>
                 <span style={{ fontSize:10, fontWeight:900, color:GOLD, fontFamily:'var(--font-sport)', background:`${GOLD}14`, padding:'1px 6px', borderRadius:5 }}>{item.pts}</span>
               </div>
@@ -1380,7 +1381,7 @@ export default function MundialClient() {
             {totalPts > 0 && (
               <a href={`/api/og/mundial-stats?picks=${myPicks}&correct=${Object.values(preds).filter(p=>p.is_correct).length}&pts=${totalPts}`} target="_blank" rel="noopener noreferrer"
                 style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:8, background:`${GOLD}12`, border:`1px solid ${GOLD}28`, color:GOLD_D, fontSize:9, fontWeight:900, fontFamily:'var(--font-sport)', textTransform:'uppercase', letterSpacing:'0.07em', textDecoration:'none' }}>
-                🖼 Compartir mis stats
+                <GalleryIcon size={11} />Compartir mis stats
               </a>
             )}
           </div>
@@ -1416,7 +1417,7 @@ export default function MundialClient() {
         <div className="mb-4 px-5 py-4 rounded-2xl flex flex-col gap-3"
           style={{ background:`linear-gradient(135deg,${GOLD}08,rgba(0,0,0,0.2))`, border:`1px solid ${GOLD}32`, boxShadow:`0 0 40px ${GOLD}08` }}>
           <div className="flex items-center gap-2">
-            <span style={{ fontSize:22 }}>🏆</span>
+            <span style={{ display:'inline-flex', color:GOLD }}><TrophyIcon size={22} /></span>
             <div>
               <p style={{ fontSize:13, fontWeight:900, color:GOLD, fontFamily:'var(--font-sport)' }}>Inicia sesión para predecir</p>
               <p style={{ fontSize:11, color:'rgba(255,255,255,0.4)', fontFamily:'var(--font-sport)', marginTop:1 }}>Crea una cuenta gratis y compite en el Mundial 2026</p>
@@ -1449,7 +1450,7 @@ export default function MundialClient() {
       {/* ─── Empty ───────────────────────────────────────────── */}
       {!loading && events.length === 0 && (
         <div className="flex flex-col items-center gap-4 py-24 text-center">
-          <span style={{ fontSize:52 }}>🏆</span>
+          <span style={{ display:'inline-flex', color:GOLD }}><TrophyIcon size={52} /></span>
           <h2 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.2rem,2.5vw,1.8rem)', color:GOLD, letterSpacing:'-0.02em' }}>Cargando partidos…</h2>
           <p style={{ color:'rgba(255,255,255,0.35)', fontSize:13, maxWidth:360 }}>Los fixtures del Mundial se están sincronizando. Recarga en unos segundos.</p>
         </div>
