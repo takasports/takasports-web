@@ -514,6 +514,16 @@ export function HomeIcon({ size = 32, className }: IconProps) {
   )
 }
 
+export function SmartphoneIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <rect x="9" y="3" width="14" height="26" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="2" />
+      <path d="M13 6h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="16" cy="25" r="1.3" fill="currentColor" />
+    </svg>
+  )
+}
+
 export function LiveDotIcon({ size = 12, className }: IconProps) {
   return (
     <span

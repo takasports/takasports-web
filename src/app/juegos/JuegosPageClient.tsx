@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
+import { SmartphoneIcon } from '@/components/icons/GameIcons'
 import NewsletterSection from '@/components/NewsletterSection'
 import {
   IconQuiniela,
@@ -727,7 +728,7 @@ function ExternalGameCard({ game }: { game: Game }) {
                 }}
                 onClick={openSheet}
               >
-                📱 App Store
+                <SmartphoneIcon size={12} />App Store
               </button>
             )}
             {links.appStore && (
@@ -744,7 +745,7 @@ function ExternalGameCard({ game }: { game: Game }) {
                   letterSpacing: '0.04em',
                 }}
               >
-                📱 App Store
+                <SmartphoneIcon size={12} />App Store
               </a>
             )}
           </div>
