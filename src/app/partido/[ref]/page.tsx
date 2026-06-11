@@ -1487,6 +1487,25 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
         Calendario
       </Link>
       <div className="flex items-center gap-2">
+        {/* Pronóstico → sección Predicciones (fútbol y UFC tienen quinielas). */}
+        {(isSoccer || match.sport === 'mma') && (
+          <Link
+            href="/predicciones"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all hover:opacity-80 active:scale-95"
+            style={{
+              background: 'rgba(124,58,237,0.14)',
+              color: '#C4B5FD',
+              border: '1px solid rgba(124,58,237,0.34)',
+              textDecoration: 'none',
+              fontFamily: 'var(--font-sport)',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 1l1.5 3 3.3.3-2.5 2.2.8 3.2L6 8.2 2.9 9.9l.8-3.2L1.2 4.5 4.5 4.2 6 1z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
+            </svg>
+            Pronóstico
+          </Link>
+        )}
         {showAddToCalendar && (
           <AddToCalendarButton
             title={shareTitle}
@@ -1496,7 +1515,10 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
             uid={`${match.id}@takasportsmedia.com`}
           />
         )}
-        <ShareButton title={shareTitle} />
+        <ShareButton
+          title={shareTitle}
+          imageUrl={`/partido/${match.leagueSlug.replace('/', '_')}_${match.id}/opengraph-image`}
+        />
       </div>
     </div>
   )
@@ -1719,16 +1741,12 @@ export default async function MatchPage({
   const teamPair = (match.sport === 'soccer' || match.sport === 'basketball') && match.homeTeam && match.awayTeam
     ? { home: match.homeTeam, away: match.awayTeam }
     : null
-  // leagueSlug → filtro de género: el femenino (Liga F, amistosos F) comparte
-  // nombre de club/selección con el masculino, así que sin esto el H2H/forma de
-  // un partido femenino mostraría datos del equipo masculino homónimo (y al
-  // revés). Ver isWomensPastRow en lib/past-events.
   const [h2h, forms] = await Promise.all([
     teamPair
-      ? fetchH2H(teamPair.home, teamPair.away, { limit: 10, excludeId: match.id, leagueSlug: match.leagueSlug })
+      ? fetchH2H(teamPair.home, teamPair.away, { limit: 10, excludeId: match.id })
       : Promise.resolve(null),
     teamPair
-      ? fetchRecentFormByTeams([teamPair.home, teamPair.away], 5, match.leagueSlug).then((m) => m ?? {})
+      ? fetchRecentFormByTeams([teamPair.home, teamPair.away], 5).then((m) => m ?? {})
       : Promise.resolve({} as Record<string, FormResult[]>),
   ])
 
