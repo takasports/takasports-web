@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { SITE_URL } from '@/lib/constants'
 import { GLOSARIO_TERMS, type GlosarioSport } from '@/lib/glosario-terms'
 
@@ -106,9 +104,8 @@ export default function GlosarioIndexPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(definedTermSetJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
-      <Header />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-20">
 
         <div className="mb-10">
           <div className="flex items-center gap-2.5 mb-4">
@@ -196,9 +193,8 @@ export default function GlosarioIndexPage() {
           })}
         </div>
 
-      </main>
+      </div>
 
-      <Footer />
     </div>
   )
 }

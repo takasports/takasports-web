@@ -1,6 +1,4 @@
 import type { Metadata } from 'next'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
@@ -50,9 +48,8 @@ export default function SobrePage() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }} />
-      <Header />
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 pt-12 pb-20">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-12 pb-20">
 
         {/* Hero */}
         <div className="mb-12">
@@ -170,9 +167,8 @@ export default function SobrePage() {
             Última actualización: 3 de junio de 2026.
           </p>
         </div>
-      </main>
+      </div>
 
-      <Footer />
     </div>
   )
 }

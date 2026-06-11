@@ -1,6 +1,4 @@
 import type { Metadata } from 'next'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
@@ -111,9 +109,8 @@ const NETWORKS = [
 export default function RedesPage() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      <Header />
 
-      <main className="max-w-[900px] mx-auto px-4 sm:px-6 py-16 sm:py-24">
+      <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-16 sm:py-24">
 
         {/* Hero */}
         <div className="text-center mb-16">
@@ -223,9 +220,8 @@ export default function RedesPage() {
           </a>
         </div>
 
-      </main>
+      </div>
 
-      <Footer />
     </div>
   )
 }

@@ -1,8 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { SITE_URL, LOGO_URL } from '@/lib/constants'
 import {
   GLOSARIO_TERMS,
@@ -119,9 +117,8 @@ export default async function GlosarioTermPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(definedTermJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <Header />
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 pt-12 pb-20">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-12 pb-20">
 
         <nav aria-label="Migas" className="mb-6 text-xs flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
           <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
@@ -211,9 +208,8 @@ export default async function GlosarioTermPage({
           </section>
         )}
 
-      </main>
+      </div>
 
-      <Footer />
     </div>
   )
 }
