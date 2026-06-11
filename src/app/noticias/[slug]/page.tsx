@@ -1160,22 +1160,42 @@ export default async function NoticiaPage({
                   ))}
                 </div>
               )}
-              {article.author && (
-                <div className="mt-6 pt-6 flex items-center gap-2" style={{ borderTop: '1px solid var(--border)' }}>
-                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ opacity: 0.35, flexShrink: 0 }}>
-                    <circle cx="6.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3" />
-                    <path d="M1.5 11.5c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                  </svg>
-                  <Link
-                    href="/autor/redaccion"
-                    rel="author"
-                    className="text-xs hover:text-white transition-colors"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    {article.author}
-                  </Link>
-                </div>
-              )}
+              {/* Caja de autor de marca: siempre visible (articleAuthor con
+                  fallback). Avatar teñido del deporte (--sport-accent). */}
+              <Link
+                href="/autor/redaccion"
+                rel="author"
+                aria-label={`Más artículos de ${articleAuthor}`}
+                className="author-box hero-enter group mt-8 flex items-center gap-3.5 rounded-2xl p-4"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none' }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex items-center justify-center rounded-full font-black"
+                  style={{
+                    width: 44, height: 44, flexShrink: 0, fontFamily: 'var(--font-sport)', fontSize: 17,
+                    color: 'var(--sport-accent)',
+                    background: 'color-mix(in srgb, var(--sport-accent) 14%, transparent)',
+                    border: '1px solid color-mix(in srgb, var(--sport-accent) 35%, transparent)',
+                  }}
+                >
+                  {articleAuthor.trim().charAt(0).toUpperCase()}
+                </span>
+                <span className="flex flex-col min-w-0">
+                  <span className="text-sm font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                    {articleAuthor}
+                  </span>
+                  <span className="text-[11px] leading-tight mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    Periodismo deportivo · Taka Sports
+                  </span>
+                  <span className="text-[11px] font-semibold leading-tight mt-1.5 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all" style={{ color: 'var(--sport-accent)' }}>
+                    Ver perfil
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                      <path d="M3 6h6M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </span>
+              </Link>
             </div>
 
             <div className="lg:hidden">

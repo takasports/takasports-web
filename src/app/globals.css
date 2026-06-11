@@ -1000,6 +1000,18 @@ html[data-cap="full"] .ts-keys__dot {
   html[data-cap="full"] .ts-keys__dot { animation: none !important; opacity: 1 !important; }
 }
 
+/* Caja de autor al pie del artículo (reutiliza .hero-enter para la entrada). */
+.author-box {
+  transition: border-color 200ms var(--ease-standard, ease), background 200ms var(--ease-standard, ease);
+}
+.author-box:hover {
+  border-color: color-mix(in srgb, var(--sport-accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--sport-accent) 6%, var(--bg-card));
+}
+@media (prefers-reduced-motion: reduce) {
+  .author-box { transition: none; }
+}
+
 /* Letra capitular del cuerpo — 1ª letra del 1er párrafo real del artículo.
    --sport-accent se hereda del data-sport del <main>. 0 KB, sin JS, estático. */
 .ts-dropcap::first-letter {
