@@ -1,8 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from '@/components/DynamicImage'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { sanityClient, urlFor } from '@/lib/sanity'
 import { SITE_URL, LOGO_URL } from '@/lib/constants'
 import { timeAgo } from '@/lib/timeAgo'
@@ -118,9 +116,8 @@ export default async function RedaccionAuthorPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(profileJsonLd) }} />
-      <Header />
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 pt-12 pb-20">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-12 pb-20">
 
         {/* Hero */}
         <div className="mb-10">
@@ -254,9 +251,8 @@ export default async function RedaccionAuthorPage() {
             </div>
           </section>
         )}
-      </main>
+      </div>
 
-      <Footer />
     </div>
   )
 }

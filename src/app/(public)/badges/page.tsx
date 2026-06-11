@@ -8,8 +8,6 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { listAllBadges } from '@/lib/badges'
 import type { BadgeDef, BadgeCategory } from '@/lib/badges'
 import { createClient } from '@/lib/supabase'
@@ -105,8 +103,7 @@ export default function BadgesPage() {
 
   return (
     <>
-      <Header />
-      <main
+      <div
         className="min-h-screen"
         style={{ background: 'var(--bg-body)', paddingTop: 80 }}
       >
@@ -341,8 +338,7 @@ export default function BadgesPage() {
             </div>
           )}
         </div>
-      </main>
-      <Footer />
+      </div>
       <style jsx>{`
         .badge-card { transition: filter 0.18s ease, opacity 0.18s ease; }
         .badge-card:hover { filter: brightness(1.18); }

@@ -6,8 +6,6 @@
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { verifyUnsubscribeToken } from '@/lib/newsletter-token'
 import { SITE_URL } from '@/lib/constants'
@@ -64,8 +62,7 @@ export default async function NewsletterBajaPage(
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
-      <main className="mx-auto max-w-2xl px-4 py-16">
+      <div className="mx-auto max-w-2xl px-4 py-16">
         <p className="section-label" style={{ color: accent, marginBottom: 12 }}>
           Newsletter
         </p>
@@ -121,8 +118,7 @@ export default async function NewsletterBajaPage(
             Contacto
           </a>
         </div>
-      </main>
-      <Footer />
+      </div>
     </div>
   )
 }

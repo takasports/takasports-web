@@ -4,8 +4,6 @@ import Image from '@/components/DynamicImage'
 import { sanityClient, urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { SITE_URL } from '@/lib/constants'
 
@@ -126,9 +124,8 @@ export default async function BuscarPage({
       {query && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(searchJsonLd) }} />
       )}
-      <Header />
 
-      <main className="mx-auto px-4 sm:px-6 xl:px-10 py-10 pb-24" style={{ maxWidth: 900 }}>
+      <div className="mx-auto px-4 sm:px-6 xl:px-10 py-10 pb-24" style={{ maxWidth: 900 }}>
         <h1
           className="font-black mb-2"
           style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: '#F8F8FF', letterSpacing: '-0.015em' }}
@@ -305,9 +302,8 @@ export default async function BuscarPage({
             Escribe al menos 2 caracteres para buscar.
           </p>
         ) : null}
-      </main>
+      </div>
 
-      <Footer />
       <ScrollToTop />
     </div>
   )
