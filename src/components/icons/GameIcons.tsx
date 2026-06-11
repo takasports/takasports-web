@@ -552,6 +552,113 @@ export function StadiumIcon({ size = 32, className }: IconProps) {
   )
 }
 
+// ── UI extra (item 14: emojis → SVG) ──────────────────────────
+
+export function BoltIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M18 3L8 17h6l-2 12 12-15h-6l2-11Z" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function TimerIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <circle cx="16" cy="19" r="10" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="2" />
+      <path d="M16 19V13M16 19h4.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M13 4h6M16 4v5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function CheckIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className} role="img" aria-label="Correcto">
+      <path d="M6 17l6 6L26 9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function CloseIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className} role="img" aria-label="Incorrecto">
+      <path d="M8 8l16 16M24 8L8 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function DiceIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <rect x="6" y="6" width="20" height="20" rx="4.5" fill="currentColor" fillOpacity="0.14" stroke="currentColor" strokeWidth="2" />
+      <circle cx="11.5" cy="11.5" r="1.7" fill="currentColor" />
+      <circle cx="20.5" cy="11.5" r="1.7" fill="currentColor" />
+      <circle cx="16" cy="16" r="1.7" fill="currentColor" />
+      <circle cx="11.5" cy="20.5" r="1.7" fill="currentColor" />
+      <circle cx="20.5" cy="20.5" r="1.7" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function GlovesIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M11 9a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5v6a6 6 0 0 1-6 6h-4a3 3 0 0 1-3-3V9Z" fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M11 12a3.5 3.5 0 0 0-3.5 3.5v1.5a2.5 2.5 0 0 0 5 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 21v3a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function FilesIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M4 11a2 2 0 0 1 2-2h6l2.5 3H26a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V11Z" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M7 9V7a2 2 0 0 1 2-2h4l2 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+    </svg>
+  )
+}
+
+export function GalleryIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <rect x="5" y="6" width="22" height="20" rx="3" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="2" />
+      <circle cx="11.5" cy="12.5" r="2.2" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M6 23l6-6 4 4 5-5 5 5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function LinkIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M13 19l-2.5 2.5a4.6 4.6 0 0 1-6.5-6.5L7.5 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M19 13l2.5-2.5a4.6 4.6 0 0 1 6.5 6.5L24.5 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12.5 19.5l7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function AlertIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M16 5l12 21H4L16 5Z" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M16 13v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="16" cy="23" r="1.4" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function CameraIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M4 11a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V11Z" fill="currentColor" fillOpacity="0.14" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <circle cx="16" cy="17" r="4.5" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  )
+}
+
 // ── Sport lookup ──────────────────────────────────────────────
 
 export function SportIcon({ sport, size = 32, className }: { sport: string } & IconProps) {
