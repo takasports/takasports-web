@@ -10,6 +10,7 @@ import Header from '@/components/Header'
 import BreakingNewsBar from '@/components/BreakingNewsBar'
 import LiveStrip from '@/components/LiveStrip'
 import HomeContent from '@/components/HomeContent'
+import SignalIntro from '@/components/SignalIntro'
 import Footer from '@/components/Footer'
 import NewsletterSection from '@/components/NewsletterSection'
 import { urlFor } from '@/lib/sanity'
@@ -202,6 +203,7 @@ export default async function Home() {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+      <SignalIntro />
       {heroPreloadUrl && (
         <link
           rel="preload"
