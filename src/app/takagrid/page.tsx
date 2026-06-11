@@ -9,7 +9,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import GameOnboarding from '@/components/games/GameOnboarding'
 import { searchPlayers, fuzzySearchPlayers, getPlayerById, type Player } from '@/lib/players-catalog'
 import { getDailyPuzzle, isValidAnswer, getValidAnswers, type CellCoord, type GridPuzzle } from '@/lib/takagrid-puzzles'
-import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag } from '@/components/icons/GameIcons'
+import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag, AlertIcon, CameraIcon, BoltIcon, LightbulbIcon } from '@/components/icons/GameIcons'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { madridParts, madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
@@ -434,7 +434,7 @@ function SearchModal({ cell, puzzle, usedIds, validCount, onSelect, onClose }: S
         {/* Warning */}
         <div className="px-4 pb-2">
           <p className="text-[10px] px-3 py-2 rounded-lg" style={{ background: 'rgba(234,88,12,0.08)', color: ACCENT, border: `1px solid ${ACCENT_DIM}20`, fontFamily: 'var(--font-sport)' }}>
-            ⚠️ Solo tienes un intento por celda. Piénsalo bien.
+            <AlertIcon size={11} className="inline-block align-middle mr-1" />Solo tienes un intento por celda. Piénsalo bien.
           </p>
         </div>
 
@@ -740,7 +740,7 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
                 </button>
                 <button onClick={handleShareImage} disabled={sharingImg} className="py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5"
                   style={{ background: `${ACCENT_DIM}25`, color: ACCENT, border: `1px solid ${ACCENT_DIM}50`, fontFamily: 'var(--font-sport)', opacity: sharingImg ? 0.6 : 1 }}>
-                  📸 Imagen
+                  <CameraIcon size={13} />Imagen
                 </button>
                 {hasMissed ? (
                   <button onClick={() => setTab('reveal')} className="py-3 px-2 rounded-xl text-[10px] font-black uppercase tracking-widest"
@@ -1023,7 +1023,9 @@ export default function TakaGridPage() {
                   title={hardMode ? 'Sin pistas de catálogo · doble puntos' : 'Activar modo hard'}
                   aria-pressed={hardMode}
                 >
-                  {hardMode ? '🔥 Hard ×2' : '⚡ Modo Hard'}
+                  {hardMode
+                    ? <><FireIcon size={12} className="inline-block align-middle mr-1" />Hard ×2</>
+                    : <><BoltIcon size={12} className="inline-block align-middle mr-1" />Modo Hard</>}
                 </button>
                 <button
                   onClick={requestPista}
@@ -1037,7 +1039,7 @@ export default function TakaGridPage() {
                   }}
                   title={pistaCell ? 'Pista ya gastada en este puzzle' : awaitingPistaCell ? 'Pincha una celda para destapar la inicial' : 'Destapa la inicial común de los válidos de una celda'}
                 >
-                  💡 {pistaCell ? 'Pista usada' : awaitingPistaCell ? 'Elige celda…' : 'Pista'}
+                  <LightbulbIcon size={13} />{pistaCell ? 'Pista usada' : awaitingPistaCell ? 'Elige celda…' : 'Pista'}
                 </button>
               </>
             )}

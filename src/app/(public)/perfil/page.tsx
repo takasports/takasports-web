@@ -16,7 +16,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { getStoredTZ, setStoredTZ, getTZOption, getTZOffset, TZ_CHANGE_EVENT } from '@/lib/timezone'
 import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
-import { SportIcon, FireIcon, FootballIcon, StadiumIcon } from '@/components/icons/GameIcons'
+import { SportIcon, FireIcon, FootballIcon, StadiumIcon, TargetIcon, TrophyIcon, ClipboardIcon, LightbulbIcon, SearchIcon } from '@/components/icons/GameIcons'
 import MyGamesActivity from '@/components/games/MyGamesActivity'
 import { getBadge } from '@/lib/badges'
 import type { BadgeDef } from '@/lib/badges'
@@ -527,7 +527,7 @@ export default function PerfilPage() {
                           border: '1px solid rgba(249,115,22,0.2)',
                         }}
                       >
-                        <span style={{ fontSize: 12 }}>🔥</span>
+                        <span style={{ display: 'inline-flex', color: '#F97316' }}><FireIcon size={12} /></span>
                         <span
                           className="text-[12px] font-black"
                           style={{ fontFamily: 'var(--font-display)', color: '#F97316', letterSpacing: '-0.01em' }}
@@ -616,7 +616,7 @@ export default function PerfilPage() {
                     className="text-[10px] font-black"
                     style={{ color: '#A78BFA', fontFamily: 'var(--font-display)', letterSpacing: '0.06em', textTransform: 'uppercase' }}
                   >
-                    🎯 Marcadores Exactos
+                    <TargetIcon size={11} className="inline-block align-middle mr-1" />Marcadores Exactos
                   </span>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
@@ -646,7 +646,7 @@ export default function PerfilPage() {
                       className="text-[10px]"
                       style={{ color: 'rgba(196,181,253,0.65)', fontFamily: 'var(--font-sport)' }}
                     >
-                      🏆 Mejor jornada: {exactStats.bestJornadaCount} exactos en {exactStats.bestJornada}
+                      <TrophyIcon size={11} className="inline-block align-middle mr-1" />Mejor jornada: {exactStats.bestJornadaCount} exactos en {exactStats.bestJornada}
                     </span>
                   )}
                 </div>
@@ -760,14 +760,14 @@ export default function PerfilPage() {
                       className="text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-80 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
                       style={{ background: 'rgba(252,211,77,0.10)', color: '#FCD34D', border: '1px solid rgba(252,211,77,0.25)', fontFamily: 'var(--font-sport)' }}
                     >
-                      📒 Tu álbum →
+                      <ClipboardIcon size={12} />Tu álbum →
                     </Link>
                     <Link
                       href="/perfil/onces"
                       className="text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-80 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
                       style={{ background: 'rgba(147,197,253,0.10)', color: '#93C5FD', border: '1px solid rgba(147,197,253,0.25)', fontFamily: 'var(--font-sport)' }}
                     >
-                      ⚽ Tus onces →
+                      <FootballIcon size={12} />Tus onces →
                     </Link>
                   </div>
                 </div>
@@ -778,7 +778,7 @@ export default function PerfilPage() {
                     <Link href="/crackquiz" className="rounded-2xl p-4 flex flex-col gap-2 transition-all hover:translate-y-[-2px]"
                       style={{ background: 'var(--bg-card)', border: '1px solid rgba(252,211,77,0.18)' }}>
                       <div className="flex items-center justify-between">
-                        <span className="text-lg">🧠</span>
+                        <span className="text-lg" style={{ color: '#FCD34D', display: 'inline-flex' }}><LightbulbIcon size={20} /></span>
                         {quizStats.streak > 1 && (
                           <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full inline-flex items-center gap-1" style={{ background: 'rgba(251,146,60,0.12)', color: '#FB923C', border: '1px solid rgba(251,146,60,0.25)', fontFamily: 'var(--font-sport)' }}>
                             <FireIcon size={10} /> {quizStats.streak}
@@ -843,7 +843,7 @@ export default function PerfilPage() {
                     <Link href="/sopa-cracks" className="rounded-2xl p-4 flex flex-col gap-2 transition-all hover:translate-y-[-2px]"
                       style={{ background: 'var(--bg-card)', border: '1px solid rgba(110,231,183,0.18)' }}>
                       <div className="flex items-center justify-between">
-                        <span className="text-lg">🔤</span>
+                        <span className="text-lg" style={{ color: '#6EE7B7', display: 'inline-flex' }}><SearchIcon size={20} /></span>
                       </div>
                       <p className="text-[11px] font-black" style={{ color: '#6EE7B7', fontFamily: 'var(--font-display)' }}>Sopa de Cracks</p>
                       <div className="flex flex-col gap-0.5">

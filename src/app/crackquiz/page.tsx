@@ -5,7 +5,7 @@ import Link from 'next/link'
 import GameLayout from '@/components/games/GameLayout'
 import { getDailyQuestions, getPracticeQuestions, listCategories, todayKey, type QuizQuestion, type QuizCategory, type QuizSport } from '@/lib/crackquiz-questions'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
-import { TrophyIcon, FireIcon, ClapIcon, FlexIcon } from '@/components/icons/GameIcons'
+import { TrophyIcon, FireIcon, ClapIcon, FlexIcon, BoltIcon, DiceIcon } from '@/components/icons/GameIcons'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
@@ -697,7 +697,7 @@ function ResultScreen({
           role="status"
           aria-live="polite"
         >
-          <span style={{ fontSize: 28, lineHeight: 1 }}>⚡</span>
+          <span style={{ display: 'inline-flex', lineHeight: 1, color: '#FCD34D' }}><BoltIcon size={28} /></span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-black" style={{ color: '#FCD34D', fontFamily: 'var(--font-display)' }}>
               +{awardedPoints} puntos al Ranked
@@ -1251,7 +1251,7 @@ export default function CrackQuizPage() {
                       boxShadow: '0 6px 20px rgba(251,146,60,0.35)',
                     }}
                   >
-                    🎲 Apostar +{comboBank}
+                    <DiceIcon size={14} className="inline-block align-middle mr-1" />Apostar +{comboBank}
                   </button>
                 </div>
               </div>
@@ -1300,7 +1300,7 @@ export default function CrackQuizPage() {
                         className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full inline-flex items-center gap-1"
                         style={{ background: 'rgba(251,146,60,0.18)', color: '#FB923C', border: '1px solid rgba(251,146,60,0.4)' }}
                       >
-                        🎲 Apostando +{comboBank}
+                        <DiceIcon size={11} />Apostando +{comboBank}
                       </span>
                     )}
                     {featuredId && q.id === featuredId && (
@@ -1309,7 +1309,7 @@ export default function CrackQuizPage() {
                         style={{ background: 'rgba(248,113,113,0.15)', color: '#FCA5A5', border: '1px solid rgba(248,113,113,0.35)' }}
                         title="Pregunta de actualidad seleccionada por la redacción"
                       >
-                        🔥 Actualidad
+                        <FireIcon size={11} />Actualidad
                       </span>
                     )}
                   </div>

@@ -12,6 +12,7 @@ import { isCorrect } from '../../lib/helpers'
 import type { MatchResult } from '../../lib/types'
 import { TeamBadge } from '../atoms/TeamBadge'
 import { ConfettiPiece } from '../atoms/ConfettiPiece'
+import { BoltIcon, CheckIcon, CloseIcon, TrophyIcon, StarIcon, FlexIcon } from '@/components/icons/GameIcons'
 
 export function RevealCeremony({ picks, results, matchData, onComplete }: {
   picks: Array<{ home: string; away: string; pick: string }>
@@ -74,7 +75,7 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
       {/* ── Intro ── */}
       {phase === 'intro' && (
         <div className="flex flex-col items-center gap-8 text-center px-8" style={{ animation: 'revealPop 0.5s ease both' }}>
-          <div style={{ fontSize: 72, lineHeight: 1 }}>⚡</div>
+          <div style={{ lineHeight: 1, color: '#FDE68A', display: 'flex' }}><BoltIcon size={72} /></div>
           <div>
             <p className="font-black leading-none mb-3" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.2rem,6vw,3.4rem)', color: '#F8F8FF', letterSpacing: '-0.03em' }}>
               Revelar resultados
@@ -182,7 +183,9 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
                     ? 'revealPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both 0.25s'
                     : 'cardShake 0.45s ease both 0.25s',
                 }}>
-                  {correct ? '✅' : '❌'}
+                  {correct
+                    ? <span style={{ color: '#4ade80', display: 'inline-flex' }}><CheckIcon size={48} /></span>
+                    : <span style={{ color: '#f87171', display: 'inline-flex' }}><CloseIcon size={48} /></span>}
                 </span>
               </div>
             </div>
@@ -211,8 +214,12 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
       )}
       {phase === 'summary' && (
         <div className="flex flex-col items-center gap-8 px-6 text-center" style={{ animation: 'revealPop 0.55s ease both' }}>
-          <div style={{ fontSize: 80, lineHeight: 1 }}>
-            {scored >= Math.ceil(total * 0.8) ? '🏆' : scored >= Math.ceil(total * 0.5) ? '⭐' : '💪'}
+          <div style={{ lineHeight: 1, display: 'flex', justifyContent: 'center' }}>
+            {scored >= Math.ceil(total * 0.8)
+              ? <span style={{ color: '#FDE68A', display: 'inline-flex' }}><TrophyIcon size={80} /></span>
+              : scored >= Math.ceil(total * 0.5)
+                ? <span style={{ color: '#FDE68A', display: 'inline-flex' }}><StarIcon size={80} /></span>
+                : <span style={{ color: '#A78BFA', display: 'inline-flex' }}><FlexIcon size={80} /></span>}
           </div>
           <div>
             <p className="font-black leading-none mb-4" style={{
