@@ -38,7 +38,7 @@ export function TeamTabs({
               onClick={() => setActiveIdx(i)}
               className="relative px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all whitespace-nowrap flex-shrink-0"
               style={{
-                color: isActive ? '#C4B5FD' : '#5A5A6A',
+                color: isActive ? '#C4B5FD' : 'var(--text-muted)',
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',

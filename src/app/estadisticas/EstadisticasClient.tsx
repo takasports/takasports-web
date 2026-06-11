@@ -2590,7 +2590,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
                   style={{
                     background: isActive ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.04)',
-                    color: isActive ? '#22c55e' : '#5A5A6A',
+                    color: isActive ? '#22c55e' : 'var(--text-muted)',
                     border: isActive ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.07)',
                     cursor: 'pointer', fontFamily: 'var(--font-sport)',
                   }}>

@@ -73,13 +73,13 @@ function MatchRow({ r, teamId }: { r: TeamResult; teamId: string }) {
           className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 text-[11px] font-black"
           style={{
             background: resultColor ? `${resultColor}22` : 'rgba(255,255,255,0.06)',
-            color: resultColor ?? '#5A5A6A',
+            color: resultColor ?? 'var(--text-muted)',
             fontFamily: 'var(--font-sport)',
           }}
         >
           {r.result ?? '•'}
         </div>
-        <div className="text-[11px] text-[#5A5A6A] w-16 flex-shrink-0">{formatShortDate(r.date)}</div>
+        <div className="text-[11px] text-[var(--text-muted)] w-16 flex-shrink-0">{formatShortDate(r.date)}</div>
         <div className="flex-1 flex items-center gap-2 min-w-0">
           <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
             <span className="text-[13px] font-semibold truncate"
@@ -141,7 +141,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
       <div className="flex items-center justify-between mb-6">
         <Link
           href="/estadisticas?sport=futbol"
-          className="flex items-center gap-1.5 text-[12px] text-[#5A5A6A] hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)] hover:text-white transition-colors"
           style={{ fontFamily: 'var(--font-sport)' }}
         >
           ‹ Volver a estadísticas
@@ -173,7 +173,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
         <div className="flex-1 min-w-0">
           <div
             className="text-[11px] font-black uppercase tracking-widest mb-1 flex items-center gap-1.5"
-            style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
           >
             {player.flag && (
               <Image src={player.flag} alt="" width={16} height={11} unoptimized
@@ -203,7 +203,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
       {player.stats.length > 0 && (
         <>
           <div
-            className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A] mb-3"
+            className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
             style={{ fontFamily: 'var(--font-sport)' }}
           >
             {player.season ? `Estadísticas · ${player.season}` : 'Estadísticas de la temporada'}
@@ -214,7 +214,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
                 <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
                   {s.value}
                 </div>
-                <div className="text-[10px] text-[#5A5A6A] uppercase tracking-wide mt-0.5">{s.label}</div>
+                <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide mt-0.5">{s.label}</div>
               </div>
             ))}
           </div>
@@ -232,7 +232,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
               >
                 <div
                   className="text-[10px] font-black uppercase tracking-widest mb-4"
-                  style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}
+                  style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
                 >
                   Perfil de rendimiento
                 </div>
@@ -247,7 +247,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
       {player.recent.length > 0 && player.team && (
         <>
           <div
-            className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A] mb-3"
+            className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
             style={{ fontFamily: 'var(--font-sport)' }}
           >
             Últimos partidos · {player.team.name}
@@ -259,7 +259,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
       )}
 
       {player.stats.length === 0 && player.recent.length === 0 && (
-        <div className="text-center py-10 text-[#5A5A6A] text-sm">
+        <div className="text-center py-10 text-[var(--text-muted)] text-sm">
           Sin estadísticas disponibles para este jugador
         </div>
       )}

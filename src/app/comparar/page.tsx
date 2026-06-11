@@ -159,7 +159,7 @@ function Comparison({ a, b }: { a: PlayerDetail; b: PlayerDetail }) {
 function CandidateGrid({ candidates, p1 }: { candidates: Candidate[]; p1?: string }) {
   return (
     <div>
-      <div className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A] mb-3"
+      <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
         style={{ fontFamily: 'var(--font-sport)' }}>
         {p1 ? 'Elige el segundo jugador' : 'Elige un jugador para comparar'}
       </div>
@@ -178,7 +178,7 @@ function CandidateGrid({ candidates, p1 }: { candidates: Candidate[]; p1?: strin
               )}
               <div className="min-w-0">
                 <div className="text-[12px] font-semibold text-white truncate">{c.name}</div>
-                <div className="text-[10px] text-[#5A5A6A] truncate">{c.team}</div>
+                <div className="text-[10px] text-[var(--text-muted)] truncate">{c.team}</div>
               </div>
             </Link>
           )
@@ -199,7 +199,7 @@ async function Content({ p1, p2 }: { p1?: string; p2?: string }) {
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-3">
         <Link href="/estadisticas?sport=futbol"
-          className="flex items-center gap-1.5 text-[12px] text-[#5A5A6A] hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)] hover:text-white transition-colors"
           style={{ fontFamily: 'var(--font-sport)' }}>
           ‹ Volver a estadísticas
         </Link>
@@ -220,7 +220,7 @@ async function Content({ p1, p2 }: { p1?: string; p2?: string }) {
             textDecoration: 'none',
           }}
         >
-          <span style={{ color: '#5A5A6A' }}>¿Buscas comparar el Índice Taka?</span>
+          <span style={{ color: 'var(--text-muted)' }}>¿Buscas comparar el Índice Taka?</span>
           <span>Comparador Taka →</span>
         </Link>
       </div>
@@ -230,7 +230,7 @@ async function Content({ p1, p2 }: { p1?: string; p2?: string }) {
           <div className="flex items-stretch gap-3 mb-6 rounded-2xl p-4"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <PlayerHead p={a} />
-            <div className="flex items-center text-[12px] font-black text-[#5A5A6A]"
+            <div className="flex items-center text-[12px] font-black text-[var(--text-muted)]"
               style={{ fontFamily: 'var(--font-sport)' }}>VS</div>
             <PlayerHead p={b} />
           </div>

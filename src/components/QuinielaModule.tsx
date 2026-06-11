@@ -155,7 +155,7 @@ function PredictionModal({
                   </h3>
                   <p className="text-xs mt-0.5" style={{ color: '#5A4878' }}>Selecciona el resultado de cada partido</p>
                 </div>
-                <button onClick={() => onClose(false)} className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.07)', color: '#5A5A6A' }}>
+                <button onClick={() => onClose(false)} className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.07)', color: 'var(--text-muted)' }}>
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>

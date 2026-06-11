@@ -41,7 +41,7 @@ function ReminderButton({ active, onClick, color = '#D4AF37', size = 'md' }: {
     >
       <svg width={icon} height={icon} viewBox="0 0 16 16" fill="none">
         <path d="M8 1.5A4.5 4.5 0 003.5 6v2.5L2 10.5h12L12.5 8.5V6A4.5 4.5 0 008 1.5z"
-          stroke={active ? color : '#5A5A6A'} strokeWidth="1.3"
+          stroke={active ? color : 'var(--text-muted)'} strokeWidth="1.3"
           fill={active ? color : 'none'} fillOpacity={active ? 0.25 : 0} />
       </svg>
     </button>
@@ -191,7 +191,7 @@ export default function UFCCardModal({
                         <span className="text-[11px] font-black" style={{ color: '#4ade80', fontFamily: 'var(--font-display)' }}>
                           {liveScore.homeGoals ?? 0}
                         </span>
-                        <span className="text-[10px] font-bold" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+                        <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                           —
                         </span>
                         <span className="text-[11px] font-black" style={{ color: '#4ade80', fontFamily: 'var(--font-display)' }}>

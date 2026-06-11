@@ -36,7 +36,7 @@ export function StandingsTab({
   const router = useRouter()
 
   if (table.length === 0) {
-    return <div className="text-center py-10 text-[#5A5A6A] text-sm">Sin datos de clasificación</div>
+    return <div className="text-center py-10 text-[var(--text-muted)] text-sm">Sin datos de clasificación</div>
   }
 
   const usedZones = [...new Set(table.map(r => r.zone).filter((z): z is StandingZone => !!z))]
@@ -55,7 +55,7 @@ export function StandingsTab({
           <span className="w-7 text-center">E</span>
           <span className="w-7 text-center">D</span>
           <span className="hidden sm:block w-9 text-center">DG</span>
-          <span className="w-8 text-center font-black text-[#5A5A6A]">PTS</span>
+          <span className="w-8 text-center font-black text-[var(--text-muted)]">PTS</span>
         </div>
         {table.map(row => {
           const isMain = row.isMain
@@ -76,7 +76,7 @@ export function StandingsTab({
             >
               <span
                 className="w-6 text-center text-[12px] font-black flex-shrink-0"
-                style={{ color: isMain ? '#C4B5FD' : '#5A5A6A', fontFamily: 'var(--font-sport)' }}
+                style={{ color: isMain ? '#C4B5FD' : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
               >
                 {row.rank}
               </span>
@@ -92,13 +92,13 @@ export function StandingsTab({
                   {row.abbr}
                 </span>
               </div>
-              <span className="w-7 text-center text-[12px] text-[#5A5A6A]">{row.gp}</span>
-              <span className="w-7 text-center text-[12px] text-[#5A5A6A]">{row.w}</span>
-              <span className="w-7 text-center text-[12px] text-[#5A5A6A]">{row.d}</span>
-              <span className="w-7 text-center text-[12px] text-[#5A5A6A]">{row.l}</span>
+              <span className="w-7 text-center text-[12px] text-[var(--text-muted)]">{row.gp}</span>
+              <span className="w-7 text-center text-[12px] text-[var(--text-muted)]">{row.w}</span>
+              <span className="w-7 text-center text-[12px] text-[var(--text-muted)]">{row.d}</span>
+              <span className="w-7 text-center text-[12px] text-[var(--text-muted)]">{row.l}</span>
               <span
                 className="hidden sm:block w-9 text-center text-[12px]"
-                style={{ color: row.gd > 0 ? '#22c55e' : row.gd < 0 ? '#ef4444' : '#5A5A6A' }}
+                style={{ color: row.gd > 0 ? '#22c55e' : row.gd < 0 ? '#ef4444' : 'var(--text-muted)' }}
               >
                 {row.gd > 0 ? `+${row.gd}` : row.gd}
               </span>
@@ -117,7 +117,7 @@ export function StandingsTab({
           {usedZones.map(z => (
             <div key={z} className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: ZONE_COLOR[z] }} />
-              <span className="text-[10px] text-[#5A5A6A]">{ZONE_LABEL[z]}</span>
+              <span className="text-[10px] text-[var(--text-muted)]">{ZONE_LABEL[z]}</span>
             </div>
           ))}
         </div>

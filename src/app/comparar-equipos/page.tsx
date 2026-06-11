@@ -154,7 +154,7 @@ function Comparison({ a, b }: { a: TeamDetail; b: TeamDetail }) {
 function CandidateGrid({ candidates, t1 }: { candidates: TeamCandidate[]; t1?: string }) {
   return (
     <div>
-      <div className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A] mb-3"
+      <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
         style={{ fontFamily: 'var(--font-sport)' }}>
         {t1 ? 'Elige el segundo equipo' : 'Elige un equipo para comparar'}
       </div>
@@ -173,7 +173,7 @@ function CandidateGrid({ candidates, t1 }: { candidates: TeamCandidate[]; t1?: s
               )}
               <div className="min-w-0">
                 <div className="text-[12px] font-semibold text-white truncate">{c.name}</div>
-                <div className="text-[10px] text-[#5A5A6A] truncate">{c.league}</div>
+                <div className="text-[10px] text-[var(--text-muted)] truncate">{c.league}</div>
               </div>
             </Link>
           )
@@ -194,7 +194,7 @@ async function Content({ t1, t2 }: { t1?: string; t2?: string }) {
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <Link href="/estadisticas?sport=futbol"
-          className="flex items-center gap-1.5 text-[12px] text-[#5A5A6A] hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)] hover:text-white transition-colors"
           style={{ fontFamily: 'var(--font-sport)' }}>
           ‹ Volver a estadísticas
         </Link>
@@ -209,7 +209,7 @@ async function Content({ t1, t2 }: { t1?: string; t2?: string }) {
           <div className="flex items-stretch gap-3 mb-6 rounded-2xl p-4"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <TeamHead t={a} />
-            <div className="flex items-center text-[12px] font-black text-[#5A5A6A]"
+            <div className="flex items-center text-[12px] font-black text-[var(--text-muted)]"
               style={{ fontFamily: 'var(--font-sport)' }}>VS</div>
             <TeamHead t={b} />
           </div>

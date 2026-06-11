@@ -102,7 +102,7 @@ export default async function RelatedArticlesByEntity({
                 {a.publishedAt && (
                   <p
                     className="text-[10px] mt-0.5"
-                    style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}
+                    style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
                   >
                     {timeAgo(a.publishedAt)}
                   </p>

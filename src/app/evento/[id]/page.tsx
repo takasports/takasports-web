@@ -166,7 +166,7 @@ function RelatedArticleCard({ article }: { article: RelatedArticle }) {
             {article.title}
           </p>
           {article.publishedAt && (
-            <p className="text-[10px]" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               {timeAgo(article.publishedAt)}
             </p>
           )}
@@ -257,7 +257,7 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
           {/* Back */}
           <div className="py-5">
             <Link href="/calendario" className="inline-flex items-center gap-1.5 text-[11px] font-semibold transition-opacity hover:opacity-70"
-              style={{ color: '#5A5A6A', textDecoration: 'none', fontFamily: 'var(--font-sport)' }}>
+              style={{ color: 'var(--text-muted)', textDecoration: 'none', fontFamily: 'var(--font-sport)' }}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -300,7 +300,7 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
             }}>
             {event.stage && (
               <p className="text-[10px] font-black uppercase tracking-widest text-center mb-4"
-                style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {event.stage}
               </p>
             )}

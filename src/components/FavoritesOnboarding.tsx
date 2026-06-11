@@ -201,7 +201,7 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
           <button
             onClick={onClose}
             className="text-[10px] font-bold uppercase tracking-widest transition-opacity hover:opacity-70"
-            style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
           >
             Saltar
           </button>
@@ -211,7 +211,7 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
             className="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
             style={{
               background: selected.size > 0 ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)',
-              color: selected.size > 0 ? '#E0D0FF' : '#5A5A6A',
+              color: selected.size > 0 ? '#E0D0FF' : 'var(--text-muted)',
               border: selected.size > 0 ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.06)',
               fontFamily: 'var(--font-sport)',
               cursor: selected.size > 0 ? 'pointer' : 'not-allowed',

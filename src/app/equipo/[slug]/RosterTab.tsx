@@ -39,11 +39,11 @@ function PlayerRow({ player, leagueSlug }: { player: RosterPlayer; leagueSlug: s
       <div className="flex-1 min-w-0">
         <div className="text-[13px] font-semibold text-white truncate">{player.name}</div>
         {player.nationality && (
-          <div className="text-[11px] text-[#5A5A6A]">{player.nationality}</div>
+          <div className="text-[11px] text-[var(--text-muted)]">{player.nationality}</div>
         )}
       </div>
       {player.age && (
-        <div className="hidden sm:block text-[11px] text-[#5A5A6A] w-8 text-right flex-shrink-0">
+        <div className="hidden sm:block text-[11px] text-[var(--text-muted)] w-8 text-right flex-shrink-0">
           {player.age}a
         </div>
       )}
@@ -52,21 +52,21 @@ function PlayerRow({ player, leagueSlug }: { player: RosterPlayer; leagueSlug: s
           <>
             <div className="text-center w-8">
               <div className="text-[13px] font-black text-white">{player.goals}</div>
-              <div className="text-[9px] text-[#5A5A6A] uppercase">Gol</div>
+              <div className="text-[9px] text-[var(--text-muted)] uppercase">Gol</div>
             </div>
             <div className="text-center w-8">
               <div className="text-[13px] font-black text-white">{player.assists}</div>
-              <div className="text-[9px] text-[#5A5A6A] uppercase">Ast</div>
+              <div className="text-[9px] text-[var(--text-muted)] uppercase">Ast</div>
             </div>
           </>
         ) : (
           <div className="text-center w-16">
-            <div className="text-[11px] text-[#5A5A6A]">Portero</div>
+            <div className="text-[11px] text-[var(--text-muted)]">Portero</div>
           </div>
         )}
         <div className="text-center w-8">
           <div className="text-[13px] font-black text-white">{player.gamesPlayed}</div>
-          <div className="text-[9px] text-[#5A5A6A] uppercase">PJ</div>
+          <div className="text-[9px] text-[var(--text-muted)] uppercase">PJ</div>
         </div>
       </div>
     </div>
@@ -98,7 +98,7 @@ export function RosterTab({ roster, leagueSlug }: { roster: RosterPlayer[]; leag
   const [sortKey, setSortKey] = useState<SortKey>('jersey')
 
   if (roster.length === 0) {
-    return <div className="text-center py-10 text-[#5A5A6A] text-sm">Sin datos de plantilla</div>
+    return <div className="text-center py-10 text-[var(--text-muted)] text-sm">Sin datos de plantilla</div>
   }
 
   const groups: Record<string, RosterPlayer[]> = {}
@@ -138,7 +138,7 @@ export function RosterTab({ roster, leagueSlug }: { roster: RosterPlayer[]; leag
         return (
           <div key={key} className="mb-5">
             <div
-              className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A] px-4 py-2"
+              className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] px-4 py-2"
               style={{ fontFamily: 'var(--font-sport)' }}
             >
               {label}

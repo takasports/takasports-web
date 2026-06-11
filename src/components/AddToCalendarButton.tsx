@@ -77,7 +77,7 @@ export function AddToCalendarButton({
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all hover:opacity-80 active:scale-95"
       style={{
         background: 'rgba(255,255,255,0.06)',
-        color: done ? '#4ade80' : '#5A5A6A',
+        color: done ? '#4ade80' : 'var(--text-muted)',
         border: '1px solid rgba(255,255,255,0.08)',
         fontFamily: 'var(--font-sport)',
       }}

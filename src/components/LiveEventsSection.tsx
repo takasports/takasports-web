@@ -323,7 +323,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
             </div>
             <button onClick={toggleReminder} title="Recordatorio"
               className="flex items-center justify-center w-6 h-6 rounded-md transition-all"
-              style={{ background: reminded ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.05)', color: reminded ? '#4ade80' : '#5A5A6A', border: reminded ? '1px solid rgba(74,222,128,0.3)' : '1px solid rgba(255,255,255,0.07)', cursor: 'pointer' }}>
+              style={{ background: reminded ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.05)', color: reminded ? '#4ade80' : 'var(--text-muted)', border: reminded ? '1px solid rgba(74,222,128,0.3)' : '1px solid rgba(255,255,255,0.07)', cursor: 'pointer' }}>
               <BellIcon filled={reminded} />
             </button>
           </div>
@@ -350,7 +350,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
             </div>
             <button onClick={toggleReminder} title={reminded ? 'Quitar recordatorio' : 'Recordar evento'}
               className="flex items-center justify-center w-6 h-6 rounded-md transition-all"
-              style={{ background: reminded ? `${event.accent}22` : 'rgba(255,255,255,0.05)', color: reminded ? event.accent : '#5A5A6A', border: reminded ? `1px solid ${event.accent}35` : '1px solid rgba(255,255,255,0.07)', cursor: 'pointer' }}>
+              style={{ background: reminded ? `${event.accent}22` : 'rgba(255,255,255,0.05)', color: reminded ? event.accent : 'var(--text-muted)', border: reminded ? `1px solid ${event.accent}35` : '1px solid rgba(255,255,255,0.07)', cursor: 'pointer' }}>
               <BellIcon filled={reminded} />
             </button>
           </div>
@@ -514,7 +514,7 @@ export default function LiveEventsSection({
                 <circle cx="9" cy="9" r="7.5" stroke="#7C3AED" strokeWidth="1.3" opacity="0.4" />
                 <path d="M9 5.5v4l2.5 2.5" stroke="#7C3AED" strokeWidth="1.3" strokeLinecap="round" opacity="0.4" />
               </svg>
-              <p className="text-[10px] text-center leading-relaxed" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[10px] text-center leading-relaxed" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 Ver todos<br />los eventos →
               </p>
             </Link>

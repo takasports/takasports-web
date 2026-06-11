@@ -12,7 +12,7 @@ export default function NotFound() {
       <h1 className="text-xl font-black text-white mb-2" style={{ fontFamily: 'var(--font-display)' }}>
         Equipo no encontrado
       </h1>
-      <p className="text-[13px] text-[#5A5A6A] mb-8">
+      <p className="text-[13px] text-[var(--text-muted)] mb-8">
         El equipo que buscas no existe o ya no está disponible.
       </p>
       <Link

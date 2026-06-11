@@ -114,7 +114,7 @@ function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterP
         <div className="font-black text-lg text-white truncate" style={{ fontFamily: 'var(--font-display)' }}>
           {player.name}
         </div>
-        <div className="text-[12px] text-[#5A5A6A] uppercase tracking-wide mt-0.5">
+        <div className="text-[12px] text-[var(--text-muted)] uppercase tracking-wide mt-0.5">
           {player.posAbbr} {player.jersey ? `· #${player.jersey}` : ''}
           {player.nationality ? ` · ${player.nationality}` : ''}
         </div>
@@ -131,7 +131,7 @@ function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterP
             <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
               {s.value}
             </div>
-            <div className="text-[10px] text-[#5A5A6A] uppercase tracking-wide">{s.label}</div>
+            <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">{s.label}</div>
           </div>
         ))}
       </div>
@@ -156,7 +156,7 @@ function ResultRow({ r, teamId }: { r: TeamResult; teamId: string }) {
           className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 text-[11px] font-black"
           style={{
             background: resultColor ? `${resultColor}22` : 'rgba(255,255,255,0.06)',
-            color: resultColor ?? '#5A5A6A',
+            color: resultColor ?? 'var(--text-muted)',
             fontFamily: 'var(--font-sport)',
           }}
         >
@@ -164,7 +164,7 @@ function ResultRow({ r, teamId }: { r: TeamResult; teamId: string }) {
         </div>
 
         {/* Date */}
-        <div className="text-[11px] text-[#5A5A6A] w-16 flex-shrink-0">
+        <div className="text-[11px] text-[var(--text-muted)] w-16 flex-shrink-0">
           {formatShortDate(r.date)}
         </div>
 
@@ -187,7 +187,7 @@ function ResultRow({ r, teamId }: { r: TeamResult; teamId: string }) {
           {/* Score */}
           <div
             className="flex-shrink-0 text-[14px] font-black w-14 text-center"
-            style={{ fontFamily: 'var(--font-display)', color: isUpcoming ? '#5A5A6A' : '#fff' }}
+            style={{ fontFamily: 'var(--font-display)', color: isUpcoming ? 'var(--text-muted)' : '#fff' }}
           >
             {isUpcoming
               ? r.date ? new Date(r.date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '–:––'
@@ -234,7 +234,7 @@ function ResultsTab({ results, teamId }: { results: TeamResult[]; teamId: string
       {past.length > 0 && (
         <div className="mb-6">
           <div
-            className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A] mb-3"
+            className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
             style={{ fontFamily: 'var(--font-sport)' }}
           >
             Últimos resultados
@@ -247,7 +247,7 @@ function ResultsTab({ results, teamId }: { results: TeamResult[]; teamId: string
       {upcoming.length > 0 && (
         <div>
           <div
-            className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A] mb-3"
+            className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
             style={{ fontFamily: 'var(--font-sport)' }}
           >
             Próximos partidos
@@ -258,7 +258,7 @@ function ResultsTab({ results, teamId }: { results: TeamResult[]; teamId: string
         </div>
       )}
       {past.length === 0 && upcoming.length === 0 && (
-        <div className="text-center py-10 text-[#5A5A6A] text-sm">Sin datos de partidos</div>
+        <div className="text-center py-10 text-[var(--text-muted)] text-sm">Sin datos de partidos</div>
       )}
     </div>
   )
@@ -287,7 +287,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
       <div className="flex items-center justify-between mb-6">
         <Link
           href="/calendario"
-          className="flex items-center gap-1.5 text-[12px] text-[#5A5A6A] hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)] hover:text-white transition-colors"
           style={{ fontFamily: 'var(--font-sport)' }}
         >
           ‹ Volver
@@ -322,7 +322,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
         <div className="flex-1 min-w-0">
           <div
             className="text-[11px] font-black uppercase tracking-widest mb-1"
-            style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
           >
             {team.leagueLabel}
           </div>
@@ -389,7 +389,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
             <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
               {s.value}
             </div>
-            <div className="text-[10px] text-[#5A5A6A] uppercase tracking-wide mt-0.5">{s.label}</div>
+            <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide mt-0.5">{s.label}</div>
           </div>
         ))}
       </div>
@@ -404,7 +404,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
         return (
           <div className="flex items-center gap-3 mb-6">
             <span
-              className="text-[10px] font-black uppercase tracking-widest text-[#5A5A6A]"
+              className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]"
               style={{ fontFamily: 'var(--font-sport)' }}
             >
               Forma

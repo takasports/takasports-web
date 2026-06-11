@@ -81,7 +81,7 @@ function playerHref(p: PlayerRow) {
 }
 
 function StandingsTable({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
-  if (!rows.length) return <p className="text-[12px] text-[#5A5A6A] px-4 py-6 text-center">Sin datos</p>
+  if (!rows.length) return <p className="text-[12px] text-[var(--text-muted)] px-4 py-6 text-center">Sin datos</p>
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}>
       <div className="flex items-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-widest text-[#3A3A4A]"
@@ -90,20 +90,20 @@ function StandingsTable({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
         <span className="flex-1">Equipo</span>
         <span className="w-7 text-center">PJ</span>
         <span className="hidden sm:block w-9 text-center">DG</span>
-        <span className="w-8 text-center font-black text-[#5A5A6A]">PTS</span>
+        <span className="w-8 text-center font-black text-[var(--text-muted)]">PTS</span>
       </div>
       {rows.map(r => {
         const href = teamHref(def, r.teamId)
         const inner = (
           <div className="flex items-center gap-2 px-4 py-2.5"
             style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-            <span className="w-6 text-center text-[12px] font-black" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>{r.rank}</span>
+            <span className="w-6 text-center text-[12px] font-black" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{r.rank}</span>
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {r.logo && <Image src={r.logo} alt={r.abbr} width={20} height={20} unoptimized style={{ objectFit: 'contain', flexShrink: 0 }} />}
               <span className="text-[12px] font-semibold truncate" style={{ color: href ? '#fff' : '#9A9AAA' }}>{r.name}</span>
             </div>
-            <span className="w-7 text-center text-[12px] text-[#5A5A6A] tabular-nums">{(parseInt(r.extra?.V ?? '0') + parseInt(r.extra?.E ?? '0') + parseInt(r.extra?.D ?? '0')) || 0}</span>
-            <span className="hidden sm:block w-9 text-center text-[12px] tabular-nums" style={{ color: '#5A5A6A' }}>{r.extra?.DG ?? '—'}</span>
+            <span className="w-7 text-center text-[12px] text-[var(--text-muted)] tabular-nums">{(parseInt(r.extra?.V ?? '0') + parseInt(r.extra?.E ?? '0') + parseInt(r.extra?.D ?? '0')) || 0}</span>
+            <span className="hidden sm:block w-9 text-center text-[12px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{r.extra?.DG ?? '—'}</span>
             <span className="w-8 text-center text-[13px] font-black tabular-nums text-white" style={{ fontFamily: 'var(--font-display)' }}>{r.value}</span>
           </div>
         )
@@ -159,7 +159,7 @@ async function Content({ id }: { id: string }) {
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <Link href="/estadisticas?sport=futbol"
-          className="flex items-center gap-1.5 text-[12px] text-[#5A5A6A] hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)] hover:text-white transition-colors"
           style={{ fontFamily: 'var(--font-sport)' }}>
           ‹ Volver a estadísticas
         </Link>

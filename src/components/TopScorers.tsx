@@ -27,7 +27,7 @@ export function TopScorers({
       <ul className="flex flex-col">
         {scorers.map((s, i) => {
           const href = `/jugador/${leaguePart}_${s.playerId}`
-          const accent = i === 0 ? '#FCD34D' : i === 1 ? '#D1D5DB' : i === 2 ? '#D97706' : '#5A5A6A'
+          const accent = i === 0 ? '#FCD34D' : i === 1 ? '#D1D5DB' : i === 2 ? '#D97706' : 'var(--text-muted)'
           return (
             <li key={s.playerId}>
               <Link
@@ -50,7 +50,7 @@ export function TopScorers({
                     {s.name}
                   </p>
                   {(s.matches != null || s.assists != null) && (
-                    <p className="text-[10px] tabular-nums" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+                    <p className="text-[10px] tabular-nums" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                       {[s.matches != null ? `${s.matches} PJ` : null,
                         s.assists != null ? `${s.assists} asist.` : null]
                         .filter(Boolean).join(' · ')}
@@ -62,7 +62,7 @@ export function TopScorers({
                     style={{ color: '#A78BFA', fontFamily: 'var(--font-display)', fontSize: 18, lineHeight: 1 }}>
                     {s.goals}
                   </span>
-                  <span className="text-[9px] font-black uppercase" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+                  <span className="text-[9px] font-black uppercase" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     {s.goals === 1 ? 'gol' : 'goles'}
                   </span>
                 </div>

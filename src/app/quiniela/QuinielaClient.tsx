@@ -784,7 +784,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                       <span className="text-[10px] font-semibold" style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
                         {saved.jornada} — En curso
                       </span>
-                      <span className="text-[10px] font-black" style={{ color: '#7C3AED', fontFamily: 'var(--font-display)' }}>
+                      <span className="text-[10px] font-black" style={{ color: '#9B7CF6', fontFamily: 'var(--font-display)' }}>
                         {myScore != null ? `${myScore} pts` : '—'}
                       </span>
                     </div>

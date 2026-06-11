@@ -161,7 +161,7 @@ export function SeasonPanel({ user }: { user: User | null }) {
                       {opt.label}
                     </span>
                     {selected && !q.resolved && (
-                      <span style={{ fontSize: 9, color: '#7C3AED' }}>✓ Tu pick</span>
+                      <span style={{ fontSize: 9, color: '#9B7CF6' }}>✓ Tu pick</span>
                     )}
                     {isWinner && selected && (q.prize_coins ?? 0) > 0 && (
                       <span className="text-[9px] font-black px-1.5 py-0.5 rounded" style={{ background: 'rgba(251,191,36,0.2)', color: '#fbbf24', fontFamily: 'var(--font-sport)' }}>

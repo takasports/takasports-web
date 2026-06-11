@@ -8,7 +8,7 @@ export default function NotFound() {
       <h1 className="text-xl font-black text-white mb-2" style={{ fontFamily: 'var(--font-display)' }}>
         Liga no encontrada
       </h1>
-      <p className="text-[13px] text-[#5A5A6A] mb-8">
+      <p className="text-[13px] text-[var(--text-muted)] mb-8">
         La liga que buscas no está disponible.
       </p>
       <Link href="/estadisticas?sport=futbol"
