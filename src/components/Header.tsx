@@ -147,7 +147,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
       >
         {/* Input */}
         <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <svg width="16" height="16" viewBox="0 0 14 14" fill="none" style={{ color: '#5A5A6A', flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 14 14" fill="none" style={{ color: 'var(--text-muted)', flexShrink: 0 }}>
             <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4" />
             <path d="M9.5 9.5L12 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
           </svg>
@@ -160,13 +160,13 @@ function SearchModal({ onClose }: { onClose: () => void }) {
             style={{ color: '#EBEBF5', fontFamily: 'var(--font-geist-sans)' }}
           />
           {query && (
-            <button onClick={() => setQuery('')} aria-label="Limpiar búsqueda" style={{ color: '#5A5A6A', flexShrink: 0 }}>
+            <button onClick={() => setQuery('')} aria-label="Limpiar búsqueda" style={{ color: 'var(--text-muted)', flexShrink: 0 }}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </button>
           )}
-          <button onClick={onClose} aria-label="Cerrar búsqueda" className="text-xs px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.07)', color: '#5A5A6A' }}>
+          <button onClick={onClose} aria-label="Cerrar búsqueda" className="text-xs px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.07)', color: 'var(--text-muted)' }}>
             Esc
           </button>
         </div>
@@ -174,17 +174,17 @@ function SearchModal({ onClose }: { onClose: () => void }) {
         {/* Resultados */}
         <div style={{ maxHeight: 460, overflowY: 'auto' }}>
           {loading && (
-            <div className="px-4 py-8 text-center text-sm" style={{ color: '#4A4A5A' }}>Buscando...</div>
+            <div className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Buscando...</div>
           )}
           {!loading && query.trim().length >= 2 && totalResults === 0 && (
             <div className="px-4 py-8 text-center">
-              <p className="text-sm" style={{ color: '#5A5A6A' }}>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                 Sin resultados para &ldquo;<span style={{ color: '#9090A4' }}>{query}</span>&rdquo;
               </p>
             </div>
           )}
           {!loading && query.trim().length < 2 && (
-            <div className="px-4 py-6 text-center text-sm" style={{ color: '#3A3A4A' }}>
+            <div className="px-4 py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
               Escribe al menos 2 caracteres para buscar
             </div>
           )}
@@ -193,7 +193,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
           {espnHits.length > 0 && (
             <div className="pt-2 pb-1" style={{ borderBottom: (players.length || articles.length) ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
               <div className="px-4 pb-1">
-                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A5A6A' }}>
+                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
                   Jugadores y equipos
                 </span>
               </div>
@@ -227,7 +227,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
           {players.length > 0 && (
             <div className="pt-2 pb-1">
               <div className="px-4 pb-1">
-                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A5A6A' }}>
+                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
                   Rankings
                 </span>
               </div>
@@ -254,7 +254,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                       <p className="text-[13px] font-semibold leading-tight truncate" style={{ color: '#EBEBF5' }}>
                         {player.name}
                       </p>
-                      <p className="text-[10px] truncate" style={{ color: '#5A5A6A' }}>
+                      <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
                         {player.subtitle}
                       </p>
                     </div>
@@ -284,7 +284,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
             <div className="pt-2 pb-1">
               {players.length > 0 && (
                 <div className="px-4 pb-1">
-                  <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#5A5A6A' }}>
+                  <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
                     Noticias
                   </span>
                 </div>
@@ -314,7 +314,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                       </p>
                     </div>
                     {article.publishedAt && (
-                      <span className="text-[10px] flex-shrink-0" style={{ color: '#4A4A5A' }}>
+                      <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
                         {timeAgo(article.publishedAt)}
                       </span>
                     )}
@@ -327,10 +327,10 @@ function SearchModal({ onClose }: { onClose: () => void }) {
 
         {/* Footer */}
         <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <span className="text-[10px]" style={{ color: '#3A3A4A' }}>
+          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
             {loading ? 'Buscando...' : totalResults > 0 ? `${totalResults} resultado${totalResults !== 1 ? 's' : ''}` : 'Escribe para buscar'}
           </span>
-          <span className="text-[10px]" style={{ color: '#3A3A4A' }}>↵ abrir · Esc cerrar</span>
+          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>↵ abrir · Esc cerrar</span>
         </div>
       </div>
     </div>
@@ -704,7 +704,7 @@ export default function Header() {
                 <button
                   onClick={() => { setMenuOpen(false); openSearch() }}
                   className="flex items-center gap-3 w-full px-3 py-3 rounded-xl mb-1"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#4A4A5A', fontFamily: 'var(--font-sport)', fontSize: 14, fontWeight: 600, textAlign: 'left' }}
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', fontSize: 14, fontWeight: 600, textAlign: 'left' }}
                 >
                   <SearchIcon />
                   <span>Buscar jugadores, noticias...</span>
