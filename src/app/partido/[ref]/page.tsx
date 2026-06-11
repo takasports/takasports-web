@@ -27,6 +27,17 @@ import { estimateOutcome, matchDominance, type OutcomeEstimate, type Dominance }
 // Reduce 4× los renders SSR para bots crawleando partidos viejos.
 export const revalidate = 120
 
+// Tema por deporte de la ficha (identidad "La Señal"). SportKind → slug
+// data-sport + acento (alineado con SPORT_STYLE de lib/sports). Sin asset/golf
+// y 'other' → neutro morado de marca.
+const FICHA_THEME: Record<string, { slug: string; accent: string }> = {
+  soccer:     { slug: 'futbol',     accent: '#22c55e' },
+  basketball: { slug: 'baloncesto', accent: '#f59e0b' },
+  mma:        { slug: 'ufc',        accent: '#f97316' },
+  racing:     { slug: 'f1',         accent: '#ef4444' },
+  tennis:     { slug: 'tenis',      accent: '#d97706' },
+}
+
 // ── Metadata ───────────────────────────────────────────────────────
 export async function generateMetadata({
   params,
@@ -201,14 +212,19 @@ function EmptyState({ message, kind }: { message: string; kind?: EmptyKind }) {
 function TeamScoreboard({ match }: { match: MatchDetail }) {
   const live = isLive(match.status)
   const hasScore = match.homeScore != null && match.awayScore != null
+  const accent = (FICHA_THEME[match.sport] ?? { accent: '#7C3AED' }).accent
   return (
-    <div className="rounded-2xl p-6 mb-5"
+    <div className="relative rounded-2xl p-6 mb-5 overflow-hidden"
       style={{
         background: live
           ? 'linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(9,9,15,0.85) 60%)'
-          : 'rgba(255,255,255,0.025)',
-        border: live ? '1px solid rgba(239,68,68,0.22)' : '1px solid rgba(255,255,255,0.06)',
+          : `linear-gradient(135deg, ${accent}0d 0%, rgba(255,255,255,0.02) 55%)`,
+        border: live ? '1px solid rgba(239,68,68,0.22)' : `1px solid ${accent}24`,
       }}>
+      {/* Hairline de acento del deporte (rótulo broadcast) — solo no-live */}
+      {!live && (
+        <span aria-hidden="true" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 2, background: `linear-gradient(90deg, transparent, ${accent}80, transparent)` }} />
+      )}
       <div className="flex items-center justify-between gap-4">
         {/* Home team */}
         {match.homeTeamId ? (
@@ -246,10 +262,15 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
               <span>{match.awayScore}</span>
             </p>
           ) : (
-            <p className="font-black uppercase tracking-[0.12em]"
-              style={{ color: '#38384A', fontFamily: 'var(--font-headline)', fontSize: 'clamp(28px, 6vw, 40px)', lineHeight: 1 }}>
-              vs
-            </p>
+            // "VS" broadcast: diagonal + acento del DEPORTE (no de los clubes,
+            // que los datos no traen → no inventamos colores). Gesto de cartel.
+            <div className="relative flex items-center justify-center" style={{ width: 'clamp(46px, 13vw, 68px)', height: 'clamp(38px, 9vw, 50px)' }}>
+              <span aria-hidden="true" className="absolute" style={{ width: 2.5, height: '128%', background: `linear-gradient(${accent}, ${accent}00)`, transform: 'rotate(22deg)', borderRadius: 2, opacity: 0.6 }} />
+              <span className="relative font-black italic"
+                style={{ color: accent, fontFamily: 'var(--font-headline)', fontSize: 'clamp(26px, 6vw, 38px)', lineHeight: 1, textShadow: `0 2px 14px ${accent}45` }}>
+                VS
+              </span>
+            </div>
           )}
           {!live && (
             <span className="text-[10px] font-black uppercase tracking-[0.14em] px-2 py-0.5 rounded"
@@ -1880,8 +1901,22 @@ export default async function MatchPage({
     ],
   }
 
+  // Tema por deporte de la ficha ("se viste del deporte", como el resto de la
+  // web). Acentos alineados con SPORT_STYLE/getSportStyle. NO inventamos colores
+  // de club (los datos no los traen): el "VS" usa el acento del DEPORTE.
+  const ficha = (FICHA_THEME[match.sport] ?? { slug: '', accent: '#7C3AED' })
+
   return (
-    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }} className="flex flex-col">
+    <div
+      data-sport={ficha.slug || undefined}
+      className="flex flex-col"
+      style={{
+        background: 'var(--bg-base)',
+        backgroundImage: `radial-gradient(ellipse 100% 460px at 50% 0%, ${ficha.accent}14 0%, transparent 70%)`,
+        backgroundRepeat: 'no-repeat',
+        minHeight: '100vh',
+      }}
+    >
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEventJsonLd) }} />
       {liveBlogJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(liveBlogJsonLd) }} />
