@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import type { PlayerDetail } from '@/app/api/jugador/[slug]/route'
+import { getSportStyle } from '@/lib/sports'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
@@ -86,11 +87,21 @@ function PlayerHead({ p }: { p: PlayerDetail }) {
   )
 }
 
+// Métricas donde MENOS es mejor: el resaltado de ganador se invierte.
+const LESS_IS_BETTER = new Set(['Faltas', 'Faltas com.', 'Amarillas', 'Rojas', 'Pérdidas/partido'])
+
+function sportFromLeagueSlug(slug?: string): string {
+  const seg = (slug ?? '').split('/')[0]
+  return seg === 'soccer' ? 'futbol' : seg === 'basketball' ? 'baloncesto' : ''
+}
+
 function Comparison({ a, b }: { a: PlayerDetail; b: PlayerDetail }) {
   const labels: string[] = []
   for (const s of [...a.stats, ...b.stats]) if (!labels.includes(s.label)) labels.push(s.label)
   const mapA = new Map(a.stats.map(s => [s.label, s.value]))
   const mapB = new Map(b.stats.map(s => [s.label, s.value]))
+  // Tema por deporte (jugadores del mismo deporte; default morado si no se detecta).
+  const accent = getSportStyle(sportFromLeagueSlug(a.leagueSlug || b.leagueSlug)).accent
 
   return (
     <div className="rounded-2xl overflow-hidden mb-6"
@@ -99,22 +110,44 @@ function Comparison({ a, b }: { a: PlayerDetail; b: PlayerDetail }) {
         const va = mapA.get(label) ?? '—'
         const vb = mapB.get(label) ?? '—'
         const na = num(va), nb = num(vb)
-        const aWins = na != null && nb != null && na > nb
-        const bWins = na != null && nb != null && nb > na
+        const lessBetter = LESS_IS_BETTER.has(label)
+        let aWins = false, bWins = false
+        if (na != null && nb != null && na !== nb) {
+          aWins = lessBetter ? na < nb : na > nb
+          bWins = !aWins
+        }
+        // Barras divergentes: cada lado proporcional al mayor de los dos (cabeza a cabeza).
+        const max = Math.max(na ?? 0, nb ?? 0, 1)
+        const pctA = na != null ? Math.round((na / max) * 100) : 0
+        const pctB = nb != null ? Math.round((nb / max) * 100) : 0
         return (
           <div key={label} className="flex items-center text-[13px]"
             style={{ borderBottom: i < labels.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-            <div className="flex-1 text-right px-3 py-2.5 tabular-nums font-bold"
-              style={{ color: aWins ? '#fff' : '#8A8AA0', background: aWins ? 'rgba(124,58,237,0.10)' : 'transparent' }}>
-              {va}
+            {/* Lado A (tira a la izquierda) */}
+            <div className="flex-1 flex items-center gap-2 pl-3 pr-1.5 py-2.5 min-w-0">
+              <span className="tabular-nums font-bold w-10 text-right flex-shrink-0"
+                style={{ color: aWins ? '#fff' : '#8A8AA0' }}>{va}</span>
+              <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                <div className="h-full rounded-full ts-bar-fill ml-auto"
+                  style={{ width: `${pctA}%`, background: accent, opacity: aWins ? 1 : 0.4 }} />
+              </div>
             </div>
-            <div className="w-32 text-center text-[10px] uppercase tracking-wide flex-shrink-0 px-1"
-              style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
-              {label}
+            {/* Etiqueta central */}
+            <div className="w-20 text-center flex-shrink-0 px-0.5">
+              <div className="text-[9.5px] uppercase tracking-wide leading-tight"
+                style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>{label}</div>
+              {lessBetter && (
+                <div className="text-[8px] uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>menos = mejor</div>
+              )}
             </div>
-            <div className="flex-1 px-3 py-2.5 tabular-nums font-bold"
-              style={{ color: bWins ? '#fff' : '#8A8AA0', background: bWins ? 'rgba(124,58,237,0.10)' : 'transparent' }}>
-              {vb}
+            {/* Lado B (tira a la derecha) */}
+            <div className="flex-1 flex items-center gap-2 pr-3 pl-1.5 py-2.5 min-w-0">
+              <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                <div className="h-full rounded-full ts-bar-fill"
+                  style={{ width: `${pctB}%`, background: accent, opacity: bWins ? 1 : 0.4 }} />
+              </div>
+              <span className="tabular-nums font-bold w-10 flex-shrink-0"
+                style={{ color: bWins ? '#fff' : '#8A8AA0' }}>{vb}</span>
             </div>
           </div>
         )
