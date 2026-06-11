@@ -211,7 +211,7 @@ function FighterPickButton({
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 6,
         padding: '16px 10px 14px',
-        borderRadius: 16, background: bg,
+        borderRadius: 'var(--radius-lg)', background: bg,
         border: `1.5px solid ${border}`,
         color, cursor: disabled ? 'default' : 'pointer',
         fontFamily: 'var(--font-sport)',
@@ -479,7 +479,7 @@ function FightCard({
     <div
       className="fight-card"
       style={{
-        borderRadius: 20,
+        borderRadius: 'var(--radius-xl)',
         background: showMain ? BG_FEAT : BG_CARD,
         border: `1.5px solid ${showMain ? 'rgba(248,113,113,0.25)' : 'rgba(255,255,255,0.07)'}`,
         overflow: 'hidden',
@@ -499,7 +499,7 @@ function FightCard({
               className="u-feat"
               style={{
                 fontSize: 8, fontWeight: 900, letterSpacing: '0.12em',
-                padding: '2px 8px', borderRadius: 20,
+                padding: '2px 8px', borderRadius: 'var(--radius-xl)',
                 background: 'rgba(248,113,113,0.15)',
                 border: '1px solid rgba(248,113,113,0.4)',
                 color: RED, fontFamily: 'var(--font-sport)',
@@ -607,7 +607,7 @@ function FightCard({
             aria-label="Quitar mi pick de este combate"
             style={{
               marginTop: 10, width: '100%', padding: '7px 10px',
-              borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.1)',
               background: 'rgba(255,255,255,0.03)',
               color: 'rgba(255,255,255,0.45)',
               cursor: isDisabled ? 'default' : 'pointer',
@@ -624,7 +624,7 @@ function FightCard({
           <div style={{
             marginTop: 10,
             padding: '6px 10px',
-            borderRadius: 8,
+            borderRadius: 'var(--radius-md)',
             background: 'rgba(248,113,113,0.06)',
             border: '1px solid rgba(248,113,113,0.15)',
             display: 'flex', alignItems: 'center', gap: 6,
@@ -704,7 +704,7 @@ function FightCard({
       {/* Loading overlay */}
       {submitting === event.id && (
         <div style={{
-          position: 'absolute', inset: 0, borderRadius: 20,
+          position: 'absolute', inset: 0, borderRadius: 'var(--radius-xl)',
           background: 'rgba(0,0,0,0.4)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
@@ -790,7 +790,7 @@ function HistorialSection({ veladas, predictions }: { veladas: Velada[]; predict
         aria-expanded={open}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: 8, padding: '12px 16px', borderRadius: 12,
+          gap: 8, padding: '12px 16px', borderRadius: 'var(--radius-card)',
           background: 'rgba(255,255,255,0.03)',
           border: '1px solid rgba(255,255,255,0.07)',
           color: 'rgba(255,255,255,0.55)', cursor: 'pointer',
@@ -1158,7 +1158,7 @@ export default function UfcClient() {
         {!hasSession && !loading && (
           <div style={{
             textAlign: 'center', padding: '32px 16px',
-            borderRadius: 16, marginBottom: 24,
+            borderRadius: 'var(--radius-lg)', marginBottom: 24,
             background: 'rgba(248,113,113,0.05)',
             border: '1px solid rgba(248,113,113,0.12)',
           }}>
@@ -1170,7 +1170,7 @@ export default function UfcClient() {
               href="/auth"
               style={{
                 display: 'inline-block', padding: '10px 24px',
-                borderRadius: 12, background: RED,
+                borderRadius: 'var(--radius-card)', background: RED,
                 color: '#fff', fontFamily: 'var(--font-sport)',
                 fontSize: 11, fontWeight: 900, letterSpacing: '0.08em',
                 textTransform: 'uppercase', textDecoration: 'none',
@@ -1194,7 +1194,7 @@ export default function UfcClient() {
         {/* Error */}
         {error && (
           <div style={{
-            padding: '16px 20px', borderRadius: 12, marginBottom: 20,
+            padding: '16px 20px', borderRadius: 'var(--radius-card)', marginBottom: 20,
             background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
             color: '#FCA5A5', fontSize: 13,
           }}>

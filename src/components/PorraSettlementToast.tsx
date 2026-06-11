@@ -409,7 +409,7 @@ export default function PorraSettlementToast() {
             onClick={handleClose}
             aria-label="Cerrar"
             style={{
-              flexShrink: 0, width: 24, height: 24, borderRadius: 6,
+              flexShrink: 0, width: 24, height: 24, borderRadius: 'var(--radius-sm)',
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid rgba(255,255,255,0.1)',
               color: 'rgba(255,255,255,0.6)',

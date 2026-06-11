@@ -586,13 +586,13 @@ export default function PerfilPage() {
                       {meData.badges.filter(b => b.unlockedAt).length} de {meData.badges.length} badges
                     </span>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, height: 5, overflow: 'hidden' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 'var(--radius-md)', height: 5, overflow: 'hidden' }}>
                     <div
                       style={{
                         height: '100%',
                         width: `${Math.min(100, meData.progress * 100)}%`,
                         background: meData.levelColor,
-                        borderRadius: 8,
+                        borderRadius: 'var(--radius-md)',
                         boxShadow: `0 0 6px ${meData.levelColor}80`,
                         transition: 'width 0.5s ease',
                       }}

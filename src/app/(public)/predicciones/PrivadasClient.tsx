@@ -92,7 +92,7 @@ function LeagueCard({
       style={{
         width: '100%',
         padding: '14px 16px',
-        borderRadius: 16,
+        borderRadius: 'var(--radius-lg)',
         background: isOpen
           ? `linear-gradient(135deg, ${meta.accent}14 0%, rgba(255,255,255,0.02) 100%)`
           : 'rgba(255,255,255,0.03)',
@@ -224,7 +224,7 @@ function LeagueDetail({
 
   return (
     <div style={{
-      marginTop: 8, borderRadius: 16,
+      marginTop: 8, borderRadius: 'var(--radius-lg)',
       background: `linear-gradient(160deg, ${meta.accent}08 0%, rgba(8,0,15,0.4) 100%)`,
       border: `1px solid ${meta.accent}20`,
       overflow: 'hidden',
@@ -254,7 +254,7 @@ function LeagueDetail({
           onClick={handleCopy}
           style={{
             display: 'flex', alignItems: 'center', gap: 5,
-            padding: '6px 12px', borderRadius: 20, cursor: 'pointer',
+            padding: '6px 12px', borderRadius: 'var(--radius-xl)', cursor: 'pointer',
             background: copied ? 'rgba(74,222,128,0.12)' : `${meta.accent}12`,
             border: `1px solid ${copied ? 'rgba(74,222,128,0.35)' : `${meta.accent}30`}`,
             color: copied ? '#4ADE80' : meta.accent,
@@ -460,7 +460,7 @@ function CreateModal({
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: '100%', maxWidth: 400, borderRadius: 20,
+          width: '100%', maxWidth: 400, borderRadius: 'var(--radius-xl)',
           background: 'linear-gradient(145deg, #18122B 0%, #100C1E 100%)',
           border: '1.5px solid rgba(167,139,250,0.25)',
           boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
@@ -488,7 +488,7 @@ function CreateModal({
               maxLength={40}
               required
               style={{
-                width: '100%', padding: '10px 14px', borderRadius: 12,
+                width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-card)',
                 background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
                 color: '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 13,
                 outline: 'none', boxSizing: 'border-box',
@@ -509,7 +509,7 @@ function CreateModal({
                   onClick={() => setSport(key)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 5,
-                    padding: '7px 12px', borderRadius: 20,
+                    padding: '7px 12px', borderRadius: 'var(--radius-xl)',
                     background: sport === key ? `${meta.accent}18` : 'rgba(255,255,255,0.04)',
                     border: `1px solid ${sport === key ? `${meta.accent}50` : 'rgba(255,255,255,0.08)'}`,
                     color: sport === key ? meta.accent : 'rgba(255,255,255,0.4)',
@@ -533,7 +533,7 @@ function CreateModal({
             <button
               type="button" onClick={onClose}
               style={{
-                padding: '9px 18px', borderRadius: 12, cursor: 'pointer',
+                padding: '9px 18px', borderRadius: 'var(--radius-card)', cursor: 'pointer',
                 background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
                 color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-sport)',
                 fontSize: 10, fontWeight: 900,
@@ -545,7 +545,7 @@ function CreateModal({
               type="submit"
               disabled={submitting || name.trim().length < 3}
               style={{
-                padding: '9px 20px', borderRadius: 12, cursor: 'pointer',
+                padding: '9px 20px', borderRadius: 'var(--radius-card)', cursor: 'pointer',
                 background: 'rgba(167,139,250,0.18)', border: '1px solid rgba(167,139,250,0.4)',
                 color: '#C4B5FD', fontFamily: 'var(--font-sport)',
                 fontSize: 10, fontWeight: 900, letterSpacing: '0.08em',
@@ -612,7 +612,7 @@ function JoinPanel({ onJoined }: { onJoined: (id: string) => void }) {
           placeholder="Ej: XKCD4F2A"
           maxLength={12}
           style={{
-            width: '100%', padding: '10px 14px', borderRadius: 12,
+            width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-card)',
             background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)',
             color: '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 13,
             outline: 'none', letterSpacing: '0.08em', boxSizing: 'border-box',
@@ -624,7 +624,7 @@ function JoinPanel({ onJoined }: { onJoined: (id: string) => void }) {
         type="submit"
         disabled={submitting || code.trim().length < 6}
         style={{
-          padding: '10px 16px', borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+          padding: '10px 16px', borderRadius: 'var(--radius-card)', cursor: 'pointer', flexShrink: 0,
           background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)',
           color: '#C4B5FD', fontFamily: 'var(--font-sport)',
           fontSize: 10, fontWeight: 900, letterSpacing: '0.06em',
@@ -720,7 +720,7 @@ export default function PrivadasClient() {
         {!hasSession && !loading && (
           <div style={{
             textAlign: 'center', padding: '48px 16px',
-            borderRadius: 20, background: 'rgba(167,139,250,0.04)',
+            borderRadius: 'var(--radius-xl)', background: 'rgba(167,139,250,0.04)',
             border: '1px solid rgba(167,139,250,0.12)',
           }}>
             <span style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: '#A78BFA' }}><LockIcon size={48} /></span>
@@ -768,7 +768,7 @@ export default function PrivadasClient() {
                 onClick={() => setShowCreate(true)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '9px 16px', borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+                  padding: '9px 16px', borderRadius: 'var(--radius-card)', cursor: 'pointer', flexShrink: 0,
                   background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.4)',
                   color: '#C4B5FD', fontFamily: 'var(--font-sport)',
                   fontSize: 10, fontWeight: 900, letterSpacing: '0.08em',
@@ -780,7 +780,7 @@ export default function PrivadasClient() {
 
             {/* Unirse con código */}
             <div style={{
-              padding: '14px 16px', borderRadius: 16,
+              padding: '14px 16px', borderRadius: 'var(--radius-lg)',
               background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
             }}>
               <p style={{
@@ -796,7 +796,7 @@ export default function PrivadasClient() {
             {loading && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="animate-pulse" style={{ height: 60, borderRadius: 16, background: 'rgba(255,255,255,0.04)' }} />
+                  <div key={i} className="animate-pulse" style={{ height: 60, borderRadius: 'var(--radius-lg)', background: 'rgba(255,255,255,0.04)' }} />
                 ))}
               </div>
             )}

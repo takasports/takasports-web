@@ -112,7 +112,7 @@ export default function PorraChallengeBanner() {
             type="button"
             onClick={handleDismiss}
             style={{
-              padding: '4px 8px', borderRadius: 6,
+              padding: '4px 8px', borderRadius: 'var(--radius-sm)',
               background: 'transparent', border: 'none',
               color: 'rgba(255,255,255,0.4)',
               fontFamily: 'var(--font-sport)', fontWeight: 700, fontSize: 9,

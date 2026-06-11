@@ -197,7 +197,7 @@ function CreatorCard({
     <div
       className="c-card"
       style={{
-        borderRadius: 20,
+        borderRadius: 'var(--radius-xl)',
         background: expanded
           ? `linear-gradient(145deg, ${meta.accent}10 0%, rgba(10,6,20,0.8) 100%)`
           : 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(10,6,20,0.5) 100%)',
@@ -266,7 +266,7 @@ function CreatorCard({
               onClick={handleJoin}
               disabled={joining || isFull}
               style={{
-                padding: '8px 16px', borderRadius: 20, cursor: isFull ? 'default' : 'pointer',
+                padding: '8px 16px', borderRadius: 'var(--radius-xl)', cursor: isFull ? 'default' : 'pointer',
                 background: isFull ? 'rgba(255,255,255,0.04)' : `${meta.accent}18`,
                 border: `1px solid ${isFull ? 'rgba(255,255,255,0.08)' : `${meta.accent}45`}`,
                 color: isFull ? 'rgba(255,255,255,0.25)' : meta.accent,
@@ -374,7 +374,7 @@ export default function CreadoresClient() {
         {loading && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
             {[1, 2, 3].map(i => (
-              <div key={i} className="animate-pulse" style={{ height: 90, borderRadius: 20, background: 'rgba(255,255,255,0.04)' }} />
+              <div key={i} className="animate-pulse" style={{ height: 90, borderRadius: 'var(--radius-xl)', background: 'rgba(255,255,255,0.04)' }} />
             ))}
           </div>
         )}

@@ -240,7 +240,7 @@ function PickButton({
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 5,
         padding: '14px 8px 12px',
-        borderRadius: 16, background: bg,
+        borderRadius: 'var(--radius-lg)', background: bg,
         border: `1.5px solid ${border}`,
         color, cursor: disabled ? 'default' : 'pointer',
         fontFamily: 'var(--font-sport)',
@@ -327,7 +327,7 @@ function ScoreStepper({
           disabled={disabled || value <= 0}
           aria-label={`Restar gol a ${label}`}
           style={{
-            width: 22, height: 28, borderRadius: 6,
+            width: 22, height: 28, borderRadius: 'var(--radius-sm)',
             background: value > 0 ? 'rgba(167,139,250,0.16)' : 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(167,139,250,0.22)',
             color: value > 0 ? '#C4B5FD' : 'rgba(255,255,255,0.2)',
@@ -351,7 +351,7 @@ function ScoreStepper({
           disabled={disabled || value >= 20}
           aria-label={`Sumar gol a ${label}`}
           style={{
-            width: 22, height: 28, borderRadius: 6,
+            width: 22, height: 28, borderRadius: 'var(--radius-sm)',
             background: value < 20 ? 'rgba(167,139,250,0.16)' : 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(167,139,250,0.22)',
             color: value < 20 ? '#C4B5FD' : 'rgba(255,255,255,0.2)',
@@ -446,7 +446,7 @@ function ExactScoreBlock({
 
     return (
       <div style={{
-        marginTop: 10, padding: '8px 10px', borderRadius: 12,
+        marginTop: 10, padding: '8px 10px', borderRadius: 'var(--radius-card)',
         background: bg, border: `1px solid ${border}`,
         display: 'flex', alignItems: 'center', gap: 8,
       }}>
@@ -563,7 +563,7 @@ function ExactScoreBlock({
         style={{
           width: '100%',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          padding: '10px 12px', borderRadius: 12,
+          padding: '10px 12px', borderRadius: 'var(--radius-card)',
           background: exactSlotAvailable
             ? 'linear-gradient(145deg, rgba(167,139,250,0.18) 0%, rgba(124,58,237,0.08) 100%)'
             : 'rgba(255,255,255,0.025)',
@@ -605,7 +605,7 @@ function ExactScoreBlock({
   if (!editorOpen) {
     return (
       <div style={{
-        marginTop: 10, padding: '8px 12px', borderRadius: 12,
+        marginTop: 10, padding: '8px 12px', borderRadius: 'var(--radius-card)',
         background: 'linear-gradient(145deg, rgba(167,139,250,0.12) 0%, rgba(124,58,237,0.04) 100%)',
         border: '1px solid rgba(167,139,250,0.32)',
         display: 'flex', alignItems: 'center', gap: 10,
@@ -632,7 +632,7 @@ function ExactScoreBlock({
           style={{
             marginLeft: 'auto',
             display: 'inline-flex', alignItems: 'center', gap: 4,
-            padding: '4px 10px', borderRadius: 8,
+            padding: '4px 10px', borderRadius: 'var(--radius-md)',
             background: 'rgba(196,181,253,0.14)',
             border: '1px solid rgba(196,181,253,0.32)',
             color: '#C4B5FD',
@@ -683,7 +683,7 @@ function ExactScoreBlock({
           title="Cierra el editor. Tu marcador queda guardado y puedes volver a editarlo hasta 1h antes del partido."
           style={{
             marginLeft: 'auto',
-            width: 22, height: 22, borderRadius: 6,
+            width: 22, height: 22, borderRadius: 'var(--radius-sm)',
             background: 'rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.1)',
             color: 'rgba(255,255,255,0.5)',
@@ -749,7 +749,7 @@ function ExactScoreBlock({
           onClick={() => setEditorOpen(false)}
           disabled={submitting}
           style={{
-            padding: '5px 14px', borderRadius: 8,
+            padding: '5px 14px', borderRadius: 'var(--radius-md)',
             background: 'rgba(196,181,253,0.18)',
             border: '1px solid rgba(196,181,253,0.36)',
             color: '#C4B5FD',
@@ -834,7 +834,7 @@ function MatchCard({
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
         {event.featured && (
           <span style={{
-            fontSize: 9, fontWeight: 900, padding: '3px 8px', borderRadius: 6,
+            fontSize: 9, fontWeight: 900, padding: '3px 8px', borderRadius: 'var(--radius-sm)',
             background: `linear-gradient(90deg,${GOLD}2A,${GOLD}14)`,
             border: `1px solid ${GOLD}55`, color: GOLD,
             fontFamily: 'var(--font-sport)', letterSpacing: '0.07em',
@@ -842,7 +842,7 @@ function MatchCard({
         )}
         {(event.meta?.group || event.meta?.city) && (
           <span style={{
-            fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 6,
+            fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 'var(--radius-sm)',
             background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
             color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-sport)',
             textTransform: 'uppercase', letterSpacing: '0.07em',
@@ -868,7 +868,7 @@ function MatchCard({
       {/* ── Match area — dark inset ── */}
       <div style={{
         background: 'rgba(0,0,0,0.25)',
-        borderRadius: 12,
+        borderRadius: 'var(--radius-card)',
         padding: '12px 10px',
         marginBottom: 12,
         display: 'flex', alignItems: 'center', gap: 6,
@@ -890,7 +890,7 @@ function MatchCard({
           {isResolved && event.result ? (
             <>
               <div style={{
-                padding: '5px 10px', borderRadius: 8,
+                padding: '5px 10px', borderRadius: 'var(--radius-md)',
                 background: `${GOLD}18`, border: `1px solid ${GOLD}30`,
               }}>
                 <span style={{
@@ -994,7 +994,7 @@ function MatchCard({
           style={{
             alignSelf: 'flex-start', marginTop: 8,
             display: 'flex', alignItems: 'center', gap: 4,
-            padding: '4px 10px', borderRadius: 8,
+            padding: '4px 10px', borderRadius: 'var(--radius-md)',
             background: `${GOLD}0E`, border: `1px solid ${GOLD}22`,
             color: GOLD_D, fontSize: 9, fontWeight: 900,
             fontFamily: 'var(--font-sport)', textTransform: 'uppercase',
@@ -1380,7 +1380,7 @@ export default function MundialClient() {
             ))}
             {totalPts > 0 && (
               <a href={`/api/og/mundial-stats?picks=${myPicks}&correct=${Object.values(preds).filter(p=>p.is_correct).length}&pts=${totalPts}`} target="_blank" rel="noopener noreferrer"
-                style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:8, background:`${GOLD}12`, border:`1px solid ${GOLD}28`, color:GOLD_D, fontSize:9, fontWeight:900, fontFamily:'var(--font-sport)', textTransform:'uppercase', letterSpacing:'0.07em', textDecoration:'none' }}>
+                style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius: 'var(--radius-md)', background:`${GOLD}12`, border:`1px solid ${GOLD}28`, color:GOLD_D, fontSize:9, fontWeight:900, fontFamily:'var(--font-sport)', textTransform:'uppercase', letterSpacing:'0.07em', textDecoration:'none' }}>
                 <GalleryIcon size={11} />Compartir mis stats
               </a>
             )}

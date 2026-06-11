@@ -586,7 +586,7 @@ export default function PorraHero() {
                     type="button"
                     onClick={handleConfirmPush}
                     style={{
-                      flex: 1, padding: '6px 10px', borderRadius: 8,
+                      flex: 1, padding: '6px 10px', borderRadius: 'var(--radius-md)',
                       background: 'linear-gradient(135deg, #7C3AED 0%, #F97316 100%)',
                       border: '1px solid rgba(255,255,255,0.18)',
                       color: '#fff',
@@ -600,7 +600,7 @@ export default function PorraHero() {
                     type="button"
                     onClick={handleDeferPush}
                     style={{
-                      padding: '6px 10px', borderRadius: 8,
+                      padding: '6px 10px', borderRadius: 'var(--radius-md)',
                       background: 'transparent',
                       border: '1px solid rgba(255,255,255,0.14)',
                       color: 'rgba(255,255,255,0.55)',

@@ -800,7 +800,7 @@ export default function SopaCracksPage() {
                                 ? `1px solid ${COLOR_ACCENT}80`
                                 : '1px solid rgba(255,255,255,0.04)',
                           boxShadow: hinted ? `0 0 12px ${COLOR_HINT}55` : undefined,
-                          borderRadius: 6,
+                          borderRadius: 'var(--radius-sm)',
                           fontFamily: 'var(--font-display)',
                           fontSize: expanded ? '18px' : 'clamp(12px, 3.2vw, 16px)',
                           userSelect: 'none',
@@ -839,7 +839,7 @@ export default function SopaCracksPage() {
                   fontFamily: 'var(--font-sport)',
                   border: `1px solid ${playerInfo.intruder ? COLOR_INTRUDER : COLOR_ACCENT}`,
                   boxShadow: `0 8px 28px ${playerInfo.intruder ? `${COLOR_INTRUDER}80` : `${COLOR_ACCENT_DIM}80`}`,
-                  borderRadius: 16,
+                  borderRadius: 'var(--radius-lg)',
                 }}
               >
                 <div className="px-4 py-3 flex items-center gap-3">

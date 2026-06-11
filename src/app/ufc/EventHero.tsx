@@ -128,7 +128,7 @@ export default function EventHero({
           </span>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 7,
-            padding: '5px 16px', borderRadius: 20,
+            padding: '5px 16px', borderRadius: 'var(--radius-xl)',
             background: isLive ? 'rgba(239,68,68,0.16)' : 'rgba(248,113,113,0.1)',
             border: `1px solid ${isLive ? 'rgba(239,68,68,0.5)' : 'rgba(248,113,113,0.3)'}`,
             fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
@@ -190,7 +190,7 @@ export default function EventHero({
             {isTitleFight && (
               <div className="eh-sub" style={{
                 marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 7,
-                padding: '5px 14px', borderRadius: 20,
+                padding: '5px 14px', borderRadius: 'var(--radius-xl)',
                 background: 'rgba(250,204,21,0.12)', border: '1px solid rgba(250,204,21,0.4)',
                 fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
                 color: '#FACC15', letterSpacing: '0.1em', textTransform: 'uppercase',
