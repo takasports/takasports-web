@@ -4,7 +4,6 @@
 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import LiveStrip from '@/components/LiveStrip'
 import ScrollToTop from '@/components/ScrollToTop'
 import LeaderboardFull from './LeaderboardFull'
 import type { GameId } from '@/lib/games-store'
@@ -49,7 +48,6 @@ export default async function LeaderboardPage({ params }: PageProps) {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <LiveStrip />
 
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
         <nav className="pt-8 pb-3">

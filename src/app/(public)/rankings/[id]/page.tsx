@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import LiveStrip from '@/components/LiveStrip'
 import ScrollToTop from '@/components/ScrollToTop'
 import { getDisplayScore, scoreColor, isCreatorEntry } from '@/lib/rankings-ui'
 import { findEntryById, getEntrySources, getAllRankingEntries } from '@/lib/rankings-search'
@@ -192,7 +191,6 @@ export default async function EntryDetailPage(
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <LiveStrip />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-16">
         {/* Breadcrumb */}

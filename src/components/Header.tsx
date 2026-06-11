@@ -473,7 +473,11 @@ function LevelUpToast({ level, levelName, color, onClose }: {
 }
 
 // ── Header principal ─────────────────────────────────────────
-export default function Header() {
+// `sticky` (default true): el Header se fija él mismo al top. En la consola de
+// (public) se monta con sticky={false} porque el contenedor de la consola es
+// quien se fija (Header + LiveStrip como bloque único). home/calendario montan
+// <Header /> directo = sticky propio, sin tocar.
+export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -630,7 +634,7 @@ export default function Header() {
   return (
     <>
       <header
-        className="sticky top-0 z-50 w-full"
+        className={`${sticky ? 'sticky top-0 z-50' : 'relative z-40'} w-full`}
         style={{
           background: 'rgba(9,9,15,0.94)',
           backdropFilter: 'blur(24px)',

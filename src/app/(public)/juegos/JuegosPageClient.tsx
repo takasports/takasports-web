@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import LiveStrip from '@/components/LiveStrip'
 import ScrollToTop from '@/components/ScrollToTop'
 import { SmartphoneIcon } from '@/components/icons/GameIcons'
 import NewsletterSection from '@/components/NewsletterSection'
@@ -879,7 +878,6 @@ export default function JuegosPageClient() {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <LiveStrip />
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 

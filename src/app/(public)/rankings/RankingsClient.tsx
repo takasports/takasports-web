@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import LiveStrip from '@/components/LiveStrip'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
 import {
@@ -475,7 +474,6 @@ export default function RankingsClient({
 
   return (
     <div data-sport={activeSport || undefined} style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <LiveStrip />
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 

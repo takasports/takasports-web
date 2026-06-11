@@ -4,7 +4,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import type { TeamDetail, TeamResult, RosterPlayer } from '@/app/api/team/[slug]/route'
-import LiveStrip from '@/components/LiveStrip'
 import { TeamTabs } from './TeamTabs'
 import { StandingsTab } from './StandingsTab'
 import { RosterTab } from './RosterTab'
@@ -484,7 +483,6 @@ export default async function EquipoPage({ params }: { params: Promise<{ slug: s
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(teamJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <LiveStrip />
       <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
         <Suspense>
           <TeamContent team={team} />

@@ -5,7 +5,6 @@ import Image from 'next/image'
 import type { PlayerDetail } from '@/app/api/jugador/[slug]/route'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import type { TeamResult } from '@/app/api/team/[slug]/route'
-import LiveStrip from '@/components/LiveStrip'
 import { ShareButton } from '@/components/ShareButton'
 import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
@@ -313,7 +312,6 @@ export default async function JugadorPage({ params }: { params: Promise<{ slug: 
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <LiveStrip />
       <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
         <Suspense>
           <PlayerContent player={player} />

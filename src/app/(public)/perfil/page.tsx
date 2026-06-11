@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import LiveStrip from '@/components/LiveStrip'
 import AuthModal from '@/components/AuthModal'
 import type { SportEvent } from '@/lib/types'
 import { QUINIELA_PICKS_KEY } from '@/components/QuinielaModule'
@@ -361,7 +360,6 @@ export default function PerfilPage() {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <LiveStrip />
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 

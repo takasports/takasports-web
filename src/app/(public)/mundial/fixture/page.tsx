@@ -7,7 +7,6 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { SITE_URL } from '@/lib/constants'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
-import LiveStrip from '@/components/LiveStrip'
 import ScrollToTop from '@/components/ScrollToTop'
 
 export const dynamic = 'force-dynamic'
@@ -99,7 +98,6 @@ export default async function MundialFixturePage() {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <LiveStrip />
 
       {/* Cabecera */}
       <section

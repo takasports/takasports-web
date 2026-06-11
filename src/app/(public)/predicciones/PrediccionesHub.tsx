@@ -12,7 +12,6 @@
 
 import { useState, Suspense, type KeyboardEvent } from 'react'
 import dynamic from 'next/dynamic'
-import LiveStrip from '@/components/LiveStrip'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
 import TakaPoint from '@/components/TakaPoint'
@@ -138,7 +137,6 @@ export default function PrediccionesHub() {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <LiveStrip />
       {/* U — Banner de reto, solo cuando ?reto=TOKEN llega en la URL.
           F6 — Suspense boundary: useSearchParams en client component lo
           requiere para no forzar a la ruta entera a dynamic rendering. */}

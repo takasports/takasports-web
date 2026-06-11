@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import LiveStrip from '@/components/LiveStrip'
 import ScrollToTop from '@/components/ScrollToTop'
 import { type RankingEntry } from '@/lib/rankings'
 import { getDisplayScore, scoreColor } from '@/lib/rankings-ui'
@@ -361,7 +360,6 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
-      <LiveStrip />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-16">
         {/* Breadcrumb */}

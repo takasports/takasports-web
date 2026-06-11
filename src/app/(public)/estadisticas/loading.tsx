@@ -1,4 +1,3 @@
-import LiveStrip from '@/components/LiveStrip'
 
 function SkeletonBlock({ rows = 5, wide = false }: { rows?: number; wide?: boolean }) {
   return (
@@ -30,7 +29,6 @@ export default function EstadisticasLoading() {
     <>
       {/* LiveStrip real: ocupa su sitio desde el primer paint para que al hidratar
           el contenido no haya salto de layout (CLS). El Header lo aporta (public)/layout. */}
-      <LiveStrip />
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24 animate-pulse" style={{ paddingTop: 32 }}>
       {/* Title + subtitle */}
       <div className="rounded-xl mb-2" style={{ width: 220, height: 34, background: 'rgba(255,255,255,0.07)' }} />

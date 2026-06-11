@@ -6,7 +6,6 @@ import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { timeAgo } from '@/lib/timeAgo'
 import Image from '@/components/DynamicImage'
 import { urlFor } from '@/lib/sanity'
-import LiveStrip from '@/components/LiveStrip'
 import ScrollToTop from '@/components/ScrollToTop'
 import { SITE_URL } from '@/lib/constants'
 
@@ -148,7 +147,6 @@ export default async function TagPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
-      <LiveStrip />
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20">
 

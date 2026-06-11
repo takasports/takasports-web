@@ -6,7 +6,6 @@ import { sanityClient, urlFor } from '@/lib/sanity'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { timeAgo } from '@/lib/timeAgo'
 import ScrollToTop from '@/components/ScrollToTop'
-import LiveStrip from '@/components/LiveStrip'
 import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 3600
@@ -123,7 +122,6 @@ export default async function NoticiasPageN({
       {/* Señalización rel=prev/next para crawlers (Bing/Yandex la usan; Google ignora pero no daña) */}
       <link rel="prev" href={prevHref(page)} />
       {hasNext && <link rel="next" href={`${SITE_URL}/noticias/pagina/${page + 1}`} />}
-      <LiveStrip />
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20 pt-8">
         <div className="flex items-center gap-2.5 mb-6">

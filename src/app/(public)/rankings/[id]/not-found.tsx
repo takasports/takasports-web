@@ -1,11 +1,9 @@
 import Link from 'next/link'
-import LiveStrip from '@/components/LiveStrip'
 import { SearchIcon } from '@/components/icons/GameIcons'
 
 export default function NotFound() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
-      <LiveStrip />
       <div className="max-w-2xl mx-auto px-6 py-20 text-center">
         <p className="mb-4 flex justify-center" style={{ color: '#7A7A92' }}><SearchIcon size={64} /></p>
         <h1 className="text-3xl sm:text-4xl font-black mb-3"

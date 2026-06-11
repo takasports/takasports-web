@@ -2,7 +2,6 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import LiveStrip from '@/components/LiveStrip'
 import { ShareButton } from '@/components/ShareButton'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
 
@@ -194,7 +193,6 @@ export default async function LigaPage({ params }: { params: Promise<{ id: strin
   const { id } = await params
   return (
     <>
-      <LiveStrip />
       <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
         <Suspense>
           <Content id={id} />
