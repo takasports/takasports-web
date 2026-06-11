@@ -588,7 +588,19 @@ export default async function NoticiaPage({
       }} />
       <Header />
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20">
+      <main
+        data-sport={sportSlug || undefined}
+        className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20"
+        style={{
+          // "Se viste del deporte": tinte de acento muy sutil en la cabecera
+          // del artículo (radial que se funde al fondo). Va en el background del
+          // <main> → 0 capas absolutas, 0 riesgo de z-index, no compite con la
+          // lectura. Legibilidad intacta: el cuerpo del texto queda sobre el
+          // fondo base. data-sport engancha además el motor global --sport-accent.
+          backgroundImage: `radial-gradient(ellipse 100% 560px at 50% 0%, ${accent}1a 0%, transparent 72%)`,
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
         <div className="lg:grid lg:gap-12 lg:items-start mx-auto" style={{ gridTemplateColumns: 'minmax(0,1fr) 268px', maxWidth: 1160 }}>
 
           <div className="pt-6 pb-5 lg:col-span-2 flex items-center gap-3">
@@ -683,7 +695,12 @@ export default async function NoticiaPage({
             {imgUrl && (
               <div
                 className="relative w-full rounded-2xl overflow-hidden mb-8"
-                style={{ height: 'clamp(240px, 52vw, 480px)' }}
+                style={{
+                  height: 'clamp(240px, 52vw, 480px)',
+                  // Hero "broadcast": borde y glow teñidos del acento del deporte.
+                  border: `1px solid ${accent}30`,
+                  boxShadow: `0 18px 50px ${accent}1f`,
+                }}
               >
                 <Image src={imgUrl} alt={article.imageAlt ?? article.title} fill className="object-cover" priority fetchPriority="high" loading="eager" sizes="(max-width: 768px) 100vw, 850px" />
                 <div
