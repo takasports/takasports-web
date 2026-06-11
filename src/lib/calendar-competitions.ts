@@ -242,7 +242,17 @@ export function matchesCompetition(
 ): boolean {
   if (comp.matchComp) {
     const c = (ev.comp ?? '').toLowerCase()
-    if (c.includes(comp.matchComp.toLowerCase())) return true
+    if (c.includes(comp.matchComp.toLowerCase())) {
+      // El match por substring del nombre de competición es laxo a propósito
+      // ("Premier" cubre tanto "Premier" como "Premier League"), pero "Premier"
+      // también vive dentro de "Premier Padel". Si el evento declara deporte,
+      // debe coincidir con el de la competición para contar → así los torneos
+      // de pádel (u otros "Premier *" de otro deporte) no se cuelan en
+      // /calendario/premier-league. Eventos sin `sport` se aceptan (no rompemos
+      // partidos de fútbol de Sanity que vengan sin etiqueta de deporte).
+      const evSport = (ev.sport ?? '').toLowerCase()
+      if (!evSport || evSport === comp.sport.toLowerCase()) return true
+    }
   }
   if (comp.matchSport) {
     if ((ev.sport ?? '').toLowerCase() === comp.matchSport.toLowerCase()) return true
