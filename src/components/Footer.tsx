@@ -225,6 +225,31 @@ export default function Footer() {
         </div>
 
       </div>
+
+      {/* Wordmark de cierre a tamaño cartel — firma de marca "La Señal" (Barlow
+          Condensed 900 con degradado morado que se funde al fondo). Decorativo
+          (aria-hidden): el nombre ya está en el logo de arriba y el copyright. */}
+      <div aria-hidden className="overflow-hidden" style={{ lineHeight: 0, userSelect: 'none' }}>
+        <div
+          className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10"
+          style={{
+            fontFamily: 'var(--font-display), sans-serif',
+            fontWeight: 900,
+            fontSize: 'clamp(3.5rem, 16vw, 13rem)',
+            lineHeight: 0.8,
+            letterSpacing: '-0.03em',
+            whiteSpace: 'nowrap',
+            backgroundImage:
+              'linear-gradient(180deg, rgba(196,181,253,0.17) 0%, rgba(124,58,237,0.12) 52%, transparent 95%)',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            paddingBottom: 'clamp(0.5rem, 2.5vw, 2rem)',
+          }}
+        >
+          Taka Sports
+        </div>
+      </div>
     </footer>
   )
 }
