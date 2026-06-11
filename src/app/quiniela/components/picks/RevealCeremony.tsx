@@ -230,22 +230,23 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
                : scored >= Math.ceil(total * 0.5) ? '¡Buen resultado! Estuviste cerca.'
                : 'La próxima jornada te va mejor.'}
             </p>
-            {/* Coin reward summary */}
-            {(() => {
-              const coinsEarned = scored * 10 + (scored === total && total > 0 ? 100 : 0)
-              return coinsEarned > 0 ? (
-                <div className="mt-4 flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)' }}>
-                  <span className="font-black" style={{ fontSize: 18, color: '#fbbf24', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
-                    +{coinsEarned} pts
+            {/* Recompensa: NO inventamos cifra. Antes se mostraba aciertos×10 (+100
+                pleno), una fórmula de "monedas" muerta que NO coincide con el
+                scoring real fijo que acredita el servidor al cerrar la jornada.
+                Mostramos solo un aviso honesto de que los puntos se suman a la
+                Liga Taka; la cifra real la pone el backend (award_points). */}
+            {scored > 0 && (
+              <div className="mt-4 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl" style={{ background: 'rgba(124,58,237,0.10)', border: '1px solid rgba(124,58,237,0.25)' }}>
+                <span className="text-[11px] font-black uppercase" style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)', letterSpacing: '0.07em' }}>
+                  Suma a tu Liga Taka
+                </span>
+                {scored === total && total > 0 && (
+                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.18)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.4)', fontFamily: 'var(--font-sport)' }}>
+                    PLENO
                   </span>
-                  {scored === total && total > 0 && (
-                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full ml-1" style={{ background: 'rgba(251,191,36,0.2)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.4)', fontFamily: 'var(--font-sport)' }}>
-                      PLENO ×2
-                    </span>
-                  )}
-                </div>
-              ) : null
-            })()}
+                )}
+              </div>
+            )}
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <button

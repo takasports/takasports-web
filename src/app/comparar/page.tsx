@@ -56,8 +56,12 @@ async function fetchCandidates(): Promise<Candidate[]> {
 }
 
 function num(v: string): number | null {
-  const m = v.replace(/\./g, '').match(/-?\d+/)
-  return m ? parseInt(m[0], 10) : null
+  // Conservar decimales: antes se borraba el punto (v.replace(/\./g,'')) y
+  // '66.5%' se convertía en 665, '1.85' en 185 → el resaltado del ganador en
+  // stats con % o ratios (TS%, PPG…) salía al azar. Ahora parseamos el primer
+  // número permitiendo parte decimal.
+  const m = v.match(/-?\d+(?:\.\d+)?/)
+  return m ? parseFloat(m[0]) : null
 }
 
 function PlayerHead({ p }: { p: PlayerDetail }) {

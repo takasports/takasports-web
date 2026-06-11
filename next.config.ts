@@ -25,6 +25,9 @@ const nextConfig: NextConfig = {
     ]
   },
   images: {
+    // AVIF antes que WebP: ~20-30% menos bytes en heros/imágenes sin tocar un
+    // solo asset. Next sirve AVIF a navegadores que lo soporten y cae a WebP.
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: "https", hostname: "cdn.sanity.io" },
       { protocol: "https", hostname: "*.cdninstagram.com" },

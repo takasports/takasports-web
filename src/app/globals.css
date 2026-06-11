@@ -10,6 +10,11 @@
 }
 
 :root {
+  /* Web dark-only: que los controles nativos del SO (scrollbars secundarios,
+     inputs date/select, autofill, tooltips) se pinten en esquema oscuro y no
+     en cajas blancas que rompen la identidad. */
+  color-scheme: dark;
+
   /* Backgrounds */
   --bg-base: #09090F;
   --bg-surface: #111118;

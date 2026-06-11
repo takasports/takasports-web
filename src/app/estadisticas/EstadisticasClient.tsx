@@ -201,42 +201,16 @@ const FUTBOL_JUGADORES_GROUPS: MetricGroup[] = [
 // ─────────────────────────────────────────────────────────────────
 // DATOS — FÚTBOL FEMENINO
 // ─────────────────────────────────────────────────────────────────
+// NO MENTIR (misma regla que el bloque "SPORTS COMPLETO" de abajo): sin filas
+// hardcodeadas. Antes había snapshots a fuego (Aitana 22, Sam Kerr en Chelsea,
+// tabla Barça 72) que, si el live no respondía, se mostraban como reales y
+// caducados. applyLive rellena estos bloques desde womenGoals/womenAssists/
+// womenLigaF cuando llegan; si no hay datos en vivo, StatBlockCard muestra
+// "Sin datos disponibles" en vez de un dato viejo inventado.
 const FUTBOL_FEMENINO_BLOCKS: StatBlock[] = [
-  {
-    id: 'f-goleadoras', title: 'Goleadoras', metric: 'Goles',
-    rows: [
-      { rank: 1, name: 'Aitana Bonmatí',          team: 'FC Barcelona',   value: '22', sub: '25 PJ', flag: '🇪🇸', trend: 'up',   extra: { Asist: '14' } },
-      { rank: 2, name: 'Salma Paralluelo',         team: 'FC Barcelona',   value: '19', sub: '24 PJ', flag: '🇪🇸', trend: 'up',   extra: { Asist: '8' } },
-      { rank: 3, name: 'Sam Kerr',                 team: 'Chelsea Women',  value: '17', sub: '22 PJ', flag: '🇦🇺', trend: 'flat' },
-      { rank: 4, name: 'Ada Hegerberg',            team: 'Lyon',           value: '16', sub: '20 PJ', flag: '🇳🇴', trend: 'up',   extra: { Asist: '6' } },
-      { rank: 5, name: 'Caroline Graham Hansen',   team: 'FC Barcelona',   value: '14', sub: '23 PJ', flag: '🇳🇴', trend: 'flat' },
-      { rank: 6, name: 'Pernille Harder',          team: 'Wolfsburg',      value: '13', sub: '22 PJ', flag: '🇩🇰', trend: 'up',   extra: { Asist: '9' } },
-      { rank: 7, name: 'Alexia Putellas',          team: 'FC Barcelona',   value: '11', sub: '21 PJ', flag: '🇪🇸', trend: 'up',   extra: { Asist: '10' } },
-      { rank: 8, name: 'Mariona Caldentey',        team: 'Arsenal Women',  value: '10', sub: '24 PJ', flag: '🇪🇸', trend: 'up',   extra: { Asist: '8' } },
-    ],
-  },
-  {
-    id: 'f-asistencias', title: 'Asistencias', metric: 'Asist.',
-    rows: [
-      { rank: 1, name: 'Aitana Bonmatí',           team: 'FC Barcelona',  value: '14', sub: '25 PJ', flag: '🇪🇸', trend: 'up' },
-      { rank: 2, name: 'Alexia Putellas',           team: 'FC Barcelona',  value: '10', sub: '21 PJ', flag: '🇪🇸', trend: 'up' },
-      { rank: 3, name: 'Caroline Graham Hansen',    team: 'FC Barcelona',  value: '12', sub: '23 PJ', flag: '🇳🇴', trend: 'flat' },
-      { rank: 4, name: 'Pernille Harder',           team: 'Wolfsburg',     value: '9',  sub: '22 PJ', flag: '🇩🇰', trend: 'up' },
-      { rank: 5, name: 'Mariona Caldentey',         team: 'Arsenal Women', value: '8',  sub: '24 PJ', flag: '🇪🇸', trend: 'up' },
-      { rank: 6, name: 'Lauren James',              team: 'Chelsea Women', value: '7',  sub: '20 PJ', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', trend: 'up' },
-    ],
-  },
-  {
-    id: 'f-ligaf-tabla', title: 'Tabla Liga F', metric: 'Puntos', placeholder: false,
-    rows: [
-      { rank: 1, name: 'FC Barcelona',              value: '72', sub: '26 PJ', trend: 'up',   extra: { V: '24', E: '0', D: '2' } },
-      { rank: 2, name: 'Real Madrid',               value: '54', sub: '26 PJ', trend: 'up',   extra: { V: '17', E: '3', D: '6' } },
-      { rank: 3, name: 'Atlético Madrid',           value: '49', sub: '26 PJ', trend: 'flat', extra: { V: '15', E: '4', D: '7' } },
-      { rank: 4, name: 'Levante',                   value: '44', sub: '26 PJ', trend: 'flat', extra: { V: '13', E: '5', D: '8' } },
-      { rank: 5, name: 'Athletic Club',             value: '38', sub: '26 PJ', trend: 'down', extra: { V: '11', E: '5', D: '10' } },
-      { rank: 6, name: 'Valencia',                  value: '34', sub: '26 PJ', trend: 'down', extra: { V: '10', E: '4', D: '12' } },
-    ],
-  },
+  { id: 'f-goleadoras',  title: 'Goleadoras',   metric: 'Goles',  rows: [] },
+  { id: 'f-asistencias', title: 'Asistencias',  metric: 'Asist.', rows: [] },
+  { id: 'f-ligaf-tabla', title: 'Tabla Liga F', metric: 'Puntos', placeholder: false, rows: [] },
 ]
 
 // ─────────────────────────────────────────────────────────────────

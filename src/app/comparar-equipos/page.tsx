@@ -76,9 +76,12 @@ function teamStats(t: TeamDetail): { label: string; value: string; n?: number }[
     { label: 'Partidos', value: String(gp), n: gp },
     { label: 'Victorias',value: String(w),  n: w },
     { label: 'Empates',  value: String(d),  n: d },
-    { label: 'Derrotas', value: String(l),  n: l },
+    // Derrotas y GC (goles en contra): MENOS es mejor → negamos n para que el
+    // resaltado del "ganador" marque al equipo con menos derrotas / menos goles
+    // encajados (antes marcaba al peor como superior).
+    { label: 'Derrotas', value: String(l),  n: -l },
     { label: 'GF',       value: String(gf), n: gf },
-    { label: 'GC',       value: String(gc), n: gc },
+    { label: 'GC',       value: String(gc), n: -gc },
     { label: 'DG',       value: gd > 0 ? `+${gd}` : String(gd), n: gd },
     { label: 'Pts/PJ',   value: String(ppp), n: ppp },
     { label: '% Victorias', value: gp ? `${winPct}%` : '—', n: winPct },
