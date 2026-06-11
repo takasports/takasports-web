@@ -3,9 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
 import {
@@ -477,10 +475,9 @@ export default function RankingsClient({
 
   return (
     <div data-sport={activeSport || undefined} style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
         {/* ── HERO ─────────────────────────────────────────────── */}
         <div className="relative pt-6 pb-4 overflow-hidden">
@@ -1076,10 +1073,9 @@ export default function RankingsClient({
           </p>
         </div>
 
-      </main>
+      </div>
 
       <NewsletterSection source="rankings" />
-      <Footer />
       <ScrollToTop />
     </div>
   )

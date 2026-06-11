@@ -1,15 +1,12 @@
 import Link from 'next/link'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import { SearchIcon } from '@/components/icons/GameIcons'
 
 export default function NotFound() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
-      <Header />
       <LiveStrip />
-      <main className="max-w-2xl mx-auto px-6 py-20 text-center">
+      <div className="max-w-2xl mx-auto px-6 py-20 text-center">
         <p className="mb-4 flex justify-center" style={{ color: '#7A7A92' }}><SearchIcon size={64} /></p>
         <h1 className="text-3xl sm:text-4xl font-black mb-3"
           style={{ color: '#E8E8F0', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
@@ -44,8 +41,7 @@ export default function NotFound() {
             ⚖️ Ir al comparador
           </Link>
         </div>
-      </main>
-      <Footer />
+      </div>
     </div>
   )
 }

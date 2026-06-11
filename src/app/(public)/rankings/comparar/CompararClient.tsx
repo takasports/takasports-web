@@ -3,9 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { type RankingEntry } from '@/lib/rankings'
 import { getDisplayScore, scoreColor } from '@/lib/rankings-ui'
@@ -363,10 +361,9 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
-      <Header />
       <LiveStrip />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-16">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-4 text-[11px]"
           style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
@@ -612,10 +609,9 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
             </div>
           </>
         )}
-      </main>
+      </div>
 
       <ScrollToTop />
-      <Footer />
     </div>
   )
 }

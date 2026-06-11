@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function MetodologiaPage() {
   return (
-    <main style={{ background: 'var(--bg-base)', minHeight: '100vh', padding: '32px 16px 80px' }}>
+    <div style={{ background: 'var(--bg-base)', minHeight: '100vh', padding: '32px 16px 80px' }}>
       <div className="max-w-3xl mx-auto">
         <Link href="/rankings"
           className="inline-block text-[10px] font-black uppercase tracking-[0.2em] mb-3"
@@ -101,7 +101,7 @@ export default function MetodologiaPage() {
           ¿Crees que un score está mal? Escríbenos a <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#7C3AED' }}>contacto@takasportsmedia.com</a> y lo revisamos.
         </p>
       </div>
-    </main>
+    </div>
   )
 }
 

@@ -33,7 +33,7 @@ export default async function MiTopPage() {
   entries.sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
 
   return (
-    <main style={{ background: 'var(--bg-base)', minHeight: '100vh', padding: '24px 16px 80px' }}>
+    <div style={{ background: 'var(--bg-base)', minHeight: '100vh', padding: '24px 16px 80px' }}>
       <div className="max-w-3xl mx-auto">
         <Link href="/rankings"
           className="inline-block text-[10px] font-black uppercase tracking-[0.2em] mb-3"
@@ -70,6 +70,6 @@ export default async function MiTopPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   )
 }

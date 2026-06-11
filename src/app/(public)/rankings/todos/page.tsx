@@ -60,7 +60,7 @@ async function loadKings(): Promise<Row[]> {
 export default async function ReyesPage() {
   const kings = await loadKings()
   return (
-    <main style={{ background: 'var(--bg-base)', minHeight: '100vh', padding: '24px 16px 80px' }}>
+    <div style={{ background: 'var(--bg-base)', minHeight: '100vh', padding: '24px 16px 80px' }}>
       <div className="max-w-3xl mx-auto">
         <Link href="/rankings"
           className="inline-block text-[10px] font-black uppercase tracking-[0.2em] mb-3"
@@ -141,6 +141,6 @@ export default async function ReyesPage() {
           <Link href="/rankings/metodologia" style={{ color: '#7C3AED' }}>metodología</Link>.
         </p>
       </div>
-    </main>
+    </div>
   )
 }
