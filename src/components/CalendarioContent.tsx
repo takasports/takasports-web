@@ -2173,7 +2173,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       {/* Capa ambiente del tema (foto IA + tinte + textura broadcast, detrás del
           hero). Solo el tema activo está montado → su foto carga lazy; el resto
           ni se pide. Sin foto configurada, caen solo tinte + textura. */}
-      <div key={themeKey} className="cal-ambient" style={{ zIndex: 0 }} aria-hidden>
+      <div key={themeKey} className={`cal-ambient${SPORT_THEME[themeKey].backdrop ? ' cal-ambient--photo' : ''}`} style={{ zIndex: 0 }} aria-hidden>
         {SPORT_THEME[themeKey].backdrop && (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
