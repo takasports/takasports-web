@@ -94,7 +94,12 @@ export default function CompetitionSelector({
   const extras = COMPETITIONS
     .filter((c) => !c.featured && (countBySlug.get(c.slug) ?? 0) > 0)
     .sort((a, b) => (countBySlug.get(b.slug) ?? 0) - (countBySlug.get(a.slug) ?? 0))
-  const comps = [...FEATURED_COMPETITIONS, ...extras]
+  // Primero los deportes (NBA/F1/UFC son una sola competición → van con Fútbol/
+  // Tenis/Pádel, al principio); después las competiciones de fútbol (LaLiga,
+  // Champions, Premier…).
+  const featuredSports = FEATURED_COMPETITIONS.filter((c) => c.sport !== 'Fútbol')
+  const featuredLeagues = FEATURED_COMPETITIONS.filter((c) => c.sport === 'Fútbol')
+  const comps = [...featuredSports, ...featuredLeagues, ...extras]
 
   const purple = '#7C3AED'
   const eventsLabel = (n: number) => (n > 0 ? `${n} ${n === 1 ? 'evento' : 'eventos'}` : 'Ver')
