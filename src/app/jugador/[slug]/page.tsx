@@ -11,6 +11,7 @@ import Footer from '@/components/Footer'
 import { ShareButton } from '@/components/ShareButton'
 import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
+import PlayerStatsRadar, { hasRadarData } from '@/components/PlayerStatsRadar'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
 
 export const revalidate = 1800
@@ -217,6 +218,28 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
               </div>
             ))}
           </div>
+
+          {/* Perfil de rendimiento — radar/barras que se "viste" del deporte */}
+          {(() => {
+            const sportSlug = player.leagueSlug.split('/')[0] === 'soccer' ? 'futbol'
+              : player.leagueSlug.startsWith('basketball') ? 'baloncesto' : ''
+            if (!sportSlug || !hasRadarData(player.stats)) return null
+            return (
+              <div
+                data-sport={sportSlug}
+                className="rounded-2xl p-5 mb-6"
+                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
+              >
+                <div
+                  className="text-[10px] font-black uppercase tracking-widest mb-4"
+                  style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}
+                >
+                  Perfil de rendimiento
+                </div>
+                <PlayerStatsRadar stats={player.stats} />
+              </div>
+            )
+          })()}
         </>
       )}
 

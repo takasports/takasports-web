@@ -1027,3 +1027,20 @@ html[data-cap="full"] .ts-keys__dot {
   letter-spacing: -0.02em;
 }
 
+/* ── /jugador — Radar "perfil de rendimiento" ──
+   El polígono de datos entra con un pop de escala desde el centro, SOLO bajo
+   data-cap="full" (perfiles capaces). Por defecto el SVG se entrega visible y
+   estático (degradación segura). Respeta prefers-reduced-motion. 0 KB. */
+@keyframes tsRadarIn {
+  from { opacity: 0; transform: scale(0.55); }
+  to   { opacity: 1; transform: scale(1); }
+}
+html[data-cap="full"] .ts-radar__shape {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tsRadarIn 0.7s var(--ease-emphasis, ease) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-cap="full"] .ts-radar__shape { animation: none; opacity: 1; transform: none; }
+}
+
