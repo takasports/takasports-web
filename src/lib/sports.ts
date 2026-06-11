@@ -38,15 +38,18 @@ export const MORE_SPORT_CATEGORIES: string[] = []
 // Lista completa (compatibilidad interna)
 export const SPORT_CATEGORIES = ['Todo', ...Object.values(SLUG_TO_LABEL)]
 
-// Colores por slug — clave = slug canónico Sanity
+// Colores por slug — clave = slug canónico Sanity.
+// Los `accent` están alineados a la paleta única "La Señal" (--sport-accent en
+// globals.css) para que TODA la web use el mismo color por deporte; el `bg` es
+// solo el fondo de respaldo del HeroBlock (muy oscuro, tras scrim).
 export const SPORT_STYLE: Record<string, { bg: string; accent: string }> = {
-  futbol:     { bg: 'linear-gradient(145deg,#0d2818,#09090F)', accent: '#22c55e' },
-  wwe:        { bg: 'linear-gradient(145deg,#2a0808,#09090F)', accent: '#facc15' },
-  baloncesto: { bg: 'linear-gradient(145deg,#0f1e3d,#09090F)', accent: '#f59e0b' },
-  formula1:   { bg: 'linear-gradient(145deg,#2a1010,#09090F)', accent: '#ef4444' },
-  tenis:      { bg: 'linear-gradient(145deg,#1c1208,#09090F)', accent: '#d97706' },
-  ufc:        { bg: 'linear-gradient(145deg,#2a1408,#09090F)', accent: '#f97316' },
-  rugby:      { bg: 'linear-gradient(145deg,#1a0f38,#09090F)', accent: '#a78bfa' },
+  futbol:     { bg: 'linear-gradient(145deg,#0d2818,#09090F)', accent: '#34D399' },
+  wwe:        { bg: 'linear-gradient(145deg,#1f0a2e,#09090F)', accent: '#A855F7' },
+  baloncesto: { bg: 'linear-gradient(145deg,#0f1e3d,#09090F)', accent: '#F59E0B' },
+  formula1:   { bg: 'linear-gradient(145deg,#2a1010,#09090F)', accent: '#EF4444' },
+  tenis:      { bg: 'linear-gradient(145deg,#1c1208,#09090F)', accent: '#E0B33A' },
+  ufc:        { bg: 'linear-gradient(145deg,#2a1408,#09090F)', accent: '#D4AF37' },
+  rugby:      { bg: 'linear-gradient(145deg,#0a2436,#09090F)', accent: '#38BDF8' },
 }
 
 // Acepta slug canónico ('futbol', 'baloncesto'…) o label visual ('Fútbol', 'NBA'…)
