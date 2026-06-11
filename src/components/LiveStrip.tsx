@@ -189,18 +189,18 @@ export default function LiveStrip() {
             {ageLabel && isLive && (
               <span
                 className="hidden md:block text-[8px] tabular-nums"
-                style={{ color: '#2A2A40', fontFamily: 'var(--font-sport)' }}
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
                 title="Última actualización de marcadores"
               >
                 {ageLabel}
               </span>
             )}
-            <Link href="/calendario" className="flex items-center gap-1 transition-opacity hover:opacity-70" style={{ textDecoration: 'none' }}>
-              <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
+            <Link href="/calendario" className="flex items-center gap-1 transition-opacity hover:opacity-70" style={{ textDecoration: 'none', color: 'var(--text-muted)' }}>
+              <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 Ver agenda
               </span>
               <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                <path d="M2 4.5h5M4.5 2.5l2 2-2 2" stroke="#3A3A5A" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 4.5h5M4.5 2.5l2 2-2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
           </div>
