@@ -329,8 +329,14 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
         clock = awayCurrentSet ?? currentSet
       }
 
+      // ESPN devuelve el MISMO ev.id (id de torneo, p. ej. "415-2026") para todos
+      // los partidos del mismo torneo → id NO único. Lo combinamos con los ids de
+      // los dos jugadores para que cada partido tenga su propia clave (si no,
+      // colisionan las React keys y se duplican/pierden partidos en el ticker).
+      const cid0 = (competitors[0]?.id as string | undefined) ?? home.abbr ?? '0'
+      const cid1 = (competitors[1]?.id as string | undefined) ?? away.abbr ?? '1'
       results.push(buildScore(
-        String(ev.id),
+        `tennis-${String(ev.id)}-${cid0}-${cid1}`,
         home,
         away,
         homeGoals,

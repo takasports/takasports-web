@@ -252,6 +252,24 @@ export function TennisIcon({ size = 32, className }: IconProps) {
   )
 }
 
+export function PadelIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      {/* Pala (cabeza perforada) */}
+      <path d="M16 4c5 0 9 3.8 9 9 0 4.4-3 7.9-7 8.6V24h-4v-2.4c-4-.7-7-4.2-7-8.6 0-5.2 4-9 9-9Z"
+        fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <circle cx="13" cy="11" r="1.05" fill="currentColor" />
+      <circle cx="19" cy="11" r="1.05" fill="currentColor" />
+      <circle cx="16" cy="14.5" r="1.05" fill="currentColor" />
+      <circle cx="13" cy="17.5" r="1.05" fill="currentColor" />
+      <circle cx="19" cy="17.5" r="1.05" fill="currentColor" />
+      {/* Mango */}
+      <path d="M14 24h4v3.4c0 .9-.7 1.6-1.6 1.6h-.8c-.9 0-1.6-.7-1.6-1.6V24Z"
+        fill="currentColor" fillOpacity="0.3" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export function UFCIcon({ size = 32, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
@@ -514,6 +532,7 @@ export function SportIcon({ sport, size = 32, className }: { sport: string } & I
   if (key === 'baloncesto' || key === 'basketball' || key === 'nba' || key === 'basket') return <BasketballIcon size={size} className={className} />
   if (key === 'formula1' || key === 'f1') return <F1Icon size={size} className={className} />
   if (key === 'tenis' || key === 'tennis') return <TennisIcon size={size} className={className} />
+  if (key === 'pádel' || key === 'padel') return <PadelIcon size={size} className={className} />
   if (key === 'ufc' || key === 'mma') return <UFCIcon size={size} className={className} />
   if (key === 'rugby') return <RugbyIcon size={size} className={className} />
   if (key === 'wwe' || key === 'wrestling') return <WWEIcon size={size} className={className} />
