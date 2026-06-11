@@ -960,3 +960,43 @@ textarea:focus-visible,
   .ts-score-in { animation: none; }
 }
 
+/* ═══ NOTICIA — Panel "Claves en 30 segundos" estilo teletexto/broadcast ═══
+   Hereda --sport-accent del [data-sport] de la raíz del artículo. La cascada
+   entra por fila con delay incremental (--ts-key-i, inyectado inline). Coste 0:
+   solo opacity/transform (compositor). Respeta prefers-reduced-motion. */
+@keyframes tsKeyRowIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes tsKeyRec {
+  0%, 60% { opacity: 1; }
+  61%, 100% { opacity: 0.25; }
+}
+.ts-keys__tab { width: 3px; height: 14px; border-radius: 2px; flex-shrink: 0; }
+.ts-keys__dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.ts-keys__num {
+  flex-shrink: 0;
+  font-family: var(--font-sport, system-ui);
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+  min-width: 1.4em;
+}
+/* Cascada y parpadeo solo bajo data-cap="full" (perfiles capaces). Si no aplica,
+   el panel se entrega ya visible y estático (degradación segura). */
+html[data-cap="full"] .ts-keys__row {
+  opacity: 0;
+  animation: tsKeyRowIn 460ms var(--ease-emphasis, ease) both;
+  animation-delay: calc(var(--ts-key-i, 0) * 80ms + 120ms);
+}
+html[data-cap="full"] .ts-keys__dot {
+  animation: tsKeyRec 1.6s steps(1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-cap="full"] .ts-keys__row { animation: none !important; opacity: 1 !important; transform: none !important; }
+  html[data-cap="full"] .ts-keys__dot { animation: none !important; opacity: 1 !important; }
+}
+

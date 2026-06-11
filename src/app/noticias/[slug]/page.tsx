@@ -712,24 +712,41 @@ export default async function NoticiaPage({
 
             {article.tldr && article.tldr.length > 0 && (
               <aside
-                className="mb-8 rounded-2xl p-5"
+                className="ts-keys mb-8 rounded-2xl overflow-hidden"
                 style={{
-                  background: `linear-gradient(135deg, ${badgeColor}10, ${badgeColor}05)`,
+                  background: `linear-gradient(135deg, ${badgeColor}12, ${badgeColor}05)`,
                   border: `1px solid ${badgeBorder}`,
                   maxWidth: 680,
                 }}
                 aria-label="Claves rápidas"
               >
-                <p
-                  className="text-[10px] font-black uppercase tracking-widest mb-3"
-                  style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}
+                {/* Rótulo de TV: barra de acento + label + punto REC */}
+                <div
+                  className="ts-keys__bar flex items-center gap-2.5 px-5 py-2.5"
+                  style={{ borderBottom: `1px solid ${badgeBorder}`, background: `${badgeColor}10` }}
                 >
-                  Claves en 30 segundos
-                </p>
-                <ul className="flex flex-col gap-2">
+                  <span aria-hidden className="ts-keys__tab" style={{ background: badgeColor }} />
+                  <span
+                    className="text-[10px] font-black uppercase tracking-widest"
+                    style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}
+                  >
+                    Claves en 30 segundos
+                  </span>
+                  <span aria-hidden className="ts-keys__rec ml-auto inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest" style={{ color: badgeColor }}>
+                    <span className="ts-keys__dot" style={{ background: badgeColor }} />
+                    EN DIRECTO
+                  </span>
+                </div>
+                <ul className="ts-keys__list flex flex-col px-5 py-4">
                   {article.tldr.map((item, i) => (
-                    <li key={i} className="flex gap-2.5" style={{ color: 'var(--body-list)', fontSize: '0.95rem', lineHeight: 1.55 }}>
-                      <span style={{ color: badgeColor, flexShrink: 0, fontWeight: 800 }}>›</span>
+                    <li
+                      key={i}
+                      className="ts-keys__row flex gap-3 py-1.5"
+                      style={{ color: 'var(--body-list)', fontSize: '0.95rem', lineHeight: 1.55, '--ts-key-i': i } as React.CSSProperties}
+                    >
+                      <span aria-hidden className="ts-keys__num" style={{ color: badgeColor }}>
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
                       <span>{item}</span>
                     </li>
                   ))}
