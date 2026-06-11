@@ -334,6 +334,18 @@ export default function RankingsClient({
     }
   }
 
+  // Dedup defensivo por id: la BD puede traer la misma entidad dos veces
+  // (p.ej. Lamine Yamal aparecía #2 y #4 → warning de key duplicada). Conserva
+  // la primera aparición (mejor rank) y evita pintar a la misma persona/club 2×.
+  {
+    const seenIds = new Set<string>()
+    entries = entries.filter(e => {
+      if (seenIds.has(e.id)) return false
+      seenIds.add(e.id)
+      return true
+    })
+  }
+
   // Cuando hay filtro de deporte activo en jugadores: reordenar por score
   // específico del deporte (rendimiento-heavy) y reasignar ranks 1, 2, 3…
   const sportFilterActive = !!activeSport && !isSpecialSport && !isContenido
