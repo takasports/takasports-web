@@ -14,6 +14,10 @@ export interface FootballLeague {
   comp: string
   /** Incluir en el feed en vivo. */
   live: boolean
+  /** Competición femenina. Clubes y selecciones comparten nombre con su
+   *  homónimo masculino, así que el detalle de partido usa este flag (vía
+   *  WOMENS_SLUGS) para no cruzar H2H/forma entre géneros. */
+  women?: boolean
 }
 
 export const FOOTBALL_LEAGUES: FootballLeague[] = [
@@ -26,7 +30,7 @@ export const FOOTBALL_LEAGUES: FootballLeague[] = [
   { slug: 'soccer/fifa.world',          comp: 'Mundial',            live: true  },
   { slug: 'soccer/fifa.cwc',            comp: 'Mundial de Clubes',  live: true  },
   { slug: 'soccer/fifa.friendly',       comp: 'Amistoso',           live: true  },
-  { slug: 'soccer/fifa.friendly.w',     comp: 'Amistoso (F)',       live: true  },
+  { slug: 'soccer/fifa.friendly.w',     comp: 'Amistoso (F)',       live: true,  women: true },
   { slug: 'soccer/uefa.nations',        comp: 'Nations',            live: true  },
   { slug: 'soccer/uefa.euro',           comp: 'Eurocopa',           live: true  },
   { slug: 'soccer/conmebol.america',    comp: 'Copa América',       live: true  },
@@ -40,7 +44,7 @@ export const FOOTBALL_LEAGUES: FootballLeague[] = [
   { slug: 'soccer/por.1',               comp: 'Primeira',           live: true  },
   { slug: 'soccer/ned.1',               comp: 'Eredivisie',         live: true  },
   // Fútbol femenino
-  { slug: 'soccer/esp.w.1',             comp: 'Liga F',             live: true  },
+  { slug: 'soccer/esp.w.1',             comp: 'Liga F',             live: true,  women: true },
   // Copas nacionales
   { slug: 'soccer/esp.copa_del_rey',    comp: 'Copa Rey',           live: true  },
   { slug: 'soccer/eng.fa',              comp: 'FA Cup',             live: true  },
@@ -82,3 +86,16 @@ export const TABLE_LEAGUE_SLUGS = new Set<string>([
 /** Mapa slug → nombre mostrado, para etiquetar el detalle de partido. */
 export const LEAGUE_LABEL_BY_SLUG: Record<string, string> =
   Object.fromEntries(FOOTBALL_LEAGUES.map((l) => [l.slug, l.comp]))
+
+/** Slugs de competiciones femeninas (derivado del flag `women`, fuente única).
+ *  Clubes y selecciones comparten nombre con su homónimo masculino ("Real
+ *  Madrid", "Barcelona", "España"…); este conjunto permite no cruzar H2H ni
+ *  forma reciente entre géneros en el detalle de partido. */
+export const WOMENS_SLUGS: ReadonlySet<string> = new Set(
+  FOOTBALL_LEAGUES.filter((l) => l.women).map((l) => l.slug),
+)
+
+/** ¿El slug de liga corresponde a una competición femenina? */
+export function isWomensSlug(slug: string | undefined | null): boolean {
+  return !!slug && WOMENS_SLUGS.has(slug)
+}

@@ -7,6 +7,7 @@ import { unstable_cache } from 'next/cache'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { SportEvent } from './types'
 import { adminSupabase } from './supabase-admin'
+import { WOMENS_SLUGS, isWomensSlug } from './football-leagues'
 
 let _read: SupabaseClient | null | undefined
 
@@ -166,6 +167,26 @@ export function pastEventsConfigured(): boolean {
   return readClient() !== null
 }
 
+// ── Filtro de género ───────────────────────────────────────────────────────
+// Club y selección comparten nombre en masculino y femenino, pero el slug de
+// liga (y por tanto el género) viaja embebido en cada fila: el job de sync
+// genera `match_ref` = `<slug con / → _>_<eventId>` (indexado) e `id` =
+// `espn-past-<slug con / → ->-<eventId>`. Reconstruimos los prefijos de las
+// competiciones femeninas para etiquetar cada fila sin columna nueva ni
+// migración. Prefijo exacto, no substring, para no confundir 'esp.w.1' con,
+// p.ej., 'esp.1'.
+const WOMENS_REF_PREFIXES = Array.from(WOMENS_SLUGS, (s) => `${s.replace('/', '_')}_`)
+const WOMENS_ID_PREFIXES  = Array.from(WOMENS_SLUGS, (s) => `espn-past-${s.replace(/\//g, '-')}-`)
+
+// ¿La fila pertenece a una competición femenina? Mira primero match_ref
+// (indexado y siempre presente en fútbol), con respaldo en el id.
+export function isWomensPastRow(r: { match_ref?: string | null; id?: string | null }): boolean {
+  const ref = r.match_ref
+  if (ref) return WOMENS_REF_PREFIXES.some((p) => ref.startsWith(p))
+  const id = r.id ?? ''
+  return WOMENS_ID_PREFIXES.some((p) => id.startsWith(p))
+}
+
 export interface H2HMatch {
   id: string
   isoDate: string
@@ -194,27 +215,39 @@ export interface H2HResult {
 async function _fetchH2HUncached(
   teamA: string,
   teamB: string,
-  opts: { limit?: number; excludeId?: string } = {}
+  opts: { limit?: number; excludeId?: string; leagueSlug?: string } = {}
 ): Promise<H2HResult | null> {
   const sb = readClient()
   if (!sb) return null
   const limit = Math.min(Math.max(opts.limit ?? 5, 1), 20)
 
+  // Filtro de género: si conocemos la liga del partido actual, solo contamos
+  // enfrentamientos del mismo género (mismos nombres de club, distinto equipo).
+  // `null` = sin contexto de liga → no se filtra (compat. con llamadas legadas).
+  const wantWomens = opts.leagueSlug ? isWomensSlug(opts.leagueSlug) : null
+
   // Either (home=A AND away=B) OR (home=B AND away=A). PostgREST `or` syntax
   // requires both clauses inside one filter expression with `and()` groups.
   const filter = `and(home.eq.${escapeOr(teamA)},away.eq.${escapeOr(teamB)}),and(home.eq.${escapeOr(teamB)},away.eq.${escapeOr(teamA)})`
+
+  // Con filtro de género pedimos margen extra para no quedarnos cortos al
+  // descartar filas del otro género tras la consulta.
+  const fetchN = wantWomens === null
+    ? limit + (opts.excludeId ? 1 : 0)
+    : Math.min(limit * 4 + 4, 80)
 
   const { data, error } = await sb
     .from('past_events')
     .select('id,iso_date,comp,home,away,home_score,away_score,home_logo,away_logo,home_abbr,away_abbr,match_ref')
     .or(filter)
     .order('iso_date', { ascending: false })
-    .limit(limit + (opts.excludeId ? 1 : 0))
+    .limit(fetchN)
 
   if (error || !data) return null
 
   const rows = (data as PastEventRow[])
     .filter(r => !opts.excludeId || r.id !== opts.excludeId)
+    .filter(r => wantWomens === null || isWomensPastRow(r) === wantWomens)
     .slice(0, limit)
 
   let wins = 0, draws = 0, losses = 0
@@ -260,11 +293,17 @@ export type FormResult = 'W' | 'D' | 'L'
 // configured (callers should treat as "no form available").
 async function _fetchRecentFormByTeamsUncached(
   teams: string[],
-  limit = 5
+  limit = 5,
+  leagueSlug?: string,
 ): Promise<Record<string, FormResult[]> | null> {
   const sb = readClient()
   if (!sb) return null
   if (teams.length === 0) return {}
+
+  // Filtro de género opcional: solo cuando el llamador pasa la liga del partido
+  // (p.ej. /partido). El calendario pasa una lista mixta sin liga única → null
+  // → sin filtro (comportamiento previo intacto).
+  const wantWomens = leagueSlug ? isWomensSlug(leagueSlug) : null
 
   // Dedup + cap at 200 names per call to keep URL length reasonable.
   const uniq = Array.from(new Set(teams)).slice(0, 200)
@@ -276,7 +315,7 @@ async function _fetchRecentFormByTeamsUncached(
   // games each per month this covers comfortably.
   const { data, error } = await sb
     .from('past_events')
-    .select('home,away,home_score,away_score,iso_date')
+    .select('home,away,home_score,away_score,iso_date,match_ref,id')
     .or(orFilter)
     .order('iso_date', { ascending: false })
     .limit(600)
@@ -287,8 +326,9 @@ async function _fetchRecentFormByTeamsUncached(
   const out: Record<string, FormResult[]> = {}
   for (const t of uniq) out[t] = []
 
-  for (const r of data as Array<{ home: string; away: string | null; home_score: number | null; away_score: number | null }>) {
+  for (const r of data as Array<{ home: string; away: string | null; home_score: number | null; away_score: number | null; match_ref: string | null; id: string }>) {
     if (r.home_score == null || r.away_score == null) continue
+    if (wantWomens !== null && isWomensPastRow(r) !== wantWomens) continue
     const hs = r.home_score, as = r.away_score
 
     if (teamSet.has(r.home) && out[r.home].length < limit) {
