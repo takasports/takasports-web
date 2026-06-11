@@ -659,6 +659,27 @@ export function CameraIcon({ size = 32, className }: IconProps) {
   )
 }
 
+export function UsersIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="2" />
+      <path d="M3.5 26c.7-5 3.8-7.5 8.5-7.5s7.8 2.5 8.5 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M21 7.5a4 4 0 0 1 0 8M23 18.5c2.8.6 4.5 2.8 5 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+    </svg>
+  )
+}
+
+// Icono por "categoría" de predicciones (mundial/global/fútbol/ufc), sustituye
+// los emojis 🏆⚡⚽🥊🏟️ repetidos en los selectores de Predicciones/leaderboard.
+export function RankedCategoryIcon({ sport, size = 16, className }: { sport: string; size?: number; className?: string }) {
+  const k = (sport || '').toLowerCase()
+  if (k === 'mundial') return <TrophyIcon size={size} className={className} />
+  if (k === 'global') return <BoltIcon size={size} className={className} />
+  if (k === 'futbol' || k === 'fútbol') return <FootballIcon size={size} className={className} />
+  if (k === 'ufc' || k === 'mma') return <GlovesIcon size={size} className={className} />
+  return <StadiumIcon size={size} className={className} />
+}
+
 // ── Sport lookup ──────────────────────────────────────────────
 
 export function SportIcon({ sport, size = 32, className }: { sport: string } & IconProps) {

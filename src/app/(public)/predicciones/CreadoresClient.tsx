@@ -15,7 +15,7 @@
 //   3. Click "Ver ranking" → leaderboard interno desplegable
 
 import { useCallback, useEffect, useState } from 'react'
-import { PodiumMedal } from '@/components/icons/GameIcons'
+import { PodiumMedal, MicrophoneIcon, UsersIcon, RankedCategoryIcon } from '@/components/icons/GameIcons'
 import TakaPoint from '@/components/TakaPoint'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -220,7 +220,7 @@ function CreatorCard({
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={league.sponsor_logo} alt={league.sponsor_name ?? ''} width={48} height={48}
                 style={{ width: 48, height: 48, objectFit: 'cover' }} />
-            : <span style={{ fontSize: 22 }}>{meta.emoji}</span>
+            : <span style={{ display: 'inline-flex', color: meta.accent }}><RankedCategoryIcon sport={league.sport} size={24} /></span>
           }
         </div>
 
@@ -239,7 +239,7 @@ function CreatorCard({
                 fontSize: 10, color: meta.accent, fontFamily: 'var(--font-sport)',
                 fontWeight: 700, letterSpacing: '0.05em',
               }}>
-                🎙️ {league.sponsor_name}
+                <MicrophoneIcon size={11} className="inline-block align-middle mr-1" />{league.sponsor_name}
               </span>
             )}
             <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 9 }}>·</span>
@@ -247,14 +247,14 @@ function CreatorCard({
               fontSize: 9, color: 'rgba(255,255,255,0.35)',
               fontFamily: 'var(--font-sport)', letterSpacing: '0.04em',
             }}>
-              {meta.emoji} {meta.label}
+              <RankedCategoryIcon sport={league.sport} size={11} className="inline-block align-middle mr-1" />{meta.label}
             </span>
             <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 9 }}>·</span>
             <span style={{
               fontSize: 9, color: isFull ? '#EF4444' : 'rgba(255,255,255,0.3)',
               fontFamily: 'var(--font-sport)',
             }}>
-              👥 {memberCount.toLocaleString('es-ES')}{league.max_members < 9999 ? `/${league.max_members}` : ''}
+              <UsersIcon size={11} className="inline-block align-middle mr-1" />{memberCount.toLocaleString('es-ES')}{league.max_members < 9999 ? `/${league.max_members}` : ''}
             </span>
           </div>
         </div>
@@ -349,7 +349,7 @@ export default function CreadoresClient() {
         padding: '28px 0 20px',
       }}>
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 text-center">
-          <div style={{ fontSize: 44, marginBottom: 8 }}>🎙️</div>
+          <div style={{ marginBottom: 8, color: '#A78BFA', display: 'flex', justifyContent: 'center' }}><MicrophoneIcon size={44} /></div>
           <h1 style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)',
@@ -381,7 +381,7 @@ export default function CreadoresClient() {
 
         {!loading && leagues.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 16px' }}>
-            <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>🎙️</span>
+            <span style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: 'rgba(255,255,255,0.4)' }}><MicrophoneIcon size={48} /></span>
             <h2 style={{
               fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900,
               color: 'rgba(255,255,255,0.4)',

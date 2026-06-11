@@ -20,6 +20,7 @@ import { usePoints } from '@/hooks/useGameState'
 import RankedLeaderboard from '@/components/ranked/RankedLeaderboard'
 import PorraChallengeBanner from '@/components/PorraChallengeBanner'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
+import { RankedCategoryIcon, FireIcon } from '@/components/icons/GameIcons'
 
 // Carga dinámica — solo se carga el cliente activo
 const QuinielaClient = dynamic(
@@ -218,7 +219,7 @@ export default function PrediccionesHub() {
                     opacity: sport.available ? 1 : 0.6,
                   }}
                 >
-                  <span aria-hidden="true">{sport.emoji}</span>
+                  <span aria-hidden="true" className="inline-flex"><RankedCategoryIcon sport={sport.id} size={14} /></span>
                   <span>{sport.label}</span>
                   {sport.badge && (
                     <span
@@ -251,7 +252,7 @@ export default function PrediccionesHub() {
                 {/* Racha Taka */}
                 {streak !== null && (
                   <div className="flex items-center gap-1.5">
-                    <span style={{ fontSize: 14 }}>🔥</span>
+                    <span style={{ display: 'inline-flex', color: '#F97316' }}><FireIcon size={14} /></span>
                     <span
                       className="text-[11px] font-black"
                       style={{ fontFamily: 'var(--font-sport)', color: '#F97316' }}
@@ -319,7 +320,7 @@ export default function PrediccionesHub() {
           {sportTab === 'futbol' && (
             SPORTS.find(s => s.id === 'futbol')?.available
               ? <QuinielaClient embedded />
-              : <SportComingSoon sport="Ranked Fútbol" emoji="⚽" accent="#4ADE80" />
+              : <SportComingSoon sport="Ranked Fútbol" iconSport="futbol" accent="#4ADE80" />
           )}
           {sportTab === 'ufc'    && <UfcClient />}
           {sportTab === 'mundial' && <MundialClient />}
@@ -342,16 +343,16 @@ export default function PrediccionesHub() {
 
 function SportComingSoon({
   sport,
-  emoji,
+  iconSport,
   accent,
 }: {
   sport: string
-  emoji: string
+  iconSport: string
   accent: string
 }) {
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 py-24 flex flex-col items-center gap-4 text-center">
-      <span style={{ fontSize: 56 }}>{emoji}</span>
+      <span style={{ display: 'inline-flex', color: accent }}><RankedCategoryIcon sport={iconSport} size={56} /></span>
       <h2
         className="font-black"
         style={{

@@ -11,6 +11,7 @@ import type { LeaderboardBadge, LeaderboardEquipment } from '@/lib/leaderboard-b
 import { PlacaRowV3 } from '@/components/placa/PlacaRowV3'
 import { buildPlacaData, type ApiEquipment } from '@/components/placa/adapter'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
+import { RankedCategoryIcon } from '@/components/icons/GameIcons'
 
 type RankedSport = 'global' | 'mundial' | 'futbol' | 'ufc'
 
@@ -157,7 +158,7 @@ export default function RankedLeaderboard({ activeSport }: Props) {
               opacity: t.available ? 1 : 0.5,
             }}
           >
-            <span>{t.emoji}</span>
+            <span className="inline-flex"><RankedCategoryIcon sport={t.id} size={14} /></span>
             <span>{t.label}</span>
             {!t.available && (
               <span className="text-[7px] px-1 py-0.5 rounded-full ml-0.5" style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A52' }}>
@@ -182,7 +183,7 @@ export default function RankedLeaderboard({ activeSport }: Props) {
       >
         {/* Card header */}
         <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${accent}12` }}>
-          <span style={{ fontSize: 13 }}>{activeTabInfo.emoji}</span>
+          <span style={{ display: 'inline-flex', color: accent }}><RankedCategoryIcon sport={tab} size={14} /></span>
           <p className="text-[11px] font-black uppercase tracking-widest flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
             {activeTabInfo.label}
           </p>

@@ -9,7 +9,7 @@
 //   · Liga abierta → leaderboard interno + share link + salir/eliminar
 
 import { useCallback, useEffect, useState } from 'react'
-import { PodiumMedal } from '@/components/icons/GameIcons'
+import { PodiumMedal, RankedCategoryIcon, UsersIcon, LockIcon, LinkIcon, StadiumIcon } from '@/components/icons/GameIcons'
 import TakaPoint from '@/components/TakaPoint'
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ function LeagueCard({
       }}
     >
       {/* Sport emoji */}
-      <span style={{ fontSize: 22, flexShrink: 0 }}>{meta.emoji}</span>
+      <span style={{ flexShrink: 0, display: 'inline-flex', color: meta.accent }}><RankedCategoryIcon sport={league.sport} size={24} /></span>
 
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -128,7 +128,7 @@ function LeagueCard({
             fontSize: 9, color: 'rgba(255,255,255,0.35)',
             fontFamily: 'var(--font-sport)', letterSpacing: '0.05em',
           }}>
-            👥 {league.member_count}/{league.max_members}
+            <UsersIcon size={11} className="inline-block align-middle mr-1" />{league.member_count}/{league.max_members}
           </span>
           {league.is_owner && (
             <>
@@ -245,7 +245,7 @@ function LeagueDetail({
             fontSize: 9, color: meta.accent, fontFamily: 'var(--font-sport)',
             letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2,
           }}>
-            {meta.emoji} {meta.label} · 👥 {league.member_count}/{league.max_members}
+            <RankedCategoryIcon sport={league.sport} size={11} className="inline-block align-middle mr-1" />{meta.label} · <UsersIcon size={11} className="inline-block align-middle mr-1" />{league.member_count}/{league.max_members}
           </div>
         </div>
 
@@ -263,7 +263,7 @@ function LeagueDetail({
             transition: 'all 0.15s ease', flexShrink: 0,
           }}
         >
-          {copied ? '✓ COPIADO' : '🔗 INVITAR'}
+          {copied ? '✓ COPIADO' : <><LinkIcon size={11} className="inline-block align-middle mr-1" />INVITAR</>}
         </button>
       </div>
 
@@ -471,7 +471,7 @@ function CreateModal({
           fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900,
           color: '#F0F0F8', marginBottom: 20,
         }}>
-          🔒 Nueva liga privada
+          <LockIcon size={16} className="inline-block align-middle mr-2" />Nueva liga privada
         </h2>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -518,7 +518,7 @@ function CreateModal({
                     transition: 'all 0.12s ease',
                   }}
                 >
-                  <span>{meta.emoji}</span>
+                  <span className="inline-flex"><RankedCategoryIcon sport={key} size={14} /></span>
                   <span>{meta.label}</span>
                 </button>
               ))}
@@ -723,7 +723,7 @@ export default function PrivadasClient() {
             borderRadius: 20, background: 'rgba(167,139,250,0.04)',
             border: '1px solid rgba(167,139,250,0.12)',
           }}>
-            <span style={{ fontSize: 48, display: 'block', marginBottom: 12 }}>🔒</span>
+            <span style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: '#A78BFA' }}><LockIcon size={48} /></span>
             <h2 style={{
               fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900,
               color: 'rgba(255,255,255,0.7)', marginBottom: 8,
@@ -758,7 +758,7 @@ export default function PrivadasClient() {
                   fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 900,
                   color: '#F0F0F8', letterSpacing: '-0.02em',
                 }}>
-                  🔒 Ligas Privadas
+                  <LockIcon size={18} className="inline-block align-middle mr-2" />Ligas Privadas
                 </h2>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
                   Hasta 15 amigos · ranking propio · cualquier deporte
@@ -804,7 +804,7 @@ export default function PrivadasClient() {
             {/* Ligas */}
             {!loading && leagues.length === 0 && (
               <div style={{ textAlign: 'center', padding: '32px 0' }}>
-                <span style={{ fontSize: 36, display: 'block', marginBottom: 12 }}>🏟️</span>
+                <span style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: 'rgba(255,255,255,0.3)' }}><StadiumIcon size={40} /></span>
                 <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
                   Aún no perteneces a ninguna liga. ¡Crea una o únete con un código!
                 </p>
