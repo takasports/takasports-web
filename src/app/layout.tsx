@@ -5,6 +5,7 @@ import './globals.css'
 import BottomNav from '@/components/BottomNav'
 import ConsentBanner from '@/components/ConsentBanner'
 import AutoTZInit from '@/components/AutoTZInit'
+import DeviceCapInit from '@/components/DeviceCapInit'
 // Wrapper client que dynamic-importa PorraSettlementToast + BadgeUnlockProvider
 // (ambos client-only, no afectan al HTML inicial). Libera ~15 KiB del bundle
 // inicial. Ver F3.3 (jun 2026).
@@ -187,6 +188,7 @@ export default function RootLayout({
           }) }}
         />
         <AutoTZInit />
+        <DeviceCapInit />
         {children}
         <BottomNav />
         <ConsentBanner gaId={GA_ID} clarityId={CLARITY_ID} />

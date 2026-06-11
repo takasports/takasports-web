@@ -842,3 +842,63 @@ textarea:focus-visible,
   .cal-rail { scroll-snap-type: none; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   IDENTIDAD "LA SEÑAL" — Sistema global de tema por deporte + paleta
+   ───────────────────────────────────────────────────────────────────────
+   Generaliza el motor [data-sport] que hoy solo vive en /calendario a TODA
+   la web. Cualquier contenedor con data-sport="futbol|nba|f1|ufc|tenis|..."
+   expone --sport-accent (y sus hijos lo heredan), de modo que header, hubs,
+   artículo, rankings, etc. puedan "vestirse" del color del deporte.
+
+   NO toca a /calendario: su .cal-root[data-sport] es un selector MÁS
+   específico (0,2,0) que [data-sport] (0,1,0), así que conserva su
+   --cal-accent sin regresión. Este bloque solo AÑADE tokens nuevos.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Acento registrado → crossfade suave al cambiar de deporte (gesto "cambiar
+   de canal"). Fallback grácil si el navegador no soporta @property. */
+@property --sport-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #7C3AED;
+}
+
+:root {
+  /* Tema por deporte (default = morado marca). */
+  --sport-accent: #7C3AED;
+
+  /* Paleta "La Señal" — el PAR que faltaba:
+     morado = la cadena · sport-accent = el programa ·
+     rojo señal = el directo/acción · verde = el acierto/gol. */
+  --accent-action: #FF4D2E;   /* Rojo Señal: CTA caliente / urgencia / acción */
+  --color-live:    #FF4D2E;   /* "EN EL AIRE" unificado (hoy disperso verde/rojo) */
+  --color-success: #3DF06B;   /* acierto / victoria / tendencia al alza */
+  --color-danger:  #EF4444;   /* error / derrota */
+  --color-warning: #FBBF24;   /* aviso / pendiente */
+}
+
+/* Mapa de acento por deporte. Incluye los alias de slug que usa la web
+   (formula1↔f1, baloncesto↔nba, mma↔ufc, lucha-libre↔wwe). */
+[data-sport="futbol"]                      { --sport-accent: #34D399; }
+[data-sport="nba"],
+[data-sport="baloncesto"]                  { --sport-accent: #F59E0B; }
+[data-sport="f1"],
+[data-sport="formula1"]                    { --sport-accent: #EF4444; }
+[data-sport="ufc"],
+[data-sport="mma"]                         { --sport-accent: #D4AF37; }
+[data-sport="tenis"]                       { --sport-accent: #E0B33A; }
+[data-sport="padel"]                       { --sport-accent: #22D3EE; }
+[data-sport="wwe"],
+[data-sport="lucha-libre"]                 { --sport-accent: #A855F7; }
+[data-sport="rugby"]                       { --sport-accent: #38BDF8; }
+[data-sport="motogp"]                      { --sport-accent: #FB7185; }
+
+/* El crossfade del acento solo en quien declara el tema (no en :root global,
+   para no animar toda la página). */
+[data-sport] {
+  transition: --sport-accent var(--duration-slow, 300ms) var(--ease-standard, ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-sport] { transition: none; }
+}
+
