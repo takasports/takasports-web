@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import type { RankingEntry } from '@/lib/rankings'
 import { getSportEmoji, getSportStyle } from '@/lib/sports'
-import { SITE_URL } from '@/lib/constants'
 import { CalendarIcon, LiveDotIcon } from '@/components/icons/GameIcons'
 
 interface SportEvent {
@@ -31,37 +30,6 @@ const SPORT_DESCRIPTIONS: Record<string, string> = {
   ufc:        'Carteleras UFC y MMA: resultados de peleas, noticias de fichajes y el ranking Taka de los luchadores del momento.',
   wwe:        'WWE Raw, SmackDown y PPVs: resultados, storylines y el ranking de los creadores de contenido en wrestling.',
   rugby:      'Six Nations, Rugby Championship y Premiership. Resultados, análisis y el índice Taka del rugby mundial.',
-}
-
-const SPORT_FAQS: Record<string, Array<{ q: string; a: string }>> = {
-  futbol: [
-    { q: '¿Cómo funciona el Índice Taka de fútbol?', a: 'El Índice Taka combina rendimiento estadístico, contexto del equipo, impacto mediático y narrativa deportiva en una puntuación del 0 al 100. Se actualiza semanalmente.' },
-    { q: '¿Con qué frecuencia se actualizan las noticias de fútbol?', a: 'TakaSports publica noticias de fútbol cada hora, cubriendo LaLiga, Premier League, Champions League, Bundesliga y más competiciones.' },
-  ],
-  baloncesto: [
-    { q: '¿Cómo funciona el Índice Taka NBA?', a: 'El Índice Taka NBA evalúa el rendimiento estadístico, impacto en el equipo, influencia mediática y contexto de la temporada de cada jugador. Se actualiza semanalmente.' },
-    { q: '¿Qué competiciones de baloncesto cubre TakaSports?', a: 'TakaSports cubre la NBA, incluyendo noticias de equipos, fichajes, resultados de partidos y análisis de playoffs.' },
-  ],
-  formula1: [
-    { q: '¿Cómo se calcula el Índice Taka de F1?', a: 'El Índice Taka de F1 pondera resultados de carrera, posiciones en parrilla, estrategia y consistencia de temporada. Se actualiza después de cada GP.' },
-    { q: '¿Qué información de F1 puedo encontrar en TakaSports?', a: 'TakaSports cubre todos los Grandes Premios de Fórmula 1: resultados, clasificaciones, noticias de equipos y análisis de temporada.' },
-  ],
-  tenis: [
-    { q: '¿Qué torneos de tenis cubre TakaSports?', a: 'TakaSports cubre ATP, WTA, los cuatro Grand Slams (Wimbledon, Roland Garros, US Open, Australian Open) y Masters 1000.' },
-    { q: '¿Cómo se calcula el Índice Taka de tenis?', a: 'El Índice Taka de tenis combina ranking ATP/WTA, rendimiento en superficies, victorias en torneos importantes y presencia mediática.' },
-  ],
-  ufc: [
-    { q: '¿Qué eventos UFC cubre TakaSports?', a: 'TakaSports cubre todos los eventos UFC y las principales peleas de MMA: carteleras, resultados, noticias de contrataciones y análisis.' },
-    { q: '¿Cómo se calcula el Índice Taka de UFC?', a: 'El Índice Taka UFC evalúa récord de victorias, calidad de rivales, método de victoria, actividad y popularidad mediática del luchador.' },
-  ],
-  wwe: [
-    { q: '¿Qué contenido de WWE cubre TakaSports?', a: 'TakaSports cubre WWE Raw, SmackDown, NXT y todos los PPVs: resultados, storylines, noticias de fichajes y cambios de título.' },
-    { q: '¿Cómo se calcula el Índice Taka de WWE?', a: 'El Índice Taka WWE mide tiempo de pantalla, títulos ganados, reacciones del público, redes sociales e impacto en storylines.' },
-  ],
-  rugby: [
-    { q: '¿Qué competiciones de rugby cubre TakaSports?', a: 'TakaSports cubre el Six Nations, Rugby Championship, Premiership inglesa, Top 14 francés y el Rugby World Cup.' },
-    { q: '¿Cómo se calcula el Índice Taka de rugby?', a: 'El Índice Taka de rugby combina estadísticas de partido, impacto en el equipo nacional, presencia en torneos internacionales e influencia mediática.' },
-  ],
 }
 
 // Etiqueta del ranking en el banner por deporte. La mayoría muestran el
@@ -105,55 +73,13 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
   // wwe aún no tienen asset propio (IA pendiente) → caen al neutro 'default'.
   const bdKey = ({ futbol: 'futbol', baloncesto: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc', padel: 'padel' } as Record<string, string>)[sport] ?? 'default'
 
-  // FAQ JSON-LD — dinámico: primera pregunta usa el jugador #1 si hay ranking
-  const baseFaqs = SPORT_FAQS[sport] ?? []
-  const dynamicFaqs = top5.length > 0
-    ? [
-        {
-          q: `¿Quién es el mejor ${label === 'Baloncesto' || label === 'NBA' ? 'jugador de baloncesto' : label === 'F1' ? 'piloto de F1' : `jugador de ${label.toLowerCase()}`} del mundo ahora mismo?`,
-          a: `Según el Índice Taka, ${top5[0].name} es actualmente el número 1 con una puntuación de ${top5[0].score.toFixed(1)}/100. ${top5[0].trendReason ?? `Ocupa el puesto #1 en el ranking global de ${label}.`}`,
-        },
-        ...baseFaqs,
-      ]
-    : baseFaqs
-
-  const faqJsonLd = dynamicFaqs.length > 0
-    ? {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: dynamicFaqs.map(faq => ({
-          '@type': 'Question',
-          name: faq.q,
-          acceptedAnswer: { '@type': 'Answer', text: faq.a },
-        })),
-      }
-    : null
-
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
-      { '@type': 'ListItem', position: 2, name: label, item: `${SITE_URL}/${sport}` },
-    ],
-  }
+  // Schema de página (FAQPage + BreadcrumbList) lo emite la PÁGINA del hub
+  // ([sport]/page.tsx), NO este componente: antes ambos emitían su propio
+  // FAQPage y su propio BreadcrumbList en la MISMA página (schema duplicado/
+  // confuso para Google). Este componente ya no emite JSON-LD.
 
   return (
-    <>
-      {faqJsonLd && (
-        <script
-          type="application/ld+json"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-        />
-      )}
-      <script
-        type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
-
-      <section
+    <section
         data-sport={sport}
         className="w-full relative overflow-hidden"
         style={{
@@ -372,6 +298,5 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
           </div>
         </div>
       </section>
-    </>
   )
 }
