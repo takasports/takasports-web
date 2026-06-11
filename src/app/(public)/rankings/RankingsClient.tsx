@@ -217,7 +217,7 @@ export default function RankingsClient({
   const sportAccent = activeSport ? getSportStyle(activeSport).accent : '#7C3AED'
   // Fondo atmosférico por deporte para el hero (reusa los WebP de /calendario).
   // Solo cuando hay un deporte con asset; en "global" se mantiene el look morado.
-  const sportBackdrop = ({ futbol: 'futbol', baloncesto: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc', padel: 'padel' } as Record<string, string>)[activeSport] ?? null
+  const sportBackdrop = ({ futbol: 'futbol', baloncesto: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc', padel: 'padel', rugby: 'rugby', wwe: 'wwe' } as Record<string, string>)[activeSport] ?? null
 
   // Build type map for contenido total view (estable entre renders)
   const contenidoTypeMap = useMemo(() => {
