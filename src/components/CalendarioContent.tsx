@@ -2235,6 +2235,15 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // banner); si no, deriva del filtro de deporte.
   const themeKey = sportThemeKey(activeCompCfg?.sport ?? activeFilter)
 
+  // "Una foto por pantalla": la foto de una competición vive en UN solo sitio a
+  // la vez, para no verla repetida. Si hay competición elegida, su identidad la
+  // lleva el banner grande (o, sin banner, sus cabeceras de grupo) → se retira la
+  // foto de fondo ambiente. Caso flagrante: NBA/F1/UFC, cuyo banner ES el mismo
+  // archivo que el backdrop del deporte, así que sin esto se ve 3 veces idéntica.
+  const compSelected = !!activeCompCfg
+  const bannerVisible = compSelected && !onlyLive && !selectedDate
+  const showAmbientPhoto = !compSelected && !!SPORT_THEME[themeKey].backdrop
+
   return (
     <main
       className="cal-root relative max-w-[1280px] mx-auto px-4 sm:px-6 xl:px-10 pb-28"
@@ -2244,8 +2253,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       {/* Capa ambiente del tema (foto IA + tinte + textura broadcast, detrás del
           hero). Solo el tema activo está montado → su foto carga lazy; el resto
           ni se pide. Sin foto configurada, caen solo tinte + textura. */}
-      <div key={themeKey} className={`cal-ambient${SPORT_THEME[themeKey].backdrop ? ' cal-ambient--photo' : ''}`} style={{ zIndex: 0 }} aria-hidden>
-        {SPORT_THEME[themeKey].backdrop && (
+      <div key={themeKey} className={`cal-ambient${showAmbientPhoto ? ' cal-ambient--photo' : ''}`} style={{ zIndex: 0 }} aria-hidden>
+        {showAmbientPhoto && (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="cal-backdrop" src={SPORT_THEME[themeKey].backdrop} alt="" aria-hidden="true" loading="lazy" decoding="async" />
@@ -2611,7 +2620,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
                     return (
                       <div key={comp} className="mb-2 relative cal-anim-in" style={{ animationDelay: `${Math.min(compIdx * 55, 280)}ms` }}>
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={bannerVisible && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <MatchRow
@@ -2833,7 +2842,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
                     return (
                       <div key={comp} className="mb-2 relative">
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={bannerVisible && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <PastMatchRow
