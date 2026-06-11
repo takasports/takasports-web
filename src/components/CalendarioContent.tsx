@@ -468,48 +468,61 @@ function compConfigForGroup(comp: string, sport?: string) {
 // ─── Competition sub-header ───────────────────────────────────────────────
 // Si la competición tiene página propia, la cabecera lleva su escudo oficial y
 // es un enlace a /calendario/[slug] (anclaje visual + descubrimiento).
-function CompGroupHeader({ comp, accent, count, first, crest, slug, pinned, onTogglePin }: {
+function CompGroupHeader({ comp, accent, count, first, crest, slug, banner, pinned, onTogglePin }: {
   comp: string; accent: string; count: number; first?: boolean; crest?: string; slug?: string
-  pinned?: boolean; onTogglePin?: () => void
+  banner?: string; pinned?: boolean; onTogglePin?: () => void
 }) {
   const inner = (
-    <div className={`flex items-center gap-2.5 px-1 pb-2 ${first ? 'pt-1' : 'pt-4'}`}>
-      <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 14, background: accent, boxShadow: `0 0 8px ${accent}66` }} />
-      {crest && (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img src={crest} alt="" aria-hidden="true" width={16} height={16} loading="lazy" decoding="async"
-          style={{ objectFit: 'contain', width: 16, height: 16, flexShrink: 0 }} />
+    <div className={`relative px-2 pb-2 ${first ? 'pt-1' : 'pt-4'}`}>
+      {/* Backdrop sutil de la competición (broadcast): la foto asoma muy tenue
+          por la derecha; un scrim la apaga sobre el lado del texto. Solo en las
+          competiciones con banner; el resto mantiene la cabecera lisa de antes. */}
+      {banner && (
+        <div className="absolute left-0 right-0 rounded-lg overflow-hidden pointer-events-none" style={{ top: first ? 2 : 12, bottom: 2, zIndex: 0 }} aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={banner} alt="" aria-hidden="true" loading="lazy" decoding="async"
+            className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.4, objectPosition: '85% 36%' }} />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, var(--bg-base) 6%, color-mix(in srgb, ${accent} 9%, rgba(10,10,18,0.82)) 46%, rgba(10,10,18,0.34) 100%)` }} />
+        </div>
       )}
-      <span className="text-[11px] font-bold uppercase tracking-[0.12em] truncate flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
-        {comp}
-      </span>
-      {pinned && (
-        <span className="text-[8px] font-black uppercase tracking-wider flex-shrink-0" style={{ color: accent, fontFamily: 'var(--font-sport)', opacity: 0.85 }}>
-          Fijada
+      <div className="relative flex items-center gap-2.5" style={{ zIndex: 1 }}>
+        <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 14, background: accent, boxShadow: `0 0 8px ${accent}66` }} />
+        {crest && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={crest} alt="" aria-hidden="true" width={16} height={16} loading="lazy" decoding="async"
+            style={{ objectFit: 'contain', width: 16, height: 16, flexShrink: 0 }} />
+        )}
+        <span className="text-[11px] font-bold uppercase tracking-[0.12em] truncate flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+          {comp}
         </span>
-      )}
-      {onTogglePin && (
-        <button
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTogglePin() }}
-          aria-label={pinned ? `Dejar de fijar ${comp}` : `Fijar ${comp} arriba`}
-          aria-pressed={!!pinned}
-          className="flex items-center justify-center flex-shrink-0 rounded-md transition-all"
-          style={{ width: 22, height: 22, cursor: 'pointer', background: pinned ? `${accent}22` : 'transparent', border: 'none' }}
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill={pinned ? accent : 'none'} stroke={pinned ? accent : '#6A6A80'} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
-            <path d="M12 2.5l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 16.8 6.4 19.7l1.1-6.2L3 9.1l6.2-.9L12 2.5z" />
+        {pinned && (
+          <span className="text-[8px] font-black uppercase tracking-wider flex-shrink-0" style={{ color: accent, fontFamily: 'var(--font-sport)', opacity: 0.85 }}>
+            Fijada
+          </span>
+        )}
+        {onTogglePin && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTogglePin() }}
+            aria-label={pinned ? `Dejar de fijar ${comp}` : `Fijar ${comp} arriba`}
+            aria-pressed={!!pinned}
+            className="flex items-center justify-center flex-shrink-0 rounded-md transition-all"
+            style={{ width: 22, height: 22, cursor: 'pointer', background: pinned ? `${accent}22` : 'transparent', border: 'none' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill={pinned ? accent : 'none'} stroke={pinned ? accent : '#6A6A80'} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+              <path d="M12 2.5l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 16.8 6.4 19.7l1.1-6.2L3 9.1l6.2-.9L12 2.5z" />
+            </svg>
+          </button>
+        )}
+        {slug && (
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" className="flex-shrink-0" aria-hidden style={{ opacity: 0.55 }}>
+            <path d="M4.5 2L8 6l-3.5 4" stroke={accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-        </button>
-      )}
-      {slug && (
-        <svg width="9" height="9" viewBox="0 0 12 12" fill="none" className="flex-shrink-0" aria-hidden style={{ opacity: 0.55 }}>
-          <path d="M4.5 2L8 6l-3.5 4" stroke={accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
-      <span className="text-[9px] font-bold tabular-nums px-2 py-0.5 rounded-full flex-shrink-0"
-        style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
-        {count}
-      </span>
+        )}
+        <span className="text-[9px] font-bold tabular-nums px-2 py-0.5 rounded-full flex-shrink-0"
+          style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
+          {count}
+        </span>
+      </div>
     </div>
   )
   return slug
@@ -2602,7 +2615,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
                     return (
                       <div key={comp} className="mb-2 relative cal-anim-in" style={{ animationDelay: `${Math.min(compIdx * 55, 280)}ms` }}>
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <MatchRow
@@ -2841,7 +2854,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
                     return (
                       <div key={comp} className="mb-2 relative">
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <PastMatchRow
