@@ -2450,64 +2450,18 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           {/* Sport categories — Destacados es una pastilla resaltada,
               el resto tabs de texto plano con subrayado púrpura al activo.
               Mask en el borde derecho indica que hay scroll horizontal. */}
-          <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-px -mx-1 px-1 scrollbar-hide"
-            style={{
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
-              maskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%)',
-            }}>
-            {sports.map(sport => {
-              const active = activeFilter === sport
-              const isDestacados = sport === 'Destacados'
-              if (isDestacados) {
-                return (
-                  <button
-                    key={sport}
-                    onClick={() => setActiveFilter(sport)}
-                    aria-pressed={active}
-                    className="cal-press relative flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-black uppercase tracking-[0.12em] transition-all flex-shrink-0"
-                    style={{
-                      color: active ? '#fff' : '#C4B5FD',
-                      background: active ? '#7C3AED' : 'rgba(124,58,237,0.16)',
-                      border: active ? '1px solid #A78BFA' : '1px solid rgba(124,58,237,0.4)',
-                      fontFamily: 'var(--font-sport)',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      boxShadow: active ? '0 0 16px rgba(124,58,237,0.5)' : 'none',
-                      marginBottom: 6,
-                    }}>
-                    <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
-                      <path d="M6 1l1.5 3.2 3.5.5-2.5 2.4.6 3.4L6 8.9 2.9 10.5l.6-3.4L1 4.7l3.5-.5L6 1z" />
-                    </svg>
-                    {sport}
-                  </button>
-                )
-              }
-              return (
-                <button
-                  key={sport}
-                  onClick={() => setActiveFilter(sport)}
-                  aria-pressed={active}
-                  className="cal-press relative px-3 py-2.5 text-[13px] font-semibold transition-colors flex-shrink-0"
-                  style={{
-                    color: active ? '#F0F0FA' : '#7A7A8E',
-                    fontFamily: 'var(--font-sport)',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    background: 'transparent',
-                    border: 'none',
-                  }}>
-                  <span className="inline-flex items-center gap-1.5">
-                    {sport !== 'Todo' && <SportIcon sport={sport} size={13} />}
-                    {sport}
-                  </span>
-                  {active && (
-                    <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full"
-                      style={{ background: 'var(--cal-accent)', boxShadow: '0 0 8px color-mix(in srgb, var(--cal-accent) 50%, transparent)' }} />
-                  )}
-                </button>
-              )
-            })}
+          {/* Barra unificada de categorías (fichas con logo, scrollable):
+              Destacados → Todo → deportes (icono) → competiciones (escudo).
+              Reemplaza los antiguos chips de texto. Deporte/modo ajusta el filtro;
+              competición fija activeComp y muestra su banner. */}
+          <div className="mt-3 pb-1">
+            <CompetitionSelector
+              events={events}
+              activeFilter={activeFilter}
+              activeComp={activeComp}
+              onSelectSport={(k) => { setActiveComp(null); setActiveFilter(k) }}
+              onSelectComp={(slug) => { if (activeComp === slug) { setActiveComp(null) } else { setActiveFilter('Todo'); setActiveComp(slug) } }}
+            />
           </div>
         </div>
       )}
@@ -2523,12 +2477,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             </section>
           )}
 
-          {/* Por competición — selector EN EL SITIO (no saca a sub-páginas): las
-              destacadas siempre + las que tengan eventos. Al elegir una, filtra el
-              feed y aparece su banner con la foto + el escudo oficial. */}
-          {!onlyLive && !selectedDate && !search && (
-            <CompetitionSelector events={events} activeComp={activeComp} onSelect={setActiveComp} />
-          )}
+          {/* Banner de la competición seleccionada (la selección se hace arriba,
+              en la barra de categorías). */}
           {activeCompCfg && !onlyLive && !selectedDate && (
             <CompetitionBanner comp={activeCompCfg} count={filtered.length} onClear={() => setActiveComp(null)} />
           )}
