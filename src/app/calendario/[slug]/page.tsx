@@ -332,7 +332,11 @@ export default async function CompetitionCalendarPage({
                 />
               )}
               {scorers.length > 0 && (
-                <TopScorers scorers={scorers} espnSlug={comp.espnSlug!} />
+                <TopScorers
+                  scorers={scorers}
+                  espnSlug={comp.espnSlug!}
+                  title={comp.espnSlug!.includes('.w.') ? 'Máximas goleadoras' : 'Máximos goleadores'}
+                />
               )}
             </div>
           </section>

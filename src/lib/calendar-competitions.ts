@@ -173,6 +173,15 @@ export const COMPETITIONS: CompetitionConfig[] = [
     description: 'Calendario de la UEFA Nations League: partidos de la fase de grupos y eliminatorias de la competición de selecciones europeas.',
     seasonLabel: '2025-2026',
   },
+  {
+    slug: 'liga-f',
+    displayName: 'Liga F',
+    shortName: 'Liga F',
+    sport: 'Fútbol',
+    matchComp: 'Liga F',
+    description: 'Calendario de la Liga F, la primera división del fútbol femenino español: jornadas, horarios, clasificación y máximas goleadoras.',
+    seasonLabel: '2025-2026',
+  },
 ]
 
 // Logos oficiales (CDN ESPN, uso editorial) por slug. Alimentan el rail "Por
@@ -209,6 +218,7 @@ const ESPN_SLUG_BY_SLUG: Record<string, string> = {
   'ligue-1':       'soccer/fra.1',
   'europa-league': 'soccer/uefa.europa',
   'copa-del-rey':  'soccer/esp.copa_del_rey',
+  'liga-f':        'soccer/esp.w.1',
 }
 for (const c of COMPETITIONS) {
   if (!c.espnSlug && ESPN_SLUG_BY_SLUG[c.slug]) c.espnSlug = ESPN_SLUG_BY_SLUG[c.slug]

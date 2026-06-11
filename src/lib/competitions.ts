@@ -10,6 +10,7 @@ export const COMP_ACCENT: Record<string, string> = {
   'UCL': '#0B1EEA',
   'Europa': '#F37021',
   'Copa Rey': '#EF4444',
+  'Liga F': '#DB2777',
   'NBA': '#C8102E',
   'Fórmula 1': '#E10600',
   'F1': '#E10600',
@@ -85,6 +86,7 @@ export const LEAGUE_IMPORTANCE: Record<string, number> = {
   'UFC': 8,
   'Ligue 1': 8,
   'Copa Rey': 7,
+  'Liga F': 7,
   // ATP/WTA 500 y genéricos
   'ATP 500': 7,
   'WTA 500': 7,

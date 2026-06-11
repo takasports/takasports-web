@@ -39,6 +39,8 @@ export const FOOTBALL_LEAGUES: FootballLeague[] = [
   { slug: 'soccer/fra.1',               comp: 'Ligue 1',            live: true  },
   { slug: 'soccer/por.1',               comp: 'Primeira',           live: true  },
   { slug: 'soccer/ned.1',               comp: 'Eredivisie',         live: true  },
+  // Fútbol femenino
+  { slug: 'soccer/esp.w.1',             comp: 'Liga F',             live: true  },
   // Copas nacionales
   { slug: 'soccer/esp.copa_del_rey',    comp: 'Copa Rey',           live: true  },
   { slug: 'soccer/eng.fa',              comp: 'FA Cup',             live: true  },
@@ -74,7 +76,7 @@ export const TABLE_LEAGUE_SLUGS = new Set<string>([
   'soccer/esp.1', 'soccer/eng.1', 'soccer/ita.1', 'soccer/ger.1', 'soccer/fra.1',
   'soccer/por.1', 'soccer/ned.1', 'soccer/eng.2', 'soccer/esp.2', 'soccer/tur.1',
   'soccer/bel.1', 'soccer/sco.1', 'soccer/usa.1', 'soccer/mex.1', 'soccer/bra.1',
-  'soccer/arg.1', 'soccer/ksa.1', 'soccer/jpn.1',
+  'soccer/arg.1', 'soccer/ksa.1', 'soccer/jpn.1', 'soccer/esp.w.1',
 ])
 
 /** Mapa slug → nombre mostrado, para etiquetar el detalle de partido. */
