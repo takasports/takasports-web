@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
+import { TrophyIcon } from '@/components/icons/GameIcons'
 
 // ─────────────────────────────────────────────────────────────────
 // Modal de bienvenida al modo Mundial 2026.
@@ -112,7 +113,7 @@ export function MundialWelcomeModal({
           className="px-6 py-5 flex items-center gap-3"
           style={{ borderBottom: '1px solid rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.05)' }}
         >
-          <span style={{ fontSize: 32, lineHeight: 1 }}>🏆</span>
+          <span style={{ display: 'inline-flex', lineHeight: 1, color: '#FBBF24' }}><TrophyIcon size={32} /></span>
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#fbbf24', fontFamily: 'var(--font-sport)' }}>
               Copa 2026

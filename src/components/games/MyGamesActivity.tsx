@@ -12,6 +12,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { MeAllResponse, GameSummary } from '@/app/api/games/me/all/route'
+import { FireIcon } from '@/components/icons/GameIcons'
 
 interface GameMeta {
   label:  string
@@ -76,7 +77,7 @@ export default function MyGamesActivity() {
             style={{ background: 'rgba(251,146,60,0.18)', fontSize: 22 }}
             aria-hidden
           >
-            🔥
+            <FireIcon size={22} className="text-[#FB923C]" />
           </div>
           <div className="flex-1">
             <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#FB923C', fontFamily: 'var(--font-sport)' }}>

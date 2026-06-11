@@ -17,6 +17,7 @@ import { trackPorraCtaClick, trackPorraSettlementShown, trackPorraExactSettled }
 import { buildResultSlug } from '@/lib/porra-result-slug'
 import { buildChallengeToken, buildChallengeUrl, buildChallengeText } from '@/lib/porra-challenge'
 import { fetchPorraStatus, readPorraCache } from '@/lib/porra-status-client'
+import { StarIcon, TargetIcon, GlovesIcon } from '@/components/icons/GameIcons'
 
 const ACK_KEY = 'porra:settledAck:v1'
 const AUTO_DISMISS_MS = 12_000
@@ -307,7 +308,7 @@ export default function PorraSettlementToast() {
                     border: '1px solid rgba(251,191,36,0.36)',
                     fontFamily: 'var(--font-sport)',
                     verticalAlign: 'middle',
-                  }}>⭐ x2 DESTACADO</span>
+                  }}><StarIcon size={10} className="inline-block align-middle mr-1" />x2 DESTACADO</span>
                 </>
               )}
               {typeof settled.exactHits === 'number' && settled.exactHits > 0 && (
@@ -321,7 +322,7 @@ export default function PorraSettlementToast() {
                     border: '1px solid rgba(167,139,250,0.36)',
                     fontFamily: 'var(--font-sport)',
                     verticalAlign: 'middle',
-                  }}>🎯 {settled.exactHits} EXACTO{settled.exactHits === 1 ? '' : 'S'}</span>
+                  }}><TargetIcon size={10} className="inline-block align-middle mr-1" />{settled.exactHits} EXACTO{settled.exactHits === 1 ? '' : 'S'}</span>
                 </>
               )}
             </p>
@@ -398,7 +399,7 @@ export default function PorraSettlementToast() {
                     color: '#FDE68A', letterSpacing: '0.06em',
                   }}
                 >
-                  🥊 RETAR
+                  <GlovesIcon size={13} className="inline-block align-middle mr-1" />RETAR
                 </button>
               )}
             </div>

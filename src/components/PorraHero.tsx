@@ -18,6 +18,7 @@ import type { PorraStatus, PorraMatch } from './PorraCTA'
 import { usePushSubscription } from '@/app/quiniela/lib/hooks'
 import { normalize as normalizeTeam } from '@/lib/quiniela'
 import { usePorraStatus } from '@/lib/porra-status-client'
+import { StarIcon, FireIcon } from '@/components/icons/GameIcons'
 
 const MAX_DAYS_AHEAD = 7
 
@@ -210,7 +211,7 @@ function MatchRow({ m, pickStatus }: { m: PorraMatch; pickStatus?: PickStatus })
               fontFamily: 'var(--font-sport)',
             }}
           >
-            ⭐ DESTACADO
+            <StarIcon size={11} className="inline-block align-middle mr-1" />DESTACADO
           </span>
         )}
         <span style={{
@@ -466,7 +467,7 @@ export default function PorraHero() {
                       fontFamily: 'var(--font-sport)',
                     }}
                   >
-                    🔥 {status.streakCurrent} en racha
+                    <FireIcon size={11} className="inline-block align-middle mr-1" />{status.streakCurrent} en racha
                   </span>
                 )}
                 {(status.weeklyParticipants ?? 0) >= 5 && (

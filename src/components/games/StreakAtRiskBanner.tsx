@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useStreak } from '@/hooks/useGameState'
 import { madridDayISO } from '@/lib/taka-time'
+import { FireIcon } from '@/components/icons/GameIcons'
 
 const HIDE_KEY = 'taka-streak-banner-hidden-on'
 
@@ -60,7 +61,7 @@ export default function StreakAtRiskBanner() {
           filter: 'drop-shadow(0 0 12px rgba(252,211,77,0.45))',
         }}
       >
-        🔥
+        <FireIcon size={32} className="text-[#FCD34D]" />
       </span>
       <div className="flex-1 min-w-0">
         <p

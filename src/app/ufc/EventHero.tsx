@@ -1,5 +1,7 @@
 'use client'
 
+import { GlovesIcon, TrophyIcon } from '@/components/icons/GameIcons'
+
 // ── EventHero ───────────────────────────────────────────────────────────────
 // Banner cinematográfico de TÍTULO de la próxima velada UFC.
 // Prioridad:
@@ -122,7 +124,7 @@ export default function EventHero({
             fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900, letterSpacing: '0.3em',
             textTransform: 'uppercase', color: 'rgba(248,113,113,0.7)',
           }}>
-            🥊 Ranked UFC
+            <GlovesIcon size={13} className="inline-block align-middle mr-1" />Ranked UFC
           </span>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 7,
@@ -193,7 +195,7 @@ export default function EventHero({
                 fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
                 color: '#FACC15', letterSpacing: '0.1em', textTransform: 'uppercase',
               }}>
-                🏆 Combate de campeonato
+                <TrophyIcon size={13} className="inline-block align-middle mr-1" />Combate de campeonato
               </div>
             )}
           </div>

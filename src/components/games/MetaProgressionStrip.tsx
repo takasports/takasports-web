@@ -9,7 +9,7 @@
 // divergente del nivel real) — esto lo elimina (una sola fuente, no falseable).
 
 import { useEffect, useState } from 'react'
-import { FireIcon } from '@/components/icons/GameIcons'
+import { FireIcon, BoltIcon } from '@/components/icons/GameIcons'
 import { useStreak } from '@/hooks/useGameState'
 
 interface MeLevel {
@@ -93,7 +93,7 @@ export default function MetaProgressionStrip({ accent = '#93C5FD', compact = fal
       <div className="flex-1 min-w-[160px]">
         <div className="flex items-baseline justify-between gap-3 mb-1.5">
           <p className="text-[10px] uppercase tracking-widest font-black inline-flex items-center gap-1.5" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
-            <span aria-hidden>⚡</span>
+            <span aria-hidden className="inline-flex"><BoltIcon size={13} /></span>
             <span>Liga Taka · Nivel {me.level}</span>
           </p>
           <p className="text-[10px] tabular-nums" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>

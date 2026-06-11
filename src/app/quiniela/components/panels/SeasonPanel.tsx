@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { GoogleSignInButton } from '../atoms/GoogleSignInButton'
+import { TrophyIcon } from '@/components/icons/GameIcons'
 
 // ─────────────────────────────────────────────────────────────────
 // Season Predictions Panel
@@ -168,7 +169,7 @@ export function SeasonPanel({ user }: { user: User | null }) {
                         +{q.prize_coins} pts
                       </span>
                     )}
-                    {isWinner && <span style={{ fontSize: 13 }}>🏆</span>}
+                    {isWinner && <span style={{ display: 'inline-flex', color: '#fbbf24' }}><TrophyIcon size={13} /></span>}
                     {isWrong  && <span style={{ fontSize: 11, color: '#f87171' }}>✗</span>}
                   </button>
                 )

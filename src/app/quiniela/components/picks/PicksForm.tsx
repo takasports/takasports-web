@@ -16,6 +16,7 @@ import { OnboardingSheet } from './OnboardingSheet'
 import { StreakHero } from './StreakHero'
 import { QuickPickIA } from './QuickPickIA'
 import { StickyBetslip } from './StickyBetslip'
+import { TargetIcon, AlertIcon, FireIcon, LightbulbIcon } from '@/components/icons/GameIcons'
 
 export function PicksForm({
   matches, jornada, onSubmit, streakCurrent = 0, onParticipation,
@@ -233,7 +234,7 @@ export function PicksForm({
             <span style={{ fontSize: 14, color: '#C4B5FD' }}>→</span>
           </button>
           <div className="w-full rounded-2xl px-5 py-4 flex items-center gap-4" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.18)' }}>
-            <span style={{ fontSize: 24 }}>🎯</span>
+            <span style={{ display: 'inline-flex', color: '#86efac' }}><TargetIcon size={24} /></span>
             <div className="text-left">
               <p className="text-xs font-black mb-0.5" style={{ color: '#86efac', fontFamily: 'var(--font-display)' }}>Crea una liga privada</p>
               <p className="text-[10px]" style={{ color: '#3a6a4a', fontFamily: 'var(--font-sport)' }}>Compite con amigos sin esperar la jornada oficial</p>
@@ -251,7 +252,7 @@ export function PicksForm({
       {submitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(3,0,9,0.95)', backdropFilter: 'blur(20px)', animation: 'fadeIn 0.2s ease both' }}>
           <div className="flex flex-col items-center gap-6 text-center px-8" style={{ animation: 'sealPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both' }}>
-            <div style={{ fontSize: 80, lineHeight: 1 }}>🎯</div>
+            <div style={{ lineHeight: 1, color: '#fbbf24', display: 'flex', justifyContent: 'center' }}><TargetIcon size={80} /></div>
             <div>
               <p className="font-black leading-none mb-3" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem,5vw,2.8rem)', color: '#F8F8FF', letterSpacing: '-0.03em' }}>
                 ¡Predicción sellada!
@@ -270,7 +271,7 @@ export function PicksForm({
       {tutored && (
         <div className="flex justify-end -mb-1">
           <button onClick={() => setShowOnboarding(true)} className="text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ color: '#7C7CA0', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)', cursor: 'pointer', minHeight: 32 }}>
-            <span style={{ fontSize: 11 }}>💡</span> Cómo se juega
+            <span style={{ display: 'inline-flex' }}><LightbulbIcon size={11} /></span> Cómo se juega
           </button>
         </div>
       )}
@@ -281,7 +282,7 @@ export function PicksForm({
       {/* Urgency: <30min to first match */}
       {urgent && (
         <div className="rounded-2xl px-5 py-4 flex items-center gap-4" style={{ background: 'rgba(239,68,68,0.1)', animation: 'urgentPulse 1.5s ease-in-out infinite' }}>
-          <span style={{ fontSize: 28, lineHeight: 1 }}>⚠️</span>
+          <span style={{ display: 'inline-flex', lineHeight: 1, color: '#f87171' }}><AlertIcon size={28} /></span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-black" style={{ color: '#f87171', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
               ¡Último aviso! {Math.floor(nearestMs / 60_000)}:{String(Math.floor((nearestMs % 60_000) / 1000)).padStart(2, '0')} para el cierre
@@ -296,7 +297,7 @@ export function PicksForm({
       {/* Streak at risk: <8h */}
       {streakAtRisk && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.25)' }}>
-          <span style={{ fontSize: 16 }}>🔥</span>
+          <span style={{ display: 'inline-flex', color: '#fb923c' }}><FireIcon size={16} /></span>
           <p className="text-xs font-black" style={{ color: '#fb923c', fontFamily: 'var(--font-sport)' }}>
             ¡Cierra en menos de 8h — no rompas tu racha!
           </p>
@@ -313,7 +314,7 @@ export function PicksForm({
             fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
             color: '#A78BFA', fontFamily: 'var(--font-sport)',
           }}>
-            🎯 MARCADORES EXACTOS{' '}
+            <TargetIcon size={11} className="inline-block align-middle mr-1" />MARCADORES EXACTOS{' '}
             <span style={{ color: '#fff', fontWeight: 900 }}>
               {Object.keys(exactScores).length}/{SCORING.MAX_EXACT_PER_JORNADA}
             </span>
@@ -429,7 +430,7 @@ export function PicksForm({
       {/* Error de submit (red, ya sellada, etc) */}
       {submitError && (
         <div className="rounded-2xl px-4 py-3 flex items-start gap-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}>
-          <span style={{ fontSize: 16, lineHeight: 1, marginTop: 2 }}>⚠️</span>
+          <span style={{ display: 'inline-flex', lineHeight: 1, marginTop: 2, color: '#f87171' }}><AlertIcon size={16} /></span>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-black" style={{ color: '#f87171', fontFamily: 'var(--font-display)' }}>{submitError}</p>
           </div>

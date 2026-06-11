@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getSportStyle, getSportLabel, SLUG_TO_LABEL } from '@/lib/sports'
+import { TrophyIcon } from '@/components/icons/GameIcons'
 
 interface Article {
   _id: string
@@ -168,7 +169,7 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
           }}
         >
           <div className="flex items-center gap-1.5 mb-1.5">
-            <span style={{ fontSize: 15, lineHeight: 1 }}>🏆</span>
+            <span style={{ display: 'inline-flex', lineHeight: 1, color: '#FBBF24' }}><TrophyIcon size={15} /></span>
             <span
               className="text-[9px] font-black uppercase tracking-widest"
               style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}

@@ -4,6 +4,7 @@
 // Si no hay sesión o no hay racha, no renderiza nada (silencioso).
 
 import { useStreak } from '@/hooks/useGameState'
+import { FireIcon } from '@/components/icons/GameIcons'
 
 export default function StreakChip() {
   const { streak, loading } = useStreak()
@@ -19,7 +20,7 @@ export default function StreakChip() {
         fontFamily: 'var(--font-sport)',
       }}
     >
-      <span aria-hidden style={{ fontSize: 13 }}>🔥</span>
+      <span aria-hidden style={{ display: 'inline-flex', color: '#FDBA74' }}><FireIcon size={13} /></span>
       <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#FDBA74' }}>
         {streak.current_streak} {streak.current_streak === 1 ? 'día' : 'días'}
       </span>
