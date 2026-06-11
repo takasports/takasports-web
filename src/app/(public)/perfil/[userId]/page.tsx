@@ -10,8 +10,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 import { PublicPlacaCard } from '@/components/placa/PublicPlacaCard'
@@ -95,8 +93,6 @@ export default function PublicProfilePage() {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
-
       <div className="max-w-[860px] mx-auto px-4 sm:px-6 py-10">
 
         {/* ── Loading ──────────────────────────────────────────── */}
@@ -369,7 +365,6 @@ export default function PublicProfilePage() {
         )}
       </div>
 
-      <Footer />
       <ScrollToTop />
     </div>
   )

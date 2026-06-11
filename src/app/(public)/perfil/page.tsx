@@ -3,9 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import AuthModal from '@/components/AuthModal'
 import type { SportEvent } from '@/lib/types'
 import { QUINIELA_PICKS_KEY } from '@/components/QuinielaModule'
@@ -363,10 +361,9 @@ export default function PerfilPage() {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
         {/* ── PLACA PERSONAL ───────────────────────────────
             Placa identitaria del user. Solo visible con sesión.
@@ -1367,9 +1364,8 @@ export default function PerfilPage() {
           </div>
         </div>
 
-      </main>
+      </div>
 
-      <Footer />
       <ScrollToTop />
     </div>
   )
