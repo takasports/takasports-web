@@ -13,7 +13,7 @@ import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
 import CompetitionSelector from '@/components/CompetitionSelector'
 import CompetitionBanner from '@/components/CompetitionBanner'
-import { COMPETITIONS, FEATURED_COMPETITIONS, getCompetition, matchesCompetition } from '@/lib/calendar-competitions'
+import { COMPETITIONS, getCompetition, matchesCompetition } from '@/lib/calendar-competitions'
 import { subscribeToPush } from '@/lib/push-client'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
@@ -1879,13 +1879,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
   // Destacados es un chip especial — no es un deporte sino un modo curado
   // que limita a los top 4 partidos por día por prestigio de liga + favoritos.
-  // Deportes que son 1:1 con una competición destacada (NBA, F1, UFC): ya viven
-  // en el selector "Por competición" con su escudo, así que NO se repiten como
-  // chip de deporte. Los deportes-paraguas (Fútbol, Tenis, Pádel…), que agrupan
-  // varias competiciones, sí se quedan como chip.
-  const singleCompSports = FEATURED_COMPETITIONS.filter(c => c.sport !== 'Fútbol').map(c => c.sport as string)
-  const sports = ['Destacados', 'Todo', ...new Set([...events, ...recentPast].map(e => e.sport)).values()]
-    .filter(s => !singleCompSports.includes(s))
+  // Las categorías (Destacados/Todo/deportes/competiciones) ahora viven en
+  // <CompetitionSelector> (barra unificada de fichas con logo), en ambas pestañas.
 
   // Competición seleccionada en el selector "Por competición": filtra el feed en
   // el sitio + muestra su banner. null = sin filtro de competición.
@@ -2144,8 +2139,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         || namesMatch(e.sport, search)
     const matchesSport = (e: SportEvent) =>
       activeFilter === 'Todo' || activeFilter === 'Destacados' || e.sport === activeFilter
-    return pastSource.filter(e => matchesSport(e) && matchesSearch(e))
-  }, [pastSource, search, activeFilter])
+    return pastSource.filter(e => matchesSport(e) && (!activeCompCfg || matchesCompetition(activeCompCfg, e)) && matchesSearch(e))
+  }, [pastSource, search, activeFilter, activeCompCfg])
 
   // Past events grouped by date (most-recent first)
   const pastGrouped = useMemo(() => {
@@ -2729,34 +2724,17 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               WebkitBackdropFilter: 'blur(8px)',
             }}
           >
-            <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-              <SearchInput value={searchRaw} onChange={setSearchRaw} />
-              <div className="flex items-center gap-1 overflow-x-auto pb-px -mx-1 px-1 scrollbar-hide"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {sports.map(sport => {
-                  const active = activeFilter === sport
-                  return (
-                    <button
-                      key={sport}
-                      onClick={() => setActiveFilter(sport)}
-                      className="relative px-3 py-2.5 text-[13px] font-semibold transition-colors flex-shrink-0"
-                      style={{
-                        color: active ? '#F0F0FA' : '#7A7A8E',
-                        fontFamily: 'var(--font-sport)',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                        background: 'transparent',
-                        border: 'none',
-                      }}>
-                      {sport}
-                      {active && (
-                        <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full"
-                          style={{ background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
+            <SearchInput value={searchRaw} onChange={setSearchRaw} />
+            {/* Misma barra de categorías que en Calendario (coherencia). Cuenta
+                sobre los resultados (pastSource). */}
+            <div className="mt-3">
+              <CompetitionSelector
+                events={pastSource}
+                activeFilter={activeFilter}
+                activeComp={activeComp}
+                onSelectSport={(k) => { setActiveComp(null); setActiveFilter(k) }}
+                onSelectComp={(slug) => { if (activeComp === slug) { setActiveComp(null) } else { setActiveFilter('Todo'); setActiveComp(slug) } }}
+              />
             </div>
             {/* Rango temporal */}
             <div className="flex items-center gap-2 mt-2.5 overflow-x-auto pb-0.5 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
