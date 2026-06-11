@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TakaPoint from '@/components/TakaPoint'
 import { TargetIcon, LightbulbIcon, StarIcon, LiveDotIcon, LockIcon, TrophyIcon, GalleryIcon, FootballIcon } from '@/components/icons/GameIcons'
+import { vibrate } from '@/lib/game-feedback'
 import { trackPorraExactAdded, trackPorraExactRemoved } from '@/lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -1147,6 +1148,8 @@ export default function MundialClient() {
   }, [submitting, load])
 
   const handlePick = useCallback((eventId: string, pick: '1'|'X'|'2') => {
+    // Háptica de "sello" al fijar la predicción (ritual B8). No-op sin soporte.
+    vibrate(12)
     // Preservar exact actual al cambiar la tendencia.
     const currentExact = preds[eventId]?.prediction?.exactScore ?? null
     void sendPrediction(eventId, pick, currentExact)

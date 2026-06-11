@@ -7,6 +7,7 @@ import { PICK_COLOR, PICK_BG, PICK_BORDER, PICK_GLOW } from '../../lib/constants
 import { getMatchContext, aiSuggest, liveOdds } from '../../lib/helpers'
 import { loadConsensus } from '../../lib/consensus'
 import { nameMatch, OUTCOME_LABEL } from '@/lib/quiniela'
+import { vibrate } from '@/lib/game-feedback'
 import { useMatchCountdown } from '../../lib/hooks'
 import { TeamBadge } from '../atoms/TeamBadge'
 import { WinProbabilityBar } from '../atoms/WinProbabilityBar'
@@ -259,7 +260,7 @@ export function MatchCard({
                 role="radio"
                 aria-checked={selected}
                 aria-label={aria}
-                onClick={() => { if (!locked) { onPick(opt); setAnimPick(opt); setTimeout(() => setAnimPick(p => p === opt ? null : p), 350) } }}
+                onClick={() => { if (!locked) { vibrate(12); onPick(opt); setAnimPick(opt); setTimeout(() => setAnimPick(p => p === opt ? null : p), 350) } }}
                 disabled={locked}
                 className="rounded-2xl flex flex-col items-center justify-center gap-0.5 px-2"
                 style={{
