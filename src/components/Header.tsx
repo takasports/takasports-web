@@ -473,6 +473,9 @@ function LevelUpToast({ level, levelName, color, onClose }: {
 }
 
 // ── Header principal ─────────────────────────────────────────
+// Sugerencias que rota el buscador visible (desktop xl+). Tras "Buscar ".
+const SEARCH_HINTS = ['jugadores, noticias…', 'a Mbappé', 'la NBA', 'el Mundial 2026', 'LaLiga', 'a Alcaraz']
+
 // `sticky` (default true): el Header se fija él mismo al top. En la consola de
 // (public) se monta con sticky={false} porque el contenedor de la consola es
 // quien se fija (Header + LiveStrip como bloque único). home/calendario montan
@@ -593,6 +596,23 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
   const closeSearch = useCallback(() => setSearchOpen(false), [])
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
+  // Buscador visible (xl+): placeholder rotativo que sugiere búsquedas. Respeta
+  // prefers-reduced-motion (no rota). El modal real se abre con click o ⌘K.
+  const [hintIdx, setHintIdx] = useState(0)
+  const [hintShown, setHintShown] = useState(true)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const id = setInterval(() => {
+      setHintShown(false)
+      window.setTimeout(() => {
+        setHintIdx((i) => (i + 1) % SEARCH_HINTS.length)
+        setHintShown(true)
+      }, 220)
+    }, 3400)
+    return () => clearInterval(id)
+  }, [])
+
   // Drawer móvil: atrapa el foco, Escape cierra, y devuelve el foco a la
   // hamburguesa al cerrar (patrón WAI-ARIA para menús desplegables).
   useFocusTrap(menuOpen, drawerRef, closeMenu, { returnRef: hamburgerRef })
@@ -697,13 +717,34 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
 
           {/* Right */}
           <div className="flex items-center gap-2 ml-auto">
-            {/* Buscador — lupa que despliega el modal. A la izquierda de la barra
-                de nivel. Reemplaza la barra completa (saturaba el header). */}
+            {/* Buscador. En pantallas anchas (xl+) = barra visible con placeholder
+                rotativo + atajo ⌘K. En el resto = lupa compacta (sin saturar). */}
+            <button
+              aria-label="Buscar en TakaSports"
+              onClick={openSearch}
+              title="Buscar (⌘K)"
+              className="hidden xl:flex items-center gap-2 rounded-lg flex-shrink-0 transition-colors hover:border-white/15"
+              style={{ height: 38, width: 232, padding: '0 8px 0 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#7A7A8E' }}
+            >
+              <SearchIcon />
+              <span
+                className="text-[13px] flex-1 text-left truncate"
+                style={{ opacity: hintShown ? 1 : 0, transition: 'opacity 200ms ease' }}
+              >
+                Buscar {SEARCH_HINTS[hintIdx]}
+              </span>
+              <kbd
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0"
+                style={{ fontFamily: 'inherit', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#9090A4' }}
+              >
+                ⌘K
+              </kbd>
+            </button>
             <button
               aria-label="Buscar"
               onClick={openSearch}
               title="Buscar (⌘K)"
-              className="flex items-center justify-center rounded-lg flex-shrink-0 transition-colors hover:border-white/15"
+              className="flex xl:hidden items-center justify-center rounded-lg flex-shrink-0 transition-colors hover:border-white/15"
               style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#7A7A8E' }}
             >
               <SearchIcon />
