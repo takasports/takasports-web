@@ -1741,12 +1741,16 @@ export default async function MatchPage({
   const teamPair = (match.sport === 'soccer' || match.sport === 'basketball') && match.homeTeam && match.awayTeam
     ? { home: match.homeTeam, away: match.awayTeam }
     : null
+  // leagueSlug → filtro de género: el femenino (Liga F, amistosos F) comparte
+  // nombre de club/selección con el masculino, así que sin esto el H2H/forma de
+  // un partido femenino mostraría datos del equipo masculino homónimo (y al
+  // revés). Ver isWomensPastRow en lib/past-events.
   const [h2h, forms] = await Promise.all([
     teamPair
-      ? fetchH2H(teamPair.home, teamPair.away, { limit: 10, excludeId: match.id })
+      ? fetchH2H(teamPair.home, teamPair.away, { limit: 10, excludeId: match.id, leagueSlug: match.leagueSlug })
       : Promise.resolve(null),
     teamPair
-      ? fetchRecentFormByTeams([teamPair.home, teamPair.away], 5).then((m) => m ?? {})
+      ? fetchRecentFormByTeams([teamPair.home, teamPair.away], 5, match.leagueSlug).then((m) => m ?? {})
       : Promise.resolve({} as Record<string, FormResult[]>),
   ])
 
