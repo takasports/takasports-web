@@ -16,7 +16,7 @@ const POS_LABEL: Record<string, string> = {
 }
 
 function PlayerRow({ player, leagueSlug }: { player: RosterPlayer; leagueSlug: string }) {
-  const href = player.id ? `/jugador/${leagueSlug.replace('/', '_')}_${player.id}` : undefined
+  const href = player.id ? `/jugador/${leagueSlug.replaceAll('/', '_')}_${player.id}` : undefined
   const inner = (
     <div
       className={`flex items-center gap-3 py-2.5 px-4 rounded-xl mb-1 hover:bg-white/5 transition-all${href ? ' cursor-pointer' : ''}`}

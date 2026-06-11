@@ -145,7 +145,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
         </Link>
         <div className="flex items-center gap-3">
           <Link
-            href={`/comparar?p1=${player.leagueSlug.replace('/', '_')}_${player.id}`}
+            href={`/comparar?p1=${player.leagueSlug.replaceAll('/', '_')}_${player.id}`}
             className="text-[12px] font-bold transition-opacity hover:opacity-80"
             style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
           >

@@ -78,7 +78,7 @@ const POS_LABEL: Record<string, string> = {
 // ── Featured Player ────────────────────────────────────────────────────
 function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterPlayer; teamColor?: string; leagueSlug: string }) {
   const accent = teamColor ? `#${teamColor}` : '#7C3AED'
-  const href = player.id ? `/jugador/${leagueSlug.replace('/', '_')}_${player.id}` : undefined
+  const href = player.id ? `/jugador/${leagueSlug.replaceAll('/', '_')}_${player.id}` : undefined
   const card = (
     <div
       className={`rounded-2xl p-5 mb-6 flex gap-4 items-center${href ? ' transition-all hover:bg-white/[0.06]' : ''}`}
@@ -291,7 +291,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
         </Link>
         <div className="flex items-center gap-3">
           <Link
-            href={`/comparar-equipos?t1=${team.leagueSlug.replace('/', '_')}_${team.id}`}
+            href={`/comparar-equipos?t1=${team.leagueSlug.replaceAll('/', '_')}_${team.id}`}
             className="text-[12px] font-bold transition-opacity hover:opacity-80"
             style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
           >

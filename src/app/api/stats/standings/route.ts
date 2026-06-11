@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SOCCER_LEAGUES, EUROPEAN_CUPS } from '@/lib/stats-leagues'
 import {
-  FIFA_RANKING, FIFA_RANKING_AS_OF, UFC_P4P, UFC_P4P_AS_OF,
+  FIFA_RANKING, UFC_P4P,
   type StandingRow,
 } from '@/lib/stats-editorial'
 export type { StandingRow } from '@/lib/stats-editorial'
@@ -1163,21 +1163,19 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   const resolveSnapshot = (
     blockId: string,
     fallback: StandingRow[],
-    fallbackSource: string,
-    fallbackAsOf: string,
   ): { rows: StandingRow[]; snap: StatSnapshot | null } => {
     const snap = snapshots.get(blockId) ?? null
     if (snap && snap.rows.length > 0) return { rows: snap.rows, snap }
     return { rows: fallback, snap: null }
   }
-  const ufcP4PR          = resolveSnapshot('ufc-p4p',             ufcP4P,              'UFC Rankings', UFC_P4P_AS_OF)
-  const ufcChampionsR    = resolveSnapshot('ufc-campeones',       [],                  'UFC',          UFC_P4P_AS_OF)
+  const ufcP4PR          = resolveSnapshot('ufc-p4p',             ufcP4P)
+  const ufcChampionsR    = resolveSnapshot('ufc-campeones',       [])
   // 11 divisiones — cada blockId resuelve a su propio snapshot.
   const ufcDivisionsResolved = UFC_DIVISIONS.map(div => ({
     div,
-    r: resolveSnapshot(div.blockId, [], `ufc.com · ${div.label}`, ''),
+    r: resolveSnapshot(div.blockId, []),
   }))
-  const fifaR            = resolveSnapshot('ranking-fifa',        FIFA_RANKING,        'FIFA',         FIFA_RANKING_AS_OF)
+  const fifaR            = resolveSnapshot('ranking-fifa',        FIFA_RANKING)
   // El snapshot del Elo puede traer banderas regional-indicator inválidas para
   // subdivisiones británicas (England → 🇪🇳, que renderiza como letras "EN").
   // Forzamos la bandera canónica por nombre desde WC_NATIONS (nationMeta acepta
@@ -1185,8 +1183,8 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   fifaR.rows = fifaR.rows.map(r => { const m = nationMeta(r.name); return m?.flag ? { ...r, flag: m.flag } : r })
   // MotoGP solo tiene datos vía cron Vercel → snapshot Supabase. Si snapshot
   // ausente, devuelve [] y meta='unavailable' (UI lo oculta con toggle).
-  const motogpRidersR    = resolveSnapshot('motogp-pilotos',       [], 'motogp.com', '')
-  const motogpConstructR = resolveSnapshot('motogp-constructores', [], 'motogp.com', '')
+  const motogpRidersR    = resolveSnapshot('motogp-pilotos',       [])
+  const motogpConstructR = resolveSnapshot('motogp-constructores', [])
 
   // Derived blocks
   const nbaMvpRace = buildNbaMvpRace(nbaLeaders.scoring, nba.east, nba.west)
