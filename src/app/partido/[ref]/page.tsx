@@ -255,7 +255,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
             </span>
           )}
           {hasScore ? (
-            <p className="font-black tabular-nums flex items-center gap-3 leading-none"
+            <p className="ts-score-in font-black tabular-nums flex items-center gap-3 leading-none"
               style={{ color: '#F0F0FA', fontFamily: 'var(--font-headline)', fontSize: 'clamp(38px, 9vw, 56px)' }}>
               <span>{match.homeScore}</span>
               <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
@@ -362,7 +362,7 @@ function StatBar({ stat }: { stat: MatchStat }) {
         <span className="font-black" style={{ color: '#E0E0F0' }}>{stat.away}</span>
       </div>
       {!isNaN(homePct) && (
-        <div className="flex rounded-full overflow-hidden h-1" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <div className="ts-bar-fill flex rounded-full overflow-hidden h-1" style={{ background: 'rgba(255,255,255,0.06)' }}>
           <div style={{ width: `${homePct}%`, background: '#7C3AED', transition: 'width 0.8s ease' }} />
           <div style={{ flex: 1, background: '#F59E0B' }} />
         </div>
@@ -1259,7 +1259,7 @@ function MatchPulse({ estimate, dominance, homeAbbr, awayAbbr }: {
           <span style={{ color: HOME }}>{homeAbbr} · {dominance.home}%</span>
           <span style={{ color: AWAY }}>{dominance.away}% · {awayAbbr}</span>
         </div>
-        <div className="flex h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+        <div className="ts-bar-fill flex h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
           <div style={{ width: `${dominance.home}%`, background: HOME }} />
           <div style={{ width: `${dominance.away}%`, background: AWAY }} />
         </div>
@@ -1278,7 +1278,7 @@ function MatchPulse({ estimate, dominance, homeAbbr, awayAbbr }: {
     ]
     return (
       <Section title="Probabilidad estimada">
-        <div className="flex h-2.5 rounded-full overflow-hidden mb-3" style={{ background: 'rgba(255,255,255,0.05)' }}>
+        <div className="ts-bar-fill flex h-2.5 rounded-full overflow-hidden mb-3" style={{ background: 'rgba(255,255,255,0.05)' }}>
           {seg.map(s => <div key={s.k} style={{ width: `${s.pct}%`, background: s.color }} />)}
         </div>
         <div className="grid grid-cols-3 gap-2">

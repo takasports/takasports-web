@@ -902,3 +902,26 @@ textarea:focus-visible,
   [data-sport] { transition: none; }
 }
 
+/* ── Ficha de partido "emisión TV" — barras que se llenan + marcador ──
+   Barrido de llenado (clip-path) para barras de probabilidad/dominio/stats:
+   se "llenan" de izquierda a derecha al pintarse (y se re-disparan cuando el
+   live actualiza el nodo). Marcador con entrada de escala. Todo $0, en el
+   compositor; neutralizado con prefers-reduced-motion. */
+@keyframes tsBarWipe {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+.ts-bar-fill { animation: tsBarWipe 0.8s var(--ease-emphasis, ease) both; }
+
+@keyframes tsScoreIn {
+  0%   { opacity: 0; transform: scale(0.82); }
+  60%  { opacity: 1; transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.ts-score-in { animation: tsScoreIn 0.5s var(--ease-bounce, ease) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ts-bar-fill { animation: none; clip-path: none; }
+  .ts-score-in { animation: none; }
+}
+
