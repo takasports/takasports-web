@@ -640,35 +640,64 @@ function LeaderCard({ leader, leagueSlug }: { leader: BasketballLeader; leagueSl
 function TennisBlock({ match }: { match: MatchDetail }) {
   if (!match.tennis) return null
   const t = match.tennis
+  const live = isLive(match.status)
   const setCount = Math.max(t.sets.home.length, t.sets.away.length)
+  const setWinners = t.setWinners ?? []
+  // El set en curso (sin ganador) es el último cuando el partido está en vivo.
+  const liveSetIdx = live ? setCount - 1 : -1
+
   return (
     <div className="rounded-2xl p-6 mb-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-      {t.round && (
-        <p className="text-[10px] font-black uppercase tracking-widest text-center mb-3"
-          style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
-          {t.round}
-        </p>
-      )}
+      <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
+        {t.round && (
+          <span className="text-[10px] font-black uppercase tracking-widest"
+            style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
+            {t.round}
+          </span>
+        )}
+        {live && (
+          <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+            style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.28)', fontFamily: 'var(--font-sport)' }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
+            En Vivo
+          </span>
+        )}
+      </div>
       <div className="flex flex-col gap-3">
         {(['home', 'away'] as const).map(side => {
-          const player = side === 'home' ? t.homePlayer : t.awayPlayer
-          const sets   = side === 'home' ? t.sets.home  : t.sets.away
+          const player  = side === 'home' ? t.homePlayer : t.awayPlayer
+          const sets    = side === 'home' ? t.sets.home  : t.sets.away
+          const sideCol = side === 'home' ? '#A78BFA' : '#F59E0B'
+          const won     = side === 'home' ? t.homeWon : t.awayWon
           return (
             <div key={side} className="flex items-center justify-between gap-3">
-              <span className="font-black text-sm" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
-                {player ?? '—'}
+              <span className="flex items-center gap-1.5 min-w-0">
+                {won && (
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-label="Ganador" className="flex-shrink-0">
+                    <path d="M2.5 7.5l3 3 6-6.5" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+                <span className="font-black text-sm truncate"
+                  style={{ color: won ? '#F0F0F8' : '#9A9AB0', fontFamily: 'var(--font-sport)' }}>
+                  {player ?? '—'}
+                </span>
               </span>
-              <div className="flex gap-2">
-                {Array.from({ length: setCount }).map((_, i) => (
-                  <span key={i} className="w-7 h-7 flex items-center justify-center rounded-md font-black tabular-nums text-sm"
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      color: side === 'home' ? '#A78BFA' : '#F59E0B',
-                      fontFamily: 'var(--font-display)',
-                    }}>
-                    {sets[i] ?? '—'}
-                  </span>
-                ))}
+              <div className="flex gap-2 flex-shrink-0">
+                {Array.from({ length: setCount }).map((_, i) => {
+                  const isSetWinner = setWinners[i] === side
+                  const isLiveSet   = i === liveSetIdx
+                  return (
+                    <span key={i} className="w-7 h-7 flex items-center justify-center rounded-md font-black tabular-nums text-sm"
+                      style={{
+                        background: isSetWinner ? `${sideCol}1f` : 'rgba(255,255,255,0.04)',
+                        color: isSetWinner ? sideCol : isLiveSet ? '#E0E0F0' : '#5A5A6A',
+                        border: isLiveSet ? '1px solid rgba(239,68,68,0.4)' : '1px solid transparent',
+                        fontFamily: 'var(--font-display)',
+                      }}>
+                      {sets[i] ?? '—'}
+                    </span>
+                  )
+                })}
               </div>
             </div>
           )

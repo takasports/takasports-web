@@ -142,7 +142,10 @@ export interface MatchDetail {
     round?: string
     homePlayer?: string
     awayPlayer?: string
+    homeWon?: boolean          // ganador del partido
+    awayWon?: boolean
     sets: TennisSet
+    setWinners?: ('home' | 'away' | null)[]   // ganador de cada set
   }
   golf?: {
     round?: string
@@ -652,22 +655,48 @@ function buildTennisFromCompetition(comp: Record<string, unknown>): MatchDetail[
   const competitors = asArr(comp.competitors) as Record<string, unknown>[]
   const home = competitors.find(c => c.homeAway === 'home') ?? competitors[0]
   const away = competitors.find(c => c.homeAway === 'away') ?? competitors[1]
-  const homeSets = asArr(home?.linescores).map(l => {
-    const v = asObj(l)?.value
+  const homeLines = asArr(home?.linescores).map(asObj)
+  const awayLines = asArr(away?.linescores).map(asObj)
+  const setVal = (l: Record<string, unknown> | undefined) => {
+    const v = l?.value
     return v != null ? String(v) : null
-  })
-  const awaySets = asArr(away?.linescores).map(l => {
-    const v = asObj(l)?.value
-    return v != null ? String(v) : null
-  })
+  }
+  const homeSets = homeLines.map(setVal)
+  const awaySets = awayLines.map(setVal)
+
+  // Ganador de cada set: ESPN marca winner en el linescore del set cerrado; si
+  // falta, se compara el número de juegos (el set en curso queda sin ganador).
+  const setCount = Math.max(homeLines.length, awayLines.length)
+  const setWinners: ('home' | 'away' | null)[] = []
+  for (let i = 0; i < setCount; i++) {
+    const h = homeLines[i]; const a = awayLines[i]
+    if (h?.winner === true) setWinners.push('home')
+    else if (a?.winner === true) setWinners.push('away')
+    else {
+      const hv = typeof h?.value === 'number' ? h.value as number : null
+      const av = typeof a?.value === 'number' ? a.value as number : null
+      setWinners.push(hv != null && av != null && hv !== av ? (hv > av ? 'home' : 'away') : null)
+    }
+  }
+
   const homePlayer = asString(asObj(asArr(home?.athletes)[0])?.displayName)
                   ?? asString(asObj(home?.athlete)?.displayName)
                   ?? asString(asObj(home?.team)?.displayName)
   const awayPlayer = asString(asObj(asArr(away?.athletes)[0])?.displayName)
                   ?? asString(asObj(away?.athlete)?.displayName)
                   ?? asString(asObj(away?.team)?.displayName)
-  const round = asString(asObj(comp.type)?.text) ?? asString(asArr(comp.notes)[0] ? asObj(asArr(comp.notes)[0])?.headline : undefined)
-  return { round, homePlayer, awayPlayer, sets: { home: homeSets, away: awaySets } }
+  const round = asString(asObj(comp.round)?.displayName)
+             ?? asString(asObj(comp.type)?.text)
+             ?? asString(asArr(comp.notes)[0] ? asObj(asArr(comp.notes)[0])?.headline : undefined)
+  return {
+    round,
+    homePlayer,
+    awayPlayer,
+    homeWon: home?.winner === true,
+    awayWon: away?.winner === true,
+    sets: { home: homeSets, away: awaySets },
+    setWinners,
+  }
 }
 
 // ── Golf (PGA leaderboard top) ──────────────────────────────────────
