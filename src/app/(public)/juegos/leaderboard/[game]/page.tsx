@@ -4,9 +4,7 @@
 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import LeaderboardFull from './LeaderboardFull'
 import type { GameId } from '@/lib/games-store'
@@ -51,10 +49,9 @@ export default async function LeaderboardPage({ params }: PageProps) {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
       <LiveStrip />
 
-      <main className="max-w-[1100px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
         <nav className="pt-8 pb-3">
           <Link
             href="/juegos"
@@ -102,9 +99,8 @@ export default async function LeaderboardPage({ params }: PageProps) {
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="#0F0A20" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </Link>
         </div>
-      </main>
+      </div>
 
-      <Footer />
       <ScrollToTop />
     </div>
   )

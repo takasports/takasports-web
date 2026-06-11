@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { SmartphoneIcon } from '@/components/icons/GameIcons'
 import NewsletterSection from '@/components/NewsletterSection'
@@ -881,10 +879,9 @@ export default function JuegosPageClient() {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
       <LiveStrip />
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
         {/* ── HERO ────────────────────────────────────────── */}
         <div className="relative pt-10 pb-8">
@@ -1085,10 +1082,9 @@ export default function JuegosPageClient() {
         </section>
         )}
 
-      </main>
+      </div>
 
       <NewsletterSection source="juegos" />
-      <Footer />
       <ScrollToTop />
     </div>
   )
