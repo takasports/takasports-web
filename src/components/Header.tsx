@@ -484,6 +484,10 @@ export default function Header() {
   const [levelUpToast, setLevelUpToast] = useState<{ level: number; levelName: string; color: string } | null>(null)
   const drawerRef = useRef<HTMLElement>(null)
   const hamburgerRef = useRef<HTMLButtonElement>(null)
+  const navRef = useRef<HTMLElement>(null)
+  // Subrayado magnético: una sola línea que se desliza bajo el enlace de sección
+  // activo (en vez de un subrayado fijo por enlace). Se mide con getBoundingClientRect.
+  const [navLine, setNavLine] = useState<{ left: number; width: number; top: number; ready: boolean }>({ left: 0, width: 0, top: 0, ready: false })
 
   // Pinta el último nivel conocido AL INSTANTE desde localStorage (sin esperar
   // a auth + /api/quiniela/me). Evita que la barra XP "salte" al entrar. Se
@@ -589,6 +593,40 @@ export default function Header() {
   // hamburguesa al cerrar (patrón WAI-ARIA para menús desplegables).
   useFocusTrap(menuOpen, drawerRef, closeMenu, { returnRef: hamburgerRef })
 
+  // Mide la posición del enlace activo para el subrayado magnético. La línea
+  // se desliza al nuevo enlace al navegar (transición CSS gateada por capacidad).
+  useEffect(() => {
+    const measure = () => {
+      const nav = navRef.current
+      if (!nav) return
+      const active = nav.querySelector<HTMLElement>('a[aria-current="page"]')
+      if (!active) { setNavLine(l => (l.ready ? { ...l, ready: false } : l)); return }
+      const navRect = nav.getBoundingClientRect()
+      const r = active.getBoundingClientRect()
+      const inset = 8
+      setNavLine({
+        left: r.left - navRect.left + inset,
+        width: Math.max(0, r.width - inset * 2),
+        top: r.bottom - navRect.top - 2,
+        ready: true,
+      })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    // ResizeObserver del nav: re-mide en cuanto el nav obtiene/cambia su ancho
+    // real (cubre el reflow por carga de fuentes web y cualquier cambio de layout).
+    let ro: ResizeObserver | null = null
+    if (typeof ResizeObserver !== 'undefined' && navRef.current) {
+      ro = new ResizeObserver(measure)
+      ro.observe(navRef.current)
+    }
+    // Las fuentes web cambian el ancho de los enlaces al cargar → re-medir.
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(measure).catch(() => {})
+    }
+    return () => { window.removeEventListener('resize', measure); ro?.disconnect() }
+  }, [pathname])
+
   return (
     <>
       <header
@@ -609,7 +647,7 @@ export default function Header() {
           />
 
           {/* Nav desktop */}
-          <nav className="hidden lg:flex items-center gap-0 flex-1" aria-label="Navegación principal">
+          <nav ref={navRef} className="hidden lg:flex items-center gap-0 flex-1 relative" aria-label="Navegación principal">
             {NAV_LINKS.map(({ label, href }) => {
               const active = isNavActive(href, pathname)
               return (
@@ -622,14 +660,6 @@ export default function Header() {
                   onClick={href === '/' && pathname === '/' ? () => window.scrollTo({ top: 0, behavior: 'smooth' }) : undefined}
                 >
                   {label}
-                  {active && (
-                    <span style={{
-                      position: 'absolute', bottom: 0, left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: 16, height: 2,
-                      background: '#7C3AED', borderRadius: 1,
-                    }} />
-                  )}
                 </Link>
               )
             })}
@@ -639,6 +669,25 @@ export default function Header() {
               href={PORRA_LINK.href}
               active={isNavActive(PORRA_LINK.href, pathname)}
               variant="desktop"
+            />
+
+            {/* Subrayado magnético: una sola línea que se desliza al enlace de
+                sección activo. Teñida del deporte (cae a morado), con glow señal. */}
+            <span
+              aria-hidden="true"
+              className="ts-navline"
+              style={{
+                position: 'absolute',
+                top: navLine.top,
+                left: navLine.left,
+                width: navLine.width,
+                height: 2,
+                borderRadius: 1,
+                background: 'var(--sport-accent, #7C3AED)',
+                boxShadow: '0 0 8px color-mix(in srgb, var(--sport-accent, #7C3AED) 55%, transparent)',
+                opacity: navLine.ready ? 1 : 0,
+                pointerEvents: 'none',
+              }}
             />
           </nav>
 
