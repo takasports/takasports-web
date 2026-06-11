@@ -24,6 +24,7 @@ import { getSportStyle } from '@/lib/sports'
 import { SearchIcon, CrownIcon, FireIcon, TennisIcon, StarIcon } from '@/components/icons/GameIcons'
 import RankRow from '@/components/rankings/RankRow'
 import TopOneRow from '@/components/rankings/TopOneRow'
+import Podium from '@/components/rankings/Podium'
 import RankBlock from '@/components/rankings/RankBlock'
 import FeaturedCard from '@/components/rankings/FeaturedCard'
 import FilterPillBar from '@/components/rankings/FilterPillBar'
@@ -436,6 +437,8 @@ export default function RankingsClient({
   // Slices del listado
   const top1       = finalEntries[0]
   const rank2to10  = finalEntries.slice(1, 10)
+  const topThree   = finalEntries.slice(0, 3)   // podio
+  const rank4to10  = finalEntries.slice(3, 10)  // resto tras el podio
   const rank11to25 = finalEntries.slice(10, 25)
   const rank26to50 = finalEntries.slice(25, 50)
   const rank51on   = finalEntries.slice(50)
@@ -925,18 +928,37 @@ export default function RankingsClient({
               </div>
             ) : (
               <>
-                {top1 && <div className="mb-2"><TopOneRow entry={top1} showSportEmoji={!activeSport && !isContenido} /></div>}
-
-                {rank2to10.length > 0 && (
-                  <div className="flex flex-col gap-2 mb-4">
-                    {rank2to10.map((entry) => (
-                      <RankRow
-                        key={entry.id} entry={entry}
-                        showSportEmoji={!activeSport && !isContenido}
-                        typeTag={typeTagFn?.(entry)}
-                      />
-                    ))}
-                  </div>
+                {topThree.length === 3 ? (
+                  <>
+                    {/* Podio del Índice: top-3 broadcast */}
+                    <Podium entries={topThree} accent={sportAccent} showSportEmoji={!activeSport && !isContenido} />
+                    {rank4to10.length > 0 && (
+                      <div className="flex flex-col gap-2 mb-4">
+                        {rank4to10.map((entry) => (
+                          <RankRow
+                            key={entry.id} entry={entry}
+                            showSportEmoji={!activeSport && !isContenido}
+                            typeTag={typeTagFn?.(entry)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {top1 && <div className="mb-2"><TopOneRow entry={top1} showSportEmoji={!activeSport && !isContenido} /></div>}
+                    {rank2to10.length > 0 && (
+                      <div className="flex flex-col gap-2 mb-4">
+                        {rank2to10.map((entry) => (
+                          <RankRow
+                            key={entry.id} entry={entry}
+                            showSportEmoji={!activeSport && !isContenido}
+                            typeTag={typeTagFn?.(entry)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div className="mb-8">
