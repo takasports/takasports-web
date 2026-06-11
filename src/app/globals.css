@@ -199,6 +199,14 @@ html[data-cap="full"] .ts-navline {
   .ts-navline { transition: none !important; }
 }
 
+/* ── Foil holográfico de la placa (gold/diamond) ── la lámina sigue al cursor
+   (0 KB). Con reduced-motion la atenuamos para que no "brille" al moverse,
+   conservando un sutil tinte premium estático. */
+.placa-foil { opacity: 0.6; transition: opacity 200ms ease; }
+@media (prefers-reduced-motion: reduce) {
+  .placa-foil { opacity: 0.22 !important; }
+}
+
 /* ── Skip-link (a11y) ── visible solo al enfocar con teclado ── */
 .skip-link {
   position: fixed;

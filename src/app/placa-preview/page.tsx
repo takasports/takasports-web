@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { PlacaCard } from '@/components/placa/PlacaCard'
 import { PlacaCardV2 } from '@/components/placa/PlacaCardV2'
 import { PlacaCardV3 } from '@/components/placa/PlacaCardV3'
+import { PlacaCardV4 } from '@/components/placa/PlacaCardV4'
 import { PlacaRowV3 } from '@/components/placa/PlacaRowV3'
 import type { PlacaData } from '@/components/placa/types'
 
@@ -186,6 +187,36 @@ export default function PlacaPreviewPage() {
             favorito al fondo. Pasa el cursor por encima — tilt 3D + foil paralax solo en la vertical.
           </p>
         </header>
+
+        {/* ── V4 DEFINITIVA — la del perfil real (foil gold/diamond) ── */}
+        <section className="mb-20">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <span style={{ height: 1, flex: 1, maxWidth: 100, background: 'rgba(251,191,36,0.4)' }} />
+            <p className="uppercase tracking-[0.28em]" style={{ color: '#FBBF24', fontSize: 11, fontFamily: 'var(--font-headline)' }}>
+              V4 · Definitiva (perfil)
+            </p>
+            <span style={{ height: 1, flex: 1, maxWidth: 100, background: 'rgba(251,191,36,0.4)' }} />
+          </div>
+          <p className="text-center max-w-[680px] mx-auto mb-8" style={{ color: '#9090B0', fontSize: 13, fontFamily: 'var(--font-sport)', lineHeight: 1.6 }}>
+            Look editorial limpio. <strong style={{ color: '#FBBF24' }}>Foil holográfico solo en Gold y Diamond</strong> como
+            recompensa premium: pasa el cursor por encima — la lámina iridiscente y el brillo siguen al puntero (0 KB, puro CSS).
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-12 place-items-center">
+            {VARIANTS.map(v => (
+              <div key={v.label} className="flex flex-col items-center gap-4">
+                <PlacaCardV4 placa={v.placa} />
+                <div className="text-center max-w-[300px]">
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900, color: '#F0F0F8' }}>
+                    {v.label} · {v.placa.tier}
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-sport)', fontSize: 11, color: '#7A7A92', marginTop: 4 }}>
+                    {v.placa.tier === 'gold' || v.placa.tier === 'diamond' ? 'Con foil holográfico premium' : 'Sin foil (look limpio)'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* ── V3 VERTICAL — full ─────────────────────────────────── */}
         <section className="mb-16">

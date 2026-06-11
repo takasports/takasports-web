@@ -44,6 +44,9 @@ export function PlacaCardV4({ placa, interactive = true }: Props) {
     rafRef.current = requestAnimationFrame(() => {
       el.style.setProperty('--ry', `${(x - 0.5) * 5}deg`)
       el.style.setProperty('--rx', `${(0.5 - y) * 5}deg`)
+      // Posición del cursor (0-100%) para el brillo holográfico del foil.
+      el.style.setProperty('--mx', `${x * 100}%`)
+      el.style.setProperty('--my', `${y * 100}%`)
     })
   }, [interactive])
 
@@ -51,6 +54,8 @@ export function PlacaCardV4({ placa, interactive = true }: Props) {
     const el = ref.current; if (!el) return
     el.style.setProperty('--ry', '0deg')
     el.style.setProperty('--rx', '0deg')
+    el.style.setProperty('--mx', '50%')
+    el.style.setProperty('--my', '50%')
   }, [])
 
   const width = 300, height = 430
@@ -62,6 +67,14 @@ export function PlacaCardV4({ placa, interactive = true }: Props) {
   const titleColor = placa.title?.color ?? tier.primary
   const ringColor  = placa.avatarFrame?.color ?? frameColor
   const ringGradient = placa.avatarFrame?.style === 'gradient'
+
+  // Foil holográfico — recompensa premium SOLO para tiers altos (gold/diamond).
+  // Los tiers bronze/silver conservan el look editorial limpio. La lámina sigue
+  // al cursor (--mx/--my) y al tilt; 0 KB (puro CSS, mix-blend-mode).
+  const isPremium = placa.tier === 'gold' || placa.tier === 'diamond'
+  const foilBand = placa.tier === 'diamond'
+    ? 'linear-gradient(115deg, transparent 16%, rgba(34,211,238,0.40) 30%, rgba(192,132,252,0.34) 43%, rgba(251,191,36,0.38) 56%, rgba(34,211,238,0.32) 69%, transparent 84%)'
+    : 'linear-gradient(115deg, transparent 22%, rgba(253,230,138,0.34) 38%, rgba(251,191,36,0.40) 50%, rgba(180,83,9,0.26) 62%, transparent 80%)'
 
   const initials = (placa.fallbackInitials
     ?? placa.displayName.split(' ').map(w => w[0]).join('').slice(0, 2)
@@ -125,6 +138,18 @@ export function PlacaCardV4({ placa, interactive = true }: Props) {
           background: `linear-gradient(180deg, ${frameColor}0F 0%, transparent 100%)`,
           pointerEvents: 'none',
         }} />
+
+        {/* Foil holográfico (gold/diamond) — bajo el contenido para no tapar el
+            texto; la lámina iridiscente + el brillo siguen al cursor. */}
+        {isPremium && interactive && (
+          <div aria-hidden="true" className="placa-foil" style={{
+            position: 'absolute', inset: 2, borderRadius: 14, pointerEvents: 'none',
+            mixBlendMode: 'color-dodge',
+            backgroundImage: `radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,0.45) 0%, transparent 42%), ${foilBand}`,
+            backgroundSize: '180% 180%, 230% 100%',
+            backgroundPosition: 'var(--mx,50%) var(--my,50%), var(--mx,50%) 0',
+          } as React.CSSProperties} />
+        )}
 
         {/* Tier band */}
         <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
