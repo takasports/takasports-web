@@ -6,6 +6,7 @@ import GameLayout from '@/components/games/GameLayout'
 import { getDailyQuestions, getPracticeQuestions, listCategories, todayKey, type QuizQuestion, type QuizCategory, type QuizSport } from '@/lib/crackquiz-questions'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import { TrophyIcon, FireIcon, ClapIcon, FlexIcon, BoltIcon, DiceIcon } from '@/components/icons/GameIcons'
+import { ensureAudio, sfx, SOUND_KEY, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
@@ -74,47 +75,8 @@ function dayDiff(fromKey: string, toKey: string): number {
 
 // ── Sound & haptic (client-only, no assets) ───────────────────────
 
-const SOUND_KEY = 'ts_crackquiz_sound'
-let audioCtx: AudioContext | null = null
-
-function ensureAudio(): AudioContext | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!Ctor) return null
-    if (!audioCtx) audioCtx = new Ctor()
-    if (audioCtx.state === 'suspended') void audioCtx.resume()
-    return audioCtx
-  } catch { return null }
-}
-
-function tone(freq: number, durMs: number, type: OscillatorType = 'sine', gain = 0.05) {
-  const ctx = audioCtx
-  if (!ctx) return
-  try {
-    const osc = ctx.createOscillator()
-    const g = ctx.createGain()
-    osc.type = type
-    osc.frequency.value = freq
-    g.gain.setValueAtTime(gain, ctx.currentTime)
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durMs / 1000)
-    osc.connect(g); g.connect(ctx.destination)
-    osc.start()
-    osc.stop(ctx.currentTime + durMs / 1000)
-  } catch { /* ignore */ }
-}
-
-function vibrate(pattern: number | number[]) {
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    try { navigator.vibrate(pattern) } catch { /* ignore */ }
-  }
-}
-
-const sfx = {
-  tick:    () => tone(660, 70, 'square', 0.025),
-  correct: () => { tone(720, 90, 'sine', 0.05); setTimeout(() => tone(960, 130, 'sine', 0.05), 90); vibrate(20) },
-  wrong:   () => { tone(180, 220, 'sawtooth', 0.04); vibrate([45, 40, 45]) },
-}
+// Motor de audio/háptica + confeti/fanfarria → src/lib/game-feedback.ts
+// (compartido con el resto de minijuegos). SOUND_KEY es ahora la key común.
 
 // ── Icons ─────────────────────────────────────────────────────────
 
@@ -635,6 +597,15 @@ function ResultScreen({
       .catch(() => { /* failsafe */ })
     return () => { cancelled = true }
   }, [practice])
+
+  // Celebración de victoria (≥60% aciertos): confeti visual siempre + fanfarria
+  // si el sonido está activado. Una sola vez al montar el resultado.
+  useEffect(() => {
+    if (pct < 0.6) return
+    fireConfetti()
+    if (getSoundPref()) { ensureAudio(); winFanfare() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Per-category breakdown → strongest / weakest
   const catMap: Record<string, { correct: number; total: number }> = {}
