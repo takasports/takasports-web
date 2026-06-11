@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import HeroBlock from '@/components/HeroBlock'
@@ -344,6 +344,10 @@ export default function HomeContent({
   const [activeSport, setActiveSport] = useState<string>('Todo')
   const [contentVisible, setContentVisible] = useState(true)
 
+  // Top de eventos del calendario — se calcula 1 vez por cambio de `events`
+  // (antes se recomputaba en cada render, y además 2 veces: calendario + sidebar).
+  const topEvents = useMemo(() => pickTopEvents(events, 4), [events])
+
   // F3.5 (jun 2026): preseleccionado por `?sport=X` se lee client-side al
   // montar. Antes se leía via searchParams en el server (forzaba dynamic).
   // Ahora el server page es estático y este efecto aplica el filtro tras
@@ -495,7 +499,7 @@ export default function HomeContent({
 
         {/* ── 2. CALENDARIO ──────────────────────────────────────── */}
         <div className="mt-6">
-          <LiveEventsSection preview={true} events={pickTopEvents(events, 4)} />
+          <LiveEventsSection preview={true} events={topEvents} />
         </div>
 
         {/* ── 3. REELS ───────────────────────────────────────────── */}
@@ -547,7 +551,7 @@ export default function HomeContent({
 
         {/* Sidebar — solo desktop */}
         <aside className="w-72 xl:w-80 flex-shrink-0 hidden lg:block sticky top-20 self-start pt-6">
-          <Sidebar topPlayers={topPlayers} events={pickTopEvents(events, 4)} />
+          <Sidebar topPlayers={topPlayers} events={topEvents} />
         </aside>
 
       </div>

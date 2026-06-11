@@ -163,7 +163,7 @@ function KenBurnsImage({
   return (
     <div
       key={animKey}
-      className="absolute inset-0"
+      className="absolute inset-0 hero-kenburns"
       style={{
         animation: `kenBurns ${INTERVAL + 1200}ms ease-in-out forwards`,
         transformOrigin: 'center center',
@@ -277,12 +277,13 @@ function BigCard({
         </div>
 
         <h2
-          className="font-black leading-tight mb-2"
+          className="font-black leading-[0.98] mb-2"
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(1.45rem, 2.9vw, 3rem)',
+            fontSize: 'clamp(1.7rem, 3.4vw, 4rem)',
+            fontWeight: 900,
             color: '#F8F8FF',
-            letterSpacing: '-0.018em',
+            letterSpacing: '-0.022em',
             textShadow: '0 2px 32px rgba(0,0,0,0.7)',
           }}
         >
@@ -443,6 +444,7 @@ function ProgressBar({ offset, paused }: { offset: number; paused: boolean }) {
     >
       <div
         key={offset}
+        className="hero-progress"
         style={{
           height: '100%',
           background: 'linear-gradient(to right, #7C3AED, #A78BFA)',
@@ -466,6 +468,8 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
   const [paused, setPaused] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const touchStartX = useRef<number | null>(null)
+  const heroRef = useRef<HTMLDivElement>(null)
+  const [heroInView, setHeroInView] = useState(true)
 
   const advance = useCallback(
     (dir: number = 1) => {
@@ -492,22 +496,37 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
     }, FADE_OUT + 40)
   }, [])
 
-  // Autoplay
+  // Autoplay — pausado si el usuario pide reducir movimiento.
   useEffect(() => {
     if (paused || len < 2) return
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     timerRef.current = setInterval(() => advance(1), INTERVAL)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [advance, paused, len])
 
-  // Teclado — flechas izq/der
+  // El hero solo "escucha" las flechas cuando está a la vista (no roba teclas
+  // mientras el usuario está más abajo en la página).
   useEffect(() => {
+    const el = heroRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const obs = new IntersectionObserver(([e]) => setHeroInView(e.isIntersecting), { threshold: 0.25 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  // Teclado — flechas izq/der. Solo si el hero está visible y el foco NO está
+  // en un campo de texto (no interferir al escribir en el buscador/modales).
+  useEffect(() => {
+    if (!heroInView) return
     const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
       if (e.key === 'ArrowLeft')  advance(-1)
       if (e.key === 'ArrowRight') advance(1)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [advance])
+  }, [advance, heroInView])
 
   if (len === 0) return null
 
@@ -517,19 +536,8 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
 
   return (
     <>
-      {/* Keyframes inyectados una sola vez */}
-      <style>{`
-        @keyframes kenBurns {
-          from { transform: scale(1.0) translate(0, 0); }
-          to   { transform: scale(1.065) translate(-0.8%, -0.4%); }
-        }
-        @keyframes heroProgress {
-          from { width: 0%; }
-          to   { width: 100%; }
-        }
-      `}</style>
-
       <div
+        ref={heroRef}
         className="hero-enter"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}

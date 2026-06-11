@@ -1044,3 +1044,20 @@ html[data-cap="full"] .ts-radar__shape {
   html[data-cap="full"] .ts-radar__shape { animation: none; opacity: 1; transform: none; }
 }
 
+/* ── Home hero — Ken Burns + barra de progreso ──
+   Movidos desde el <style> inline de HeroBlock (eran globales de facto). La
+   duración sigue siendo inline (depende de INTERVAL); aquí solo se define el
+   keyframe y se neutraliza con prefers-reduced-motion. */
+@keyframes kenBurns {
+  from { transform: scale(1.0) translate(0, 0); }
+  to   { transform: scale(1.065) translate(-0.8%, -0.4%); }
+}
+@keyframes heroProgress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-kenburns { animation: none !important; }
+  .hero-progress { animation: none !important; }
+}
+
