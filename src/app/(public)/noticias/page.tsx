@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { sanityClient, articlesQuery, reelsQuery, urlFor } from '@/lib/sanity'
 import reelsData from '@/lib/reels-data.json'
-import BreakingNewsBar from '@/components/BreakingNewsBar'
 import NoticiasContent from '@/components/NoticiasContent'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
@@ -66,10 +65,6 @@ export default async function NoticiasPage() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
-      <BreakingNewsBar items={[
-        ...articles.filter((a: { takaStatus?: string | null }) => a.takaStatus === 'breaking'),
-        ...articles.filter((a: { takaStatus?: string | null }) => a.takaStatus !== 'breaking'),
-      ].slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
 
       <div className="max-w-[1440px] mx-auto pb-24">
         <NoticiasContent

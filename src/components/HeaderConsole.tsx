@@ -1,4 +1,5 @@
 import Header from './Header'
+import BreakingNewsBar from './BreakingNewsBar'
 import LiveStrip from './LiveStrip'
 
 // Consola "La Señal": apila el Header y la franja de marcadores (LiveStrip) como
@@ -12,10 +13,15 @@ import LiveStrip from './LiveStrip'
 //
 // LiveStrip ya hace su propio autofetch del directo y se colapsa al bajar en
 // móvil; dentro de la consola eso lo minimiza dejando el Header visible.
+//
+// BreakingNewsBar va sin props = modo autofetch (titulares de /api/articles,
+// prioriza los "breaking"): aparece en TODA la web (public). Si no hay titulares
+// devuelve null y no ocupa espacio. Orden Header → Última hora → Directo.
 export default function HeaderConsole() {
   return (
     <div className="sticky top-0 z-50">
       <Header sticky={false} />
+      <BreakingNewsBar />
       <LiveStrip />
     </div>
   )

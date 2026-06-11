@@ -17,29 +17,60 @@ export default function BreakingNewsBar({
   items?: TickerItem[]
   titles?: string[]
 }) {
-  // Sin fallback hardcodeado: si no hay breaking real, NO se muestra la barra (no inventar noticias).
+  // TODOS los hooks ARRIBA, antes de cualquier return condicional: el modo
+  // autofetch hace que los datos pasen de vacío a llenos (async), y con el
+  // return temprano antes de los hooks React rompería el orden de hooks.
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [paused, setPaused] = useState(false)
+  const [fetched, setFetched] = useState<TickerItem[]>([])
+
+  // Autofetch (modo consola site-wide): si NO llegan items/titles por props,
+  // pide los titulares recientes a /api/articles y prioriza los "breaking".
+  // Si no hay nada, `resolved` queda vacío y la barra no se pinta (no inventar).
+  const autofetch = !(items && items.length > 0) && !(titles && titles.length > 0)
+  useEffect(() => {
+    if (!autofetch) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/articles?pageSize=20', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        const arts: Array<{ title: string; slug?: string; sport?: string; category?: string; takaStatus?: string | null }> =
+          data?.articles ?? []
+        const ordered = [
+          ...arts.filter((a) => a.takaStatus === 'breaking'),
+          ...arts.filter((a) => a.takaStatus !== 'breaking'),
+        ]
+          .slice(0, 8)
+          .map((a) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))
+        if (!cancelled) setFetched(ordered)
+      } catch { /* ignore */ }
+    })()
+    return () => { cancelled = true }
+  }, [autofetch])
+
+  // Sin fallback hardcodeado: si no hay breaking real, NO se muestra la barra.
   const resolved: TickerItem[] =
     items && items.length > 0
       ? items
       : titles && titles.length > 0
-        ? titles.map(t => ({ title: t }))
-        : []
+        ? titles.map((t) => ({ title: t }))
+        : fetched
 
-  if (resolved.length === 0) return null
-
-  // Duplicate items so the ticker scrolls seamlessly
-  const doubled = [...resolved, ...resolved]
-
-  const trackRef = useRef<HTMLDivElement>(null)
-  const [paused, setPaused] = useState(false)
-
-  // Reset animation on mount so SSR/hydration don't misalign
+  // Reset de la animación al montar / al llegar datos para que SSR/hidratación
+  // y el autofetch no descuadren el ticker.
   useEffect(() => {
     const el = trackRef.current
     if (!el) return
     el.style.animation = 'none'
     requestAnimationFrame(() => { el.style.animation = '' })
-  }, [])
+  }, [resolved.length])
+
+  if (resolved.length === 0) return null
+
+  // Duplicate items so the ticker scrolls seamlessly
+  const doubled = [...resolved, ...resolved]
 
   return (
     <div
