@@ -58,7 +58,7 @@ export default function GamePointsToast({
         zIndex: 100,
         background: 'linear-gradient(135deg, rgba(167,139,250,0.14), rgba(109,40,217,0.10))',
         border: `1px solid ${accent}55`,
-        borderRadius: 16,
+        borderRadius: 'var(--radius-lg)',
         padding: '14px 20px',
         display: 'flex',
         alignItems: 'center',

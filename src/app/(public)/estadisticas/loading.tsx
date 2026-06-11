@@ -3,7 +3,7 @@ function SkeletonBlock({ rows = 5, wide = false }: { rows?: number; wide?: boole
   return (
     <div
       className={wide ? 'md:col-span-2 xl:col-span-1' : ''}
-      style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, overflow: 'hidden' }}
+      style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}
     >
       {/* Block header */}
       <div className="px-5 pt-4 pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>

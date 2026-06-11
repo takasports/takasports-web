@@ -166,7 +166,7 @@ export default function PublicProfilePage() {
                         title={`${b.name} · ${RARITY_LABEL[b.rarity] ?? b.rarity}`}
                         style={{
                           display: 'inline-flex', alignItems: 'center', gap: 5,
-                          padding: '3px 8px', borderRadius: 8,
+                          padding: '3px 8px', borderRadius: 'var(--radius-md)',
                           background: b.bg, border: `1px solid ${b.color}35`,
                           fontSize: 11, fontWeight: 700, color: b.color,
                           fontFamily: 'var(--font-sport)',
@@ -305,7 +305,7 @@ export default function PublicProfilePage() {
                         <span
                           style={{
                             fontSize: 10, fontWeight: 900, flexShrink: 0,
-                            padding: '2px 8px', borderRadius: 6,
+                            padding: '2px 8px', borderRadius: 'var(--radius-sm)',
                             fontFamily: 'var(--font-sport)',
                             background: pick.is_correct ? 'rgba(74,222,128,0.12)' : 'rgba(239,68,68,0.08)',
                             border: `1px solid ${pick.is_correct ? 'rgba(74,222,128,0.3)' : 'rgba(239,68,68,0.2)'}`,
@@ -350,7 +350,7 @@ export default function PublicProfilePage() {
               <Link
                 href="/predicciones"
                 style={{
-                  flexShrink: 0, padding: '10px 22px', borderRadius: 12,
+                  flexShrink: 0, padding: '10px 22px', borderRadius: 'var(--radius-card)',
                   background: GOLD, color: '#000',
                   fontSize: 12, fontWeight: 900, textDecoration: 'none',
                   fontFamily: 'var(--font-sport)', letterSpacing: '0.05em',

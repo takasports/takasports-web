@@ -118,14 +118,14 @@ function PredictionModal({
     <div className="quiniela-modal-backdrop" onClick={() => onClose(submitted)}>
       <div
         className="w-full relative"
-        style={{ maxWidth: 460, borderRadius: 20, overflow: 'hidden' }}
+        style={{ maxWidth: 460, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
           style={{
             background: 'linear-gradient(160deg,#1A0030 0%,#120025 50%,#08000F 100%)',
             border: '1px solid rgba(124,58,237,0.3)',
-            borderRadius: 20,
+            borderRadius: 'var(--radius-xl)',
             overflow: 'hidden',
           }}
         >

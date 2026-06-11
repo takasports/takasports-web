@@ -62,9 +62,9 @@ export default function PredictWidget({ category = 'jugadores' }: { category?: s
               }}>
               {o.image_url ? (
                 <img src={o.image_url} alt="" width={42} height={42}
-                  style={{ borderRadius: 9999, objectFit: 'cover' }} />
+                  style={{ borderRadius: 'var(--radius-full)', objectFit: 'cover' }} />
               ) : (
-                <div style={{ width: 42, height: 42, borderRadius: 9999, background: 'rgba(245,158,11,0.2)' }} />
+                <div style={{ width: 42, height: 42, borderRadius: 'var(--radius-full)', background: 'rgba(245,158,11,0.2)' }} />
               )}
               <span className="text-[10px] text-center leading-tight font-bold line-clamp-2"
                 style={{ color: '#E8E8F0', fontFamily: 'var(--font-sport)' }}>

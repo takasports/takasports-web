@@ -16,7 +16,7 @@ export default function Loading() {
         className="rounded-2xl p-5 mb-6 flex items-center gap-5"
         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
       >
-        <Bone style={{ width: 80, height: 80, borderRadius: 16, flexShrink: 0 }} />
+        <Bone style={{ width: 80, height: 80, borderRadius: 'var(--radius-lg)', flexShrink: 0 }} />
         <div className="flex-1 min-w-0 flex flex-col gap-2">
           <Bone style={{ width: 90, height: 10 }} />
           <Bone style={{ width: 200, height: 24 }} />

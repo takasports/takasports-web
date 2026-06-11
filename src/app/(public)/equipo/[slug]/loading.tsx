@@ -18,7 +18,7 @@ export default function Loading() {
         className="rounded-2xl p-5 mb-6 flex items-center gap-5"
         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
       >
-        <Bone style={{ width: 80, height: 80, borderRadius: 16, flexShrink: 0 }} />
+        <Bone style={{ width: 80, height: 80, borderRadius: 'var(--radius-lg)', flexShrink: 0 }} />
         <div className="flex-1 min-w-0 flex flex-col gap-2">
           <Bone style={{ width: 80, height: 10 }} />
           <Bone style={{ width: 200, height: 24 }} />
@@ -54,7 +54,7 @@ export default function Loading() {
       {/* Featured player */}
       <div className="rounded-2xl p-5 mb-6 flex gap-4 items-center"
         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-        <Bone style={{ width: 72, height: 72, borderRadius: 12, flexShrink: 0 }} />
+        <Bone style={{ width: 72, height: 72, borderRadius: 'var(--radius-card)', flexShrink: 0 }} />
         <div className="flex-1 min-w-0 flex flex-col gap-2">
           <Bone style={{ width: 80, height: 10, borderRadius: 999 }} />
           <Bone style={{ width: 160, height: 20 }} />

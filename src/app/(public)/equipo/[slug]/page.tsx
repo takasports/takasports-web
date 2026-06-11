@@ -91,7 +91,7 @@ function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterP
       >
         {player.headshot ? (
           <Image src={player.headshot} alt={player.name} width={72} height={72} unoptimized
-            style={{ objectFit: 'cover', borderRadius: 12 }} />
+            style={{ objectFit: 'cover', borderRadius: 'var(--radius-card)' }} />
         ) : (
           <span className="font-black text-2xl" style={{ color: accent, fontFamily: 'var(--font-display)' }}>
             {player.jersey ? `#${player.jersey}` : player.name.charAt(0)}
