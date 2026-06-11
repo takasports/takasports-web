@@ -11,8 +11,6 @@
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import { parseResultSlug, formatJornadaFromSlug } from '@/lib/porra-result-slug'
 import { SITE_URL } from '@/lib/constants'
 
@@ -65,8 +63,7 @@ export default async function ResultadoPage({
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#09090F' }}>
-      <Header />
-      <main className="flex-1 flex items-center justify-center px-4 py-16">
+      <div className="flex-1 flex items-center justify-center px-4 py-16">
         <div
           className="w-full max-w-xl rounded-3xl p-8 sm:p-10 text-center"
           style={{
@@ -131,8 +128,7 @@ export default async function ResultadoPage({
             Gratis · sin descargas
           </p>
         </div>
-      </main>
-      <Footer />
+      </div>
     </div>
   )
 }
