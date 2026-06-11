@@ -342,6 +342,43 @@ export default async function CompetitionCalendarPage({
           </section>
         )}
 
+        {/* Insights por liga → Predicciones (solo fútbol). Juego gratuito de
+            puntos (Liga Taka), sin apuestas. */}
+        {comp.sport === 'Fútbol' && (
+          <section className="mt-12">
+            <Link
+              href="/predicciones"
+              className="group block rounded-2xl p-5 transition-colors"
+              style={{ background: 'rgba(124,58,237,0.10)', border: '1px solid rgba(124,58,237,0.28)' }}
+            >
+              <div className="flex items-center gap-4">
+                <span
+                  className="flex-shrink-0 flex items-center justify-center rounded-xl"
+                  style={{ width: 44, height: 44, background: 'rgba(124,58,237,0.18)', border: '1px solid rgba(124,58,237,0.3)' }}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2l2.9 6 6.6.5-5 4.3 1.6 6.4L12 16.9 5.9 19.2 7.5 12.8l-5-4.3 6.6-.5L12 2z" stroke="#C4B5FD" strokeWidth="1.4" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="section-label" style={{ marginBottom: 2 }}>Predicciones</p>
+                  <p className="font-black" style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: '1.15rem', letterSpacing: '-0.01em' }}>
+                    ¿Quién se lleva la {comp.shortName}?
+                  </p>
+                  <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                    Haz tus pronósticos y compite por puntos en la Liga Taka. Gratis.
+                  </p>
+                </div>
+                <span className="flex-shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: '#C4B5FD' }}>
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+              </div>
+            </Link>
+          </section>
+        )}
+
         {/* Otras competiciones */}
         <section className="mt-14 pt-8" style={{ borderTop: '1px solid var(--border)' }}>
           <h2 className="section-label mb-4">Otros calendarios</h2>
