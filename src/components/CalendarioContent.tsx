@@ -14,6 +14,7 @@ import FavoritesOnboarding from '@/components/FavoritesOnboarding'
 import CompetitionSelector from '@/components/CompetitionSelector'
 import CompetitionBanner from '@/components/CompetitionBanner'
 import { COMPETITIONS, getCompetition, matchesCompetition } from '@/lib/calendar-competitions'
+import { subscribeToPush } from '@/lib/push-client'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
 
@@ -1786,6 +1787,49 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     notifTimers.current.set(id, timer)
   }, [events])
 
+  // Recordatorio REAL vía push (server) → avisa aunque la web esté cerrada. Si
+  // el usuario rechaza el permiso o el navegador no soporta push, cae al aviso
+  // local (setTimeout, solo con la pestaña abierta).
+  const enableReminderPush = useCallback(async (id: string) => {
+    const ev = events.find(e => e.id === id)
+    if (ev?.isoDate) {
+      try {
+        const r = await subscribeToPush(['calendario'])
+        if (r.ok && r.endpoint) {
+          const res = await fetch('/api/push/reminders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              endpoint: r.endpoint, matchRef: id, kickoffIso: ev.isoDate,
+              home: ev.home, away: ev.away ?? null, comp: ev.comp ?? null,
+              url: ev.matchRef ? `/partido/${ev.matchRef}` : '/calendario',
+            }),
+          })
+          if (res.ok) return  // push real OK → no programamos el local (evita doble aviso)
+        }
+      } catch { /* cae al fallback local */ }
+    }
+    await requestNotifPermission()
+    scheduleNotif(id)
+  }, [events, requestNotifPermission, scheduleNotif])
+
+  // Baja del recordatorio en el servidor (la suscripción push se mantiene por si
+  // hay otros recordatorios; solo se borra esta fila).
+  const disableReminderPush = useCallback(async (id: string) => {
+    try {
+      if (!('serviceWorker' in navigator)) return
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.getSubscription()
+      if (sub?.endpoint) {
+        await fetch('/api/push/reminders', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: sub.endpoint, matchRef: id }),
+        }).catch(() => {})
+      }
+    } catch { /* ignore */ }
+  }, [])
+
   const toggleReminder = useCallback((id: string) => {
     setReminders(prev => {
       const next = new Set(prev)
@@ -1794,9 +1838,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         const timer = notifTimers.current.get(id)
         if (timer) clearTimeout(timer)
         notifTimers.current.delete(id)
+        disableReminderPush(id)
       } else {
         next.add(id)
-        requestNotifPermission().then(() => scheduleNotif(id))
+        enableReminderPush(id)
       }
       localStorage.setItem('ts_reminders', JSON.stringify([...next]))
       // Snapshot del evento junto al id: el perfil lee 'ts_reminders_data' para
@@ -1814,7 +1859,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       window.dispatchEvent(new CustomEvent('ts-reminders-change'))
       return next
     })
-  }, [requestNotifPermission, scheduleNotif, events])
+  }, [enableReminderPush, disableReminderPush, events])
 
   // Sync de snapshots: rellena 'ts_reminders_data' para los recordatorios
   // activos cuyo evento siga en el feed. Cubre recordatorios creados antes de

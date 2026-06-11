@@ -47,7 +47,7 @@ export async function getPushStatus(): Promise<PushStatus> {
   }
 }
 
-export interface SubscribeResult { ok: boolean; error?: string }
+export interface SubscribeResult { ok: boolean; error?: string; endpoint?: string }
 
 export async function subscribeToPush(topics: string[] = ['games']): Promise<SubscribeResult> {
   if (!isPushSupported()) return { ok: false, error: 'unsupported' }
@@ -78,7 +78,7 @@ export async function subscribeToPush(topics: string[] = ['games']): Promise<Sub
       }),
     })
     if (!res.ok) return { ok: false, error: `server ${res.status}` }
-    return { ok: true }
+    return { ok: true, endpoint: json.endpoint }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
