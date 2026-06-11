@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
@@ -564,15 +565,13 @@ export default function ReelsSection({
             {hasReels ? `${visible.length} reels` : 'Próximamente'}
           </span>
         </div>
-        <a
-          href="https://www.instagram.com/taka.sports"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href="/reels"
           className="text-[11px] font-semibold transition-opacity hover:opacity-70"
           style={{ color: '#9B6DB5', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
         >
-          @taka.sports →
-        </a>
+          Ver todos →
+        </Link>
       </div>
 
       {hasReels && availableSports.length > 1 && (
