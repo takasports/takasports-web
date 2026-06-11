@@ -584,6 +584,11 @@ export default async function NoticiaPage({
   // para que los ids coincidan con los enlaces del índice.
   const { headings: tocHeadings, idByKey: tocIdByKey } = extractHeadings(article.bodyPortable)
 
+  // Tiempo estimado de lectura (≈200 ppm en español) — hoy bodyWordCount solo
+  // alimentaba el JSON-LD; lo mostramos también en la cabecera del artículo.
+  const _wc = bodyWordCount()
+  const readMinutes = _wc ? Math.max(1, Math.round(_wc / 200)) : null
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
@@ -654,6 +659,12 @@ export default async function NoticiaPage({
                     {timeAgo(article.publishedAt)}
                   </time>
                 )}
+                {readMinutes && (
+                  <span className="text-xs flex-shrink-0 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                    <span aria-hidden="true" style={{ color: badgeColor }}>·</span>
+                    {readMinutes} min
+                  </span>
+                )}
               </div>
               <ShareButton title={article.title} />
             </div>
@@ -682,6 +693,17 @@ export default async function NoticiaPage({
                   </svg>
                   {timeAgo(article.publishedAt)}
                 </time>
+              )}
+              {readMinutes && (
+                <span
+                  className="text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5"
+                  style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: 'var(--font-sport)' }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ color: badgeColor, opacity: 0.85 }} aria-hidden="true">
+                    <path d="M2 3h8M2 6h8M2 9h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                  {readMinutes} min de lectura
+                </span>
               )}
             </div>
 
