@@ -238,6 +238,20 @@ function rowToEntry(row: any): RankingEntry {
   }
 }
 
+// La vista `ranking_view` puede contener filas repetidas por id (la misma
+// persona dos veces dentro de una categoría, o la misma persona en varias
+// categorías al cruzar todas). Conserva la PRIMERA aparición — las queries ya
+// vienen ordenadas por rank/score, así que es la de mejor posición — para no
+// pintar duplicados ni romper las keys de React aguas abajo (home, sidebar…).
+function dedupeById<T extends { id: string }>(rows: T[]): T[] {
+  const seen = new Set<string>()
+  return rows.filter(r => {
+    if (seen.has(r.id)) return false
+    seen.add(r.id)
+    return true
+  })
+}
+
 // Categorías que tienen datos en Supabase (las demás siempre usan el estático)
 const DB_CATEGORIES: RankingCategory[] = [
   'jugadores', 'jugadoras', 'sub21', 'latam', 'concacaf', 'clubes', 'clubes_femenino', 'entrenadores',
@@ -272,7 +286,7 @@ export async function getRanking(category: RankingCategory): Promise<RankingEntr
     if (error || !data || data.length === 0) {
       return STATIC_FALLBACK[category] ?? []
     }
-    return data.map(rowToEntry)
+    return dedupeById(data.map(rowToEntry))
   } catch {
     return STATIC_FALLBACK[category] ?? []
   }
@@ -324,7 +338,7 @@ export async function getAllRankings(
       const partial: Partial<Record<RankingCategory, RankingEntry[]>> = {}
       for (const { cat, rows } of results) {
         if (rows && rows.length > 0) {
-          partial[cat] = rows.map(rowToEntry)
+          partial[cat] = dedupeById(rows.map(rowToEntry))
         } else {
           partial[cat] = STATIC_FALLBACK[cat]
         }
@@ -335,7 +349,7 @@ export async function getAllRankings(
     const result = { ...STATIC_FALLBACK } as Record<RankingCategory, RankingEntry[]>
     for (const { cat, rows } of results) {
       if (rows && rows.length > 0) {
-        result[cat] = rows.map(rowToEntry)
+        result[cat] = dedupeById(rows.map(rowToEntry))
       }
     }
     return result
@@ -429,7 +443,7 @@ export async function getTopMovers(limit = 3): Promise<{ movers: MoverEntry[]; f
       })
       .filter(e => Math.abs(e.delta) >= 1 && Math.abs(e.delta) <= MAX_WEEKLY_DELTA)
 
-    const sorted = [...entries].sort((a, b) => b.delta - a.delta)
+    const sorted = dedupeById(entries).sort((a, b) => b.delta - a.delta)
     return {
       movers:  sorted.filter(e => e.delta >= 1).slice(0, limit),
       fallers: sorted.filter(e => e.delta <= -1).slice(-limit).reverse(),
@@ -519,7 +533,7 @@ export async function getTopEntriesForCompare(limit = 600): Promise<RankingEntry
       .order('score', { ascending: false })
       .limit(limit)
     if (error || !data) return []
-    return data.map(rowToEntry)
+    return dedupeById(data.map(rowToEntry))
   } catch {
     return []
   }
