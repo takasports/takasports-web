@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
-import { getZone, zoneFromNote } from '@/lib/league-zones'
 import type { StandingZone } from '@/lib/league-zones'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
-import { TABLE_LEAGUE_SLUGS, LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
+import { LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
+import { fetchLeagueTableRows, type LeagueTableRow } from '@/lib/espn-standings'
+// Re-exportados para los componentes cliente que ya importan estos tipos desde
+// este route (LeagueTable.tsx). La fuente real vive ahora en lib/espn-standings.
 export type { StandingZone }
+export type { LeagueTableRow }
 
 export type SportKind = 'soccer' | 'basketball' | 'mma' | 'racing' | 'tennis' | 'golf' | 'other'
 
@@ -70,24 +73,6 @@ export interface TeamLineup {
   formation?: string  // e.g. "4-3-3"
   starters: LineupPlayer[]
   bench: LineupPlayer[]
-}
-
-export interface LeagueTableRow {
-  rank: number
-  name: string
-  abbr: string
-  logo?: string
-  teamId?: string
-  pts: number
-  gp: number
-  w: number
-  d: number
-  l: number
-  gf: number
-  gc: number
-  gd: number
-  highlight?: 'home' | 'away'
-  zone?: StandingZone
 }
 
 export interface MatchDetail {
@@ -309,50 +294,6 @@ function buildLineups(json: Record<string, unknown>): MatchDetail['lineups'] | u
   const result = { home: parse(homeR), away: parse(awayR) }
   if (!result.home.starters.length && !result.away.starters.length) return undefined
   return result
-}
-
-// ── League table ─────────────────────────────────────────────────────
-// Ligas con clasificación: lib/football-leagues (TABLE_LEAGUE_SLUGS).
-async function fetchLeagueTableRows(leagueSlug: string): Promise<Omit<LeagueTableRow, 'highlight'>[]> {
-  if (!TABLE_LEAGUE_SLUGS.has(leagueSlug)) return []
-  try {
-    const res = await fetch(
-      `https://site.web.api.espn.com/apis/v2/sports/${leagueSlug}/standings`,
-      { next: { revalidate: 1800 } }
-    )
-    if (!res.ok) return []
-    const json = await res.json()
-    const groups  = asArr(json.children) as Record<string, unknown>[]
-    const entries = asArr(asObj(groups[0]?.standings)?.entries) as Record<string, unknown>[]
-    if (!entries.length) return []
-
-    // ESPN no siempre devuelve las entradas ordenadas por posición (p. ej. MLS),
-    // y abajo usamos el índice como puesto. Ordenamos por el stat 'rank' de ESPN.
-    const rankOf = (e: Record<string, unknown>) => {
-      const st = asArr(e.stats) as Array<{ name: string; value?: number }>
-      return (st.find(s => s.name === 'rank')?.value as number) ?? 999
-    }
-    entries.sort((a, b) => rankOf(a) - rankOf(b))
-
-    return entries.map((e, i) => {
-      const team  = asObj(e.team) ?? {}
-      const stats = asArr(e.stats) as Array<{ name: string; value?: number }>
-      const sv = (name: string) => Math.round((stats.find(s => s.name === name)?.value as number) ?? 0)
-      const w = sv('wins'); const d = sv('ties'); const l = sv('losses')
-      const pts = sv('points'); const gd = sv('pointDifferential')
-      const gf  = sv('pointsFor'); const gc = sv('pointsAgainst')
-      const logos = asArr(team.logos) as Record<string, unknown>[]
-      return {
-        rank: i + 1,
-        name: asString(team.displayName) ?? '—',
-        abbr: asString(team.abbreviation) ?? '',
-        logo: asString(logos[0]?.href),
-        teamId: asString(team.id),
-        pts, gp: w + d + l, w, d, l, gf, gc, gd,
-        zone: zoneFromNote(asString(asObj(e.note)?.description)) ?? getZone(leagueSlug, i + 1),
-      }
-    })
-  } catch { return [] }
 }
 
 // ── Soccer ──────────────────────────────────────────────────────────

@@ -30,6 +30,9 @@ export interface CompetitionConfig {
   /** Escudo/logo oficial de la competición (URL) para superponer sobre el
    *  banner de cabecera — uso editorial/informativo. */
   crest?: string
+  /** Slug ESPN (p.ej. 'soccer/esp.1') para enriquecer la página con
+   *  clasificación + máximos goleadores. Solo ligas de fútbol con datos. */
+  espnSlug?: string
 }
 
 export const COMPETITIONS: CompetitionConfig[] = [
@@ -192,6 +195,23 @@ const CREST_BY_SLUG: Record<string, string> = {
 }
 for (const c of COMPETITIONS) {
   if (!c.crest && CREST_BY_SLUG[c.slug]) c.crest = CREST_BY_SLUG[c.slug]
+}
+
+// Slug ESPN por competición → habilita clasificación + máximos goleadores en la
+// página de competición. Solo ligas de fútbol (la tabla solo aparece para las de
+// TABLE_LEAGUE_SLUGS; los goleadores se intentan y degradan si no hay datos).
+const ESPN_SLUG_BY_SLUG: Record<string, string> = {
+  laliga:          'soccer/esp.1',
+  champions:       'soccer/uefa.champions',
+  'premier-league':'soccer/eng.1',
+  'serie-a':       'soccer/ita.1',
+  bundesliga:      'soccer/ger.1',
+  'ligue-1':       'soccer/fra.1',
+  'europa-league': 'soccer/uefa.europa',
+  'copa-del-rey':  'soccer/esp.copa_del_rey',
+}
+for (const c of COMPETITIONS) {
+  if (!c.espnSlug && ESPN_SLUG_BY_SLUG[c.slug]) c.espnSlug = ESPN_SLUG_BY_SLUG[c.slug]
 }
 
 export function getCompetition(slug: string): CompetitionConfig | null {

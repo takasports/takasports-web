@@ -16,6 +16,9 @@ import {
   matchesCompetition,
   type CompetitionConfig,
 } from '@/lib/calendar-competitions'
+import { fetchLeagueTableRows, fetchTopScorers } from '@/lib/espn-standings'
+import { LeagueTableBlock } from '@/app/partido/[ref]/LeagueTable'
+import { TopScorers } from '@/components/TopScorers'
 
 // ISR cada hora — competiciones evergreen, no necesitan revalidación rápida.
 export const revalidate = 3600
@@ -117,6 +120,16 @@ export default async function CompetitionCalendarPage({
   if (!comp) notFound()
 
   const filtered = await loadCompetitionEvents(comp)
+
+  // Clasificación + máximos goleadores (solo ligas de fútbol con datos ESPN).
+  // En paralelo y degradando a vacío si la competición no tiene tabla/goleadores
+  // (copas, off-season). Coste $0 (ESPN público, ISR 1 h).
+  const [tableRows, scorers] = comp.espnSlug
+    ? await Promise.all([
+        fetchLeagueTableRows(comp.espnSlug),
+        fetchTopScorers(comp.espnSlug),
+      ])
+    : [[], []]
 
   // Agrupar por día.
   const groupedByDay = new Map<string, SportEvent[]>()
@@ -300,6 +313,29 @@ export default async function CompetitionCalendarPage({
               </section>
             ))}
           </div>
+        )}
+
+        {/* Clasificación + máximos goleadores (ligas de fútbol con datos ESPN).
+            Reusa la tabla de /partido (LeagueTableBlock). $0. */}
+        {(tableRows.length > 0 || scorers.length > 0) && (
+          <section className="mt-14 pt-8" style={{ borderTop: '1px solid var(--border)' }}>
+            <div className="flex items-center gap-2.5 mb-5">
+              <span className="section-accent" />
+              <span className="section-label">Clasificación y goleadores</span>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+              {tableRows.length > 0 && (
+                <LeagueTableBlock
+                  rows={tableRows}
+                  leagueLabel={comp.displayName}
+                  leagueSlug={comp.espnSlug!}
+                />
+              )}
+              {scorers.length > 0 && (
+                <TopScorers scorers={scorers} espnSlug={comp.espnSlug!} />
+              )}
+            </div>
+          </section>
         )}
 
         {/* Otras competiciones */}
