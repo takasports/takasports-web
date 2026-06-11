@@ -101,6 +101,10 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
   const rankingLabel = RANKING_LABEL[sport] ?? 'Índice Taka'
   const rankingsHref = `/rankings?deporte=${sport}&tab=jugadores`
 
+  // Fondo atmosférico por deporte (reusa los WebP de /calendario, $0). rugby y
+  // wwe aún no tienen asset propio (IA pendiente) → caen al neutro 'default'.
+  const bdKey = ({ futbol: 'futbol', baloncesto: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc', padel: 'padel' } as Record<string, string>)[sport] ?? 'default'
+
   // FAQ JSON-LD — dinámico: primera pregunta usa el jugador #1 si hay ranking
   const baseFaqs = SPORT_FAQS[sport] ?? []
   const dynamicFaqs = top5.length > 0
@@ -150,33 +154,48 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
       />
 
       <section
-        className="w-full"
+        data-sport={sport}
+        className="w-full relative overflow-hidden"
         style={{
           background: style.bg,
           borderBottom: `1px solid ${accent}22`,
         }}
       >
+        {/* Fondo atmosférico del deporte (broadcast) — reusa los WebP de
+            /calendario. Decorativo: background-image (sin <img>, sin coste de
+            lint), muy oscurecido por el scrim para no competir con el texto. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            backgroundImage: `url(/banners/backdrop-${bdKey}.webp)`,
+            backgroundSize: 'cover', backgroundPosition: 'center 28%',
+            opacity: 0.4,
+          }}
+        />
+        {/* Scrim de legibilidad: oscurece de arriba a abajo hasta fundir con el fondo */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            background: 'linear-gradient(180deg, rgba(9,9,15,0.50) 0%, rgba(9,9,15,0.74) 52%, #09090F 100%)',
+          }}
+        />
+        {/* Tinte de acento del deporte (firma cromática) */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            background: `radial-gradient(ellipse 120% 80% at 50% 0%, ${accent}24 0%, transparent 58%)`,
+          }}
+        />
         <div
           className="max-w-[1440px] mx-auto px-4 md:px-8 pt-6 pb-6"
           style={{ position: 'relative' }}
         >
-          {/* Glow */}
-          <div
-            style={{
-              position: 'absolute',
-              top: -60,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 700,
-              height: 300,
-              borderRadius: '50%',
-              background: `radial-gradient(circle, ${accent}18 0%, transparent 70%)`,
-              pointerEvents: 'none',
-            }}
-          />
 
           {/* Breadcrumb nav */}
-          <nav className="relative flex items-center gap-1.5 text-[11px] mb-5" aria-label="Breadcrumb">
+          <nav className="hero-enter relative flex items-center gap-1.5 text-[11px] mb-5" aria-label="Breadcrumb" style={{ animationDelay: '0ms' }}>
             <Link href="/" className="hover:opacity-70 transition-opacity" style={{ color: 'var(--text-faint, #55556a)', textDecoration: 'none' }}>
               TakaSports
             </Link>
@@ -189,8 +208,19 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
           </nav>
 
           {/* Sport identity */}
-          <div className="relative flex flex-col md:flex-row md:items-center gap-3 md:gap-6 mb-8">
-            <span style={{ fontSize: 52, lineHeight: 1 }}>{emoji}</span>
+          <div className="hero-enter relative flex flex-col md:flex-row md:items-center gap-3 md:gap-6 mb-8" style={{ animationDelay: '80ms' }}>
+            <span
+              className="shrink-0"
+              aria-hidden="true"
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 64, height: 64, borderRadius: 16, fontSize: 38, lineHeight: 1,
+                background: `${accent}1a`, border: `1px solid ${accent}33`,
+                boxShadow: `0 8px 24px ${accent}14`,
+              }}
+            >
+              {emoji}
+            </span>
             <div>
               <h1
                 className="text-4xl md:text-5xl font-black tracking-tight"
@@ -205,7 +235,7 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
           </div>
 
           {/* Data cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="hero-enter grid grid-cols-1 md:grid-cols-2 gap-4" style={{ animationDelay: '160ms' }}>
 
             {/* Rankings card */}
             {top5.length > 0 && (
