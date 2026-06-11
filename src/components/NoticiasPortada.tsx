@@ -210,22 +210,32 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
   const [pairIdx,      setPairIdx]      = useState(0)
   const [visible,      setVisible]      = useState(true)
   const [isPaused, setIsPaused] = useState(false)
+  // autoPlay = el carrusel avanza solo. WCAG 2.2.2 (Pausar/Parar): respetamos
+  // prefers-reduced-motion (no arranca) y damos un botón de pausa explícito.
+  const [autoPlay, setAutoPlay] = useState(true)
   const pausedRef = useRef(false)
   const touchStartX = useRef<number | null>(null)
 
   const pause  = () => { pausedRef.current = true;  setIsPaused(true)  }
   const resume = () => { pausedRef.current = false; setIsPaused(false) }
 
+  // Con prefers-reduced-motion, el carrusel no se mueve solo (el usuario navega
+  // con los puntos / el botón). Se evalúa en cliente tras montar.
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setAutoPlay(false)
+  }, [])
+
   // Rotación big cards
   useEffect(() => {
-    if (bigPool.length <= 2) return
+    if (bigPool.length <= 2 || !autoPlay) return
     const timer = setInterval(() => {
       if (pausedRef.current) return
       setVisible(false)
       setTimeout(() => { setPairIdx(i => (i + 1) % totalPairs); setVisible(true) }, 400)
     }, ROTATION_MS)
     return () => clearInterval(timer)
-  }, [bigPool.length, totalPairs])
+  }, [bigPool.length, totalPairs, autoPlay])
 
   const goTo = (i: number) => {
     setVisible(false)
@@ -288,7 +298,7 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
                     background: 'linear-gradient(to right, #7C3AED, #A78BFA)',
                     transformOrigin: 'left center',
                     animation: `progressFill ${ROTATION_MS}ms linear forwards`,
-                    animationPlayState: isPaused ? 'paused' : 'running',
+                    animationPlayState: (isPaused || !autoPlay) ? 'paused' : 'running',
                   }}
                 />
               </div>
@@ -302,6 +312,8 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
                   <button
                     key={i}
                     onClick={() => goTo(i)}
+                    aria-label={`Ir al grupo ${i + 1} de ${totalPairs}`}
+                    aria-current={i === pairIdx ? 'true' : undefined}
                     style={{
                       width: i === pairIdx ? 16 : 6,
                       height: 6,
@@ -315,6 +327,26 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
                   />
                 ))}
               </div>
+
+              {/* Pausa/Play — control explícito (WCAG 2.2.2) */}
+              <button
+                type="button"
+                onClick={() => setAutoPlay(p => !p)}
+                aria-label={autoPlay ? 'Pausar rotación automática' : 'Reanudar rotación automática'}
+                className="flex-shrink-0 flex items-center justify-center rounded-full transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)]"
+                style={{ width: 22, height: 22, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#9B8BC8' }}
+              >
+                {autoPlay ? (
+                  <svg width="9" height="9" viewBox="0 0 9 9" fill="currentColor" aria-hidden="true">
+                    <rect x="1" y="0.5" width="2.5" height="8" rx="0.6" />
+                    <rect x="5.5" y="0.5" width="2.5" height="8" rx="0.6" />
+                  </svg>
+                ) : (
+                  <svg width="9" height="9" viewBox="0 0 9 9" fill="currentColor" aria-hidden="true">
+                    <path d="M1.5 0.7v7.6l6-3.8z" />
+                  </svg>
+                )}
+              </button>
             </div>
           )}
         </div>
