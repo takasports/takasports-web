@@ -13,6 +13,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { parseChallengeToken } from '@/lib/porra-challenge'
+import { GlovesIcon } from '@/components/icons/GameIcons'
 
 const DISMISSED_KEY = 'porra:challengeDismissed'
 
@@ -75,7 +76,7 @@ export default function PorraChallengeBanner() {
           boxShadow: '0 0 28px rgba(251,191,36,0.14)',
         }}
       >
-        <span style={{ fontSize: 32, lineHeight: 1, flexShrink: 0 }} aria-hidden>🥊</span>
+        <span style={{ lineHeight: 1, flexShrink: 0, color: '#FBBF24', display: 'inline-flex' }} aria-hidden><GlovesIcon size={32} /></span>
         <div className="flex-1 min-w-0">
           <p style={{
             fontFamily: 'var(--font-sport)', fontWeight: 900, fontSize: 13,

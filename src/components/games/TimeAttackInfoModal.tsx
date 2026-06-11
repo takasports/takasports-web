@@ -7,6 +7,7 @@
 // aria-modal, Escape, focus-trap y devolución de foco al disparador).
 
 import { useEffect, useRef } from 'react'
+import { BoltIcon } from '@/components/icons/GameIcons'
 
 interface Props {
   open: boolean
@@ -63,7 +64,7 @@ export default function TimeAttackInfoModal({ open, accent, onConfirm, onClose }
         onClick={e => e.stopPropagation()}
       >
         <div className="flex flex-col items-center text-center" style={{ padding: 'var(--space-lg) var(--space-lg) var(--space-md)' }}>
-          <span aria-hidden="true" style={{ fontSize: 46, lineHeight: 1, marginBottom: 'var(--space-sm)' }}>⚡</span>
+          <span aria-hidden="true" style={{ lineHeight: 1, marginBottom: 'var(--space-sm)', color: accent, display: 'inline-flex' }}><BoltIcon size={46} /></span>
           <h2
             id="ta-info-title"
             className="font-black"

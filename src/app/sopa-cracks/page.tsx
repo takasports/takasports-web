@@ -16,7 +16,7 @@ import MyPositionBanner from '@/components/games/MyPositionBanner'
 import TimeAttackInfoModal from '@/components/games/TimeAttackInfoModal'
 import { type Player } from '@/lib/players-catalog'
 import { PUZZLES, findPlayerForWord, moveCursor, type Puzzle } from '@/lib/sopa-puzzles'
-import { CountryFlag } from '@/components/icons/GameIcons'
+import { CountryFlag, TargetIcon, BoltIcon } from '@/components/icons/GameIcons'
 
 // ── Tipos y datos ─────────────────────────────────────────────
 
@@ -677,7 +677,7 @@ export default function SopaCracksPage() {
                     style={{ background: `${COLOR_INTRUDER}18`, border: `1px solid ${COLOR_INTRUDER}50` }}
                   >
                     <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: COLOR_INTRUDER, fontFamily: 'var(--font-sport)' }}>
-                      🎯 Intrusa
+                      <TargetIcon size={11} className="inline-block align-middle mr-1" />Intrusa
                     </span>
                   </div>
                 )}
@@ -718,7 +718,7 @@ export default function SopaCracksPage() {
                   title={timeAttack ? 'Desactivar contrarreloj' : 'Modo contrarreloj: 3 minutos para encontrar el máximo de palabras (ver reglas)'}
                   aria-pressed={timeAttack}
                 >
-                  {timeAttack ? '⚡ Contrarreloj 3:00' : '⚡ Contrarreloj'}
+                  <BoltIcon size={12} className="inline-block align-middle mr-1" />{timeAttack ? 'Contrarreloj 3:00' : 'Contrarreloj'}
                 </button>
                 <button
                   onClick={() => setExpanded(e => !e)}
@@ -851,7 +851,7 @@ export default function SopaCracksPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-black uppercase tracking-widest opacity-80 inline-flex items-center gap-1">
-                      {playerInfo.intruder ? '🎯 Palabra intrusa' : '✓ Encontrado'}
+                      {playerInfo.intruder ? <><TargetIcon size={11} className="inline-block align-middle mr-1" />Palabra intrusa</> : '✓ Encontrado'}
                       {playerInfo.intruder && <span className="opacity-70">· +{INTRUDER_BONUS_PTS} XP</span>}
                     </p>
                     <p className="text-sm font-black truncate inline-flex items-center gap-1.5 w-full" style={{ fontFamily: 'var(--font-display)' }}>
@@ -946,7 +946,7 @@ export default function SopaCracksPage() {
                     border: `1px dashed ${intruderFound ? COLOR_INTRUDER : 'rgba(255,255,255,0.12)'}`,
                   }}
                 >
-                  <span aria-hidden className="text-base leading-none">🎯</span>
+                  <span aria-hidden className="inline-flex" style={{ color: intruderFound ? COLOR_INTRUDER : '#9090B0' }}><TargetIcon size={16} /></span>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: intruderFound ? COLOR_INTRUDER : '#9090B0', fontFamily: 'var(--font-sport)' }}>
                       Palabra intrusa (bonus)

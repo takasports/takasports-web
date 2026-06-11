@@ -7,7 +7,7 @@ import GameLayout from '@/components/games/GameLayout'
 import { searchPlayers, getPlayerById, type Player, type PlayerPosition } from '@/lib/players-catalog'
 import { getWeeklyChallenge, type FormationId, type Challenge, type SlotTag } from '@/lib/mionce-challenges'
 import { FORMATIONS, FORMATION_LIST, type SlotDef } from '@/lib/mionce-formations'
-import { CountryFlag } from '@/components/icons/GameIcons'
+import { CountryFlag, LockIcon, ClipboardIcon } from '@/components/icons/GameIcons'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import GameOnboarding from '@/components/games/GameOnboarding'
@@ -1204,7 +1204,7 @@ export default function MiOncePage() {
                 <span className="text-[10px] font-black uppercase tracking-widest px-2 inline-flex items-center gap-1 flex-shrink-0"
                   style={{ color: '#FCD34D', fontFamily: 'var(--font-sport)' }}
                 >
-                  🔒 Fijada por el reto
+                  <LockIcon size={11} />Fijada por el reto
                 </span>
               )}
             </div>
@@ -1429,7 +1429,7 @@ export default function MiOncePage() {
                 }}
                 title="Guardar este once en tu perfil"
               >
-                📒 Guardar
+                <ClipboardIcon size={13} className="inline-block align-middle mr-1" />Guardar
               </button>
               <button
                 onClick={handleReset}

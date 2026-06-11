@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { StarIcon } from '@/components/icons/GameIcons'
 
 // Logos vía ESPN CDN (escudos para equipos, headshots para individuales).
 // Fallback al icono emoji si la imagen falla en runtime.
@@ -120,7 +121,7 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest"
                 style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
-                ⭐ Bienvenido
+                <StarIcon size={11} className="inline-block align-middle mr-1" />Bienvenido
               </p>
               <h2 className="text-lg font-black leading-tight mt-1"
                 style={{ color: '#F8F8FF', fontFamily: 'var(--font-display)' }}>
