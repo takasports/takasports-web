@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 import { createClient } from '@sanity/client'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import ArchivoContent from '@/components/ArchivoContent'
 import type { ArchivoFilterState } from '@/components/ArchivoFilters'
@@ -141,9 +139,8 @@ export default async function ArchivoPage({
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
 
-      <main className="max-w-[1440px] mx-auto pb-24">
+      <div className="max-w-[1440px] mx-auto pb-24">
         <div className="px-4 sm:px-6 xl:px-10 pt-8 pb-2">
           <h1
             className="font-black leading-none"
@@ -167,9 +164,8 @@ export default async function ArchivoPage({
           initialHasMore={initialHasMore}
           initialFilters={initialFilters}
         />
-      </main>
+      </div>
 
-      <Footer />
       <ScrollToTop />
     </div>
   )

@@ -7,9 +7,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { SITE_URL } from '@/lib/constants'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 
 export const dynamic = 'force-dynamic'
@@ -101,7 +99,6 @@ export default async function MundialFixturePage() {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
       <LiveStrip />
 
       {/* Cabecera */}
@@ -143,7 +140,7 @@ export default async function MundialFixturePage() {
         </div>
       </section>
 
-      <main className="max-w-[1100px] mx-auto px-4 md:px-8 py-8 pb-24">
+      <div className="max-w-[1100px] mx-auto px-4 md:px-8 py-8 pb-24">
         {events.length === 0 ? (
           <p className="py-20 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
             El calendario del Mundial estará disponible muy pronto.
@@ -211,9 +208,8 @@ export default async function MundialFixturePage() {
             ))}
           </div>
         )}
-      </main>
+      </div>
 
-      <Footer />
       <ScrollToTop />
     </div>
   )

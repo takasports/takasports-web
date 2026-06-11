@@ -4,9 +4,7 @@
 
 import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
 import MundialWrapper from './MundialWrapper'
@@ -33,11 +31,9 @@ export const metadata: Metadata = {
 export default function MundialPage() {
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <Header />
       <LiveStrip />
       <MundialWrapper />
       <NewsletterSection source="mundial" />
-      <Footer />
       <ScrollToTop />
     </div>
   )

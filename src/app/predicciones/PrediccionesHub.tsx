@@ -31,7 +31,7 @@ const QuinielaClient = dynamic(
 )
 
 const MundialClient = dynamic(
-  () => import('@/app/mundial/MundialClient'),
+  () => import('@/app/(public)/mundial/MundialClient'),
   { ssr: false, loading: () => <QuinielaLoadingShim /> }
 )
 

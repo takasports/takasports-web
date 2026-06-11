@@ -5,9 +5,7 @@ import PlayerAvatar from '@/components/PlayerAvatar'
 import type { TeamDetail } from '@/app/api/team/[slug]/route'
 import DivergentBar from '@/components/comparators/DivergentBar'
 import { getSportStyle } from '@/lib/sports'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 1800
@@ -244,13 +242,11 @@ export default async function CompararEquiposPage({
   return (
     <>
       <LiveStrip />
-      <Header />
-      <main style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
         <Suspense>
           <Content t1={t1} t2={t2} />
         </Suspense>
-      </main>
-      <Footer />
+      </div>
     </>
   )
 }

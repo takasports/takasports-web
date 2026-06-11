@@ -4,9 +4,7 @@ import Image from 'next/image'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import type { PlayerDetail } from '@/app/api/jugador/[slug]/route'
 import { getSportStyle } from '@/lib/sports'
-import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
-import Footer from '@/components/Footer'
 import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 1800
@@ -265,13 +263,11 @@ export default async function CompararPage({
   return (
     <>
       <LiveStrip />
-      <Header />
-      <main style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
         <Suspense>
           <Content p1={p1} p2={p2} />
         </Suspense>
-      </main>
-      <Footer />
+      </div>
     </>
   )
 }
