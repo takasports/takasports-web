@@ -14,9 +14,10 @@ import { SportIcon } from '@/components/icons/GameIcons'
 import SocialHandles from './SocialHandles'
 
 export default function RankRow({
-  entry, showSportEmoji = false, typeTag,
+  entry, showSportEmoji = false, typeTag, maxScore, minScore,
 }: {
   entry: RankingEntry; showSportEmoji?: boolean; typeTag?: string
+  maxScore?: number; minScore?: number
 }) {
   const [expanded, setExpanded] = useState(false)
   const displayScore = getDisplayScore(entry)
@@ -28,6 +29,15 @@ export default function RankRow({
     ? entry.emoji
     : (entry.sport ? (SPORT_EMOJI[entry.sport] ?? '🏅') : '🏅')
   const canExpand = !!entry.factors || !!entry.insight
+  // Tira de proporción: posición relativa dentro de la lista visible (min→máx),
+  // con suelo del 12% para que la última entrada siga siendo visible. El número
+  // exacto se anuncia a la derecha → la barra es un apoyo visual decorativo.
+  const barFrac =
+    maxScore !== undefined && minScore !== undefined
+      ? (maxScore > minScore
+          ? 0.12 + 0.88 * (displayScore - minScore) / (maxScore - minScore)
+          : 1)
+      : null
 
   return (
     <div
@@ -87,6 +97,17 @@ export default function RankRow({
           <p className="text-[10px] truncate" style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
             {entry.subtitle}
           </p>
+          {barFrac !== null && (
+            <div className="mt-1.5 h-[3px] rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }} aria-hidden="true">
+              <div
+                className="ts-bar-fill h-full rounded-full"
+                style={{
+                  width: `${Math.max(4, Math.min(100, barFrac * 100))}%`,
+                  background: `linear-gradient(90deg, ${sportAccent}88, ${sportAccent})`,
+                }}
+              />
+            </div>
+          )}
           {/* Insight inline en mobile (en desktop se muestra en columna separada abajo) */}
           {entry.insight && (
             <p

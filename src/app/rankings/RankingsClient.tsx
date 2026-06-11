@@ -446,6 +446,13 @@ export default function RankingsClient({
     .filter(e => !badgeFilter || e.badge === badgeFilter)
     .filter(e => !q || norm(e.name).includes(q) || norm(e.subtitle).includes(q))
 
+  // Rango de la lista visible → tira de proporción por fila (posición relativa
+  // min→máx). Se calcula sobre TODA la lista para que las barras sean comparables
+  // entre bloques (top, 11-25, 26-50…).
+  const listScores = finalEntries.map(getDisplayScore)
+  const listMaxScore = listScores.length ? Math.max(...listScores) : undefined
+  const listMinScore = listScores.length ? Math.min(...listScores) : undefined
+
   // Slices del listado
   const top1       = finalEntries[0]
   const rank2to10  = finalEntries.slice(1, 10)
@@ -935,6 +942,7 @@ export default function RankingsClient({
                     key={entry.id} entry={entry}
                     showSportEmoji={!activeSport && !isContenido}
                     typeTag={typeTagFn?.(entry)}
+                    maxScore={listMaxScore} minScore={listMinScore}
                   />
                 ))}
               </div>
@@ -951,6 +959,7 @@ export default function RankingsClient({
                             key={entry.id} entry={entry}
                             showSportEmoji={!activeSport && !isContenido}
                             typeTag={typeTagFn?.(entry)}
+                            maxScore={listMaxScore} minScore={listMinScore}
                           />
                         ))}
                       </div>
@@ -966,6 +975,7 @@ export default function RankingsClient({
                             key={entry.id} entry={entry}
                             showSportEmoji={!activeSport && !isContenido}
                             typeTag={typeTagFn?.(entry)}
+                            maxScore={listMaxScore} minScore={listMinScore}
                           />
                         ))}
                       </div>
@@ -974,10 +984,10 @@ export default function RankingsClient({
                 )}
 
                 <div className="mb-8">
-                  <RankBlock label="Posiciones 11 – 25" entries={rank11to25} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} defaultOpen />
-                  <RankBlock label="Posiciones 26 – 50" entries={rank26to50} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} />
+                  <RankBlock label="Posiciones 11 – 25" entries={rank11to25} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} maxScore={listMaxScore} minScore={listMinScore} defaultOpen />
+                  <RankBlock label="Posiciones 26 – 50" entries={rank26to50} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} maxScore={listMaxScore} minScore={listMinScore} />
                   {rank51on.length > 0 && (
-                    <RankBlock label="Posiciones 51+" entries={rank51on} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} />
+                    <RankBlock label="Posiciones 51+" entries={rank51on} showSportEmoji={!activeSport && !isContenido} typeTagFn={typeTagFn} maxScore={listMaxScore} minScore={listMinScore} />
                   )}
                 </div>
               </>

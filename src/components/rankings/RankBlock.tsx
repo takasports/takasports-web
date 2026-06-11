@@ -5,11 +5,13 @@ import type { RankingEntry } from '@/lib/rankings'
 import RankRow from './RankRow'
 
 export default function RankBlock({
-  label, entries, showSportEmoji = false, typeTagFn, defaultOpen = false,
+  label, entries, showSportEmoji = false, typeTagFn, defaultOpen = false, maxScore, minScore,
 }: {
   label: string; entries: RankingEntry[]; showSportEmoji?: boolean
   typeTagFn?: (entry: RankingEntry) => string | undefined
   defaultOpen?: boolean
+  maxScore?: number
+  minScore?: number
 }) {
   const [open, setOpen] = useState(defaultOpen)
   if (entries.length === 0) return null
@@ -59,7 +61,7 @@ export default function RankBlock({
       {open && (
         <div className="flex flex-col gap-2 mt-2">
           {entries.map((entry) => (
-            <RankRow key={entry.id} entry={entry} showSportEmoji={showSportEmoji} typeTag={typeTagFn?.(entry)} />
+            <RankRow key={entry.id} entry={entry} showSportEmoji={showSportEmoji} typeTag={typeTagFn?.(entry)} maxScore={maxScore} minScore={minScore} />
           ))}
         </div>
       )}
