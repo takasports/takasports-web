@@ -17,6 +17,9 @@ export interface CompetitionConfig {
   sport: CompetitionSport
   /** Match contra el campo `comp` del evento (case-insensitive, contiene). */
   matchComp?: string
+  /** Exige igualdad EXACTA de matchComp (no substring). Para etiquetas que son
+   *  prefijo de otras: "Mundial" no debe capturar "Mundial de Clubes". */
+  matchExact?: boolean
   /** Match alternativo contra el campo `sport` cuando matchComp no aplica. */
   matchSport?: CompetitionSport
   description: string
@@ -40,6 +43,18 @@ export interface CompetitionConfig {
 }
 
 export const COMPETITIONS: CompetitionConfig[] = [
+  {
+    slug: 'mundial',
+    displayName: 'Mundial',
+    shortName: 'Mundial',
+    sport: 'Fútbol',
+    matchComp: 'Mundial',
+    matchExact: true,
+    description: 'Calendario completo del Mundial 2026: los 104 partidos con horarios, sedes, resultados y la clasificación de los 12 grupos.',
+    seasonLabel: '2026',
+    banner: '/banners/backdrop-futbol.webp',
+    crest: 'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/4.png',
+  },
   {
     slug: 'laliga',
     displayName: 'LaLiga EA Sports',
@@ -222,6 +237,7 @@ for (const c of COMPETITIONS) {
 // página de competición. Solo ligas de fútbol (la tabla solo aparece para las de
 // TABLE_LEAGUE_SLUGS; los goleadores se intentan y degradan si no hay datos).
 const ESPN_SLUG_BY_SLUG: Record<string, string> = {
+  mundial:         'soccer/fifa.world',
   laliga:          'soccer/esp.1',
   champions:       'soccer/uefa.champions',
   'premier-league':'soccer/eng.1',
@@ -237,9 +253,11 @@ for (const c of COMPETITIONS) {
 }
 
 // Competiciones destacadas (las que tienen backdrop propio + entrada fija en el
-// selector de la portada del calendario): las 5 grandes ligas + Champions + los
-// 3 grandes deportes. El resto se descubre por el buscador o si tienen eventos.
+// selector de la portada del calendario): el Mundial (verano 2026) + las 5
+// grandes ligas + Champions + los 3 grandes deportes. El resto se descubre por
+// el buscador o si tienen eventos.
 const FEATURED_SLUGS = new Set([
+  'mundial',
   'laliga', 'champions', 'premier-league', 'serie-a', 'bundesliga', 'ligue-1',
   'nba', 'f1', 'ufc',
 ])
@@ -260,7 +278,8 @@ export function matchesCompetition(
 ): boolean {
   if (comp.matchComp) {
     const c = (ev.comp ?? '').toLowerCase()
-    if (c.includes(comp.matchComp.toLowerCase())) {
+    const target = comp.matchComp.toLowerCase()
+    if (comp.matchExact ? c === target : c.includes(target)) {
       // El match por substring del nombre de competición es laxo a propósito
       // ("Premier" cubre tanto "Premier" como "Premier League"), pero "Premier"
       // también vive dentro de "Premier Padel". Si el evento declara deporte,

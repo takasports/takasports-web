@@ -129,25 +129,35 @@ async function fetchLiveSharedCached(): Promise<RawLiveFixture[]> {
   return _liveInflight
 }
 
+// Cadencia del polling: 30s con partidos en juego, 60s sin ellos. La mayor
+// parte del día no hay nada en vivo → la mitad de peticiones sin que se note.
+function livePollMs(data: RawLiveFixture[]): number {
+  return data.some(f => !FINISHED.has(f.status)) ? 30_000 : 60_000
+}
+
 function useLiveFixtures() {
   const [fixtures, setFixtures] = useState<RawLiveFixture[]>([])
+  const [pollMs, setPollMs] = useState(30_000)
 
   const fetch_ = useCallback(async () => {
     const data = await fetchLiveSharedCached()
     setFixtures(data.filter(f => !FINISHED.has(f.status)))
+    setPollMs(livePollMs(data))
   }, [])
 
-  useVisiblePolling(fetch_, 30_000)
+  useVisiblePolling(fetch_, pollMs)
 
   return fixtures
 }
 
 function useLiveScores(events: SportEvent[]) {
   const [scores, setScores] = useState<Map<string, LiveScore>>(new Map())
+  const [pollMs, setPollMs] = useState(30_000)
 
   const fetch_ = useCallback(async () => {
     try {
       const fixtures = await fetchLiveSharedCached()
+      setPollMs(livePollMs(fixtures))
       const byRef = new Map<string, RawLiveFixture>()
       for (const f of fixtures) if (f.matchRef) byRef.set(f.matchRef, f)
       const next = new Map<string, LiveScore>()
@@ -168,7 +178,7 @@ function useLiveScores(events: SportEvent[]) {
     } catch { /* ignore */ }
   }, [events])
 
-  useVisiblePolling(fetch_, 30_000)
+  useVisiblePolling(fetch_, pollMs)
 
   return scores
 }
@@ -911,6 +921,13 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           {reason}
         </span>
       )}
+      {/* Fase/grupo del torneo (Mundial: "Grupo A", "Octavos", "Final"…) */}
+      {event.stage && (
+        <span className="text-[8px] font-black uppercase tracking-[0.14em] px-1.5 py-0.5 rounded-full flex-shrink-0"
+          style={{ color: compColor, background: `${compColor}14`, border: `1px solid ${compColor}30`, fontFamily: 'var(--font-sport)' }}>
+          {event.stage}
+        </span>
+      )}
       <BroadcastChip comp={event.comp} sport={event.sport} tz={tz} fallback={event.broadcast} />
     </div>
   )
@@ -1504,6 +1521,13 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
         ) : event.resultNote ? null : (
           <span className="text-[14px] font-bold" style={{ color: '#5A5A6A' }}>–</span>
         )}
+        {/* Fase/grupo (Mundial: "Grupo A", "Octavos"…) */}
+        {event.stage && (
+          <span className="text-[8px] font-bold uppercase tracking-[0.14em] leading-none truncate max-w-[88px]"
+            style={{ color: '#6A6A80', fontFamily: 'var(--font-sport)' }}>
+            {event.stage}
+          </span>
+        )}
       </div>
 
       {hasVs ? (
@@ -1679,15 +1703,20 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // Resultados (10 días): cargados en cliente vía ESPN en vivo (live=1) para no
   // hacer ~38 fetches de pasados en el SSR. Conserva tenis y ganador F1/UFC. Si
   // falla, la pestaña Resultados 10d queda vacía pero los rangos mayores siguen.
+  // Diferido hasta abrir la pestaña Resultados: en la carga inicial (vista
+  // Calendario) se ahorra una petición de hasta 200 eventos.
+  const recentPastRequested = useRef(false)
   useEffect(() => {
+    if (view !== 'resultados' || recentPastRequested.current) return
+    recentPastRequested.current = true
     const ctrl = new AbortController()
     const from = new Date(Date.now() - 10 * 86_400_000).toISOString()
     fetch(`/api/events/past?live=1&from=${encodeURIComponent(from)}&limit=200`, { signal: ctrl.signal })
       .then(r => (r.ok ? r.json() : null))
       .then((data: { events?: SportEvent[] } | null) => { if (data?.events) setRecentPast(data.events) })
-      .catch(() => { /* ignore */ })
+      .catch(() => { recentPastRequested.current = false }) // abort/fallo → reintento al volver
     return () => ctrl.abort()
-  }, [])
+  }, [view])
 
   // Debounce search input — avoid filtering on every keystroke
   useEffect(() => {
@@ -1949,10 +1978,12 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       counts[k] = (counts[k] ?? 0) + 1
     }
     const today = isoToLocalDate(new Date().toISOString())
+    // 42 días: cubre el Mundial completo (38 días) — antes el tope de 14 dejaba
+    // fuera del selector las fechas de octavos en adelante.
     return Object.keys(counts)
       .filter(k => k >= today)
       .sort((a, b) => a.localeCompare(b))
-      .slice(0, 14)
+      .slice(0, 42)
       .map(k => ({ key: k, label: formatDateLabel(k), count: counts[k] }))
   }, [events, search, activeFilter, activeCompCfg])
 

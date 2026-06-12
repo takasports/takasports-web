@@ -18,6 +18,12 @@ export interface FootballLeague {
    *  homónimo masculino, así que el detalle de partido usa este flag (vía
    *  WOMENS_SLUGS) para no cruzar H2H/forma entre géneros. */
   women?: boolean
+  /** Ventana de futuros (días) mayor que los 21 por defecto. Torneos largos
+   *  (Mundial: 38 días) la necesitan para que el fixture completo entre. */
+  daysAhead?: number
+  /** Tope de eventos por scoreboard mayor que el de por defecto. El Mundial
+   *  tiene 104 partidos; sin esto ESPN corta la lista y faltan partidos. */
+  fetchLimit?: number
 }
 
 export const FOOTBALL_LEAGUES: FootballLeague[] = [
@@ -27,7 +33,7 @@ export const FOOTBALL_LEAGUES: FootballLeague[] = [
   { slug: 'soccer/uefa.europa.conf',    comp: 'Conference',         live: true  },
   { slug: 'soccer/uefa.super_cup',      comp: 'Super Cup',          live: true  },
   // Selecciones / FIFA
-  { slug: 'soccer/fifa.world',          comp: 'Mundial',            live: true  },
+  { slug: 'soccer/fifa.world',          comp: 'Mundial',            live: true,  daysAhead: 45, fetchLimit: 250 },
   { slug: 'soccer/fifa.cwc',            comp: 'Mundial de Clubes',  live: true  },
   { slug: 'soccer/fifa.friendly',       comp: 'Amistoso',           live: true  },
   { slug: 'soccer/fifa.friendly.w',     comp: 'Amistoso (F)',       live: true,  women: true },

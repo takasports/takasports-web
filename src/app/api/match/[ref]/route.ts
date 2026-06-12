@@ -3,7 +3,7 @@ import type { StandingZone } from '@/lib/league-zones'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
 import { LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
-import { fetchLeagueTableRows, type LeagueTableRow } from '@/lib/espn-standings'
+import { fetchLeagueTableRows, fetchTournamentGroups, type LeagueTableRow } from '@/lib/espn-standings'
 // Re-exportados para los componentes cliente que ya importan estos tipos desde
 // este route (LeagueTable.tsx). La fuente real vive ahora en lib/espn-standings.
 export type { StandingZone }
@@ -155,6 +155,8 @@ export interface MatchDetail {
   // Lineups + league table (soccer/basketball)
   lineups?: { home: TeamLineup; away: TeamLineup }
   leagueTable?: LeagueTableRow[]
+  /** Título alternativo de la tabla (Mundial: "Grupo A" en vez de la liga). */
+  leagueTableLabel?: string
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -838,9 +840,11 @@ export async function GET(
     }
 
     // ─── Soccer / Basketball: ESPN summary ──────────────────────────
-    const [json, tableRows] = await Promise.all([
+    const [json, tableRows, wcGroups] = await Promise.all([
       espnJson(`https://site.api.espn.com/apis/site/v2/sports/${leagueSlug}/summary?event=${eventId}`),
       sport === 'soccer' ? fetchLeagueTableRows(leagueSlug) : Promise.resolve([]),
+      // Mundial: la clasificación relevante del partido es su grupo (A–L).
+      leagueSlug === 'soccer/fifa.world' ? fetchTournamentGroups(leagueSlug) : Promise.resolve([]),
     ])
     if (!json) return NextResponse.json(null, { status: 404 })
 
@@ -905,6 +909,22 @@ export async function GET(
                    : row.name === awayTeamName ? 'away'
                    : undefined,
         }))
+      } else if (wcGroups.length) {
+        // Grupo del Mundial que contiene a los equipos del partido. Match por
+        // teamId (los nombres del grupo van traducidos al español y los del
+        // summary vienen en inglés — el id es estable en ambos).
+        const hId = asString(homeTeamObj?.id)
+        const aId = asString(awayTeamObj?.id)
+        const group = wcGroups.find(g => g.rows.some(r => r.teamId === hId || r.teamId === aId))
+        if (group) {
+          detail.leagueTable = group.rows.map(row => ({
+            ...row,
+            highlight: row.teamId === hId ? 'home' as const
+                     : row.teamId === aId ? 'away' as const
+                     : undefined,
+          }))
+          detail.leagueTableLabel = `Mundial · ${group.name}`
+        }
       }
     } else if (sport === 'basketball') {
       detail.basketball = buildBasketball(json, homeComp, awayComp)

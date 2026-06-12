@@ -10,11 +10,18 @@ interface EspnSource {
   sport: string
   comp: string
   teamSport: boolean
+  /** Ventana de futuros en días (por defecto 21). */
+  daysAhead?: number
+  /** Tope de eventos del scoreboard (por defecto 75). */
+  fetchLimit?: number
 }
 
 const SOURCES: EspnSource[] = [
   // Fútbol — lista maestra compartida (lib/football-leagues)
-  ...FOOTBALL_LEAGUES.map((l): EspnSource => ({ slug: l.slug, sport: 'Fútbol', comp: l.comp, teamSport: true })),
+  ...FOOTBALL_LEAGUES.map((l): EspnSource => ({
+    slug: l.slug, sport: 'Fútbol', comp: l.comp, teamSport: true,
+    daysAhead: l.daysAhead, fetchLimit: l.fetchLimit,
+  })),
   { slug: 'basketball/nba',           sport: 'NBA',     comp: 'NBA',        teamSport: true  },
   { slug: 'racing/f1',                sport: 'F1',      comp: 'Fórmula 1',  teamSport: false },
   { slug: 'mma/ufc',                  sport: 'UFC',     comp: 'UFC',        teamSport: false },
@@ -110,9 +117,58 @@ async function espnFetch(url: string, ms = 8000): Promise<Response> {
   return fetch(url, { next: { revalidate: 300 }, signal: AbortSignal.timeout(ms) })
 }
 
+// ── Mundial: fase y grupo de cada partido ───────────────────────────────────
+// ESPN da la fase del torneo en season.slug del evento; el grupo concreto
+// (A–L) se deriva del standings (teamId → grupo). Etiqueta cada tarjeta del
+// calendario con "Grupo A" / "Octavos" / "Final"…
+const WC_SLUG = 'soccer/fifa.world'
+const WC_STAGE_ES: Record<string, string> = {
+  'group-stage':      'Fase de grupos',
+  'round-of-32':      'Dieciseisavos',
+  'round-of-16':      'Octavos',
+  'quarterfinals':    'Cuartos',
+  'semifinals':       'Semifinales',
+  '3rd-place-match':  'Tercer puesto',
+  'final':            'Final',
+}
+
+async function fetchWorldCupGroupLetters(): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
+  try {
+    const res = await fetch(
+      `https://site.web.api.espn.com/apis/v2/sports/${WC_SLUG}/standings`,
+      { next: { revalidate: 1800 }, signal: AbortSignal.timeout(8000) }
+    )
+    if (!res.ok) return map
+    const json = await res.json()
+    for (const child of ((json as Record<string, unknown>).children as Record<string, unknown>[]) ?? []) {
+      const letter = ((child.name as string) ?? '').replace(/^Group\s+/i, '')
+      const entries = ((child.standings as Record<string, unknown>)?.entries as Record<string, unknown>[]) ?? []
+      for (const e of entries) {
+        const id = (e.team as Record<string, unknown>)?.id as string | undefined
+        if (id && letter) map.set(id, letter)
+      }
+    }
+  } catch { /* sin standings: stage degrada a la fase genérica */ }
+  return map
+}
+
+function wcStageLabel(
+  ev: Record<string, unknown>,
+  homeTeamId: string | undefined,
+  groups: Map<string, string>,
+): string | undefined {
+  const phase = ((ev.season as Record<string, unknown>)?.slug as string) ?? ''
+  if (phase === 'group-stage') {
+    const letter = homeTeamId ? groups.get(homeTeamId) : undefined
+    return letter ? `Grupo ${letter}` : WC_STAGE_ES[phase]
+  }
+  return WC_STAGE_ES[phase]
+}
+
 async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
   const { accent } = getSportStyle(source.sport)
-  const url = `https://site.api.espn.com/apis/site/v2/sports/${source.slug}/scoreboard?dates=${dateRangeParam(21)}&limit=30`
+  const url = `https://site.api.espn.com/apis/site/v2/sports/${source.slug}/scoreboard?dates=${dateRangeParam(source.daysAhead ?? 21)}&limit=${source.fetchLimit ?? 75}`
 
   let json: Record<string, unknown>
   try {
@@ -125,6 +181,9 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
 
   const results: RawEvent[] = []
   const espnEvents = (json.events as unknown[]) ?? []
+  const wcGroups = source.slug === WC_SLUG && espnEvents.length
+    ? await fetchWorldCupGroupLetters()
+    : null
 
   for (const raw of espnEvents) {
     const ev = raw as Record<string, unknown>
@@ -176,6 +235,10 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
     const venue  = ((comp.venue as Record<string, unknown>)?.fullName as string) ?? undefined
     const broadcast = getSpanishBroadcast(source.comp, source.sport)
     const matchRef  = `${source.slug.replace('/', '_')}_${ev.id as string}`
+    const homeTeamId = source.teamSport && competitors.length >= 2
+      ? ((competitors.find(c => c.homeAway === 'home') ?? competitors[0])?.team as Record<string, unknown>)?.id as string | undefined
+      : undefined
+    const stage = wcGroups ? wcStageLabel(ev, homeTeamId, wcGroups) : undefined
 
     results.push({
       isoDate,
@@ -190,6 +253,7 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
         accent,
         isoDate,
         venue,
+        stage,
         broadcast,
         homeLogo,
         awayLogo,
@@ -356,7 +420,7 @@ function pastWinner(ev: Record<string, unknown>, comp: Record<string, unknown> |
 // ── Past results (last N days) ────────────────────────────────────────────
 async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEvent[]> {
   const { accent } = getSportStyle(source.sport)
-  const url = `https://site.api.espn.com/apis/site/v2/sports/${source.slug}/scoreboard?dates=${dateRangePastParam(daysBack)}&limit=50`
+  const url = `https://site.api.espn.com/apis/site/v2/sports/${source.slug}/scoreboard?dates=${dateRangePastParam(daysBack)}&limit=${source.fetchLimit ?? 50}`
 
   let json: Record<string, unknown>
   try {
@@ -369,6 +433,9 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
 
   const results: RawEvent[] = []
   const espnEvents = (json.events as unknown[]) ?? []
+  const wcGroups = source.slug === WC_SLUG && espnEvents.length
+    ? await fetchWorldCupGroupLetters()
+    : null
 
   for (const raw of espnEvents) {
     const ev = raw as Record<string, unknown>
@@ -419,6 +486,10 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
 
     const venue    = ((comp.venue as Record<string, unknown>)?.fullName as string) ?? undefined
     const matchRef = `${source.slug.replace('/', '_')}_${ev.id as string}`
+    const homeTeamId = source.teamSport && competitors.length >= 2
+      ? ((competitors.find(c => c.homeAway === 'home') ?? competitors[0])?.team as Record<string, unknown>)?.id as string | undefined
+      : undefined
+    const stage = wcGroups ? wcStageLabel(ev, homeTeamId, wcGroups) : undefined
 
     results.push({
       isoDate,
@@ -433,6 +504,7 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
         accent,
         isoDate,
         venue,
+        stage,
         homeLogo,
         awayLogo,
         homeAbbr,
@@ -448,6 +520,22 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
   }
 
   return results
+}
+
+// ── Mundial: resultados del torneo completo ────────────────────────────────
+// Todos los partidos YA jugados del Mundial (con marcador, fase/grupo, sede),
+// desde el día inaugural — no solo los últimos 10 días. Alimenta la sección
+// "Resultados" de /calendario/mundial. Más recientes primero.
+const WC_START_UTC = Date.UTC(2026, 5, 11) // 11 jun 2026
+
+export async function fetchWorldCupResults(): Promise<SportEvent[]> {
+  const src = SOURCES.find(s => s.slug === WC_SLUG)
+  if (!src) return []
+  const daysBack = Math.min(45, Math.max(2, Math.ceil((Date.now() - WC_START_UTC) / 86_400_000) + 1))
+  const rows = await fetchLeaguePast(src, daysBack)
+  return rows
+    .map(r => r.event)
+    .sort((a, b) => (b.isoDate ?? '').localeCompare(a.isoDate ?? ''))
 }
 
 // ── Tennis past (resultados del torneo top en curso) ───────────────────────

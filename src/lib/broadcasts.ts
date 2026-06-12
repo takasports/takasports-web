@@ -134,7 +134,15 @@ const SPAIN_BROADCAST: Record<string, string> = {
  *     → "Roland Garros Masters 1000" → "Eurosport"
  *  4. Fallback por deporte
  */
+// La etiqueta del calendario es "Mundial" pero los mapas por país usan la
+// clave "World Cup". Alias EXACTO (no substring): "Mundial de Clubes" es OTRA
+// competición con otros derechos y no debe heredar este mapeo.
+function canonicalComp(comp: string): string {
+  return comp === 'Mundial' ? 'World Cup' : comp
+}
+
 export function getSpanishBroadcast(comp: string, sport?: string): string | undefined {
+  comp = canonicalComp(comp)
   // 1. Exact match
   if (SPAIN_BROADCAST[comp]) return SPAIN_BROADCAST[comp]
 
@@ -587,6 +595,7 @@ function lookupInMap(map: Record<string, string>, comp: string): string | undefi
  * no está mapeado.
  */
 export function getBroadcastForTz(comp: string, sport: string, tz: string): string | undefined {
+  comp = canonicalComp(comp)
   const country = TZ_TO_COUNTRY[tz] ?? 'ES'
   const map = COUNTRY_BROADCASTS[country]
   const fallbacks = COUNTRY_SPORT_FALLBACKS[country]

@@ -7,6 +7,7 @@
 import { getZone, zoneFromNote } from '@/lib/league-zones'
 import type { StandingZone } from '@/lib/league-zones'
 import { TABLE_LEAGUE_SLUGS } from '@/lib/football-leagues'
+import { toSpanishNation } from '@/lib/nation-names'
 
 // ── Tipos ────────────────────────────────────────────────────────────
 export interface LeagueTableRow {
@@ -96,6 +97,55 @@ export async function fetchLeagueTableRows(leagueSlug: string): Promise<Omit<Lea
         zone: zoneFromNote(asString(asObj(e.note)?.description)) ?? getZone(leagueSlug, i + 1),
       }
     })
+  } catch { return [] }
+}
+
+// ── Clasificación por grupos (torneos: Mundial) ──────────────────────
+// A diferencia de fetchLeagueTableRows (una sola tabla, ligas round-robin de
+// TABLE_LEAGUE_SLUGS), devuelve TODOS los grupos del standings de ESPN: en el
+// Mundial 2026 son 12 (A–L). Nombres de selección en español. $0 (ESPN).
+export interface TournamentGroup {
+  name: string
+  rows: Omit<LeagueTableRow, 'highlight'>[]
+}
+
+export async function fetchTournamentGroups(leagueSlug: string): Promise<TournamentGroup[]> {
+  try {
+    const res = await fetch(
+      `https://site.web.api.espn.com/apis/v2/sports/${leagueSlug}/standings`,
+      { next: { revalidate: 1800 } }
+    )
+    if (!res.ok) return []
+    const json = await res.json()
+    const children = asArr(json.children) as Record<string, unknown>[]
+    const out: TournamentGroup[] = []
+    for (const child of children) {
+      const entries = asArr(asObj(child.standings)?.entries) as Record<string, unknown>[]
+      if (!entries.length) continue
+      const parsed = entries.map((e) => {
+        const team  = asObj(e.team) ?? {}
+        const stats = asArr(e.stats) as Array<{ name: string; value?: number }>
+        const sv = (name: string) => Math.round((stats.find(s => s.name === name)?.value as number) ?? 0)
+        const w = sv('wins'); const d = sv('ties'); const l = sv('losses')
+        const logos = asArr(team.logos) as Record<string, unknown>[]
+        return {
+          name: toSpanishNation(asString(team.displayName) ?? '—') ?? '—',
+          abbr: asString(team.abbreviation) ?? '',
+          logo: asString(logos[0]?.href),
+          teamId: asString(team.id),
+          pts: sv('points'), gp: w + d + l, w, d, l,
+          gf: sv('pointsFor'), gc: sv('pointsAgainst'), gd: sv('pointDifferential'),
+        }
+      })
+      // ESPN no garantiza el orden de las entradas: puntos → dif. goles → GF.
+      parsed.sort((a, b) => (b.pts - a.pts) || (b.gd - a.gd) || (b.gf - a.gf))
+      const name = (asString(child.name) ?? '').replace(/^Group\s+/i, 'Grupo ')
+      out.push({
+        name: name || `Grupo ${out.length + 1}`,
+        rows: parsed.map((r, i) => ({ ...r, rank: i + 1 })),
+      })
+    }
+    return out
   } catch { return [] }
 }
 

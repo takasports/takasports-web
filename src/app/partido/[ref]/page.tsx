@@ -1734,7 +1734,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
         {/* ── Tab 5: Clasificación ─────────────────────── */}
         <div>
           {hasTable ? (
-            <LeagueTableBlock rows={match.leagueTable!} leagueLabel={match.leagueLabel} leagueSlug={match.leagueSlug} />
+            <LeagueTableBlock rows={match.leagueTable!} leagueLabel={match.leagueTableLabel ?? match.leagueLabel} leagueSlug={match.leagueSlug} />
           ) : (
             <EmptyState message="Clasificación no disponible" kind="table" />
           )}

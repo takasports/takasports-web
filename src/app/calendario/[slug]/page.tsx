@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { fetchEspnEvents } from '@/lib/espn'
+import { fetchEspnEvents, fetchWorldCupResults } from '@/lib/espn'
 import { fetchPadelEvents } from '@/lib/padel'
 import { sanityClient, eventsQuery } from '@/lib/sanity'
 import { normalizeEvent } from '@/lib/events'
@@ -16,7 +16,7 @@ import {
   matchesCompetition,
   type CompetitionConfig,
 } from '@/lib/calendar-competitions'
-import { fetchLeagueTableRows, fetchTopScorers } from '@/lib/espn-standings'
+import { fetchLeagueTableRows, fetchTopScorers, fetchTournamentGroups } from '@/lib/espn-standings'
 import { LeagueTableBlock } from '@/app/partido/[ref]/LeagueTable'
 import { TopScorers } from '@/components/TopScorers'
 
@@ -124,12 +124,27 @@ export default async function CompetitionCalendarPage({
   // Clasificación + máximos goleadores (solo ligas de fútbol con datos ESPN).
   // En paralelo y degradando a vacío si la competición no tiene tabla/goleadores
   // (copas, off-season). Coste $0 (ESPN público, ISR 1 h).
-  const [tableRows, scorers] = comp.espnSlug
+  // El Mundial es un torneo por grupos: en vez de la tabla única lleva los 12
+  // grupos (A–L) y los resultados de TODO el torneo con marcador.
+  const isWorldCup = comp.espnSlug === 'soccer/fifa.world'
+  const [tableRows, scorers] = comp.espnSlug && !isWorldCup
     ? await Promise.all([
         fetchLeagueTableRows(comp.espnSlug),
         fetchTopScorers(comp.espnSlug),
       ])
     : [[], []]
+  const [groups, wcResults] = isWorldCup
+    ? await Promise.all([fetchTournamentGroups(comp.espnSlug!), fetchWorldCupResults()])
+    : [[], []]
+
+  // Resultados del Mundial agrupados por día (más reciente primero).
+  const wcResultsByDay = new Map<string, SportEvent[]>()
+  for (const ev of wcResults) {
+    const k = dayKey(ev)
+    if (!wcResultsByDay.has(k)) wcResultsByDay.set(k, [])
+    wcResultsByDay.get(k)!.push(ev)
+  }
+  const wcResultDayKeys = [...wcResultsByDay.keys()].sort().reverse()
 
   // Agrupar por día.
   const groupedByDay = new Map<string, SportEvent[]>()
@@ -260,7 +275,7 @@ export default async function CompetitionCalendarPage({
         {filtered.length === 0 ? (
           <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p style={{ color: 'var(--text-secondary)' }}>
-              {tableRows.length > 0 || scorers.length > 0 ? (
+              {tableRows.length > 0 || scorers.length > 0 || groups.length > 0 ? (
                 <>
                   Ahora mismo no hay partidos programados. Más abajo tienes la clasificación y los goleadores al día, o consulta el{' '}
                   <Link href="/calendario" style={{ color: '#7C3AED', textDecoration: 'underline' }}>calendario completo</Link>.
@@ -323,6 +338,96 @@ export default async function CompetitionCalendarPage({
           </div>
         )}
 
+        {/* Mundial: resultados de TODO el torneo, con marcador y enlace al
+            detalle del partido (goles, alineaciones, minuto a minuto). */}
+        {wcResultDayKeys.length > 0 && (
+          <section className="mt-14 pt-8" style={{ borderTop: '1px solid var(--border)' }}>
+            <div className="flex items-center gap-2.5 mb-5">
+              <span className="section-accent" />
+              <span className="section-label">Resultados del Mundial</span>
+            </div>
+            <div className="flex flex-col gap-8">
+              {wcResultDayKeys.map((day) => (
+                <section key={day}>
+                  <h2
+                    className="mb-3"
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: '1.1rem',
+                      fontWeight: 800,
+                      color: '#E8E8F4',
+                      letterSpacing: '-0.005em',
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {formatDayHeader(day)}
+                  </h2>
+                  <ul className="flex flex-col gap-2">
+                    {wcResultsByDay.get(day)!.map((ev) => {
+                      const inner = (
+                        <>
+                          <div className="flex items-center justify-end gap-2 flex-1 min-w-0">
+                            <span className="text-sm font-semibold truncate text-right" style={{ color: '#E8E8F4' }}>{ev.home}</span>
+                            {ev.homeLogo && (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={ev.homeLogo} alt="" loading="lazy" decoding="async" width={20} height={20} style={{ objectFit: 'contain', flexShrink: 0 }} />
+                            )}
+                          </div>
+                          <span
+                            className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[15px] font-black tabular-nums"
+                            style={{ background: 'rgba(255,255,255,0.06)', color: '#F8F8FF', fontFamily: 'var(--font-sport)' }}
+                          >
+                            {ev.homeScore ?? 0}–{ev.awayScore ?? 0}
+                          </span>
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {ev.awayLogo && (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={ev.awayLogo} alt="" loading="lazy" decoding="async" width={20} height={20} style={{ objectFit: 'contain', flexShrink: 0 }} />
+                            )}
+                            <span className="text-sm font-semibold truncate" style={{ color: '#E8E8F4' }}>{ev.away}</span>
+                          </div>
+                        </>
+                      )
+                      const meta = [ev.stage, ev.venue].filter(Boolean).join(' · ')
+                      return (
+                        <li key={ev.id} className="rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                          {ev.matchRef ? (
+                            <Link href={`/partido/${ev.matchRef}`} className="block px-4 py-3 hover:brightness-110 transition-[filter]">
+                              <div className="flex items-center gap-3">{inner}</div>
+                              {meta && <p className="text-xs text-center truncate mt-1.5" style={{ color: 'var(--text-muted)' }}>{meta}</p>}
+                            </Link>
+                          ) : (
+                            <div className="px-4 py-3">
+                              <div className="flex items-center gap-3">{inner}</div>
+                              {meta && <p className="text-xs text-center truncate mt-1.5" style={{ color: 'var(--text-muted)' }}>{meta}</p>}
+                            </div>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Mundial: clasificación de los 12 grupos (A–L), cada uno con la tabla
+            compacta de /partido. Los equipos enlazan a su página. */}
+        {groups.length > 0 && (
+          <section className="mt-14 pt-8" style={{ borderTop: '1px solid var(--border)' }}>
+            <div className="flex items-center gap-2.5 mb-5">
+              <span className="section-accent" />
+              <span className="section-label">Fase de grupos — clasificación</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+              {groups.map((g) => (
+                <LeagueTableBlock key={g.name} rows={g.rows} leagueLabel={g.name} leagueSlug={comp.espnSlug!} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Clasificación + máximos goleadores (ligas de fútbol con datos ESPN).
             Reusa la tabla de /partido (LeagueTableBlock). $0. */}
         {(tableRows.length > 0 || scorers.length > 0) && (
@@ -371,7 +476,7 @@ export default async function CompetitionCalendarPage({
                 <div className="flex-1 min-w-0">
                   <p className="section-label" style={{ marginBottom: 2 }}>Predicciones</p>
                   <p className="font-black" style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: '1.15rem', letterSpacing: '-0.01em' }}>
-                    ¿Quién se lleva la {comp.shortName}?
+                    ¿Quién se lleva {comp.shortName === 'Mundial' ? 'el Mundial' : `la ${comp.shortName}`}?
                   </p>
                   <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                     Haz tus pronósticos y compite por puntos en la Liga Taka. Gratis.
