@@ -137,6 +137,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/politica-editorial`, lastModified: STATIC_LASTMOD, changeFrequency: 'yearly', priority: 0.4 },
     { url: `${BASE_URL}/autor/redaccion`, lastModified: hubLastMod, changeFrequency: 'daily', priority: 0.6 },
     { url: `${BASE_URL}/glosario`, lastModified: STATIC_LASTMOD, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${BASE_URL}/tag`, lastModified: hubLastMod, changeFrequency: 'daily', priority: 0.5 },
     ...GLOSARIO_TERMS.map((t) => ({
       url: `${BASE_URL}/glosario/${t.slug}`,
       lastModified: new Date(t.updatedAt),

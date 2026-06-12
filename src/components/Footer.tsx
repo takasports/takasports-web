@@ -33,6 +33,7 @@ const PLATFORM_LINKS = [
   { label: 'Rankings',     href: '/rankings' },
   { label: 'Calendario',   href: '/calendario' },
   { label: 'Glosario',     href: '/glosario' },
+  { label: 'Etiquetas',    href: '/tag' },
   { label: 'Reels',        href: '/reels' },
   { label: 'Juegos',       href: '/juegos' },
   { label: 'Predicciones', href: '/predicciones' },
