@@ -135,6 +135,18 @@ export default async function EntryDetailPage(
   const entry = (await findEntryByIdFromDb(id)) ?? findEntryById(id)
   if (!entry) notFound()
 
+  // Rankings relacionados: hasta ahora cada /rankings/[id] era una hoja sin
+  // enlaces salientes a hermanos → no repartía autoridad ni daba a Google rutas
+  // de crawl. Enlazamos las entries de mayor score del mismo deporte (excluyendo
+  // entrenadores, que son noindex). (Fase 1 SEO, jun 2026)
+  const relatedEntries = (() => {
+    const all = getAllRankingEntries().filter(
+      e => e.id !== entry.id && !e.id.startsWith('coach-') && e.category !== 'entrenadores',
+    )
+    const sameSport = entry.sport ? all.filter(e => e.sport === entry.sport) : []
+    return (sameSport.length >= 6 ? sameSport : all).slice(0, 12)
+  })()
+
   const ds = getDisplayScore(entry)
   const sportAccent = entry.sport ? getSportStyle(entry.sport).accent : '#7C3AED'
   const sportEmoji = entry.sport ? SPORT_EMOJI[entry.sport] ?? '🏅' : '🏅'
@@ -411,6 +423,35 @@ export default async function EntryDetailPage(
         <Suspense>
           <RelatedArticlesByEntity entityName={entry.name} limit={6} />
         </Suspense>
+
+        {/* Rankings relacionados — enlaza hermanos del mismo deporte para repartir
+            autoridad y dar a Google rutas de crawl entre fichas del Índice Taka. */}
+        {relatedEntries.length > 0 && (
+          <nav aria-label="Rankings relacionados" className="pt-2">
+            <div
+              className="text-[10px] font-black uppercase tracking-widest mb-3 text-center"
+              style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}
+            >
+              Más en el Índice Taka
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              {relatedEntries.map(e => (
+                <Link
+                  key={e.id}
+                  href={`/rankings/${e.id}`}
+                  className="px-3 py-1.5 rounded-full text-xs transition-colors hover:text-white"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  {e.name}
+                </Link>
+              ))}
+            </div>
+          </nav>
+        )}
       </div>
 
       <ScrollToTop />

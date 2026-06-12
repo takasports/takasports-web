@@ -151,7 +151,15 @@ export default function RootLayout({
                 logo: { '@type': 'ImageObject', url: LOGO_URL, width: 512, height: 512 },
                 image: { '@type': 'ImageObject', url: LOGO_URL, width: 512, height: 512 },
                 description: 'Plataforma de noticias y análisis deportivos en español. Fútbol, NBA, F1, UFC, tenis y más. Resultados en vivo, rankings editoriales y juegos interactivos.',
-                sameAs: ['https://www.instagram.com/takasportsmedia', 'https://x.com/takasportsx'],
+                // Perfiles reales (fuente: barra social del footer). Consolida la
+                // entidad de marca en el Knowledge Graph y la desambigua de homónimos.
+                sameAs: [
+                  'https://www.instagram.com/taka.sports',
+                  'https://x.com/takasportsx',
+                  'https://www.tiktok.com/@taka.sports',
+                  'https://www.youtube.com/@takasports',
+                  'https://www.threads.net/@taka.sports',
+                ],
                 areaServed: { '@type': 'Country', name: 'España' },
                 knowsAbout: ['Fútbol', 'Baloncesto', 'Fórmula 1', 'UFC', 'Tenis', 'Lucha libre', 'Rugby', 'MotoGP'],
                 contactPoint: {

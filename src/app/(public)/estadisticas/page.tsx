@@ -1,8 +1,54 @@
 import dynamicImport from 'next/dynamic'
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getStandingsData, shardStandingsForSport } from '@/app/api/stats/standings/route'
 import { SITE_URL } from '@/lib/constants'
 import EstadisticasLoading from './loading'
+
+// Hubs de clasificación server-rendered: la vista interactiva de /estadisticas
+// se pinta en cliente (0 enlaces profundos en el HTML que ve Google). Esta tira
+// estática enlaza los hubs /liga/* —que SÍ renderizan tabla + ~40 fichas de
+// equipo/jugador cada uno— para que Googlebot los descubra y reparta autoridad
+// a las páginas profundas evergreen. (Fase 1 SEO, jun 2026)
+const LIGA_HUBS: { id: string; label: string }[] = [
+  { id: 'esp.1', label: 'LaLiga' },
+  { id: 'eng.1', label: 'Premier League' },
+  { id: 'ita.1', label: 'Serie A' },
+  { id: 'ger.1', label: 'Bundesliga' },
+  { id: 'fra.1', label: 'Ligue 1' },
+]
+
+function ClasificacionesHub() {
+  return (
+    <nav
+      aria-label="Clasificaciones por liga"
+      className="max-w-2xl mx-auto px-4 pb-10"
+    >
+      <h2
+        className="text-[11px] font-black uppercase tracking-widest mb-3"
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
+      >
+        Clasificaciones por liga
+      </h2>
+      <div className="flex flex-wrap gap-2">
+        {LIGA_HUBS.map(({ id, label }) => (
+          <Link
+            key={id}
+            href={`/liga/${id}`}
+            className="px-3.5 py-2 rounded-full text-xs font-semibold transition-colors hover:text-white"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              color: 'var(--text-secondary)',
+              border: '1px solid var(--border)',
+            }}
+          >
+            {label}: tabla, goleadores y asistencias
+          </Link>
+        ))}
+      </div>
+    </nav>
+  )
+}
 
 const EstadisticasClient = dynamicImport(() => import('./EstadisticasClient'), {
   loading: () => <EstadisticasLoading />,
@@ -85,5 +131,10 @@ export default async function EstadisticasPage({
   } catch (err) {
     console.error('[estadisticas] SSR data fetch failed:', err)
   }
-  return <EstadisticasClient initialData={initialData} />
+  return (
+    <>
+      <EstadisticasClient initialData={initialData} />
+      <ClasificacionesHub />
+    </>
+  )
 }
