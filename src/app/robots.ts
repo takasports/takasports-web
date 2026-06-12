@@ -18,16 +18,29 @@ const SEO_SCRAPERS = [
   'ZoominfoBot',
 ]
 
-// Bots de IA/LLM training: opcional bloquearlos (no traen tráfico).
+// Bots de IA de ENTRENAMIENTO puro: bloqueados (consumen el contenido sin
+// devolver tráfico ni citar la fuente). NOTA: Google-Extended NO se bloquea
+// a propósito, para seguir apareciendo en las AI Overviews de Google.
 const AI_TRAINING_BOTS = [
-  'GPTBot',
-  'ClaudeBot',
+  'GPTBot',        // OpenAI — entrenamiento
+  'ClaudeBot',     // Anthropic — entrenamiento
   'anthropic-ai',
-  'CCBot',
-  'PerplexityBot',
-  'Bytespider',
+  'CCBot',         // Common Crawl
+  'Bytespider',    // ByteDance
   'Amazonbot',
   'cohere-ai',
+]
+
+// Bots de IA de BÚSQUEDA con citación: PERMITIDOS explícitamente. Enlazan a la
+// fuente, así que aparecer en ChatGPT Search / Perplexity es tráfico de
+// descubrimiento gratis para un medio joven. (Fase 3 SEO — decisión del dueño,
+// jun 2026). Se les da el mismo acceso que a un crawler normal (sin zonas
+// privadas). PerplexityBot estaba bloqueado por error y aquí se reactiva.
+const AI_SEARCH_BOTS = [
+  'PerplexityBot',
+  'Perplexity-User',
+  'OAI-SearchBot',
+  'ChatGPT-User',
 ]
 
 export default function robots(): MetadataRoute.Robots {
@@ -43,6 +56,12 @@ export default function robots(): MetadataRoute.Robots {
       ...SEO_SCRAPERS.map(userAgent => ({ userAgent, disallow: '/' })),
       // Bots de entrenamiento IA: bloqueo total.
       ...AI_TRAINING_BOTS.map(userAgent => ({ userAgent, disallow: '/' })),
+      // Bots de búsqueda IA con citación: mismo acceso que un crawler normal.
+      ...AI_SEARCH_BOTS.map(userAgent => ({
+        userAgent,
+        allow: '/',
+        disallow: ['/api/', '/perfil/', '/admin/', '/buscar', '/buscar/'],
+      })),
     ],
     sitemap: [
       `${SITE_URL}/sitemap.xml`,

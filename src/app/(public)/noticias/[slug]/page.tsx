@@ -107,7 +107,10 @@ export async function generateMetadata({
   const metaTitle = (article.seoTitle?.trim() || article.title)
 
   return {
-    title: metaTitle,
+    // absolute: el pipeline ya genera titulares de 57-59 chars con la keyword
+    // delante; el sufijo " | TakaSports" de la plantilla raíz los empujaba a
+    // 70-72 chars y Google truncaba justo la cola. (Fase 0 SEO, jun 2026)
+    title: { absolute: metaTitle },
     description: article.short_summary ?? article.subtitle,
     authors: [{ name: article.author ?? 'Redacción TakaSports' }],
     alternates: { canonical },

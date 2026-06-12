@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { sanityClient, allTagsQuery } from '@/lib/sanity'
+import { sanityClient, allTagsFlatQuery, MIN_TAG_ARTICLES, isJunkTag } from '@/lib/sanity'
 import { SLUG_TO_LABEL } from '@/lib/sports'
 import { getAllRankingEntries } from '@/lib/rankings-search'
 import { getAllEntryIdsFromDb } from '@/lib/rankings-data'
@@ -76,16 +76,30 @@ async function statRoutes(): Promise<MetadataRoute.Sitemap> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articles, tags, dbIds, stats] = await Promise.all([
+  const [articles, flatTags, dbIds, stats] = await Promise.all([
     sanityClient.fetch<Array<{ slug: string; publishedAt: string; _updatedAt?: string; sport?: string }>>(
       `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc) {
         "slug": slug.current, publishedAt, _updatedAt, sport
       }`
     ).catch(() => []),
-    sanityClient.fetch<string[]>(allTagsQuery).catch(() => [] as string[]),
+    sanityClient.fetch<string[]>(allTagsFlatQuery).catch(() => [] as string[]),
     getAllEntryIdsFromDb(2000).catch(() => [] as string[]),
     statRoutes(),
   ])
+
+  // Poda de tags: cuenta cuántos artículos lleva cada tag y conserva en el sitemap
+  // solo los que superan el umbral y no son slugs basura. Esto saca ~5.000 URLs
+  // finas (frases LLM de un solo uso) que diluían el crawl budget. (Fase 0 SEO)
+  const tagCounts = new Map<string, number>()
+  for (const raw of flatTags) {
+    if (typeof raw !== 'string') continue
+    const tag = raw.trim()
+    if (!tag) continue
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
+  }
+  const tags = [...tagCounts.entries()]
+    .filter(([tag, count]) => count >= MIN_TAG_ARTICLES && !isJunkTag(tag))
+    .map(([tag]) => tag)
 
   const hubLastMod = mostRecent(articles)
 

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { sanityClient, articlesByTagQuery, allTagsQuery } from '@/lib/sanity'
+import { sanityClient, articlesByTagQuery, allTagsQuery, tagCountQuery, MIN_TAG_ARTICLES, isJunkTag } from '@/lib/sanity'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { timeAgo } from '@/lib/timeAgo'
 import Image from '@/components/DynamicImage'
@@ -46,9 +46,18 @@ export async function generateMetadata({
   const description = `Todos los artículos etiquetados con #${decoded} en TakaSports. Noticias, análisis y cobertura deportiva.`
   const canonical = `${SITE_URL}/tag/${tag}`
 
+  // Tags finos (frases de un solo uso) o basura → noindex,follow: no merecen
+  // indexarse y son la mayor fuente de "Descubierta sin indexar" y soft-404,
+  // pero conservamos follow para no perder el paso de enlaces. (Fase 0 SEO)
+  const count = await sanityClient
+    .fetch<number>(tagCountQuery, { tag: decoded } as Record<string, string>)
+    .catch(() => 0)
+  const thin = isJunkTag(decoded) || count < MIN_TAG_ARTICLES
+
   return {
     title,
     description,
+    ...(thin ? { robots: { index: false, follow: true } } : {}),
     alternates: { canonical },
     openGraph: {
       title: `#${decoded} | TakaSports`,

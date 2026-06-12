@@ -32,10 +32,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params
   const lg = LEAGUES[id]
   if (!lg) return { title: 'Liga | TakaSports' }
-  const title = `${lg.label} · Clasificación, goleadores y asistencias | TakaSports`
+  // Sin sufijo manual de marca: la plantilla raíz ya añadía " | TakaSports", lo
+  // que producía el doble sufijo "...| TakaSports | TakaSports" (76 chars). Con
+  // absolute controlamos el título exacto y evitamos el truncado. (Fase 0 SEO)
+  const title = `${lg.label} · Clasificación, goleadores y asistencias`
   const description = `Tabla en vivo de ${lg.label}, máximos goleadores y mejores asistentes de la temporada.`
   return {
-    title, description,
+    title: { absolute: title }, description,
     alternates: { canonical: `${SITE_URL}/liga/${id}` },
     openGraph: { title, description, type: 'website', siteName: SITE_NAME },
   }

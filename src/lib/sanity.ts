@@ -145,8 +145,29 @@ export const articlesByTagQuery = `*[_type == "article" && (status == "publicado
   "priority": select(defined(headline) => "destacado", priority)
 }`
 
-// Todos los tags únicos — para el sitemap
+// Todos los tags únicos — para el sitemap (legacy: generateStaticParams del tag)
 export const allTagsQuery = `array::unique(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(tags)].tags[])`
+
+// Todos los tags CON repetición — para contar frecuencia y podar del sitemap los
+// tags finos (frases LLM de un solo uso). El sitemap solo indexa tags con >=3
+// artículos; el resto va a noindex,follow. (Fase 0 SEO, jun 2026)
+export const allTagsFlatQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(tags)].tags[]`
+
+// Nº de artículos publicados que llevan un tag concreto — para decidir noindex
+// de /tag/[tag] cuando es demasiado fino para merecer indexación.
+export const tagCountQuery = `count(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && $tag in coalesce(tags, [])])`
+
+// Umbral mínimo de artículos para que un tag sea indexable (sitemap + meta robots).
+export const MIN_TAG_ARTICLES = 3
+
+// Un tag es "basura" si su slug es numérico puro o de menos de 3 caracteres
+// (ej. /tag/2, /tag/a) → nunca indexar.
+export function isJunkTag(tag: string): boolean {
+  const t = tag.trim()
+  if (t.length < 3) return true
+  if (/^\d+$/.test(t)) return true
+  return false
+}
 
 // Feed de noticias relacionadas con una entidad (jugador, equipo, etc.).
 // Búsqueda por matching en campos prioritarios (title/headline > summary > body).
