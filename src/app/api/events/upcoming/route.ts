@@ -185,15 +185,24 @@ async function fetchUpcomingTennis(slug: string, comp: string): Promise<Upcoming
 
       if (!homeTeam) continue
 
+      // ESPN devuelve el MISMO ev.id (id de torneo, p. ej. "415-2026") para todos
+      // los partidos del mismo torneo → id NO único. Lo combinamos con los ids de
+      // los dos jugadores (mismo esquema que /api/events/live) para que cada
+      // partido tenga su propia clave; si no, colisionan las React keys del strip.
+      // Sin matchRef: el id de torneo no resuelve en /api/match/[ref] (espera el
+      // id de competición del scoreboard), así que la tarjeta cae a /calendario
+      // igual que las de tenis del feed en vivo.
+      const cid0 = (competitors[0]?.id as string | undefined) ?? homeAbbr ?? '0'
+      const cid1 = (competitors[1]?.id as string | undefined) ?? awayAbbr ?? '1'
+
       results.push({
-        id: String(ev.id),
+        id: `tennis-${String(ev.id)}-${cid0}-${cid1}`,
         homeTeam,
         awayTeam,
         time: toTimeStr(isoDate),
         dateLabel,
         sport: 'tennis',
         comp: tournament,
-        matchRef: `${slug.replace('/', '_')}_${String(ev.id)}`,
         isoDate,
       })
 
