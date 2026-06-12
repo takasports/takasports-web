@@ -46,7 +46,12 @@ const PLATFORM_STYLES: Record<string, { color: string; bg: string; label: string
     color: '#FF0000',
     bg: 'rgba(255,0,0,0.10)',
     label: 'YouTube',
-    urlFn: h => h.startsWith('http') ? h : `https://youtube.com/@${h.replace(/^@/, '')}`,
+    // El ingest guarda unos canales como ID (UC…) y otros como @handle. Un ID de
+    // canal NUNCA resuelve en youtube.com/@…; debe ir por /channel/. Si no, /@handle.
+    urlFn: h =>
+      h.startsWith('http')               ? h
+      : /^UC[A-Za-z0-9_-]{20,}$/.test(h) ? `https://youtube.com/channel/${h}`
+      : `https://youtube.com/@${h.replace(/^@/, '')}`,
   },
   twitter: {
     color: '#E7E9EA',

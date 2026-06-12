@@ -70,22 +70,16 @@ const SUB_ENTITY_TABS: Record<string, { id: string; label: string }[]> = {
   // contenido: sin sub-tabs — lista unificada creadores+periodistas
 }
 
-// Contenidos: sólo los 3 deportes con sección propia
-// Deportes con sección de Contenido. Otros deportes (baloncesto, F1, tenis, padel, golf)
-// se reactivarán cuando tengamos creadores curados — junio 2026.
-const CONTENIDO_SPORTS = ['futbol', 'mundial', 'ufc', 'wwe']
+// Contenido: sólo los 3 verticales con creadores curados (fútbol, UFC, WWE).
+// Simplificado (jun 2026): se retiran mundial/NBA/F1/tenis/pádel/golf — no tenían
+// creadores en la vista y sus pestañas de filtro salían siempre vacías.
+const CONTENIDO_SPORTS = ['futbol', 'ufc', 'wwe']
 
 const SPORT_FILTERS_CONTENIDO = [
-  { label: 'Todos',    slug: '' },
-  { label: 'Fútbol',  slug: 'futbol' },
-  { label: 'Mundial', slug: 'mundial' },
-  { label: 'UFC',     slug: 'ufc' },
-  { label: 'WWE',     slug: 'wwe' },
-  { label: 'NBA',     slug: 'baloncesto' },
-  { label: 'F1',      slug: 'formula1' },
-  { label: 'Tenis',   slug: 'tenis' },
-  { label: 'Pádel',   slug: 'padel' },
-  { label: 'Golf',    slug: 'golf' },
+  { label: 'Todos',  slug: '' },
+  { label: 'Fútbol', slug: 'futbol' },
+  { label: 'UFC',    slug: 'ufc' },
+  { label: 'WWE',    slug: 'wwe' },
 ]
 
 // Tarjetas explicativas del Índice por track (deportistas vs contenido)
