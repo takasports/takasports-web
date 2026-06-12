@@ -127,11 +127,22 @@ async function fetchFootball(slug: string, id: string, label: string): Promise<L
       }
       const first = await grab()
       let entries = first.entries
-      // Offseason rollover: ESPN pasa la liga a la nueva temporada (0 partidos →
-      // tabla vacía) mientras la anterior sigue siendo la relevante. Caemos a
-      // season-1 para no perder la tabla. Ocurre escalonado may-jul → blinda a las
-      // 5 grandes ligas. (fix Serie A jun 2026: ESPN rotó ita.1 a 2026-27 el 5-jun)
-      if (!entries.length && first.yr) entries = (await grab(first.yr - 1)).entries
+      // Offseason rollover: ESPN pasa la liga a la nueva temporada mientras la
+      // anterior sigue siendo la relevante. Dos variantes: (a) tabla vacía (0
+      // entries), o (b) la temporada nueva ya EXISTE pero nadie ha jugado aún
+      // (todos 0 PJ → orden alfabético sin sentido, p.ej. "Angers" 1º en Ligue 1
+      // o "AC Milan" 1º en Serie A). En ambos casos caemos a season-1. Escalonado
+      // may-jul → blinda a las 5 grandes + UCL/UEL. (ita.1/fra.1 rotaron a 2026-27
+      // el 1-5 jun 2026; el resto rota en semanas.)
+      const played = (es: typeof entries) =>
+        es.some(e => {
+          const s = (e.stats as RawStat[] | undefined) ?? []
+          return sv(s, 'wins') + sv(s, 'ties') + sv(s, 'losses') > 0
+        })
+      if ((!entries.length || !played(entries)) && first.yr) {
+        const prev = await grab(first.yr - 1)
+        if (prev.entries.length && played(prev.entries)) entries = prev.entries
+      }
       if (!entries.length) return null
 
       const rows: StandingRow[] = entries.map((e, i) => {
@@ -472,8 +483,17 @@ async function fetchWomenLigaF(): Promise<StandingRow[]> {
     const first = await grab()
     let entries = first.entries
     // Mismo rollover de verano que las ligas masculinas: si ESPN ya pasó Liga F a
-    // la nueva temporada (tabla vacía), caemos a season-1 para conservar la tabla.
-    if (!entries.length && first.yr) entries = (await grab(first.yr - 1)).entries
+    // la nueva temporada (tabla vacía O recién creada con todos a 0 PJ), caemos a
+    // season-1 para conservar la tabla relevante.
+    const played = (es: Record<string, unknown>[]) =>
+      es.some(e => {
+        const s = (e.stats as RawStat[] | undefined) ?? []
+        return sv(s, 'wins') + sv(s, 'ties') + sv(s, 'losses') > 0
+      })
+    if ((!entries.length || !played(entries)) && first.yr) {
+      const prev = await grab(first.yr - 1)
+      if (prev.entries.length && played(prev.entries)) entries = prev.entries
+    }
     if (!entries.length) return []
     return entries.slice(0, 10).map((e, i) => {
       const team  = e.team as Record<string, unknown>
