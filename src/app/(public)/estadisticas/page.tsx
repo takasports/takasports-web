@@ -2,6 +2,7 @@ import dynamicImport from 'next/dynamic'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getStandingsData, shardStandingsForSport, type StatsStandingsResponse } from '@/app/api/stats/standings/route'
+import type { PlayersResponse } from '@/app/api/stats/players/route'
 import { SITE_URL } from '@/lib/constants'
 import EstadisticasLoading from './loading'
 
@@ -86,6 +87,58 @@ function ClasificacionesHub({ data }: { data: StatsStandingsResponse | null }) {
   )
 }
 
+function playerHref(leagueSlug: string | undefined, playerId: string | undefined): string | null {
+  if (!leagueSlug || !playerId) return null
+  return `/jugador/${leagueSlug.replace('/', '_')}_${playerId}`
+}
+
+// Directorio de jugadores: goleadores + asistentes por liga, deduplicados, cada
+// uno enlazando su ficha /jugador. Mismo objetivo que el de equipos: sacar las
+// fichas profundas del limbo "solo en sitemap" a 1 clic. (Fase 1 SEO)
+function PlayersDirectory({ data }: { data: PlayersResponse | null }) {
+  if (!data?.leagues?.length) return null
+  const groups: DirGroup[] = []
+  for (const lg of data.leagues) {
+    const seen = new Set<string>()
+    const players: DirTeam[] = []
+    for (const p of [...(lg.goals ?? []), ...(lg.assists ?? [])]) {
+      const href = playerHref(p.leagueSlug, p.playerId)
+      if (!href || seen.has(href)) continue
+      seen.add(href)
+      players.push({ name: p.name, href })
+    }
+    if (players.length) groups.push({ title: lg.label, hubHref: null, teams: players })
+  }
+  if (!groups.length) return null
+  return (
+    <nav aria-label="Goleadores y asistentes por liga" className="max-w-2xl mx-auto px-4 pb-12">
+      <h2
+        className="text-[11px] font-black uppercase tracking-widest mb-4"
+        style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sport)' }}
+      >
+        Goleadores y asistentes
+      </h2>
+      {groups.map((g) => (
+        <DirectoryGroup key={g.title} {...g} />
+      ))}
+    </nav>
+  )
+}
+
+async function fetchPlayersForDirectory(): Promise<PlayersResponse | null> {
+  const base = process.env.NEXT_PUBLIC_SITE_URL
+    ?? (process.env.NODE_ENV === 'production' ? SITE_URL : 'http://localhost:3000')
+  try {
+    const res = await fetch(`${base}/api/stats/players`, {
+      next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(8000),
+    })
+    return res.ok ? ((await res.json()) as PlayersResponse) : null
+  } catch {
+    return null
+  }
+}
+
 const EstadisticasClient = dynamicImport(() => import('./EstadisticasClient'), {
   loading: () => <EstadisticasLoading />,
 })
@@ -151,6 +204,8 @@ export async function generateMetadata({
 export default async function EstadisticasPage({
   searchParams,
 }: { searchParams: Promise<{ sport?: string }> }) {
+  // Jugadores para el directorio — lanzado en paralelo con las clasificaciones.
+  const playersPromise = fetchPlayersForDirectory()
   let initialData = null
   // `full` (sin shardear) alimenta el directorio server-rendered de equipos.
   // Reutiliza la MISMA llamada a getStandingsData() (sin fetch extra).
@@ -170,10 +225,12 @@ export default async function EstadisticasPage({
   } catch (err) {
     console.error('[estadisticas] SSR data fetch failed:', err)
   }
+  const playersData = await playersPromise
   return (
     <>
       <EstadisticasClient initialData={initialData} />
       <ClasificacionesHub data={full} />
+      <PlayersDirectory data={playersData} />
     </>
   )
 }
