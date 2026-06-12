@@ -12,7 +12,6 @@ import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
 import CompetitionSelector from '@/components/CompetitionSelector'
-import CompetitionBanner from '@/components/CompetitionBanner'
 import { COMPETITIONS, getCompetition, matchesCompetition } from '@/lib/calendar-competitions'
 import { subscribeToPush } from '@/lib/push-client'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
@@ -2235,14 +2234,12 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // banner); si no, deriva del filtro de deporte.
   const themeKey = sportThemeKey(activeCompCfg?.sport ?? activeFilter)
 
-  // "Una foto por pantalla": la foto de una competición vive en UN solo sitio a
-  // la vez, para no verla repetida. Si hay competición elegida, su identidad la
-  // lleva el banner grande (o, sin banner, sus cabeceras de grupo) → se retira la
-  // foto de fondo ambiente. Caso flagrante: NBA/F1/UFC, cuyo banner ES el mismo
-  // archivo que el backdrop del deporte, así que sin esto se ve 3 veces idéntica.
-  const compSelected = !!activeCompCfg
-  const bannerVisible = compSelected && !onlyLive && !selectedDate
-  const showAmbientPhoto = !compSelected && !!SPORT_THEME[themeKey].backdrop
+  // Foto ÚNICA de la cabecera (telón): refleja lo seleccionado — la foto de la
+  // competición si hay una elegida, si no la del deporte del filtro. Va de fondo,
+  // con el título y los selectores encima; NO hay banner-recuadro aparte. Las
+  // cabeceras de grupo de la competición activa no repiten la foto (la lleva el
+  // telón); en la vista general cada liga conserva la suya (variedad).
+  const heroPhoto = activeCompCfg?.banner ?? SPORT_THEME[themeKey].backdrop ?? null
 
   return (
     <main
@@ -2253,11 +2250,11 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       {/* Capa ambiente del tema (foto IA + tinte + textura broadcast, detrás del
           hero). Solo el tema activo está montado → su foto carga lazy; el resto
           ni se pide. Sin foto configurada, caen solo tinte + textura. */}
-      <div key={themeKey} className={`cal-ambient${showAmbientPhoto ? ' cal-ambient--photo' : ''}`} style={{ zIndex: 0 }} aria-hidden>
-        {showAmbientPhoto && (
+      <div key={activeComp ?? themeKey} className={`cal-ambient${heroPhoto ? ' cal-ambient--photo' : ''}`} style={{ zIndex: 0 }} aria-hidden>
+        {heroPhoto && (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="cal-backdrop" src={SPORT_THEME[themeKey].backdrop} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+            <img className="cal-backdrop" src={heroPhoto} alt="" aria-hidden="true" loading="lazy" decoding="async" />
             <div className="cal-backdrop-scrim" aria-hidden />
           </>
         )}
@@ -2270,16 +2267,52 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
         <div className="relative flex items-end justify-between gap-4 mb-4">
           <div>
+            {/* Eyebrow: identidad de la competición elegida (escudo + nombre) o
+                "Agenda deportiva" cuando no hay filtro de competición. */}
             <div className="flex items-center gap-2 mb-2">
-              <span className="block rounded-sm" style={{ width: 3, height: 13, background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: '#5A5A74', fontFamily: 'var(--font-sport)' }}>
-                Agenda deportiva
-              </span>
+              {activeCompCfg ? (
+                <>
+                  {activeCompCfg.crest && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={activeCompCfg.crest} alt="" aria-hidden="true" width={20} height={20} loading="lazy" decoding="async" style={{ objectFit: 'contain', width: 20, height: 20 }} />
+                  )}
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] truncate" style={{ color: getCompAccent(activeCompCfg.shortName), fontFamily: 'var(--font-sport)', maxWidth: '58vw' }}>
+                    {activeCompCfg.displayName}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="block rounded-sm" style={{ width: 3, height: 13, background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: '#5A5A74', fontFamily: 'var(--font-sport)' }}>
+                    Agenda deportiva
+                  </span>
+                </>
+              )}
             </div>
             <h1 className="font-black leading-none uppercase"
               style={{ fontFamily: 'var(--font-headline)', fontSize: 'clamp(2rem, 5.5vw, 3rem)', color: '#F8F8FF', letterSpacing: '-0.01em' }}>
               Calendario
             </h1>
+            {/* Acceso a la página de la competición + quitar filtro. Sustituye al
+                antiguo banner-recuadro: la foto ya está de fondo, aquí va el texto. */}
+            {activeCompCfg && (
+              <div className="flex items-center gap-3 mt-2">
+                {activeCompCfg.espnSlug && (
+                  <Link href={`/calendario/${activeCompCfg.slug}`} prefetch={false}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold no-underline transition-opacity hover:opacity-80"
+                    style={{ color: getCompAccent(activeCompCfg.shortName), fontFamily: 'var(--font-sport)' }}>
+                    Clasificación y goleadores
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden><path d="M4.5 2 8 6l-3.5 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </Link>
+                )}
+                <button onClick={() => setActiveComp(null)} aria-label="Quitar filtro de competición"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider transition-colors hover:text-white"
+                  style={{ color: '#9A9AAE', fontFamily: 'var(--font-sport)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                  Quitar
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Stat chips — compact on mobile */}
@@ -2457,7 +2490,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           {/* Barra unificada de categorías (fichas con logo, scrollable):
               Destacados → Todo → deportes (icono) → competiciones (escudo).
               Reemplaza los antiguos chips de texto. Deporte/modo ajusta el filtro;
-              competición fija activeComp y muestra su banner. */}
+              competición fija activeComp → su foto pasa al telón de fondo de la
+              cabecera y su escudo/acceso a la página aparecen junto al título. */}
           <div className="mt-3 pb-1">
             <CompetitionSelector
               events={events}
@@ -2479,12 +2513,6 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               <SectionHeader icon={<LiveDotIcon size={8} />} label="En Vivo" color="#4ade80" count={liveCount} hint={liveCount > 3 ? '← desliza →' : undefined} />
               <LiveHeroStrip items={liveHeroCards} />
             </section>
-          )}
-
-          {/* Banner de la competición seleccionada (la selección se hace arriba,
-              en la barra de categorías). */}
-          {activeCompCfg && !onlyLive && !selectedDate && (
-            <CompetitionBanner comp={activeCompCfg} count={filtered.length} onClear={() => setActiveComp(null)} />
           )}
 
           {/* Tus equipos — resumen de favoritos (chips con su próximo partido).
@@ -2620,7 +2648,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
                     return (
                       <div key={comp} className="mb-2 relative cal-anim-in" style={{ animationDelay: `${Math.min(compIdx * 55, 280)}ms` }}>
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={bannerVisible && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={activeComp && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <MatchRow
@@ -2842,7 +2870,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
                     return (
                       <div key={comp} className="mb-2 relative">
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={bannerVisible && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={activeComp && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
                         <div className="space-y-1.5">
                           {compEvents.map(event => (
                             <PastMatchRow
