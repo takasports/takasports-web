@@ -52,7 +52,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchExact: true,
     description: 'Calendario completo del Mundial 2026: los 104 partidos con horarios, sedes, resultados y la clasificación de los 12 grupos.',
     seasonLabel: '2026',
-    banner: '/banners/backdrop-futbol.webp',
+    banner: '/banners/mundial.webp',
     crest: 'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/4.png',
   },
   {
