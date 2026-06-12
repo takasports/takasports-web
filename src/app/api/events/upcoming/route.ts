@@ -156,10 +156,18 @@ async function fetchUpcomingFromLeague(
 // Limit to 3 matches per tour to avoid flooding the strip.
 async function fetchUpcomingTennis(slug: string, comp: string): Promise<UpcomingEvent[]> {
   try {
-    const res = await fetch(
-      `https://site.api.espn.com/apis/site/v2/sports/${slug}/events?limit=50`,
-      { next: { revalidate: 300 } }
-    )
+    // El endpoint /events solo da el id del TORNEO (ev.id, p. ej. "415-2026"), no
+    // el de cada partido. En paralelo pedimos el /scoreboard, que SÍ trae el id de
+    // COMPETICIÓN por partido (el que entiende /api/match/[ref]), y lo cruzamos por
+    // el par de ids de jugador. Ambas peticiones se cachean 5 min (revalidate 300)
+    // como el resto del route.
+    const [res, competitionByPair] = await Promise.all([
+      fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/${slug}/events?limit=50`,
+        { next: { revalidate: 300 } }
+      ),
+      buildTennisCompetitionIndex(slug),
+    ])
     if (!res.ok) return []
     const json = await res.json()
     const results: UpcomingEvent[] = []
@@ -189,11 +197,22 @@ async function fetchUpcomingTennis(slug: string, comp: string): Promise<Upcoming
       // los partidos del mismo torneo → id NO único. Lo combinamos con los ids de
       // los dos jugadores (mismo esquema que /api/events/live) para que cada
       // partido tenga su propia clave; si no, colisionan las React keys del strip.
-      // Sin matchRef: el id de torneo no resuelve en /api/match/[ref] (espera el
-      // id de competición del scoreboard), así que la tarjeta cae a /calendario
-      // igual que las de tenis del feed en vivo.
+      // ⚠️ NO tocar este formato (fix de keys duplicadas, commit dedd4d7).
       const cid0 = (competitors[0]?.id as string | undefined) ?? homeAbbr ?? '0'
       const cid1 = (competitors[1]?.id as string | undefined) ?? awayAbbr ?? '1'
+
+      // matchRef: id de COMPETICIÓN resuelto contra el scoreboard cruzando por el
+      // par de ids de jugador (orden-indiferente). Formato idéntico al de lib/espn.ts:
+      // tennis_{atp|wta}_<cid>. Solo individuales: el detalle (/api/match) no resuelve
+      // los nombres de dobles (mostraría "—" vs "—"), así que los dobles se dejan sin
+      // matchRef igual que en fetchTennisLeague. Sin match —o si es ambiguo— queda
+      // undefined y la tarjeta degrada a /calendario en vez de a un partido equivocado.
+      const isDoubles = homeTeam.includes('/') || (awayTeam ?? '').includes('/')
+      const pairKey = isDoubles ? null : tennisPairKey(competitors[0]?.id, competitors[1]?.id)
+      const competitionId = pairKey ? competitionByPair.get(pairKey) : null
+      const matchRef = competitionId
+        ? `${slug.replace('/', '_')}_${competitionId}`
+        : undefined
 
       results.push({
         id: `tennis-${String(ev.id)}-${cid0}-${cid1}`,
@@ -203,6 +222,7 @@ async function fetchUpcomingTennis(slug: string, comp: string): Promise<Upcoming
         dateLabel,
         sport: 'tennis',
         comp: tournament,
+        matchRef,
         isoDate,
       })
 
@@ -216,6 +236,49 @@ async function fetchUpcomingTennis(slug: string, comp: string): Promise<Upcoming
     console.error(`[upcoming] ESPN tennis fetch failed for ${slug}:`, err)
     return []
   }
+}
+
+// Índice "par de ids de jugador" → id de competición del scoreboard de tenis.
+// El /scoreboard expone events[].groupings[].competitions[]: cada competición trae
+// su id propio (el que resuelve /api/match/[ref]) y sus dos competidores. Se indexa
+// por el par de ids (orden-indiferente). Valor null = par ambiguo (aparece en más de
+// una competición, p. ej. dos partidos con rival "TBD") → no se enlaza, para no abrir
+// el partido equivocado. Errores → Map vacío (degrada a tarjeta sin matchRef).
+async function buildTennisCompetitionIndex(slug: string): Promise<Map<string, string | null>> {
+  const index = new Map<string, string | null>()
+  try {
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
+      { next: { revalidate: 300 } }
+    )
+    if (!res.ok) return index
+    const json = await res.json()
+    for (const ev of (json.events ?? []) as Record<string, unknown>[]) {
+      for (const g of (ev.groupings ?? []) as Record<string, unknown>[]) {
+        for (const m of (g.competitions ?? []) as Record<string, unknown>[]) {
+          const competitionId = m.id as string | undefined
+          const cs = (m.competitors ?? []) as Record<string, unknown>[]
+          if (!competitionId || cs.length < 2) continue
+          const key = tennisPairKey(cs[0]?.id, cs[1]?.id)
+          if (!key) continue
+          // Clave ya vista → par ambiguo → null (no enlazar).
+          index.set(key, index.has(key) ? null : competitionId)
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`[upcoming] ESPN tennis scoreboard index failed for ${slug}:`, err)
+  }
+  return index
+}
+
+// Clave orden-indiferente a partir de los dos ids de competidor del partido.
+// Devuelve null si falta alguno (sin par no se puede cruzar de forma fiable).
+function tennisPairKey(a: unknown, b: unknown): string | null {
+  const ia = a == null ? '' : String(a)
+  const ib = b == null ? '' : String(b)
+  if (!ia || !ib) return null
+  return ia < ib ? `${ia}|${ib}` : `${ib}|${ia}`
 }
 
 // Upcoming events: cambian poco. Cache edge 5min fresh + 15min stale.
