@@ -422,9 +422,13 @@ export default async function NoticiaPage({
 
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1400).height(600).url() : null)
   const canonical = `${SITE_URL}/noticias/${article.slug ?? id}`
+  // Tarjeta OG propia (1200×630, marca + foto + titular). Cuando no hay imagen
+  // propia en el CDN, los datos estructurados y Discover usan ESTA imagen propia
+  // y controlada en vez de hotlinkear el CDN de otro medio. (Fase 2 SEO, jun 2026)
+  const ogCardUrl = `${canonical}/opengraph-image`
 
   // Google News / Top Stories prioriza artículos con imágenes en 16:9, 4:3 y 1:1
-  function multiRatioImages(): string[] | undefined {
+  function multiRatioImages(): string[] {
     if (article.image?.asset) {
       return [
         urlFor(article.image).width(1200).height(675).url(), // 16:9
@@ -432,7 +436,8 @@ export default async function NoticiaPage({
         urlFor(article.image).width(1200).height(1200).url(), // 1:1
       ]
     }
-    return imgUrl ? [imgUrl] : undefined
+    // Sin asset propio → tarjeta OG propia (nunca el CDN de la competencia).
+    return [ogCardUrl]
   }
   const articleImages = multiRatioImages()
 
@@ -480,7 +485,7 @@ export default async function NoticiaPage({
       }
       return undefined
     })(),
-    thumbnailUrl: article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(320).height(180).url() : undefined),
+    thumbnailUrl: article.image?.asset ? urlFor(article.image).width(320).height(180).url() : ogCardUrl,
     isAccessibleForFree: true,
     speakable: {
       '@type': 'SpeakableSpecification',
