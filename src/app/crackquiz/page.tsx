@@ -671,10 +671,10 @@ function ResultScreen({
           <span style={{ display: 'inline-flex', lineHeight: 1, color: '#FCD34D' }}><BoltIcon size={28} /></span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-black" style={{ color: '#FCD34D', fontFamily: 'var(--font-display)' }}>
-              +{awardedPoints} puntos al Ranked
+              +{awardedPoints} puntos a la Liga Taka
             </p>
             <p className="text-[10px]" style={{ color: 'rgba(252,211,77,0.6)', fontFamily: 'var(--font-sport)' }}>
-              Los usás para apostar en la Quiniela Ranked
+              Suman en tu ranking general de TakaSports
             </p>
           </div>
         </div>

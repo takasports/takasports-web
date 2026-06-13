@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { QuinielaMatch } from '@/components/QuinielaModule'
+import { toSpanishNation } from '@/lib/nation-names'
 
 function TeamLogo({ name, logo }: { name: string; logo?: string }) {
   const [err, setErr] = useState(false)
@@ -103,7 +104,7 @@ export default function QuinielaTeaser() {
                 className="text-[10.5px] font-black truncate"
                 style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}
               >
-                {m.homeShort ?? m.home}
+                {toSpanishNation(m.homeShort ?? m.home)}
               </span>
               <TeamLogo name={m.home} logo={m.homeLogo} />
             </div>
@@ -129,7 +130,7 @@ export default function QuinielaTeaser() {
                 className="text-[10.5px] font-black truncate"
                 style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}
               >
-                {m.awayShort ?? m.away}
+                {toSpanishNation(m.awayShort ?? m.away)}
               </span>
             </div>
           </div>
