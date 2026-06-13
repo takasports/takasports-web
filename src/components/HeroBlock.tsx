@@ -152,12 +152,16 @@ function KenBurnsImage({
   alt,
   animKey,
   priority = false,
+  still = false,
   onError,
 }: {
   src: string
   alt: string
   animKey: number
   priority?: boolean
+  /** Sin Ken Burns: la imagen del LCP debe estar quieta para asentar la métrica
+   *  durante la carga (un transform continuo deja el LCP sin atribuir). */
+  still?: boolean
   onError?: () => void
 }) {
   return (
@@ -165,9 +169,9 @@ function KenBurnsImage({
       key={animKey}
       className="absolute inset-0 hero-kenburns"
       style={{
-        animation: `kenBurns ${INTERVAL + 1200}ms ease-in-out forwards`,
+        animation: still ? 'none' : `kenBurns ${INTERVAL + 1200}ms ease-in-out forwards`,
         transformOrigin: 'center center',
-        willChange: 'transform',
+        willChange: still ? 'auto' : 'transform',
       }}
     >
       <Image
@@ -190,10 +194,12 @@ function BigCard({
   article,
   visible,
   animKey,
+  still = false,
 }: {
   article: Article
   visible: boolean
   animKey: number
+  still?: boolean
 }) {
   const href = `/noticias/${article.slug ?? article._id}`
   const label = getSportLabel(article.sport, article.category)
@@ -219,7 +225,7 @@ function BigCard({
     >
       {/* Imagen con Ken Burns */}
       {imgUrl ? (
-        <KenBurnsImage key={animKey} src={imgUrl} alt={article.title} animKey={animKey} priority onError={() => setImgFailed(true)} />
+        <KenBurnsImage key={animKey} src={imgUrl} alt={article.title} animKey={animKey} priority still={still} onError={() => setImgFailed(true)} />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ background: getSportStyle(article.sport, article.category).bg }}>
           <div style={{ fontSize: '10rem', lineHeight: 1, opacity: 0.1, userSelect: 'none', filter: 'blur(2px)' }}>
@@ -466,6 +472,12 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
   const [offset, setOffset] = useState(0)
   const [visible, setVisible] = useState(true)
   const [paused, setPaused] = useState(false)
+  // El autoplay NO arranca hasta que la página termina de cargar (window.load),
+  // con un tope de seguridad de 10 s. Así, durante la ventana de carga el héroe
+  // se queda en la 1ª imagen QUIETA (sin rotar ni Ken Burns) y el LCP se asienta
+  // en ella; antes, el carrusel rotando + el zoom continuo dejaban el "elemento
+  // más grande" sin asentar y disparaban el LCP a decenas de segundos en móvil.
+  const [autoplay, setAutoplay] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const touchStartX = useRef<number | null>(null)
   const heroRef = useRef<HTMLDivElement>(null)
@@ -496,13 +508,25 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
     }, FADE_OUT + 40)
   }, [])
 
-  // Autoplay — pausado si el usuario pide reducir movimiento.
+  // Habilita el autoplay al completar la carga (window.load), con fallback 10 s
+  // por si algún recurso cuelga. Ata el arranque del carrusel a que el LCP ya
+  // haya tenido tiempo de asentarse en la 1ª imagen.
   useEffect(() => {
-    if (paused || len < 2) return
+    let done = false
+    const go = () => { if (!done) { done = true; setAutoplay(true) } }
+    if (document.readyState === 'complete') { go(); return }
+    window.addEventListener('load', go, { once: true })
+    const fb = setTimeout(go, 10000)
+    return () => { window.removeEventListener('load', go); clearTimeout(fb) }
+  }, [])
+
+  // Autoplay — pausado si el usuario pide reducir movimiento o aún no cargó.
+  useEffect(() => {
+    if (!autoplay || paused || len < 2) return
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     timerRef.current = setInterval(() => advance(1), INTERVAL)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [advance, paused, len])
+  }, [advance, paused, len, autoplay])
 
   // El hero solo "escucha" las flechas cuando está a la vista (no roba teclas
   // mientras el usuario está más abajo en la página).
@@ -599,7 +623,7 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
         <div className="flex flex-col lg:flex-row gap-3 hero-h">
           {/* Artículo grande — izquierda */}
           <div style={{ flex: '0 0 62%' }}>
-            <BigCard article={big} visible={visible} animKey={offset % len} />
+            <BigCard article={big} visible={visible} animKey={offset % len} still={offset === 0 && !autoplay} />
           </div>
 
           {/* Artículos pequeños — derecha apilados (ocultos en mobile) */}
