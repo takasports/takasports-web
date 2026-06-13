@@ -24,6 +24,9 @@ interface RankedEvent {
   meta:        { group?: string; venue?: string; city?: string }
 }
 
+// Marcador parcial EN VIVO (de /api/ranked/mundial/live, fuente ESPN).
+interface LiveScore { home: number | null; away: number | null; clock: string | null }
+
 interface PredictionRow {
   event_id:       string
   prediction:     {
@@ -770,10 +773,12 @@ function ExactScoreBlock({
 
 function MatchCard({
   event, pred, submitting, onPick, onExactSet, activeExactCount,
-  showExactTooltip, onExactTooltipDismiss, animDelay = 0,
+  showExactTooltip, onExactTooltipDismiss, animDelay = 0, liveScore,
 }: {
   event: RankedEvent; pred: PredictionRow | undefined
   submitting: boolean
+  /** Marcador parcial EN VIVO si el partido está en curso (fuente ESPN). */
+  liveScore?: LiveScore
   onPick: (id: string, pick: '1'|'X'|'2') => void
   /** ME3 — Set/unset del marcador exacto. null = quitar. */
   onExactSet: (id: string, exact: { home: number; away: number } | null) => void
@@ -903,6 +908,26 @@ function MatchCard({
               </div>
               <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.22)', fontFamily: 'var(--font-sport)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                 Final
+              </span>
+            </>
+          ) : isClosed && liveScore && (liveScore.home != null || liveScore.away != null) ? (
+            <>
+              <div style={{
+                padding: '5px 10px', borderRadius: 'var(--radius-md)',
+                background: 'rgba(248,113,113,0.14)', border: '1px solid rgba(248,113,113,0.35)',
+              }}>
+                <span style={{
+                  fontSize: 20, fontWeight: 900, color: '#F87171',
+                  fontFamily: 'var(--font-display)', letterSpacing: '-0.03em', lineHeight: 1,
+                }}>
+                  {liveScore.home ?? 0}–{liveScore.away ?? 0}
+                </span>
+              </div>
+              <span className="m-live" style={{
+                fontSize: 7, color: 'rgba(248,113,113,0.85)', fontFamily: 'var(--font-sport)',
+                letterSpacing: '0.1em', textTransform: 'uppercase',
+              }}>
+                {liveScore.clock || 'Directo'}
               </span>
             </>
           ) : (
@@ -1053,6 +1078,7 @@ function formatCountdown(ms: number): string {
 
 export default function MundialClient() {
   const [events,     setEvents]     = useState<RankedEvent[]>([])
+  const [liveScores, setLiveScores] = useState<Record<string, LiveScore>>({})
   const [preds,      setPreds]      = useState<PredMap>({})
   const [loading,    setLoading]    = useState(true)
   const [loggedIn,   setLoggedIn]   = useState<boolean | null>(null)
@@ -1075,27 +1101,70 @@ export default function MundialClient() {
   }, [])
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  const fetchEventsCore = useCallback(async () => {
+    const [evRes, predRes] = await Promise.all([
+      fetch('/api/ranked/events?sport=mundial'),
+      fetch('/api/ranked/predictions?sport=mundial'),
+    ])
+    const evData   = await evRes.json()   as { events?: RankedEvent[] }
+    const predData = await predRes.json() as { predictions?: PredMap; reason?: string }
+    setEvents(evData.events ?? [])
+    setPreds(predData.predictions ?? {})
+    setLoggedIn(predData.reason !== 'no_session')
+  }, [])
+
   const load = useCallback(async () => {
     setLoading(true); setError(null)
-    try {
-      const [evRes, predRes] = await Promise.all([
-        fetch('/api/ranked/events?sport=mundial'),
-        fetch('/api/ranked/predictions?sport=mundial'),
-      ])
-      const evData   = await evRes.json()   as { events?: RankedEvent[] }
-      const predData = await predRes.json() as { predictions?: PredMap; reason?: string }
-      setEvents(evData.events ?? [])
-      setPreds(predData.predictions ?? {})
-      setLoggedIn(predData.reason !== 'no_session')
-    } catch { setError('Error cargando partidos. Intenta de nuevo.') }
+    try { await fetchEventsCore() }
+    catch { setError('Error cargando partidos. Intenta de nuevo.') }
     finally { setLoading(false) }
-  }, [])
+  }, [fetchEventsCore])
+
+  // Refresco silencioso (sin spinner), para el polling en vivo.
+  const refreshEvents = useCallback(async () => {
+    try { await fetchEventsCore() } catch { /* silencioso */ }
+  }, [fetchEventsCore])
 
   useEffect(() => { void load() }, [load])
   useEffect(() => {
     tickRef.current = setInterval(() => setTick(t => t+1), 1000)
     return () => { if (tickRef.current) clearInterval(tickRef.current) }
   }, [])
+
+  // ── Marcador EN VIVO ────────────────────────────────────────────────────
+  // Sondea ESPN (vía /api/ranked/mundial/live, cacheado 30 s en CDN) SOLO
+  // cuando hay —o va a haber en breve— un partido en juego, y refresca en
+  // silencio los eventos para que un partido pase de "en vivo" a "Final" sin
+  // que el usuario recargue. Fuera de ventana de partido, no sondea (idle).
+  const hasLiveWindow = useMemo(() => {
+    const t = Date.now()
+    return events.some(e => {
+      if (e.status === 'closed') return true
+      if (e.status === 'open') {
+        const k = Date.parse(e.event_date)
+        return k <= t + 2 * 60_000 && k >= t - 3 * 3_600_000
+      }
+      return false
+    })
+  }, [events, tick])
+
+  useEffect(() => {
+    if (!hasLiveWindow) { setLiveScores({}); return }
+    let cancelled = false
+    const poll = async () => {
+      try {
+        const r = await fetch('/api/ranked/mundial/live')
+        if (r.ok) {
+          const d = await r.json() as { live?: Record<string, LiveScore> }
+          if (!cancelled) setLiveScores(d.live ?? {})
+        }
+      } catch { /* ignore */ }
+      void refreshEvents()
+    }
+    void poll()
+    const iv = setInterval(poll, 30_000)
+    return () => { cancelled = true; clearInterval(iv) }
+  }, [hasLiveWindow, refreshEvents])
 
   // Función interna: envía POST a /api/ranked/predictions con el pick
   // actual + un exactScore opcional. La RPC del Mundial guarda el JSONB
@@ -1497,6 +1566,7 @@ export default function MundialClient() {
                     showExactTooltip={ev.id === tooltipEventId}
                     onExactTooltipDismiss={dismissExactTooltip}
                     animDelay={gi * 55 + ci * 45}
+                    liveScore={liveScores[ev.id]}
                   />
                 ))}
               </div>
