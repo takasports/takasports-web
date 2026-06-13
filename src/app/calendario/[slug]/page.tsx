@@ -20,8 +20,9 @@ import { fetchLeagueTableRows, fetchTopScorers, fetchTournamentGroups } from '@/
 import { LeagueTableBlock } from '@/app/partido/[ref]/LeagueTable'
 import { TopScorers } from '@/components/TopScorers'
 
-// ISR cada hora — competiciones evergreen, no necesitan revalidación rápida.
-export const revalidate = 3600
+// ISR cada 5 min: estas páginas ganaron resultados en vivo (Mundial, ligas), así
+// que durante un torneo no pueden servir un marcador de hasta 1 hora de antigüedad.
+export const revalidate = 300
 
 export async function generateStaticParams() {
   return COMPETITIONS.map((c) => ({ slug: c.slug }))
