@@ -4,16 +4,23 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { QuinielaMatch } from '@/components/QuinielaModule'
 import { toSpanishNation } from '@/lib/nation-names'
+import { toProxyUrl } from '@/lib/image-url'
 
 function TeamLogo({ name, logo }: { name: string; logo?: string }) {
   const [err, setErr] = useState(false)
   if (logo && !err) {
+    // El escudo se ve a 16px pero ESPN lo sirve a 500px (~20-90 KB PNG). Lo
+    // pasamos por el proxy a 32px (WebP, ~2 KB) + lazy/async para no descargar
+    // banderas/escudos enormes en cada carga del home.
+    const src = logo.startsWith('http') ? `${toProxyUrl(logo)}&w=32` : logo
     return (
       <img
-        src={logo}
+        src={src}
         alt={name}
         width={16}
         height={16}
+        loading="lazy"
+        decoding="async"
         onError={() => setErr(true)}
         style={{ objectFit: 'contain', flexShrink: 0 }}
       />
