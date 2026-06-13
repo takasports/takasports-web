@@ -2653,7 +2653,16 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             </div>
           ) : (
             orderedDates.map(dateKey => {
-              const dayEvents = grouped[dateKey] ?? []
+              // Orden cronológico de los partidos del día. En "Destacados" se respeta
+              // la curación por relevancia (top del día); en el resto (Todo / deporte /
+              // competición) se ordena por isoDate (instante real → sube de menor a
+              // mayor sea cual sea la zona horaria del usuario), de modo que las
+              // competiciones quedan por su primer partido y, dentro de cada una, los
+              // encuentros van en hora ascendente.
+              const rawDay = grouped[dateKey] ?? []
+              const dayEvents = activeFilter === 'Destacados'
+                ? rawDay
+                : [...rawDay].sort((a, b) => (a.isoDate ?? '').localeCompare(b.isoDate ?? ''))
               // Group by competition, preserving order of first appearance
               const compOrder: string[] = []
               const byComp: Record<string, typeof dayEvents> = {}

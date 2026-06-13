@@ -1,11 +1,10 @@
-import { cookies } from 'next/headers'
 import { sanityClient, eventsQuery } from '@/lib/sanity'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents } from '@/lib/espn'
 import { fetchPadelEvents } from '@/lib/padel'
 import { fetchRecentFormByTeams, type FormResult } from '@/lib/past-events'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
-import { TZ_KEY, SOURCE_TZ } from '@/lib/timezone'
+import { SOURCE_TZ } from '@/lib/timezone'
 import Header from '@/components/Header'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
@@ -112,10 +111,13 @@ export default async function CalendarioPage() {
   for (const [name, form] of Object.entries(womensForms ?? {})) recentForms[`w:${name}`] = form
   for (const [name, form] of Object.entries(otherForms ?? {}))  recentForms[`m:${name}`] = form
 
-  // Read TZ preference from cookie so the very first render already uses it
-  // and we avoid the hydration flash from Madrid → browser TZ on mount.
-  const cookieStore = await cookies()
-  const initialTz = cookieStore.get(TZ_KEY)?.value || SOURCE_TZ
+  // Sembramos el render en Europe/Madrid (base del producto) y dejamos que el
+  // cliente localice la hora al montar (CalendarioContent useEffect + AutoTZInit
+  // leen la TZ del navegador/localStorage). Así NO leemos cookie en el servidor
+  // y la página puede cachearse (ISR 300s) en vez de regenerarse en cada visita.
+  // Importante: el ORDEN es por isoDate (instante UTC) y el AGRUPADO por día es
+  // siempre Madrid (isoToLocalDate) — ninguno depende de esta semilla, solo el
+  // número del reloj de cada partido, que el navegador convierte a hora local.
 
   // SportsEvent JSON-LD: emitimos los primeros 60 eventos futuros para
   // que Google los muestre como rich results (carrusel de eventos en SERP).
@@ -171,7 +173,7 @@ export default async function CalendarioPage() {
       <CalendarioContent
         events={events}
         recentForms={recentForms}
-        initialTz={initialTz}
+        initialTz={SOURCE_TZ}
       />
       <NewsletterSection source="calendario" />
       <Footer />
