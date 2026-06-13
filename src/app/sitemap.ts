@@ -125,6 +125,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.85,
     })),
     { url: `${BASE_URL}/rankings`, lastModified: RANKINGS_LASTMOD, changeFrequency: 'weekly', priority: 0.9 },
+    // Predicciones (hub) y Mundial (URL de campaña) — faltaban en el sitemap.
+    { url: `${BASE_URL}/predicciones`, lastModified: hubLastMod, changeFrequency: 'daily', priority: 0.85 },
+    { url: `${BASE_URL}/mundial`, lastModified: hubLastMod, changeFrequency: 'daily', priority: 0.85 },
     { url: `${BASE_URL}/juegos`, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly', priority: 0.75 },
     { url: `${BASE_URL}/quiniela`, lastModified: STATIC_LASTMOD, changeFrequency: 'daily', priority: 0.7 },
     { url: `${BASE_URL}/crackquiz`, lastModified: STATIC_LASTMOD, changeFrequency: 'daily', priority: 0.65 },

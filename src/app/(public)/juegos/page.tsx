@@ -13,7 +13,8 @@ import JuegosPageClient from './JuegosPageClient'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: 'Juegos · Predicciones, trivia y fantasy deportivo — TakaSports',
+  // Sin sufijo " — TakaSports": el root layout ya aplica title.template '%s | TakaSports'.
+  title: 'Juegos · Predicciones, trivia y fantasy deportivo',
   description: 'Mundial, Predicciones, CrackQuiz, Mi Once, Sopa de Cracks y TakaGrid. Compite cada semana en el ranking global de TakaSports.',
   alternates: { canonical: `${SITE_URL}/juegos` },
   openGraph: {
