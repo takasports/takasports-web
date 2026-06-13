@@ -295,10 +295,9 @@ interface HeroProps {
 }
 
 function LiveHeroCard(p: HeroProps) {
-  const compColor = getCompAccent(p.comp ?? '', 'var(--color-live)')
+  const compColor = getCompAccent(p.comp ?? '', '#4ade80')
   const tennis = isTennis(p.sport)
   const racing = isRacing(p.sport)
-  const football = !tennis && !racing
   const liveLabel = getLiveLabel(p.status, p.elapsed, {
     sport: p.sport,
     homeScore: p.homeScore,
@@ -309,23 +308,23 @@ function LiveHeroCard(p: HeroProps) {
     <div
       className={`cal-card cal-card--live rounded-xl flex flex-col hover:brightness-110 ${p.flashing ? 'ts-flash' : ''}`}
       style={{
-        ['--row-accent' as string]: 'var(--color-live)',
+        ['--row-accent' as string]: '#4ade80',
         width: 300,
         flexShrink: 0,
-        background: 'linear-gradient(145deg, rgba(255,77,46,0.12) 0%, rgba(30,18,16,0.85) 60%, rgba(15,15,22,0.92) 100%)',
-        border: '1px solid rgba(255,77,46,0.28)',
+        background: 'linear-gradient(145deg, rgba(74,222,128,0.10) 0%, rgba(20,30,25,0.85) 60%, rgba(15,15,22,0.9) 100%)',
+        border: '1px solid rgba(74,222,128,0.25)',
       }}
     >
       {/* Halo animado */}
       <span aria-hidden className="absolute -top-12 -right-12 w-32 h-32 rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(255,77,46,0.2) 0%, transparent 70%)', filter: 'blur(8px)' }} />
+        style={{ background: 'radial-gradient(circle, rgba(74,222,128,0.18) 0%, transparent 70%)', filter: 'blur(8px)' }} />
 
       {/* Header */}
       <div className="relative flex items-center justify-between px-3.5 pt-3 pb-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="cal-live-tag flex items-center gap-1 pl-1.5 pr-2.5 py-0.5 text-[8.5px] font-black uppercase"
-            style={{ background: 'rgba(255,77,46,0.18)', color: 'var(--color-live)', fontFamily: 'var(--font-sport)', letterSpacing: '0.1em' }}>
-            <span className="w-1 h-1 rounded-full animate-pulse" style={{ background: '#FF4D2E', boxShadow: '0 0 6px #FF4D2E' }} />
+            style={{ background: 'rgba(74,222,128,0.18)', color: '#4ade80', fontFamily: 'var(--font-sport)', letterSpacing: '0.1em' }}>
+            <span className="w-1 h-1 rounded-full animate-pulse" style={{ background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
             EN VIVO
           </span>
           {tennis && <span style={{ color: '#d97706' }}><TennisIcon size={10} /></span>}
@@ -334,12 +333,10 @@ function LiveHeroCard(p: HeroProps) {
             {p.comp}
           </span>
         </div>
-        {!football && (
-          <span className="text-[8.5px] font-black uppercase tabular-nums px-1.5 py-0.5 rounded flex-shrink-0"
-            style={{ color: 'var(--color-live)', background: 'rgba(255,77,46,0.10)', fontFamily: 'var(--font-display)' }}>
-            {liveLabel}
-          </span>
-        )}
+        <span className="text-[8.5px] font-black uppercase tabular-nums px-1.5 py-0.5 rounded flex-shrink-0"
+          style={{ color: '#4ade80', background: 'rgba(74,222,128,0.10)', fontFamily: 'var(--font-display)' }}>
+          {liveLabel}
+        </span>
       </div>
 
       {/* Body: Home — Score — Away */}
@@ -357,7 +354,7 @@ function LiveHeroCard(p: HeroProps) {
           {racing ? (
             <div className="flex flex-col items-center gap-1">
               <span className="text-[9px] font-black uppercase tracking-[0.15em] inline-flex items-center gap-1"
-                style={{ color: 'var(--color-live)', fontFamily: 'var(--font-sport)' }}>
+                style={{ color: '#4ade80', fontFamily: 'var(--font-sport)' }}>
                 <F1Icon size={11} /> EN CARRERA
               </span>
               <span className="text-[11px] font-bold text-center"
@@ -373,24 +370,17 @@ function LiveHeroCard(p: HeroProps) {
                   Sets
                 </span>
               )}
-              <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1"
-                style={{ background: 'rgba(255,77,46,0.14)', border: '1px solid rgba(255,77,46,0.4)' }}>
+              <div className="flex items-center gap-2">
                 <span className="font-black tabular-nums leading-none"
-                  style={{ fontSize: 24, color: 'var(--color-live)', fontFamily: 'var(--font-display)' }}>
+                  style={{ fontSize: 28, color: '#4ade80', fontFamily: 'var(--font-display)', textShadow: '0 0 12px rgba(74,222,128,0.4)' }}>
                   {p.homeScore ?? 0}
                 </span>
-                <span className="text-[14px] font-light leading-none" style={{ color: 'rgba(255,77,46,0.5)' }}>–</span>
+                <span className="text-[16px] font-light leading-none" style={{ color: '#3A3A4A' }}>—</span>
                 <span className="font-black tabular-nums leading-none"
-                  style={{ fontSize: 24, color: 'var(--color-live)', fontFamily: 'var(--font-display)' }}>
+                  style={{ fontSize: 28, color: '#4ade80', fontFamily: 'var(--font-display)', textShadow: '0 0 12px rgba(74,222,128,0.4)' }}>
                   {p.awayScore ?? 0}
                 </span>
               </div>
-              {football && (
-                <span className="text-[9px] font-black uppercase tracking-[0.1em] animate-pulse mt-0.5"
-                  style={{ color: 'var(--color-live)', fontFamily: 'var(--font-sport)' }}>
-                  {liveLabel}
-                </span>
-              )}
             </>
           )}
         </div>
@@ -405,14 +395,14 @@ function LiveHeroCard(p: HeroProps) {
       </div>
 
       {/* Footer */}
-      <div className="relative flex items-center justify-between px-3.5 pb-3 pt-1 gap-2 border-t" style={{ borderColor: 'rgba(255,77,46,0.14)' }}>
+      <div className="relative flex items-center justify-between px-3.5 pb-3 pt-1 gap-2 border-t" style={{ borderColor: 'rgba(74,222,128,0.12)' }}>
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="text-[9px] font-semibold uppercase tracking-wider truncate" style={{ color: '#7A8A7E', fontFamily: 'var(--font-sport)' }}>
             {p.matchRef ? 'Ver detalles →' : p.sport}
           </span>
           <BroadcastChip comp={p.comp ?? ''} sport={p.sport} tz={p.tz} fallback={p.broadcast} />
         </div>
-        <ReminderButton active={p.isReminded} onClick={p.onToggleReminder} color="#FF4D2E" size="sm" />
+        <ReminderButton active={p.isReminded} onClick={p.onToggleReminder} color="#4ade80" size="sm" />
       </div>
     </div>
   )
@@ -757,7 +747,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   const isFinal = !!liveScore && (liveScore.status === 'FT' || liveScore.status === 'Final' || liveScore.status === 'STATUS_FINAL') && liveScore.homeGoals !== null
   const showScore = isLive || isFinal
   const compColor = getCompAccent(event.comp, event.accent)
-  const accent = isLive ? 'var(--color-live)' : isFinal ? compColor : compColor
+  const accent = isLive ? '#4ade80' : isFinal ? compColor : compColor
   const tennis = isTennis(event.sport)
   const combat = isCombat(event.sport)
   const racing = isRacing(event.sport)
@@ -787,7 +777,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           <span className="flex flex-col items-center gap-0.5 leading-none">
             <span
               className="text-[10px] font-black uppercase tracking-[0.18em]"
-              style={{ color: isLive ? 'var(--color-live)' : '#7A7A8E', fontFamily: 'var(--font-sport)' }}
+              style={{ color: isLive ? '#EF4444' : '#7A7A8E', fontFamily: 'var(--font-sport)' }}
             >
               {isLive ? 'LIVE' : 'FIN'}
             </span>
@@ -804,8 +794,8 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           <>
             {isLive ? (
               <span className="flex items-center gap-1.5 leading-none">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-live)', animation: 'live-pulse 1.6s ease-out infinite' }} />
-                <span className="text-[10px] font-black uppercase tracking-[0.14em] tabular-nums" style={{ color: 'var(--color-live)', fontFamily: 'var(--font-sport)' }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] tabular-nums" style={{ color: '#EF4444', fontFamily: 'var(--font-sport)' }}>
                   {liveLabel || 'LIVE'}
                 </span>
               </span>
@@ -948,11 +938,11 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
       style={{
         ['--row-accent' as string]: accent,
         background: isLive
-          ? 'linear-gradient(135deg, rgba(255,77,46,0.07) 0%, rgba(255,255,255,0.02) 100%)'
+          ? 'linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(255,255,255,0.02) 100%)'
           : 'rgba(255,255,255,0.025)',
-        borderTop: `1px solid ${isLive ? 'rgba(255,77,46,0.15)' : 'rgba(255,255,255,0.04)'}`,
-        borderRight: `1px solid ${isLive ? 'rgba(255,77,46,0.15)' : 'rgba(255,255,255,0.04)'}`,
-        borderBottom: `1px solid ${isLive ? 'rgba(255,77,46,0.15)' : 'rgba(255,255,255,0.04)'}`,
+        borderTop: `1px solid ${isLive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
+        borderRight: `1px solid ${isLive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
+        borderBottom: `1px solid ${isLive ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)'}`,
         borderLeft: `3px solid ${accent}`,
       }}
     >
@@ -2369,9 +2359,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             </div>
             {liveCount > 0 && (
               <div className="flex flex-col items-center px-3 py-1.5 rounded-xl"
-                style={{ background: 'rgba(255,77,46,0.08)', border: '1px solid rgba(255,77,46,0.2)' }}>
-                <span className="text-[17px] font-black tabular-nums leading-none flex items-center gap-1" style={{ color: 'var(--color-live)', fontFamily: 'var(--font-display)' }}>
-                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--color-live)', animation: 'live-pulse 1.6s ease-out infinite' }} />
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                <span className="text-[17px] font-black tabular-nums leading-none flex items-center gap-1" style={{ color: '#EF4444', fontFamily: 'var(--font-display)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
                   {liveCount}
                 </span>
                 <span className="text-[8.5px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#D69A9A', fontFamily: 'var(--font-sport)' }}>
@@ -2422,8 +2412,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                       Calendario
                       {liveCount > 0 && (
                         <span className="inline-flex items-center gap-1 ml-1">
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-live)', animation: 'live-pulse 1.6s ease-out infinite' }} />
-                          <span className="tabular-nums" style={{ color: isActive ? '#FCA5A5' : 'var(--color-live)' }}>{liveCount}</span>
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
+                          <span className="tabular-nums" style={{ color: isActive ? '#FCA5A5' : '#EF4444' }}>{liveCount}</span>
                         </span>
                       )}
                     </>
@@ -2492,16 +2482,16 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               aria-label="Mostrar solo partidos en vivo"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
               style={{
-                background: onlyLive ? 'rgba(255,77,46,0.18)' : 'rgba(255,255,255,0.04)',
-                color: onlyLive ? 'var(--color-live)' : '#7A7A8E',
-                border: onlyLive ? '1px solid rgba(255,77,46,0.45)' : '1px solid rgba(255,255,255,0.06)',
+                background: onlyLive ? 'rgba(74,222,128,0.18)' : 'rgba(255,255,255,0.04)',
+                color: onlyLive ? '#4ade80' : '#7A7A8E',
+                border: onlyLive ? '1px solid rgba(74,222,128,0.45)' : '1px solid rgba(255,255,255,0.06)',
                 fontFamily: 'var(--font-sport)',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
-                boxShadow: onlyLive ? '0 0 12px rgba(255,77,46,0.18)' : 'none',
+                boxShadow: onlyLive ? '0 0 12px rgba(74,222,128,0.18)' : 'none',
               }}
             >
-              {onlyLive && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--color-live)' }} />}
+              {onlyLive && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />}
               En vivo
             </button>
             {hasActiveFilters && (
@@ -2551,7 +2541,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           {/* Live strip at top of TODOS view */}
           {liveCount > 0 && !selectedDate && (
             <section>
-              <SectionHeader icon={<LiveDotIcon size={8} />} label="En Vivo" color="#FF4D2E" count={liveCount} hint={liveCount > 3 ? '← desliza →' : undefined} />
+              <SectionHeader icon={<LiveDotIcon size={8} />} label="En Vivo" color="#4ade80" count={liveCount} hint={liveCount > 3 ? '← desliza →' : undefined} />
               <LiveHeroStrip items={liveHeroCards} />
             </section>
           )}
@@ -2616,7 +2606,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
           {orderedDates.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="mb-2 flex justify-center" style={{ color: onlyLive ? 'var(--color-live)' : '#5A5A6A' }}>
+              <p className="mb-2 flex justify-center" style={{ color: onlyLive ? '#4ade80' : '#5A5A6A' }}>
                 {onlyLive
                   ? <LiveDotIcon size={32} />
                   : search
