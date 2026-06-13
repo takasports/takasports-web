@@ -16,6 +16,17 @@ import { SITE_URL, LOGO_URL } from '@/lib/constants'
 
 export const revalidate = 300
 
+// Soft-404 fix: los deportes válidos son una lista FINITA conocida
+// (claves de SLUG_TO_LABEL). Con `dynamicParams = false`, cualquier slug de
+// primer nivel que NO esté en generateStaticParams (p. ej. /motogp o
+// /esta-pagina-no-existe) devuelve un 404 REAL (HTTP 404 + app/not-found.tsx),
+// en lugar del soft-404 (HTTP 200) que daba `notFound()` en una ruta ISR —
+// Next 16 no propaga el 404 status desde `notFound()` en SSG/ISR. Verificado
+// que el sitemap y los enlaces internos (Footer) solo referencian estos slugs
+// válidos, así que ningún enlace existente se rompe. El `notFound()` del body
+// y la rama noindex de generateMetadata quedan como red de seguridad.
+export const dynamicParams = false
+
 export function generateStaticParams() {
   return Object.keys(SLUG_TO_LABEL).map(sport => ({ sport }))
 }
