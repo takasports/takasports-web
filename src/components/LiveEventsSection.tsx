@@ -6,6 +6,7 @@ import type { SportEvent } from '@/lib/types'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { getCompAccent, getLiveLabel } from '@/lib/competitions'
 import { TvIcon } from '@/components/icons/GameIcons'
+import { toProxyUrl } from '@/lib/image-url'
 
 // ── Live scores ────────────────────────────────────────────────────
 interface LiveScore {
@@ -103,8 +104,12 @@ function TeamLogo({ logo, name, size = 22 }: { logo?: string; name: string; size
       </span>
     )
   }
+  // El escudo se ve a ~34px pero ESPN lo sirve a 500px (~220 KB PNG). Lo pasamos
+  // por el proxy a un tamaño acorde (WebP ~4 KB) + lazy/async para no robar
+  // ancho de banda a la carga inicial (LCP).
+  const src = logo.startsWith('http') ? `${toProxyUrl(logo)}&w=${Math.round(size * 2)}` : logo
   return (
-    <img src={logo} alt={name} width={size} height={size} onError={() => setErr(true)}
+    <img src={src} alt={name} width={size} height={size} loading="lazy" decoding="async" onError={() => setErr(true)}
       style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />
   )
 }
