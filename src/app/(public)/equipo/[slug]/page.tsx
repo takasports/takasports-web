@@ -12,6 +12,16 @@ import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import { SITE_URL, SITE_NAME, LOGO_URL, ICON_URL } from '@/lib/constants'
 
+// Solo estas 5 ligas tienen página /liga/[id]. team.leagueSlug llega como
+// "soccer/esp.1" (con el deporte delante), así que enlazar a /liga/${leagueSlug}
+// daba /liga/soccer/esp.1 → 404 en ~198 fichas. Quitamos el prefijo y, si la liga
+// no tiene página propia (NBA, etc.), enlazamos a /estadisticas para no romper.
+const LIGA_PAGES = new Set(['esp.1', 'eng.1', 'ita.1', 'ger.1', 'fra.1'])
+function leagueHref(leagueSlug: string): string {
+  const bareId = leagueSlug.replace(/^[^/]+\//, '') // "soccer/esp.1" → "esp.1"
+  return LIGA_PAGES.has(bareId) ? `/liga/${bareId}` : '/estadisticas'
+}
+
 export const revalidate = 300
 
 // ── Metadata ──────────────────────────────────────────────────────────
@@ -274,7 +284,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
         items={[
           { label: 'Inicio', href: '/' },
           { label: 'Estadísticas', href: '/estadisticas' },
-          { label: team.leagueLabel, href: `/liga/${team.leagueSlug}` },
+          { label: team.leagueLabel, href: leagueHref(team.leagueSlug) },
           { label: team.name },
         ]}
         className="mb-4 text-[11px] flex items-center gap-2 flex-wrap"
@@ -474,7 +484,7 @@ export default async function EquipoPage({ params }: { params: Promise<{ slug: s
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Inicio', item: SITE_URL },
       { '@type': 'ListItem', position: 2, name: 'Estadísticas', item: `${SITE_URL}/estadisticas` },
-      { '@type': 'ListItem', position: 3, name: team.leagueLabel, item: `${SITE_URL}/liga/${team.leagueSlug}` },
+      { '@type': 'ListItem', position: 3, name: team.leagueLabel, item: `${SITE_URL}${leagueHref(team.leagueSlug)}` },
       { '@type': 'ListItem', position: 4, name: team.name, item: canonicalUrl },
     ],
   }
