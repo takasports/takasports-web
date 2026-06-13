@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
 import { RANKING_JUGADORES, type RankingEntry } from '@/lib/rankings'
 import { PersonIcon, PodiumMedal } from '@/components/icons/GameIcons'
+import { toProxyUrl } from '@/lib/image-url'
 
 function SectionHeader({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
@@ -79,10 +80,18 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
                 {/* Avatar */}
                 {player.image ? (
                   <img
-                    src={player.image}
+                    // El avatar se ve a 28px pero la fuente (cutout de thesportsdb)
+                    // pesa ~250 KB en PNG. Lo pasamos por el proxy a w=64 (WebP ~3 KB)
+                    // y lo marcamos lazy: como la Sidebar es `hidden lg:block`, en
+                    // móvil queda en display:none y el navegador NO descarga las
+                    // imágenes lazy ocultas → se eliminan ~1,3 MB de ancho de banda
+                    // que robaban la carga del héroe (LCP).
+                    src={player.image.startsWith('http') ? `${toProxyUrl(player.image)}&w=64` : player.image}
                     alt={player.name}
                     width={28}
                     height={28}
+                    loading="lazy"
+                    decoding="async"
                     style={{
                       width: 28, height: 28, borderRadius: 8, objectFit: 'cover', flexShrink: 0,
                       boxShadow: i < 3 ? `0 0 6px ${medalColor.badge}44` : 'none',
