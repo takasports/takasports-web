@@ -143,9 +143,14 @@ const EstadisticasClient = dynamicImport(() => import('./EstadisticasClient'), {
   loading: () => <EstadisticasLoading />,
 })
 
-// searchParams hace la página dinámica; force-dynamic evita el error de build.
-export const dynamic = 'force-dynamic'
-export const dynamicParams = true
+// La página lee `searchParams` (sport) en generateMetadata + body → Next la
+// renderiza de forma dinámica igualmente. NO declaramos `dynamic` ni
+// `revalidate`: `force-dynamic` forzaba `Cache-Control: no-store` (Vercel CDN
+// nunca cacheaba → x-vercel-cache MISS, TTFB alto en móvil), y `revalidate`
+// chocaría con `searchParams` en build. Al quitarlos, el override de
+// Cache-Control del middleware (FAST_CACHE, s-maxage=120 + SWR) SÍ surte
+// efecto, igual que /noticias y /calendario. El SEO por deporte (metadata +
+// shard del payload) se conserva intacto: generateMetadata sigue leyendo sport.
 
 interface SportMeta { label: string; description: string }
 const SPORT_META: Record<string, SportMeta> = {
