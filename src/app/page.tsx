@@ -14,7 +14,6 @@ import SignalIntro from '@/components/SignalIntro'
 import Footer from '@/components/Footer'
 import NewsletterSection from '@/components/NewsletterSection'
 import { urlFor } from '@/lib/sanity'
-import { resolveImageUrl } from '@/lib/image-url'
 import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 300
@@ -187,31 +186,21 @@ export default async function Home() {
     })),
   }
 
-  // LCP: pre-cargamos la imagen del primer artículo del hero. Es la imagen
-  // que Next/Image marca como `priority` en HeroBlock; con `<link rel=preload>`
-  // el navegador empieza a descargarla antes de que React hidrate.
+  // LCP del hero: NO emitimos un <link rel="preload"> manual.
   //
-  // F3.7 (jun 2026): resolveImageUrl() devuelve la URL FINAL que el browser
-  // descargará (proxy si el host es desconocido). ANTES preload-ábamos la URL
-  // original mientras el <img> cargaba el proxy → doble descarga compitiendo
-  // por el ancho de banda mobile.
-  const heroArticle = articles[0]
-  const heroImgRaw =
-    heroArticle?.imageUrl ??
-    (heroArticle?.image?.asset ? urlFor(heroArticle.image).width(1200).height(680).url() : null)
-  const heroPreloadUrl = resolveImageUrl(heroImgRaw)
+  // F3.8 (jun 2026): el preload manual apuntaba a la URL ORIGINAL del artículo
+  // (Supabase/Sanity son hosts "optimizados", así que resolveImageUrl devolvía
+  // la cruda). Pero el <img> real del hero es next/image, que descarga
+  // `/_next/image?...` (AVIF/WebP redimensionado) y YA emite su propio
+  // <link rel="preload" imageSrcSet=...> con la variante correcta. Resultado:
+  // el preload manual descargaba en alta prioridad el JPEG ORIGINAL de ~402 KB
+  // que nunca se muestra, robando ancho de banda al AVIF bueno justo durante el
+  // LCP en móvil. Eliminado: dejamos que el `priority` de next/image (BigCard)
+  // haga el preload, que apunta a la imagen optimizada de verdad.
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <SignalIntro />
-      {heroPreloadUrl && (
-        <link
-          rel="preload"
-          as="image"
-          href={heroPreloadUrl}
-          fetchPriority="high"
-        />
-      )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       {videoListJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoListJsonLd) }} />
