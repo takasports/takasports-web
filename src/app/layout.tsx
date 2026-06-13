@@ -10,6 +10,7 @@ import DeviceCapInit from '@/components/DeviceCapInit'
 // (ambos client-only, no afectan al HTML inicial). Libera ~15 KiB del bundle
 // inicial. Ver F3.3 (jun 2026).
 import ClientOnlyLayoutScripts from '@/components/ClientOnlyLayoutScripts'
+import PWAManager from '@/components/PWAManager'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
@@ -200,6 +201,7 @@ export default function RootLayout({
         {children}
         <BottomNav />
         <ConsentBanner gaId={GA_ID} clarityId={CLARITY_ID} />
+        <PWAManager />
         <ClientOnlyLayoutScripts />
         <script
           dangerouslySetInnerHTML={{
