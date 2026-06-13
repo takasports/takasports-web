@@ -1,8 +1,9 @@
 {
   "name": "TakaSports — Deporte en vivo",
   "short_name": "TakaSports",
-  "description": "Quiniela, juegos diarios, noticias y resultados en vivo de fútbol, NBA, UFC, F1 y tenis",
-  "start_url": "/juegos",
+  "description": "Predicciones, juegos diarios, noticias y resultados en vivo de fútbol, NBA, UFC, F1 y tenis",
+  "id": "/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#09090F",
   "theme_color": "#7C3AED",
@@ -11,10 +12,22 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
@@ -37,10 +50,10 @@
       "description": "Alinea tu once ideal semanal"
     },
     {
-      "name": "Quiniela",
-      "short_name": "Quiniela",
-      "url": "/quiniela",
-      "description": "Predice los resultados de la jornada"
+      "name": "Predicciones",
+      "short_name": "Predicciones",
+      "url": "/predicciones",
+      "description": "Predice el Mundial y la jornada"
     }
   ],
   "categories": ["sports", "games", "news"]
