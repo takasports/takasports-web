@@ -143,14 +143,18 @@ const EstadisticasClient = dynamicImport(() => import('./EstadisticasClient'), {
   loading: () => <EstadisticasLoading />,
 })
 
-// La página lee `searchParams` (sport) en generateMetadata + body → Next la
-// renderiza de forma dinámica igualmente. NO declaramos `dynamic` ni
-// `revalidate`: `force-dynamic` forzaba `Cache-Control: no-store` (Vercel CDN
-// nunca cacheaba → x-vercel-cache MISS, TTFB alto en móvil), y `revalidate`
-// chocaría con `searchParams` en build. Al quitarlos, el override de
-// Cache-Control del middleware (FAST_CACHE, s-maxage=120 + SWR) SÍ surte
-// efecto, igual que /noticias y /calendario. El SEO por deporte (metadata +
-// shard del payload) se conserva intacto: generateMetadata sigue leyendo sport.
+// Esta página DEBE quedarse dinámica (force-dynamic). Lee `searchParams.sport`
+// en generateMetadata (title/canonical/OG propios para las 7 landings
+// /estadisticas?sport=X que están en el sitemap) y en el body (shard del
+// payload SSR por deporte). Leer `searchParams` fuerza `no-store` y el override
+// de Cache-Control del middleware NO puede revertirlo (a diferencia de
+// /noticias, que NO lee searchParams y sí se cachea). Para cachear ESTA página
+// SIN perder esas 7 landings haría falta migrar `?sport=X` a rutas de path
+// reales `/estadisticas/[sport]` (params SÍ son cacheables) — refactor mayor,
+// pendiente de decisión. Mantener force-dynamic evita además el error de build
+// "Dynamic server usage" del probe de prerender.
+export const dynamic = 'force-dynamic'
+export const dynamicParams = true
 
 interface SportMeta { label: string; description: string }
 const SPORT_META: Record<string, SportMeta> = {
