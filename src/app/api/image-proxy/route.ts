@@ -16,8 +16,14 @@
 //   · Límite de 8 MB por imagen
 
 import { NextRequest, NextResponse } from 'next/server'
+import sharp from 'sharp'
 
-const MAX_SIZE = 8 * 1024 * 1024 // 8 MB
+// sharp recomprime las imágenes → necesita el runtime de Node (no Edge).
+export const runtime = 'nodejs'
+
+const MAX_SIZE = 8 * 1024 * 1024 // 8 MB (entrada)
+const MAX_WIDTH = 1280           // ancho máximo servido (px) — evita fotos 2-3 MB en móvil
+const WEBP_QUALITY = 72          // calidad WebP (buen equilibrio peso/nitidez)
 
 // Bloques CIDR de IPs que NUNCA deben ser accesibles desde el proxy (SSRF).
 const PRIVATE_RANGES = [
@@ -100,16 +106,42 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Image too large' }, { status: 413 })
     }
 
-    const buffer = await upstream.arrayBuffer()
+    const buffer = Buffer.from(await upstream.arrayBuffer())
     if (buffer.byteLength > MAX_SIZE) {
       return NextResponse.json({ error: 'Image too large' }, { status: 413 })
     }
 
-    return new NextResponse(buffer, {
+    // Redimensionar + recomprimir a WebP: servir una foto de 2-3 MB a tamaño
+    // completo en móvil es la causa nº1 de LCP alto. SVG (vector) y GIF (posible
+    // animación) se pasan sin tocar. Si sharp falla, se sirve el original.
+    const reqW = Number(request.nextUrl.searchParams.get('w'))
+    const maxW = Math.min(1920, Math.max(64, Number.isFinite(reqW) && reqW > 0 ? reqW : MAX_WIDTH))
+    const transcodable =
+      contentType.startsWith('image/') &&
+      !contentType.includes('svg') &&
+      !contentType.includes('gif')
+
+    let outBuffer: Buffer = buffer
+    let outType = contentType || 'image/jpeg'
+    if (transcodable) {
+      try {
+        outBuffer = await sharp(buffer)
+          .rotate() // auto-orienta según EXIF antes de redimensionar
+          .resize({ width: maxW, withoutEnlargement: true })
+          .webp({ quality: WEBP_QUALITY })
+          .toBuffer()
+        outType = 'image/webp'
+      } catch {
+        outBuffer = buffer
+        outType = contentType || 'image/jpeg'
+      }
+    }
+
+    return new NextResponse(new Uint8Array(outBuffer), {
       status: 200,
       headers: {
-        'Content-Type': contentType || 'image/jpeg',
-        'Content-Length': String(buffer.byteLength),
+        'Content-Type': outType,
+        'Content-Length': String(outBuffer.byteLength),
         // 24 h fresh en CDN edge; stale-while-revalidate 7 días.
         // Una misma URL de imagen no se descarga más de 1 vez al día.
         'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
