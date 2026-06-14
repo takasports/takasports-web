@@ -44,6 +44,7 @@ const LEGAL_LINKS = [
   { label: 'Equipo editorial',  href: '/autor/redaccion' },
   { label: 'Política editorial', href: '/politica-editorial' },
   { label: 'Privacidad',        href: '/privacidad' },
+  { label: 'Cookies',           href: '/cookies' },
   { label: 'Términos',          href: '/terminos' },
 ]
 
