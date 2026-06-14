@@ -55,10 +55,16 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 200)
 
   const sb = await createServerSupabaseClient()
+  // El leaderboard se lee con el cliente de servicio (service_role) para poder
+  // revocar el acceso público al RPC get_ranked_leaderboard (que devuelve
+  // user_id crudo) sin dejar el ranking en blanco a los visitantes anónimos.
+  // Sin service role (dev local) cae al cliente normal.
+  const admin = adminSupabase()
+  const lbClient = admin ?? sb
 
   // Leaderboard + check de partidos en curso (para auto-refresh del cliente)
   const [lbResult, liveResult] = await Promise.all([
-    sb.rpc('get_ranked_leaderboard', {
+    lbClient.rpc('get_ranked_leaderboard', {
       p_sport: sport === 'global' ? null : sport,
       p_limit: limit,
     }),
@@ -76,7 +82,6 @@ export async function GET(req: NextRequest) {
 
   // Fetch badges + equipment en paralelo. Si no hay admin client (env sin
   // service role), devolvemos los rows sin enriquecer — la UI tiene fallback.
-  const admin = adminSupabase()
   const [badgesByUser, equipByUser, levelsByUser] = await Promise.all([
     fetchBadgesByUser(admin, userIds, 3),
     admin ? fetchEquipmentByUser(admin, userIds) : Promise.resolve(new Map<string, UserEquipment>()),

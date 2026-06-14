@@ -44,8 +44,11 @@ export async function GET(
 
   if (ligaErr || !league) return NextResponse.json({ error: 'not_found' }, { status: 404 })
 
-  // Leaderboard vía RPC
-  const { data: entries, error: lbErr } = await sb
+  // Leaderboard vía RPC. Se lee con service_role (admin) para poder revocar el
+  // acceso público al RPC (devuelve user_id crudo) sin romper esta ruta;
+  // fallback al cliente de sesión si no hay service role (dev local).
+  const admin = adminSupabase()
+  const { data: entries, error: lbErr } = await (admin ?? sb)
     .rpc('ranked_league_leaderboard', { p_league_id: leagueId })
 
   if (lbErr) return NextResponse.json({ error: lbErr.message }, { status: 500 })
