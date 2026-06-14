@@ -49,9 +49,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ entries: [], total: 0 })
   }
 
-  const sb = await createServerSupabaseClient()
+  // Lee la vista con service_role (bypassa RLS) para no depender del acceso
+  // anónimo a v_game_leaderboard, que cerramos a nivel de BD. Fallback a la
+  // sesión solo en dev sin SUPABASE_SERVICE_ROLE_KEY.
+  const admin = adminSupabase()
+  const reader = admin ?? await createServerSupabaseClient()
 
-  const { data, error } = await sb
+  const { data, error } = await reader
     .from('v_game_leaderboard')
     .select('user_id, score, duration_ms, created_at, display_name, avatar_url, position')
     .eq('game_id', game)
@@ -66,7 +70,6 @@ export async function GET(req: NextRequest) {
   const rows = data ?? []
   const userIds = rows.map(r => r.user_id as string).filter(Boolean)
 
-  const admin = adminSupabase()
   const [badgesByUser, equipByUser] = await Promise.all([
     fetchBadgesByUser(admin, userIds, 3),
     admin ? fetchEquipmentByUser(admin, userIds) : Promise.resolve(new Map<string, UserEquipment>()),
