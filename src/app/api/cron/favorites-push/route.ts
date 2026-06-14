@@ -4,7 +4,7 @@
 // se movió ≥1.5 puntos esta semana. Se ejecuta los lunes 09:30 (después de
 // que el cron de rankings haya escrito score_prev y los nuevos scores).
 //
-// Auth: Bearer CRON_SECRET o ?secret= para pruebas manuales.
+// Auth: solo Bearer CRON_SECRET o header x-cron-secret.
 
 import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
@@ -22,11 +22,11 @@ function initVapid(): boolean {
 }
 
 export async function GET(req: NextRequest) {
-  const secretParam = new URL(req.url).searchParams.get('secret')
-  const okSecret = !!process.env.CRON_SECRET &&
-    (secretParam === process.env.CRON_SECRET ||
-     checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET))
-  if (!okSecret) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  // Auth: solo Bearer CRON_SECRET o header x-cron-secret (comparación en tiempo
+  // constante). El antiguo `?secret=` queda eliminado: se filtraba en logs/referer.
+  if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
   if (!initVapid()) return NextResponse.json({ error: 'VAPID no configurado' }, { status: 503 })
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'Supabase admin no configurado' }, { status: 503 })

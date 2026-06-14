@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 const GAME_IDS    = ['quiniela','crackquiz','mionce','sopacracks','takagrid','strikerrush'] as const
 const EVENT_TYPES = ['started','completed','abandoned','shared','leaderboard_view'] as const
@@ -47,6 +48,17 @@ export async function POST(req: NextRequest) {
     EVENT_TYPES.includes(e.event_type as typeof EVENT_TYPES[number])
   )
   if (clean.length === 0) return NextResponse.json({ accepted: 0 })
+
+  // Freno anti-inundación: este endpoint acepta envíos anónimos, así que
+  // limitamos por IP (la telemetría es no crítica; checkRateLimit hace
+  // fail-open si la BD de límites no responde).
+  const rl = await checkRateLimit({ bucket: 'games_events', key: getClientIp(req), windowSeconds: 60, max: 120 })
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'rate_limited', retryAfterSeconds: rl.retryAfterSeconds },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+    )
+  }
 
   const sb = await createServerSupabaseClient()
   const { data: { user } } = await sb.auth.getUser()

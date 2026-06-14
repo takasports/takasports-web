@@ -6,11 +6,11 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 
 export async function GET(req: NextRequest) {
-  const secretParam = new URL(req.url).searchParams.get('secret')
-  const okSecret = !!process.env.CRON_SECRET &&
-    (secretParam === process.env.CRON_SECRET ||
-     checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET))
-  if (!okSecret) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  // Auth: solo Bearer CRON_SECRET o header x-cron-secret (comparación en tiempo
+  // constante). El antiguo `?secret=` queda eliminado: se filtraba en logs/referer.
+  if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
 
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'Supabase admin no configurado' }, { status: 503 })

@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { POINTS_ENABLED_GAMES, pointsFor, type GameId as PointsGameId } from '@/lib/game-points'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
 type GameId = typeof GAME_IDS[number]
@@ -54,6 +55,21 @@ export async function POST(req: NextRequest) {
     if (!user) {
       // Modo invitado: aceptamos y devolvemos sin persistir (cliente cae a localStorage)
       return NextResponse.json({ persisted: false, reason: 'no_session' })
+    }
+
+    // Freno anti-abuso por usuario: registrar partidas escribe en BD y acredita
+    // puntos a la Liga Taka. Generoso para uso normal, corta scripts.
+    const rl = await checkRateLimit({
+      bucket: 'games_plays',
+      key: `${getClientIp(req)}:${user.id}`,
+      windowSeconds: 60,
+      max: 30,
+    })
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: 'rate_limited', retryAfterSeconds: rl.retryAfterSeconds },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+      )
     }
 
     const { data, error } = await sb.rpc('record_game_play', {

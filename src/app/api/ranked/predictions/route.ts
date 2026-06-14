@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { awardBadges, badgesEarnedOnRankedPick } from '@/lib/badge-awards'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -120,6 +121,21 @@ export async function POST(req: NextRequest) {
   const sb = await createServerSupabaseClient()
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
+
+  // Freno anti-abuso por usuario: cada POST inserta/actualiza una predicción.
+  // Generoso para rellenar un cuadro entero del Mundial, corta scripts.
+  const rl = await checkRateLimit({
+    bucket: 'ranked_predictions',
+    key: `${getClientIp(req)}:${user.id}`,
+    windowSeconds: 60,
+    max: 120,
+  })
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'rate_limited', retryAfterSeconds: rl.retryAfterSeconds },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+    )
+  }
 
   // Verificar que el evento existe y está open
   const { data: event } = await sb

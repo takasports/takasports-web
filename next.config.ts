@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Oculta la cabecera `X-Powered-By: Next.js` en todas las respuestas: no
+  // revelar el framework reduce la superficie de fingerprinting/ataques dirigidos.
+  poweredByHeader: false,
   async redirects() {
     return [
       // Canonical domain: non-www → www (permanent 301 for SEO link equity)
