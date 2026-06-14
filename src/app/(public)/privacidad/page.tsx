@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 }
 
-const LAST_UPDATED = '15 de mayo de 2026'
+const LAST_UPDATED = '14 de junio de 2026'
 
 export default function PrivacidadPage() {
   return (
@@ -120,10 +120,23 @@ export default function PrivacidadPage() {
             <li><strong>Apple/Google Push Notification Service</strong> — entrega de notificaciones.</li>
             <li><strong>Sentry</strong> — crash reporting anónimo.</li>
             <li><strong>ESPN public API</strong> — datos de partidos y resultados.</li>
+            <li><strong>Google Analytics 4</strong> — analítica de uso anónima y agregada (sin cookies por defecto; con cookies solo si aceptas).</li>
+            <li><strong>Microsoft Clarity</strong> — mapas de calor de uso (solo si aceptas cookies).</li>
+            <li><strong>Vercel</strong> — alojamiento y red de entrega del sitio web.</li>
           </ul>
           <p className="mt-3">
             Cada uno tiene su propia política de privacidad. Solo compartimos con ellos lo
             estrictamente necesario para el funcionamiento del servicio.
+          </p>
+          <h3 className="text-lg font-semibold mt-6 mb-2">4.1 Transferencias internacionales</h3>
+          <p>
+            Algunos de estos proveedores (<strong>Google</strong>, <strong>Microsoft</strong>,{' '}
+            <strong>Vercel</strong> y <strong>Sentry</strong>) tratan datos en{' '}
+            <strong>Estados Unidos</strong>. Dichas transferencias se amparan en el{' '}
+            <strong>Marco de Privacidad de Datos UE-EE. UU.</strong> (Data Privacy Framework)
+            y/o en <strong>Cláusulas Contractuales Tipo</strong> aprobadas por la Comisión
+            Europea. Los datos asociados a tu cuenta se alojan en <strong>Supabase</strong>,
+            con servidores en la <strong>Unión Europea</strong>.
           </p>
 
           <h2 className="text-2xl font-bold mt-10 mb-3">5. Tus derechos</h2>
@@ -145,7 +158,7 @@ export default function PrivacidadPage() {
 
           <h2 className="text-2xl font-bold mt-10 mb-3">6. Menores de edad</h2>
           <p>
-            TakaSports no está dirigido a menores de 13 años. No recopilamos conscientemente
+            TakaSports no está dirigido a menores de 14 años. No recopilamos conscientemente
             datos personales de menores. Si crees que un menor ha creado una cuenta, contáctanos
             y la eliminaremos.
           </p>
@@ -157,11 +170,24 @@ export default function PrivacidadPage() {
             requieren consentimiento porque no rastrean comportamiento.
           </p>
           <p className="mt-3">
-            Además, si lo aceptas explícitamente, cargamos analítica anónima de uso con{' '}
-            <strong>Google Analytics 4</strong> y <strong>Microsoft Clarity</strong> para
-            entender qué contenido funciona y dónde mejorar la experiencia. Si rechazas o
-            aún no has decidido, ningún tracker se carga. No utilizamos cookies de tracking
-            publicitario ni cedemos datos a terceros con fines comerciales.
+            Para medir de forma anónima qué contenido funciona, usamos{' '}
+            <strong>Google Analytics 4</strong> en modo «sin cookies» (Google Consent Mode v2){' '}
+            <strong>desde que entras</strong>: envía mediciones agregadas y anónimas, sin
+            cookies ni datos que te identifiquen. Esto funciona aunque rechaces o aún no
+            hayas decidido.
+          </p>
+          <p className="mt-3">
+            Si <strong>aceptas</strong> el aviso de cookies, además: (a) Google Analytics 4
+            pasa a su modo completo y guarda cookies de medición (<code>_ga</code>,{' '}
+            <code>_ga_*</code>); y (b) cargamos <strong>Microsoft Clarity</strong>, que usa
+            cookies (<code>_clck</code>, <code>_clsk</code>, <code>CLID</code>) para generar
+            mapas de calor de uso. Si <strong>rechazas</strong> o aún no has decidido, no se
+            instala ninguna de esas cookies ni se carga Microsoft Clarity.
+          </p>
+          <p className="mt-3">
+            En ningún caso usamos cookies de publicidad ni señales de marketing: las opciones
+            de anuncios de Google permanecen desactivadas siempre. Puedes cambiar tu decisión
+            cuando quieras desde el control de aquí abajo.
           </p>
           <CookieConsentControl />
 

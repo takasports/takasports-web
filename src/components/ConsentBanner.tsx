@@ -109,8 +109,9 @@ export default function ConsentBanner({ gaId, clarityId, nonce }: Props) {
                   lineHeight: 1.45,
                 }}
               >
-                Usamos cookies analíticas para entender qué contenido funciona y mejorar TakaSports.
-                Puedes aceptar o rechazar.{' '}
+                Medimos el uso de forma anónima y sin cookies para mejorar TakaSports. Si
+                aceptas, además activamos cookies de medición (Google Analytics) y mapas de
+                calor (Microsoft Clarity).{' '}
                 <a
                   href="/privacidad"
                   style={{ color: 'var(--purple-light)', textDecoration: 'underline', textUnderlineOffset: 3 }}
