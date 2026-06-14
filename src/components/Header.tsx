@@ -22,6 +22,7 @@ const INNER = 'max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10'
 const NAV_LINKS = [
   { label: 'Inicio',       href: '/'              },
   { label: 'Noticias',     href: '/noticias'      },
+  { label: 'Reels',        href: '/reels'         },
   { label: 'Calendario',   href: '/calendario'    },
   { label: 'Estadísticas', href: '/estadisticas'  },
   { label: 'Rankings',     href: '/rankings'      },

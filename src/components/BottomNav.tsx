@@ -7,7 +7,8 @@ const TABS = [
   { href: '/', label: 'Inicio',    match: (p: string) => p === '/',                                      icon: HomeIcon },
   { href: '/noticias',   label: 'Noticias',   match: (p: string) => p === '/noticias' || p.startsWith('/noticias/') || p.startsWith('/article'), icon: NewsIcon },
   { href: '/calendario', label: 'Calendario', match: (p: string) => p.startsWith('/calendario') || p.startsWith('/evento') || p.startsWith('/partido'), icon: CalIcon },
-  { href: '/juegos',     label: 'Juegos',     match: (p: string) => ['/juegos','/predicciones','/quiniela','/mionce','/sopa-cracks','/crackquiz','/takagrid'].some(r => p.startsWith(r)), icon: GameIcon },
+  { href: '/predicciones', label: 'Predicciones', match: (p: string) => p.startsWith('/predicciones'), icon: PredIcon },
+  { href: '/juegos',     label: 'Juegos',     match: (p: string) => ['/juegos','/quiniela','/mionce','/sopa-cracks','/crackquiz','/takagrid'].some(r => p.startsWith(r)), icon: GameIcon },
   { href: '/perfil',     label: 'Perfil',     match: (p: string) => p.startsWith('/perfil'), icon: UserIcon },
 ]
 
@@ -76,9 +77,13 @@ export default function BottomNav() {
                 <span
                   style={{
                     fontFamily: 'var(--font-sport)',
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: active ? 700 : 600,
-                    letterSpacing: '0.04em',
+                    letterSpacing: '0',
+                    maxWidth: '100%',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
                   {label}
@@ -129,6 +134,15 @@ function UserIcon({ active }: { active: boolean }) {
     <svg width="22" height="22" viewBox="0 0 22 22" fill={active ? 'rgba(124,58,237,0.18)' : 'none'}>
       <circle cx="11" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.6" />
       <path d="M4 19c0-3.5 3.2-6 7-6s7 2.5 7 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+function PredIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="7.5" stroke="currentColor" strokeWidth="1.6" fill={active ? 'rgba(124,58,237,0.18)' : 'none'} />
+      <circle cx="11" cy="11" r="3.6" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="11" cy="11" r="0.7" fill="currentColor" stroke="currentColor" strokeWidth="1.4" />
     </svg>
   )
 }
