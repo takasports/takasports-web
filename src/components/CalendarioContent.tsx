@@ -1753,8 +1753,32 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     }
   }, [liveScores])
 
+  // Persistencia en la nube (best-effort, solo con sesión): sube o borra un
+  // favorito en la cuenta (reusa user_favorites con etiqueta team:/comp:) para
+  // que equipos y ligas sigan al usuario entre dispositivos.
+  const syncFavoriteToCloud = useCallback((entryId: string, active: boolean) => {
+    const supabase = createClient()
+    if (!supabase) return
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) return
+      if (active) {
+        fetch('/api/rankings/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entry_id: entryId }),
+        }).catch(() => { /* best-effort */ })
+      } else {
+        fetch(`/api/rankings/favorites?entry_id=${encodeURIComponent(entryId)}`, {
+          method: 'DELETE',
+          credentials: 'same-origin',
+        }).catch(() => { /* best-effort */ })
+      }
+    }).catch(() => { /* ignore */ })
+  }, [])
+
   const toggleFavorite = useCallback((name: string) => {
     if (!name) return
+    const willActivate = !favorites.has(name)
     setFavorites(prev => {
       const next = new Set(prev)
       if (next.has(name)) next.delete(name)
@@ -1762,12 +1786,14 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       localStorage.setItem('ts_favorites', JSON.stringify([...next]))
       return next
     })
-  }, [])
+    syncFavoriteToCloud(`team:${name}`, willActivate)
+  }, [favorites, syncFavoriteToCloud])
 
   // Fijar / dejar de fijar una competición (slug). Las fijadas suben al principio
-  // de cada día en el feed. Persistido en localStorage.
+  // de cada día en el feed. Persistido en localStorage + cuenta.
   const togglePinComp = useCallback((slug: string) => {
     if (!slug) return
+    const willPin = !favComps.has(slug)
     setFavComps(prev => {
       const next = new Set(prev)
       if (next.has(slug)) next.delete(slug)
@@ -1775,18 +1801,68 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       localStorage.setItem('ts_fav_comps', JSON.stringify([...next]))
       return next
     })
-  }, [])
+    syncFavoriteToCloud(`comp:${slug}`, willPin)
+  }, [favComps, syncFavoriteToCloud])
 
   const finishOnboarding = useCallback((selectedTeams: string[]) => {
     const next = new Set(selectedTeams)
+    // Sincroniza la diferencia con la cuenta: añade los nuevos, quita los retirados.
+    for (const t of next) if (!favorites.has(t)) syncFavoriteToCloud(`team:${t}`, true)
+    for (const t of favorites) if (!next.has(t)) syncFavoriteToCloud(`team:${t}`, false)
     setFavorites(next)
     localStorage.setItem('ts_favorites', JSON.stringify([...next]))
     localStorage.setItem('ts_onboarded', '1')
-  }, [])
+  }, [favorites, syncFavoriteToCloud])
 
   const skipOnboarding = useCallback(() => {
     localStorage.setItem('ts_onboarded', '1')
     setShowOnboarding(false)
+  }, [])
+
+  // Fusión con la cuenta (best-effort, solo con sesión): al entrar logueado
+  // junta los favoritos de este navegador con los de la cuenta (no se pierde
+  // nada) y deja la misma lista de equipos y ligas en todos los dispositivos.
+  useEffect(() => {
+    const supabase = createClient()
+    if (!supabase) return
+    let cancelled = false
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session || cancelled) return
+      fetch('/api/rankings/favorites', { credentials: 'same-origin' })
+        .then(r => (r.ok ? r.json() : { favorites: [] }))
+        .then((j: { favorites?: { entry_id: string }[] }) => {
+          if (cancelled) return
+          const ids = (j.favorites ?? []).map(f => f.entry_id)
+          const cloudTeams = ids.filter(id => id.startsWith('team:')).map(id => id.slice(5))
+          const cloudComps = ids.filter(id => id.startsWith('comp:')).map(id => id.slice(5))
+          const readArr = (k: string): string[] => {
+            try { const v = JSON.parse(localStorage.getItem(k) ?? '[]'); return Array.isArray(v) ? v : [] }
+            catch { return [] }
+          }
+          const localTeams = readArr('ts_favorites')
+          const localComps = readArr('ts_fav_comps')
+          const mergedTeams = new Set<string>([...localTeams, ...cloudTeams])
+          const mergedComps = new Set<string>([...localComps, ...cloudComps])
+          setFavorites(mergedTeams)
+          setFavComps(mergedComps)
+          try {
+            localStorage.setItem('ts_favorites', JSON.stringify([...mergedTeams]))
+            localStorage.setItem('ts_fav_comps', JSON.stringify([...mergedComps]))
+          } catch { /* ignore */ }
+          // Sube a la cuenta lo que solo estaba en este navegador (invitado→cuenta).
+          const post = (entryId: string) => fetch('/api/rankings/favorites', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entry_id: entryId }),
+          }).catch(() => { /* best-effort */ })
+          const cloudTeamSet = new Set(cloudTeams)
+          const cloudCompSet = new Set(cloudComps)
+          for (const t of localTeams) if (!cloudTeamSet.has(t)) post(`team:${t}`)
+          for (const c of localComps) if (!cloudCompSet.has(c)) post(`comp:${c}`)
+        })
+        .catch(() => { /* best-effort */ })
+    }).catch(() => { /* ignore */ })
+    return () => { cancelled = true }
   }, [])
 
   // Request browser notification permission on first reminder

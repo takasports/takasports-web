@@ -31,14 +31,16 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null) as { entry_id?: string } | null
   const entryId = body?.entry_id?.trim()
   if (!entryId) return NextResponse.json({ error: 'entry_id requerido' }, { status: 400 })
+  if (entryId.length > 200) return NextResponse.json({ error: 'entry_id demasiado largo' }, { status: 400 })
 
-  // Cap por usuario para evitar abuso (ej. 100 favoritos máx)
+  // Cap por usuario para evitar abuso. La lista junta fichas del Índice +
+  // equipos (team:) + ligas (comp:) del calendario → 200 da margen de sobra.
   const { count } = await sb
     .from('user_favorites')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
-  if ((count ?? 0) >= 100) {
-    return NextResponse.json({ error: 'Máximo 100 favoritos. Quita alguno antes.' }, { status: 409 })
+  if ((count ?? 0) >= 200) {
+    return NextResponse.json({ error: 'Máximo 200 favoritos. Quita alguno antes.' }, { status: 409 })
   }
 
   const { error } = await sb

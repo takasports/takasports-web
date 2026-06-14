@@ -27,6 +27,9 @@ export default async function MiTopPage() {
 
   const entries: RankingEntry[] = []
   for (const f of favs ?? []) {
+    // Las etiquetas team:/comp: son favoritos de equipos y ligas del calendario,
+    // no fichas del Índice → se ignoran aquí (Mi Top solo muestra el Índice).
+    if (f.entry_id.includes(':')) continue
     const e = (await findEntryByIdFromDb(f.entry_id)) ?? findEntryById(f.entry_id)
     if (e) entries.push(e)
   }
