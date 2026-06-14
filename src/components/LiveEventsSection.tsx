@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { getCompAccent, getLiveLabel } from '@/lib/competitions'
 import { TvIcon } from '@/components/icons/GameIcons'
 import { toProxyUrl } from '@/lib/image-url'
+import { isoToLocalDate } from '@/lib/calendar'
 
 // ── Live scores ────────────────────────────────────────────────────
 interface LiveScore {
@@ -406,6 +407,8 @@ function convertUpcoming(items: UpcomingRaw[]): SportEvent[] {
 }
 
 // ── Main component ─────────────────────────────────────────────────
+type EventFilter = 'destacados' | 'hoy' | 'mis-equipos'
+
 export default function LiveEventsSection({
   preview = true,
   events: eventsProp,
@@ -415,6 +418,15 @@ export default function LiveEventsSection({
 }) {
   // Start with server-rendered events, refresh client-side after 5 min
   const [events, setEvents] = useState<SportEvent[]>(eventsProp ?? [])
+
+  // Filtro del bloque: destacados (por defecto) · hoy · mis equipos (favoritos).
+  const [filter, setFilter] = useState<EventFilter>('destacados')
+  // Lista amplia (todos los deportes) que se carga BAJO DEMANDA al usar un
+  // filtro, para no pedir datos extra en la carga inicial (no toca el LCP).
+  const [fullEvents, setFullEvents] = useState<SportEvent[] | null>(null)
+  const [fullLoading, setFullLoading] = useState(false)
+  // Equipos favoritos (navegador + cuenta), también bajo demanda.
+  const [favTeams, setFavTeams] = useState<string[] | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -431,8 +443,68 @@ export default function LiveEventsSection({
     return () => { cancelled = true; clearTimeout(timer) }
   }, [])
 
-  const liveScores = useLiveScores(events)
+  // Carga la lista amplia (todos los deportes) la 1ª vez que se usa un filtro.
+  useEffect(() => {
+    if (filter === 'destacados' || fullEvents !== null || fullLoading) return
+    let cancelled = false
+    setFullLoading(true)
+    fetch('/api/events/upcoming', { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : []))
+      .then((raw: UpcomingRaw[]) => { if (!cancelled) setFullEvents(convertUpcoming((raw ?? []).slice(0, 60))) })
+      .catch(() => { if (!cancelled) setFullEvents([]) })
+      .finally(() => { if (!cancelled) setFullLoading(false) })
+    return () => { cancelled = true }
+  }, [filter, fullEvents, fullLoading])
+
+  // Carga los equipos favoritos la 1ª vez que se entra en "mis equipos".
+  useEffect(() => {
+    if (filter !== 'mis-equipos' || favTeams !== null) return
+    let cancelled = false
+    let local: string[] = []
+    try { const v = JSON.parse(localStorage.getItem('ts_favorites') ?? '[]'); local = Array.isArray(v) ? v : [] }
+    catch { /* ignore */ }
+    setFavTeams(local)   // pinta lo local al instante
+    fetch('/api/rankings/favorites', { credentials: 'same-origin' })
+      .then(r => (r.ok ? r.json() : { favorites: [] }))
+      .then((j: { favorites?: { entry_id: string }[] }) => {
+        if (cancelled) return
+        const cloud = (j.favorites ?? []).map(f => f.entry_id)
+          .filter(id => id.startsWith('team:')).map(id => id.slice(5))
+        setFavTeams([...new Set([...local, ...cloud])])
+      })
+      .catch(() => { /* nos quedamos con lo local */ })
+    return () => { cancelled = true }
+  }, [filter, favTeams])
+
+  // Eventos a mostrar según el filtro.
+  const displayEvents = useMemo<SportEvent[]>(() => {
+    if (filter === 'destacados') return events
+    const base = fullEvents ?? []
+    if (filter === 'hoy') {
+      const today = isoToLocalDate(new Date().toISOString())
+      return base.filter(ev => ev.isoDate && isoToLocalDate(ev.isoDate) === today)
+    }
+    const favs = (favTeams ?? []).filter(Boolean)
+    if (favs.length === 0) return []
+    return base.filter(ev =>
+      favs.some(t => (ev.home && namesMatch(t, ev.home)) || (ev.away && namesMatch(t, ev.away)))
+    )
+  }, [filter, events, fullEvents, favTeams])
+
+  const liveScores = useLiveScores(displayEvents)
   const containerRef = useScrollReveal()
+
+  // Estado de carga / vacío del filtro activo (mensaje honesto por caso).
+  const showLoading = filter !== 'destacados' && fullLoading && displayEvents.length === 0
+  const noFavs = (favTeams ?? []).length === 0
+  const emptyTitle =
+    filter === 'hoy' ? 'Hoy no juega nadie'
+    : filter === 'mis-equipos' ? (noFavs ? 'Aún no sigues equipos' : 'Tus equipos no juegan pronto')
+    : 'Sin eventos próximos'
+  const emptySub =
+    filter === 'hoy' ? 'Mira el calendario completo.'
+    : filter === 'mis-equipos' ? (noFavs ? 'Marca tus equipos con ❤ en el calendario.' : 'Vuelve pronto — añadimos partidos a diario.')
+    : 'Vuelve pronto — los partidos asoman día a día.'
 
   return (
     <section ref={containerRef} className="pt-4 pb-0" style={{ background: 'var(--bg-base)' }}>
@@ -448,11 +520,11 @@ export default function LiveEventsSection({
             </svg>
             <h2 className="section-label" style={{ color: '#C4B5FD', fontSize: 13 }}>Calendario</h2>
           </div>
-          {events.length > 0 && (
+          {displayEvents.length > 0 && (
             <>
               <span className="text-[10px]" style={{ color: '#3A3A4A' }}>·</span>
               <span className="text-[11px]" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
-                {events.length} próximos eventos
+                {displayEvents.length} {filter === 'mis-equipos' ? 'de tus equipos' : filter === 'hoy' ? 'hoy' : 'próximos eventos'}
               </span>
             </>
           )}
@@ -465,8 +537,45 @@ export default function LiveEventsSection({
         )}
       </div>
 
-      {/* Empty state cuando no hay eventos próximos */}
-      {events.length === 0 ? (
+      {/* Selector: destacados (por defecto) / hoy / mis equipos (favoritos) */}
+      <div role="tablist" aria-label="Filtrar eventos" className="flex items-center gap-1.5 mb-4">
+        {([
+          ['destacados', 'Destacados'],
+          ['hoy', 'Hoy'],
+          ['mis-equipos', 'Mis equipos'],
+        ] as [EventFilter, string][]).map(([key, label]) => {
+          const active = filter === key
+          return (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setFilter(key)}
+              className="text-[11px] font-bold px-3 py-1 rounded-full transition-colors"
+              style={{
+                background: active ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.04)',
+                color: active ? '#C4B5FD' : '#9090B0',
+                border: active ? '1px solid rgba(124,58,237,0.50)' : '1px solid rgba(255,255,255,0.10)',
+                fontFamily: 'var(--font-sport)',
+              }}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Cargando la lista al cambiar de filtro */}
+      {showLoading ? (
+        <div className="rounded-2xl px-5 py-6 flex items-center gap-3"
+          style={{ background: 'rgba(124,58,237,0.04)', border: '1px dashed rgba(124,58,237,0.18)' }}>
+          <span className="w-4 h-4 rounded-full animate-spin flex-shrink-0"
+            style={{ border: '2px solid rgba(124,58,237,0.25)', borderTopColor: '#7C3AED' }} />
+          <p className="text-[12px]" style={{ color: '#9090B0', fontFamily: 'var(--font-sport)' }}>
+            Cargando partidos…
+          </p>
+        </div>
+      ) : displayEvents.length === 0 ? (
         <div className="rounded-2xl px-5 py-6 flex items-center justify-between gap-4"
           style={{ background: 'rgba(124,58,237,0.04)', border: '1px dashed rgba(124,58,237,0.18)' }}>
           <div className="flex items-center gap-3">
@@ -480,10 +589,10 @@ export default function LiveEventsSection({
             </div>
             <div className="flex flex-col gap-0.5">
               <p className="font-black text-[13px]" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
-                Sin eventos próximos
+                {emptyTitle}
               </p>
               <p className="text-[11px]" style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>
-                Vuelve pronto — los partidos asoman día a día.
+                {emptySub}
               </p>
             </div>
           </div>
@@ -505,7 +614,7 @@ export default function LiveEventsSection({
       <div className="relative -mx-6 xl:-mx-10" style={{ background: 'var(--bg-base)' }}>
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 pt-1"
           style={{ paddingLeft: 'max(24px, calc((100vw - 1440px) / 2 + 40px))', paddingRight: 24, background: 'var(--bg-base)' }}>
-          {events.map((event) => (
+          {displayEvents.map((event) => (
             <div key={event.id} data-reveal>
               <EventCard event={event} liveScore={liveScores.get(event.id)} />
             </div>
