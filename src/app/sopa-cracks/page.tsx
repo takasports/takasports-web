@@ -631,7 +631,7 @@ export default function SopaCracksPage() {
             {puzzle.title}
           </h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)', maxWidth: 520 }}>
-            {puzzle.subtitle}. Arrastra desde la primera letra hasta la última para marcar cada nombre, o usa las flechas del teclado y Enter (inicio y final).
+            {puzzle.subtitle}. En el móvil, toca la primera letra y luego la última de cada nombre; con ratón, arrastra de la primera a la última; o usa las flechas del teclado y Enter (inicio y final).
           </p>
         </div>
 
@@ -761,7 +761,12 @@ export default function SopaCracksPage() {
                   width: expanded ? puzzle.size * 44 : '100%',
                   maxWidth: expanded ? 'none' : puzzle.size * 38,
                   minWidth: expanded ? puzzle.size * 44 : undefined,
-                  touchAction: 'none',
+                  // Con la Lupa activa la cuadrícula se sale de pantalla → hay
+                  // que permitir el desplazamiento horizontal táctil (pan-x). El
+                  // doble toque para seleccionar sigue funcionando (son toques
+                  // sueltos, no arrastre) y pan-x mantiene desactivado el zoom de
+                  // doble toque. Sin Lupa, 'none' fija la cuadrícula al tocar.
+                  touchAction: expanded ? 'pan-x' : 'none',
                   filter: paused ? 'blur(8px)' : undefined,
                   transition: 'filter 0.2s',
                 }}
