@@ -10,6 +10,7 @@ import NewsFeed from '@/components/NewsFeed'
 import Sidebar from '@/components/Sidebar'
 import type { RankingEntry } from '@/lib/rankings'
 import QuinielaTeaser from '@/components/QuinielaTeaser'
+import RetoDelDia from '@/components/games/RetoDelDia'
 import CategoriesFilter from '@/components/CategoriesFilter'
 import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, SLUG_TO_LABEL } from '@/lib/sports'
 import type { SportEvent } from '@/lib/types'
@@ -248,6 +249,9 @@ function GamesSection() {
           Ver todos →
         </Link>
       </div>
+      {/* Reto del día — acceso de un toque al primer juego diario pendiente */}
+      <RetoDelDia />
+
       {/* Quiniela teaser — 3 partidos destacados como preview */}
       <QuinielaTeaser />
 
