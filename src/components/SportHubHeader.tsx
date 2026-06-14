@@ -69,8 +69,9 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
   const rankingLabel = RANKING_LABEL[sport] ?? 'Índice Taka'
   const rankingsHref = `/rankings?deporte=${sport}&tab=jugadores`
 
-  // Fondo atmosférico por deporte (reusa los WebP de /calendario, $0). Todos los
-  // deportes tienen asset propio; un slug desconocido cae al neutro 'default'.
+  // Fondo atmosférico cinematográfico por deporte (set "La Señal", reusa los WebP
+  // de /calendario, $0). Todos los deportes tienen asset propio; un slug
+  // desconocido cae al neutro 'default'.
   const bdKey = ({ futbol: 'futbol', baloncesto: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc', padel: 'padel', rugby: 'rugby', wwe: 'wwe' } as Record<string, string>)[sport] ?? 'default'
 
   // Schema de página (FAQPage + BreadcrumbList) lo emite la PÁGINA del hub
@@ -94,7 +95,7 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
           aria-hidden="true"
           style={{
             position: 'absolute', inset: 0, pointerEvents: 'none',
-            backgroundImage: `url(/banners/backdrop-${bdKey}.webp)`,
+            backgroundImage: `url(/banners/signal/${bdKey}.webp)`,
             backgroundSize: 'cover', backgroundPosition: 'center 28%',
             opacity: 0.4,
           }}

@@ -133,7 +133,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchSport: 'NBA',
     description: 'Calendario NBA: partidos de regular season y playoffs con horarios España.',
     seasonLabel: '2025-2026',
-    banner: '/banners/backdrop-nba.webp',
+    banner: '/banners/signal/nba.webp',
   },
   {
     slug: 'f1',
@@ -143,7 +143,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchSport: 'F1',
     description: 'Calendario completo de la Fórmula 1: Grandes Premios, clasificaciones, sprints y carreras.',
     seasonLabel: '2026',
-    banner: '/banners/backdrop-f1.webp',
+    banner: '/banners/signal/f1.webp',
   },
   {
     slug: 'ufc',
@@ -153,7 +153,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchSport: 'UFC',
     description: 'Calendario UFC: próximos eventos, peleas estelares y horarios.',
     seasonLabel: '2026',
-    banner: '/banners/backdrop-ufc.webp',
+    banner: '/banners/signal/ufc.webp',
   },
   {
     slug: 'copa-del-rey',
