@@ -877,9 +877,34 @@ export default function JuegosPageClient() {
   const comingGames     = GAMES.filter(g => g.status === 'coming' && g.category !== 'Predicciones')
 
   return (
-    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg-base)', minHeight: '100vh', position: 'relative' }}>
 
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+      {/* Ambiente de marca "La Señal" (Higgsfield): capa estática detrás de la
+          cabecera del hub, se desvanece hacia abajo. No hay "deporte activo" en
+          /juegos → fondo neutro de marca (morado). Respeta prefers-reduced-motion
+          (globals: .signal-ambient → animation none) y NO es movimiento → no la
+          apaga el "modo flojo". */}
+      <div className="signal-ambient" aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/banners/signal/default.webp"
+          alt=""
+          className="signal-backdrop"
+          loading="lazy"
+          decoding="async"
+          /* El foco morado de la escena vive arriba-derecha (el título va a la
+             izquierda) → encuadro a la derecha + un punto más de presencia para
+             que ese haz luzca junto al título. Override inline = NO toca Predicciones. */
+          style={{ objectPosition: '80% 8%', opacity: 0.9 }}
+        />
+        <div className="signal-scrim" />
+        <div
+          className="signal-tint"
+          style={{ background: 'radial-gradient(120% 85% at 70% 0%, #7C3AED33 0%, transparent 60%)' }}
+        />
+      </div>
+
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24" style={{ position: 'relative', zIndex: 1 }}>
 
         {/* ── HERO ────────────────────────────────────────── */}
         <div className="relative pt-10 pb-8">
