@@ -29,7 +29,7 @@ export default function PrivacidadPage() {
           <h3 className="text-lg font-semibold mt-6 mb-2">1.1 Sin cuenta</h3>
           <p>Cuando usas la app o el web sin iniciar sesión, recopilamos únicamente:</p>
           <ul className="list-disc pl-6 space-y-1">
-            <li><strong>Preferencias locales</strong>: deportes y equipos seguidos, artículos guardados, historial de búsqueda. Se almacenan en tu dispositivo y opcionalmente en tu iCloud privado.</li>
+            <li><strong>Preferencias locales</strong>: deportes y equipos seguidos, artículos guardados, historial de búsqueda. Se almacenan en tu dispositivo y, <em>en la app móvil</em>, opcionalmente en tu iCloud privado.</li>
             <li><strong>Datos técnicos anónimos</strong>: tipo de dispositivo, sistema operativo, versión de la app. Sin identificadores personales.</li>
           </ul>
 
@@ -100,6 +100,14 @@ export default function PrivacidadPage() {
             <strong>No vendemos ni compartimos tus datos personales con terceros</strong>.
             No usamos tus datos para publicidad dirigida.
           </p>
+          <p className="mt-3">
+            <strong>Base jurídica (RGPD art. 6):</strong> la gestión de tu cuenta y los
+            servicios que pides se basan en la ejecución del contrato (art. 6.1.b); la
+            analítica con Google Analytics y Microsoft Clarity, en tu consentimiento
+            (art. 6.1.a, en relación con el art. 22.2 LSSI); y el diagnóstico de errores y la
+            seguridad, en nuestro interés legítimo en mantener el servicio funcionando y
+            seguro (art. 6.1.f).
+          </p>
 
           <h2 className="text-2xl font-bold mt-10 mb-3">3. Almacenamiento y seguridad</h2>
           <p>
@@ -108,8 +116,9 @@ export default function PrivacidadPage() {
             seguro. La comunicación entre tu dispositivo y nuestros servidores está cifrada con TLS.
           </p>
           <p>
-            Las preferencias locales se almacenan únicamente en tu dispositivo (AsyncStorage) y
-            opcionalmente en tu cuenta privada de iCloud (no accesible para nosotros).
+            <em>En la app móvil</em>, las preferencias locales se almacenan en tu dispositivo
+            (AsyncStorage) y opcionalmente en tu cuenta privada de iCloud (no accesible para
+            nosotros). En la web, esas preferencias viven en el almacenamiento local del navegador.
           </p>
 
           <h2 className="text-2xl font-bold mt-10 mb-3">4. Servicios de terceros</h2>
@@ -130,14 +139,16 @@ export default function PrivacidadPage() {
           </p>
           <h3 className="text-lg font-semibold mt-6 mb-2">4.1 Transferencias internacionales</h3>
           <p>
-            Algunos de estos proveedores (<strong>Google</strong>, <strong>Microsoft</strong>,{' '}
-            <strong>Vercel</strong> y <strong>Sentry</strong>) tratan datos en{' '}
-            <strong>Estados Unidos</strong>. Dichas transferencias se amparan en el{' '}
-            <strong>Marco de Privacidad de Datos UE-EE. UU.</strong> (Data Privacy Framework)
-            y/o en <strong>Cláusulas Contractuales Tipo</strong> aprobadas por la Comisión
-            Europea. Los datos asociados a tu cuenta se alojan en <strong>Supabase</strong>,
-            con servidores en la <strong>Unión Europea</strong>.
+            Algunos proveedores tratan datos fuera del Espacio Económico Europeo, con un
+            mecanismo de garantía distinto para cada uno:
           </p>
+          <ul className="list-disc pl-6 space-y-1">
+            <li><strong>Google LLC</strong> (Analytics) — Marco de Privacidad de Datos UE-EE. UU. (Data Privacy Framework).</li>
+            <li><strong>Microsoft</strong> (Clarity) — Marco de Privacidad de Datos UE-EE. UU. (Data Privacy Framework).</li>
+            <li><strong>Vercel Inc.</strong> (alojamiento) — Cláusulas Contractuales Tipo de la Comisión Europea.</li>
+            <li><strong>Sentry</strong> (diagnóstico de errores) — Data Privacy Framework con Cláusulas Contractuales Tipo de respaldo.</li>
+            <li><strong>Supabase</strong> (datos de cuenta) — servidores en la <strong>Unión Europea</strong>: sin transferencia internacional.</li>
+          </ul>
 
           <h2 className="text-2xl font-bold mt-10 mb-3">5. Tus derechos</h2>
           <p>Conforme al RGPD (UE) y normativas equivalentes, tienes derecho a:</p>
@@ -156,6 +167,25 @@ export default function PrivacidadPage() {
             . Responderemos en un plazo máximo de 30 días.
           </p>
 
+          <h3 className="text-lg font-semibold mt-6 mb-2">5.1 Usuarios de Latinoamérica</h3>
+          <p>
+            TakaSports tiene su sede en España y dirige su actividad al mercado español y
+            europeo; no contamos con establecimiento ni representante en países de Latinoamérica
+            ni dirigimos campañas específicas a esa región. Si accedes desde un país
+            latinoamericano, respetamos tus derechos sobre tus datos conforme a la legislación
+            que resulte aplicable. Con carácter general puedes ejercer los derechos de acceso,
+            rectificación, cancelación o supresión y oposición (los llamados ARCO o ARCOP) y,
+            donde la ley lo reconozca, la portabilidad y la revocación del consentimiento — por
+            ejemplo en México (LFPDPPP), Brasil (LGPD), Argentina (Ley 25.326), Colombia
+            (Ley 1581 de 2012) o Chile (Ley 19.628, reformada por la Ley 21.719). Atenderemos
+            tu solicitud a través de un único canal:{' '}
+            <a className="text-purple-light underline" href="mailto:contacto@takasportsmedia.com">
+              contacto@takasportsmedia.com
+            </a>
+            . Este bloque es informativo y puede actualizarse, ya que el marco normativo de
+            varios países está en reforma.
+          </p>
+
           <h2 className="text-2xl font-bold mt-10 mb-3">6. Menores de edad</h2>
           <p>
             TakaSports no está dirigido a menores de 14 años. No recopilamos conscientemente
@@ -170,24 +200,22 @@ export default function PrivacidadPage() {
             requieren consentimiento porque no rastrean comportamiento.
           </p>
           <p className="mt-3">
-            Para medir de forma anónima qué contenido funciona, usamos{' '}
-            <strong>Google Analytics 4</strong> en modo «sin cookies» (Google Consent Mode v2){' '}
-            <strong>desde que entras</strong>: envía mediciones agregadas y anónimas, sin
-            cookies ni datos que te identifiquen. Esto funciona aunque rechaces o aún no
-            hayas decidido.
+            Para medir cómo se usa el sitio y mejorarlo, usamos <strong>Google Analytics 4</strong>{' '}
+            y <strong>Microsoft Clarity</strong>. Ambas <strong>solo se cargan si pulsas
+            «Aceptar»</strong> en el aviso de cookies; entonces instalan cookies de medición
+            (Google Analytics: <code>_ga</code>, <code>_ga_*</code>) y de mapas de calor
+            (Microsoft Clarity: <code>_clck</code>, <code>_clsk</code>, <code>CLID</code>). Si
+            rechazas o aún no has decidido, no se carga ninguna de las dos ni se instala ninguna
+            de esas cookies, y la web funciona con total normalidad.
           </p>
           <p className="mt-3">
-            Si <strong>aceptas</strong> el aviso de cookies, además: (a) Google Analytics 4
-            pasa a su modo completo y guarda cookies de medición (<code>_ga</code>,{' '}
-            <code>_ga_*</code>); y (b) cargamos <strong>Microsoft Clarity</strong>, que usa
-            cookies (<code>_clck</code>, <code>_clsk</code>, <code>CLID</code>) para generar
-            mapas de calor de uso. Si <strong>rechazas</strong> o aún no has decidido, no se
-            instala ninguna de esas cookies ni se carga Microsoft Clarity.
-          </p>
-          <p className="mt-3">
-            En ningún caso usamos cookies de publicidad ni señales de marketing: las opciones
-            de anuncios de Google permanecen desactivadas siempre. Puedes cambiar tu decisión
-            cuando quieras desde el control de aquí abajo.
+            Al activarse, estas herramientas tratan datos en Estados Unidos; en concreto,
+            Google Analytics transmite tu dirección IP y datos técnicos del navegador a Google
+            (una transferencia internacional, ver el punto 4.1). Las señales de publicidad de
+            Google permanecen desactivadas siempre. Puedes cambiar o retirar tu decisión cuando
+            quieras desde el control de aquí abajo o el enlace «Cookies» del pie. Tienes el
+            detalle de cada cookie (finalidad, titular y duración) en nuestra{' '}
+            <a className="text-purple-light underline" href="/cookies">Política de cookies</a>.
           </p>
           <CookieConsentControl />
 
