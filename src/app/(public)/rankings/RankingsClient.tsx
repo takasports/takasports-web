@@ -480,7 +480,7 @@ export default function RankingsClient({
               <div
                 aria-hidden="true"
                 className="absolute inset-0 pointer-events-none"
-                style={{ backgroundImage: `url(/banners/backdrop-${sportBackdrop}.webp)`, backgroundSize: 'cover', backgroundPosition: 'center 30%', opacity: 0.22 }}
+                style={{ backgroundImage: `url(/banners/signal/${sportBackdrop}.webp)`, backgroundSize: 'cover', backgroundPosition: 'center 32%', opacity: 0.4 }}
               />
               <div
                 aria-hidden="true"

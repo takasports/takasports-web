@@ -2369,7 +2369,7 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
           {statsBackdrop && (
             <>
               <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
-                style={{ backgroundImage: `url(/banners/backdrop-${statsBackdrop}.webp)`, backgroundSize: 'cover', backgroundPosition: 'center 30%', opacity: 0.2 }} />
+                style={{ backgroundImage: `url(/banners/signal/${statsBackdrop}.webp)`, backgroundSize: 'cover', backgroundPosition: 'center 32%', opacity: 0.4 }} />
               <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
                 style={{ background: 'linear-gradient(180deg, rgba(9,9,15,0.40) 0%, rgba(9,9,15,0.72) 62%, var(--bg-base) 100%)' }} />
             </>
