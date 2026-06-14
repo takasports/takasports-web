@@ -52,7 +52,12 @@ export default function TerminosPage() {
             <li>Notificarnos si sospechas un uso no autorizado.</li>
           </ul>
           <p className="mt-3">
-            Puedes cerrar tu cuenta en cualquier momento desde Ajustes, o contactándonos.
+            Puedes eliminar tu cuenta y todos tus datos en cualquier momento desde tu{' '}
+            <a className="text-purple-light underline" href="/perfil">perfil</a> (sección «Zona
+            de peligro» → «Eliminar mi cuenta»), o escribiéndonos a{' '}
+            <a className="text-purple-light underline" href="mailto:contacto@takasportsmedia.com">
+              contacto@takasportsmedia.com
+            </a>.
           </p>
 
           <h2 className="text-2xl font-bold mt-10 mb-3">4. Propiedad intelectual</h2>

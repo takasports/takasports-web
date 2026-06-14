@@ -24,6 +24,7 @@ import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 import { UserPlacaCard } from '@/components/placa/UserPlacaCard'
 import { SportPickPanel } from '@/components/placa/SportPickPanel'
 import TakaPoint from '@/components/TakaPoint'
+import DeleteAccountSection from '@/components/DeleteAccountSection'
 import { usePoints, useStreak } from '@/hooks/useGameState'
 
 const REMINDERS_KEY = 'ts_reminders'
@@ -1358,6 +1359,9 @@ export default function PerfilPage() {
                 </button>
               </section>
             )}
+
+            {/* Zona de peligro — borrado de cuenta (RGPD + requisito tiendas) */}
+            {user && <DeleteAccountSection />}
 
           </div>
         </div>
