@@ -12,13 +12,14 @@ interface AuthModalProps {
 type AuthMode = 'social' | 'password' | 'register'
 
 export default function AuthModal({ onClose }: AuthModalProps) {
-  const [loading, setLoading] = useState<'google' | 'facebook' | 'apple' | 'email' | 'password' | null>(null)
+  const [loading, setLoading] = useState<'google' | 'email' | 'password' | 'reset' | null>(null)
   const [error,   setError]   = useState<string | null>(null)
   const [email,   setEmail]   = useState('')
   const [emailSent, setEmailSent] = useState(false)
   const [mode,    setMode]    = useState<AuthMode>('social')
   const [password,    setPassword]    = useState('')
   const [confirmPwd,  setConfirmPwd]  = useState('')
+  const [resetSent,   setResetSent]   = useState(false)
   const supabase = createClient()
 
   const touchStartY = useRef<number | null>(null)
@@ -39,7 +40,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     touchStartY.current = null
   }
 
-  async function signInWith(provider: 'google' | 'facebook' | 'apple') {
+  async function signInWith(provider: 'google') {
     if (!supabase) { setError('Auth no configurado'); return }
     setLoading(provider)
     setError(null)
@@ -47,9 +48,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
       provider,
       options: {
         redirectTo: `${window.location.origin}/api/auth/callback?next=/perfil`,
-        queryParams: provider === 'google'
-          ? { access_type: 'offline', prompt: 'consent' }
-          : undefined,
+        queryParams: { access_type: 'offline', prompt: 'consent' },
       },
     })
     if (error) {
@@ -113,11 +112,28 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     }
   }
 
+  async function sendPasswordReset() {
+    if (!supabase) { setError('Auth no configurado'); return }
+    if (!email.trim() || !email.includes('@')) { setError('Escribe tu email para recuperar la contraseña'); return }
+    setLoading('reset')
+    setError(null)
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/api/auth/callback?next=/auth/reset-password`,
+    })
+    setLoading(null)
+    if (error) {
+      setError('No se pudo enviar el correo. Inténtalo de nuevo.')
+    } else {
+      setResetSent(true)
+    }
+  }
+
   function resetMode(m: AuthMode) {
     setMode(m)
     setError(null)
     setPassword('')
     setConfirmPwd('')
+    setResetSent(false)
   }
 
   if (!mounted) return null
@@ -245,52 +261,6 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                     </svg>
                   )}
                   {loading === 'google' ? 'Redirigiendo…' : 'Continuar con Google'}
-                </button>
-
-                {/* Facebook */}
-                <button
-                  onClick={() => signInWith('facebook')}
-                  disabled={loading !== null}
-                  className="w-full flex items-center justify-center gap-3 rounded-2xl py-3.5 font-semibold text-sm transition-all hover:brightness-110 active:scale-[0.98]"
-                  style={{
-                    background: loading === 'facebook' ? 'rgba(24,119,242,0.25)' : '#1877F2',
-                    color: '#fff',
-                    border: '1px solid rgba(24,119,242,0.4)',
-                    opacity: loading !== null && loading !== 'facebook' ? 0.4 : 1,
-                    cursor: loading !== null ? 'wait' : 'pointer',
-                  }}
-                >
-                  {loading === 'facebook' ? (
-                    <span className="w-5 h-5 rounded-full border-2 border-blue-300 border-t-white animate-spin" />
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                    </svg>
-                  )}
-                  {loading === 'facebook' ? 'Redirigiendo…' : 'Continuar con Facebook'}
-                </button>
-
-                {/* Apple */}
-                <button
-                  onClick={() => signInWith('apple')}
-                  disabled={loading !== null}
-                  className="w-full flex items-center justify-center gap-3 rounded-2xl py-3.5 font-semibold text-sm transition-all hover:brightness-110 active:scale-[0.98]"
-                  style={{
-                    background: loading === 'apple' ? 'rgba(0,0,0,0.5)' : '#000',
-                    color: '#fff',
-                    border: '1px solid rgba(255,255,255,0.18)',
-                    opacity: loading !== null && loading !== 'apple' ? 0.4 : 1,
-                    cursor: loading !== null ? 'wait' : 'pointer',
-                  }}
-                >
-                  {loading === 'apple' ? (
-                    <span className="w-5 h-5 rounded-full border-2 border-gray-600 border-t-white animate-spin" />
-                  ) : (
-                    <svg width="18" height="20" viewBox="0 0 24 24" fill="#fff">
-                      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                    </svg>
-                  )}
-                  {loading === 'apple' ? 'Redirigiendo…' : 'Continuar con Apple'}
                 </button>
 
                 {/* Divider */}
@@ -446,6 +416,23 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                   }
                 </button>
 
+                {/* Recuperar contraseña — solo en modo entrada */}
+                {mode === 'password' && (resetSent ? (
+                  <div className="rounded-2xl px-4 py-3 text-center flex flex-col gap-1" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                    <p className="text-[11px] font-black" style={{ color: '#4ade80', fontFamily: 'var(--font-display)' }}>Correo enviado</p>
+                    <p className="text-[10px]" style={{ color: '#2A5A3A', fontFamily: 'var(--font-sport)' }}>Te enviamos un enlace para restablecer la contraseña a {email}</p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={sendPasswordReset}
+                    disabled={loading !== null}
+                    className="text-[10px] text-center transition-opacity hover:opacity-70"
+                    style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)', cursor: loading !== null ? 'wait' : 'pointer' }}
+                  >
+                    {loading === 'reset' ? 'Enviando…' : '¿Olvidaste tu contraseña?'}
+                  </button>
+                ))}
+
                 <button
                   onClick={() => resetMode(mode === 'password' ? 'register' : 'password')}
                   className="text-[10px] text-center transition-opacity hover:opacity-70"
@@ -457,7 +444,11 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             )}
 
             <p className="text-center text-[9px]" style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
-              Al continuar aceptas los Términos de Servicio y la Política de Privacidad de TakaSports.
+              Al continuar aceptas los{' '}
+              <a href="/terminos" className="underline transition-opacity hover:opacity-70" style={{ color: '#5A5A7A' }}>Términos de Servicio</a>
+              {' '}y la{' '}
+              <a href="/privacidad" className="underline transition-opacity hover:opacity-70" style={{ color: '#5A5A7A' }}>Política de Privacidad</a>
+              {' '}de TakaSports.
             </p>
           </div>
         </div>

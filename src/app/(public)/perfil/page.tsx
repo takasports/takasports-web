@@ -80,6 +80,7 @@ export default function PerfilPage() {
   const [tz, setTz] = useState<string>('Europe/Madrid')
   const [user, setUser] = useState<User | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [authError, setAuthError] = useState(false)
   const [badges, setBadges] = useState<BadgeDef[]>([])
   const [linkingGoogle, setLinkingGoogle] = useState(false)
 
@@ -116,6 +117,18 @@ export default function PerfilPage() {
   const [miOnceStats, setMiOnceStats] = useState<{ weekKey: string; filled: number } | null>(null)
   const [sopaStats, setSopaStats] = useState<{ gamesCompleted: number; bestSeconds: number | null } | null>(null)
   const nameRef = useRef<HTMLSpanElement>(null)
+
+  // ── Aviso de error de login (el callback redirige aquí con ?auth_error) ──
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('auth_error')) {
+      setAuthError(true)
+      // Limpiamos la URL para que el aviso no reaparezca al recargar.
+      const url = new URL(window.location.href)
+      url.searchParams.delete('auth_error')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [])
 
   // ── Supabase session ───────────────────────────────────────────
   useEffect(() => {
@@ -363,6 +376,34 @@ export default function PerfilPage() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
+
+        {/* Aviso de error de inicio de sesión — descartable */}
+        {authError && (
+          <div
+            className="mt-6 rounded-xl px-4 py-3 flex items-start gap-3"
+            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
+            role="alert"
+          >
+            <span style={{ color: '#f87171', flexShrink: 0, marginTop: 1 }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3" />
+                <path d="M8 5v3.5M8 10.5v.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </span>
+            <p className="flex-1 text-xs" style={{ color: '#fca5a5', fontFamily: 'var(--font-sport)', lineHeight: 1.5 }}>
+              No se pudo iniciar sesión. El enlace puede haber caducado o el proceso se interrumpió. Inténtalo de nuevo.
+            </p>
+            <button
+              onClick={() => setAuthError(false)}
+              aria-label="Descartar aviso"
+              style={{ color: '#f87171', flexShrink: 0, cursor: 'pointer', background: 'none', border: 'none', padding: 2 }}
+            >
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         {/* ── PLACA PERSONAL ───────────────────────────────
             Placa identitaria del user. Solo visible con sesión.
