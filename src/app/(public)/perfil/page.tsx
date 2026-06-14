@@ -250,6 +250,33 @@ export default function PerfilPage() {
       .catch(() => { /* ignore */ })
   }, [user])
 
+  // ── Sync recordatorios (sube los locales = merge invitado→cuenta, baja la lista fusionada) ──
+  useEffect(() => {
+    if (!user) return
+    let data: Record<string, SportEvent> = {}
+    try { data = JSON.parse(localStorage.getItem(REMINDERS_DATA_KEY) ?? '{}') } catch { /* ignore */ }
+    const items = Object.entries(data || {}).map(([event_id, event_data]) => ({ event_id, event_data }))
+    fetch('/api/account/sync/reminders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { items?: { event_id: string; event_data: SportEvent }[] } | null) => {
+        if (!d?.items) return
+        const mergedData: Record<string, SportEvent> = {}
+        const ids: string[] = []
+        for (const it of d.items) { if (it?.event_id) { mergedData[it.event_id] = it.event_data; ids.push(it.event_id) } }
+        setReminderIds(ids)
+        setReminderData(mergedData)
+        try {
+          localStorage.setItem(REMINDERS_KEY, JSON.stringify(ids))
+          localStorage.setItem(REMINDERS_DATA_KEY, JSON.stringify(mergedData))
+        } catch { /* ignore */ }
+      })
+      .catch(() => { /* ignore */ })
+  }, [user])
+
   // ── localStorage ───────────────────────────────────────────────
   useEffect(() => {
     const loadReminders = () => {
@@ -353,6 +380,14 @@ export default function PerfilPage() {
       setReminderData(data)
     } catch { /* ignore */ }
     window.dispatchEvent(new CustomEvent('ts-reminders-change'))
+    // Propaga el borrado a la nube si hay sesión (best-effort).
+    if (user) {
+      fetch('/api/account/sync/reminders', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_id: id }),
+      }).catch(() => { /* best-effort */ })
+    }
   }
 
   const handleTzChange = (newTz: string) => {

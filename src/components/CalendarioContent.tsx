@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
+import { createClient } from '@/lib/supabase'
 import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME, highlightReason } from '@/lib/competitions'
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
@@ -1858,7 +1859,31 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     } catch { /* ignore */ }
   }, [])
 
+  // Persistencia en la nube (best-effort, solo con sesión): sube o borra el
+  // recordatorio en la cuenta para que siga al usuario entre dispositivos.
+  const syncReminderToCloud = useCallback((id: string, active: boolean, ev?: SportEvent) => {
+    const supabase = createClient()
+    if (!supabase) return
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) return
+      if (active && ev) {
+        fetch('/api/account/sync/reminders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: [{ event_id: id, event_data: ev }] }),
+        }).catch(() => { /* best-effort */ })
+      } else if (!active) {
+        fetch('/api/account/sync/reminders', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: id }),
+        }).catch(() => { /* best-effort */ })
+      }
+    }).catch(() => { /* ignore */ })
+  }, [])
+
   const toggleReminder = useCallback((id: string) => {
+    const willActivate = !reminders.has(id)
     setReminders(prev => {
       const next = new Set(prev)
       if (next.has(id)) {
@@ -1887,7 +1912,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       window.dispatchEvent(new CustomEvent('ts-reminders-change'))
       return next
     })
-  }, [enableReminderPush, disableReminderPush, events])
+    syncReminderToCloud(id, willActivate, events.find(e => e.id === id))
+  }, [enableReminderPush, disableReminderPush, events, reminders, syncReminderToCloud])
 
   // Sync de snapshots: rellena 'ts_reminders_data' para los recordatorios
   // activos cuyo evento siga en el feed. Cubre recordatorios creados antes de
