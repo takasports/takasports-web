@@ -11,6 +11,7 @@ import BreakingNewsBar from '@/components/BreakingNewsBar'
 import LiveStrip from '@/components/LiveStrip'
 import HomeContent from '@/components/HomeContent'
 import SignalIntro from '@/components/SignalIntro'
+import WelcomeOnboarding from '@/components/WelcomeOnboarding'
 import Footer from '@/components/Footer'
 import NewsletterSection from '@/components/NewsletterSection'
 import { urlFor } from '@/lib/sanity'
@@ -212,6 +213,7 @@ export default async function Home() {
       <HomeContent articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} />
       <NewsletterSection source="home" />
       <Footer />
+      <WelcomeOnboarding />
     </div>
   )
 }

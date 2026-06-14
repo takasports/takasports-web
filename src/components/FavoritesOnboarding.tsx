@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { StarIcon } from '@/components/icons/GameIcons'
 
@@ -77,6 +77,38 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState<string>('Todos')
 
+  // Diálogo accesible: foco inicial dentro del modal, foco atrapado (Tab/Shift+Tab
+  // no se escapan), Escape cierra y al cerrar devolvemos el foco a quien lo abrió.
+  const modalRef = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+  useEffect(() => {
+    const prevFocus = document.activeElement as HTMLElement | null
+    const node = modalRef.current
+    const focusables = () =>
+      Array.from(
+        node?.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter(el => !el.hasAttribute('disabled'))
+    focusables()[0]?.focus()
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); onCloseRef.current(); return }
+      if (e.key !== 'Tab') return
+      const els = focusables()
+      if (els.length === 0) return
+      const firstEl = els[0]
+      const lastEl = els[els.length - 1]
+      if (e.shiftKey && document.activeElement === firstEl) { e.preventDefault(); lastEl.focus() }
+      else if (!e.shiftKey && document.activeElement === lastEl) { e.preventDefault(); firstEl.focus() }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      prevFocus?.focus?.()
+    }
+  }, [])
+
   const sports = ['Todos', ...Array.from(new Set(POPULAR_TEAMS.map(t => t.sport)))]
   const visibleTeams = filter === 'Todos'
     ? POPULAR_TEAMS
@@ -107,6 +139,10 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
 
       {/* Modal */}
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fav-onb-title"
         onClick={e => e.stopPropagation()}
         className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] max-h-[85vh] overflow-y-auto rounded-2xl w-[92vw] sm:w-[520px]"
         style={{
@@ -123,7 +159,7 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
                 style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
                 <StarIcon size={11} className="inline-block align-middle mr-1" />Bienvenido
               </p>
-              <h2 className="text-lg font-black leading-tight mt-1"
+              <h2 id="fav-onb-title" className="text-lg font-black leading-tight mt-1"
                 style={{ color: '#F8F8FF', fontFamily: 'var(--font-display)' }}>
                 Elige tus equipos favoritos
               </h2>
@@ -204,7 +240,7 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
             className="text-[10px] font-bold uppercase tracking-widest transition-opacity hover:opacity-70"
             style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
           >
-            Saltar
+            Explorar sin elegir
           </button>
           <button
             onClick={handleSave}
