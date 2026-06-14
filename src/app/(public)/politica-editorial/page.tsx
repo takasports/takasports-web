@@ -162,8 +162,8 @@ export default function PoliticaEditorialPage() {
             constancia explícita en el artículo afectado, indicando qué se corrigió y
             cuándo. Los cambios menores (tipográficos, ortográficos) se aplican sin
             mención. Si detectas un error, escríbenos a{' '}
-            <a href="mailto:contactotakasports@gmail.com" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
-              contactotakasports@gmail.com
+            <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
+              contacto@takasportsmedia.com
             </a>{' '}
             con el enlace del artículo y nos pondremos en contacto contigo.
           </p>
@@ -221,8 +221,8 @@ export default function PoliticaEditorialPage() {
           <p>
             Para sugerencias, correcciones, propuestas de colaboración o quejas
             editoriales:{' '}
-            <a href="mailto:contactotakasports@gmail.com" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
-              contactotakasports@gmail.com
+            <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
+              contacto@takasportsmedia.com
             </a>.
           </p>
         </Section>

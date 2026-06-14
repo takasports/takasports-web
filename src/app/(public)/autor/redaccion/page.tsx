@@ -85,7 +85,7 @@ export default async function RedaccionAuthorPage() {
     ethicsPolicy: `${SITE_URL}/politica-editorial#seccion-6`,
     contactPoint: {
       '@type': 'ContactPoint',
-      email: 'contactotakasports@gmail.com',
+      email: 'contacto@takasportsmedia.com',
       contactType: 'editorial',
       availableLanguage: ['Spanish', 'es'],
     },
@@ -206,8 +206,8 @@ export default async function RedaccionAuthorPage() {
           </h2>
           <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>
             Para enviar una historia, reportar un error o proponer una colaboración:{' '}
-            <a href="mailto:contactotakasports@gmail.com" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
-              contactotakasports@gmail.com
+            <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
+              contacto@takasportsmedia.com
             </a>.
           </p>
         </section>

@@ -119,8 +119,8 @@ export default function TerminosPage() {
           <h2 className="text-2xl font-bold mt-10 mb-3">11. Contacto</h2>
           <p>
             Para dudas sobre estos términos:{' '}
-            <a className="text-purple-light underline" href="mailto:hola@takasportsmedia.com">
-              hola@takasportsmedia.com
+            <a className="text-purple-light underline" href="mailto:contacto@takasportsmedia.com">
+              contacto@takasportsmedia.com
             </a>
           </p>
         </div>

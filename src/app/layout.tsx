@@ -165,7 +165,7 @@ export default function RootLayout({
                 knowsAbout: ['Fútbol', 'Baloncesto', 'Fórmula 1', 'UFC', 'Tenis', 'Lucha libre', 'Rugby', 'MotoGP'],
                 contactPoint: {
                   '@type': 'ContactPoint',
-                  email: 'contactotakasports@gmail.com',
+                  email: 'contacto@takasportsmedia.com',
                   contactType: 'editorial',
                   availableLanguage: ['Spanish', 'es'],
                 },

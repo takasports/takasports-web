@@ -54,9 +54,9 @@ export default async function NewsletterBajaPage(
 
   const message =
     status === 'ok'         ? 'No volverás a recibir nuestra newsletter. Si fue un error, puedes volver a suscribirte desde el pie de cualquier página.'
-    : status === 'invalid'  ? 'El enlace que has seguido no es válido o ha caducado. Escríbenos a hola@takasportsmedia.com y te damos de baja a mano.'
-    : status === 'unavailable' ? 'Hemos tenido un problema temporal procesando tu baja. Inténtalo en unos minutos o escríbenos a hola@takasportsmedia.com.'
-    : 'No hemos podido procesar tu baja. Escríbenos a hola@takasportsmedia.com y lo hacemos a mano.'
+    : status === 'invalid'  ? 'El enlace que has seguido no es válido o ha caducado. Escríbenos a contacto@takasportsmedia.com y te damos de baja a mano.'
+    : status === 'unavailable' ? 'Hemos tenido un problema temporal procesando tu baja. Inténtalo en unos minutos o escríbenos a contacto@takasportsmedia.com.'
+    : 'No hemos podido procesar tu baja. Escríbenos a contacto@takasportsmedia.com y lo hacemos a mano.'
 
   const accent = status === 'ok' ? '#86EFAC' : '#FCA5A5'
 
@@ -100,7 +100,7 @@ export default async function NewsletterBajaPage(
             Volver al inicio
           </Link>
           <a
-            href="mailto:hola@takasportsmedia.com"
+            href="mailto:contacto@takasportsmedia.com"
             style={{
               padding: '10px 18px',
               background: 'transparent',

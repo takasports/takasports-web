@@ -137,10 +137,10 @@ export default function SobrePage() {
               ¿Tienes una historia, una corrección o quieres colaborar con nosotros?
               Escríbenos a{' '}
               <a
-                href="mailto:contactotakasports@gmail.com"
+                href="mailto:contacto@takasportsmedia.com"
                 style={{ color: '#7C3AED', textDecoration: 'underline' }}
               >
-                contactotakasports@gmail.com
+                contacto@takasportsmedia.com
               </a>
               {' '}o síguenos en{' '}
               <a

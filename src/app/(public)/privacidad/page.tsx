@@ -68,7 +68,7 @@ export default function PrivacidadPage() {
             <br />
             <strong>Retención:</strong> hasta que solicites tu baja. Cada email enviado incluye
             un enlace de baja inmediata (un solo click). También puedes pedir la baja escribiendo
-            a hola@takasportsmedia.com.
+            a contacto@takasportsmedia.com.
           </p>
 
           <h3 className="text-lg font-semibold mt-6 mb-2">1.6 Comentarios en artículos</h3>
@@ -83,7 +83,7 @@ export default function PrivacidadPage() {
             Aplicamos un <strong>límite de 5 comentarios por hora</strong> para prevenir spam.
             Cualquier usuario puede <strong>reportar un comentario</strong>; los que acumulen
             varios reportes quedan automáticamente ocultos hasta revisión. Para borrar comentarios
-            propios o solicitar la eliminación de tus datos, escribe a hola@takasportsmedia.com.
+            propios o solicitar la eliminación de tus datos, escribe a contacto@takasportsmedia.com.
           </p>
           <p className="mt-3">
             <strong>Base legal:</strong> ejecución de los servicios solicitados (Art. 6.1.b RGPD).
@@ -150,8 +150,8 @@ export default function PrivacidadPage() {
           </ul>
           <p className="mt-3">
             Para ejercer cualquiera de estos derechos, escribe a{' '}
-            <a className="text-purple-light underline" href="mailto:hola@takasportsmedia.com">
-              hola@takasportsmedia.com
+            <a className="text-purple-light underline" href="mailto:contacto@takasportsmedia.com">
+              contacto@takasportsmedia.com
             </a>
             . Responderemos en un plazo máximo de 30 días.
           </p>
@@ -201,8 +201,8 @@ export default function PrivacidadPage() {
           <p>
             <strong>TakaSports Media</strong><br />
             Email:{' '}
-            <a className="text-purple-light underline" href="mailto:hola@takasportsmedia.com">
-              hola@takasportsmedia.com
+            <a className="text-purple-light underline" href="mailto:contacto@takasportsmedia.com">
+              contacto@takasportsmedia.com
             </a>
           </p>
         </div>
