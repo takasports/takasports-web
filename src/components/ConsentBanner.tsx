@@ -29,21 +29,6 @@ function readConsent(): StoredConsent | null {
   }
 }
 
-// Empuja una actualización de consentimiento a GA sin recargar la página.
-// gtag ya está cargado (Consent Mode v2 lo carga siempre con default denied).
-function pushConsentUpdate(state: 'granted' | 'denied') {
-  if (typeof window === 'undefined') return
-  const w = window as unknown as { gtag?: (...args: unknown[]) => void }
-  if (typeof w.gtag !== 'function') return
-  w.gtag('consent', 'update', {
-    analytics_storage: state,
-    // ad_* permanecen denied siempre — TakaSports no hace publicidad personalizada.
-    ad_storage: 'denied',
-    ad_user_data: 'denied',
-    ad_personalization: 'denied',
-  })
-}
-
 interface Props {
   gaId?: string
   clarityId?: string
@@ -55,21 +40,11 @@ export default function ConsentBanner({ gaId, clarityId, nonce }: Props) {
   const [decision, setDecision] = useState<Decision | null | 'pending'>('pending')
 
   useEffect(() => {
-    const stored = readConsent()
-    setDecision(stored?.decision ?? null)
-    // Consent Mode v2: si el user ya había aceptado en una visita anterior,
-    // actualizamos el consent a granted en cuanto gtag esté listo.
-    if (stored?.decision === 'accepted') {
-      pushConsentUpdate('granted')
-    }
+    setDecision(readConsent()?.decision ?? null)
   }, [])
 
   const decide = (d: Decision) => {
     setDecision(d)
-    // Consent Mode v2: notificamos a GA el cambio de consentimiento sin recargar.
-    // 'accepted' → analytics_storage granted (con cookies). 'rejected' → sigue
-    // denied (GA mantiene los pings cookieless agregados, RGPD-ok).
-    pushConsentUpdate(d === 'accepted' ? 'granted' : 'denied')
     const key = CONSENT_KEY
     const value = JSON.stringify({ decision: d, at: new Date().toISOString(), version: 1 } satisfies StoredConsent)
     const persist = () => { try { localStorage.setItem(key, value) } catch {} }
@@ -77,8 +52,12 @@ export default function ConsentBanner({ gaId, clarityId, nonce }: Props) {
   }
 
   const showBanner = decision === null
-  // Clarity (heatmaps con cookies) solo carga con accept — no tiene modo cookieless.
-  const loadClarity = decision === 'accepted'
+  // Decisión del dueño (2026-06-14): la analítica (GA4 + Microsoft Clarity) SOLO
+  // se carga tras un "Aceptar" explícito. NO se ejecuta gtag antes del
+  // consentimiento: el EDPB (Directrices 2/2023) considera que incluso el "ping"
+  // cookieless es "acceso al equipo terminal" y requiere consentimiento (art. 22.2
+  // LSSI / art. 5.3 ePrivacy). Si el user rechaza o no decide, no se carga nada.
+  const loadAnalytics = decision === 'accepted'
 
   return (
     <>
@@ -109,11 +88,11 @@ export default function ConsentBanner({ gaId, clarityId, nonce }: Props) {
                   lineHeight: 1.45,
                 }}
               >
-                Medimos el uso de forma anónima y sin cookies para mejorar TakaSports. Si
-                aceptas, además activamos cookies de medición (Google Analytics) y mapas de
-                calor (Microsoft Clarity).{' '}
+                Usamos Google Analytics y Microsoft Clarity para medir cómo se usa TakaSports
+                y mejorarlo. Solo se activan si pulsas «Aceptar»; puedes rechazar y seguir
+                usando la web con normalidad.{' '}
                 <a
-                  href="/privacidad"
+                  href="/cookies"
                   style={{ color: 'var(--purple-light)', textDecoration: 'underline', textUnderlineOffset: 3 }}
                 >
                   Más información
@@ -174,20 +153,15 @@ export default function ConsentBanner({ gaId, clarityId, nonce }: Props) {
         </div>
       )}
 
-      {/* GA4 con Google Consent Mode v2 — se carga SIEMPRE, no condicionado a
-          aceptar cookies. Por defecto el consentimiento es 'denied' → GA envía
-          pings cookieless (anónimos, sin cookies, agregados) que alimentan datos
-          modelados. RGPD-ok: sin cookies ni PII hasta que el user acepta. Al
-          aceptar, pushConsentUpdate('granted') activa el tracking completo.
-          Esto resuelve el infra-conteo: antes GA solo veía a quien aceptaba
-          (~10-15% del tráfico); ahora mide a todos de forma agregada. */}
-      {gaId && (
+      {/* Analítica — SOLO tras aceptar (ver nota arriba). GA4 con Consent Mode:
+          analytics_storage 'granted' (el user aceptó); señales de publicidad
+          (ad_*) SIEMPRE denied — TakaSports no hace publicidad personalizada. */}
+      {loadAnalytics && gaId && (
         <>
-          {/* 1. Define gtag + consent default (denied) ANTES de cargar gtag.js */}
+          {/* 1. Define gtag + consent ANTES de cargar gtag.js */}
           <Script id="ga-consent-default" strategy="afterInteractive" nonce={nonce}>
             {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
-gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});
-gtag('set','url_passthrough',true);
+gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'granted'});
 gtag('set','ads_data_redaction',true);`}
           </Script>
           {/* 2. Carga la librería gtag */}
@@ -203,8 +177,8 @@ gtag('set','ads_data_redaction',true);`}
         </>
       )}
 
-      {/* Clarity (heatmaps) usa cookies sin modo cookieless → solo con accept. */}
-      {loadClarity && clarityId && (
+      {/* Clarity (mapas de calor) — solo tras aceptar; usa cookies sin modo cookieless. */}
+      {loadAnalytics && clarityId && (
         <Script id="clarity-init" strategy="afterInteractive" nonce={nonce}>
           {`(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${clarityId}");`}
         </Script>
