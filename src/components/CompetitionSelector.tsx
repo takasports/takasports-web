@@ -130,9 +130,9 @@ export default function CompetitionSelector({
           accent={purple}
           badge={<AllIcon color={purple} />}
           label="Todo"
-          sub="Toda la agenda"
+          sub="Todo el calendario"
           onClick={() => onSelectSport('Todo')}
-          ariaLabel="Ver toda la agenda"
+          ariaLabel="Ver todo el calendario"
         />
         {/* Deportes paraguas (icono) */}
         {UMBRELLA_SPORTS.map((s) => {

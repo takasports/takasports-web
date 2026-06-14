@@ -77,7 +77,7 @@ export default function Image() {
             zIndex: 1,
           }}
         >
-          PARTIDOS HOY · AGENDA · RESULTADOS EN VIVO
+          PARTIDOS HOY · CALENDARIO · RESULTADOS EN VIVO
         </div>
 
         {/* Day cards */}

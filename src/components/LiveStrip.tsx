@@ -197,7 +197,7 @@ export default function LiveStrip() {
             )}
             <Link href="/calendario" className="flex items-center gap-1 transition-opacity hover:opacity-70" style={{ textDecoration: 'none', color: 'var(--text-muted)' }}>
               <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-                Ver agenda
+                Ver calendario
               </span>
               <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
                 <path d="M2 4.5h5M4.5 2.5l2 2-2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />

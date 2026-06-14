@@ -2417,7 +2417,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 <>
                   <span className="block rounded-sm" style={{ width: 3, height: 13, background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
                   <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: '#5A5A74', fontFamily: 'var(--font-sport)' }}>
-                    Agenda deportiva
+                    Todos los deportes
                   </span>
                 </>
               )}
@@ -2732,7 +2732,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               </p>
               <p className="text-[10px] mt-1.5" style={{ color: '#7A7A8E' }}>
                 {onlyLive
-                  ? 'Cuando arranque un partido aparecerá aquí. Quita el filtro para ver toda la agenda.'
+                  ? 'Cuando arranque un partido aparecerá aquí. Quita el filtro para ver todo el calendario.'
                   : search
                     ? 'Prueba con el nombre del equipo o la competición'
                     : selectedDate
@@ -2835,7 +2835,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                   cursor: 'pointer',
                 }}
               >
-                Ver toda la agenda ({filtered.length})
+                Ver todo el calendario ({filtered.length})
                 <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                   <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
