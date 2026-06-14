@@ -687,6 +687,7 @@ textarea:focus-visible,
   [data-reveal],
   [data-counter],
   .ts-flash,
+  .signal-ambient,
   .cal-ambient {
     animation: none !important;
     opacity: 1 !important;
@@ -819,6 +820,51 @@ textarea:focus-visible,
 @keyframes calThemeFade {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PREDICCIONES — Ambiente cinematográfico por deporte (set "La Señal").
+   Mismo lenguaje "sala de control de TV" que el Calendario, pero DESACOPLADO:
+   el tinte de acento se pasa inline (cada deporte trae su color, incl. Mundial),
+   reutiliza el crossfade calThemeFade y respeta prefers-reduced-motion.
+   Es una capa estática (foto), NO movimiento → no la apaga el "modo flojo".
+   ═══════════════════════════════════════════════════════════════════════ */
+.signal-ambient {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 380px;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 100%);
+          mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 100%);
+  animation: calThemeFade var(--duration-slow) var(--ease-standard);
+}
+.signal-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 38%;
+  opacity: 0.55;
+  z-index: 0;
+}
+.signal-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg,
+    rgba(9,9,15,0.58) 0%,
+    rgba(9,9,15,0.24) 24%,
+    rgba(9,9,15,0.06) 46%,
+    rgba(9,9,15,0.32) 76%,
+    rgba(9,9,15,0.85) 100%);
+}
+.signal-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
 }
 
 /* Tarjeta de partido — silueta "broadcast" con profundidad. Mantiene box-shadow

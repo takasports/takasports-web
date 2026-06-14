@@ -184,7 +184,30 @@ export default function PrediccionesHub() {
       {/* ── Contenido (tabpanel del hub) ──────────────────────────── */}
       <div role="tabpanel" id="hubpanel" aria-labelledby={`hubtab-${hubTab}`} tabIndex={0} className="focus-visible:outline-none">
       {hubTab === 'ranked' && (
-        <>
+        <div style={{ position: 'relative' }}>
+          {/* Ambiente cinematográfico por deporte (fondos "La Señal", Higgsfield).
+              Capa estática detrás del contenido; se desvanece hacia abajo;
+              key={sportTab} → crossfade al cambiar de deporte. Respeta
+              prefers-reduced-motion (globals: .signal-ambient → animation none). */}
+          <div className="signal-ambient" aria-hidden="true" key={sportTab}>
+            <img
+              src={`/banners/signal/${sportTab}.webp`}
+              alt=""
+              className="signal-backdrop"
+              loading="lazy"
+              decoding="async"
+            />
+            <div className="signal-scrim" />
+            <div
+              className="signal-tint"
+              style={{
+                background: `radial-gradient(120% 80% at 50% 0%, ${
+                  SPORTS.find(s => s.id === sportTab)?.accent ?? '#FBBF24'
+                }26 0%, transparent 58%)`,
+              }}
+            />
+          </div>
+          <div style={{ position: 'relative', zIndex: 1 }}>
           {/* Sport selector */}
           <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pt-4 pb-2">
             <div className="flex gap-2 overflow-x-auto scrollbar-none" role="tablist" aria-label="Deporte">
@@ -326,7 +349,8 @@ export default function PrediccionesHub() {
           {sportTab === 'mundial' && <MundialClient />}
           <RankedLeaderboard activeSport={sportTab} />
           </div>
-        </>
+          </div>
+        </div>
       )}
 
       {hubTab === 'creadores' && <CreadoresClient />}
