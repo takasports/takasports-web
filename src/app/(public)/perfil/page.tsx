@@ -231,6 +231,25 @@ export default function PerfilPage() {
       .catch(() => { /* ignore */ })
   }, [user])
 
+  // ── Sync historial de leídos (sube lo local = merge invitado→cuenta, baja la lista fusionada) ──
+  useEffect(() => {
+    if (!user) return
+    let local: ReadItem[] = []
+    try { local = JSON.parse(localStorage.getItem(RECENTLY_READ_KEY) ?? '[]') } catch { /* ignore */ }
+    fetch('/api/account/sync/reads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: Array.isArray(local) ? local : [] }),
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { items?: ReadItem[] } | null) => {
+        if (!d?.items) return
+        setRecentlyRead(d.items)
+        try { localStorage.setItem(RECENTLY_READ_KEY, JSON.stringify(d.items.slice(0, 10))) } catch { /* ignore */ }
+      })
+      .catch(() => { /* ignore */ })
+  }, [user])
+
   // ── localStorage ───────────────────────────────────────────────
   useEffect(() => {
     const loadReminders = () => {
