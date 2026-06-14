@@ -24,6 +24,7 @@ import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 import { UserPlacaCard } from '@/components/placa/UserPlacaCard'
 import { SportPickPanel } from '@/components/placa/SportPickPanel'
 import TakaPoint from '@/components/TakaPoint'
+import ExportDataSection from '@/components/ExportDataSection'
 import DeleteAccountSection from '@/components/DeleteAccountSection'
 import { usePoints, useStreak } from '@/hooks/useGameState'
 
@@ -1401,7 +1402,8 @@ export default function PerfilPage() {
               </section>
             )}
 
-            {/* Zona de peligro — borrado de cuenta (RGPD + requisito tiendas) */}
+            {/* Tus datos — exportar (RGPD art. 20) + Zona de peligro — borrado (art. 17) */}
+            {user && <ExportDataSection />}
             {user && <DeleteAccountSection />}
 
           </div>
