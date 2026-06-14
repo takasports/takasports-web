@@ -10,6 +10,7 @@ import type { QuinielaSaved } from '@/components/QuinielaModule'
 import type { ReadItem } from '@/app/article/[id]/ReadTracker'
 import { RECENTLY_READ_KEY } from '@/app/article/[id]/ReadTracker'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
+import { COMPETITIONS } from '@/lib/calendar-competitions'
 import { timeAgo } from '@/lib/timeAgo'
 import TimezoneSelector from '@/components/TimezoneSelector'
 import ScrollToTop from '@/components/ScrollToTop'
@@ -34,6 +35,10 @@ const PROFILE_NAME_KEY = 'ts_profile_name'
 
 const PICK_LABEL: Record<string, string> = { '1': 'Local', X: 'Empate', '2': 'Visitante' }
 const PICK_COLOR: Record<string, string> = { '1': '#22c55e', X: '#f59e0b', '2': '#ef4444' }
+
+// Mapa slug→config de competición para mostrar el nombre legible de las ligas
+// favoritas (que se guardan por slug) y enlazarlas a su página de calendario.
+const COMP_BY_SLUG = new Map(COMPETITIONS.map((c) => [c.slug, c]))
 
 // ── Section header ─────────────────────────────────────────────────
 function SectionHeader({ title }: { title: string }) {
@@ -84,6 +89,11 @@ export default function PerfilPage() {
   const [authError, setAuthError] = useState(false)
   const [badges, setBadges] = useState<BadgeDef[]>([])
   const [linkingGoogle, setLinkingGoogle] = useState(false)
+
+  // Favoritos del usuario (equipos + ligas del calendario + fichas del Índice)
+  const [favTeams, setFavTeams] = useState<string[]>([])
+  const [favLeagueSlugs, setFavLeagueSlugs] = useState<string[]>([])
+  const [favEntryCount, setFavEntryCount] = useState(0)
 
   // Ranked points & streak (server-side, only loaded when session exists)
   const { points } = usePoints()
@@ -273,6 +283,32 @@ export default function PerfilPage() {
           localStorage.setItem(REMINDERS_KEY, JSON.stringify(ids))
           localStorage.setItem(REMINDERS_DATA_KEY, JSON.stringify(mergedData))
         } catch { /* ignore */ }
+      })
+      .catch(() => { /* ignore */ })
+  }, [user])
+
+  // ── Favoritos (equipos + ligas + fichas) desde la cuenta + localStorage ──
+  // Reúne lo local de este navegador con lo de la cuenta para mostrarlo junto.
+  // La subida invitado→cuenta la hace el calendario; aquí solo se muestra.
+  useEffect(() => {
+    if (!user) return
+    const readArr = (k: string): string[] => {
+      try { const v = JSON.parse(localStorage.getItem(k) ?? '[]'); return Array.isArray(v) ? v : [] }
+      catch { return [] }
+    }
+    const localTeams = readArr('ts_favorites')
+    const localComps = readArr('ts_fav_comps')
+    setFavTeams(localTeams)
+    setFavLeagueSlugs(localComps)
+    fetch('/api/rankings/favorites', { credentials: 'same-origin' })
+      .then(r => r.ok ? r.json() : { favorites: [] })
+      .then((j: { favorites?: { entry_id: string }[] }) => {
+        const ids = (j.favorites ?? []).map(f => f.entry_id)
+        const cloudTeams = ids.filter(id => id.startsWith('team:')).map(id => id.slice(5))
+        const cloudComps = ids.filter(id => id.startsWith('comp:')).map(id => id.slice(5))
+        setFavTeams([...new Set([...localTeams, ...cloudTeams])])
+        setFavLeagueSlugs([...new Set([...localComps, ...cloudComps])])
+        setFavEntryCount(ids.filter(id => !id.includes(':')).length)
       })
       .catch(() => { /* ignore */ })
   }, [user])
@@ -1166,6 +1202,57 @@ export default function PerfilPage() {
 
           {/* ── COLUMNA DERECHA ── */}
           <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 flex flex-col gap-10">
+
+            {/* TUS FAVORITOS: equipos + ligas (sincronizados con tu cuenta) + fichas del Índice */}
+            {user && (
+              <section>
+                <SectionHeader title="Tus favoritos" />
+                {favTeams.length === 0 && favLeagueSlugs.length === 0 && favEntryCount === 0 ? (
+                  <p className="text-xs px-1" style={{ color: 'var(--text-faint)' }}>
+                    Marca equipos con ❤ y fija ligas con el pin en el calendario. Aquí los tendrás en todos tus dispositivos.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {favTeams.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Equipos</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {favTeams.map((t) => (
+                            <span key={t} className="px-2.5 py-1 rounded-lg text-[11px] font-semibold"
+                              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: '#D0D0E0', fontFamily: 'var(--font-sport)' }}>
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {favLeagueSlugs.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Ligas</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {favLeagueSlugs.map((slug) => {
+                            const cfg = COMP_BY_SLUG.get(slug)
+                            const label = cfg?.shortName ?? cfg?.displayName ?? slug
+                            const cls = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors'
+                            const stl = { background: 'var(--bg-card)', border: '1px solid var(--border)', color: '#D0D0E0', fontFamily: 'var(--font-sport)' } as const
+                            return cfg
+                              ? <Link key={slug} href={`/calendario/${slug}`} className={cls} style={{ ...stl, textDecoration: 'none' }}>{label}</Link>
+                              : <span key={slug} className={cls} style={stl}>{label}</span>
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {favEntryCount > 0 && (
+                      <Link href="/rankings/mi-top"
+                        className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-widest"
+                        style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}>
+                        {favEntryCount} {favEntryCount === 1 ? 'ficha' : 'fichas'} del Índice →
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
 
             {/* SEGUIMIENTO: Deportes / Ligas / Clubs */}
             <section>
