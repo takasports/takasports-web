@@ -72,7 +72,9 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
   // Fondo atmosférico cinematográfico por deporte (set "La Señal", reusa los WebP
   // de /calendario, $0). Todos los deportes tienen asset propio; un slug
   // desconocido cae al neutro 'default'.
-  const bdKey = ({ futbol: 'futbol', baloncesto: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc', padel: 'padel', rugby: 'rugby', wwe: 'wwe' } as Record<string, string>)[sport] ?? 'default'
+  // Cubre TODOS los slugs válidos de SLUG_TO_LABEL (incl. los alias `nba`/
+  // `wrestling` y las ligas de baloncesto bcl/euroliga/acb → escena de pabellón).
+  const bdKey = ({ futbol: 'futbol', baloncesto: 'nba', nba: 'nba', bcl: 'nba', euroliga: 'nba', acb: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc', padel: 'padel', rugby: 'rugby', wwe: 'wwe', wrestling: 'wwe' } as Record<string, string>)[sport] ?? 'default'
 
   // Schema de página (FAQPage + BreadcrumbList) lo emite la PÁGINA del hub
   // ([sport]/page.tsx), NO este componente: antes ambos emitían su propio
