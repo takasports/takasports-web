@@ -757,25 +757,63 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
             {user ? (
               <Link
                 href="/perfil"
-                aria-label="Mi perfil"
-                className="profile-btn flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden"
-                style={{ width: 38, height: 38, background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.4)', textDecoration: 'none' }}
+                aria-label={levelData ? `Mi perfil — nivel ${levelData.level}` : 'Mi perfil'}
+                className="profile-btn relative flex items-center justify-center flex-shrink-0"
+                style={{ width: 40, height: 40, textDecoration: 'none' }}
               >
-                {user.user_metadata?.avatar_url ? (
-                  <Image
-                    src={user.user_metadata.avatar_url as string}
-                    alt={user.user_metadata?.full_name ?? 'Avatar'}
-                    width={34} height={34}
-                    className="object-cover w-full h-full"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <span
-                    className="text-xs font-black"
-                    style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}
+                {/* Anillo de progreso de nivel — solo en móvil (en md+ ya está el LevelChip) */}
+                {levelData && (
+                  <svg
+                    className="md:hidden"
+                    width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"
+                    style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}
                   >
-                    {((user.user_metadata?.full_name ?? user.email ?? 'U') as string)
-                      .split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()}
+                    <circle cx="20" cy="20" r="18.5" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="2.5" />
+                    <circle
+                      cx="20" cy="20" r="18.5" fill="none"
+                      stroke={levelData.levelColor} strokeWidth="2.5" strokeLinecap="round"
+                      strokeDasharray={2 * Math.PI * 18.5}
+                      strokeDashoffset={2 * Math.PI * 18.5 * (1 - Math.min(1, Math.max(0, levelData.progress)))}
+                    />
+                  </svg>
+                )}
+                {/* Avatar */}
+                <span
+                  className="flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+                  style={{ width: 34, height: 34, background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.4)' }}
+                >
+                  {user.user_metadata?.avatar_url ? (
+                    <Image
+                      src={user.user_metadata.avatar_url as string}
+                      alt={user.user_metadata?.full_name ?? 'Avatar'}
+                      width={34} height={34}
+                      className="object-cover w-full h-full"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <span
+                      className="text-xs font-black"
+                      style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}
+                    >
+                      {((user.user_metadata?.full_name ?? user.email ?? 'U') as string)
+                        .split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()}
+                    </span>
+                  )}
+                </span>
+                {/* Insignia de nivel — solo móvil (en md+ el nivel va en el LevelChip) */}
+                {levelData && (
+                  <span
+                    className="md:hidden"
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute', bottom: -2, right: -1,
+                      background: levelData.levelColor, color: '#09090F',
+                      fontSize: 8, fontWeight: 900, lineHeight: 1.5,
+                      padding: '0 3px', borderRadius: 5,
+                      border: '1.5px solid #09090F', fontFamily: 'var(--font-sport)',
+                    }}
+                  >
+                    L{levelData.level}
                   </span>
                 )}
               </Link>
