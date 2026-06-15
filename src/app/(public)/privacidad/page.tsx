@@ -233,6 +233,10 @@ export default function PrivacidadPage() {
               contacto@takasportsmedia.com
             </a>
           </p>
+          <p>
+            Los datos identificativos completos del titular (responsable del tratamiento) figuran en
+            el <a className="text-purple-light underline" href="/aviso-legal">Aviso legal</a>.
+          </p>
         </div>
     </div>
   )

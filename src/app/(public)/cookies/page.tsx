@@ -102,9 +102,10 @@ export default function CookiesPage() {
         <h2 className="text-2xl font-bold mt-10 mb-3">2. ¿Quién es el responsable?</h2>
         <p>
           El responsable del tratamiento es <strong>TakaSports Media</strong>, editor de
-          takasportsmedia.com (persona física / autónomo en España). Los datos fiscales
-          completos (NIF y domicilio) figurarán en el Aviso Legal. Para cualquier consulta
-          sobre privacidad o cookies, escribe a{' '}
+          takasportsmedia.com (persona física / autónomo en España). Los datos identificativos
+          completos del titular figuran en el{' '}
+          <a className="text-purple-light underline" href="/aviso-legal">Aviso legal</a>. Para
+          cualquier consulta sobre privacidad o cookies, escribe a{' '}
           <a className="text-purple-light underline" href="mailto:contacto@takasportsmedia.com">
             contacto@takasportsmedia.com
           </a>.

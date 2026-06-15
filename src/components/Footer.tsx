@@ -43,6 +43,7 @@ const LEGAL_LINKS = [
   { label: 'Sobre TakaSports',  href: '/sobre' },
   { label: 'Equipo editorial',  href: '/autor/redaccion' },
   { label: 'Política editorial', href: '/politica-editorial' },
+  { label: 'Aviso legal',       href: '/aviso-legal' },
   { label: 'Privacidad',        href: '/privacidad' },
   { label: 'Cookies',           href: '/cookies' },
   { label: 'Términos',          href: '/terminos' },
