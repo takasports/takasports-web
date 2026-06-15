@@ -51,8 +51,13 @@ const SOURCE_LABELS: Record<string, string> = {
 }
 
 // ── SSG: top 500 por score en build time; el resto on-demand via ISR ─
-// Revalidar perfiles cada 2h (scores cambian ~semanalmente)
-export const revalidate = 300  // 5 min — antes 2h, bajado para reflejar fotos nuevas
+// Revalidar perfiles cada 1h. Los datos cambian ~1x/semana y la ingesta
+// semanal + las ediciones del admin fuerzan revalidatePath('/rankings/[id]')
+// al instante, así que el temporizador solo cubre correcciones de foto hechas
+// con scripts sueltos (escriben directo en DB sin avisar a Next). Antes 5 min,
+// pero ese recálculo continuo de ranking_view (~65% del coste de la BD para
+// datos que apenas cambian) disparaba el aviso de "recursos agotándose".
+export const revalidate = 3600  // 1 hora
 export const dynamicParams = true
 export async function generateStaticParams() {
   const staticIds = getAllRankingEntries().map(e => e.id)

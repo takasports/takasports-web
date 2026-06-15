@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/rankings/todos` },
 }
 
-export const revalidate = 120  // refresca cada 2 min para evitar cache stale tras cambios
+export const revalidate = 3600  // 1 hora — datos cambian ~1x/semana; antes 2 min (recálculo continuo de ranking_view)
 
 interface Row {
   id: string

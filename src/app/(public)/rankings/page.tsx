@@ -2,8 +2,11 @@ import type { Metadata } from 'next'
 import RankingsClient from './RankingsClient'
 import { getTopMovers, getAllRankings, getLastIngestTime, type RankingCategory } from '@/lib/rankings-data'
 
-// Rankings: cachear 5 min para reflejar cambios editoriales rápidamente
-export const revalidate = 60  // 1 min — forzar refresh tras actualizaciones de fotos
+// Rankings: revalidar cada 30 min. La ingesta semanal y las ediciones del
+// admin fuerzan revalidatePath('/rankings') al instante; el temporizador solo
+// cubre correcciones de foto por script. Antes 1 min, demasiado frecuente para
+// datos que cambian ~1x/semana (recálculo continuo de ranking_view).
+export const revalidate = 1800  // 30 min
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import {
   RANKING_JUGADORES, RANKING_CLUBES,
