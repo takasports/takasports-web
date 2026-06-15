@@ -527,6 +527,13 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
       supabase.auth.getUser().then(({ data }) => { setUser(data.user ?? null); setAuthChecked(true) })
       subscription = supabase.auth.onAuthStateChange((_event, session) => {
         setUser(session?.user ?? null); setAuthChecked(true)
+        // Al iniciar sesión, sube al instante las partidas jugadas como
+        // invitado (cola local de games-store) a la cuenta — sin esperar a
+        // que monte useStreak. Import diferido para no tocar el First Load
+        // del Header (montado en toda la web).
+        if (_event === 'SIGNED_IN') {
+          import('@/lib/games-store').then(({ flushQueue }) => { void flushQueue() }).catch(() => {})
+        }
       }).data.subscription
     })
     return () => {

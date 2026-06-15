@@ -130,10 +130,10 @@ export default function PostGameResultModal({
               style={{ background: `${accent}08`, border: `1px solid ${accent}20` }}
             >
               <p className="text-xs font-semibold mb-0.5" style={{ color: '#F0F0F5' }}>
-                No pierdas tu progreso
+                Guarda este resultado
               </p>
               <p className="text-[10px] mb-3" style={{ color: 'var(--text-muted)' }}>
-                Tu partida está guardada en este navegador. Regístrate para guardar tu racha y sumar tus puntos a la Liga Taka.
+                Tu partida está guardada solo en este navegador. Inicia sesión para guardarla en tu cuenta y sumarla a la Liga Taka.
               </p>
               <Link
                 href="/auth?from=game"
@@ -145,7 +145,7 @@ export default function PostGameResultModal({
                   letterSpacing: '0.06em',
                 }}
               >
-                Crear cuenta gratis →
+                Guardar mi resultado →
               </Link>
             </div>
           )}
