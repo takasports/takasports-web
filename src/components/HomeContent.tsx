@@ -33,20 +33,6 @@ const HOME_PAGE_SIZE = 8
 const WINDOW_HOURS = 36
 const MAX_PER_SPORT = 2
 
-// Fase 5 "La Señal": fondo cinematográfico + color por deporte en la portada.
-// Mapea el slug del filtro activo → foto del set `signal/` + acento. SOLO se
-// usa cuando hay un deporte elegido; en "Todo" (carga inicial = lo que mide la
-// velocidad) NO se añade ninguna imagen → LCP intacto.
-const HOME_SPORT_SIGNAL: Record<string, { key: string; accent: string }> = {
-  futbol:     { key: 'futbol', accent: '#34D399' },
-  baloncesto: { key: 'nba',    accent: '#F59E0B' },
-  formula1:   { key: 'f1',     accent: '#EF4444' },
-  tenis:      { key: 'tenis',  accent: '#E0B33A' },
-  ufc:        { key: 'ufc',    accent: '#D4AF37' },
-  rugby:      { key: 'rugby',  accent: '#38BDF8' },
-  wwe:        { key: 'wwe',    accent: '#A855F7' },
-}
-
 // Palabras clave en el nombre de la competición → peso de relevancia
 const TIER_S = [
   'champions', 'final', 'mundial', 'world cup', 'clásico', 'clasico',
@@ -399,8 +385,6 @@ export default function HomeContent({
 
   // Filtrar artículos por deporte activo (con aliases: nba→baloncesto, wrestling→wwe, f1→formula1)
   const activeSlug = CATEGORY_TO_SLUG[activeSport]?.toLowerCase() ?? ''
-  // Fondo cinematográfico del deporte activo (solo si hay deporte elegido).
-  const heroSignal = activeSlug ? HOME_SPORT_SIGNAL[activeSlug] : undefined
   const acceptedSlugs = activeSlug
     ? new Set<string>([activeSlug, ...(SLUG_ALIASES[activeSlug] ?? [])])
     : new Set<string>()
@@ -476,37 +460,13 @@ export default function HomeContent({
         {/* ── 1. PORTADA ─────────────────────────────────────────── */}
         {heroArticles.length > 0 && (
           <div className="mt-4 relative">
-            {heroSignal ? (
-              /* Ambiente cinematográfico del deporte activo (set "La Señal").
-                 Capa ESTÁTICA (no movimiento → no la apaga el "modo flojo"),
-                 lazy, key={activeSlug}→crossfade al cambiar de deporte. SOLO
-                 aparece al elegir deporte → la carga inicial ("Todo") no añade
-                 imagen = velocidad intacta. El acento del deporte tiñe el halo. */
-              <div className="signal-ambient" aria-hidden="true" key={activeSlug}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`/banners/signal/${heroSignal.key}.webp`}
-                  alt=""
-                  className="signal-backdrop"
-                  loading="lazy"
-                  decoding="async"
-                  style={{ opacity: 0.72 }}
-                />
-                <div className="signal-scrim" />
-                <div
-                  className="signal-tint"
-                  style={{ background: `radial-gradient(120% 100% at 50% 0%, ${heroSignal.accent}4D 0%, ${heroSignal.accent}1A 32%, transparent 66%)` }}
-                />
-              </div>
-            ) : (
-              <div
-                className="absolute -inset-x-10 -top-12 h-72 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(ellipse 80% 100% at 50% 0%, rgba(124,58,237,0.09) 0%, transparent 70%)',
-                  zIndex: 0,
-                }}
-              />
-            )}
+            <div
+              className="absolute -inset-x-10 -top-12 h-72 pointer-events-none"
+              style={{
+                background: 'radial-gradient(ellipse 80% 100% at 50% 0%, rgba(124,58,237,0.09) 0%, transparent 70%)',
+                zIndex: 0,
+              }}
+            />
             <div className="relative z-10">
               <HeroBlock articles={heroArticles} stripPool={heroStripPool} />
             </div>
