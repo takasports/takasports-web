@@ -47,6 +47,7 @@ const LEGAL_LINKS = [
   { label: 'Privacidad',        href: '/privacidad' },
   { label: 'Cookies',           href: '/cookies' },
   { label: 'Términos',          href: '/terminos' },
+  { label: 'Eliminar cuenta',   href: '/eliminar-cuenta' },
 ]
 
 const SOCIAL = [
