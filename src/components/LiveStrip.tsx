@@ -170,13 +170,13 @@ export default function LiveStrip() {
           <div className="flex items-center gap-1 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
             {stripMode === 'live'
               ? liveFixtures.map((fix, i) => (
-                  <div key={fix.id} className="flex items-center gap-3 flex-shrink-0">
+                  <div key={`${fix.id}-${i}`} className="flex items-center gap-3 flex-shrink-0">
                     {i > 0 && <Sep />}
                     <LiveEventCard fix={fix} />
                   </div>
                 ))
               : upcoming.slice(0, 6).map((ev, i) => (
-                  <div key={ev.id} className="flex items-center gap-3 flex-shrink-0">
+                  <div key={`${ev.id}-${i}`} className="flex items-center gap-3 flex-shrink-0">
                     {i > 0 && <Sep />}
                     <UpcomingEventCard ev={ev} />
                   </div>

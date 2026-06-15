@@ -614,8 +614,8 @@ export default function LiveEventsSection({
       <div className="relative -mx-6 xl:-mx-10" style={{ background: 'var(--bg-base)' }}>
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 pt-1"
           style={{ paddingLeft: 'max(24px, calc((100vw - 1440px) / 2 + 40px))', paddingRight: 24, background: 'var(--bg-base)' }}>
-          {displayEvents.map((event) => (
-            <div key={event.id} data-reveal>
+          {displayEvents.map((event, i) => (
+            <div key={`${event.id}-${i}`} data-reveal>
               <EventCard event={event} liveScore={liveScores.get(event.id)} />
             </div>
           ))}

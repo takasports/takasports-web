@@ -148,9 +148,9 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
           Próximos
         </SectionHeader>
         <div className="flex flex-col gap-1.5">
-          {PROXIMOS.length > 0 ? PROXIMOS.map((event) => (
+          {PROXIMOS.length > 0 ? PROXIMOS.map((event, i) => (
             <Link
-              key={event.id}
+              key={`${event.id}-${i}`}
               href="/calendario"
               className="flex items-center justify-between p-2.5 rounded-xl transition-all hover:brightness-110"
               style={{
