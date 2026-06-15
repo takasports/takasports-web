@@ -1356,8 +1356,8 @@ export async function getStandingsData(): Promise<StatsStandingsResponse> {
 }
 
 // Shard de la respuesta para un solo sport (reduce tamaño SSR ~80%).
-// Reutilizado por GET y por page.tsx en initialData cuando se entra a
-// un /estadisticas?sport=X (links de redes/SEO).
+// Reutilizado por GET y por la vista de estadísticas (StatsView) en initialData
+// cuando se entra a una landing de deporte /estadisticas/[sport] (SEO/redes).
 export function shardStandingsForSport(
   data: StatsStandingsResponse,
   sport: string,

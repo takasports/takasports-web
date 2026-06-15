@@ -242,7 +242,7 @@ async function Content({ p1, p2 }: { p1?: string; p2?: string }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-3">
-        <Link href="/estadisticas?sport=futbol"
+        <Link href="/estadisticas/futbol"
           className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)] hover:text-white transition-colors"
           style={{ fontFamily: 'var(--font-sport)' }}>
           ‹ Volver a estadísticas

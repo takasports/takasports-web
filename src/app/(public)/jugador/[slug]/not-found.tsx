@@ -16,7 +16,7 @@ export default function NotFound() {
         El jugador que buscas no existe o ya no está disponible.
       </p>
       <Link
-        href="/estadisticas?sport=futbol"
+        href="/estadisticas/futbol"
         className="px-5 py-2.5 rounded-xl text-[13px] font-black uppercase tracking-wide transition-all"
         style={{
           background: 'rgba(124,58,237,0.2)',

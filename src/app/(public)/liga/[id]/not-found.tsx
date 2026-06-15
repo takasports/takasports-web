@@ -11,7 +11,7 @@ export default function NotFound() {
       <p className="text-[13px] text-[var(--text-muted)] mb-8">
         La liga que buscas no está disponible.
       </p>
-      <Link href="/estadisticas?sport=futbol"
+      <Link href="/estadisticas/futbol"
         className="px-5 py-2.5 rounded-xl text-[13px] font-black uppercase tracking-wide"
         style={{ background: 'rgba(124,58,237,0.2)', color: '#C4B5FD',
           border: '1px solid rgba(124,58,237,0.3)', fontFamily: 'var(--font-sport)' }}>

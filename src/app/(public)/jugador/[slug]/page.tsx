@@ -137,7 +137,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
       {/* Back + Share */}
       <div className="flex items-center justify-between mb-6">
         <Link
-          href="/estadisticas?sport=futbol"
+          href="/estadisticas/futbol"
           className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)] hover:text-white transition-colors"
           style={{ fontFamily: 'var(--font-sport)' }}
         >
