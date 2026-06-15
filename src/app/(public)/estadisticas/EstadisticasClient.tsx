@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { PodiumMedal } from '@/components/icons/GameIcons'
 import NewsletterSection from '@/components/NewsletterSection'
 import ScrollToTop from '@/components/ScrollToTop'
@@ -1948,18 +1948,35 @@ function ResumenView({
   )
 }
 
-export default function EstadisticasClient({ initialData }: { initialData?: LiveStandingsData | null }) {
-  const searchParams = useSearchParams()
-  const router = useRouter()
+// Construye la dirección de path de estadísticas: /estadisticas/<slug> (la F1 usa
+// el slug 'f1' aunque su id interno sea 'formula1'; 'resumen' = portada sin slug).
+// Sección y género van como query porque NO son landings SEO.
+const SLUG_BY_SPORT_ID: Record<string, string> = { formula1: 'f1' }
+function buildStatsUrl(id: string, section?: string, genderF?: boolean): string {
+  const slug = id === 'resumen' ? '' : (SLUG_BY_SPORT_ID[id] ?? id)
+  const base = slug ? `/estadisticas/${slug}` : '/estadisticas'
+  const qs = new URLSearchParams()
+  if (section) qs.set('section', section)
+  if (genderF) qs.set('gender', 'f')
+  const q = qs.toString()
+  return q ? `${base}?${q}` : base
+}
 
-  const [sportId, setSportId] = useState<string>(() => {
+export default function EstadisticasClient({ initialData, initialSport }: { initialData?: LiveStandingsData | null; initialSport?: string }) {
+  const searchParams = useSearchParams()
+
+  // El deporte inicial viene del prop (ruta /estadisticas/[sport]); si no, se lee
+  // de ?sport= (compatibilidad con enlaces antiguos) y por defecto 'Destacados'.
+  const initialSportId = (() => {
+    if (initialSport && SPORTS.find(s => s.id === initialSport)) return initialSport
     const sp = searchParams.get('sport') ?? ''
     return SPORTS.find(s => s.id === sp) ? sp : 'resumen'
-  })
+  })()
+
+  const [sportId, setSportId] = useState<string>(initialSportId)
   const [sectionId, setSectionId] = useState<string>(() => {
-    const sp = searchParams.get('sport') ?? 'resumen'
     const sec = searchParams.get('section') ?? ''
-    const sport = SPORTS.find(s => s.id === sp) ?? SPORTS[0]
+    const sport = SPORTS.find(s => s.id === initialSportId) ?? SPORTS[0]
     return sport.sections.find(s => s.id === sec) ? sec : sport.sections[0].id
   })
   const [expandedBlocks, setExpandedBlocks]   = useState<Record<string, boolean>>({})
@@ -1968,10 +1985,9 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
     return firstGroupId ? { [firstGroupId]: true } : {}
   })
   const [leagueFilter, setLeagueFilter]       = useState('General')
-  const [gender, setGender]                   = useState<'m' | 'f'>(() => {
-    const sp = searchParams.get('sport') ?? ''
-    return sp === 'futbol' && searchParams.get('gender') === 'f' ? 'f' : 'm'
-  })
+  const [gender, setGender]                   = useState<'m' | 'f'>(() =>
+    initialSportId === 'futbol' && searchParams.get('gender') === 'f' ? 'f' : 'm'
+  )
   const [liveData, setLiveData]               = useState<LiveStandingsData | null>(initialData ?? null)
   const [livePlayerData, setLivePlayerData]   = useState<LivePlayerData | null>(null)
   const [lastUpdated, setLastUpdated]         = useState<Date | null>(null)
@@ -2229,8 +2245,12 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
     setExpandedBlocks({})
     setExpandedGroups(sec?.groups ? { [sec.groups[0]?.id ?? '']: true } : {})
     setLeagueFilter('General')
-    const qs = sec ? `?sport=${id}&section=${sec.id}` : `?sport=${id}`
-    router.push(`/estadisticas${qs}${g === 'f' ? '&gender=f' : ''}`, { scroll: false })
+    // URL de path limpia (/estadisticas/<slug>) sin recargar: las pestañas siguen
+    // siendo instantáneas (no remonta la página). La sección se omite aquí para
+    // que la dirección del deporte coincida con su canonical.
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', buildStatsUrl(id, undefined, g === 'f'))
+    }
   }
 
   const handleSectionChange = (id: string) => {
@@ -2239,7 +2259,9 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
     setExpandedBlocks({})
     setExpandedGroups(sec?.groups ? { [sec.groups[0]?.id ?? '']: true } : {})
     setLeagueFilter('General')
-    router.push(`/estadisticas?sport=${sportId}&section=${id}${gender === 'f' ? '&gender=f' : ''}`, { scroll: false })
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', buildStatsUrl(sportId, id, gender === 'f'))
+    }
   }
 
   const section = sport.sections.find(s => s.id === sectionId) ?? sport.sections[0]
@@ -2580,7 +2602,9 @@ export default function EstadisticasClient({ initialData }: { initialData?: Live
               return (
                 <button key={g} onClick={() => {
                   setGender(g); setExpandedBlocks({})
-                  router.push(`/estadisticas?sport=${sportId}&section=${sectionId}${g === 'f' ? '&gender=f' : ''}`, { scroll: false })
+                  if (typeof window !== 'undefined') {
+                    window.history.replaceState(null, '', buildStatsUrl(sportId, sectionId, g === 'f'))
+                  }
                 }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
                   style={{

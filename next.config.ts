@@ -22,6 +22,21 @@ const nextConfig: NextConfig = {
       { source: '/f1', destination: '/formula1', permanent: true },
       { source: '/mma', destination: '/ufc', permanent: true },
       { source: '/lucha-libre', destination: '/wwe', permanent: true },
+      // Estadísticas: las landings pasaron de ?sport=X (no cacheable) a rutas de
+      // path /estadisticas/X (cacheables). Reenviamos 308 las direcciones viejas
+      // (sitemap + enlaces + lo ya indexado en Google) para conservar el SEO.
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'futbol' }], destination: '/estadisticas/futbol', permanent: true },
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'football' }], destination: '/estadisticas/futbol', permanent: true },
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'selecciones' }], destination: '/estadisticas/futbol', permanent: true },
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'femenino' }], destination: '/estadisticas/futbol', permanent: true },
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'baloncesto' }], destination: '/estadisticas/baloncesto', permanent: true },
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'nba' }], destination: '/estadisticas/baloncesto', permanent: true },
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'f1' }], destination: '/estadisticas/f1', permanent: true },
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'tenis' }], destination: '/estadisticas/tenis', permanent: true },
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'tennis' }], destination: '/estadisticas/tenis', permanent: true },
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'motogp' }], destination: '/estadisticas/motogp', permanent: true },
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'ufc' }], destination: '/estadisticas/ufc', permanent: true },
+      { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'mundial' }], destination: '/estadisticas/mundial', permanent: true },
       // /login no es una ruta real; varios componentes redirigen aquí en 401.
       // Lo enviamos al AuthModal (/auth/login → /perfil) en vez de dar 404.
       { source: '/login', destination: '/auth/login', permanent: false },
