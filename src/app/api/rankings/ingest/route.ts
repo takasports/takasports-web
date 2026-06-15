@@ -156,6 +156,11 @@ export async function POST(req: NextRequest) {
   revalidatePath('/rankings/comparar')
   revalidatePath('/rankings/[id]', 'page')
 
+  // Rehace la foto materializada ranking_view para que los nuevos scores se vean
+  // ya (los lectores leen de ahí). Best-effort: el cron horario la cubre si falla.
+  const { error: refErr } = await sb.rpc('refresh_ranking_view')
+  if (refErr) console.error('[ingest] refresh_ranking_view falló:', refErr.message)
+
   return NextResponse.json({
     ok: true,
     runId,

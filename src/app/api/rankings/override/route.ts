@@ -183,6 +183,9 @@ export async function POST(req: NextRequest) {
 
   revalidatePath('/rankings')
   revalidatePath(`/rankings/${id}`)
+  // Refresca la foto materializada ranking_view → el cambio del admin se ve ya.
+  const { error: refErr } = await sb.rpc('refresh_ranking_view')
+  if (refErr) console.error('[override] refresh_ranking_view falló:', refErr.message)
   return NextResponse.json({ ok: true, entry: data })
 }
 
@@ -251,5 +254,8 @@ export async function DELETE(req: NextRequest) {
 
   revalidatePath('/rankings')
   revalidatePath(`/rankings/${id}`)
+  // Refresca la foto materializada ranking_view → el cambio del admin se ve ya.
+  const { error: refErr } = await sb.rpc('refresh_ranking_view')
+  if (refErr) console.error('[override] refresh_ranking_view falló:', refErr.message)
   return NextResponse.json({ ok: true, cleared: field })
 }
