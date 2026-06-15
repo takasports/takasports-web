@@ -749,6 +749,10 @@ textarea:focus-visible,
   --cal-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='40'%3E%3Cg fill='none' stroke='white' stroke-width='1.2'%3E%3Crect x='4' y='4' width='52' height='32'/%3E%3Cpath d='M30 4V36M4 20H56'/%3E%3C/g%3E%3C/svg%3E"); }
 .cal-root[data-sport="padel"] { --cal-accent: #22D3EE; --cal-bd-y: 42%; --cal-backdrop-opacity: 1;
   --cal-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cg fill='none' stroke='white' stroke-width='1.2'%3E%3Cpath d='M0 0H30V30H0Z'/%3E%3Cpath d='M15 0V30M0 15H30'/%3E%3C/g%3E%3C/svg%3E"); }
+.cal-root[data-sport="rugby"] { --cal-accent: #38BDF8; --cal-bd-y: 38%; --cal-backdrop-opacity: 1;
+  --cal-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cg fill='none' stroke='white' stroke-width='1.4'%3E%3Cpath d='M10 4V36M30 4V36M10 15H30'/%3E%3C/g%3E%3C/svg%3E"); }
+.cal-root[data-sport="wwe"] { --cal-accent: #A855F7; --cal-bd-y: 38%; --cal-backdrop-opacity: 1;
+  --cal-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='24'%3E%3Cg fill='none' stroke='white' stroke-width='1.3'%3E%3Cpath d='M0 5H48M0 12H48M0 19H48'/%3E%3C/g%3E%3C/svg%3E"); }
 
 /* Capa ambiente: tinte + textura característica detrás de la cabecera, que se
    desvanece hacia abajo. Una sola capa (performante). `key={themeKey}` en React

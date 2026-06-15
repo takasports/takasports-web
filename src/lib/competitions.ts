@@ -293,7 +293,7 @@ export function getSportColor(sport: string): string {
 // `.cal-root[data-sport="…"]` para que el cambio de deporte sea solo un swap de
 // variables CSS (instantáneo, 0 fetch). `backdrop` se reserva para la Fase C
 // (imagen IA estática lazy). Mantener sincronizado el `accent` con globals.css.
-export type SportThemeKey = 'default' | 'futbol' | 'nba' | 'f1' | 'ufc' | 'tenis' | 'padel'
+export type SportThemeKey = 'default' | 'futbol' | 'nba' | 'f1' | 'ufc' | 'tenis' | 'padel' | 'rugby' | 'wwe'
 
 export interface SportTheme {
   /** Color de acento (hex). Debe coincidir con `--cal-accent` en globals.css. */
@@ -312,10 +312,12 @@ export const SPORT_THEME: Record<SportThemeKey, SportTheme> = {
   ufc:     { accent: '#D4AF37', label: 'UFC',       backdrop: '/banners/signal/ufc.webp' },
   tenis:   { accent: '#E0B33A', label: 'Tenis',     backdrop: '/banners/signal/tenis.webp' },
   padel:   { accent: '#22D3EE', label: 'Pádel',     backdrop: '/banners/signal/padel.webp' },
+  rugby:   { accent: '#38BDF8', label: 'Rugby',     backdrop: '/banners/signal/rugby.webp' },
+  wwe:     { accent: '#A855F7', label: 'Lucha libre', backdrop: '/banners/signal/wwe.webp' },
 }
 
 // Normaliza el filtro activo de la UI ('Destacados'/'Todo'/'Fútbol'/'NBA'/…) a
-// una de las claves de tema. Lo niche (Golf, Rugby, Béisbol…) cae al tema marca.
+// una de las claves de tema. Lo niche (Golf, Béisbol…) cae al tema marca.
 export function sportThemeKey(filter: string | null | undefined): SportThemeKey {
   const f = (filter ?? '').toLowerCase()
   if (/fútbol|futbol|soccer/.test(f)) return 'futbol'
@@ -324,6 +326,8 @@ export function sportThemeKey(filter: string | null | undefined): SportThemeKey 
   if (/ufc|mma|boxe|combat/.test(f)) return 'ufc'
   if (/tenis|tennis|atp|wta/.test(f)) return 'tenis'
   if (/pádel|padel/.test(f)) return 'padel'
+  if (/rugby/.test(f)) return 'rugby'
+  if (/lucha|wwe|wrestling|aew/.test(f)) return 'wwe'
   return 'default'
 }
 
