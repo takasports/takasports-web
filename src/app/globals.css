@@ -147,10 +147,15 @@ body::after {
 
 body {
   background: var(--bg-base);
-  /* Ambient depth — faint purple glow at top-center, deep indigo pocket bottom-right */
+  /* Velo de color suave "La Señal" — halo morado arriba + glows tenues en las
+     esquinas para que las zonas generales no se vean negro plano. Puro CSS,
+     viewport-fijo (cubre toda la página al hacer scroll), 0 KB. Alfas muy bajas
+     para no robar contraste a las tarjetas. */
   background-image:
-    radial-gradient(ellipse 100% 55% at 50% -2%, rgba(124,58,237,0.08) 0%, transparent 65%),
-    radial-gradient(ellipse 55% 40% at 88% 90%, rgba(20,10,60,0.14) 0%, transparent 60%);
+    radial-gradient(ellipse 130% 80% at 50% -12%, rgba(124,58,237,0.18) 0%, transparent 56%),
+    radial-gradient(ellipse 110% 95% at 50% 45%, rgba(108,68,206,0.055) 0%, transparent 70%),
+    radial-gradient(ellipse 75% 60% at 95% 100%, rgba(40,22,96,0.16) 0%, transparent 58%),
+    radial-gradient(ellipse 70% 55% at 2% 78%, rgba(72,44,150,0.07) 0%, transparent 55%);
   background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif;
