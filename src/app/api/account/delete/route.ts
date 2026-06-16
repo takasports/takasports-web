@@ -4,9 +4,16 @@
 // Autentica por cookie (web) O por token Bearer (takasports-app vía fetch
 // nativo) — usa getUserFromRequest, que acepta ambas. Luego usa el cliente de
 // servicio (service_role) para auth.admin.deleteUser(): la BD limpia en cascada
-// (30 FK ON DELETE CASCADE) y anula la autoría de lo compartido (5 FK SET NULL:
-// ligas, chat de liga, suscripciones push, eventos). Verificado: 0 FK en
-// RESTRICT/NO ACTION → el borrado no se bloquea.
+// (32 FK ON DELETE CASCADE — incl. suscripciones push y chat de liga desde la
+// migración 076) y anula la autoría de lo compartido (3 FK SET NULL: ligas
+// quiniela, ligas ranked, eventos de juego). Verificado: 0 FK en RESTRICT/NO
+// ACTION → el borrado no se bloquea.
+//
+// Además, dos tablas NO están conectadas a la cuenta por FK y por tanto la
+// cascada NO las toca; las limpiamos aquí a mano (best-effort, derecho de
+// supresión RGPD art. 17):
+//   · newsletter_subscribers — el email del usuario (si estaba suscrito).
+//   · rate_limits — la(s) fila(s) cuya `key` incluye su user.id (temporal).
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, getUserFromRequest } from '@/lib/supabase-server'
@@ -42,6 +49,27 @@ export async function POST(req: NextRequest) {
   const { error } = await admin.auth.admin.deleteUser(user.id)
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  // Supresión de datos NO cubiertos por la cascada de FK (ver cabecera).
+  // Best-effort: la cuenta ya está borrada; si algo de esto falla, lo
+  // registramos pero NO devolvemos error (no fingir que el borrado falló).
+  if (user.email) {
+    try {
+      await admin
+        .from('newsletter_subscribers')
+        .delete()
+        .eq('email', user.email.toLowerCase())
+    } catch (e) {
+      console.error('[account/delete] newsletter cleanup', e)
+    }
+  }
+  try {
+    // La key del rate-limit es `${ip}:${user.id}` en varios buckets
+    // (account_delete, account_export, sync_*). Borramos todas las del usuario.
+    await admin.from('rate_limits').delete().like('key', `%:${user.id}`)
+  } catch (e) {
+    console.error('[account/delete] rate_limits cleanup', e)
   }
 
   // Cierra la sesión de cookie del lado servidor (web). Para clientes con
