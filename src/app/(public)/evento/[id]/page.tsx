@@ -10,9 +10,11 @@ export const revalidate = 300
 
 // Pre-genera en build todas las páginas de eventos Sanity programados/en_vivo
 export async function generateStaticParams() {
-  const events: { _id: string }[] = await sanityClient.fetch(
-    `*[_type == "event" && status in ["programado", "en_vivo"]]{ _id }`
-  )
+  const events: { _id: string }[] = await sanityClient
+    .fetch<{ _id: string }[]>(
+      `*[_type == "event" && status in ["programado", "en_vivo"]]{ _id }`
+    )
+    .catch(() => [] as { _id: string }[]) // si Sanity cae, no tumbar el build
   return events.map(e => ({ id: e._id }))
 }
 

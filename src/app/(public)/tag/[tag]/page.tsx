@@ -20,7 +20,10 @@ export async function generateStaticParams() {
   const tags = await sanityClient
     .fetch<string[]>(allTagsQuery)
     .catch(() => [] as string[])
-  return tags.filter(Boolean).slice(0, 200).map((tag) => ({ tag: encodeURIComponent(tag) }))
+  // Pre-genera solo las 50 etiquetas más recientes (antes 200) para bajar las
+  // consultas a Sanity por build; el resto se generan on-demand (dynamicParams),
+  // sin perder SEO (se sirven y cachean igual).
+  return tags.filter(Boolean).slice(0, 50).map((tag) => ({ tag: encodeURIComponent(tag) }))
 }
 
 interface Article {
