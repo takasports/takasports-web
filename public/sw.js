@@ -1,7 +1,9 @@
-// TakaSports Service Worker — push notifications + offline shell (v6)
+// TakaSports Service Worker — push notifications + offline shell (v7)
+// v7: las notificaciones usan /icon-192.png (antes /icon.svg, inexistente →
+//     salían con el icono genérico del navegador en vez del logo Taka).
 // v6: alinea el shell con la PWA instalable (start_url '/', Predicciones):
 // precache '/predicciones' y '/juegos'; bump de cache para aplicar el cambio.
-const CACHE_NAME = 'takasports-v6'
+const CACHE_NAME = 'takasports-v7'
 const SHELL_URLS = ['/', '/predicciones', '/juegos', '/calendario', '/noticias']
 
 // Install: pre-cache app shell (best-effort)
@@ -57,8 +59,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title ?? 'TakaSports', {
       body: data.body ?? '',
-      icon: '/icon.svg',
-      badge: '/icon.svg',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
       tag: data.tag ?? 'takasports',
       data: { url: data.url ?? '/quiniela' },
       vibrate: [100, 50, 100],
