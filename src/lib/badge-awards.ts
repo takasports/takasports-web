@@ -30,6 +30,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { BADGES, getBadge } from './badges'
+import { adminSupabase } from './supabase-admin'
 import { sendPushToUser } from './push-helper'
 import { sendBadgeEmail } from './email-helper'
 import { unlockCosmeticsForBadge } from './cosmetics'
@@ -62,8 +63,17 @@ export interface BadgeAwardResult {
 /**
  * Otorga uno o más badges a un user. Idempotente.
  *
- * @param sb       cliente Supabase (service role o user-scoped — ambos
- *                 sirven gracias a UPSERT onConflict)
+ * IMPORTANTE: `quiniela_badges` tiene RLS con SOLO una política de SELECT
+ * (`qb_read`, auth.uid()=user_id). La escritura es "solo service role" por
+ * diseño (ver supabase/schema_quiniela.sql), igual que `user_cosmetic_unlocks`.
+ * Por eso esta función SIEMPRE escribe con el cliente service-role
+ * (`adminSupabase()`), sin importar qué cliente pase el caller. Si un caller
+ * nos pasa el cliente user-scoped (el callback de auth → welcome badge, o el
+ * settle de quiniela), un upsert con ese cliente lo rechazaría RLS en silencio
+ * y el badge nunca se escribiría. Fallback al `sb` recibido solo si no hay
+ * SUPABASE_SERVICE_ROLE_KEY en el entorno.
+ *
+ * @param sb       cliente Supabase (fallback si no hay service-role key)
  * @param userId   uuid del user (auth.users.id)
  * @param badgeIds array de badge_ids a otorgar
  */
@@ -75,6 +85,11 @@ export async function awardBadges(
   const result: BadgeAwardResult = { awarded: [], alreadyHad: [], invalid: [] }
   if (!userId || badgeIds.length === 0) return result
 
+  // La escritura en quiniela_badges es service-role-only (RLS sin política de
+  // INSERT). Forzamos el cliente admin; si falta la key, caemos al cliente
+  // recibido (degradación elegante, no crash).
+  const db = adminSupabase() ?? sb
+
   // Filtrar IDs desconocidos
   const valid = badgeIds.filter(id => {
     if (BADGES[id]) return true
@@ -84,7 +99,7 @@ export async function awardBadges(
   if (valid.length === 0) return result
 
   // Detectar cuáles ya tiene (para distinguir awarded vs alreadyHad)
-  const { data: existing } = await sb
+  const { data: existing } = await db
     .from('quiniela_badges')
     .select('badge_id')
     .eq('user_id', userId)
@@ -97,7 +112,7 @@ export async function awardBadges(
   if (toInsert.length === 0) return result
 
   // Upsert con onConflict por idempotencia ante race conditions
-  const { error } = await sb.from('quiniela_badges').upsert(
+  const { error } = await db.from('quiniela_badges').upsert(
     toInsert.map(badge_id => ({ user_id: userId, badge_id })),
     { onConflict: 'user_id,badge_id', ignoreDuplicates: true },
   )
@@ -144,7 +159,7 @@ export async function awardBadges(
     // asociados (catálogo en DB tabla `cosmetics` con unlock_source='badge').
     // Si la migración 055/056 no está aplicada, la tabla no existe y esto
     // loguea silenciosamente sin romper el award del badge.
-    void unlockCosmeticsForBadge(sb, userId, badgeId).catch(err => {
+    void unlockCosmeticsForBadge(db, userId, badgeId).catch(err => {
       console.warn('[awardBadges] cosmetic unlock failed', { userId, badgeId, err: err?.message })
     })
   }
