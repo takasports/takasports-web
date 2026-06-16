@@ -40,7 +40,8 @@ const sanity = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
   apiVersion: '2024-01-01',
-  useCdn: true,
+  // useCdn:false → API directa (el CDN agotó su cuota mensual, 402).
+  useCdn: false,
 })
 
 const BASE_FILTER = `_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))`
