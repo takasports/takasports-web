@@ -50,16 +50,14 @@ async function ensureProfileAndWelcome(supabase: SupabaseClient): Promise<void> 
   }
 }
 
-// Página mínima de éxito: redirige con replace() para NO dejar entrada en el
-// historial (evita el "loop" al pulsar atrás tras el callback). safeNext es
-// siempre una de las constantes de ALLOWED_NEXT; aun así se serializa con
-// JSON.stringify y se navega por ruta relativa (sin interpolar el origin) para
-// cerrar por completo cualquier vector de inyección en el <script>.
-function successPage(safeNext: string): NextResponse {
-  return new NextResponse(
-    `<!DOCTYPE html><html><head><meta charset="utf-8"><script>window.location.replace(${JSON.stringify(safeNext)})</script></head><body></body></html>`,
-    { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-  )
+// Redirección de éxito por 302 (cabecera Location, NO un <script> inline). Así
+// funciona aunque la CSP del sitio bloquee scripts sin nonce, y elimina de raíz
+// cualquier vector de inyección. La cookie de sesión que escribió verifyOtp/
+// exchangeCodeForSession viaja igual en la respuesta de redirección. safeNext es
+// siempre una ruta interna de ALLOWED_NEXT (o derivada del type), de modo que
+// new URL(safeNext, origin) nunca puede apuntar fuera de nuestro dominio.
+function successRedirect(origin: string, safeNext: string): NextResponse {
+  return NextResponse.redirect(new URL(safeNext, origin))
 }
 
 export async function GET(request: Request) {
@@ -89,7 +87,7 @@ export async function GET(request: Request) {
     const { error: verifyError } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash })
     if (!verifyError) {
       await ensureProfileAndWelcome(supabase)
-      return successPage(safeNext)
+      return successRedirect(origin, safeNext)
     }
     // Enlace caducado o ya usado (token de un solo uso) → aviso claro.
     return NextResponse.redirect(`${origin}/perfil?auth_error=verify_failed`)
@@ -103,7 +101,7 @@ export async function GET(request: Request) {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
     if (!exchangeError) {
       await ensureProfileAndWelcome(supabase)
-      return successPage(safeNext)
+      return successRedirect(origin, safeNext)
     }
   }
 
