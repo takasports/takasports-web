@@ -13,7 +13,7 @@
 //   · Solo permite http/https
 //   · Bloquea IPs privadas / localhost / servicios de metadatos cloud
 //   · Solo acepta respuestas de tipo image/*
-//   · Límite de 8 MB por imagen
+//   · Límite de 25 MB de ENTRADA (se sirve siempre encogida a WebP ≤MAX_WIDTH)
 
 import { NextRequest, NextResponse } from 'next/server'
 import sharp from 'sharp'
@@ -21,9 +21,12 @@ import sharp from 'sharp'
 // sharp recomprime las imágenes → necesita el runtime de Node (no Edge).
 export const runtime = 'nodejs'
 
-const MAX_SIZE = 8 * 1024 * 1024 // 8 MB (entrada)
-const MAX_WIDTH = 1280           // ancho máximo servido (px) — evita fotos 2-3 MB en móvil
-const WEBP_QUALITY = 72          // calidad WebP (buen equilibrio peso/nitidez)
+// Tope de ENTRADA generoso: las portadas de IA (Higgsfield→CloudFront) son PNG de
+// ~9 MB. El móvil NUNCA descarga eso: sharp las encoge a un WebP de ~50-120 KB y la
+// CDN cachea 24 h. El tope solo evita buffers absurdos en memoria (SSRF/DoS).
+const MAX_SIZE = 25 * 1024 * 1024 // 25 MB (entrada)
+const MAX_WIDTH = 1280            // ancho máximo servido (px) — evita fotos 2-3 MB en móvil
+const WEBP_QUALITY = 80           // calidad WebP (nítida en tarjetas grandes a todo el ancho)
 
 // Bloques CIDR de IPs que NUNCA deben ser accesibles desde el proxy (SSRF).
 const PRIVATE_RANGES = [
