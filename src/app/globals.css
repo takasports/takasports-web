@@ -125,6 +125,13 @@ body {
   .hero-h { height: clamp(400px, 52vw, 620px); }
 }
 
+/* En MÓVIL (teléfono) el hero de portada se mostraba a la altura del texto
+   (~200px), tapando casi toda la foto. Le damos un suelo de altura para que se
+   vea más imagen sobre el titular y para que no "salte" de tamaño al rotar. */
+@media (max-width: 639px) {
+  .hero-big-col { min-height: clamp(300px, 88vw, 410px); }
+}
+
 /* ── Horizontal snap utility for chip strips ── */
 .snap-strip {
   scroll-snap-type: x mandatory;

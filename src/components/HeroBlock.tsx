@@ -214,7 +214,7 @@ function BigCard({
     <div ref={elRef} className="h-full">
     <Link
       href={href}
-      className="group relative flex flex-col justify-end overflow-hidden rounded-2xl h-full"
+      className="hero-big-col group relative flex flex-col justify-end overflow-hidden rounded-2xl h-full"
       style={{
         textDecoration: 'none',
         background: '#06060F',
