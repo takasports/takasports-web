@@ -99,10 +99,9 @@ function pickTopEvents(events: SportEvent[], n = 4): SportEvent[] {
     }
   }
 
-  // 5) Reordenar cronológicamente para mostrar
-  return result
-    .sort((a, b) => (a.isoDate ?? '').localeCompare(b.isoDate ?? ''))
-    .slice(0, n)
+  // 5) Inicio = escaparate: dejar el orden por relevancia (más destacado
+  //    primero). `result` ya viene en orden de score; /calendario sí va por hora.
+  return result.slice(0, n)
 }
 
 interface Article {
