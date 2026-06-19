@@ -8,6 +8,7 @@ import TakaPoint from '@/components/TakaPoint'
 import { TargetIcon, LightbulbIcon, StarIcon, LiveDotIcon, LockIcon, TrophyIcon, GalleryIcon, FootballIcon } from '@/components/icons/GameIcons'
 import { vibrate } from '@/lib/game-feedback'
 import { trackPorraExactAdded, trackPorraExactRemoved } from '@/lib/analytics'
+import { SeasonPanel } from '@/app/quiniela/components/panels/SeasonPanel'
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -1572,6 +1573,16 @@ export default function MundialClient() {
               </div>
             </section>
           ))}
+        </div>
+      )}
+
+      {/* ─── Preguntas de torneo (campeón, Bota de Oro…) ─────── */}
+      {/* Mismas que la app. Antes solo vivían en Ranked Fútbol (apagado); ahora
+          el Mundial de la web también las muestra. El panel resuelve su propio
+          login y lee de /api/quiniela/season. */}
+      {!loading && (
+        <div className="mt-14">
+          <SeasonPanel user={null} />
         </div>
       )}
 
