@@ -132,6 +132,15 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://site.api.espn.com" />
         <link rel="dns-prefetch" href="https://v3.football.api-sports.io" />
         <link rel="alternate" type="application/rss+xml" title="TakaSports — Noticias deportivas" href="/rss.xml" />
+        {/* Red de seguridad CSS incrustada: si la hoja de estilos externa no llega
+            (p. ej. HTML cacheado tras un deploy → CSS con hash viejo da 404), las
+            imágenes NO deben salir a tamaño natural tapando el texto. Va inline en
+            el <head> para que esté SIEMPRE, incluso sin el CSS de la app. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: 'img,video{max-width:100%;height:auto}',
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col">
         <script

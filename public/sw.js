@@ -1,9 +1,14 @@
-// TakaSports Service Worker — push notifications + offline shell (v7)
+// TakaSports Service Worker — push notifications + offline shell (v8)
+// v8: arregla el bug "fotos gigantes" (FOUC). Cachea los estáticos de Next
+//     (/_next/static, con hash) en cache-first, así un HTML cacheado SIEMPRE
+//     encuentra su CSS y la página no se pinta sin estilos tras un deploy.
+//     Bump de versión para purgar cachés viejas sin estáticos. Fallback offline
+//     de navegación corregido de '/quiniela' (no precacheado) a '/'.
 // v7: las notificaciones usan /icon-192.png (antes /icon.svg, inexistente →
 //     salían con el icono genérico del navegador en vez del logo Taka).
 // v6: alinea el shell con la PWA instalable (start_url '/', Predicciones):
 // precache '/predicciones' y '/juegos'; bump de cache para aplicar el cambio.
-const CACHE_NAME = 'takasports-v7'
+const CACHE_NAME = 'takasports-v8'
 const SHELL_URLS = ['/', '/predicciones', '/juegos', '/calendario', '/noticias']
 
 // Install: pre-cache app shell (best-effort)
@@ -30,6 +35,28 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return
   if (request.url.includes('/api/')) return
 
+  const url = new URL(request.url)
+
+  // Estáticos de Next (CSS/JS/fuentes con hash de contenido = inmutables) →
+  // CACHE-FIRST. Clave del arreglo: si servimos un HTML cacheado, su CSS también
+  // está en caché y la página NUNCA se pinta sin estilos (bug "fotos gigantes").
+  if (url.origin === self.location.origin && url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.match(request).then(
+        (cached) =>
+          cached ||
+          fetch(request).then((res) => {
+            if (res && res.status === 200) {
+              const copy = res.clone()
+              caches.open(CACHE_NAME).then((c) => c.put(request, copy)).catch(() => null)
+            }
+            return res
+          })
+      )
+    )
+    return
+  }
+
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -38,9 +65,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((c) => c.put(request, copy)).catch(() => null)
           return res
         })
-        .catch(() =>
-          caches.match(request).then((r) => r ?? caches.match('/quiniela'))
-        )
+        .catch(() => caches.match(request).then((r) => r ?? caches.match('/')))
     )
   }
 })
