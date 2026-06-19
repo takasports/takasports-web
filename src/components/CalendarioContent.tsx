@@ -525,8 +525,8 @@ function CompGroupHeader({ comp, accent, count, first, crest, slug, banner, pinn
           </button>
         )}
         {slug && (
-          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" className="flex-shrink-0" aria-hidden style={{ opacity: 0.55 }}>
-            <path d="M4.5 2L8 6l-3.5 4" stroke={accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <svg width="13" height="13" viewBox="0 0 12 12" fill="none" className="flex-shrink-0" aria-hidden style={{ opacity: 0.95 }}>
+            <path d="M4.5 2L8 6l-3.5 4" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
         <span className="text-[9px] font-bold tabular-nums px-2 py-0.5 rounded-full flex-shrink-0"

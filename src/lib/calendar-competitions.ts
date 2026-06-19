@@ -196,7 +196,9 @@ export const COMPETITIONS: CompetitionConfig[] = [
     displayName: 'UEFA Nations League',
     shortName: 'Nations League',
     sport: 'Fútbol',
-    matchComp: 'Nations League',
+    // El feed emite comp 'Nations' (football-leagues.ts), no 'Nations League';
+    // matchComp por substring 'Nations' captura ambos sin colisionar con otras.
+    matchComp: 'Nations',
     description: 'Calendario de la UEFA Nations League: partidos de la fase de grupos y eliminatorias de la competición de selecciones europeas.',
     seasonLabel: '2025-2026',
   },
