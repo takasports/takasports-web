@@ -3,6 +3,7 @@ import { SOURCE_TZ } from '@/lib/timezone'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
 import { FOOTBALL_LEAGUES } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
+import { getEventHighlightScore } from '@/lib/competitions'
 
 export interface UpcomingEvent {
   id: string
@@ -311,17 +312,28 @@ export async function GET() {
       })
     }
 
-    // Sort: today first, then tomorrow, then next days — capped at 10
-    // (the strip shows 6; the extra allows the client to do its own capping)
-    const today    = all.filter(e => e.dateLabel === 'Hoy').slice(0, 6)
-    const tomorrow = all.filter(e => e.dateLabel === 'Mañana').slice(0, 4)
-    const rest     = all.filter(e => e.dateLabel !== 'Hoy' && e.dateLabel !== 'Mañana').slice(0, 3)
+    // Selección por IMPORTANCIA (Destacados), no por hora: el Inicio (web+app)
+    // debe enseñar los partidos que importan, no los que tocan antes. Usamos el
+    // MISMO ranking que /calendario (getEventHighlightScore: liga top, equipos/
+    // selecciones de renombre, finales, prime time). Se elige top-N por score y
+    // luego se devuelve en orden cronológico para que se lea natural.
+    const score = (e: UpcomingEvent) =>
+      getEventHighlightScore({ comp: e.comp, home: e.homeTeam, away: e.awayTeam, isoDate: e.isoDate })
+    const byScore = (a: UpcomingEvent, b: UpcomingEvent) => score(b) - score(a)
+    const chrono = (a: UpcomingEvent, b: UpcomingEvent) =>
+      (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
+    const topBy = (label: (l: string) => boolean, n: number) =>
+      all.filter(e => label(e.dateLabel)).sort(byScore).slice(0, n).sort(chrono)
+
+    const today    = topBy(l => l === 'Hoy', 12)
+    const tomorrow = topBy(l => l === 'Mañana', 6)
+    const rest     = topBy(l => l !== 'Hoy' && l !== 'Mañana', 4)
 
     const data = today.length > 0
-      ? today.slice(0, 10)
+      ? today
       : tomorrow.length > 0
-        ? [...tomorrow, ...rest].slice(0, 10)
-        : rest.slice(0, 10)
+        ? [...tomorrow, ...rest]
+        : rest
 
     cache = { data, ts: now }
     staleCache = cache

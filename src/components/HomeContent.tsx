@@ -20,6 +20,7 @@ import {
   IconSopaCracks,
 } from '@/components/games/GameVisuals'
 import { SearchIcon } from '@/components/icons/GameIcons'
+import { getEventHighlightScore } from '@/lib/competitions'
 
 const HOME_PAGE_SIZE = 8
 
@@ -32,30 +33,6 @@ const HOME_PAGE_SIZE = 8
 // evitar que la sección se monopolice un día flojo.
 const WINDOW_HOURS = 36
 const MAX_PER_SPORT = 2
-
-// Palabras clave en el nombre de la competición → peso de relevancia
-const TIER_S = [
-  'champions', 'final', 'mundial', 'world cup', 'clásico', 'clasico',
-  'super bowl', 'playoffs', 'play-off', 'eliminator',
-  'roland garros', 'wimbledon', 'us open', 'australian open', 'grand slam',
-  'masters', 'ryder cup', 'the open',
-  'gp ', ' gp', 'grand prix', 'fórmula 1', 'formula 1', 'f1',
-]
-const TIER_A = [
-  'laliga', 'la liga', 'premier league', 'serie a', 'bundesliga', 'ligue 1',
-  'copa del rey', 'copa america', 'eurocopa', 'europa league', 'conference',
-  'nba', 'euroliga', 'euroleague',
-  'atp', 'wta', 'atp 1000', 'atp 500',
-  'ufc',
-  'pga', 'liv golf',
-]
-
-function tierScore(comp: string): number {
-  const c = (comp ?? '').toLowerCase()
-  if (TIER_S.some(k => c.includes(k))) return 100
-  if (TIER_A.some(k => c.includes(k))) return 60
-  return 25
-}
 
 function pickTopEvents(events: SportEvent[], n = 4): SportEvent[] {
   const now = Date.now()
@@ -77,7 +54,9 @@ function pickTopEvents(events: SportEvent[], n = 4): SportEvent[] {
   for (const ev of unique) {
     if (ev.isPast) continue
     const ts = ev.isoDate ? new Date(ev.isoDate).getTime() : NaN
-    const base = tierScore(ev.comp)
+    // Mismo ranking de Destacados que /calendario: liga top + equipos/selecciones
+    // de renombre + finales/semis + prime time (escala ~0-18).
+    const base = getEventHighlightScore({ comp: ev.comp, home: ev.home, away: ev.away, isoDate: ev.isoDate })
     if (!Number.isFinite(ts)) {
       fallback.push({ ev, score: base, ts: Number.POSITIVE_INFINITY })
       continue
@@ -85,8 +64,8 @@ function pickTopEvents(events: SportEvent[], n = 4): SportEvent[] {
     if (ts < now - 2 * 3600_000) continue          // ya terminó hace rato
     let score = base
     if (ts <= windowEnd) {
-      // Bonus si es hoy mismo (próximas 24h)
-      if (ts <= now + 24 * 3600_000) score += 20
+      // Pequeño empujón si es hoy mismo (próximas 24h) — proporcional a la escala.
+      if (ts <= now + 24 * 3600_000) score += 4
       inWindow.push({ ev, score, ts })
     } else {
       fallback.push({ ev, score: base, ts })
