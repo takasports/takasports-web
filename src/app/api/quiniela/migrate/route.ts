@@ -4,6 +4,8 @@
 // Idempotente: badges upsert con ignoreDuplicates.
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { readJson } from '@/lib/api-utils'
+import { captureException } from '@/lib/monitoring'
 
 interface MigrateBody {
   badges: string[]             // badge ids ganados como invitado (localStorage)
@@ -13,8 +15,10 @@ export async function POST(req: NextRequest) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return NextResponse.json({ ok: true, reason: 'supabase not configured' })
   }
+  const parsed = await readJson<MigrateBody>(req)
+  if ('error' in parsed) return parsed.error
+  const body = parsed.data
   try {
-    const body = await req.json() as MigrateBody
     const sb = await createServerSupabaseClient()
     const { data: { user } } = await sb.auth.getUser()
     if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
@@ -32,6 +36,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, badgesMigrated: badges.length })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    captureException(e, { route: 'quiniela/migrate' })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { readJson } from '@/lib/api-utils'
+import { captureException } from '@/lib/monitoring'
 
 interface PushSubscriptionInput {
   endpoint: string
@@ -30,8 +32,10 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const parsed = await readJson<PushSubscriptionInput>(req)
+  if ('error' in parsed) return parsed.error
+  const sub = parsed.data
   try {
-    const sub = await req.json() as PushSubscriptionInput
     if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) {
       return NextResponse.json({ error: 'invalid subscription' }, { status: 400 })
     }
@@ -60,13 +64,16 @@ export async function POST(req: NextRequest) {
     memSubs.set(sub.endpoint, { endpoint: sub.endpoint, keys: sub.keys, topics })
     return NextResponse.json({ ok: true, persisted: false })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 400 })
+    captureException(e, { route: 'push/subscribe' })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }
 
 export async function DELETE(req: NextRequest) {
+  const parsed = await readJson<{ endpoint?: string }>(req)
+  if ('error' in parsed) return parsed.error
+  const { endpoint } = parsed.data
   try {
-    const { endpoint } = await req.json()
     if (!endpoint) return NextResponse.json({ error: 'endpoint required' }, { status: 400 })
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -76,7 +83,8 @@ export async function DELETE(req: NextRequest) {
     memSubs.delete(endpoint)
     return NextResponse.json({ ok: true })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 400 })
+    captureException(e, { route: 'push/subscribe' })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }
 

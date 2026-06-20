@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { readJson } from '@/lib/api-utils'
+import { captureException } from '@/lib/monitoring'
 
 // Fallback in-memory si Supabase no está disponible o la tabla no existe
 const memChat = new Map<string, Array<{ id: string; nickname: string; message: string; created_at: string; user_id?: string | null }>>()
@@ -73,8 +75,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const parsed = await readJson<{ liga?: string; message?: string; nickname?: string }>(req)
+  if ('error' in parsed) return parsed.error
+  const { liga, message, nickname: rawNick } = parsed.data
   try {
-    const { liga, message, nickname: rawNick } = await req.json() as { liga: string; message: string; nickname?: string }
     const ligaId = liga?.toUpperCase()
     const msg = String(message ?? '').trim().slice(0, 280)
     if (!ligaId || !msg) return NextResponse.json({ error: 'liga and message required' }, { status: 400 })
@@ -122,7 +126,8 @@ export async function POST(req: NextRequest) {
     memChat.set(ligaId, msgs)
     return NextResponse.json({ ok: true })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 400 })
+    captureException(e, { route: 'quiniela/chat' })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }
 

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { readJson } from '@/lib/api-utils'
+import { captureException } from '@/lib/monitoring'
 import type { Pick } from '@/lib/quiniela'
 
 // Estructura de un partido referenciado en una liga (snapshot al crearla)
@@ -25,6 +27,18 @@ interface MemberRow {
   user_id: string
   nickname: string
   picks: Record<string, Pick>
+}
+
+// Forma laxa del cuerpo entrante (se valida/sanitiza más abajo campo a campo).
+interface CreateLeagueBody {
+  name?: unknown
+  jornada?: unknown
+  matchKeys?: Array<Record<string, unknown>>
+}
+interface UpdateLeagueBody {
+  id?: unknown
+  nickname?: unknown
+  picks?: unknown
 }
 
 // ── Fallback in-memory (solo si Supabase no está configurado) ──────
@@ -74,8 +88,10 @@ function dropLockedPicks<T extends Record<string, unknown>>(
 
 // ── POST: crear liga ────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const parsed = await readJson<CreateLeagueBody>(req)
+  if ('error' in parsed) return parsed.error
+  const body = parsed.data
   try {
-    const body = await req.json()
     const name = String(body?.name ?? '').trim().slice(0, 60)
     const jornada = String(body?.jornada ?? '').trim().slice(0, 80)
     const matchKeysRaw = Array.isArray(body?.matchKeys) ? body.matchKeys : []
@@ -139,7 +155,8 @@ export async function POST(req: NextRequest) {
     memStore.set(id, { row, members: new Map() })
     return NextResponse.json({ id, name: row.name })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 400 })
+    captureException(e, { route: 'quiniela/leagues' })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }
 
@@ -201,8 +218,10 @@ export async function GET(req: NextRequest) {
 
 // ── PATCH: unirse / actualizar picks ────────────────────────────
 export async function PATCH(req: NextRequest) {
+  const parsed = await readJson<UpdateLeagueBody>(req)
+  if ('error' in parsed) return parsed.error
+  const body = parsed.data
   try {
-    const body = await req.json()
     const id = String(body?.id ?? '').toUpperCase()
     // 'Tú' era el placeholder hardcodeado que colapsaba a todos los
     // miembros en una sola fila — lo tratamos como vacío.
@@ -250,7 +269,8 @@ export async function PATCH(req: NextRequest) {
     })
     return NextResponse.json({ ok: true, locked: Object.keys(rawPicks).length - Object.keys(picks).length })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 400 })
+    captureException(e, { route: 'quiniela/leagues' })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }
 
@@ -287,6 +307,7 @@ export async function DELETE(req: NextRequest) {
     memStore.delete(id)
     return NextResponse.json({ ok: true })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 400 })
+    captureException(e, { route: 'quiniela/leagues' })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }

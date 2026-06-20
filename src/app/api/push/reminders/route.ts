@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { readJson } from '@/lib/api-utils'
+import { captureException } from '@/lib/monitoring'
 
 interface ReminderInput {
   endpoint: string
@@ -34,8 +36,10 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const parsed = await readJson<ReminderInput>(req)
+  if ('error' in parsed) return parsed.error
+  const b = parsed.data
   try {
-    const b = await req.json() as ReminderInput
     if (!b?.endpoint || !b?.matchRef || !b?.kickoffIso || !b?.home) {
       return NextResponse.json({ error: 'invalid' }, { status: 400 })
     }
@@ -70,19 +74,23 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 400 })
+    captureException(e, { route: 'push/reminders' })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }
 
 export async function DELETE(req: NextRequest) {
+  const parsed = await readJson<{ endpoint?: string; matchRef?: string }>(req)
+  if ('error' in parsed) return parsed.error
+  const { endpoint, matchRef } = parsed.data
   try {
-    const { endpoint, matchRef } = await req.json() as { endpoint?: string; matchRef?: string }
     if (!endpoint || !matchRef) return NextResponse.json({ error: 'invalid' }, { status: 400 })
     const sb = adminSupabase()
     if (!sb) return NextResponse.json({ error: 'not_configured' }, { status: 503 })
     await sb.from('match_reminders').delete().eq('endpoint', endpoint).eq('match_ref', matchRef)
     return NextResponse.json({ ok: true })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 400 })
+    captureException(e, { route: 'push/reminders' })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }

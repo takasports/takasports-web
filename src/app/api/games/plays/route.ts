@@ -17,6 +17,8 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { POINTS_ENABLED_GAMES, pointsFor, type GameId as PointsGameId } from '@/lib/game-points'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { readJson } from '@/lib/api-utils'
+import { captureException } from '@/lib/monitoring'
 
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
 type GameId = typeof GAME_IDS[number]
@@ -34,8 +36,10 @@ function hasSupabaseEnv(): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const parsed = await readJson<PlayBody>(req)
+  if ('error' in parsed) return parsed.error
+  const body = parsed.data
   try {
-    const body = await req.json() as PlayBody
     if (!body?.game_id || !GAME_IDS.includes(body.game_id)) {
       return NextResponse.json({ error: 'invalid game_id' }, { status: 400 })
     }
@@ -109,7 +113,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ persisted: true, play: data, awarded })
   } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 400 })
+    captureException(err, { route: 'games/plays' })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }
 

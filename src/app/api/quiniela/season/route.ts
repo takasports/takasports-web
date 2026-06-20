@@ -4,6 +4,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { readJson } from '@/lib/api-utils'
+import { captureException } from '@/lib/monitoring'
 
 interface SeasonQuestion {
   id: string
@@ -44,8 +46,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const parsed = await readJson<{ questionId?: string; answer?: string }>(req)
+  if ('error' in parsed) return parsed.error
+  const { questionId, answer } = parsed.data
   try {
-    const { questionId, answer } = await req.json() as { questionId: string; answer: string }
     if (!questionId || !answer) return NextResponse.json({ error: 'questionId and answer required' }, { status: 400 })
 
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -78,6 +82,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 400 })
+    captureException(e, { route: 'quiniela/season' })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }
