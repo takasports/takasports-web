@@ -71,6 +71,16 @@ export function isSameOrigin(req: Request): boolean {
     return process.env.NODE_ENV !== 'production'
   }
 
+  // Same-origin REAL: si el host del Origin/Referer coincide con el Host de la
+  // petición, es el MISMO sitio. No depende de NEXT_PUBLIC_SITE_URL (que puede
+  // no estar configurada en el entorno → si no, rechazaría peticiones legítimas
+  // del propio sitio). El navegador fija el Host según la URL destino; un sitio
+  // atacante no puede falsearlo, así que esto sigue bloqueando el CSRF real.
+  const reqHost = req.headers.get('host')
+  let candidateHost: string | null = null
+  try { candidateHost = new URL(candidate).host } catch { /* candidate ya viene normalizado */ }
+  if (reqHost && candidateHost && candidateHost === reqHost) return true
+
   if (expected && candidate === expected) return true
   if (process.env.NODE_ENV !== 'production' && isLocalhost(candidate)) return true
   return false
