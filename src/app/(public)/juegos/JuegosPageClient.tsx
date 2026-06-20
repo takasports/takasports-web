@@ -251,6 +251,11 @@ const GAMES: Game[] = [
   },
 ]
 
+// Aporte REAL a la Liga Taka por minijuego (game-points.ts: diarios 1→5,
+// semanales 2→12). El `pts` de cada juego es la puntuación de la PARTIDA
+// (arcade), NO puntos de Liga Taka — no mezclar las dos escalas en la UI.
+const LIGA_TAKA_MAX: Record<string, number> = { crackquiz: 5, takagrid: 5, mionce: 12, sopacracks: 12 }
+
 // ── Componentes de badges ────────────────────────────────────
 
 function DifficultyDots({ level }: { level: Difficulty }) {
@@ -338,7 +343,7 @@ function FeaturedGameCard({ game }: { game: Game }) {
           </div>
           <div className="flex items-center gap-1.5">
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1.5l1.5 3.2 3.5.5-2.5 2.4.6 3.4L7 9.3 3.9 11l.6-3.4L2 5.2l3.5-.5L7 1.5z" stroke="#5A4878" strokeWidth="1.1" /></svg>
-            <span className="text-[10px]" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Hasta {game.pts} pts</span>
+            <span className="text-[10px]" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>{LIGA_TAKA_MAX[game.id] ? `Hasta ${LIGA_TAKA_MAX[game.id]} pts Liga Taka` : `Hasta ${game.pts} pts`}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-[10px]" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Dificultad</span>
@@ -441,7 +446,7 @@ function LiveGameCard({ game }: { game: Game }) {
           <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>·</span>
           <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
           <span className="ml-auto text-[9px] font-black" style={{ color: `${game.accent}A0`, fontFamily: 'var(--font-sport)' }}>
-            {game.pts} pts
+            {LIGA_TAKA_MAX[game.id] ?? game.pts} pts
           </span>
         </div>
 
@@ -558,7 +563,7 @@ function ComingGameCard({ game }: { game: Game }) {
           <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>·</span>
           <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
           <span className="ml-auto text-[9px] font-black" style={{ color: `${game.accent}80`, fontFamily: 'var(--font-sport)' }}>
-            {game.pts} pts
+            {LIGA_TAKA_MAX[game.id] ?? game.pts} pts
           </span>
         </div>
 

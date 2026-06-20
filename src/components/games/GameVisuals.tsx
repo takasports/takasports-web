@@ -253,7 +253,7 @@ export function PreviewQuiniela({ accent, accentDim }: { accent: string; accentD
     <div className="w-full">
       <div className="rounded-xl p-2.5" style={{ background: 'rgba(0,0,0,0.28)' }}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[9px] font-black tracking-wider" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>JORNADA 38</span>
+          <span className="text-[9px] font-black tracking-wider" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>JORNADA</span>
           <span className="text-[8px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>4/14</span>
         </div>
         <div className="space-y-1">

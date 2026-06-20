@@ -11,11 +11,12 @@ import { useMyPlayedGames } from '@/hooks/useMyPlayedGames'
 import { getGamePeriod } from '@/lib/games-periods'
 import type { GameId } from '@/lib/games-store'
 
+// Solo los juegos DIARIOS: el "Reto del día" cuenta atrás en horas y dice
+// "vuelve mañana". Sopa de Cracks y Mi Once son SEMANALES (resetean el lunes),
+// así que no encajan aquí — se juegan desde el hub /juegos.
 const TILES: { id: GameId; name: string; href: string }[] = [
   { id: 'crackquiz',  name: 'CrackQuiz',      href: '/crackquiz' },
   { id: 'takagrid',   name: 'TakaGrid',       href: '/takagrid' },
-  { id: 'sopacracks', name: 'Sopa de Cracks', href: '/sopa-cracks' },
-  { id: 'mionce',     name: 'Mi Once',        href: '/mionce' },
 ]
 
 function fmtCountdown(ms: number): string {

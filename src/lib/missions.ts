@@ -81,7 +81,7 @@ export const TEMPLATES: Record<string, MissionTemplate> = {
     emoji: '💥', goal: { kind: 'score-at-least', gameId: 'crackquiz', min: 100 }, rewardXp: 80, period: 'daily',
   },
   'd-double-quiz': {
-    id: 'd-double-quiz', title: 'Doble jugada', description: 'Termina 2 partidas de CrackQuiz (la práctica cuenta)',
+    id: 'd-double-quiz', title: 'Doble jugada', description: 'Termina 2 partidas de CrackQuiz (sin contar la práctica)',
     emoji: '🎲', goal: { kind: 'play-game', gameId: 'crackquiz', target: 2 }, rewardXp: 40, period: 'daily',
   },
   'w-once': {

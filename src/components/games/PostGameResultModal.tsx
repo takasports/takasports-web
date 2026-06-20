@@ -105,7 +105,7 @@ export default function PostGameResultModal({
           >
             {play.score}
           </p>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>puntos</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>puntos de la partida</p>
         </div>
 
         {/* Posición */}
