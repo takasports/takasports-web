@@ -883,6 +883,28 @@ textarea:focus-visible,
   z-index: 2;
 }
 
+/* Portada de Predicciones — la foto "respira" (ken-burns lento, 0 KB) y el
+   piloto rojo "rec" de La Señal late. Solo en la cabecera de /predicciones
+   (clase --hero); no afecta a los demás consumidores del banco signal.
+   Ambos se apagan con prefers-reduced-motion. */
+@keyframes signalKen { from { transform: scale(1.03); } to { transform: scale(1.11); } }
+.signal-ambient--hero .signal-backdrop {
+  animation: signalKen 26s var(--ease-standard, ease) infinite alternate;
+  will-change: transform;
+}
+@keyframes signalRec { 0%, 100% { opacity: 1; } 50% { opacity: 0.28; } }
+.signal-rec {
+  width: 7px; height: 7px; border-radius: 9999px;
+  background: var(--color-live, #FF4D2E);
+  box-shadow: 0 0 8px var(--color-live, #FF4D2E);
+  animation: signalRec 1.6s var(--ease-standard, ease) infinite;
+  flex-shrink: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .signal-ambient--hero .signal-backdrop { animation: none; }
+  .signal-rec { animation: none; }
+}
+
 /* Tarjeta de partido — silueta "broadcast" con profundidad. Mantiene box-shadow
    (barato) en vez de clip-path (que la eliminaría); la firma de forma es la
    muesca diagonal de acento abajo-derecha (::after) y el borde de acento. */

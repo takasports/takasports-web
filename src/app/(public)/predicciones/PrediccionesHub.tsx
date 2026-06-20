@@ -87,6 +87,15 @@ const SPORTS: {
   },
 ]
 
+// Copy de la portada por deporte (identidad base + variación por deporte):
+// el marco "La Señal" es común; el eyebrow + la línea de apoyo cambian con el
+// deporte activo. El dato vivo del evento lo aporta el hero de cada cliente.
+const HERO_COPY: Record<SportTab, { eyebrow: string; sub: string }> = {
+  mundial: { eyebrow: 'Mundial 2026',  sub: 'Pronostica cada partido y escala el Ranking Ranked.' },
+  ufc:     { eyebrow: 'Ranked UFC',    sub: 'Predice cada combate. El estelar vale el doble.' },
+  futbol:  { eyebrow: 'Ranked Fútbol', sub: RANKED_FUTBOL_ENABLED ? 'Pronostica la jornada y compite en el Ranking.' : 'Predicciones de Liga. Muy pronto.' },
+}
+
 // Tabs del hub (todas disponibles)
 const HUB_TABS: { id: HubTab; label: string }[] = [
   { id: 'ranked',    label: 'Ranked' },
@@ -102,6 +111,8 @@ export default function PrediccionesHub() {
   const [sportTab, setSportTab] = useState<SportTab>('mundial')
   const { streak }              = useStreak()
   const { points }              = usePoints()
+  const activeSport             = SPORTS.find(s => s.id === sportTab) ?? SPORTS[0]
+  const heroCopy                = HERO_COPY[sportTab]
 
   // Navegación por teclado del tablist del hub (WAI-ARIA): flechas/Home/End
   // ciclan entre las 3 secciones y trasladan el foco a la recién activada.
@@ -191,7 +202,7 @@ export default function PrediccionesHub() {
               Capa estática detrás del contenido; se desvanece hacia abajo;
               key={sportTab} → crossfade al cambiar de deporte. Respeta
               prefers-reduced-motion (globals: .signal-ambient → animation none). */}
-          <div className="signal-ambient" aria-hidden="true" key={sportTab}>
+          <div className="signal-ambient signal-ambient--hero" aria-hidden="true" key={sportTab}>
             <img
               src={`/banners/signal/${sportTab}.webp`}
               alt=""
@@ -210,6 +221,31 @@ export default function PrediccionesHub() {
             />
           </div>
           <div style={{ position: 'relative', zIndex: 1 }}>
+          {/* ── Portada "La Señal" — marco cinematográfico común ───────────
+              Cabecera de sección sobre la foto signal: piloto rojo "rec",
+              título de cadena (PREDICCIONES) y línea de apoyo que se viste con
+              el acento del deporte activo. El hero específico de cada deporte
+              (cuenta atrás del Mundial, cartel de UFC) va justo debajo. */}
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pt-6 sm:pt-7 pb-1">
+            <div className="flex items-center gap-2">
+              <span className="signal-rec" aria-hidden="true" />
+              <span style={{ fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 900, letterSpacing: '0.16em', color: 'var(--color-live)', textTransform: 'uppercase' }}>
+                Predicciones en juego
+              </span>
+              <span style={{ fontFamily: 'var(--font-sport)', fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                · La Señal
+              </span>
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 'clamp(2rem, 5.5vw, 3.4rem)', lineHeight: 0.9, color: '#F4F4FA', letterSpacing: '-0.03em', textShadow: '0 2px 30px rgba(0,0,0,0.55)', marginTop: 8 }}>
+              PREDICCIONES
+            </div>
+            <div style={{ height: 3, width: 72, marginTop: 9, borderRadius: 2, background: `linear-gradient(to right, ${activeSport.accent}, ${activeSport.accent}00)`, transition: 'background var(--duration-slow, 300ms) var(--ease-standard, ease)' }} />
+            <p style={{ marginTop: 11, fontSize: 13, color: 'var(--text-secondary)', maxWidth: 520, lineHeight: 1.45 }}>
+              <span style={{ fontFamily: 'var(--font-sport)', fontWeight: 900, color: activeSport.accent, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 12 }}>{heroCopy.eyebrow}</span>
+              <span style={{ color: 'var(--text-faint)', margin: '0 8px' }}>·</span>
+              {heroCopy.sub}
+            </p>
+          </div>
           {/* Sport selector */}
           <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pt-4 pb-2">
             <div className="flex gap-2 overflow-x-auto scrollbar-none" role="tablist" aria-label="Deporte">
