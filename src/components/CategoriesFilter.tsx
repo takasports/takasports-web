@@ -7,11 +7,11 @@ import { FootballIcon, BasketballIcon, F1Icon, TennisIcon, UFCIcon, RugbyIcon, W
 const SPORT_META: Record<string, { accent: string; Icon: React.ComponentType<{ size?: number }> | null }> = {
   'Todo':    { accent: '#7C3AED', Icon: null },
   'Fútbol':  { accent: '#22c55e', Icon: FootballIcon },
-  'WWE':     { accent: '#facc15', Icon: WWEIcon },
+  'Lucha libre': { accent: '#facc15', Icon: WWEIcon },
   'F1':      { accent: '#ef4444', Icon: F1Icon },
   'Baloncesto': { accent: '#f59e0b', Icon: BasketballIcon },
   'Tenis':   { accent: '#d97706', Icon: TennisIcon },
-  'UFC':     { accent: '#f97316', Icon: UFCIcon },
+  'MMA':     { accent: '#f97316', Icon: UFCIcon },
   'Rugby':   { accent: '#a78bfa', Icon: RugbyIcon },
 }
 
@@ -69,6 +69,7 @@ export default function CategoriesFilter({
               className="group flex-shrink-0 flex items-center gap-1.5 relative transition-colors duration-200"
               style={{
                 padding: '10px 14px 10px 12px',
+                minHeight: 44,
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',

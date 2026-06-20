@@ -1107,7 +1107,7 @@ function DaySeparator({ dateKey, count, tone = 'upcoming' }: {
               {label}
             </h2>
             {subtitle && (
-              <p className="text-[10px] mt-1 capitalize tracking-wide" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[10px] mt-1 first-letter:uppercase tracking-wide" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
                 {subtitle}
               </p>
             )}
