@@ -17,6 +17,7 @@ import ReadTracker from '@/app/article/[id]/ReadTracker'
 import ArticleTableOfContents from '@/components/ArticleTableOfContents'
 import ArticleComments from '@/components/ArticleComments'
 import PorraMatchWidget from '@/components/PorraMatchWidget'
+import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 import { extractHeadings, type TocHeading } from '@/lib/article-toc'
 import {
   getEntityIndex,
@@ -821,10 +822,13 @@ export default async function NoticiaPage({
               </p>
             )}
 
-            {/* Widget La Porra — solo se materializa si el artículo cita un partido de la jornada activa */}
-            <div style={{ maxWidth: 680 }}>
-              <PorraMatchWidget title={article.title} tags={article.tags} />
-            </div>
+            {/* Widget La Porra — solo con Ranked Fútbol activo (enseña cuotas y
+                puntos de la quiniela de LaLiga, hoy apagada). */}
+            {RANKED_FUTBOL_ENABLED && (
+              <div style={{ maxWidth: 680 }}>
+                <PorraMatchWidget title={article.title} tags={article.tags} />
+              </div>
+            )}
 
             {article.bodyPortable && article.bodyPortable.length > 0 ? (
               <div style={{ maxWidth: 680 }}>

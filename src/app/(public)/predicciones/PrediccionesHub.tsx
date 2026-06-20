@@ -141,9 +141,11 @@ export default function PrediccionesHub() {
       {/* U — Banner de reto, solo cuando ?reto=TOKEN llega en la URL.
           F6 — Suspense boundary: useSearchParams en client component lo
           requiere para no forzar a la ruta entera a dynamic rendering. */}
-      <Suspense fallback={null}>
-        <PorraChallengeBanner />
-      </Suspense>
+      {RANKED_FUTBOL_ENABLED && (
+        <Suspense fallback={null}>
+          <PorraChallengeBanner />
+        </Suspense>
+      )}
 
       {/* ── Hub tabs ──────────────────────────────────────────────── */}
       <div

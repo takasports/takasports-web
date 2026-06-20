@@ -11,6 +11,7 @@ import Sidebar from '@/components/Sidebar'
 import type { RankingEntry } from '@/lib/rankings'
 import QuinielaTeaser from '@/components/QuinielaTeaser'
 import RetoDelDia from '@/components/games/RetoDelDia'
+import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 import CategoriesFilter from '@/components/CategoriesFilter'
 import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, SLUG_TO_LABEL } from '@/lib/sports'
 import type { SportEvent } from '@/lib/types'
@@ -230,8 +231,10 @@ function GamesSection() {
       {/* Reto del día — acceso de un toque al primer juego diario pendiente */}
       <RetoDelDia />
 
-      {/* Quiniela teaser — 3 partidos destacados como preview */}
-      <QuinielaTeaser />
+      {/* Quiniela teaser — solo con Ranked Fútbol activo. Con el flag off,
+          /quiniela redirige al Mundial → la jornada de LaLiga que muestra no
+          se puede jugar, así que no lo enseñamos. */}
+      {RANKED_FUTBOL_ENABLED && <QuinielaTeaser />}
 
       {/* Otros juegos: tira fina como atajo de navegación */}
       <div className="mt-3 grid grid-cols-3 gap-2">
@@ -406,7 +409,7 @@ export default function HomeContent({
   const heroStripPool = filteredArticles.slice(3, 23)
 
   return (
-    <main className="max-w-[1440px] mx-auto pb-6">
+    <main id="main" className="max-w-[1440px] mx-auto pb-6">
 
       {/* ── FILTRO GLOBAL — sticky bajo el header ───────────────── */}
       <div
