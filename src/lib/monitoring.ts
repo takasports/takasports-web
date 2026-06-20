@@ -13,20 +13,19 @@
 type Extras = Record<string, unknown>
 
 export function captureException(error: unknown, extras?: Extras): void {
-  if (process.env.NODE_ENV === 'production') {
-    // Sentry.captureException(error, { extra: extras })
-    // Until Sentry is wired up, send to /api/log-error if desired,
-    // or simply suppress. Errors are still surfaced in Vercel logs.
-    return
-  }
+  // Sentry.captureException(error, { extra: extras })  // cuando se cablee Sentry
+  //
+  // Hasta entonces registramos en consola SIEMPRE (dev y PROD). En producción
+  // esto aparece en los Logs de Vercel — un destino real y consultable (vía el
+  // MCP de Vercel / dashboard) — en vez del antiguo `return` que dejaba la app
+  // CIEGA ante cualquier fallo en producción.
   // eslint-disable-next-line no-console
-  console.error('[TakaSports]', error, extras)
+  console.error('[TakaSports]', error, extras ?? '')
 }
 
 export function captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info'): void {
-  if (process.env.NODE_ENV !== 'production') {
-    // eslint-disable-next-line no-console
-    console[level === 'error' ? 'error' : level === 'warning' ? 'warn' : 'log']('[TakaSports]', message)
-  }
-  // Sentry.captureMessage(message, level)
+  // Sentry.captureMessage(message, level)  // cuando se cablee Sentry
+  const fn = level === 'error' ? 'error' : level === 'warning' ? 'warn' : 'log'
+  // eslint-disable-next-line no-console
+  console[fn]('[TakaSports]', message)
 }

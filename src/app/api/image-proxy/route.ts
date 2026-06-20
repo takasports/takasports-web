@@ -76,6 +76,31 @@ function browserHeaders(imageUrl: string): HeadersInit {
   }
 }
 
+// Sigue redirecciones MANUALMENTE re-validando cada salto con isSafeUrl. Con
+// redirect:'follow', un dominio permitido podía responder 302 → IP privada /
+// metadatos cloud (169.254.169.254) y saltarse el guardia SSRF (solo miraba la
+// URL inicial). Aquí cada Location pasa por isSafeUrl antes de seguirla.
+async function fetchFollowingSafe(startUrl: string, maxHops = 3): Promise<Response> {
+  let url = startUrl
+  for (let hop = 0; hop <= maxHops; hop++) {
+    const res = await fetch(url, {
+      headers: browserHeaders(url),
+      redirect: 'manual',
+      signal: AbortSignal.timeout(8_000), // 8 s timeout
+    })
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get('location')
+      if (!loc) return res // 3xx sin Location: que lo gestione el caller
+      const next = new URL(loc, url).toString() // resuelve relativos contra la URL actual
+      if (!isSafeUrl(next)) throw new Error('unsafe_redirect')
+      url = next
+      continue
+    }
+    return res
+  }
+  throw new Error('too_many_redirects')
+}
+
 export async function GET(request: NextRequest) {
   const raw = request.nextUrl.searchParams.get('url')
   if (!raw) {
@@ -87,11 +112,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const upstream = await fetch(raw, {
-      headers: browserHeaders(raw),
-      redirect: 'follow',
-      signal: AbortSignal.timeout(8_000), // 8 s timeout
-    })
+    const upstream = await fetchFollowingSafe(raw)
 
     if (!upstream.ok) {
       // No retransmitir el cuerpo del error del upstream — solo el status

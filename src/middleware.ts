@@ -155,7 +155,10 @@ export const config = {
     '/admin/:path*',
     '/archivo',
     '/quiniela/:path*',
-    // (A) Endpoints API con dependencia de sesión Supabase
+    // (A) Endpoints API con dependencia de sesión Supabase / mutables por cookie.
+    // Todos pasan por el guard CSRF (isSameOrigin solo bloquea POST/PUT/PATCH/
+    // DELETE de origen ajeno; GET y peticiones con Bearer/secret quedan exentas,
+    // así que la app móvil y los crons no se ven afectados).
     '/api/auth/:path*',
     '/api/articles/:path*',
     '/api/reels/:path*',
@@ -164,6 +167,12 @@ export const config = {
     '/api/rankings/:path*',
     '/api/games/:path*',
     '/api/quiniela/:path*',
+    '/api/ranked/:path*',
+    '/api/comments/:path*',
+    '/api/cosmetics/:path*',
+    '/api/account/:path*',
+    '/api/mionce/:path*',
+    '/api/newsletter/:path*',
     // (B) Rutas públicas de contenido — solo Cache-Control override
     '/',
     '/noticias/:path*',
