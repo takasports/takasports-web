@@ -17,6 +17,9 @@
 // Cron de Vercel — OJO: los crons de Vercel SIEMPRE hacen GET. Por eso el cron
 // debe llevar ?award=1, si no el GET se queda en dry-run y NUNCA reparte premios.
 //   GET /api/admin/ranked/close-week?sport=mundial&award=1
+//
+// NOTA de datos: point_transactions NO tiene FK a profiles, así que NO se puede
+// usar el embed PostgREST `profiles!inner(...)`. Los nombres se traen aparte.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
@@ -45,6 +48,42 @@ interface RankRow {
   rank:         number
 }
 
+/** Suma de puntos por usuario en la ventana (amount>0, source ranked_prediction). */
+async function weeklyTotals(
+  admin: AdminClient,
+  sport: string,
+  weekStartIso: string,
+  weekEndIso: string,
+): Promise<{ error?: string; totals: Map<string, number> }> {
+  const { data: rows, error } = await admin
+    .from('point_transactions')
+    .select('user_id, amount')
+    .eq('sport', sport)
+    .eq('source', 'ranked_prediction')
+    .gt('amount', 0)
+    .gte('created_at', weekStartIso)
+    .lte('created_at', weekEndIso)
+
+  if (error) return { error: error.message, totals: new Map() }
+
+  const totals = new Map<string, number>()
+  for (const r of (rows as unknown as Array<{ user_id: string; amount: number }>) ?? []) {
+    totals.set(r.user_id, (totals.get(r.user_id) ?? 0) + r.amount)
+  }
+  return { totals }
+}
+
+/** Nombres de display por id (consulta aparte: no hay FK para embed). */
+async function fetchNames(admin: AdminClient, ids: string[]): Promise<Map<string, string | null>> {
+  const map = new Map<string, string | null>()
+  if (ids.length === 0) return map
+  const { data } = await admin.from('profiles').select('id, display_name').in('id', ids)
+  for (const r of (data as unknown as Array<{ id: string; display_name: string | null }>) ?? []) {
+    map.set(r.id, r.display_name)
+  }
+  return map
+}
+
 // ── Núcleo compartido ───────────────────────────────────────────────
 // Lee el leaderboard semanal y OTORGA los badges del top-3. Lo usan el
 // POST (disparo manual) y el GET con ?award=1 (cron semanal de Vercel).
@@ -54,48 +93,25 @@ async function closeWeek(
   weekStartIso: string,
   weekEndIso: string,
 ): Promise<{ status: number; body: Record<string, unknown> }> {
-  // Suma de puntos ganados (amount > 0) en ranked_predictions para el
-  // deporte y la ventana de tiempo especificados.
-  const { data: rows, error } = await admin
-    .from('point_transactions')
-    .select(`
-      user_id,
-      profiles!inner(display_name),
-      amount
-    `)
-    .eq('sport', sport)
-    .eq('source', 'ranked_prediction')
-    .gt('amount', 0)
-    .gte('created_at', weekStartIso)
-    .lte('created_at', weekEndIso)
+  const { error, totals } = await weeklyTotals(admin, sport, weekStartIso, weekEndIso)
+  if (error) return { status: 500, body: { ok: false, error } }
 
-  if (error) return { status: 500, body: { ok: false, error: error.message } }
-
-  if (!rows || rows.length === 0) {
+  if (totals.size === 0) {
     return {
       status: 200,
       body: { ok: true, sport, week_start: weekStartIso, note: 'no_activity_this_week', awarded: [] },
     }
   }
 
-  // Agrupa por user_id
-  interface UserTotal { user_id: string; display_name: string | null; total: number }
-  const totals = new Map<string, UserTotal>()
-  for (const r of rows as unknown as Array<{ user_id: string; profiles: { display_name: string | null } | null; amount: number }>) {
-    const prev = totals.get(r.user_id) ?? {
-      user_id:      r.user_id,
-      display_name: r.profiles?.display_name ?? null,
-      total:        0,
-    }
-    prev.total += r.amount
-    totals.set(r.user_id, prev)
-  }
-
-  // Ordena desc y toma TOP 3
-  const ranked: RankRow[] = [...totals.values()]
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 3)
-    .map((u, i) => ({ ...u, total_week: u.total, rank: i + 1 }))
+  // Top-3 por puntos
+  const top3 = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
+  const names = await fetchNames(admin, top3.map(([uid]) => uid))
+  const ranked: RankRow[] = top3.map(([uid, total], i) => ({
+    user_id:      uid,
+    display_name: names.get(uid) ?? null,
+    total_week:   total,
+    rank:         i + 1,
+  }))
 
   // ── Award badges ──────────────────────────────────────────────────
   const awarded: Array<{ user_id: string; display_name: string | null; rank: number; badges: string[] }> = []
@@ -184,30 +200,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(body, { status })
   }
 
-  // ── Dry-run / preview (sin award) ─────────────────────────────────
-  const { data: rows, error } = await admin
-    .from('point_transactions')
-    .select('user_id, profiles!inner(display_name), amount')
-    .eq('sport', sport)
-    .eq('source', 'ranked_prediction')
-    .gt('amount', 0)
-    .gte('created_at', weekStart)
-    .lte('created_at', weekEnd)
+  // ── Dry-run / preview (sin award, top-10) ─────────────────────────
+  const { error, totals } = await weeklyTotals(admin, sport, weekStart, weekEnd)
+  if (error) return NextResponse.json({ ok: false, error }, { status: 500 })
 
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
-
-  const totals = new Map<string, { display_name: string | null; total: number }>()
-  for (const r of (rows as unknown as Array<{ user_id: string; profiles: { display_name: string | null } | null; amount: number }>) ?? []) {
-    const prev = totals.get(r.user_id) ?? { display_name: r.profiles?.display_name ?? null, total: 0 }
-    prev.total += r.amount
-    totals.set(r.user_id, prev)
-  }
-
-  const top = [...totals.entries()]
-    .map(([uid, v]) => ({ user_id: uid, ...v }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 10)
-    .map((u, i) => ({ rank: i + 1, ...u }))
+  const topEntries = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
+  const names = await fetchNames(admin, topEntries.map(([uid]) => uid))
+  const top = topEntries.map(([uid, total], i) => ({
+    rank:         i + 1,
+    user_id:      uid,
+    display_name: names.get(uid) ?? null,
+    total,
+  }))
 
   return NextResponse.json({ ok: true, sport, week_start: weekStart, week_end: weekEnd, top, dry_run: true })
 }
