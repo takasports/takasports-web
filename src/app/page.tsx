@@ -14,6 +14,7 @@ import SignalIntro from '@/components/SignalIntro'
 import WelcomeOnboarding from '@/components/WelcomeOnboarding'
 import Footer from '@/components/Footer'
 import NewsletterSection from '@/components/NewsletterSection'
+import ScrollToTop from '@/components/ScrollToTop'
 import { urlFor } from '@/lib/sanity'
 import { SITE_URL } from '@/lib/constants'
 
@@ -201,6 +202,7 @@ export default async function Home() {
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+      <a href="#main" className="skip-link">Saltar al contenido</a>
       <SignalIntro />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       {videoListJsonLd && (
@@ -214,6 +216,7 @@ export default async function Home() {
       <NewsletterSection source="home" />
       <Footer />
       <WelcomeOnboarding />
+      <ScrollToTop />
     </div>
   )
 }

@@ -89,7 +89,7 @@ export default async function NoticiasPageN({
   if (articles.length === 0) notFound()
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
-  const hasPrev = page > 2
+  const hasPrev = page >= 2
   const hasNext = page < totalPages
 
   const breadcrumbJsonLd = {
