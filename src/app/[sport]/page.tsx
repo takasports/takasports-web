@@ -233,6 +233,7 @@ export default async function SportPage({
           articles={safeArticles}
           reels={igReels as typeof reels}
           initialCategory={label}
+          headingAs="h2"
         />
       </main>
 

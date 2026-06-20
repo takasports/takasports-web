@@ -32,6 +32,8 @@ export const metadata: Metadata = {
 export default function MundialPage() {
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+      {/* H1 server-rendered: el cliente del Mundial no emitía ningún H1. (Fix M1 SEO) */}
+      <h1 className="sr-only">Mundial 2026 — predicciones, partidos y resultados</h1>
       <MundialWrapper />
       {/* Enlace interno server-rendered al calendario del Mundial (SEO + descubrimiento). */}
       <nav

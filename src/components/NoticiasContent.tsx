@@ -96,10 +96,14 @@ export default function NoticiasContent({
   articles,
   reels,
   initialCategory = 'Todo',
+  headingAs = 'h1',
 }: {
   articles: Article[]
   reels: SanityReel[]
   initialCategory?: string
+  // En /noticias es el H1 de la página; embebido en un hub de deporte
+  // (que ya tiene su propio H1) debe ser H2 para no duplicar el H1. (Fix M1 SEO)
+  headingAs?: 'h1' | 'h2'
 }) {
   const router = useRouter()
   const [activeCategory, setActiveCategory] = useState(initialCategory)
@@ -191,6 +195,7 @@ export default function NoticiasContent({
     ...(hasWeek  ? [{ key: 'semana' as TimeFilter, label: 'Esta semana' }] : []),
   ]
   const showTimePills = timePills.length > 1
+  const HeadingTag = headingAs
 
   return (
     <>
@@ -202,7 +207,7 @@ export default function NoticiasContent({
               <span className="section-accent" />
               <span className="section-label">La actualidad deportiva</span>
             </div>
-            <h1
+            <HeadingTag
               className="font-black leading-none"
               style={{
                 fontFamily: 'var(--font-display)',
@@ -212,7 +217,7 @@ export default function NoticiasContent({
               }}
             >
               Noticias
-            </h1>
+            </HeadingTag>
           </div>
           <p className="text-[10px] flex-shrink-0 pb-1" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
             {editorialDate()}{filteredArticles.length > 0 ? ` · ${filteredArticles.length} historias` : ''}

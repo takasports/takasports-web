@@ -34,15 +34,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = team.standingSummary
     ? `${team.name} — ${team.standingSummary}. ${team.record?.summary ?? ''} en ${team.leagueLabel}`
     : `${team.name} · ${team.leagueLabel} en TakaSports`
+  const canonical = `${SITE_URL}/equipo/${slug}`
+  const ogImageUrl = team.logo ?? `${SITE_URL}/taka-icon.png`
   return {
     title,
     description,
-    alternates: { canonical: `${SITE_URL}/equipo/${slug}` },
+    alternates: { canonical },
     openGraph: {
       title, description,
-      images: [{ url: team.logo ?? `${SITE_URL}/taka-icon.png`, width: 200, height: 200 }],
+      url: canonical,
+      images: [{ url: ogImageUrl, width: 200, height: 200 }],
       type: 'website', siteName: SITE_NAME,
     },
+    // Sin `twitter` propio, X mostraba el default genérico del home. Se reflejan
+    // título/descripción del equipo; card 'summary' (cuadrada) porque el escudo
+    // es 200×200 y encaja limpio. (Fix A3 SEO)
+    twitter: { card: 'summary', title, description, images: [ogImageUrl] },
   }
 }
 

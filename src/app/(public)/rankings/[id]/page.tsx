@@ -185,13 +185,11 @@ export default async function EntryDetailPage(
     ...(entry.country && schemaType === 'Person' && { nationality: { '@type': 'Country', name: entry.country } }),
     ...(entry.sport && schemaType === 'Person' && { knowsAbout: entry.sport }),
     ...(entry.sport && schemaType === 'SportsTeam' && { sport: entry.sport }),
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: ds,
-      bestRating: 100,
-      worstRating: 0,
-      ratingCount: 1,
-    },
+    // El "Índice Taka" (ds) es una puntuación editorial propia, no una reseña
+    // agregada. Modelarlo como AggregateRating (con ratingCount:1, auto-otorgado)
+    // viola la política de review snippets de Google y arriesga supresión/acción
+    // manual a escala (~1.100 entidades). Se retira de los datos estructurados;
+    // el score se sigue mostrando en la propia página. (Fix A4 SEO, jun 2026)
   }
 
   const breadcrumbJsonLd = {

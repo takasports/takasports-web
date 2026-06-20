@@ -56,5 +56,11 @@ export default async function EstadisticasSportPage({
 }: { params: Promise<{ sport: string }> }) {
   const { sport } = await params
   if (!SPORT_META[sport]) notFound()
-  return <EstadisticasView sport={sport} />
+  return (
+    <>
+      {/* H1 server-rendered con el deporte: la vista es cliente y no emitía H1. (Fix M1 SEO) */}
+      <h1 className="sr-only">Estadísticas de {SPORT_META[sport].label} en vivo</h1>
+      <EstadisticasView sport={sport} />
+    </>
+  )
 }

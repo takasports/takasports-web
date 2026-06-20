@@ -422,10 +422,16 @@ export default async function NoticiaPage({
 
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1400).height(600).url() : null)
   const canonical = `${SITE_URL}/noticias/${article.slug ?? id}`
-  // Tarjeta OG propia (1200×630, marca + foto + titular). Cuando no hay imagen
-  // propia en el CDN, los datos estructurados y Discover usan ESTA imagen propia
-  // y controlada en vez de hotlinkear el CDN de otro medio. (Fase 2 SEO, jun 2026)
-  const ogCardUrl = `${canonical}/opengraph-image`
+  // Imagen para datos estructurados / Discover. Orden: imagen líder real del
+  // artículo (la misma que publica el image-sitemap, resuelve 200) → tarjeta OG
+  // ESTÁTICA del home como último recurso. Antes se apuntaba a
+  // `${canonical}/opengraph-image`, pero Next.js NO sirve la tarjeta OG dinámica
+  // en su ruta sin hash → daba 404 en los ~1.157 artículos (la `image` es
+  // propiedad obligatoria de NewsArticle: un 404 inhabilita la miniatura en
+  // Google News / Top Stories). El fix definitivo (auto-alojar la imagen líder)
+  // es la tarea A8. (Fix C1 SEO, jun 2026)
+  const ogCardFallback = `${SITE_URL}/opengraph-image`
+  const ogCardUrl = article.imageUrl ?? ogCardFallback
 
   // Google News / Top Stories prioriza artículos con imágenes en 16:9, 4:3 y 1:1
   function multiRatioImages(): string[] {
@@ -436,7 +442,8 @@ export default async function NoticiaPage({
         urlFor(article.image).width(1200).height(1200).url(), // 1:1
       ]
     }
-    // Sin asset propio → tarjeta OG propia (nunca el CDN de la competencia).
+    // Sin asset propio en Sanity → imagen líder real (image-sitemap) o, en su
+    // defecto, la tarjeta OG estática del home. Siempre resuelve 200.
     return [ogCardUrl]
   }
   const articleImages = multiRatioImages()

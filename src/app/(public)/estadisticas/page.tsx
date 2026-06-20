@@ -8,5 +8,11 @@ import { EstadisticasView } from './StatsView'
 export const revalidate = 300
 
 export default async function EstadisticasPage() {
-  return <EstadisticasView sport="" />
+  return (
+    <>
+      {/* H1 server-rendered: la vista de estadísticas es cliente y no emitía H1. (Fix M1 SEO) */}
+      <h1 className="sr-only">Estadísticas deportivas en vivo</h1>
+      <EstadisticasView sport="" />
+    </>
+  )
 }

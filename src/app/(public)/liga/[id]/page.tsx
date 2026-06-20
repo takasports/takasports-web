@@ -40,7 +40,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: { absolute: title }, description,
     alternates: { canonical: `${SITE_URL}/liga/${id}` },
-    openGraph: { title, description, type: 'website', siteName: SITE_NAME },
+    openGraph: { title, description, type: 'website', siteName: SITE_NAME, url: `${SITE_URL}/liga/${id}` },
+    // Sin definir `twitter`, X heredaba el default genérico del root layout
+    // (logo + "Noticias deportivas") en vez de la tarjeta OG propia de la liga.
+    // Al declararlo, la convención opengraph-image.tsx de esta ruta rellena
+    // también twitter:image (tarjeta 1200×630), igual que en /rankings. (Fix A3 SEO)
+    twitter: { card: 'summary_large_image', title, description },
   }
 }
 

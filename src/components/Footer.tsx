@@ -9,7 +9,9 @@ import { TrophyIcon } from './icons/GameIcons'
 // canonical hacia home (bug pendiente fix en [sport]/page.tsx).
 const SPORTS_LINKS = [
   { label: 'Fútbol',     href: '/futbol' },
+  { label: 'Mundial 2026', href: '/mundial' }, // hub /mundial: sin enlace sitewide hasta ahora (Fix M11 SEO)
   { label: 'Baloncesto', href: '/baloncesto' },
+  { label: 'NBA',        href: '/nba' },        // hub /nba: sin enlace sitewide hasta ahora (Fix M11 SEO)
   { label: 'F1',         href: '/formula1' },
   { label: 'UFC',        href: '/ufc' },
   { label: 'Tenis',      href: '/tenis' },
