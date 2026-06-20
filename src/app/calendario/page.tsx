@@ -6,6 +6,7 @@ import { fetchRecentFormByTeams, type FormResult } from '@/lib/past-events'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { SOURCE_TZ } from '@/lib/timezone'
 import Header from '@/components/Header'
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 import LiveStrip from '@/components/LiveStrip'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
@@ -168,6 +169,7 @@ export default async function CalendarioPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventsJsonLd) }}
       />
+      <BreadcrumbJsonLd items={[{ name: 'TakaSports', path: '' }, { name: 'Calendario', path: '/calendario' }]} />
       <Header />
       <LiveStrip />
       <CalendarioContent

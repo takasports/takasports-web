@@ -10,6 +10,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import JuegosPageClient from './JuegosPageClient'
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
@@ -61,6 +62,7 @@ export default function JuegosPage() {
         // Serialización confiable: el objeto está controlado server-side.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
+      <BreadcrumbJsonLd items={[{ name: 'TakaSports', path: '' }, { name: 'Juegos', path: '/juegos' }]} />
       {/* Suspense: aísla useSearchParams() del filtro para que Next.js
           pueda mantener el shell estático sin warnings en build. */}
       <Suspense fallback={null}>

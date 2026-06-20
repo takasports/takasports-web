@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import RankingsClient from './RankingsClient'
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 import { getTopMovers, getAllRankings, getLastIngestTime, type RankingCategory } from '@/lib/rankings-data'
 
 // Rankings: revalidar cada 30 min. La ingesta semanal y las ediciones del
@@ -205,6 +206,7 @@ export default async function Page(
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <BreadcrumbJsonLd items={[{ name: 'TakaSports', path: '' }, { name: 'Rankings', path: '/rankings' }]} />
       <RankingsClient initialMovers={movers} initialFallers={fallers} dbData={dbData} lastUpdated={lastUpdated ?? undefined} />
     </>
   )
