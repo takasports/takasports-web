@@ -40,7 +40,7 @@ function teamHref(leagueSlug: string | undefined, teamId: string | undefined): s
   return `/equipo/${leagueSlug.replace('/', '_')}_${teamId}`
 }
 
-type DirTeam = { name: string; href: string }
+type DirTeam = { name: string; href: string; meta?: string }
 type DirGroup = { title: string; hubHref: string | null; teams: DirTeam[] }
 
 function DirectoryGroup({ title, hubHref, teams }: DirGroup) {
@@ -64,6 +64,9 @@ function DirectoryGroup({ title, hubHref, teams }: DirGroup) {
             style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
           >
             {t.name}
+            {/* Cifra (pts / récord / goles) server-rendered junto al nombre: convierte
+                el directorio de "solo enlaces" en un mini-cuadro indexable. (Fix A1 SEO) */}
+            {t.meta && <span style={{ color: 'var(--text-muted)' }}> · {t.meta}</span>}
           </Link>
         ))}
       </div>
@@ -77,9 +80,10 @@ function ClasificacionesHub({ data }: { data: StatsStandingsResponse | null }) {
 
   for (const lg of data.football ?? []) {
     const teams = (lg.rows ?? [])
-      .map((r) => {
+      .map((r): DirTeam | null => {
         const href = teamHref(lg.leagueSlug, r.teamId)
-        return href ? { name: r.name, href } : null
+        // value = puntos en fútbol (route.ts standings) → "45 pts".
+        return href ? { name: r.name, href, meta: `${r.value} pts` } : null
       })
       .filter((x): x is DirTeam => x !== null)
     if (!teams.length) continue
@@ -88,7 +92,8 @@ function ClasificacionesHub({ data }: { data: StatsStandingsResponse | null }) {
   }
 
   const nbaTeams = [...(data.nbaEast ?? []), ...(data.nbaWest ?? [])]
-    .map((r) => (r.teamId ? { name: r.name, href: `/equipo/basketball_nba_${r.teamId}` } : null))
+    // value = récord "w-l" en NBA (route.ts standings).
+    .map((r): DirTeam | null => (r.teamId ? { name: r.name, href: `/equipo/basketball_nba_${r.teamId}`, meta: r.value } : null))
     .filter((x): x is DirTeam => x !== null)
   if (nbaTeams.length) groups.push({ title: 'NBA', hubHref: null, teams: nbaTeams })
 
@@ -123,11 +128,19 @@ function PlayersDirectory({ data }: { data: PlayersResponse | null }) {
   for (const lg of data.leagues) {
     const seen = new Set<string>()
     const players: DirTeam[] = []
-    for (const p of [...(lg.goals ?? []), ...(lg.assists ?? [])]) {
+    // Goleadores primero (value = goles), luego asistentes (value = asistencias).
+    // Separados para etiquetar la cifra sin ambigüedad. (Fix A1 SEO)
+    for (const p of (lg.goals ?? [])) {
       const href = playerHref(p.leagueSlug, p.playerId)
       if (!href || seen.has(href)) continue
       seen.add(href)
-      players.push({ name: p.name, href })
+      players.push({ name: p.name, href, meta: `${p.value} ${p.value === 1 ? 'gol' : 'goles'}` })
+    }
+    for (const p of (lg.assists ?? [])) {
+      const href = playerHref(p.leagueSlug, p.playerId)
+      if (!href || seen.has(href)) continue
+      seen.add(href)
+      players.push({ name: p.name, href, meta: `${p.value} asist.` })
     }
     if (players.length) groups.push({ title: lg.label, hubHref: null, teams: players })
   }
