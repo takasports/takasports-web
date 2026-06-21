@@ -2,63 +2,23 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isSameOrigin } from '@/lib/csrf'
 
-// Reglas de cache para rutas públicas de contenido.
-// Necesarias porque el root layout llama await headers() para leer el nonce CSP,
-// lo que marca toda la app como dinámica → Next emite por defecto
-// `cache-control: private, no-cache, no-store, max-age=0, must-revalidate`,
-// catastrófico para SEO (Googlebot deja de mantener URLs indexadas) y para
-// Vercel CDN (x-vercel-cache: MISS en cada request).
+// Este middleware cubre SOLO rutas autenticadas + API (ver `config.matcher`):
+// aplica el guard CSRF, refresca la sesión de Supabase e inyecta el nonce CSP.
 //
-// El header de next.config.ts no funciona porque Next sobrescribe a nivel de
-// runtime. Middleware sí puede modificar el header de respuesta.
-type CacheRule = { pattern: RegExp; cache: string }
-const CONTENT_CACHE = 'public, s-maxage=600, stale-while-revalidate=86400'
-const FAST_CACHE    = 'public, s-maxage=120, stale-while-revalidate=3600'
-const SLOW_CACHE    = 'public, s-maxage=3600, stale-while-revalidate=86400'
-const CACHE_RULES: CacheRule[] = [
-  { pattern: /^\/noticias(\/|$)/,     cache: CONTENT_CACHE },
-  { pattern: /^\/tag\//,              cache: CONTENT_CACHE },
-  { pattern: /^\/equipo\//,           cache: CONTENT_CACHE },
-  { pattern: /^\/jugador\//,          cache: CONTENT_CACHE },
-  { pattern: /^\/evento\//,           cache: CONTENT_CACHE },
-  { pattern: /^\/rankings(\/|$)/,     cache: CONTENT_CACHE },
-  { pattern: /^\/reels$/,             cache: CONTENT_CACHE },
-  { pattern: /^\/partido\//,          cache: FAST_CACHE },
-  { pattern: /^\/calendario(\/|$)/,   cache: FAST_CACHE },
-  { pattern: /^\/estadisticas(\/|$)/, cache: FAST_CACHE },
-  { pattern: /^\/liga\//,             cache: FAST_CACHE },
-  { pattern: /^\/glosario(\/|$)/,     cache: SLOW_CACHE },
-  { pattern: /^\/autor\//,            cache: SLOW_CACHE },
-  { pattern: /^\/sobre$/,             cache: SLOW_CACHE },
-  { pattern: /^\/politica-editorial$/, cache: SLOW_CACHE },
-  { pattern: /^\/privacidad$/,        cache: SLOW_CACHE },
-  { pattern: /^\/terminos$/,          cache: SLOW_CACHE },
-  // Hubs de deporte: slugs canónicos = claves de SLUG_TO_LABEL (src/lib/sports.ts)
-  // + /mundial (ruta dedicada). Antes cacheaba /f1 y /motogp, que dan 404 REAL
-  // (dynamicParams=false en [sport]/page.tsx), y omitía los reales del footer
-  // (/formula1, /nba, /rugby, /wwe). Mantener sincronizado con el matcher de abajo.
-  { pattern: /^\/(futbol|wwe|wrestling|formula1|baloncesto|tenis|ufc|rugby|nba|bcl|euroliga|acb|mundial)$/, cache: CONTENT_CACHE },
-  { pattern: /^\/$/,                  cache: CONTENT_CACHE },
-]
-
-function getCacheControl(pathname: string): string | null {
-  for (const r of CACHE_RULES) if (r.pattern.test(pathname)) return r.cache
-  return null
-}
+// Las rutas públicas de contenido (home, noticias, jugador, calendario,
+// rankings, hubs de deporte, …) NO pasan por aquí: son ISR (cada página exporta
+// su `revalidate`) y Next emite su propio Cache-Control cacheable de forma
+// nativa, así que el CDN las sirve sin invocar ni la función ni el middleware.
+//
+// HISTÓRICO: el root layout llamaba `await headers()` para leer el nonce CSP, lo
+// que marcaba TODA la app como dinámica → Next emitía `no-store` y el middleware
+// tenía que reescribir el Cache-Control en cada request de contenido. El refactor
+// F3.1 eliminó esa llamada; desde entonces ese atajo era redundante y solo
+// generaba Edge Middleware Invocations facturables en cada pageview (la Edge
+// Middleware corre ANTES de la caché → se factura incluso en cache HIT), así que
+// se retiró junto con las rutas de contenido del matcher.
 
 export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
-
-  // ── Caso rápido: rutas públicas de contenido ─────────────────────────────
-  // Solo necesitan override del Cache-Control. Sin Supabase, sin CSP nonce.
-  // Coste mínimo en Function Invocations: ~5ms de CPU, sin I/O externa.
-  const cache = getCacheControl(pathname)
-  if (cache && !pathname.startsWith('/api/')) {
-    const res = NextResponse.next()
-    res.headers.set('Cache-Control', cache)
-    return res
-  }
-
   // CSRF guard: para métodos mutables sobre rutas autenticadas, exigimos
   // mismo origen. Se aplica antes del refresh de sesión para que un ataque
   // CSRF ni siquiera llegue al endpoint. Las APIs de auth/callback de OAuth
@@ -142,27 +102,20 @@ export async function middleware(request: NextRequest) {
   return supabaseResponse
 }
 
-// Allowlist:
-//
-// (A) Rutas autenticadas / API → ejecutan toda la lógica (CSRF, Supabase, CSP nonce).
-//
-// (B) Rutas públicas de contenido → solo el shortcut de Cache-Control al inicio.
-//     Necesario porque Next emite `no-store` por defecto cuando el root layout
-//     llama await headers(), lo que hace que Googlebot deindexe URLs y Vercel
-//     CDN nunca cachee. El middleware sobrescribe el header tras el render.
-//     Coste: ~150k Function Invocations/mes para ~1k visitas/día (dentro del
-//     free tier de Vercel con holgura).
+// Allowlist: SOLO rutas autenticadas + API (mutables por cookie o con sesión
+// Supabase). Ejecutan CSRF + refresh de sesión + nonce CSP. Las rutas públicas
+// de contenido se sirven por CDN (ISR) sin pasar por este middleware.
 export const config = {
   matcher: [
-    // (A) Páginas autenticadas
+    // Páginas autenticadas
     '/perfil/:path*',
     '/admin/:path*',
     '/archivo',
     '/quiniela/:path*',
-    // (A) Endpoints API con dependencia de sesión Supabase / mutables por cookie.
-    // Todos pasan por el guard CSRF (isSameOrigin solo bloquea POST/PUT/PATCH/
-    // DELETE de origen ajeno; GET y peticiones con Bearer/secret quedan exentas,
-    // así que la app móvil y los crons no se ven afectados).
+    // Endpoints API con dependencia de sesión Supabase / mutables por cookie.
+    // El guard CSRF (isSameOrigin) solo bloquea POST/PUT/PATCH/DELETE de origen
+    // ajeno; GET y peticiones con Bearer/secret quedan exentas, así que la app
+    // móvil y los crons no se ven afectados.
     '/api/auth/:path*',
     '/api/articles/:path*',
     '/api/reels/:path*',
@@ -177,39 +130,5 @@ export const config = {
     '/api/account/:path*',
     '/api/mionce/:path*',
     '/api/newsletter/:path*',
-    // (B) Rutas públicas de contenido — solo Cache-Control override
-    '/',
-    '/noticias/:path*',
-    '/tag/:path*',
-    '/equipo/:path*',
-    '/jugador/:path*',
-    '/evento/:path*',
-    '/rankings/:path*',
-    '/reels',
-    '/partido/:path*',
-    '/calendario/:path*',
-    '/estadisticas/:path*',
-    '/liga/:path*',
-    '/glosario/:path*',
-    '/autor/:path*',
-    '/sobre',
-    '/politica-editorial',
-    '/privacidad',
-    '/terminos',
-    // Hubs de deporte: slugs canónicos (claves de SLUG_TO_LABEL) + /mundial.
-    // El matcher debe ser literal (Next lo analiza en build) → sin /f1 ni /motogp.
-    '/futbol',
-    '/wwe',
-    '/wrestling',
-    '/formula1',
-    '/baloncesto',
-    '/tenis',
-    '/ufc',
-    '/rugby',
-    '/nba',
-    '/bcl',
-    '/euroliga',
-    '/acb',
-    '/mundial',
   ],
 }
