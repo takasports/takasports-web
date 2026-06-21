@@ -9,7 +9,7 @@
 // user.id autenticado → nunca toca filas de terceros.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
@@ -30,8 +30,7 @@ function isoOrNull(v: unknown): string | null {
 }
 
 export async function POST(req: NextRequest) {
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) {
     return NextResponse.json({ error: 'no_session' }, { status: 401 })
   }

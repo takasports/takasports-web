@@ -11,15 +11,14 @@
 // `match_reminders` (registro de push notifications, que gestiona /api/push/*).
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 const MAX_UPLOAD = 200
 
 async function authed(req: NextRequest) {
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return { error: NextResponse.json({ error: 'no_session' }, { status: 401 }) }
   const rl = await checkRateLimit({
     bucket: 'sync_reminders',

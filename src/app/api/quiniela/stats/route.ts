@@ -14,8 +14,8 @@
 // Sin sesión devuelve { authed: false }. La UI cae a un mensaje
 // invitando a login. Sin Supabase configurado (dev local) también.
 
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,13 +64,12 @@ const EMPTY_STATS: QuinielaStats = {
   bestJornada: null,
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.json(EMPTY_STATS)
   }
   try {
-    const sb = await createServerSupabaseClient()
-    const { data: { user } } = await sb.auth.getUser()
+    const { supabase: sb, user } = await supabaseForRequest(req)
     if (!user) return NextResponse.json(EMPTY_STATS)
 
     const { data: rows, error } = await sb

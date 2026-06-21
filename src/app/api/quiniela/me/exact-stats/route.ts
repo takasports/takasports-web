@@ -18,8 +18,8 @@
 //
 // Sin auth → 401.
 
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 
 interface PicksJsonb {
   picks?: Array<{ exactScore?: unknown }>
@@ -36,12 +36,11 @@ interface Row {
   picks: PicksJsonb | null
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return NextResponse.json({ error: 'not configured' }, { status: 503 })
   }
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
 
   // Fetch todas las filas settled del user. JSONB no permite filtrar por

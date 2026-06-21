@@ -3,7 +3,7 @@
 // y el total de jugadores. Si no hay sesión → todo null.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
@@ -27,8 +27,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ play: null, position: null, total: 0 })
   }
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) {
     return NextResponse.json({ play: null, position: null, total: 0, reason: 'no_session' })
   }

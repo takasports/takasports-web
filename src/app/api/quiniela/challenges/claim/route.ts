@@ -18,7 +18,7 @@
 // (mín. 1) — antes iba a add_coins (moneda muerta) mientras la UI decía "pts".
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { awardBadges } from '@/lib/badge-awards'
 
@@ -28,8 +28,7 @@ interface ClaimBody {
 }
 
 export async function POST(req: NextRequest) {
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
 
   let body: ClaimBody

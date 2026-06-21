@@ -8,8 +8,8 @@
 //   3 días  → +3 pts  |  7 días → +5 pts
 //   14 días → +8 pts  |  30 días → +12 pts
 
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { awardBadges } from '@/lib/badge-awards'
 
@@ -25,11 +25,10 @@ const STREAK_MILESTONES: Record<number, number> = {
   30: 12,
 }
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   if (!hasSupabaseEnv()) return NextResponse.json({ streak: null })
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ streak: null, reason: 'no_session' })
 
   const { data, error } = await sb.rpc('ping_game_streak')
@@ -88,11 +87,10 @@ export async function POST() {
   return NextResponse.json({ streak: data, milestone_awarded: milestoneAwarded })
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!hasSupabaseEnv()) return NextResponse.json({ streak: null })
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ streak: null, reason: 'no_session' })
 
   const { data, error } = await sb

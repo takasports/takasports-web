@@ -3,7 +3,7 @@
 //  modo invitado ya no acumula saldo que migrar.)
 // Idempotente: badges upsert con ignoreDuplicates.
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 
@@ -19,8 +19,7 @@ export async function POST(req: NextRequest) {
   if ('error' in parsed) return parsed.error
   const body = parsed.data
   try {
-    const sb = await createServerSupabaseClient()
-    const { data: { user } } = await sb.auth.getUser()
+    const { supabase: sb, user } = await supabaseForRequest(req)
     if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
 
     // Migrar badges (upsert idempotente)
