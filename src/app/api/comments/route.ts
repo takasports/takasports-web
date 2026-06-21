@@ -29,9 +29,14 @@ export async function GET(req: NextRequest) {
   const supa = adminSupabase()
   if (!supa) return NextResponse.json({ ok: true, comments: [] })
 
+  // Usuario OPCIONAL (cookie web O Bearer app). Solo sirve para marcar SUS
+  // comentarios: leemos user_id en el servidor y devolvemos is_mine, sin exponer
+  // nunca el UUID auth al cliente. Sin sesión → is_mine false (anónimo).
+  const me = await getUserFromRequest(req).catch(() => null)
+
   const { data, error } = await supa
     .from('article_comments')
-    .select('id, user_name, user_avatar, body, created_at, flagged_count')
+    .select('id, user_id, user_name, user_avatar, body, created_at, flagged_count')
     .eq('article_slug', slug)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
@@ -42,8 +47,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'fetch_failed' }, { status: 500 })
   }
 
-  // Ocultamos comentarios con muchos flags (auto-shadow ≥ 5 reports).
-  const filtered = (data ?? []).filter(c => (c.flagged_count ?? 0) < 5)
+  // Ocultamos comentarios con muchos flags (auto-shadow ≥ 5 reports). Añadimos
+  // is_mine y QUITAMOS user_id de la respuesta (no se expone el id crudo).
+  const filtered = (data ?? [])
+    .filter((c) => (c.flagged_count ?? 0) < 5)
+    .map(({ user_id, ...c }) => ({ ...c, is_mine: !!me && user_id === me.id }))
 
   return NextResponse.json({ ok: true, comments: filtered })
 }
@@ -128,5 +136,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'insert_failed' }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, comment: inserted })
+  // El comentario recién creado es del propio usuario → is_mine: true (mismo
+  // shape que el GET; sin exponer user_id).
+  return NextResponse.json({ ok: true, comment: { ...inserted, is_mine: true } })
 }
