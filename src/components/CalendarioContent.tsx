@@ -15,6 +15,7 @@ import FavoritesOnboarding from '@/components/FavoritesOnboarding'
 import CompetitionSelector from '@/components/CompetitionSelector'
 import { COMPETITIONS, getCompetition, matchesCompetition } from '@/lib/calendar-competitions'
 import { subscribeToPush } from '@/lib/push-client'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
 
@@ -1605,6 +1606,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const [selectedDate, setSelectedDate] = useState<string | null>(null)   // YYYY-MM-DD or null for all
   const [selectedUFCDate, setSelectedUFCDate] = useState<string | null>(null) // UFC modal date
   const [reminders, setReminders] = useState<Set<string>>(new Set())
+  // Mini-paso de contexto antes de pedir el permiso de notificaciones del
+  // navegador (ver toggleReminder). null = oculto; con datos = diálogo visible.
+  const [reminderPrompt, setReminderPrompt] = useState<{ id: string; home: string; away: string | null; comp: string | null } | null>(null)
+  const reminderDialogRef = useRef<HTMLDivElement>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [favComps, setFavComps] = useState<Set<string>>(new Set())   // ligas fijadas (slugs)
   const [onlyLive, setOnlyLive] = useState(false)
@@ -1972,7 +1977,6 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         disableReminderPush(id)
       } else {
         next.add(id)
-        enableReminderPush(id)
       }
       localStorage.setItem('ts_reminders', JSON.stringify([...next]))
       // Snapshot del evento junto al id: el perfil lee 'ts_reminders_data' para
@@ -1990,8 +1994,25 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       window.dispatchEvent(new CustomEvent('ts-reminders-change'))
       return next
     })
+    // Al activar: si el permiso de notificaciones está SIN decidir ('default'),
+    // mostramos primero un mini-paso de contexto. Pedir el permiso "a pelo" hace
+    // que Chrome lo bloquee de forma permanente si el usuario lo descarta. El
+    // recordatorio ya quedó guardado arriba; el permiso se pide al confirmar.
+    // Si ya está concedido/denegado (o no hay API), seguimos el flujo directo.
+    if (willActivate) {
+      const ev = events.find(e => e.id === id)
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        setReminderPrompt({ id, home: ev?.home ?? '', away: ev?.away ?? null, comp: ev?.comp ?? null })
+      } else {
+        enableReminderPush(id)
+      }
+    }
     syncReminderToCloud(id, willActivate, events.find(e => e.id === id))
   }, [enableReminderPush, disableReminderPush, events, reminders, syncReminderToCloud])
+
+  // Cierre del mini-paso de permiso (también lo usa el focus-trap con Escape).
+  const closeReminderPrompt = useCallback(() => setReminderPrompt(null), [])
+  useFocusTrap(!!reminderPrompt, reminderDialogRef, closeReminderPrompt)
 
   // Sync de snapshots: rellena 'ts_reminders_data' para los recordatorios
   // activos cuyo evento siga en el feed. Cubre recordatorios creados antes de
@@ -3072,6 +3093,62 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           onClose={skipOnboarding}
           onSave={(teams) => { finishOnboarding(teams); setShowOnboarding(false) }}
         />
+      )}
+
+      {/* Mini-paso de contexto antes de pedir el permiso de notificaciones.
+          Solo aparece la 1ª vez (permiso 'default'); el permiso real se solicita
+          al pulsar "Permitir avisos" (dentro del gesto, con contexto). */}
+      {reminderPrompt && (
+        <div
+          onClick={closeReminderPrompt}
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.62)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+        >
+          <div
+            ref={reminderDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reminder-dialog-title"
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 340, maxWidth: '90%', background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 18, padding: '24px 22px', textAlign: 'center' }}
+          >
+            <div style={{ width: 56, height: 56, margin: '0 auto 14px', borderRadius: '50%', background: 'rgba(255,77,46,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-action)' }}>
+              <BellIcon size={26} />
+            </div>
+            <div style={{ fontFamily: 'var(--font-sport)', textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: 'var(--accent-action)', fontWeight: 600, marginBottom: 6 }}>
+              Recordatorio
+            </div>
+            <h2 id="reminder-dialog-title" style={{ fontFamily: 'var(--font-display)', textTransform: 'uppercase', fontWeight: 700, fontSize: 24, lineHeight: 1.05, color: '#F4F4F8', marginBottom: 10 }}>
+              Activa los avisos
+            </h2>
+            <p style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--text-secondary)', margin: '0 0 14px' }}>
+              Te avisamos <strong style={{ color: '#C8C8D4', fontWeight: 600 }}>~10 min antes</strong> del partido, aunque tengas la web cerrada. Para eso necesitamos tu permiso de notificaciones.
+            </p>
+            {(reminderPrompt.home || reminderPrompt.comp) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', background: '#0E0E14', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '8px 12px', marginBottom: 18 }}>
+                <span style={{ color: '#34D399', display: 'inline-flex' }}><ClipboardIcon size={15} /></span>
+                <span style={{ fontSize: 12.5, color: '#C8C8D4' }}>
+                  {reminderPrompt.home}{reminderPrompt.away ? ` vs ${reminderPrompt.away}` : ''}{reminderPrompt.comp ? ` · ${reminderPrompt.comp}` : ''}
+                </span>
+              </div>
+            )}
+            <button
+              onClick={() => { const id = reminderPrompt.id; enableReminderPush(id); setReminderPrompt(null) }}
+              style={{ width: '100%', background: 'var(--accent-action)', color: '#fff', border: 'none', borderRadius: 11, padding: 12, fontFamily: 'var(--font-display)', textTransform: 'uppercase', fontWeight: 700, fontSize: 15, letterSpacing: '0.04em', cursor: 'pointer', marginBottom: 9 }}
+            >
+              Permitir avisos
+            </button>
+            <button
+              onClick={closeReminderPrompt}
+              style={{ width: '100%', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 11, padding: 11, fontWeight: 500, fontSize: 13, cursor: 'pointer' }}
+            >
+              Ahora no
+            </button>
+            <p style={{ fontSize: 11, lineHeight: 1.4, color: 'var(--text-muted)', margin: '13px 0 0' }}>
+              El recordatorio se guarda en tu cuenta igualmente. Sin permiso no podremos enviarte el aviso.
+            </p>
+          </div>
+        </div>
       )}
     </main>
   )
