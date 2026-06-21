@@ -115,7 +115,7 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
                   <p className="text-[11px] font-bold truncate" style={{ color: i < 3 ? '#EEEEF8' : '#D0D0E0', fontFamily: 'var(--font-display)' }}>
                     {player.name}
                   </p>
-                  <p className="text-[9px] truncate" style={{ color: '#4A4A6A' }}>{player.subtitle}</p>
+                  <p className="text-[9px] truncate" style={{ color: 'var(--text-muted)' }}>{player.subtitle}</p>
                 </div>
                 {/* Score + trend */}
                 <div className="flex-shrink-0 text-right">
@@ -175,7 +175,7 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
                 <p className="text-[11px] font-black tabular-nums" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
                   {event.time}
                 </p>
-                <p className="text-[9px]" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>
+                <p className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   {event.date}
                 </p>
               </div>

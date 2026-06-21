@@ -33,7 +33,11 @@ const CACHE_RULES: CacheRule[] = [
   { pattern: /^\/politica-editorial$/, cache: SLOW_CACHE },
   { pattern: /^\/privacidad$/,        cache: SLOW_CACHE },
   { pattern: /^\/terminos$/,          cache: SLOW_CACHE },
-  { pattern: /^\/(futbol|baloncesto|f1|motogp|tenis|ufc|mundial)$/, cache: CONTENT_CACHE },
+  // Hubs de deporte: slugs canónicos = claves de SLUG_TO_LABEL (src/lib/sports.ts)
+  // + /mundial (ruta dedicada). Antes cacheaba /f1 y /motogp, que dan 404 REAL
+  // (dynamicParams=false en [sport]/page.tsx), y omitía los reales del footer
+  // (/formula1, /nba, /rugby, /wwe). Mantener sincronizado con el matcher de abajo.
+  { pattern: /^\/(futbol|wwe|wrestling|formula1|baloncesto|tenis|ufc|rugby|nba|bcl|euroliga|acb|mundial)$/, cache: CONTENT_CACHE },
   { pattern: /^\/$/,                  cache: CONTENT_CACHE },
 ]
 
@@ -192,12 +196,20 @@ export const config = {
     '/politica-editorial',
     '/privacidad',
     '/terminos',
+    // Hubs de deporte: slugs canónicos (claves de SLUG_TO_LABEL) + /mundial.
+    // El matcher debe ser literal (Next lo analiza en build) → sin /f1 ni /motogp.
     '/futbol',
+    '/wwe',
+    '/wrestling',
+    '/formula1',
     '/baloncesto',
-    '/f1',
-    '/motogp',
     '/tenis',
     '/ufc',
+    '/rugby',
+    '/nba',
+    '/bcl',
+    '/euroliga',
+    '/acb',
     '/mundial',
   ],
 }

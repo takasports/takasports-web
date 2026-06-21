@@ -187,7 +187,7 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
           >
             Predicciones del Mundial
           </p>
-          <p className="text-[11px]" style={{ color: '#6A6288' }}>
+          <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
             Acierta cada partido y sube en la clasificación Taka
           </p>
           <span

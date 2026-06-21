@@ -5,7 +5,7 @@
 // distribuye autoridad interna partido → noticia. Si no hay artículos, no renderiza.
 
 import Link from 'next/link'
-import Image from '@/components/DynamicImage'
+import NewsThumb from '@/components/NewsThumb'
 import { sanityClient, articlesByMatchQuery, urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 
@@ -62,11 +62,7 @@ export default async function MatchNews({
               className="group flex gap-3 rounded-xl p-2.5 transition-colors hover:bg-white/[0.04]"
               style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}
             >
-              {img && (
-                <div className="rounded-lg overflow-hidden flex-shrink-0" style={{ width: 72, height: 48, background: 'rgba(255,255,255,0.04)' }}>
-                  <Image src={img} alt={a.title} width={72} height={48} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
-                </div>
-              )}
+              {img && <NewsThumb src={img} alt={a.title} />}
               <div className="flex flex-col justify-center min-w-0 flex-1">
                 <h3 className="text-[13px] font-bold leading-snug line-clamp-2" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
                   {a.title}
