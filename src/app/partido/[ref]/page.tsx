@@ -1566,16 +1566,23 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
   // Non-tabbed sports (tennis, mma, racing, golf)
   if (!usesTabs) {
     return (
-      <div className="max-w-2xl mx-auto px-4 pb-16">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-16">
         <LiveRefresh isLive={live} startDate={match.startDate} />
         {backLink}
         {leaguePills}
-        <InfoRow match={match} />
-        {match.sport === 'tennis'     && <TennisBlock  match={match} />}
-        {match.sport === 'mma'        && <MmaBlock     match={match} />}
-        {match.sport === 'racing'     && <RacingBlock  match={match} />}
-        {match.sport === 'golf'       && <GolfBlock    match={match} />}
-        <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
+        {/* 2 columnas en escritorio: detalle del evento (principal) + contexto (lateral) */}
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          <div className="flex-1 min-w-0 w-full">
+            {match.sport === 'tennis'     && <TennisBlock  match={match} />}
+            {match.sport === 'mma'        && <MmaBlock     match={match} />}
+            {match.sport === 'racing'     && <RacingBlock  match={match} />}
+            {match.sport === 'golf'       && <GolfBlock    match={match} />}
+          </div>
+          <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0">
+            <InfoRow match={match} />
+            <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
+          </aside>
+        </div>
       </div>
     )
   }
@@ -1590,17 +1597,19 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
   ]
 
   return (
-    <div className="max-w-2xl mx-auto px-4 pb-16">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-16">
       <LiveRefresh isLive={live} startDate={match.startDate} />
       {backLink}
       {leaguePills}
       <div data-match-hero>
         <TeamScoreboard match={match} />
       </div>
-      <InfoRow match={match} />
 
-      <FormGuide homeTeam={match.homeTeam} awayTeam={match.awayTeam} forms={forms} />
-
+      {/* 2 columnas en escritorio: pestañas (principal) + contexto del partido (lateral).
+          En móvil/tablet se apila (flex-col): primero las pestañas, debajo el contexto. */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* ── Principal: pestañas del partido ── */}
+        <div className="flex-1 min-w-0 w-full">
       <MatchTabs
         tabs={tabs}
         topSlot={
@@ -1619,14 +1628,6 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
       >
         {/* ── Tab 0: Resumen ───────────────────────────── */}
         <div>
-          {hasPulse && (
-            <MatchPulse
-              estimate={estimate}
-              dominance={dominance}
-              homeAbbr={match.homeAbbr ?? match.homeTeam ?? '—'}
-              awayAbbr={match.awayAbbr ?? match.awayTeam ?? '—'}
-            />
-          )}
           {hasSoccerScoring && (
             <Section title="Eventos del partido">
               <ScoringTimeline
@@ -1740,7 +1741,23 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
           )}
         </div>
       </MatchTabs>
-      <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
+        </div>
+
+        {/* ── Lateral: contexto del partido (datos / forma / pulso / noticias) ── */}
+        <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0">
+          <InfoRow match={match} />
+          <FormGuide homeTeam={match.homeTeam} awayTeam={match.awayTeam} forms={forms} />
+          {hasPulse && (
+            <MatchPulse
+              estimate={estimate}
+              dominance={dominance}
+              homeAbbr={match.homeAbbr ?? match.homeTeam ?? '—'}
+              awayAbbr={match.awayAbbr ?? match.awayTeam ?? '—'}
+            />
+          )}
+          <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
+        </aside>
+      </div>
     </div>
   )
 }
