@@ -12,8 +12,8 @@
 //
 // Cache: no-store (datos volátiles tras cada settle).
 
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { BADGES, listAllBadges, type BadgeDef } from '@/lib/badges'
 import { fetchSpecialBadgeDefs } from '@/lib/special-badges'
 import { computeLevel, computeXp } from '@/lib/levels'
@@ -60,13 +60,12 @@ function toMeBadge(def: BadgeDef, unlockedAt: string | null): MeBadge {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.json({ error: 'not configured' }, { status: 503 })
   }
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) {
     return NextResponse.json({ error: 'auth required' }, { status: 401 })
   }

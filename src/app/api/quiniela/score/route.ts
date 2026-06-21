@@ -23,7 +23,7 @@
 // `staked` y `settled`. No requiere migración SQL nueva.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { scorePicks, SCORING, type SavedPick, type MatchResult, type ScoreBreakdown } from '@/lib/quiniela'
 import { enrichResultsWithFeatured } from '@/lib/quiniela-featured'
@@ -187,8 +187,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ breakdown, evaluated: results.length, persisted: false })
     }
 
-    const sb = await createServerSupabaseClient()
-    const { data: { user } } = await sb.auth.getUser()
+    const { supabase: sb, user } = await supabaseForRequest(req)
     if (!user) {
       if (phase) return NextResponse.json({ error: 'auth required' }, { status: 401 })
       const results = await fetchResults(origin)

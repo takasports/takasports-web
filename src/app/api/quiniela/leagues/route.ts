@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { createServerSupabaseClient, supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
@@ -106,8 +106,7 @@ export async function POST(req: NextRequest) {
       espnId:  m.espnId  ? String(m.espnId).slice(0, 40)  : undefined,
     })).filter((m: LeagueMatchKey) => m.home && m.away)
 
-    const sb = await createServerSupabaseClient()
-    const { data: { user } } = await sb.auth.getUser()
+    const { supabase: sb, user } = await supabaseForRequest(req)
 
     // ── Path Supabase ────────────────────────────────────────────
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && user) {
@@ -234,8 +233,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const sb = await createServerSupabaseClient()
-      const { data: { user } } = await sb.auth.getUser()
+      const { supabase: sb, user } = await supabaseForRequest(req)
       if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
 
       // Si el cliente no manda alias válido, derivamos del email — nunca 'Tú'
@@ -281,8 +279,7 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const sb = await createServerSupabaseClient()
-      const { data: { user } } = await sb.auth.getUser()
+      const { supabase: sb, user } = await supabaseForRequest(req)
       if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
 
       const { data: league } = await sb

@@ -6,20 +6,19 @@
 // Requiere sesión activa (401 si no la hay).
 // is_correct puede ser null (partido aún no resuelto) — solo contamos los resueltos.
 
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 
 function hasSupabaseEnv(): boolean {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!hasSupabaseEnv()) {
     return NextResponse.json({ total: 0, correct: 0, accuracy: 0, bySport: {} })
   }
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
   // ranked_predictions NO tiene columna `sport` (el deporte vive en

@@ -7,7 +7,7 @@
 // Requiere auth en ambos métodos.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { awardBadges, badgesEarnedOnRankedPick } from '@/lib/badge-awards'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
@@ -22,8 +22,7 @@ function hasEnv() {
 export async function GET(req: NextRequest) {
   if (!hasEnv()) return NextResponse.json({ predictions: {} })
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ predictions: {}, reason: 'no_session' })
 
   const sport = new URL(req.url).searchParams.get('sport') ?? 'mundial'
@@ -118,8 +117,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_method' }, { status: 400 })
   }
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
 
   // Freno anti-abuso por usuario: cada POST inserta/actualiza una predicción.
@@ -334,8 +332,7 @@ export async function DELETE(req: NextRequest) {
   }
   if (!body?.event_id) return NextResponse.json({ error: 'invalid_body' }, { status: 400 })
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
 
   const { data: event } = await sb

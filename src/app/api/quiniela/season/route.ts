@@ -3,7 +3,7 @@
 // POST → guarda/actualiza tu respuesta a una pregunta (solo si no ha cerrado)
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 
@@ -17,18 +17,17 @@ interface SeasonQuestion {
   resolved: string | null
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.json({ questions: [], mine: {}, authed: false })
   }
-  const sb = await createServerSupabaseClient()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   const { data: questions, error } = await sb
     .from('quiniela_season_questions')
     .select('*')
     .order('closes_at', { ascending: true })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const { data: { user } } = await sb.auth.getUser()
   let mine: Record<string, string> = {}
   if (user) {
     const { data: preds } = await sb
@@ -55,8 +54,7 @@ export async function POST(req: NextRequest) {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return NextResponse.json({ error: 'supabase not configured' }, { status: 503 })
     }
-    const sb = await createServerSupabaseClient()
-    const { data: { user } } = await sb.auth.getUser()
+    const { supabase: sb, user } = await supabaseForRequest(req)
     if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
 
     const { data: q } = await sb

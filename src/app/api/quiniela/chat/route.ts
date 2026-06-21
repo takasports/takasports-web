@@ -4,7 +4,7 @@
 // DELETE /api/quiniela/chat?id=...                → borrar mensaje (autor o owner liga)
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { createServerSupabaseClient, supabaseForRequest } from '@/lib/supabase-server'
 import { readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 
@@ -84,8 +84,7 @@ export async function POST(req: NextRequest) {
     if (!ligaId || !msg) return NextResponse.json({ error: 'liga and message required' }, { status: 400 })
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const sb = await createServerSupabaseClient()
-      const { data: { user } } = await sb.auth.getUser()
+      const { supabase: sb, user } = await supabaseForRequest(req)
       const rl = rateLimit(`${clientKey(req, user?.id ?? null)}:${ligaId}`)
       if (!rl.ok) {
         return NextResponse.json(
@@ -136,8 +135,7 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    const sb = await createServerSupabaseClient()
-    const { data: { user } } = await sb.auth.getUser()
+    const { supabase: sb, user } = await supabaseForRequest(req)
     if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
     // RLS hace el control: solo autor del mensaje o owner de la liga puede borrar.
     const { error, count } = await sb
