@@ -39,7 +39,6 @@ export type QuinielaSaved = {
     away: string
     pick: Pick
     oddsAtPick?: number
-    stake?: number
     /** Marcador exacto opcional (E3). +3 pts si coincide y la tendencia
      *  es correcta. Máximo 3 picks con exactScore por jornada — validado
      *  server-side. */

@@ -47,11 +47,6 @@ export function PicksForm({
     setExactTooltipDismissed(true)
     try { localStorage.setItem('porra:exactTooltipDismissed', '1') } catch { /* */ }
   }
-  // Picks que el user fijó explícitamente. Es UX para "confirmar y bajar
-  // al siguiente" — compacta la card y permite enfoque en lo pendiente.
-  // No es obligatorio fijar para sellar: el botón del sticky sella todos
-  // los picks elegidos igualmente.
-  const [fixedPicks, setFixedPicks]   = useState<Set<number>>(new Set())
   const [now, setNow]                 = useState(Date.now())
   const [submitting, setSubmitting]   = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -336,14 +331,6 @@ export function PicksForm({
             pick={picks[i]}
             onPick={(p) => {
               setPicks((prev) => ({ ...prev, [i]: p }))
-              // Si cambia de pick, sale del estado fijado (la cuota
-              // efectiva cambió, hay que reconfirmar).
-              setFixedPicks((prev) => {
-                if (!prev.has(i)) return prev
-                const next = new Set(prev)
-                next.delete(i)
-                return next
-              })
               if (!tutored) { setTutored(true); try { localStorage.setItem(TUTORED_KEY, '1') } catch {/* */} }
             }}
             comp={m.comp}
@@ -352,7 +339,6 @@ export function PicksForm({
             oddsSource={m.oddsSource}
             isoDate={m.isoDate}
             jornada={jornada}
-            fixed={fixedPicks.has(i)}
             exactScore={exactScores[i]}
             exactSlotAvailable={
               !!exactScores[i] ||
@@ -388,37 +374,6 @@ export function PicksForm({
                 } else if (wasPresent && v == null) {
                   trackPorraExactRemoved({ remaining: Object.keys(next).length })
                 }
-                return next
-              })
-            }}
-            onFix={() => {
-              setFixedPicks((prev) => {
-                const next = new Set(prev)
-                next.add(i)
-                return next
-              })
-              // Scroll suave al próximo pick pendiente (sin pick o
-              // con pick pero sin fijar). Si no queda ninguno, scroll
-              // al sticky bottom para que vea "Cerrar apuesta".
-              if (typeof window !== 'undefined') {
-                requestAnimationFrame(() => {
-                  const nextIdx = matches.findIndex((_, j) =>
-                    j > i && (!picks[j] || !fixedPicks.has(j))
-                  )
-                  const target = nextIdx >= 0
-                    ? document.getElementById(`pick-card-${nextIdx}`)
-                    : null
-                  if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                  }
-                })
-              }
-            }}
-            onEdit={() => {
-              setFixedPicks((prev) => {
-                if (!prev.has(i)) return prev
-                const next = new Set(prev)
-                next.delete(i)
                 return next
               })
             }}

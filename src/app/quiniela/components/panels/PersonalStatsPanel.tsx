@@ -20,10 +20,7 @@ interface QuinielaStats {
   authed: boolean
   jornadasPlayed: number
   jornadasSettled: number
-  totalStaked: number
   totalWon: number
-  net: number
-  roi: number | null
   totalHits: number
   totalPicks: number
   hitRate: number | null

@@ -173,7 +173,6 @@ export async function awardBadges(
 //
 // Inputs:
 //   · breakdown:   resultado de scorePicks
-//   · totalStake:  (legado) monedas apostadas — hoy siempre 0 (sin apuestas)
 //   · totalWon:    puntos ganados en la jornada (first_win, high_roller)
 //   · picks:       picks con oddsAtPick para detectar underdog
 //   · prevStreak:  nº de jornadas consecutivas con ganancias ANTES de esta
@@ -184,7 +183,6 @@ interface SettleBadgeContext {
   hits: number
   totalPicks: number
   pleno: boolean
-  totalStake: number
   totalWon: number
   picksWithOdds: Array<{ won: boolean; odds: number }>
   prevStreak: number
@@ -226,8 +224,9 @@ export function badgesEarnedOnSettle(ctx: SettleBadgeContext): string[] {
     earned.push('underdog')
   }
 
-  // Racha: contamos esta jornada como ganadora si totalWon > totalStake.
-  const wonThis = ctx.totalWon > ctx.totalStake
+  // Racha: contamos esta jornada como ganadora si sumó puntos (totalWon > 0).
+  // (El viejo `totalWon > totalStake` era trivial con las apuestas retiradas.)
+  const wonThis = ctx.totalWon > 0
   if (wonThis) {
     const newStreak = ctx.prevStreak + 1
     if (newStreak >= 3) earned.push('racha_3')
@@ -264,7 +263,6 @@ interface MinimalPayload {
     perPick?: Array<{ hit?: boolean }>
     hits?: number
     pleno?: boolean
-    totalStake?: number
     exactHits?: number
   }
   settled?: boolean
@@ -338,7 +336,6 @@ export async function evaluatePendingBadges(
     hits: payload.breakdown.hits ?? 0,
     totalPicks: picks.length,
     pleno: payload.breakdown.pleno === true,
-    totalStake: payload.totalStakeCharged ?? payload.breakdown.totalStake ?? 0,
     totalWon: payload.totalWon ?? 0,
     picksWithOdds,
     prevStreak,

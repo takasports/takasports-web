@@ -418,7 +418,6 @@ export async function POST(req: NextRequest) {
           hits: breakdown.hits,
           totalPicks: persistedPicks.length,
           pleno: breakdown.pleno,
-          totalStake: 0, // legado (sin apuestas) — wonThis = totalWon > 0
           totalWon: totalPoints,
           picksWithOdds,
           prevStreak,
@@ -470,7 +469,6 @@ export async function POST(req: NextRequest) {
           const meets = userMeetsCriteria(sp, {
             hits: breakdown.hits,
             pleno: breakdown.pleno,
-            totalStake: 0, // legado (sin apuestas)
           })
           if (!meets) continue
 

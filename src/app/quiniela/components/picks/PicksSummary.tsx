@@ -275,7 +275,6 @@ export function PicksSummary({ saved, matches, onReset, onScore }: {
         const cancelled = !!result?.cancelled
         const correct   = result && !cancelled ? isCorrect(p.pick as Pick, result.outcome) : false
         const visible   = isResultVisible(i)
-        const stake = p.stake ?? 0
 
         return (
           <div key={i} className="flex flex-col">
@@ -301,7 +300,7 @@ export function PicksSummary({ saved, matches, onReset, onScore }: {
               />
 
               {/* Overlay ANULADO: cuando el partido se postergó/canceló.
-                  El stake se devuelve en el settle (refund). */}
+                  El pick no compite (no suma ni resta puntos). */}
               {cancelled && visible && (
                 <div
                   className="absolute inset-0 flex flex-col items-center justify-center gap-1 z-10 pointer-events-none rounded-2xl"
@@ -313,11 +312,6 @@ export function PicksSummary({ saved, matches, onReset, onScore }: {
                       Partido anulado
                     </span>
                   </div>
-                  {stake > 0 && (
-                    <span className="text-[9px] font-bold tabular-nums" style={{ color: '#86efac', fontFamily: 'var(--font-sport)' }}>
-                      +{stake} pts devueltos
-                    </span>
-                  )}
                 </div>
               )}
             </div>

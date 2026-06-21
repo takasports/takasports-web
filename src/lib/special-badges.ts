@@ -94,7 +94,6 @@ export function userMeetsCriteria(
   ctx: {
     hits: number
     pleno: boolean
-    totalStake: number
     rankInJornada?: number  // 1-based, solo para top_n
   },
 ): boolean {
@@ -104,7 +103,11 @@ export function userMeetsCriteria(
     case 'min_hits':
       return ctx.hits >= badge.criteria_value
     case 'all_participants':
-      return ctx.totalStake > 0
+      // La gana cualquiera que llegó al settle (selló su quiniela esa
+      // jornada). Antes exigía un stake>0 del modelo de apuestas retirado,
+      // así que NUNCA se otorgaba (stake siempre 0). El caller solo evalúa
+      // boletos ya liquidados → la participación está garantizada.
+      return true
     case 'top_n':
       return ctx.rankInJornada != null && ctx.rankInJornada <= badge.criteria_value
     case 'manual':

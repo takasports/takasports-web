@@ -12,7 +12,7 @@
 // de jornada (las jornadas del Mundial empiezan con "Mundial · …",
 // generado por buildJornadaLabel cuando QUINIELA_MUNDIAL está activo).
 //   · tournament=mundial2026 → filtra jornadas LIKE "Mundial%".
-//   · Score = suma de totalCoins a lo largo del torneo.
+//   · Score = suma de totalWon (puntos fijos) a lo largo del torneo.
 //   · total = jornadas jugadas (para mostrar "X jornadas").
 //
 // MODO LEGACY (opt-in) — proxy histórico por pickCount.
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
   try {
     // ── MODO TOURNAMENT ────────────────────────────────────────────
     // Ranking acumulado a través de TODAS las jornadas del torneo.
-    // Score = suma de totalCoins ganados; total = jornadas jugadas.
+    // Score = suma de totalWon (puntos) ganados; total = jornadas jugadas.
     const tournamentPrefix = TOURNAMENT_PREFIXES[tournament]
     if (tournamentPrefix) {
       const { data: rows, error } = await admin
@@ -118,14 +118,14 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ entries: [], mode: 'tournament', tournament })
       }
 
-      // Agregamos por user_id sumando totalCoins.
-      const byUser = new Map<string, { coins: number; jornadas: number; hits: number }>()
+      // Agregamos por user_id sumando totalWon (puntos).
+      const byUser = new Map<string, { points: number; jornadas: number; hits: number }>()
       for (const r of rows) {
         const stored = (r.picks ?? {}) as StoredPicks
         const b = stored.breakdown ?? {}
         const uid = r.user_id as string
-        const prev = byUser.get(uid) ?? { coins: 0, jornadas: 0, hits: 0 }
-        prev.coins += stored.totalWon ?? 0
+        const prev = byUser.get(uid) ?? { points: 0, jornadas: 0, hits: 0 }
+        prev.points += stored.totalWon ?? 0
         prev.hits += b.hits ?? 0
         prev.jornadas += 1
         byUser.set(uid, prev)
@@ -147,7 +147,7 @@ export async function GET(req: NextRequest) {
       const entries: LeaderboardEntry[] = [...byUser.entries()]
         .map(([uid, agg]) => ({
           nickname: nameById.get(uid) ?? `Jugador-${uid.slice(0, 6)}`,
-          score: agg.coins,
+          score: agg.points,
           total: agg.jornadas,
           captainUsed: false,
           badges: badgesByUser.get(uid) ?? [],
@@ -182,13 +182,13 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ entries: [], mode: 'season' })
       }
 
-      const byUser = new Map<string, { coins: number; jornadas: number; hits: number }>()
+      const byUser = new Map<string, { points: number; jornadas: number; hits: number }>()
       for (const r of rows) {
         const stored = (r.picks ?? {}) as StoredPicks
         const b = stored.breakdown ?? {}
         const uid = r.user_id as string
-        const prev = byUser.get(uid) ?? { coins: 0, jornadas: 0, hits: 0 }
-        prev.coins += stored.totalWon ?? 0
+        const prev = byUser.get(uid) ?? { points: 0, jornadas: 0, hits: 0 }
+        prev.points += stored.totalWon ?? 0
         prev.hits += b.hits ?? 0
         prev.jornadas += 1
         byUser.set(uid, prev)
@@ -209,7 +209,7 @@ export async function GET(req: NextRequest) {
       const entries: LeaderboardEntry[] = [...byUser.entries()]
         .map(([uid, agg]) => ({
           nickname: nameById.get(uid) ?? `Jugador-${uid.slice(0, 6)}`,
-          score: agg.coins,
+          score: agg.points,
           total: agg.jornadas,
           captainUsed: false,
           badges: badgesByUser.get(uid) ?? [],
@@ -260,7 +260,7 @@ export async function GET(req: NextRequest) {
             equipment: equipByUser.get(uid),
           }
         })
-        // Score desc (monedas), desempate por hits (total) desc.
+        // Score desc (puntos), desempate por hits (total) desc.
         .sort((a, b) => b.score - a.score || b.total - a.total)
         .slice(0, limit)
 

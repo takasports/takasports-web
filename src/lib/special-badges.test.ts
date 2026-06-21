@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { topNWinners } from './special-badges'
+import { topNWinners, userMeetsCriteria, type SpecialBadgeRow } from './special-badges'
 import { badgesEarnedOnSettle } from './badge-awards'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,7 +47,6 @@ const baseCtx = {
   hits: 0,
   totalPicks: 5,
   pleno: false,
-  totalStake: 0,
   totalWon: 0,
   picksWithOdds: [] as Array<{ won: boolean; odds: number }>,
   prevStreak: 0,
@@ -66,10 +65,6 @@ describe('first_win — primera vez que puntúas', () => {
   it('NO se otorga si ya no es la primera ganancia', () => {
     expect(badgesEarnedOnSettle({ ...baseCtx, isFirstWin: false, totalWon: 8 })).not.toContain('first_win')
   })
-  it('no depende del stake (apuestas retiradas): stake>0 no lo bloquea', () => {
-    // Antes pedía totalWon > totalStake; ahora solo totalWon > 0.
-    expect(badgesEarnedOnSettle({ ...baseCtx, isFirstWin: true, totalWon: 3, totalStake: 100 })).toContain('first_win')
-  })
 })
 
 describe('high_roller (Gran jornada) — 15+ puntos en una jornada', () => {
@@ -82,7 +77,52 @@ describe('high_roller (Gran jornada) — 15+ puntos en una jornada', () => {
   it('NO se otorga justo por debajo (14)', () => {
     expect(badgesEarnedOnSettle({ ...baseCtx, totalWon: 14 })).not.toContain('high_roller')
   })
-  it('no necesita apuesta: 15 puntos con stake 0 basta (antes pedía stake≥500)', () => {
-    expect(badgesEarnedOnSettle({ ...baseCtx, totalWon: 15, totalStake: 0 })).toContain('high_roller')
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// userMeetsCriteria — criterios de special badges evaluados en el settle.
+// Regresión clave: 'all_participants' exigía totalStake>0 (modelo de apuestas
+// retirado) y por eso NUNCA se otorgaba; ahora la gana cualquiera que participó.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const mkBadge = (
+  criteria_type: SpecialBadgeRow['criteria_type'],
+  criteria_value = 0,
+): SpecialBadgeRow => ({
+  badge_id: 'sp_test',
+  name: 'Test',
+  emoji: '⭐',
+  color: '#fff',
+  bg: '#000',
+  description: '',
+  rarity: 'common',
+  jornada: null,
+  criteria_type,
+  criteria_value,
+  max_grants: 0,
+  granted_count: 0,
+  expires_at: null,
+  active: true,
+})
+
+describe('userMeetsCriteria — criterios de special badges', () => {
+  it('all_participants → la gana cualquier participante (antes exigía stake>0 y NUNCA se daba)', () => {
+    expect(userMeetsCriteria(mkBadge('all_participants'), { hits: 0, pleno: false })).toBe(true)
+  })
+  it('pleno → solo si hizo pleno', () => {
+    expect(userMeetsCriteria(mkBadge('pleno'), { hits: 5, pleno: true })).toBe(true)
+    expect(userMeetsCriteria(mkBadge('pleno'), { hits: 5, pleno: false })).toBe(false)
+  })
+  it('min_hits → según criteria_value', () => {
+    expect(userMeetsCriteria(mkBadge('min_hits', 3), { hits: 3, pleno: false })).toBe(true)
+    expect(userMeetsCriteria(mkBadge('min_hits', 3), { hits: 2, pleno: false })).toBe(false)
+  })
+  it('top_n → según el rango en la jornada', () => {
+    expect(userMeetsCriteria(mkBadge('top_n', 3), { hits: 0, pleno: false, rankInJornada: 2 })).toBe(true)
+    expect(userMeetsCriteria(mkBadge('top_n', 3), { hits: 0, pleno: false, rankInJornada: 4 })).toBe(false)
+    expect(userMeetsCriteria(mkBadge('top_n', 3), { hits: 0, pleno: false })).toBe(false)
+  })
+  it('manual → jamás automático', () => {
+    expect(userMeetsCriteria(mkBadge('manual'), { hits: 9, pleno: true })).toBe(false)
   })
 })
