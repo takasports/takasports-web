@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SearchIcon } from '@/components/icons/GameIcons'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { SearchHit } from '@/app/api/search/players/route'
 
 interface SearchableRow {
@@ -29,24 +30,15 @@ function normalize(s: string): string {
 
 export function StatsSearchModal({ open, onClose, rows, onPick }: Props) {
   const [q, setQ] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (open) {
-      setQ('')
-      // RAF so the focus call happens after the modal is painted
-      requestAnimationFrame(() => inputRef.current?.focus())
-    }
-  }, [open])
+  // Diálogo modal accesible: atrapa el foco (Tab no se escapa al fondo de la
+  // página), cierra con Escape y DEVUELVE el foco al disparador al cerrar.
+  // initialFocus enfoca el primer focusable = el input. 0 KB.
+  useFocusTrap(open, containerRef, onClose)
 
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  // Limpia la búsqueda cada vez que se abre.
+  useEffect(() => { if (open) setQ('') }, [open])
 
   const matches = useMemo(() => {
     if (!q.trim()) return []
@@ -80,12 +72,12 @@ export function StatsSearchModal({ open, onClose, rows, onPick }: Props) {
       className="fixed inset-0 z-[100] flex items-start justify-center pt-24 px-4"
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={onClose}>
-      <div className="w-full max-w-xl rounded-2xl overflow-hidden"
+      <div ref={containerRef} className="w-full max-w-xl rounded-2xl overflow-hidden"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 18px 48px rgba(0,0,0,0.5)' }}
         onClick={e => e.stopPropagation()}>
         <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
           <span aria-hidden style={{ color: '#5A5A72' }}><SearchIcon size={14} /></span>
-          <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)}
+          <input value={q} onChange={e => setQ(e.target.value)}
             placeholder="Busca jugador o equipo..."
             className="flex-1 bg-transparent outline-none text-sm"
             style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }} />
