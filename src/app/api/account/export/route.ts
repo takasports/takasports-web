@@ -23,7 +23,6 @@ const USER_TABLES: { table: string; col: 'user_id' | 'owner_id' }[] = [
   { table: 'point_transactions',            col: 'user_id'  },
   { table: 'quiniela_badges',               col: 'user_id'  },
   { table: 'quiniela_challenge_completions', col: 'user_id' },
-  { table: 'quiniela_featured_picks',       col: 'user_id'  },
   { table: 'quiniela_league_chat',          col: 'user_id'  },
   { table: 'quiniela_league_member_scores', col: 'user_id'  },
   { table: 'quiniela_league_members',       col: 'user_id'  },
