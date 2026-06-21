@@ -63,7 +63,6 @@ const VALID_PICKS = new Set(['1', 'X', '2', '1X', 'X2'])
 const VALID_PHASES = new Set<Phase>(['stake', 'settle'])
 const MAX_ODDS = 100
 const MAX_PICKS = 20
-const MAX_STAKE = 200
 const MAX_TEAM_LEN = 80
 const MAX_JORNADA_LEN = 64
 
@@ -115,11 +114,6 @@ function validateBody(body: ScoreBody): { status: number; error: string } | null
       p.oddsAtPick < 1 || p.oddsAtPick > MAX_ODDS
     )) {
       return { status: 400, error: 'invalid oddsAtPick' }
-    }
-    if (p.stake != null && (
-      !Number.isFinite(p.stake) || p.stake < 0 || p.stake > MAX_STAKE
-    )) {
-      return { status: 400, error: 'invalid stake' }
     }
     // E2 — Marcador exacto: validar shape, rango entero [0, 20] y
     // contar para enforzar MAX_EXACT_PER_JORNADA.
@@ -424,7 +418,7 @@ export async function POST(req: NextRequest) {
           hits: breakdown.hits,
           totalPicks: persistedPicks.length,
           pleno: breakdown.pleno,
-          totalStake: prevPayload.totalStakeCharged ?? breakdown.totalStake,
+          totalStake: 0, // legado (sin apuestas) — wonThis = totalWon > 0
           totalWon: totalPoints,
           picksWithOdds,
           prevStreak,
@@ -476,7 +470,7 @@ export async function POST(req: NextRequest) {
           const meets = userMeetsCriteria(sp, {
             hits: breakdown.hits,
             pleno: breakdown.pleno,
-            totalStake: prevPayload.totalStakeCharged ?? breakdown.totalStake,
+            totalStake: 0, // legado (sin apuestas)
           })
           if (!meets) continue
 
