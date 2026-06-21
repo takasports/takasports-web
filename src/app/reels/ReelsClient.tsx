@@ -16,8 +16,48 @@ function toEmbedUrl(url: string): string {
   return `${clean}/embed`
 }
 
+// Reproductor nativo del reel activo. El atributo `muted` va SIEMPRE en el JSX
+// (lo emite el SSR) para que el autoplay no lo bloquee el navegador; el efecto
+// desactiva el silencio cuando el usuario lo pide (soundOn) sin recargar el vídeo.
+function ReelVideo({
+  reel,
+  index,
+  soundOn,
+  onSoundChange,
+}: {
+  reel: PublicReel
+  index: number
+  soundOn: boolean
+  onSoundChange: (on: boolean) => void
+}) {
+  const ref = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    const v = ref.current
+    if (v) v.muted = !soundOn
+  }, [soundOn])
+  return (
+    <video
+      ref={ref}
+      key={`active-vid-${reel.id}`}
+      src={reel.video_url ?? undefined}
+      poster={reel.thumbnail_url ?? undefined}
+      title={reel.title || `Reel ${index + 1}`}
+      autoPlay
+      loop
+      muted
+      playsInline
+      controls
+      onVolumeChange={e => onSoundChange(!e.currentTarget.muted)}
+      style={{ width: '100%', height: '100%', objectFit: 'contain', border: 'none', background: '#000' }}
+    />
+  )
+}
+
 export default function ReelsClient({ reels }: { reels: PublicReel[] }) {
   const [activeIdx, setActiveIdx] = useState(0)
+  // El sonido es global al feed: una vez activado, se mantiene al pasar de reel
+  // (como TikTok/Reels). Arranca silenciado para no romper el autoplay.
+  const [soundOn, setSoundOn] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const slideRefs = useRef<Array<HTMLElement | null>>([])
   const tickingRef = useRef(false)
@@ -160,20 +200,24 @@ export default function ReelsClient({ reels }: { reels: PublicReel[] }) {
               }}
             >
               {isActive ? (
-                <iframe
-                  key={`active-${reel.id}`}
-                  src={toEmbedUrl(reel.instagram_url)}
-                  title={reel.title || `Reel ${i + 1}`}
-                  loading="lazy"
-                  allow="autoplay; encrypted-media; picture-in-picture; clipboard-write"
-                  allowFullScreen
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    border: 'none',
-                    background: '#000',
-                  }}
-                />
+                reel.video_url ? (
+                  <ReelVideo reel={reel} index={i} soundOn={soundOn} onSoundChange={setSoundOn} />
+                ) : (
+                  <iframe
+                    key={`active-${reel.id}`}
+                    src={toEmbedUrl(reel.instagram_url)}
+                    title={reel.title || `Reel ${i + 1}`}
+                    loading="lazy"
+                    allow="autoplay; encrypted-media; picture-in-picture; clipboard-write"
+                    allowFullScreen
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                      background: '#000',
+                    }}
+                  />
+                )
               ) : (
                 thumb && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -254,6 +298,39 @@ export default function ReelsClient({ reels }: { reels: PublicReel[] }) {
                 </a>
               </div>
             </div>
+
+            {/* Activar sonido — solo en el reel activo con vídeo nativo silenciado */}
+            {isActive && reel.video_url && !soundOn && (
+              <button
+                onClick={() => setSoundOn(true)}
+                aria-label="Activar sonido"
+                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)]"
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  left: 14,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontFamily: 'var(--font-sport)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: 'rgba(255,255,255,0.85)',
+                  background: 'rgba(0,0,0,0.45)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-full)',
+                  cursor: 'pointer',
+                  zIndex: 4,
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor" />
+                  <path d="M17 9l4 6M21 9l-4 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+                Toca para sonido
+              </button>
+            )}
 
             {/* Contador de progreso */}
             <div

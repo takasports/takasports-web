@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
@@ -131,18 +132,28 @@ function ReelModal({ reel, onClose }: { reel: Reel; onClose: () => void }) {
   const { accent } = getSportStyle(reel.sport)
   const label = getSportLabel(reel.sport)
   const igCode = reel.instagram_url ? extractIGCode(reel.instagram_url) : null
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  // Diálogo accesible: foco atrapado + Escape + devolución de foco al disparador
+  // (hook común, 0 KB) y bloqueo del scroll del fondo mientras está abierto.
+  useFocusTrap(true, dialogRef, onClose)
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(18px)' }}
       onClick={onClose}
-      aria-hidden="true"
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={reel.title}
+        tabIndex={-1}
         className="relative flex flex-col"
         style={{
           width: '100%',
