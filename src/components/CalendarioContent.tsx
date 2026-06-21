@@ -546,8 +546,10 @@ function CompGroupHeader({ comp, accent, count, first, crest, slug, banner, pinn
 function FormStrip({ form, align = 'start' }: { form: ('W'|'D'|'L')[]; align?: 'start' | 'end' }) {
   if (!form || form.length === 0) return null
   const color = (r: 'W'|'D'|'L') => r === 'W' ? '#22C55E' : r === 'D' ? '#EAB308' : '#EF4444'
-  // Show in chronological order: oldest first → most recent on the side closest to the logo.
-  const ordered = align === 'end' ? [...form].reverse() : [...form].reverse()
+  // Lo más reciente, junto al escudo (input = más-reciente-primero, past-events order desc).
+  // Local (align='end', escudo a la derecha) → invertir: lo más reciente queda a la derecha.
+  // Visitante (align='start', escudo a la izquierda) → mantener: lo más reciente queda a la izquierda.
+  const ordered = align === 'end' ? [...form].reverse() : [...form]
   return (
     <div className={`mt-1.5 flex gap-1 ${align === 'end' ? 'justify-end' : ''}`}>
       {ordered.map((r, i) => (
