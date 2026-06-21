@@ -6,23 +6,26 @@
 // su propia card hero).
 
 import Link from 'next/link'
+import type { ComponentType } from 'react'
 import { useMyPlayedGames } from '@/hooks/useMyPlayedGames'
 import { getGamePeriod } from '@/lib/games-periods'
 import type { GameId } from '@/lib/games-store'
+import { IconCrackQuiz, IconTakaGrid, IconSopaCracks, IconMiOnce } from '@/components/games/GameVisuals'
+import { CheckIcon } from '@/components/icons/GameIcons'
 
 interface Tile {
   id: GameId
   name: string
-  emoji: string
+  Icon: ComponentType<{ size?: number }>
   accent: string
   href: string
 }
 
 const TILES: Tile[] = [
-  { id: 'crackquiz',  name: 'CrackQuiz',     emoji: '🎯', accent: '#FCD34D', href: '/crackquiz' },
-  { id: 'takagrid',   name: 'TakaGrid',      emoji: '🟧', accent: '#FDBA74', href: '/takagrid' },
-  { id: 'sopacracks', name: 'Sopa de Cracks', emoji: '🔤', accent: '#6EE7B7', href: '/sopa-cracks' },
-  { id: 'mionce',     name: 'Mi Once',       emoji: '⚽', accent: '#93C5FD', href: '/mionce' },
+  { id: 'crackquiz',  name: 'CrackQuiz',     Icon: IconCrackQuiz,  accent: '#FCD34D', href: '/crackquiz' },
+  { id: 'takagrid',   name: 'TakaGrid',      Icon: IconTakaGrid,   accent: '#FDBA74', href: '/takagrid' },
+  { id: 'sopacracks', name: 'Sopa de Cracks', Icon: IconSopaCracks, accent: '#6EE7B7', href: '/sopa-cracks' },
+  { id: 'mionce',     name: 'Mi Once',       Icon: IconMiOnce,     accent: '#93C5FD', href: '/mionce' },
 ]
 
 function fmtCountdown(ms: number): string {
@@ -95,13 +98,15 @@ function DayTile({ tile, played }: { tile: Tile; played: boolean }) {
       }}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xl leading-none" aria-hidden>{tile.emoji}</span>
+        <span className="leading-none inline-flex" aria-hidden style={{ color: tile.accent }}>
+          <tile.Icon size={22} />
+        </span>
         {played ? (
           <span
             className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded inline-flex items-center gap-1"
             style={{ background: 'rgba(74,222,128,0.12)', color: '#86EFAC', border: '1px solid rgba(74,222,128,0.25)', fontFamily: 'var(--font-sport)' }}
           >
-            ✓ Hecho
+            <CheckIcon size={10} /> Hecho
           </span>
         ) : (
           <span
