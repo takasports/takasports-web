@@ -126,8 +126,13 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
   if (player.nationality) bio.push(player.nationality)
   if (player.height) bio.push(player.height)
 
+  const sportSlug = player.leagueSlug.split('/')[0] === 'soccer' ? 'futbol'
+    : player.leagueSlug.startsWith('basketball') ? 'baloncesto' : ''
+  const showRadar = !!sportSlug && hasRadarData(player.stats)
+  const hasRecent = player.recent.length > 0 && !!player.team
+
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 py-6">
       {/* Breadcrumbs semánticos — mirror del BreadcrumbList JSON-LD */}
       <BreadcrumbsNav
         items={[
@@ -150,123 +155,137 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
         >
           ‹ Volver a estadísticas
         </Link>
-        <div className="flex items-center gap-3">
+        <ShareButton title={`${player.name} · ${player.leagueLabel}`} />
+      </div>
+
+      {/* 2 columnas en escritorio: principal (perfil + estadísticas) + lateral (comparar / partidos / noticias).
+          En móvil/tablet se apila (flex-col). */}
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* ── Columna principal ── */}
+        <div className="flex-1 min-w-0 w-full">
+          {/* Header */}
+          <div
+            className="rounded-2xl p-5 mb-6 flex items-center gap-5"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            <div
+              className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0"
+              style={{ background: `${accent}18` }}
+            >
+              <PlayerAvatar headshot={player.headshot} teamLogo={player.team?.logo}
+                teamName={player.team?.name} name={player.name} accent={accent} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div
+                className="text-[11px] font-black uppercase tracking-widest mb-1 flex items-center gap-1.5"
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
+              >
+                {player.flag && (
+                  <Image src={player.flag} alt="" width={16} height={11} unoptimized
+                    style={{ objectFit: 'contain' }} />
+                )}
+                {player.leagueLabel}
+              </div>
+              <h1 className="text-2xl font-black text-white leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                {player.name}
+              </h1>
+              {bio.length > 0 && (
+                <div className="text-[12px] text-[#9A9AAA] mt-1">{bio.join(' · ')}</div>
+              )}
+              {player.team && (
+                <Link
+                  href={`/equipo/${player.team.slug}`}
+                  className="inline-flex items-center gap-1.5 mt-2 text-[12px] font-semibold transition-opacity hover:opacity-80"
+                  style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
+                >
+                  {player.team.name} ›
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Season stats */}
+          {player.stats.length > 0 && (
+            <>
+              <div
+                className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
+                style={{ fontFamily: 'var(--font-sport)' }}
+              >
+                {player.season ? `Estadísticas · ${player.season}` : 'Estadísticas de la temporada'}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+                {player.stats.map(s => (
+                  <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                    <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
+                      {s.value}
+                    </div>
+                    <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide mt-0.5">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Perfil de rendimiento — radar/barras que se "viste" del deporte */}
+              {showRadar && (
+                <div
+                  data-sport={sportSlug}
+                  className="rounded-2xl p-5 mb-6"
+                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
+                >
+                  <div
+                    className="text-[10px] font-black uppercase tracking-widest mb-4"
+                    style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
+                  >
+                    Perfil de rendimiento
+                  </div>
+                  <PlayerStatsRadar stats={player.stats} />
+                </div>
+              )}
+            </>
+          )}
+
+          {player.stats.length === 0 && !hasRecent && (
+            <div className="text-center py-10 text-[var(--text-muted)] text-sm">
+              Sin estadísticas disponibles para este jugador
+            </div>
+          )}
+        </div>
+
+        {/* ── Barra lateral ── */}
+        <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
+          {/* Comparar */}
           <Link
             href={`/comparar?p1=${player.leagueSlug.replaceAll('/', '_')}_${player.id}`}
-            className="text-[12px] font-bold transition-opacity hover:opacity-80"
-            style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
+            className="block rounded-2xl p-4 transition-opacity hover:opacity-90"
+            style={{ background: 'rgba(124,58,237,0.10)', border: '1px solid rgba(124,58,237,0.25)' }}
           >
-            ⇄ Comparar
+            <div className="text-[13px] font-bold text-white" style={{ fontFamily: 'var(--font-sport)' }}>⇄ Comparar jugador</div>
+            <div className="text-[11px] text-[#9A9AAA] mt-0.5">Mídelo contra otro crack de la liga.</div>
           </Link>
-          <ShareButton title={`${player.name} · ${player.leagueLabel}`} />
-        </div>
-      </div>
 
-      {/* Header */}
-      <div
-        className="rounded-2xl p-5 mb-6 flex items-center gap-5"
-        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-      >
-        <div
-          className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0"
-          style={{ background: `${accent}18` }}
-        >
-          <PlayerAvatar headshot={player.headshot} teamLogo={player.team?.logo}
-            teamName={player.team?.name} name={player.name} accent={accent} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div
-            className="text-[11px] font-black uppercase tracking-widest mb-1 flex items-center gap-1.5"
-            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
-          >
-            {player.flag && (
-              <Image src={player.flag} alt="" width={16} height={11} unoptimized
-                style={{ objectFit: 'contain' }} />
-            )}
-            {player.leagueLabel}
-          </div>
-          <h1 className="text-2xl font-black text-white leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
-            {player.name}
-          </h1>
-          {bio.length > 0 && (
-            <div className="text-[12px] text-[#9A9AAA] mt-1">{bio.join(' · ')}</div>
-          )}
-          {player.team && (
-            <Link
-              href={`/equipo/${player.team.slug}`}
-              className="inline-flex items-center gap-1.5 mt-2 text-[12px] font-semibold transition-opacity hover:opacity-80"
-              style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
+          {/* Club recent matches */}
+          {hasRecent && (
+            <div
+              className="rounded-2xl p-4"
+              style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
-              {player.team.name} ›
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* Season stats */}
-      {player.stats.length > 0 && (
-        <>
-          <div
-            className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
-            style={{ fontFamily: 'var(--font-sport)' }}
-          >
-            {player.season ? `Estadísticas · ${player.season}` : 'Estadísticas de la temporada'}
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-            {player.stats.map(s => (
-              <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
-                  {s.value}
-                </div>
-                <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide mt-0.5">{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Perfil de rendimiento — radar/barras que se "viste" del deporte */}
-          {(() => {
-            const sportSlug = player.leagueSlug.split('/')[0] === 'soccer' ? 'futbol'
-              : player.leagueSlug.startsWith('basketball') ? 'baloncesto' : ''
-            if (!sportSlug || !hasRadarData(player.stats)) return null
-            return (
               <div
-                data-sport={sportSlug}
-                className="rounded-2xl p-5 mb-6"
-                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
+                className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
+                style={{ fontFamily: 'var(--font-sport)' }}
               >
-                <div
-                  className="text-[10px] font-black uppercase tracking-widest mb-4"
-                  style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
-                >
-                  Perfil de rendimiento
-                </div>
-                <PlayerStatsRadar stats={player.stats} />
+                Últimos partidos · {player.team!.name}
               </div>
-            )
-          })()}
-        </>
-      )}
+              {player.recent.map(r => (
+                <MatchRow key={r.matchRef} r={r} teamId={player.team!.id} />
+              ))}
+            </div>
+          )}
 
-      {/* Club recent matches */}
-      {player.recent.length > 0 && player.team && (
-        <>
-          <div
-            className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
-            style={{ fontFamily: 'var(--font-sport)' }}
-          >
-            Últimos partidos · {player.team.name}
-          </div>
-          {player.recent.map(r => (
-            <MatchRow key={r.matchRef} r={r} teamId={player.team!.id} />
-          ))}
-        </>
-      )}
-
-      {player.stats.length === 0 && player.recent.length === 0 && (
-        <div className="text-center py-10 text-[var(--text-muted)] text-sm">
-          Sin estadísticas disponibles para este jugador
-        </div>
-      )}
+          {/* Noticias relacionadas con el jugador */}
+          <Suspense>
+            <RelatedArticlesByEntity entityName={player.name} limit={6} />
+          </Suspense>
+        </aside>
+      </div>
     </div>
   )
 }
@@ -323,13 +342,6 @@ export default async function JugadorPage({ params }: { params: Promise<{ slug: 
         <Suspense>
           <PlayerContent player={player} />
         </Suspense>
-        {/* Widget de noticias relacionadas con el jugador.
-            Distribuye autoridad del feed editorial al hub de la entidad. */}
-        <div className="max-w-2xl mx-auto px-4 pb-10">
-          <Suspense>
-            <RelatedArticlesByEntity entityName={player.name} limit={6} />
-          </Suspense>
-        </div>
       </div>
     </>
   )
