@@ -29,7 +29,10 @@ export async function GET(req: NextRequest) {
 
   const now = Date.now()
   const nowIso = new Date(now).toISOString()
-  const windowEnd = new Date(now + 15 * 60_000).toISOString()
+  // Ventana de 20 min (antes 15): el cron pasó de cada 10 a cada 15 min, así que
+  // ensanchamos la ventana para que ningún recordatorio caiga entre dos pasadas.
+  // Cada aviso salta entre 5 y 20 min antes del inicio del partido.
+  const windowEnd = new Date(now + 20 * 60_000).toISOString()
 
   // 1) Recordatorios a punto de empezar y aún sin avisar.
   const { data: due, error: dueErr } = await sb

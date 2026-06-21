@@ -21,6 +21,9 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 
 export const dynamic = 'force-dynamic'
+// Tope anti-runaway: si algo se cuelga, Vercel corta a los 60s en vez de dejar
+// correr la función hasta el límite por defecto del plan (300s) = menos GB-horas.
+export const maxDuration = 60
 
 interface EspnCompetitor {
   id?:      string  // = athleteId → foto: a.espncdn.com/i/headshots/mma/players/full/{id}.png
@@ -70,7 +73,9 @@ async function fetchUfcEvents(): Promise<EspnEvent[]> {
   const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
   const url = `https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=${fmt(start)}-${fmt(end)}&limit=100`
   try {
-    const res = await fetch(url, { next: { revalidate: 0 } })
+    // Timeout de 10s: si ESPN se cuelga, abortamos en vez de quedarnos colgados
+    // (mismo cinturón que ya tiene sync-mundial). El catch de abajo degrada a [].
+    const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(10_000) })
     if (!res.ok) return []
     const json = await res.json() as { events?: EspnEvent[] }
     return json.events ?? []

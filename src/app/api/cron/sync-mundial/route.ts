@@ -14,6 +14,9 @@ import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { awardBadges } from '@/lib/badge-awards'
 
 export const dynamic = 'force-dynamic'
+// Tope anti-runaway: corta a los 60s en vez del límite por defecto (300s). Su
+// fetch a ESPN ya tiene AbortSignal.timeout(10s) más abajo.
+export const maxDuration = 60
 
 // Rango de fechas del Mundial: 11 jun — 26 jul 2026
 const WC_START = '20260611'

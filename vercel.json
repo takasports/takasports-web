@@ -43,7 +43,11 @@
     },
     {
       "path": "/api/cron/sync-ufc",
-      "schedule": "*/15 * * * *"
+      "schedule": "*/15 * * * 5,6,0"
+    },
+    {
+      "path": "/api/cron/sync-ufc",
+      "schedule": "0 */4 * * 1,2,3,4"
     },
     {
       "path": "/api/cron/mundial-reminders",
@@ -51,7 +55,7 @@
     },
     {
       "path": "/api/cron/calendar-reminders",
-      "schedule": "*/10 * * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/admin/ranked/close-week?sport=mundial&award=1",
@@ -83,7 +87,7 @@
     },
     {
       "path": "/api/cron/refresh-rankings",
-      "schedule": "0 * * * *"
+      "schedule": "0 */4 * * *"
     }
   ],
   "headers": [
