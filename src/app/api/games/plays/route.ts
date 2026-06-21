@@ -13,7 +13,7 @@
 // (awarded: 0).
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { POINTS_ENABLED_GAMES, pointsFor, type GameId as PointsGameId } from '@/lib/game-points'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ persisted: false })
     }
 
-    const sb = await createServerSupabaseClient()
-    const { data: { user } } = await sb.auth.getUser()
+    // Auth: acepta cookie (web) o Authorization: Bearer (takasports-app).
+    const { supabase: sb, user } = await supabaseForRequest(req)
     if (!user) {
       // Modo invitado: aceptamos y devolvemos sin persistir (cliente cae a localStorage)
       return NextResponse.json({ persisted: false, reason: 'no_session' })
@@ -132,8 +132,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ play: null })
   }
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ play: null, reason: 'no_session' })
 
   const { data, error } = await sb

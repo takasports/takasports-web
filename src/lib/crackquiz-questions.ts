@@ -1276,13 +1276,19 @@ function composeRound(shuffled: QuizQuestion[], count: number): QuizQuestion[] {
   return picked.sort((a, b) => a.difficulty - b.difficulty)
 }
 
-/** Returns a seeded, difficulty-curved daily selection of N questions */
-export function getDailyQuestions(count = 10): QuizQuestion[] {
-  const today = todayKey()
-  const seed = today.split('-').reduce((acc, n) => acc * 100 + parseInt(n), 0)
+/** Selección diaria determinista para un día concreto "YYYY-MM-DD". Fuente
+ *  única del set del día; la usan tanto el cliente web (vía getDailyQuestions)
+ *  como el endpoint /api/crackquiz/today (para que la app reciba EL MISMO set). */
+export function getDailyQuestionsFor(day: string, count = 10): QuizQuestion[] {
+  const seed = day.split('-').reduce((acc, n) => acc * 100 + parseInt(n), 0)
   const rand = mulberry32(seed)
   const shuffled = seededShuffle(QUESTIONS, rand)
   return composeRound(shuffled, Math.min(count, QUESTIONS.length))
+}
+
+/** Returns a seeded, difficulty-curved daily selection of N questions */
+export function getDailyQuestions(count = 10): QuizQuestion[] {
+  return getDailyQuestionsFor(todayKey(), count)
 }
 
 /** Lista única de categorías presentes en el pool actual. */

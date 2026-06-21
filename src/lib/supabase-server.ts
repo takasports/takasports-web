@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
-import { createClient, type User } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { NextRequest } from 'next/server'
 
@@ -64,4 +64,43 @@ export async function getUserFromRequest(req: NextRequest): Promise<User | null>
   })
   const { data } = await sb.auth.getUser()
   return data?.user ?? null
+}
+
+/**
+ * Como `getUserFromRequest`, pero además devuelve el CLIENTE Supabase
+ * autenticado (no solo el `User`). Necesario para route handlers que ejecutan
+ * RPCs que se apoyan en `auth.uid()` (p.ej. `record_game_play`): el RPC debe
+ * correr con el JWT del usuario, así que hace falta el cliente, no solo su id.
+ *
+ * Acepta las dos credenciales, igual que getUserFromRequest:
+ *   1. `Authorization: Bearer <token>` (takasports-app vía fetch nativo)
+ *   2. Cookies de Supabase SSR (web) — comportamiento idéntico al previo.
+ *
+ * Debe llamarse solo cuando Supabase está configurado (el caller suele guardar
+ * con un check de env antes); en la rama cookie reutiliza createServerSupabaseClient.
+ */
+export async function supabaseForRequest(
+  req: NextRequest,
+): Promise<{ supabase: SupabaseClient; user: User | null }> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  // 1. Bearer token (móvil / clientes sin cookies)
+  const auth = req.headers.get('authorization')
+  if (url && key && auth?.toLowerCase().startsWith('bearer ')) {
+    const token = auth.slice(7).trim()
+    if (token) {
+      const supabase = createClient(url, key, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+      const { data } = await supabase.auth.getUser()
+      return { supabase, user: data?.user ?? null }
+    }
+  }
+
+  // 2. Cookies (web SSR) — idéntico a createServerSupabaseClient().
+  const supabase = (await createServerSupabaseClient()) as unknown as SupabaseClient
+  const { data } = await supabase.auth.getUser()
+  return { supabase, user: data?.user ?? null }
 }
