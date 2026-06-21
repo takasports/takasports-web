@@ -933,7 +933,7 @@ export default async function NoticiaPage({
                                 }}
                               >
                                 <iframe
-                                  src={`https://www.youtube.com/embed/${v.videoId}`}
+                                  src={`https://www.youtube-nocookie.com/embed/${v.videoId}`}
                                   title={v.sourceName || 'Video'}
                                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                   allowFullScreen

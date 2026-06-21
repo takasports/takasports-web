@@ -243,8 +243,12 @@ export async function GET(
 
   const team = asObj(ath.team)
   const teamId = asString(team?.id)
+  // El logo del equipo vive en la ruta CDN del deporte (NBA usa 'nba', no
+  // 'basketball'); derivar del leagueSlug en vez de asumir siempre fútbol.
+  const LOGO_PATH: Record<string, string> = { basketball: 'nba' }
+  const logoSport = leagueSlug.split('/')[0]
   const teamLogo = teamId
-    ? `https://a.espncdn.com/i/teamlogos/soccer/500/${teamId}.png`
+    ? `https://a.espncdn.com/i/teamlogos/${LOGO_PATH[logoSport] ?? logoSport}/500/${teamId}.png`
     : undefined
   const teamSlug = teamId ? `${leagueSlug.replaceAll('/', '_')}_${teamId}` : undefined
   const position = asObj(ath.position)

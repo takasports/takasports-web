@@ -73,6 +73,11 @@ export async function POST(req: NextRequest) {
   const text = typeof body.body === 'string' ? body.body.trim() : ''
 
   if (!slug) return NextResponse.json({ ok: false, error: 'slug_required' }, { status: 400 })
+  // El slug viene del CMS (Sanity): minúsculas, dígitos y - _ . Validamos formato
+  // y longitud para no aceptar paths manipulados (../) ni payloads enormes.
+  if (slug.length > 200 || !/^[a-z0-9]([a-z0-9-_.]*[a-z0-9])?$/.test(slug)) {
+    return NextResponse.json({ ok: false, error: 'invalid_slug' }, { status: 400 })
+  }
   if (text.length === 0 || text.length > MAX_BODY_LEN) {
     return NextResponse.json({ ok: false, error: 'invalid_body' }, { status: 400 })
   }
