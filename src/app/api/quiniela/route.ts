@@ -493,7 +493,15 @@ export async function getQuinielaData(): Promise<QuinielaData> {
   return data
 }
 
+// Jornada pública: mismos partidos y cuotas para todos, sin datos por-usuario
+// (la lee QuinielaClient/Module/Teaser y la página /juegos). getQuinielaData ya
+// cachea en memoria; añadimos caché de borde para que el CDN sirva la mayoría de
+// hits sin invocar la función. 300s coincide con el revalidate interno del fetch.
+const QUINIELA_CACHE = 'public, s-maxage=300, stale-while-revalidate=900'
+
 export async function GET() {
   const data = await getQuinielaData()
-  return NextResponse.json(data)
+  return NextResponse.json(data, {
+    headers: { 'Cache-Control': QUINIELA_CACHE, 'CDN-Cache-Control': QUINIELA_CACHE },
+  })
 }

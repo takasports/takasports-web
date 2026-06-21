@@ -104,9 +104,14 @@ export async function GET(req: NextRequest) {
       sanity.fetch<number>(buildCountQuery(filters), params),
     ])
 
+    // Lista de artículos pública (varía por query, no por usuario): cacheable en
+    // el CDN. La barra de titulares (BreakingNewsBar) la pide en CADA página, así
+    // que un s-maxage corto (10s) revalidaba ~6 veces/min bajo tráfico. 60s da
+    // frescura de sobra para un ticker/listado y reduce ~6× las invocaciones.
+    const cache = 'public, s-maxage=60, stale-while-revalidate=300'
     return NextResponse.json(
       { articles, total, page, pageSize, hasMore: end < total },
-      { headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' } }
+      { headers: { 'Cache-Control': cache, 'CDN-Cache-Control': cache } }
     )
   } catch (err) {
     captureException(err, { route: '/api/articles', page, sport, from, to, q })
