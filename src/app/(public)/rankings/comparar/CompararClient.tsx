@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ScrollToTop from '@/components/ScrollToTop'
 import { type RankingEntry } from '@/lib/rankings'
-import { getDisplayScore, scoreColor } from '@/lib/rankings-ui'
+import { getDisplayScore, scoreColor, isCreatorEntry } from '@/lib/rankings-ui'
 import { getAllRankingEntries } from '@/lib/rankings-search'
 import { getSportStyle } from '@/lib/sports'
 
@@ -22,7 +22,16 @@ const FACTOR_DEFS = [
   { key: 'mediatico',   label: 'Mediático',   pct: '25%', color: '#f59e0b' },
   { key: 'narrativa',   label: 'Narrativa',   pct: '15%', color: '#c084fc' },
 ] as const
+// Contenido (creadores/periodistas): criterio propio, audiencia-heavy. Mismas
+// claves que el atleta pero distinta etiqueta y peso (espejo de /rankings/[id]).
+const FACTOR_DEFS_CREATOR = [
+  { key: 'mediatico',   label: 'Audiencia',   pct: '50%', color: '#f59e0b' },
+  { key: 'rendimiento', label: 'Contenido',   pct: '30%', color: '#22c55e' },
+  { key: 'narrativa',   label: 'Momento',     pct: '15%', color: '#c084fc' },
+  { key: 'contexto',    label: 'Profundidad', pct: '5%',  color: '#60a5fa' },
+] as const
 type FactorKey = typeof FACTOR_DEFS[number]['key']
+type FactorDef = { key: FactorKey; label: string; pct: string; color: string }
 
 const DEFAULT_FACTORS: Record<FactorKey, number> = {
   rendimiento: 0, contexto: 0, mediatico: 0, narrativa: 0,
@@ -191,10 +200,11 @@ function EntryPicker({
 
 // ── Radar chart SVG ──────────────────────────────────────────────────
 function RadarChart({
-  a, b,
+  a, b, defs = FACTOR_DEFS,
 }: {
   a: Record<FactorKey, number>
   b: Record<FactorKey, number>
+  defs?: readonly FactorDef[]
 }) {
   const width = 360
   const height = 320
@@ -272,7 +282,7 @@ function RadarChart({
       {/* Labels */}
       {axes.map(({ key, angle }) => {
         const [lx, ly] = point(angle, labelR)
-        const def = FACTOR_DEFS.find(f => f.key === key)!
+        const def = defs.find(f => f.key === key)!
         return (
           <text
             key={key}
@@ -350,6 +360,28 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
 
   const factorsA: Record<FactorKey, number> = entryA?.factors ?? DEFAULT_FACTORS
   const factorsB: Record<FactorKey, number> = entryB?.factors ?? DEFAULT_FACTORS
+
+  // Track-aware: atletas y creadores usan las MISMAS 4 claves pero distinta
+  // etiqueta/peso. Mismo criterio que la ficha individual (/rankings/[id]).
+  const isCreatorA = entryA ? isCreatorEntry(entryA) : false
+  const isCreatorB = entryB ? isCreatorEntry(entryB) : false
+  const bothCreator = isCreatorA && isCreatorB
+  const mixedTrack = !!entryA && !!entryB && isCreatorA !== isCreatorB
+  const radarDefs: readonly FactorDef[] = bothCreator ? FACTOR_DEFS_CREATOR : FACTOR_DEFS
+  const aDefs: readonly FactorDef[] = isCreatorA ? FACTOR_DEFS_CREATOR : FACTOR_DEFS
+  const bDefByKey: Record<string, FactorDef> = Object.fromEntries(
+    (isCreatorB ? FACTOR_DEFS_CREATOR : FACTOR_DEFS).map((d) => [d.key, d]),
+  )
+  const desgloseTitle = bothCreator
+    ? 'Desglose · Índice de Contenido'
+    : mixedTrack
+      ? 'Desglose · criterios distintos'
+      : 'Desglose factor a factor'
+  const radarTitle = bothCreator
+    ? 'Radar · Índice de Contenido'
+    : mixedTrack
+      ? 'Radar · criterios distintos'
+      : 'Radar · 4 factores objetivos'
 
   const scoreA = entryA ? getDisplayScore(entryA) : 0
   const scoreB = entryB ? getDisplayScore(entryB) : 0
@@ -486,10 +518,10 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
               <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-3"
                 style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
-                Radar · 4 factores objetivos
+                {radarTitle}
               </p>
               <div className="flex flex-col items-center gap-4">
-                <RadarChart a={factorsA} b={factorsB} />
+                <RadarChart a={factorsA} b={factorsB} defs={radarDefs} />
                 <div className="flex items-center gap-5 text-[10px] font-bold"
                   style={{ fontFamily: 'var(--font-sport)' }}>
                   <span className="flex items-center gap-1.5" style={{ color: COLOR_A }}>
@@ -511,20 +543,36 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
               <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-4"
                 style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
-                Desglose factor a factor
+                {desgloseTitle}
               </p>
+              {mixedTrack && entryA && entryB && (
+                <p className="text-[10px] mb-3" style={{ fontFamily: 'var(--font-sport)', color: '#8A8AA0' }}>
+                  <span style={{ color: COLOR_A }}>{entryA.name}</span> se mide como {isCreatorA ? 'creador' : 'atleta'} ·{' '}
+                  <span style={{ color: COLOR_B }}>{entryB.name}</span> como {isCreatorB ? 'creador' : 'atleta'} — etiquetas y pesos distintos.
+                </p>
+              )}
               <div className="flex flex-col gap-3">
-                {FACTOR_DEFS.map(({ key, label, pct, color }) => {
+                {aDefs.map((aDef) => {
+                  const key = aDef.key
+                  const bDef = bDefByKey[key] ?? aDef
                   const va = factorsA[key]
                   const vb = factorsB[key]
                   const d = va - vb
                   return (
                     <div key={key}>
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-bold"
-                          style={{ color: color, fontFamily: 'var(--font-sport)' }}>
-                          {label} <span style={{ color: '#3A3A4A' }}>{pct}</span>
-                        </span>
+                        {mixedTrack ? (
+                          <span className="text-[10px] font-bold" style={{ fontFamily: 'var(--font-sport)' }}>
+                            <span style={{ color: COLOR_A }}>{aDef.label} <span style={{ color: '#3A3A4A' }}>{aDef.pct}</span></span>
+                            <span style={{ color: '#3A3A4A' }}> / </span>
+                            <span style={{ color: COLOR_B }}>{bDef.label} <span style={{ color: '#3A3A4A' }}>{bDef.pct}</span></span>
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold"
+                            style={{ color: aDef.color, fontFamily: 'var(--font-sport)' }}>
+                            {aDef.label} <span style={{ color: '#3A3A4A' }}>{aDef.pct}</span>
+                          </span>
+                        )}
                         <span className="text-[10px] tabular-nums font-bold"
                           style={{ color: d === 0 ? '#5A5A72' : d > 0 ? COLOR_A : COLOR_B,
                             fontFamily: 'var(--font-display)' }}>
@@ -555,7 +603,7 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[10px] font-black uppercase tracking-widest"
                     style={{ color: '#A0A0B8', fontFamily: 'var(--font-sport)' }}>
-                    Índice Taka · Total
+                    {bothCreator ? 'Índice de Contenido' : 'Índice Taka'} · Total
                   </span>
                   <span className="text-[10px] tabular-nums font-bold"
                     style={{ color: delta === 0 ? '#5A5A72' : delta > 0 ? COLOR_A : COLOR_B,
