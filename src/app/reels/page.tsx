@@ -30,6 +30,15 @@ export const metadata: Metadata = {
   },
 }
 
+// Convierte el timestamp del reel (epoch en segundos o fecha ISO) a ISO válido.
+// Si no parsea, devuelve undefined en vez de reventar el render (RangeError → 500).
+function safeUploadDate(timestamp?: string | null): string | undefined {
+  if (!timestamp) return undefined
+  const value = /^\d+$/.test(timestamp) ? parseInt(timestamp, 10) * 1000 : timestamp
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString()
+}
+
 export default async function ReelsPage() {
   const reels = (await getMergedReels().catch(() => [])).slice(0, 40)
 
@@ -50,9 +59,7 @@ export default async function ReelsPage() {
           ? (r.thumbnail_url.startsWith('http') ? r.thumbnail_url : `${SITE_URL}${r.thumbnail_url}`)
           : `${SITE_URL}/taka-icon.png`,
         contentUrl: r.instagram_url,
-        uploadDate: r.timestamp
-          ? new Date(/^\d+$/.test(r.timestamp) ? parseInt(r.timestamp, 10) * 1000 : r.timestamp).toISOString()
-          : undefined,
+        uploadDate: safeUploadDate(r.timestamp),
       },
     })),
   }
