@@ -12,6 +12,7 @@ import type { User } from '@supabase/supabase-js'
 import { PersonIcon } from '@/components/icons/GameIcons'
 import PorraCTA from '@/components/PorraCTA'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { useQuinielaMe } from '@/lib/quiniela-me-store'
 import type { SearchHit } from '@/app/api/search/players/route'
 import dynamic from 'next/dynamic'
 
@@ -490,6 +491,10 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
   const [levelData, setLevelData] = useState<LevelData | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [levelUpToast, setLevelUpToast] = useState<{ level: number; levelName: string; color: string } | null>(null)
+  // Datos de /api/quiniela/me desde el store compartido (un solo fetch global,
+  // compartido con BadgeUnlockProvider). `meVersion` sube en cada respuesta
+  // fresca → la usamos para detectar level-up una vez por respuesta.
+  const { data: meData, version: meVersion } = useQuinielaMe()
   const drawerRef = useRef<HTMLElement>(null)
   const hamburgerRef = useRef<HTMLButtonElement>(null)
   const navRef = useRef<HTMLElement>(null)
@@ -542,7 +547,9 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
     }
   }, [])
 
-  // Fetch level data cuando hay sesión — con detección de level-up
+  // Deriva el nivel del store compartido (1 solo fetch global) — con
+  // detección de level-up. Corre cuando cambia la sesión, cuando se resuelve
+  // la auth, o cuando llega una respuesta fresca del store (meVersion).
   useEffect(() => {
     if (!user) {
       // Solo limpiamos (y borramos la caché) cuando la auth YA se resolvió a
@@ -553,36 +560,36 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
       }
       return
     }
-    const LEVEL_KEY = `ts_level_${user.id}`
-    fetch('/api/quiniela/me', { cache: 'no-store' })
-      .then(r => r.ok ? r.json() : null)
-      .then((d: { level?: number; levelName?: string; levelColor?: string; progress?: number; xp?: number; xpToNext?: number } | null) => {
-        if (d && d.level != null) {
-          const newLevel = d.level
-          const newData: LevelData = {
-            level:      newLevel,
-            levelName:  d.levelName  ?? '',
-            levelColor: d.levelColor ?? '#A78BFA',
-            progress:   d.progress   ?? 0,
-            xp:         d.xp         ?? 0,
-            xpToNext:   d.xpToNext   ?? 0,
-          }
-          setLevelData(newData)
-          try { localStorage.setItem(LEVELCHIP_CACHE, JSON.stringify(newData)) } catch { /* ignore */ }
+    // Sesión presente pero aún sin respuesta del store → conservamos la caché
+    // optimista (el chip ya pinta desde ts_levelchip) y esperamos al dato.
+    if (!meData || meData.level == null) return
 
-          // Detectar level-up comparando con el nivel anterior guardado
-          try {
-            const prevLevel = parseInt(sessionStorage.getItem(LEVEL_KEY) ?? '0', 10)
-            if (prevLevel > 0 && newLevel > prevLevel) {
-              // ¡Subió de nivel! Mostrar toast
-              setLevelUpToast({ level: newLevel, levelName: newData.levelName, color: newData.levelColor })
-            }
-            sessionStorage.setItem(LEVEL_KEY, String(newLevel))
-          } catch { /* sessionStorage no disponible — ignorar */ }
-        }
-      })
-      .catch(() => {/* silencioso */})
-  }, [user])
+    const LEVEL_KEY = `ts_level_${user.id}`
+    const newLevel = meData.level
+    const newData: LevelData = {
+      level:      newLevel,
+      levelName:  meData.levelName  ?? '',
+      levelColor: meData.levelColor ?? '#A78BFA',
+      progress:   meData.progress   ?? 0,
+      xp:         meData.xp         ?? 0,
+      xpToNext:   meData.xpToNext   ?? 0,
+    }
+    setLevelData(newData)
+    try { localStorage.setItem(LEVELCHIP_CACHE, JSON.stringify(newData)) } catch { /* ignore */ }
+
+    // Detectar level-up comparando con el nivel anterior guardado
+    try {
+      const prevLevel = parseInt(sessionStorage.getItem(LEVEL_KEY) ?? '0', 10)
+      if (prevLevel > 0 && newLevel > prevLevel) {
+        // ¡Subió de nivel! Mostrar toast
+        setLevelUpToast({ level: newLevel, levelName: newData.levelName, color: newData.levelColor })
+      }
+      sessionStorage.setItem(LEVEL_KEY, String(newLevel))
+    } catch { /* sessionStorage no disponible — ignorar */ }
+    // meVersion en deps: garantiza que el diff de level-up corra una vez por
+    // respuesta fresca del store (no por cada re-render).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authChecked, meVersion])
 
   useEffect(() => {
     document.body.style.overflow = (menuOpen || searchOpen) ? 'hidden' : ''

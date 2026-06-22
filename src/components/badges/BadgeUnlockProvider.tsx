@@ -5,11 +5,13 @@
 // BadgeUnlockModal celebratorio.
 //
 // Estrategia (sin tráfico extra):
-//   1. Al montar y cuando la pestaña vuelve a visible (`visibilitychange`),
-//      hace fetch a /api/quiniela/me. Si el user no está autenticado
-//      (401), se queda en idle silencioso — no reintenta.
+//   1. Lee los datos de /api/quiniela/me del STORE COMPARTIDO
+//      (`useQuinielaMe`) — un solo fetch global, compartido con el chip de
+//      nivel del Header. El store ya cablea los disparadores (mount,
+//      visibilitychange, evento 'taka:badge-check' tras settle) y la
+//      desactivación silenciosa en 401. Aquí solo reaccionamos al dato.
 //   2. Compara los badge_ids desbloqueados contra el set en localStorage
-//      (`taka_seen_badges`). Los IDs nuevos se encolan.
+//      (`taka_seen_badges_v1`). Los IDs nuevos se encolan.
 //   3. La primera vez que carga (no hay set previo en localStorage), NO
 //      muestra modal — solo "siembra" el set. Esto evita que el primer
 //      login dispare modales para badges históricos.
@@ -20,26 +22,11 @@
 // inicial.
 // ─────────────────────────────────────────────────────────────────
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuinielaMe } from '@/lib/quiniela-me-store'
 import { BadgeUnlockModal, type UnlockedBadgeView } from './BadgeUnlockModal'
 
 const SEEN_KEY = 'taka_seen_badges_v1'
-
-interface MeBadge {
-  id: string
-  name: string
-  emoji: string
-  color: string
-  bg: string
-  rarity: string
-  description: string
-  unlockedAt: string | null
-}
-
-interface MeResponse {
-  badges?: MeBadge[]
-  error?: string
-}
 
 function readSeen(): Set<string> | null {
   try {
@@ -57,33 +44,15 @@ function writeSeen(set: Set<string>) {
 
 export default function BadgeUnlockProvider() {
   const [queue, setQueue] = useState<UnlockedBadgeView[]>([])
-  const lastCheckRef = useRef(0)
-  // Si el endpoint nos dijo "no auth", desactivamos chequeos hasta el
-  // próximo reload — el user no tiene sesión, no hay nada que detectar.
-  const disabledRef  = useRef(false)
+  // Dato del store compartido (1 solo fetch global). `version` sube en cada
+  // respuesta fresca → corremos el diff una vez por respuesta.
+  const { data, version } = useQuinielaMe()
 
-  const checkForUnlocks = useCallback(async () => {
-    if (disabledRef.current) return
-    // Throttling: máximo 1 check cada 8s para evitar storms al cambiar
-    // de pestaña rápido.
-    const now = Date.now()
-    if (now - lastCheckRef.current < 8000) return
-    lastCheckRef.current = now
+  useEffect(() => {
+    if (!data) return // sin sesión / aún sin respuesta — nada que detectar
+    let cancelled = false
 
-    let resp: Response
-    try {
-      resp = await fetch('/api/quiniela/me', { cache: 'no-store' })
-    } catch { return }
-    if (resp.status === 401 || resp.status === 503) {
-      disabledRef.current = true
-      return
-    }
-    if (!resp.ok) return
-
-    let data: MeResponse
-    try { data = await resp.json() } catch { return }
     const all = (data.badges ?? []).filter(b => b.unlockedAt)
-
     const unlockedIds = new Set(all.map(b => b.id))
     const seen = readSeen()
 
@@ -119,40 +88,31 @@ export default function BadgeUnlockProvider() {
       return
     }
 
-    // Resolver titleUnlock vía catálogo cliente.
-    try {
-      const { BADGES } = await import('@/lib/badges')
-      for (const f of fresh) {
-        const def = BADGES[f.id]
-        if (def?.unlocks?.title) f.titleUnlock = def.unlocks.title
-      }
-    } catch { /* ignore — el modal funciona sin titleUnlock */ }
+    // Resolver titleUnlock vía catálogo cliente + encolar (async).
+    void (async () => {
+      try {
+        const { BADGES } = await import('@/lib/badges')
+        for (const f of fresh) {
+          const def = BADGES[f.id]
+          if (def?.unlocks?.title) f.titleUnlock = def.unlocks.title
+        }
+      } catch { /* ignore — el modal funciona sin titleUnlock */ }
 
-    // Ordenar por rareza descendente para que los épicos/legendarios sean
-    // los primeros que vea el user.
-    const order: Record<string, number> = { legendary: 0, epic: 1, rare: 2, common: 3 }
-    fresh.sort((a, b) => (order[a.rarity] ?? 9) - (order[b.rarity] ?? 9))
+      if (cancelled) return
 
-    setQueue(prev => [...prev, ...fresh])
-    writeSeen(unlockedIds)
-  }, [])
+      // Ordenar por rareza descendente para que los épicos/legendarios sean
+      // los primeros que vea el user.
+      const order: Record<string, number> = { legendary: 0, epic: 1, rare: 2, common: 3 }
+      fresh.sort((a, b) => (order[a.rarity] ?? 9) - (order[b.rarity] ?? 9))
 
-  useEffect(() => {
-    void checkForUnlocks()
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') void checkForUnlocks()
-    }
-    document.addEventListener('visibilitychange', onVisible)
-    // Hook ligero: cuando alguien escribe en localStorage desde otra pestaña
-    // o cuando termina un settle local (otros componentes pueden disparar
-    // `window.dispatchEvent(new Event('taka:badge-check'))` para forzar).
-    const onCustom = () => { void checkForUnlocks() }
-    window.addEventListener('taka:badge-check', onCustom)
-    return () => {
-      document.removeEventListener('visibilitychange', onVisible)
-      window.removeEventListener('taka:badge-check', onCustom)
-    }
-  }, [checkForUnlocks])
+      setQueue(prev => [...prev, ...fresh])
+      writeSeen(unlockedIds)
+    })()
+
+    return () => { cancelled = true }
+    // version en deps: corre el diff una vez por respuesta fresca del store.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [version])
 
   if (queue.length === 0) return null
 
