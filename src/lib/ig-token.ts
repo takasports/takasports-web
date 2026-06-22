@@ -25,7 +25,12 @@ export async function getIgTokenFromStore(): Promise<string | null> {
   try {
     const res = await fetch(
       `${SUPA}/rest/v1/app_secrets?key=eq.${SECRET_KEY}&select=value`,
-      { headers: restHeaders(), signal: AbortSignal.timeout(5000), cache: 'no-store' },
+      // Cacheable 30 min (NO no-store): el token largo vive 60 días y el WF-10
+      // lo refresca cada hora, así que una lectura de hasta 30 min de antigüedad
+      // sigue siendo válida. Antes con `cache:'no-store'` esta lectura forzaba a
+      // /reels a renderizarse en CADA visita (no-store+MISS); con revalidate la
+      // página vuelve a ser ISR cacheable. Alineado con `revalidate` de /reels.
+      { headers: restHeaders(), signal: AbortSignal.timeout(5000), next: { revalidate: 1800 } },
     )
     if (!res.ok) return null
     const rows = await res.json()
