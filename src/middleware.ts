@@ -117,9 +117,11 @@ export const config = {
     // ajeno; GET y peticiones con Bearer/secret quedan exentas, así que la app
     // móvil y los crons no se ven afectados.
     '/api/auth/:path*',
-    '/api/articles/:path*',
+    // /api/articles y /api/search NO se incluyen: son GET-only públicas (sin
+    // POST mutable, sin leer sesión aquí) y ya emiten su propio Cache-Control →
+    // pasar por el middleware solo gastaba Edge Middleware Inv. /api/reels SÍ se
+    // queda: /api/reels/ingest es POST mutable y necesita el guard CSRF.
     '/api/reels/:path*',
-    '/api/search/:path*',
     '/api/push/:path*',
     '/api/rankings/:path*',
     '/api/games/:path*',
