@@ -6,10 +6,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { SITE_URL } from '@/lib/constants'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 import ScrollToTop from '@/components/ScrollToTop'
 
-export const dynamic = 'force-dynamic'
+// ISR: página pública de solo-lectura → cacheada, regenera cada 60s. Antes era
+// force-dynamic (se re-ejecutaba en CADA visita). getEvents() usa un cliente
+// Supabase SIN cookies (los datos son públicos) para NO forzar render dinámico
+// — leer cookies, como hace createServerSupabaseClient, fuerza no-store.
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: 'Mundial 2026: calendario y resultados',
@@ -69,7 +73,11 @@ function kickoff(iso: string): string {
 
 async function getEvents(): Promise<MundialEvent[]> {
   try {
-    const sb = await createServerSupabaseClient()
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } },
+    )
     const { data, error } = await sb
       .from('ranked_events')
       .select('id, event_date, team_home, team_away, status, result, meta')
