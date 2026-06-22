@@ -17,7 +17,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   const res = renderPlacaOG(data, userId)
   // Caché de CDN: la placa refleja nivel/puntos/cosméticos (cambian), pero como
   // imagen compartible una instantánea de ~1h vale. Antes era force-dynamic:
-  // re-render satori (CPU) en cada apertura del enlace compartido.
-  res.headers.set('Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400')
+  // re-render satori (CPU) en cada apertura del enlace compartido. CDN-Cache-Control
+  // es la que respeta Vercel para su caché de borde (Next sobrescribe el
+  // Cache-Control de cara al navegador en rutas dinámicas).
+  res.headers.set('Cache-Control', 'public, max-age=0, must-revalidate')
+  res.headers.set('CDN-Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
   return res
 }

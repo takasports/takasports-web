@@ -213,7 +213,12 @@ export async function GET(req: NextRequest) {
       height: H,
       // La imagen depende SOLO de los parámetros de la URL → cacheable en CDN.
       // Antes era force-dynamic: re-render satori (CPU) en cada compartido/apertura.
-      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=86400, stale-while-revalidate=604800' },
+      // CDN-Cache-Control es la que respeta Vercel para su caché de borde (Next
+      // sobrescribe el Cache-Control de cara al navegador en rutas dinámicas).
+      headers: {
+        'Cache-Control': 'public, max-age=0, must-revalidate',
+        'CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+      },
     }
   )
 }
