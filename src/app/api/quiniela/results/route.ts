@@ -46,6 +46,14 @@ const CANCELLED_STATUSES = new Set([
   'STATUS_ABANDONED',
 ])
 
+// Estados ESPN que tratamos como "final" (partido terminado). DEBE coincidir con
+// FINAL_STATUSES_ESPN del cron settle-quiniela: ESPN cierra muchos partidos de
+// fútbol como STATUS_FULL_TIME (no STATUS_FINAL), así que mirar solo STATUS_FINAL
+// dejaba esos resultados sin mostrar aquí aunque el cron SÍ los liquidaba.
+const FINAL_STATUSES = new Set([
+  'STATUS_FINAL', 'STATUS_FULL_TIME', 'STATUS_FT', 'STATUS_ENDED',
+])
+
 async function fetchResultsFromLeague(slug: string): Promise<MatchResult[]> {
   const res = await fetchWithRetry(
     `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${dateRangeParam()}&limit=20`
@@ -60,7 +68,7 @@ async function fetchResultsFromLeague(slug: string): Promise<MatchResult[]> {
     if (!competition) continue
     const status = competition.status as Record<string, unknown> | undefined
     const statusName = (status?.type as Record<string, unknown> | undefined)?.name as string ?? ''
-    const isFinal = statusName === 'STATUS_FINAL'
+    const isFinal = FINAL_STATUSES.has(statusName)
     const isCancelled = CANCELLED_STATUSES.has(statusName)
     if (!isFinal && !isCancelled) continue
 

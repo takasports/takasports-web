@@ -78,7 +78,27 @@ export async function POST(req: NextRequest) {
   // Escala baja: el coin_bonus (escala vieja) → puntos = /10, mínimo 1.
   const points = coinBonus > 0 ? Math.max(1, Math.round(coinBonus / 10)) : 0
 
-  // 3. Acreditar PUNTOS Taka si hay premio
+  // 3. CLAIM ATÓMICO: marcar claimed SOLO si seguía sin reclamar. El UPDATE
+  //    condicional (claimed_at IS NULL) es el cerrojo real — dos peticiones
+  //    concurrentes leían ambas claimed_at=null arriba y acreditaban las dos
+  //    (doble crédito). Ahora solo una gana este UPDATE; la otra ve 0 filas.
+  const { data: claimedRows, error: claimErr } = await admin!
+    .from('quiniela_challenge_completions')
+    .update({ claimed_at: new Date().toISOString(), coins_awarded: points })
+    .eq('user_id', user.id)
+    .eq('badge_id', body.badgeId)
+    .eq('jornada', body.jornada)
+    .is('claimed_at', null)
+    .select('badge_id')
+  if (claimErr) {
+    return NextResponse.json({ error: 'claim_failed', detail: claimErr.message }, { status: 500 })
+  }
+  if (!claimedRows || claimedRows.length === 0) {
+    // Otra petición concurrente ya reclamó → idempotente, no re-acreditamos.
+    return NextResponse.json({ ok: true, alreadyClaimed: true, coinsAwarded: points })
+  }
+
+  // 4. Solo el GANADOR del cerrojo acredita los puntos.
   if (points > 0) {
     const { error: creditErr } = await admin!.rpc('award_points', {
       p_user_id: user.id,
@@ -93,25 +113,22 @@ export async function POST(req: NextRequest) {
       },
     })
     if (creditErr) {
+      // Rollback del cerrojo para poder reintentar (no dejar "reclamado" sin pagar).
+      await admin!
+        .from('quiniela_challenge_completions')
+        .update({ claimed_at: null, coins_awarded: null })
+        .eq('user_id', user.id)
+        .eq('badge_id', body.badgeId)
+        .eq('jornada', body.jornada)
       return NextResponse.json({ error: 'credit_failed', detail: creditErr.message }, { status: 500 })
     }
   }
 
-  // 4. Otorgar badge (awardBadges maneja special badges también —
-  //    inserta en quiniela_badges con el badge_id del special badge)
+  // 5. Otorgar badge (awardBadges maneja special badges también — idempotente).
   const admin2 = adminSupabase()
   if (admin2) {
     await awardBadges(admin2, user.id, [body.badgeId])
   }
-
-  // 5. Marcar como claimed (coins_awarded conserva el nombre de columna pero
-  //    guarda los PUNTOS otorgados; lo mismo el campo coinsAwarded de la API).
-  await sb
-    .from('quiniela_challenge_completions')
-    .update({ claimed_at: new Date().toISOString(), coins_awarded: points })
-    .eq('user_id', user.id)
-    .eq('badge_id', body.badgeId)
-    .eq('jornada', body.jornada)
 
   return NextResponse.json({
     ok: true,
