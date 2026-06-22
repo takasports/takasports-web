@@ -195,19 +195,25 @@ export function computeStandings(
   return members
     .map(m => {
       const total = matchKeys.length
-      let points = 0, hits = 0, picked = 0
+      let points = 0, hits = 0, picked = 0, cancelled = 0
       matchKeys.forEach((mk, i) => {
+        const r = resultFor(mk)
+        if (r?.cancelled) cancelled++
         const pk = m.picks?.[String(i)]
         if (!pk) return
         picked++
         const s = scorePick(
           { home: mk.home, away: mk.away, pick: pk as Pick },
-          resultFor(mk),
+          r,
         )
         points += s.points
         if (s.hit) hits++
       })
-      const pleno = total > 0 && picked === total && hits === total
+      // Pleno = acertar todos los partidos JUGABLES (los anulados no compiten),
+      // habiendo rellenado todos los picks. Antes exigía hits===total, lo que
+      // dejaba el pleno INALCANZABLE en cuanto había un partido anulado.
+      const playable = total - cancelled
+      const pleno = playable > 0 && picked === total && hits === playable
       if (pleno) points += SCORING.PLENO_BONUS
       return { nickname: m.nickname, points, hits, picked, pleno }
     })

@@ -42,16 +42,42 @@ interface PastEventRow {
 const DAYS_ES   = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MONTHS_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
+const MADRID_TZ = 'Europe/Madrid'
+const WEEKDAY_IDX: Record<string, number> = {
+  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+}
+
+// Partes de la fecha en hora de Madrid (antes se mostraba en UTC, con desfase
+// de 1-2 h → la franja de noche caía en el día equivocado). Es la zona que usa
+// el resto de la web para fechas/horas mostradas.
+function madridParts(iso: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: MADRID_TZ,
+    weekday: 'short',
+    day: 'numeric',
+    month: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(iso))
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
+  return {
+    wd: WEEKDAY_IDX[get('weekday')] ?? 0,
+    day: Number(get('day')),
+    month: Number(get('month')) - 1, // 0-based para MONTHS_ES
+    hour: get('hour'),
+    minute: get('minute'),
+  }
+}
+
 function toDateLabel(iso: string): string {
-  const d = new Date(iso)
-  return `${DAYS_ES[d.getUTCDay()]} · ${d.getUTCDate()} ${MONTHS_ES[d.getUTCMonth()]}`
+  const p = madridParts(iso)
+  return `${DAYS_ES[p.wd]} · ${p.day} ${MONTHS_ES[p.month]}`
 }
 
 function toTimeStr(iso: string): string {
-  const d = new Date(iso)
-  const h = String(d.getUTCHours()).padStart(2, '0')
-  const m = String(d.getUTCMinutes()).padStart(2, '0')
-  return `${h}:${m}`
+  const p = madridParts(iso)
+  return `${p.hour}:${p.minute}`
 }
 
 function rowToEvent(r: PastEventRow): SportEvent {
