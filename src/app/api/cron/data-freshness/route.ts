@@ -21,9 +21,13 @@ export const maxDuration = 30
 // SLA por dato: días que puede pasar sin actualizarse antes de avisar.
 //   · Índice Taka (recompute SEMANAL) → 9 días = 7 de cadencia + 2 de gracia.
 //   · Resultados pasados (sync DIARIO) → 2 días = 1 de cadencia + 1 de gracia.
+//   · Pipeline de noticias (ingesta CONTINUA) → 2 días: el pipeline crea
+//     content_items cada pocos minutos; 2 días sin un solo item nuevo = caído
+//     (o pausado a propósito vía Telegram, en cuyo caso el aviso es informativo).
 const CHECKS: ReadonlyArray<{ table: string; column: string; slaDays: number; label: string }> = [
   { table: 'ranking_entries', column: 'last_auto_update', slaDays: 9, label: 'Índice Taka (recompute semanal)' },
   { table: 'past_events',     column: 'updated_at',       slaDays: 2, label: 'Resultados pasados (sync diario)' },
+  { table: 'content_items',   column: 'created_at',       slaDays: 2, label: 'Pipeline de noticias (ingesta)' },
 ]
 
 async function handle(req: Request) {
