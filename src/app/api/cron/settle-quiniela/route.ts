@@ -153,19 +153,12 @@ async function handle(req: Request) {
   const admin = adminSupabase()
   if (!admin) return NextResponse.json({ ok: false, error: 'admin_client_unavailable' }, { status: 503 })
 
-  // 1. Resultados ESPN
-  const results = await fetchAllResults()
-  if (results.length === 0) {
-    return NextResponse.json({ ok: true, settled_count: 0, note: 'no ESPN results available' })
-  }
-
-  // T — Marcar el partido featured de la jornada activa en los results.
-  // Sin esto, scorePick no aplica el bonus x2 en la liquidación batch
-  // y los users que aciertan el destacado se quedan sin el premio
-  // que sí se promete en la UI.
-  await enrichResultsWithFeatured(results)
-
-  // 2. Picks sellados pero no liquidados
+  // 1. Picks sellados pero no liquidados (consulta barata) — PRIMERO.
+  //    Si no hay nada que liquidar, salimos AQUÍ sin gastar las llamadas a
+  //    ESPN (9 fetches): el cron corre 4×/día y la mayoría de las pasadas no
+  //    tienen jornada pendiente. Reordenado (antes ESPN iba primero) — no
+  //    cambia el comportamiento: con 0 pendientes el código ya salía antes
+  //    de settlear, enriquecer y evaluar badges top_n.
   //    Filtramos en DB con JSONB path operators para no desperdiciar los 500 slots
   //    en rows ya liquidados. Sin filtro en DB, con volumen alto los pending al
   //    final de la cola nunca se procesarían.
@@ -190,6 +183,18 @@ async function handle(req: Request) {
   if (pending.length === 0) {
     return NextResponse.json({ ok: true, settled_count: 0, note: 'no pending picks' })
   }
+
+  // 2. Resultados ESPN (solo si HAY picks pendientes que liquidar)
+  const results = await fetchAllResults()
+  if (results.length === 0) {
+    return NextResponse.json({ ok: true, settled_count: 0, note: 'no ESPN results available' })
+  }
+
+  // T — Marcar el partido featured de la jornada activa en los results.
+  // Sin esto, scorePick no aplica el bonus x2 en la liquidación batch
+  // y los users que aciertan el destacado se quedan sin el premio
+  // que sí se promete en la UI.
+  await enrichResultsWithFeatured(results)
 
   let settledCount = 0
   let skippedCount = 0
