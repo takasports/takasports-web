@@ -4,7 +4,7 @@ export async function GET(request: Request) {
   const error = searchParams.get('error_description')
 
   if (error || !code) {
-    return html(`<h2 style="color:#ef4444">❌ Error</h2><p>${error ?? 'No se recibió código'}</p>`)
+    return html(`<h2 style="color:#ef4444">❌ Error</h2><p>${esc(error ?? 'No se recibió código')}</p>`)
   }
 
   // 1. Canjear código por token de corta duración
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   })
   const shortData = await shortRes.json()
   if (shortData.error_type) {
-    return html(`<h2 style="color:#ef4444">❌ Error al canjear código</h2><pre>${JSON.stringify(shortData, null, 2)}</pre>`)
+    return html(`<h2 style="color:#ef4444">❌ Error al canjear código</h2><pre>${esc(JSON.stringify(shortData, null, 2))}</pre>`)
   }
 
   // 2. Canjear por token de larga duración (60 días)
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   })
   const longData = await longRes.json()
   if (longData.error) {
-    return html(`<h2 style="color:#ef4444">❌ Error al extender token</h2><pre>${JSON.stringify(longData, null, 2)}</pre>`)
+    return html(`<h2 style="color:#ef4444">❌ Error al extender token</h2><pre>${esc(JSON.stringify(longData, null, 2))}</pre>`)
   }
 
   const days = Math.floor((longData.expires_in ?? 5183944) / 86400)
@@ -52,9 +52,19 @@ export async function GET(request: Request) {
          auto-refrescarán solos. <strong>No tienes que hacer nada más.</strong></p>`
       : `<p style="color:#f59e0b">⚠️ No se pudo guardar en Supabase
          (¿migración 025 aplicada?). Pégalo a mano en .env.local:</p>
-         <pre style="background:#0d0d18;border:1px solid #2a2a4a;padding:16px;border-radius:8px;word-break:break-all;font-size:13px">INSTAGRAM_ACCESS_TOKEN=${longData.access_token}</pre>`}
+         <pre style="background:#0d0d18;border:1px solid #2a2a4a;padding:16px;border-radius:8px;word-break:break-all;font-size:13px">INSTAGRAM_ACCESS_TOKEN=${esc(String(longData.access_token ?? ''))}</pre>`}
     <p style="color:#52527A;font-size:13px">Expira en ~${days} días. Renovación automática vía WF-10; manual: <code>GET /api/instagram/refresh</code></p>
   `)
+}
+
+// Escapa para HTML: el callback OAuth reflejaba `error_description` (controlado
+// por quien construye la URL) sin escapar → XSS reflejado. Se aplica a todo lo
+// interpolado en el HTML por defensa en profundidad.
+function esc(s: string): string {
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string,
+  )
 }
 
 function html(body: string) {

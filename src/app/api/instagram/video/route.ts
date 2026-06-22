@@ -3,7 +3,18 @@
 
 export const runtime = 'nodejs'
 
-const ALLOWED_HOSTS = ['cdninstagram.com', 'scontent', 'fbcdn.net']
+// Dominios base permitidos del CDN de Instagram/Meta. Los hosts reales son del
+// tipo `scontent-xxx.cdninstagram.com` o `scontent.xx.fbcdn.net`, todos bajo
+// estos dos sufijos. Validamos por SUFIJO EXACTO de dominio (no `includes`):
+// antes `includes('scontent')` dejaba pasar hosts como `scontent.evil.com`
+// (SSRF). Como solo se admiten estos dominios (no IPs), también queda cerrado
+// el SSRF contra IPs privadas/metadatos.
+const ALLOWED_HOSTS = ['cdninstagram.com', 'fbcdn.net']
+
+function hostAllowed(hostname: string): boolean {
+  const h = hostname.toLowerCase()
+  return ALLOWED_HOSTS.some((base) => h === base || h.endsWith('.' + base))
+}
 
 const IG_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -21,7 +32,7 @@ export async function GET(request: Request) {
   let parsed: URL
   try { parsed = new URL(url) } catch { return new Response('Invalid url', { status: 400 }) }
 
-  if (!ALLOWED_HOSTS.some(h => parsed.hostname.includes(h))) {
+  if (!hostAllowed(parsed.hostname)) {
     return new Response('Forbidden', { status: 403 })
   }
 
