@@ -131,6 +131,7 @@ export const config = {
     '/api/cosmetics/:path*',
     '/api/account/:path*',
     '/api/mionce/:path*',
+    '/api/album/:path*',
     '/api/newsletter/:path*',
   ],
 }

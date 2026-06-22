@@ -17,12 +17,15 @@ import dynamic from 'next/dynamic'
 
 const PorraSettlementToast = dynamic(() => import('./PorraSettlementToast'), { ssr: false })
 const BadgeUnlockProvider  = dynamic(() => import('./badges/BadgeUnlockProvider'), { ssr: false })
+// Sincroniza álbum + onces con el servidor al iniciar/cerrar sesión (sin UI).
+const CollectionSync       = dynamic(() => import('./CollectionSync'), { ssr: false })
 
 export default function ClientOnlyLayoutScripts() {
   return (
     <>
       <PorraSettlementToast />
       <BadgeUnlockProvider />
+      <CollectionSync />
     </>
   )
 }
