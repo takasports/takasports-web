@@ -12,7 +12,6 @@ import { getUserFromRequest } from '@/lib/supabase-server'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
 
 const MAX_BODY_LEN = 1000
 const RATE_LIMIT_PER_HOUR = 5
@@ -53,7 +52,20 @@ export async function GET(req: NextRequest) {
     .filter((c) => (c.flagged_count ?? 0) < 5)
     .map(({ user_id, ...c }) => ({ ...c, is_mine: !!me && user_id === me.id }))
 
-  return NextResponse.json({ ok: true, comments: filtered })
+  // Caché de borde: la respuesta ANÓNIMA no lleva datos por-usuario (is_mine
+  // siempre false) → cacheable 60s (la mayoría de lecturas son anónimas). La
+  // respuesta AUTENTICADA lleva is_mine propio (lo usa la app por Bearer) →
+  // nunca se cachea ni se comparte. `Vary` hace que el CDN particione por
+  // credencial, así que una petición con cookie/Bearer nunca recibe la copia
+  // anónima cacheada.
+  const headers: Record<string, string> = { Vary: 'Authorization, Cookie' }
+  if (me) {
+    headers['Cache-Control'] = 'private, no-store'
+  } else {
+    headers['Cache-Control'] = 'public, s-maxage=60, stale-while-revalidate=120'
+    headers['CDN-Cache-Control'] = 'public, s-maxage=60, stale-while-revalidate=120'
+  }
+  return NextResponse.json({ ok: true, comments: filtered }, { headers })
 }
 
 export async function POST(req: NextRequest) {
