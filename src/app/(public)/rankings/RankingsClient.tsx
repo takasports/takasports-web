@@ -1035,7 +1035,7 @@ export default function RankingsClient({
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5">
             {(isContenido ? FACTOR_CARDS_CONTENIDO : FACTOR_CARDS_ATLETA).map(f => (
               <div key={f.label} className="rounded-xl px-3 py-2.5"
                 style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${f.color}1F` }}>

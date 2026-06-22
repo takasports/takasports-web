@@ -1308,7 +1308,7 @@ function MetricGroupAccordion({ group, accent, expanded, onToggle, expandedBlock
       </button>
 
       {expanded && (
-        <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {liveVisibleBlocks.map(({ block, isLive }) => (
             <StatBlockBoundary key={block.id} blockId={block.id}>
               <StatBlockCard
@@ -2673,7 +2673,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
             <div className={`grid gap-5 ${
               sportId === 'mundial' && sectionId === 'grupos'
                 ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
-                : 'grid-cols-1 lg:grid-cols-2'
+                : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
             }`}>
               {filteredFlatBlocks.map(block => {
                 const blockMeta = getBlockMeta(block.id, liveData?.meta, block.cardType)

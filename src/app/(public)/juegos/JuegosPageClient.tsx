@@ -989,7 +989,7 @@ export default function JuegosPageClient() {
             <FeaturedGameCard game={mundialGame} />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {prediccionGames.map(game => (
               game.status === 'live'
                 ? <LiveGameCard key={game.id} game={game} />
@@ -1017,7 +1017,7 @@ export default function JuegosPageClient() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {minijuegos.map(game => (
                 <LiveGameCard key={game.id} game={game} />
               ))}
@@ -1102,7 +1102,7 @@ export default function JuegosPageClient() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {comingGames.map(game => (
               <ComingGameCard key={game.id} game={game} />
             ))}

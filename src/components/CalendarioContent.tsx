@@ -2399,7 +2399,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
   return (
     <main
-      className="cal-root relative max-w-[1280px] mx-auto px-4 sm:px-6 xl:px-10 pb-28"
+      className="cal-root relative max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-28"
       data-sport={themeKey}
       style={{ isolation: 'isolate' }}
     >
