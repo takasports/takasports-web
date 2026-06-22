@@ -4,7 +4,7 @@
 // DELETE /api/quiniela/chat?id=...                → borrar mensaje (autor o owner liga)
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, supabaseForRequest } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 
@@ -54,7 +54,9 @@ export async function GET(req: NextRequest) {
   if (!liga) return NextResponse.json({ error: 'liga required' }, { status: 400 })
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    const sb = await createServerSupabaseClient()
+    // Autenticado por cookie (web) O Bearer (app): el chat es de ligas PRIVADAS
+    // y la RLS solo deja leer a miembros/owner. Un no-miembro recibe lista vacía.
+    const { supabase: sb } = await supabaseForRequest(req)
     const { data, error } = await sb
       .from('quiniela_league_chat')
       .select('id, nickname, message, created_at')
@@ -85,6 +87,9 @@ export async function POST(req: NextRequest) {
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const { supabase: sb, user } = await supabaseForRequest(req)
+      // Postear en una liga privada exige sesión (la RLS exige membership). Antes
+      // se admitían mensajes anónimos (user_id NULL) en cualquier liga.
+      if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
       const rl = rateLimit(`${clientKey(req, user?.id ?? null)}:${ligaId}`)
       if (!rl.ok) {
         return NextResponse.json(
