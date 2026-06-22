@@ -46,6 +46,13 @@ const nextConfig: NextConfig = {
     // AVIF antes que WebP: ~20-30% menos bytes en heros/imágenes sin tocar un
     // solo asset. Next sirve AVIF a navegadores que lo soporten y cae a WebP.
     formats: ["image/avif", "image/webp"],
+    // Caché de la imagen YA optimizada: 31 días. Sin esto Next usa el default de
+    // 60s → Vercel RE-OPTIMIZA (= re-cobra transformación) la misma imagen pasado
+    // 1 min. Con 31d, cada (imagen, tamaño, formato) se transforma una sola vez al
+    // mes. Las imágenes son estáticas (fotos de jugadores/equipos/artículos); si
+    // una cambia, su URL de origen cambia → nueva clave de caché. Ahorro directo
+    // en la métrica con tope (transformaciones), 0 impacto visual.
+    minimumCacheTTL: 2678400,
     remotePatterns: [
       { protocol: "https", hostname: "cdn.sanity.io" },
       { protocol: "https", hostname: "*.cdninstagram.com" },

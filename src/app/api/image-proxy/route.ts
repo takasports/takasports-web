@@ -166,10 +166,13 @@ export async function GET(request: NextRequest) {
       headers: {
         'Content-Type': outType,
         'Content-Length': String(outBuffer.byteLength),
-        // 24 h fresh en CDN edge; stale-while-revalidate 7 días.
-        // Una misma URL de imagen no se descarga más de 1 vez al día.
-        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
-        'CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+        // 7 días fresh en CDN edge; stale-while-revalidate 30 días. Los bytes ya
+        // descargados son válidos indefinidamente y cada URL de origen distinta es
+        // una clave de caché distinta (si la foto rota, su URL cambia), así que
+        // cachear más tiempo no sirve imágenes "viejas" — solo evita re-descargar
+        // y re-procesar (sharp) la misma imagen. Antes 1 día.
+        'Cache-Control': 'public, s-maxage=604800, stale-while-revalidate=2592000',
+        'CDN-Cache-Control': 'public, s-maxage=604800, stale-while-revalidate=2592000',
         'X-Content-Type-Options': 'nosniff',
       },
     })
