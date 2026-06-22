@@ -9,6 +9,18 @@ import { fetchLeagueTableRows, fetchTournamentGroups, type LeagueTableRow } from
 export type { StandingZone }
 export type { LeagueTableRow }
 
+// Caché de borde: el detalle del partido es PÚBLICO (datos de ESPN, sin cookies
+// ni usuario). Cachear 15s permite que el sondeo del marcador en vivo
+// (client-side cada 20s, ver LiveScore.tsx) y el self-fetch de la página golpeen
+// el CDN en vez de re-ejecutar la función o llamar a ESPN en cada petición.
+// stale-while-revalidate=60 sirve la copia anterior mientras revalida en 2º plano.
+const MATCH_CACHE = {
+  headers: {
+    'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=60',
+    'CDN-Cache-Control': 'public, s-maxage=15, stale-while-revalidate=60',
+  },
+} as const
+
 export type SportKind = 'soccer' | 'basketball' | 'mma' | 'racing' | 'tennis' | 'golf' | 'other'
 
 export interface MatchStat {
@@ -783,7 +795,7 @@ export async function GET(
         statusLabel: data.statusLabel,
         mma: data.mma,
       }
-      return NextResponse.json(detail)
+      return NextResponse.json(detail, MATCH_CACHE)
     }
 
     // ─── Racing (F1) ──────────────────────────────────────────────────
@@ -800,7 +812,7 @@ export async function GET(
         venue: data.venue,
         racing: data.racing,
       }
-      return NextResponse.json(detail)
+      return NextResponse.json(detail, MATCH_CACHE)
     }
 
     // ─── Golf (PGA) ───────────────────────────────────────────────────
@@ -817,7 +829,7 @@ export async function GET(
         venue: data.venue,
         golf: data.golf,
       }
-      return NextResponse.json(detail)
+      return NextResponse.json(detail, MATCH_CACHE)
     }
 
     // ─── Tennis: scoreboard lookup (summary returns 400 for match IDs) ─
@@ -836,7 +848,7 @@ export async function GET(
         venue: data.venue,
         tennis: data.tennis,
       }
-      return NextResponse.json(detail)
+      return NextResponse.json(detail, MATCH_CACHE)
     }
 
     // ─── Soccer / Basketball: ESPN summary ──────────────────────────
@@ -930,7 +942,7 @@ export async function GET(
       detail.basketball = buildBasketball(json, homeComp, awayComp)
     }
 
-    return NextResponse.json(detail)
+    return NextResponse.json(detail, MATCH_CACHE)
   } catch (err) {
     console.error(`[match] fetch failed for ${ref}:`, err)
     return NextResponse.json(null, { status: 500 })

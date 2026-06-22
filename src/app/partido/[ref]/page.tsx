@@ -12,8 +12,8 @@ import Footer from '@/components/Footer'
 import { MatchTabs } from './MatchTabs'
 import { LeagueTableBlock } from './LeagueTable'
 import { LiveRefresh } from './LiveRefresh'
+import { LiveMatchProvider, HeroLiveCenter } from './LiveScore'
 import { StickyScoreBar } from './StickyScoreBar'
-import { ScoreFlip } from './ScoreFlip'
 import { ShareButton } from '@/components/ShareButton'
 import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import MatchNews from '@/components/MatchNews'
@@ -212,7 +212,6 @@ function EmptyState({ message, kind }: { message: string; kind?: EmptyKind }) {
 // ── Scoreboard hero ────────────────────────────────────────────────
 function TeamScoreboard({ match }: { match: MatchDetail }) {
   const live = isLive(match.status)
-  const hasScore = match.homeScore != null && match.awayScore != null
   const accent = (FICHA_THEME[match.sport] ?? { accent: '#7C3AED' }).accent
   return (
     <div className="relative rounded-2xl p-6 mb-5 overflow-hidden"
@@ -246,40 +245,13 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
             </p>
           </div>
         )}
-        <div className="flex flex-col items-center gap-2 flex-shrink-0">
-          {live && (
-            <span className="flex items-center gap-1.5 leading-none">
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.14em] tabular-nums" style={{ color: '#EF4444', fontFamily: 'var(--font-sport)' }}>
-                {match.statusLabel}
-              </span>
-            </span>
-          )}
-          {hasScore ? (
-            <ScoreFlip home={match.homeScore!} away={match.awayScore!} variant="hero" />
-          ) : (
-            // "VS" broadcast: diagonal + acento del DEPORTE (no de los clubes,
-            // que los datos no traen → no inventamos colores). Gesto de cartel.
-            <div className="relative flex items-center justify-center" style={{ width: 'clamp(46px, 13vw, 68px)', height: 'clamp(38px, 9vw, 50px)' }}>
-              <span aria-hidden="true" className="absolute" style={{ width: 2.5, height: '128%', background: `linear-gradient(${accent}, ${accent}00)`, transform: 'rotate(22deg)', borderRadius: 2, opacity: 0.6 }} />
-              <span className="relative font-black italic"
-                style={{ color: accent, fontFamily: 'var(--font-headline)', fontSize: 'clamp(26px, 6vw, 38px)', lineHeight: 1, textShadow: `0 2px 14px ${accent}45` }}>
-                VS
-              </span>
-            </div>
-          )}
-          {!live && (
-            <span className="text-[10px] font-black uppercase tracking-[0.14em] px-2 py-0.5 rounded"
-              style={{
-                color: '#7A7A8E',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                fontFamily: 'var(--font-sport)',
-              }}>
-              {match.statusLabel}
-            </span>
-          )}
-        </div>
+        <HeroLiveCenter
+          accent={accent}
+          initialHomeScore={match.homeScore ?? null}
+          initialAwayScore={match.awayScore ?? null}
+          initialStatusLabel={match.statusLabel}
+          initialLive={live}
+        />
         {/* Away team */}
         {match.awayTeamId ? (
           <Link href={`/equipo/${match.leagueSlug.replace('/', '_')}_${match.awayTeamId}`}
@@ -1449,7 +1421,7 @@ function H2HBlock({ h2h, homeTeam, awayTeam }: { h2h: H2HResult; homeTeam: strin
 }
 
 // ── Main match content ─────────────────────────────────────────────
-function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResult | null; forms: Record<string, FormResult[]> }) {
+function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h: H2HResult | null; forms: Record<string, FormResult[]>; matchRef: string }) {
   const live       = isLive(match.status)
   const isSoccer   = match.sport === 'soccer'
   const isBasket   = match.sport === 'basketball'
@@ -1598,7 +1570,17 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-16">
-      <LiveRefresh isLive={live} startDate={match.startDate} />
+      {/* En fútbol/baloncesto el MARCADOR se actualiza solo client-side cada 20s
+          (LiveMatchProvider sondea /api/match cacheado) → este router.refresh()
+          sube a 120s y solo cubre comentario/stats/alineaciones (mucho más barato
+          que re-renderizar todo el servidor cada 20s). */}
+      <LiveRefresh isLive={live} startDate={match.startDate} liveIntervalMs={120_000} />
+      <LiveMatchProvider
+        matchRef={matchRef}
+        live={live}
+        startDate={match.startDate}
+        initial={{ homeScore: match.homeScore ?? null, awayScore: match.awayScore ?? null, statusLabel: match.statusLabel, live }}
+      >
       {backLink}
       {leaguePills}
       <div data-match-hero>
@@ -1758,6 +1740,7 @@ function MatchContent({ match, h2h, forms }: { match: MatchDetail; h2h: H2HResul
           <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
         </aside>
       </div>
+      </LiveMatchProvider>
     </div>
   )
 }
@@ -1947,7 +1930,7 @@ export default async function MatchPage({
       <LiveStrip />
       <main className="flex-1">
         <Suspense>
-          <MatchContent match={match} h2h={h2h} forms={forms} />
+          <MatchContent match={match} h2h={h2h} forms={forms} matchRef={ref} />
         </Suspense>
       </main>
       <Footer />

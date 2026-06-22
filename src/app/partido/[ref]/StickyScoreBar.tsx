@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { ScoreFlip } from './ScoreFlip'
+import { useLiveScore } from './LiveScore'
 
 interface Props {
   homeLogo?: string
@@ -21,7 +22,16 @@ interface Props {
 // is still in view and expands when the user scrolls past it. Detection is
 // based on a `[data-match-hero]` element in the DOM.
 export function StickyScoreBar(props: Props) {
-  const { homeLogo, awayLogo, homeAbbr, awayAbbr, homeScore, awayScore, statusLabel, live, hasScore } = props
+  const { homeLogo, awayLogo, homeAbbr, awayAbbr } = props
+  // El marcador/estado vienen del context EN VIVO si hay proveedor (se actualiza
+  // solo cada 20s, sin re-render del servidor); si no, de las props del servidor
+  // = comportamiento previo, sin riesgo.
+  const ctx = useLiveScore()
+  const homeScore = ctx ? ctx.homeScore : props.homeScore
+  const awayScore = ctx ? ctx.awayScore : props.awayScore
+  const statusLabel = ctx ? ctx.statusLabel : props.statusLabel
+  const live = ctx ? ctx.live : props.live
+  const hasScore = ctx ? (ctx.homeScore != null && ctx.awayScore != null) : props.hasScore
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
