@@ -112,34 +112,23 @@ function buildTitle(sp: SP): { title: string; description: string } {
   return { title, description }
 }
 
-// ── generateMetadata dinámico por filtros ─────────────────────────
-export async function generateMetadata(
-  { searchParams }: { searchParams: Promise<SP> }
-): Promise<Metadata> {
-  const sp = await searchParams
-  const { title, description } = buildTitle(sp)
-  const params = new URLSearchParams()
-  if (sp.deporte) params.set('deporte', String(sp.deporte))
-  const tab = pickStr(sp, 'tab')
-  if (tab && tab !== 'jugadores') params.set('tab', tab)
-  const canonicalPath = params.toString() ? `/rankings?${params}` : '/rankings'
-
-  // Parámetros que no forman parte del canonical — si están presentes la URL
-  // real difiere del canonical, Google la marca como "alternativa con canonical
-  // adecuado" y no la indexa. Añadimos noindex explícito para evitar esos reportes.
-  const EXTRA_PARAMS = ['liga', 'scope', 'gender', 'posicion', 'badge']
-  const hasExtraParams = EXTRA_PARAMS.some(p => !!pickStr(sp, p))
-  // tab=jugadores es el valor por defecto y se excluye del canonical, por lo que
-  // /rankings?tab=jugadores tendría un canonical distinto (/rankings).
-  const hasRedundantTab = tab === 'jugadores'
-  const noindex = hasExtraParams || hasRedundantTab
-
+// ── Metadata base (ISR) ────────────────────────────────────────────
+// /rankings es ISR cacheable: NO leemos searchParams en el servidor (eso forzaría
+// render por-petición = no-store en cada visita). Los filtros (?deporte=…) son
+// client-side (router.replace) y NO se indexan: no están en el sitemap ni
+// enlazados con <a>, así que Google solo conoce /rankings. Un canonical FIJO a
+// /rankings consolida cualquier variante filtrada que alguien comparta — más
+// limpio que el noindex anterior y, sobre todo, cacheable. `generateMetadata`
+// sin args (no `export const`) deja que currentEdition() se evalúe en cada
+// revalidación, manteniendo el mes/año del título al día.
+export async function generateMetadata(): Promise<Metadata> {
+  const { title, description } = buildTitle({})
+  const url = `${SITE_URL}/rankings`
   return {
     title,
     description,
-    alternates: { canonical: `${SITE_URL}${canonicalPath}` },
-    ...(noindex ? { robots: { index: false, follow: false } } : {}),
-    openGraph: { title, description, type: 'website', url: `${SITE_URL}${canonicalPath}`, siteName: 'TakaSports', locale: 'es_ES' },
+    alternates: { canonical: url },
+    openGraph: { title, description, type: 'website', url, siteName: 'TakaSports', locale: 'es_ES' },
     twitter: { card: 'summary_large_image', title, description, site: '@takasportsx' },
   }
 }
@@ -170,13 +159,11 @@ function buildItemListJsonLd(sp: SP) {
   }
 }
 
-// Decide qué categorías cargar en SSR según la vista activa.
-// Las omitidas no se serializan al HTML — el cliente cae al STATIC_FALLBACK
-// que ya vive en el bundle JS. Default: jugadores + jugadoras (vista inicial).
-function categoriesForView(sp: SP): RankingCategory[] {
-  // Siempre cargamos TODAS las categorías desde DB para que image_url
-  // sea siempre el valor real de Supabase (con fotos actualizadas).
-  // Sin esto el cliente cae al fallback estático de rankings.ts (URLs antiguas).
+// Categorías que cargamos en SSR. Cargamos TODAS desde DB para que image_url
+// sea siempre el valor real de Supabase (con fotos actualizadas); sin esto el
+// cliente caería al fallback estático de rankings.ts (URLs antiguas). El cliente
+// hace el filtrado fino por deporte/tab/etc. a partir de este bag.
+function categoriesForView(): RankingCategory[] {
   const ALL: RankingCategory[] = [
     'jugadores', 'jugadoras', 'clubes', 'clubes_femenino',
     'creadores', 'periodistas', 'luchadoras_ufc',
@@ -185,20 +172,19 @@ function categoriesForView(sp: SP): RankingCategory[] {
   return ALL
 }
 
-// ── Página (server) ────────────────────────────────────────────────
-export default async function Page(
-  { searchParams }: { searchParams: Promise<SP> }
-) {
-  const spResolved = await searchParams
-  const targetCats = categoriesForView(spResolved)
+// ── Página (server, ISR) ───────────────────────────────────────────
+// NO lee searchParams (eso forzaría render dinámico): los datos son idénticos
+// para cualquier filtro (el cliente filtra). El JSON-LD top-10 refleja la vista
+// por defecto (jugadores), que es la que ve Google en /rankings.
+export default async function Page() {
+  const targetCats = categoriesForView()
 
-  const [sp, { movers, fallers }, dbData, lastUpdated] = await Promise.all([
-    Promise.resolve(spResolved),
+  const [{ movers, fallers }, dbData, lastUpdated] = await Promise.all([
     getTopMovers(3),
     getAllRankings(targetCats),
     getLastIngestTime(),
   ])
-  const jsonLd = buildItemListJsonLd(sp)
+  const jsonLd = buildItemListJsonLd({})
   return (
     <>
       <script
