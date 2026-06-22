@@ -25,6 +25,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { awardBadges } from '@/lib/badge-awards'
+import { sendTelegram } from '@/lib/telegram'
 
 export const dynamic = 'force-dynamic'
 
@@ -94,7 +95,14 @@ async function closeWeek(
   weekEndIso: string,
 ): Promise<{ status: number; body: Record<string, unknown> }> {
   const { error, totals } = await weeklyTotals(admin, sport, weekStartIso, weekEndIso)
-  if (error) return { status: 500, body: { ok: false, error } }
+  if (error) {
+    // Cron semanal de premios (Mundial): si el cómputo falla, AVISAR — antes el
+    // error solo iba al JSON de respuesta y el podio se quedaba sin repartir.
+    await sendTelegram(
+      `⚠️ close-week (${sport}): el cómputo semanal falló — ${String(typeof error === 'string' ? error : JSON.stringify(error)).slice(0, 200).replace(/[<>]/g, '')}`,
+    )
+    return { status: 500, body: { ok: false, error } }
+  }
 
   if (totals.size === 0) {
     return {

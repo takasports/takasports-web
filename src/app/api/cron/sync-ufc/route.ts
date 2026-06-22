@@ -19,6 +19,7 @@
 import { NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
+import { sendTelegram } from '@/lib/telegram'
 
 export const dynamic = 'force-dynamic'
 // Tope anti-runaway: si algo se cuelga, Vercel corta a los 60s en vez de dejar
@@ -152,6 +153,7 @@ async function handle(req: Request) {
 
   let upserted = 0
   let scored   = 0
+  let scoringFailures = 0
 
   // Cerrar fights iniciados (vía admin: la función ya no es ejecutable por anon/auth).
   try { await admin.rpc('close_started_ranked_events') } catch { /* */ }
@@ -252,12 +254,22 @@ async function handle(req: Request) {
             p_method:   method ?? null,
           })
           scored++
-        } catch { /* scoring fallo no rompe el cron */ }
+        } catch {
+          // El resultado ya se guardó; falló el scoring de predicciones de este
+          // combate. Antes 100% silencioso → ahora se cuenta y se avisa al final.
+          scoringFailures++
+        }
       }
     }
   }
 
-  return NextResponse.json({ ok: true, fetched: ppvEvents.length, upserted, scored })
+  if (scoringFailures > 0) {
+    await sendTelegram(
+      `⚠️ sync-ufc: ${scoringFailures} combate(s) con el resultado guardado pero el scoring de predicciones FALLÓ. Revisar score_ufc_prediction / point_transactions.`,
+    )
+  }
+
+  return NextResponse.json({ ok: true, fetched: ppvEvents.length, upserted, scored, scoringFailures })
 }
 
 export async function GET(req: Request)  { return handle(req) }

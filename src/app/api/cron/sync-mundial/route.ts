@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { awardBadges } from '@/lib/badge-awards'
+import { sendTelegram } from '@/lib/telegram'
 
 export const dynamic = 'force-dynamic'
 // Tope anti-runaway: corta a los 60s en vez del límite por defecto (300s). Su
@@ -128,6 +129,7 @@ async function handle(req: Request) {
 
   let upserted = 0
   let scored   = 0
+  let scoringFailures = 0
 
   // Cerrar partidos iniciados (vía admin: la función ya no es ejecutable por anon/auth).
   try { await admin.rpc('close_started_ranked_events') } catch { /* no-op */ }
@@ -246,12 +248,24 @@ async function handle(req: Request) {
               }
             }
           } catch { /* badges nunca rompen el flow del cron */ }
-        } catch { /* scoring falla silencioso — el upsert ya guardó el resultado */ }
+        } catch {
+          // El upsert ya guardó el resultado; lo que falló es el scoring de las
+          // predicciones de ESTE evento. Antes era 100% silencioso → ahora se
+          // cuenta y se avisa al final (crítico durante el Mundial: sin esto, un
+          // fallo de scoring deja predicciones sin puntuar y nadie se entera).
+          scoringFailures++
+        }
       }
     }
   }
 
-  return NextResponse.json({ ok: true, fetched: fixtures.length, upserted, scored })
+  if (scoringFailures > 0) {
+    await sendTelegram(
+      `⚠️ sync-mundial: ${scoringFailures} evento(s) con el resultado guardado pero el scoring de predicciones FALLÓ. Revisar score_ranked_prediction / point_transactions.`,
+    )
+  }
+
+  return NextResponse.json({ ok: true, fetched: fixtures.length, upserted, scored, scoringFailures })
 }
 
 export async function GET(req: Request)  { return handle(req) }

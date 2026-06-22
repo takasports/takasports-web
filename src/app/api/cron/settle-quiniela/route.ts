@@ -22,6 +22,7 @@ import { enrichResultsWithFeatured } from '@/lib/quiniela-featured'
 import type { SavedPick, MatchResult, ScoreBreakdown } from '@/lib/quiniela'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { evaluateTopNBadges } from '@/lib/special-badges'
+import { sendTelegram } from '@/lib/telegram'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60  // hasta 1 min — puede procesar muchos usuarios
@@ -171,6 +172,7 @@ async function handle(req: Request) {
     .limit(500)
 
   if (fetchErr) {
+    await sendTelegram(`⚠️ settle-quiniela: fallo al leer picks pendientes — ${String(fetchErr.message).replace(/[<>]/g, '')}`)
     return NextResponse.json({ ok: false, error: fetchErr.message }, { status: 500 })
   }
 
@@ -314,6 +316,14 @@ async function handle(req: Request) {
     topN = await evaluateTopNBadges(admin)
   } catch (e) {
     errors.push(`top_n eval failed: ${String(e)}`)
+  }
+
+  // Si hubo fallos al liquidar a algún usuario o al evaluar badges, avisar (antes
+  // se devolvían en la respuesta JSON pero nadie los veía → fallo silencioso).
+  if (errors.length > 0) {
+    await sendTelegram(
+      `⚠️ settle-quiniela cerró con ${errors.length} error(es): ${errors.slice(0, 5).join(' | ').replace(/[<>]/g, '')}`,
+    )
   }
 
   return NextResponse.json({
