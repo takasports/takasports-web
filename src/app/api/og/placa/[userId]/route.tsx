@@ -8,12 +8,16 @@ import type { NextRequest } from 'next/server'
 import { fetchPlacaForOG, placaFallback, renderPlacaOG } from '@/lib/og/placa-og'
 
 export const runtime     = 'nodejs'
-export const dynamic     = 'force-dynamic'
 export const contentType = 'image/png'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   const { userId } = await params
   const origin = new URL(req.url).origin
   const data = await fetchPlacaForOG(userId, origin) ?? placaFallback()
-  return renderPlacaOG(data, userId)
+  const res = renderPlacaOG(data, userId)
+  // Caché de CDN: la placa refleja nivel/puntos/cosméticos (cambian), pero como
+  // imagen compartible una instantánea de ~1h vale. Antes era force-dynamic:
+  // re-render satori (CPU) en cada apertura del enlace compartido.
+  res.headers.set('Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400')
+  return res
 }

@@ -18,7 +18,6 @@ import { ImageResponse } from 'next/og'
 import { type NextRequest } from 'next/server'
 
 export const runtime     = 'edge'
-export const dynamic     = 'force-dynamic'
 export const contentType = 'image/png'
 
 const W = 1200
@@ -209,6 +208,12 @@ export async function GET(req: NextRequest) {
         </div>
       </div>
     ),
-    { width: W, height: H }
+    {
+      width: W,
+      height: H,
+      // La imagen depende SOLO de los parámetros de la URL → cacheable en CDN.
+      // Antes era force-dynamic: re-render satori (CPU) en cada compartido/apertura.
+      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=86400, stale-while-revalidate=604800' },
+    }
   )
 }

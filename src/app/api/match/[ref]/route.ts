@@ -10,16 +10,26 @@ export type { StandingZone }
 export type { LeagueTableRow }
 
 // Caché de borde: el detalle del partido es PÚBLICO (datos de ESPN, sin cookies
-// ni usuario). Cachear 15s permite que el sondeo del marcador en vivo
-// (client-side cada 20s, ver LiveScore.tsx) y el self-fetch de la página golpeen
-// el CDN en vez de re-ejecutar la función o llamar a ESPN en cada petición.
-// stale-while-revalidate=60 sirve la copia anterior mientras revalida en 2º plano.
-const MATCH_CACHE = {
-  headers: {
-    'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=60',
-    'CDN-Cache-Control': 'public, s-maxage=15, stale-while-revalidate=60',
-  },
-} as const
+// ni usuario), así el sondeo del marcador (client-side cada 20s) y el self-fetch
+// de la página golpean el CDN en vez de re-ejecutar la función o llamar a ESPN.
+// La frescura se ADAPTA al estado: un partido EN VIVO necesita 15s, pero uno
+// TERMINADO no cambia (1h) y uno PROGRAMADO casi tampoco (5min). Conservador: si
+// el estado no es confiablemente final/programado, se queda en 15s → NUNCA se
+// sobre-cachea un partido en directo (no mostraría el marcador viejo).
+const FINAL_STATUSES = new Set([
+  'STATUS_FULL_TIME', 'STATUS_FINAL', 'STATUS_FINAL_PEN', 'STATUS_FINAL_AET',
+  'STATUS_POST_GAME', 'STATUS_END_OF_REGULATION',
+  'STATUS_CANCELED', 'STATUS_ABANDONED', 'STATUS_FORFEIT', 'STATUS_WALKOVER', 'STATUS_RETIRED',
+])
+const UPCOMING_STATUSES = new Set(['STATUS_SCHEDULED', 'STATUS_PRE_GAME'])
+
+function matchCache(status: string | undefined) {
+  const s = status ?? ''
+  const maxAge = FINAL_STATUSES.has(s) ? 3600 : UPCOMING_STATUSES.has(s) ? 300 : 15
+  const swr = maxAge === 15 ? 60 : maxAge * 4
+  const cc = `public, s-maxage=${maxAge}, stale-while-revalidate=${swr}`
+  return { headers: { 'Cache-Control': cc, 'CDN-Cache-Control': cc } }
+}
 
 export type SportKind = 'soccer' | 'basketball' | 'mma' | 'racing' | 'tennis' | 'golf' | 'other'
 
@@ -795,7 +805,7 @@ export async function GET(
         statusLabel: data.statusLabel,
         mma: data.mma,
       }
-      return NextResponse.json(detail, MATCH_CACHE)
+      return NextResponse.json(detail, matchCache(detail.status))
     }
 
     // ─── Racing (F1) ──────────────────────────────────────────────────
@@ -812,7 +822,7 @@ export async function GET(
         venue: data.venue,
         racing: data.racing,
       }
-      return NextResponse.json(detail, MATCH_CACHE)
+      return NextResponse.json(detail, matchCache(detail.status))
     }
 
     // ─── Golf (PGA) ───────────────────────────────────────────────────
@@ -829,7 +839,7 @@ export async function GET(
         venue: data.venue,
         golf: data.golf,
       }
-      return NextResponse.json(detail, MATCH_CACHE)
+      return NextResponse.json(detail, matchCache(detail.status))
     }
 
     // ─── Tennis: scoreboard lookup (summary returns 400 for match IDs) ─
@@ -848,7 +858,7 @@ export async function GET(
         venue: data.venue,
         tennis: data.tennis,
       }
-      return NextResponse.json(detail, MATCH_CACHE)
+      return NextResponse.json(detail, matchCache(detail.status))
     }
 
     // ─── Soccer / Basketball: ESPN summary ──────────────────────────
@@ -942,7 +952,7 @@ export async function GET(
       detail.basketball = buildBasketball(json, homeComp, awayComp)
     }
 
-    return NextResponse.json(detail, MATCH_CACHE)
+    return NextResponse.json(detail, matchCache(detail.status))
   } catch (err) {
     console.error(`[match] fetch failed for ${ref}:`, err)
     return NextResponse.json(null, { status: 500 })
