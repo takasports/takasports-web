@@ -99,11 +99,44 @@ create table if not exists public.quiniela_league_chat (
 create index if not exists qlc_league_time on public.quiniela_league_chat(league_id, created_at desc);
 
 alter table public.quiniela_league_chat enable row level security;
+-- ⚠️ SEGURIDAD: leer/escribir el chat EXIGE pertenencia a la liga (miembro u
+-- owner); borrar = autor del mensaje u owner. Alineado con
+-- migrations/087_secure_league_chat_rls.sql para que reejecutar este archivo NO
+-- reabra el agujero. (ANTES: chat_read USING(true) + insert con user_id NULL
+-- dejaban el chat de cualquier liga legible/escribible por anónimos.)
 drop policy if exists "chat_read"   on public.quiniela_league_chat;
 drop policy if exists "chat_insert" on public.quiniela_league_chat;
-create policy "chat_read"   on public.quiniela_league_chat for select using (true);
-create policy "chat_insert" on public.quiniela_league_chat for insert
-  with check (auth.uid() = user_id or user_id is null);
+drop policy if exists "chat_delete" on public.quiniela_league_chat;
+create policy "chat_read" on public.quiniela_league_chat for select using (
+  exists (
+    select 1 from public.quiniela_league_members m
+    where m.league_id = quiniela_league_chat.league_id and m.user_id = (select auth.uid())
+  )
+  or exists (
+    select 1 from public.quiniela_leagues l
+    where l.id = quiniela_league_chat.league_id and l.owner_id = (select auth.uid())
+  )
+);
+create policy "chat_insert" on public.quiniela_league_chat for insert with check (
+  (select auth.uid()) = user_id
+  and (
+    exists (
+      select 1 from public.quiniela_league_members m
+      where m.league_id = quiniela_league_chat.league_id and m.user_id = (select auth.uid())
+    )
+    or exists (
+      select 1 from public.quiniela_leagues l
+      where l.id = quiniela_league_chat.league_id and l.owner_id = (select auth.uid())
+    )
+  )
+);
+create policy "chat_delete" on public.quiniela_league_chat for delete using (
+  (select auth.uid()) = user_id
+  or exists (
+    select 1 from public.quiniela_leagues l
+    where l.id = quiniela_league_chat.league_id and l.owner_id = (select auth.uid())
+  )
+);
 
 -- ── MATCH RESULTS CACHE (snapshot oficial server-side) ──────────
 -- Permite cierres deterministas y scoring reproducible aun si ESPN cambia historial.
