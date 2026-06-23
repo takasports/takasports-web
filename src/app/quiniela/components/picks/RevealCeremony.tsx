@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { trackGameStart } from '@/lib/analytics'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { shareResult } from '@/lib/share'
 import type { GamePlay } from '@/lib/games-store'
@@ -23,6 +24,10 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
   const [phase, setPhase] = useState<'intro' | 'cards' | 'summary'>('intro')
   const [cardIdx, setCardIdx] = useState(0)
   const [showCard, setShowCard] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  // Overlay modal: Escape sale de la ceremonia (a "mis picks") y el Tab queda
+  // atrapado dentro. Devuelve el foco al disparador al cerrar.
+  useFocusTrap(true, dialogRef, onComplete)
 
   const evaluated = picks.map(p => ({
     ...p,
@@ -69,6 +74,10 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
 
   return (
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Revelación de resultados de la quiniela"
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
       style={{ background: 'rgba(3,0,9,0.97)', backdropFilter: 'blur(20px)' }}
     >
@@ -80,7 +89,7 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
             <p className="font-black leading-none mb-3" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.2rem,6vw,3.4rem)', color: '#F8F8FF', letterSpacing: '-0.03em' }}>
               Revelar resultados
             </p>
-            <p className="text-sm" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-sm" style={{ color: '#9090A4', fontFamily: 'var(--font-sport)' }}>
               {total} partidos evaluados · ¿Cuántos habrás acertado?
             </p>
           </div>
