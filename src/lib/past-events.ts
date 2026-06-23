@@ -37,6 +37,7 @@ interface PastEventRow {
   match_ref: string | null
   accent: string | null
   source: string
+  result_note: string | null
 }
 
 const DAYS_ES   = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
@@ -99,6 +100,7 @@ function rowToEvent(r: PastEventRow): SportEvent {
     matchRef: r.match_ref ?? undefined,
     homeScore: r.home_score,
     awayScore: r.away_score,
+    resultNote: r.result_note ?? undefined,
     isPast: true,
     source: (r.source === 'sanity' || r.source === 'padel') ? r.source : 'espn',
   }
@@ -123,6 +125,7 @@ function eventToRow(e: SportEvent): PastEventRow | null {
     match_ref: e.matchRef ?? null,
     accent: e.accent ?? null,
     source: e.source ?? 'espn',
+    result_note: e.resultNote ?? null,
   }
 }
 
