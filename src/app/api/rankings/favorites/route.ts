@@ -7,11 +7,10 @@
 // Requiere sesión. Sin sesión, GET devuelve [], POST/DELETE devuelven 401.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 
-export async function GET() {
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+export async function GET(req: NextRequest) {
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ favorites: [] })
 
   const { data, error } = await sb
@@ -24,8 +23,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
   const body = await req.json().catch(() => null) as { entry_id?: string } | null
@@ -51,8 +49,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
   const url = new URL(req.url)
