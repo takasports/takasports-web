@@ -33,10 +33,12 @@ const CHECKS: ReadonlyArray<{ table: string; column: string; slaDays: number; la
 // Se vigila POR CATEGORÍA (no con un máximo global): así un parón PARCIAL de una
 // sola categoría no queda enmascarado por otra que sí se actualizó.
 const RANKING_SLA_DAYS = 9
-// Categorías SIN fuente automática (se curan a mano, p.ej. UFC femenino):
-// exentas de la alarma para no generar ruido recurrente. Si alguna pasa a tener
-// ingesta automática, quítala de aquí.
-const STATIC_CATEGORIES = new Set<string>(['luchadoras_ufc'])
+// Categorías SIN fuente automática (se curan SOLO a mano): exentas de la alarma
+// para no generar ruido recurrente. Hoy NINGUNA: UFC femenino se actualiza vía
+// ingest-ufc-rankings.mjs (ufc.com), que ahora sella last_auto_update, así que
+// se vigila como las demás. Si en el futuro una categoría pasa a curarse solo a
+// mano, añádela aquí.
+const STATIC_CATEGORIES = new Set<string>([])
 
 async function handle(req: Request) {
   if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {

@@ -4,6 +4,8 @@
 //
 // Actualiza `rendimiento_auto` y `contexto_auto` de luchadores UFC
 // a partir de los rankings oficiales de ufc.com/rankings.
+// Sella `last_auto_update` en cada fila que actualiza (igual que el resto del
+// pipeline) para que la alarma de frescura por categoría vea esta fuente viva.
 //
 // Escala rendimiento (basado en posición en ranking de división):
 //   Campeón:    95
@@ -189,7 +191,7 @@ async function main() {
   let ok = 0, fail = 0
   for (const u of updates) {
     const { error: err } = await sb.from('ranking_entries')
-      .update({ rendimiento_auto: u.newRendimiento, contexto_auto: u.newContexto })
+      .update({ rendimiento_auto: u.newRendimiento, contexto_auto: u.newContexto, last_auto_update: new Date().toISOString() })
       .eq('id', u.entryId).eq('category', u.category)
     if (err) { fail++; console.error(`FAIL ${u.entryId}: ${err.message}`) } else ok++
   }
