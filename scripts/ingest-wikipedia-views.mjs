@@ -67,9 +67,22 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 async function fetchWithRetry(url, opts = {}, retries = 2) {
   for (let i = 0; i <= retries; i++) {
-    const r = await fetch(url, opts)
-    if (r.status === 429) { await sleep(3000 * (i + 1)); continue }
-    return r
+    // Timeout duro por intento (15 s): una conexión colgada bloqueaba el cron
+    // semanal entero hasta el límite de 15 min de execFileSync → ETIMEDOUT y
+    // pérdida del paso. Con AbortController abortamos, reintentamos con backoff
+    // y, si se agota, devolvemos null (los llamadores ya tratan el null).
+    const ac = new AbortController()
+    const timer = setTimeout(() => ac.abort(), 15000)
+    try {
+      const r = await fetch(url, { ...opts, signal: ac.signal })
+      if (r.status === 429) { await sleep(3000 * (i + 1)); continue }
+      return r
+    } catch {
+      if (i === retries) return null
+      await sleep(1000 * (i + 1))
+    } finally {
+      clearTimeout(timer)
+    }
   }
   return null
 }

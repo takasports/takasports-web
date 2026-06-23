@@ -1,0 +1,13 @@
+-- 094 — quitar el índice único estricto (entry_id, week_start) de ranking_score_history.
+-- Era CONTRADICTORIO con el diseño de la migración 016: el histórico se guarda
+-- POR CATEGORÍA (clave correcta (entry_id, category, week_start), que la función
+-- f_capture_score_history usa en su ON CONFLICT). Este índice, añadido a mano
+-- fuera de las migraciones, imponía 1 fila por entrada y semana.
+--
+-- Las 37 entradas que aparecen en 2 categorías con scores DISTINTOS (p.ej.
+-- Alcaraz: sub21 89.10 vs jugadores 67.10) hacían que el snapshot semanal
+-- reventara con "duplicate key value violates unique constraint
+-- uniq_score_history_entry_week", abortando la transacción y perdiendo TODO el
+-- snapshot de esa semana. Lo eliminamos para restaurar el histórico por-categoría
+-- (que es lo que consume /api/rankings/[id]/history?category=...).
+drop index if exists public.uniq_score_history_entry_week;
