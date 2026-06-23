@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 // ─────────────────────────────────────────────────────────────────
 // BadgesModal — catálogo completo de hitos del user.
@@ -77,6 +78,9 @@ export function BadgesModal({
   const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all')
   const [equipping, setEquipping] = useState<string | null>(null)  // `${badge_id}:${slot}`
 
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(true, dialogRef, onClose)
+
   const grouped = useMemo(() => {
     const filtered = badges.filter(b => {
       if (filter === 'unlocked') return b.unlockedAt != null
@@ -120,6 +124,10 @@ export function BadgesModal({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Tus insignias y nivel"
         className="w-full max-w-lg rounded-2xl overflow-hidden max-h-[88vh] flex flex-col"
         style={{
           background: 'linear-gradient(165deg, #15082A 0%, #0A0118 100%)',

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { SportEvent } from '@/lib/types'
 import { getCompAccent, getLiveLabel } from '@/lib/competitions'
 import { formatDateLabel, isoToLocalDate } from '@/lib/calendar'
@@ -90,6 +91,8 @@ function initials(name: string): string {
 export default function UFCCardModal({
   date, events, liveScores, reminders, onToggleReminder, onClose
 }: UFCCardModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(true, dialogRef, onClose)
   const FINISHED = new Set(['FT', 'Final', 'STATUS_FINAL', 'NS'])
   const dateLabel = formatDateLabel(date)
   const liveCount = events.filter(e => {
@@ -110,6 +113,10 @@ export default function UFCCardModal({
 
       {/* Modal */}
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Cartelera UFC"
         onClick={e => e.stopPropagation()}
         className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] max-h-[90vh] overflow-y-auto rounded-2xl w-[90vw] sm:w-[600px]"
         style={{

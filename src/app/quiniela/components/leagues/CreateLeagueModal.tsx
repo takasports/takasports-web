@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { QuinielaMatch } from '@/components/QuinielaModule'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { LEAGUES_KEY } from '../../lib/constants'
 import { getPlayerAlias, setPlayerAlias } from '../../lib/helpers'
 import type { League } from '../../lib/types'
@@ -25,6 +26,9 @@ export function CreateLeagueModal({ onClose, onCreated, apiMatches, apiJornada }
   const [createdCode, setCreatedCode] = useState('')
   const [creating, setCreating]       = useState(false)
   const [copied, setCopied]           = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  // initialFocus:false → el input del paso 1 ya tiene autoFocus; no se lo robamos.
+  useFocusTrap(true, dialogRef, onClose, { initialFocus: false })
 
   const toggleMatch = (i: number) =>
     setMatches((prev) => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i])
@@ -82,6 +86,10 @@ export function CreateLeagueModal({ onClose, onCreated, apiMatches, apiJornada }
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Crear liga privada"
         className="w-full max-w-[480px] rounded-2xl overflow-hidden"
         style={{
           background: 'linear-gradient(160deg,#12001E 0%,#0A0016 60%,#06000F 100%)',

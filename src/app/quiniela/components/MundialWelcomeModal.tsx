@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { TrophyIcon } from '@/components/icons/GameIcons'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 // ─────────────────────────────────────────────────────────────────
 // Modal de bienvenida al modo Mundial 2026.
@@ -41,6 +42,10 @@ export function MundialWelcomeModal({
   const [shouldShow, setShouldShow] = useState(false)
   const [questions, setQuestions] = useState<QuestionPreview[]>([])
   const [alreadyAnswered, setAlreadyAnswered] = useState<number>(0)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  // active = shouldShow: el hook se llama siempre (antes del early return) y solo
+  // atrapa el foco / escucha Escape cuando el modal está visible.
+  useFocusTrap(shouldShow, dialogRef, dismiss)
 
   useEffect(() => {
     if (!user || !isMundial) { setShouldShow(false); return }
@@ -100,6 +105,10 @@ export function MundialWelcomeModal({
       onClick={dismiss}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Bienvenida al Mundial 2026"
         className="w-full max-w-md rounded-2xl overflow-hidden"
         style={{
           background: 'linear-gradient(165deg, #1A0B30 0%, #0B0218 100%)',
