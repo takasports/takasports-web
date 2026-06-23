@@ -19,16 +19,24 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
 // SLA por dato: días que puede pasar sin actualizarse antes de avisar.
-//   · Índice Taka (recompute SEMANAL) → 9 días = 7 de cadencia + 2 de gracia.
 //   · Resultados pasados (sync DIARIO) → 2 días = 1 de cadencia + 1 de gracia.
 //   · Pipeline de noticias (ingesta CONTINUA) → 2 días: el pipeline crea
 //     content_items cada pocos minutos; 2 días sin un solo item nuevo = caído
 //     (o pausado a propósito vía Telegram, en cuyo caso el aviso es informativo).
+// El Índice Taka se vigila APARTE, POR CATEGORÍA (ver más abajo).
 const CHECKS: ReadonlyArray<{ table: string; column: string; slaDays: number; label: string }> = [
-  { table: 'ranking_entries', column: 'last_auto_update', slaDays: 9, label: 'Índice Taka (recompute semanal)' },
-  { table: 'past_events',     column: 'updated_at',       slaDays: 2, label: 'Resultados pasados (sync diario)' },
-  { table: 'content_items',   column: 'created_at',       slaDays: 2, label: 'Pipeline de noticias (ingesta)' },
+  { table: 'past_events',   column: 'updated_at', slaDays: 2, label: 'Resultados pasados (sync diario)' },
+  { table: 'content_items', column: 'created_at', slaDays: 2, label: 'Pipeline de noticias (ingesta)' },
 ]
+
+// Índice Taka (recompute SEMANAL) → 9 días = 7 de cadencia + 2 de gracia.
+// Se vigila POR CATEGORÍA (no con un máximo global): así un parón PARCIAL de una
+// sola categoría no queda enmascarado por otra que sí se actualizó.
+const RANKING_SLA_DAYS = 9
+// Categorías SIN fuente automática (se curan a mano, p.ej. UFC femenino):
+// exentas de la alarma para no generar ruido recurrente. Si alguna pasa a tener
+// ingesta automática, quítala de aquí.
+const STATIC_CATEGORIES = new Set<string>(['luchadoras_ufc'])
 
 async function handle(req: Request) {
   if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
@@ -72,6 +80,33 @@ async function handle(req: Request) {
     if (!ok) {
       const ageTxt = Number.isFinite(ageDays) ? `${ageDays.toFixed(1)} días` : 'sin datos'
       stale.push(`• <b>${c.label}</b>: ${ageTxt} sin actualizarse (límite ${c.slaDays}d). Última: ${last ?? '—'}`)
+    }
+  }
+
+  // Índice Taka POR CATEGORÍA: detecta paros PARCIALES (una categoría vieja
+  // mientras otras siguen frescas) que el antiguo máximo global ocultaba.
+  // Las categorías estáticas (STATIC_CATEGORIES) se omiten.
+  const { data: cats, error: catErr } = await admin.rpc('f_ranking_category_freshness')
+  if (catErr) {
+    checks.push({ source: 'Índice Taka (por categoría)', ok: false, note: catErr.message })
+    stale.push(`• <b>Índice Taka</b>: error al consultar frescura por categoría (${catErr.message})`)
+  } else {
+    const rows = (cats ?? []) as Array<{ category: string; last_update: string | null; age_days: number | string | null }>
+    for (const row of rows) {
+      if (STATIC_CATEGORIES.has(row.category)) continue
+      const ageDays = row.age_days != null ? Number(row.age_days) : Infinity
+      const ok = ageDays <= RANKING_SLA_DAYS
+      checks.push({
+        source: `Índice · ${row.category}`,
+        last: row.last_update,
+        ageDays: Number.isFinite(ageDays) ? ageDays : null,
+        slaDays: RANKING_SLA_DAYS,
+        ok,
+      })
+      if (!ok) {
+        const ageTxt = Number.isFinite(ageDays) ? `${ageDays.toFixed(1)} días` : 'sin datos'
+        stale.push(`• <b>Índice Taka · ${row.category}</b>: ${ageTxt} sin actualizarse (límite ${RANKING_SLA_DAYS}d). Última: ${row.last_update ?? '—'}`)
+      }
     }
   }
 
