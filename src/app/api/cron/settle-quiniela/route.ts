@@ -295,7 +295,7 @@ async function handle(req: Request) {
       if (totalPoints > 0) {
         import('@/lib/push-helper').then(({ sendPushToUser }) =>
           sendPushToUser(row.user_id, {
-            title:  breakdown.pleno ? `🎯 ¡PLENO! +${totalPoints} pts` : `⚡ +${totalPoints} pts en La Porra`,
+            title:  breakdown.pleno ? `🎯 ¡PLENO! +${totalPoints} pts` : `⚡ +${totalPoints} pts en la Quiniela`,
             body:   `${breakdown.hits}/${savedPicks.length} aciertos · ${row.jornada}`,
             url:    '/predicciones',
             tag:    `quiniela-settle-${row.jornada}`,

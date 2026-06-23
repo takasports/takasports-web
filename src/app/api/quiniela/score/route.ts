@@ -518,7 +518,7 @@ export async function POST(req: NextRequest) {
       if (totalPoints > 0) {
         const title = breakdown.pleno
           ? `🎯 ¡PLENO! +${totalPoints} pts`
-          : `⚡ +${totalPoints} pts en La Porra`
+          : `⚡ +${totalPoints} pts en la Quiniela`
         const pushBody = breakdown.pleno
           ? `Acertaste TODOS los ${persistedPicks.length} partidos · ${body.jornada}`
           : `${breakdown.hits}/${persistedPicks.length} aciertos · ${body.jornada}`
