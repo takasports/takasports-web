@@ -5,18 +5,17 @@
 // Las ligas type='creator' son de acceso abierto (sin código).
 // Las ligas type='private' requieren invite_code correcto.
 
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(
-  req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
 
   let body: { invite_code?: unknown } = {}

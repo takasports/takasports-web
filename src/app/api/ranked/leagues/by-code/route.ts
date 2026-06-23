@@ -3,13 +3,12 @@
 // Requiere sesión.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
 
   const code = new URL(req.url).searchParams.get('code')?.trim().toUpperCase()

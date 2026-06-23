@@ -3,8 +3,8 @@
 //
 // Requiere sesión en ambos métodos.
 
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 /** Genera un ID aleatorio URL-safe sin dependencias externas */
 function genId(len = 10): string {
@@ -20,11 +20,10 @@ function hasEnv() {
 const VALID_SPORTS = new Set(['mundial', 'ufc', 'futbol', 'global'])
 
 // ── GET ───────────────────────────────────────────────────────────────────
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!hasEnv()) return NextResponse.json({ leagues: [] })
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ leagues: [], reason: 'no_session' })
 
   // Ligas donde el user es miembro (incluye las que creó, ya que al crear se añade como miembro)
@@ -71,11 +70,10 @@ export async function GET() {
 }
 
 // ── POST ──────────────────────────────────────────────────────────────────
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   if (!hasEnv()) return NextResponse.json({ error: 'no_config' }, { status: 503 })
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
 
   let body: { name?: unknown; sport?: unknown }

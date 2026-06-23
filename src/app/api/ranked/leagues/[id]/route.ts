@@ -1,8 +1,8 @@
 // GET    /api/ranked/leagues/[id]  → detalles de la liga + leaderboard de miembros
 // DELETE /api/ranked/leagues/[id]  → eliminar liga (solo owner)
 
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { publicId } from '@/lib/public-id'
 
@@ -14,13 +14,12 @@ function hasEnv() {
 
 // ── GET ───────────────────────────────────────────────────────────────────
 export async function GET(
-  _req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!hasEnv()) return NextResponse.json({ error: 'no_config' }, { status: 503 })
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
 
   const { id: leagueId } = await params
@@ -75,13 +74,12 @@ export async function GET(
 
 // ── DELETE ────────────────────────────────────────────────────────────────
 export async function DELETE(
-  _req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!hasEnv()) return NextResponse.json({ error: 'no_config' }, { status: 503 })
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
 
   const { id: leagueId } = await params

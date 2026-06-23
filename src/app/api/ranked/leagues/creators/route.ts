@@ -3,18 +3,16 @@
 // Ruta pública — no requiere sesión para listar.
 // Con sesión devuelve además is_member para cada liga.
 
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
-  const sb    = await createServerSupabaseClient()
+export async function GET(req: NextRequest) {
+  // Sesión opcional (cookie web O Bearer app); sin sesión, is_member = false.
+  const { supabase: sb, user } = await supabaseForRequest(req)
   const admin = adminSupabase()
-
-  // Sesión opcional
-  const { data: { user } } = await sb.auth.getUser()
 
   const { data: leagues, error } = await sb
     .from('ranked_leagues')
