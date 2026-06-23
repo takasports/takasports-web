@@ -1,20 +1,11 @@
 import { ImageResponse } from 'next/og'
 import { sanityClient } from '@/lib/sanity'
+import { accentForSport } from '@/lib/sports'
 
 export const alt = 'TakaSports'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 export const revalidate = 3600
-
-const SPORT_COLORS: Record<string, string> = {
-  futbol:     '#22c55e',
-  baloncesto: '#f97316',
-  formula1:   '#ef4444',
-  ufc:        '#7C3AED',
-  tenis:      '#eab308',
-  wwe:        '#dc2626',
-  rugby:      '#0ea5e9',
-}
 
 const OG_QUERY = `*[_type == "article" && (_id == $id || slug.current == $id)][0]{
   title,
@@ -66,7 +57,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const title   = article?.title ?? 'TakaSports — Noticias deportivas'
   const summary = article?.short_summary
   const sport   = article?.sport ?? article?.category
-  const accent  = sport ? (SPORT_COLORS[sport] ?? '#7C3AED') : '#7C3AED'
+  const accent  = accentForSport(sport)
   const imgUrl  = await fetchImageDataUri(article?.imageUrl ?? null)
 
   return new ImageResponse(

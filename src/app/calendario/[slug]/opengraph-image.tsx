@@ -1,20 +1,11 @@
 import { ImageResponse } from 'next/og'
 import { getCompetition } from '@/lib/calendar-competitions'
+import { accentForSport } from '@/lib/sports'
 
 export const alt = 'Calendario de competición — TakaSports'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 export const revalidate = 3600
-
-const SPORT_COLORS: Record<string, string> = {
-  'Fútbol':     '#22c55e',
-  'Baloncesto': '#f97316',
-  'NBA':        '#f97316',
-  'F1':         '#ef4444',
-  'UFC':        '#7C3AED',
-  'Tenis':      '#eab308',
-  'Pádel':      '#06b6d4',
-}
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -24,7 +15,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const season     = comp?.seasonLabel ?? ''
   const desc       = comp?.description ?? 'Partidos, horarios y resultados en TakaSports.'
   const sport      = comp?.sport ?? 'Fútbol'
-  const accent     = SPORT_COLORS[sport] ?? '#7C3AED'
+  const accent     = accentForSport(sport)
 
   return new ImageResponse(
     (

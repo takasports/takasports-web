@@ -1,20 +1,12 @@
 import { ImageResponse } from 'next/og'
 import { getGlosarioTerm } from '@/lib/glosario-terms'
+import { accentForSport } from '@/lib/sports'
 
 export const alt = 'Glosario deportivo — TakaSports'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 // Los términos del glosario cambian poco — cache 24h.
 export const revalidate = 86400
-
-const SPORT_COLORS: Record<string, string> = {
-  futbol:     '#22c55e',
-  baloncesto: '#f97316',
-  f1:         '#ef4444',
-  tenis:      '#eab308',
-  ufc:        '#7C3AED',
-  general:    '#7C3AED',
-}
 
 const SPORT_LABEL: Record<string, string> = {
   futbol:     'FÚTBOL',
@@ -32,7 +24,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const termName = term?.term ?? 'Glosario deportivo'
   const summary  = term?.summary ?? 'Glosario deportivo de TakaSports'
   const sport    = term?.sport ?? 'general'
-  const accent   = SPORT_COLORS[sport] ?? '#7C3AED'
+  const accent   = accentForSport(sport)
   const sportTag = SPORT_LABEL[sport] ?? sport.toUpperCase()
 
   return new ImageResponse(

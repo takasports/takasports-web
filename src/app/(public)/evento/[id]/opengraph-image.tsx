@@ -1,17 +1,12 @@
 import { ImageResponse } from 'next/og'
 import { sanityClient, eventDetailQuery } from '@/lib/sanity'
+import { accentForSport } from '@/lib/sports'
 
 export const runtime = 'edge'
 export const alt = 'Evento deportivo — TakaSports'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-const SPORT_COLOR: Record<string, string> = {
-  futbol: '#22c55e', baloncesto: '#f97316',
-  formula1: '#ef4444', tenis: '#eab308',
-  ufc: '#7C3AED', wwe: '#dc2626',
-  rugby: '#0ea5e9',
-}
 const SPORT_EMOJI: Record<string, string> = {
   futbol: '⚽', baloncesto: '🏀', formula1: '🏎️',
   tenis: '🎾', ufc: '🥊', wwe: '🎤', rugby: '🏉',
@@ -24,7 +19,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const event: EventBasic | null = await sanityClient.fetch(eventDetailQuery, { id }).catch(() => null)
 
   const sport = event?.sport ?? 'futbol'
-  const color = SPORT_COLOR[sport] ?? '#7C3AED'
+  const color = accentForSport(sport)
   const emoji = SPORT_EMOJI[sport] ?? '🏟️'
   const home = event?.home ?? '—'
   const away = event?.away

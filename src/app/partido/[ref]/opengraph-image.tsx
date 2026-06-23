@@ -1,19 +1,12 @@
 import { ImageResponse } from 'next/og'
 import type { MatchDetail } from '@/app/api/match/[ref]/route'
 import { SITE_URL } from '@/lib/constants'
+import { accentForSport } from '@/lib/sports'
 
 export const runtime = 'edge'
 export const alt = 'Partido — TakaSports'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
-
-const SPORT_COLOR: Record<string, string> = {
-  soccer: '#22c55e', football: '#22c55e',
-  basketball: '#f97316',
-  'formula-1': '#ef4444', racing: '#ef4444',
-  tennis: '#eab308',
-  mma: '#7C3AED', ufc: '#7C3AED',
-}
 
 async function fetchMatch(ref: string): Promise<MatchDetail | null> {
   try {
@@ -48,7 +41,7 @@ export default async function Image({ params }: { params: Promise<{ ref: string 
   const { ref } = await params
   const match = await fetchMatch(ref)
 
-  const color = match ? (SPORT_COLOR[match.sport] ?? '#7C3AED') : '#7C3AED'
+  const color = match ? accentForSport(match.sport) : '#7C3AED'
   const home = match?.homeTeam ?? '—'
   const away = match?.awayTeam ?? '—'
   const hasScore = match?.homeScore != null && match?.awayScore != null

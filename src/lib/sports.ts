@@ -38,18 +38,43 @@ export const MORE_SPORT_CATEGORIES: string[] = []
 // Lista completa (compatibilidad interna)
 export const SPORT_CATEGORIES = ['Todo', ...Object.values(SLUG_TO_LABEL)]
 
-// Colores por slug — clave = slug canónico Sanity.
-// Los `accent` están alineados a la paleta única "La Señal" (--sport-accent en
-// globals.css) para que TODA la web use el mismo color por deporte; el `bg` es
+// Acento por deporte — FUENTE ÚNICA Y PLANA de la identidad "La Señal".
+// Acepta slug canónico ('futbol'), label visual en minúsculas ('fútbol', 'nba')
+// y slug ESPN de los eventos ('soccer', 'formula-1', 'racing', 'mma'). Sustituye
+// los mapas de color duplicados de las tarjetas para compartir (OG). Espejo del
+// `accentFor` de la app (mismos valores). Default = morado de marca.
+export const DEFAULT_SPORT_ACCENT = '#7C3AED'
+export const SPORT_ACCENT: Record<string, string> = {
+  futbol: '#34D399', 'fútbol': '#34D399', football: '#34D399', soccer: '#34D399',
+  baloncesto: '#F59E0B', basketball: '#F59E0B', nba: '#F59E0B', euroliga: '#F59E0B', bcl: '#F59E0B', acb: '#F59E0B',
+  formula1: '#EF4444', f1: '#EF4444', 'formula-1': '#EF4444', racing: '#EF4444',
+  tenis: '#E0B33A', tennis: '#E0B33A',
+  ufc: '#D4AF37', mma: '#D4AF37', boxing: '#D4AF37', boxeo: '#D4AF37',
+  rugby: '#38BDF8',
+  wwe: '#A855F7', wrestling: '#A855F7',
+  padel: '#22D3EE', 'pádel': '#22D3EE',
+  golf: '#86C166',
+  motogp: '#FB7185',
+}
+
+/** Acento de marca del deporte (acepta slug/label/slug ESPN). Fallback al morado. */
+export function accentForSport(sport?: string | null, fallback = DEFAULT_SPORT_ACCENT): string {
+  if (!sport) return fallback
+  return SPORT_ACCENT[sport.toLowerCase()] ?? fallback
+}
+
+// Colores por slug — clave = slug canónico Sanity. El `accent` SALE de SPORT_ACCENT
+// (fuente única) para que TODA la web use el mismo color por deporte; el `bg` es
 // solo el fondo de respaldo del HeroBlock (muy oscuro, tras scrim).
 export const SPORT_STYLE: Record<string, { bg: string; accent: string }> = {
-  futbol:     { bg: 'linear-gradient(145deg,#0d2818,#09090F)', accent: '#34D399' },
-  wwe:        { bg: 'linear-gradient(145deg,#1f0a2e,#09090F)', accent: '#A855F7' },
-  baloncesto: { bg: 'linear-gradient(145deg,#0f1e3d,#09090F)', accent: '#F59E0B' },
-  formula1:   { bg: 'linear-gradient(145deg,#2a1010,#09090F)', accent: '#EF4444' },
-  tenis:      { bg: 'linear-gradient(145deg,#1c1208,#09090F)', accent: '#E0B33A' },
-  ufc:        { bg: 'linear-gradient(145deg,#2a1408,#09090F)', accent: '#D4AF37' },
-  rugby:      { bg: 'linear-gradient(145deg,#0a2436,#09090F)', accent: '#38BDF8' },
+  futbol:     { bg: 'linear-gradient(145deg,#0d2818,#09090F)', accent: SPORT_ACCENT.futbol },
+  wwe:        { bg: 'linear-gradient(145deg,#1f0a2e,#09090F)', accent: SPORT_ACCENT.wwe },
+  baloncesto: { bg: 'linear-gradient(145deg,#0f1e3d,#09090F)', accent: SPORT_ACCENT.baloncesto },
+  formula1:   { bg: 'linear-gradient(145deg,#2a1010,#09090F)', accent: SPORT_ACCENT.formula1 },
+  tenis:      { bg: 'linear-gradient(145deg,#1c1208,#09090F)', accent: SPORT_ACCENT.tenis },
+  ufc:        { bg: 'linear-gradient(145deg,#2a1408,#09090F)', accent: SPORT_ACCENT.ufc },
+  rugby:      { bg: 'linear-gradient(145deg,#0a2436,#09090F)', accent: SPORT_ACCENT.rugby },
+  golf:       { bg: 'linear-gradient(145deg,#0c2416,#09090F)', accent: SPORT_ACCENT.golf },
 }
 
 // Acepta slug canónico ('futbol', 'baloncesto'…) o label visual ('Fútbol', 'NBA'…)
