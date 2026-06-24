@@ -101,10 +101,10 @@ export default async function SportPage({
   const rankCategory = sportSlug === 'wwe' ? 'creadores_wwe' : 'jugadores'
 
   const [articles, reels, allRankings, upcomingEvents] = await Promise.all([
-    sanityClient.fetch(articlesBySportQuery, { sport: sportSlug }),
-    sanityClient.fetch(reelsQuery),
+    sanityClient.fetch(articlesBySportQuery, { sport: sportSlug }).catch(() => []),
+    sanityClient.fetch(reelsQuery).catch(() => []),
     getRanking(rankCategory),
-    sanityClient.fetch(eventsBySportQuery, { sport: sportSlug }),
+    sanityClient.fetch(eventsBySportQuery, { sport: sportSlug }).catch(() => []),
   ])
 
   const topRankings = rankCategory === 'jugadores'

@@ -95,7 +95,7 @@ function articleImageUrl(a: RelatedArticle, w = 320, h = 180): string | null {
 // ── Metadata ──────────────────────────────────────────────────
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id }  = await params
-  const event: SanityEventDetail | null = await sanityClient.fetch(eventDetailQuery, { id })
+  const event: SanityEventDetail | null = await sanityClient.fetch(eventDetailQuery, { id }).catch(() => null)
   if (!event) return { title: 'Evento | TakaSports' }
 
   const sportLabel = getSportLabel(event.sport)
@@ -178,7 +178,7 @@ function RelatedArticleCard({ article }: { article: RelatedArticle }) {
 // ── Page ──────────────────────────────────────────────────────
 export default async function EventoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const event: SanityEventDetail | null = await sanityClient.fetch(eventDetailQuery, { id })
+  const event: SanityEventDetail | null = await sanityClient.fetch(eventDetailQuery, { id }).catch(() => null)
   if (!event) notFound()
 
   const { bg, accent } = getSportStyle(event.sport)
@@ -195,7 +195,7 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
     to:    toIso,
     home:  event.home ?? '',
     away:  event.away ?? '',
-  })
+  }).catch(() => [])
 
   const isLive    = event.status === 'en_vivo'
   const statusLabel = isLive ? 'En Vivo' : event.status === 'finalizado' ? 'Finalizado' : null

@@ -82,8 +82,8 @@ export default async function NoticiasPageN({
   const to = from + PAGE_SIZE
 
   const [articles, total]: [Article[], number] = await Promise.all([
-    sanityClient.fetch<Article[]>(pagedQuery, { from, to }),
-    sanityClient.fetch<number>(totalQuery),
+    sanityClient.fetch<Article[]>(pagedQuery, { from, to }).catch(() => []),
+    sanityClient.fetch<number>(totalQuery).catch(() => 0),
   ])
 
   if (articles.length === 0) notFound()

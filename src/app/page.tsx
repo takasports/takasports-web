@@ -95,8 +95,8 @@ export default async function Home() {
   )
 
   const [rawArticles, sanityReels, rawEvents, espnEvents, igReels, topPlayers, perSportRaw] = await Promise.all([
-    sanityClient.fetch<HomeArticle[]>(articlesQuery),
-    sanityClient.fetch(reelsQuery),
+    sanityClient.fetch<HomeArticle[]>(articlesQuery).catch(() => []),
+    sanityClient.fetch(reelsQuery).catch(() => []),
     sanityClient.fetch(eventsQuery).catch(() => []),
     fetchEspnEvents().catch(() => []),
     fetchPublicReels().catch(() => []),

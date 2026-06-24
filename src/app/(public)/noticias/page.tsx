@@ -30,8 +30,8 @@ export default async function NoticiasPage() {
   // carga sus noticias. El canonical fijo a /noticias evita competir con los hubs /[sport],
   // y la vista filtrada deja de ser una URL distinta indexable (sustituye al noindex anterior).
   const [articles, reels] = await Promise.all([
-    sanityClient.fetch(articlesQuery),
-    sanityClient.fetch(reelsQuery),
+    sanityClient.fetch(articlesQuery).catch(() => []),
+    sanityClient.fetch(reelsQuery).catch(() => []),
   ])
 
   const igReels = (reels as unknown[]).length > 0 ? reels : reelsData
