@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -870,12 +871,11 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
       </header>
 
       {/* Mobile drawer */}
-      {menuOpen && (
+      {menuOpen && createPortal(
         <>
-          <div className="drawer-backdrop" onClick={() => setMenuOpen(false)} aria-hidden="true" />
-          <nav ref={drawerRef} id="mobile-drawer" tabIndex={-1} className="drawer-panel" aria-label="Menú de navegación" style={{ outline: 'none' }}>
-            <div style={{ background: 'rgba(13,13,20,0.98)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="px-4 sm:px-6 py-4 flex flex-col gap-1">
+          <div className="menu-backdrop" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+          <nav ref={drawerRef} id="mobile-drawer" tabIndex={-1} className="menu-card" aria-label="Menú de navegación" style={{ outline: 'none' }}>
+              <div className="p-3 flex flex-col gap-1">
 
                 {/* Search */}
                 <button
@@ -964,9 +964,9 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
                   </Link>
                 )}
               </div>
-            </div>
           </nav>
-        </>
+        </>,
+        document.body,
       )}
 
       {searchOpen && <SearchModal onClose={closeSearch} />}

@@ -349,26 +349,40 @@ a[href^="/noticias/"]:visited .news-title {
   animation: fadeIn 0.15s ease;
 }
 
-/* ── Mobile drawer overlay ── */
-.drawer-backdrop {
+/* ── Menú móvil: tarjeta a la derecha, POR ENCIMA de la consola (z-50) ──
+   Se renderiza en un portal a <body> para escapar del stacking context de la
+   consola sticky; por eso z-index alto (la franja EN DIRECTO queda debajo). */
+.menu-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
-  z-index: 39;
+  background: rgba(0,0,0,0.62);
+  backdrop-filter: blur(3px);
+  z-index: 9998;
   animation: fadeIn 0.18s ease;
 }
 @keyframes fadeIn {
   from { opacity: 0 }
   to   { opacity: 1 }
 }
-.drawer-panel {
+.menu-card {
   position: fixed;
-  top: 56px; /* height of header */
-  left: 0;
-  right: 0;
-  z-index: 40;
-  animation: slideDown 0.22s ease;
+  top: 12px;
+  right: 12px;
+  width: min(290px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  z-index: 9999;
+  border-radius: 16px;
+  background: rgba(16,16,25,0.98);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+  animation: slideInRight 0.2s ease;
+}
+@keyframes slideInRight {
+  from { transform: translateX(10px); opacity: 0 }
+  to   { transform: translateX(0);    opacity: 1 }
 }
 @keyframes slideDown {
   from { transform: translateY(-8px); opacity: 0 }
