@@ -78,15 +78,15 @@ export async function generateMetadata(
     // sobrescribimos). Bug relacionado: notFound() de Next 16 con ISR no propaga
     // 404 status, así que la página sigue siendo 200 + content "no encontrada".
     return {
-      title: 'Entry no encontrada — Índice Taka',
+      title: 'Entry no encontrada — Ranking Taka',
       robots: { index: false, follow: true },
       alternates: { canonical: `${SITE_URL}/rankings/${id}` },
     }
   }
 
   const score = getDisplayScore(entry).toFixed(1)
-  const title = `${entry.name} · Índice Taka ${score} — TakaSports`
-  const description = entry.insight ?? `${entry.subtitle}. Índice Taka ${score}/100.`
+  const title = `${entry.name} · Ranking Taka ${score} — TakaSports`
+  const description = entry.insight ?? `${entry.subtitle}. Ranking Taka ${score}/100.`
 
   return {
     title,
@@ -160,7 +160,7 @@ export default async function EntryDetailPage(
   const sources = getEntrySources(id)
   const factors = entry.factors
   // Base objetiva (suma ponderada de factores) y ajuste editorial = lo que la
-  // separa del Índice mostrado (editorial_boost y/o score_manual). Reconcilia
+  // separa del Ranking mostrado (editorial_boost y/o score_manual). Reconcilia
   // las barras con el número grande cuando hay override editorial.
   const factorBase = factors
     ? Math.round((isCreatorEntry(entry)
@@ -185,7 +185,7 @@ export default async function EntryDetailPage(
     ...(entry.country && schemaType === 'Person' && { nationality: { '@type': 'Country', name: entry.country } }),
     ...(entry.sport && schemaType === 'Person' && { knowsAbout: entry.sport }),
     ...(entry.sport && schemaType === 'SportsTeam' && { sport: entry.sport }),
-    // El "Índice Taka" (ds) es una puntuación editorial propia, no una reseña
+    // El "Ranking Taka" (ds) es una puntuación editorial propia, no una reseña
     // agregada. Modelarlo como AggregateRating (con ratingCount:1, auto-otorgado)
     // viola la política de review snippets de Google y arriesga supresión/acción
     // manual a escala (~1.100 entidades). Se retira de los datos estructurados;
@@ -261,7 +261,7 @@ export default async function EntryDetailPage(
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1"
                 style={{ color: sportAccent, fontFamily: 'var(--font-sport)' }}>
-                #{entry.rank} · Índice Taka
+                #{entry.rank} · Ranking Taka
               </p>
               <h1 className="text-2xl sm:text-3xl font-black leading-tight mb-1"
                 style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
@@ -303,7 +303,7 @@ export default async function EntryDetailPage(
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-4"
               style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
-              {isCreatorEntry(entry) ? 'Desglose · Índice de Contenido' : 'Desglose · 4 factores objetivos'}
+              {isCreatorEntry(entry) ? 'Desglose · Ranking de Contenido' : 'Desglose · 4 factores objetivos'}
             </p>
             <div className="flex flex-col gap-4">
               {(isCreatorEntry(entry) ? FACTOR_DEFS_CREATOR : FACTOR_DEFS).map(({ key, label, pct, color }) => (
@@ -401,7 +401,7 @@ export default async function EntryDetailPage(
           <span className="text-sm flex-shrink-0 mt-0.5">ℹ️</span>
           <p className="text-[11px] leading-relaxed"
             style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
-            El <span style={{ color: '#9B7CF6' }}>Índice Taka</span> pondera rendimiento reciente (40 %), contexto competitivo (20 %), influencia mediática (25 %) y narrativa pública (15 %). Las tendencias reflejan el movimiento respecto al período anterior.
+            El <span style={{ color: '#9B7CF6' }}>Ranking Taka</span> pondera rendimiento reciente (40 %), contexto competitivo (20 %), influencia mediática (25 %) y narrativa pública (15 %). Las tendencias reflejan el movimiento respecto al período anterior.
           </p>
         </div>
 
@@ -428,14 +428,14 @@ export default async function EntryDetailPage(
         </Suspense>
 
         {/* Rankings relacionados — enlaza hermanos del mismo deporte para repartir
-            autoridad y dar a Google rutas de crawl entre fichas del Índice Taka. */}
+            autoridad y dar a Google rutas de crawl entre fichas del Ranking Taka. */}
         {relatedEntries.length > 0 && (
           <nav aria-label="Rankings relacionados" className="pt-2">
             <div
               className="text-[10px] font-black uppercase tracking-widest mb-3 text-center"
               style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}
             >
-              Más en el Índice Taka
+              Más en el Ranking Taka
             </div>
             <div className="flex flex-wrap justify-center gap-2">
               {relatedEntries.map(e => (

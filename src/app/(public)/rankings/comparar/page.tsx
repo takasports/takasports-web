@@ -6,8 +6,8 @@ import CompararClient from './CompararClient'
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: 'Comparador · Índice Taka',
-  description: 'Compara dos figuras del Índice Taka: radar de 4 factores, desglose objetivo y delta total.',
+  title: 'Comparador · Ranking Taka',
+  description: 'Compara dos figuras del Ranking Taka: radar de 4 factores, desglose objetivo y delta total.',
   robots: { index: false },
 }
 

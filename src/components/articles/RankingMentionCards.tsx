@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { MatchedEntry } from '@/lib/rankings-match'
 
-// Cards compactas del Índice Taka para incrustar en artículos.
+// Cards compactas del Ranking Taka para incrustar en artículos.
 // Se renderiza server-side desde la página del artículo cuando el autor
 // menciona a un deportista/club/creador del top 500.
 
@@ -14,7 +14,7 @@ export default function RankingMentionCards({ entries }: { entries: MatchedEntry
         className="text-[10px] font-black uppercase tracking-[0.2em] mb-2"
         style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}
       >
-        En el Índice Taka
+        En el Ranking Taka
       </p>
       <div className="space-y-2">
         {entries.map((e) => {
@@ -97,7 +97,7 @@ export default function RankingMentionCards({ entries }: { entries: MatchedEntry
         className="text-[9px] mt-2 text-right"
         style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}
       >
-        <Link href="/rankings" style={{ color: '#7C3AED' }}>Ver el Índice completo →</Link>
+        <Link href="/rankings" style={{ color: '#7C3AED' }}>Ver el Ranking completo →</Link>
       </p>
     </div>
   )

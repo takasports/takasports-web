@@ -104,10 +104,10 @@ function buildTitle(sp: SP): { title: string; description: string } {
     : badgeLbl ? ` · ${badgeLbl}`
     : ''
 
-  const title = `${subject}${ctx} · ${edition} · Índice Taka`
+  const title = `${subject}${ctx} · ${edition} · Ranking Taka`
   const description =
     `Ranking ${tabLbl}${genderLbl}${sportLbl ? ' de ' + sportLbl : ''} edición ${edition}. ` +
-    `Calculado con el Índice Taka: rendimiento, contexto, influencia mediática y narrativa.`
+    `Calculado con el Ranking Taka: rendimiento, contexto, influencia mediática y narrativa.`
 
   return { title, description }
 }

@@ -349,7 +349,7 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
     const url = window.location.href
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Comparador · Índice Taka', url })
+        await navigator.share({ title: 'Comparador · Ranking Taka', url })
       } else {
         await navigator.clipboard.writeText(url)
         setShareState('copied')
@@ -373,12 +373,12 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
     (isCreatorB ? FACTOR_DEFS_CREATOR : FACTOR_DEFS).map((d) => [d.key, d]),
   )
   const desgloseTitle = bothCreator
-    ? 'Desglose · Índice de Contenido'
+    ? 'Desglose · Ranking de Contenido'
     : mixedTrack
       ? 'Desglose · criterios distintos'
       : 'Desglose factor a factor'
   const radarTitle = bothCreator
-    ? 'Radar · Índice de Contenido'
+    ? 'Radar · Ranking de Contenido'
     : mixedTrack
       ? 'Radar · criterios distintos'
       : 'Radar · 4 factores objetivos'
@@ -413,7 +413,7 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
           </h1>
           <p className="text-xs sm:text-sm"
             style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
-            Enfrenta dos entries del Índice Taka. Radar de los 4 factores,
+            Enfrenta dos entries del Ranking Taka. Radar de los 4 factores,
             desglose objetivo y delta total.
           </p>
         </div>
@@ -603,7 +603,7 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[10px] font-black uppercase tracking-widest"
                     style={{ color: '#A0A0B8', fontFamily: 'var(--font-sport)' }}>
-                    {bothCreator ? 'Índice de Contenido' : 'Índice Taka'} · Total
+                    {bothCreator ? 'Ranking de Contenido' : 'Ranking Taka'} · Total
                   </span>
                   <span className="text-[10px] tabular-nums font-bold"
                     style={{ color: delta === 0 ? '#5A5A72' : delta > 0 ? COLOR_A : COLOR_B,

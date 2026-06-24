@@ -1625,6 +1625,19 @@ function buildSummaryCards(
   const cards: SummaryCard[] = []
   const meta = liveData?.meta ?? {}
 
+  // 🌍 Mundial 2026: clasificados destacados (primero — evento estrella)
+  if (liveData?.worldCupQualified?.length) {
+    cards.push({
+      sportId: 'mundial', sportLabel: 'Mundial 2026', emoji: '🌍', accent: '#f59e0b',
+      title: 'Mundial 2026 · Clasificados', metric: 'Grupo',
+      rows: liveData.worldCupQualified.slice(0, 5).map(r => ({
+        rank: r.rank, name: r.name, sub: r.sub, value: r.value, flag: r.flag,
+      })),
+      meta: meta.worldCupQualified,
+      sectionTarget: 'clasificados',
+    })
+  }
+
   // ⚽ Goleadores LaLiga (ESPN, vivo)
   // Fix: league id is 'esp.1', not 'laliga'
   const laliga = livePlayerData?.leagues.find(l => l.id === 'esp.1')
@@ -1743,19 +1756,6 @@ function buildSummaryCards(
       })),
       meta: meta.wtaRanking,
       sectionTarget: 'wta',
-    })
-  }
-
-  // 🌍 Mundial 2026: clasificados destacados
-  if (liveData?.worldCupQualified?.length) {
-    cards.push({
-      sportId: 'mundial', sportLabel: 'Mundial 2026', emoji: '🌍', accent: '#f59e0b',
-      title: 'Mundial 2026 · Clasificados', metric: 'Grupo',
-      rows: liveData.worldCupQualified.slice(0, 5).map(r => ({
-        rank: r.rank, name: r.name, sub: r.sub, value: r.value, flag: r.flag,
-      })),
-      meta: meta.worldCupQualified,
-      sectionTarget: 'clasificados',
     })
   }
 

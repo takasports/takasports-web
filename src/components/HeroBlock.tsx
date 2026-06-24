@@ -574,17 +574,7 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
         }}
       >
         {/* ── Cabecera: contador + flechas ─────────────────── */}
-        <div className="flex items-center justify-between mb-2.5">
-          <div className="flex items-center gap-2">
-            <span className="section-accent" />
-            <span
-              className="text-[10px] font-black tracking-widest"
-              style={{ color: '#52527A', fontFamily: 'var(--font-sport)' }}
-            >
-              Portada
-            </span>
-          </div>
-
+        <div className="flex items-center justify-end mb-2.5">
           <div className="flex items-center gap-2">
             <span
               className="text-[11px] font-black tabular-nums"

@@ -90,7 +90,7 @@ export default function PerfilPage() {
   const [badges, setBadges] = useState<BadgeDef[]>([])
   const [linkingGoogle, setLinkingGoogle] = useState(false)
 
-  // Favoritos del usuario (equipos + ligas del calendario + fichas del Índice)
+  // Favoritos del usuario (equipos + ligas del calendario + fichas del Ranking)
   const [favTeams, setFavTeams] = useState<string[]>([])
   const [favLeagueSlugs, setFavLeagueSlugs] = useState<string[]>([])
   const [favEntryCount, setFavEntryCount] = useState(0)
@@ -1203,7 +1203,7 @@ export default function PerfilPage() {
           {/* ── COLUMNA DERECHA ── */}
           <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 flex flex-col gap-10">
 
-            {/* TUS FAVORITOS: equipos + ligas (sincronizados con tu cuenta) + fichas del Índice */}
+            {/* TUS FAVORITOS: equipos + ligas (sincronizados con tu cuenta) + fichas del Ranking */}
             {user && (
               <section>
                 <SectionHeader title="Tus favoritos" />
@@ -1246,7 +1246,7 @@ export default function PerfilPage() {
                       <Link href="/rankings/mi-top"
                         className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-widest"
                         style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}>
-                        {favEntryCount} {favEntryCount === 1 ? 'ficha' : 'fichas'} del Índice →
+                        {favEntryCount} {favEntryCount === 1 ? 'ficha' : 'fichas'} del Ranking →
                       </Link>
                     )}
                   </div>

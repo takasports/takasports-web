@@ -8,8 +8,8 @@ import type { RankingEntry } from '@/lib/rankings'
 import RankRow from '@/components/rankings/RankRow'
 
 export const metadata: Metadata = {
-  title: 'Mi Top · Índice Taka',
-  description: 'Tu watchlist personal del Índice Taka — los deportistas, clubes y creadores que sigues.',
+  title: 'Mi Top · Ranking Taka',
+  description: 'Tu watchlist personal del Ranking Taka — los deportistas, clubes y creadores que sigues.',
 }
 
 export const dynamic = 'force-dynamic'
@@ -28,7 +28,7 @@ export default async function MiTopPage() {
   const entries: RankingEntry[] = []
   for (const f of favs ?? []) {
     // Las etiquetas team:/comp: son favoritos de equipos y ligas del calendario,
-    // no fichas del Índice → se ignoran aquí (Mi Top solo muestra el Índice).
+    // no fichas del Ranking → se ignoran aquí (Mi Top solo muestra el Índice).
     if (f.entry_id.includes(':')) continue
     const e = (await findEntryByIdFromDb(f.entry_id)) ?? findEntryById(f.entry_id)
     if (e) entries.push(e)
@@ -41,7 +41,7 @@ export default async function MiTopPage() {
         <Link href="/rankings"
           className="inline-block text-[10px] font-black uppercase tracking-[0.2em] mb-3"
           style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
-          ← Volver al Índice
+          ← Volver al Ranking
         </Link>
 
         <h1 className="text-3xl font-black mb-1"
@@ -50,8 +50,8 @@ export default async function MiTopPage() {
         </h1>
         <p className="text-sm mb-8" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
           {entries.length === 0
-            ? 'Aún no sigues a nadie. Toca el ❤ en cualquier entry del Índice para añadirlo aquí.'
-            : `Sigues a ${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} del Índice. Reordenado por score actual.`}
+            ? 'Aún no sigues a nadie. Toca el ❤ en cualquier entry del Ranking para añadirlo aquí.'
+            : `Sigues a ${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} del Ranking. Reordenado por score actual.`}
         </p>
 
         {entries.length === 0 ? (
@@ -63,7 +63,7 @@ export default async function MiTopPage() {
               border: '1px solid rgba(124,58,237,0.4)',
               fontFamily: 'var(--font-sport)',
             }}>
-            Explorar el Índice →
+            Explorar el Ranking →
           </Link>
         ) : (
           <div className="space-y-2">

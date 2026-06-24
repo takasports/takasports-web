@@ -186,15 +186,6 @@ export default function NoticiasContent({
     ? timeFiltered.filter(a => getFederation(a.category) === federation)
     : timeFiltered
 
-  const now = Date.now()
-  const hasToday = allArticles.some(a => a.publishedAt && (now - new Date(a.publishedAt).getTime()) / 86_400_000 < 1)
-  const hasWeek  = allArticles.some(a => a.publishedAt && (now - new Date(a.publishedAt).getTime()) / 86_400_000 < 7)
-  const timePills: { key: TimeFilter; label: string }[] = [
-    { key: 'todo', label: 'Ver todo' },
-    ...(hasToday ? [{ key: 'hoy' as TimeFilter, label: 'Hoy' }] : []),
-    ...(hasWeek  ? [{ key: 'semana' as TimeFilter, label: 'Esta semana' }] : []),
-  ]
-  const showTimePills = timePills.length > 1
   const HeadingTag = headingAs
 
   return (
@@ -279,30 +270,6 @@ export default function NoticiasContent({
         </div>
       )}
 
-      {/* ── FILTRO TEMPORAL ── */}
-      {showTimePills && (
-        <div className="flex items-center gap-1.5 mt-4 mb-2">
-          {timePills.map(({ key, label }) => {
-            const isActive = timeFilter === key
-            return (
-              <button
-                key={key}
-                onClick={() => setTimeFilter(key)}
-                className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all"
-                style={{
-                  background: isActive ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.04)',
-                  color: isActive ? '#C4B5FD' : '#4A4A6A',
-                  border: isActive ? '1px solid rgba(124,58,237,0.3)' : '1px solid rgba(255,255,255,0.06)',
-                  fontFamily: 'var(--font-sport)',
-                  cursor: 'pointer',
-                }}
-              >
-                {label}
-              </button>
-            )
-          })}
-        </div>
-      )}
 
       {/* ── SIN RESULTADOS ── */}
       {filteredArticles.length === 0 && (

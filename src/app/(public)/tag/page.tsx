@@ -59,7 +59,7 @@ export default async function TagIndexPage() {
         <div className="pt-10 pb-8">
           <div className="flex items-center gap-2.5 mb-2">
             <span className="section-accent" />
-            <span className="section-label">Índice</span>
+            <span className="section-label">Ranking</span>
           </div>
           <h1
             className="font-black leading-tight mb-2"

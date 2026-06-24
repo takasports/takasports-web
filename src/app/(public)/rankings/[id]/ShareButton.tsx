@@ -10,7 +10,7 @@ export default function ShareButton({ title }: { title: string }) {
     const url = window.location.href
     try {
       if (navigator.share) {
-        await navigator.share({ title: `${title} · Índice Taka`, url })
+        await navigator.share({ title: `${title} · Ranking Taka`, url })
       } else {
         await navigator.clipboard.writeText(url)
         setCopied(true)

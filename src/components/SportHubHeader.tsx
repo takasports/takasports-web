@@ -23,8 +23,8 @@ interface Props {
 }
 
 const SPORT_DESCRIPTIONS: Record<string, string> = {
-  futbol:     'Noticias, fichajes, resultados de LaLiga, Premier, Champions y más. Índice Taka: los mejores del mundo en tiempo real.',
-  baloncesto: 'NBA, Euroliga, ACB y más: traspasos, resultados, estadísticas y el ranking de los mejores jugadores según el Índice Taka.',
+  futbol:     'Noticias, fichajes, resultados de LaLiga, Premier, Champions y más. Ranking Taka: los mejores del mundo en tiempo real.',
+  baloncesto: 'NBA, Euroliga, ACB y más: traspasos, resultados, estadísticas y el ranking de los mejores jugadores según el Ranking Taka.',
   formula1:   'Resultados de cada GP, clasificaciones, noticias de los equipos y el análisis Taka de los pilotos del momento.',
   tenis:      'ATP, WTA, Grand Slams y Ryder Cup. Resultados, rankings y análisis de los tenistas más influyentes.',
   ufc:        'Carteleras UFC y MMA: resultados de peleas, noticias de fichajes y el ranking Taka de los luchadores del momento.',
@@ -33,7 +33,7 @@ const SPORT_DESCRIPTIONS: Record<string, string> = {
 }
 
 // Etiqueta del ranking en el banner por deporte. La mayoría muestran el
-// "Índice Taka"; los deportes con ranking propio (UFC = libra por libra)
+// "Ranking Taka"; los deportes con ranking propio (UFC = libra por libra)
 // usan su nomenclatura específica.
 const RANKING_LABEL: Record<string, string> = {
   ufc: 'Libra por libra',
@@ -66,7 +66,7 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
   const accent = style.accent
   const description = SPORT_DESCRIPTIONS[sport] ?? `Últimas noticias, resultados y análisis de ${label}.`
   const top5 = topRankings.slice(0, 5)
-  const rankingLabel = RANKING_LABEL[sport] ?? 'Índice Taka'
+  const rankingLabel = RANKING_LABEL[sport] ?? 'Ranking Taka'
   const rankingsHref = `/rankings?deporte=${sport}&tab=jugadores`
 
   // Fondo atmosférico cinematográfico por deporte (set "La Señal", reusa los WebP

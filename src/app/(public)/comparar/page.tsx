@@ -253,7 +253,7 @@ async function Content({ p1, p2 }: { p1?: string; p2?: string }) {
         </h1>
       </div>
 
-      {/* Cross-link al comparador del Índice Taka (4 factores subjetivos) */}
+      {/* Cross-link al comparador del Ranking Taka (4 factores subjetivos) */}
       <div className="mb-6">
         <Link
           href="/rankings/comparar"
@@ -264,7 +264,7 @@ async function Content({ p1, p2 }: { p1?: string; p2?: string }) {
             textDecoration: 'none',
           }}
         >
-          <span style={{ color: 'var(--text-muted)' }}>¿Buscas comparar el Índice Taka?</span>
+          <span style={{ color: 'var(--text-muted)' }}>¿Buscas comparar el Ranking Taka?</span>
           <span>Comparador Taka →</span>
         </Link>
       </div>

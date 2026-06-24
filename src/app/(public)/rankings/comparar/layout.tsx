@@ -3,11 +3,11 @@ import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: 'Comparador de rankings deportivos',
-  description: 'Enfrenta dos deportistas cara a cara: radar de los 4 factores del Índice Taka, desglose y delta total.',
+  description: 'Enfrenta dos deportistas cara a cara: radar de los 4 factores del Ranking Taka, desglose y delta total.',
   alternates: { canonical: `${SITE_URL}/rankings/comparar` },
   openGraph: {
     title: 'Comparador de rankings deportivos | TakaSports',
-    description: 'Enfrenta dos deportistas cara a cara con el Índice Taka.',
+    description: 'Enfrenta dos deportistas cara a cara con el Ranking Taka.',
     url: `${SITE_URL}/rankings/comparar`,
     siteName: 'TakaSports',
     locale: 'es_ES',

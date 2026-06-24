@@ -82,7 +82,7 @@ const SPORT_FILTERS_CONTENIDO = [
   { label: 'WWE',    slug: 'wwe' },
 ]
 
-// Tarjetas explicativas del Índice por track (deportistas vs contenido)
+// Tarjetas explicativas del Ranking por track (deportistas vs contenido)
 const FACTOR_CARDS_ATLETA = [
   { label: 'Rendimiento', pct: '40%', color: '#22c55e',
     desc: 'Stats reales del deporte: goles, asistencias, PPG, victorias, podios. Es el peso principal.' },
@@ -515,7 +515,7 @@ export default function RankingsClient({
             </div>
             <h1 className="font-black mb-3"
               style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', color: '#F8F8FF', letterSpacing: '-0.03em', lineHeight: 1 }}>
-              Índice <span style={{ color: '#9B7CF6' }}>Taka</span>
+              Ranking <span style={{ color: '#9B7CF6' }}>Taka</span>
             </h1>
             <p className="text-sm max-w-xl mx-auto leading-relaxed"
               style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
@@ -939,7 +939,7 @@ export default function RankingsClient({
               <>
                 {topThree.length === 3 ? (
                   <>
-                    {/* Podio del Índice: top-3 broadcast */}
+                    {/* Podio del Ranking: top-3 broadcast */}
                     <Podium entries={topThree} accent={sportAccent} showSportEmoji={!activeSport && !isContenido} />
                     {rank4to10.length > 0 && (
                       <div className="flex flex-col gap-2 mb-4">
@@ -1026,7 +1026,7 @@ export default function RankingsClient({
             </div>
             <div>
               <p className="text-xs font-bold mb-1" style={{ color: '#9B7CF6', fontFamily: 'var(--font-sport)' }}>
-                Cómo funciona el Índice Taka
+                Cómo funciona el Ranking Taka
               </p>
               <p className="text-xs leading-relaxed" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
                 {isContenido ? 'Cada creador o periodista' : 'Cada deportista'} recibe una puntuación de 0 a 100 ponderada en cuatro dimensiones. Toca el

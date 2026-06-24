@@ -30,7 +30,7 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
   return (
     <div className="flex flex-col gap-7 pt-1">
 
-      {/* ── Índice Taka — Rankings ───────────────────── */}
+      {/* ── Ranking Taka — Rankings ───────────────────── */}
       <div>
         <SectionHeader
           action={
@@ -43,7 +43,7 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
             </Link>
           }
         >
-          Índice Taka
+          Ranking Taka
         </SectionHeader>
         <div className="flex flex-col gap-1">
           {TOP_PLAYERS.map((player, i) => {

@@ -103,7 +103,7 @@ export default function SobrePage() {
             <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <li><strong style={{ color: '#E8E8F4' }}>Noticias de actualidad</strong> — artículos long-form escritos y editados por nuestro equipo, actualizados cada hora.</li>
               <li><strong style={{ color: '#E8E8F4' }}>Resultados en vivo</strong> — marcadores de LaLiga, Premier League, NBA, F1, UFC, ATP y más, sin registrarse.</li>
-              <li><strong style={{ color: '#E8E8F4' }}>Índice Taka</strong> — rankings editoriales semanales de los deportistas y creadores más relevantes del momento.</li>
+              <li><strong style={{ color: '#E8E8F4' }}>Ranking Taka</strong> — rankings editoriales semanales de los deportistas y creadores más relevantes del momento.</li>
               <li><strong style={{ color: '#E8E8F4' }}>Juegos</strong> — quiniela, CrackQuiz, Sopa de Cracks, Mi Once y TakaGrid para toda la comunidad.</li>
               <li><strong style={{ color: '#E8E8F4' }}>Calendario</strong> — todos los partidos y eventos deportivos de la semana en un solo lugar.</li>
             </ul>

@@ -12,7 +12,7 @@ export default function NotFound() {
         </h1>
         <p className="text-sm mb-6"
           style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
-          Esta entrada del Índice Taka no existe o aún no ha sido publicada.
+          Esta entrada del Ranking Taka no existe o aún no ha sido publicada.
           Puede que haya cambiado de slug o que la edición de este mes no la incluya.
         </p>
         <div className="flex justify-center gap-3 flex-wrap">

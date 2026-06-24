@@ -3,8 +3,8 @@ import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: 'Metodología · Índice Taka',
-  description: 'Cómo se calcula el Índice Taka — factores, pesos por deporte, capa editorial y reglas de actualización.',
+  title: 'Metodología · Ranking Taka',
+  description: 'Cómo se calcula el Ranking Taka — factores, pesos por deporte, capa editorial y reglas de actualización.',
   alternates: { canonical: `${SITE_URL}/rankings/metodologia` },
 }
 
@@ -15,16 +15,16 @@ export default function MetodologiaPage() {
         <Link href="/rankings"
           className="inline-block text-[10px] font-black uppercase tracking-[0.2em] mb-3"
           style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
-          ← Volver al Índice
+          ← Volver al Ranking
         </Link>
 
         <h1 className="text-3xl font-black mb-2"
           style={{ color: '#E8E8F0', fontFamily: 'var(--font-display)' }}>
-          Cómo calculamos el <span style={{ color: '#7C3AED' }}>Índice Taka</span>
+          Cómo calculamos el <span style={{ color: '#7C3AED' }}>Ranking Taka</span>
         </h1>
         <p className="text-sm mb-8 leading-relaxed"
           style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
-          El Índice Taka mide la relevancia de cada deportista, club, creador o periodista en el panorama deportivo
+          El Ranking Taka mide la relevancia de cada deportista, club, creador o periodista en el panorama deportivo
           hispanohablante. Combina datos objetivos (ESPN, Jolpica, redes sociales) con criterio editorial para
           casos donde los números no cuentan toda la historia.
         </p>
@@ -49,7 +49,7 @@ export default function MetodologiaPage() {
             <Factor name="Profundidad" pct="5%" desc="Nivel de análisis y conocimiento del deporte que cubren." />
           </ul>
           <p className="mt-3 text-[11px]" style={{ color: '#5A5A72' }}>
-            Índice de Contenido = (Aud × 0.50) + (Cont × 0.30) + (Mom × 0.15) + (Prof × 0.05)
+            Ranking de Contenido = (Aud × 0.50) + (Cont × 0.30) + (Mom × 0.15) + (Prof × 0.05)
           </p>
         </Section>
 
@@ -60,7 +60,7 @@ export default function MetodologiaPage() {
           ~3.000 futbolistas activos contra ~20 pilotos de F1. No es injusticia — es la realidad
           mediática del deporte hispanohablante. Para ver la diversidad real, usa
           <Link href="/rankings/todos" style={{ color: '#7C3AED' }}> Reyes del deporte hispano </Link>
-          (el #1 de cada disciplina) o filtra por deporte en el Índice principal.</p>
+          (el #1 de cada disciplina) o filtra por deporte en el Ranking principal.</p>
         </Section>
 
         <Section title="3. Capa automática + capa editorial">

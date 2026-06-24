@@ -62,7 +62,7 @@ export default function ScoreBreakdown({
     <div className={compact ? 'pt-1' : 'pt-2'}>
       <p className="text-[8px] font-black uppercase tracking-[0.15em] mb-2"
         style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
-        Desglose Índice Taka
+        Desglose Ranking Taka
       </p>
 
       <div className="flex flex-col gap-1.5">
@@ -126,7 +126,7 @@ export default function ScoreBreakdown({
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <span className="text-[9px] font-black uppercase tracking-wider"
             style={{ color: '#9090AA', fontFamily: 'var(--font-sport)' }}>
-            Índice Taka
+            Ranking Taka
           </span>
           <span className="text-[12px] tabular-nums font-black"
             style={{ color: scoreColor(total), fontFamily: 'var(--font-display)' }}>

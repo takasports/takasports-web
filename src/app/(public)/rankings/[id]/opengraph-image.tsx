@@ -5,7 +5,7 @@ import { getDisplayScore, scoreColor } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
 
 export const runtime = 'edge'
-export const alt = 'Índice Taka — TakaSports'
+export const alt = 'Ranking Taka — TakaSports'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -57,7 +57,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             fontSize: 22, fontWeight: 900, letterSpacing: '0.18em',
             color: accent, textTransform: 'uppercase',
           }}>
-            #{entry?.rank ?? '?'} · Índice Taka
+            #{entry?.rank ?? '?'} · Ranking Taka
           </span>
         </div>
 

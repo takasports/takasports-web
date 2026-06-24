@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: 'Reyes del deporte hispano · Índice Taka',
+  title: 'Reyes del deporte hispano · Ranking Taka',
   description: 'El #1 de cada disciplina. Una foto del momento del deporte hispanohablante.',
   alternates: { canonical: `${SITE_URL}/rankings/todos` },
 }
@@ -65,14 +65,14 @@ export default async function ReyesPage() {
         <Link href="/rankings"
           className="inline-block text-[10px] font-black uppercase tracking-[0.2em] mb-3"
           style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
-          ← Volver al Índice
+          ← Volver al Ranking
         </Link>
         <h1 className="text-3xl font-black mb-1"
           style={{ color: '#E8E8F0', fontFamily: 'var(--font-display)' }}>
           Reyes del <span style={{ color: '#C4B5FD' }}>deporte hispano</span>
         </h1>
         <p className="text-sm mb-6" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
-          El #1 de cada disciplina según el Índice Taka. Una foto del momento — actualizada cada semana.
+          El #1 de cada disciplina según el Ranking Taka. Una foto del momento — actualizada cada semana.
         </p>
 
         <div className="space-y-2">

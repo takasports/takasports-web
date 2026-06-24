@@ -64,7 +64,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
               {name}
             </div>
             <div style={{ fontSize: 30, color: '#8A8AA0', marginTop: 18, display: 'flex' }}>
-              Perfil, estadísticas e Índice Taka
+              Perfil, estadísticas e Ranking Taka
             </div>
           </div>
         </div>

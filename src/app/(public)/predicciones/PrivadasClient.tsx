@@ -40,7 +40,7 @@ const SPORT_META: Record<string, { label: string; emoji: string; accent: string 
   mundial: { label: 'Mundial 2026', emoji: '🏆', accent: '#FBBF24' },
   ufc:     { label: 'Ranked UFC',   emoji: '🥊', accent: '#F87171' },
   futbol:  { label: 'Ranked Fútbol',emoji: '⚽', accent: '#4ADE80' },
-  global:  { label: 'Global',       emoji: '⚡', accent: '#A78BFA' },
+  global:  { label: 'Liga Total',   emoji: '⚡', accent: '#A78BFA' },
 }
 
 function sportMeta(sport: string) {
