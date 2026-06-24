@@ -73,7 +73,7 @@ interface PickBody {
   method?: 'KO' | 'SUB' | 'DEC'
 }
 
-const MAX_EXACT_ACTIVE = 3
+const MAX_EXACT_ACTIVE = 5
 const SOCCER_PICKS = new Set(['1', 'X', '2'])
 const UFC_PICKS    = new Set(['a', 'b'])
 const UFC_METHODS  = new Set(['KO', 'SUB', 'DEC'])

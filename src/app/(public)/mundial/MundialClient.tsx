@@ -588,7 +588,7 @@ function ExactScoreBlock({
         <span style={{
           fontSize: 11, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase',
         }}>
-          {exactSlotAvailable ? 'Predecir marcador' : 'Marcador exacto (3/3 usados)'}
+          {exactSlotAvailable ? 'Predecir marcador' : 'Marcador exacto (5/5 usados)'}
         </span>
         {exactSlotAvailable && (
           <span style={{
@@ -783,7 +783,7 @@ function MatchCard({
   onPick: (id: string, pick: '1'|'X'|'2') => void
   /** ME3 — Set/unset del marcador exacto. null = quitar. */
   onExactSet: (id: string, exact: { home: number; away: number } | null) => void
-  /** ME3 — Nº de exactos activos del user en eventos no resueltos (0..3). */
+  /** ME3 — Nº de exactos activos del user en eventos no resueltos (0..5). */
   activeExactCount: number
   /** AS3 — Render tooltip de descubrimiento en este card (solo el primero). */
   showExactTooltip?: boolean
@@ -798,7 +798,7 @@ function MatchCard({
   const winner     = event.result?.winner ?? null
   const pts        = pred?.points_awarded ?? null
   const [shared, setShared] = useState(false)
-  const exactSlotAvailable = !!exactScore || activeExactCount < 3
+  const exactSlotAvailable = !!exactScore || activeExactCount < 5
 
   // Lock: 1h antes del partido (se recalcula en cada render por el tick)
   const lockMs  = msUntilLock(event.event_date)
@@ -1191,7 +1191,7 @@ export default function MundialClient() {
         try {
           const json = await res.json() as { error?: string; message?: string }
           if (json?.error === 'exact_limit') {
-            setError(json.message ?? 'Ya tienes 3 marcadores exactos activos.')
+            setError(json.message ?? 'Ya tienes 5 marcadores exactos activos.')
             return
           }
         } catch { /* */ }
