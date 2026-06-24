@@ -70,6 +70,8 @@ export interface StatsStandingsResponse {
   uelScorers: StandingRow[]
   uclAssists: StandingRow[]
   uelAssists: StandingRow[]
+  mundialScorers: StandingRow[]
+  mundialAssists: StandingRow[]
   worldCupQualified: StandingRow[]
   motogpRiders: StandingRow[]
   motogpConstructors: StandingRow[]
@@ -1131,6 +1133,7 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
     'uclFixtures', 'uelFixtures',
     'uclScorers', 'uelScorers',
     'uclAssists', 'uelAssists',
+    'mundialScorers', 'mundialAssists',
     'fifaRanking',
     'womenLigaF', 'womenGoals', 'womenAssists',
   ],
@@ -1142,7 +1145,7 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   ufc: ['ufcP4P', 'ufcChampions', 'ufcDivisions'],
   selecciones: ['fifaRanking'],
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
-  mundial: ['worldCup', 'worldCupKnockout', 'worldCupQualified', 'worldCupSchedule'],
+  mundial: ['worldCup', 'worldCupKnockout', 'worldCupQualified', 'worldCupSchedule', 'mundialScorers', 'mundialAssists'],
   motogp: ['motogpRiders', 'motogpConstructors'],
 }
 
@@ -1162,11 +1165,14 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchEuropeanCupFixtures('soccer/uefa.champions'),
     fetchEuropeanCupFixtures('soccer/uefa.europa'),
   ])
-  const [uclScorers, uelScorers, uclAssists, uelAssists] = await Promise.all([
+  const [uclScorers, uelScorers, uclAssists, uelAssists, mundialScorers, mundialAssists] = await Promise.all([
     fetchEuropeanCupLeaders('soccer/uefa.champions',  'goals'),
     fetchEuropeanCupLeaders('soccer/uefa.europa',     'goals'),
     fetchEuropeanCupLeaders('soccer/uefa.champions',  'assists'),
     fetchEuropeanCupLeaders('soccer/uefa.europa',     'assists'),
+    // El mismo endpoint de líderes sirve para el Mundial (slug ESPN soccer/fifa.world).
+    fetchEuropeanCupLeaders('soccer/fifa.world',      'goals'),
+    fetchEuropeanCupLeaders('soccer/fifa.world',      'assists'),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
   const [f1Calendar, f1Sprints] = f1.season
@@ -1277,6 +1283,8 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     uelScorers:        uelScorers.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
     uclAssists:        uclAssists.length    ? live('ESPN · UEFA Champions League') : unavail('ESPN'),
     uelAssists:        uelAssists.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
+    mundialScorers:    mundialScorers.length ? live('ESPN · FIFA World Cup 2026')  : unavail('ESPN · sin goleadores aún'),
+    mundialAssists:    mundialAssists.length ? live('ESPN · FIFA World Cup 2026')  : unavail('ESPN · sin asistencias aún'),
     worldCupQualified: worldCupQualified.length ? live('Auto · FIFA World Cup 2026') : unavail('ESPN'),
     worldCupSchedule:  worldCupSchedule.length  ? live('ESPN · scoreboard')          : unavail('ESPN'),
     motogpRiders:        motogpRidersR.snap    ? snapMeta(motogpRidersR.snap)    : unavail('Sin snapshot — ejecutar cron MotoGP'),
@@ -1343,6 +1351,8 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     uelScorers,
     uclAssists,
     uelAssists,
+    mundialScorers,
+    mundialAssists,
     worldCupQualified,
     motogpRiders:       motogpRidersR.rows,
     motogpConstructors: motogpConstructR.rows,

@@ -244,6 +244,13 @@ const SPORTS: SportConfig[] = [
         })),
       },
       {
+        id: 'wc-goleo', label: 'Goleadores', icon: '⚽',
+        blocks: [
+          { id: 'wc-scorers', title: 'Mundial 2026 · Goleadores', metric: 'Goles',  rows: [] },
+          { id: 'wc-assists', title: 'Mundial 2026 · Asistencias', metric: 'Asist.', rows: [] },
+        ],
+      },
+      {
         id: 'calendario', label: 'Próximos partidos', icon: '📅',
         blocks: [{
           id: 'wc-schedule',
@@ -1356,6 +1363,8 @@ const LIVE_BLOCK_IDS = new Set([
   'wc-knockout',
   'wc-qualified',
   'wc-schedule',
+  'wc-scorers',
+  'wc-assists',
   // Snapshots auto-actualizados (cron Vercel)
   'motogp-pilotos', 'motogp-constructores',
   'tenis-slams',
@@ -1402,6 +1411,8 @@ interface LiveStandingsData {
   uelScorers?: LiveStandingRow[]
   uclAssists?: LiveStandingRow[]
   uelAssists?: LiveStandingRow[]
+  mundialScorers?: LiveStandingRow[]
+  mundialAssists?: LiveStandingRow[]
   worldCupQualified?: LiveStandingRow[]
   worldCupSchedule?: LiveStandingRow[]
   motogpRiders?: LiveStandingRow[]
@@ -1442,6 +1453,8 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'wc-knockout': 'worldCupKnockout',
   'wc-qualified': 'worldCupQualified',
   'wc-schedule': 'worldCupSchedule',
+  'wc-scorers': 'mundialScorers',
+  'wc-assists': 'mundialAssists',
   'f1-calendario': 'f1Calendar',
   'f1-sprints': 'f1Sprints',
   'nba-mvp-race': 'nbaMvpRace',
@@ -2193,6 +2206,8 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
         if (block.id === 'uel-scorers'      && liveData.uelScorers?.length)        return { ...block, rows: toStatRows(liveData.uelScorers) }
         if (block.id === 'ucl-assists'      && liveData.uclAssists?.length)        return { ...block, rows: toStatRows(liveData.uclAssists) }
         if (block.id === 'uel-assists'      && liveData.uelAssists?.length)        return { ...block, rows: toStatRows(liveData.uelAssists) }
+        if (block.id === 'wc-scorers'       && liveData.mundialScorers?.length)     return { ...block, rows: toStatRows(liveData.mundialScorers) }
+        if (block.id === 'wc-assists'       && liveData.mundialAssists?.length)     return { ...block, rows: toStatRows(liveData.mundialAssists) }
         if (block.id === 'wc-qualified'     && liveData.worldCupQualified?.length) return { ...block, rows: toStatRows(liveData.worldCupQualified) }
         if (block.id === 'wc-schedule'      && liveData.worldCupSchedule?.length)  return { ...block, rows: toStatRows(liveData.worldCupSchedule) }
         if (block.id === 'motogp-pilotos'        && liveData.motogpRiders?.length)        return { ...block, rows: toStatRows(liveData.motogpRiders, 'Escudería') }
