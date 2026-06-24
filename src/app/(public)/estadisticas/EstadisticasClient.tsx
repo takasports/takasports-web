@@ -1975,6 +1975,23 @@ function buildStatsUrl(id: string, section?: string, genderF?: boolean): string 
   return q ? `${base}?${q}` : base
 }
 
+// Lee deporte/sección/género desde la URL actual (camino inverso de buildStatsUrl).
+// Sirve de respaldo del popstate cuando la entrada del historial no trae estado.
+function parseStatsLocation(): { sportId: string; sectionId?: string; gender: 'm' | 'f' } {
+  if (typeof window === 'undefined') return { sportId: 'resumen', gender: 'm' }
+  const m = window.location.pathname.match(/\/estadisticas\/([^/?#]+)/)
+  const slug = m?.[1]
+  const sportId = slug
+    ? (Object.keys(SLUG_BY_SPORT_ID).find(k => SLUG_BY_SPORT_ID[k] === slug) ?? slug)
+    : 'resumen'
+  const params = new URLSearchParams(window.location.search)
+  return {
+    sportId,
+    sectionId: params.get('section') ?? undefined,
+    gender: params.get('gender') === 'f' ? 'f' : 'm',
+  }
+}
+
 export default function EstadisticasClient({ initialData, initialSport }: { initialData?: LiveStandingsData | null; initialSport?: string }) {
   const searchParams = useSearchParams()
 
@@ -2033,6 +2050,43 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
   // SSR ≠ hora local del cliente, que se renderiza con toLocaleTimeString).
   useEffect(() => {
     if (initialData) setLastUpdated(new Date())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Botón "atrás" del navegador navega por las subsecciones ──────────
+  // Antes cada cambio de deporte/sección usaba replaceState, así que el
+  // historial no recordaba la ruta interna y "atrás" echaba de Estadísticas
+  // de un tirón. Ahora: al montar sellamos la entrada actual con el estado de
+  // navegación (preservando los marcadores internos de Next para no forzar
+  // recargas en popstate), los cambios hacen pushState, y este listener
+  // restaura deporte/sección/género al retroceder. Solo el último "atrás" sale.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.history.replaceState(
+      { ...window.history.state, tsNav: { sportId, sectionId, gender } },
+      ''
+    )
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onPop = (e: PopStateEvent) => {
+      if (!window.location.pathname.startsWith('/estadisticas')) return
+      const nav = (e.state as { tsNav?: { sportId?: string; sectionId?: string; gender?: 'm' | 'f' } } | null)?.tsNav
+      const loc = nav ?? parseStatsLocation()
+      const nextSport = SPORTS.find(s => s.id === loc.sportId) ?? SPORTS[0]
+      const nextSec = nextSport.sections.find(s => s.id === loc.sectionId) ?? nextSport.sections[0]
+      const g: 'm' | 'f' = nextSport.id === 'futbol' && loc.gender === 'f' ? 'f' : 'm'
+      setSportId(nextSport.id)
+      setGender(g)
+      setSectionId(nextSec.id)
+      setExpandedBlocks({})
+      setExpandedGroups(nextSec.groups ? { [nextSec.groups[0]?.id ?? '']: true } : {})
+      setLeagueFilter('General')
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -2262,20 +2316,29 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
     setLeagueFilter('General')
     // URL de path limpia (/estadisticas/<slug>) sin recargar: las pestañas siguen
     // siendo instantáneas (no remonta la página). La sección se omite aquí para
-    // que la dirección del deporte coincida con su canonical.
+    // que la dirección del deporte coincida con su canonical. pushState (no
+    // replaceState) para que "atrás" del navegador retroceda al deporte anterior;
+    // preservamos window.history.state (marcadores de Next) para no forzar recarga.
     if (typeof window !== 'undefined') {
-      window.history.replaceState(null, '', buildStatsUrl(id, undefined, g === 'f'))
+      window.history.pushState(
+        { ...window.history.state, tsNav: { sportId: id, sectionId: sec?.id, gender: g } },
+        '', buildStatsUrl(id, undefined, g === 'f')
+      )
     }
   }
 
   const handleSectionChange = (id: string) => {
+    if (id === sectionId) return  // misma sección → no duplicar entrada de historial
     const sec = sport.sections.find(s => s.id === id)
     setSectionId(id)
     setExpandedBlocks({})
     setExpandedGroups(sec?.groups ? { [sec.groups[0]?.id ?? '']: true } : {})
     setLeagueFilter('General')
     if (typeof window !== 'undefined') {
-      window.history.replaceState(null, '', buildStatsUrl(sportId, id, gender === 'f'))
+      window.history.pushState(
+        { ...window.history.state, tsNav: { sportId, sectionId: id, gender } },
+        '', buildStatsUrl(sportId, id, gender === 'f')
+      )
     }
   }
 
@@ -2618,7 +2681,10 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                 <button key={g} onClick={() => {
                   setGender(g); setExpandedBlocks({})
                   if (typeof window !== 'undefined') {
-                    window.history.replaceState(null, '', buildStatsUrl(sportId, sectionId, g === 'f'))
+                    window.history.replaceState(
+                      { ...window.history.state, tsNav: { sportId, sectionId, gender: g } },
+                      '', buildStatsUrl(sportId, sectionId, g === 'f')
+                    )
                   }
                 }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
