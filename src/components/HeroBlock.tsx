@@ -436,6 +436,47 @@ function SmallCard({
   )
 }
 
+// ── Secundaria compacta (tira deslizable en móvil) ──────────────
+// Mini-tarjeta horizontal (miniatura + titular). En escritorio las
+// secundarias van apiladas con imagen (SmallCard); en móvil estaban ocultas,
+// ahora se deslizan aquí.
+function SecondaryMini({ art }: { art: Article }) {
+  const href = `/noticias/${art.slug ?? art._id}`
+  const label = getSportLabel(art.sport, art.category)
+  const { accent } = getSportStyle(art.sport, art.category)
+  const rawImgUrl = art.imageUrl ?? (art.image?.asset ? urlFor(art.image).width(160).height(160).url() : null)
+  const [imgFailed, setImgFailed] = useState(false)
+  const imgUrl = imgFailed ? null : rawImgUrl
+  return (
+    <Link
+      href={href}
+      data-carousel-card
+      className="snap-start shrink-0 flex gap-2.5 rounded-xl p-2.5 transition-all active:brightness-110"
+      style={{ width: '78%', background: 'var(--bg-card)', border: `1px solid ${accent}30`, textDecoration: 'none' }}
+    >
+      <div className="relative shrink-0 rounded-lg overflow-hidden" style={{ width: 54, height: 54, background: '#06060F' }}>
+        {imgUrl ? (
+          <Image src={imgUrl} alt={art.title} fill sizes="54px" className="object-cover" onError={() => setImgFailed(true)} />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: getSportStyle(art.sport, art.category).bg }}>
+            <span style={{ fontSize: '1.5rem', lineHeight: 1, opacity: 0.2 }}>{getSportEmoji(label)}</span>
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex flex-col gap-1">
+        {label && (
+          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+            {label}
+          </span>
+        )}
+        <h3 className="font-bold leading-snug line-clamp-2" style={{ fontFamily: 'var(--font-display)', fontSize: '0.8rem', color: '#D8D8F0' }}>
+          {art.title}
+        </h3>
+      </div>
+    </Link>
+  )
+}
+
 // ── Barra de progreso animada ───────────────────────────────────
 function ProgressBar({ offset, paused }: { offset: number; paused: boolean }) {
   return (
@@ -622,6 +663,34 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
             {len > 2 && <SmallCard article={s2} visible={visible} delay={120} />}
           </div>
         </div>
+
+        {/* ── Secundarias deslizables (solo móvil; en escritorio van apiladas) ─ */}
+        {len > 1 && (
+          <div
+            className="sm:hidden mt-3"
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-black uppercase tracking-wider" style={{ color: '#9090B0', fontFamily: 'var(--font-sport)' }}>
+                Más noticias
+              </span>
+              <span className="text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: '#6B6B8A', fontFamily: 'var(--font-sport)' }}>
+                desliza
+                <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+                  <path d="M3.5 2L7 5l-3.5 3" stroke="#6B6B8A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-1">
+              {[len > 1 ? s1 : null, len > 2 ? s2 : null]
+                .filter((a): a is Article => Boolean(a))
+                .map((a) => (
+                  <SecondaryMini key={a._id} art={a} />
+                ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Barra de progreso ─────────────────────────────── */}
         <ProgressBar offset={offset % len} paused={paused} />
