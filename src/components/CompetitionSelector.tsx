@@ -48,7 +48,7 @@ function Card({
       onClick={onClick}
       aria-pressed={active}
       aria-label={ariaLabel}
-      className="cal-press group flex items-center gap-2.5 flex-shrink-0 rounded-xl pl-2.5 pr-3 py-2 transition-all"
+      className="cal-press group flex items-center gap-2 sm:gap-2.5 flex-shrink-0 rounded-xl pl-2 pr-2.5 py-1.5 sm:pl-2.5 sm:pr-3 sm:py-2 transition-all"
       style={{
         background: active ? `${accent}22` : (primary ? `${accent}14` : 'rgba(255,255,255,0.03)'),
         borderTop: `1px solid ${active ? accent + '99' : (primary ? accent + '55' : 'rgba(255,255,255,0.07)')}`,
@@ -59,14 +59,16 @@ function Card({
         boxShadow: active ? `0 0 14px ${accent}33` : 'none',
       }}
     >
-      <span className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ width: 30, height: 30, background: `${accent}1A` }}>
+      <span className="flex items-center justify-center rounded-lg flex-shrink-0 w-6 h-6 sm:w-[30px] sm:h-[30px]" style={{ background: `${accent}1A` }}>
         {badge}
       </span>
       <span className="flex flex-col leading-tight items-start">
         <span className="text-[12px] font-bold whitespace-nowrap" style={{ color: active || primary ? '#fff' : '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
           {label}
         </span>
-        <span className="text-[9px] font-black uppercase tracking-wider tabular-nums whitespace-nowrap" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+        {/* 2ª línea (recuento/sub) solo en escritorio: en móvil la ficha se reduce
+            a un chip de una línea para que los partidos suban (estilo 365scores). */}
+        <span className="hidden sm:block text-[9px] font-black uppercase tracking-wider tabular-nums whitespace-nowrap" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
           {sub}
         </span>
       </span>

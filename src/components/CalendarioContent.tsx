@@ -2419,16 +2419,16 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         )}
       </div>
       {/* Header */}
-      <div className="relative pt-6 pb-4" style={{ zIndex: 1 }}>
+      <div className="relative pt-3 pb-2 sm:pt-6 sm:pb-4" style={{ zIndex: 1 }}>
         {/* Ambient glow */}
         <div className="absolute -top-8 left-0 w-96 h-56 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at 15% 45%, rgba(124,58,237,0.09) 0%, transparent 70%)', filter: 'blur(20px)' }} />
 
-        <div className="relative flex items-end justify-between gap-4 mb-4">
+        <div className="relative flex items-end justify-between gap-4 mb-2 sm:mb-4">
           <div>
             {/* Eyebrow: identidad de la competición elegida (escudo + nombre) o
                 "Agenda deportiva" cuando no hay filtro de competición. */}
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1 sm:mb-2">
               {activeCompCfg ? (
                 <>
                   {activeCompCfg.crest && (
@@ -2449,7 +2449,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               )}
             </div>
             <h1 className="font-black leading-none uppercase"
-              style={{ fontFamily: 'var(--font-headline)', fontSize: 'clamp(2rem, 5.5vw, 3rem)', color: '#F8F8FF', letterSpacing: '-0.01em' }}>
+              style={{ fontFamily: 'var(--font-headline)', fontSize: 'clamp(1.4rem, 5.5vw, 3rem)', color: '#F8F8FF', letterSpacing: '-0.01em' }}>
               Calendario
             </h1>
             {/* Acceso a la página de la competición + quitar filtro. Sustituye al
@@ -2697,29 +2697,31 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           {/* CTA — invita a elegir equipos cuando aún no hay favoritos */}
           {favorites.size === 0 && !onlyLive && !selectedDate && filtered.length > 0 && (
             <section
-              className="rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4"
+              className="rounded-2xl p-3 sm:p-5 flex flex-row items-center gap-3 sm:gap-4"
               style={{
                 background: 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(244,114,182,0.08) 100%)',
                 border: '1px solid rgba(124,58,237,0.28)',
               }}
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-2 sm:mb-1.5">
                   <span className="text-[10px] font-black uppercase tracking-[0.18em]"
                     style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
                     Sigue a tus equipos
                   </span>
                 </div>
-                <p className="text-[14px] leading-snug font-bold mb-1" style={{ color: '#F0F0FA', fontFamily: 'var(--font-sport)' }}>
+                {/* Texto largo solo en escritorio: en móvil la tarjeta se reduce a
+                    una línea (etiqueta + botón) para no empujar los partidos abajo. */}
+                <p className="hidden sm:block text-[14px] leading-snug font-bold mb-1" style={{ color: '#F0F0FA', fontFamily: 'var(--font-sport)' }}>
                   Elige tus equipos favoritos y tendrás aquí arriba un acceso rápido a cuándo juega cada uno, con aviso antes de empezar.
                 </p>
-                <p className="text-[11px]" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
+                <p className="hidden sm:block text-[11px]" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
                   Lleva 30 segundos · puedes cambiarlo cuando quieras.
                 </p>
               </div>
               <button
                 onClick={() => setShowOnboarding(true)}
-                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[11px] font-black uppercase tracking-[0.16em] transition-all"
+                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 sm:py-2.5 rounded-full text-[11px] font-black uppercase tracking-[0.16em] transition-all"
                 style={{
                   background: '#7C3AED', color: '#fff',
                   border: '1px solid rgba(255,255,255,0.12)',
