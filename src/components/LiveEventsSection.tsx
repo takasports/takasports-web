@@ -8,59 +8,33 @@ import { getCompAccent, getLiveLabel } from '@/lib/competitions'
 import { TvIcon } from '@/components/icons/GameIcons'
 import { toProxyUrl } from '@/lib/image-url'
 import { isoToLocalDate } from '@/lib/calendar'
+import {
+  type RawLiveFixture,
+  type LiveScore,
+  FINISHED,
+  SPORT_LABELS,
+  SPORT_ACCENTS,
+  namesMatch,
+  liveCardsFromFixtures,
+  withLiveFirst,
+  scoresForEvents,
+} from '@/lib/live-events'
 
-// ── Live scores ────────────────────────────────────────────────────
-interface LiveScore {
-  homeGoals: number | null
-  awayGoals: number | null
-  status: string
-  elapsed: number | null
-  homeLogo?: string
-  awayLogo?: string
-  matchRef?: string
-}
-
-const FINISHED = new Set(['FT', 'Final', 'FINAL', 'FINAL_PEN', 'FINAL_AET', 'STATUS_FINAL', 'NS', 'STATUS_SCHEDULED',
-  'POST_GAME', 'END_OF_REGULATION',
-  'ABANDONED', 'WALKOVER', 'RETIRED', 'CANCELED', 'POSTPONED', 'SUSPENDED'])
-
-function normalize(name: string) {
-  return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '')
-}
-function namesMatch(a: string, b: string) {
-  const na = normalize(a), nb = normalize(b)
-  return na === nb || na.includes(nb) || nb.includes(na)
-}
-
-
-type FixtureRaw = {
-  homeTeam: string; awayTeam: string
-  homeGoals: number | null; awayGoals: number | null
-  status: string; elapsed: number | null
-  homeLogo?: string; awayLogo?: string; id?: string
-}
-
-function useLiveScores(events: SportEvent[]): Map<string, LiveScore> {
-  const [scores, setScores] = useState<Map<string, LiveScore>>(new Map())
+// Trae /api/events/live (todos los partidos: en juego, recién acabados, etc.)
+// cada 60s, pausado con la pestaña oculta. Devuelve la lista CRUDA — el llamante
+// decide qué hace: puntuar las tarjetas ya presentes y/o anteponer las que están
+// en juego. Una sola petición compartida para ambos usos.
+function useLiveFixtures(): RawLiveFixture[] {
+  const [fixtures, setFixtures] = useState<RawLiveFixture[]>([])
 
   const fetch_ = useCallback(async () => {
     try {
       const res = await fetch('/api/events/live', { cache: 'no-store' })
       if (!res.ok) return
-      const fixtures: FixtureRaw[] = await res.json()
-      const next = new Map<string, LiveScore>()
-      for (const ev of events) {
-        if (!ev.away) continue
-        const m = fixtures.find(f => namesMatch(f.homeTeam, ev.home) && namesMatch(f.awayTeam, ev.away!))
-        if (m) next.set(ev.id, {
-          homeGoals: m.homeGoals, awayGoals: m.awayGoals,
-          status: m.status, elapsed: m.elapsed,
-          homeLogo: m.homeLogo, awayLogo: m.awayLogo,
-        })
-      }
-      setScores(next)
+      const data = await res.json()
+      if (Array.isArray(data)) setFixtures(data as RawLiveFixture[])
     } catch { /* ignore */ }
-  }, [events])
+  }, [])
 
   // Polling pausado mientras la pestaña está oculta.
   useEffect(() => {
@@ -80,7 +54,7 @@ function useLiveScores(events: SportEvent[]): Map<string, LiveScore> {
     }
   }, [fetch_])
 
-  return scores
+  return fixtures
 }
 
 // ── Icons ──────────────────────────────────────────────────────────
@@ -372,13 +346,6 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
 }
 
 // ── Client-side upcoming refresh ───────────────────────────────────
-const SPORT_LABELS: Record<string, string> = {
-  soccer: 'Fútbol', basketball: 'Baloncesto', racing: 'F1', mma: 'UFC', tennis: 'Tenis',
-}
-const SPORT_ACCENTS: Record<string, string> = {
-  soccer: '#22c55e', basketball: '#f59e0b', racing: '#ef4444', mma: '#f97316', tennis: '#d97706',
-}
-
 interface UpcomingRaw {
   id: string; homeTeam: string; awayTeam: string | null; time: string; dateLabel: string
   sport: string; comp: string; matchRef?: string
@@ -476,9 +443,14 @@ export default function LiveEventsSection({
     return () => { cancelled = true }
   }, [filter, favTeams])
 
+  // Partidos EN JUEGO (de /api/events/live) → tarjetas para anteponerlas en el
+  // escaparate "Destacados" (lógica pura y testeada en lib/live-events).
+  const liveFixtures = useLiveFixtures()
+  const liveCards = useMemo<SportEvent[]>(() => liveCardsFromFixtures(liveFixtures), [liveFixtures])
+
   // Eventos a mostrar según el filtro.
   const displayEvents = useMemo<SportEvent[]>(() => {
-    if (filter === 'destacados') return events
+    if (filter === 'destacados') return withLiveFirst(liveCards, events)
     const base = fullEvents ?? []
     if (filter === 'hoy') {
       const today = isoToLocalDate(new Date().toISOString())
@@ -489,9 +461,9 @@ export default function LiveEventsSection({
     return base.filter(ev =>
       favs.some(t => (ev.home && namesMatch(t, ev.home)) || (ev.away && namesMatch(t, ev.away)))
     )
-  }, [filter, events, fullEvents, favTeams])
+  }, [filter, events, fullEvents, favTeams, liveCards])
 
-  const liveScores = useLiveScores(displayEvents)
+  const liveScores = useMemo(() => scoresForEvents(displayEvents, liveFixtures), [displayEvents, liveFixtures])
   const containerRef = useScrollReveal()
 
   // Estado de carga / vacío del filtro activo (mensaje honesto por caso).
