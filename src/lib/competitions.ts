@@ -127,6 +127,14 @@ export function getLeagueScore(comp: string): number {
   return 4
 }
 
+// El Mundial de selecciones (comp === 'Mundial', origen ESPN 'soccer/fifa.world').
+// Match EXACTO en minúsculas para NO confundirlo con 'Mundial de Clubes'
+// (que empieza igual). Se usa para forzar que TODO partido del Mundial entre
+// siempre en "Destacados", saltándose el tope del día.
+export function isMundial(comp: string | null | undefined): boolean {
+  return (comp ?? '').trim().toLowerCase() === 'mundial'
+}
+
 // Equipos / atletas "marquee" — siempre boost en Destacados aunque la liga
 // sea menor. Coincide por substring contra home/away (lowercased).
 const MARQUEE_TEAMS = [

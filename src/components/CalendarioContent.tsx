@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
-import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME, highlightReason } from '@/lib/competitions'
+import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME, highlightReason, isMundial } from '@/lib/competitions'
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
 import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime, dayDeltaForIso } from '@/lib/timezone'
@@ -2198,7 +2198,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       ) {
         keep++
       }
-      out.push(...sorted.slice(0, keep))
+      // El Mundial entra SIEMPRE en Destacados, aunque el tope del día (MAX) lo
+      // dejara fuera: garantiza la cobertura del torneo en su ventana. Se respeta
+      // el orden ya calculado (`sorted`), así que el Mundial mantiene su posición.
+      out.push(...sorted.filter((e, i) => i < keep || isMundial(e.comp)))
     }
     return out
   }, [filtered, activeFilter, activeComp, favorites, liveScores])
