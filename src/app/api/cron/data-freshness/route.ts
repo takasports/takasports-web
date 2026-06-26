@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { sendTelegram } from '@/lib/telegram'
+import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -109,6 +110,37 @@ async function handle(req: Request) {
         const ageTxt = Number.isFinite(ageDays) ? `${ageDays.toFixed(1)} días` : 'sin datos'
         stale.push(`• <b>Índice Taka · ${row.category}</b>: ${ageTxt} sin actualizarse (límite ${RANKING_SLA_DAYS}d). Última: ${row.last_update ?? '—'}`)
       }
+    }
+  }
+
+  // GRANT/legibilidad de ranking_view (anon): el Índice de arriba se mide con el
+  // cliente service-role, que IGNORA permisos. Pero la web y la app PÚBLICAS leen
+  // ranking_view como ANON; si esa vista pierde el GRANT SELECT a anon/authenticated
+  // (p.ej. al recrearse sin re-emitir el GRANT) los rankings salen VACÍOS para todo
+  // el mundo aunque el dato esté fresco — justo el bug que ya nos pasó. Lo
+  // detectamos LEYÉNDOLA como anon (service-role daría un falso OK).
+  const anonUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!anonUrl || !anonKey) {
+    checks.push({ source: 'ranking_view (anon)', ok: false, note: 'env anon no configurada' })
+    stale.push('• <b>Ranking (legible por anon)</b>: no se pudo comprobar (falta NEXT_PUBLIC_SUPABASE_ANON_KEY)')
+  } else {
+    const anon = createClient(anonUrl, anonKey, { auth: { persistSession: false } })
+    const { count, error: anonErr } = await anon
+      .from('ranking_view')
+      .select('*', { count: 'exact', head: true })
+    if (anonErr) {
+      checks.push({ source: 'ranking_view (anon)', ok: false, code: anonErr.code, note: anonErr.message })
+      stale.push(
+        anonErr.code === '42501'
+          ? '• <b>Ranking SIN PERMISO para anon</b>: ranking_view perdió el GRANT SELECT → rankings VACÍOS en web y app. Re-aplica <code>GRANT SELECT ON public.ranking_view TO anon, authenticated;</code>'
+          : `• <b>Ranking (legible por anon)</b>: error al leer ranking_view (${anonErr.message}${anonErr.code ? `, código ${anonErr.code}` : ''})`,
+      )
+    } else if (!count) {
+      checks.push({ source: 'ranking_view (anon)', ok: false, count: 0 })
+      stale.push('• <b>Ranking VACÍO</b>: ranking_view es legible por anon pero devuelve 0 filas → rankings vacíos en web y app')
+    } else {
+      checks.push({ source: 'ranking_view (anon)', ok: true, count })
     }
   }
 
