@@ -5,12 +5,12 @@ export const sanityClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
   apiVersion: '2024-01-01',
-  // useCdn:false → usa la API directa (api.sanity.io) en vez del CDN
-  // (apicdn.sanity.io). El CDN tiene su propia cuota mensual que se AGOTÓ
-  // (402 plan_limit_reached) y tumbaba todos los builds; la API directa tiene
-  // cuota aparte (con margen). Encima cacheamos con ISR de Next (revalidate),
-  // así que el volumen real de peticiones es bajo. 2026-06-16.
-  useCdn: false,
+  // useCdn:true → CDN de Sanity (apicdn.sanity.io). 2026-06-27: con el plan
+  // Growth (de pago) el CDN tiene cupo amplio y cachea las queries en su edge,
+  // descargando el cupo pequeño de la API directa (que se agotó el 24-jun y dejó
+  // las noticias en blanco). Solo leemos contenido publicado (los drafts se
+  // excluyen en las queries), así que el CDN es correcto y no afecta a la edición.
+  useCdn: true,
 })
 
 const builder = createImageUrlBuilder(sanityClient)

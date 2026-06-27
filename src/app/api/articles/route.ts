@@ -6,9 +6,10 @@ const sanity = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
   apiVersion: '2024-01-01',
-  // useCdn:false → API directa; el CDN agotó su cuota mensual (402) y rompía
-  // este endpoint (lo consume la app móvil). La API directa tiene cuota aparte.
-  useCdn: false,
+  // useCdn:true → CDN de Sanity. 2026-06-27 (plan Growth): el CDN cachea en su
+  // edge y usa el cupo grande; descarga la API directa (cupo pequeño que se agotó
+  // el 24-jun). Lo consume la app móvil; solo contenido publicado, CDN OK.
+  useCdn: true,
 })
 
 const DEFAULT_PAGE_SIZE = 20
@@ -106,9 +107,10 @@ export async function GET(req: NextRequest) {
 
     // Lista de artículos pública (varía por query, no por usuario): cacheable en
     // el CDN. La barra de titulares (BreakingNewsBar) la pide en CADA página, así
-    // que un s-maxage corto (10s) revalidaba ~6 veces/min bajo tráfico. 60s da
-    // frescura de sobra para un ticker/listado y reduce ~6× las invocaciones.
-    const cache = 'public, s-maxage=60, stale-while-revalidate=300'
+    // que un s-maxage corto revalidaba muchas veces/min bajo tráfico. 180s da
+    // frescura de sobra para un ticker/listado y reduce ~3× más las invocaciones
+    // (a Vercel y a Sanity) frente a los 60s previos. 2026-06-27.
+    const cache = 'public, s-maxage=180, stale-while-revalidate=900'
     return NextResponse.json(
       { articles, total, page, pageSize, hasMore: end < total },
       { headers: { 'Cache-Control': cache, 'CDN-Cache-Control': cache } }
