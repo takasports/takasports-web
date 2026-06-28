@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ScrollToTop from '@/components/ScrollToTop'
 import { getDisplayScore, scoreColor, isCreatorEntry } from '@/lib/rankings-ui'
+import { SCORE_WEIGHTS, CREATOR_WEIGHTS, weightedBase } from '@/lib/rankings'
 import { findEntryById, getEntrySources, getAllRankingEntries } from '@/lib/rankings-search'
 import { findEntryByIdFromDb, getAllEntryIdsFromDb } from '@/lib/rankings-data'
 import { getSportStyle } from '@/lib/sports'
@@ -20,18 +21,21 @@ const SPORT_EMOJI: Record<string, string> = {
   futbol: '⚽', baloncesto: '🏀', formula1: '🏎️', tenis: '🎾',
   ufc: '🥊', wwe: '🤼', contenido: '✍️',
 }
+// `pct` se deriva de los pesos canónicos (SCORE_WEIGHTS/CREATOR_WEIGHTS) para
+// que la etiqueta y la barra nunca puedan contradecir la fórmula real.
+const pctOf = (w: number) => Math.round(w * 100)
 const FACTOR_DEFS = [
-  { key: 'rendimiento', label: 'Rendimiento', pct: 40, color: '#22c55e' },
-  { key: 'contexto',    label: 'Contexto',    pct: 20, color: '#60a5fa' },
-  { key: 'mediatico',   label: 'Mediático',   pct: 25, color: '#f59e0b' },
-  { key: 'narrativa',   label: 'Narrativa',   pct: 15, color: '#c084fc' },
+  { key: 'rendimiento', label: 'Rendimiento', pct: pctOf(SCORE_WEIGHTS.rendimiento), color: '#22c55e' },
+  { key: 'contexto',    label: 'Contexto',    pct: pctOf(SCORE_WEIGHTS.contexto),    color: '#60a5fa' },
+  { key: 'mediatico',   label: 'Mediático',   pct: pctOf(SCORE_WEIGHTS.mediatico),   color: '#f59e0b' },
+  { key: 'narrativa',   label: 'Narrativa',   pct: pctOf(SCORE_WEIGHTS.narrativa),   color: '#c084fc' },
 ] as const
 // Contenido (creadores/periodistas): criterio propio, audiencia-heavy
 const FACTOR_DEFS_CREATOR = [
-  { key: 'mediatico',   label: 'Audiencia',   pct: 50, color: '#f59e0b' },
-  { key: 'rendimiento', label: 'Contenido',   pct: 30, color: '#22c55e' },
-  { key: 'narrativa',   label: 'Momento',     pct: 15, color: '#c084fc' },
-  { key: 'contexto',    label: 'Profundidad', pct:  5, color: '#60a5fa' },
+  { key: 'mediatico',   label: 'Audiencia',   pct: pctOf(CREATOR_WEIGHTS.mediatico),   color: '#f59e0b' },
+  { key: 'rendimiento', label: 'Contenido',   pct: pctOf(CREATOR_WEIGHTS.rendimiento), color: '#22c55e' },
+  { key: 'narrativa',   label: 'Momento',     pct: pctOf(CREATOR_WEIGHTS.narrativa),   color: '#c084fc' },
+  { key: 'contexto',    label: 'Profundidad', pct: pctOf(CREATOR_WEIGHTS.contexto),    color: '#60a5fa' },
 ] as const
 type FactorKey = typeof FACTOR_DEFS[number]['key']
 
@@ -163,10 +167,7 @@ export default async function EntryDetailPage(
   // separa del Ranking mostrado (editorial_boost y/o score_manual). Reconcilia
   // las barras con el número grande cuando hay override editorial.
   const factorBase = factors
-    ? Math.round((isCreatorEntry(entry)
-        ? factors.mediatico * 0.50 + factors.rendimiento * 0.30 + factors.narrativa * 0.15 + factors.contexto * 0.05
-        : factors.rendimiento * 0.40 + factors.contexto * 0.20 + factors.mediatico * 0.25 + factors.narrativa * 0.15
-      ) * 10) / 10
+    ? Math.round(weightedBase(factors, isCreatorEntry(entry) ? CREATOR_WEIGHTS : SCORE_WEIGHTS) * 10) / 10
     : ds
   const editorialAdj = Math.round((ds - factorBase) * 10) / 10
 
@@ -401,7 +402,7 @@ export default async function EntryDetailPage(
           <span className="text-sm flex-shrink-0 mt-0.5">ℹ️</span>
           <p className="text-[11px] leading-relaxed"
             style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
-            El <span style={{ color: '#9B7CF6' }}>Ranking Taka</span> pondera rendimiento reciente (40 %), contexto competitivo (20 %), influencia mediática (25 %) y narrativa pública (15 %). Las tendencias reflejan el movimiento respecto al período anterior.
+            El <span style={{ color: '#9B7CF6' }}>Ranking Taka</span> pondera rendimiento reciente ({pctOf(SCORE_WEIGHTS.rendimiento)} %), contexto competitivo ({pctOf(SCORE_WEIGHTS.contexto)} %), influencia mediática ({pctOf(SCORE_WEIGHTS.mediatico)} %) y narrativa pública ({pctOf(SCORE_WEIGHTS.narrativa)} %). Las tendencias reflejan el movimiento respecto al período anterior.
           </p>
         </div>
 

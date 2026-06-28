@@ -14,6 +14,14 @@
 -- Fórmula deportistas (sin cambios):
 --   rendimiento × 0.40 + contexto × 0.20 + mediático × 0.25 + narrativa × 0.15
 --
+-- ⚠️ ESPEJO EN TYPESCRIPT — FUENTE ÚNICA: estos MISMOS pesos viven en
+--   src/lib/rankings.ts → SCORE_WEIGHTS / CREATOR_WEIGHTS (+ weightedBase),
+--   que alimentan calcScore/calcCreatorScore, la ficha /rankings/[id], el
+--   componente ScoreBreakdown y el endpoint /api/rankings/ingest.
+--   SQL no puede importar TS: si cambias un peso AQUÍ, cámbialo también en
+--   rankings.ts (y viceversa). Si divergen, el desglose de la ficha mentiría
+--   respecto al score_auto que calcula este trigger.
+--
 -- CÓMO APLICAR:
 --   Supabase Dashboard → SQL Editor → pegar y ejecutar.
 -- ─────────────────────────────────────────────────────────────────

@@ -81,42 +81,81 @@ export function calcTrend(score: number, scorePrev: number): Trend {
   return 'flat'
 }
 
-// Calcula el Índice Taka desde factores objetivos + ajuste editorial subjetivo
-// Fórmula v6: rendimiento×0.40 + contexto×0.20 + mediático×0.25 + narrativa×0.15 + editorialBoost
-// v6 (2026-05-09):
-//   · Curva suave de bonus por posición de equipo (Top-1 +8 ↔ último -6) en lugar del binario v5.
-//   · Penalty por falta de stats individuales reducido (9→4) — el proxy del equipo cubre.
-//   · CAP sin-stats subido (62→72): pros legítimos sin endpoint /statistics no quedan bloqueados.
-//   · YouthNarr: bonus narrativa (+4) para jóvenes ≤21 con stats reales.
-//   · enrich-photos universal: cubre todos los deportes (TheSportsDB + Wikipedia fallback).
-export function calcScore(
+// ── PESOS DEL SCORE — FUENTE ÚNICA DE VERDAD ──────────────────────────
+// Estos pesos DEFINEN el Índice Taka. Antes estaban duplicados a mano en
+// calcScore/calcCreatorScore, en la ficha /rankings/[id], en el componente
+// ScoreBreakdown y en el endpoint /api/rankings/ingest. Ahora TODOS consumen
+// estas dos constantes (vía weightedBase) — si cambias un peso, cambia en un
+// solo sitio.
+//
+// ⚠️ ESPEJO EN SQL: el trigger f_recompute_score_auto() de
+// supabase/migrations/028_creator_formula.sql recalcula `score_auto` en la DB
+// con ESTOS MISMOS pesos. SQL no puede importar TS, así que si cambias un peso
+// AQUÍ, cámbialo también en la migración 028 (y viceversa). Si divergen, el
+// desglose de la ficha mentiría respecto al score real que sirve la DB.
+//
+// Deportistas (v6, 2026-05-09): rendimiento 40 % + contexto 20 % +
+// mediático 25 % + narrativa 15 %. Notas v6: curva suave de bonus por posición
+// de equipo (Top-1 +8 ↔ último -6) en lugar del binario v5; penalty sin-stats
+// 9→4 (el proxy del equipo cubre); CAP sin-stats 62→72; YouthNarr +4 narrativa
+// para ≤21 con stats reales; enrich-photos universal (TheSportsDB + Wikipedia).
+export const SCORE_WEIGHTS = {
+  rendimiento: 0.40,
+  contexto:    0.20,
+  mediatico:   0.25,
+  narrativa:   0.15,
+} as const
+
+// Contenido (creadores/periodistas): criterio PROPIO, paralelo al deportivo.
+// Audiencia(mediático) manda; luego contenido(rendimiento), momento(narrativa)
+// y profundidad(contexto).
+export const CREATOR_WEIGHTS = {
+  mediatico:   0.50,
+  rendimiento: 0.30,
+  narrativa:   0.15,
+  contexto:    0.05,
+} as const
+
+export type FactorWeights = Record<keyof NonNullable<RankingEntry['factors']>, number>
+
+// Suma ponderada base (0–100, sin clamp ni ajuste editorial). Es el
+// «factorBase» / «base objetiva» que muestran la ficha y el desglose.
+//
+// Suma en el ORDEN DE CLAVES del objeto de pesos a propósito: así reproduce
+// bit-a-bit la fórmula original de cada track (deportistas sumaban rend→ctx→
+// med→narr; creadores med→rend→narr→ctx, el mismo orden que el trigger SQL).
+// La suma en coma flotante no es asociativa y los pesos de creador caen sobre
+// puntos medios exactos (p.ej. 5.95) donde reordenar volcaría el redondeo a 0.1.
+export function weightedBase(
   factors: NonNullable<RankingEntry['factors']>,
-  editorialBoost?: number
+  weights: FactorWeights,
 ): number {
-  const base =
-    factors.rendimiento * 0.40 +
-    factors.contexto    * 0.20 +
-    factors.mediatico   * 0.25 +
-    factors.narrativa   * 0.15
-  const total = base + (editorialBoost ?? 0)
-  return Math.round(Math.max(0, Math.min(100, total)) * 10) / 10
+  let sum = 0
+  for (const k of Object.keys(weights) as (keyof FactorWeights)[]) {
+    sum += factors[k] * weights[k]
+  }
+  return sum
 }
 
-// Índice de Contenido (creadores/periodistas): criterio PROPIO, paralelo al
-// deportivo. Audiencia manda; luego contenido, momento y profundidad.
-// Pesos: mediático(Audiencia)×0.50 + rendimiento(Contenido)×0.30 +
-//        narrativa(Momento)×0.15 + contexto(Profundidad)×0.05 + editorialBoost.
+// Clamp a 0–100 + redondeo a 1 decimal — formato final del Índice.
+const clampScore = (total: number): number =>
+  Math.round(Math.max(0, Math.min(100, total)) * 10) / 10
+
+// Calcula el Índice Taka (deportistas) desde factores objetivos + ajuste
+// editorial subjetivo.
+export function calcScore(
+  factors: NonNullable<RankingEntry['factors']>,
+  editorialBoost?: number,
+): number {
+  return clampScore(weightedBase(factors, SCORE_WEIGHTS) + (editorialBoost ?? 0))
+}
+
+// Índice de Contenido (creadores/periodistas) — mismo formato, pesos propios.
 export function calcCreatorScore(
   factors: NonNullable<RankingEntry['factors']>,
-  editorialBoost?: number
+  editorialBoost?: number,
 ): number {
-  const base =
-    factors.mediatico   * 0.50 +
-    factors.rendimiento * 0.30 +
-    factors.narrativa   * 0.15 +
-    factors.contexto    * 0.05
-  const total = base + (editorialBoost ?? 0)
-  return Math.round(Math.max(0, Math.min(100, total)) * 10) / 10
+  return clampScore(weightedBase(factors, CREATOR_WEIGHTS) + (editorialBoost ?? 0))
 }
 
 // ── JUGADORES — GLOBAL ────────────────────────────────────────────

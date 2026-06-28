@@ -175,6 +175,9 @@ const CREATOR_FACTORS = {
   'puntodebreak':         { med: 62, rend: 68, narr: 62, ctx: 90 }, // referente tenis digital ES
 }
 
+// Pesos de creadores duplicados a mano: este script .mjs suelto no puede
+// importar el TS. Fuente única = CREATOR_WEIGHTS en src/lib/rankings.ts (espejo
+// del trigger de la migr. 028). Si cambian allí, actualiza estos números.
 function calcScore({ med, rend, narr, ctx }) {
   return Math.round((med * 0.50 + rend * 0.30 + narr * 0.15 + ctx * 0.05) * 10) / 10
 }

@@ -1,29 +1,32 @@
 'use client'
 
 import Link from 'next/link'
-import type { RankingEntry } from '@/lib/rankings'
+import { SCORE_WEIGHTS, CREATOR_WEIGHTS, weightedBase, type RankingEntry } from '@/lib/rankings'
 import { scoreColor, isCreatorEntry, getDisplayScore } from '@/lib/rankings-ui'
 import { PinIcon } from '@/components/icons/GameIcons'
 
+// `pct` se deriva de los pesos canónicos para que nunca contradiga la fórmula.
+const pctStr = (w: number) => `${Math.round(w * 100)}%`
+
 const FACTOR_META_ATHLETE = [
-  { key: 'rendimiento', label: 'Rendimiento', pct: '40%', color: '#22c55e',
+  { key: 'rendimiento', label: 'Rendimiento', pct: pctStr(SCORE_WEIGHTS.rendimiento), color: '#22c55e',
     desc: 'Stats reales (goles, asistencias, PPG, puntos, victorias…) y rating de equipo' },
-  { key: 'contexto',    label: 'Contexto',    pct: '20%', color: '#60a5fa',
+  { key: 'contexto',    label: 'Contexto',    pct: pctStr(SCORE_WEIGHTS.contexto), color: '#60a5fa',
     desc: 'Nivel de la competición y posición del equipo en su liga' },
-  { key: 'mediatico',   label: 'Mediático',   pct: '25%', color: '#f59e0b',
+  { key: 'mediatico',   label: 'Mediático',   pct: pctStr(SCORE_WEIGHTS.mediatico), color: '#f59e0b',
     desc: 'Alcance en redes, búsquedas y cobertura en prensa especializada' },
-  { key: 'narrativa',   label: 'Narrativa',   pct: '15%', color: '#c084fc',
+  { key: 'narrativa',   label: 'Narrativa',   pct: pctStr(SCORE_WEIGHTS.narrativa), color: '#c084fc',
     desc: 'Momento de su carrera, hitos, polémicas y peso histórico' },
 ] as const
 
 const FACTOR_META_CREATOR = [
-  { key: 'mediatico',   label: 'Audiencia',   pct: '50%', color: '#f59e0b',
+  { key: 'mediatico',   label: 'Audiencia',   pct: pctStr(CREATOR_WEIGHTS.mediatico), color: '#f59e0b',
     desc: 'Seguidores y suscriptores totales ponderados por plataforma (YouTube, Instagram, TikTok, Twitter/X)' },
-  { key: 'rendimiento', label: 'Contenido',   pct: '30%', color: '#22c55e',
+  { key: 'rendimiento', label: 'Contenido',   pct: pctStr(CREATOR_WEIGHTS.rendimiento), color: '#22c55e',
     desc: 'Calidad, frecuencia y engagement del contenido publicado' },
-  { key: 'narrativa',   label: 'Momento',     pct: '15%', color: '#c084fc',
+  { key: 'narrativa',   label: 'Momento',     pct: pctStr(CREATOR_WEIGHTS.narrativa), color: '#c084fc',
     desc: 'Tendencia de crecimiento, viralidad reciente y relevancia en el debate actual' },
-  { key: 'contexto',    label: 'Profundidad', pct:  '5%', color: '#60a5fa',
+  { key: 'contexto',    label: 'Profundidad', pct: pctStr(CREATOR_WEIGHTS.contexto), color: '#60a5fa',
     desc: 'Nivel de análisis y conocimiento del deporte que cubre' },
 ] as const
 
@@ -42,16 +45,9 @@ export default function ScoreBreakdown({
   const FACTOR_META = isCreator ? FACTOR_META_CREATOR : FACTOR_META_ATHLETE
 
   // Base objetiva = suma ponderada de los factores (coincide con las barras).
-  const base = Math.round((isCreator
-    ? entry.factors.mediatico   * 0.50 +
-      entry.factors.rendimiento * 0.30 +
-      entry.factors.narrativa   * 0.15 +
-      entry.factors.contexto    * 0.05
-    : entry.factors.rendimiento * 0.40 +
-      entry.factors.contexto    * 0.20 +
-      entry.factors.mediatico   * 0.25 +
-      entry.factors.narrativa   * 0.15
-  ) * 10) / 10
+  const base = Math.round(
+    weightedBase(entry.factors, isCreator ? CREATOR_WEIGHTS : SCORE_WEIGHTS) * 10,
+  ) / 10
   // Total = el Índice mostrado (DB/curado, con override editorial aplicado).
   const total = getDisplayScore(entry)
   // Ajuste editorial = lo que separa la base objetiva del total mostrado
