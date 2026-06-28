@@ -1,12 +1,12 @@
-// Predicciones meta-juego del Índice Taka.
-//   GET   ?category=jugadores → { options (top 5), myPick, resolved } para la próxima semana
-//   POST  { category, entry_id } → registra la predicción del usuario
+// Voto de APOYO de la afición al Ranking Taka. Acepta login web (cookie) y de la
+// app (Bearer) vía supabaseForRequest — así el mismo POST vale para web y móvil.
+//   GET   ?category=jugadores → { week, category, options (top 5), myPick }
+//   POST  { category, entry_id } → registra el apoyo del usuario (1/semana/categoría)
 //
 // La semana objetivo es siempre date_trunc('week', now()) + 7d (próximo lunes).
-// El cron lunes 10:30 llama f_resolve_predictions para marcar aciertos.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 
 function pubClient() {
@@ -37,12 +37,12 @@ export async function GET(req: NextRequest) {
     .order('score', { ascending: false })
     .limit(5)
 
+  // Apoyo previo del usuario (myPick). Acepta cookie (web) o Bearer (app).
   let myPick: string | null = null
   try {
-    const session = await createServerSupabaseClient()
-    const { data: { user } } = await session.auth.getUser()
+    const { supabase, user } = await supabaseForRequest(req)
     if (user) {
-      const { data } = await session.from('index_predictions')
+      const { data } = await supabase.from('index_predictions')
         .select('predicted_entry_id')
         .eq('user_id', user.id).eq('week_start', week).eq('category', category)
         .maybeSingle()
@@ -54,9 +54,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Inicia sesión para predecir' }, { status: 401 })
+  const { supabase: sb, user } = await supabaseForRequest(req)
+  if (!user) return NextResponse.json({ error: 'Inicia sesión para apoyar' }, { status: 401 })
 
   const body = await req.json().catch(() => null) as { category?: string; entry_id?: string } | null
   const category = body?.category ?? 'jugadores'
@@ -65,8 +64,8 @@ export async function POST(req: NextRequest) {
 
   const week = nextMonday()
 
-  // Valida que entry_id esté entre las opciones reales (top-5 de la categoría),
-  // como hace poll — evita predicciones sobre entradas que no están en juego.
+  // Solo se puede apoyar a quien está en juego esta semana: entry_id debe estar
+  // entre las opciones reales (top-5 de la categoría).
   const { data: top } = await sb
     .from('ranking_view').select('id')
     .eq('category', category)

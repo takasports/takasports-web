@@ -42,12 +42,15 @@ export default function PredictWidget({ category = 'jugadores' }: { category?: s
       style={{ background: 'var(--bg-card)', border: '1px solid rgba(245,158,11,0.18)' }}>
       <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1"
         style={{ color: '#f59e0b', fontFamily: 'var(--font-sport)' }}>
-        Predicción · próxima semana
+        Apoyo de la afición · esta semana
       </p>
-      <h3 className="text-base font-black mb-3"
+      <h3 className="text-base font-black mb-1"
         style={{ color: '#E8E8F0', fontFamily: 'var(--font-display)' }}>
-        ¿Quién será #1 el próximo lunes?
+        ¿A quién apoyas esta semana?
       </h3>
+      <p className="text-[11px] mb-3" style={{ color: '#9090A4' }}>
+        Tu apoyo reúne fuerza para tu favorito.
+      </p>
       <div className="grid grid-cols-5 gap-2">
         {data.options.map((o) => {
           const isMine = data.myPick === o.id
@@ -76,7 +79,7 @@ export default function PredictWidget({ category = 'jugadores' }: { category?: s
       </div>
       {data.myPick && (
         <p className="text-[10px] mt-3" style={{ color: '#f59e0b', fontFamily: 'var(--font-sport)' }}>
-          ✓ Tu predicción está guardada. Se resuelve el lunes 10:30.
+          ✓ Apoyo registrado para esta semana.
         </p>
       )}
     </div>
