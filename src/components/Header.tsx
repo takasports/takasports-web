@@ -21,12 +21,15 @@ const AuthModal = dynamic(() => import('./AuthModal'), { ssr: false })
 
 const INNER = 'max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10'
 
-const NAV_LINKS = [
+// `to` (opcional) = destino del clic cuando difiere del `href` que decide el
+// resaltado activo. Estadísticas abre directo el cuadro del Mundial mientras dura
+// el torneo (al acabar, quitar el `to` → vuelve a la portada Destacados).
+const NAV_LINKS: { label: string; href: string; to?: string }[] = [
   { label: 'Inicio',       href: '/'              },
   { label: 'Noticias',     href: '/noticias'      },
   { label: 'Reels',        href: '/reels'         },
   { label: 'Calendario',   href: '/calendario'    },
-  { label: 'Estadísticas', href: '/estadisticas'  },
+  { label: 'Estadísticas', href: '/estadisticas', to: '/estadisticas/mundial' },
   { label: 'Rankings',     href: '/rankings'      },
   { label: 'Juegos',       href: '/juegos'        },
 ]
@@ -688,12 +691,12 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
 
           {/* Nav desktop */}
           <nav ref={navRef} className="hidden lg:flex items-center gap-0 flex-1 relative" aria-label="Navegación principal">
-            {NAV_LINKS.map(({ label, href }) => {
+            {NAV_LINKS.map(({ label, href, to }) => {
               const active = isNavActive(href, pathname)
               return (
                 <Link
                   key={href}
-                  href={href}
+                  href={to ?? href}
                   aria-current={active ? 'page' : undefined}
                   className={`nav-link relative flex items-center px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap${active ? ' active' : ''}`}
                   style={{ fontFamily: 'var(--font-sport)', textDecoration: 'none', letterSpacing: '0.01em' }}
@@ -895,12 +898,12 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
                   onNavigate={() => setMenuOpen(false)}
                 />
 
-                {NAV_LINKS.map(({ label, href }) => {
+                {NAV_LINKS.map(({ label, href, to }) => {
                   const active = isNavActive(href, pathname)
                   return (
                     <Link
                       key={href}
-                      href={href}
+                      href={to ?? href}
                       onClick={() => {
                         setMenuOpen(false)
                         if (href === '/' && pathname === '/') window.scrollTo({ top: 0, behavior: 'smooth' })
