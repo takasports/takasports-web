@@ -10,6 +10,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { StatBlockBoundary } from '@/components/StatBlockBoundary'
 import { trackStatsBlockOpen, trackStatsGroupOpen, trackSearch } from '@/lib/analytics'
 import { StatsSearchModal, type SearchableRow } from '@/components/StatsSearchModal'
+import MundialBracket from '@/components/mundial/MundialBracket'
 
 // ─────────────────────────────────────────────────────────────────
 // DATOS EN VIVO — resumen de fuentes y limitaciones
@@ -234,6 +235,9 @@ const SPORTS: SportConfig[] = [
   {
     id: 'mundial', label: 'Mundial 2026', emoji: '🌍', accent: '#f59e0b',
     sections: [
+      // "Cuadro" es la pestaña de entrada del Mundial (sections[0] = default):
+      // la llave de eliminatorias renderizada por <MundialBracket/> (sin StatBlocks).
+      { id: 'cuadro', label: 'Cuadro', icon: '🗺️', blocks: [] },
       {
         id: 'grupos', label: 'Grupos', icon: '🏆',
         blocks: WC_GROUPS_FALLBACK.map(g => ({
@@ -2611,7 +2615,9 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                 {sport.sections.map(sec => (
                   <button key={sec.id}
                     onClick={() => handleSectionChange(sec.id)}
-                    aria-label={`${sec.label}, ${SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`) ?? 0} tablas`}
+                    aria-label={(SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`) ?? 0) > 0
+                      ? `${sec.label}, ${SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`)} tablas`
+                      : sec.label}
                     aria-current={sectionId === sec.id ? 'true' : undefined}
                     className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
                     style={{
@@ -2622,10 +2628,12 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                     }}>
                     <span className="text-xs">{sec.icon}</span>
                     {sec.label}
-                    <span className="text-[8px] px-1 py-0.5 rounded font-black ml-0.5"
-                      style={{ background: sectionId === sec.id ? `${sport.accent}20` : 'rgba(255,255,255,0.05)', color: sectionId === sec.id ? sport.accent : '#3A3A52' }}>
-                      {SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`) ?? 0}
-                    </span>
+                    {(SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`) ?? 0) > 0 && (
+                      <span className="text-[8px] px-1 py-0.5 rounded font-black ml-0.5"
+                        style={{ background: sectionId === sec.id ? `${sport.accent}20` : 'rgba(255,255,255,0.05)', color: sectionId === sec.id ? sport.accent : '#3A3A52' }}>
+                        {SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`) ?? 0}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -2729,7 +2737,9 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
           </div>
         )}
 
-        {sportId !== 'resumen' && !isFemenino && hasGroups && section.groups ? (
+        {sportId === 'mundial' && sectionId === 'cuadro' ? (
+          <MundialBracket />
+        ) : sportId !== 'resumen' && !isFemenino && hasGroups && section.groups ? (
           <div className="flex flex-col gap-1">
             {section.groups.map(group => (
               <MetricGroupAccordion
