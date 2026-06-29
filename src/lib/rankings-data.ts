@@ -141,6 +141,55 @@ function countryToFlag(country: string | undefined): string | undefined {
   return COUNTRY_FLAG_MAP[key] ?? undefined
 }
 
+// Mapa inverso bandera→nombre (en español) SOLO para el JSON-LD de SEO. La
+// ficha recibe `entry.country` YA normalizado a bandera emoji (countryToFlag,
+// arriba), así que schema.org Country.name acabaría siendo "🇪🇸" en vez de
+// "España" — inútil para buscadores. Las claves se DERIVAN de COUNTRY_FLAG_MAP
+// para que las banderas coincidan EXACTAMENTE con lo que emite countryToFlag
+// (sin teclear emojis a mano, p. ej. las de subdivisión 🏴 Inglaterra/Escocia/
+// Gales). Nombres canónicos espejo del normalizador de la app
+// (takasports-app/src/lib/country-flags.ts). Aliases mapeados a la misma grafía
+// para no depender del orden. Si una bandera no resuelve → se omite nationality
+// (mejor nada que un emoji para los buscadores).
+const COUNTRY_NAME_ES: Record<string, string> = {
+  spain: 'España', france: 'Francia', germany: 'Alemania', england: 'Inglaterra',
+  italy: 'Italia', portugal: 'Portugal', brazil: 'Brasil', argentina: 'Argentina',
+  netherlands: 'Países Bajos', belgium: 'Bélgica', croatia: 'Croacia', serbia: 'Serbia',
+  austria: 'Austria', switzerland: 'Suiza', poland: 'Polonia', 'czech republic': 'Chequia',
+  denmark: 'Dinamarca', sweden: 'Suecia', norway: 'Noruega', scotland: 'Escocia',
+  wales: 'Gales', 'republic of ireland': 'Irlanda', ireland: 'Irlanda',
+  nigeria: 'Nigeria', senegal: 'Senegal', 'ivory coast': 'Costa de Marfil', cameroon: 'Camerún',
+  ghana: 'Ghana', morocco: 'Marruecos', egypt: 'Egipto', algeria: 'Argelia',
+  mexico: 'México', colombia: 'Colombia', uruguay: 'Uruguay', chile: 'Chile',
+  ecuador: 'Ecuador', peru: 'Perú', venezuela: 'Venezuela', paraguay: 'Paraguay',
+  'united states': 'Estados Unidos', usa: 'Estados Unidos', canada: 'Canadá', japan: 'Japón',
+  'south korea': 'Corea del Sur', australia: 'Australia', turkey: 'Turquía', ukraine: 'Ucrania',
+  russia: 'Rusia', greece: 'Grecia', slovakia: 'Eslovaquia', hungary: 'Hungría',
+  romania: 'Rumanía', bulgaria: 'Bulgaria', finland: 'Finlandia', kosovo: 'Kosovo',
+  'north macedonia': 'Macedonia del Norte', albania: 'Albania', slovenia: 'Eslovenia', estonia: 'Estonia',
+  latvia: 'Letonia', lithuania: 'Lituania', 'bosnia and herzegovina': 'Bosnia',
+  mali: 'Malí', guinea: 'Guinea', 'guinea-bissau': 'Guinea-Bisáu', gabon: 'Gabón',
+  'republic of congo': 'República del Congo', 'dr congo': 'RD Congo', togo: 'Togo', benin: 'Benín',
+  'cape verde': 'Cabo Verde', angola: 'Angola', zambia: 'Zambia', zimbabwe: 'Zimbabue',
+  qatar: 'Catar', 'saudi arabia': 'Arabia Saudí', iran: 'Irán',
+  'united kingdom': 'Reino Unido', 'great britain': 'Reino Unido',
+}
+const FLAG_TO_COUNTRY_NAME: Record<string, string> = {}
+for (const [en, flag] of Object.entries(COUNTRY_FLAG_MAP)) {
+  const es = COUNTRY_NAME_ES[en]
+  if (es && !FLAG_TO_COUNTRY_NAME[flag]) FLAG_TO_COUNTRY_NAME[flag] = es
+}
+
+/**
+ * Nombre del país (en español) a partir de su bandera emoji, para el JSON-LD de
+ * SEO. Devuelve `undefined` si la bandera no se reconoce → conviene omitir
+ * `nationality` en vez de emitir un emoji.
+ */
+export function countryNameFromFlag(flag: string | undefined): string | undefined {
+  if (!flag) return undefined
+  return FLAG_TO_COUNTRY_NAME[flag]
+}
+
 // Normaliza nombre para hacer match entre DB y dato estático (sin acentos,
 // minúsculas). Los ids de la DB (ESPN) no coinciden con los ids curados,
 // pero el nombre sí es estable.

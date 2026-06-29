@@ -5,7 +5,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { getDisplayScore, scoreColor, isCreatorEntry } from '@/lib/rankings-ui'
 import { SCORE_WEIGHTS, CREATOR_WEIGHTS, weightedBase } from '@/lib/rankings'
 import { findEntryById, getEntrySources, getAllRankingEntries } from '@/lib/rankings-search'
-import { findEntryByIdFromDb, getAllEntryIdsFromDb } from '@/lib/rankings-data'
+import { findEntryByIdFromDb, getAllEntryIdsFromDb, countryNameFromFlag } from '@/lib/rankings-data'
 import { getSportStyle } from '@/lib/sports'
 import ShareButton from './ShareButton'
 import PlayerAvatar from '@/components/rankings/PlayerAvatar'
@@ -176,6 +176,10 @@ export default async function EntryDetailPage(
   const schemaType = cat.includes('club')
     ? 'SportsTeam'
     : 'Person'
+  // entry.country ya viene normalizado a bandera emoji (countryToFlag); el
+  // JSON-LD necesita el NOMBRE del país, no el emoji. Si no resuelve, se omite
+  // nationality (mejor nada que una bandera para los buscadores).
+  const nationalityName = schemaType === 'Person' ? countryNameFromFlag(entry.country) : undefined
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': schemaType,
@@ -183,7 +187,7 @@ export default async function EntryDetailPage(
     description: entry.insight ?? entry.subtitle,
     url: `${SITE_URL}/rankings/${id}`,
     ...(entry.image && { image: entry.image }),
-    ...(entry.country && schemaType === 'Person' && { nationality: { '@type': 'Country', name: entry.country } }),
+    ...(nationalityName && { nationality: { '@type': 'Country', name: nationalityName } }),
     ...(entry.sport && schemaType === 'Person' && { knowsAbout: entry.sport }),
     ...(entry.sport && schemaType === 'SportsTeam' && { sport: entry.sport }),
     // El "Ranking Taka" (ds) es una puntuación editorial propia, no una reseña
