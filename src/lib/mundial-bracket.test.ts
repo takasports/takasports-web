@@ -145,4 +145,27 @@ describe('treeOrderedRounds', () => {
     expect(tree[0].matches[0].away.name).toBe('Canadá')
     expect(tree[1].matches[0].home.name).toBe('Canadá')
   })
+
+  it('SALVAGUARDA: sigue ordenando por árbol aunque el torneo avance y los huecos desaparezcan', () => {
+    // Simula los 16avos ya jugados: los octavos llevan selecciones reales (ESPN
+    // borra "Ganador 16avos N" al propagar) → la derivación por huecos ya no puede
+    // reconstruir r32. La plantilla fija debe mantener el orden de la llave.
+    const advanced: BracketSourceEvent[] = KO.map(e => {
+      const n = Number(e.id)
+      return n >= 17 && n <= 24 ? { ...e, team_home: 'Spain', team_away: 'France' } : e
+    })
+    const tree = treeOrderedRounds(buildBracket(advanced).rounds)
+    const r32 = tree[0].matches.map(m => Number(m.id))
+    expect(r32).toEqual([1, 3, 2, 5, 11, 12, 9, 10, 4, 6, 7, 8, 14, 16, 13, 15])
+    expect(tree.map(r => r.matches.length)).toEqual([16, 8, 4, 2, 1])
+  })
+
+  it('SALVAGUARDA: si el cuadro no tiene la forma del Mundial, no rompe (respaldo cronológico)', () => {
+    // Solo 4 partidos sueltos (no es la estructura 16/8/4/2/1) → devuelve lo que haya.
+    const few = buildBracket([
+      ev('a', '2026-07-01T12:00:00Z', 'Spain', 'Italy'),
+      ev('b', '2026-07-02T12:00:00Z', 'Brazil', 'Japan'),
+    ]).rounds
+    expect(() => treeOrderedRounds(few)).not.toThrow()
+  })
 })

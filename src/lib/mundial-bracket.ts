@@ -203,26 +203,65 @@ export function buildBracket(events: BracketSourceEvent[]): Bracket {
   return { rounds, resolvedCount, totalCount, hasStarted }
 }
 
-/**
- * Reordena las rondas (sin el 3er puesto) en orden de ÁRBOL: deja cada ronda
- * dispuesta de modo que los dos cruces que alimentan un mismo partido de la ronda
- * siguiente queden ADYACENTES. Es lo que permite dibujar la llave con líneas
- * conectoras coherentes. El orden se deriva de los sourceSlot de los huecos de
- * ESPN ("Ganador 16avos 3"); para los lados ya resueltos/propagados (que ya no
- * llevan hueco) se rellena con los partidos restantes en su orden cronológico.
- * Si los datos no permiten reconstruir una ronda al completo, esa ronda conserva
- * el orden cronológico (degradación segura).
- */
-export function treeOrderedRounds(rounds: BracketRound[]): BracketRound[] {
-  const main = rounds.filter(r => r.id !== 'third' && r.matches.length > 0)
-  if (main.length < 2) return main
+// Plantilla FIJA del cuadro del Mundial 2026 (formato 48 equipos): el orden de
+// ÁRBOL de cada ronda, expresado con los slots CRONOLÓGICOS (1-indexados) que
+// asigna buildBracket. Es estructural — sigue siendo correcto AUNQUE todos los
+// ganadores ya se hayan propagado y los huecos ("Ganador 16avos 3") hayan
+// desaparecido. Derivado de los cruces que publica ESPN para este torneo.
+const WC2026_TREE_ORDER: Partial<Record<BracketRoundId, number[]>> = {
+  r32:   [1, 3, 2, 5, 11, 12, 9, 10, 4, 6, 7, 8, 14, 16, 13, 15],
+  r16:   [1, 2, 5, 6, 3, 4, 7, 8],
+  qf:    [1, 2, 3, 4],
+  sf:    [1, 2],
+  final: [1],
+}
 
+// Reordena cada ronda según la plantilla fija (por slot). null si no encaja
+// (nº de partidos distinto o algún slot ausente) → no es el cuadro esperado.
+function orderByTemplate(main: BracketRound[]): BracketRound[] | null {
+  const out: BracketRound[] = []
+  for (const r of main) {
+    const tmpl = WC2026_TREE_ORDER[r.id]
+    if (!tmpl || tmpl.length !== r.matches.length) return null
+    const bySlot = new Map(r.matches.map(m => [m.slot, m]))
+    const ordered: BracketMatch[] = []
+    for (const slot of tmpl) {
+      const m = bySlot.get(slot)
+      if (!m) return null
+      ordered.push(m)
+    }
+    out.push({ ...r, matches: ordered })
+  }
+  return out
+}
+
+// ¿La plantilla concuerda con los huecos que SIGUEN vivos? Cada partido de la
+// ronda j debe alimentarse de las posiciones 2j y 2j+1 de la ronda anterior.
+// Detecta una eventual reprogramación de ESPN que alterase los slots cronológicos.
+function isConsistentWithLiveSlots(ordered: BracketRound[]): boolean {
+  for (let i = 1; i < ordered.length; i++) {
+    const prev = ordered[i - 1]
+    const cur = ordered[i]
+    const posBySlot = new Map(prev.matches.map((m, idx) => [m.slot, idx] as const))
+    for (let j = 0; j < cur.matches.length; j++) {
+      for (const side of [cur.matches[j].home, cur.matches[j].away]) {
+        if (side.sourceRound === prev.id && side.sourceSlot != null) {
+          const pos = posBySlot.get(side.sourceSlot)
+          if (pos !== 2 * j && pos !== 2 * j + 1) return false
+        }
+      }
+    }
+  }
+  return true
+}
+
+// Deriva el orden de árbol leyendo los sourceSlot vivos (de la final hacia
+// 16avos). null si la propagación impide reconstruir alguna ronda al completo.
+function orderByLiveSlots(main: BracketRound[]): BracketRound[] | null {
   const slotIndex = new Map<BracketRoundId, Map<number, BracketMatch>>(
     main.map(r => [r.id, new Map(r.matches.map(m => [m.slot, m]))]),
   )
   const resultByRound = new Map<BracketRoundId, BracketMatch[]>()
-
-  // Arranca por la última ronda (la final) y baja hacia los dieciseisavos.
   let order = main[main.length - 1].matches.slice()
   resultByRound.set(main[main.length - 1].id, order)
 
@@ -230,26 +269,54 @@ export function treeOrderedRounds(rounds: BracketRound[]): BracketRound[] {
     const prev = main[i]
     const slotMap = slotIndex.get(prev.id)!
     const used = new Set<number>()
+    let determined = 0
     const slotted: (BracketMatch | null)[] = []
     for (const m of order) {
       for (const side of [m.home, m.away]) {
         const s = side.sourceRound === prev.id ? side.sourceSlot : null
         if (s != null && slotMap.has(s) && !used.has(s)) {
           used.add(s)
+          determined++
           slotted.push(slotMap.get(s)!)
         } else {
-          slotted.push(null) // hueco ya propagado o no determinable
+          slotted.push(null)
         }
       }
     }
+    if (determined === 0) return null // nada determinable por los huecos
     const leftover = prev.matches.filter(m => !used.has(m.slot))
     let li = 0
     const filled = slotted
       .map(x => x ?? leftover[li++] ?? null)
       .filter((x): x is BracketMatch => x != null)
-    resultByRound.set(prev.id, filled.length === prev.matches.length ? filled : prev.matches.slice())
-    order = resultByRound.get(prev.id)!
+    if (filled.length !== prev.matches.length) return null
+    resultByRound.set(prev.id, filled)
+    order = filled
   }
-
   return main.map(r => ({ ...r, matches: resultByRound.get(r.id) ?? r.matches }))
+}
+
+/**
+ * Reordena las rondas (sin el 3er puesto) en orden de ÁRBOL: deja cada ronda
+ * dispuesta de modo que los dos cruces que alimentan un mismo partido de la
+ * ronda siguiente queden ADYACENTES — lo que permite dibujar la llave con líneas
+ * conectoras coherentes. Estrategia en 3 niveles, de más a menos robusta:
+ *   1. Plantilla fija del Mundial 2026 — CORRECTA aunque todos los ganadores ya
+ *      se hayan propagado (no depende de los huecos), validada contra los huecos
+ *      que aún siguen vivos.
+ *   2. Derivación dinámica de los sourceSlot — cubre una eventual reprogramación
+ *      del calendario que cambiara los slots cronológicos.
+ *   3. Respaldo: el orden cronológico tal cual.
+ */
+export function treeOrderedRounds(rounds: BracketRound[]): BracketRound[] {
+  const main = rounds.filter(r => r.id !== 'third' && r.matches.length > 0)
+  if (main.length < 2) return main
+
+  const byTemplate = orderByTemplate(main)
+  if (byTemplate && isConsistentWithLiveSlots(byTemplate)) return byTemplate
+
+  const byDynamic = orderByLiveSlots(main)
+  if (byDynamic) return byDynamic
+
+  return main
 }
