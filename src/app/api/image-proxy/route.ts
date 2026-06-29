@@ -57,15 +57,27 @@ function isSafeUrl(raw: string): boolean {
   }
 }
 
+// User-Agents que el proxy presenta al origen. Muchos WAF de medios (sopitas,
+// nginx, Cloudflare…) bloquean como "bot" cualquier UA de navegador ANTIGUO, así
+// que la versión de Chrome hay que mantenerla al día o el proxy se auto-sabotea:
+// su única razón de ser es parecer un navegador real. Si el primario es
+// rechazado (403/401/429/451) reintentamos con Googlebot, que los medios casi
+// siempre permiten para que Google indexe sus imágenes.
+const PRIMARY_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+const FALLBACK_UA =
+  'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+// Estados típicos de "te he tomado por bot" → merecen un reintento con otro UA.
+const BLOCKED_STATUSES = new Set([401, 403, 429, 451])
+
 // Cabeceras que simulan un navegador navegando desde el propio dominio.
 // Suficiente para saltar la mayoría de protecciones anti-hotlink simples.
-function browserHeaders(imageUrl: string): HeadersInit {
+function browserHeaders(imageUrl: string, ua: string = PRIMARY_UA): HeadersInit {
   const origin = (() => {
     try { return new URL(imageUrl).origin } catch { return '' }
   })()
   return {
-    'User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'User-Agent': ua,
     'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
     'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
     'Sec-Fetch-Dest': 'image',
@@ -80,11 +92,11 @@ function browserHeaders(imageUrl: string): HeadersInit {
 // redirect:'follow', un dominio permitido podía responder 302 → IP privada /
 // metadatos cloud (169.254.169.254) y saltarse el guardia SSRF (solo miraba la
 // URL inicial). Aquí cada Location pasa por isSafeUrl antes de seguirla.
-async function fetchFollowingSafe(startUrl: string, maxHops = 3): Promise<Response> {
+async function fetchFollowingSafe(startUrl: string, ua: string = PRIMARY_UA, maxHops = 3): Promise<Response> {
   let url = startUrl
   for (let hop = 0; hop <= maxHops; hop++) {
     const res = await fetch(url, {
-      headers: browserHeaders(url),
+      headers: browserHeaders(url, ua),
       redirect: 'manual',
       signal: AbortSignal.timeout(8_000), // 8 s timeout
     })
@@ -112,7 +124,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const upstream = await fetchFollowingSafe(raw)
+    let upstream = await fetchFollowingSafe(raw)
+
+    // Algunos WAF rechazan el UA de navegador (lo toman por bot). Un único
+    // reintento con UA de Googlebot recupera la mayoría de esos casos: los
+    // medios quieren que Google indexe sus imágenes.
+    if (!upstream.ok && BLOCKED_STATUSES.has(upstream.status)) {
+      upstream = await fetchFollowingSafe(raw, FALLBACK_UA)
+    }
 
     if (!upstream.ok) {
       // No retransmitir el cuerpo del error del upstream — solo el status
