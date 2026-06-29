@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildBracket, type BracketSourceEvent } from './mundial-bracket'
+import { buildBracket, treeOrderedRounds, type BracketSourceEvent } from './mundial-bracket'
 
 // Los 32 partidos REALES de la fase final del Mundial 2026, extraídos de
 // ranked_events (sport='mundial') el 2026-06-29. Mezcla equipos ya definidos
@@ -121,5 +121,28 @@ describe('buildBracket', () => {
     const b = buildBracket(KO)
     expect(b.resolvedCount).toBe(1)
     expect(b.hasStarted).toBe(true)
+  })
+})
+
+describe('treeOrderedRounds', () => {
+  it('reordena por árbol: los pares que alimentan un cruce quedan adyacentes', () => {
+    const tree = treeOrderedRounds(buildBracket(KO).rounds)
+    // el 3er puesto se excluye del árbol principal
+    expect(tree.map(r => r.id)).toEqual(['r32', 'r16', 'qf', 'sf', 'final'])
+    // dieciseisavos en el orden del cuadro (slots cronológicos): 1,3,2,5,11,12,9,10,4,6,7,8,14,16,13,15
+    const r32 = tree[0].matches.map(m => Number(m.id))
+    expect(r32).toEqual([1, 3, 2, 5, 11, 12, 9, 10, 4, 6, 7, 8, 14, 16, 13, 15])
+    // octavos: 1,2,5,6,3,4,7,8 (ids 17..24 = slots 1..8)
+    const r16 = tree[1].matches.map(m => Number(m.id) - 16)
+    expect(r16).toEqual([1, 2, 5, 6, 3, 4, 7, 8])
+    // no se pierde ningún partido
+    expect(tree.map(r => r.matches.length)).toEqual([16, 8, 4, 2, 1])
+  })
+
+  it('mantiene la pareja correcta: el ganador propagado (Canadá) conserva su sitio', () => {
+    const tree = treeOrderedRounds(buildBracket(KO).rounds)
+    // primer dieciseisavo del árbol = Sudáfrica/Canadá (slot 1), que alimenta el 1er octavo
+    expect(tree[0].matches[0].away.name).toBe('Canadá')
+    expect(tree[1].matches[0].home.name).toBe('Canadá')
   })
 })

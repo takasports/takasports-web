@@ -202,3 +202,54 @@ export function buildBracket(events: BracketSourceEvent[]): Bracket {
 
   return { rounds, resolvedCount, totalCount, hasStarted }
 }
+
+/**
+ * Reordena las rondas (sin el 3er puesto) en orden de ÁRBOL: deja cada ronda
+ * dispuesta de modo que los dos cruces que alimentan un mismo partido de la ronda
+ * siguiente queden ADYACENTES. Es lo que permite dibujar la llave con líneas
+ * conectoras coherentes. El orden se deriva de los sourceSlot de los huecos de
+ * ESPN ("Ganador 16avos 3"); para los lados ya resueltos/propagados (que ya no
+ * llevan hueco) se rellena con los partidos restantes en su orden cronológico.
+ * Si los datos no permiten reconstruir una ronda al completo, esa ronda conserva
+ * el orden cronológico (degradación segura).
+ */
+export function treeOrderedRounds(rounds: BracketRound[]): BracketRound[] {
+  const main = rounds.filter(r => r.id !== 'third' && r.matches.length > 0)
+  if (main.length < 2) return main
+
+  const slotIndex = new Map<BracketRoundId, Map<number, BracketMatch>>(
+    main.map(r => [r.id, new Map(r.matches.map(m => [m.slot, m]))]),
+  )
+  const resultByRound = new Map<BracketRoundId, BracketMatch[]>()
+
+  // Arranca por la última ronda (la final) y baja hacia los dieciseisavos.
+  let order = main[main.length - 1].matches.slice()
+  resultByRound.set(main[main.length - 1].id, order)
+
+  for (let i = main.length - 2; i >= 0; i--) {
+    const prev = main[i]
+    const slotMap = slotIndex.get(prev.id)!
+    const used = new Set<number>()
+    const slotted: (BracketMatch | null)[] = []
+    for (const m of order) {
+      for (const side of [m.home, m.away]) {
+        const s = side.sourceRound === prev.id ? side.sourceSlot : null
+        if (s != null && slotMap.has(s) && !used.has(s)) {
+          used.add(s)
+          slotted.push(slotMap.get(s)!)
+        } else {
+          slotted.push(null) // hueco ya propagado o no determinable
+        }
+      }
+    }
+    const leftover = prev.matches.filter(m => !used.has(m.slot))
+    let li = 0
+    const filled = slotted
+      .map(x => x ?? leftover[li++] ?? null)
+      .filter((x): x is BracketMatch => x != null)
+    resultByRound.set(prev.id, filled.length === prev.matches.length ? filled : prev.matches.slice())
+    order = resultByRound.get(prev.id)!
+  }
+
+  return main.map(r => ({ ...r, matches: resultByRound.get(r.id) ?? r.matches }))
+}
