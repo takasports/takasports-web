@@ -2500,8 +2500,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           </div>
         </div>
 
-        {/* Timezone */}
-        <div className="flex items-center gap-3 mb-2 sm:mb-4">
+        {/* Timezone — fila propia solo en escritorio; en móvil el globo se reubica
+            junto a la campana (fila de pestañas, abajo) para ahorrar una fila. */}
+        <div className="hidden sm:flex items-center gap-3 mb-2 sm:mb-4">
           <TimezoneSelector value={tz} onChange={(newTz) => { setTz(newTz); setStoredTZ(newTz) }} compact />
         </div>
 
@@ -2551,33 +2552,40 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               )
             })}
           </div>
-          {/* Alertas — botón icono auxiliar */}
-          {(() => {
-            const isActive = view === 'recordatorios'
-            const remCount = remindedEvents.length
-            return (
-              <button
-                onClick={() => setView(isActive ? 'todos' : 'recordatorios')}
-                aria-label="Alertas"
-                title="Mis recordatorios"
-                className="relative flex items-center justify-center rounded-full flex-shrink-0 transition-all"
-                style={{
-                  width: 36, height: 36,
-                  background: isActive ? 'rgba(251,191,36,0.16)' : 'rgba(255,255,255,0.04)',
-                  border: isActive ? '1px solid rgba(251,191,36,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                  color: isActive ? '#FBBF24' : '#7A7A8E',
-                  cursor: 'pointer',
-                }}>
-                <BellIcon size={14} />
-                {remCount > 0 && (
-                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center text-[9px] font-black tabular-nums rounded-full"
-                    style={{ minWidth: 16, height: 16, padding: '0 4px', background: '#FBBF24', color: '#0a0a12', border: '1px solid var(--bg-base)', fontFamily: 'var(--font-sport)' }}>
-                    {remCount}
-                  </span>
-                )}
-              </button>
-            )
-          })()}
+          {/* Controles auxiliares a la derecha (zona horaria móvil + alertas) */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Zona horaria — solo móvil; en escritorio vive en su fila propia (arriba) */}
+            <div className="sm:hidden">
+              <TimezoneSelector value={tz} onChange={(newTz) => { setTz(newTz); setStoredTZ(newTz) }} compact />
+            </div>
+            {/* Alertas — botón icono auxiliar */}
+            {(() => {
+              const isActive = view === 'recordatorios'
+              const remCount = remindedEvents.length
+              return (
+                <button
+                  onClick={() => setView(isActive ? 'todos' : 'recordatorios')}
+                  aria-label="Alertas"
+                  title="Mis recordatorios"
+                  className="relative flex items-center justify-center rounded-full flex-shrink-0 transition-all"
+                  style={{
+                    width: 36, height: 36,
+                    background: isActive ? 'rgba(251,191,36,0.16)' : 'rgba(255,255,255,0.04)',
+                    border: isActive ? '1px solid rgba(251,191,36,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                    color: isActive ? '#FBBF24' : '#7A7A8E',
+                    cursor: 'pointer',
+                  }}>
+                  <BellIcon size={14} />
+                  {remCount > 0 && (
+                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center text-[9px] font-black tabular-nums rounded-full"
+                      style={{ minWidth: 16, height: 16, padding: '0 4px', background: '#FBBF24', color: '#0a0a12', border: '1px solid var(--bg-base)', fontFamily: 'var(--font-sport)' }}>
+                      {remCount}
+                    </span>
+                  )}
+                </button>
+              )
+            })()}
+          </div>
         </div>
       </div>
 
