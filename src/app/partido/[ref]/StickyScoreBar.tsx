@@ -74,8 +74,8 @@ export function StickyScoreBar(props: Props) {
         <div className="flex flex-col items-center flex-shrink-0 min-w-[84px]">
           {live && (
             <span className="flex items-center gap-1 leading-none">
-              <span className="w-1 h-1 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
-              <span className="text-[9px] font-black uppercase tracking-[0.14em] tabular-nums" style={{ color: '#EF4444', fontFamily: 'var(--font-sport)' }}>
+              <span className="w-1 h-1 rounded-full" style={{ background: '#FF4D2E', animation: 'live-pulse 1.6s ease-out infinite' }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.14em] tabular-nums" style={{ color: '#FF4D2E', fontFamily: 'var(--font-sport)' }}>
                 {statusLabel}
               </span>
             </span>

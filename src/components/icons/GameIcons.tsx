@@ -533,8 +533,8 @@ export function LiveDotIcon({ size = 12, className }: IconProps) {
         width: size,
         height: size,
         borderRadius: '50%',
-        background: '#ef4444',
-        boxShadow: '0 0 0 0 rgba(239,68,68,0.7)',
+        background: '#FF4D2E',
+        boxShadow: '0 0 0 0 rgba(255,77,46,0.7)',
         animation: 'live-pulse 1.6s infinite',
       }}
     />

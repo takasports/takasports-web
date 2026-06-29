@@ -254,7 +254,7 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
                       >
                         <span
                           className="text-xs font-bold shrink-0 w-20 text-right inline-flex items-center justify-end gap-1"
-                          style={{ color: ev.status === 'en_vivo' ? '#ef4444' : `${accent}cc` }}
+                          style={{ color: ev.status === 'en_vivo' ? '#FF4D2E' : `${accent}cc` }}
                         >
                           {ev.status === 'en_vivo'
                             ? (<><LiveDotIcon size={7} /> EN VIVO</>)

@@ -138,7 +138,7 @@ export default function UFCCardModal({
               </h2>
               <p className="text-[9px] mt-1" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
                 {events.length} combate{events.length !== 1 ? 's' : ''}
-                {liveCount > 0 && <span style={{ color: '#4ade80' }}> · {liveCount} en vivo</span>}
+                {liveCount > 0 && <span style={{ color: '#FF4D2E' }}> · {liveCount} en vivo</span>}
               </p>
             </div>
             <button
@@ -174,8 +174,8 @@ export default function UFCCardModal({
                   className="grid gap-3 p-3 rounded-lg transition-all"
                   style={{
                     gridTemplateColumns: '1fr auto 1fr auto',
-                    background: isLive ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.025)',
-                    borderLeft: `3px solid ${isLive ? '#4ade80' : accent}`,
+                    background: isLive ? 'rgba(255,77,46,0.06)' : 'rgba(255,255,255,0.025)',
+                    borderLeft: `3px solid ${isLive ? '#FF4D2E' : accent}`,
                   }}
                 >
                   {/* Home Luchador */}
@@ -195,16 +195,16 @@ export default function UFCCardModal({
                   <div className="flex flex-col items-center justify-center flex-shrink-0 px-1 gap-1 min-w-[60px]">
                     {isLive && liveScore ? (
                       <>
-                        <span className="text-[11px] font-black" style={{ color: '#4ade80', fontFamily: 'var(--font-display)' }}>
+                        <span className="text-[11px] font-black" style={{ color: '#FF4D2E', fontFamily: 'var(--font-display)' }}>
                           {liveScore.homeGoals ?? 0}
                         </span>
                         <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                           —
                         </span>
-                        <span className="text-[11px] font-black" style={{ color: '#4ade80', fontFamily: 'var(--font-display)' }}>
+                        <span className="text-[11px] font-black" style={{ color: '#FF4D2E', fontFamily: 'var(--font-display)' }}>
                           {liveScore.awayGoals ?? 0}
                         </span>
-                        <span className="text-[8px] font-black uppercase tracking-wider mt-1 px-1.5 py-0.5 rounded" style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', fontFamily: 'var(--font-sport)' }}>
+                        <span className="text-[8px] font-black uppercase tracking-wider mt-1 px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,77,46,0.12)', color: '#FF4D2E', fontFamily: 'var(--font-sport)' }}>
                           {getLiveLabel(liveScore.status, liveScore.elapsed, { sport: event.sport, homeScore: liveScore.homeGoals, awayScore: liveScore.awayGoals })}
                         </span>
                       </>

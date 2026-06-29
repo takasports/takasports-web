@@ -129,13 +129,13 @@ export default function EventHero({
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 7,
             padding: '5px 16px', borderRadius: 'var(--radius-xl)',
-            background: isLive ? 'rgba(239,68,68,0.16)' : 'rgba(248,113,113,0.1)',
-            border: `1px solid ${isLive ? 'rgba(239,68,68,0.5)' : 'rgba(248,113,113,0.3)'}`,
+            background: isLive ? 'rgba(255,77,46,0.16)' : 'rgba(248,113,113,0.1)',
+            border: `1px solid ${isLive ? 'rgba(255,77,46,0.5)' : 'rgba(248,113,113,0.3)'}`,
             fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
-            color: isLive ? '#EF4444' : RED, letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: isLive ? '#FF4D2E' : RED, letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>
             {isLive
-              ? <><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444', boxShadow: '0 0 8px #EF4444', display: 'inline-block' }} /> En vivo</>
+              ? <><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF4D2E', boxShadow: '0 0 8px #FF4D2E', display: 'inline-block' }} /> En vivo</>
               : <>Próxima velada · {dateLabel} · {timeLabel}</>}
           </span>
         </div>

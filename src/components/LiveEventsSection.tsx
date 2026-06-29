@@ -183,18 +183,18 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
         width: 'clamp(198px, 56vw, 228px)',
         borderRadius: 16,
         background: isLive
-          ? 'linear-gradient(160deg, rgba(74,222,128,0.10) 0%, var(--bg-card) 58%)'
+          ? 'linear-gradient(160deg, rgba(255,77,46,0.10) 0%, var(--bg-card) 58%)'
           : `linear-gradient(165deg, ${compColor}14 0%, var(--bg-card) 52%)`,
-        border: isLive ? '1px solid rgba(74,222,128,0.25)' : `1px solid ${compColor}22`,
-        borderTop: `2.5px solid ${isLive ? '#4ade80' : compColor}`,
-        boxShadow: isLive ? '0 6px 26px rgba(74,222,128,0.12)' : '0 6px 24px rgba(0,0,0,0.32)',
+        border: isLive ? '1px solid rgba(255,77,46,0.25)' : `1px solid ${compColor}22`,
+        borderTop: `2.5px solid ${isLive ? '#FF4D2E' : compColor}`,
+        boxShadow: isLive ? '0 6px 26px rgba(255,77,46,0.12)' : '0 6px 24px rgba(0,0,0,0.32)',
         cursor: matchRef ? 'pointer' : 'default',
       }}
     >
       {/* Glow decorativo por color de competición */}
       <div aria-hidden className="absolute pointer-events-none opacity-70"
         style={{ top: -28, right: -28, width: 110, height: 110, borderRadius: '50%',
-          background: `radial-gradient(circle, ${isLive ? 'rgba(74,222,128,0.18)' : compColor + '22'} 0%, transparent 70%)` }} />
+          background: `radial-gradient(circle, ${isLive ? 'rgba(255,77,46,0.18)' : compColor + '22'} 0%, transparent 70%)` }} />
       <div className="relative px-4 pt-3.5 pb-4 flex flex-col gap-2.5">
 
         {/* Sport + competition */}
@@ -202,10 +202,10 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
           <div className="flex items-center gap-1.5">
             {(event.date === 'Hoy' || isLive) && (
               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 animate-pulse"
-                style={{ background: isLive ? '#4ade80' : compColor }} />
+                style={{ background: isLive ? '#FF4D2E' : compColor }} />
             )}
             <span className="text-[10px] font-black uppercase tracking-widest"
-              style={{ color: isLive ? '#4ade80' : event.accent, fontFamily: 'var(--font-sport)' }}>
+              style={{ color: isLive ? '#FF4D2E' : event.accent, fontFamily: 'var(--font-sport)' }}>
               {event.sport}
             </span>
           </div>
@@ -288,16 +288,16 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
         {isLive && scoreStr ? (
           <div className="flex items-center justify-between rounded-lg px-2.5 py-1.5 transition-colors duration-700"
             style={{
-              background: scoreFlash ? 'rgba(74,222,128,0.22)' : 'rgba(74,222,128,0.07)',
-              border: `1px solid ${scoreFlash ? 'rgba(74,222,128,0.5)' : 'rgba(74,222,128,0.18)'}`,
+              background: scoreFlash ? 'rgba(255,77,46,0.22)' : 'rgba(255,77,46,0.07)',
+              border: `1px solid ${scoreFlash ? 'rgba(255,77,46,0.5)' : 'rgba(255,77,46,0.18)'}`,
             }}>
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ background: '#4ade80' }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ background: '#FF4D2E' }} />
               <span className="font-black tabular-nums"
-                style={{ color: scoreFlash ? '#86efac' : '#4ade80', fontFamily: 'var(--font-display)', fontSize: 16, letterSpacing: '0.04em', transition: 'color 0.7s' }}>
+                style={{ color: scoreFlash ? '#FF9D85' : '#FF4D2E', fontFamily: 'var(--font-display)', fontSize: 16, letterSpacing: '0.04em', transition: 'color 0.7s' }}>
                 {scoreStr}
               </span>
-              <span className="text-[9px] font-black" style={{ color: '#22a86a', fontFamily: 'var(--font-sport)' }}>
+              <span className="text-[9px] font-black" style={{ color: '#E8552E', fontFamily: 'var(--font-sport)' }}>
                 {getLiveLabel(liveScore.status, liveScore.elapsed)}
               </span>
             </div>

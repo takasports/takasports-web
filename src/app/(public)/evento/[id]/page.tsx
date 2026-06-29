@@ -274,12 +274,12 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
             {statusLabel && (
               <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full"
                 style={{
-                  background: isLive ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.05)',
-                  color: isLive ? '#4ade80' : '#6A6A80',
-                  border: isLive ? '1px solid rgba(74,222,128,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                  background: isLive ? 'rgba(255,77,46,0.12)' : 'rgba(255,255,255,0.05)',
+                  color: isLive ? '#FF4D2E' : '#6A6A80',
+                  border: isLive ? '1px solid rgba(255,77,46,0.3)' : '1px solid rgba(255,255,255,0.08)',
                   fontFamily: 'var(--font-sport)',
                 }}>
-                {isLive && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />}
+                {isLive && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#FF4D2E' }} />}
                 {statusLabel}
               </span>
             )}
