@@ -2428,7 +2428,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           <div>
             {/* Eyebrow: identidad de la competición elegida (escudo + nombre) o
                 "Agenda deportiva" cuando no hay filtro de competición. */}
-            <div className="flex items-center gap-2 mb-1 sm:mb-2">
+            <div className={`${activeCompCfg ? 'flex' : 'hidden sm:flex'} items-center gap-2 mb-1 sm:mb-2`}>
               {activeCompCfg ? (
                 <>
                   {activeCompCfg.crest && (
@@ -2476,9 +2476,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
           {/* Stat chips — compact on mobile */}
           <div className="flex items-center gap-2 flex-shrink-0 pb-1">
-            <div className="flex flex-col items-center px-3 py-1.5 rounded-xl"
+            <div className="flex flex-col items-center px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl"
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <span className="text-[17px] font-black tabular-nums leading-none" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
+              <span className="text-[13px] sm:text-[17px] font-black tabular-nums leading-none" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
                 {filtered.length}
               </span>
               <span className="text-[8.5px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>
@@ -2486,10 +2486,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               </span>
             </div>
             {liveCount > 0 && (
-              <div className="flex flex-col items-center px-3 py-1.5 rounded-xl"
-                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                <span className="text-[17px] font-black tabular-nums leading-none flex items-center gap-1" style={{ color: '#EF4444', fontFamily: 'var(--font-display)' }}>
-                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
+              <div className="flex flex-col items-center px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl"
+                style={{ background: 'rgba(255,77,46,0.08)', border: '1px solid rgba(255,77,46,0.2)' }}>
+                <span className="text-[13px] sm:text-[17px] font-black tabular-nums leading-none flex items-center gap-1" style={{ color: '#FF4D2E', fontFamily: 'var(--font-display)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#FF4D2E', animation: 'live-pulse 1.6s ease-out infinite' }} />
                   {liveCount}
                 </span>
                 <span className="text-[8.5px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#D69A9A', fontFamily: 'var(--font-sport)' }}>
@@ -2501,7 +2501,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         </div>
 
         {/* Timezone */}
-        <div className="flex items-center gap-3 mb-3 sm:mb-4">
+        <div className="flex items-center gap-3 mb-2 sm:mb-4">
           <TimezoneSelector value={tz} onChange={(newTz) => { setTz(newTz); setStoredTZ(newTz) }} compact />
         </div>
 
@@ -2519,7 +2519,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 <button
                   key={tab}
                   onClick={() => setView(tab)}
-                  className="cal-press flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all flex-shrink-0"
+                  className="cal-press flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all flex-shrink-0"
                   style={{
                     scrollSnapAlign: 'start',
                     background: isActive
@@ -2697,7 +2697,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           {/* CTA — invita a elegir equipos cuando aún no hay favoritos */}
           {favorites.size === 0 && !onlyLive && !selectedDate && filtered.length > 0 && (
             <section
-              className="rounded-2xl p-3 sm:p-5 flex flex-row items-center gap-3 sm:gap-4"
+              className="rounded-2xl px-3 py-2 sm:p-5 flex flex-row items-center gap-3 sm:gap-4"
               style={{
                 background: 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(244,114,182,0.08) 100%)',
                 border: '1px solid rgba(124,58,237,0.28)',
@@ -2721,7 +2721,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               </div>
               <button
                 onClick={() => setShowOnboarding(true)}
-                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 sm:py-2.5 rounded-full text-[11px] font-black uppercase tracking-[0.16em] transition-all"
+                className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-[0.16em] transition-all"
                 style={{
                   background: '#7C3AED', color: '#fff',
                   border: '1px solid rgba(255,255,255,0.12)',

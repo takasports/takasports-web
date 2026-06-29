@@ -171,7 +171,12 @@ export default async function CalendarioPage() {
       />
       <BreadcrumbJsonLd items={[{ name: 'TakaSports', path: '' }, { name: 'Calendario', path: '/calendario' }]} />
       <Header />
-      <LiveStrip />
+      {/* La tira de directo/próximos es redundante dentro del propio calendario
+          (los partidos —incluido el directo en rojo— ya se ven abajo); en móvil
+          se oculta para que los resultados suban. En escritorio se mantiene. */}
+      <div className="hidden md:block">
+        <LiveStrip />
+      </div>
       <CalendarioContent
         events={events}
         recentForms={recentForms}
