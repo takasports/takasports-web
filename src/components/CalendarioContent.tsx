@@ -1379,7 +1379,11 @@ function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect }: {
   )
 }
 
-// Horizontal chips strip to filter by day
+// Navegación por días del calendario. En ESCRITORIO se conserva la tira
+// horizontal deslizable (estilo 365scores, sin cambios). En MÓVIL se sustituye
+// por un único botón de fecha que despliega el mismo calendario mensual
+// (CalendarDropdown) → menos ruido en la cabecera. Por defecto "Todos los días";
+// al elegir un día muestra el día + ✕ para volver a todos.
 function DayChips({ days, value, onChange }: {
   days: { key: string; label: string; count: number }[]
   value: string | null
@@ -1387,7 +1391,8 @@ function DayChips({ days, value, onChange }: {
 }) {
   const [showCalendar, setShowCalendar] = useState(false)
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
-  const calBtnRef = useRef<HTMLButtonElement | null>(null)
+  const deskBtnRef = useRef<HTMLButtonElement | null>(null)
+  const mobBtnRef = useRef<HTMLButtonElement | null>(null)
 
   const today = isoToLocalDate(new Date().toISOString())
   const tomorrow = (() => {
@@ -1398,13 +1403,31 @@ function DayChips({ days, value, onChange }: {
 
   const eventDays = useMemo(() => new Set(days.map(d => d.key)), [days])
   const DOW = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
-  const dayLabel = (key: string) => {
+  const MON = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+  // Etiqueta corta para los chips de la tira de escritorio (Hoy / Mañana / Mié 2).
+  const dayLabelShort = (key: string) => {
     if (key === today) return 'Hoy'
     if (key === tomorrow) return 'Mañana'
     const dt = new Date(key + 'T12:00:00Z')
     return `${DOW[dt.getUTCDay()]} ${dt.getUTCDate()}`
   }
+  // Etiqueta larga para el botón de móvil (Hoy · 30 jun).
+  const dayLabelLong = (key: string) => {
+    const dt = new Date(key + 'T12:00:00Z')
+    const d = dt.getUTCDate()
+    const mon = MON[dt.getUTCMonth()]
+    if (key === today) return `Hoy · ${d} ${mon}`
+    if (key === tomorrow) return `Mañana · ${d} ${mon}`
+    return `${DOW[dt.getUTCDay()]} ${d} ${mon}`
+  }
   const isCalActive = showCalendar || (value !== null && !eventDays.has(value))
+  const hasDay = value !== null
+  const mobActive = showCalendar || hasDay
+
+  const openFrom = (ref: { current: HTMLButtonElement | null }) => {
+    if (ref.current) setAnchorRect(ref.current.getBoundingClientRect())
+    setShowCalendar(v => !v)
+  }
 
   const chipStyle = (active: boolean) => ({
     background: active ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.04)',
@@ -1416,38 +1439,33 @@ function DayChips({ days, value, onChange }: {
   })
 
   return (
-    <div className="cal-rail flex items-center gap-1.5 pb-1 overflow-x-auto scrollbar-hide" style={{ position: 'relative' }}>
-      {/* "Todos" + un chip por día disponible (con su nº de eventos): barra de
-          días deslizable, la "columna vertebral" de las portadas tipo 365scores. */}
-      <button
-        onClick={() => { onChange(null); setShowCalendar(false) }}
-        className="cal-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
-        style={chipStyle(value === null)}
-      >
-        Todos
-      </button>
-      {days.map(d => {
-        const active = value === d.key
-        return (
-          <button
-            key={d.key}
-            onClick={() => { onChange(d.key); setShowCalendar(false) }}
-            className="cal-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
-            style={chipStyle(active)}
-          >
-            {dayLabel(d.key)}
-            <span className="tabular-nums" style={{ opacity: 0.6, fontWeight: 700 }}>{d.count}</span>
-          </button>
-        )
-      })}
-
-      <div style={{ position: 'relative' }}>
+    <>
+      {/* ESCRITORIO — tira de días deslizable (sin cambios). */}
+      <div className="cal-rail hidden sm:flex items-center gap-1.5 pb-1 overflow-x-auto scrollbar-hide" style={{ position: 'relative' }}>
         <button
-          ref={calBtnRef}
-          onClick={() => {
-            if (calBtnRef.current) setAnchorRect(calBtnRef.current.getBoundingClientRect())
-            setShowCalendar(v => !v)
-          }}
+          onClick={() => { onChange(null); setShowCalendar(false) }}
+          className="cal-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+          style={chipStyle(value === null)}
+        >
+          Todos
+        </button>
+        {days.map(d => {
+          const active = value === d.key
+          return (
+            <button
+              key={d.key}
+              onClick={() => { onChange(d.key); setShowCalendar(false) }}
+              className="cal-press flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+              style={chipStyle(active)}
+            >
+              {dayLabelShort(d.key)}
+              <span className="tabular-nums" style={{ opacity: 0.6, fontWeight: 700 }}>{d.count}</span>
+            </button>
+          )
+        })}
+        <button
+          ref={deskBtnRef}
+          onClick={() => openFrom(deskBtnRef)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
           style={chipStyle(isCalActive)}
         >
@@ -1456,18 +1474,65 @@ function DayChips({ days, value, onChange }: {
             : (<><CalendarIcon size={11} /> Calendario</>)
           }
         </button>
+      </div>
 
-        {showCalendar && (
-          <CalendarDropdown
-            value={value}
-            eventDays={eventDays}
-            onChange={v => { onChange(v); setShowCalendar(false) }}
-            onClose={() => setShowCalendar(false)}
-            anchorRect={anchorRect}
-          />
+      {/* MÓVIL — un único botón de fecha que abre el mismo calendario mensual. */}
+      <div className="cal-rail flex sm:hidden items-center gap-1.5 pb-1" style={{ position: 'relative' }}>
+        <button
+          ref={mobBtnRef}
+          onClick={() => openFrom(mobBtnRef)}
+          aria-haspopup="dialog"
+          aria-expanded={showCalendar}
+          aria-label="Elegir día"
+          className="cal-press flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex-shrink-0"
+          style={{
+            background: mobActive ? 'rgba(124,58,237,0.22)' : 'rgba(124,58,237,0.12)',
+            color: mobActive ? '#D8CCFF' : '#C4B5FD',
+            border: mobActive ? '1px solid rgba(124,58,237,0.6)' : '1px solid rgba(124,58,237,0.3)',
+            fontFamily: 'var(--font-sport)',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <CalendarIcon size={12} />
+          {hasDay ? dayLabelLong(value) : 'Todos los días'}
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.7 }}>
+            <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {/* ✕ — solo cuando hay un día elegido: vuelve a "Todos los días". */}
+        {hasDay && (
+          <button
+            onClick={() => { onChange(null); setShowCalendar(false) }}
+            aria-label="Ver todos los días"
+            className="cal-press flex items-center justify-center rounded-full flex-shrink-0 transition-all"
+            style={{
+              width: 26,
+              height: 26,
+              background: 'rgba(255,255,255,0.05)',
+              color: '#9090A8',
+              border: '1px solid rgba(255,255,255,0.08)',
+              cursor: 'pointer',
+            }}
+          >
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
         )}
       </div>
-    </div>
+
+      {showCalendar && (
+        <CalendarDropdown
+          value={value}
+          eventDays={eventDays}
+          onChange={v => { onChange(v); setShowCalendar(false) }}
+          onClose={() => setShowCalendar(false)}
+          anchorRect={anchorRect}
+        />
+      )}
+    </>
   )
 }
 
