@@ -60,3 +60,33 @@ export function formatDateLabel(localDate: string): string {
   const d = new Date(localDate + 'T12:00:00Z')
   return `${days[d.getUTCDay()]} ${d.getUTCDate()} ${months[d.getUTCMonth()]}`
 }
+
+// Agrupa los partidos de UN día por competición (en orden de primera aparición)
+// y ordena CRONOLÓGICAMENTE por hora (isoDate = instante real) los partidos
+// DENTRO de cada liga. Devuelve el orden de ligas — que quien llama puede
+// reordenar luego, p.ej. fijando las favoritas — y el mapa liga→partidos.
+//
+// Por qué existe: en "Destacados" los partidos llegan ordenados por relevancia
+// ("caché": equipo estrella, horario estelar, en directo), así que dentro de una
+// misma liga un partidazo de las 22:00 podía salir antes que uno de las 18:00.
+// Aquí se garantiza el orden por hora dentro de cada liga SIN tocar el orden en
+// que aparecen las ligas. En el resto de vistas el orden de entrada ya es por
+// hora, de modo que esta ordenación es idempotente.
+export function groupDayByCompetition(dayEvents: SportEvent[]): {
+  order: string[]
+  byComp: Record<string, SportEvent[]>
+} {
+  const order: string[] = []
+  const byComp: Record<string, SportEvent[]> = {}
+  for (const ev of dayEvents) {
+    if (!byComp[ev.comp]) {
+      byComp[ev.comp] = []
+      order.push(ev.comp)
+    }
+    byComp[ev.comp].push(ev)
+  }
+  for (const comp of order) {
+    byComp[comp].sort((a, b) => (a.isoDate ?? '').localeCompare(b.isoDate ?? ''))
+  }
+  return { order, byComp }
+}

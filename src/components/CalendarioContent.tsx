@@ -7,7 +7,7 @@ import type { SportEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
 import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME, highlightReason, isMundial } from '@/lib/competitions'
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
-import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate } from '@/lib/calendar'
+import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate, groupDayByCompetition } from '@/lib/calendar'
 import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime, dayDeltaForIso } from '@/lib/timezone'
 import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
@@ -2801,13 +2801,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               const dayEvents = activeFilter === 'Destacados'
                 ? rawDay
                 : [...rawDay].sort((a, b) => (a.isoDate ?? '').localeCompare(b.isoDate ?? ''))
-              // Group by competition, preserving order of first appearance
-              const compOrder: string[] = []
-              const byComp: Record<string, typeof dayEvents> = {}
-              for (const ev of dayEvents) {
-                if (!byComp[ev.comp]) { byComp[ev.comp] = []; compOrder.push(ev.comp) }
-                byComp[ev.comp].push(ev)
-              }
+              // Agrupar por competición (orden de primera aparición) y ordenar por
+              // hora los partidos DENTRO de cada liga. En Destacados venían por
+              // relevancia ("caché"), no por hora → ver groupDayByCompetition.
+              const { order: compOrder, byComp } = groupDayByCompetition(dayEvents)
               // Ligas fijadas primero (orden estable; el resto, primera aparición).
               compOrder.sort((a, b) => {
                 const pa = favComps.has(compConfigForGroup(a, byComp[a][0]?.sport)?.slug ?? '') ? 1 : 0
