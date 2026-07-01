@@ -48,12 +48,16 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const total   = rows.length
-  const correct = rows.filter(r => r.is_correct === true).length
+  // Solo cuentan las predicciones YA RESUELTAS (is_correct != null): meter las
+  // pendientes en el denominador infla la precisión A LA BAJA y diverge del perfil
+  // público, que solo cuenta las resueltas.
+  const resolved = rows.filter(r => r.is_correct !== null)
+  const total   = resolved.length
+  const correct = resolved.filter(r => r.is_correct === true).length
   const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
 
   const bySport: Record<string, { total: number; correct: number }> = {}
-  for (const row of rows) {
+  for (const row of resolved) {
     const sport = sportByEvent.get(row.event_id) ?? 'otro'
     if (!bySport[sport]) bySport[sport] = { total: 0, correct: 0 }
     bySport[sport].total++

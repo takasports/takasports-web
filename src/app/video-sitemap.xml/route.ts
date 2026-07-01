@@ -20,7 +20,7 @@ function escapeXml(str: string | null | undefined): string {
 export async function GET() {
   const reels = (await getMergedReels().catch(() => [])).slice(0, 500)
 
-  const urls = reels
+  const videos = reels
     .map(r => {
       // Blindaje: un timestamp no parseable tumbaría TODO el sitemap (500).
       // Si no parsea, dejamos publishedIso null (la etiqueta es opcional).
@@ -32,24 +32,33 @@ export async function GET() {
       const thumbnail = r.thumbnail_url
         ? (r.thumbnail_url.startsWith('http') ? r.thumbnail_url : `${SITE_URL}${r.thumbnail_url}`)
         : `${SITE_URL}/taka-icon.png`
-      return `  <url>
-    <loc>${SITE_URL}/noticias?reel=${encodeURIComponent(r.id)}</loc>
-    <video:video>
+      // No hay fichero de vídeo servible (video_url es null en el feed fusionado):
+      // usamos el reproductor EMBEBIBLE de Instagram como player_loc —que Google sí
+      // acepta— en vez de un content_loc que apuntaba a la página HTML del post.
+      const player = `${r.instagram_url.replace(/\/+$/, '')}/embed/`
+      const description = (r.caption?.trim() || r.title || 'Reel de TakaSports').slice(0, 2000)
+      return `    <video:video>
       <video:thumbnail_loc>${escapeXml(thumbnail)}</video:thumbnail_loc>
       <video:title>${escapeXml(r.title)}</video:title>
-      <video:content_loc>${escapeXml(r.instagram_url)}</video:content_loc>
+      <video:description>${escapeXml(description)}</video:description>
+      <video:player_loc allow_embed="yes">${escapeXml(player)}</video:player_loc>
       ${publishedIso ? `<video:publication_date>${publishedIso}</video:publication_date>` : ''}
       ${r.sport ? `<video:tag>${escapeXml(r.sport)}</video:tag>` : ''}
       <video:live>no</video:live>
-    </video:video>
-  </url>`
+    </video:video>`
     })
     .join('\n')
 
+  // Los reels viven TODOS en /reels (una sola página que los reproduce), así que la
+  // estructura correcta del sitemap de vídeo es 1 <url> con N <video>. Antes cada
+  // entrada apuntaba a /noticias?reel=ID, una URL que NO abría el reel (soft-404).
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
-${urls}
+  <url>
+    <loc>${SITE_URL}/reels</loc>
+${videos}
+  </url>
 </urlset>`
 
   return new Response(xml, {

@@ -81,10 +81,10 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // Cuántos users distintos se liquidaron en esa jornada (telemetría).
-  const liquidatedUsers = new Set(
-    recentlySettled.filter((r) => r.jornada === targetJornada).map((r) => r.jornada),
-  ).size
+  // Cuántos users se liquidaron en esa jornada (telemetría). quiniela_picks tiene
+  // una fila por (user, jornada), así que el nº de filas de esta jornada = nº de
+  // users. (Antes se mapeaba a r.jornada → Set de tamaño 1, y un Set ni serializa.)
+  const liquidatedUsers = recentlySettled.filter((r) => r.jornada === targetJornada).length
 
   // Broadcast — el mensaje es deliberadamente neutro. Quien hizo picks
   // verá su resultado real en el toast; quien no, ve un recordatorio
