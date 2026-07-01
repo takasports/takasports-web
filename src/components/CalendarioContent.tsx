@@ -1704,8 +1704,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       // Legacy aliases: 'en-vivo' e 'destacados' (Inicio) fueron absorbidos
       // por el chip Destacados dentro del tab Calendario. Cualquier URL o
       // localStorage que apunte a esos valores cae a 'todos' (Calendario).
-      // Legacy: 'en-vivo'/'destacados' (vistas retiradas) caen a 'todos'.
-      const VALID_VIEWS: ViewType[] = ['todos', 'resultados', 'recordatorios']
+      // Legacy: 'en-vivo'/'destacados'/'resultados' (vistas retiradas o ya no
+      // navegables desde la cabecera) caen a 'todos'.
+      const VALID_VIEWS: ViewType[] = ['todos', 'recordatorios']
       const normalizedView = (urlView === 'en-vivo' || urlView === 'destacados') ? 'todos' : urlView
       if (normalizedView && VALID_VIEWS.includes(normalizedView as ViewType)) {
         setView(normalizedView as ViewType)
@@ -2523,8 +2524,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         <div className="absolute -top-8 left-0 w-96 h-56 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at 15% 45%, rgba(124,58,237,0.09) 0%, transparent 70%)', filter: 'blur(20px)' }} />
 
-        <div className="relative flex items-end justify-between gap-4 mb-2 sm:mb-4">
-          <div>
+        <div className="relative flex items-start justify-between gap-3 mb-2 sm:mb-4">
+          <div className="min-w-0">
             {/* Eyebrow: identidad de la competición elegida (escudo + nombre) o
                 "Agenda deportiva" cuando no hay filtro de competición. */}
             <div className={`${activeCompCfg ? 'flex' : 'hidden sm:flex'} items-center gap-2 mb-1 sm:mb-2`}>
@@ -2548,7 +2549,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               )}
             </div>
             <h1 className="font-black leading-none uppercase"
-              style={{ fontFamily: 'var(--font-headline)', fontSize: 'clamp(1.4rem, 5.5vw, 3rem)', color: '#F8F8FF', letterSpacing: '-0.01em' }}>
+              style={{ fontFamily: 'var(--font-headline)', fontSize: '1.3rem', color: '#F8F8FF', letterSpacing: '-0.01em' }}>
               Calendario
             </h1>
             {/* Acceso a la página de la competición + quitar filtro. Sustituye al
@@ -2573,90 +2574,42 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             )}
           </div>
 
-          {/* Stat chips — compact on mobile */}
-          <div className="flex items-center gap-2 flex-shrink-0 pb-1">
-            <div className="flex flex-col items-center px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <span className="text-[13px] sm:text-[17px] font-black tabular-nums leading-none" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>
-                {filtered.length}
-              </span>
-              <span className="text-[8.5px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>
-                eventos
-              </span>
-            </div>
-            {liveCount > 0 && (
-              <div className="flex flex-col items-center px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl"
-                style={{ background: 'rgba(255,77,46,0.08)', border: '1px solid rgba(255,77,46,0.2)' }}>
-                <span className="text-[13px] sm:text-[17px] font-black tabular-nums leading-none flex items-center gap-1" style={{ color: '#FF4D2E', fontFamily: 'var(--font-display)' }}>
-                  <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#FF4D2E', animation: 'live-pulse 1.6s ease-out infinite' }} />
-                  {liveCount}
-                </span>
-                <span className="text-[8.5px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#D69A9A', fontFamily: 'var(--font-sport)' }}>
-                  en vivo
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Timezone — fila propia solo en escritorio; en móvil el globo se reubica
-            junto a la campana (fila de pestañas, abajo) para ahorrar una fila. */}
-        <div className="hidden sm:flex items-center gap-3 mb-2 sm:mb-4">
-          <TimezoneSelector value={tz} onChange={(newTz) => { setTz(newTz); setStoredTZ(newTz) }} compact />
-        </div>
-
-        {/* Tabs — 3 principales + botón de alertas */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
-            style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
-            {/* Inicio eliminado: el chip 'Destacados' dentro de Calendario
-                cumple su rol. Solo quedan Calendario y Resultados. */}
-            {(['todos', 'resultados'] as const).map(tab => {
-              const isActive = view === tab
-              const isPastTab = tab === 'resultados'
-              const pastStyle = isActive && isPastTab
+          {/* Controles auxiliares a la derecha, en la MISMA fila que el título:
+              zona horaria + favoritos + alertas. Sin pestañas ni stat chips para
+              que los partidos se vean cuanto antes. */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Zona horaria — único selector (móvil + escritorio) */}
+            <TimezoneSelector value={tz} onChange={(newTz) => { setTz(newTz); setStoredTZ(newTz) }} compact />
+            {/* Favoritos — abre el modal de elegir equipos. Se tiñe de morado
+                cuando el usuario ya tiene equipos guardados. */}
+            {(() => {
+              const hasFavs = favorites.size > 0
               return (
                 <button
-                  key={tab}
-                  onClick={() => setView(tab)}
-                  className="cal-press flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all flex-shrink-0"
+                  onClick={() => setShowOnboarding(true)}
+                  aria-label="Mis equipos"
+                  title="Mis equipos"
+                  className="relative flex items-center justify-center rounded-full flex-shrink-0 transition-all"
                   style={{
-                    scrollSnapAlign: 'start',
-                    background: isActive
-                      ? (pastStyle ? 'rgba(239,68,68,0.14)' : 'rgba(124,58,237,0.18)')
-                      : 'rgba(255,255,255,0.04)',
-                    color: isActive
-                      ? (pastStyle ? '#FCA5A5' : '#C4B5FD')
-                      : '#7A7A8E',
-                    border: isActive
-                      ? (pastStyle ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(124,58,237,0.45)')
-                      : '1px solid rgba(255,255,255,0.06)',
-                    fontFamily: 'var(--font-sport)',
+                    width: 36, height: 36,
+                    background: hasFavs ? 'rgba(124,58,237,0.16)' : 'rgba(255,255,255,0.04)',
+                    border: hasFavs ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                    color: hasFavs ? '#C4B5FD' : '#7A7A8E',
                     cursor: 'pointer',
-                    boxShadow: isActive && !pastStyle ? '0 0 14px rgba(124,58,237,0.18)' : 'none',
                   }}>
-                  {tab === 'todos' && (
-                    <>
-                      Calendario
-                      {liveCount > 0 && (
-                        <span className="inline-flex items-center gap-1 ml-1">
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
-                          <span className="tabular-nums" style={{ color: isActive ? '#FCA5A5' : '#EF4444' }}>{liveCount}</span>
-                        </span>
-                      )}
-                    </>
+                  <svg width={15} height={15} viewBox="0 0 16 16" fill={hasFavs ? '#C4B5FD' : 'none'} aria-hidden>
+                    <path d="M8 13.5s-5-3-5-7a3 3 0 015-2 3 3 0 015 2c0 4-5 7-5 7z"
+                      stroke={hasFavs ? '#C4B5FD' : '#7A7A8E'} strokeWidth="1.4" strokeLinejoin="round" />
+                  </svg>
+                  {hasFavs && (
+                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center text-[9px] font-black tabular-nums rounded-full"
+                      style={{ minWidth: 16, height: 16, padding: '0 4px', background: '#7C3AED', color: '#fff', border: '1px solid var(--bg-base)', fontFamily: 'var(--font-sport)' }}>
+                      {favorites.size}
+                    </span>
                   )}
-                  {tab === 'resultados' && `Resultados${pastSource.length > 0 ? ` · ${pastSource.length}` : ''}`}
                 </button>
               )
-            })}
-          </div>
-          {/* Controles auxiliares a la derecha (zona horaria móvil + alertas) */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Zona horaria — solo móvil; en escritorio vive en su fila propia (arriba) */}
-            <div className="sm:hidden">
-              <TimezoneSelector value={tz} onChange={(newTz) => { setTz(newTz); setStoredTZ(newTz) }} compact />
-            </div>
+            })()}
             {/* Alertas — botón icono auxiliar */}
             {(() => {
               const isActive = view === 'recordatorios'
@@ -2802,45 +2755,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             />
           )}
 
-          {/* CTA — invita a elegir equipos cuando aún no hay favoritos */}
-          {favorites.size === 0 && !onlyLive && !selectedDate && filtered.length > 0 && (
-            <section
-              className="rounded-2xl px-3 py-2 sm:p-5 flex flex-row items-center gap-3 sm:gap-4"
-              style={{
-                background: 'linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(244,114,182,0.08) 100%)',
-                border: '1px solid rgba(124,58,237,0.28)',
-              }}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 sm:mb-1.5">
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em]"
-                    style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
-                    Sigue a tus equipos
-                  </span>
-                </div>
-                {/* Texto largo solo en escritorio: en móvil la tarjeta se reduce a
-                    una línea (etiqueta + botón) para no empujar los partidos abajo. */}
-                <p className="hidden sm:block text-[14px] leading-snug font-bold mb-1" style={{ color: '#F0F0FA', fontFamily: 'var(--font-sport)' }}>
-                  Elige tus equipos favoritos y tendrás aquí arriba un acceso rápido a cuándo juega cada uno, con aviso antes de empezar.
-                </p>
-                <p className="hidden sm:block text-[11px]" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
-                  Lleva 30 segundos · puedes cambiarlo cuando quieras.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowOnboarding(true)}
-                className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-[0.16em] transition-all"
-                style={{
-                  background: '#7C3AED', color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  fontFamily: 'var(--font-sport)', cursor: 'pointer',
-                  boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
-                }}
-              >
-                ♥ Elegir equipos
-              </button>
-            </section>
-          )}
+          {/* El acceso a "elegir equipos" ahora vive en el botón ♥ de la
+              cabecera; el tarjetón "Sigue a tus equipos" se retiró para que los
+              partidos aparezcan cuanto antes. */}
 
           {orderedDates.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
