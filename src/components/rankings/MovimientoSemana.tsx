@@ -9,7 +9,7 @@ import {
 } from '@/lib/rankings'
 import { getDisplayScore, SPORT_EMOJI } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
-import type { MoverEntry } from '@/lib/rankings-data'
+import { MAX_WEEKLY_DELTA, type MoverEntry } from '@/lib/rankings-data'
 
 // ── Fallback desde arrays estáticos ──────────────────────────────────────
 function getStaticMovers(limit: number): { movers: MoverEntry[]; fallers: MoverEntry[] } {
@@ -34,7 +34,14 @@ function getStaticMovers(limit: number): { movers: MoverEntry[]; fallers: MoverE
     delta:       Math.round((getDisplayScore(e) - e.scorePrev!) * 10) / 10,
   })
 
-  const sorted = [...withPrev].map(toMover).sort((a, b) => b.delta - a.delta)
+  // Mismo tope anti-artefacto que la vía de DB (rankings-data): un salto de
+  // re-baseline (+34, +20) NO es un movimiento semanal real → se descarta, igual
+  // que hace la ruta de servidor. Sin esto, el fallback estático mostraba esos
+  // saltos como si fueran la subida de la semana.
+  const sorted = [...withPrev]
+    .map(toMover)
+    .filter(e => Math.abs(e.delta) >= 1 && Math.abs(e.delta) <= MAX_WEEKLY_DELTA)
+    .sort((a, b) => b.delta - a.delta)
   return {
     movers:  sorted.filter(e => e.delta >= 1).slice(0, limit),
     fallers: sorted.filter(e => e.delta <= -1).slice(-limit).reverse(),

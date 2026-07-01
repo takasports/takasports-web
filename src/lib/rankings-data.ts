@@ -448,8 +448,9 @@ export interface MoverEntry {
  * (el componente cae al estático).
  */
 // Un cambio semanal mayor que esto casi siempre es un artefacto de baseline
-// obsoleto, no movimiento real → se descarta.
-const MAX_WEEKLY_DELTA = 8
+// obsoleto, no movimiento real → se descarta. Exportado para que el fallback
+// estático (MovimientoSemana) aplique el MISMO tope y no muestre saltos falsos.
+export const MAX_WEEKLY_DELTA = 8
 const MOVER_CATEGORIES = ['jugadores', 'jugadoras', 'sub21', 'latam', 'concacaf', 'clubes']
 
 export async function getTopMovers(limit = 3): Promise<{ movers: MoverEntry[]; fallers: MoverEntry[] }> {

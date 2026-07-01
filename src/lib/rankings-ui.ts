@@ -3,7 +3,7 @@
 // componentes desacoplados (RankRow, TopOneRow, MovimientoSemana, etc.).
 
 import {
-  calcScore, calcCreatorScore, type RankingEntry, type Trend,
+  calcScore, calcCreatorScore, calcTrend, type RankingEntry, type Trend,
   RANKING_CREADORES, RANKING_PERIODISTAS, RANKING_CREADORES_WWE,
 } from './rankings'
 
@@ -30,10 +30,13 @@ export function getDisplayScore(entry: RankingEntry): number {
     : calcScore(entry.factors, entry.editorialBoost)
 }
 
-// La flecha refleja la tendencia editorial/DB (coherente con el insight),
-// no un recálculo que podía contradecir el texto curado.
+// La flecha refleja el CAMBIO REAL de score (esta semana vs la anterior), como
+// promete la metodología (sección 4): así la flecha, el número y el sparkline
+// coinciden y no se contradicen. Umbral ±1 = movimiento; ±4 = movimiento fuerte
+// (↑↑/↓↓). Si no hay score previo (entry nueva), caemos a la tendencia editorial.
 export function getEffectiveTrend(entry: RankingEntry): Trend {
-  return entry.trend
+  if (typeof entry.scorePrev !== 'number') return entry.trend
+  return calcTrend(getDisplayScore(entry), entry.scorePrev)
 }
 
 export function trendIcon(trend: Trend) {
