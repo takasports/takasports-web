@@ -1653,8 +1653,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const loadingPastRef = useRef(false)
   const prependAnchorRef = useRef<number | null>(null)  // scrollHeight antes del prepend (para anclar HOY tras cargar pasados)
   const stickyBarRef = useRef<HTMLDivElement | null>(null) // barra sticky (day chips + toolbar): su altura = offset del anclaje
-  const todaySepRef = useRef<HTMLElement | null>(null) // sección de HOY (para anclarla arriba tras cargar)
-  const didInitialLoadRef = useRef(false) // dispara la carga de pasados una sola vez al montar
+  const todaySepRef = useRef<HTMLElement | null>(null) // sección de HOY (referencia; ya no se ancla al montar)
 
   const liveScores = useLiveScores(events)
   const liveFixtures = useLiveFixtures()
@@ -1781,25 +1780,18 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     loadingPastRef.current = false
   }, [])
 
-  // Tras anteponer los días pasados anclamos HOY justo bajo la barra sticky, para
-  // "arrancar en HOY" con los pasados por encima (el usuario sube para verlos).
-  // Re-anclamos un par de veces porque banderas/escudos cargan tarde y descuadran
-  // la altura. Fallback a scrollBy si (raro) no hubiera sección de HOY.
+  // Al anteponer los días pasados (el usuario pulsó "Ver resultados anteriores"):
+  // 1) compensamos cuánto creció la página para que HOY NO SALTE de sitio, y
+  // 2) asomamos un poco hacia arriba (suave) para que se vean los primeros
+  // resultados e invitar a seguir subiendo. Como NO se carga nada al montar,
+  // al entrar HOY está arriba al instante y no hay "flash".
   useLayoutEffect(() => {
     if (prependAnchorRef.current == null) return
     const grew = document.documentElement.scrollHeight - prependAnchorRef.current
     prependAnchorRef.current = null
-    const anchorHoy = () => {
-      const el = todaySepRef.current
-      if (!el) { if (grew > 0) window.scrollBy(0, grew); return }
-      const stickyH = stickyBarRef.current?.getBoundingClientRect().height ?? 0
-      const y = window.scrollY + el.getBoundingClientRect().top - stickyH - 6
-      window.scrollTo(0, Math.max(0, y))
-    }
-    anchorHoy()
-    requestAnimationFrame(anchorHoy)
-    setTimeout(anchorHoy, 250)
-    setTimeout(anchorHoy, 600)
+    if (grew <= 0) return
+    window.scrollBy(0, grew) // mantiene la posición visual (HOY donde estaba)
+    requestAnimationFrame(() => window.scrollBy({ top: -Math.min(grew, 260), behavior: 'smooth' }))
   }, [pastTimeline])
 
   // Debounce search input — avoid filtering on every keystroke
@@ -2294,16 +2286,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const grouped = useMemo(() => groupEventsByDate(filteredForGrouping), [filteredForGrouping])
   const orderedDates = useMemo(() => orderedDateKeys(grouped), [grouped])
 
-  // Carga de días pasados al montar (una sola vez, cuando la lista ya tiene HOY).
-  // Es aditiva: HOY y los futuros ya están; los pasados se anteponen y el anclaje
-  // deja HOY arriba. Se salta si hay un día elegido o el filtro "En vivo".
-  useEffect(() => {
-    if (didInitialLoadRef.current) return
-    if (view !== 'todos' || selectedDate || onlyLive) return
-    if (orderedDates.length === 0) return
-    didInitialLoadRef.current = true
-    loadPastWindow()
-  }, [view, selectedDate, onlyLive, orderedDates.length, loadPastWindow])
+  // A propósito NO cargamos días pasados al montar: HOY aparece arriba al
+  // instante, sin "flash" ni saltos. Los pasados se traen solo cuando el usuario
+  // pulsa la casilla "Ver resultados anteriores" (en el cuerpo de la lista).
 
   const liveCount = liveEventsInList.length + orphanFixtures.length
 
@@ -2735,29 +2720,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             </section>
           )}
 
-          {/* Tus equipos — resumen de favoritos (chips con su próximo partido).
-              Recuperado en el tab Calendario: cumple lo que promete el onboarding. */}
-          {favorites.size > 0 && !onlyLive && !selectedDate && (
-            <FavoritesSection
-              favoriteEvents={favoriteEvents}
-              favorites={favorites}
-              liveScores={liveScores}
-              reminders={reminders}
-              flashIds={flashIds}
-              recentForms={recentForms}
-              tz={tz}
-              toggleReminder={toggleReminder}
-              toggleFavorite={toggleFavorite}
-              setSelectedUFCDate={setSelectedUFCDate}
-              onEdit={() => setShowOnboarding(true)}
-              filterActive={activeFilter !== 'Todo' || !!search}
-              chipsOnly
-            />
-          )}
-
-          {/* El acceso a "elegir equipos" ahora vive en el botón ♥ de la
-              cabecera; el tarjetón "Sigue a tus equipos" se retiró para que los
-              partidos aparezcan cuanto antes. */}
+          {/* El resumen grande de "tus equipos" se retiró de la lista: ocupaba
+              demasiado. Ver y cambiar tus equipos vive ahora en el botón ♥ de la
+              cabecera. Así, al entrar, se ven antes los partidos. */}
 
           {orderedDates.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
@@ -2808,13 +2773,24 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             </div>
           ) : (
             <>
-              {/* Rótulo del tope del timeline: marca el inicio de los resultados
-                  de días anteriores (que el usuario ve al subir). */}
-              {pastTimeline.length > 0 && (
+              {/* Casilla "Ver resultados anteriores": al entrar HOY está arriba y
+                  no se carga nada (sin flash). Al pulsarla se traen los días
+                  pasados con sus marcadores y se asoman por arriba (el usuario
+                  sube para verlos). Solo en la vista general (sin día ni "En vivo"). */}
+              {pastTimeline.length === 0 && !selectedDate && !onlyLive ? (
+                <button
+                  onClick={() => loadPastWindow()}
+                  className="cal-press w-full flex items-center justify-center gap-1.5 py-2.5 mb-1 rounded-xl text-[10px] font-black uppercase tracking-[0.18em] transition-all hover:brightness-125"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.12)', color: '#9090A8', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden><path d="M2.5 7.5L6 4l3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  Ver resultados anteriores
+                </button>
+              ) : pastTimeline.length > 0 ? (
                 <div className="flex items-center justify-center py-2 text-[10px] uppercase tracking-widest" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
                   <span>Resultados de días anteriores</span>
                 </div>
-              )}
+              ) : null}
               {orderedDates.map(dateKey => {
               // Orden cronológico de los partidos del día. En "Destacados" se respeta
               // la curación por relevancia (top del día); en el resto (Todo / deporte /
