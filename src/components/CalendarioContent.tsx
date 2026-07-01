@@ -565,170 +565,6 @@ function FormStrip({ form, align = 'start' }: { form: ('W'|'D'|'L')[]; align?: '
   )
 }
 
-// Renders the upgraded "Tus equipos" section: a horizontal row of team
-// chips (each with the team's next match countdown), an editable header,
-// and the full list of upcoming events involving any favorited team. Long
-// lists collapse to 8 by default with a "Ver más" toggle.
-function FavoritesSection({
-  favoriteEvents, favorites, liveScores, reminders, flashIds, recentForms, tz,
-  toggleReminder, toggleFavorite, setSelectedUFCDate, onEdit, filterActive, chipsOnly,
-}: {
-  favoriteEvents: SportEvent[]
-  favorites: Set<string>
-  liveScores: Map<string, LiveScore>
-  reminders: Set<string>
-  flashIds: Set<string>
-  recentForms: Record<string, ('W'|'D'|'L')[]>
-  tz: string
-  toggleReminder: (id: string) => void
-  toggleFavorite: (name: string) => void
-  setSelectedUFCDate: (d: string | null) => void
-  onEdit: () => void
-  filterActive: boolean
-  chipsOnly?: boolean
-}) {
-  const [expanded, setExpanded] = useState(false)
-  const VISIBLE = 8
-
-  // For each favorite team find their next upcoming event (favoriteEvents
-  // is already sorted by isoDate ascending — see useMemo upstream).
-  // Cuando hay un filtro activo (deporte/búsqueda), ocultamos los equipos
-  // que no tienen ningún partido en el filtro actual: no tiene sentido
-  // mostrar 'Sin partidos' para un equipo de NBA cuando filtras Fútbol.
-  const teamNext = useMemo(() => {
-    const out: Array<{ team: string; next: SportEvent | null }> = []
-    for (const team of favorites) {
-      const lower = team.toLowerCase()
-      const match = favoriteEvents.find(ev =>
-        ev.home.toLowerCase().includes(lower)
-        || (ev.away?.toLowerCase().includes(lower) ?? false)
-      ) ?? null
-      if (filterActive && !match) continue
-      out.push({ team, next: match })
-    }
-    // Sort: teams with a next match first (closest first), then no-match teams.
-    return out.sort((a, b) => {
-      if (a.next && !b.next) return -1
-      if (!a.next && b.next) return 1
-      if (a.next && b.next) return (a.next.isoDate ?? '').localeCompare(b.next.isoDate ?? '')
-      return a.team.localeCompare(b.team)
-    })
-  }, [favorites, favoriteEvents, filterActive])
-
-  const visibleEvents = expanded ? favoriteEvents : favoriteEvents.slice(0, VISIBLE)
-
-  return (
-    <section>
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2">
-          <span className="text-[12px]" style={{ color: '#F472B6' }}>♥</span>
-          <span className="text-[10px] font-black uppercase tracking-[0.18em]"
-            style={{ color: '#F472B6', fontFamily: 'var(--font-sport)' }}>
-            Tus equipos
-          </span>
-          <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-black tabular-nums"
-            style={{ background: 'rgba(244,114,182,0.18)', color: '#F472B6', fontFamily: 'var(--font-sport)' }}>
-            {favoriteEvents.length}
-          </span>
-        </div>
-        <button
-          onClick={onEdit}
-          className="text-[9px] font-bold uppercase tracking-widest transition-opacity hover:opacity-70"
-          style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
-        >
-          Editar
-        </button>
-      </div>
-
-      {/* Team chips: cada equipo favorito con su próximo partido o estado */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 mb-3 scrollbar-hide">
-        {teamNext.map(({ team, next }) => {
-          const countdown = next?.isoDate ? timeUntilLabel(next.isoDate) : null
-          const nextDate = next?.isoDate ? isoToLocalDate(next.isoDate) : null
-          const today = isoToLocalDate(new Date().toISOString())
-          const isToday = nextDate === today
-          const subtitle = next
-            ? (countdown ?? (isToday ? `Hoy · ${next.time}` : formatDateLabel(nextDate ?? '') + ' · ' + next.time))
-            : 'Sin partidos'
-          return (
-            <div
-              key={team}
-              className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl"
-              style={{
-                background: next ? 'rgba(244,114,182,0.08)' : 'rgba(255,255,255,0.025)',
-                border: next ? '1px solid rgba(244,114,182,0.22)' : '1px solid rgba(255,255,255,0.05)',
-              }}
-              title={team}
-            >
-              <div className="flex flex-col">
-                <span className="text-[11px] font-bold leading-tight truncate max-w-[120px]"
-                  style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-                  {team}
-                </span>
-                <span className="text-[9px] tabular-nums mt-0.5 truncate max-w-[120px]"
-                  style={{ color: next ? '#F472B6' : '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
-                  {subtitle}
-                </span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {!chipsOnly && (
-        <>
-          <div className="space-y-1.5">
-            {visibleEvents.map(event => {
-              const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
-              const today = isoToLocalDate(new Date().toISOString())
-              const dateLabel = evDate && evDate !== today ? formatDateLabel(evDate) : undefined
-              return (
-                <MatchRow
-                  key={`fav-${event.id}`}
-                  event={event}
-                  liveScore={liveScores.get(event.id)}
-                  isReminded={reminders.has(event.id)}
-                  onToggleReminder={() => toggleReminder(event.id)}
-                  dateLabel={dateLabel}
-                  onClickUFC={setSelectedUFCDate}
-                  flashing={flashIds.has(event.id)}
-                  isFav={true}
-                  onToggleFav={() => toggleFavorite(event.home)}
-                  formHome={recentForms[formKey(event, event.home)]}
-                  formAway={event.away ? recentForms[formKey(event, event.away)] : undefined}
-                  showComp
-                  tz={tz}
-                />
-              )
-            })}
-          </div>
-
-          {favoriteEvents.length > VISIBLE && (
-            <div className="flex justify-center mt-3">
-              <button
-                onClick={() => setExpanded(v => !v)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all"
-                style={{
-                  color: '#F472B6',
-                  background: 'rgba(244,114,182,0.10)',
-                  border: '1px solid rgba(244,114,182,0.28)',
-                  fontFamily: 'var(--font-sport)',
-                  cursor: 'pointer',
-                }}
-              >
-                {expanded ? 'Ver menos' : `Ver ${favoriteEvents.length - VISIBLE} más`}
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }}>
-                  <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </section>
-  )
-}
-
 // ─── Compact list row (non-live or in TODOS) ──────────────────────────────
 function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, onToggleFav, formHome, formAway, showComp, showReason, tz }: {
   event: SportEvent
@@ -1737,24 +1573,6 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     } catch { /* ignore */ }
   }, [view, activeFilter, selectedDate])
 
-  // Resultados (10 días): cargados en cliente vía ESPN en vivo (live=1) para no
-  // hacer ~38 fetches de pasados en el SSR. Conserva tenis y ganador F1/UFC. Si
-  // falla, la pestaña Resultados 10d queda vacía pero los rangos mayores siguen.
-  // Diferido hasta abrir la pestaña Resultados: en la carga inicial (vista
-  // Calendario) se ahorra una petición de hasta 200 eventos.
-  const recentPastRequested = useRef(false)
-  useEffect(() => {
-    if (view !== 'resultados' || recentPastRequested.current) return
-    recentPastRequested.current = true
-    const ctrl = new AbortController()
-    const from = new Date(Date.now() - 10 * 86_400_000).toISOString()
-    fetch(`/api/events/past?live=1&from=${encodeURIComponent(from)}&limit=200`, { signal: ctrl.signal })
-      .then(r => (r.ok ? r.json() : null))
-      .then((data: { events?: SportEvent[] } | null) => { if (data?.events) setRecentPast(data.events) })
-      .catch(() => { recentPastRequested.current = false }) // abort/fallo → reintento al volver
-    return () => ctrl.abort()
-  }, [view])
-
   // Carga la ventana de días PASADOS del timeline (una sola vez, al montar). El
   // endpoint con live=1 cubre los ~10 días recientes: los traemos de golpe y los
   // anteponemos a la lista. Para histórico más antiguo está la pestaña Resultados.
@@ -2253,8 +2071,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       scoreCache.set(ev.id, s)
       return s
     }
+    const todayKey = isoToLocalDate(new Date().toISOString())
     const out: SportEvent[] = []
-    for (const evs of byDay.values()) {
+    for (const [day, evs] of byDay) {
       const sorted = [...evs].sort((a, b) => {
         const aFav = eventHasFavorite(favorites, a) ? 1 : 0
         const bFav = eventHasFavorite(favorites, b) ? 1 : 0
@@ -2264,6 +2083,14 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         if (sA !== sB) return sB - sA
         return (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
       })
+      // Días YA JUGADOS (timeline "Ver resultados anteriores"): se muestran
+      // COMPLETOS, sin curación. Destacados solo tiene sentido como AVANCE de lo
+      // que viene; en un día terminado el usuario quiere TODOS los resultados,
+      // no 4 curados (que además esconderían resultados reales sin avisar).
+      if (day !== 'unknown' && day < todayKey) {
+        out.push(...sorted)
+        continue
+      }
       // Al menos MIN; se extiende mientras el siguiente siga siendo favorito o
       // élite (≥ ELITE), hasta MAX. Ordenado desc. → en cuanto uno no cualifica,
       // el resto tampoco: corte limpio.
@@ -2927,169 +2754,6 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 })}
               </div>
             </section>
-          )}
-        </div>
-      )}
-
-      {view === 'resultados' && (
-        <div className="relative z-[1] space-y-10">
-          {/* Compact sport + search toolbar */}
-          <div
-            className="-mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-4 sm:px-6 xl:px-10 pt-2 pb-3 mb-1"
-            style={{
-              position: 'sticky',
-              top: 0,
-              zIndex: 30,
-              background: 'linear-gradient(180deg, rgba(10,10,18,0.96) 0%, rgba(10,10,18,0.88) 80%, rgba(10,10,18,0) 100%)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-            }}
-          >
-            <SearchInput value={searchRaw} onChange={setSearchRaw} />
-            {/* Misma barra de categorías que en Calendario (coherencia). Cuenta
-                sobre los resultados (pastSource). */}
-            <div className="mt-3">
-              <CompetitionSelector
-                events={pastSource}
-                activeFilter={activeFilter}
-                activeComp={activeComp}
-                onSelectSport={(k) => { setActiveComp(null); setActiveFilter(k) }}
-                onSelectComp={(slug) => { if (activeComp === slug) { setActiveComp(null) } else { setActiveFilter('Todo'); setActiveComp(slug) } }}
-              />
-            </div>
-            {/* Rango temporal */}
-            <div className="flex items-center gap-2 mt-2.5 overflow-x-auto pb-0.5 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
-              <span className="text-[9px] font-black uppercase tracking-widest flex-shrink-0" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
-                Rango
-              </span>
-              {([
-                { id: '10d', label: '10 días' },
-                { id: '30d', label: '1 mes' },
-                { id: '90d', label: '3 meses' },
-                { id: 'all', label: 'Histórico' },
-              ] as const).map(opt => {
-                const active = pastRange === opt.id
-                return (
-                  <button
-                    key={opt.id}
-                    onClick={() => setPastRange(opt.id)}
-                    className="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
-                    style={{
-                      background: active ? 'rgba(252,165,165,0.14)' : 'rgba(255,255,255,0.03)',
-                      color: active ? '#FCA5A5' : '#5A5A6A',
-                      border: active ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.06)',
-                      fontFamily: 'var(--font-sport)',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                    }}>
-                    {opt.label}
-                  </button>
-                )
-              })}
-              {pastLoading && (
-                <span className="text-[9px] flex-shrink-0" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-                  cargando…
-                </span>
-              )}
-            </div>
-            {pastError && (
-              <p className="text-[10px] mt-1.5" style={{ color: '#FCA5A5', fontFamily: 'var(--font-sport)' }}>
-                {pastError}
-              </p>
-            )}
-          </div>
-
-          {pastOrderedDates.length === 0 ? (
-            <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="mb-2 flex justify-center" style={{ color: '#5A5A6A' }}><ClipboardIcon size={32} /></p>
-              <p style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600 }}>
-                {pastLoading
-                  ? 'Buscando resultados…'
-                  : search
-                    ? `Sin resultados para "${search}"`
-                    : activeFilter !== 'Todo'
-                      ? `Sin ${activeFilter} en los últimos ${pastRange === '10d' ? '10 días' : pastRange === '30d' ? '30 días' : pastRange === '90d' ? '90 días' : '3 años'}`
-                      : `Sin resultados en los últimos ${pastRange === '10d' ? '10 días' : pastRange === '30d' ? '30 días' : pastRange === '90d' ? '90 días' : '3 años'}`}
-              </p>
-              {!pastLoading && (
-                <div className="mt-3 flex flex-col gap-1.5 items-center">
-                  {pastRange !== 'all' && (
-                    <button onClick={() => setPastRange('all')}
-                      className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full"
-                      style={{ background: 'rgba(124,58,237,0.12)', color: '#C4B5FD', border: '1px solid rgba(124,58,237,0.32)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}>
-                      Ampliar a histórico completo
-                    </button>
-                  )}
-                  {(search || activeFilter !== 'Todo') && (
-                    <button onClick={clearFilters}
-                      className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full"
-                      style={{ background: 'rgba(255,255,255,0.04)', color: '#7A7A8E', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}>
-                      ✕ Quitar filtros
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            pastOrderedDates.map(dateKey => {
-              const dayEvents = pastGrouped[dateKey] ?? []
-              const compOrder: string[] = []
-              const byComp: Record<string, typeof dayEvents> = {}
-              for (const ev of dayEvents) {
-                if (!byComp[ev.comp]) { byComp[ev.comp] = []; compOrder.push(ev.comp) }
-                byComp[ev.comp].push(ev)
-              }
-              // Ligas fijadas primero (orden estable; el resto, primera aparición).
-              compOrder.sort((a, b) => {
-                const pa = favComps.has(compConfigForGroup(a, byComp[a][0]?.sport)?.slug ?? '') ? 1 : 0
-                const pb = favComps.has(compConfigForGroup(b, byComp[b][0]?.sport)?.slug ?? '') ? 1 : 0
-                return pb - pa
-              })
-              return (
-                <section key={dateKey}>
-                  <DaySeparator dateKey={dateKey} count={dayEvents.length} tone="past" />
-                  {compOrder.map((comp, compIdx) => {
-                    const compEvents = byComp[comp]
-                    const accent = getCompAccent(comp, compEvents[0]?.accent)
-                    const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
-                    return (
-                      <div key={comp} className="mb-2 relative">
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={activeComp && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
-                        <div className="space-y-1.5">
-                          {compEvents.map(event => (
-                            <PastMatchRow
-                              key={event.id}
-                              event={event}
-                              isFav={eventHasFavorite(favorites, event)}
-                              onToggleFav={() => toggleFavorite(event.home)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </section>
-              )
-            })
-          )}
-
-          {useExtendedPast && pastNextCursor && (
-            <div className="flex justify-center pt-2">
-              <button
-                onClick={loadMorePast}
-                disabled={pastLoading}
-                className="px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all"
-                style={{
-                  background: 'rgba(124,58,237,0.14)',
-                  color: '#C4B5FD',
-                  border: '1px solid rgba(124,58,237,0.35)',
-                  fontFamily: 'var(--font-sport)',
-                  cursor: pastLoading ? 'wait' : 'pointer',
-                  opacity: pastLoading ? 0.6 : 1,
-                }}>
-                {pastLoading ? 'Cargando…' : 'Cargar más resultados'}
-              </button>
-            </div>
           )}
         </div>
       )}

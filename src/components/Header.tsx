@@ -147,7 +147,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
   const totalResults = articles.length + players.length + espnHits.length
 
   return (
-    <div className="search-overlay" onClick={onClose} aria-hidden="true">
+    <div className="search-overlay" onClick={onClose}>
       <div
         ref={modalRef}
         role="dialog"

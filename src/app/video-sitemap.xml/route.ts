@@ -22,9 +22,13 @@ export async function GET() {
 
   const urls = reels
     .map(r => {
-      const publishedIso = r.timestamp
-        ? new Date(/^\d+$/.test(r.timestamp) ? parseInt(r.timestamp, 10) * 1000 : r.timestamp).toISOString()
-        : null
+      // Blindaje: un timestamp no parseable tumbaría TODO el sitemap (500).
+      // Si no parsea, dejamos publishedIso null (la etiqueta es opcional).
+      let publishedIso: string | null = null
+      if (r.timestamp) {
+        const d = new Date(/^\d+$/.test(r.timestamp) ? parseInt(r.timestamp, 10) * 1000 : r.timestamp)
+        if (!Number.isNaN(d.getTime())) publishedIso = d.toISOString()
+      }
       const thumbnail = r.thumbnail_url
         ? (r.thumbnail_url.startsWith('http') ? r.thumbnail_url : `${SITE_URL}${r.thumbnail_url}`)
         : `${SITE_URL}/taka-icon.png`

@@ -58,19 +58,24 @@ export async function GET() {
 
   const urls = articles
     .filter(a => a.slug && a.title && a.publishedAt)
-    .map(
-      a => `  <url>
+    .map(a => {
+      // Blindaje: una sola fecha no parseable tumbaría TODO el sitemap (500).
+      // Si no parsea, saltamos solo esa URL en vez de reventar la respuesta.
+      const d = new Date(a.publishedAt)
+      if (Number.isNaN(d.getTime())) return null
+      return `  <url>
     <loc>${SITE_URL}/noticias/${a.slug}</loc>
     <news:news>
       <news:publication>
         <news:name>TakaSports</news:name>
         <news:language>es</news:language>
       </news:publication>
-      <news:publication_date>${new Date(a.publishedAt).toISOString()}</news:publication_date>
+      <news:publication_date>${d.toISOString()}</news:publication_date>
       <news:title>${escapeXml(a.title)}</news:title>
     </news:news>
-  </url>`,
-    )
+  </url>`
+    })
+    .filter(Boolean)
     .join('\n')
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
