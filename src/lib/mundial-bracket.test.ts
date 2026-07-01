@@ -78,6 +78,19 @@ describe('buildBracket', () => {
     expect(first.home.isPlaceholder).toBe(false)
   })
 
+  it('pone bandera a las selecciones con acentos que manda ESPN (Curaçao, Côte d\'Ivoire)', () => {
+    // ESPN envía las grafías acentuadas; antes no casaban y salía bandera blanca.
+    const conAcentos: BracketSourceEvent[] = KO.map(e =>
+      e.id === '5' ? ev('5', e.event_date, 'Curaçao', "Côte d'Ivoire") : e,
+    )
+    const b = buildBracket(conAcentos)
+    const m = b.rounds[0].matches.find(mm => mm.home.name === 'Curazao')
+    expect(m).toBeDefined()
+    expect(m!.home.flag).toBe('🇨🇼')
+    expect(m!.away.name).toBe('Costa de Marfil')
+    expect(m!.away.flag).toBe('🇨🇮')
+  })
+
   it('convierte los huecos de ESPN en texto ES con su conexión', () => {
     const b = buildBracket(KO)
     const oct = b.rounds[1].matches[0] // Canada vs "Round of 32 3 Winner"

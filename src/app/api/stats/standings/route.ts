@@ -984,7 +984,7 @@ const WC_NATIONS: Record<string, NationMeta> = {
   // CONCACAF
   Mexico:           { flag: '🇲🇽', confed: 'CONCACAF', es: 'México' },
   Canada:           { flag: '🇨🇦', confed: 'CONCACAF', es: 'Canadá' },
-  'United States':  { flag: '🇺🇸', confed: 'CONCACAF', es: 'EEUU' },
+  'United States':  { flag: '🇺🇸', confed: 'CONCACAF', es: 'Estados Unidos' },
   Haiti:            { flag: '🇭🇹', confed: 'CONCACAF', es: 'Haití' },
   Panama:           { flag: '🇵🇦', confed: 'CONCACAF', es: 'Panamá' },
   Curaçao:          { flag: '🇨🇼', confed: 'CONCACAF', es: 'Curazao' },
@@ -1013,7 +1013,7 @@ const WC_NATIONS: Record<string, NationMeta> = {
   Portugal:         { flag: '🇵🇹', confed: 'UEFA' },
   England:          { flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', confed: 'UEFA', es: 'Inglaterra' },
   Croatia:          { flag: '🇭🇷', confed: 'UEFA', es: 'Croacia' },
-  'Bosnia-Herzegovina': { flag: '🇧🇦', confed: 'UEFA', es: 'Bosnia-Herzegovina' },
+  'Bosnia-Herzegovina': { flag: '🇧🇦', confed: 'UEFA', es: 'Bosnia y Herzegovina' },
   // AFC
   'South Korea':    { flag: '🇰🇷', confed: 'AFC', es: 'Corea del Sur' },
   Qatar:            { flag: '🇶🇦', confed: 'AFC' },
@@ -1035,17 +1035,24 @@ const WC_NATIONS: Record<string, NationMeta> = {
   'Cabo Verde':     { flag: '🇨🇻', confed: 'CAF', es: 'Cabo Verde' },
   Senegal:          { flag: '🇸🇳', confed: 'CAF' },
   Algeria:          { flag: '🇩🇿', confed: 'CAF', es: 'Argelia' },
-  'DR Congo':       { flag: '🇨🇩', confed: 'CAF', es: 'Congo RD' },
-  'Congo DR':       { flag: '🇨🇩', confed: 'CAF', es: 'Congo RD' },
+  'DR Congo':       { flag: '🇨🇩', confed: 'CAF', es: 'RD Congo' },
+  'Congo DR':       { flag: '🇨🇩', confed: 'CAF', es: 'RD Congo' },
   Ghana:            { flag: '🇬🇭', confed: 'CAF' },
   // OFC
   'New Zealand':    { flag: '🇳🇿', confed: 'OFC', es: 'Nueva Zelanda' },
 }
 
 // Lookup directo por nombre ESPN (inglés) o por su traducción ES.
-const WC_NATIONS_BY_ES: Record<string, NationMeta> = Object.fromEntries(
-  Object.values(WC_NATIONS).filter(m => m.es).map(m => [m.es!, m]),
-)
+const WC_NATIONS_BY_ES: Record<string, NationMeta> = {
+  ...Object.fromEntries(Object.values(WC_NATIONS).filter(m => m.es).map(m => [m.es!, m])),
+  // Los nombres MOSTRADOS (es:) ya son los canónicos (Estados Unidos / RD Congo /
+  // Bosnia y Herzegovina), alineados con nation-names.ts para no mostrar el mismo
+  // país con dos nombres. Mantenemos las grafías cortas anteriores como alias por
+  // si una fuente externa (FIFA ranking) aún las manda.
+  EEUU: WC_NATIONS['United States'],
+  'Congo RD': WC_NATIONS['DR Congo'],
+  'Bosnia-Herzegovina': WC_NATIONS['Bosnia-Herzegovina'],
+}
 function nationMeta(name: string): NationMeta | undefined {
   return WC_NATIONS[name] ?? WC_NATIONS_BY_ES[name]
 }

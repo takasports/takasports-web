@@ -120,11 +120,18 @@ const FLAG: Record<string, string> = {
   'greece': '🇬🇷', 'romania': '🇷🇴', 'hungary': '🇭🇺', 'slovakia': '🇸🇰', 'slovenia': '🇸🇮',
   'republic of ireland': '🇮🇪', 'ireland': '🇮🇪', 'north macedonia': '🇲🇰', 'albania': '🇦🇱',
   'dr congo': '🇨🇩', 'congo dr': '🇨🇩', 'mali': '🇲🇱', 'finland': '🇫🇮', 'kosovo': '🇽🇰', 'iceland': '🇮🇸',
+  // Grafías acentuadas tal cual las manda ESPN (no casaban en minúsculas simples).
+  "cote d'ivoire": '🇨🇮', 'turkiye': '🇹🇷',
 }
+
+// Normaliza acentos/diacríticos: ESPN manda "Curaçao", "Côte d'Ivoire", "Türkiye"
+// y la búsqueda simple en minúsculas fallaba → bandera blanca para clasificados reales.
+const stripDiacritics = (s: string) =>
+  s.toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
 function flagFor(team: string | null): string {
   if (!team) return '🏳️'
-  return FLAG[team.toLowerCase().trim()] ?? '🏳️'
+  return FLAG[team.toLowerCase().trim()] ?? FLAG[stripDiacritics(team)] ?? '🏳️'
 }
 
 function buildSide(rawName: string | null, score: number | null, isWinner: boolean): BracketSide {
