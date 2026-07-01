@@ -11,42 +11,130 @@ const ESPN_NBA = (abbr: string) => `https://a.espncdn.com/i/teamlogos/nba/500/${
 
 // Curated list of popular teams/athletes per sport. Names match what appears in the
 // SportEvent.home/away strings from ESPN/Sanity data.
-const POPULAR_TEAMS: { name: string; sport: string; icon: string; logo?: string }[] = [
-  // Fútbol
-  { name: 'Real Madrid',          sport: 'Fútbol', icon: '⚪', logo: ESPN_SOCCER(86)   },
-  { name: 'Barcelona',            sport: 'Fútbol', icon: '🔵', logo: ESPN_SOCCER(83)   },
-  { name: 'Atlético Madrid',      sport: 'Fútbol', icon: '🔴', logo: ESPN_SOCCER(1068) },
-  { name: 'Manchester City',      sport: 'Fútbol', icon: '🩵', logo: ESPN_SOCCER(382)  },
-  { name: 'Liverpool',            sport: 'Fútbol', icon: '🔴', logo: ESPN_SOCCER(364)  },
-  { name: 'Arsenal',              sport: 'Fútbol', icon: '🔴', logo: ESPN_SOCCER(359)  },
-  { name: 'Manchester United',    sport: 'Fútbol', icon: '🔴', logo: ESPN_SOCCER(360)  },
-  { name: 'Chelsea',              sport: 'Fútbol', icon: '🔵', logo: ESPN_SOCCER(363)  },
-  { name: 'Bayern',               sport: 'Fútbol', icon: '🔴', logo: ESPN_SOCCER(132)  },
-  { name: 'PSG',                  sport: 'Fútbol', icon: '🔵', logo: ESPN_SOCCER(160)  },
-  { name: 'Juventus',             sport: 'Fútbol', icon: '⚫', logo: ESPN_SOCCER(111)  },
-  { name: 'Inter',                sport: 'Fútbol', icon: '🔵', logo: ESPN_SOCCER(110)  },
+const POPULAR_TEAMS: { name: string; sport: string; league?: string; icon: string; logo?: string }[] = [
+  // ⚽ LaLiga
+  { name: 'Barcelona', sport: 'Fútbol', league: 'LaLiga', icon: '🔵', logo: ESPN_SOCCER(83) },
+  { name: 'Real Madrid', sport: 'Fútbol', league: 'LaLiga', icon: '⚪', logo: ESPN_SOCCER(86) },
+  { name: 'Villarreal', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(102) },
+  { name: 'Atlético Madrid', sport: 'Fútbol', league: 'LaLiga', icon: '🔴', logo: ESPN_SOCCER(1068) },
+  { name: 'Real Betis', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(244) },
+  { name: 'Celta Vigo', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(85) },
+  { name: 'Getafe', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(2922) },
+  { name: 'Rayo Vallecano', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(101) },
+  { name: 'Valencia', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(94) },
+  { name: 'Real Sociedad', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(89) },
+  { name: 'Espanyol', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(88) },
+  { name: 'Athletic Club', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(93) },
+  { name: 'Sevilla', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(243) },
+  { name: 'Alavés', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(96) },
+  { name: 'Elche', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(3751) },
+  { name: 'Levante', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(1538) },
+  { name: 'Osasuna', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(97) },
+  { name: 'Mallorca', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(84) },
+  { name: 'Girona', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(9812) },
+  { name: 'Real Oviedo', sport: 'Fútbol', league: 'LaLiga', icon: '⚽', logo: ESPN_SOCCER(92) },
+  // ⚽ Premier
+  { name: 'Arsenal', sport: 'Fútbol', league: 'Premier', icon: '🔴', logo: ESPN_SOCCER(359) },
+  { name: 'Manchester City', sport: 'Fútbol', league: 'Premier', icon: '🩵', logo: ESPN_SOCCER(382) },
+  { name: 'Manchester United', sport: 'Fútbol', league: 'Premier', icon: '🔴', logo: ESPN_SOCCER(360) },
+  { name: 'Aston Villa', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(362) },
+  { name: 'Liverpool', sport: 'Fútbol', league: 'Premier', icon: '🔴', logo: ESPN_SOCCER(364) },
+  { name: 'Bournemouth', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(349) },
+  { name: 'Sunderland', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(366) },
+  { name: 'Brighton', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(331) },
+  { name: 'Brentford', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(337) },
+  { name: 'Chelsea', sport: 'Fútbol', league: 'Premier', icon: '🔵', logo: ESPN_SOCCER(363) },
+  { name: 'Fulham', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(370) },
+  { name: 'Newcastle United', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(361) },
+  { name: 'Everton', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(368) },
+  { name: 'Leeds United', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(357) },
+  { name: 'Crystal Palace', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(384) },
+  { name: 'Nottingham Forest', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(393) },
+  { name: 'Tottenham', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(367) },
+  { name: 'West Ham', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(371) },
+  { name: 'Burnley', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(379) },
+  { name: 'Wolverhampton', sport: 'Fútbol', league: 'Premier', icon: '⚽', logo: ESPN_SOCCER(380) },
+  // ⚽ Serie A
+  { name: 'Inter', sport: 'Fútbol', league: 'Serie A', icon: '🔵', logo: ESPN_SOCCER(110) },
+  { name: 'Napoli', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(114) },
+  { name: 'Roma', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(104) },
+  { name: 'Como', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(2572) },
+  { name: 'AC Milan', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(103) },
+  { name: 'Juventus', sport: 'Fútbol', league: 'Serie A', icon: '⚫', logo: ESPN_SOCCER(111) },
+  { name: 'Atalanta', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(105) },
+  { name: 'Bologna', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(107) },
+  { name: 'Lazio', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(112) },
+  { name: 'Udinese', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(118) },
+  { name: 'Sassuolo', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(3997) },
+  { name: 'Torino', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(239) },
+  { name: 'Parma', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(115) },
+  { name: 'Cagliari', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(2925) },
+  { name: 'Fiorentina', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(109) },
+  { name: 'Genoa', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(3263) },
+  { name: 'Lecce', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(113) },
+  { name: 'Cremonese', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(4050) },
+  { name: 'Verona', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(119) },
+  { name: 'Pisa', sport: 'Fútbol', league: 'Serie A', icon: '⚽', logo: ESPN_SOCCER(3956) },
+  // ⚽ Bundesliga
+  { name: 'Bayern', sport: 'Fútbol', league: 'Bundesliga', icon: '🔴', logo: ESPN_SOCCER(132) },
+  { name: 'Dortmund', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(124) },
+  { name: 'RB Leipzig', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(11420) },
+  { name: 'Stuttgart', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(134) },
+  { name: 'Hoffenheim', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(7911) },
+  { name: 'Leverkusen', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(131) },
+  { name: 'Freiburg', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(126) },
+  { name: 'Frankfurt', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(125) },
+  { name: 'Augsburg', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(3841) },
+  { name: 'Mainz', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(2950) },
+  { name: 'Union Berlin', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(598) },
+  { name: 'Gladbach', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(268) },
+  { name: 'Hamburg', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(127) },
+  { name: 'Cologne', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(122) },
+  { name: 'Werder Bremen', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(137) },
+  { name: 'Wolfsburg', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(138) },
+  { name: 'Heidenheim', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(6418) },
+  { name: 'St. Pauli', sport: 'Fútbol', league: 'Bundesliga', icon: '⚽', logo: ESPN_SOCCER(270) },
+  // ⚽ Ligue 1
+  { name: 'PSG', sport: 'Fútbol', league: 'Ligue 1', icon: '🔵', logo: ESPN_SOCCER(160) },
+  { name: 'Lens', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(175) },
+  { name: 'Lille', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(166) },
+  { name: 'Lyon', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(167) },
+  { name: 'Marseille', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(176) },
+  { name: 'Stade Rennais', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(169) },
+  { name: 'Monaco', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(174) },
+  { name: 'Strasbourg', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(180) },
+  { name: 'Lorient', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(273) },
+  { name: 'Toulouse', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(179) },
+  { name: 'Paris FC', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(6851) },
+  { name: 'Brest', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(6997) },
+  { name: 'Angers', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(7868) },
+  { name: 'Le Havre', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(3236) },
+  { name: 'Auxerre', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(172) },
+  { name: 'Nice', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(2502) },
+  { name: 'Nantes', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(165) },
+  { name: 'Metz', sport: 'Fútbol', league: 'Ligue 1', icon: '⚽', logo: ESPN_SOCCER(177) },
   // NBA
-  { name: 'Lakers',               sport: 'NBA',    icon: '🟣', logo: ESPN_NBA('lal')   },
-  { name: 'Celtics',              sport: 'NBA',    icon: '🟢', logo: ESPN_NBA('bos')   },
-  { name: 'Warriors',             sport: 'NBA',    icon: '🔵', logo: ESPN_NBA('gs')    },
-  { name: 'Bulls',                sport: 'NBA',    icon: '🔴', logo: ESPN_NBA('chi')   },
-  { name: 'Heat',                 sport: 'NBA',    icon: '🔥', logo: ESPN_NBA('mia')   },
-  { name: 'Nuggets',              sport: 'NBA',    icon: '🟡', logo: ESPN_NBA('den')   },
+  { name: 'Lakers', sport: 'NBA', icon: '🟣', logo: ESPN_NBA('lal') },
+  { name: 'Celtics', sport: 'NBA', icon: '🟢', logo: ESPN_NBA('bos') },
+  { name: 'Warriors', sport: 'NBA', icon: '🔵', logo: ESPN_NBA('gs') },
+  { name: 'Bulls', sport: 'NBA', icon: '🔴', logo: ESPN_NBA('chi') },
+  { name: 'Heat', sport: 'NBA', icon: '🔥', logo: ESPN_NBA('mia') },
+  { name: 'Nuggets', sport: 'NBA', icon: '🟡', logo: ESPN_NBA('den') },
   // Tenis — sin logo de equipo, emoji se mantiene
-  { name: 'Alcaraz',              sport: 'Tenis',  icon: '🎾' },
-  { name: 'Sinner',               sport: 'Tenis',  icon: '🎾' },
-  { name: 'Djokovic',             sport: 'Tenis',  icon: '🎾' },
-  { name: 'Swiatek',              sport: 'Tenis',  icon: '🎾' },
-  { name: 'Sabalenka',            sport: 'Tenis',  icon: '🎾' },
+  { name: 'Alcaraz', sport: 'Tenis', icon: '🎾' },
+  { name: 'Sinner', sport: 'Tenis', icon: '🎾' },
+  { name: 'Djokovic', sport: 'Tenis', icon: '🎾' },
+  { name: 'Swiatek', sport: 'Tenis', icon: '🎾' },
+  { name: 'Sabalenka', sport: 'Tenis', icon: '🎾' },
   // F1 — sin logo de equipo, emoji se mantiene
-  { name: 'Verstappen',           sport: 'F1',     icon: '🏎️' },
-  { name: 'Hamilton',             sport: 'F1',     icon: '🏎️' },
-  { name: 'Leclerc',              sport: 'F1',     icon: '🏎️' },
-  { name: 'Norris',               sport: 'F1',     icon: '🏎️' },
+  { name: 'Verstappen', sport: 'F1', icon: '🏎️' },
+  { name: 'Hamilton', sport: 'F1', icon: '🏎️' },
+  { name: 'Leclerc', sport: 'F1', icon: '🏎️' },
+  { name: 'Norris', sport: 'F1', icon: '🏎️' },
   // UFC / MMA — sin logo de equipo, emoji se mantiene
-  { name: 'McGregor',             sport: 'UFC',    icon: '🥊' },
-  { name: 'Pereira',              sport: 'UFC',    icon: '🥊' },
-  { name: 'Topuria',              sport: 'UFC',    icon: '🥊' },
+  { name: 'McGregor', sport: 'UFC', icon: '🥊' },
+  { name: 'Pereira', sport: 'UFC', icon: '🥊' },
+  { name: 'Topuria', sport: 'UFC', icon: '🥊' },
 ]
 
 // Pequeño componente con fallback a emoji si la imagen del escudo falla.
@@ -109,10 +197,13 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
     }
   }, [])
 
-  const sports = ['Todos', ...Array.from(new Set(POPULAR_TEAMS.map(t => t.sport)))]
+  // Los equipos de fútbol se agrupan por LIGA (LaLiga, Premier…); el resto de
+  // deportes (NBA, Tenis, F1, UFC) por su propio `sport`. Así con ~100 equipos
+  // el usuario navega por pestañas de liga en vez de una lista plana enorme.
+  const groups = ['Todos', ...Array.from(new Set(POPULAR_TEAMS.map(t => t.league ?? t.sport)))]
   const visibleTeams = filter === 'Todos'
     ? POPULAR_TEAMS
-    : POPULAR_TEAMS.filter(t => t.sport === filter)
+    : POPULAR_TEAMS.filter(t => (t.league ?? t.sport) === filter)
 
   const toggle = (name: string) => {
     setSelected(prev => {
@@ -182,7 +273,7 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
 
         {/* Sport filters */}
         <div className="flex items-center gap-1.5 overflow-x-auto px-5 py-3" style={{ scrollbarWidth: 'none' }}>
-          {sports.map(s => (
+          {groups.map(s => (
             <button
               key={s}
               onClick={() => setFilter(s)}
