@@ -2479,7 +2479,14 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // con el título y los selectores encima; NO hay banner-recuadro aparte. Las
   // cabeceras de grupo de la competición activa no repiten la foto (la lleva el
   // telón); en la vista general cada liga conserva la suya (variedad).
-  const heroPhoto = activeCompCfg?.banner ?? SPORT_THEME[themeKey].backdrop ?? null
+  // En las vistas generales del calendario (Destacados/Todo/nicho → tema 'default')
+  // usamos una arena nocturna PROPIA en vez del bokeh morado compartido con
+  // Juegos/Rankings/Estadísticas: casa mejor con el look de foto visible y no
+  // arrastra la "franja de luces" del bokeh. Las vistas de un deporte conservan su foto.
+  const heroPhoto =
+    activeCompCfg?.banner ??
+    (themeKey === 'default' ? '/banners/signal/destacados.webp' : SPORT_THEME[themeKey].backdrop) ??
+    null
 
   // Día de HOY (local): separa los días pasados (tono rojo suave) de los
   // futuros en las cabeceras del timeline continuo.
