@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
@@ -79,6 +79,11 @@ const FINISHED = new Set(['FT', 'Final', 'FINAL', 'FINAL_PEN', 'FINAL_AET', 'STA
 const DESTACADOS_MIN = 4
 const DESTACADOS_ELITE = 12
 const DESTACADOS_MAX = 8
+
+// Timeline (vista Calendario): ventana de días PASADOS que se cargan de una vez
+// al montar y se anteponen a la lista. El endpoint con live=1 cubre ~10 días;
+// para histórico más antiguo está la pestaña Resultados.
+const PAST_WINDOW_DAYS = 12
 
 // ─── Hooks ────────────────────────────────────────────────────────────────
 // Helper: ejecuta `tick` cada `ms` solo cuando la pestaña está visible.
@@ -748,7 +753,14 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   // Si la hora local cae en otra jornada (zona ≠ Madrid), avisamos +1/−1 día.
   const dayDelta = tz ? dayDeltaForIso(event.isoDate, tz) : 0
   const isLive  = !!liveScore && !FINISHED.has(liveScore.status)
-  const isFinal = !!liveScore && (liveScore.status === 'FT' || liveScore.status === 'Final' || liveScore.status === 'STATUS_FINAL') && liveScore.homeGoals !== null
+  // Días pasados (timeline continuo): el marcador viaja en el propio evento
+  // (homeScore/awayScore) y NO entra en el mapa liveScore. Distinguimos las dos
+  // convenciones: live/futuro = liveScore.homeGoals/awayGoals; pasado = event.*.
+  const pastHasScore = event.homeScore != null && event.awayScore != null
+  const finishedPast = !liveScore && (event.isPast === true || pastHasScore)
+  const homeScoreVal = liveScore ? liveScore.homeGoals : (event.homeScore ?? null)
+  const awayScoreVal = liveScore ? liveScore.awayGoals : (event.awayScore ?? null)
+  const isFinal = (!!liveScore && (liveScore.status === 'FT' || liveScore.status === 'Final' || liveScore.status === 'STATUS_FINAL') && liveScore.homeGoals !== null) || (finishedPast && pastHasScore)
   const showScore = isLive || isFinal
   const compColor = getCompAccent(event.comp, event.accent)
   const accent = isLive ? '#FF4D2E' : isFinal ? compColor : compColor
@@ -773,7 +785,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           {event.comp}
         </span>
       )}
-      {showScore && liveScore ? (
+      {showScore ? (
         // Racing y combate: NO mostrar score numérico (no significa nada en
         // F1/MotoGP/UFC), solo badge "LIVE"/"FIN". Combate añade "VS" pequeño
         // para reforzar la semántica de enfrentamiento.
@@ -817,7 +829,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
                 Sets
               </span>
             )}
-            {tennis && liveScore.clock && (
+            {tennis && liveScore?.clock && (
               <span className="text-[8px] font-bold uppercase tracking-[0.16em] leading-none"
                 style={{ color: isLive ? '#FBBF24' : '#9090A8', fontFamily: 'var(--font-sport)' }}>
                 {liveScore.clock}
@@ -825,9 +837,9 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
             )}
             <span className="flex items-center gap-2 leading-none tabular-nums font-black"
               style={{ fontSize: 24, color: isLive ? '#EBEBF5' : '#C0C0D8', fontFamily: 'var(--font-sport)' }}>
-              <span>{liveScore.homeGoals ?? 0}</span>
+              <span>{homeScoreVal ?? 0}</span>
               <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
-              <span>{liveScore.awayGoals ?? 0}</span>
+              <span>{awayScoreVal ?? 0}</span>
             </span>
           </>
         )
@@ -1634,6 +1646,16 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const notifTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
   const prevScoresRef = useRef<Map<string, string>>(new Map())
 
+  // Timeline continuo (vista Calendario): días PASADOS que se anteponen a la
+  // lista al subir el scroll (arriba = pasado, HOY en medio, abajo = futuro).
+  // Distintos del histórico de la pestaña Resultados (extraPast/recentPast).
+  const [pastTimeline, setPastTimeline] = useState<SportEvent[]>([])
+  const loadingPastRef = useRef(false)
+  const prependAnchorRef = useRef<number | null>(null)  // scrollHeight antes del prepend (para anclar HOY tras cargar pasados)
+  const stickyBarRef = useRef<HTMLDivElement | null>(null) // barra sticky (day chips + toolbar): su altura = offset del anclaje
+  const todaySepRef = useRef<HTMLElement | null>(null) // sección de HOY (para anclarla arriba tras cargar)
+  const didInitialLoadRef = useRef(false) // dispara la carga de pasados una sola vez al montar
+
   const liveScores = useLiveScores(events)
   const liveFixtures = useLiveFixtures()
 
@@ -1732,6 +1754,52 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       .catch(() => { recentPastRequested.current = false }) // abort/fallo → reintento al volver
     return () => ctrl.abort()
   }, [view])
+
+  // Carga la ventana de días PASADOS del timeline (una sola vez, al montar). El
+  // endpoint con live=1 cubre los ~10 días recientes: los traemos de golpe y los
+  // anteponemos a la lista. Para histórico más antiguo está la pestaña Resultados.
+  const loadPastWindow = useCallback(async () => {
+    if (loadingPastRef.current) return
+    loadingPastRef.current = true
+    const from = new Date(Date.now() - PAST_WINDOW_DAYS * 86_400_000).toISOString()
+    prependAnchorRef.current = document.documentElement.scrollHeight
+    try {
+      const res = await fetch(`/api/events/past?live=1&from=${encodeURIComponent(from)}&limit=200`)
+      const data = res.ok ? await res.json() as { events?: SportEvent[] } : null
+      const todayKey = isoToLocalDate(new Date().toISOString())
+      // Solo días estrictamente anteriores a HOY (los de hoy ya vienen por events).
+      const evs = (data?.events ?? []).filter(e => e.isoDate && isoToLocalDate(e.isoDate) < todayKey)
+      setPastTimeline(prev => {
+        const seen = new Set(prev.map(e => e.id))
+        const fresh = evs.filter(e => !seen.has(e.id))
+        return fresh.length ? [...fresh, ...prev] : prev
+      })
+    } catch {
+      prependAnchorRef.current = null
+    }
+    loadingPastRef.current = false
+  }, [])
+
+  // Tras anteponer los días pasados anclamos HOY justo bajo la barra sticky, para
+  // "arrancar en HOY" con los pasados por encima (el usuario sube para verlos).
+  // Re-anclamos un par de veces porque banderas/escudos cargan tarde y descuadran
+  // la altura. Fallback a scrollBy si (raro) no hubiera sección de HOY.
+  useLayoutEffect(() => {
+    if (prependAnchorRef.current == null) return
+    const grew = document.documentElement.scrollHeight - prependAnchorRef.current
+    prependAnchorRef.current = null
+    const anchorHoy = () => {
+      const el = todaySepRef.current
+      if (!el) { if (grew > 0) window.scrollBy(0, grew); return }
+      const stickyH = stickyBarRef.current?.getBoundingClientRect().height ?? 0
+      const y = window.scrollY + el.getBoundingClientRect().top - stickyH - 6
+      window.scrollTo(0, Math.max(0, y))
+    }
+    anchorHoy()
+    requestAnimationFrame(anchorHoy)
+    setTimeout(anchorHoy, 250)
+    setTimeout(anchorHoy, 600)
+  }, [pastTimeline])
 
   // Debounce search input — avoid filtering on every keystroke
   useEffect(() => {
@@ -2046,6 +2114,15 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // el sitio + muestra su banner. null = sin filtro de competición.
   const activeCompCfg = useMemo(() => (activeComp ? getCompetition(activeComp) : null), [activeComp])
 
+  // Base de la LISTA de días: en la vista Calendario (sin fecha ni "En vivo")
+  // combinamos los días pasados del timeline continuo DELANTE de los futuros
+  // (prop events). El resto de derivados (availableDays, favoriteEvents,
+  // liveEventsInList, recordatorios…) siguen usando SOLO events.
+  const baseEventsForList = useMemo(
+    () => (view === 'todos' && !selectedDate && !onlyLive) ? [...pastTimeline, ...events] : events,
+    [view, selectedDate, onlyLive, pastTimeline, events]
+  )
+
   const filtered = useMemo(() => {
     const matchesSearch = (e: SportEvent) =>
       !search
@@ -2066,8 +2143,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       return !!score && !FINISHED.has(score.status)
     }
     const matchesComp = (e: SportEvent) => !activeCompCfg || matchesCompetition(activeCompCfg, e)
-    return events.filter(e => matchesSport(e) && matchesComp(e) && matchesSearch(e) && matchesDate(e) && matchesLive(e))
-  }, [events, search, activeFilter, activeCompCfg, selectedDate, onlyLive, liveScores])
+    return baseEventsForList.filter(e => matchesSport(e) && matchesComp(e) && matchesSearch(e) && matchesDate(e) && matchesLive(e))
+  }, [baseEventsForList, search, activeFilter, activeCompCfg, selectedDate, onlyLive, liveScores])
 
   // Upcoming events featuring favorite teams (across all dates)
   const favoriteEvents = useMemo(() => {
@@ -2215,6 +2292,17 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
   const grouped = useMemo(() => groupEventsByDate(filteredForGrouping), [filteredForGrouping])
   const orderedDates = useMemo(() => orderedDateKeys(grouped), [grouped])
+
+  // Carga de días pasados al montar (una sola vez, cuando la lista ya tiene HOY).
+  // Es aditiva: HOY y los futuros ya están; los pasados se anteponen y el anclaje
+  // deja HOY arriba. Se salta si hay un día elegido o el filtro "En vivo".
+  useEffect(() => {
+    if (didInitialLoadRef.current) return
+    if (view !== 'todos' || selectedDate || onlyLive) return
+    if (orderedDates.length === 0) return
+    didInitialLoadRef.current = true
+    loadPastWindow()
+  }, [view, selectedDate, onlyLive, orderedDates.length, loadPastWindow])
 
   const liveCount = liveEventsInList.length + orphanFixtures.length
 
@@ -2406,6 +2494,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // cabeceras de grupo de la competición activa no repiten la foto (la lleva el
   // telón); en la vista general cada liga conserva la suya (variedad).
   const heroPhoto = activeCompCfg?.banner ?? SPORT_THEME[themeKey].backdrop ?? null
+
+  // Día de HOY (local): separa los días pasados (tono rojo suave) de los
+  // futuros en las cabeceras del timeline continuo.
+  const todayKey = isoToLocalDate(new Date().toISOString())
 
   return (
     <main
@@ -2599,6 +2691,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       {/* Day chips + Toolbar (sticky on scroll) */}
       {view === 'todos' && (
         <div
+          ref={stickyBarRef}
           className="mb-4 -mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-4 sm:px-6 xl:px-10 pt-2 pb-3"
           style={{
             position: 'sticky',
@@ -2797,7 +2890,15 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               )}
             </div>
           ) : (
-            orderedDates.map(dateKey => {
+            <>
+              {/* Rótulo del tope del timeline: marca el inicio de los resultados
+                  de días anteriores (que el usuario ve al subir). */}
+              {pastTimeline.length > 0 && (
+                <div className="flex items-center justify-center py-2 text-[10px] uppercase tracking-widest" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+                  <span>Resultados de días anteriores</span>
+                </div>
+              )}
+              {orderedDates.map(dateKey => {
               // Orden cronológico de los partidos del día. En "Destacados" se respeta
               // la curación por relevancia (top del día); en el resto (Todo / deporte /
               // competición) se ordena por isoDate (instante real → sube de menor a
@@ -2822,8 +2923,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 // key incluye el filtro/fecha/onlyLive: al cambiarlos la sección
                 // se re-monta y dispara la entrada en cascada (Fase B). No incluye
                 // search ni liveScores → no re-anima al teclear ni en cada poll.
-                <section key={`${activeFilter}|${selectedDate ?? ''}|${onlyLive ? 'L' : ''}|${dateKey}`}>
-                  <DaySeparator dateKey={dateKey} count={dayEvents.length} />
+                <section ref={dateKey === todayKey ? todaySepRef : undefined} key={`${activeFilter}|${selectedDate ?? ''}|${onlyLive ? 'L' : ''}|${dateKey}`}>
+                  <DaySeparator dateKey={dateKey} count={dayEvents.length} tone={dateKey < todayKey ? 'past' : 'upcoming'} />
                   {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     const accent = getCompAccent(comp, compEvents[0]?.accent)
@@ -2855,7 +2956,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                   })}
                 </section>
               )
-            })
+              })}
+            </>
           )}
 
           {/* CTA — invitar a ver toda la agenda cuando estamos en modo Destacados */}
