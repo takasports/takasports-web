@@ -20,7 +20,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { fetchUserEquipment } from '@/lib/equipment'
 import { fetchBadgesByUser } from '@/lib/leaderboard-badges'
-import { computeLevel, XP_PER_BADGE } from '@/lib/levels'
+import { fetchUserProgress } from '@/lib/user-progress'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,8 +38,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
   // ── Lecturas en paralelo ─────────────────────────────────────
   const [
     profileRes,
-    ptRes,
-    badgeCountRes,
+    progress,
     badgesByUser,
     equipment,
     predictionsRes,
@@ -47,8 +46,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
     streakRes,
   ] = await Promise.all([
     admin.from('profiles').select('display_name, avatar_url').eq('id', userId).maybeSingle(),
-    admin.from('point_transactions').select('amount').eq('user_id', userId).gt('amount', 0),
-    admin.from('quiniela_badges').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+    fetchUserProgress(admin, userId),
     fetchBadgesByUser(admin, [userId], 5),
     fetchUserEquipment(admin, userId),
     admin.from('ranked_predictions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
@@ -67,13 +65,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
   // Handle: usamos display_name slugified (no exponemos email del user)
   const handle = displayName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'takero'
 
-  // XP = sum(point_transactions positivas) + 200 * badges
-  const lifetimePts = (ptRes.data ?? []).reduce(
-    (sum, t) => sum + ((t.amount as number) ?? 0), 0,
-  )
-  const badgeCount = badgeCountRes.count ?? 0
-  const xp = lifetimePts + badgeCount * XP_PER_BADGE
-  const levelInfo = computeLevel(xp)
+  // XP y nivel canónicos (misma fórmula que el perfil, vía user-progress).
+  const { xp, badgesCount: badgeCount, level: levelInfo } = progress
 
   const badges = badgesByUser.get(userId) ?? []
 

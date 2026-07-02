@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { BADGES, listAllBadges, type BadgeDef } from '@/lib/badges'
 import { fetchSpecialBadgeDefs } from '@/lib/special-badges'
-import { computeLevel, computeXp } from '@/lib/levels'
+import { fetchUserProgress } from '@/lib/user-progress'
 import { type EquipSlot } from '@/lib/equipment'
 
 interface MeBadge {
@@ -70,15 +70,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'auth required' }, { status: 401 })
   }
 
-  // Lifetime positivo en point_transactions (fuente universal de puntos Taka)
-  const { data: ptRows } = await sb
-    .from('point_transactions')
-    .select('amount')
-    .eq('user_id', user.id)
-    .gt('amount', 0)
-  const lifetimePts = (ptRows ?? []).reduce(
-    (sum, t) => sum + (t.amount as number), 0,
-  )
+  // XP y nivel canónicos (misma fórmula que la placa, vía user-progress).
+  // Se lanza en paralelo con la resolución de insignias de abajo.
+  const progressPromise = fetchUserProgress(sb, user.id)
 
   // Badges del user
   const { data: badgeRows } = await sb
@@ -106,11 +100,7 @@ export async function GET(req: NextRequest) {
 
   const unlockedDefs = [...unlockedCatalog, ...unlockedSpecials]
 
-  const xp = computeXp({
-    lifetimePts,
-    badgesCount: unlockedDefs.length,
-  })
-  const levelInfo = computeLevel(xp)
+  const { xp, level: levelInfo } = await progressPromise
 
   // Catálogo completo (código) + special badges desbloqueados por el user.
   // Los special badges que el user NO tiene se omiten del listado (no
