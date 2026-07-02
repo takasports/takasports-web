@@ -19,6 +19,7 @@
 import { NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
+import { apiError } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -169,7 +170,7 @@ async function handle(req: Request) {
     .select('block_id, source, as_of, updated_at')
     .order('updated_at', { ascending: false })
 
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500, { ok: false })
 
   const now = Date.now()
   const blocks: BlockHealth[] = (data ?? []).map(r => {

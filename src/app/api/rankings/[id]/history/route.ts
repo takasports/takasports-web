@@ -46,7 +46,7 @@ export async function GET(
 
   const { data, error } = await q
   if (error) {
-    return NextResponse.json({ points: [], warning: error.message })
+    return NextResponse.json({ points: [], warning: 'query_failed' })
   }
 
   // Orden cronologico ascendente para el chart (izquierda -> derecha)

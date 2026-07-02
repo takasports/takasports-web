@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
       .eq('sport', sport === 'global' ? 'mundial' : sport),
   ])
 
-  if (lbResult.error) return NextResponse.json({ error: lbResult.error.message }, { status: 500 })
+  if (lbResult.error) return NextResponse.json({ error: 'server_error' }, { status: 500 })
 
   const rows = (lbResult.data as LeaderboardEntry[] ?? [])
   const userIds = rows.map(r => r.user_id).filter((u): u is string => !!u)

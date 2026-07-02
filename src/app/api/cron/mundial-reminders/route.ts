@@ -15,6 +15,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
+import { apiError } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,7 +91,7 @@ export async function GET(req: NextRequest) {
     .lte('event_date', maxDate.toISOString())
 
   if (evErr) {
-    return NextResponse.json({ ok: false, error: evErr.message }, { status: 500 })
+    return apiError('server_error', 500, { ok: false })
   }
   if (!events || events.length === 0) {
     return NextResponse.json({ ok: true, events_found: 0, notified: 0 })

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const out = await persistLeagueScores(id, results)
     lastRun.set(id, { ts: now, out })
     return NextResponse.json({ ok: true, cached: false, ...out })
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }

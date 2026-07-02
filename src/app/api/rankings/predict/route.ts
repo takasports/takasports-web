@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
+import { apiError } from '@/lib/api-utils'
 
 function pubClient() {
   return createClient(
@@ -79,6 +80,6 @@ export async function POST(req: NextRequest) {
     { user_id: user.id, week_start: week, category, predicted_entry_id: entryId },
     { onConflict: 'user_id,week_start,category' },
   )
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ ok: true, week })
 }

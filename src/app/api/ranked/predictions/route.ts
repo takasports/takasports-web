@@ -11,6 +11,7 @@ import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { awardBadges, badgesEarnedOnRankedPick } from '@/lib/badge-awards'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { apiError } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
     .eq('user_id', user.id)
     .in('event_id', eventIds)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   // Devuelve como mapa event_id → row para lookup O(1) en el cliente
   const map: Record<string, unknown> = {}
@@ -241,7 +242,7 @@ export async function POST(req: NextRequest) {
       .select()
       .single()
 
-    if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+    if (updateErr) return apiError('server_error', 500)
     return NextResponse.json({ prediction: updated, updated: true }, { status: 200 })
   }
 
@@ -269,7 +270,7 @@ export async function POST(req: NextRequest) {
         .single()
       return NextResponse.json({ prediction: fallback, updated: true }, { status: 200 })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError('server_error', 500)
   }
 
   // ── Badges — solo en primera inserción ──────────────────────────
@@ -361,7 +362,7 @@ export async function DELETE(req: NextRequest) {
     .delete()
     .eq('user_id', user.id)
     .eq('event_id', body.event_id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   return NextResponse.json({ ok: true, cleared: true }, { status: 200 })
 }

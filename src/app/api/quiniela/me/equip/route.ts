@@ -24,6 +24,7 @@
 // ambos (el CHECK exactly-one en DB lo enforza también).
 
 import { NextRequest, NextResponse } from 'next/server'
+import { apiError } from '@/lib/api-utils'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { BADGES } from '@/lib/badges'
 import {
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: 'user_id,slot' },
       )
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return apiError('server_error', 500)
 
     return NextResponse.json({
       ok: true, slot: body.slot,
@@ -153,7 +154,7 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: 'user_id,slot' },
       )
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return apiError('server_error', 500)
 
     return NextResponse.json({
       ok: true, slot: body.slot,

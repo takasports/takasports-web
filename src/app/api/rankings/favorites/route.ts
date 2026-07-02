@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
+import { apiError } from '@/lib/api-utils'
 
 export async function GET(req: NextRequest) {
   const { supabase: sb, user } = await supabaseForRequest(req)
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
     .select('entry_id, created_at, meta')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ favorites: data ?? [] })
 }
 
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
   const { error } = await sb
     .from('user_favorites')
     .upsert(row, { onConflict: 'user_id,entry_id' })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ ok: true })
 }
 
@@ -79,6 +80,6 @@ export async function DELETE(req: NextRequest) {
     .delete()
     .eq('user_id', user.id)
     .eq('entry_id', entryId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ ok: true })
 }

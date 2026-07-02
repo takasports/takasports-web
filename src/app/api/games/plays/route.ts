@@ -17,7 +17,7 @@ import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { POINTS_ENABLED_GAMES, pointsFor, type GameId as PointsGameId } from '@/lib/game-points'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
-import { readJson } from '@/lib/api-utils'
+import { apiError, readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return apiError('server_error', 500)
     }
 
     // ── Cross-game puntos (Liga Taka) ──────────────────────────────
@@ -147,7 +147,7 @@ export async function GET(req: NextRequest) {
     .maybeSingle()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError('server_error', 500)
   }
   return NextResponse.json({ play: data })
 }

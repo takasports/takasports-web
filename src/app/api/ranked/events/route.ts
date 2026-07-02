@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { apiError } from '@/lib/api-utils'
 
 function hasEnv() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
   if (status) q = q.eq('status', status)
 
   const { data, error } = await q
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   // El cierre de eventos ya iniciados (close_started_ranked_events) lo ejecutan
   // YA los crons sync-mundial (cada 30 min jun/jul) y sync-ufc (cada 15 min en

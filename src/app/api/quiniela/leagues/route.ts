@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
-import { readJson } from '@/lib/api-utils'
+import { apiError, readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 import type { Pick } from '@/lib/quiniela'
 
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
         match_keys: matchKeys,
         owner_id: user.id,
       })
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) return apiError('server_error', 500)
 
       // El owner se autoinscribe vacío. Las columnas exact_scores y
       // captain_idx siguen existiendo en la DB (sin borrar para no romper)
@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
     const sb = await createServerSupabaseClient()
     const { data: league, error } = await sb
       .from('quiniela_leagues').select('*').eq('id', id).maybeSingle()
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return apiError('server_error', 500)
     if (!league) {
       // intentar fallback memoria
       const mem = memStore.get(id)
@@ -252,7 +252,7 @@ export async function PATCH(req: NextRequest) {
         nickname: safeNick,
         picks,
       }, { onConflict: 'league_id,user_id' })
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) return apiError('server_error', 500)
 
       return NextResponse.json({ ok: true, locked: Object.keys(rawPicks).length - Object.keys(picks).length })
     }
@@ -289,12 +289,12 @@ export async function DELETE(req: NextRequest) {
       if (league.owner_id === user.id) {
         // Owner: borra la liga (cascade borra miembros)
         const { error } = await sb.from('quiniela_leagues').delete().eq('id', id)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) return apiError('server_error', 500)
       } else {
         // Miembro: solo se borra a sí mismo
         const { error } = await sb.from('quiniela_league_members')
           .delete().eq('league_id', id).eq('user_id', user.id)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) return apiError('server_error', 500)
       }
       return NextResponse.json({ ok: true })
     }

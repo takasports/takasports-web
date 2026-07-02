@@ -19,6 +19,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, getUserFromRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { apiError } from '@/lib/api-utils'
 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   const { error } = await admin.auth.admin.deleteUser(user.id)
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError('server_error', 500)
   }
 
   // Supresión de datos NO cubiertos por la cascada de FK (ver cabecera).

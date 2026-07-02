@@ -21,6 +21,7 @@ import { scorePicks, resultForPick, QUINIELA_RESULTS_DAYS_BACK, QUINIELA_RESULTS
 import { enrichResultsWithFeatured } from '@/lib/quiniela-featured'
 import type { SavedPick, MatchResult, ScoreBreakdown } from '@/lib/quiniela'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
+import { apiError } from '@/lib/api-utils'
 import { evaluateTopNBadges } from '@/lib/special-badges'
 import { sendTelegram } from '@/lib/telegram'
 
@@ -171,7 +172,7 @@ async function handle(req: Request) {
 
   if (fetchErr) {
     await sendTelegram(`⚠️ settle-quiniela: fallo al leer picks pendientes — ${String(fetchErr.message).replace(/[<>]/g, '')}`)
-    return NextResponse.json({ ok: false, error: fetchErr.message }, { status: 500 })
+    return apiError('server_error', 500, { ok: false })
   }
 
   // El filtro DB ya excluye settled; el filter JS actúa como doble verificación

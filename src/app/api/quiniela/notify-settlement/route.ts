@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     .select('jornada, picks')
     .limit(256)
   if (error) {
-    return NextResponse.json({ error: 'query failed', detail: error.message }, { status: 503 })
+    return NextResponse.json({ error: 'query_failed' }, { status: 503 })
   }
 
   const recentlySettled = (rows as SettledRow[] | null ?? []).filter((r) => {

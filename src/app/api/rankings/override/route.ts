@@ -25,6 +25,7 @@ import { revalidatePath } from 'next/cache'
 import { createHash } from 'crypto'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { isAdminRequest } from '@/lib/admin-auth'
+import { apiError } from '@/lib/api-utils'
 
 async function checkAuth(req: NextRequest): Promise<boolean> {
   return isAdminRequest(req, {
@@ -167,7 +168,7 @@ export async function POST(req: NextRequest) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   // Audit log (fire-and-forget; no falla el override si la tabla no existe)
   const editor = tokenHash(req)
@@ -239,7 +240,7 @@ export async function DELETE(req: NextRequest) {
     .eq('id', id)
     .eq('category', category)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   const editor = tokenHash(req)
   await logEdits(

@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { apiError } from '@/lib/api-utils'
 
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
 type GameId = typeof GAME_IDS[number]
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
     .eq('status', 'published')
     .maybeSingle()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   return NextResponse.json(
     { payload: data?.payload ?? null, updated_at: data?.updated_at ?? null },

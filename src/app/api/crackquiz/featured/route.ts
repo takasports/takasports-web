@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { isAdminRequest } from '@/lib/admin-auth'
+import { apiError } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,10 +82,10 @@ export async function POST(req: NextRequest) {
     const { error } = await admin
       .from('crackquiz_featured')
       .upsert({ day_iso: body.day, question: q }, { onConflict: 'day_iso' })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return apiError('server_error', 500)
     return NextResponse.json({ ok: true, day: body.day })
-  } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 })
+  } catch {
+    return apiError('request_failed', 400)
   }
 }
 
@@ -99,6 +100,6 @@ export async function DELETE(req: NextRequest) {
   const admin = adminSupabase()
   if (!admin) return NextResponse.json({ error: 'admin client unavailable' }, { status: 503 })
   const { error } = await admin.from('crackquiz_featured').delete().eq('day_iso', day)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ ok: true, day })
 }

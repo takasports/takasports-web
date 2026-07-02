@@ -113,7 +113,7 @@ export async function PATCH(
     .eq('id', leagueId)
     .eq('owner_id', user.id) // doble guard contra race con cambio de owner
   if (updErr) {
-    return NextResponse.json({ error: 'update_failed', detail: updErr.message }, { status: 500 })
+    return NextResponse.json({ error: 'update_failed' }, { status: 500 })
   }
 
   return NextResponse.json({

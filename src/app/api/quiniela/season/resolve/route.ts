@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     .select('id, question, prize_coins, resolved, tournament, options')
     .eq('id', body.questionId)
     .maybeSingle()
-  if (qErr) return NextResponse.json({ error: qErr.message }, { status: 500 })
+  if (qErr) return NextResponse.json({ error: 'server_error' }, { status: 500 })
   if (!q) return NextResponse.json({ error: 'question not found' }, { status: 404 })
 
   // 2. Validar winner contra options
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       .update({ resolved: body.winner })
       .eq('id', body.questionId)
     if (updErr) {
-      return NextResponse.json({ error: updErr.message }, { status: 500 })
+      return NextResponse.json({ error: 'server_error' }, { status: 500 })
     }
   }
 
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
       .eq('answer', body.winner)
       .eq('prize_credited', false)
       .select('user_id')
-    if (claimErr) return NextResponse.json({ error: claimErr.message }, { status: 500 })
+    if (claimErr) return NextResponse.json({ error: 'server_error' }, { status: 500 })
 
     for (const w of claimed ?? []) {
       const { error: insErr } = await admin.rpc('award_points', {

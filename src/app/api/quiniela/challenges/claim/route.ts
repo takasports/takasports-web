@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     .is('claimed_at', null)
     .select('badge_id')
   if (claimErr) {
-    return NextResponse.json({ error: 'claim_failed', detail: claimErr.message }, { status: 500 })
+    return NextResponse.json({ error: 'claim_failed' }, { status: 500 })
   }
   if (!claimedRows || claimedRows.length === 0) {
     // Otra petición concurrente ya reclamó → idempotente, no re-acreditamos.
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
         .eq('user_id', user.id)
         .eq('badge_id', body.badgeId)
         .eq('jornada', body.jornada)
-      return NextResponse.json({ error: 'credit_failed', detail: creditErr.message }, { status: 500 })
+      return NextResponse.json({ error: 'credit_failed' }, { status: 500 })
     }
   }
 

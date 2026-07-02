@@ -11,6 +11,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { fetchEquipmentByUser, type UserEquipment } from '@/lib/equipment'
 import { fetchBadgesByUser, type LeaderboardBadge, type LeaderboardEquipment } from '@/lib/leaderboard-badges'
+import { apiError } from '@/lib/api-utils'
 
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
 type GameId = typeof GAME_IDS[number]
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
     .limit(limit)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return apiError('server_error', 500)
   }
 
   const rows = data ?? []

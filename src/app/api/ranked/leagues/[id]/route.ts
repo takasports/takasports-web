@@ -50,7 +50,7 @@ export async function GET(
   const { data: entries, error: lbErr } = await (admin ?? sb)
     .rpc('ranked_league_leaderboard', { p_league_id: leagueId })
 
-  if (lbErr) return NextResponse.json({ error: lbErr.message }, { status: 500 })
+  if (lbErr) return NextResponse.json({ error: 'server_error' }, { status: 500 })
 
   // El leaderboard del RPC trae user_id crudo por miembro. Lo cambiamos por
   // un pid opaco (sha256) para no exponer UUIDs de auth de terceros; my_pid

@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
-import { readJson } from '@/lib/api-utils'
+import { apiError, readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 
 interface SeasonQuestion {
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     .from('quiniela_season_questions')
     .select('*')
     .order('closes_at', { ascending: true })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   let mine: Record<string, string> = {}
   if (user) {
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       question_id: questionId,
       answer,
     }, { onConflict: 'user_id,question_id' })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return apiError('server_error', 500)
 
     return NextResponse.json({ ok: true })
   } catch (e) {

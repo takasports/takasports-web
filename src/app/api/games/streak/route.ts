@@ -9,6 +9,7 @@
 //   14 días → +8 pts  |  30 días → +12 pts
 
 import { NextRequest, NextResponse } from 'next/server'
+import { apiError } from '@/lib/api-utils'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { awardBadges } from '@/lib/badge-awards'
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ streak: null, reason: 'no_session' })
 
   const { data, error } = await sb.rpc('ping_game_streak')
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   // ── Milestone bonus points ────────────────────────────────────────
   // El importe es SERVER-autoritativo: lo decide `current_streak` (que calcula
@@ -99,6 +100,6 @@ export async function GET(req: NextRequest) {
     .eq('user_id', user.id)
     .maybeSingle()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ streak: data })
 }

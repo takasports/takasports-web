@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       if (error) {
         // Si la tabla no existe aún, fallback memoria con warning
         memSubs.set(sub.endpoint, { endpoint: sub.endpoint, keys: sub.keys, topics })
-        return NextResponse.json({ ok: true, persisted: false, warning: error.message })
+        return NextResponse.json({ ok: true, persisted: false, warning: 'persist_failed' })
       }
       return NextResponse.json({ ok: true, persisted: true })
     }

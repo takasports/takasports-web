@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { apiError } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,12 +26,12 @@ export async function GET(req: NextRequest) {
   try {
     const sb = await createServerSupabaseClient()
     const { data, error } = await sb.rpc('quiniela_consensus', { p_jornada: jornada })
-    if (error) return NextResponse.json({ rows: [], error: error.message }, { status: 200 })
+    if (error) return apiError('request_failed', 200, { rows: [] })
     const rows = (data ?? []) as ConsensusRow[]
     return NextResponse.json({ rows }, {
       headers: { 'cache-control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=120' },
     })
   } catch (e) {
-    return NextResponse.json({ rows: [], error: String(e) }, { status: 200 })
+    return apiError('request_failed', 200, { rows: [] })
   }
 }

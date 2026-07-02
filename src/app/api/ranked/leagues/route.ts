@@ -6,6 +6,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-utils'
 /** Genera un ID aleatorio URL-safe sin dependencias externas */
 function genId(len = 10): string {
   return crypto.randomUUID().replace(/-/g, '').slice(0, len)
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
     .eq('type', 'private')
     .order('created_at', { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   // Para cada liga, contar miembros
   const admin = adminSupabase()
@@ -119,7 +120,7 @@ export async function POST(req: NextRequest) {
     .select()
     .single()
 
-  if (createErr) return NextResponse.json({ error: createErr.message }, { status: 500 })
+  if (createErr) return apiError('server_error', 500)
 
   // El creador se añade como primer miembro
   await sb.from('ranked_league_members').insert({ league_id: leagueId, user_id: user.id })

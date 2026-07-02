@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-utils'
 
 function initVapid(): boolean {
   const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
     .gte('kickoff_iso', nowIso)
     .lte('kickoff_iso', windowEnd)
     .limit(500)
-  if (dueErr) return NextResponse.json({ error: dueErr.message }, { status: 500 })
+  if (dueErr) return apiError('server_error', 500)
 
   let sent = 0, pruned = 0, failed = 0
   if (due && due.length > 0) {

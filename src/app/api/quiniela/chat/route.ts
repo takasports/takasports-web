@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
-import { readJson } from '@/lib/api-utils'
+import { apiError, readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 
 // Fallback in-memory si Supabase no está disponible o la tabla no existe
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
       if (isMissingTable(error)) {
         return NextResponse.json((memChat.get(liga) ?? []).slice(-limit))
       }
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return apiError('server_error', 500)
     }
     return NextResponse.json((data ?? []).reverse())
   }
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
         if (isMissingTable(error)) {
           // tabla no creada aún, usar memoria
         } else {
-          return NextResponse.json({ error: error.message }, { status: 500 })
+          return apiError('server_error', 500)
         }
       } else {
         return NextResponse.json({ ok: true })
@@ -147,7 +147,7 @@ export async function DELETE(req: NextRequest) {
       .from('quiniela_league_chat')
       .delete({ count: 'exact' })
       .eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return apiError('server_error', 500)
     if ((count ?? 0) === 0) return NextResponse.json({ error: 'forbidden or not found' }, { status: 403 })
     return NextResponse.json({ ok: true })
   }

@@ -51,8 +51,8 @@ export async function GET(): Promise<NextResponse<MeAllResponse | { error: strin
       .order('created_at', { ascending: false }),
   ])
 
-  if (streakRes.error) return NextResponse.json({ error: streakRes.error.message }, { status: 500 })
-  if (playsRes.error)  return NextResponse.json({ error: playsRes.error.message }, { status: 500 })
+  if (streakRes.error) return NextResponse.json({ error: 'server_error' }, { status: 500 })
+  if (playsRes.error)  return NextResponse.json({ error: 'server_error' }, { status: 500 })
 
   const streak = streakRes.data ? {
     current:          streakRes.data.current_streak,

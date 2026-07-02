@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
+import { apiError } from '@/lib/api-utils'
 
 export async function GET(req: NextRequest) {
   if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
   if (!sb) return NextResponse.json({ error: 'Supabase admin no configurado' }, { status: 503 })
 
   const { error } = await sb.rpc('refresh_ranking_view')
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   return NextResponse.json({ ok: true, refreshed: 'ranking_view', at: new Date().toISOString() })
 }

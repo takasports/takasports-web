@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
+import { apiError } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -78,7 +79,7 @@ export async function GET(req: NextRequest) {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
     if (error) {
-      return NextResponse.json({ ...EMPTY_STATS, authed: true, error: error.message }, { status: 200 })
+      return apiError('request_failed', 200, { ...EMPTY_STATS, authed: true })
     }
 
     if (!rows || rows.length === 0) {
@@ -144,6 +145,6 @@ export async function GET(req: NextRequest) {
     }
     return NextResponse.json(stats)
   } catch (e) {
-    return NextResponse.json({ ...EMPTY_STATS, error: String(e) }, { status: 200 })
+    return apiError('request_failed', 200, { ...EMPTY_STATS })
   }
 }

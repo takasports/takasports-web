@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
+import { apiError } from '@/lib/api-utils'
 
 export async function GET(req: NextRequest) {
   // Auth: solo Bearer CRON_SECRET o header x-cron-secret (comparación en tiempo
@@ -16,6 +17,6 @@ export async function GET(req: NextRequest) {
   if (!sb) return NextResponse.json({ error: 'Supabase admin no configurado' }, { status: 503 })
 
   const { data, error } = await sb.rpc('f_recompute_badges')
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ counts: data })
 }

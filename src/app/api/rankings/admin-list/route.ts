@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
     .eq('category', category)
 
   if (viewErr || rawErr || !viewData || !rawData) {
-    return NextResponse.json({ error: 'db error', detail: viewErr?.message ?? rawErr?.message }, { status: 500 })
+    return NextResponse.json({ error: 'db_error' }, { status: 500 })
   }
 
   // DB vacía (aún no se ha sembrado) → fallback al estático

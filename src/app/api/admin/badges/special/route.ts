@@ -20,6 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { safeEqual } from '@/lib/auth-utils'
+import { apiError } from '@/lib/api-utils'
 
 interface CreateBody {
   badge_id: string
@@ -61,7 +62,7 @@ export async function GET(req: NextRequest) {
     .from('quiniela_special_badges')
     .select('*')
     .order('created_at', { ascending: false })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ badges: data ?? [] })
 }
 
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
   const { error } = await admin
     .from('quiniela_special_badges')
     .upsert(row, { onConflict: 'badge_id' })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   return NextResponse.json({ ok: true, badge_id: body.badge_id })
 }

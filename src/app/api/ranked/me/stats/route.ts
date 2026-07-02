@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
+import { apiError } from '@/lib/api-utils'
 
 function hasSupabaseEnv(): boolean {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
     .select('event_id, is_correct')
     .eq('user_id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   const rows = (data ?? []) as { event_id: string; is_correct: boolean | null }[]
 

@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       .from('ranking_edits_narrative_outliers')
       .select('*')
       .limit(limit)
-    if (error) return NextResponse.json({ edits: [], warning: error.message })
+    if (error) return NextResponse.json({ edits: [], warning: 'query_failed' })
     return NextResponse.json({ edits: data ?? [] })
   }
 
@@ -49,6 +49,6 @@ export async function GET(req: NextRequest) {
   if (field)    q = q.eq('field', field)
 
   const { data, error } = await q
-  if (error) return NextResponse.json({ edits: [], warning: error.message })
+  if (error) return NextResponse.json({ edits: [], warning: 'query_failed' })
   return NextResponse.json({ edits: data ?? [] })
 }

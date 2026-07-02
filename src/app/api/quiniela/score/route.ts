@@ -238,7 +238,7 @@ export async function POST(req: NextRequest) {
       }, { onConflict: 'user_id,jornada' })
 
       if (upsertErr) {
-        return NextResponse.json({ error: 'persist_failed', detail: upsertErr.message }, { status: 500 })
+        return NextResponse.json({ error: 'persist_failed' }, { status: 500 })
       }
 
       // RT1 — Racha Taka unificada: sellar el pronóstico cuenta como
@@ -367,7 +367,7 @@ export async function POST(req: NextRequest) {
         if (creditErr) {
           // Acreditación falló: deshacemos el claim para permitir reintento.
           await sb.from('quiniela_picks').update({ picks: prevPayload }).eq('user_id', user.id).eq('jornada', body.jornada)
-          return NextResponse.json({ error: 'credit_failed', detail: creditErr.message }, { status: 500 })
+          return NextResponse.json({ error: 'credit_failed' }, { status: 500 })
         }
       }
 
@@ -568,7 +568,7 @@ export async function POST(req: NextRequest) {
       persisted: false,
       legacy: true,
     })
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }

@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { isAdminRequest } from '@/lib/admin-auth'
+import { apiError } from '@/lib/api-utils'
 
 const GAME_IDS = ['quiniela', 'crackquiz', 'mionce', 'sopacracks', 'takagrid', 'strikerrush'] as const
 type GameId = typeof GAME_IDS[number]
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     status,
   }, { onConflict: 'game_id,period' }).select().single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ ok: true, content: data })
 }
 
@@ -72,7 +73,7 @@ export async function DELETE(req: NextRequest) {
 
   const { error } = await sb.from('game_content').delete()
     .eq('game_id', game).eq('period', period)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ ok: true })
 }
 
@@ -92,6 +93,6 @@ export async function GET(req: NextRequest) {
   if (game) q = q.eq('game_id', game)
 
   const { data, error } = await q
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ entries: data ?? [] })
 }

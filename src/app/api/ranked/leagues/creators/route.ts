@@ -6,6 +6,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
     .eq('type', 'creator')
     .order('created_at', { ascending: true })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   if (!leagues?.length) return NextResponse.json({ leagues: [] })
 
   // Para cada liga: contar miembros + saber si el user ya es miembro

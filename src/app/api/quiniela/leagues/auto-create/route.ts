@@ -13,6 +13,7 @@
 // fallback in-memory de /leagues no tiene sentido para onboarding real).
 
 import { NextResponse } from 'next/server'
+import { apiError } from '@/lib/api-utils'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { getQuinielaData } from '../../route'
 
@@ -109,7 +110,7 @@ export async function POST() {
     owner_id: user.id,
   })
   if (leagueErr) {
-    return NextResponse.json({ error: leagueErr.message }, { status: 500 })
+    return apiError('server_error', 500)
   }
 
   // 5. Autoinscribir al owner.
@@ -122,7 +123,7 @@ export async function POST() {
   if (memberErr) {
     // Rollback best-effort: borra la liga huérfana para no dejar basura.
     await sb.from('quiniela_leagues').delete().eq('id', id)
-    return NextResponse.json({ error: memberErr.message }, { status: 500 })
+    return apiError('server_error', 500)
   }
 
   return NextResponse.json({

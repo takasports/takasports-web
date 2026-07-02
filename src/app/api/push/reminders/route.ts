@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
-import { readJson } from '@/lib/api-utils'
+import { apiError, readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 
 interface ReminderInput {
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       url: b.url ?? null,
       notified: false,
     }, { onConflict: 'endpoint,match_ref' })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return apiError('server_error', 500)
     return NextResponse.json({ ok: true })
   } catch (e) {
     captureException(e, { route: 'push/reminders' })

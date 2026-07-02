@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { isAdminRequest } from '@/lib/admin-auth'
+import { apiError } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -118,10 +119,10 @@ export async function POST(req: NextRequest) {
         words:    p.words,
         intruder: p.intruder ?? null,
       }, { onConflict: 'week_iso' })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return apiError('server_error', 500)
     return NextResponse.json({ ok: true, week: body.week })
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 })
+    return apiError('request_failed', 400)
   }
 }
 
@@ -136,6 +137,6 @@ export async function DELETE(req: NextRequest) {
   const admin = adminSupabase()
   if (!admin) return NextResponse.json({ error: 'admin client unavailable' }, { status: 503 })
   const { error } = await admin.from('sopa_cracks_featured').delete().eq('week_iso', week)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ ok: true, week })
 }

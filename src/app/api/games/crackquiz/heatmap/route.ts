@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     .limit(5000)
 
   if (error || !data) {
-    return NextResponse.json({ period, totalPlays: 0, byQuestion: {}, error: error?.message })
+    return NextResponse.json({ period, totalPlays: 0, byQuestion: {}, error: 'query_failed' })
   }
 
   const { byQuestion, totalPlays } = aggregateCrackquizHeatmap(period, data)

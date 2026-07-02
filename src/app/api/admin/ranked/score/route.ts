@@ -12,6 +12,7 @@
 //     -d '{"event_id":"wc26-espn-123","winner":"1","home_score":2,"away_score":0}'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { apiError } from '@/lib/api-utils'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { awardBadges, badgesEarnedOnRankedCorrect } from '@/lib/badge-awards'
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
   })
 
   if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    return apiError('server_error', 500, { ok: false })
   }
 
   // ── Badge: primera_prediccion_correcta (fire-and-forget) ─────────
@@ -130,6 +131,6 @@ export async function GET(req: NextRequest) {
     .in('status', ['open', 'closed'])
     .order('event_date', { ascending: true })
 
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500, { ok: false })
   return NextResponse.json({ ok: true, events: data ?? [] })
 }

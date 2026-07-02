@@ -8,6 +8,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,7 +53,7 @@ export async function POST(
     p_user_id:   user.id,
   })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
 
   const status = (result as { status?: string } | null)?.status
   if (status === 'already_member') return NextResponse.json({ ok: true, already_member: true })

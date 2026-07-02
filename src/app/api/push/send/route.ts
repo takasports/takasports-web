@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     )
     void results
     return NextResponse.json({ sent, pruned, total: subs.length })
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }

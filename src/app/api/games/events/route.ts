@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { apiError } from '@/lib/api-utils'
 
 const GAME_IDS    = ['quiniela','crackquiz','mionce','sopacracks','takagrid','strikerrush'] as const
 const EVENT_TYPES = ['started','completed','abandoned','shared','leaderboard_view'] as const
@@ -73,6 +74,6 @@ export async function POST(req: NextRequest) {
   }))
 
   const { error } = await sb.from('game_events').insert(rows)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError('server_error', 500)
   return NextResponse.json({ accepted: rows.length })
 }
