@@ -43,34 +43,27 @@ export async function POST(
   const admin = adminSupabase()
   if (!admin) return NextResponse.json({ error: 'server_error' }, { status: 503 })
 
-  // ¿Ya es miembro?
-  const { data: existing } = await admin
-    .from('ranked_league_members')
-    .select('league_id')
-    .eq('league_id', leagueId)
-    .eq('user_id', user.id)
-    .maybeSingle()
+  // Alta ATÓMICA: la RPC bloquea la fila de la liga y hace "comprobar aforo +
+  // insertar" en una sola transacción, cerrando la carrera TOCTOU por la que
+  // dos peticiones simultáneas podían superar max_members. La validación del
+  // invite_code (arriba) sigue en la ruta; la RPC está bloqueada a service_role.
+  const { data: result, error } = await admin.rpc('join_ranked_league', {
+    p_league_id: leagueId,
+    p_user_id:   user.id,
+  })
 
-  if (existing) return NextResponse.json({ ok: true, already_member: true })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // ¿Hay hueco? (aplica a ambos tipos)
-  const { count: memberCount } = await admin
-    .from('ranked_league_members')
-    .select('user_id', { count: 'exact', head: true })
-    .eq('league_id', leagueId)
-
-  if ((memberCount ?? 0) >= league.max_members) {
+  const status = (result as { status?: string } | null)?.status
+  if (status === 'already_member') return NextResponse.json({ ok: true, already_member: true })
+  if (status === 'not_found')      return NextResponse.json({ error: 'not_found' }, { status: 404 })
+  if (status === 'full') {
     return NextResponse.json({
       error: 'league_full',
       message: `La liga ya está llena (máx. ${league.max_members} miembros).`,
     }, { status: 409 })
   }
 
-  const { error } = await admin
-    .from('ranked_league_members')
-    .insert({ league_id: leagueId, user_id: user.id })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
+  // status === 'joined'
   return NextResponse.json({ ok: true, joined: true }, { status: 201 })
 }
