@@ -1069,10 +1069,13 @@ export default function CrackQuizPage() {
 
     // Sync con backend unificado (games-store). No bloqueante.
     const period = currentDayISO()
-    // Compact per-question outcome for the social heatmap (qId + acierto).
+    // Compact per-question outcome for the social heatmap. Enviamos la opción
+    // ELEGIDA (`selected`, 0–3, o -1 si no respondió): el servidor recalcula el
+    // acierto contra la respuesta oficial e ignora el `correct` del cliente.
     const answersForPayload = questions.map((qq, i) => ({
       qId: qq.id,
-      correct: answers[i] && answers[i].selected === qq.correctIndex,
+      selected: answers[i] ? answers[i].selected : -1,
+      correct: answers[i] ? answers[i].selected === qq.correctIndex : false,
     }))
     recordPlay({
       gameId:  'crackquiz',

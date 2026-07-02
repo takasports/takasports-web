@@ -2,11 +2,14 @@
 // pregunta. Lo consume el ResultScreen para pintar "el X% de la comunidad
 // también acertó". Si no hay service-role disponible (dev local sin
 // SUPABASE_SERVICE_ROLE_KEY), devuelve estructura vacía.
+//
+// El acierto NO se toma del flag `correct` del cliente (falsificable): se
+// recalcula en servidor contra la respuesta oficial del día — ver
+// aggregateCrackquizHeatmap (lib/crackquiz-heatmap.ts).
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
-
-interface AnswerRow { qId?: unknown; correct?: unknown }
+import { aggregateCrackquizHeatmap } from '@/lib/crackquiz-heatmap'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,22 +33,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ period, totalPlays: 0, byQuestion: {}, error: error?.message })
   }
 
-  const byQuestion: Record<string, { plays: number; correct: number }> = {}
-  for (const row of data) {
-    const ans = (row.payload as { answers?: unknown })?.answers
-    if (!Array.isArray(ans)) continue
-    for (const a of ans as AnswerRow[]) {
-      const qId = typeof a?.qId === 'string' ? a.qId : ''
-      if (!qId) continue
-      const ok = a?.correct === true
-      const slot = byQuestion[qId] ?? (byQuestion[qId] = { plays: 0, correct: 0 })
-      slot.plays += 1
-      if (ok) slot.correct += 1
-    }
-  }
+  const { byQuestion, totalPlays } = aggregateCrackquizHeatmap(period, data)
 
   return NextResponse.json(
-    { period, totalPlays: data.length, byQuestion },
+    { period, totalPlays, byQuestion },
     { headers: { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=120' } },
   )
 }
