@@ -70,7 +70,7 @@ const FLAGS: Record<string, string> = {
   'Morocco': '🇲🇦', 'Senegal': '🇸🇳', 'Nigeria': '🇳🇬', 'Egypt': '🇪🇬',
   'Ghana': '🇬🇭', 'Cameroon': '🇨🇲', 'Ivory Coast': '🇨🇮', 'Cote d\'Ivoire': '🇨🇮',
   'Tunisia': '🇹🇳', 'South Africa': '🇿🇦', 'Algeria': '🇩🇿',
-  'Mali': '🇲🇱', 'Congo': '🇨🇩', 'Congo DR': '🇨🇩', 'DR Congo': '🇨🇩',
+  'Mali': '🇲🇱', 'Congo': '🇨🇬', 'Congo DR': '🇨🇩', 'DR Congo': '🇨🇩',
   'Cape Verde': '🇨🇻', 'Cabo Verde': '🇨🇻',
   'Zambia': '🇿🇲', 'Uganda': '🇺🇬', 'Tanzania': '🇹🇿', 'Kenya': '🇰🇪',
   'Libya': '🇱🇾', 'Ethiopia': '🇪🇹', 'Angola': '🇦🇴', 'Mozambique': '🇲🇿',

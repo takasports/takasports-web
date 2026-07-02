@@ -476,7 +476,7 @@ const FWD: Player[] = [
   { id: 'williams-n', name: 'Nico Williams', club: 'Athletic Club', country: 'España', position: 'FWD', era: 'current' },
   { id: 'sancet', name: 'Oihan Sancet', club: 'Athletic Club', country: 'España', position: 'FWD', era: 'current' },
   { id: 'iago-aspas2', name: 'Borja Iglesias', club: 'Real Betis', country: 'España', position: 'FWD', era: 'current' },
-  { id: 'bakambu', name: 'Cédric Bakambu', club: 'Real Betis', country: 'RD del Congo', position: 'FWD', era: 'current' },
+  { id: 'bakambu', name: 'Cédric Bakambu', club: 'Real Betis', country: 'RD Congo', position: 'FWD', era: 'current' },
   { id: 'enciso', name: 'Julio Enciso', club: 'Brighton', country: 'Paraguay', position: 'FWD', era: 'current' },
   { id: 'mitoma', name: 'Kaoru Mitoma', club: 'Brighton', country: 'Japón', position: 'FWD', era: 'current' },
   { id: 'isak', name: 'Alexander Isak', club: 'Newcastle', country: 'Suecia', position: 'FWD', era: 'current' },

@@ -167,7 +167,7 @@ const COUNTRY_NAME_ES: Record<string, string> = {
   russia: 'Rusia', greece: 'Grecia', slovakia: 'Eslovaquia', hungary: 'Hungría',
   romania: 'Rumanía', bulgaria: 'Bulgaria', finland: 'Finlandia', kosovo: 'Kosovo',
   'north macedonia': 'Macedonia del Norte', albania: 'Albania', slovenia: 'Eslovenia', estonia: 'Estonia',
-  latvia: 'Letonia', lithuania: 'Lituania', 'bosnia and herzegovina': 'Bosnia',
+  latvia: 'Letonia', lithuania: 'Lituania', 'bosnia and herzegovina': 'Bosnia y Herzegovina',
   mali: 'Malí', guinea: 'Guinea', 'guinea-bissau': 'Guinea-Bisáu', gabon: 'Gabón',
   'republic of congo': 'República del Congo', 'dr congo': 'RD Congo', togo: 'Togo', benin: 'Benín',
   'cape verde': 'Cabo Verde', angola: 'Angola', zambia: 'Zambia', zimbabwe: 'Zimbabue',

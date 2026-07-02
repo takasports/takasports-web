@@ -57,7 +57,7 @@ const NATION_ES: Record<string, string> = {
   'China': 'China',
   'Colombia': 'Colombia',
   'Comoros': 'Comoras',
-  'Congo': 'Congo',
+  'Congo': 'República del Congo',
   'Congo DR': 'RD Congo',
   'Costa Rica': 'Costa Rica',
   'Croatia': 'Croacia',

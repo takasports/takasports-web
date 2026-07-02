@@ -79,7 +79,7 @@ const COUNTRY_TO_FLAG: Record<string, React.ComponentType<{ title?: string }>> =
   'Georgia': GE, 'Turquía': TR, 'Austria': AT, 'Liberia': LR,
   'Gabón': GA, 'Burkina Faso': BF, 'Canadá': CA, 'Irlanda': IE,
   'Bélgica': BE, 'Hungría': HU, 'Chequia': CZ, 'Rusia': RU,
-  'Mali': ML, 'RD del Congo': CD, 'Mozambique': MZ, 'Irán': IR,
+  'Mali': ML, 'RD Congo': CD, 'Mozambique': MZ, 'Irán': IR,
   'Perú': PE, 'Ecuador': EC, 'Bolivia': BO, 'Venezuela': VE,
   'Rumanía': RO, 'Eslovaquia': SK, 'Eslovenia': SI,
   'Armenia': AM, 'Guinea': GN, 'Montenegro': ME,
