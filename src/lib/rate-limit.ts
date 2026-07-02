@@ -44,18 +44,31 @@ function roundWindow(now: number, windowSeconds: number): string {
 
 /**
  * Extrae la IP real del cliente respetando los headers de Vercel.
- * Si no hay forma fiable, devuelve `'unknown'` (todos los unknown comparten
- * cubo, lo cual es conservador para prod). Usar `${ip}:${userId}` cuando se
+ *
+ * SEGURIDAD (anti-bypass del rate-limit): NO usar el primer valor de
+ * `x-forwarded-for`. Ese header es manipulable por el cliente y Vercel, cuando
+ * el cliente lo envía, ANTEPONE los valores del cliente y AÑADE la IP real al
+ * FINAL → tomar el primero (izquierda) deja que un atacante rote una IP falsa
+ * en cada petición y evada el freno por IP. Fuentes de confianza, en orden:
+ *   1. `x-real-ip` — lo fija la plataforma (Vercel) con la IP real del cliente
+ *      y no es sobreescribible por el cliente.
+ *   2. el ÚLTIMO valor de `x-forwarded-for` — la IP que observó el proxy de
+ *      confianza (Vercel la añade al final).
+ * Si no hay forma fiable, devuelve `'unknown'` (todos comparten cubo, lo cual
+ * es conservador). Para tráfico honesto no cambia nada: sin spoofing, primer y
+ * último valor coinciden con la IP real. Usar `${ip}:${userId}` cuando se
  * quiera evitar colisiones entre usuarios anónimos.
  */
 export function getClientIp(req: Request): string {
+  const real = req.headers.get('x-real-ip')?.trim()
+  if (real) return real
+
   const xff = req.headers.get('x-forwarded-for')
   if (xff) {
-    const first = xff.split(',')[0]?.trim()
-    if (first) return first
+    const parts = xff.split(',').map((p) => p.trim()).filter(Boolean)
+    const last = parts[parts.length - 1]
+    if (last) return last
   }
-  const real = req.headers.get('x-real-ip')
-  if (real) return real.trim()
   return 'unknown'
 }
 
