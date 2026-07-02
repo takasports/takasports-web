@@ -94,6 +94,9 @@ export async function POST(req: NextRequest) {
     // normalmente — la UI no se rompe.
     let awarded = 0
     if (POINTS_ENABLED_GAMES.has(body.game_id as PointsGameId)) {
+      // pointsFor valida y acota internamente cada campo del payload a su
+      // dominio real (GAME_LIMITS) antes de derivar la tarifa → un parte
+      // manipulado (correct>total, total gigante, tipos raros) nunca infla.
       const amount = pointsFor(body.game_id as PointsGameId, body.score, body.payload)
       if (amount > 0) {
         try {
