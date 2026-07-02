@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { isAdminRequest } from '@/lib/admin-auth'
 import { apiError } from '@/lib/api-utils'
+import { isSameOrigin } from '@/lib/csrf'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,6 +66,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isSameOrigin(req)) return apiError('csrf_origin_mismatch', 403)
   if (!(await isAdmin(req))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
@@ -90,6 +92,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!isSameOrigin(req)) return apiError('csrf_origin_mismatch', 403)
   if (!(await isAdmin(req))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }

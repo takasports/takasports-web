@@ -44,3 +44,24 @@ export async function readJson<T = unknown>(
     return { error: apiError('invalid_json', 400) }
   }
 }
+
+/**
+ * Sanea un apodo/nickname de entrada de usuario para guardar y mostrar en UI
+ * pública (chat de ligas, etc.). Quita caracteres de control y los ángulos
+ * `<>` (defensa en profundidad frente a inyección aunque React ya escape al
+ * pintar), colapsa espacios/saltos de línea, recorta y limita a `max`.
+ * Devuelve '' si no queda nada usable (el caller elige el fallback, p.ej. 'Anon').
+ */
+export function sanitizeNickname(raw: unknown, max = 24): string {
+  const collapsed = String(raw ?? '')
+    .replace(/[<>]/g, '')
+    .replace(/\s+/g, ' ') // \n, \t, etc. → un solo espacio
+  let cleaned = ''
+  for (const ch of collapsed) {
+    const code = ch.codePointAt(0) ?? 0
+    // Salta los caracteres de control no-espacio restantes (C0 < 0x20 y DEL 0x7F).
+    if (code < 0x20 || code === 0x7f) continue
+    cleaned += ch
+  }
+  return cleaned.trim().slice(0, max)
+}

@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
-import { apiError, readJson } from '@/lib/api-utils'
+import { apiError, readJson, sanitizeNickname } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 
 // Fallback in-memory si Supabase no está disponible o la tabla no existe
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
           { status: 429, headers: { 'retry-after': String(Math.ceil(rl.retryMs / 1000)) } },
         )
       }
-      const nickname = (rawNick ?? user?.email?.split('@')[0] ?? 'Anon').slice(0, 24)
+      const nickname = sanitizeNickname(rawNick) || sanitizeNickname(user?.email?.split('@')[0]) || 'Anon'
       const { error } = await sb.from('quiniela_league_chat').insert({
         league_id: ligaId,
         user_id: user?.id ?? null,
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         { status: 429, headers: { 'retry-after': String(Math.ceil(rl.retryMs / 1000)) } },
       )
     }
-    const nickname = (rawNick ?? 'Anon').slice(0, 24)
+    const nickname = sanitizeNickname(rawNick) || 'Anon'
     const msgs = memChat.get(ligaId) ?? []
     msgs.push({ id: Date.now().toString(), nickname, message: msg, created_at: new Date().toISOString() })
     if (msgs.length > 200) msgs.splice(0, msgs.length - 200)

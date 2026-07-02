@@ -77,7 +77,7 @@ export async function fetchBadgesByUser(
   for (const [uid, ids] of byUser.entries()) {
     const defs = ids
       .map(resolveDef)
-      .filter((d): d is BadgeDef => d != null)
+      .filter((d): d is BadgeDef => d != null && !d.privateOnly) // no exponer badges privados en vistas públicas
       .sort((a, b) => (RARITY_ORDER[a.rarity] ?? 9) - (RARITY_ORDER[b.rarity] ?? 9))
       .slice(0, limit)
     out.set(uid, defs.map(d => ({
