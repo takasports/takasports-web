@@ -264,16 +264,6 @@ const SPORTS: SportConfig[] = [
         }],
       },
       {
-        id: 'eliminatoria', label: 'Eliminatoria', icon: '⚔️',
-        blocks: [{
-          id: 'wc-knockout',
-          title: 'Fase eliminatoria · Mundial 2026',
-          metric: 'Resultado',
-          placeholder: true,
-          rows: [],
-        }],
-      },
-      {
         id: 'clasificados', label: 'Clasificados', icon: '✅',
         blocks: [{
           id: 'wc-qualified', title: 'Selecciones clasificadas · 48 plazas',
@@ -1364,7 +1354,6 @@ const LIVE_BLOCK_IDS = new Set([
   'wc-group-a', 'wc-group-b', 'wc-group-c', 'wc-group-d',
   'wc-group-e', 'wc-group-f', 'wc-group-g', 'wc-group-h',
   'wc-group-i', 'wc-group-j', 'wc-group-k', 'wc-group-l',
-  'wc-knockout',
   'wc-qualified',
   'wc-schedule',
   'wc-scorers',
@@ -1402,7 +1391,6 @@ interface LiveStandingsData {
   womenGoals: LiveStandingRow[]; womenAssists: LiveStandingRow[]
   coachesWinRate?: LiveStandingRow[]
   worldCup?: LiveLeague[]
-  worldCupKnockout?: LiveStandingRow[]
   uclFixtures?: LiveStandingRow[]
   uelFixtures?: LiveStandingRow[]
   // Nuevos automatizados
@@ -1454,7 +1442,6 @@ const BLOCK_TO_META_KEY: Record<string, string> = {
   'wc-group-d': 'worldCup', 'wc-group-e': 'worldCup', 'wc-group-f': 'worldCup',
   'wc-group-g': 'worldCup', 'wc-group-h': 'worldCup', 'wc-group-i': 'worldCup',
   'wc-group-j': 'worldCup', 'wc-group-k': 'worldCup', 'wc-group-l': 'worldCup',
-  'wc-knockout': 'worldCupKnockout',
   'wc-qualified': 'worldCupQualified',
   'wc-schedule': 'worldCupSchedule',
   'wc-scorers': 'mundialScorers',
@@ -2251,8 +2238,6 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
           const group = liveData.worldCup.find(g => g.id === block.id)
           if (group?.rows.length) return { ...block, rows: toStatRows(group.rows) }
         }
-        if (block.id === 'wc-knockout' && liveData.worldCupKnockout?.length)
-          return { ...block, rows: toStatRows(liveData.worldCupKnockout), placeholder: false }
 
         // ── Nuevos automatizados ────────────────────────────────────────
         if (block.id === 'f1-calendario'    && liveData.f1Calendar?.length)        return { ...block, rows: toStatRows(liveData.f1Calendar) }
@@ -2772,7 +2757,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                 let inner: React.ReactNode
                 if (block.id.startsWith('wc-group-'))
                   inner = <WorldCupGroupCard block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
-                else if (block.id === 'wc-knockout' || block.cardType === 'fixtures')
+                else if (block.cardType === 'fixtures')
                   inner = <PlayoffSeriesCard block={block} accent={sport.accent} isLive={live} meta={blockMeta} />
                 else
                   inner = (
