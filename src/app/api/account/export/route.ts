@@ -12,8 +12,10 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 // Tablas con datos del usuario y la columna que lo identifica.
-// (Excluida a propósito: push_subscriptions = tokens técnicos del dispositivo,
-//  sensibles y sin valor de portabilidad para la persona.)
+// (Excluidas a propósito, sin valor de portabilidad para la persona:
+//  push_subscriptions = tokens técnicos del dispositivo; rate_limits = frenos
+//  anti-abuso temporales.)
+// newsletter_subscribers va aparte (se cruza por email, no por user_id) — ver GET.
 const USER_TABLES: { table: string; col: 'user_id' | 'owner_id' }[] = [
   { table: 'article_comments',              col: 'user_id'  },
   { table: 'game_events',                   col: 'user_id'  },
@@ -35,8 +37,10 @@ const USER_TABLES: { table: string; col: 'user_id' | 'owner_id' }[] = [
   { table: 'ranked_predictions',            col: 'user_id'  },
   { table: 'read_history',                  col: 'user_id'  },
   { table: 'reminders',                     col: 'user_id'  },
+  { table: 'user_album',                    col: 'user_id'  },
   { table: 'user_cosmetic_unlocks',         col: 'user_id'  },
   { table: 'user_favorites',                col: 'user_id'  },
+  { table: 'user_mionce_lineups',           col: 'user_id'  },
   { table: 'weekly_votes',                  col: 'user_id'  },
 ]
 
@@ -95,6 +99,17 @@ export async function GET(req: NextRequest) {
 
   for (const { table, col } of USER_TABLES) {
     data[table] = await fetchAll(admin, table, col, user.id)
+  }
+
+  // La suscripción a la newsletter se cruza por EMAIL (no por user_id): es dato
+  // del usuario (art. 20) y ya se suprime al cerrar la cuenta (art. 17).
+  if (user.email) {
+    data['newsletter_subscribers'] = await fetchAll(
+      admin,
+      'newsletter_subscribers',
+      'email',
+      user.email.toLowerCase(),
+    )
   }
 
   const now = new Date()
