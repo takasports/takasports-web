@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nameMatch, scorePicks, type SavedPick, type MatchResult } from './quiniela'
+import { nameMatch, scorePicks, resultForPick, type SavedPick, type MatchResult } from './quiniela'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // nameMatch — empareja resultado↔pick por nombre de equipo. Es scoring crítico:
@@ -118,5 +118,50 @@ describe('scorePicks — empareja el resultado correcto', () => {
     )
     expect(bd.perPick[0].hit).toBe(true)
     expect(bd.hits).toBe(1)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// resultForPick — ÚNICA fuente de verdad del emparejado pick↔resultado, que
+// comparten scoring y la comprobación de cobertura del cron settle (H2). Blinda
+// que la cobertura NO se infle con un señuelo ni se pierda por un alias.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('resultForPick — cobertura de liquidación (H2)', () => {
+  it('encuentra el resultado del pick por palabra completa (sufijo FC)', () => {
+    const r = resultForPick(
+      { home: 'Real Madrid', away: 'Barcelona' },
+      [res('Real Madrid', 'FC Barcelona', 2, 1)],
+    )
+    expect(r).toBeDefined()
+    expect(r?.away).toBe('FC Barcelona')
+  })
+
+  it('NO cuenta como cubierto un señuelo de subcadena: "Real Madrid" ≠ "Real Sociedad" (antes settleaba prematuro)', () => {
+    const r = resultForPick(
+      { home: 'Real Madrid', away: 'Barcelona' },
+      [res('Real Sociedad', 'Barcelona', 1, 1)],
+    )
+    expect(r).toBeUndefined()
+  })
+
+  it('SÍ cuenta como cubierto vía alias: "PSG" ↔ "Paris Saint-Germain" (antes la jornada no cerraba nunca)', () => {
+    const r = resultForPick(
+      { home: 'PSG', away: 'Marseille' },
+      [res('Paris Saint-Germain', 'Olympique de Marseille', 3, 0)],
+    )
+    expect(r).toBeDefined()
+    expect(r?.home).toBe('Paris Saint-Germain')
+  })
+
+  it('requiere que casen AMBOS equipos, no solo uno', () => {
+    const r = resultForPick(
+      { home: 'Real Madrid', away: 'Barcelona' },
+      [res('Real Madrid', 'Getafe', 2, 0)],
+    )
+    expect(r).toBeUndefined()
+  })
+
+  it('sin resultados devuelve undefined', () => {
+    expect(resultForPick({ home: 'Real Madrid', away: 'Barcelona' }, [])).toBeUndefined()
   })
 })

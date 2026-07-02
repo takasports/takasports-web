@@ -100,15 +100,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 4. Lee predictions acertantes sin acreditar
-  const { data: winners, error: pErr } = await admin
-    .from('quiniela_season_predictions')
-    .select('user_id, prize_credited')
-    .eq('question_id', body.questionId)
-    .eq('answer', body.winner)
-    .eq('prize_credited', false)
-  if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 })
-
   const prize = q.prize_coins as number
   // Modelo SIN monedas: el premio (prize_coins, escala vieja) se acredita como
   // PUNTOS Taka en escala baja = /100, mínimo 1 (500/1000/1500 → 5/10/15).
@@ -117,9 +108,24 @@ export async function POST(req: NextRequest) {
   let credited = 0
   let creditFailed = 0
 
-  // 5. Acreditar PUNTOS uno por uno con p_user_id (bypass auth.uid).
-  if (prizePoints > 0 && winners && winners.length > 0) {
-    for (const w of winners) {
+  // 4+5. CLAIM atómico + acreditación. Marcamos prize_credited=true ANTES de
+  // acreditar, en un solo UPDATE condicionado a prize_credited=false, y solo
+  // procesamos las filas que ESTE request logró voltear (RETURNING). Dos
+  // llamadas concurrentes (o un doble clic) no pueden pagar dos veces al mismo
+  // acertante — award_points NO es idempotente. Mismo patrón que
+  // challenges/claim y el cron settle-quiniela. Si award_points falla,
+  // revertimos esa fila (prize_credited=false) para reintentar más tarde.
+  if (prizePoints > 0) {
+    const { data: claimed, error: claimErr } = await admin
+      .from('quiniela_season_predictions')
+      .update({ prize_credited: true })
+      .eq('question_id', body.questionId)
+      .eq('answer', body.winner)
+      .eq('prize_credited', false)
+      .select('user_id')
+    if (claimErr) return NextResponse.json({ error: claimErr.message }, { status: 500 })
+
+    for (const w of claimed ?? []) {
       const { error: insErr } = await admin.rpc('award_points', {
         p_user_id: w.user_id,
         p_amount:  prizePoints,
@@ -133,13 +139,17 @@ export async function POST(req: NextRequest) {
           prize_coins: prize,
         },
       })
-      if (insErr) { creditFailed += 1; continue }
-      // Marcar prize_credited
-      await admin
-        .from('quiniela_season_predictions')
-        .update({ prize_credited: true })
-        .eq('user_id', w.user_id)
-        .eq('question_id', body.questionId)
+      if (insErr) {
+        // Acreditación fallida: deshacemos el claim de ESTA fila para que un
+        // reintento posterior la vuelva a coger (queda prize_credited=false).
+        await admin
+          .from('quiniela_season_predictions')
+          .update({ prize_credited: false })
+          .eq('user_id', w.user_id)
+          .eq('question_id', body.questionId)
+        creditFailed += 1
+        continue
+      }
       credited += 1
     }
   }

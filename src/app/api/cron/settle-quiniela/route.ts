@@ -17,7 +17,7 @@
 
 import { NextResponse }       from 'next/server'
 import { adminSupabase }      from '@/lib/supabase-admin'
-import { scorePicks }         from '@/lib/quiniela'
+import { scorePicks, resultForPick, QUINIELA_RESULTS_DAYS_BACK, QUINIELA_RESULTS_LIMIT } from '@/lib/quiniela'
 import { enrichResultsWithFeatured } from '@/lib/quiniela-featured'
 import type { SavedPick, MatchResult, ScoreBreakdown } from '@/lib/quiniela'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
@@ -47,7 +47,7 @@ const FOOTBALL_SLUGS = [
 function dateRangeParam(): string {
   const now   = new Date()
   const start = new Date(now)
-  start.setDate(now.getDate() - 10)
+  start.setDate(now.getDate() - QUINIELA_RESULTS_DAYS_BACK)
   const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
   return `${fmt(start)}-${fmt(now)}`
 }
@@ -64,7 +64,7 @@ async function fetchAllResults(): Promise<MatchResult[]> {
   const settled = await Promise.allSettled(
     FOOTBALL_SLUGS.map(async slug => {
       try {
-        const url = `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${dateRangeParam()}&limit=30`
+        const url = `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${dateRangeParam()}&limit=${QUINIELA_RESULTS_LIMIT}`
         const res = await fetch(url, { next: { revalidate: 0 } })
         if (!res.ok) return []
         const json = await res.json() as { events?: unknown[] }
@@ -133,17 +133,15 @@ interface PicksRow {
   picks:    QuinielaPicks
 }
 
-// ── nameMatch ligero (simplificado de quiniela.ts) ────────────────────────
-// Verifica si ESPN tiene resultado para un pick dado.
-// Usa AND (no OR) para que ambas palabras clave coincidan — evita falsos
-// positivos cuando equipos de diferentes partidos comparten el mismo nombre
-// inicial (ej. "Sporting Braga" y "Sporting Kansas City").
+// ── ¿ESPN ya tiene resultado para este pick? ───────────────────────────────
+// Reutiliza resultForPick de quiniela.ts, el MISMO emparejador que usa el
+// scoring — así la comprobación de cobertura y la puntuación deciden idéntico.
+// Antes esta función tenía su propia comparación por subcadena del primer
+// palabro ('real' casaba con "Real Sociedad" = cobertura inflada → cierre
+// prematuro y puntos perdidos; 'psg' NO casaba con "Paris Saint-Germain" =
+// cobertura infravalorada → la jornada no cerraba nunca).
 function hasResult(pick: SavedPick, results: MatchResult[]): boolean {
-  const h = pick.home.toLowerCase().split(' ')[0]
-  const a = pick.away.toLowerCase().split(' ')[0]
-  return results.some(r =>
-    r.home.toLowerCase().includes(h) && r.away.toLowerCase().includes(a)
-  )
+  return resultForPick(pick, results) !== undefined
 }
 
 async function handle(req: Request) {

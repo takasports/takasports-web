@@ -25,6 +25,16 @@ export interface MatchResult {
 // siendo '1'/'X'/'2' para API, scoring y compatibilidad.
 export const OUTCOME_LABEL: Record<Outcome, string> = { '1': 'L', 'X': 'E', '2': 'V' }
 
+// ── Ventana ESPN compartida (web ↔ cron) ─────────────────────────
+// La web (/api/quiniela/results) y el cron de liquidación
+// (/api/cron/settle-quiniela) DEBEN mirar el MISMO rango de partidos:
+// si la web enseña menos días de los que el cron liquida, el usuario ve
+// resultados que "faltan" mientras su jornada ya se cerró por detrás.
+// Antes divergían (web 7 días/20 · cron 10 días/30). Ambos importan estas
+// constantes → estructuralmente no pueden volver a descuadrarse.
+export const QUINIELA_RESULTS_DAYS_BACK = 10
+export const QUINIELA_RESULTS_LIMIT = 30
+
 export interface SavedPick {
   home: string
   away: string
@@ -125,6 +135,22 @@ function tokenRunContains(outer: string[], inner: string[]): boolean {
     if (ok) return true
   }
   return false
+}
+
+// ── Emparejado pick ↔ resultado ──────────────────────────────────
+// ÚNICA fuente de verdad para decir "¿qué resultado ESPN corresponde a
+// este pick?". La usan TANTO el scoring (scorePicks) COMO la comprobación
+// de cobertura del cron de liquidación. Antes el cron tenía su propia
+// comparación por subcadena del primer palabro ('real' casaba con
+// "Real Sociedad", 'psg' NO casaba con "Paris Saint-Germain") que
+// divergía del scoring → cerraba jornadas antes de tiempo (puntos
+// perdidos) o no las cerraba nunca. Al compartir este helper, cobertura
+// y puntuación emparejan EXACTAMENTE igual.
+export function resultForPick(
+  pick: { home: string; away: string },
+  results: MatchResult[],
+): MatchResult | undefined {
+  return results.find(r => nameMatch(r.home, pick.home) && nameMatch(r.away, pick.away))
 }
 
 // ── Validación de pick contra resultado ──────────────────────────
@@ -230,7 +256,7 @@ export function scorePicks(
   opts?: ScoreOptions,
 ): ScoreBreakdown {
   const perPick = picks.map(p => {
-    const r = results.find(rr => nameMatch(rr.home, p.home) && nameMatch(rr.away, p.away))
+    const r = resultForPick(p, results)
     return scorePick(p, r, opts)
   })
   const hits = perPick.filter(s => s.hit).length

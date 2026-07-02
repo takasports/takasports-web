@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { MatchResult } from '@/lib/quiniela'
+import { QUINIELA_RESULTS_DAYS_BACK, QUINIELA_RESULTS_LIMIT } from '@/lib/quiniela'
 
 export type { MatchResult }
 
@@ -18,7 +19,7 @@ const FOOTBALL_SLUGS = [
 function dateRangeParam(): string {
   const now = new Date()
   const start = new Date(now)
-  start.setDate(now.getDate() - 7)
+  start.setDate(now.getDate() - QUINIELA_RESULTS_DAYS_BACK)
   const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
   return `${fmt(start)}-${fmt(now)}`
 }
@@ -56,7 +57,7 @@ const FINAL_STATUSES = new Set([
 
 async function fetchResultsFromLeague(slug: string): Promise<MatchResult[]> {
   const res = await fetchWithRetry(
-    `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${dateRangeParam()}&limit=20`
+    `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${dateRangeParam()}&limit=${QUINIELA_RESULTS_LIMIT}`
   )
   if (!res || !res.ok) return []
   let json: { events?: Array<Record<string, unknown>> }
