@@ -86,12 +86,12 @@ export default function Image() {
         {/* Sport pills */}
         <div style={{ display: 'flex', gap: 12, marginTop: 44, zIndex: 1 }}>
           {[
-            { emoji: '⚽', label: 'Fútbol', color: '#22c55e' },
-            { emoji: '🏀', label: 'Baloncesto', color: '#f97316' },
-            { emoji: '🏎️', label: 'F1', color: '#ef4444' },
-            { emoji: '🥊', label: 'UFC', color: '#7C3AED' },
-            { emoji: '🎾', label: 'Tenis', color: '#eab308' },
-            { emoji: '🎤', label: 'WWE', color: '#dc2626' },
+            { emoji: '⚽', label: 'Fútbol', color: '#34D399' },
+            { emoji: '🏀', label: 'Baloncesto', color: '#F59E0B' },
+            { emoji: '🏎️', label: 'F1', color: '#EF4444' },
+            { emoji: '🥊', label: 'MMA', color: '#D4AF37' },
+            { emoji: '🎾', label: 'Tenis', color: '#E0B33A' },
+            { emoji: '🎤', label: 'Lucha libre', color: '#A855F7' },
           ].map(({ emoji, label, color }) => (
             <div
               key={label}

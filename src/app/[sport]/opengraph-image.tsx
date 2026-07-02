@@ -1,23 +1,28 @@
 import { ImageResponse } from 'next/og'
+import { accentForSport, getSportLabel } from '@/lib/sports'
 
 export const runtime = 'edge'
 export const alt = 'TakaSports — Noticias deportivas'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-const SPORT_CONFIG: Record<string, { label: string; emoji: string; color: string }> = {
-  futbol:     { label: 'FÚTBOL',  emoji: '⚽', color: '#22c55e' },
-  baloncesto: { label: 'BALONCESTO', emoji: '🏀', color: '#f97316' },
-  formula1:   { label: 'F1',      emoji: '🏎️', color: '#ef4444' },
-  ufc:        { label: 'UFC',     emoji: '🥊', color: '#7C3AED' },
-  tenis:      { label: 'TENIS',   emoji: '🎾', color: '#eab308' },
-  wwe:        { label: 'WWE',     emoji: '🎤', color: '#dc2626' },
-  rugby:      { label: 'RUGBY',   emoji: '🏉', color: '#0ea5e9' },
+const SPORT_EMOJI: Record<string, string> = {
+  futbol:     '⚽',
+  baloncesto: '🏀',
+  formula1:   '🏎️',
+  ufc:        '🥊',
+  tenis:      '🎾',
+  wwe:        '🎤',
+  rugby:      '🏉',
 }
 
 export default async function Image({ params }: { params: Promise<{ sport: string }> }) {
   const { sport } = await params
-  const cfg = SPORT_CONFIG[sport] ?? { label: sport.toUpperCase(), emoji: '🏟️', color: '#7C3AED' }
+  const cfg = {
+    label: getSportLabel(sport).toUpperCase(),
+    emoji: SPORT_EMOJI[sport] ?? '🏟️',
+    color: accentForSport(sport),
+  }
 
   return new ImageResponse(
     (

@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel } from '@/lib/sports'
+import { getSportStyle, getSportLabel, accentForSport } from '@/lib/sports'
 
 // Categorías que aparecen siempre en los tabs de Reels (independiente de si
 // hay contenido en este instante). Se ordenan: las que tienen reels primero.
@@ -113,12 +113,12 @@ function ReelSkeleton() {
 
 // ── Placeholders ────────────────────────────────────────────────
 const REEL_PLACEHOLDERS = [
-  { sport: 'futbol',     accent: '#22c55e', label: 'Fútbol' },
-  { sport: 'baloncesto', accent: '#f59e0b', label: 'Baloncesto' },
-  { sport: 'formula1',   accent: '#ef4444', label: 'F1' },
-  { sport: 'tenis',      accent: '#d97706', label: 'Tenis' },
-  { sport: 'ufc',        accent: '#f97316', label: 'UFC' },
-  { sport: 'rugby',      accent: '#a78bfa', label: 'Rugby' },
+  { sport: 'futbol',     accent: accentForSport('futbol'),     label: getSportLabel('futbol') },
+  { sport: 'baloncesto', accent: accentForSport('baloncesto'), label: getSportLabel('baloncesto') },
+  { sport: 'formula1',   accent: accentForSport('formula1'),   label: getSportLabel('formula1') },
+  { sport: 'tenis',      accent: accentForSport('tenis'),      label: getSportLabel('tenis') },
+  { sport: 'ufc',        accent: accentForSport('ufc'),        label: getSportLabel('ufc') },
+  { sport: 'rugby',      accent: accentForSport('rugby'),      label: getSportLabel('rugby') },
 ]
 
 // Extrae el shortcode de una URL de reel/post de Instagram

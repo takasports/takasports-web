@@ -1,4 +1,6 @@
 // Competition metadata: colors, rankings, display names
+import { accentForSport } from '@/lib/sports'
+
 export const COMP_ACCENT: Record<string, string> = {
   'LaLiga': '#FF4500',
   'Premier': '#6C2D91',
@@ -274,24 +276,11 @@ export const SPORT_EMOJI: Record<string, string> = {
   'rugby':       '🏉',
 }
 
-export const SPORT_COLOR: Record<string, string> = {
-  'Fútbol':     '#4ade80',
-  'NBA':        '#f59e0b',
-  'F1':         '#ef4444',
-  'UFC':        '#D4AF37',
-  'Tenis':      '#d97706',
-  'Pádel':      '#22d3ee',
-  'Rugby':      '#84cc16',
-  // Fallbacks
-  'soccer':     '#4ade80',
-  'basketball': '#f59e0b',
-  'racing':     '#ef4444',
-  'mma':        '#f97316',
-  'tennis':     '#d97706',
-}
-
+// Color de acento por deporte — delega en la fuente única (src/lib/sports.ts)
+// para que toda la web use el mismo color por deporte. Acepta label ('Fútbol',
+// 'NBA'…) y slug ESPN ('soccer','mma'…); default = morado de marca.
 export function getSportColor(sport: string): string {
-  return SPORT_COLOR[sport] ?? '#a78bfa'
+  return accentForSport(sport)
 }
 
 // ─── Tema por deporte (paquete gráfico de retransmisión) ───────────────────

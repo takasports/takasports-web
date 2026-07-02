@@ -36,10 +36,10 @@ export const FINISHED = new Set([
 ])
 
 export const SPORT_LABELS: Record<string, string> = {
-  soccer: 'Fútbol', basketball: 'Baloncesto', racing: 'F1', mma: 'UFC', tennis: 'Tenis',
+  soccer: 'Fútbol', basketball: 'Baloncesto', racing: 'F1', mma: 'MMA', tennis: 'Tenis',
 }
 export const SPORT_ACCENTS: Record<string, string> = {
-  soccer: '#22c55e', basketball: '#f59e0b', racing: '#ef4444', mma: '#f97316', tennis: '#d97706',
+  soccer: '#34D399', basketball: '#F59E0B', racing: '#EF4444', mma: '#D4AF37', tennis: '#E0B33A',
 }
 
 function normalizeTeam(name: string) {

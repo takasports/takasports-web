@@ -283,7 +283,7 @@ const SPORTS: SportConfig[] = [
     ],
   },
   {
-    id: 'futbol', label: 'Fútbol', emoji: '⚽', accent: '#22c55e',
+    id: 'futbol', label: 'Fútbol', emoji: '⚽', accent: '#34D399',
     sections: [
       { id: 'jugadores', label: 'Jugadores', icon: '👤', groups: FUTBOL_JUGADORES_GROUPS },
       {
@@ -646,7 +646,7 @@ const SPORTS: SportConfig[] = [
     ],
   },
   {
-    id: 'tenis', label: 'Tenis', emoji: '🎾', accent: '#d97706',
+    id: 'tenis', label: 'Tenis', emoji: '🎾', accent: '#E0B33A',
     sections: [
       {
         id: 'atp', label: 'ATP', icon: '👨',
@@ -685,7 +685,7 @@ const SPORTS: SportConfig[] = [
     ],
   },
   {
-    id: 'ufc', label: 'UFC', emoji: '🥊', accent: '#f97316',
+    id: 'ufc', label: 'MMA', emoji: '🥊', accent: '#D4AF37',
     sections: [
       {
         id: 'ranking-ufc', label: 'Top general', icon: '🏆',

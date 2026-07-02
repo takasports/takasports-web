@@ -11,14 +11,15 @@ import { PlacaCardV2 } from '@/components/placa/PlacaCardV2'
 import { PlacaCardV3 } from '@/components/placa/PlacaCardV3'
 import { PlacaCardV4 } from '@/components/placa/PlacaCardV4'
 import { PlacaRowV3 } from '@/components/placa/PlacaRowV3'
+import { accentForSport } from '@/lib/sports'
 import type { PlacaData } from '@/components/placa/types'
 
 const SPORT_ACCENTS = {
-  futbol:     '#22c55e',
-  baloncesto: '#f59e0b',
-  formula1:   '#ef4444',
-  ufc:        '#f97316',
-  tenis:      '#d97706',
+  futbol:     accentForSport('futbol'),
+  baloncesto: accentForSport('baloncesto'),
+  formula1:   accentForSport('formula1'),
+  ufc:        accentForSport('ufc'),
+  tenis:      accentForSport('tenis'),
 }
 
 type SportArt = 'futbol' | 'basket' | 'f1' | 'ufc' | 'tenis' | 'rugby' | 'none'

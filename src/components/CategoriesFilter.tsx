@@ -1,18 +1,18 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
+import { HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, accentForSport, CATEGORY_TO_SLUG } from '@/lib/sports'
 import { FootballIcon, BasketballIcon, F1Icon, TennisIcon, UFCIcon, RugbyIcon, WWEIcon } from '@/components/icons/GameIcons'
 
 const SPORT_META: Record<string, { accent: string; Icon: React.ComponentType<{ size?: number }> | null }> = {
   'Todo':    { accent: '#7C3AED', Icon: null },
-  'Fútbol':  { accent: '#22c55e', Icon: FootballIcon },
-  'Lucha libre': { accent: '#facc15', Icon: WWEIcon },
-  'F1':      { accent: '#ef4444', Icon: F1Icon },
-  'Baloncesto': { accent: '#f59e0b', Icon: BasketballIcon },
-  'Tenis':   { accent: '#d97706', Icon: TennisIcon },
-  'MMA':     { accent: '#f97316', Icon: UFCIcon },
-  'Rugby':   { accent: '#a78bfa', Icon: RugbyIcon },
+  'Fútbol':  { accent: accentForSport(CATEGORY_TO_SLUG['Fútbol'] ?? 'Fútbol'), Icon: FootballIcon },
+  'Lucha libre': { accent: accentForSport(CATEGORY_TO_SLUG['Lucha libre'] ?? 'Lucha libre'), Icon: WWEIcon },
+  'F1':      { accent: accentForSport(CATEGORY_TO_SLUG['F1'] ?? 'F1'), Icon: F1Icon },
+  'Baloncesto': { accent: accentForSport(CATEGORY_TO_SLUG['Baloncesto'] ?? 'Baloncesto'), Icon: BasketballIcon },
+  'Tenis':   { accent: accentForSport(CATEGORY_TO_SLUG['Tenis'] ?? 'Tenis'), Icon: TennisIcon },
+  'MMA':     { accent: accentForSport(CATEGORY_TO_SLUG['MMA'] ?? 'MMA'), Icon: UFCIcon },
+  'Rugby':   { accent: accentForSport(CATEGORY_TO_SLUG['Rugby'] ?? 'Rugby'), Icon: RugbyIcon },
 }
 
 function getMeta(label: string) {

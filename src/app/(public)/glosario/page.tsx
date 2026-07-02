@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { SITE_URL } from '@/lib/constants'
 import { GLOSARIO_TERMS, type GlosarioSport } from '@/lib/glosario-terms'
+import { accentForSport } from '@/lib/sports'
 
 export const metadata: Metadata = {
   title: 'Glosario deportivo — Términos explicados',
@@ -90,12 +91,12 @@ export default function GlosarioIndexPage() {
 
   const order: GlosarioSport[] = ['futbol', 'baloncesto', 'f1', 'tenis', 'ufc', 'general']
   const SPORT_META: Record<GlosarioSport, { emoji: string; accent: string }> = {
-    futbol:     { emoji: '⚽',  accent: '#22c55e' },
-    baloncesto: { emoji: '🏀',  accent: '#f59e0b' },
-    f1:         { emoji: '🏎️',  accent: '#ef4444' },
-    tenis:      { emoji: '🎾',  accent: '#d97706' },
-    ufc:        { emoji: '🥊',  accent: '#f97316' },
-    general:    { emoji: '📘',  accent: '#7C3AED' },
+    futbol:     { emoji: '⚽',  accent: accentForSport('futbol') },
+    baloncesto: { emoji: '🏀',  accent: accentForSport('baloncesto') },
+    f1:         { emoji: '🏎️',  accent: accentForSport('f1') },
+    tenis:      { emoji: '🎾',  accent: accentForSport('tenis') },
+    ufc:        { emoji: '🥊',  accent: accentForSport('ufc') },
+    general:    { emoji: '📘',  accent: accentForSport('general') },
   }
   const activeSports = order.filter((s) => bySport[s]?.length)
 

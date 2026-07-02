@@ -14,6 +14,7 @@ import { PersonIcon } from '@/components/icons/GameIcons'
 import PorraCTA from '@/components/PorraCTA'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { useQuinielaMe } from '@/lib/quiniela-me-store'
+import { accentForSport } from '@/lib/sports'
 import type { SearchHit } from '@/app/api/search/players/route'
 import dynamic from 'next/dynamic'
 
@@ -62,11 +63,6 @@ interface SearchPlayer {
   emoji?: string
   photo?: string
   catLabel: string
-}
-
-const SPORT_ACCENT: Record<string, string> = {
-  futbol: '#22C55E', baloncesto: '#F97316', formula1: '#EF4444',
-  tenis: '#EAB308', contenido: '#7C3AED',
 }
 
 function playerRankingsUrl(player: SearchPlayer, q: string): string {
@@ -243,7 +239,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                 </span>
               </div>
               {players.map((player) => {
-                const accent = SPORT_ACCENT[player.sport] ?? '#7C3AED'
+                const accent = accentForSport(player.sport)
                 return (
                   <Link
                     key={player.id}

@@ -29,14 +29,14 @@ import { estimateOutcome, matchDominance, type OutcomeEstimate, type Dominance }
 export const revalidate = 120
 
 // Tema por deporte de la ficha (identidad "La Señal"). SportKind → slug
-// data-sport + acento (alineado con SPORT_STYLE de lib/sports). Sin asset/golf
-// y 'other' → neutro morado de marca.
+// data-sport + acento (acentos canónicos de lib/sports.ts, mismos valores que
+// accentForSport). Sin asset/golf y 'other' → neutro morado de marca.
 const FICHA_THEME: Record<string, { slug: string; accent: string }> = {
-  soccer:     { slug: 'futbol',     accent: '#22c55e' },
-  basketball: { slug: 'baloncesto', accent: '#f59e0b' },
-  mma:        { slug: 'ufc',        accent: '#f97316' },
-  racing:     { slug: 'f1',         accent: '#ef4444' },
-  tennis:     { slug: 'tenis',      accent: '#d97706' },
+  soccer:     { slug: 'futbol',     accent: '#34D399' },
+  basketball: { slug: 'baloncesto', accent: '#F59E0B' },
+  mma:        { slug: 'ufc',        accent: '#D4AF37' },
+  racing:     { slug: 'f1',         accent: '#EF4444' },
+  tennis:     { slug: 'tenis',      accent: '#E0B33A' },
 }
 
 // ── Metadata ───────────────────────────────────────────────────────
