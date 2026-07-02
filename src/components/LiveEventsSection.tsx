@@ -8,13 +8,13 @@ import { getCompAccent, getLiveLabel } from '@/lib/competitions'
 import { TvIcon } from '@/components/icons/GameIcons'
 import { toProxyUrl } from '@/lib/image-url'
 import { isoToLocalDate } from '@/lib/calendar'
+import { nameMatch } from '@/lib/quiniela'
 import {
   type RawLiveFixture,
   type LiveScore,
   FINISHED,
   SPORT_LABELS,
   SPORT_ACCENTS,
-  namesMatch,
   liveCardsFromFixtures,
   withLiveFirst,
   scoresForEvents,
@@ -459,7 +459,7 @@ export default function LiveEventsSection({
     const favs = (favTeams ?? []).filter(Boolean)
     if (favs.length === 0) return []
     return base.filter(ev =>
-      favs.some(t => (ev.home && namesMatch(t, ev.home)) || (ev.away && namesMatch(t, ev.away)))
+      favs.some(t => (ev.home && nameMatch(t, ev.home)) || (ev.away && nameMatch(t, ev.away)))
     )
   }, [filter, events, fullEvents, favTeams, liveCards])
 

@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase'
 import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME, highlightReason, isMundial } from '@/lib/competitions'
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate, groupDayByCompetition } from '@/lib/calendar'
+import { nameMatch } from '@/lib/quiniela'
 import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime, dayDeltaForIso } from '@/lib/timezone'
 import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
@@ -20,12 +21,16 @@ import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
 
 // ── Favorites helpers ──────────────────────────────────────────
+// Empareja el favorito guardado (nombre libre: del onboarding o del ❤ que guarda
+// el nombre crudo del feed) contra el nombre del equipo del evento con el MISMO
+// emparejador que la quiniela: por PALABRA COMPLETA + alias + sin acentos. Evita
+// los falsos positivos del "contiene texto" ('Inter'⊄'Inter Miami', 'Milan'⊄'Inter
+// Milan', 'Roma'⊄'Romania') sin perder los apodos ('Gladbach'→'Borussia
+// Mönchengladbach', 'PSG'→'Paris Saint-Germain') ni las tildes ('Alavés'='Alaves').
 function isFavorite(favorites: Set<string>, name: string | null | undefined): boolean {
   if (!name || favorites.size === 0) return false
-  const lower = name.toLowerCase()
   for (const fav of favorites) {
-    const f = fav.toLowerCase()
-    if (lower.includes(f) || f.includes(lower)) return true
+    if (nameMatch(name, fav)) return true
   }
   return false
 }
