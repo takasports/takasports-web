@@ -1,16 +1,17 @@
 // GET /api/ranked/points — saldo de puntos Taka del usuario autenticado
 // Devuelve { points: number | null } (null si no hay sesión o tabla aún no existe).
 
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
     return NextResponse.json({ points: null })
   }
 
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+  // Acepta cookie (web) Y Authorization: Bearer (app Expo) → antes la app,
+  // que va con Bearer y sin cookie, recibía siempre points:null/no_session.
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ points: null, reason: 'no_session' })
 
   const { data, error } = await sb

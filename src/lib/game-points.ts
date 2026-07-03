@@ -113,7 +113,11 @@ export function pointsFor(
     const found = boundedInt(payload?.found, 0, total)
     const ratio = total > 0
       ? found / total
-      : clamp01(boundedInt(score / 10, 0, words) / 10)
+      // Fallback sin payload.total: score = palabras×10 → score/10 = palabras
+      // encontradas; el ratio se divide entre el total REAL (words=14), no un
+      // 10 fijo que saturaba a 1.0 con ≥10 palabras y sobre-penalizaba las
+      // sopas de menos palabras.
+      : clamp01(boundedInt(score / 10, 0, words) / words)
     return 2 + Math.round(ratio * 10)
   }
 

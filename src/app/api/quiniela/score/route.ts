@@ -283,28 +283,17 @@ export async function POST(req: NextRequest) {
       // Usamos los picks PERSISTIDOS (no los del body) para evitar
       // que un cliente comprometido cambie picks después de stakearlos.
       const persistedPicks = prevPayload.picks
-      const allResolved = persistedPicks.every(p =>
-        results.some(r =>
-          r.home.toLowerCase().includes(p.home.toLowerCase().split(' ')[0]) ||
-          r.away.toLowerCase().includes(p.away.toLowerCase().split(' ')[0])
-        )
-      )
-      // Nota: el matching real lo hace scorePicks con nameMatch.
-      // Hacemos un quick-check aquí; si scorePicks no encuentra un
-      // result para un pick, ese pick contará 0 (correcto — partido
-      // no jugado/cancelado equivale a perder el stake).
-
+      // El matching real lo hace scorePicks con nameMatch (palabra completa +
+      // alias); si no encuentra result para un pick, ese pick cuenta 0 (partido
+      // no jugado/cancelado = perder el stake). No hace falta pre-check propio.
       const breakdown = scorePicks(persistedPicks, results)
       // Modelo SIN apuestas: la Liga Taka recibe los PUNTOS FIJOS
       // (TENDENCY 1 ×2 destacado + EXACTO 3 + PLENO 5), no stake×cuota.
       const totalPoints = breakdown.totalPoints
 
-      // Solo bloquear settle si NO hay ningún resultado finalizado
-      // — los parciales se cierran con lo que hay (los picks sin
-      // result cuentan como perdidos, el stake ya se descontó).
-      // Si el cliente quiere esperar, debe pasar allEvaluated antes
-      // de llamar phase=settle.
-      void allResolved
+      // Los parciales se cierran con lo que hay (los picks sin result cuentan
+      // como perdidos, el stake ya se descontó). Si el cliente quiere esperar a
+      // que ESPN finalice todos, no debe llamar phase=settle todavía.
 
       // ── CLAIM atómico (lock por `settled`) ───────────────────────
       // Marcamos settled=true + guardamos breakdown ANTES de acreditar, y

@@ -117,23 +117,45 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'missing id/category/overrides' }, { status: 400 })
   }
 
+  // Validación de los campos NUMÉRICOS: si vienen, deben ser un número finito
+  // (se permite null para LIMPIAR el override). Evita que un typo/HTML/NaN/
+  // Infinity corrompa la fila de ranking; rank/score no pueden ser negativos.
+  const numOrNull = (v: unknown, min = -Infinity): boolean =>
+    v === null || (typeof v === 'number' && Number.isFinite(v) && v >= min)
+
   // Mapea API → columnas DB
   const update: Record<string, unknown> = {}
-  if ('rank' in overrides)             update.rank_manual            = overrides.rank
-  if ('score' in overrides)            update.score_manual           = overrides.score
+  if ('rank' in overrides) {
+    if (!numOrNull(overrides.rank, 0)) return NextResponse.json({ error: 'invalid_rank' }, { status: 400 })
+    update.rank_manual = overrides.rank
+  }
+  if ('score' in overrides) {
+    if (!numOrNull(overrides.score, 0)) return NextResponse.json({ error: 'invalid_score' }, { status: 400 })
+    update.score_manual = overrides.score
+  }
   if ('insight' in overrides)          update.insight_manual         = overrides.insight
   if ('trendReason' in overrides)      update.trend_reason_manual    = overrides.trendReason
   if ('badge' in overrides)            update.badge_manual           = overrides.badge
   if ('trend' in overrides)            update.trend_manual           = overrides.trend
-  if ('editorialBoost' in overrides)   update.editorial_boost        = overrides.editorialBoost
+  if ('editorialBoost' in overrides) {
+    if (!numOrNull(overrides.editorialBoost)) return NextResponse.json({ error: 'invalid_editorialBoost' }, { status: 400 })
+    update.editorial_boost = overrides.editorialBoost
+  }
   if ('editorialNote' in overrides)    update.editorial_note         = overrides.editorialNote
   if ('locked' in overrides)           update.editorial_locked       = overrides.locked
   const f = overrides.factors as Record<string, unknown> | undefined
   if (f && typeof f === 'object') {
-    if ('rendimiento' in f) update.rendimiento_manual = f.rendimiento
-    if ('contexto'    in f) update.contexto_manual    = f.contexto
-    if ('mediatico'   in f) update.mediatico_manual   = f.mediatico
-    if ('narrativa'   in f) update.narrativa_manual   = f.narrativa
+    for (const [k, col] of [
+      ['rendimiento', 'rendimiento_manual'],
+      ['contexto',    'contexto_manual'],
+      ['mediatico',   'mediatico_manual'],
+      ['narrativa',   'narrativa_manual'],
+    ] as const) {
+      if (k in f) {
+        if (!numOrNull(f[k])) return NextResponse.json({ error: `invalid_factor_${k}` }, { status: 400 })
+        update[col] = f[k]
+      }
+    }
   }
 
   if (Object.keys(update).length === 0) {

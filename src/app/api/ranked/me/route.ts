@@ -3,15 +3,16 @@
 // Usado por UIs que necesitan saber quién soy para resaltar mi fila
 // (comparando pid; NO se expone el user_id crudo de auth).
 
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { supabaseForRequest } from '@/lib/supabase-server'
 import { publicId } from '@/lib/public-id'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
-  const sb = await createServerSupabaseClient()
-  const { data: { user } } = await sb.auth.getUser()
+export async function GET(req: NextRequest) {
+  // supabaseForRequest acepta cookie (web) Y Authorization: Bearer (app Expo),
+  // que hace fetch nativo sin cookies → antes recibía 401.
+  const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ pid: null }, { status: 401 })
 
   const { data: profile } = await sb

@@ -62,17 +62,22 @@ export async function GET(req: NextRequest) {
   const admin = adminSupabase()
   const lbClient = admin ?? sb
 
+  // has_live: hay algún evento en estado 'closed' (en curso). En 'global' el
+  // ranking mezcla TODOS los deportes, así que el check NO debe filtrar por
+  // 'mundial' (antes un UFC en directo no disparaba el auto-refresh del cliente);
+  // sin filtro de deporte = cualquier evento en curso vale.
+  const liveBase = sb.from('ranked_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'closed')
+  const liveQuery = sport === 'global' ? liveBase : liveBase.eq('sport', sport)
+
   // Leaderboard + check de partidos en curso (para auto-refresh del cliente)
   const [lbResult, liveResult] = await Promise.all([
     lbClient.rpc('get_ranked_leaderboard', {
       p_sport: sport === 'global' ? null : sport,
       p_limit: limit,
     }),
-    // has_live: hay algún evento del deporte en estado 'closed' (en curso)
-    sb.from('ranked_events')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'closed')
-      .eq('sport', sport === 'global' ? 'mundial' : sport),
+    liveQuery,
   ])
 
   if (lbResult.error) return NextResponse.json({ error: 'server_error' }, { status: 500 })

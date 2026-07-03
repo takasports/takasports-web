@@ -18,7 +18,10 @@ function hasEnv() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
 }
 
-const VALID_SPORTS = new Set(['mundial', 'ufc', 'futbol', 'global'])
+// 'global' NO es un deporte de liga privada: el CreateModal lo filtra (la UI no
+// lo ofrece), así que el POST tampoco debe aceptarlo (antes un POST directo
+// creaba una "Liga Total" inaccesible desde la interfaz). Solo se usa en el POST.
+const VALID_SPORTS = new Set(['mundial', 'ufc', 'futbol'])
 
 // ── GET ───────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {

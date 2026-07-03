@@ -1481,6 +1481,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const [recentPast, setRecentPast] = useState<SportEvent[]>(pastEvents)
   const notifTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
   const prevScoresRef = useRef<Map<string, string>>(new Map())
+  const flashTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
 
   // Timeline continuo (vista Calendario): días PASADOS que se anteponen a la
   // lista al subir el scroll (arriba = pasado, HOY en medio, abajo = futuro).
@@ -1636,15 +1637,24 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         newFlashes.forEach(id => next.add(id))
         return next
       })
-      setTimeout(() => {
+      const timer = setTimeout(() => {
+        flashTimers.current.delete(timer)
         setFlashIds(prev => {
           const next = new Set(prev)
           newFlashes.forEach(id => next.delete(id))
           return next
         })
       }, 1500)
+      flashTimers.current.add(timer)
     }
   }, [liveScores])
+
+  // Al desmontar: cancela los timers de flash pendientes (evita el setState
+  // sobre un componente ya desmontado si un marcador cambió justo antes de salir).
+  useEffect(() => () => {
+    flashTimers.current.forEach(clearTimeout)
+    flashTimers.current.clear()
+  }, [])
 
   // Persistencia en la nube (best-effort, solo con sesión): sube o borra un
   // favorito en la cuenta (reusa user_favorites con etiqueta team:/comp:) para

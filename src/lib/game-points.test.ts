@@ -84,6 +84,15 @@ describe('pointsFor — Sopa de Cracks (semanal · 2 → 12)', () => {
   it('parcial 4/8 escala dentro de 2..12', () => {
     expect(pointsFor('sopacracks', 40, { found: 4, total: 8 })).toBe(7) // 2 + round(0.5*10)=2+5
   })
+  // Fallback SIN payload.total: el ratio se divide entre el total real (14),
+  // no entre 10 fijo (L40). score = palabras×10.
+  it('fallback sin total: 14 palabras (score 140) = techo 12', () => {
+    expect(pointsFor('sopacracks', 140)).toBe(12) // 14/14 = 1 → 2 + 10
+  })
+  it('fallback sin total: 7 palabras (score 70) = 7, no 9', () => {
+    // antes /10 daba 0.7 → 2+7=9 (inflado); ahora 7/14=0.5 → 2+5=7
+    expect(pointsFor('sopacracks', 70)).toBe(7)
+  })
 })
 
 describe('pointsFor — whitelist y guardas', () => {
