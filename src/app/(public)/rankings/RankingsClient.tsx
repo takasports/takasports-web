@@ -28,7 +28,7 @@ import FilterPillBar from '@/components/rankings/FilterPillBar'
 import ScopeTabBar from '@/components/rankings/ScopeTabBar'
 import SubEntityTabBar from '@/components/rankings/SubEntityTabBar'
 import MovimientoSemana from '@/components/rankings/MovimientoSemana'
-import type { MoverEntry } from '@/lib/rankings-data'
+import { MAX_WEEKLY_DELTA, type MoverEntry } from '@/lib/rankings-data'
 import SportSelector from '@/components/rankings/SportSelector'
 import EntityTabBar from '@/components/rankings/EntityTabBar'
 import GlobalSearchResults from '@/components/rankings/GlobalSearchResults'
@@ -420,12 +420,15 @@ export default function RankingsClient({
     setPaisClubes('')
   }
 
-  // Sort opcional por tendencia ("Hot now")
+  // Sort opcional por tendencia ("Hot now"). El delta semanal se ACOTA a
+  // ±MAX_WEEKLY_DELTA (igual que "Mayores subidas"): así los saltos de
+  // re-baseline (+34, +20) no encabezan la lista tapando a los movimientos reales.
   const hasHotData = entries.some(e => e.scorePrev !== undefined)
+  const clampDelta = (d: number) => Math.max(-MAX_WEEKLY_DELTA, Math.min(MAX_WEEKLY_DELTA, d))
   const sortedEntries = (sortMode === 'hot' && hasHotData)
     ? [...entries].sort((a, b) => {
-        const da = a.scorePrev !== undefined ? getDisplayScore(a) - a.scorePrev : -99
-        const db = b.scorePrev !== undefined ? getDisplayScore(b) - b.scorePrev : -99
+        const da = a.scorePrev !== undefined ? clampDelta(getDisplayScore(a) - a.scorePrev) : -99
+        const db = b.scorePrev !== undefined ? clampDelta(getDisplayScore(b) - b.scorePrev) : -99
         return db - da
       }).map((e, i) => ({ ...e, rank: i + 1 }))
     : entries

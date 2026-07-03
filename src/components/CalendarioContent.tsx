@@ -420,7 +420,7 @@ function LiveHeroCard(p: HeroProps) {
           </span>
           <BroadcastChip comp={p.comp ?? ''} sport={p.sport} tz={p.tz} fallback={p.broadcast} />
         </div>
-        <ReminderButton active={p.isReminded} onClick={p.onToggleReminder} color="#4ade80" size="sm" />
+        {/* Sin campana de recordatorio: el partido YA está en vivo (M22). */}
       </div>
     </div>
   )
@@ -754,9 +754,14 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
         : <span aria-hidden style={{ width: 34, height: 34, display: 'block' }} />}
     </div>
   )
+  // La campana de recordatorio NO se muestra si el partido ya está EN VIVO
+  // (recordar algo que ya está pasando no tiene sentido, M22); hueco del mismo
+  // tamaño (34px) para no descuadrar la rejilla.
   const actionBell = (
     <div className="flex items-center justify-self-end flex-shrink-0">
-      <ReminderButton active={isReminded} onClick={onToggleReminder} color={event.accent} />
+      {isLive
+        ? <span aria-hidden style={{ width: 34, height: 34, display: 'block' }} />
+        : <ReminderButton active={isReminded} onClick={onToggleReminder} color={event.accent} />}
     </div>
   )
 
