@@ -9,7 +9,7 @@ import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate, groupDayByCompetition } from '@/lib/calendar'
 import { nameMatch } from '@/lib/quiniela'
-import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime, dayDeltaForIso } from '@/lib/timezone'
+import { getStoredTZ, setStoredTZ, SOURCE_TZ, TZ_KEY, convertEventTime } from '@/lib/timezone'
 import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
@@ -591,8 +591,6 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   // not provided or matches source, returns the original string. Falls back
   // gracefully on parse errors inside the helper.
   const displayTime = tz && tz !== SOURCE_TZ ? convertEventTime(event.time, tz) : event.time
-  // Si la hora local cae en otra jornada (zona ≠ Madrid), avisamos +1/−1 día.
-  const dayDelta = tz ? dayDeltaForIso(event.isoDate, tz) : 0
   const isLive  = !!liveScore && !FINISHED.has(liveScore.status)
   // Días pasados (timeline continuo): el marcador viaja en el propio evento
   // (homeScore/awayScore) y NO entra en el mapa liveScore. Distinguimos las dos
@@ -608,7 +606,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   const tennis = isTennis(event.sport)
   const combat = isCombat(event.sport)
   const racing = isRacing(event.sport)
-  const eventDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
+  const eventDate = event.isoDate ? isoToLocalDate(event.isoDate, tz) : null
   const countdown = !isLive && !isFinal ? timeUntilLabel(event.isoDate) : null
 
   const hasVs = !!event.away
@@ -703,13 +701,6 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
               style={{ color: '#6A6A80', fontFamily: 'var(--font-sport)' }}
               title="Hora en Madrid (origen de la emisión)">
               {event.time} MAD
-            </span>
-          )}
-          {dayDelta !== 0 && (
-            <span className="text-[8.5px] font-black uppercase tracking-wide leading-none px-1 py-0.5 rounded mt-0.5"
-              style={{ color: '#C4B5FD', background: 'rgba(124,58,237,0.16)', fontFamily: 'var(--font-sport)' }}
-              title="El partido cae en otro día en tu zona horaria">
-              {dayDelta > 0 ? '+1 día' : '−1 día'}
             </span>
           )}
           {hasVs && (
@@ -937,18 +928,19 @@ function formatDateSubtitle(localDate: string): string {
 }
 
 // Day separator — prominent header for each date in the events list.
-function DaySeparator({ dateKey, count, tone = 'upcoming' }: {
+function DaySeparator({ dateKey, count, tone = 'upcoming', tz }: {
   dateKey: string
   count: number
   tone?: 'upcoming' | 'past'
+  tz?: string
 }) {
-  const today = isoToLocalDate(new Date().toISOString())
+  const today = isoToLocalDate(new Date().toISOString(), tz)
   const isToday = dateKey === today
   // El acento del día sigue el tema del deporte activo (var(--cal-accent)); hoy
   // se ilumina mezclando con blanco. Los pasados van en rojo suave.
   const accent = tone === 'past' ? '#FCA5A5' : isToday ? 'color-mix(in srgb, var(--cal-accent) 58%, #ffffff)' : 'var(--cal-accent)'
   const subtitle = formatDateSubtitle(dateKey)
-  const label = formatDateLabel(dateKey)
+  const label = formatDateLabel(dateKey, tz)
 
   return (
     <div className="relative pt-7 pb-4 mb-3">
@@ -1060,14 +1052,15 @@ function LiveHeroStrip({ items }: { items: React.ReactNode[] }) {
 }
 
 // Custom calendar dropdown
-function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect }: {
+function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect, tz }: {
   value: string | null
   eventDays: Set<string>
   onChange: (k: string) => void
   onClose: () => void
   anchorRect: DOMRect | null
+  tz?: string
 }) {
-  const today = isoToLocalDate(new Date().toISOString())
+  const today = isoToLocalDate(new Date().toISOString(), tz)
   const initMonth = value ?? today
 
   const [month, setMonth] = useState(() => initMonth.slice(0, 7)) // 'YYYY-MM'
@@ -1236,16 +1229,17 @@ function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect }: {
 // escritorio POR IGUAL) que despliega el calendario mensual (CalendarDropdown).
 // Por defecto "Todos los días"; al elegir un día muestra el día + ✕ para volver.
 // (Decisión del dueño: misma pieza en todas las pantallas, fuera la tira de días.)
-function DayChips({ days, value, onChange }: {
+function DayChips({ days, value, onChange, tz }: {
   days: { key: string; label: string; count: number }[]
   value: string | null
   onChange: (k: string | null) => void
+  tz?: string
 }) {
   const [showCalendar, setShowCalendar] = useState(false)
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
   const calBtnRef = useRef<HTMLButtonElement | null>(null)
 
-  const today = isoToLocalDate(new Date().toISOString())
+  const today = isoToLocalDate(new Date().toISOString(), tz)
   const tomorrow = (() => {
     const d = new Date(today + 'T12:00:00Z')
     d.setUTCDate(d.getUTCDate() + 1)
@@ -1325,6 +1319,7 @@ function DayChips({ days, value, onChange }: {
           onChange={v => { onChange(v); setShowCalendar(false) }}
           onClose={() => setShowCalendar(false)}
           anchorRect={anchorRect}
+          tz={tz}
         />
       )}
     </div>
@@ -1589,9 +1584,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     try {
       const res = await fetch(`/api/events/past?live=1&from=${encodeURIComponent(from)}&limit=200`)
       const data = res.ok ? await res.json() as { events?: SportEvent[] } : null
-      const todayKey = isoToLocalDate(new Date().toISOString())
+      const todayKey = isoToLocalDate(new Date().toISOString(), tz)
       // Solo días estrictamente anteriores a HOY (los de hoy ya vienen por events).
-      const evs = (data?.events ?? []).filter(e => e.isoDate && isoToLocalDate(e.isoDate) < todayKey)
+      const evs = (data?.events ?? []).filter(e => e.isoDate && isoToLocalDate(e.isoDate, tz) < todayKey)
       setPastTimeline(prev => {
         const seen = new Set(prev.map(e => e.id))
         const fresh = evs.filter(e => !seen.has(e.id))
@@ -1601,7 +1596,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       prependAnchorRef.current = null
     }
     loadingPastRef.current = false
-  }, [])
+  }, [tz])
 
   // Al anteponer los días pasados (el usuario pulsó "Ver resultados anteriores"):
   // 1) compensamos cuánto creció la página para que HOY NO SALTE de sitio, y
@@ -1951,7 +1946,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     const matchesDate = (e: SportEvent) => {
       if (!selectedDate) return true
       if (!e.isoDate) return false
-      return isoToLocalDate(e.isoDate) === selectedDate
+      return isoToLocalDate(e.isoDate, tz) === selectedDate
     }
     const matchesLive = (e: SportEvent) => {
       if (!onlyLive) return true
@@ -1960,7 +1955,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     }
     const matchesComp = (e: SportEvent) => !activeCompCfg || matchesCompetition(activeCompCfg, e)
     return baseEventsForList.filter(e => matchesSport(e) && matchesComp(e) && matchesSearch(e) && matchesDate(e) && matchesLive(e))
-  }, [baseEventsForList, search, activeFilter, activeCompCfg, selectedDate, onlyLive, liveScores])
+  }, [baseEventsForList, search, activeFilter, activeCompCfg, selectedDate, onlyLive, liveScores, tz])
 
   // Upcoming events featuring favorite teams (across all dates)
   const favoriteEvents = useMemo(() => {
@@ -1999,18 +1994,18 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     const counts: Record<string, number> = {}
     for (const e of events) {
       if (!matchesSport(e) || (activeCompCfg && !matchesCompetition(activeCompCfg, e)) || !matchesSearch(e) || !e.isoDate) continue
-      const k = isoToLocalDate(e.isoDate)
+      const k = isoToLocalDate(e.isoDate, tz)
       counts[k] = (counts[k] ?? 0) + 1
     }
-    const today = isoToLocalDate(new Date().toISOString())
+    const today = isoToLocalDate(new Date().toISOString(), tz)
     // 42 días: cubre el Mundial completo (38 días) — antes el tope de 14 dejaba
     // fuera del selector las fechas de octavos en adelante.
     return Object.keys(counts)
       .filter(k => k >= today)
       .sort((a, b) => a.localeCompare(b))
       .slice(0, 42)
-      .map(k => ({ key: k, label: formatDateLabel(k), count: counts[k] }))
-  }, [events, search, activeFilter, activeCompCfg])
+      .map(k => ({ key: k, label: formatDateLabel(k, tz), count: counts[k] }))
+  }, [events, search, activeFilter, activeCompCfg, tz])
 
   const liveEventsInList = useMemo(
     () => filtered.filter(e => liveScores.has(e.id) && !FINISHED.has(liveScores.get(e.id)?.status ?? '')),
@@ -2055,7 +2050,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     if (activeFilter !== 'Destacados' || activeComp) return filtered
     const byDay = new Map<string, SportEvent[]>()
     for (const ev of filtered) {
-      const day = ev.isoDate ? isoToLocalDate(ev.isoDate) : 'unknown'
+      const day = ev.isoDate ? isoToLocalDate(ev.isoDate, tz) : 'unknown'
       const arr = byDay.get(day) ?? []
       arr.push(ev)
       byDay.set(day, arr)
@@ -2076,7 +2071,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       scoreCache.set(ev.id, s)
       return s
     }
-    const todayKey = isoToLocalDate(new Date().toISOString())
+    const todayKey = isoToLocalDate(new Date().toISOString(), tz)
     const out: SportEvent[] = []
     for (const [day, evs] of byDay) {
       const sorted = [...evs].sort((a, b) => {
@@ -2113,9 +2108,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       out.push(...sorted.filter((e, i) => i < keep || isMundial(e.comp)))
     }
     return out
-  }, [filtered, activeFilter, activeComp, favorites, liveScores])
+  }, [filtered, activeFilter, activeComp, favorites, liveScores, tz])
 
-  const grouped = useMemo(() => groupEventsByDate(filteredForGrouping), [filteredForGrouping])
+  const grouped = useMemo(() => groupEventsByDate(filteredForGrouping, tz), [filteredForGrouping, tz])
   const orderedDates = useMemo(() => orderedDateKeys(grouped), [grouped])
 
   // A propósito NO cargamos días pasados al montar: HOY aparece arriba al
@@ -2217,12 +2212,12 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const pastGrouped = useMemo(() => {
     const groups: Record<string, SportEvent[]> = {}
     for (const e of filteredPast) {
-      const k = e.isoDate ? isoToLocalDate(e.isoDate) : e.date
+      const k = e.isoDate ? isoToLocalDate(e.isoDate, tz) : e.date
       if (!groups[k]) groups[k] = []
       groups[k].push(e)
     }
     return groups
-  }, [filteredPast])
+  }, [filteredPast, tz])
 
   const pastOrderedDates = useMemo(
     () => Object.keys(pastGrouped).sort((a, b) => b.localeCompare(a)),
@@ -2235,9 +2230,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     return filtered.filter(e =>
       isCombat(e.sport) &&
       e.isoDate &&
-      isoToLocalDate(e.isoDate) === selectedUFCDate
+      isoToLocalDate(e.isoDate, tz) === selectedUFCDate
     )
-  }, [selectedUFCDate, filtered])
+  }, [selectedUFCDate, filtered, tz])
 
   // Build hero cards
   const liveHeroCards = useMemo(() => {
@@ -2322,7 +2317,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
   // Día de HOY (local): separa los días pasados (tono rojo suave) de los
   // futuros en las cabeceras del timeline continuo.
-  const todayKey = isoToLocalDate(new Date().toISOString())
+  const todayKey = isoToLocalDate(new Date().toISOString(), tz)
 
   return (
     <main
@@ -2481,7 +2476,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
         >
           {availableDays.length > 0 && (
             <div className="mb-2.5">
-              <DayChips days={availableDays} value={selectedDate} onChange={setSelectedDate} />
+              <DayChips days={availableDays} value={selectedDate} onChange={setSelectedDate} tz={tz} />
             </div>
           )}
           {/* Toolbar — single scrollable row on mobile, two-row layout on sm+ */}
@@ -2656,7 +2651,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 // se re-monta y dispara la entrada en cascada (Fase B). No incluye
                 // search ni liveScores → no re-anima al teclear ni en cada poll.
                 <section ref={dateKey === todayKey ? todaySepRef : undefined} key={`${activeFilter}|${selectedDate ?? ''}|${onlyLive ? 'L' : ''}|${dateKey}`}>
-                  <DaySeparator dateKey={dateKey} count={dayEvents.length} tone={dateKey < todayKey ? 'past' : 'upcoming'} />
+                  <DaySeparator dateKey={dateKey} count={dayEvents.length} tone={dateKey < todayKey ? 'past' : 'upcoming'} tz={tz} />
                   {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     const accent = getCompAccent(comp, compEvents[0]?.accent)
@@ -2736,9 +2731,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               <SectionHeader icon={<BellIcon size={12} />} label="Mis Recordatorios" color="#FBBF24" count={remindedEvents.length} />
               <div className="space-y-1.5">
                 {remindedEvents.map(event => {
-                  const evDate = event.isoDate ? isoToLocalDate(event.isoDate) : null
-                  const today = isoToLocalDate(new Date().toISOString())
-                  const dateLabel = evDate && evDate !== today ? formatDateLabel(evDate) : undefined
+                  const evDate = event.isoDate ? isoToLocalDate(event.isoDate, tz) : null
+                  const today = isoToLocalDate(new Date().toISOString(), tz)
+                  const dateLabel = evDate && evDate !== today ? formatDateLabel(evDate, tz) : undefined
                   return (
                     <MatchRow
                       key={event.id}

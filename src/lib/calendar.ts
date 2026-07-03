@@ -2,8 +2,11 @@
 import type { SportEvent } from '@/lib/types'
 import { SOURCE_TZ } from '@/lib/timezone'
 
-export function isoToLocalDate(isoDate: string): string {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: SOURCE_TZ }).formatToParts(new Date(isoDate))
+// Devuelve el día local (YYYY-MM-DD) de un instante ISO en la zona `tz`.
+// Por defecto SOURCE_TZ (Madrid) para el resto de consumidores; el calendario
+// le pasa el huso del usuario para agrupar el día por su zona (no la de Madrid).
+export function isoToLocalDate(isoDate: string, tz: string = SOURCE_TZ): string {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).formatToParts(new Date(isoDate))
   const year = parts.find(p => p.type === 'year')?.value
   const month = parts.find(p => p.type === 'month')?.value
   const day = parts.find(p => p.type === 'day')?.value
@@ -25,10 +28,10 @@ export function namesMatch(a: string, b: string): boolean {
 }
 
 // Group events by local calendar date (YYYY-MM-DD)
-export function groupEventsByDate(events: SportEvent[]): Record<string, SportEvent[]> {
+export function groupEventsByDate(events: SportEvent[], tz: string = SOURCE_TZ): Record<string, SportEvent[]> {
   const grouped: Record<string, SportEvent[]> = {}
   for (const ev of events) {
-    const key = ev.isoDate ? isoToLocalDate(ev.isoDate) : 'unknown'
+    const key = ev.isoDate ? isoToLocalDate(ev.isoDate, tz) : 'unknown'
     if (!grouped[key]) grouped[key] = []
     grouped[key].push(ev)
   }
@@ -45,9 +48,9 @@ export function orderedDateKeys(grouped: Record<string, SportEvent[]>): string[]
 }
 
 // Format YYYY-MM-DD into a friendly label: "Hoy", "Mañana", or "Vie 5 May"
-export function formatDateLabel(localDate: string): string {
+export function formatDateLabel(localDate: string, tz: string = SOURCE_TZ): string {
   if (localDate === 'unknown') return 'Sin fecha'
-  const today = isoToLocalDate(new Date().toISOString())
+  const today = isoToLocalDate(new Date().toISOString(), tz)
   if (localDate === today) return 'Hoy'
 
   const tomorrow = new Date(today + 'T12:00:00Z')
