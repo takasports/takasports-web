@@ -4,7 +4,7 @@
 // PublicPlacaCard — placa pública de otro usuario.
 //
 // Self-fetch de /api/placa/[userId]. NO permite customizar (no es
-// el dueño). Renderiza PlacaCardV3 con interactive=true para que el
+// el dueño). Renderiza PlacaCardV4 (la versión vigente) para que el
 // visitante pueda hacer hover y ver el foil/tilt.
 // ─────────────────────────────────────────────────────────────────
 

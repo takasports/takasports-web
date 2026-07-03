@@ -1,8 +1,10 @@
 // Cron — push personalizado por favoritos del Índice Taka.
 //
 // Cada usuario que marcó ❤ en una entry recibe una notificación si esa entry
-// se movió ≥1.5 puntos esta semana. Se ejecuta los lunes 09:30 (después de
-// que el cron de rankings haya escrito score_prev y los nuevos scores).
+// se movió ≥1.5 puntos esta semana. Se ejecuta los lunes 10:10 UTC (vercel.json).
+// Depende de que el ingest semanal EXTERNO (launchd del Mac) haya escrito antes
+// score_prev y los nuevos scores — NO de un cron de Vercel. La idempotencia
+// (tabla favorites_push_log) evita doble aviso si se re-dispara la misma semana.
 //
 // Auth: solo Bearer CRON_SECRET o header x-cron-secret.
 

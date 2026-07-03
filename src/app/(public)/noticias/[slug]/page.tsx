@@ -104,8 +104,10 @@ export async function generateMetadata({
   const keywordList = [article.focusKeyword, ...(article.secondaryKeywords ?? []), ...(article.tags ?? [])]
     .filter((k): k is string => Boolean(k))
   // Título para buscadores/redes: usa seoTitle si el editor lo definió (optimizado
-  // para CTR), si no cae al titular del artículo (H1). El H1 nunca cambia.
-  const metaTitle = (article.seoTitle?.trim() || article.title)
+  // para CTR), si no cae al titular del artículo (H1). Respaldo final a la marca
+  // si el doc no tuviera ni seoTitle ni title (borrador mal migrado) → evita un
+  // <title>/og:title vacío. El H1 nunca cambia.
+  const metaTitle = (article.seoTitle?.trim() || article.title?.trim() || 'TakaSports')
 
   return {
     // absolute: el pipeline ya genera titulares de 57-59 chars con la keyword

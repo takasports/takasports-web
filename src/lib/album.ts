@@ -132,13 +132,18 @@ function pushCollectToServer(playerId: string, source: GameId): void {
 }
 
 /**
- * Al iniciar sesión: si la cache era de invitado, fusiona el local en el
- * servidor (una vez); después baja el servidor a la cache local. Idempotente.
+ * Al iniciar sesión: fusiona el local en el servidor y después baja el
+ * servidor a la cache local. El merge (RPC album_merge = UNIÓN, nunca borra)
+ * corre para invitado→login Y para re-sincronizaciones del MISMO usuario, de
+ * modo que un cromo coleccionado cuyo push por-cromo falló (offline/429) se
+ * reconcilia en vez de perderse al pisar la cache con el servidor. NO se
+ * fusiona si la cache pertenece a OTRO usuario (cambio de cuenta): ahí solo se
+ * baja su álbum, sin contaminarlo con los cromos del anterior. Idempotente.
  */
 export async function syncAlbumOnAuth(userId: string): Promise<void> {
   if (typeof window === 'undefined') return
   const owner = getOwner()
-  if (owner == null || owner === 'guest') {
+  if (owner == null || owner === 'guest' || owner === userId) {
     const local = getAlbumEntries()
     if (local.length > 0) {
       try {
