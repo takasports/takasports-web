@@ -10,8 +10,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { apiError } from '@/lib/api-utils'
 
 const DELTA_THRESHOLD = 1.5
+
+type RankRow = {
+  id: string
+  name: string
+  sport: string | null
+  score: number | string | null
+  score_prev: number | string | null
+  trend_reason: string | null
+  category: string | null
+}
 
 function initVapid(): boolean {
   const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
@@ -31,18 +42,27 @@ export async function GET(req: NextRequest) {
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'Supabase admin no configurado' }, { status: 503 })
 
-  // 1) Entries que se movieron ≥ DELTA_THRESHOLD esta semana
-  const { data: moved } = await sb
-    .from('ranking_view')
-    .select('id,name,sport,score,score_prev,trend_reason,category')
-    .not('score_prev', 'is', null)
-    .range(0, 4999)
-  const movers = (moved ?? [])
-    .map((r) => ({
-      ...r,
-      delta: Math.round((Number(r.score) - Number(r.score_prev)) * 10) / 10,
-    }))
-    .filter((r) => Math.abs(r.delta) >= DELTA_THRESHOLD)
+  // 1) Entries que se movieron ≥ DELTA_THRESHOLD esta semana.
+  // Paginamos de 1000 en 1000 (ordenado por id, clave estable) porque el Índice
+  // puede superar las 5000 filas: el `.range(0, 4999)` anterior perdía en
+  // silencio los movers a partir de la fila 5000. Tope de seguridad 100k filas.
+  const PAGE = 1000
+  const movers: Array<RankRow & { delta: number }> = []
+  for (let from = 0; from < 100_000; from += PAGE) {
+    const { data, error } = await sb
+      .from('ranking_view')
+      .select('id,name,sport,score,score_prev,trend_reason,category')
+      .not('score_prev', 'is', null)
+      .order('id', { ascending: true })
+      .range(from, from + PAGE - 1)
+    if (error) return apiError('server_error', 500)
+    const rows = (data ?? []) as RankRow[]
+    for (const r of rows) {
+      const delta = Math.round((Number(r.score) - Number(r.score_prev)) * 10) / 10
+      if (Math.abs(delta) >= DELTA_THRESHOLD) movers.push({ ...r, delta })
+    }
+    if (rows.length < PAGE) break
+  }
 
   if (movers.length === 0) return NextResponse.json({ sent: 0, notes: 'sin movimientos relevantes' })
 
