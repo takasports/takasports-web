@@ -1,0 +1,11 @@
+-- 099_restore_ranking_view_grants.sql  ·  F4 (drift de migraciones — back-fill)
+--
+-- Se aplicó DIRECTAMENTE en producción el 2026-06-24 (schema_migrations version
+-- 20260624013740, name `094_restore_ranking_view_grants`) SIN quedar en el repo.
+-- Se versiona aquí a posteriori para que el repo refleje la BD. Idempotente.
+--
+-- Restaura el permiso de lectura sobre la vista materializada ranking_view. Se
+-- perdió al recrearse la matview (un DROP/CREATE borra los GRANT; un REFRESH los
+-- conserva). Sin esto, web y app leen como anon/authenticated y reciben
+-- "permission denied" → rankings vacíos (app) o degradados a estáticos viejos (web).
+grant select on public.ranking_view to anon, authenticated;
