@@ -11,6 +11,7 @@ import webpush from 'web-push'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-utils'
+import { isoWeek } from '@/lib/quiniela'
 
 const DELTA_THRESHOLD = 1.5
 
@@ -103,7 +104,25 @@ export async function GET(req: NextRequest) {
     if (!prev || Math.abs(m.delta) > Math.abs(prev.delta)) userToBestEntry.set(f.user_id, m)
   }
 
+  // Idempotencia: reclama (user, semana) ANTES de enviar. `insert ... on conflict
+  // do nothing` + .select() devuelve SOLO los recién insertados → enviamos solo a
+  // esos. Un reintento del cron en la misma semana no reclama a nadie → 0 envíos
+  // (at-most-once: mejor no avisar que duplicar). Purga semanas viejas (>60 días).
+  const week = isoWeek(new Date())
+  await sb.from('favorites_push_log').delete().lt('notified_at', new Date(Date.now() - 60 * 86_400_000).toISOString())
+  const candidateIds = [...userToBestEntry.keys()]
+  const claimed = new Set<string>()
+  if (candidateIds.length > 0) {
+    const { data: claimedRows, error: claimErr } = await sb
+      .from('favorites_push_log')
+      .upsert(candidateIds.map((user_id) => ({ user_id, week })), { onConflict: 'user_id,week', ignoreDuplicates: true })
+      .select('user_id')
+    if (claimErr) return apiError('server_error', 500)
+    for (const r of claimedRows ?? []) claimed.add(r.user_id as string)
+  }
+
   for (const [userId, m] of userToBestEntry) {
+    if (!claimed.has(userId)) continue   // ya avisado esta semana → no reenviar
     const userSubs = subsByUser.get(userId) ?? []
     const direction = m.delta >= 0 ? '↑' : '↓'
     const sign = m.delta >= 0 ? '+' : ''
@@ -134,7 +153,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     movers: movers.length,
     favs: favs.length,
-    users_notified: userToBestEntry.size,
+    users_notified: claimed.size,
+    skipped_already_notified: userToBestEntry.size - claimed.size,
     sent, pruned,
   })
 }
