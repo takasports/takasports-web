@@ -1,10 +1,31 @@
+import {
+  IG_STATE_COOKIE,
+  readCookie,
+  stateMatches,
+  buildClearStateCookie,
+} from '@/lib/ig-oauth-state'
+
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code  = searchParams.get('code')
   const error = searchParams.get('error_description')
+  const state = searchParams.get('state')
 
   if (error || !code) {
     return html(`<h2 style="color:#ef4444">❌ Error</h2><p>${esc(error ?? 'No se recibió código')}</p>`)
+  }
+
+  // Anti-CSRF: el `state` que devuelve Instagram debe coincidir con el de la
+  // cookie httpOnly que sembró /auth. Sin coincidencia NO se canjea el código,
+  // así que un callback forzado con un `code` ajeno no puede sobrescribir el
+  // token guardado. Se comprueba ANTES de tocar la API de Instagram.
+  const cookieState = readCookie(request.headers.get('cookie'), IG_STATE_COOKIE)
+  if (!stateMatches(cookieState, state)) {
+    return html(`<h2 style="color:#ef4444">🔒 Verificación fallida</h2>
+      <p>El parámetro de seguridad no coincide. Vuelve a iniciar la conexión
+         desde <code>/api/instagram/auth</code> (con tu sesión de admin).</p>`)
   }
 
   // 1. Canjear código por token de corta duración
@@ -68,8 +89,11 @@ function esc(s: string): string {
 }
 
 function html(body: string) {
+  // Cada respuesta del callback BORRA el `state` (single-use): tanto si la
+  // conexión sale bien como si falla, la cookie no se reutiliza.
+  const secure = process.env.NODE_ENV === 'production'
   return new Response(
     `<!DOCTYPE html><html><body style="font-family:system-ui,monospace;padding:32px;background:#09090F;color:#F8F8FF;max-width:720px;margin:auto">${body}</body></html>`,
-    { headers: { 'Content-Type': 'text/html' } }
+    { headers: { 'Content-Type': 'text/html', 'Set-Cookie': buildClearStateCookie(secure) } }
   )
 }
