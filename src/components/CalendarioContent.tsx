@@ -174,8 +174,14 @@ function useLiveScores(events: SportEvent[]) {
       for (const f of fixtures) if (f.matchRef) byRef.set(f.matchRef, f)
       const next = new Map<string, LiveScore>()
       for (const ev of events) {
-        const m = (ev.matchRef && byRef.get(ev.matchRef))
-              ?? fixtures.find(f => namesMatch(f.homeTeam, ev.home) && namesMatch(f.awayTeam, ev.away ?? ''))
+        // Primario: matchRef (clave exacta). Fallback por nombre SOLO si es
+        // INEQUÍVOCO (una única fixture casa): con substring varias podían
+        // casar y se pegaba el marcador al partido equivocado.
+        let m = (ev.matchRef && byRef.get(ev.matchRef)) || undefined
+        if (!m) {
+          const cands = fixtures.filter(f => namesMatch(f.homeTeam, ev.home) && namesMatch(f.awayTeam, ev.away ?? ''))
+          if (cands.length === 1) m = cands[0]
+        }
         if (m) {
           next.set(ev.id, {
             homeGoals: m.homeGoals,
@@ -1230,7 +1236,7 @@ function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect, tz 
 // Por defecto "Todos los días"; al elegir un día muestra el día + ✕ para volver.
 // (Decisión del dueño: misma pieza en todas las pantallas, fuera la tira de días.)
 function DayChips({ days, value, onChange, tz }: {
-  days: { key: string; label: string; count: number }[]
+  days: { key: string }[]
   value: string | null
   onChange: (k: string | null) => void
   tz?: string
@@ -2014,7 +2020,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       .filter(k => k >= today)
       .sort((a, b) => a.localeCompare(b))
       .slice(0, 42)
-      .map(k => ({ key: k, label: formatDateLabel(k, tz), count: counts[k] }))
+      // counts solo sirve para saber QUÉ días tienen partidos; DayChips ya no
+      // pinta ni label ni count (calcula su propia etiqueta desde la key).
+      .map(k => ({ key: k }))
   }, [events, search, activeFilter, activeCompCfg, tz])
 
   const liveEventsInList = useMemo(

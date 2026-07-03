@@ -3,12 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { LiveEventCard, UpcomingEventCard, type LiveFixture, type UpcomingEvent } from '@/components/events/LiveEventCard'
-
-const FINISHED = new Set([
-  'FT', 'NS', 'FINAL', 'FINAL_PEN', 'FINAL_AET', 'STATUS_FINAL', 'STATUS_SCHEDULED',
-  'POST_GAME', 'END_OF_REGULATION',
-  'ABANDONED', 'WALKOVER', 'RETIRED', 'CANCELED', 'POSTPONED', 'SUSPENDED',
-])
+// Fuente ÚNICA de estados "no en juego". La copia local que tenía LiveStrip NO
+// incluía 'Final' → un partido finalizado con ese estado se colaba como "en vivo".
+import { FINISHED } from '@/lib/live-events'
 
 function useRelativeTime(ts: number | null): string {
   const [label, setLabel] = useState('')
