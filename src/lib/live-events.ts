@@ -85,6 +85,26 @@ export function liveCardsFromFixtures(fixtures: RawLiveFixture[], max = 6): Spor
   return cards.slice(0, max)
 }
 
+// Etiquetas de deporte del filtro del calendario, indexadas por la clave del
+// feed en vivo (`f.sport`). El calendario filtra por estas etiquetas mostradas.
+export const LIVE_SPORT_LABELS: Record<string, string> = {
+  soccer: 'Fútbol', basketball: 'Baloncesto', mma: 'UFC',
+  racing: 'F1', tennis: 'Tenis', padel: 'Pádel',
+}
+
+// ¿El deporte de una fixture EN VIVO pasa el filtro activo del calendario?
+// 'Todo' y 'Destacados' son pseudo-filtros de "todos los deportes" (no un
+// deporte concreto), igual que en el resto del calendario — y un partido en vivo
+// es por definición un destacado. Solo se filtra por deporte cuando hay uno
+// concreto seleccionado. Sin este trato de 'Destacados' como "todos", un partido
+// en vivo huérfano (que arrancó tras el último SSR, p. ej. un Mundial en juego)
+// desaparecía de la vista por defecto porque 'Fútbol' !== 'Destacados'.
+export function liveSportPassesFilter(activeFilter: string, fixtureSport: string): boolean {
+  if (activeFilter === 'Todo' || activeFilter === 'Destacados') return true
+  const mapped = LIVE_SPORT_LABELS[fixtureSport.toLowerCase()] ?? fixtureSport
+  return mapped === activeFilter
+}
+
 // Antepone las tarjetas en vivo al escaparate, quitando de los próximos los que
 // ya están en juego (evita la tarjeta duplicada del mismo partido).
 export function withLiveFirst(liveCards: SportEvent[], upcoming: SportEvent[]): SportEvent[] {

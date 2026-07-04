@@ -18,6 +18,7 @@ import { COMPETITIONS, getCompetition, matchesCompetition } from '@/lib/calendar
 import { subscribeToPush } from '@/lib/push-client'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
+import { liveSportPassesFilter } from '@/lib/live-events'
 import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
 
 // ── Favorites helpers ──────────────────────────────────────────
@@ -2036,15 +2037,11 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   )
 
   const orphanFixtures = useMemo(() => {
-    const LIVE_TO_SPORT: Record<string, string> = {
-      soccer: 'Fútbol', basketball: 'Baloncesto', mma: 'UFC',
-      racing: 'F1', tennis: 'Tenis', padel: 'Pádel',
-    }
     return liveFixtures.filter(f => {
-      if (activeFilter !== 'Todo') {
-        const mapped = LIVE_TO_SPORT[f.sport.toLowerCase()] ?? f.sport
-        if (mapped !== activeFilter) return false
-      }
+      // 'Todo'/'Destacados' = todos los deportes; un partido en vivo huérfano
+      // (que arrancó tras el último SSR, p. ej. un Mundial en juego) es siempre
+      // un destacado. Ver liveSportPassesFilter para el porqué del trato especial.
+      if (!liveSportPassesFilter(activeFilter, f.sport)) return false
       const matched = liveEventsInList.find(e =>
         // Cruce por matchRef (id canónico, inmune al idioma): el feed en vivo
         // trae el nombre de selección en inglés y el calendario en español, así

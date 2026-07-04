@@ -5,6 +5,7 @@ import {
   withLiveFirst,
   scoresForEvents,
   namesMatch,
+  liveSportPassesFilter,
   type RawLiveFixture,
 } from './live-events'
 import type { SportEvent } from './types'
@@ -35,6 +36,27 @@ describe('namesMatch', () => {
   })
   it('no casa equipos distintos', () => {
     expect(namesMatch('Suiza', 'Canadá')).toBe(false)
+  })
+})
+
+describe('liveSportPassesFilter', () => {
+  // Regresión: un partido en vivo huérfano (fútbol) NO puede desaparecer de la
+  // vista por defecto 'Destacados'. Antes 'Fútbol' !== 'Destacados' lo ocultaba
+  // (p. ej. Colombia–Ghana del Mundial en juego, no presente en el SSR).
+  it("'Destacados' deja pasar cualquier deporte (es un pseudo-filtro de todos)", () => {
+    expect(liveSportPassesFilter('Destacados', 'soccer')).toBe(true)
+    expect(liveSportPassesFilter('Destacados', 'basketball')).toBe(true)
+    expect(liveSportPassesFilter('Destacados', 'tennis')).toBe(true)
+  })
+  it("'Todo' deja pasar cualquier deporte", () => {
+    expect(liveSportPassesFilter('Todo', 'soccer')).toBe(true)
+    expect(liveSportPassesFilter('Todo', 'mma')).toBe(true)
+  })
+  it('un deporte concreto solo deja pasar sus propias fixtures', () => {
+    expect(liveSportPassesFilter('Fútbol', 'soccer')).toBe(true)
+    expect(liveSportPassesFilter('Baloncesto', 'basketball')).toBe(true)
+    expect(liveSportPassesFilter('Fútbol', 'tennis')).toBe(false)
+    expect(liveSportPassesFilter('Tenis', 'soccer')).toBe(false)
   })
 })
 
