@@ -28,7 +28,7 @@
   --text-primary: #EBEBF5;
   --text-secondary: #9090A4;
   --text-muted: #7C7C8C;
-  --text-faint: #38384A;
+  --text-faint: #7C7C8C; /* subido por contraste AA (era #38384A ~1.7:1; muted ya está en la línea AA → faint lo iguala) */
 
   /* Lector de noticias — cuerpo del artículo (paleta azulada-fría, distinta de
      los grises neutros de arriba; cada valor = el hex que ya estaba inline, así
