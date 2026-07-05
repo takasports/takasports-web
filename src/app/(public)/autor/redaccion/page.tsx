@@ -8,23 +8,23 @@ import { timeAgo } from '@/lib/timeAgo'
 export const revalidate = 1800
 
 export const metadata: Metadata = {
-  title: 'Redacción TakaSports — Equipo editorial',
+  title: 'Redacción Taka Sports — Equipo editorial',
   description:
-    'Redacción TakaSports: el equipo editorial detrás de las noticias, análisis y rankings deportivos de TakaSports Media. Conoce nuestra forma de trabajar.',
+    'Redacción Taka Sports: el equipo editorial detrás de las noticias, análisis y rankings deportivos de TakaSports Media. Conoce nuestra forma de trabajar.',
   alternates: { canonical: `${SITE_URL}/autor/redaccion` },
   openGraph: {
-    title: 'Redacción TakaSports — Equipo editorial',
+    title: 'Redacción Taka Sports — Equipo editorial',
     description:
       'El equipo editorial de TakaSports Media: noticias deportivas, análisis y rankings con estándares periodísticos.',
     url: `${SITE_URL}/autor/redaccion`,
     siteName: 'TakaSports',
     locale: 'es_ES',
     type: 'profile',
-    images: [{ url: LOGO_URL, width: 1200, height: 630, alt: 'Redacción TakaSports' }],
+    images: [{ url: LOGO_URL, width: 1200, height: 630, alt: 'Redacción Taka Sports' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Redacción TakaSports',
+    title: 'Redacción Taka Sports',
     description: 'El equipo editorial de TakaSports Media.',
     site: '@takasportsx',
     images: [LOGO_URL],
@@ -64,7 +64,7 @@ export default async function RedaccionAuthorPage() {
     '@context': 'https://schema.org',
     '@type': 'NewsMediaOrganization',
     '@id': `${SITE_URL}/autor/redaccion#author`,
-    name: 'Redacción TakaSports',
+    name: 'Redacción Taka Sports',
     alternateName: 'Equipo editorial de TakaSports',
     url: `${SITE_URL}/autor/redaccion`,
     image: LOGO_URL,
@@ -97,14 +97,14 @@ export default async function RedaccionAuthorPage() {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
       { '@type': 'ListItem', position: 2, name: 'Autores', item: `${SITE_URL}/autor/redaccion` },
-      { '@type': 'ListItem', position: 3, name: 'Redacción TakaSports', item: `${SITE_URL}/autor/redaccion` },
+      { '@type': 'ListItem', position: 3, name: 'Redacción Taka Sports', item: `${SITE_URL}/autor/redaccion` },
     ],
   }
 
   const profileJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ProfilePage',
-    name: 'Redacción TakaSports',
+    name: 'Redacción Taka Sports',
     url: `${SITE_URL}/autor/redaccion`,
     inLanguage: 'es-ES',
     mainEntity: { '@id': `${SITE_URL}/autor/redaccion#author` },
@@ -156,7 +156,7 @@ export default async function RedaccionAuthorPage() {
                   marginBottom: 4,
                 }}
               >
-                Redacción TakaSports
+                Redacción Taka Sports
               </h1>
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                 Equipo editorial · TakaSports Media
@@ -165,7 +165,7 @@ export default async function RedaccionAuthorPage() {
           </div>
 
           <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-            La Redacción de TakaSports es el equipo editorial responsable de las noticias,
+            La Redacción de Taka Sports es el equipo editorial responsable de las noticias,
             análisis y rankings publicados en TakaSports Media. Cubrimos fútbol, baloncesto,
             Fórmula 1, UFC, tenis y los principales eventos deportivos del momento, con
             piezas largas de actualidad (≤72 horas) y datos en tiempo real.
