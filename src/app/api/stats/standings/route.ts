@@ -9,6 +9,7 @@ import { withStaleFallback, tfetch } from '@/lib/stats-cache'
 import { espnStandingsSchema, jolpicaDriverStandingsSchema, safeParse } from '@/lib/stats-schemas'
 import { loadAllSnapshots, type StatSnapshot } from '@/lib/stat-snapshots'
 import { UFC_DIVISIONS } from '@/lib/ufc-scraper'
+import { toSpanishNation } from '@/lib/nation-names'
 
 const staleSet = new Set<string>()
 
@@ -790,6 +791,14 @@ async function fetchEuropeanCupLeaders(
   }
 }
 
+// Traduce el `sub` (selección nacional) de una tabla de líderes al español.
+// Para los goleadores/asistentes del Mundial, donde el sub es un país en inglés.
+// toSpanishNation deja intacto lo que no reconoce (clubes u otros), así que es
+// seguro aunque colara alguna fila que no fuese selección.
+function withSpanishNations(rows: StandingRow[]): StandingRow[] {
+  return rows.map((r) => ({ ...r, sub: toSpanishNation(r.sub) }))
+}
+
 
 // ── F1 Calendar ───────────────────────────────────────────────────────────────
 
@@ -1178,8 +1187,11 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchEuropeanCupLeaders('soccer/uefa.champions',  'assists'),
     fetchEuropeanCupLeaders('soccer/uefa.europa',     'assists'),
     // El mismo endpoint de líderes sirve para el Mundial (slug ESPN soccer/fifa.world).
-    fetchEuropeanCupLeaders('soccer/fifa.world',      'goals'),
-    fetchEuropeanCupLeaders('soccer/fifa.world',      'assists'),
+    // Ahí el `sub` es la SELECCIÓN (no un club), que ESPN da en inglés ("England",
+    // "France"…) → traducir a español. Solo el Mundial: en UCL/UEL el sub es el club
+    // (nombre propio) y se deja intacto. Paridad con la app (V-08).
+    fetchEuropeanCupLeaders('soccer/fifa.world',      'goals').then(withSpanishNations),
+    fetchEuropeanCupLeaders('soccer/fifa.world',      'assists').then(withSpanishNations),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
   const [f1Calendar, f1Sprints] = f1.season

@@ -18,6 +18,7 @@ import ArticleTableOfContents from '@/components/ArticleTableOfContents'
 import ArticleComments from '@/components/ArticleComments'
 import PorraMatchWidget from '@/components/PorraMatchWidget'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
+import { displayAuthor } from '@/lib/brand'
 import { extractHeadings, type TocHeading } from '@/lib/article-toc'
 import {
   getEntityIndex,
@@ -115,7 +116,7 @@ export async function generateMetadata({
     // 70-72 chars y Google truncaba justo la cola. (Fase 0 SEO, jun 2026)
     title: { absolute: metaTitle },
     description: article.short_summary ?? article.subtitle,
-    authors: [{ name: article.author ?? 'Redacción TakaSports' }],
+    authors: [{ name: displayAuthor(article.author) }],
     alternates: { canonical },
     keywords: keywordList.length > 0 ? keywordList : undefined,
     other: keywordList.length > 0 ? { news_keywords: keywordList.slice(0, 10).join(', ') } : undefined,
@@ -274,7 +275,7 @@ function ArticleSidebar({
                 className="text-[11px] hover:text-white transition-colors"
                 style={{ color: 'var(--text-muted)' }}
               >
-                {article.author}
+                {displayAuthor(article.author)}
               </Link>
             </div>
           )}
@@ -465,7 +466,7 @@ export default async function NoticiaPage({
     return undefined
   }
 
-  const articleAuthor = article.author ?? 'Redacción TakaSports'
+  const articleAuthor = displayAuthor(article.author)
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
