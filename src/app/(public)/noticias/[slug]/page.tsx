@@ -1289,6 +1289,56 @@ export default async function NoticiaPage({
               <RankingMentionCards entries={rankingMentions} />
             )}
 
+            {/* Fuentes long-form (array sourceUrls de Sanity): sección "Fuentes" con
+                enlaces externos. Espejo de SourcesList de la app. Solo si hay ≥1 con url. */}
+            {(() => {
+              const sources = (article.sourceUrls ?? []).filter((s) => !!s?.url)
+              if (sources.length === 0) return null
+              const hostLabel = (url: string) => {
+                try {
+                  return new URL(url).hostname.replace(/^www\./, '')
+                } catch {
+                  return url
+                }
+              }
+              return (
+                <section
+                  className="mt-8 pt-4"
+                  style={{ maxWidth: 680, borderTop: '1px solid var(--border)' }}
+                  aria-label="Fuentes"
+                >
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <span
+                      aria-hidden="true"
+                      style={{ width: 3, height: 14, borderRadius: 2, background: badgeColor, display: 'inline-block' }}
+                    />
+                    <h2
+                      className="text-[10px] font-black uppercase tracking-widest"
+                      style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}
+                    >
+                      Fuentes
+                    </h2>
+                  </div>
+                  <ul className="flex flex-col gap-2">
+                    {sources.map((s, i) => (
+                      <li key={i}>
+                        <a
+                          href={s.url!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-semibold hover:underline inline-flex items-start gap-1.5"
+                          style={{ color: badgeColor, textDecorationColor: `${badgeColor}66` }}
+                        >
+                          <span aria-hidden="true">↗</span>
+                          <span className="line-clamp-2">{s.name || hostLabel(s.url!)}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )
+            })()}
+
             <div style={{ maxWidth: 680 }}>
               <ArticleComments slug={article.slug ?? id} />
             </div>

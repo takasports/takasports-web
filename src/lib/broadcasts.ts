@@ -141,6 +141,35 @@ function canonicalComp(comp: string): string {
   return comp === 'Mundial' ? 'World Cup' : comp
 }
 
+// El `sport` llega como slug de la API (soccer, mma, racing…) pero las claves de los
+// fallbacks por deporte están en español (Fútbol, UFC…), así que sin normalizar nunca
+// casaban y el fallback era código muerto. Mapea el slug a una clave que EXISTE.
+const SPORT_ALIAS: Record<string, string> = {
+  soccer: 'Fútbol',
+  football: 'Fútbol',
+  futbol: 'Fútbol',
+  basketball: 'Baloncesto',
+  nba: 'Baloncesto',
+  baloncesto: 'Baloncesto',
+  tennis: 'Tenis',
+  tenis: 'Tenis',
+  racing: 'F1',
+  formula1: 'F1',
+  f1: 'F1',
+  motogp: 'MotoGP',
+  mma: 'UFC',
+  ufc: 'UFC',
+  boxing: 'UFC',
+  boxeo: 'UFC',
+  rugby: 'Rugby',
+  padel: 'Pádel',
+  pádel: 'Pádel',
+}
+function canonicalSport(sport?: string): string | undefined {
+  if (!sport) return sport
+  return SPORT_ALIAS[sport.toLowerCase()] ?? sport
+}
+
 export function getSpanishBroadcast(comp: string, sport?: string): string | undefined {
   comp = canonicalComp(comp)
   // 1. Exact match
@@ -169,7 +198,8 @@ export function getSpanishBroadcast(comp: string, sport?: string): string | unde
     MotoGP:      'DAZN',
     Pádel:       'DAZN',
   }
-  if (sport && sportFallbacks[sport]) return sportFallbacks[sport]
+  const sp = canonicalSport(sport)
+  if (sp && sportFallbacks[sp]) return sportFallbacks[sp]
 
   return undefined
 }
@@ -606,7 +636,8 @@ export function getBroadcastForTz(comp: string, sport: string, tz: string): stri
   }
 
   // Fallback por deporte dentro del mismo país
-  if (fallbacks && sport && fallbacks[sport]) return fallbacks[sport]
+  const sp = canonicalSport(sport)
+  if (fallbacks && sp && fallbacks[sp]) return fallbacks[sp]
 
   // Si el país no tiene mapa, volver a España como default
   if (country !== 'ES') return lookupInMap(SPAIN_BROADCAST, comp)

@@ -13,6 +13,7 @@ import Link from 'next/link'
 import ScrollToTop from '@/components/ScrollToTop'
 import { BadgeIcon, hasBadgeIcon } from '@/components/icons/badges/BadgeIcon'
 import { PublicPlacaCard } from '@/components/placa/PublicPlacaCard'
+import { toSpanishNation } from '@/lib/nation-names'
 
 const GOLD   = '#FBBF24'
 const GOLD2  = '#F59E0B'
@@ -270,7 +271,7 @@ export default function PublicProfilePage() {
 
                 <div className="flex flex-col gap-2">
                   {profile.picks.map(pick => {
-                    const pickLabel = pick.pick === '1' ? pick.team_home : pick.pick === '2' ? pick.team_away : 'Empate'
+                    const pickLabel = pick.pick === '1' ? toSpanishNation(pick.team_home) : pick.pick === '2' ? toSpanishNation(pick.team_away) : 'Empate'
                     const scoreStr  = pick.result ? `${pick.result.home_score ?? '?'}–${pick.result.away_score ?? '?'}` : null
 
                     return (
@@ -290,7 +291,7 @@ export default function PublicProfilePage() {
                           <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-sport)' }}>vs</span>
                           <span style={{ fontSize: 18 }}>{flag(pick.team_away)}</span>
                           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-sport)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {pick.team_home} vs {pick.team_away}
+                            {toSpanishNation(pick.team_home)} vs {toSpanishNation(pick.team_away)}
                           </span>
                         </div>
 

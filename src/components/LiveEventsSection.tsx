@@ -9,6 +9,7 @@ import { TvIcon } from '@/components/icons/GameIcons'
 import { toProxyUrl } from '@/lib/image-url'
 import { isoToLocalDate } from '@/lib/calendar'
 import { nameMatch } from '@/lib/quiniela'
+import { getStoredTZ, SOURCE_TZ, convertEventTime, TZ_CHANGE_EVENT } from '@/lib/timezone'
 import {
   type RawLiveFixture,
   type LiveScore,
@@ -120,6 +121,17 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
     try { return (JSON.parse(localStorage.getItem('ts_reminders') ?? '[]') as string[]).includes(event.id) }
     catch { return false }
   })
+
+  // Hora del partido en la zona del usuario (la API la sirve en Madrid). Arranca en
+  // SOURCE_TZ para no romper la hidratación; el efecto la corrige tras montar.
+  const [tz, setTz] = useState<string>(SOURCE_TZ)
+  useEffect(() => {
+    const sync = () => setTz(getStoredTZ())
+    sync()
+    window.addEventListener(TZ_CHANGE_EVENT, sync)
+    return () => window.removeEventListener(TZ_CHANGE_EVENT, sync)
+  }, [])
+  const displayTime = tz !== SOURCE_TZ ? convertEventTime(event.time, tz) : event.time
 
   // Score flash animation when goals change
   const [scoreFlash, setScoreFlash] = useState(false)
@@ -323,7 +335,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
                   <span className="text-[9px]" style={{ color: '#3A3A4A' }}>·</span>
                   <span className="font-black"
                     style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)', fontSize: 15, letterSpacing: '0.03em' }}>
-                    {event.time}
+                    {displayTime}
                   </span>
                 </>
               )}

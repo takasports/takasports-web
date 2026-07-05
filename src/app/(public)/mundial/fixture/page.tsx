@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { SITE_URL } from '@/lib/constants'
 import { createClient } from '@supabase/supabase-js'
 import ScrollToTop from '@/components/ScrollToTop'
+import { toSpanishNation } from '@/lib/nation-names'
 
 // ISR: página pública de solo-lectura → cacheada, regenera cada 60s. Antes era
 // force-dynamic (se re-ejecutaba en CADA visita). getEvents() usa un cliente
@@ -180,7 +181,7 @@ export default async function MundialFixturePage() {
                         {/* Local */}
                         <div className="flex items-center gap-2 justify-end min-w-0">
                           <span className="text-[13px] font-bold truncate text-right" style={{ color: '#E0E0F0' }}>
-                            {ev.team_home ?? 'Por definir'}
+                            {toSpanishNation(ev.team_home) ?? 'Por definir'}
                           </span>
                           <span style={{ fontSize: 18, lineHeight: 1 }}>{flagFor(ev.team_home)}</span>
                         </div>
@@ -203,7 +204,7 @@ export default async function MundialFixturePage() {
                         <div className="flex items-center gap-2 min-w-0">
                           <span style={{ fontSize: 18, lineHeight: 1 }}>{flagFor(ev.team_away)}</span>
                           <span className="text-[13px] font-bold truncate" style={{ color: '#E0E0F0' }}>
-                            {ev.team_away ?? 'Por definir'}
+                            {toSpanishNation(ev.team_away) ?? 'Por definir'}
                           </span>
                         </div>
                       </div>

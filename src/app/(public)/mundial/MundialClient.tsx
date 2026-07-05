@@ -9,6 +9,7 @@ import { TargetIcon, LightbulbIcon, StarIcon, LiveDotIcon, LockIcon, TrophyIcon,
 import { vibrate } from '@/lib/game-feedback'
 import { trackPorraExactAdded, trackPorraExactRemoved } from '@/lib/analytics'
 import { SeasonPanel } from '@/app/quiniela/components/panels/SeasonPanel'
+import { toSpanishNation } from '@/lib/nation-names'
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,12 @@ const FLAGS: Record<string, string> = {
 function flag(team: string | null): string {
   if (!team) return '🏳️'
   return FLAGS[team] ?? '🏴'
+}
+
+// Nombre visible de la selección, traducido al español ("France"→"Francia"). OJO: NO
+// usar para flag(), cuyas claves son inglesas.
+function teamLabel(team: string | null): string {
+  return toSpanishNation(team) ?? '—'
 }
 
 function shortName(name: string, max = 12): string {
@@ -653,8 +660,8 @@ function ExactScoreBlock({
   }
 
   // ── 3b. Editor scoreboard abierto ──
-  const homeLabel = event.team_home ?? 'Local'
-  const awayLabel = event.team_away ?? 'Visita'
+  const homeLabel = toSpanishNation(event.team_home) ?? 'Local'
+  const awayLabel = toSpanishNation(event.team_away) ?? 'Visita'
 
   return (
     <div style={{
@@ -809,9 +816,9 @@ function MatchCard({
   const showLockWarning = event.status === 'open' && !isLocked && lockMs < 6 * 60 * 60 * 1000
 
   const picks: { label: string; flagEmoji: string; sub: string; val: '1'|'X'|'2' }[] = [
-    { label: 'Local',  flagEmoji: flag(event.team_home), sub: event.team_home ?? '', val: '1' },
+    { label: 'Local',  flagEmoji: flag(event.team_home), sub: toSpanishNation(event.team_home) ?? '', val: '1' },
     { label: 'X',      flagEmoji: '⚖️',                  sub: 'Empate',              val: 'X' },
-    { label: 'Visita', flagEmoji: flag(event.team_away), sub: event.team_away ?? '', val: '2' },
+    { label: 'Visita', flagEmoji: flag(event.team_away), sub: toSpanishNation(event.team_away) ?? '', val: '2' },
   ]
 
   const cardBg     = event.featured ? BG_FEAT : BG_CARD
@@ -886,7 +893,7 @@ function MatchCard({
           <span style={{
             fontSize: 12, fontWeight: 900, color: '#ECECF6',
             fontFamily: 'var(--font-sport)', lineHeight: 1.2, textAlign: 'right',
-          }}>{event.team_home ?? '—'}</span>
+          }}>{teamLabel(event.team_home)}</span>
         </div>
 
         {/* VS / Score box */}
@@ -951,7 +958,7 @@ function MatchCard({
           <span style={{
             fontSize: 12, fontWeight: 900, color: '#ECECF6',
             fontFamily: 'var(--font-sport)', lineHeight: 1.2, textAlign: 'left',
-          }}>{event.team_away ?? '—'}</span>
+          }}>{teamLabel(event.team_away)}</span>
         </div>
       </div>
 
@@ -1005,7 +1012,7 @@ function MatchCard({
             </>
           ) : (
             <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-sport)' }}>
-              Fallaste — ganó {winner === '1' ? event.team_home : winner === '2' ? event.team_away : 'el empate'}
+              Fallaste — ganó {winner === '1' ? toSpanishNation(event.team_home) : winner === '2' ? toSpanishNation(event.team_away) : 'el empate'}
             </span>
           )}
         </div>
@@ -1043,8 +1050,8 @@ function MatchCard({
 // ── Share helper ─────────────────────────────────────────────────────────
 
 async function sharePick(teamHome: string | null, teamAway: string | null, pick: '1'|'X'|'2') {
-  const label = pick === '1' ? teamHome ?? 'Local' : pick === '2' ? teamAway ?? 'Visita' : 'Empate'
-  const text  = `Predigo: ${label} en ${teamHome ?? '?'} vs ${teamAway ?? '?'} — ¿Quién acierta más? 🏆`
+  const label = pick === '1' ? toSpanishNation(teamHome) ?? 'Local' : pick === '2' ? toSpanishNation(teamAway) ?? 'Visita' : 'Empate'
+  const text  = `Predigo: ${label} en ${toSpanishNation(teamHome) ?? '?'} vs ${toSpanishNation(teamAway) ?? '?'} — ¿Quién acierta más? 🏆`
   if (navigator.share) {
     try { await navigator.share({ title: 'Mi predicción en TakaSports', text, url: 'https://takasportsmedia.com/predicciones' }) }
     catch { /* cancelled */ }

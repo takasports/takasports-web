@@ -7,8 +7,9 @@
 // existentes con etiquetas y disposición distinta por deporte.
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getSportColor, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
+import { getStoredTZ, SOURCE_TZ, convertEventTime, TZ_CHANGE_EVENT } from '@/lib/timezone'
 import { SportIcon } from '@/components/icons/GameIcons'
 
 export interface LiveFixture {
@@ -262,6 +263,17 @@ export function UpcomingEventCard({ ev }: { ev: UpcomingEvent }) {
   const racing = isRacing(ev.sport)
   const combat = isCombat(ev.sport)
 
+  // Hora en la zona del usuario (la API la sirve en Madrid). Arranca en SOURCE_TZ
+  // para no romper la hidratación; el efecto la corrige tras montar.
+  const [tz, setTz] = useState<string>(SOURCE_TZ)
+  useEffect(() => {
+    const sync = () => setTz(getStoredTZ())
+    sync()
+    window.addEventListener(TZ_CHANGE_EVENT, sync)
+    return () => window.removeEventListener(TZ_CHANGE_EVENT, sync)
+  }, [])
+  const displayTime = tz !== SOURCE_TZ ? convertEventTime(ev.time, tz) : ev.time
+
   // Racing/Combat: GP name + sesión sin "vs"; resto: home vs away
   const label = racing
     ? (ev.comp && ev.comp.length > 4 ? ev.comp : ev.homeTeam)
@@ -291,7 +303,7 @@ export function UpcomingEventCard({ ev }: { ev: UpcomingEvent }) {
           letterSpacing: '0.02em',
         }}
       >
-        {ev.time}
+        {displayTime}
       </span>
       <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
         {ev.dateLabel}
