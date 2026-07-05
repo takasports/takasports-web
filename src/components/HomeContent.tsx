@@ -244,7 +244,10 @@ function GamesSection() {
             <Link
               key={game.href}
               href={game.href}
-              className="group flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all hover:-translate-y-0.5"
+              // Vertical (icono arriba, nombre debajo centrado): paridad con la app
+              // (GamesSection). El texto usa todo el ancho de la pastilla y envuelve a
+              // 2 líneas en vez de truncar ("Sopa de Cracks" cabía cortado en móvil).
+              className="group flex flex-col items-center text-center gap-2 px-2 py-3 rounded-xl transition-all hover:-translate-y-0.5"
               style={{
                 background: `linear-gradient(140deg, ${game.accent}10, rgba(9,9,15,0.9))`,
                 border: `1px solid ${game.accent}22`,
@@ -252,33 +255,23 @@ function GamesSection() {
               }}
             >
               <div
-                className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110"
+                className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110"
                 style={{
                   background: `${game.accent}14`,
                   border: `1px solid ${game.accent}35`,
                   color: game.accent,
                 }}
               >
-                <Icon size={16} />
+                <Icon size={18} />
               </div>
-              <div className="min-w-0 flex-1">
+              <div className="w-full min-w-0">
                 <p
-                  className="text-[12px] font-black truncate"
+                  className="text-[12px] font-black text-center line-clamp-2"
                   style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}
                 >
                   {game.name}
                 </p>
               </div>
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 10 10"
-                fill="none"
-                className="flex-shrink-0 transition-transform group-hover:translate-x-0.5"
-                style={{ color: game.accent }}
-              >
-                <path d="M1.5 5h7M5.5 2L8.5 5l-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
             </Link>
           )
         })}
