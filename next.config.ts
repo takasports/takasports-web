@@ -135,6 +135,14 @@ const nextConfig: NextConfig = {
           { key: "Content-Security-Policy", value: csp },
         ],
       },
+      {
+        // Universal Links (iOS): el fichero `apple-app-site-association` no tiene
+        // extensión → sin este header Vercel lo serviría como octet-stream y, con
+        // el `nosniff` global, Apple podría rechazarlo. Se sirve en www (dominio
+        // canónico), por lo que no hay redirección de por medio.
+        source: "/.well-known/apple-app-site-association",
+        headers: [{ key: "Content-Type", value: "application/json" }],
+      },
     ];
   },
 };

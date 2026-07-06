@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "42PR76ZV4H.com.takasportsmedia.app",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
