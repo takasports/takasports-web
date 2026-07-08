@@ -6,6 +6,8 @@ import { LiveEventCard, UpcomingEventCard, type LiveFixture, type UpcomingEvent 
 // Fuente ÚNICA de "en juego" (denylist). Incluye 'Final' y también PRE_GAME/DELAYED/
 // RAIN_DELAY, que la lista-permiso anterior no cubría (colaban como "en vivo").
 import { isLiveStatus } from '@/lib/live-events'
+import { filterByFollowed } from '@/lib/calendar-curate'
+import { useFollowedSports } from '@/lib/useFollowedSports'
 
 function useRelativeTime(ts: number | null): string {
   const [label, setLabel] = useState('')
@@ -38,6 +40,7 @@ export default function LiveStrip() {
   const [fetchedAt,    setFetchedAt]    = useState<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastYRef = useRef(0)
+  const { sports: followedSports } = useFollowedSports()
 
   const fetchLive = useCallback(async () => {
     try {
@@ -115,6 +118,9 @@ export default function LiveStrip() {
   const ageLabel = useRelativeTime(fetchedAt)
   // Prioridad: eventos en vivo > próximos destacados con hora
   const stripMode: 'live' | 'upcoming' = isLive ? 'live' : 'upcoming'
+  // Personalización: los PRÓXIMOS se filtran por los deportes seguidos (el Mundial
+  // entra igual; sin nada seguido → todos). Los DIRECTOS se muestran siempre.
+  const curatedUpcoming = filterByFollowed(upcoming, { deportesSeguidos: [...followedSports] })
 
   return (
     <div
@@ -172,7 +178,7 @@ export default function LiveStrip() {
                     <LiveEventCard fix={fix} />
                   </div>
                 ))
-              : upcoming.slice(0, 6).map((ev, i) => (
+              : curatedUpcoming.slice(0, 6).map((ev, i) => (
                   <div key={`${ev.id}-${i}`} className="flex items-center gap-3 flex-shrink-0">
                     {i > 0 && <Sep />}
                     <UpcomingEventCard ev={ev} />

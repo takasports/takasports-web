@@ -9,6 +9,8 @@ import { TvIcon } from '@/components/icons/GameIcons'
 import { toProxyUrl } from '@/lib/image-url'
 import { isoToLocalDate } from '@/lib/calendar'
 import { nameMatch } from '@/lib/quiniela'
+import { filterByFollowed } from '@/lib/calendar-curate'
+import { useFollowedSports } from '@/lib/useFollowedSports'
 import { getStoredTZ, SOURCE_TZ, convertEventTime, TZ_CHANGE_EVENT } from '@/lib/timezone'
 import {
   type RawLiveFixture,
@@ -460,9 +462,21 @@ export default function LiveEventsSection({
   const liveFixtures = useLiveFixtures()
   const liveCards = useMemo<SportEvent[]>(() => liveCardsFromFixtures(liveFixtures), [liveFixtures])
 
+  // Deportes seguidos (personaliza el escaparate "Destacados"). Vacío → se ve todo.
+  const { sports: followedSports } = useFollowedSports()
+
   // Eventos a mostrar según el filtro.
   const displayEvents = useMemo<SportEvent[]>(() => {
-    if (filter === 'destacados') return withLiveFirst(liveCards, events)
+    if (filter === 'destacados') {
+      // Filtra los PRÓXIMOS por tus deportes/equipos seguidos (Mundial y equipos
+      // entran igual); los directos van SIEMPRE delante, sin filtrar.
+      const personalized = filterByFollowed(
+        events,
+        { deportesSeguidos: [...followedSports], equiposSeguidos: (favTeams ?? []).filter(Boolean) },
+        { teamMatch: (n, t) => (t ? nameMatch(n, t) : false) },
+      )
+      return withLiveFirst(liveCards, personalized)
+    }
     const base = fullEvents ?? []
     if (filter === 'hoy') {
       const today = isoToLocalDate(new Date().toISOString())
@@ -473,7 +487,7 @@ export default function LiveEventsSection({
     return base.filter(ev =>
       favs.some(t => (ev.home && nameMatch(t, ev.home)) || (ev.away && nameMatch(t, ev.away)))
     )
-  }, [filter, events, fullEvents, favTeams, liveCards])
+  }, [filter, events, fullEvents, favTeams, liveCards, followedSports])
 
   const liveScores = useMemo(() => scoresForEvents(displayEvents, liveFixtures), [displayEvents, liveFixtures])
   const containerRef = useScrollReveal()

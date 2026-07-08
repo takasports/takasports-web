@@ -15,6 +15,9 @@ import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
 import CompetitionSelector from '@/components/CompetitionSelector'
 import { COMPETITIONS, getCompetition, matchesCompetition } from '@/lib/calendar-competitions'
+import { filterByFollowed } from '@/lib/calendar-curate'
+import { useFollowedSports, FOLLOWABLE_SPORTS } from '@/lib/useFollowedSports'
+import { SLUG_TO_LABEL } from '@/lib/sports'
 import { subscribeToPush } from '@/lib/push-client'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
@@ -1478,6 +1481,9 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   const reminderDialogRef = useRef<HTMLDivElement>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [favComps, setFavComps] = useState<Set<string>>(new Set())   // ligas fijadas (slugs)
+  // Deportes seguidos (personalización de "Destacados"). Local + nube (sport:<slug>),
+  // compartido con la app. Vacío → no filtra (se ve todo).
+  const { sports: followedSports, toggle: toggleFollowedSport } = useFollowedSports()
   const [onlyLive, setOnlyLive] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set())
@@ -2067,8 +2073,25 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     // Con una competición seleccionada se muestran TODOS sus partidos (no se aplica
     // la curación de Destacados, que recorta a los top del día).
     if (activeFilter !== 'Destacados' || activeComp) return filtered
+    // Personalización IMPLÍCITA (solo en Destacados, sin búsqueda activa): quédate
+    // con tus deportes/equipos seguidos. El Mundial, los directos y tus equipos
+    // entran igual; sin nada seguido → se ve todo. La búsqueda es una elección
+    // explícita, así que NO filtra por seguidos.
+    const src = search
+      ? filtered
+      : filterByFollowed(
+          filtered,
+          { deportesSeguidos: [...followedSports], equiposSeguidos: [...favorites] },
+          {
+            isLive: (e) => {
+              const ls = liveScores.get((e as SportEvent).id)
+              return !!ls && isLiveStatus(ls.status)
+            },
+            teamMatch: (n, t) => (t ? nameMatch(n, t) : false),
+          },
+        )
     const byDay = new Map<string, SportEvent[]>()
-    for (const ev of filtered) {
+    for (const ev of src) {
       const day = ev.isoDate ? isoToLocalDate(ev.isoDate, tz) : 'unknown'
       const arr = byDay.get(day) ?? []
       arr.push(ev)
@@ -2127,7 +2150,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       out.push(...sorted.filter((e, i) => i < keep || isMundial(e.comp)))
     }
     return out
-  }, [filtered, activeFilter, activeComp, favorites, liveScores, tz])
+  }, [filtered, activeFilter, activeComp, favorites, followedSports, search, liveScores, tz])
 
   const grouped = useMemo(() => groupEventsByDate(filteredForGrouping, tz), [filteredForGrouping, tz])
   const orderedDates = useMemo(() => orderedDateKeys(grouped), [grouped])
@@ -2558,6 +2581,37 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               onSelectSport={(k) => { setActiveComp(null); setActiveFilter(k) }}
               onSelectComp={(slug) => { if (activeComp === slug) { setActiveComp(null) } else { setActiveFilter('Todo'); setActiveComp(slug) } }}
             />
+            {/* "Mis deportes": personaliza los Destacados. Vacío → se ven todos.
+                Se sincroniza con la app (usuarios con sesión). Editor completo en el
+                Perfil (fase posterior); aquí una fila mínima de chips. */}
+            {activeFilter === 'Destacados' && (
+              <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                <span className="text-[10px] font-black uppercase tracking-widest flex-shrink-0"
+                  style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>
+                  Mis deportes
+                </span>
+                {FOLLOWABLE_SPORTS.map((slug) => {
+                  const on = followedSports.has(slug)
+                  return (
+                    <button
+                      key={slug}
+                      type="button"
+                      onClick={() => toggleFollowedSport(slug)}
+                      aria-pressed={on}
+                      className="flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full transition-all"
+                      style={{
+                        background: on ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.04)',
+                        color: on ? '#C4B5FD' : '#8A8AA0',
+                        border: on ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                        fontFamily: 'var(--font-sport)',
+                      }}
+                    >
+                      {SLUG_TO_LABEL[slug] ?? slug}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
