@@ -271,8 +271,14 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
 // Tennis uses /scoreboard endpoint — gives individual match IDs for detail pages
 async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
   const { accent } = getSportStyle('Tenis')
-  const comp = slug.includes('wta') ? 'WTA' : 'ATP'
+  const isWta = slug.includes('wta')
+  const comp = isWta ? 'WTA' : 'ATP'
   const shortSlug = slug.split('/')[1] // 'atp' or 'wta'
+  // En Grand Slams / Masters combinados, el endpoint de CADA tour devuelve el torneo
+  // ENTERO (mens + womens), así que sin filtrar por cuadro el feed emitía cada individual
+  // DOS veces (una por tour, con ids distintos espn-tennis-atp-* / -wta-*). Nos quedamos
+  // solo con el cuadro individual de ESTE tour (igual que fetchTennisPast) → sin duplicar.
+  const wantGrouping = isWta ? 'womens-singles' : 'mens-singles'
   const url = `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`
 
   let json: Record<string, unknown>
@@ -295,6 +301,8 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
     const groupings = (ev.groupings as unknown[]) ?? []
     for (const rawG of groupings) {
       const g = rawG as Record<string, unknown>
+      const gSlug = (g.grouping as Record<string, unknown> | undefined)?.slug as string | undefined
+      if (gSlug !== wantGrouping) continue // solo el cuadro individual de ESTE tour (no duplica combinados)
       const competitions = (g.competitions as unknown[]) ?? []
 
       for (const rawM of competitions) {

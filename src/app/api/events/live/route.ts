@@ -234,12 +234,22 @@ async function fetchTeamLeague(slug: string, sport: string, comp: string, league
         logo: (awayRaw.team as Record<string, unknown>)?.logo as string | undefined,
       })
       if (!home || !away) continue
-      // Selecciones → español (Brazil→Brasil…); clubes intactos. No toca el
-      // matchRef (id), solo el nombre mostrado en el ticker/huérfanos en vivo,
-      // y mantiene la coincidencia con el calendario (también en español).
       if (NATIONAL_TEAM_COMPS.has(comp)) {
+        // Selecciones → español (Brazil→Brasil…). El feed hace lo mismo sobre el mismo
+        // displayName crudo, así que ya coinciden.
         home.name = toSpanishNation(home.name)
         away.name = toSpanishNation(away.name)
+      } else {
+        // CLUBES: usamos el NOMBRE CRUDO de ESPN (el mismo `displayName` que emite el
+        // feed/calendario), NO el del catálogo. El catálogo (normalizeTeam) renombra
+        // algunos clubes (p. ej. 'Internazionale'→'Inter Milan') solo en el directo, así
+        // que la versión live y la del feed NO colapsaban en el dedup por nombre de la
+        // app → el MISMO partido salía DUPLICADO (uno en vivo, otro como próximo). Igualar
+        // el nombre al del feed lo arregla; el catálogo sigue dando logo/abbr/colores.
+        const homeName = (homeRaw.team as Record<string, unknown>)?.displayName as string | undefined
+        const awayName = (awayRaw.team as Record<string, unknown>)?.displayName as string | undefined
+        if (homeName?.trim()) home.name = homeName.trim()
+        if (awayName?.trim()) away.name = awayName.trim()
       }
 
       const homeScore = homeRaw.score !== undefined ? Number(homeRaw.score) : null
@@ -282,14 +292,66 @@ async function fetchTeamLeague(slug: string, sport: string, comp: string, league
 
 // ── Tennis (athlete vs athlete) ─────────────────────────────────
 
+// Nombre del jugador de un competidor de tenis, tolerante a las dos formas ESPN:
+// /events lo trae plano (`competitor.displayName`); /scoreboard lo anida
+// (`competitor.athletes[0].displayName` o `competitor.athlete.displayName`).
+function tennisPlayerName(c: RawCompetitor | undefined): string {
+  if (!c) return ''
+  const ath = c.athlete as Record<string, unknown> | undefined
+  const athletes = c.athletes as Array<Record<string, unknown>> | undefined
+  const team = c.team as Record<string, unknown> | undefined
+  return String(
+    ath?.displayName ?? athletes?.[0]?.displayName ?? c.displayName ?? team?.displayName ?? '',
+  )
+}
+
+// Clave de pareja (sin acentos, sin puntuación, ordenada) para casar el mismo partido
+// entre /events y /scoreboard. Ambos endpoints son de la MISMA familia ESPN (mismo tour,
+// mismo día) → los displayName coinciden exactos, así que el emparejamiento es fiable.
+function tennisPairKey(a: string, b: string): string {
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '')
+  return [norm(a), norm(b)].sort().join('~')
+}
+
 async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
+  const shortSlug = slug.split('/')[1] // 'atp' | 'wta'
   try {
-    const res = await fetch(
-      `https://site.api.espn.com/apis/site/v2/sports/${slug}/events?limit=50`,
-      { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }
-    )
-    if (!res.ok) return []
-    const json = await res.json()
+    // Dos fuentes en paralelo: /events da el marcador en vivo (string de sets por
+    // jugador) que ya sabíamos leer, y /scoreboard da el id POR PARTIDO (m.id en
+    // groupings[].competitions[]) — el mismo que usan el feed y buildTennis para la
+    // ficha. El tenis en vivo era la ÚNICA fuente sin matchRef (porque /events da
+    // ev.id = id de TORNEO, no único) → sus filas/tarjetas no abrían la ficha (bug
+    // reportado). Cruzamos por nombre de jugador para adjuntar un matchRef resoluble
+    // SIN tocar el parseo del marcador (cero riesgo para la visualización del directo);
+    // si el cruce falla, se degrada a como estaba antes (sin matchRef, no una regresión).
+    const [eventsRes, sbRes] = await Promise.all([
+      fetch(`https://site.api.espn.com/apis/site/v2/sports/${slug}/events?limit=50`,
+        { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }),
+      fetch(`https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
+        { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }).catch(() => null),
+    ])
+    if (!eventsRes.ok) return []
+    const json = await eventsRes.json()
+
+    // Mapa (pareja de nombres) → id de partido del scoreboard.
+    const idByPair = new Map<string, string>()
+    if (sbRes && sbRes.ok) {
+      try {
+        const sb = await sbRes.json()
+        for (const ev of sb.events ?? []) {
+          for (const g of ev.groupings ?? []) {
+            for (const m of g.competitions ?? []) {
+              const cs: RawCompetitor[] = m.competitors ?? []
+              const n1 = tennisPlayerName(cs[0])
+              const n2 = tennisPlayerName(cs[1])
+              if (!n1 || !n2 || m.id == null) continue
+              idByPair.set(tennisPairKey(n1, n2), String(m.id))
+            }
+          }
+        }
+      } catch { /* scoreboard ilegible → seguimos sin matchRef */ }
+    }
+
     const results: LiveScore[] = []
 
     for (const ev of json.events ?? []) {
@@ -329,6 +391,15 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
         clock = awayCurrentSet ?? currentSet
       }
 
+      // matchRef resoluble (tennis_<tour>_<idPartido>) cruzando con el scoreboard por
+      // nombre. Igual formato que el feed → colapsa el duplicado y abre la ficha.
+      const matchId = idByPair.get(
+        tennisPairKey(
+          (competitors[0]?.displayName as string | undefined) ?? '',
+          (competitors[1]?.displayName as string | undefined) ?? '',
+        ),
+      )
+
       // ESPN devuelve el MISMO ev.id (id de torneo, p. ej. "415-2026") para todos
       // los partidos del mismo torneo → id NO único. Lo combinamos con los ids de
       // los dos jugadores para que cada partido tenga su propia clave (si no,
@@ -343,7 +414,12 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
         awayGoals,
         mapStatus(statusName, 'tennis', undefined, completed, state),
         'tennis',
-        { comp: tournament, clock, ...(setsStr ? { setsStr } : {}) },
+        {
+          comp: tournament,
+          clock,
+          ...(matchId ? { matchRef: `tennis_${shortSlug}_${matchId}` } : {}),
+          ...(setsStr ? { setsStr } : {}),
+        },
       ))
     }
     return results
