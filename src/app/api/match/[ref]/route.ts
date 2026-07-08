@@ -379,14 +379,27 @@ function buildSoccer(json: Record<string, unknown>, homeId?: string): NonNullabl
     const homeStats = asArr((boxTeams.find(t => t.homeAway === 'home') ?? boxTeams[0])?.statistics) as Record<string, unknown>[]
     const awayStats = asArr((boxTeams.find(t => t.homeAway === 'away') ?? boxTeams[1])?.statistics) as Record<string, unknown>[]
     const byName = (arr: Record<string, unknown>[], name: string) => arr.find(s => asString(s.name) === name)
+    // ESPN da `passPct` como RATIO ("0.9") → saldría "0.9%" (inútil). Recalculamos
+    // el porcentaje real (entero) desde accuratePasses/totalPasses.
+    const passPctOf = (arr: Record<string, unknown>[]): string | null => {
+      const acc = Number(asString(byName(arr, 'accuratePasses')?.displayValue))
+      const tot = Number(asString(byName(arr, 'totalPasses')?.displayValue))
+      return Number.isFinite(acc) && Number.isFinite(tot) && tot > 0 ? String(Math.round((acc / tot) * 100)) : null
+    }
     for (const name of SOCCER_STAT_ORDER) {
       const h = byName(homeStats, name)
       const a = byName(awayStats, name)
       if (!h && !a) continue
+      let home = asString(h?.displayValue) ?? String(h?.value ?? '—')
+      let away = asString(a?.displayValue) ?? String(a?.value ?? '—')
+      if (name === 'passPct') {
+        home = passPctOf(homeStats) ?? home
+        away = passPctOf(awayStats) ?? away
+      }
       stats.push({
         label: SOCCER_LABELS[name] ?? asString(h?.label) ?? asString(a?.label) ?? name,
-        home:  asString(h?.displayValue) ?? String(h?.value ?? '—'),
-        away:  asString(a?.displayValue) ?? String(a?.value ?? '—'),
+        home,
+        away,
       })
     }
   }
