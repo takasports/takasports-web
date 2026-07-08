@@ -6,6 +6,7 @@ import {
   scoresForEvents,
   namesMatch,
   liveSportPassesFilter,
+  isLiveStatus,
   type RawLiveFixture,
 } from './live-events'
 import type { SportEvent } from './types'
@@ -70,13 +71,38 @@ describe('liveFixtureToEvent', () => {
   })
 })
 
+describe('isLiveStatus', () => {
+  it('EN JUEGO = estado no vacío ni terminal ni programado', () => {
+    expect(isLiveStatus('2H')).toBe(true)
+    expect(isLiveStatus('HT')).toBe(true)
+    expect(isLiveStatus('Q3')).toBe(true)
+    expect(isLiveStatus('STATUS_IN_PROGRESS')).toBe(true)
+  })
+  it('terminado / programado / vacío = NO en juego', () => {
+    expect(isLiveStatus('FT')).toBe(false)
+    expect(isLiveStatus('Final')).toBe(false)
+    expect(isLiveStatus('STATUS_FINAL')).toBe(false)
+    expect(isLiveStatus('NS')).toBe(false)
+    expect(isLiveStatus('')).toBe(false)
+  })
+  it('aplazado / previa NO es en juego (antes se colaba como EN DIRECTO)', () => {
+    expect(isLiveStatus('PRE_GAME')).toBe(false)
+    expect(isLiveStatus('DELAYED')).toBe(false)
+    expect(isLiveStatus('RAIN_DELAY')).toBe(false)
+    expect(isLiveStatus('POSTPONED')).toBe(false)
+    expect(isLiveStatus('FORFEIT')).toBe(false)
+  })
+})
+
 describe('liveCardsFromFixtures', () => {
-  it('solo incluye partidos EN JUEGO con rival (fuera FT, NS y sin rival)', () => {
+  it('solo incluye partidos EN JUEGO con rival (fuera FT, NS, aplazados y sin rival)', () => {
     const cards = liveCardsFromFixtures([
-      fx({ status: '2H', homeTeam: 'A', awayTeam: 'B', matchRef: 'r1' }),   // en juego ✓
-      fx({ status: 'FT', homeTeam: 'C', awayTeam: 'D', matchRef: 'r2' }),   // terminado ✗
-      fx({ status: 'NS', homeTeam: 'E', awayTeam: 'F', matchRef: 'r3' }),   // no empezado ✗
-      fx({ status: '1H', homeTeam: 'G', awayTeam: null, matchRef: 'r4' }),  // sin rival ✗
+      fx({ status: '2H', homeTeam: 'A', awayTeam: 'B', matchRef: 'r1' }),        // en juego ✓
+      fx({ status: 'FT', homeTeam: 'C', awayTeam: 'D', matchRef: 'r2' }),        // terminado ✗
+      fx({ status: 'NS', homeTeam: 'E', awayTeam: 'F', matchRef: 'r3' }),        // no empezado ✗
+      fx({ status: 'PRE_GAME', homeTeam: 'P', awayTeam: 'Q', matchRef: 'r5' }),  // previa ✗
+      fx({ status: 'DELAYED', homeTeam: 'R', awayTeam: 'S', matchRef: 'r6' }),   // aplazado ✗
+      fx({ status: '1H', homeTeam: 'G', awayTeam: null, matchRef: 'r4' }),       // sin rival ✗
     ])
     expect(cards).toHaveLength(1)
     expect(cards[0].home).toBe('A')

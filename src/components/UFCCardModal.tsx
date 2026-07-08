@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import type { SportEvent } from '@/lib/types'
 import { getCompAccent, getLiveLabel } from '@/lib/competitions'
+import { isLiveStatus } from '@/lib/live-events'
 import { formatDateLabel, isoToLocalDate } from '@/lib/calendar'
 import { ClipboardIcon } from '@/components/icons/GameIcons'
 
@@ -93,11 +94,10 @@ export default function UFCCardModal({
 }: UFCCardModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(true, dialogRef, onClose)
-  const FINISHED = new Set(['FT', 'Final', 'STATUS_FINAL', 'NS'])
   const dateLabel = formatDateLabel(date)
   const liveCount = events.filter(e => {
     const score = liveScores.get(e.id)
-    return score && !FINISHED.has(score.status)
+    return score && isLiveStatus(score.status)
   }).length
 
   return (
@@ -165,7 +165,7 @@ export default function UFCCardModal({
           ) : (
             events.map(event => {
               const liveScore = liveScores.get(event.id)
-              const isLive = liveScore && !FINISHED.has(liveScore.status)
+              const isLive = liveScore && isLiveStatus(liveScore.status)
               const accent = '#D4AF37'
 
               return (

@@ -28,12 +28,27 @@ export interface LiveScore {
   matchRef?: string
 }
 
-// Estados terminales o aún no empezados: NO cuentan como "en juego".
-export const FINISHED = new Set([
-  'FT', 'Final', 'FINAL', 'FINAL_PEN', 'FINAL_AET', 'STATUS_FINAL', 'NS', 'STATUS_SCHEDULED',
-  'POST_GAME', 'END_OF_REGULATION',
-  'ABANDONED', 'WALKOVER', 'RETIRED', 'CANCELED', 'POSTPONED', 'SUSPENDED',
+// Criterio ÚNICO de "en juego" de la web (espejo del isLiveStatus de la app,
+// takasports-app/src/utils/liveStatus.ts). DENYLIST robusta: EN JUEGO = estado no
+// vacío y NO terminal/programado. Antes era una lista-PERMISO (FINISHED) que NO
+// incluía PRE_GAME/DELAYED/RAIN_DELAY/FORFEIT/TBD → un partido aplazado o en la previa
+// se colaba como EN DIRECTO en el escaparate/ticker aunque no había empezado. La
+// denylist detecta sola cualquier código nuevo "en juego"; solo hay que mantener los
+// terminales/no-empezados de aquí.
+function normStatus(status?: string): string {
+  return (status ?? '').toLowerCase().replace(/^status[_\s]+/, '').replace(/[_\s]+/g, ' ').trim()
+}
+const TERMINAL_STATUS = new Set([
+  // Aún no empezado
+  '', 'ns', 'scheduled', 'pre game', 'tbd', 'delayed', 'rain delay', 'rescheduled',
+  // Terminados
+  'ft', 'final', 'finalizado', 'full time', 'final pen', 'final aet', 'post game',
+  'end of regulation', 'abandoned', 'walkover', 'retired', 'forfeit', 'canceled',
+  'cancelled', 'postponed', 'suspended',
 ])
+export function isLiveStatus(status?: string): boolean {
+  return !TERMINAL_STATUS.has(normStatus(status))
+}
 
 export const SPORT_LABELS: Record<string, string> = {
   soccer: 'Fútbol', basketball: 'Baloncesto', racing: 'F1', mma: 'MMA', tennis: 'Tenis',
@@ -77,7 +92,7 @@ export function liveFixtureToEvent(f: RawLiveFixture): SportEvent {
 // no son cara a cara (sin rival): combate/carrera no llevan marcador.
 export function liveCardsFromFixtures(fixtures: RawLiveFixture[], max = 6): SportEvent[] {
   const cards = fixtures
-    .filter(f => f.awayTeam && !FINISHED.has(f.status))
+    .filter(f => f.awayTeam && isLiveStatus(f.status))
     .map(liveFixtureToEvent)
   cards.sort((a, b) =>
     getEventHighlightScore({ comp: b.comp, home: b.home, away: b.away, isLive: true }) -

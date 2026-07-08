@@ -112,20 +112,25 @@ export function getTZOffset(iana: string, date = new Date()): string {
  * Estrategia: construir un Date que represente "hoy a las HH:MM en Europe/Madrid"
  * y formatearlo en la TZ destino.
  */
-export function convertEventTime(timeStr: string, targetTZ: string): string {
+export function convertEventTime(timeStr: string, targetTZ: string, anchorIso?: string): string {
   if (targetTZ === SOURCE_TZ) return timeStr
 
   try {
     const [h, m] = timeStr.split(':').map(Number)
     if (isNaN(h) || isNaN(m)) return timeStr
 
-    // 1. Fecha de hoy en Madrid (YYYY-MM-DD)
+    // 1. Fecha ANCLA en Madrid (YYYY-MM-DD): la del EVENTO (anchorIso) si se da, si no
+    // hoy. Anclar a la fecha real del partido hace que el offset de horario de verano
+    // (DST) sea el correcto; antes usaba SIEMPRE hoy → 1h de desfase alrededor de los
+    // cambios de hora europeos para fechas lejanas (e incoherente con la app, que ya
+    // pasa anchorIso). Espejo del convertEventTime de takasports-app.
+    const anchor = anchorIso ? new Date(anchorIso) : new Date()
     const madridDate = new Intl.DateTimeFormat('en-CA', {
       timeZone: SOURCE_TZ,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-    }).format(new Date())
+    }).format(Number.isNaN(anchor.getTime()) ? new Date() : anchor)
 
     // 2. Crear Date "naïve" en UTC con esa fecha+hora
     const naive = new Date(`${madridDate}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00Z`)
@@ -158,11 +163,14 @@ export function convertEventTime(timeStr: string, targetTZ: string): string {
 
 /** Indica si targetTZ es el mismo día que SOURCE_TZ para "hoy".
  *  Útil para mostrar aviso de cambio de día. */
-export function isSameDay(timeStr: string, targetTZ: string): boolean {
+export function isSameDay(timeStr: string, targetTZ: string, anchorIso?: string): boolean {
   if (targetTZ === SOURCE_TZ) return true
   try {
     const [h, m] = timeStr.split(':').map(Number)
-    const madridDate = new Intl.DateTimeFormat('en-CA', { timeZone: SOURCE_TZ }).format(new Date())
+    const anchor = anchorIso ? new Date(anchorIso) : new Date()
+    const madridDate = new Intl.DateTimeFormat('en-CA', { timeZone: SOURCE_TZ }).format(
+      Number.isNaN(anchor.getTime()) ? new Date() : anchor,
+    )
     const naive = new Date(`${madridDate}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00Z`)
     const fmtSrc = new Intl.DateTimeFormat('en', { timeZone: SOURCE_TZ, hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(naive)
     const srcH = parseInt(fmtSrc.find(p => p.type === 'hour')?.value ?? '0')

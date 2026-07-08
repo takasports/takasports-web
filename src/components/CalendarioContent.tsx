@@ -18,7 +18,7 @@ import { COMPETITIONS, getCompetition, matchesCompetition } from '@/lib/calendar
 import { subscribeToPush } from '@/lib/push-client'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
-import { liveSportPassesFilter } from '@/lib/live-events'
+import { liveSportPassesFilter, isLiveStatus } from '@/lib/live-events'
 import { SearchIcon, CalendarIcon, TvIcon, BellIcon, ClipboardIcon, SportIcon, LiveDotIcon, TennisIcon, F1Icon } from '@/components/icons/GameIcons'
 
 // ── Favorites helpers ──────────────────────────────────────────
@@ -75,7 +75,6 @@ interface LiveScore {
   clock?: string   // current set score for tennis e.g. "4-2"
 }
 
-const FINISHED = new Set(['FT', 'Final', 'FINAL', 'FINAL_PEN', 'FINAL_AET', 'STATUS_FINAL', 'POST_GAME', 'END_OF_REGULATION', 'NS'])
 
 // Modo Destacados: cuántos partidos mostrar por día.
 //   · MIN  → mínimo garantizado aunque el día sea flojo.
@@ -145,7 +144,7 @@ async function fetchLiveSharedCached(): Promise<RawLiveFixture[]> {
 // Cadencia del polling: 30s con partidos en juego, 60s sin ellos. La mayor
 // parte del día no hay nada en vivo → la mitad de peticiones sin que se note.
 function livePollMs(data: RawLiveFixture[]): number {
-  return data.some(f => !FINISHED.has(f.status)) ? 30_000 : 60_000
+  return data.some(f => isLiveStatus(f.status)) ? 30_000 : 60_000
 }
 
 function useLiveFixtures() {
@@ -154,7 +153,7 @@ function useLiveFixtures() {
 
   const fetch_ = useCallback(async () => {
     const data = await fetchLiveSharedCached()
-    setFixtures(data.filter(f => !FINISHED.has(f.status)))
+    setFixtures(data.filter(f => isLiveStatus(f.status)))
     setPollMs(livePollMs(data))
   }, [])
 
@@ -597,8 +596,8 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
   // Convert event time (Madrid source) to user's selected timezone. If tz is
   // not provided or matches source, returns the original string. Falls back
   // gracefully on parse errors inside the helper.
-  const displayTime = tz && tz !== SOURCE_TZ ? convertEventTime(event.time, tz) : event.time
-  const isLive  = !!liveScore && !FINISHED.has(liveScore.status)
+  const displayTime = tz && tz !== SOURCE_TZ ? convertEventTime(event.time, tz, event.isoDate) : event.time
+  const isLive  = !!liveScore && isLiveStatus(liveScore.status)
   // Días pasados (timeline continuo): el marcador viaja en el propio evento
   // (homeScore/awayScore) y NO entra en el mapa liveScore. Distinguimos las dos
   // convenciones: live/futuro = liveScore.homeGoals/awayGoals; pasado = event.*.
@@ -1188,7 +1187,7 @@ function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect, tz 
                 key={iso}
                 onClick={isPast ? undefined : () => { onChange(iso); onClose() }}
                 disabled={isPast}
-                title={isPast ? 'Los resultados anteriores están en la pestaña Resultados' : undefined}
+                title={isPast ? 'Para ver días ya jugados, pulsa «Ver resultados anteriores» en el calendario' : undefined}
                 className="relative flex flex-col items-center justify-center rounded-lg transition-all"
                 style={{
                   height: 30,
@@ -1973,7 +1972,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     const matchesLive = (e: SportEvent) => {
       if (!onlyLive) return true
       const score = liveScores.get(e.id)
-      return !!score && !FINISHED.has(score.status)
+      return !!score && isLiveStatus(score.status)
     }
     const matchesComp = (e: SportEvent) => !activeCompCfg || matchesCompetition(activeCompCfg, e)
     return baseEventsForList.filter(e => matchesSport(e) && matchesComp(e) && matchesSearch(e) && matchesDate(e) && matchesLive(e))
@@ -2032,7 +2031,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   }, [events, search, activeFilter, activeCompCfg, tz])
 
   const liveEventsInList = useMemo(
-    () => filtered.filter(e => liveScores.has(e.id) && !FINISHED.has(liveScores.get(e.id)?.status ?? '')),
+    () => filtered.filter(e => liveScores.has(e.id) && isLiveStatus(liveScores.get(e.id)?.status ?? '')),
     [filtered, liveScores]
   )
 
@@ -2079,7 +2078,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
     const scoreFor = (ev: SportEvent) => {
       const cached = scoreCache.get(ev.id)
       if (cached !== undefined) return cached
-      const live = liveScores.has(ev.id) && !FINISHED.has(liveScores.get(ev.id)?.status ?? '')
+      const live = liveScores.has(ev.id) && isLiveStatus(liveScores.get(ev.id)?.status ?? '')
       const s = getEventHighlightScore({
         comp: ev.comp,
         home: ev.home,
@@ -2608,7 +2607,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                   : search
                     ? 'Prueba con el nombre del equipo o la competición'
                     : selectedDate
-                      ? 'Mostramos las próximas ~3 semanas. Los resultados anteriores están en la pestaña Resultados.'
+                      ? 'Mostramos las próximas ~3 semanas. Para los días ya jugados, pulsa «Ver resultados anteriores».'
                       : activeCompCfg
                         ? 'Mira su clasificación y todo el calendario en el banner de arriba ↑'
                         : (activeFilter !== 'Todo' && activeFilter !== 'Destacados')

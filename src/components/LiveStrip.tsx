@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { LiveEventCard, UpcomingEventCard, type LiveFixture, type UpcomingEvent } from '@/components/events/LiveEventCard'
-// Fuente ÚNICA de estados "no en juego". La copia local que tenía LiveStrip NO
-// incluía 'Final' → un partido finalizado con ese estado se colaba como "en vivo".
-import { FINISHED } from '@/lib/live-events'
+// Fuente ÚNICA de "en juego" (denylist). Incluye 'Final' y también PRE_GAME/DELAYED/
+// RAIN_DELAY, que la lista-permiso anterior no cubría (colaban como "en vivo").
+import { isLiveStatus } from '@/lib/live-events'
 
 function useRelativeTime(ts: number | null): string {
   const [label, setLabel] = useState('')
@@ -46,7 +46,7 @@ export default function LiveStrip() {
       const all: LiveFixture[] = await res.json()
 
       // Solo eventos realmente en juego (excluir FT, NS, etc.)
-      const live = all.filter(f => !FINISHED.has(f.status))
+      const live = all.filter(f => isLiveStatus(f.status))
 
       // Deduplicar por id → fallback a homeTeam|awayTeam
       const seen = new Set<string>()

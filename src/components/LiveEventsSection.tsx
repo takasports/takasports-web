@@ -13,7 +13,7 @@ import { getStoredTZ, SOURCE_TZ, convertEventTime, TZ_CHANGE_EVENT } from '@/lib
 import {
   type RawLiveFixture,
   type LiveScore,
-  FINISHED,
+  isLiveStatus,
   SPORT_LABELS,
   SPORT_ACCENTS,
   liveCardsFromFixtures,
@@ -131,7 +131,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
     window.addEventListener(TZ_CHANGE_EVENT, sync)
     return () => window.removeEventListener(TZ_CHANGE_EVENT, sync)
   }, [])
-  const displayTime = tz !== SOURCE_TZ ? convertEventTime(event.time, tz) : event.time
+  const displayTime = tz !== SOURCE_TZ ? convertEventTime(event.time, tz, event.isoDate) : event.time
 
   // Score flash animation when goals change
   const [scoreFlash, setScoreFlash] = useState(false)
@@ -164,7 +164,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
   }
 
   const compColor  = getCompAccent(event.comp, event.accent)
-  const isLive     = !!liveScore && !FINISHED.has(liveScore.status)
+  const isLive     = !!liveScore && isLiveStatus(liveScore.status)
   const scoreStr   = liveScore != null ? `${liveScore.homeGoals ?? 0} – ${liveScore.awayGoals ?? 0}` : null
   const homeLogo   = liveScore?.homeLogo ?? event.homeLogo
   const awayLogo   = liveScore?.awayLogo ?? event.awayLogo
