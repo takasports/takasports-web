@@ -373,11 +373,14 @@ function ScoringTimeline({ events, homeTeam, awayTeam, leagueSlug }: { events: S
       return <span style={{ color: '#86EFAC', display: 'inline-flex' }}><GoalIcon size={14} /></span>
     if (type === 'own-goal')
       return <span style={{ color: '#FCA5A5', display: 'inline-flex' }}><GoalIcon size={14} /></span>
+    if (type === 'penalty-missed')
+      return <span style={{ color: '#FBBF24', display: 'inline-flex' }}><GoalIcon size={14} /></span>
     return <span>•</span>
   }
 
   const typeLabel = (type: string): string | null => {
     if (type === 'penalty') return 'Penalti'
+    if (type === 'penalty-missed') return 'Penalti errado'
     if (type === 'own-goal') return 'En propia'
     if (type === 'yellow') return 'Amarilla'
     if (type === 'red') return 'Roja'
@@ -387,6 +390,7 @@ function ScoringTimeline({ events, homeTeam, awayTeam, leagueSlug }: { events: S
   const accentFor = (type: string) =>
     type === 'goal' || type === 'penalty' ? '#86EFAC'
     : type === 'own-goal' ? '#FCA5A5'
+    : type === 'penalty-missed' ? '#FBBF24'
     : type === 'yellow' ? '#FBBF24'
     : type === 'red' ? '#EF4444'
     : '#7A7A8E'
@@ -403,7 +407,7 @@ function ScoringTimeline({ events, homeTeam, awayTeam, leagueSlug }: { events: S
         {events.map((ev, i) => {
           const isHome = ev.team === 'home'
           const accent = accentFor(ev.type)
-          const sub = typeLabel(ev.type)
+          const sub = ev.detail ?? typeLabel(ev.type)
           return (
             <div key={i} className="relative grid items-center gap-2"
               style={{ gridTemplateColumns: '1fr 44px 1fr' }}>
@@ -483,6 +487,7 @@ function CommentaryFeed({ entries }: { entries: CommentaryEntry[] }) {
 
   const colorFor = (e: CommentaryEntry): string => {
     if (e.type === 'goal' || e.type === 'penalty-goal' || e.type === 'penalty') return '#86EFAC'
+    if (e.type === 'penalty-missed') return '#FBBF24'
     if (e.type === 'own-goal') return '#FCA5A5'
     if (e.type === 'yellow-card') return '#FBBF24'
     if (e.type === 'red-card' || e.type === 'yellow-red-card') return '#EF4444'
@@ -1805,28 +1810,36 @@ export default async function MatchPage({
   const match   = await fetchMatchDetail(ref)
   if (!match) notFound()
 
-  // H2H: last meetings between the two teams (soccer team sports only). Pulled
-  // from our own past_events cache so it's free and fast. If Supabase isn't
-  // configured the function returns null and the tab is hidden.
-  // Para deportes de equipo (fútbol/básket) traemos H2H (últimos 10) + forma
-  // reciente (últimos 5 de cada equipo) en paralelo desde nuestra caché propia
-  // past_events. Si Supabase no está configurado, h2h=null y forms={} → la UI
-  // degrada (oculta tab H2H / no muestra forma). Coste 0.
+  // H2H + forma reciente. PRIMARIO = el propio summary de ESPN (match.headToHead /
+  // match.recentForm), que YA viaja en el payload → coste 0, una fuente y dos
+  // renders (app y web ven exactamente lo mismo). FALLBACK = nuestra caché
+  // past_events (Supabase), que solo se consulta si el summary no trajo el dato
+  // (así no se regresa en partidos donde ESPN no lo incluya).
   const teamPair = (match.sport === 'soccer' || match.sport === 'basketball') && match.homeTeam && match.awayTeam
     ? { home: match.homeTeam, away: match.awayTeam }
     : null
-  // leagueSlug → filtro de género: el femenino (Liga F, amistosos F) comparte
-  // nombre de club/selección con el masculino, así que sin esto el H2H/forma de
-  // un partido femenino mostraría datos del equipo masculino homónimo (y al
-  // revés). Ver isWomensPastRow en lib/past-events.
-  const [h2h, forms] = await Promise.all([
-    teamPair
+  const espnH2H = match.headToHead && match.headToHead.matches.length ? match.headToHead : null
+  const espnForm = match.recentForm && (match.recentForm.home.length || match.recentForm.away.length)
+    ? match.recentForm
+    : null
+  // leagueSlug → filtro de género (el femenino comparte nombre de club/selección
+  // con el masculino). Ver isWomensPastRow en lib/past-events.
+  const [fbH2H, fbForms] = await Promise.all([
+    teamPair && !espnH2H
       ? fetchH2H(teamPair.home, teamPair.away, { limit: 10, excludeId: match.id, leagueSlug: match.leagueSlug })
       : Promise.resolve(null),
-    teamPair
+    teamPair && !espnForm
       ? fetchRecentFormByTeams([teamPair.home, teamPair.away], 5, match.leagueSlug).then((m) => m ?? {})
       : Promise.resolve({} as Record<string, FormResult[]>),
   ])
+  const h2h: H2HResult | null = espnH2H ?? fbH2H
+  // forms indexadas por NOMBRE de equipo (lo que consumen FormGuide + estimate).
+  const forms: Record<string, FormResult[]> = espnForm
+    ? {
+        ...(match.homeTeam ? { [match.homeTeam]: espnForm.home } : {}),
+        ...(match.awayTeam ? { [match.awayTeam]: espnForm.away } : {}),
+      }
+    : fbForms
 
   const STATUS_MAP: Record<string, string> = {
     STATUS_FINAL: 'https://schema.org/EventCompleted',
@@ -1923,7 +1936,8 @@ export default async function MatchPage({
         publisher: { '@id': `${SITE_URL}/#organization` },
         liveBlogUpdate: soccerEvents.slice(-20).map((ev, i) => {
           const typeLabel = ev.type === 'goal' ? 'Gol'
-            : ev.type === 'penalty' ? 'Penalti'
+            : ev.type === 'penalty' ? 'Gol de penalti'
+            : ev.type === 'penalty-missed' ? 'Penalti errado'
             : ev.type === 'own-goal' ? 'Gol en propia'
             : ev.type === 'yellow' ? 'Tarjeta amarilla'
             : ev.type === 'red' ? 'Tarjeta roja'

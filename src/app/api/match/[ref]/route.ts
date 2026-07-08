@@ -4,7 +4,10 @@ import { getSpanishBroadcast } from '@/lib/broadcasts'
 import { LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
 import { fetchLeagueTableRows, fetchTournamentGroups, type LeagueTableRow } from '@/lib/espn-standings'
-import { getPastEventByRef } from '@/lib/past-events'
+import { getPastEventByRef, type H2HResult, type H2HMatch, type FormResult } from '@/lib/past-events'
+import {
+  normalizeScoringType, commentaryLabelFor, SOCCER_STAT_ORDER, SOCCER_LABELS,
+} from '@/lib/espn-soccer'
 // Re-exportados para los componentes cliente que ya importan estos tipos desde
 // este route (LeagueTable.tsx). La fuente real vive ahora en lib/espn-standings.
 export type { StandingZone }
@@ -45,7 +48,8 @@ export interface ScoringEvent {
   player?: string
   playerId?: string   // id ESPN del atleta → enlace a /jugador
   clock?: string
-  type: string   // 'goal' | 'yellow' | 'red' | 'penalty' | 'own-goal'
+  type: string   // 'goal' | 'yellow' | 'red' | 'penalty' | 'penalty-missed' | 'own-goal'
+  detail?: string // matiz en español ("De cabeza", "De falta", "Parado"…) — cuenta el partido
 }
 
 // Entrada del minuto a minuto (commentary de ESPN, ya localizada). El texto
@@ -193,6 +197,13 @@ export interface MatchDetail {
   leagueTable?: LeagueTableRow[]
   /** Título alternativo de la tabla (Mundial: "Grupo A" en vez de la liga). */
   leagueTableLabel?: string
+
+  // Cara a cara + forma reciente, extraídos del PROPIO summary de ESPN
+  // (headToHeadGames / lastFiveGames): coste 0, ya viajan en el payload. Una
+  // fuente → dos renders (app y web). `recentForm` es POSICIONAL (home/away) para
+  // no depender de la traducción de nombres de selección; más reciente primero.
+  headToHead?: H2HResult
+  recentForm?: { home: FormResult[]; away: FormResult[] }
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -356,51 +367,41 @@ function buildLineups(json: Record<string, unknown>): MatchDetail['lineups'] | u
 }
 
 // ── Soccer ──────────────────────────────────────────────────────────
-const SOCCER_STATS = new Set([
-  'possessionPct', 'totalShots', 'shotsOnTarget', 'saves',
-  'fouls', 'corners', 'wonCorners', 'yellowCards', 'redCards', 'offsides',
-])
-
-const SOCCER_LABELS: Record<string, string> = {
-  possessionPct:  'Posesión %',
-  totalShots:     'Tiros totales',
-  shotsOnTarget:  'Tiros a puerta',
-  saves:          'Paradas',
-  fouls:          'Faltas',
-  corners:        'Córners',
-  wonCorners:     'Córners',
-  yellowCards:    'Tarjetas amarillas',
-  redCards:       'Tarjetas rojas',
-  offsides:       'Fuera de juego',
-}
+// (config de estadísticas y normalización de tipos → @/lib/espn-soccer)
 
 function buildSoccer(json: Record<string, unknown>, homeId?: string): NonNullable<MatchDetail['soccer']> {
+  // Estadísticas curadas EN ORDEN (SOCCER_STAT_ORDER) con los nombres REALES del
+  // boxscore de ESPN. Iterar el orden (en vez del array crudo) da una secuencia
+  // estable y permite añadir pase/entradas/intercepciones/despejes/centros.
   const stats: MatchStat[] = []
   const boxTeams = asArr(asObj(json.boxscore)?.teams) as Record<string, unknown>[]
   if (boxTeams.length >= 2) {
     const homeStats = asArr((boxTeams.find(t => t.homeAway === 'home') ?? boxTeams[0])?.statistics) as Record<string, unknown>[]
     const awayStats = asArr((boxTeams.find(t => t.homeAway === 'away') ?? boxTeams[1])?.statistics) as Record<string, unknown>[]
-    for (const stat of homeStats) {
-      const name = asString(stat.name) ?? ''
-      if (!SOCCER_STATS.has(name)) continue
-      const awayStat = awayStats.find(s => s.name === name)
+    const byName = (arr: Record<string, unknown>[], name: string) => arr.find(s => asString(s.name) === name)
+    for (const name of SOCCER_STAT_ORDER) {
+      const h = byName(homeStats, name)
+      const a = byName(awayStats, name)
+      if (!h && !a) continue
       stats.push({
-        label: SOCCER_LABELS[name] ?? asString(stat.label) ?? name,
-        home:  asString(stat.displayValue) ?? String(stat.value ?? ''),
-        away:  asString(awayStat?.displayValue) ?? String(awayStat?.value ?? '—'),
+        label: SOCCER_LABELS[name] ?? asString(h?.label) ?? asString(a?.label) ?? name,
+        home:  asString(h?.displayValue) ?? String(h?.value ?? '—'),
+        away:  asString(a?.displayValue) ?? String(a?.value ?? '—'),
       })
     }
   }
 
-  // keyEvents has reliable event data (plays array is often empty for soccer)
+  // keyEvents lleva los eventos fiables (el array `plays` suele venir vacío en
+  // fútbol). normalizeScoringType separa el sufijo "---xxx" de ESPN, así los
+  // goles de cabeza/volea/falta y el penalti marcado YA no se pierden (antes se
+  // descartaban por comparar el tipo exacto), y un penalti parado no cuela como gol.
   const scoring: ScoringEvent[] = []
-  const SCORING_TYPES = new Set(['goal', 'owngoal', 'penalty-goal', 'yellow-card', 'red-card', 'yellow-red-card'])
   for (const ev of asArr(json.keyEvents) as Record<string, unknown>[]) {
-    const typeObj = asObj(ev.type)
-    const typeKey = asString(typeObj?.type) ?? ''
-    if (!SCORING_TYPES.has(typeKey)) continue
+    const rawType = asString(asObj(ev.type)?.type) ?? ''
+    const norm = normalizeScoringType(rawType)
+    if (!norm) continue
     const team = asObj(ev.team)
-    // Prefer participants[0].athlete.displayName over shortText (shortText gets truncated at ~30 chars)
+    // participants[0].athlete.displayName es más fiable que shortText (se trunca ~30 chars).
     const firstParticipant = asObj(asArr(ev.participants)[0])
     const playerFromParticipant = asString(asObj(firstParticipant?.athlete)?.displayName)
     const shortText = asString(ev.shortText) ?? ''
@@ -409,15 +410,12 @@ function buildSoccer(json: Record<string, unknown>, homeId?: string): NonNullabl
     const playerId = asString(asObj(firstParticipant?.athlete)?.id)
     const clock = asString(asObj(ev.clock)?.displayValue)
     scoring.push({
-      team:   asString(team?.id) === homeId ? 'home' : 'away',
+      team: asString(team?.id) === homeId ? 'home' : 'away',
       player,
       playerId,
       clock,
-      type:   typeKey === 'yellow-card' ? 'yellow'
-            : (typeKey === 'red-card' || typeKey === 'yellow-red-card') ? 'red'
-            : typeKey === 'owngoal' ? 'own-goal'
-            : typeKey === 'penalty-goal' ? 'penalty'
-            : 'goal',
+      type: norm.type,
+      detail: norm.detail,
     })
   }
 
@@ -425,47 +423,17 @@ function buildSoccer(json: Record<string, unknown>, homeId?: string): NonNullabl
 }
 
 // Minuto a minuto. ESPN da `commentary` en orden ascendente con texto inglés;
-// reconstruimos una etiqueta en español desde el tipo estructurado de jugada y
-// devolvemos lo más reciente primero (estilo directo). Tipos no mapeados (saque
-// de banda, saque de puerta, ruido «noplay») se descartan para no colar inglés.
-const COMMENTARY_LABELS: Record<string, string> = {
-  'goal':            'Gol',
-  'penalty-goal':    'Gol de penalti',
-  'own-goal':        'Gol en propia',
-  'owngoal':         'Gol en propia',
-  'yellow-card':     'Tarjeta amarilla',
-  'red-card':        'Tarjeta roja',
-  'yellow-red-card': 'Doble amarilla',
-  'substitution':    'Cambio',
-  'penalty':         'Penalti',
-  'penalty-won':     'Penalti',
-  'penalty-missed':  'Penalti fallado',
-  'penalty-saved':   'Penalti parado',
-  'shot-on-target':  'Tiro a puerta',
-  'shot-off-target': 'Tiro desviado',
-  'shot-blocked':    'Tiro bloqueado',
-  'corner-awarded':  'Córner',
-  'offside':         'Fuera de juego',
-  'foul':            'Falta',
-  'handball':        'Mano',
-  'halftime':        'Descanso',
-  'start-2nd-half':  'Comienza la 2ª parte',
-  'fulltime':        'Final del partido',
-}
-const COMMENTARY_KEY = new Set([
-  'goal', 'penalty-goal', 'own-goal', 'owngoal',
-  'yellow-card', 'red-card', 'yellow-red-card',
-  'substitution', 'penalty', 'penalty-won', 'penalty-missed', 'penalty-saved',
-])
-
+// reconstruimos una etiqueta en español desde el tipo estructurado de jugada
+// (con su matiz "---xxx", vía commentaryLabelFor) y devolvemos lo más reciente
+// primero (estilo directo). Tipos no mapeados (saque de banda, «noplay», ruido)
+// se descartan para no colar inglés.
 function buildSoccerCommentary(json: Record<string, unknown>, homeName?: string, awayName?: string): CommentaryEntry[] {
   const out: CommentaryEntry[] = []
   for (const c of asArr(json.commentary) as Record<string, unknown>[]) {
     const play = asObj(c.play)
-    const typeKey = asString(asObj(play?.type)?.type) ?? ''
-    let label = COMMENTARY_LABELS[typeKey]
-    if (!label && typeKey.startsWith('var')) label = 'Revisión VAR'
-    if (!label) continue   // descarta noplay/desconocidos (evita texto inglés)
+    const rawType = asString(asObj(play?.type)?.type) ?? ''
+    const mapped = commentaryLabelFor(rawType)
+    if (!mapped) continue   // descarta noplay/desconocidos (evita texto inglés)
 
     const minute = asString(asObj(c.time)?.displayValue)
                 ?? asString(asObj(play?.clock)?.displayValue)
@@ -478,30 +446,132 @@ function buildSoccerCommentary(json: Record<string, unknown>, homeName?: string,
       : undefined
     const parts = asArr(play?.participants) as Record<string, unknown>[]
     const player = asString(asObj(parts[0]?.athlete)?.displayName)
-    const isGoal = typeKey.includes('goal')
+    const isGoal = mapped.type === 'goal' || mapped.type === 'penalty-goal'
     const assist = isGoal ? asString(asObj(parts[1]?.athlete)?.displayName) : undefined
-    const normType = typeKey === 'owngoal' ? 'own-goal'
-                   : typeKey.startsWith('var') ? 'var' : typeKey
 
     // ESPN registra cada falta dos veces (la falta + «X gana un libre»), mismo
     // tipo, jugador Y equipo → colapsa consecutivas idénticas para no repetir
     // filas (incluye el equipo para no fusionar eventos de equipos distintos).
     const prev = out[out.length - 1]
-    if (prev && prev.minute === minute && prev.type === normType
+    if (prev && prev.minute === minute && prev.type === mapped.type
         && prev.player === player && prev.team === team) continue
 
     out.push({
       minute,
-      type: normType,
-      label,
+      type: mapped.type,
+      label: mapped.label,
       team,
       player,
       assist,
-      key: COMMENTARY_KEY.has(typeKey),
+      key: mapped.key,
     })
   }
-  // Más reciente primero; tope defensivo de 130 entradas.
-  return out.reverse().slice(0, 130)
+  // Más reciente primero; tope defensivo de 300 entradas (antes 130 recortaba
+  // partidos largos). El render pinta todo lo que recibe.
+  return out.reverse().slice(0, 300)
+}
+
+// ── Cara a cara + forma reciente (del PROPIO summary de ESPN) ────────
+// headToHeadGames: array por equipo con sus últimos enfrentamientos directos.
+// lastFiveGames: array por equipo con sus últimos 5 partidos (gameResult W/D/L).
+// Ambos vienen GRATIS en el summary → coste 0, sin tocar Supabase.
+
+function buildHeadToHead(
+  json: Record<string, unknown>,
+  homeTeamId?: string,
+  translate: (s: string) => string = (s) => s,
+): H2HResult | undefined {
+  const groups = asArr(json.headToHeadGames) as Record<string, unknown>[]
+  if (!groups.length) return undefined
+  const seen = new Set<string>()
+  const matches: H2HMatch[] = []
+  let wins = 0, draws = 0, losses = 0
+  for (const g of groups) {
+    for (const ev of asArr(g.events) as Record<string, unknown>[]) {
+      const id = asString(ev.id) ?? ''
+      if (id && seen.has(id)) continue   // el mismo cruce aparece en ambos equipos
+      if (id) seen.add(id)
+      const hId = asString(ev.homeTeamId)
+      const aId = asString(ev.awayTeamId)
+      const hScore = numOrNull(ev.homeTeamScore)
+      const aScore = numOrNull(ev.awayTeamScore)
+      // Nombre/escudo de cada lado: uno es `g.team`, el otro `ev.opponent`. El
+      // nombre se traduce igual que el marcador (selecciones → español) para que
+      // el resaltado por fila del render case con match.homeTeam.
+      const gTeam = asObj(g.team)
+      const opp = asObj(ev.opponent)
+      const gTeamId = asString(gTeam?.id)
+      const nameFor = (side: 'home' | 'away') => {
+        const sideId = side === 'home' ? hId : aId
+        const raw = sideId === gTeamId ? asString(gTeam?.displayName) : asString(opp?.displayName)
+        return raw ? translate(raw) : raw
+      }
+      const abbrFor = (side: 'home' | 'away') => {
+        const sideId = side === 'home' ? hId : aId
+        return sideId === gTeamId ? asString(gTeam?.abbreviation) : asString(opp?.abbreviation)
+      }
+      const logoFor = (side: 'home' | 'away') => {
+        const sideId = side === 'home' ? hId : aId
+        return sideId === gTeamId ? asString(gTeam?.logo) : asString(opp?.logo)
+      }
+      matches.push({
+        id: id || `${hId}-${aId}-${asString(ev.gameDate) ?? ''}`,
+        isoDate: asString(ev.gameDate) ?? '',
+        comp: asString(ev.leagueName) ?? asString(ev.competitionName) ?? '',
+        home: nameFor('home') ?? '—',
+        away: nameFor('away') ?? '—',
+        homeScore: hScore,
+        awayScore: aScore,
+        homeLogo: logoFor('home'),
+        awayLogo: logoFor('away'),
+        homeAbbr: abbrFor('home'),
+        awayAbbr: abbrFor('away'),
+      })
+      // Balance desde la óptica del equipo LOCAL del partido actual.
+      if (homeTeamId && hScore != null && aScore != null) {
+        const homeIsCurrent = hId === homeTeamId
+        const curScore = homeIsCurrent ? hScore : aScore
+        const oppScore = homeIsCurrent ? aScore : hScore
+        if (curScore > oppScore) wins++
+        else if (curScore < oppScore) losses++
+        else draws++
+      }
+    }
+  }
+  if (!matches.length) return undefined
+  // Más reciente primero.
+  matches.sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || ''))
+  return { matches, wins, draws, losses }
+}
+
+function buildRecentForm(json: Record<string, unknown>, homeTeamId?: string, awayTeamId?: string): MatchDetail['recentForm'] {
+  const groups = asArr(json.lastFiveGames) as Record<string, unknown>[]
+  if (!groups.length) return undefined
+  const formOf = (teamId?: string): FormResult[] => {
+    if (!teamId) return []
+    const g = groups.find(grp => asString(asObj(grp.team)?.id) === teamId)
+    if (!g) return []
+    const results: FormResult[] = []
+    for (const ev of asArr(g.events) as Record<string, unknown>[]) {
+      const r = asString(ev.gameResult)
+      if (r === 'W' || r === 'D' || r === 'L') results.push(r)
+    }
+    // ESPN los da del más antiguo al más reciente → invertimos (más reciente primero).
+    return results.reverse()
+  }
+  const home = formOf(homeTeamId)
+  const away = formOf(awayTeamId)
+  if (!home.length && !away.length) return undefined
+  return { home, away }
+}
+
+function numOrNull(v: unknown): number | null {
+  if (typeof v === 'number') return Number.isNaN(v) ? null : v
+  if (typeof v === 'string' && v.trim() !== '') {
+    const n = Number(v)
+    return Number.isNaN(n) ? null : n
+  }
+  return null
 }
 
 // ── Basketball ──────────────────────────────────────────────────────
@@ -1024,6 +1094,16 @@ export async function GET(
       }
     } else if (sport === 'basketball') {
       detail.basketball = buildBasketball(json, homeComp, awayComp)
+    }
+
+    // Cara a cara + forma reciente del PROPIO summary de ESPN (soccer/basket).
+    // Una fuente → dos renders (app y web); coste 0. Solo deportes de equipo con
+    // ambos equipos identificados.
+    if (homeTeamObj && awayTeamObj) {
+      const hId = asString(homeTeamObj.id)
+      const aId = asString(awayTeamObj.id)
+      detail.headToHead = buildHeadToHead(json, hId, nat)
+      detail.recentForm = buildRecentForm(json, hId, aId)
     }
 
     return NextResponse.json(detail, matchCache(detail.status))
