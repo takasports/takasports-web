@@ -1032,6 +1032,77 @@ export default async function NoticiaPage({
                           </figure>
                         )
                       },
+                      // Gráfico comparativo (infografía "liquid glass"). Lo emite WF-07 cuando
+                      // el redactor aporta cifras reales (posesión, tiros…). Nunca inventadas.
+                      statChart: ({ value }) => {
+                        const v = (value || {}) as {
+                          title?: string; subtitle?: string; homeLabel?: string; awayLabel?: string
+                          rows?: Array<{ label?: string; home?: number; away?: number; unit?: string }>
+                        }
+                        const rows = (v.rows || []).filter(
+                          (r) => r && typeof r.home === 'number' && typeof r.away === 'number' && r.label,
+                        )
+                        if (!rows.length) return null
+                        const home = v.homeLabel || 'Local'
+                        const away = v.awayLabel || 'Visitante'
+                        const scStyle = { '--sc-home': badgeColor, '--sc-away': '#f5a623' } as React.CSSProperties
+                        return (
+                          <figure className="tk-sc-stage" style={scStyle}>
+                            <style>{`
+                              .tk-sc-stage{position:relative;margin:2.25rem auto;max-width:620px;padding:24px 18px;border-radius:26px;overflow:hidden;isolation:isolate;}
+                              .tk-sc-stage::before,.tk-sc-stage::after{content:"";position:absolute;border-radius:50%;filter:blur(48px);opacity:.38;z-index:0;pointer-events:none;}
+                              .tk-sc-stage::before{width:220px;height:220px;left:-50px;top:-70px;background:radial-gradient(circle,var(--sc-home),transparent 70%);}
+                              .tk-sc-stage::after{width:230px;height:230px;right:-60px;bottom:-80px;background:radial-gradient(circle,var(--sc-away),transparent 70%);}
+                              .tk-sc-glass{position:relative;z-index:1;border-radius:20px;padding:20px 20px 16px;background:rgba(255,255,255,.06);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,.14);box-shadow:0 20px 50px -20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(0,0,0,.25);}
+                              .tk-sc-kick{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--sc-home);}
+                              .tk-sc-title{font-size:1.2rem;font-weight:800;letter-spacing:-.02em;color:var(--body-heading);margin:3px 0 1px;}
+                              .tk-sc-sub{font-size:.8rem;color:var(--body-text);opacity:.65;margin-bottom:14px;}
+                              .tk-sc-leg{display:flex;gap:14px;margin-bottom:15px;font-size:.8rem;font-weight:600;color:var(--body-text);}
+                              .tk-sc-dot{width:11px;height:11px;border-radius:4px;display:inline-block;margin-right:6px;vertical-align:-1px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5);}
+                              .tk-sc-row{margin:0 0 12px;}
+                              .tk-sc-vals{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+                              .tk-sc-lab{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--body-text);opacity:.7;font-weight:600;}
+                              .tk-sc-hv{font-weight:800;font-size:.92rem;color:var(--sc-home);font-variant-numeric:tabular-nums;}
+                              .tk-sc-av{font-weight:800;font-size:.92rem;color:var(--sc-away);font-variant-numeric:tabular-nums;}
+                              .tk-sc-bar{display:flex;height:11px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.08);box-shadow:inset 0 1px 3px rgba(0,0,0,.35),inset 0 -1px 0 rgba(255,255,255,.12);}
+                              .tk-sc-seg{transition:width .3s ease;}
+                              .tk-sc-bh{background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0) 55%),var(--sc-home);}
+                              .tk-sc-ba{background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0) 55%),var(--sc-away);}
+                              .tk-sc-foot{margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);font-size:.62rem;color:var(--body-text);opacity:.55;}
+                            `}</style>
+                            <div className="tk-sc-glass">
+                              <div className="tk-sc-kick">Estadísticas</div>
+                              <div className="tk-sc-title">{v.title || `${home} vs ${away}`}</div>
+                              {v.subtitle ? <div className="tk-sc-sub">{v.subtitle}</div> : null}
+                              <div className="tk-sc-leg">
+                                <span><span className="tk-sc-dot" style={{ background: 'var(--sc-home)' }} />{home}</span>
+                                <span><span className="tk-sc-dot" style={{ background: 'var(--sc-away)' }} />{away}</span>
+                              </div>
+                              {rows.map((r, i) => {
+                                const h = Number(r.home) || 0
+                                const a = Number(r.away) || 0
+                                const tot = h + a
+                                const hw = tot > 0 ? Math.round((h / tot) * 100) : 50
+                                const u = r.unit || ''
+                                return (
+                                  <div className="tk-sc-row" key={i}>
+                                    <div className="tk-sc-vals">
+                                      <span className="tk-sc-hv">{h}{u}</span>
+                                      <span className="tk-sc-lab">{r.label}</span>
+                                      <span className="tk-sc-av">{a}{u}</span>
+                                    </div>
+                                    <div className="tk-sc-bar">
+                                      <span className="tk-sc-seg tk-sc-bh" style={{ width: `${hw}%` }} />
+                                      <span className="tk-sc-seg tk-sc-ba" style={{ width: `${100 - hw}%` }} />
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                              <div className="tk-sc-foot">Datos verificados de la fuente</div>
+                            </div>
+                          </figure>
+                        )
+                      },
                     },
                     block: {
                       normal: ({ children, value }) => {
