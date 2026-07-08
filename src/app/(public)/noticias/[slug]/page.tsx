@@ -979,6 +979,59 @@ export default async function NoticiaPage({
                         }
                         return null
                       },
+                      // G4 — tabla de datos (ficha del partido, clasificación, comparativas)
+                      table: ({ value }) => {
+                        const rows = ((value as { rows?: Array<{ cells?: string[] }> })?.rows) || []
+                        if (!rows.length) return null
+                        const header = rows[0]?.cells || []
+                        const body = rows.slice(1)
+                        return (
+                          <figure style={{ margin: '2rem 0', maxWidth: 680, overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem', minWidth: 320 }}>
+                              {header.length > 0 && (
+                                <thead>
+                                  <tr>
+                                    {header.map((c, i) => (
+                                      <th
+                                        key={i}
+                                        style={{
+                                          textAlign: 'left',
+                                          padding: '0.6rem 0.75rem',
+                                          borderBottom: `2px solid ${badgeColor}`,
+                                          background: `${badgeColor}12`,
+                                          color: 'var(--body-heading)',
+                                          fontWeight: 700,
+                                        }}
+                                      >
+                                        {c}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                              )}
+                              <tbody>
+                                {body.map((row, ri) => (
+                                  <tr key={ri}>
+                                    {(row.cells || []).map((c, ci) => (
+                                      <td
+                                        key={ci}
+                                        style={{
+                                          padding: '0.55rem 0.75rem',
+                                          borderBottom: '1px solid var(--border)',
+                                          color: 'var(--body-text)',
+                                          fontWeight: ci === 0 ? 600 : 400,
+                                        }}
+                                      >
+                                        {c}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </figure>
+                        )
+                      },
                     },
                     block: {
                       normal: ({ children, value }) => {
