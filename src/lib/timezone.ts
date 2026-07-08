@@ -22,6 +22,7 @@ export interface TZOption {
 export const TZ_OPTIONS: TZOption[] = [
   // Europa
   { iana: 'Europe/Madrid',    city: 'Madrid',        region: 'Europa',     flag: '🇪🇸' },
+  { iana: 'Atlantic/Canary',  city: 'Canarias',      region: 'Europa',     flag: '🇮🇨' },
   { iana: 'Europe/London',    city: 'Londres',       region: 'Europa',     flag: '🇬🇧' },
   { iana: 'Europe/Paris',     city: 'París',         region: 'Europa',     flag: '🇫🇷' },
   { iana: 'Europe/Lisbon',    city: 'Lisboa',        region: 'Europa',     flag: '🇵🇹' },
@@ -201,3 +202,59 @@ export function dayDeltaForIso(isoDate: string | undefined, targetTZ: string): n
     return 0
   }
 }
+
+// ── Instante UTC → hora en cada país ──────────────────────────
+// A diferencia de convertEventTime (que trabaja con "HH:MM" en Madrid), estas
+// funciones parten de un INSTANTE exacto (ISO-8601 UTC) y lo expresan en cada
+// zona. Es lo que usa la tarjeta "Horario del partido": un único instante real,
+// convertido de forma determinista a cada país (sin que ninguna IA haga cuentas).
+
+export interface ZoneTime {
+  iana: string
+  city: string
+  flag: string
+  time: string      // "21:00"
+  offset: string    // "UTC+2"
+  dayDelta: number  // -1 / 0 / +1 respecto a España (Europe/Madrid)
+  dayLabel: string  // "" salvo si cambia de día: "dom. 12 jul"
+}
+
+/** Formatea un instante ISO-8601 UTC en una zona IANA concreta. */
+export function formatInstantInZone(isoDate: string, iana: string): ZoneTime | null {
+  try {
+    const d = new Date(isoDate)
+    if (Number.isNaN(d.getTime())) return null
+    const opt = getTZOption(iana)
+    const time = new Intl.DateTimeFormat('es-ES', {
+      timeZone: iana, hour: '2-digit', minute: '2-digit', hour12: false,
+    }).format(d)
+    const dayDelta = dayDeltaForIso(isoDate, iana)
+    const dayLabel = dayDelta === 0 ? '' : new Intl.DateTimeFormat('es-ES', {
+      timeZone: iana, weekday: 'short', day: 'numeric', month: 'short',
+    }).format(d)
+    return { iana, city: opt.city, flag: opt.flag, time, offset: getTZOffset(iana, d), dayDelta, dayLabel }
+  } catch {
+    return null
+  }
+}
+
+/** Formatea un instante en una lista de zonas, descartando las inválidas. */
+export function formatInstantForZones(isoDate: string, ianas: string[]): ZoneTime[] {
+  return ianas
+    .map((z) => formatInstantInZone(isoDate, z))
+    .filter((z): z is ZoneTime => z !== null)
+}
+
+// Países donde más se sigue el deporte para el público de Taka (España + grandes
+// mercados hispanohablantes + Reino Unido). España y Canarias se muestran aparte
+// como referencia central; el resto forma la lista. La tarjeta acepta override
+// para adaptarla al evento concreto (equipos/competición) en el futuro.
+export const MATCH_AUDIENCE_ZONES: string[] = [
+  'America/Mexico_City',
+  'America/Bogota',
+  'America/Lima',
+  'America/Argentina/Buenos_Aires',
+  'America/Santiago',
+  'America/New_York',
+  'Europe/London',
+]

@@ -16,6 +16,7 @@ import ReadingProgress from '@/app/article/[id]/ReadingProgress'
 import ReadTracker from '@/app/article/[id]/ReadTracker'
 import ArticleTableOfContents from '@/components/ArticleTableOfContents'
 import ArticleComments from '@/components/ArticleComments'
+import MatchScheduleCard, { type MatchKickoffData } from '@/components/MatchScheduleCard'
 import PorraMatchWidget from '@/components/PorraMatchWidget'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 import { displayAuthor } from '@/lib/brand'
@@ -89,6 +90,7 @@ interface Article {
   secondaryKeywords?: string[] | null
   sourceUrls?: SourceRef[] | null
   editorialRelated?: RelatedArticle[] | null
+  matchKickoff?: MatchKickoffData | null
 }
 
 export async function generateMetadata({
@@ -253,7 +255,7 @@ function ArticleSidebar({
               <div>
                 <time dateTime={article.publishedAt} className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)', display: 'block' }}>
                   {new Date(article.publishedAt).toLocaleDateString('es-ES', {
-                    day: 'numeric', month: 'long', year: 'numeric',
+                    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Madrid',
                   })}
                 </time>
                 <p className="text-[10px]" style={{ color: 'var(--text-faint)' }}>
@@ -823,6 +825,10 @@ export default async function NoticiaPage({
               >
                 {article.short_summary}
               </p>
+            )}
+
+            {article.matchKickoff?.iso && (
+              <MatchScheduleCard kickoff={article.matchKickoff} accent={badgeColor} />
             )}
 
             {/* Widget La Porra — solo con Ranked Fútbol activo (enseña cuotas y

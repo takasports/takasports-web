@@ -10,8 +10,11 @@ export function timeAgo(dateStr?: string): string {
   if (diff < 604800) return `Hace ${Math.floor(diff / 86400)} días`
   // Fecha absoluta: incluye el año si NO es el año en curso (evita que una noticia
   // del año pasado parezca de este año, p.ej. "3 jul" vs "3 jul 2025").
-  const sameYear = then.getFullYear() === new Date().getFullYear()
+  // Año calendario en Europe/Madrid (no en la zona del runtime; en Vercel es UTC).
+  const madridYear = (d: Date) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric' }).format(d)
+  const sameYear = madridYear(then) === madridYear(new Date())
   return then.toLocaleDateString('es-ES', sameYear
-    ? { day: 'numeric', month: 'short' }
-    : { day: 'numeric', month: 'short', year: 'numeric' })
+    ? { day: 'numeric', month: 'short', timeZone: 'Europe/Madrid' }
+    : { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/Madrid' })
 }

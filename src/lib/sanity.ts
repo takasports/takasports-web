@@ -105,7 +105,17 @@ export const articleDetailQuery = `*[_type == "article" && (slug.current == $id 
     sport,
     "category": competition,
     "takaStatus": status
-  }, null)
+  }, null),
+  "matchKickoff": select(
+    defined(headline) && (defined(matchKickoff.iso) || defined(relatedEvent->date)) => {
+      "iso": coalesce(matchKickoff.iso, relatedEvent->date),
+      "home": coalesce(matchKickoff.home, relatedEvent->home),
+      "away": coalesce(matchKickoff.away, relatedEvent->away),
+      "competition": coalesce(matchKickoff.competition, relatedEvent->competition->name),
+      "approx": coalesce(matchKickoff.approx, false)
+    },
+    null
+  )
 }`
 
 // Artículos relacionados — fallback dinámico cuando editorialRelated está vacío
