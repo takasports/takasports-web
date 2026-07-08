@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type {
-  MatchDetail, MatchStat, ScoringEvent, BasketballLeader, MmaFighter,
+  MatchDetail, MatchStat, ScoringEvent, BasketballLeader, MmaFighter, MmaFight,
   RacingResult, GolfLeader, LineupPlayer, TeamLineup, CommentaryEntry,
 } from '@/app/api/match/[ref]/route'
 import Header from '@/components/Header'
@@ -775,7 +775,56 @@ function MmaBlock({ match }: { match: MatchDetail }) {
           <p className="text-[11px] mt-3" style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>{m.note}</p>
         )}
       </Section>
+      <FightCardList fights={m.fights ?? []} />
     </>
+  )
+}
+
+// Cartelera COMPLETA de la velada: todos los combates ordenados (estelar primero),
+// con clase de peso, resultado/estado y ganador resaltado. Da la vista de "todo el
+// evento" al abrir un UFC desde el calendario (antes solo se veía el combate estelar).
+function FightCardList({ fights }: { fights: MmaFight[] }) {
+  if (!fights.length) return null
+  return (
+    <Section title="Cartelera completa">
+      <div className="flex flex-col gap-2">
+        {fights.map((f, i) => {
+          const [a, b] = f.fighters
+          const result = f.endRound ? `R${f.endRound}${f.endTime ? ` ${f.endTime}` : ''}` : f.statusLabel
+          return (
+            <div key={i} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                  {f.isMain && (
+                    <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(212,175,55,0.15)', color: '#D4AF37', border: '1px solid rgba(212,175,55,0.3)', fontFamily: 'var(--font-sport)' }}>
+                      Estelar
+                    </span>
+                  )}
+                  {f.weightClass && (
+                    <span className="text-[9px] uppercase tracking-wider" style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>
+                      {f.weightClass}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-sm truncate" style={{ fontFamily: 'var(--font-sport)' }}>
+                  <span style={{ color: a?.winner ? '#F0F0F8' : '#9A9AB0', fontWeight: a?.winner ? 900 : 600 }}>{a?.name ?? '—'}</span>
+                  <span style={{ color: '#4A4A5A' }}>vs</span>
+                  <span style={{ color: b?.winner ? '#F0F0F8' : '#9A9AB0', fontWeight: b?.winner ? 900 : 600 }}>{b?.name ?? '—'}</span>
+                </div>
+              </div>
+              {result && (
+                <span className="text-[10px] font-black uppercase tracking-widest flex-shrink-0 text-right"
+                  style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+                  {result}
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </Section>
   )
 }
 

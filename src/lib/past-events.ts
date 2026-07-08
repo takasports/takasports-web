@@ -176,6 +176,24 @@ export async function searchPastEvents(query: PastQuery): Promise<PastQueryResul
   return { events: slice.map(rowToEvent), nextCursor }
 }
 
+// Busca UN evento archivado por su matchRef. Lo usa la ficha para resolver un
+// resultado pasado cuando su fuente en vivo ya rotó (p. ej. tenis: al acabar el
+// torneo, el scoreboard de ESPN deja de devolver el partido → 404). past_events
+// guarda el tenis (sets ganados) vía el cron sync-past-results.
+export async function getPastEventByRef(matchRef: string): Promise<SportEvent | null> {
+  if (!matchRef) return null
+  const sb = readClient()
+  if (!sb) return null
+  const { data, error } = await sb
+    .from('past_events')
+    .select('*')
+    .eq('match_ref', matchRef)
+    .order('iso_date', { ascending: false })
+    .limit(1)
+  if (error || !data || data.length === 0) return null
+  return rowToEvent(data[0] as PastEventRow)
+}
+
 export async function upsertPastEvents(events: SportEvent[]): Promise<number> {
   const admin = adminSupabase()
   if (!admin) return 0

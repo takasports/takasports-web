@@ -4,6 +4,7 @@ import { getSpanishBroadcast } from '@/lib/broadcasts'
 import { LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
 import { fetchLeagueTableRows, fetchTournamentGroups, type LeagueTableRow } from '@/lib/espn-standings'
+import { getPastEventByRef } from '@/lib/past-events'
 // Re-exportados para los componentes cliente que ya importan estos tipos desde
 // este route (LeagueTable.tsx). La fuente real vive ahora en lib/espn-standings.
 export type { StandingZone }
@@ -78,6 +79,18 @@ export interface MmaFighter {
   flag?: string
   winner?: boolean
   record?: string
+}
+
+// Un combate de la cartelera (para listar la velada completa al abrir el evento).
+export interface MmaFight {
+  fighters: MmaFighter[]   // [home, away]
+  weightClass?: string
+  rounds?: number
+  endRound?: number
+  endTime?: string
+  note?: string            // método/resultado
+  statusLabel?: string     // "Final", "R2 3:45", hora…
+  isMain?: boolean         // combate estelar (primero de la cartelera)
 }
 
 export interface RacingResult {
@@ -155,6 +168,7 @@ export interface MatchDetail {
     fighters: MmaFighter[]
     cardName?: string
     note?: string
+    fights?: MmaFight[]      // cartelera completa (todos los combates, estelar primero)
   }
   racing?: {
     circuit?: string
@@ -576,29 +590,19 @@ function buildBasketball(
 }
 
 // ── MMA ─────────────────────────────────────────────────────────────
-async function buildMma(eventId: string): Promise<{ mma: MatchDetail['mma']; status: string; statusLabel: string; cardName?: string } | null> {
-  const json = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?event=${eventId}`)
-  if (!json) return null
-  const card = asArr(json.events)[0] as Record<string, unknown> | undefined
-  if (!card) return null
-  const cardName = asString(card.name) ?? asString(card.shortName)
-  const competitions = asArr(card.competitions) as Record<string, unknown>[]
-  const fight = competitions.find(c => asString(c.id) === eventId) ?? competitions[0]
-  if (!fight) return null
-
-  const statusObj = asObj(fight.status)
+// Mapea UN combate del scoreboard (competition) a MmaFight, reutilizado para el
+// combate destacado y para cada fila de la cartelera completa.
+function mapMmaFight(fight: Record<string, unknown>, isMain: boolean): MmaFight {
+  const statusObj  = asObj(fight.status)
   const statusType = asObj(statusObj?.type)
-  const status = asString(statusType?.name) ?? ''
+  const status     = asString(statusType?.name) ?? ''
   const statusLabel = asString(statusType?.shortDetail) ?? mapStatusLabel(status)
-
   const weightClass = asString(asObj(fight.type)?.abbreviation)
   const rounds = asNumber(asObj(asObj(fight.format)?.regulation)?.periods)
   const ended = asObj(statusType)?.completed === true
   const endRound = ended ? asNumber(statusObj?.period) : undefined
   const endTime = ended ? asString(statusObj?.displayClock) : undefined
-
   const note = asString(asArr(fight.notes)[0] ? asObj(asArr(fight.notes)[0])?.headline : undefined)
-
   const fighters: MmaFighter[] = (asArr(fight.competitors) as Record<string, unknown>[]).map(c => {
     const ath = asObj(c.athlete)
     return {
@@ -609,9 +613,41 @@ async function buildMma(eventId: string): Promise<{ mma: MatchDetail['mma']; sta
       record:   asString(asObj(asArr(ath?.records)[0])?.summary),
     }
   })
+  return { fighters, weightClass, rounds, endRound, endTime, note, statusLabel, isMain }
+}
+
+async function buildMma(eventId: string): Promise<{ mma: MatchDetail['mma']; status: string; statusLabel: string; cardName?: string } | null> {
+  const json = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?event=${eventId}`)
+  if (!json) return null
+  const card = asArr(json.events)[0] as Record<string, unknown> | undefined
+  if (!card) return null
+  const cardName = asString(card.name) ?? asString(card.shortName)
+  const competitions = asArr(card.competitions) as Record<string, unknown>[]
+  if (competitions.length === 0) return null
+
+  // Combate DESTACADO = el que casa el id (fila EN VIVO por-combate) o, si el id es el
+  // de la CARTELERA (fila del calendario), el primero = combate estelar. El resto de la
+  // velada se devuelve en `fights` para mostrar la cartelera COMPLETA al abrir el evento.
+  const foundIdx = competitions.findIndex(c => asString(c.id) === eventId)
+  const featuredIdx = foundIdx >= 0 ? foundIdx : 0
+  const fights = competitions.map((c, i) => mapMmaFight(c, i === 0))
+  const featured = fights[featuredIdx] ?? fights[0]
+
+  const featStatusType = asObj(asObj(competitions[featuredIdx]?.status)?.type)
+  const status = asString(featStatusType?.name) ?? ''
+  const statusLabel = asString(featStatusType?.shortDetail) ?? mapStatusLabel(status)
 
   return {
-    mma: { weightClass, rounds, endRound, endTime, fighters, cardName, note },
+    mma: {
+      weightClass: featured.weightClass,
+      rounds:      featured.rounds,
+      endRound:    featured.endRound,
+      endTime:     featured.endTime,
+      fighters:    featured.fighters,
+      cardName,
+      note:        featured.note,
+      fights,
+    },
     status,
     statusLabel,
     cardName,
@@ -622,8 +658,11 @@ async function buildMma(eventId: string): Promise<{ mma: MatchDetail['mma']; sta
 async function buildRacing(eventId: string): Promise<{ racing: MatchDetail['racing']; status: string; statusLabel: string; venue?: string; raceName?: string } | null> {
   const json = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard?event=${eventId}`)
   if (!json) return null
+  // ESPN IGNORA ?event= en el scoreboard y devuelve SIEMPRE la carrera actual. Si el
+  // id pedido no está entre los eventos devueltos (cualquier carrera pasada salvo la
+  // vigente), devolvemos null → 404 honesto, en vez de caer a events[0] y pintar los
+  // datos de OTRA carrera (Top10/circuito) bajo esta URL con estado 200.
   const ev = (asArr(json.events) as Record<string, unknown>[]).find(e => asString(e.id) === eventId)
-              ?? asArr(json.events)[0] as Record<string, unknown> | undefined
   if (!ev) return null
   const comp = asArr(ev.competitions)[0] as Record<string, unknown> | undefined
   const statusObj = asObj(comp?.status ?? ev.status)
@@ -733,8 +772,9 @@ function buildTennisFromCompetition(comp: Record<string, unknown>): MatchDetail[
 async function buildGolf(eventId: string): Promise<{ golf: MatchDetail['golf']; status: string; statusLabel: string; raceName?: string; venue?: string } | null> {
   const json = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?event=${eventId}`)
   if (!json) return null
+  // Mismo caso que buildRacing: el scoreboard ignora ?event= y da el torneo actual. Si
+  // el id pedido no aparece, 404 en vez de pintar OTRO torneo bajo esta URL.
   const ev = (asArr(json.events) as Record<string, unknown>[]).find(e => asString(e.id) === eventId)
-              ?? asArr(json.events)[0] as Record<string, unknown> | undefined
   if (!ev) return null
   const comp = asArr(ev.competitions)[0] as Record<string, unknown> | undefined
   const statusObj = asObj(comp?.status ?? ev.status)
@@ -845,20 +885,54 @@ export async function GET(
     // ─── Tennis: scoreboard lookup (summary returns 400 for match IDs) ─
     if (sport === 'tennis') {
       const data = await buildTennis(eventId, leagueSlug)
-      if (!data) return NextResponse.json(null, { status: 404 })
-      const detail: MatchDetail = {
-        id: eventId,
-        sport,
-        leagueSlug,
-        leagueLabel,
-        homeTeam: data.homePlayer,
-        awayTeam: data.awayPlayer,
-        status: data.status,
-        statusLabel: data.statusLabel,
-        venue: data.venue,
-        tennis: data.tennis,
+      if (data) {
+        const detail: MatchDetail = {
+          id: eventId,
+          sport,
+          leagueSlug,
+          leagueLabel,
+          homeTeam: data.homePlayer,
+          awayTeam: data.awayPlayer,
+          status: data.status,
+          statusLabel: data.statusLabel,
+          venue: data.venue,
+          tennis: data.tennis,
+        }
+        return NextResponse.json(detail, matchCache(detail.status))
       }
-      return NextResponse.json(detail, matchCache(detail.status))
+      // El scoreboard del torneo ya rotó (torneo terminado) → el partido no está en
+      // vivo. Recuperamos el RESULTADO archivado (past_events) para no dar 404. Solo
+      // tenemos sets GANADOS (no juegos por set), así que la ficha muestra el marcador
+      // por sets + ganador. Antes cualquier resultado de tenis reciente daba 404.
+      const past = await getPastEventByRef(ref)
+      if (past && past.away) {
+        const hw = past.homeScore ?? null
+        const aw = past.awayScore ?? null
+        const known = hw != null && aw != null
+        const detail: MatchDetail = {
+          id: eventId,
+          sport,
+          leagueSlug,
+          leagueLabel,
+          homeTeam: past.home,
+          awayTeam: past.away,
+          homeScore: hw,
+          awayScore: aw,
+          status: 'STATUS_FINAL',
+          statusLabel: 'Final',
+          startDate: past.isoDate,
+          tennis: {
+            homePlayer: past.home,
+            awayPlayer: past.away,
+            homeWon: known ? hw > aw : undefined,
+            awayWon: known ? aw > hw : undefined,
+            sets: { home: hw != null ? [String(hw)] : [], away: aw != null ? [String(aw)] : [] },
+            setWinners: known ? [hw > aw ? 'home' : aw > hw ? 'away' : null] : [],
+          },
+        }
+        return NextResponse.json(detail, matchCache(detail.status))
+      }
+      return NextResponse.json(null, { status: 404 })
     }
 
     // ─── Soccer / Basketball: ESPN summary ──────────────────────────
