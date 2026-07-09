@@ -685,20 +685,27 @@ function TennisBlock({ match }: { match: MatchDetail }) {
 
   return (
     <div className="tk-glass rounded-2xl p-6 mb-6">
-      <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
-        {t.round && (
-          <span className="text-[10px] font-black uppercase tracking-widest"
-            style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
-            {t.round}
+      <div className="flex flex-col items-center gap-1.5 mb-4">
+        {t.tournament && (
+          <span className="text-[14px] font-black" style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
+            {t.tournament}
           </span>
         )}
-        {live && (
-          <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
-            style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.28)', fontFamily: 'var(--font-sport)' }}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
-            En Vivo
-          </span>
-        )}
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          {t.round && (
+            <span className="text-[10px] font-black uppercase tracking-widest"
+              style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
+              {t.round}
+            </span>
+          )}
+          {live && (
+            <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+              style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.28)', fontFamily: 'var(--font-sport)' }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#EF4444', animation: 'live-pulse 1.6s ease-out infinite' }} />
+              En Vivo
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex flex-col gap-3">
         {(['home', 'away'] as const).map(side => {
@@ -706,9 +713,16 @@ function TennisBlock({ match }: { match: MatchDetail }) {
           const sets    = side === 'home' ? t.sets.home  : t.sets.away
           const sideCol = side === 'home' ? '#A78BFA' : '#F59E0B'
           const won     = side === 'home' ? t.homeWon : t.awayWon
+          const flag    = side === 'home' ? t.homeFlag : t.awayFlag
+          const country = side === 'home' ? t.homeCountry : t.awayCountry
           return (
             <div key={side} className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-1.5 min-w-0">
+              <span className="flex items-center gap-2 min-w-0">
+                {flag && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={flag} alt={country ?? ''} title={country ?? undefined} width={20} height={20} loading="lazy" decoding="async"
+                    className="flex-shrink-0" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                )}
                 {won && (
                   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-label="Ganador" className="flex-shrink-0">
                     <path d="M2.5 7.5l3 3 6-6.5" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

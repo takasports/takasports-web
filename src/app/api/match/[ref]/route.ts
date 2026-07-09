@@ -203,8 +203,13 @@ export interface MatchDetail {
   }
   tennis?: {
     round?: string
+    tournament?: string        // nombre del torneo (Wimbledon, Nordea Open…)
     homePlayer?: string
     awayPlayer?: string
+    homeFlag?: string          // URL de la bandera del país (ESPN)
+    awayFlag?: string
+    homeCountry?: string       // nombre del país (flag.alt)
+    awayCountry?: string
     homeWon?: boolean          // ganador del partido
     awayWon?: boolean
     sets: TennisSet
@@ -911,6 +916,8 @@ async function buildTennis(eventId: string, leagueSlug: string): Promise<{
         if (asString(m.id) !== eventId) continue
 
         const tennis = buildTennisFromCompetition(m)
+        // El nombre del torneo vive en el evento padre (Wimbledon, Nordea Open…).
+        if (tennis) tennis.tournament = asString(rawEv.name)
         const statusObj  = asObj(asObj(m.status)?.type)
         const statusName = asString(statusObj?.name) ?? ''
         const statusLabel = asString(statusObj?.shortDetail) ?? mapStatusLabel(statusName)
@@ -950,12 +957,15 @@ function buildTennisFromCompetition(comp: Record<string, unknown>): MatchDetail[
     }
   }
 
-  const homePlayer = asString(asObj(asArr(home?.athletes)[0])?.displayName)
-                  ?? asString(asObj(home?.athlete)?.displayName)
-                  ?? asString(asObj(home?.team)?.displayName)
-  const awayPlayer = asString(asObj(asArr(away?.athletes)[0])?.displayName)
-                  ?? asString(asObj(away?.athlete)?.displayName)
-                  ?? asString(asObj(away?.team)?.displayName)
+  // El competidor de tenis trae el atleta directo (singles) o dentro de
+  // `athletes[]` (dobles). Sacamos el objeto atleta de forma robusta para leer
+  // nombre + bandera del país (flag.href = URL, flag.alt = país).
+  const athOf = (c: Record<string, unknown> | undefined) =>
+    asObj(c?.athlete) ?? asObj(asObj(asArr(c?.athletes)[0])?.athlete) ?? asObj(asArr(c?.athletes)[0])
+  const homeAth = athOf(home)
+  const awayAth = athOf(away)
+  const homePlayer = asString(homeAth?.displayName) ?? asString(asObj(home?.team)?.displayName)
+  const awayPlayer = asString(awayAth?.displayName) ?? asString(asObj(away?.team)?.displayName)
   const round = asString(asObj(comp.round)?.displayName)
              ?? asString(asObj(comp.type)?.text)
              ?? asString(asArr(comp.notes)[0] ? asObj(asArr(comp.notes)[0])?.headline : undefined)
@@ -963,6 +973,10 @@ function buildTennisFromCompetition(comp: Record<string, unknown>): MatchDetail[
     round,
     homePlayer,
     awayPlayer,
+    homeFlag: asString(asObj(homeAth?.flag)?.href),
+    awayFlag: asString(asObj(awayAth?.flag)?.href),
+    homeCountry: asString(asObj(homeAth?.flag)?.alt),
+    awayCountry: asString(asObj(awayAth?.flag)?.alt),
     homeWon: home?.winner === true,
     awayWon: away?.winner === true,
     sets: { home: homeSets, away: awaySets },
