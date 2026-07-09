@@ -298,3 +298,13 @@ export function matchesCompetition(
   }
   return false
 }
+
+// Nombre CORTO de la competición para espacios estrechos (escaparate de Inicio):
+// "UEFA Champions League" → "Champions". Sin match en la config → el comp original
+// (FASE 4, decisión de José Tomás: usar shortName; lo no listado cae al normal).
+export function shortCompName(comp?: string | null, sport?: string | null): string {
+  const raw = (comp ?? '').trim()
+  if (!raw) return ''
+  const hit = COMPETITIONS.find((c) => matchesCompetition(c, { comp: raw, sport: sport ?? null }))
+  return hit ? hit.shortName : raw
+}

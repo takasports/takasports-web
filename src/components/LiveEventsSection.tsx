@@ -10,6 +10,7 @@ import { toProxyUrl } from '@/lib/image-url'
 import { isoToLocalDate } from '@/lib/calendar'
 import { nameMatch } from '@/lib/quiniela'
 import { filterByFollowed } from '@/lib/calendar-curate'
+import { shortCompName } from '@/lib/calendar-competitions'
 import { useFollowedSports } from '@/lib/useFollowedSports'
 import { getStoredTZ, SOURCE_TZ, convertEventTime, TZ_CHANGE_EVENT } from '@/lib/timezone'
 import {
@@ -225,7 +226,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
           </div>
           <span className="text-[8px] font-semibold px-2 py-0.5 rounded-full"
             style={{ background: `${compColor}18`, color: compColor, border: `1px solid ${compColor}35` }}>
-            {event.comp}
+            {shortCompName(event.comp, event.sport)}
           </span>
         </div>
 
