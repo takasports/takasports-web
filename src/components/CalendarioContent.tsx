@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, memo } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
@@ -612,7 +612,7 @@ function FormStrip({ form, align = 'start' }: { form: ('W'|'D'|'L')[]; align?: '
 }
 
 // ─── Compact list row (non-live or in TODOS) ──────────────────────────────
-function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, homeFav, awayFav, onToggleFav, formHome, formAway, showComp, showReason, tz }: {
+function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, homeFav, awayFav, onToggleFav, formHome, formAway, showComp, showReason, tz }: {
   event: SportEvent
   liveScore?: LiveScore
   isReminded: boolean
@@ -1293,6 +1293,39 @@ function DayChips({ days, value, onChange, tz }: {
     </div>
   )
 }
+
+// Memoización de la fila: la lista pinta 100+ filas y el padre re-renderiza en cada
+// poll de directos (30-60s) y en cada tecla del buscador. Comparamos SOLO las props
+// que afectan al render (liveScore por CONTENIDO — es un objeto nuevo cada poll aunque
+// no cambie el marcador) e ignoramos los callbacks, que son semánticamente estables
+// (cierran sobre event/toggles estables). (FASE 7 tanda D — hallazgo [16])
+type MatchRowProps = Parameters<typeof MatchRowInner>[0]
+function matchRowPropsEqual(a: MatchRowProps, b: MatchRowProps): boolean {
+  if (
+    a.event !== b.event ||
+    a.isReminded !== b.isReminded ||
+    a.flashing !== b.flashing ||
+    a.isFav !== b.isFav ||
+    a.homeFav !== b.homeFav ||
+    a.awayFav !== b.awayFav ||
+    a.showComp !== b.showComp ||
+    a.showReason !== b.showReason ||
+    a.dateLabel !== b.dateLabel ||
+    a.tz !== b.tz ||
+    a.formHome !== b.formHome ||
+    a.formAway !== b.formAway
+  ) return false
+  const x = a.liveScore, y = b.liveScore
+  if (!x || !y) return x === y
+  return (
+    x.homeGoals === y.homeGoals &&
+    x.awayGoals === y.awayGoals &&
+    x.status === y.status &&
+    x.elapsed === y.elapsed &&
+    x.clock === y.clock
+  )
+}
+const MatchRow = memo(MatchRowInner, matchRowPropsEqual)
 
 // ── Past result row (compact, for resultados tab) ─────────────────────────
 function PastMatchRow({ event, isFav, onToggleFav }: {
