@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
-import { getCompAccent, getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME, highlightReason, isMundial } from '@/lib/competitions'
+import { getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME, highlightReason, isMundial } from '@/lib/competitions'
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate, groupDayByCompetition } from '@/lib/calendar'
 import { nameMatch } from '@/lib/quiniela'
@@ -347,7 +347,8 @@ interface HeroProps {
 }
 
 function LiveHeroCard(p: HeroProps) {
-  const compColor = getCompAccent(p.comp ?? '', '#FF4D2E')
+  // FASE 3: comp en el color POR DEPORTE (fallback rojo del ticker en vivo).
+  const compColor = accentForSport(p.sport, '#FF4D2E')
   const tennis = isTennis(p.sport)
   const racing = isRacing(p.sport)
   const liveLabel = getLiveLabel(p.status, p.elapsed, {
@@ -1295,7 +1296,8 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
   isFav?: boolean
   onToggleFav?: () => void
 }) {
-  const compColor = getCompAccent(event.comp, event.accent)
+  // FASE 3: Resultados con el mismo color POR DEPORTE que la lista principal.
+  const compColor = accentForSport(event.sport, '#A78BFA')
   const hs = event.homeScore
   const as_ = event.awayScore
   const hasScore = hs !== null && hs !== undefined && as_ !== null && as_ !== undefined
@@ -2345,7 +2347,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={activeCompCfg.crest} alt="" aria-hidden="true" width={20} height={20} loading="lazy" decoding="async" style={{ objectFit: 'contain', width: 20, height: 20 }} />
                   )}
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em] truncate" style={{ color: getCompAccent(activeCompCfg.shortName), fontFamily: 'var(--font-sport)', maxWidth: '58vw' }}>
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] truncate" style={{ color: accentForSport(activeCompCfg.sport, '#A78BFA'), fontFamily: 'var(--font-sport)', maxWidth: '58vw' }}>
                     {activeCompCfg.displayName}
                   </span>
                 </>
@@ -2369,7 +2371,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 {activeCompCfg.espnSlug && (
                   <Link href={`/calendario/${activeCompCfg.slug}`} prefetch={false}
                     className="inline-flex items-center gap-1 text-[11px] font-bold no-underline transition-opacity hover:opacity-80"
-                    style={{ color: getCompAccent(activeCompCfg.shortName), fontFamily: 'var(--font-sport)' }}>
+                    style={{ color: accentForSport(activeCompCfg.sport, '#A78BFA'), fontFamily: 'var(--font-sport)' }}>
                     Clasificación y goleadores
                     <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden><path d="M4.5 2 8 6l-3.5 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </Link>
