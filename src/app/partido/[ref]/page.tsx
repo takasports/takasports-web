@@ -775,8 +775,17 @@ function FighterCard({ fighter, side }: { fighter: MmaFighter; side: 'home' | 'a
       <p className="font-black text-sm leading-tight" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
         {fighter.name}
       </p>
-      {fighter.flag && <p className="text-[10px]" style={{ color: '#6A6A7A' }}>{fighter.flag}</p>}
-      {fighter.record && <p className="text-[10px] tabular-nums" style={{ color: '#8A8AA0' }}>{fighter.record}</p>}
+      {(fighter.flagUrl || fighter.flag) && (
+        <span className={`flex items-center gap-1.5 ${side === 'away' ? 'flex-row-reverse' : ''}`}>
+          {fighter.flagUrl && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={fighter.flagUrl} alt={fighter.flag ?? ''} title={fighter.flag ?? undefined} width={18} height={18} loading="lazy" decoding="async"
+              style={{ width: 18, height: 18, objectFit: 'contain' }} />
+          )}
+          {fighter.flag && <span className="text-[10px]" style={{ color: '#8A8AA0' }}>{fighter.flag}</span>}
+        </span>
+      )}
+      {fighter.record && <p className="text-[11px] font-bold tabular-nums" style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>{fighter.record}</p>}
       {fighter.winner && (
         <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
           style={{ background: 'rgba(74,222,128,0.12)', color: accent, border: '1px solid rgba(74,222,128,0.3)', fontFamily: 'var(--font-sport)' }}>

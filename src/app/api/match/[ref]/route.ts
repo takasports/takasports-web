@@ -102,9 +102,10 @@ export interface BoxTeam {
 export interface MmaFighter {
   name: string
   headshot?: string
-  flag?: string
+  flag?: string       // nombre del país (flag.alt)
+  flagUrl?: string    // URL de la bandera del país (flag.href)
   winner?: boolean
-  record?: string
+  record?: string     // récord del luchador ("18-10-1")
 }
 
 // Un combate de la cartelera (para listar la velada completa al abrir el evento).
@@ -816,8 +817,11 @@ function mapMmaFight(fight: Record<string, unknown>, isMain: boolean): MmaFight 
       name:     asString(ath?.displayName) ?? '—',
       headshot: asString(asObj(ath?.headshot)?.href),
       flag:     asString(asObj(ath?.flag)?.alt),
+      flagUrl:  asString(asObj(ath?.flag)?.href),
       winner:   c.winner === true,
-      record:   asString(asObj(asArr(ath?.records)[0])?.summary),
+      // El récord vive en el COMPETIDOR (c.records), no en el atleta (ESPN MMA).
+      record:   asString(asObj(asArr(c.records)[0])?.summary)
+             ?? asString(asObj(asArr(ath?.records)[0])?.summary),
     }
   })
   return { fighters, weightClass, rounds, endRound, endTime, note, statusLabel, isMain }
