@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type {
-  MatchDetail, MatchStat, ScoringEvent, BasketballLeader, MmaFighter, MmaFight,
+  MatchDetail, MatchStat, ScoringEvent, BasketballLeader, BoxTeam, MmaFighter, MmaFight,
   RacingResult, GolfLeader, LineupPlayer, TeamLineup, CommentaryEntry,
 } from '@/app/api/match/[ref]/route'
 import Header from '@/components/Header'
@@ -628,6 +628,47 @@ function LeaderCard({ leader, leagueSlug }: { leader: BasketballLeader; leagueSl
           <p className="text-[9px]" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>{leader.summary}</p>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Boxscore de baloncesto ─────────────────────────────────────────
+// Tabla por equipo (Jugador · PTS · REB · AST · MIN). Solo los que jugaron;
+// los starters ya vienen primero de ESPN. Espejo de la app.
+function BoxscoreTeam({ team, abbr, home }: { team: BoxTeam; abbr: string; home: boolean }) {
+  const played = team.players.filter(p => !p.dnp)
+  if (!played.length) return null
+  return (
+    <div className={home ? '' : 'mt-5'}>
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="block rounded-sm" style={{ width: 3, height: 12, background: home ? '#A78BFA' : '#6A6A80' }} />
+        <span className="text-[12px] font-bold" style={{ color: home ? '#A78BFA' : '#8A8AA0', fontFamily: 'var(--font-sport)' }}>{abbr}</span>
+      </div>
+      <table className="w-full" style={{ fontFamily: 'var(--font-sport)' }}>
+        <thead>
+          <tr className="text-[10px]" style={{ color: '#5A5A6A' }}>
+            <th className="text-left font-normal pb-1.5">Jugador</th>
+            <th className="text-center font-normal pb-1.5 w-9">PTS</th>
+            <th className="text-center font-normal pb-1.5 w-9">REB</th>
+            <th className="text-center font-normal pb-1.5 w-9">AST</th>
+            <th className="text-center font-normal pb-1.5 w-10">MIN</th>
+          </tr>
+        </thead>
+        <tbody>
+          {played.map((p, i) => (
+            <tr key={`${p.name}-${i}`} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <td className="py-1.5 pr-2">
+                <span className="text-[12.5px]" style={{ color: '#D8D8E8' }}>{p.name}</span>
+                {p.starter && p.pos && <span className="ml-1 text-[9px]" style={{ color: '#5A5A6A' }}>{p.pos}</span>}
+              </td>
+              <td className="text-center text-[13px] font-black tabular-nums" style={{ color: '#EDEDF7' }}>{p.pts ?? '–'}</td>
+              <td className="text-center text-[13px] tabular-nums" style={{ color: '#9A9AAE' }}>{p.reb ?? '–'}</td>
+              <td className="text-center text-[13px] tabular-nums" style={{ color: '#9A9AAE' }}>{p.ast ?? '–'}</td>
+              <td className="text-center text-[13px] tabular-nums" style={{ color: '#6A6A80' }}>{p.min ?? '–'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -1691,6 +1732,12 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {match.basketball.leaders.map((l, i) => <LeaderCard key={i} leader={l} leagueSlug={match.leagueSlug} />)}
                   </div>
+                </Section>
+              )}
+              {match.basketball.boxscore && (
+                <Section title="Boxscore">
+                  <BoxscoreTeam team={match.basketball.boxscore.home} abbr={match.homeAbbr ?? match.homeTeam ?? '—'} home />
+                  <BoxscoreTeam team={match.basketball.boxscore.away} abbr={match.awayAbbr ?? match.awayTeam ?? '—'} home={false} />
                 </Section>
               )}
             </>

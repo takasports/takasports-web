@@ -77,6 +77,28 @@ export interface BasketballLeader {
   summary?: string
 }
 
+// Boxscore de baloncesto: una fila por jugador con las stats clave del partido
+// (del boxscore.players[].statistics[].athletes[] de ESPN). Starters primero;
+// los que no jugaron (dnp) llevan stats vacías.
+export interface BoxPlayer {
+  name: string
+  jersey?: string
+  pos?: string
+  starter: boolean
+  dnp: boolean
+  min?: string
+  pts?: string
+  reb?: string
+  ast?: string
+  fg?: string
+  threePt?: string
+  plusMinus?: string
+}
+export interface BoxTeam {
+  players: BoxPlayer[]
+  totals: { pts?: string; reb?: string; ast?: string }
+}
+
 export interface MmaFighter {
   name: string
   headshot?: string
@@ -163,6 +185,7 @@ export interface MatchDetail {
     stats: MatchStat[]
     quarters: { home: (number | null)[]; away: (number | null)[] }
     leaders: BasketballLeader[]
+    boxscore?: { home: BoxTeam; away: BoxTeam }
   }
   mma?: {
     weightClass?: string
@@ -557,6 +580,57 @@ function buildHeadToHead(
   return { matches, wins, draws, losses }
 }
 
+// H2H de BALONCESTO: el summary de NBA no trae headToHeadGames, pero sí
+// `seasonseries` (Regular Season + Playoffs) con los enfrentamientos directos de
+// la temporada. Misma forma H2HResult → un render (H2H tab) sirve para ambos.
+function buildBasketballH2H(json: Record<string, unknown>, homeTeamId?: string): H2HResult | undefined {
+  const series = asArr(json.seasonseries) as Record<string, unknown>[]
+  if (!series.length) return undefined
+  const seen = new Set<string>()
+  const matches: H2HMatch[] = []
+  let wins = 0, draws = 0, losses = 0
+  for (const s of series) {
+    for (const ev of asArr(s.events) as Record<string, unknown>[]) {
+      const id = asString(ev.id) ?? ''
+      if (id && seen.has(id)) continue
+      if (id) seen.add(id)
+      const comps = asArr(ev.competitors) as Record<string, unknown>[]
+      const homeC = comps.find(c => asString(c.homeAway) === 'home') ?? comps[0]
+      const awayC = comps.find(c => asString(c.homeAway) === 'away') ?? comps[1]
+      if (!homeC || !awayC) continue
+      const hTeam = asObj(homeC.team), aTeam = asObj(awayC.team)
+      const hScore = numOrNull(homeC.score), aScore = numOrNull(awayC.score)
+      matches.push({
+        id: id || `${asString(hTeam?.id)}-${asString(aTeam?.id)}-${asString(ev.date) ?? ''}`,
+        isoDate: asString(ev.date) ?? '',
+        comp: asString(s.title) ?? '',
+        home: asString(hTeam?.displayName) ?? asString(hTeam?.abbreviation) ?? '—',
+        away: asString(aTeam?.displayName) ?? asString(aTeam?.abbreviation) ?? '—',
+        homeScore: hScore,
+        awayScore: aScore,
+        homeLogo: asString(hTeam?.logo),
+        awayLogo: asString(aTeam?.logo),
+        homeAbbr: asString(hTeam?.abbreviation),
+        awayAbbr: asString(aTeam?.abbreviation),
+      })
+      // Balance desde la óptica del equipo LOCAL del partido actual (solo jugados).
+      const stName = asString(asObj(ev.statusType)?.name)
+      const completed = asObj(ev.statusType)?.completed === true || stName === 'STATUS_FINAL'
+      if (homeTeamId && completed && hScore != null && aScore != null) {
+        const hIsCurrent = asString(hTeam?.id) === homeTeamId
+        const cur = hIsCurrent ? hScore : aScore
+        const opp = hIsCurrent ? aScore : hScore
+        if (cur > opp) wins++
+        else if (cur < opp) losses++
+        else draws++
+      }
+    }
+  }
+  if (!matches.length) return undefined
+  matches.sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || ''))
+  return { matches, wins, draws, losses }
+}
+
 function buildRecentForm(json: Record<string, unknown>, homeTeamId?: string, awayTeamId?: string): MatchDetail['recentForm'] {
   const groups = asArr(json.lastFiveGames) as Record<string, unknown>[]
   if (!groups.length) return undefined
@@ -665,10 +739,55 @@ function buildBasketball(
     }
   }
 
+  // Boxscore por jugador (ambos equipos): stats clave alineadas a las labels de ESPN.
+  let boxscore: NonNullable<MatchDetail['basketball']>['boxscore']
+  const boxPlayers = asArr(asObj(json.boxscore)?.players) as Record<string, unknown>[]
+  if (boxPlayers.length >= 2) {
+    const homeBox = boxPlayers.find(t => asString(asObj(t.team)?.id) === homeId) ?? boxPlayers[0]
+    const awayBox = boxPlayers.find(t => t !== homeBox) ?? boxPlayers[1]
+    boxscore = { home: parseBoxTeam(homeBox), away: parseBoxTeam(awayBox) }
+  }
+
   return {
     stats,
     quarters: { home: homeQ, away: awayQ },
     leaders,
+    boxscore,
+  }
+}
+
+// Una fila por jugador desde boxscore.players[team].statistics[0]. Localiza cada
+// columna por NOMBRE (MIN/PTS/REB/AST/FG/3PT/+/-) para no depender del orden.
+function parseBoxTeam(teamBox: Record<string, unknown>): BoxTeam {
+  const grp = asObj(asArr(teamBox.statistics)[0])
+  const names = (asArr(grp?.names) as unknown[]).map(n => asString(n) ?? '')
+  const at = (row: (string | undefined)[], key: string) => {
+    const i = names.indexOf(key)
+    return i >= 0 ? row[i] : undefined
+  }
+  const players: BoxPlayer[] = (asArr(grp?.athletes) as Record<string, unknown>[]).map(a => {
+    const ath = asObj(a.athlete)
+    const row = (asArr(a.stats) as unknown[]).map(v => asString(v))
+    const dnp = a.didNotPlay === true || row.length === 0
+    return {
+      name: asString(ath?.displayName) ?? asString(ath?.shortName) ?? '—',
+      jersey: asString(ath?.jersey),
+      pos: asString(asObj(ath?.position)?.abbreviation),
+      starter: a.starter === true,
+      dnp,
+      min: at(row, 'MIN'),
+      pts: at(row, 'PTS'),
+      reb: at(row, 'REB'),
+      ast: at(row, 'AST'),
+      fg: at(row, 'FG'),
+      threePt: at(row, '3PT'),
+      plusMinus: at(row, '+/-'),
+    }
+  })
+  const totals = (asArr(grp?.totals) as unknown[]).map(v => asString(v))
+  return {
+    players,
+    totals: { pts: at(totals, 'PTS'), reb: at(totals, 'REB'), ast: at(totals, 'AST') },
   }
 }
 
@@ -1115,7 +1234,9 @@ export async function GET(
     if (homeTeamObj && awayTeamObj) {
       const hId = asString(homeTeamObj.id)
       const aId = asString(awayTeamObj.id)
-      detail.headToHead = buildHeadToHead(json, hId, nat)
+      detail.headToHead = sport === 'basketball'
+        ? buildBasketballH2H(json, hId)
+        : buildHeadToHead(json, hId, nat)
       detail.recentForm = buildRecentForm(json, hId, aId)
     }
 
