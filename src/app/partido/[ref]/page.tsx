@@ -22,6 +22,7 @@ import { isSplitBroadcast } from '@/lib/broadcasts'
 import { GoalIcon, YellowCardIcon, RedCardIcon } from '@/components/icons/GameIcons'
 import { fetchH2H, fetchRecentFormByTeams, type H2HResult, type FormResult } from '@/lib/past-events'
 import { estimateOutcome, matchDominance, type OutcomeEstimate, type Dominance } from '@/lib/match-estimate'
+import { accentForSport } from '@/lib/sports'
 
 // Cache 2 min en ISR. Partidos en vivo se refrescan a 30s vía LiveRefresh
 // (router.refresh client-side), partidos finalizados aprovechan el cache.
@@ -211,7 +212,7 @@ function EmptyState({ message, kind }: { message: string; kind?: EmptyKind }) {
 // ── Scoreboard hero ────────────────────────────────────────────────
 function TeamScoreboard({ match }: { match: MatchDetail }) {
   const live = isLive(match.status)
-  const accent = (FICHA_THEME[match.sport] ?? { accent: '#7C3AED' }).accent
+  const accent = accentForSport(match.sport, '#7C3AED')
   return (
     <div className="relative rounded-2xl p-6 mb-5 overflow-hidden"
       style={{
@@ -2060,6 +2061,9 @@ export default async function MatchPage({
   // web). Acentos alineados con SPORT_STYLE/getSportStyle. NO inventamos colores
   // de club (los datos no los traen): el "VS" usa el acento del DEPORTE.
   const ficha = (FICHA_THEME[match.sport] ?? { slug: '', accent: '#7C3AED' })
+  // Glow ambiental (look de la maqueta liquid-glass): acento del deporte arriba-dcha
+  // + morado de marca arriba-izq, para que el vidrio de las tarjetas resalte.
+  const accent = accentForSport(match.sport, '#7C3AED')
 
   return (
     <div
@@ -2067,7 +2071,10 @@ export default async function MatchPage({
       className="flex flex-col"
       style={{
         background: 'var(--bg-base)',
-        backgroundImage: `radial-gradient(ellipse 100% 460px at 50% 0%, ${ficha.accent}14 0%, transparent 70%)`,
+        backgroundImage: [
+          `radial-gradient(80% 120% at 82% -40px, ${accent}26 0%, transparent 60%)`,
+          `radial-gradient(70% 90% at 12% 6%, rgba(124,58,237,0.15) 0%, transparent 55%)`,
+        ].join(', '),
         backgroundRepeat: 'no-repeat',
         minHeight: '100vh',
       }}
