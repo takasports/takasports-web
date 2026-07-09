@@ -900,22 +900,24 @@ function DaySeparator({ dateKey, count, tone = 'upcoming', tz }: {
 }) {
   const today = isoToLocalDate(new Date().toISOString(), tz)
   const isToday = dateKey === today
-  // El acento del día sigue el tema del deporte activo (var(--cal-accent)); hoy
-  // se ilumina mezclando con blanco. Los pasados van en rojo suave.
-  const accent = tone === 'past' ? '#FCA5A5' : isToday ? 'color-mix(in srgb, var(--cal-accent) 58%, #ffffff)' : 'var(--cal-accent)'
+  // FASE 3: cabecera de día como la app/maqueta — barra MORADA de marca para HOY
+  // (identidad), gris neutro el resto; sin brillo ni gradiente de color. Los días
+  // pasados atenúan el label. Contador con texto "N partidos".
+  const bar = isToday ? '#7C3AED' : '#3A3A48'
+  const chipColor = isToday ? '#C4B5FD' : '#8A8A9E'
   const subtitle = formatDateSubtitle(dateKey)
   const label = formatDateLabel(dateKey, tz)
 
   return (
     <div className="relative pt-7 pb-4 mb-3">
-      {/* Top divider angulado — el acento del tema arranca a la izquierda */}
-      <div className="absolute top-0 left-0 right-0" style={{ height: 2, background: `linear-gradient(90deg, ${accent} 0%, color-mix(in srgb, ${accent} 30%, transparent) 18%, rgba(255,255,255,0.07) 38%, rgba(255,255,255,0.03) 100%)` }} />
+      {/* Hairline superior sutil (separación de día), sin color de deporte */}
+      <div className="absolute top-0 left-0 right-0" style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
       <div className="flex items-end justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="cal-pennant block flex-shrink-0" style={{ width: 6, height: 20, background: accent, boxShadow: `0 0 12px color-mix(in srgb, ${accent} 45%, transparent)` }} />
+          <span className="block flex-shrink-0 rounded-sm" style={{ width: 4, height: 20, background: bar }} />
           <div className="min-w-0">
             <h2 className="font-black leading-none uppercase tracking-[0.18em]"
-              style={{ fontFamily: 'var(--font-sport)', fontSize: 14, color: '#F0F0FA' }}>
+              style={{ fontFamily: 'var(--font-sport)', fontSize: 14, color: tone === 'past' ? '#B8B8C8' : '#F0F0FA' }}>
               {label}
             </h2>
             {subtitle && (
@@ -925,9 +927,9 @@ function DaySeparator({ dateKey, count, tone = 'upcoming', tz }: {
             )}
           </div>
         </div>
-        <span className="flex items-center justify-center min-w-[26px] h-[22px] px-2 rounded-full text-[10px] font-black tabular-nums flex-shrink-0"
-          style={{ background: `color-mix(in srgb, ${accent} 12%, transparent)`, color: accent, border: `1px solid color-mix(in srgb, ${accent} 28%, transparent)`, fontFamily: 'var(--font-sport)' }}>
-          {count}
+        <span className="flex items-center justify-center h-[22px] px-2.5 rounded-full text-[10px] font-black tabular-nums flex-shrink-0"
+          style={{ background: isToday ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.05)', color: chipColor, border: `1px solid ${isToday ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.08)'}`, fontFamily: 'var(--font-sport)' }}>
+          {count} {count === 1 ? 'partido' : 'partidos'}
         </span>
       </div>
     </div>
