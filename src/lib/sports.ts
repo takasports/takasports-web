@@ -51,7 +51,7 @@ export const SPORT_ACCENT: Record<string, string> = {
   tenis: '#E0B33A', tennis: '#E0B33A',
   ufc: '#D4AF37', mma: '#D4AF37', boxing: '#D4AF37', boxeo: '#D4AF37',
   rugby: '#38BDF8',
-  wwe: '#A855F7', wrestling: '#A855F7',
+  wwe: '#A855F7', wrestling: '#A855F7', 'lucha libre': '#A855F7',
   padel: '#22D3EE', 'pádel': '#22D3EE',
   golf: '#86C166',
   motogp: '#FB7185',
