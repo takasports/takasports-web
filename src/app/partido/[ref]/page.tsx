@@ -904,14 +904,26 @@ function RacingBlock({ match }: { match: MatchDetail }) {
   return (
     <>
       <div className="tk-glass rounded-2xl p-6 mb-6">
+        {r.session && (
+          <p className="text-[10px] font-black uppercase tracking-widest text-center mb-1.5"
+            style={{ color: '#EF4444', fontFamily: 'var(--font-sport)' }}>
+            {r.session}
+          </p>
+        )}
         {r.circuit && (
-          <p className="text-[10px] font-black uppercase tracking-widest text-center mb-2"
-            style={{ color: '#9CA3AF', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-center font-black"
+            style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 19, letterSpacing: '-0.01em' }}>
             {r.circuit}
           </p>
         )}
-        <p className="text-center font-black"
-          style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 22 }}>
+        {r.circuitLocation && (
+          <p className="text-[11px] text-center mt-1"
+            style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
+            {r.circuitLocation}
+          </p>
+        )}
+        <p className="text-center font-black mt-2.5"
+          style={{ color: '#9CA3AF', fontFamily: 'var(--font-display)', fontSize: 15 }}>
           {match.statusLabel}
         </p>
       </div>
@@ -948,13 +960,19 @@ function GolfBlock({ match }: { match: MatchDetail }) {
   return (
     <>
       <div className="tk-glass rounded-2xl p-6 mb-6">
-        <p className="text-center font-black"
-          style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 22 }}>
+        {g.tournament && (
+          <p className="text-center font-black"
+            style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 19, letterSpacing: '-0.01em' }}>
+            {g.tournament}
+          </p>
+        )}
+        <p className="text-center font-black mt-1.5"
+          style={{ color: '#9CA3AF', fontFamily: 'var(--font-display)', fontSize: 15 }}>
           {match.statusLabel}
         </p>
         {g.round && (
-          <p className="text-[10px] text-center mt-2 uppercase tracking-widest"
-            style={{ color: '#9CA3AF', fontFamily: 'var(--font-sport)' }}>{g.round}</p>
+          <p className="text-[10px] text-center mt-1 uppercase tracking-widest"
+            style={{ color: '#86C166', fontFamily: 'var(--font-sport)' }}>{g.round}</p>
         )}
       </div>
       {g.leaderboard.length > 0 && (

@@ -200,6 +200,8 @@ export interface MatchDetail {
   }
   racing?: {
     circuit?: string
+    circuitLocation?: string   // ciudad, país del circuito
+    session?: string           // sesión mostrada (Carrera, Clasificación, Sprint…)
     results: RacingResult[]
   }
   tennis?: {
@@ -218,6 +220,7 @@ export interface MatchDetail {
   }
   golf?: {
     round?: string
+    tournament?: string        // nombre del torneo (Genesis Scottish Open…)
     leaderboard: GolfLeader[]
   }
 
@@ -866,6 +869,17 @@ async function buildMma(eventId: string): Promise<{ mma: MatchDetail['mma']; sta
 }
 
 // ── Racing (F1) ─────────────────────────────────────────────────────
+// Sesiones de F1 (type.text de ESPN) → etiqueta en español.
+const F1_SESSION_ES: Record<string, string> = {
+  Race: 'Carrera',
+  Qual: 'Clasificación',
+  Sprint: 'Sprint',
+  'Sprint Qual': 'Clasificación Sprint',
+  FP1: 'Práctica 1',
+  FP2: 'Práctica 2',
+  FP3: 'Práctica 3',
+}
+
 async function buildRacing(eventId: string): Promise<{ racing: MatchDetail['racing']; status: string; statusLabel: string; venue?: string; raceName?: string } | null> {
   const json = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard?event=${eventId}`)
   if (!json) return null
@@ -875,13 +889,32 @@ async function buildRacing(eventId: string): Promise<{ racing: MatchDetail['raci
   // datos de OTRA carrera (Top10/circuito) bajo esta URL con estado 200.
   const ev = (asArr(json.events) as Record<string, unknown>[]).find(e => asString(e.id) === eventId)
   if (!ev) return null
-  const comp = asArr(ev.competitions)[0] as Record<string, unknown> | undefined
+  // Un GP tiene varias sesiones (FP1/FP2/FP3/Clasificación/Sprint/Carrera). NO
+  // mostramos FP1 por defecto: elegimos la CARRERA si ya tiene datos; si no, la
+  // última sesión con resultados (p.ej. Clasificación); si no, la Carrera (etiqueta).
+  const comps = asArr(ev.competitions) as Record<string, unknown>[]
+  const typeText = (c: Record<string, unknown>) =>
+    asString(asObj(c.type)?.text) ?? asString(asObj(c.type)?.abbreviation) ?? ''
+  const raceComp = comps.find(c => typeText(c) === 'Race')
+  const lastWithResults = [...comps].reverse().find(c => asArr(c.competitors).length > 0)
+  const comp: Record<string, unknown> | undefined =
+    raceComp && asArr(raceComp.competitors).length > 0
+      ? raceComp
+      : lastWithResults ?? raceComp ?? comps[comps.length - 1] ?? comps[0]
+
   const statusObj = asObj(comp?.status ?? ev.status)
   const statusType = asObj(statusObj?.type)
   const status = asString(statusType?.name) ?? ''
   const statusLabel = asString(statusType?.shortDetail) ?? mapStatusLabel(status)
-  const venue = asString(asObj(comp?.venue)?.fullName)
   const raceName = asString(ev.name)
+
+  // Circuito: vive en el EVENTO (ev.circuit), no en la sesión (venue suele ser null).
+  const circuitObj = asObj(ev.circuit)
+  const circuit = asString(circuitObj?.fullName) ?? asString(asObj(comp?.venue)?.fullName)
+  const addr = asObj(circuitObj?.address)
+  const circuitLocation =
+    [asString(addr?.city), asString(addr?.country)].filter(Boolean).join(', ') || undefined
+  const session = comp ? (F1_SESSION_ES[typeText(comp)] ?? typeText(comp)) : undefined
 
   const competitors = asArr(comp?.competitors) as Record<string, unknown>[]
   const results: RacingResult[] = competitors
@@ -899,7 +932,7 @@ async function buildRacing(eventId: string): Promise<{ racing: MatchDetail['raci
     .sort((a, b) => a.pos - b.pos)
     .slice(0, 10)
 
-  return { racing: { circuit: venue, results }, status, statusLabel, venue, raceName }
+  return { racing: { circuit, circuitLocation, session, results }, status, statusLabel, venue: circuit, raceName }
 }
 
 // ── Tennis ──────────────────────────────────────────────────────────
@@ -1014,12 +1047,16 @@ async function buildGolf(eventId: string): Promise<{ golf: MatchDetail['golf']; 
               ?? String(asNumber(c.order) ?? ''),
       player: asString(ath?.displayName) ?? '—',
       score:  asString(c.score) ?? asString(stats.find(s => s.name === 'scoreToPar')?.displayValue) ?? '',
-      today:  asString(stats.find(s => s.name === 'thru')?.displayValue),
+      // "Thru" (hoyos jugados) — el scoreboard a veces lo trae en el status del
+      // competidor durante el juego en vivo; si no, queda vacío.
+      today:  asString(stats.find(s => s.name === 'thru')?.displayValue)
+              ?? asString(asObj(c.status)?.thru)
+              ?? asString(asObj(c.status)?.displayThru),
     }
   })
 
   return {
-    golf: { round, leaderboard },
+    golf: { round, tournament: asString(ev.name), leaderboard },
     status,
     statusLabel,
     venue: asString(asObj(comp?.venue)?.fullName),
