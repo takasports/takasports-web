@@ -161,8 +161,7 @@ function Pill({ children, color = '#A78BFA', bg, border }: { children: React.Rea
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl p-4 mb-4"
-      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="tk-glass rounded-xl p-4 mb-4">
       <p className="text-[9px] font-black uppercase tracking-widest mb-4"
         style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
         {title}
@@ -220,6 +219,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
           ? 'linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(9,9,15,0.85) 60%)'
           : `linear-gradient(135deg, ${accent}0d 0%, rgba(255,255,255,0.02) 55%)`,
         border: live ? '1px solid rgba(239,68,68,0.22)' : `1px solid ${accent}24`,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 18px 44px -24px rgba(0,0,0,0.6)',
       }}>
       {/* Hairline de acento del deporte (rótulo broadcast) — solo no-live */}
       {!live && (
@@ -684,7 +684,7 @@ function TennisBlock({ match }: { match: MatchDetail }) {
   const liveSetIdx = live ? setCount - 1 : -1
 
   return (
-    <div className="rounded-2xl p-6 mb-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+    <div className="tk-glass rounded-2xl p-6 mb-6">
       <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
         {t.round && (
           <span className="text-[10px] font-black uppercase tracking-widest"
@@ -779,7 +779,7 @@ function MmaBlock({ match }: { match: MatchDetail }) {
   const [a, b] = m.fighters
   return (
     <>
-      <div className="rounded-2xl p-6 mb-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+      <div className="tk-glass rounded-2xl p-6 mb-6">
         {(m.weightClass || m.cardName) && (
           <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
             {m.weightClass && <Pill color="#f87171">{m.weightClass}</Pill>}
@@ -880,7 +880,7 @@ function RacingBlock({ match }: { match: MatchDetail }) {
   const r = match.racing
   return (
     <>
-      <div className="rounded-2xl p-6 mb-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+      <div className="tk-glass rounded-2xl p-6 mb-6">
         {r.circuit && (
           <p className="text-[10px] font-black uppercase tracking-widest text-center mb-2"
             style={{ color: '#9CA3AF', fontFamily: 'var(--font-sport)' }}>
@@ -924,7 +924,7 @@ function GolfBlock({ match }: { match: MatchDetail }) {
   const g = match.golf
   return (
     <>
-      <div className="rounded-2xl p-6 mb-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+      <div className="tk-glass rounded-2xl p-6 mb-6">
         <p className="text-center font-black"
           style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', fontSize: 22 }}>
           {match.statusLabel}

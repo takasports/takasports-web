@@ -971,6 +971,17 @@ textarea:focus-visible,
   transition-duration: 90ms;
 }
 
+/* ── VIDRIO TAKA — superficie de vidrio SIMULADO (velo + canto de luz specular
+   arriba + sombra), coste 0 (sin blur, apta para contenido que scrollea).
+   Para las tarjetas de la ficha de partido; el chrome fijo sí lleva blur real. */
+.tk-glass {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+              0 18px 40px -22px rgba(0, 0, 0, 0.65);
+}
+
 /* Pennant de acento (separador de día / cabeceras) — chevron de retransmisión. */
 .cal-pennant {
   clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
