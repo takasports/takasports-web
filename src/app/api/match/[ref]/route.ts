@@ -1038,6 +1038,23 @@ async function buildGolf(eventId: string): Promise<{ golf: MatchDetail['golf']; 
   const round = asString(asObj(comp?.status)?.period ? `Ronda ${asObj(comp?.status)?.period}` : undefined)
 
   const competitors = asArr(comp?.competitors) as Record<string, unknown>[]
+  // "Thru" (hoyos jugados) — el scoreboard de golf NO trae `thru` ni `status` por
+  // jugador, pero SÍ `linescores`: una entrada por ronda (con `period`) y dentro
+  // un sub-`linescores` por hoyo. Derivamos thru = nº de hoyos con score de la
+  // ronda en curso (comp.status.period). 18 → "F"; 0 → vacío.
+  const curPeriod = asNumber(asObj(comp?.status)?.period)
+  const holesIn = (r?: Record<string, unknown>) => asArr(r?.linescores).length
+  const holesThru = (c: Record<string, unknown>): string | undefined => {
+    const rounds = asArr(c.linescores) as Record<string, unknown>[]
+    const byPeriod = rounds.find(r => asNumber(r.period) === curPeriod)
+    // Ronda del period actual si tiene hoyos; si no, la última ronda con hoyos jugados.
+    const cur = byPeriod && holesIn(byPeriod) > 0
+      ? byPeriod
+      : [...rounds].reverse().find(r => holesIn(r) > 0)
+    const holes = holesIn(cur)
+    if (holes <= 0) return undefined
+    return holes >= 18 ? 'F' : String(holes)
+  }
   const leaderboard: GolfLeader[] = competitors.slice(0, 10).map(c => {
     const ath = asObj(c.athlete)
     const stats = asArr(c.statistics) as Record<string, unknown>[]
@@ -1047,9 +1064,9 @@ async function buildGolf(eventId: string): Promise<{ golf: MatchDetail['golf']; 
               ?? String(asNumber(c.order) ?? ''),
       player: asString(ath?.displayName) ?? '—',
       score:  asString(c.score) ?? asString(stats.find(s => s.name === 'scoreToPar')?.displayValue) ?? '',
-      // "Thru" (hoyos jugados) — el scoreboard a veces lo trae en el status del
-      // competidor durante el juego en vivo; si no, queda vacío.
-      today:  asString(stats.find(s => s.name === 'thru')?.displayValue)
+      // Thru derivado de linescores (arriba); fallback al best-effort viejo del status.
+      today:  holesThru(c)
+              ?? asString(stats.find(s => s.name === 'thru')?.displayValue)
               ?? asString(asObj(c.status)?.thru)
               ?? asString(asObj(c.status)?.displayThru),
     }
