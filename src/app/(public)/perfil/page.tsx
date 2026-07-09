@@ -26,6 +26,7 @@ import { UserPlacaCard } from '@/components/placa/UserPlacaCard'
 import { SportPickPanel } from '@/components/placa/SportPickPanel'
 import TakaPoint from '@/components/TakaPoint'
 import ExportDataSection from '@/components/ExportDataSection'
+import FollowedSportsEditor from '@/components/profile/FollowedSportsEditor'
 import DeleteAccountSection from '@/components/DeleteAccountSection'
 import { usePoints, useStreak } from '@/hooks/useGameState'
 
@@ -881,6 +882,9 @@ export default function PerfilPage() {
 
           {/* ── COLUMNA IZQUIERDA ── */}
           <div className="flex-1 min-w-0 flex flex-col gap-10">
+
+            {/* ── MIS DEPORTES (FASE 5 — editor de deportes seguidos) ── */}
+            <FollowedSportsEditor />
 
             {/* ── MIS JUEGOS ── */}
             {(quizStats || gridStats || miOnceStats || sopaStats) && (
