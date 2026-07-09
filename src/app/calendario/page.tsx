@@ -113,12 +113,13 @@ export default async function CalendarioPage() {
   for (const [name, form] of Object.entries(otherForms ?? {}))  recentForms[`m:${name}`] = form
 
   // Sembramos el render en Europe/Madrid (base del producto) y dejamos que el
-  // cliente localice la hora al montar (CalendarioContent useEffect + AutoTZInit
-  // leen la TZ del navegador/localStorage). Así NO leemos cookie en el servidor
-  // y la página puede cachearse (ISR 300s) en vez de regenerarse en cada visita.
-  // Importante: el ORDEN es por isoDate (instante UTC) y el AGRUPADO por día es
-  // siempre Madrid (isoToLocalDate) — ninguno depende de esta semilla, solo el
-  // número del reloj de cada partido, que el navegador convierte a hora local.
+  // cliente localice al montar (CalendarioContent useEffect lee la TZ del
+  // navegador/localStorage vía getStoredTZ). Así NO leemos cookie/cabecera en el
+  // servidor y la página se cachea (ISR 300s) en vez de regenerarse por visita.
+  // Contrapartida ACEPTADA (coste 0): el AGRUPADO por día usa esa TZ (tz arranca
+  // en Madrid y salta a la del navegador tras montar), así que un usuario lejos de
+  // España cerca de medianoche ve un breve "salto de día" en el primer paint que
+  // se corrige al instante. El ORDEN base es por isoDate (instante UTC), estable.
 
   // SportsEvent JSON-LD: emitimos los primeros 60 eventos futuros para
   // que Google los muestre como rich results (carrusel de eventos en SERP).

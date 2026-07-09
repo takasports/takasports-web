@@ -62,14 +62,15 @@ export function getStoredTZ(): string {
   )
 }
 
-/** Guarda preferencia del usuario en localStorage + cookie (para que el
- *  server pueda leerla en el siguiente render y evite el flash de hidratación). */
+/** Guarda la preferencia de TZ del usuario en localStorage. El cliente la lee con
+ *  getStoredTZ (localStorage, no cookie). El server NO lee la TZ (la página se
+ *  cachea con ISR): el render inicial usa Madrid y el cliente localiza al montar,
+ *  re-agrupando por día con la TZ real. (Antes se escribía una cookie ts_timezone
+ *  "para que el server la leyera", pero ningún server la leía → se retiró.) */
 export function setStoredTZ(tz: string, source: TZSource = 'manual'): void {
   if (typeof window === 'undefined') return
   localStorage.setItem(TZ_KEY, tz)
   localStorage.setItem(TZ_SOURCE_KEY, source)
-  // 1 año, accesible al server, samesite lax
-  document.cookie = `${TZ_KEY}=${encodeURIComponent(tz)}; path=/; max-age=31536000; samesite=lax`
   window.dispatchEvent(new CustomEvent(TZ_CHANGE_EVENT, { detail: { tz, source } }))
 }
 
