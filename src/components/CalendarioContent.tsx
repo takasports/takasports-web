@@ -2132,10 +2132,16 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       ) {
         keep++
       }
-      // El Mundial entra SIEMPRE en Destacados, aunque el tope del día (MAX) lo
-      // dejara fuera: garantiza la cobertura del torneo en su ventana. Se respeta
-      // el orden ya calculado (`sorted`), así que el Mundial mantiene su posición.
-      out.push(...sorted.filter((e, i) => i < keep || isMundial(e.comp)))
+      // El Mundial y los DIRECTOS entran SIEMPRE en Destacados, aunque el tope del
+      // día (MAX) los dejara fuera: el Mundial garantiza cobertura del torneo y un
+      // directo es por definición un destacado. Se respeta el orden ya calculado
+      // (`sorted`). [23] antes faltaba `|| isLive` → los directos de liga menor se
+      // caían del cap (la app y el curateDay del shared sí los mantenían).
+      out.push(...sorted.filter((e, i) =>
+        i < keep ||
+        isMundial(e.comp) ||
+        (liveScores.has(e.id) && isLiveStatus(liveScores.get(e.id)?.status ?? '')),
+      ))
     }
     return out
   }, [filtered, activeFilter, activeComp, favorites, followedSports, search, liveScores, tz])
