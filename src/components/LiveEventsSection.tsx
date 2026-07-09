@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
-import { getCompAccent, getLiveLabel } from '@/lib/competitions'
+import { getLiveLabel } from '@/lib/competitions'
+import { accentForSport } from '@/lib/sports'
 import { TvIcon } from '@/components/icons/GameIcons'
 import { toProxyUrl } from '@/lib/image-url'
 import { isoToLocalDate } from '@/lib/calendar'
@@ -166,7 +167,9 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
     })
   }
 
-  const compColor  = getCompAccent(event.comp, event.accent)
+  // Color POR DEPORTE (paridad con la app CalendarPreview, que usa accentFor).
+  // Fallback a event.accent (ya por-deporte). Antes: getCompAccent (por competición).
+  const sportColor = accentForSport(event.sport, event.accent)
   const isLive     = !!liveScore && isLiveStatus(liveScore.status)
   const scoreStr   = liveScore != null ? `${liveScore.homeGoals ?? 0} – ${liveScore.awayGoals ?? 0}` : null
   const homeLogo   = liveScore?.homeLogo ?? event.homeLogo
@@ -199,17 +202,17 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
         borderRadius: 16,
         background: isLive
           ? 'linear-gradient(160deg, rgba(255,77,46,0.10) 0%, var(--bg-card) 58%)'
-          : `linear-gradient(165deg, ${compColor}14 0%, var(--bg-card) 52%)`,
-        border: isLive ? '1px solid rgba(255,77,46,0.25)' : `1px solid ${compColor}22`,
-        borderTop: `2.5px solid ${isLive ? '#FF4D2E' : compColor}`,
+          : `linear-gradient(165deg, ${sportColor}14 0%, var(--bg-card) 52%)`,
+        border: isLive ? '1px solid rgba(255,77,46,0.25)' : `1px solid ${sportColor}22`,
+        borderTop: `2.5px solid ${isLive ? '#FF4D2E' : sportColor}`,
         boxShadow: isLive ? '0 6px 26px rgba(255,77,46,0.12)' : '0 6px 24px rgba(0,0,0,0.32)',
         cursor: matchRef ? 'pointer' : 'default',
       }}
     >
-      {/* Glow decorativo por color de competición */}
+      {/* Glow decorativo por color de deporte */}
       <div aria-hidden className="absolute pointer-events-none opacity-70"
         style={{ top: -28, right: -28, width: 110, height: 110, borderRadius: '50%',
-          background: `radial-gradient(circle, ${isLive ? 'rgba(255,77,46,0.18)' : compColor + '22'} 0%, transparent 70%)` }} />
+          background: `radial-gradient(circle, ${isLive ? 'rgba(255,77,46,0.18)' : sportColor + '22'} 0%, transparent 70%)` }} />
       <div className="relative px-4 pt-3.5 pb-4 flex flex-col gap-2.5">
 
         {/* Sport + competition */}
@@ -217,7 +220,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
           <div className="flex items-center gap-1.5">
             {(event.date === 'Hoy' || isLive) && (
               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 animate-pulse"
-                style={{ background: isLive ? '#FF4D2E' : compColor }} />
+                style={{ background: isLive ? '#FF4D2E' : sportColor }} />
             )}
             <span className="text-[10px] font-black uppercase tracking-widest"
               style={{ color: isLive ? '#FF4D2E' : event.accent, fontFamily: 'var(--font-sport)' }}>
@@ -225,7 +228,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
             </span>
           </div>
           <span className="text-[8px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ background: `${compColor}18`, color: compColor, border: `1px solid ${compColor}35` }}>
+            style={{ background: `${sportColor}18`, color: sportColor, border: `1px solid ${sportColor}35` }}>
             {shortCompName(event.comp, event.sport)}
           </span>
         </div>
@@ -241,7 +244,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
               </p>
             </div>
             <span className="flex-shrink-0 flex items-center justify-center text-[8px] font-black rounded-full"
-              style={{ width: 20, height: 20, color: compColor, background: `${compColor}1a`, border: `1px solid ${compColor}33`, fontFamily: 'var(--font-display)' }}>
+              style={{ width: 20, height: 20, color: sportColor, background: `${sportColor}1a`, border: `1px solid ${sportColor}33`, fontFamily: 'var(--font-display)' }}>
               VS
             </span>
             <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
