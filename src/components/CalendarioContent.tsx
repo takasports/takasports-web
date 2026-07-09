@@ -569,7 +569,7 @@ function CompGroupHeader({ comp, accent, count, first, crest, slug, banner, pinn
             aria-label={pinned ? `Dejar de fijar ${comp}` : `Fijar ${comp} arriba`}
             aria-pressed={!!pinned}
             className="flex items-center justify-center flex-shrink-0 rounded-md transition-all"
-            style={{ width: 22, height: 22, cursor: 'pointer', background: pinned ? `${accent}22` : 'transparent', border: 'none' }}
+            style={{ width: 24, height: 24, cursor: 'pointer', background: pinned ? `${accent}22` : 'transparent', border: 'none' }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill={pinned ? accent : 'none'} stroke={pinned ? accent : '#6A6A80'} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
               <path d="M12 2.5l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 16.8 6.4 19.7l1.1-6.2L3 9.1l6.2-.9L12 2.5z" />
@@ -733,7 +733,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           {opts.score ?? 0}
         </span>
       ) : opts.showVs ? (
-        <span className="flex-shrink-0" style={{ marginLeft: 6, fontWeight: 900, color: combat ? '#F472B6' : '#4A4A5E', fontSize: combat ? 13 : 12, letterSpacing: combat ? '0.12em' : '0.14em', fontFamily: combat ? 'var(--font-display)' : 'var(--font-sport)' }}>
+        <span className="flex-shrink-0" style={{ marginLeft: 6, fontWeight: 900, color: combat ? '#F472B6' : '#7C7C8C', fontSize: combat ? 13 : 12, letterSpacing: combat ? '0.12em' : '0.14em', fontFamily: combat ? 'var(--font-display)' : 'var(--font-sport)' }}>
           VS
         </span>
       ) : null}
@@ -814,7 +814,7 @@ function MatchRow({ event, liveScore, isReminded, onToggleReminder, dateLabel, o
           )}
           <BroadcastChip comp={event.comp} sport={event.sport} tz={tz} fallback={event.broadcast} />
           {madTime && (
-            <span className="text-[8px] font-bold uppercase tracking-wide tabular-nums flex-shrink-0" style={{ color: '#6A6A80', fontFamily: 'var(--font-sport)' }} title="Hora en Madrid (origen de la emisión)">
+            <span className="text-[8px] font-bold uppercase tracking-wide tabular-nums flex-shrink-0" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }} title="Hora en Madrid (origen de la emisión)">
               {madTime}
             </span>
           )}
@@ -862,7 +862,7 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
         onChange={e => onChange(e.target.value)}
         className="w-full pl-7 py-1.5 rounded-lg text-[11px] font-medium outline-none"
         style={{
-          paddingRight: value ? 28 : 8,
+          paddingRight: value ? 34 : 8,
           background: value ? 'rgba(124,58,237,0.08)' : 'rgba(255,255,255,0.04)',
           border: value ? '1px solid rgba(124,58,237,0.25)' : '1px solid rgba(255,255,255,0.06)',
           color: '#D0D0E8',
@@ -872,8 +872,8 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
       {value && (
         <button
           onClick={() => onChange('')}
-          className="absolute right-2 flex items-center justify-center w-4 h-4 rounded-full transition-opacity hover:opacity-70"
-          style={{ background: 'rgba(255,255,255,0.12)', color: '#A0A0B8', border: 'none', cursor: 'pointer', fontSize: 9 }}
+          className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded-full transition-opacity hover:opacity-70"
+          style={{ background: 'rgba(255,255,255,0.12)', color: '#A0A0B8', border: 'none', cursor: 'pointer', fontSize: 11 }}
           aria-label="Limpiar búsqueda"
         >
           ✕
@@ -953,7 +953,7 @@ function SectionHeader({ icon, label, color, count, hint }: {
         </span>
       )}
       {hint && (
-        <span className="text-[9px] ml-auto" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+        <span className="text-[9px] ml-auto" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
           {hint}
         </span>
       )}
@@ -1090,6 +1090,7 @@ function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect, tz 
         <div className="flex items-center justify-between mb-3">
           <button
             onClick={prevMonth}
+            aria-label="Mes anterior"
             className="flex items-center justify-center w-6 h-6 rounded-md transition-all hover:brightness-125"
             style={{ background: 'rgba(255,255,255,0.06)', color: '#9090A8' }}
           >
@@ -1105,6 +1106,7 @@ function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect, tz 
           </span>
           <button
             onClick={nextMonth}
+            aria-label="Mes siguiente"
             className="flex items-center justify-center w-6 h-6 rounded-md transition-all hover:brightness-125"
             style={{ background: 'rgba(255,255,255,0.06)', color: '#9090A8' }}
           >
@@ -1120,7 +1122,7 @@ function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect, tz 
             <div
               key={d}
               className="text-center text-[8px] font-black uppercase tracking-widest py-0.5"
-              style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}
+              style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}
             >
               {d}
             </div>
@@ -1162,7 +1164,7 @@ function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRect, tz 
                       ? '#3A3A4E'
                       : hasEvents
                         ? '#D0D0F0'
-                        : '#6A6A80',
+                        : '#7C7C8C',
                   cursor: isPast ? 'not-allowed' : 'pointer',
                 }}
               >
@@ -1334,7 +1336,7 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
       </div>
 
       <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 min-w-[80px] sm:min-w-[88px] px-2">
-        <span className="text-[8.5px] font-black uppercase tracking-[0.18em] leading-none" style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
+        <span className="text-[8.5px] font-black uppercase tracking-[0.18em] leading-none" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
           FT
         </span>
         {hasScore ? (
@@ -1345,12 +1347,12 @@ function PastMatchRow({ event, isFav, onToggleFav }: {
             <span>{as_}</span>
           </span>
         ) : event.resultNote ? null : (
-          <span className="text-[14px] font-bold" style={{ color: '#5A5A6A' }}>–</span>
+          <span className="text-[14px] font-bold" style={{ color: '#7C7C8C' }}>–</span>
         )}
         {/* Fase/grupo (Mundial: "Grupo A", "Octavos"…) */}
         {event.stage && (
           <span className="text-[8px] font-bold uppercase tracking-[0.14em] leading-none truncate max-w-[88px]"
-            style={{ color: '#6A6A80', fontFamily: 'var(--font-sport)' }}>
+            style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
             {event.stage}
           </span>
         )}
@@ -2540,7 +2542,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             {activeFilter === 'Destacados' && (
               <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
                 <span className="text-[10px] font-black uppercase tracking-widest flex-shrink-0"
-                  style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>
+                  style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
                   Mis deportes
                 </span>
                 {FOLLOWABLE_SPORTS.map((slug) => {
@@ -2551,7 +2553,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                       type="button"
                       onClick={() => toggleFollowedSport(slug)}
                       aria-pressed={on}
-                      className="flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full transition-all"
+                      className="flex-shrink-0 text-[11px] font-bold px-2.5 py-1.5 rounded-full transition-all"
                       style={{
                         background: on ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.04)',
                         color: on ? '#C4B5FD' : '#8A8AA0',
@@ -2586,7 +2588,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
 
           {orderedDates.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="mb-2 flex justify-center" style={{ color: onlyLive ? '#FF4D2E' : '#5A5A6A' }}>
+              <p className="mb-2 flex justify-center" style={{ color: onlyLive ? '#FF4D2E' : '#7C7C8C' }}>
                 {onlyLive
                   ? <LiveDotIcon size={32} />
                   : search
@@ -2647,7 +2649,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                   Ver resultados anteriores
                 </button>
               ) : pastTimeline.length > 0 ? (
-                <div className="flex items-center justify-center py-2 text-[10px] uppercase tracking-widest" style={{ color: '#5A5A6A', fontFamily: 'var(--font-sport)' }}>
+                <div className="flex items-center justify-center py-2 text-[10px] uppercase tracking-widest" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
                   <span>Resultados de días anteriores</span>
                 </div>
               ) : null}

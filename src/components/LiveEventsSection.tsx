@@ -593,7 +593,7 @@ export default function LiveEventsSection({
               <p className="font-black text-[13px]" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
                 {emptyTitle}
               </p>
-              <p className="text-[11px]" style={{ color: '#6A6A7A', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[11px]" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
                 {emptySub}
               </p>
             </div>
