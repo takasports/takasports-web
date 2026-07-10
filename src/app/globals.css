@@ -113,10 +113,10 @@ body {
   html { font-size: 15px; }
 }
 
-/* ── Reserve space at page bottom on mobile for the bottom nav ── */
+/* ── Reserve space at page bottom on mobile for the floating bottom nav ── */
 @media (max-width: 1023px) {
   body {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(72px + max(env(safe-area-inset-bottom, 0px), 10px));
   }
 }
 
@@ -583,11 +583,11 @@ a[href^="/noticias/"]:visited .news-title {
 .no-scrollbar { scrollbar-width: none; }
 
 /* ── Quiniela sticky betslip ──
-   En mobile el sticky debe quedar por encima del BottomNav (64px) y respetar
-   el home indicator iOS. En lg+ no hay BottomNav, así que se ancla al borde. */
+   En mobile el sticky queda por encima del BottomNav flotante (cápsula ~58px que
+   flota sobre la safe-area). En lg+ no hay BottomNav, así que se ancla al borde. */
 .qn-betslip-sticky {
   position: sticky;
-  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(66px + max(env(safe-area-inset-bottom, 0px), 10px));
 }
 @media (min-width: 1024px) {
   .qn-betslip-sticky {
@@ -629,10 +629,10 @@ details > summary::-webkit-details-marker { display: none; }
 details[open] > summary .toc-chev { transform: rotate(180deg); }
 
 /* ── Consent banner ──
-   En mobile (≤1023px) se eleva sobre el BottomNav (64px) + safe-area.
+   En mobile (≤1023px) se eleva sobre el BottomNav flotante (cápsula ~58px + aire).
    En lg+ se ancla al borde inferior con safe-area. */
 .ts-consent-wrapper {
-  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 12px);
+  bottom: calc(78px + max(env(safe-area-inset-bottom, 0px), 10px));
 }
 @media (min-width: 1024px) {
   .ts-consent-wrapper {
