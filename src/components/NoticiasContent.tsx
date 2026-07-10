@@ -116,7 +116,10 @@ export default function NoticiasContent({
   const [page, setPage] = useState(2)
   const [hasMore, setHasMore] = useState(articles.length >= 20)
   const [loadingMore, setLoadingMore] = useState(false)
-  const activeSportRef = useRef('')
+  // Nace con el slug del deporte actual (en un hub /futbol, initialCategory ya
+  // trae "Fútbol"). Antes nacía vacío y solo se fijaba al cambiar de chip, así que
+  // "Ver más" en un hub de deporte paginaba SIN filtro → mezclaba todos los deportes.
+  const activeSportRef = useRef(CATEGORY_TO_SLUG[initialCategory]?.toLowerCase() ?? '')
 
   const handleCategoryChange = useCallback((cat: string) => {
     setContentVisible(false)

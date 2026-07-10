@@ -214,8 +214,9 @@ export default async function SportPage({
       <Header />
       <BreakingNewsBar
         items={safeArticles.slice(0, 8).map(
-          (a: { title: string; sport?: string; category?: string }) => ({
+          (a: { title: string; slug?: string; sport?: string; category?: string }) => ({
             title: a.title,
+            slug: a.slug,
             sport: a.sport || a.category,
           })
         )}

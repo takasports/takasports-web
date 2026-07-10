@@ -98,6 +98,8 @@ export default function BreakingNewsBar({
           className="flex-1 overflow-hidden"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
+          onTouchStart={() => setPaused(true)}
+          onTouchEnd={() => setPaused(false)}
         >
           <div
             ref={trackRef}
