@@ -55,8 +55,7 @@ function SectionHeader({ title }: { title: string }) {
 function EmptyState({ icon, text, cta, href }: { icon: React.ReactNode; text: string; cta: string; href: string }) {
   return (
     <div
-      className="rounded-2xl p-6 flex flex-col items-center gap-3 text-center"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+      className="tk-glass rounded-2xl p-6 flex flex-col items-center gap-3 text-center"
     >
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -913,7 +912,7 @@ export default function PerfilPage() {
                   {/* CrackQuiz */}
                   {quizStats && (
                     <Link href="/crackquiz" className="rounded-2xl p-4 flex flex-col gap-2 transition-all hover:translate-y-[-2px]"
-                      style={{ background: 'var(--bg-card)', border: '1px solid rgba(252,211,77,0.18)' }}>
+                      style={{ background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)', border: '1px solid rgba(252,211,77,0.18)' }}>
                       <div className="flex items-center justify-between">
                         <span className="text-lg" style={{ color: '#FCD34D', display: 'inline-flex' }}><LightbulbIcon size={20} /></span>
                         {quizStats.streak > 1 && (
@@ -934,7 +933,7 @@ export default function PerfilPage() {
                   {/* TakaGrid */}
                   {gridStats && (
                     <Link href="/takagrid" className="rounded-2xl p-4 flex flex-col gap-2 transition-all hover:translate-y-[-2px]"
-                      style={{ background: 'var(--bg-card)', border: '1px solid rgba(253,186,116,0.18)' }}>
+                      style={{ background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)', border: '1px solid rgba(253,186,116,0.18)' }}>
                       <div className="flex items-center justify-between">
                         <span style={{ color: '#FDBA74' }}><FootballIcon size={20} /></span>
                         {gridStats.finished && (
@@ -960,7 +959,7 @@ export default function PerfilPage() {
                   {/* Mi Once */}
                   {miOnceStats && (
                     <Link href="/mionce" className="rounded-2xl p-4 flex flex-col gap-2 transition-all hover:translate-y-[-2px]"
-                      style={{ background: 'var(--bg-card)', border: '1px solid rgba(147,197,253,0.18)' }}>
+                      style={{ background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)', border: '1px solid rgba(147,197,253,0.18)' }}>
                       <div className="flex items-center justify-between">
                         <span style={{ color: '#93C5FD' }}><StadiumIcon size={20} /></span>
                         <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(147,197,253,0.12)', color: '#93C5FD', border: '1px solid rgba(147,197,253,0.25)', fontFamily: 'var(--font-sport)' }}>
@@ -978,7 +977,7 @@ export default function PerfilPage() {
                   {/* Sopa de Cracks */}
                   {sopaStats && (
                     <Link href="/sopa-cracks" className="rounded-2xl p-4 flex flex-col gap-2 transition-all hover:translate-y-[-2px]"
-                      style={{ background: 'var(--bg-card)', border: '1px solid rgba(110,231,183,0.18)' }}>
+                      style={{ background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)', border: '1px solid rgba(110,231,183,0.18)' }}>
                       <div className="flex items-center justify-between">
                         <span className="text-lg" style={{ color: '#6EE7B7', display: 'inline-flex' }}><SearchIcon size={20} /></span>
                       </div>
@@ -1022,7 +1021,7 @@ export default function PerfilPage() {
                         href={`/noticias/${item.slug}`}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:brightness-110"
                         style={{
-                          background: 'var(--bg-card)',
+                          background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)',
                           border: '1px solid var(--border)',
                           borderLeft: `3px solid ${accent}`,
                           textDecoration: 'none',
@@ -1096,7 +1095,7 @@ export default function PerfilPage() {
                       key={event.id}
                       className="flex items-center justify-between px-4 py-3 rounded-xl group/item"
                       style={{
-                        background: 'var(--bg-card)',
+                        background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)',
                         border: '1px solid var(--border)',
                         borderLeft: `3px solid ${event.accent}`,
                       }}
@@ -1145,7 +1144,7 @@ export default function PerfilPage() {
                   href="/quiniela"
                   className="flex items-center justify-between px-4 py-3 rounded-xl transition-all hover:brightness-110"
                   style={{
-                    background: 'var(--bg-card)',
+                    background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)',
                     border: '1px solid var(--border)',
                     textDecoration: 'none',
                   }}
@@ -1159,8 +1158,7 @@ export default function PerfilPage() {
                 </Link>
               ) : (
                 <div
-                  className="rounded-2xl overflow-hidden"
-                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                  className="tk-glass rounded-2xl overflow-hidden"
                 >
                   {quinielaSaved.picks.map((p, i) => (
                     <div
@@ -1298,7 +1296,7 @@ export default function PerfilPage() {
                         <div
                           key={sport}
                           className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-                          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                          style={{ background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)', border: '1px solid var(--border)' }}
                         >
                           <span className="flex-shrink-0" style={{ color: '#9B7CF6' }}><SportIcon sport={sport} size={18} /></span>
                           <span className="flex-1 text-xs font-semibold" style={{ color: '#D0D0E0', fontFamily: 'var(--font-sport)' }}>
@@ -1328,7 +1326,7 @@ export default function PerfilPage() {
                         <div
                           key={liga}
                           className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-                          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                          style={{ background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)', border: '1px solid var(--border)' }}
                         >
                           <span className="text-[10px] w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#7C3AED', display: 'inline-block' }} />
                           <span className="flex-1 text-xs font-semibold truncate" style={{ color: '#D0D0E0', fontFamily: 'var(--font-sport)' }}>
@@ -1356,7 +1354,7 @@ export default function PerfilPage() {
                       <div
                         key={club}
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-                        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                        style={{ background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)', border: '1px solid var(--border)' }}
                       >
                         <div
                           className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 text-[9px] font-black"
@@ -1453,8 +1451,7 @@ export default function PerfilPage() {
             <section>
               <SectionHeader title="Preferencias" />
               <div
-                className="rounded-2xl overflow-hidden"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                className="tk-glass rounded-2xl overflow-hidden"
               >
                 <div
                   className="flex items-center justify-between px-4 py-3.5"
