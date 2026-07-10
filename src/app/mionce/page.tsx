@@ -547,16 +547,9 @@ function PlayerSearchModal({ slot, challenge, slotTag, excludeIds, excludedClubs
                         <CountryFlag country={p.country} width={16} />
                         <span className="truncate">{p.name}</span>
                       </p>
-                      <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
-                        {slotTag && p.club !== slotTag.label ? (
-                          <>
-                            <span style={{ color: '#F0F0F5' }}>{slotTag.label}</span>
-                            <span> · también en {p.club}</span>
-                          </>
-                        ) : (
-                          p.club
-                        )}
-                      </p>
+                      {/* FASE 9 "sin pista": NO mostramos el club del jugador en los
+                          resultados (era la pista que confirmaba la respuesta). El
+                          enunciado del hueco —"Solo {club}"— sigue en la cabecera. */}
                     </div>
                     <span
                       className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded flex-shrink-0"
