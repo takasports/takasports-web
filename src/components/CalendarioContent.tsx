@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
-import { getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME, highlightReason, isMundial } from '@/lib/competitions'
+import { getEventHighlightScore, getLiveLabel, isTennis, isCombat, isRacing, sportThemeKey, SPORT_THEME, isMundial } from '@/lib/competitions'
 import { isSplitBroadcast, getBroadcastForTz } from '@/lib/broadcasts'
 import { groupEventsByDate, orderedDateKeys, namesMatch, formatDateLabel, isoToLocalDate, groupDayByCompetition } from '@/lib/calendar'
 import { nameMatch } from '@/lib/quiniela'
@@ -277,49 +277,12 @@ function crestInitials(abbr?: string, name?: string): string {
   return parts.map((w) => w[0]).slice(0, 3).join('').toUpperCase()
 }
 
-function ReminderButton({ active, onClick, color = '#7C3AED', size = 'md' }: {
-  active: boolean; onClick: () => void; color?: string; size?: 'sm' | 'md'
-}) {
-  const dim = size === 'sm' ? 28 : 34
-  const icon = size === 'sm' ? 12 : 14
-  return (
-    <button
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick() }}
-      className="flex items-center justify-center rounded-md transition-all flex-shrink-0"
-      style={{
-        width: dim, height: dim,
-        background: active ? `${color}1F` : 'rgba(255,255,255,0.04)',
-        border: active ? `1px solid ${color}55` : '1px solid rgba(255,255,255,0.06)',
-      }}
-      aria-label={active ? 'Quitar recordatorio' : 'Recordar'}
-    >
-      <svg width={icon} height={icon} viewBox="0 0 16 16" fill="none">
-        <path d="M8 1.5A4.5 4.5 0 003.5 6v2.5L2 10.5h12L12.5 8.5V6A4.5 4.5 0 008 1.5z"
-          stroke={active ? color : '#5A5A6A'} strokeWidth="1.3"
-          fill={active ? color : 'none'} fillOpacity={active ? 0.25 : 0} />
-      </svg>
-    </button>
-  )
-}
-
 // Truncate-friendly short name (last word for multi-word names)
 function shortName(name: string | null | undefined, abbr?: string): string {
   if (!name) return ''
   if (abbr) return abbr
   const words = name.split(' ')
   return words.length > 1 ? words[words.length - 1] : name
-}
-
-// Returns "en 2h" / "en 45m" when match is within 12h, null otherwise
-function timeUntilLabel(isoDate: string | undefined): string | null {
-  if (!isoDate) return null
-  const diff = new Date(isoDate).getTime() - Date.now()
-  if (diff <= 0 || diff > 12 * 60 * 60 * 1000) return null
-  const mins = Math.floor(diff / 60_000)
-  if (mins < 60) return `en ${mins}m`
-  const h = Math.floor(mins / 60)
-  const m = mins % 60
-  return m > 0 ? `en ${h}h ${m}m` : `en ${h}h`
 }
 
 // ─── Hero Card (live ticker) ──────────────────────────────────────────────
@@ -593,26 +556,15 @@ function CompGroupHeader({ comp, accent, count, first, crest, slug, banner, pinn
     : inner
 }
 
-// Inline strip of 5 W/D/L chips for a team's recent form. Renders nothing
-// if the list is empty.
-function FormStrip({ form, align = 'start' }: { form: ('W'|'D'|'L')[]; align?: 'start' | 'end' }) {
-  if (!form || form.length === 0) return null
-  const color = (r: 'W'|'D'|'L') => r === 'W' ? '#22C55E' : r === 'D' ? '#EAB308' : '#EF4444'
-  // Lo más reciente, junto al escudo (input = más-reciente-primero, past-events order desc).
-  // Local (align='end', escudo a la derecha) → invertir: lo más reciente queda a la derecha.
-  // Visitante (align='start', escudo a la izquierda) → mantener: lo más reciente queda a la izquierda.
-  const ordered = align === 'end' ? [...form].reverse() : [...form]
-  return (
-    <div className={`mt-1.5 flex gap-1 ${align === 'end' ? 'justify-end' : ''}`}>
-      {ordered.map((r, i) => (
-        <span key={i} className="size-2 rounded-sm" style={{ background: color(r) }} title={r} />
-      ))}
-    </div>
-  )
-}
-
-// ─── Compact list row (non-live or in TODOS) ──────────────────────────────
-function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, isFav, homeFav, awayFav, onToggleFav, formHome, formAway, showComp, showReason, tz }: {
+// ─── Compact list row (una línea + canal) — paridad con la app compacta (§4) ──
+// FASE compacto (2026-07-10): fila de UNA LÍNEA en VIDRIO, espejo EXACTO de la app.
+// Equipo · hora/marcador · equipo + canal fino debajo → máxima densidad (revierte la
+// tarjeta vertical de la Fase 3). Espina de acento por deporte, pastilla EN VIVO/
+// Descanso/Final, velada UFC parseada (título en la ceja + "vs"), evento F1/golf a lo
+// ancho. Favorito = anillo en el escudo (se gestiona en "Mis equipos", como la app).
+// Recordatorio = campana mínima arriba-dcha SOLO en próximos (la web no tiene toque
+// largo). Conserva onClickUFC (modal cartelera), liveScore, tz y la agrupación por liga.
+function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, homeFav, awayFav, showComp, tz }: {
   event: SportEvent
   liveScore?: LiveScore
   isReminded: boolean
@@ -621,7 +573,7 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
   onClickUFC?: (date: string) => void
   flashing?: boolean
   isFav?: boolean
-  /** Favorito por-equipo (anillo + ♥ en el lado correcto). Si no llegan, cae en isFav (local). */
+  /** Favorito por-equipo (anillo del acento en el escudo). Si no llega, cae en isFav. */
   homeFav?: boolean
   awayFav?: boolean
   onToggleFav?: () => void
@@ -631,17 +583,10 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
   showReason?: boolean
   tz?: string
 }) {
-  // FASE 3 (2026-07-09): tarjeta VERTICAL, espejo de la app (maqueta aprobada).
-  // Espina de acento POR DEPORTE (decisión de José Tomás), ceja de competición,
-  // pastilla de estado, marcador blanco y escudo con anillo del favorito. Conserva
-  // TODAS las features de la web: FormStrip, cuenta atrás, hora Madrid, badges de
-  // fase/motivo, viñeta de evento-solo, favorito, recordatorio, BroadcastChip, tz.
-
   // Hora del partido (origen Madrid) convertida a la zona horaria del usuario.
   const displayTime = tz && tz !== SOURCE_TZ ? convertEventTime(event.time, tz, event.isoDate) : event.time
   const isLive = !!liveScore && isLiveStatus(liveScore.status)
-  // Días pasados (timeline continuo): el marcador viaja en el propio evento
-  // (homeScore/awayScore) y NO entra en el mapa liveScore. Dos convenciones.
+  // Días pasados (timeline continuo): el marcador viaja en el propio evento.
   const pastHasScore = event.homeScore != null && event.awayScore != null
   const finishedPast = !liveScore && (event.isPast === true || pastHasScore)
   const homeScoreVal = liveScore ? liveScore.homeGoals : (event.homeScore ?? null)
@@ -649,17 +594,12 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
   const isFinal = (!!liveScore && (liveScore.status === 'FT' || liveScore.status === 'Final' || liveScore.status === 'STATUS_FINAL') && liveScore.homeGoals !== null) || (finishedPast && pastHasScore)
   // Finalizado también para F1/UFC pasados (sin marcador, solo isPast) → "Final".
   const finished = !isLive && (isFinal || event.isPast === true)
-  // Favorito por-equipo (retrocompat: si no llega, el local hereda isFav).
-  const hFav = homeFav ?? !!isFav
+  const hFav = homeFav ?? false
   const aFav = awayFav ?? false
-  const tennis = isTennis(event.sport)
   const combat = isCombat(event.sport)
   const racing = isRacing(event.sport)
   // Identidad por DEPORTE (verde fútbol, ámbar básket…); default morado #A78BFA.
   const accent = accentForSport(event.sport, '#A78BFA')
-  const hasVs = !!event.away
-  const eventDate = event.isoDate ? isoToLocalDate(event.isoDate, tz) : null
-  const countdown = !isLive && !isFinal ? timeUntilLabel(event.isoDate) : null
 
   // Marcador numérico solo en deportes con marcador (nada en F1/MMA).
   const showScore = (isLive || isFinal) && !racing && !combat
@@ -677,157 +617,165 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
   const paused = liveLabel === 'Descanso' || liveLabel === 'Intervalo'
   // Ganador de una carrera/velada terminada (deportes sin marcador).
   const winnerNote = !isLive && (combat || racing) && event.resultNote ? event.resultNote : null
-  // Motivo "por qué es Destacado" (solo en modo Destacados, y si hay uno claro).
-  const reason = showReason ? highlightReason({ comp: event.comp, home: event.home, away: event.away ?? undefined }) : null
+
+  const home = event.home ?? ''
+  const away = event.away ?? ''
   const compLabel = (event.comp ?? '').trim()
-  // El comp por-tarjeta solo cuando NO hay cabecera de grupo (vista Recordatorios);
-  // en la lista principal la competición ya la lleva CompGroupHeader.
-  const showEyebrowComp = !!showComp && !!compLabel
-  // Hora de Madrid (origen de la emisión) junto a la local, para la audiencia LatAm.
-  const madTime = !isLive && !finished && !!tz && tz !== SOURCE_TZ ? `${event.time} MAD` : null
-  const FAV = '#F472B6'
 
-  // ── Pastilla de estado (arriba-dcha): EN VIVO · min / Descanso / Final / hora ──
-  const statusPill = isLive && !paused ? (
-    <span className="inline-flex items-center gap-1.5 rounded-full flex-shrink-0" style={{ padding: '3px 8px', background: 'rgba(255,77,46,0.18)', border: '1px solid rgba(255,77,46,0.42)' }}>
-      <span className="rounded-full" style={{ width: 6, height: 6, background: '#FF4D2E', boxShadow: '0 0 7px #FF4D2E', animation: 'live-pulse 1.6s ease-out infinite' }} />
-      <span className="text-[9px] font-black uppercase tracking-[0.06em] tabular-nums" style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}>
-        {liveLabel && liveLabel !== 'EN VIVO' ? `EN VIVO · ${liveLabel}` : 'EN VIVO'}
-      </span>
-    </span>
-  ) : paused ? (
-    <span className="text-[9.5px] font-black uppercase tracking-[0.08em] rounded-full flex-shrink-0" style={{ padding: '3px 9px', color: '#FBBF24', background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}>
-      {liveLabel}
-    </span>
-  ) : finished ? (
-    <span className="text-[9.5px] font-black uppercase tracking-[0.08em] rounded-full flex-shrink-0" style={{ padding: '3px 9px', color: '#9090A8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)' }}>
-      Final
-    </span>
-  ) : (
-    <span className="text-[10px] font-black tracking-[0.02em] tabular-nums rounded-full flex-shrink-0" style={{ padding: '3px 9px', color: accent, background: `${accent}22`, border: `1px solid ${accent}55`, fontFamily: 'var(--font-sport)' }}>
-      {displayTime || 'Por confirmar'}
-    </span>
-  )
+  // Evento de un solo lado (F1/golf: sin rival) o velada UFC (home = "UFC 329: A vs B")
+  // → se parsea a matchup + título para que se vea el "vs" Y el título.
+  const noAway = !away.trim()
+  const vsParse = noAway ? /^(.*?):\s*(.+?)\s+vs\.?\s+(.+)$/i.exec(home.trim()) : null
+  const dispHome = vsParse ? vsParse[2].trim() : home
+  const dispAway = vsParse ? vsParse[3].trim() : away
+  const parsedTitle = vsParse ? vsParse[1].trim() : undefined
+  const isMatchup = !racing && !!dispAway.trim()
 
-  // ── Fila de un equipo/entidad: escudo (+anillo favorito) · nombre (+♥ +forma) · marcador/VS ──
-  const teamRow = (opts: { name: string; logo?: string; photo?: string; abbr?: string; score: number | null; lead: boolean; dim: boolean; fav: boolean; form?: ('W'|'D'|'L')[]; showVs: boolean }) => (
-    <div className="flex items-center gap-2.5">
-      <span className="flex-shrink-0 inline-flex rounded-lg" style={opts.fav ? { boxShadow: `0 0 0 2px ${FAV}` } : undefined}>
-        <TeamLogo logo={opts.logo} photo={opts.photo} name={opts.name} abbr={opts.abbr} size={28} sport={event.sport} accent={accent} />
+  const kickoff = displayTime || ''
+  const centerTxt = showScore ? `${homeScoreVal ?? 0} – ${awayScoreVal ?? 0}` : (kickoff || (isMatchup ? 'VS' : ''))
+
+  // Canal de TV localizado según la zona horaria elegida (espejo de la app).
+  const channel = getBroadcastForTz(compLabel, event.sport ?? '', tz ?? SOURCE_TZ) ?? event.broadcast
+
+  // Recordatorio solo para PRÓXIMOS con ficha y fecha futura.
+  const kickoffMs = event.isoDate ? new Date(event.isoDate).getTime() : NaN
+  const canRemind = !isLive && !finished && !!event.matchRef && !Number.isNaN(kickoffMs) && kickoffMs > Date.now()
+  const eventDate = event.isoDate ? isoToLocalDate(event.isoDate, tz) : null
+
+  // Ceja: título de velada UFC parseado, o competición (vista Recordatorios).
+  const eyebrowText = parsedTitle || (showComp && compLabel ? compLabel : '')
+  // Hueco a la derecha para no chocar con la pastilla/campana absolutas.
+  const contentPadRight = (isLive || finished) ? 54 : (canRemind ? 24 : 0)
+
+  // Escudo pequeño (20px) con anillo del acento si el equipo es favorito; si no hay
+  // logo, ♥ del acento cuando es favorito (nunca un hueco vacío grande), como la app.
+  const smallCrest = (logo: string | undefined, fav: boolean) =>
+    logo ? (
+      <span className="inline-flex items-center justify-center flex-shrink-0" style={{ width: 20, height: 20, borderRadius: 5, border: fav ? `1.5px solid ${accent}` : '1.5px solid transparent' }}>
+        <img src={logo} alt="" width={18} height={18} style={{ width: 18, height: 18, objectFit: 'contain' }} />
       </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="truncate leading-snug" style={{ fontSize: 14, fontFamily: 'var(--font-sport)', fontWeight: opts.lead ? 900 : 700, color: opts.dim ? '#8A8A9E' : '#EBEBF5' }}>
-            {opts.name}
-          </span>
-          {opts.fav && (
-            <svg width="10" height="10" viewBox="0 0 16 16" fill={FAV} className="flex-shrink-0" aria-hidden>
-              <path d="M8 13.5s-5-3-5-7a3 3 0 015-2 3 3 0 015 2c0 4-5 7-5 7z" />
-            </svg>
-          )}
-        </div>
-        {opts.form && <FormStrip form={opts.form} align="start" />}
-      </div>
-      {showScore ? (
-        <span className="tabular-nums flex-shrink-0" style={{ fontSize: 22, fontFamily: 'var(--font-sport)', fontWeight: 900, color: opts.dim ? '#8A8A9E' : '#fff', marginLeft: 6 }}>
-          {opts.score ?? 0}
-        </span>
-      ) : opts.showVs ? (
-        <span className="flex-shrink-0" style={{ marginLeft: 6, fontWeight: 900, color: combat ? '#F472B6' : '#7C7C8C', fontSize: combat ? 13 : 12, letterSpacing: combat ? '0.12em' : '0.14em', fontFamily: combat ? 'var(--font-display)' : 'var(--font-sport)' }}>
-          VS
-        </span>
-      ) : null}
-    </div>
-  )
+    ) : fav ? (
+      <svg width="10" height="10" viewBox="0 0 16 16" fill={accent} className="flex-shrink-0" aria-hidden><path d="M8 13.5s-5-3-5-7a3 3 0 015-2 3 3 0 015 2c0 4-5 7-5 7z" /></svg>
+    ) : null
 
   const inner = (
     <div
-      className={`cal-card${isLive ? ' cal-card--live' : ''} rounded-xl hover:brightness-105 ${flashing ? 'ts-flash' : ''}`}
+      className={`rounded-xl relative overflow-hidden hover:brightness-110 transition-[filter] duration-150 ${flashing ? 'ts-flash' : ''}`}
       style={{
-        ['--row-accent' as string]: accent,
-        padding: '11px 13px',
-        background: isLive
-          ? 'linear-gradient(100deg, rgba(255,77,46,0.07) 0%, rgba(255,255,255,0.02) 55%)'
-          : 'rgba(255,255,255,0.025)',
-        borderTop: `1px solid ${isLive ? 'rgba(255,77,46,0.15)' : 'rgba(255,255,255,0.05)'}`,
-        borderRight: `1px solid ${isLive ? 'rgba(255,77,46,0.15)' : 'rgba(255,255,255,0.05)'}`,
-        borderBottom: `1px solid ${isLive ? 'rgba(255,77,46,0.15)' : 'rgba(255,255,255,0.05)'}`,
-        borderLeft: `4px solid ${isLive ? '#FF4D2E' : accent}`,
+        padding: '8px 12px',
+        // Vidrio simulado: velo translúcido + canto de luz arriba + sombra (coste 0).
+        background: isLive ? 'rgba(255,59,59,0.09)' : 'rgba(255,255,255,0.07)',
+        border: `1px solid ${isLive ? 'rgba(255,59,59,0.33)' : 'rgba(255,255,255,0.13)'}`,
+        borderTopColor: isLive ? 'rgba(255,59,59,0.44)' : 'rgba(255,255,255,0.22)',
+        borderLeft: `3px solid ${isLive ? '#FF3B3B' : accent}`,
+        boxShadow: isLive
+          ? 'inset 0 1px 0 rgba(255,255,255,0.10), 0 10px 20px -14px rgba(0,0,0,0.7), 0 0 16px rgba(255,59,59,0.14)'
+          : 'inset 0 1px 0 rgba(255,255,255,0.10), 0 10px 20px -14px rgba(0,0,0,0.7)',
       }}
     >
-      {/* Ceja: icono del deporte + competición (si toca) · fase · pastilla de estado */}
-      <div className="flex items-center gap-1.5 mb-2.5">
-        <span className="inline-flex flex-shrink-0" style={{ color: accent }}>
-          <SportIcon sport={event.sport} size={13} />
+      {/* Pastilla de estado (arriba-dcha): EN VIVO · Descanso · Final; o campana en próximos */}
+      {isLive && !paused ? (
+        <span className="absolute z-[2] inline-flex items-center gap-1 rounded-full" style={{ top: 6, right: 8, padding: '1.5px 6px', background: 'rgba(255,59,59,0.16)', border: '1px solid rgba(255,59,59,0.4)' }}>
+          <span className="rounded-full" style={{ width: 4, height: 4, background: '#FF3B3B', boxShadow: '0 0 6px #FF3B3B', animation: 'live-pulse 1.6s ease-out infinite' }} />
+          <span className="text-[8px] font-black uppercase tracking-[0.04em] tabular-nums" style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}>
+            {liveLabel && liveLabel !== 'EN VIVO' ? `EN VIVO · ${liveLabel}` : 'EN VIVO'}
+          </span>
         </span>
-        {showEyebrowComp ? (
-          <span className="truncate flex-1" style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', color: accent, fontFamily: 'var(--font-sport)' }}>
-            {compLabel}
-          </span>
+      ) : paused ? (
+        <span className="absolute z-[2] text-[8px] font-black uppercase tracking-[0.05em] rounded-full" style={{ top: 6, right: 8, padding: '2px 7px', color: '#FBBF24', background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}>
+          {liveLabel}
+        </span>
+      ) : finished ? (
+        <span className="absolute z-[2] text-[8px] font-black uppercase tracking-[0.06em] rounded-full" style={{ top: 6, right: 8, padding: '2px 7px', color: '#9090A8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)' }}>
+          Final
+        </span>
+      ) : canRemind ? (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleReminder() }}
+          className="absolute z-[2] flex items-center justify-center rounded-full transition-colors"
+          style={{ top: 5, right: 6, width: 22, height: 22 }}
+          aria-label={isReminded ? 'Quitar recordatorio' : 'Recordar'}
+          title={isReminded ? 'Quitar recordatorio' : 'Recordar'}
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1.5A4.5 4.5 0 003.5 6v2.5L2 10.5h12L12.5 8.5V6A4.5 4.5 0 008 1.5z" stroke={isReminded ? accent : '#6A6A7A'} strokeWidth="1.3" fill={isReminded ? accent : 'none'} fillOpacity={isReminded ? 0.25 : 0} />
+          </svg>
+        </button>
+      ) : null}
+
+      <div style={{ paddingRight: contentPadRight }}>
+        {/* Ceja (opcional): fecha (Recordatorios) + título velada / competición */}
+        {(eyebrowText || dateLabel) ? (
+          <div className="flex items-center gap-1.5" style={{ marginBottom: 3 }}>
+            {dateLabel ? (
+              <span className="flex-shrink-0 rounded-full" style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '1px 6px', color: accent, background: `${accent}14`, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
+                {dateLabel}
+              </span>
+            ) : null}
+            {eyebrowText ? (
+              <span className="truncate" style={{ fontSize: 8.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', color: accent, fontFamily: 'var(--font-sport)' }}>
+                {eyebrowText}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        {isMatchup ? (
+          <div className="flex items-center gap-2">
+            {/* Local */}
+            <div className="flex-1 flex items-center gap-1.5 min-w-0">
+              {smallCrest(event.homeLogo, hFav)}
+              <span className="truncate" style={{ fontSize: 14, fontFamily: 'var(--font-sport)', fontWeight: homeLead ? 900 : 700, color: dimHome ? '#8A8A9E' : '#EBEBF5' }}>
+                {dispHome}
+              </span>
+            </div>
+            {/* Centro: marcador / hora / VS */}
+            <div className="flex-shrink-0 text-center" style={{ minWidth: 50 }}>
+              <span className="tabular-nums" style={{ fontSize: showScore ? 16 : 14, fontFamily: 'var(--font-sport)', fontWeight: 900, letterSpacing: showScore ? '0.02em' : 0, color: showScore ? '#fff' : (!isLive && !finished ? accent : '#6A6A7A') }}>
+                {centerTxt}
+              </span>
+            </div>
+            {/* Visitante */}
+            <div className="flex-1 flex items-center justify-end gap-1.5 min-w-0">
+              <span className="truncate text-right" style={{ fontSize: 14, fontFamily: 'var(--font-sport)', fontWeight: awayLead ? 900 : 700, color: dimAway ? '#8A8A9E' : '#EBEBF5' }}>
+                {dispAway}
+              </span>
+              {smallCrest(event.awayLogo, aFav)}
+            </div>
+          </div>
         ) : (
-          <span className="flex-1" />
+          /* Evento sin rival (F1/golf): icono + nombre a lo ancho + hora/ganador */
+          <div className="flex items-center gap-2.5">
+            <span className="flex items-center justify-center flex-shrink-0" style={{ width: 26, height: 26, borderRadius: 8, background: `${accent}22`, color: accent }}>
+              <SportIcon sport={event.sport} size={14} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="truncate" style={{ fontSize: 14, fontFamily: 'var(--font-sport)', fontWeight: 800, color: '#EBEBF5' }}>
+                {home}
+              </div>
+              {winnerNote ? (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[11px] leading-none flex-shrink-0" aria-hidden>{racing ? '🏁' : '🏆'}</span>
+                  <span className="truncate" style={{ fontSize: 11, fontWeight: 700, color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>{winnerNote}</span>
+                </div>
+              ) : null}
+            </div>
+            {!isLive && !finished ? (
+              <span className="tabular-nums flex-shrink-0" style={{ fontSize: 15, fontWeight: 900, color: accent, fontFamily: 'var(--font-sport)' }}>
+                {kickoff || '—'}
+              </span>
+            ) : null}
+          </div>
         )}
-        {event.stage && (
-          <span className="text-[8px] font-black uppercase tracking-[0.12em] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ color: accent, background: `${accent}14`, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
-            {event.stage}
-          </span>
-        )}
-        {tennis && showScore && (
-          <span className="text-[8px] font-black uppercase tracking-[0.14em] flex-shrink-0" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>Sets</span>
-        )}
-        {tennis && isLive && liveScore?.clock && (
-          <span className="text-[8px] font-bold uppercase tracking-[0.1em] tabular-nums flex-shrink-0" style={{ color: '#FBBF24', fontFamily: 'var(--font-sport)' }} title="Juego en curso">
-            {liveScore.clock}
-          </span>
-        )}
-        {statusPill}
       </div>
 
-      {/* Equipos: fila local + fila visitante (carreras/eventos = una sola fila) */}
-      <div className="flex flex-col gap-2">
-        {teamRow({ name: event.home, logo: event.homeLogo, photo: event.homePhoto, abbr: event.homeAbbr, score: homeScoreVal, lead: homeLead, dim: dimHome, fav: hFav, form: hasVs ? formHome : undefined, showVs: !isLive && !finished && hasVs })}
-        {hasVs && !racing ? teamRow({ name: event.away as string, logo: event.awayLogo, photo: event.awayPhoto, abbr: event.awayAbbr, score: awayScoreVal, lead: awayLead, dim: dimAway, fav: aFav, form: formAway, showVs: false }) : null}
-      </div>
-
-      {/* Ganador (combate/carrera terminada, sin marcador numérico) */}
-      {winnerNote && (
-        <div className="flex items-center gap-2 mt-2.5 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <span className="text-[13px] leading-none flex-shrink-0" aria-hidden>{racing ? '🏁' : '🏆'}</span>
-          <span className="text-[9px] font-black uppercase tracking-[0.1em] flex-shrink-0" style={{ color: '#9090A8', fontFamily: 'var(--font-sport)' }}>Ganador</span>
-          <span className="truncate flex-1 text-[13px] font-bold" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>{winnerNote}</span>
+      {/* Canal (sub-línea fina) */}
+      {channel ? (
+        <div className="flex items-center justify-center gap-1.5" style={{ marginTop: 6, paddingTop: 5, borderTop: '1px solid rgba(255,255,255,0.05)', color: '#6A6A7A' }}>
+          <TvIcon size={10} className="flex-shrink-0" />
+          <span className="truncate" style={{ fontSize: 10, fontWeight: 600, color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>{channel}</span>
         </div>
-      )}
-
-      {/* Meta: motivo · fecha · canal · hora MAD · cuenta atrás · favorito · recordatorio */}
-      <div className="flex items-center gap-2 mt-2.5 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-          {reason && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.1em] flex-shrink-0" style={{ color: '#C4B5FD', background: 'rgba(124,58,237,0.14)', border: '1px solid rgba(124,58,237,0.32)', fontFamily: 'var(--font-sport)' }}>
-              <svg width="7" height="7" viewBox="0 0 12 12" fill="currentColor" aria-hidden><path d="M6 1l1.5 3.2 3.5.5-2.5 2.4.6 3.4L6 8.9 2.9 10.5l.6-3.4L1 4.7l3.5-.5L6 1z" /></svg>
-              {reason}
-            </span>
-          )}
-          {dateLabel && (
-            <span className="text-[8px] font-black uppercase tracking-[0.1em] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ color: accent, background: `${accent}14`, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
-              {dateLabel}
-            </span>
-          )}
-          <BroadcastChip comp={event.comp} sport={event.sport} tz={tz} fallback={event.broadcast} />
-          {madTime && (
-            <span className="text-[8px] font-bold uppercase tracking-wide tabular-nums flex-shrink-0" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }} title="Hora en Madrid (origen de la emisión)">
-              {madTime}
-            </span>
-          )}
-          {isFav && countdown && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black tabular-nums uppercase tracking-wider flex-shrink-0" style={{ background: 'rgba(244,114,182,0.12)', color: '#F472B6', border: '1px solid rgba(244,114,182,0.3)', fontFamily: 'var(--font-sport)' }} title="Tu equipo juega pronto">
-              <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" /><path d="M6 4v2.5l1.5 1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
-              {countdown}
-            </span>
-          )}
-        </div>
-        {onToggleFav && <FavoriteHeart active={!!isFav} onClick={onToggleFav} size={15} />}
-        {!isLive && !finished && <ReminderButton active={isReminded} onClick={onToggleReminder} color={event.accent} size="sm" />}
-      </div>
+      ) : null}
     </div>
   )
 
@@ -1301,19 +1249,17 @@ function DayChips({ days, value, onChange, tz }: {
 // (cierran sobre event/toggles estables). (FASE 7 tanda D — hallazgo [16])
 type MatchRowProps = Parameters<typeof MatchRowInner>[0]
 function matchRowPropsEqual(a: MatchRowProps, b: MatchRowProps): boolean {
+  // Solo comparamos las props que AFECTAN al render compacto. isFav/showReason/
+  // formHome/formAway ya no se pintan (la fila compacta no lleva forma ni motivo).
   if (
     a.event !== b.event ||
     a.isReminded !== b.isReminded ||
     a.flashing !== b.flashing ||
-    a.isFav !== b.isFav ||
     a.homeFav !== b.homeFav ||
     a.awayFav !== b.awayFav ||
     a.showComp !== b.showComp ||
-    a.showReason !== b.showReason ||
     a.dateLabel !== b.dateLabel ||
-    a.tz !== b.tz ||
-    a.formHome !== b.formHome ||
-    a.formAway !== b.formAway
+    a.tz !== b.tz
   ) return false
   const x = a.liveScore, y = b.liveScore
   if (!x || !y) return x === y
