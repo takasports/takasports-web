@@ -212,11 +212,6 @@ export default function RootLayout({
         <ConsentBanner gaId={GA_ID} clarityId={CLARITY_ID} />
         <PWAManager />
         <ClientOnlyLayoutScripts />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', () => { const reg = () => navigator.serviceWorker.register('/sw.js').catch(() => {}); 'requestIdleCallback' in window ? requestIdleCallback(reg) : setTimeout(reg, 2000) }) }`,
-          }}
-        />
       </body>
     </html>
   )

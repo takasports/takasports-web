@@ -24,6 +24,25 @@ export default function PWAManager() {
   // consentimiento esté resuelto (prioridad legal). Misma clave que ConsentBanner.
   const [consentOk, setConsentOk] = useState(false)
 
+  // ── 0) Registro del service worker ────────────────────────────────────────
+  // Antes vivía en un <script> inline en layout.tsx, pero la CSP nonce-only de
+  // las rutas dinámicas (/perfil, /quiniela, /archivo, /admin) lo bloqueaba y el
+  // SW no se registraba en ellas. Desde un componente cliente el registro va en
+  // un chunk servido desde 'self', que la CSP permite sin nonce. Se difiere a
+  // load + idle para no competir con el LCP.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    const register = () => { navigator.serviceWorker.register('/sw.js').catch(() => {}) }
+    const onLoad = () => {
+      if ('requestIdleCallback' in window) requestIdleCallback(register)
+      else setTimeout(register, 2000)
+    }
+    // Si el componente hidrata después del load (habitual), el evento ya pasó.
+    if (document.readyState === 'complete') onLoad()
+    else window.addEventListener('load', onLoad, { once: true })
+    return () => window.removeEventListener('load', onLoad)
+  }, [])
+
   // ── 1) Invitación a instalar ──────────────────────────────────────────────
   useEffect(() => {
     let dismissed = false
