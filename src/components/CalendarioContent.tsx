@@ -650,7 +650,9 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
   // Ceja: título de velada UFC parseado, o competición (vista Recordatorios).
   const eyebrowText = parsedTitle || (showComp && compLabel ? compLabel : '')
   // Hueco a la derecha para no chocar con la pastilla/campana absolutas.
-  const contentPadRight = (isLive || finished) ? 54 : (canRemind ? 24 : 0)
+  // El estado ya NO va en la esquina (pasa a ceja centrada) → el marcador queda CENTRADO;
+  // solo reservamos hueco a la dcha para la campana de recordatorio en próximos.
+  const contentPadRight = canRemind ? 24 : 0
 
   // Escudo del equipo (22px): logo si existe (anillo del acento si es favorito); si no,
   // iniciales tintadas del deporte. Flanquean el marcador central (maqueta G2 aprobada).
@@ -711,23 +713,9 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
       {/* Brillo specular del borde superior */}
       <div aria-hidden className="pointer-events-none absolute" style={{ top: 0, left: 0, right: 0, height: '42%', background: 'linear-gradient(180deg, rgba(255,255,255,0.07), transparent)', borderRadius: '15px 15px 0 0' }} />
 
-      {/* Pastilla de estado (arriba-dcha): EN VIVO · Descanso · Final; o campana en próximos */}
-      {isLive && !paused ? (
-        <span className="absolute z-[2] inline-flex items-center gap-1 rounded-full" style={{ top: 8, right: 10, padding: '2.5px 7px', background: 'rgba(255,59,59,0.22)', border: '1px solid rgba(255,59,59,0.55)', boxShadow: '0 0 10px rgba(255,59,59,0.25)' }}>
-          <span className="rounded-full" style={{ width: 5, height: 5, background: '#fff', boxShadow: '0 0 6px #fff', animation: 'live-pulse 1.6s ease-out infinite' }} />
-          <span className="text-[8px] font-black uppercase tracking-[0.05em] tabular-nums" style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}>
-            {liveLabel && liveLabel !== 'EN VIVO' ? `EN VIVO · ${liveLabel}` : 'EN VIVO'}
-          </span>
-        </span>
-      ) : paused ? (
-        <span className="absolute z-[2] text-[8px] font-black uppercase tracking-[0.05em] rounded-full" style={{ top: 8, right: 10, padding: '2.5px 8px', color: '#FBBF24', background: 'rgba(251,191,36,0.16)', border: '1px solid rgba(251,191,36,0.34)', fontFamily: 'var(--font-sport)' }}>
-          {liveLabel}
-        </span>
-      ) : finished ? (
-        <span className="absolute z-[2] text-[8px] font-black uppercase tracking-[0.06em] rounded-full" style={{ top: 8, right: 10, padding: '2.5px 8px', color: '#A2A2B4', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', fontFamily: 'var(--font-sport)' }}>
-          Final
-        </span>
-      ) : canRemind ? (
+      {/* Recordatorio (campana) arriba-dcha SOLO en próximos. El estado (EN VIVO/Final)
+          ya NO va en la esquina: pasa a una ceja CENTRADA encima del marcador (Opción A). */}
+      {canRemind ? (
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleReminder() }}
           className="absolute z-[2] flex items-center justify-center rounded-full transition-colors"
@@ -742,16 +730,33 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
       ) : null}
 
       <div className="relative" style={{ zIndex: 1, paddingRight: contentPadRight }}>
-        {/* Ceja (opcional): fecha (Recordatorios) + título velada / competición */}
-        {(eyebrowText || dateLabel) ? (
-          <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
+        {/* Ceja CENTRADA encima del marcador: estado (EN VIVO·min / DESCANSO / FINAL) +
+            fecha (Recordatorios) + título de velada / competición. */}
+        {(isLive || finished || eyebrowText || dateLabel) ? (
+          <div className="flex items-center justify-center gap-1.5" style={{ marginBottom: 5 }}>
             {dateLabel ? (
               <span className="flex-shrink-0 rounded-full" style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '1px 6px', color: accent, background: `${accent}14`, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
                 {dateLabel}
               </span>
             ) : null}
+            {isLive && !paused ? (
+              <span className="inline-flex items-center gap-1 rounded-full flex-shrink-0" style={{ padding: '2.5px 8px', background: 'rgba(255,59,59,0.2)', border: '1px solid rgba(255,59,59,0.5)', boxShadow: '0 0 10px rgba(255,59,59,0.2)' }}>
+                <span className="rounded-full" style={{ width: 5, height: 5, background: '#fff', boxShadow: '0 0 6px #fff', animation: 'live-pulse 1.6s ease-out infinite' }} />
+                <span className="text-[8.5px] font-black uppercase tracking-[0.05em] tabular-nums" style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}>
+                  {liveLabel && liveLabel !== 'EN VIVO' ? `EN VIVO · ${liveLabel}` : 'EN VIVO'}
+                </span>
+              </span>
+            ) : paused ? (
+              <span className="text-[8.5px] font-black uppercase tracking-[0.05em] rounded-full flex-shrink-0" style={{ padding: '2.5px 9px', color: '#FBBF24', background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}>
+                {liveLabel}
+              </span>
+            ) : finished ? (
+              <span className="text-[8.5px] font-black uppercase tracking-[0.06em] rounded-full flex-shrink-0" style={{ padding: '2.5px 9px', color: '#9A9AAE', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-sport)' }}>
+                Final
+              </span>
+            ) : null}
             {eyebrowText ? (
-              <span className="truncate" style={{ fontSize: 8.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', color: accent, fontFamily: 'var(--font-sport)' }}>
+              <span className="truncate" style={{ fontSize: 8.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', color: accent, fontFamily: 'var(--font-sport)', maxWidth: '52%' }}>
                 {eyebrowText}
               </span>
             ) : null}
