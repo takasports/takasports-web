@@ -86,6 +86,8 @@ export default function PerfilPage() {
   const [tz, setTz] = useState<string>('Europe/Madrid')
   const [user, setUser] = useState<User | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [authInitialMode, setAuthInitialMode] = useState<'social' | 'register'>('social')
+  const [authNext, setAuthNext] = useState<string | null>(null)
   const [authError, setAuthError] = useState(false)
   const [badges, setBadges] = useState<BadgeDef[]>([])
   const [linkingGoogle, setLinkingGoogle] = useState(false)
@@ -130,15 +132,29 @@ export default function PerfilPage() {
   const nameRef = useRef<HTMLSpanElement>(null)
 
   // ── Aviso de error de login (el callback redirige aquí con ?auth_error) ──
+  // ── Auto-apertura del AuthModal (los CTAs y /auth* redirigen aquí con
+  //    ?login=1 o ?login=register, y opcionalmente ?next= para el returnTo) ──
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    const url = new URL(window.location.href)
+    let dirty = false
     if (params.get('auth_error')) {
       setAuthError(true)
-      // Limpiamos la URL para que el aviso no reaparezca al recargar.
-      const url = new URL(window.location.href)
       url.searchParams.delete('auth_error')
-      window.history.replaceState({}, '', url.toString())
+      dirty = true
     }
+    const login = params.get('login')
+    if (login) {
+      setShowAuthModal(true)
+      if (login === 'register') setAuthInitialMode('register')
+      const nx = params.get('next')
+      if (nx) setAuthNext(nx)
+      url.searchParams.delete('login')
+      url.searchParams.delete('next')
+      dirty = true
+    }
+    // Limpiamos la URL para que el aviso/modal no reaparezca al recargar.
+    if (dirty) window.history.replaceState({}, '', url.toString())
   }, [])
 
   // ── Supabase session ───────────────────────────────────────────
@@ -874,7 +890,7 @@ export default function PerfilPage() {
             </div>
           </div>
         </div>
-        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} initialMode={authInitialMode} next={authNext} />}
 
         {/* ── GRID PRINCIPAL ───────────────────────────── */}
         <div className="flex flex-col lg:flex-row gap-8">

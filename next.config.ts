@@ -37,9 +37,16 @@ const nextConfig: NextConfig = {
       { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'motogp' }], destination: '/estadisticas/motogp', permanent: true },
       { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'ufc' }], destination: '/estadisticas/ufc', permanent: true },
       { source: '/estadisticas', has: [{ type: 'query', key: 'sport', value: 'mundial' }], destination: '/estadisticas/mundial', permanent: true },
-      // /login no es una ruta real; varios componentes redirigen aquí en 401.
-      // Lo enviamos al AuthModal (/auth/login → /perfil) en vez de dar 404.
-      { source: '/login', destination: '/auth/login', permanent: false },
+      // Rutas de auth: ninguna es una página real — el login/registro se gestiona
+      // desde el AuthModal en /perfil. Varios CTAs (hero del Mundial, ligas, juegos)
+      // y los 401 de la web apuntan a estas rutas; sin estos redirects, /auth y
+      // /auth/register daban 404. Enviamos todas a /perfil con ?login para que el
+      // modal se auto-abra (perfil lee ?login), en el modo adecuado. La query extra
+      // (?next=, ?from=) se preserva y se mergea automáticamente por Next.
+      { source: '/login',         destination: '/perfil?login=1',        permanent: false },
+      { source: '/auth',          destination: '/perfil?login=1',        permanent: false },
+      { source: '/auth/login',    destination: '/perfil?login=1',        permanent: false },
+      { source: '/auth/register', destination: '/perfil?login=register', permanent: false },
     ]
   },
   images: {

@@ -10,7 +10,7 @@
 // renderiza su cliente correspondiente (QuinielaClient para fútbol,
 // placeholders para el resto).
 
-import { useState, Suspense, type KeyboardEvent } from 'react'
+import { useState, useEffect, Suspense, type KeyboardEvent } from 'react'
 import dynamic from 'next/dynamic'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
@@ -113,6 +113,15 @@ export default function PrediccionesHub() {
   const { points }              = usePoints()
   const activeSport             = SPORTS.find(s => s.id === sportTab) ?? SPORTS[0]
   const heroCopy                = HERO_COPY[sportTab]
+
+  // Invitación a liga privada: si se llega por /predicciones?liga=ID&code=CODE
+  // (enlace compartido por WhatsApp), abrir directamente la pestaña Ligas
+  // Privadas para que se monte PrivadasClient y dispare su auto-join. Sin esto,
+  // el invitado aterrizaba en Ranked y el join automático nunca ocurría.
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search)
+    if (sp.get('liga') && sp.get('code')) setHubTab('privadas')
+  }, [])
 
   // Navegación por teclado del tablist del hub (WAI-ARIA): flechas/Home/End
   // ciclan entre las 3 secciones y trasladan el foco a la recién activada.

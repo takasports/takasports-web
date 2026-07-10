@@ -1480,10 +1480,10 @@ export default function MundialClient() {
                 <p style={{ fontSize:10, color:'rgba(255,255,255,0.35)', fontFamily:'var(--font-sport)', marginTop:3 }}>Guarda tus picks · Acumula puntos · Compite en el ranking</p>
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                <a href="/auth/login" style={{ padding:'9px 18px', borderRadius:11, background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.14)', color:'rgba(255,255,255,0.8)', fontSize:11, fontWeight:900, fontFamily:'var(--font-sport)', textDecoration:'none', letterSpacing:'0.04em', textTransform:'uppercase', whiteSpace:'nowrap' }}>
+                <a href="/auth/login?next=/mundial" style={{ padding:'9px 18px', borderRadius:11, background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.14)', color:'rgba(255,255,255,0.8)', fontSize:11, fontWeight:900, fontFamily:'var(--font-sport)', textDecoration:'none', letterSpacing:'0.04em', textTransform:'uppercase', whiteSpace:'nowrap' }}>
                   Iniciar sesión
                 </a>
-                <a href="/auth/register" style={{ padding:'9px 18px', borderRadius:11, background:GOLD, color:'#000', fontSize:11, fontWeight:900, fontFamily:'var(--font-sport)', textDecoration:'none', letterSpacing:'0.04em', textTransform:'uppercase', whiteSpace:'nowrap', boxShadow:`0 4px 20px ${GOLD}35` }}>
+                <a href="/auth/register?next=/mundial" style={{ padding:'9px 18px', borderRadius:11, background:GOLD, color:'#000', fontSize:11, fontWeight:900, fontFamily:'var(--font-sport)', textDecoration:'none', letterSpacing:'0.04em', textTransform:'uppercase', whiteSpace:'nowrap', boxShadow:`0 4px 20px ${GOLD}35` }}>
                   Registro gratis →
                 </a>
               </div>
@@ -1505,8 +1505,8 @@ export default function MundialClient() {
             <button onClick={() => setShowLogin(false)} style={{ marginLeft:'auto', opacity:0.4, background:'none', border:'none', color:'#F0F0F8', cursor:'pointer', fontSize:16 }}>✕</button>
           </div>
           <div className="flex gap-2">
-            <a href="/auth/login" style={{ flex:1, textAlign:'center', padding:'10px 16px', borderRadius:11, background:`${GOLD}1E`, border:`1px solid ${GOLD}55`, color:GOLD, fontSize:11, fontWeight:900, fontFamily:'var(--font-sport)', textDecoration:'none', textTransform:'uppercase' }}>Iniciar sesión</a>
-            <a href="/auth/register" style={{ flex:1, textAlign:'center', padding:'10px 16px', borderRadius:11, background:GOLD, color:'#000', fontSize:11, fontWeight:900, fontFamily:'var(--font-sport)', textDecoration:'none', textTransform:'uppercase', boxShadow:`0 4px 20px ${GOLD}35` }}>Crear cuenta gratis</a>
+            <a href="/auth/login?next=/mundial" style={{ flex:1, textAlign:'center', padding:'10px 16px', borderRadius:11, background:`${GOLD}1E`, border:`1px solid ${GOLD}55`, color:GOLD, fontSize:11, fontWeight:900, fontFamily:'var(--font-sport)', textDecoration:'none', textTransform:'uppercase' }}>Iniciar sesión</a>
+            <a href="/auth/register?next=/mundial" style={{ flex:1, textAlign:'center', padding:'10px 16px', borderRadius:11, background:GOLD, color:'#000', fontSize:11, fontWeight:900, fontFamily:'var(--font-sport)', textDecoration:'none', textTransform:'uppercase', boxShadow:`0 4px 20px ${GOLD}35` }}>Crear cuenta gratis</a>
           </div>
         </div>
       )}

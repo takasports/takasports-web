@@ -9,7 +9,7 @@ import { WELCOME_BADGE_IDS } from '@/lib/badges'
 // evita open-redirect y, sobre todo, impide cualquier inyección en el
 // window.location.replace de successPage(), porque el valor que se refleja es
 // SIEMPRE una constante nuestra, nunca texto que venga del enlace.
-const ALLOWED_NEXT = new Set(['/perfil', '/auth/reset-password', '/quiniela'])
+const ALLOWED_NEXT = new Set(['/perfil', '/auth/reset-password', '/quiniela', '/predicciones', '/mundial'])
 
 function sanitizeNext(raw: string | null): string {
   return raw && ALLOWED_NEXT.has(raw) ? raw : '/perfil'

@@ -734,7 +734,7 @@ export default function PrivadasClient() {
               Crea una liga con hasta 15 amigos y compite por el ranking privado.
             </p>
             <a
-              href="/auth"
+              href="/auth?next=/predicciones"
               style={{
                 display: 'inline-block', padding: '10px 28px', borderRadius: 14,
                 background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.35)',

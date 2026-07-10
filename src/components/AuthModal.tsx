@@ -2,21 +2,35 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { LogoMark } from './Logo'
 
-interface AuthModalProps {
-  onClose: () => void
-}
-
 type AuthMode = 'social' | 'password' | 'register'
 
-export default function AuthModal({ onClose }: AuthModalProps) {
+interface AuthModalProps {
+  onClose: () => void
+  /** Modo inicial del modal. Por defecto 'social'; los CTAs de "Registro" lo abren en 'register'. */
+  initialMode?: AuthMode
+  /** Ruta interna a la que volver tras un login/registro con éxito (returnTo). */
+  next?: string | null
+}
+
+// returnTo seguro: solo rutas internas ("/algo"), nunca protocol-relative ("//host")
+// ni absolutas. Evita open-redirect en el router.push tras el login por contraseña.
+function safeInternalNext(next: string | null | undefined): string | null {
+  if (!next) return null
+  if (!next.startsWith('/') || next.startsWith('//')) return null
+  return next
+}
+
+export default function AuthModal({ onClose, initialMode, next }: AuthModalProps) {
+  const router = useRouter()
   const [loading, setLoading] = useState<'google' | 'email' | 'password' | 'reset' | null>(null)
   const [error,   setError]   = useState<string | null>(null)
   const [email,   setEmail]   = useState('')
   const [emailSent, setEmailSent] = useState(false)
-  const [mode,    setMode]    = useState<AuthMode>('social')
+  const [mode,    setMode]    = useState<AuthMode>(initialMode ?? 'social')
   const [password,    setPassword]    = useState('')
   const [confirmPwd,  setConfirmPwd]  = useState('')
   const [resetSent,   setResetSent]   = useState(false)
@@ -44,10 +58,11 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     if (!supabase) { setError('Auth no configurado'); return }
     setLoading(provider)
     setError(null)
+    const dest = safeInternalNext(next) ?? '/perfil'
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback?next=/perfil`,
+        redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(dest)}`,
         queryParams: { access_type: 'offline', prompt: 'consent' },
       },
     })
@@ -62,9 +77,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     if (!email.trim() || !email.includes('@')) { setError('Introduce un email válido'); return }
     setLoading('email')
     setError(null)
+    const dest = safeInternalNext(next) ?? '/perfil'
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/perfil` },
+      options: { emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(dest)}` },
     })
     setLoading(null)
     if (error) {
@@ -88,6 +104,8 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     if (error) {
       setError(error.message.includes('Invalid') ? 'Email o contraseña incorrectos.' : 'No se pudo iniciar sesión.')
     } else {
+      const dest = safeInternalNext(next)
+      if (dest) router.push(dest)
       onClose()
     }
   }
@@ -99,14 +117,20 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     if (password !== confirmPwd) { setError('Las contraseñas no coinciden'); return }
     setLoading('password')
     setError(null)
-    const { error } = await supabase.auth.signUp({
+    const dest = safeInternalNext(next) ?? '/perfil'
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
-      options: { emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/perfil` },
+      options: { emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(dest)}` },
     })
     setLoading(null)
     if (error) {
-      setError(error.message.includes('already') ? 'Ya existe una cuenta con ese email.' : 'No se pudo crear la cuenta.')
+      setError(error.message.includes('already') ? 'Ya existe una cuenta con ese email. Inicia sesión o recupera tu contraseña.' : 'No se pudo crear la cuenta.')
+    } else if (data.user && data.user.identities && data.user.identities.length === 0) {
+      // Con "Confirm email" activo, Supabase devuelve éxito ofuscado para emails ya
+      // registrados (user con identities:[] y sin error) para no filtrar qué emails
+      // existen. Lo detectamos para no mostrar un falso "Enlace enviado".
+      setError('Ya existe una cuenta con ese email. Inicia sesión o recupera tu contraseña.')
     } else {
       setEmailSent(true)
     }

@@ -172,7 +172,7 @@ function CreatorCard({
   const meta = sportMeta(league.sport)
 
   async function handleJoin() {
-    if (!myPid) { window.location.href = '/auth'; return }
+    if (!myPid) { window.location.href = '/auth?next=/predicciones'; return }
     setJoining(true)
     try {
       const res = await fetch(`/api/ranked/leagues/${league.id}/join`, {
