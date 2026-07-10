@@ -4,6 +4,7 @@ import { SOURCE_TZ } from './timezone'
 import { getSpanishBroadcast } from './broadcasts'
 import { FOOTBALL_LEAGUES } from './football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from './nation-names'
+import { athletePhoto } from './athlete-photos'
 
 interface EspnSource {
   slug: string
@@ -48,6 +49,16 @@ function isTennisTopTournament(tournamentName: string): boolean {
 
 function isTennisDoubles(player1: string, player2: string): boolean {
   return player1.includes('/') || player2.includes('/')
+}
+
+// Cara (headshot) del atleta desde el competidor de ESPN. `athlete.headshot` llega como
+// string o como { href }. Devuelve la URL o undefined (→ la fila mostrará solo el nombre).
+function espnHeadshot(competitor: Record<string, unknown> | undefined): string | undefined {
+  const hs = (competitor?.athlete as Record<string, unknown> | undefined)?.headshot
+  if (!hs) return undefined
+  if (typeof hs === 'string') return hs
+  const href = (hs as { href?: string }).href
+  return typeof href === 'string' ? href : undefined
 }
 
 const DAYS_ES   = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
@@ -240,6 +251,18 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
       : undefined
     const stage = wcGroups ? wcStageLabel(ev, homeTeamId, wcGroups) : undefined
 
+    // UFC: la velada llega como "UFC 329: A vs B" → parseamos los dos peleadores para
+    // poner su CARA (foto del top-list curado) en la fila; el resto sale con el nombre.
+    let homePhoto: string | undefined
+    let awayPhoto: string | undefined
+    if (source.sport === 'UFC') {
+      const fm = /^(.*?):\s*(.+?)\s+vs\.?\s+(.+)$/i.exec(home)
+      if (fm) {
+        homePhoto = athletePhoto(fm[2].trim())
+        awayPhoto = athletePhoto(fm[3].trim())
+      }
+    }
+
     results.push({
       isoDate,
       event: {
@@ -259,6 +282,8 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
         awayLogo,
         homeAbbr,
         awayAbbr,
+        homePhoto,
+        awayPhoto,
         matchRef,
         source:    'espn' as const,
       },
@@ -344,6 +369,10 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
             isoDate,
             broadcast: getSpanishBroadcast(tournamentName, 'Tenis'),
             matchRef,
+            // Cara del jugador (headshot de ESPN) para la fila del calendario. Coste 0
+            // (ESPN lo da en el propio scoreboard). Si falta, la fila muestra solo el nombre.
+            homePhoto: espnHeadshot(competitors[0]) ?? athletePhoto(home),
+            awayPhoto: espnHeadshot(competitors[1]) ?? athletePhoto(away),
             source:    'espn' as const,
           },
         })
@@ -632,6 +661,8 @@ async function fetchTennisPast(slug: string, daysBack = 10): Promise<RawEvent[]>
             matchRef,
             homeScore: countTennisSets(competitors[0]),
             awayScore: countTennisSets(competitors[1]),
+            homePhoto: espnHeadshot(competitors[0]) ?? athletePhoto(home),
+            awayPhoto: espnHeadshot(competitors[1]) ?? athletePhoto(away),
             isPast:    true,
             source:    'espn' as const,
           },

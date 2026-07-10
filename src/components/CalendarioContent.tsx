@@ -556,6 +556,29 @@ function CompGroupHeader({ comp, accent, count, first, crest, slug, banner, pinn
     : inner
 }
 
+// Cara del jugador (headshot de ESPN, redonda) o escudo (fútbol, cuadrado) que flanquea el
+// marcador en la fila. Prioriza la FOTO (tenis); si falla o no hay, el escudo; si tampoco,
+// NADA (la fila muestra solo el nombre — sin siglas raras). Aro tintado del acento (más si fav).
+function MatchCrest({ photo, logo, accent, fav }: { photo?: string; logo?: string; accent: string; fav?: boolean }) {
+  const [photoErr, setPhotoErr] = useState(false)
+  const [logoErr, setLogoErr] = useState(false)
+  if (photo && !photoErr) {
+    return (
+      <span className="inline-flex flex-shrink-0 rounded-full" style={{ boxShadow: `0 0 0 1.5px ${fav ? accent : `color-mix(in srgb, ${accent} 55%, transparent)`}` }}>
+        <img src={photo} alt="" width={26} height={26} onError={() => setPhotoErr(true)} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
+      </span>
+    )
+  }
+  if (logo && !logoErr) {
+    return (
+      <span className="inline-flex items-center justify-center flex-shrink-0" style={{ width: 20, height: 20, borderRadius: 6, border: fav ? `1.5px solid ${accent}` : '1.5px solid transparent' }}>
+        <img src={logo} alt="" width={18} height={18} onError={() => setLogoErr(true)} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+      </span>
+    )
+  }
+  return null
+}
+
 // ─── Compact list row (una línea + canal) — paridad con la app compacta (§4) ──
 // FASE compacto (2026-07-10): fila de UNA LÍNEA en VIDRIO, espejo EXACTO de la app.
 // Equipo · hora/marcador · equipo + canal fino debajo → máxima densidad (revierte la
@@ -654,18 +677,11 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
   // solo reservamos hueco a la dcha para la campana de recordatorio en próximos.
   const contentPadRight = canRemind ? 24 : 0
 
-  // Escudo del equipo (22px): logo si existe (anillo del acento si es favorito); si no,
-  // iniciales tintadas del deporte. Flanquean el marcador central (maqueta G2 aprobada).
-  const smallCrest = (logo: string | undefined, name: string, abbr: string | undefined, fav: boolean) =>
-    logo ? (
-      <span className="inline-flex items-center justify-center flex-shrink-0" style={{ width: 20, height: 20, borderRadius: 6, border: fav ? `1.5px solid ${accent}` : '1.5px solid transparent' }}>
-        <img src={logo} alt="" width={18} height={18} style={{ width: 18, height: 18, objectFit: 'contain' }} />
-      </span>
-    ) : (
-      <span className="inline-flex items-center justify-center flex-shrink-0 font-black" style={{ width: 20, height: 20, borderRadius: 6, fontSize: 8.5, letterSpacing: '0.02em', color: accent, background: `color-mix(in srgb, ${accent} 16%, transparent)`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${accent} ${fav ? '90%' : '40%'}, transparent)` }}>
-        {crestInitials(abbr, name)}
-      </span>
-    )
+  // Cara del jugador (tenis) o escudo (fútbol) que flanquea el marcador. Si no hay ni
+  // foto ni escudo → nada (solo el nombre); ya NO se muestran siglas raras (José Tomás).
+  const crest = (logo: string | undefined, photo: string | undefined, fav: boolean) => (
+    <MatchCrest photo={photo} logo={logo} accent={accent} fav={fav} />
+  )
 
   // Cápsula de marcador (vidrio esmerilado): marcador blanco (vivo/final) o hora en el
   // acento (próximos). Es el foco central de la tarjeta — la mezcla aprobada (G2).
@@ -769,9 +785,9 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
             <span className="truncate text-right" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: homeLead ? 900 : 800, color: dimHome ? '#8A8A9E' : '#EDEDF5' }}>
               {dispHome}
             </span>
-            {smallCrest(event.homeLogo, home, event.homeAbbr, hFav)}
+            {crest(event.homeLogo, event.homePhoto, hFav)}
             {scoreCapsule}
-            {smallCrest(event.awayLogo, away, event.awayAbbr, aFav)}
+            {crest(event.awayLogo, event.awayPhoto, aFav)}
             <span className="truncate text-left" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: awayLead ? 900 : 800, color: dimAway ? '#8A8A9E' : '#EDEDF5' }}>
               {dispAway}
             </span>
