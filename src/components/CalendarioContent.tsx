@@ -626,8 +626,13 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
   // → se parsea a matchup + título para que se vea el "vs" Y el título.
   const noAway = !away.trim()
   const vsParse = noAway ? /^(.*?):\s*(.+?)\s+vs\.?\s+(.+)$/i.exec(home.trim()) : null
-  const dispHome = vsParse ? vsParse[2].trim() : home
-  const dispAway = vsParse ? vsParse[3].trim() : away
+  const rawHome = vsParse ? vsParse[2].trim() : home
+  const rawAway = vsParse ? vsParse[3].trim() : away
+  // En tenis/pádel los nombres vienen completos (Alexander Zverev) y no caben en la
+  // fila compacta con la cápsula en medio → usamos el nombre corto (apellido).
+  const tennis = isTennis(event.sport)
+  const dispHome = tennis ? shortName(rawHome, event.homeAbbr) : rawHome
+  const dispAway = tennis ? shortName(rawAway, event.awayAbbr) : rawAway
   const parsedTitle = vsParse ? vsParse[1].trim() : undefined
   const isMatchup = !racing && !!dispAway.trim()
 
@@ -647,53 +652,86 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
   // Hueco a la derecha para no chocar con la pastilla/campana absolutas.
   const contentPadRight = (isLive || finished) ? 54 : (canRemind ? 24 : 0)
 
-  // Escudo pequeño (20px) con anillo del acento si el equipo es favorito; si no hay
-  // logo, ♥ del acento cuando es favorito (nunca un hueco vacío grande), como la app.
-  const smallCrest = (logo: string | undefined, fav: boolean) =>
+  // Escudo del equipo (22px): logo si existe (anillo del acento si es favorito); si no,
+  // iniciales tintadas del deporte. Flanquean el marcador central (maqueta G2 aprobada).
+  const smallCrest = (logo: string | undefined, name: string, abbr: string | undefined, fav: boolean) =>
     logo ? (
-      <span className="inline-flex items-center justify-center flex-shrink-0" style={{ width: 20, height: 20, borderRadius: 5, border: fav ? `1.5px solid ${accent}` : '1.5px solid transparent' }}>
+      <span className="inline-flex items-center justify-center flex-shrink-0" style={{ width: 20, height: 20, borderRadius: 6, border: fav ? `1.5px solid ${accent}` : '1.5px solid transparent' }}>
         <img src={logo} alt="" width={18} height={18} style={{ width: 18, height: 18, objectFit: 'contain' }} />
       </span>
-    ) : fav ? (
-      <svg width="10" height="10" viewBox="0 0 16 16" fill={accent} className="flex-shrink-0" aria-hidden><path d="M8 13.5s-5-3-5-7a3 3 0 015-2 3 3 0 015 2c0 4-5 7-5 7z" /></svg>
-    ) : null
+    ) : (
+      <span className="inline-flex items-center justify-center flex-shrink-0 font-black" style={{ width: 20, height: 20, borderRadius: 6, fontSize: 8.5, letterSpacing: '0.02em', color: accent, background: `color-mix(in srgb, ${accent} 16%, transparent)`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${accent} ${fav ? '90%' : '40%'}, transparent)` }}>
+        {crestInitials(abbr, name)}
+      </span>
+    )
+
+  // Cápsula de marcador (vidrio esmerilado): marcador blanco (vivo/final) o hora en el
+  // acento (próximos). Es el foco central de la tarjeta — la mezcla aprobada (G2).
+  const scoreCapsule = (
+    <span
+      className="inline-flex items-center justify-center flex-shrink-0"
+      style={{
+        minWidth: 54,
+        padding: '2.5px 11px',
+        borderRadius: 10,
+        background: showScore ? 'rgba(0,0,0,0.34)' : `color-mix(in srgb, ${accent} 12%, rgba(0,0,0,0.3))`,
+        border: `1px solid ${showScore ? 'rgba(255,255,255,0.14)' : `color-mix(in srgb, ${accent} 40%, rgba(255,255,255,0.14))`}`,
+        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)',
+      }}
+    >
+      <span className="tabular-nums" style={{ fontSize: showScore ? 20 : 15, fontFamily: 'var(--font-sport)', fontWeight: 900, letterSpacing: showScore ? '0.04em' : 0, color: showScore ? '#fff' : accent, textShadow: showScore ? '0 1px 8px rgba(0,0,0,0.4)' : undefined }}>
+        {centerTxt}
+      </span>
+    </span>
+  )
 
   const inner = (
     <div
-      className={`rounded-xl relative overflow-hidden hover:brightness-110 transition-[filter] duration-150 ${flashing ? 'ts-flash' : ''}`}
+      className={`relative overflow-hidden hover:brightness-110 transition-[filter] duration-150 ${flashing ? 'ts-flash' : ''}`}
       style={{
-        padding: '8px 12px',
-        // Vidrio simulado: velo translúcido + canto de luz arriba + sombra (coste 0).
-        background: isLive ? 'rgba(255,59,59,0.09)' : 'rgba(255,255,255,0.07)',
-        border: `1px solid ${isLive ? 'rgba(255,59,59,0.33)' : 'rgba(255,255,255,0.13)'}`,
-        borderTopColor: isLive ? 'rgba(255,59,59,0.44)' : 'rgba(255,255,255,0.22)',
-        borderLeft: `3px solid ${isLive ? '#FF3B3B' : accent}`,
-        boxShadow: isLive
-          ? 'inset 0 1px 0 rgba(255,255,255,0.10), 0 10px 20px -14px rgba(0,0,0,0.7), 0 0 16px rgba(255,59,59,0.14)'
-          : 'inset 0 1px 0 rgba(255,255,255,0.10), 0 10px 20px -14px rgba(0,0,0,0.7)',
+        borderRadius: 15,
+        padding: '11px 13px 11px 14px',
+        // VIDRIO TAKA teñido por deporte: velo translúcido + tinte del acento + canto de
+        // luz specular arriba + sombra que la hace FLOTAR (separa las tarjetas). En vivo = rojo.
+        background: isLive
+          ? 'linear-gradient(158deg, rgba(255,59,59,0.16) 0%, rgba(255,255,255,0.026) 46%, rgba(255,255,255,0.012) 100%)'
+          : `linear-gradient(158deg, color-mix(in srgb, ${accent} 15%, rgba(255,255,255,0.05)) 0%, rgba(255,255,255,0.028) 46%, rgba(255,255,255,0.015) 100%)`,
+        border: `1px solid ${isLive ? 'rgba(255,59,59,0.4)' : 'rgba(255,255,255,0.12)'}`,
+        borderTopColor: isLive ? 'rgba(255,59,59,0.5)' : 'rgba(255,255,255,0.28)',
+        borderLeft: `4px solid ${isLive ? '#FF3B3B' : accent}`,
+        boxShadow: '0 10px 24px -10px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -14px 22px -16px rgba(0,0,0,0.45)',
       }}
     >
+      {/* Luz refractada (blob) — el toque líquido, teñido del deporte */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute"
+        style={{ top: -40, left: -10, width: 150, height: 110, background: `radial-gradient(60% 60% at 30% 40%, ${isLive ? 'rgba(255,59,59,0.3)' : `color-mix(in srgb, ${accent} 26%, transparent)`}, transparent 70%)`, filter: 'blur(6px)', opacity: 0.7 }}
+      />
+      {/* Brillo specular del borde superior */}
+      <div aria-hidden className="pointer-events-none absolute" style={{ top: 0, left: 0, right: 0, height: '42%', background: 'linear-gradient(180deg, rgba(255,255,255,0.07), transparent)', borderRadius: '15px 15px 0 0' }} />
+
       {/* Pastilla de estado (arriba-dcha): EN VIVO · Descanso · Final; o campana en próximos */}
       {isLive && !paused ? (
-        <span className="absolute z-[2] inline-flex items-center gap-1 rounded-full" style={{ top: 6, right: 8, padding: '1.5px 6px', background: 'rgba(255,59,59,0.16)', border: '1px solid rgba(255,59,59,0.4)' }}>
-          <span className="rounded-full" style={{ width: 4, height: 4, background: '#FF3B3B', boxShadow: '0 0 6px #FF3B3B', animation: 'live-pulse 1.6s ease-out infinite' }} />
-          <span className="text-[8px] font-black uppercase tracking-[0.04em] tabular-nums" style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}>
+        <span className="absolute z-[2] inline-flex items-center gap-1 rounded-full" style={{ top: 8, right: 10, padding: '2.5px 7px', background: 'rgba(255,59,59,0.22)', border: '1px solid rgba(255,59,59,0.55)', boxShadow: '0 0 10px rgba(255,59,59,0.25)' }}>
+          <span className="rounded-full" style={{ width: 5, height: 5, background: '#fff', boxShadow: '0 0 6px #fff', animation: 'live-pulse 1.6s ease-out infinite' }} />
+          <span className="text-[8px] font-black uppercase tracking-[0.05em] tabular-nums" style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}>
             {liveLabel && liveLabel !== 'EN VIVO' ? `EN VIVO · ${liveLabel}` : 'EN VIVO'}
           </span>
         </span>
       ) : paused ? (
-        <span className="absolute z-[2] text-[8px] font-black uppercase tracking-[0.05em] rounded-full" style={{ top: 6, right: 8, padding: '2px 7px', color: '#FBBF24', background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}>
+        <span className="absolute z-[2] text-[8px] font-black uppercase tracking-[0.05em] rounded-full" style={{ top: 8, right: 10, padding: '2.5px 8px', color: '#FBBF24', background: 'rgba(251,191,36,0.16)', border: '1px solid rgba(251,191,36,0.34)', fontFamily: 'var(--font-sport)' }}>
           {liveLabel}
         </span>
       ) : finished ? (
-        <span className="absolute z-[2] text-[8px] font-black uppercase tracking-[0.06em] rounded-full" style={{ top: 6, right: 8, padding: '2px 7px', color: '#9090A8', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)' }}>
+        <span className="absolute z-[2] text-[8px] font-black uppercase tracking-[0.06em] rounded-full" style={{ top: 8, right: 10, padding: '2.5px 8px', color: '#A2A2B4', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', fontFamily: 'var(--font-sport)' }}>
           Final
         </span>
       ) : canRemind ? (
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleReminder() }}
           className="absolute z-[2] flex items-center justify-center rounded-full transition-colors"
-          style={{ top: 5, right: 6, width: 22, height: 22 }}
+          style={{ top: 6, right: 7, width: 22, height: 22 }}
           aria-label={isReminded ? 'Quitar recordatorio' : 'Recordar'}
           title={isReminded ? 'Quitar recordatorio' : 'Recordar'}
         >
@@ -703,10 +741,10 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
         </button>
       ) : null}
 
-      <div style={{ paddingRight: contentPadRight }}>
+      <div className="relative" style={{ zIndex: 1, paddingRight: contentPadRight }}>
         {/* Ceja (opcional): fecha (Recordatorios) + título velada / competición */}
         {(eyebrowText || dateLabel) ? (
-          <div className="flex items-center gap-1.5" style={{ marginBottom: 3 }}>
+          <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
             {dateLabel ? (
               <span className="flex-shrink-0 rounded-full" style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '1px 6px', color: accent, background: `${accent}14`, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
                 {dateLabel}
@@ -721,36 +759,26 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
         ) : null}
 
         {isMatchup ? (
-          <div className="flex items-center gap-2">
-            {/* Local */}
-            <div className="flex-1 flex items-center gap-1.5 min-w-0">
-              {smallCrest(event.homeLogo, hFav)}
-              <span className="truncate" style={{ fontSize: 14, fontFamily: 'var(--font-sport)', fontWeight: homeLead ? 900 : 700, color: dimHome ? '#8A8A9E' : '#EBEBF5' }}>
-                {dispHome}
-              </span>
-            </div>
-            {/* Centro: marcador / hora / VS */}
-            <div className="flex-shrink-0 text-center" style={{ minWidth: 50 }}>
-              <span className="tabular-nums" style={{ fontSize: showScore ? 16 : 14, fontFamily: 'var(--font-sport)', fontWeight: 900, letterSpacing: showScore ? '0.02em' : 0, color: showScore ? '#fff' : (!isLive && !finished ? accent : '#6A6A7A') }}>
-                {centerTxt}
-              </span>
-            </div>
-            {/* Visitante */}
-            <div className="flex-1 flex items-center justify-end gap-1.5 min-w-0">
-              <span className="truncate text-right" style={{ fontSize: 14, fontFamily: 'var(--font-sport)', fontWeight: awayLead ? 900 : 700, color: dimAway ? '#8A8A9E' : '#EBEBF5' }}>
-                {dispAway}
-              </span>
-              {smallCrest(event.awayLogo, aFav)}
-            </div>
+          /* Marcador central: nombres + escudos ABRAZAN la cápsula (no se van a los lados) */
+          <div className="grid items-center" style={{ gridTemplateColumns: '1fr auto auto auto 1fr', gap: 7 }}>
+            <span className="truncate text-right" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: homeLead ? 900 : 800, color: dimHome ? '#8A8A9E' : '#EDEDF5' }}>
+              {dispHome}
+            </span>
+            {smallCrest(event.homeLogo, home, event.homeAbbr, hFav)}
+            {scoreCapsule}
+            {smallCrest(event.awayLogo, away, event.awayAbbr, aFav)}
+            <span className="truncate text-left" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: awayLead ? 900 : 800, color: dimAway ? '#8A8A9E' : '#EDEDF5' }}>
+              {dispAway}
+            </span>
           </div>
         ) : (
-          /* Evento sin rival (F1/golf): icono + nombre a lo ancho + hora/ganador */
+          /* Evento sin rival (F1/golf): icono + nombre a lo ancho + hora en cápsula/ganador */
           <div className="flex items-center gap-2.5">
-            <span className="flex items-center justify-center flex-shrink-0" style={{ width: 26, height: 26, borderRadius: 8, background: `${accent}22`, color: accent }}>
-              <SportIcon sport={event.sport} size={14} />
+            <span className="flex items-center justify-center flex-shrink-0" style={{ width: 30, height: 30, borderRadius: 9, background: `color-mix(in srgb, ${accent} 20%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 38%, transparent)`, color: accent }}>
+              <SportIcon sport={event.sport} size={15} />
             </span>
             <div className="flex-1 min-w-0">
-              <div className="truncate" style={{ fontSize: 14, fontFamily: 'var(--font-sport)', fontWeight: 800, color: '#EBEBF5' }}>
+              <div className="truncate" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: 800, color: '#EDEDF5' }}>
                 {home}
               </div>
               {winnerNote ? (
@@ -761,7 +789,7 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
               ) : null}
             </div>
             {!isLive && !finished ? (
-              <span className="tabular-nums flex-shrink-0" style={{ fontSize: 15, fontWeight: 900, color: accent, fontFamily: 'var(--font-sport)' }}>
+              <span className="inline-flex items-center justify-center flex-shrink-0 tabular-nums" style={{ padding: '3px 11px', borderRadius: 10, background: `color-mix(in srgb, ${accent} 12%, rgba(0,0,0,0.3))`, border: `1px solid color-mix(in srgb, ${accent} 40%, rgba(255,255,255,0.14))`, fontSize: 15, fontWeight: 900, color: accent, fontFamily: 'var(--font-sport)' }}>
                 {kickoff || '—'}
               </span>
             ) : null}
@@ -771,7 +799,7 @@ function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLab
 
       {/* Canal (sub-línea fina) */}
       {channel ? (
-        <div className="flex items-center justify-center gap-1.5" style={{ marginTop: 6, paddingTop: 5, borderTop: '1px solid rgba(255,255,255,0.05)', color: '#6A6A7A' }}>
+        <div className="relative flex items-center justify-center gap-1.5" style={{ zIndex: 1, marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)', color: '#61616D' }}>
           <TvIcon size={10} className="flex-shrink-0" />
           <span className="truncate" style={{ fontSize: 10, fontWeight: 600, color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>{channel}</span>
         </div>
