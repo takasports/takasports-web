@@ -251,6 +251,8 @@ function GamesSection() {
               style={{
                 background: `linear-gradient(140deg, ${game.accent}10, rgba(9,9,15,0.9))`,
                 border: `1px solid ${game.accent}22`,
+                // Vidrio: canto de luz arriba + sombra de elevación (§5.2).
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 20px -12px rgba(0,0,0,0.6)',
                 textDecoration: 'none',
               }}
             >

@@ -205,7 +205,9 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
           : `linear-gradient(165deg, ${sportColor}14 0%, var(--bg-card) 52%)`,
         border: isLive ? '1px solid rgba(255,77,46,0.25)' : `1px solid ${sportColor}22`,
         borderTop: `2.5px solid ${isLive ? '#FF4D2E' : sportColor}`,
-        boxShadow: isLive ? '0 6px 26px rgba(255,77,46,0.12)' : '0 6px 24px rgba(0,0,0,0.32)',
+        boxShadow: isLive
+          ? 'inset 0 1px 0 rgba(255,255,255,0.16), 0 6px 26px rgba(255,77,46,0.12)'
+          : 'inset 0 1px 0 rgba(255,255,255,0.14), 0 6px 24px rgba(0,0,0,0.32)',
         cursor: matchRef ? 'pointer' : 'default',
       }}
     >
