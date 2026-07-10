@@ -61,9 +61,9 @@ export default function BottomNav() {
           style={{
             height: 58,
             borderRadius: 30,
-            background: 'rgba(16,16,22,0.55)',
-            backdropFilter: 'blur(24px) saturate(1.6)',
-            WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
+            background: 'rgba(16,16,22,0.42)',
+            backdropFilter: 'blur(30px) saturate(1.7)',
+            WebkitBackdropFilter: 'blur(30px) saturate(1.7)',
             border: '1px solid rgba(255,255,255,0.10)',
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.35)',
           }}
