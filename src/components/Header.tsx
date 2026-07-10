@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { LogoFull } from './Logo'
@@ -142,6 +142,17 @@ function SearchModal({ onClose }: { onClose: () => void }) {
 
   const totalResults = articles.length + players.length + espnHits.length
 
+  // Enter (o "Ver todos") lleva a la página de búsqueda completa /buscar?q=,
+  // que antes estaba huérfana (nada enlazaba a ella) y cuyo "↵ abrir" no hacía
+  // nada. El modal es un adelanto; /buscar tiene facetas y todos los resultados.
+  const router = useRouter()
+  const submitSearch = () => {
+    const q = query.trim()
+    if (q.length < 2) return
+    onClose()
+    router.push(`/buscar?q=${encodeURIComponent(q)}`)
+  }
+
   return (
     <div className="search-overlay" onClick={onClose}>
       <div
@@ -162,6 +173,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') submitSearch() }}
             placeholder="Buscar jugadores, noticias, deportes..."
             className="flex-1 bg-transparent outline-none text-sm"
             style={{ color: '#EBEBF5', fontFamily: 'var(--font-geist-sans)' }}
@@ -337,7 +349,13 @@ function SearchModal({ onClose }: { onClose: () => void }) {
           <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
             {loading ? 'Buscando...' : totalResults > 0 ? `${totalResults} resultado${totalResults !== 1 ? 's' : ''}` : 'Escribe para buscar'}
           </span>
-          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>↵ abrir · Esc cerrar</span>
+          {query.trim().length >= 2 ? (
+            <button onClick={submitSearch} className="text-[10px] font-semibold transition-opacity hover:opacity-70" style={{ color: '#A78BFA' }}>
+              Ver todos los resultados ↵
+            </button>
+          ) : (
+            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>↵ abrir · Esc cerrar</span>
+          )}
         </div>
       </div>
     </div>

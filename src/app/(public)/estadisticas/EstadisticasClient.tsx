@@ -642,16 +642,12 @@ const SPORTS: SportConfig[] = [
         id: 'atp', label: 'ATP', icon: '👨',
         blocks: [
           {
+            // NO MENTIR (misma regla que femenino y "SPORTS COMPLETO"): sin filas
+            // hardcodeadas. applyLive rellena desde atpRanking (ESPN
+            // /tennis/atp/rankings); si el live no responde, StatBlockCard muestra
+            // "Sin datos disponibles" en vez de un ranking caducado como si fuera real.
             id: 'atp-ranking', title: 'Ranking ATP (Top 10)', metric: 'Pts',
-            rows: [
-              { rank: 1, name: 'Jannik Sinner',           value: '14350', sub: '2 Grand Slams',  flag: '🇮🇹', trend: 'up',   extra: { GS: '2',  Torneos: '9' } },
-              { rank: 2, name: 'Carlos Alcaraz',          value: '12960', sub: '4 Grand Slams',  flag: '🇪🇸', trend: 'flat', extra: { GS: '4',  Torneos: '7' } },
-              { rank: 3, name: 'Alexander Zverev',        value: '5805',  sub: '0 Grand Slams',  flag: '🇩🇪', trend: 'up',   extra: { GS: '0',  Torneos: '6' } },
-              { rank: 4, name: 'Novak Djokovic',          value: '4700',  sub: '24 Grand Slams', flag: '🇷🇸', trend: 'down', extra: { GS: '24', Torneos: '3' } },
-              { rank: 5, name: 'Felix Auger-Aliassime',   value: '4050',  sub: '0 Grand Slams',  flag: '🇨🇦', trend: 'up',   extra: { GS: '0',  Torneos: '4' } },
-              { rank: 6, name: 'Ben Shelton',             value: '4030',  sub: '0 Grand Slams',  flag: '🇺🇸', trend: 'up',   extra: { GS: '0',  Torneos: '5' } },
-              { rank: 7, name: 'Taylor Fritz',            value: '3770',  sub: '0 Grand Slams',  flag: '🇺🇸', trend: 'flat', extra: { GS: '0',  Torneos: '4' } },
-            ],
+            rows: [],
           },
         ],
       },
@@ -659,16 +655,11 @@ const SPORTS: SportConfig[] = [
         id: 'wta', label: 'WTA', icon: '👩',
         blocks: [
           {
+            // NO MENTIR: sin filas hardcodeadas. applyLive rellena desde wtaRanking
+            // (ESPN /tennis/wta/rankings); si el live no responde, StatBlockCard
+            // muestra "Sin datos disponibles" en vez de un ranking caducado.
             id: 'wta-ranking', title: 'Ranking WTA (Top 10)', metric: 'Pts',
-            rows: [
-              { rank: 1, name: 'Aryna Sabalenka', value: '10110', sub: '3 Grand Slams', flag: '🇧🇾', trend: 'flat', extra: { GS: '3', Torneos: '7' } },
-              { rank: 2, name: 'Elena Rybakina',  value: '8555',  sub: '1 Grand Slam',  flag: '🇰🇿', trend: 'up',   extra: { GS: '1', Torneos: '5' } },
-              { rank: 3, name: 'Iga Swiatek',     value: '6948',  sub: '5 Grand Slams', flag: '🇵🇱', trend: 'down', extra: { GS: '5', Torneos: '4' } },
-              { rank: 4, name: 'Coco Gauff',      value: '6749',  sub: '1 Grand Slam',  flag: '🇺🇸', trend: 'flat', extra: { GS: '1', Torneos: '5' } },
-              { rank: 5, name: 'Jessica Pegula',  value: '6136',  sub: '0 Grand Slams', flag: '🇺🇸', trend: 'up',   extra: { GS: '0', Torneos: '4' } },
-              { rank: 6, name: 'Amanda Anisimova',value: '5985',  sub: '0 Grand Slams', flag: '🇺🇸', trend: 'up',   extra: { GS: '0', Torneos: '4' } },
-              { rank: 7, name: 'Mirra Andreeva',  value: '4181',  sub: '0 Grand Slams', flag: '🇷🇺', trend: 'up',   extra: { GS: '0', Torneos: '3' } },
-            ],
+            rows: [],
           },
         ],
       },
