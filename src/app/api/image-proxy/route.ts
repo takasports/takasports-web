@@ -66,10 +66,45 @@ function browserHeaders(imageUrl: string, ua: string = PRIMARY_UA): Record<strin
   }
 }
 
+// Rate-limit en memoria por IP: defensa básica para que el proxy no se use como
+// CDN/transcodificador abierto de imágenes de todo internet. LIMITACIÓN: en
+// serverless (Vercel) el contador es POR-INSTANCIA, así que un abusador con IPs
+// rotativas o mucha concurrencia lo evade; frena el abuso oportunista de una sola
+// IP sin coste ni latencia (no toca Supabase, que en un endpoint que sirve
+// decenas de imágenes por página degradaría todo el sitio). El blindaje completo
+// (firmar las URLs con HMAC) NO cabe aquí: el helper que las genera (image-url.ts)
+// es compartido con el cliente, donde un secret se filtraría. Requiere rediseño.
+const RL_WINDOW_MS = 60_000
+const RL_MAX = 500 // holgado: una página carga ~40-70 imágenes de terceros
+const rlHits = new Map<string, { count: number; resetAt: number }>()
+
+function isRateLimited(req: NextRequest): boolean {
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown'
+  const now = Date.now()
+  const cur = rlHits.get(ip)
+  if (!cur || now > cur.resetAt) {
+    rlHits.set(ip, { count: 1, resetAt: now + RL_WINDOW_MS })
+    // Poda oportunista de entradas caducadas para que el Map no crezca sin fin.
+    if (rlHits.size > 5000) {
+      for (const [k, v] of rlHits) if (now > v.resetAt) rlHits.delete(k)
+    }
+    return false
+  }
+  cur.count++
+  return cur.count > RL_MAX
+}
+
 export async function GET(request: NextRequest) {
   const raw = request.nextUrl.searchParams.get('url')
   if (!raw) {
     return NextResponse.json({ error: 'Missing url' }, { status: 400 })
+  }
+
+  if (isRateLimited(request)) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 })
   }
 
   if (!isSafeUrl(raw)) {

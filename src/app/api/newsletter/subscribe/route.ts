@@ -64,6 +64,34 @@ export async function POST(req: NextRequest) {
   const userAgent = req.headers.get('user-agent')?.slice(0, 200) ?? null
   const ipHash = hashIp(req)
 
+  // ¿Ya existe una fila para este email? Si el usuario se dio de baja, su fila
+  // sigue ahí con unsubscribed_at != null. Un INSERT ciego chocaba con el unique
+  // y respondía "ya suscrito" SIN reactivarlo → quien se dio de baja no podía
+  // volver. Distinguimos los tres casos.
+  const { data: existing } = await supa
+    .from('newsletter_subscribers')
+    .select('unsubscribed_at')
+    .eq('email', email)
+    .maybeSingle()
+
+  if (existing) {
+    if (existing.unsubscribed_at == null) {
+      // Ya suscrito y activo — no tocamos nada.
+      return NextResponse.json({ ok: true, alreadySubscribed: true })
+    }
+    // Estaba dado de baja → re-activar limpiando unsubscribed_at y refrescando
+    // la evidencia del nuevo consentimiento (source/UA/IP). created_at se preserva.
+    const { error: upErr } = await supa
+      .from('newsletter_subscribers')
+      .update({ unsubscribed_at: null, source, user_agent: userAgent, ip_hash: ipHash })
+      .eq('email', email)
+    if (upErr) {
+      console.error('[newsletter] resubscribe error', upErr)
+      return NextResponse.json({ ok: false, error: 'persist_failed' }, { status: 500 })
+    }
+    return NextResponse.json({ ok: true })
+  }
+
   const { error } = await supa
     .from('newsletter_subscribers')
     .insert({
@@ -74,7 +102,7 @@ export async function POST(req: NextRequest) {
     })
 
   if (error) {
-    // 23505 = unique violation (duplicado). Respondemos amistosamente.
+    // Carrera entre el select y el insert: si otro proceso insertó primero, 23505.
     if (error.code === '23505') {
       return NextResponse.json({ ok: true, alreadySubscribed: true })
     }
