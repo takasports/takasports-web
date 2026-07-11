@@ -12,7 +12,7 @@ import { SITE_URL } from '@/lib/constants'
 // Striker Rush queda fuera a propósito: aún no existe /strikerrush, así que su
 // leaderboard debe devolver 404 (no un ranking fantasma con CTA a una página rota).
 const META: Partial<Record<GameId, { label: string; accent: string; href: string }>> = {
-  quiniela:    { label: 'Quiniela',       accent: '#A78BFA', href: '/quiniela' },
+  quiniela:    { label: 'Predicciones',   accent: '#A78BFA', href: '/predicciones' },
   crackquiz:   { label: 'CrackQuiz',      accent: '#FCD34D', href: '/crackquiz' },
   mionce:      { label: 'Mi Once',        accent: '#93C5FD', href: '/mionce' },
   sopacracks:  { label: 'Sopa de Cracks', accent: '#6EE7B7', href: '/sopa-cracks' },

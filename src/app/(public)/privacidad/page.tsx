@@ -38,7 +38,7 @@ export default function PrivacidadPage() {
           <ul className="list-disc pl-6 space-y-1">
             <li>Tu dirección de email (usada para login y comunicaciones esenciales).</li>
             <li>Tu nombre (opcional, mostrado en tu perfil).</li>
-            <li>Tu participación en juegos (quinielas, predicciones) para calcular tu puntuación.</li>
+            <li>Tu participación en juegos (predicciones) para calcular tu puntuación.</li>
           </ul>
 
           <h3 className="text-lg font-semibold mt-6 mb-2">1.3 Notificaciones push</h3>

@@ -45,7 +45,7 @@ const JSON_LD = {
     numberOfItems:     6,
     itemListElement: [
       { '@type': 'ListItem', position: 1, item: { '@type': 'VideoGame', name: 'Mundial',        url: `${SITE_URL}/mundial`,     genre: 'Predicción', applicationCategory: 'Game' } },
-      { '@type': 'ListItem', position: 2, item: { '@type': 'VideoGame', name: 'Predicciones',   url: `${SITE_URL}/quiniela`,    genre: 'Predicción', applicationCategory: 'Game' } },
+      { '@type': 'ListItem', position: 2, item: { '@type': 'VideoGame', name: 'Predicciones',   url: `${SITE_URL}/predicciones`,    genre: 'Predicción', applicationCategory: 'Game' } },
       { '@type': 'ListItem', position: 3, item: { '@type': 'VideoGame', name: 'CrackQuiz',      url: `${SITE_URL}/crackquiz`,   genre: 'Trivia',     applicationCategory: 'Game' } },
       { '@type': 'ListItem', position: 4, item: { '@type': 'VideoGame', name: 'Mi Once',        url: `${SITE_URL}/mionce`,      genre: 'Fantasy',    applicationCategory: 'Game' } },
       { '@type': 'ListItem', position: 5, item: { '@type': 'VideoGame', name: 'Sopa de Cracks', url: `${SITE_URL}/sopa-cracks`, genre: 'Puzzle',     applicationCategory: 'Game' } },

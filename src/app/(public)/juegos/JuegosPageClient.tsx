@@ -106,7 +106,7 @@ const GAMES: Game[] = [
     accent: '#A78BFA',
     accentDim: '#7C3AED',
     status: 'live',
-    href: '/quiniela',
+    href: '/predicciones',
     icon: <IconQuiniela />,
     format: 'Semanal',
     category: 'Predicciones',

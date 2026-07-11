@@ -43,7 +43,7 @@ export default function TerminosPage() {
 
           <h2 className="text-2xl font-bold mt-10 mb-3">3. Cuentas de usuario</h2>
           <p>
-            Para usar ciertas funciones (guardar favoritos, participar en quinielas, recibir
+            Para usar ciertas funciones (guardar favoritos, participar en predicciones, recibir
             notificaciones personalizadas) puedes crear una cuenta. Eres responsable de:
           </p>
           <ul className="list-disc pl-6 space-y-1">
@@ -85,7 +85,7 @@ export default function TerminosPage() {
 
           <h2 className="text-2xl font-bold mt-10 mb-3">6. Juegos y predicciones</h2>
           <p>
-            Las quinielas, CrackQuiz, Mi Once y otros juegos son <strong>gratuitos y sin
+            Las predicciones, CrackQuiz, Mi Once y otros juegos son <strong>gratuitos y sin
             premio monetario</strong>. Las puntuaciones tienen valor exclusivamente lúdico y
             de comunidad. TakaSports no es una plataforma de apuestas.
           </p>

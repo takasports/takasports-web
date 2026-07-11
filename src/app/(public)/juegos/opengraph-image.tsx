@@ -9,7 +9,7 @@ export default function Image() {
   return buildGameOgImage({
     emoji: '🎮',
     title: 'Juegos',
-    description: 'Quiniela, CrackQuiz, Mi Once, Sopa de Cracks y TakaGrid.',
+    description: 'Predicciones, CrackQuiz, Mi Once, Sopa de Cracks y TakaGrid.',
     accentColor: '#7C3AED',
   })
 }

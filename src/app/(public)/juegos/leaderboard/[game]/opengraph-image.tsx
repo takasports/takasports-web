@@ -18,7 +18,7 @@ interface GameMeta {
 }
 
 const META: Record<string, GameMeta> = {
-  quiniela:    { emoji: '🎯', title: 'Quiniela',       subtitle: 'Top jugadores · Jornada actual',    accent: '#A78BFA' },
+  quiniela:    { emoji: '🎯', title: 'Predicciones',   subtitle: 'Top jugadores · Jornada actual',    accent: '#A78BFA' },
   crackquiz:   { emoji: '🧠', title: 'CrackQuiz',      subtitle: 'Top jugadores · Trivia diaria',     accent: '#FCD34D' },
   mionce:      { emoji: '⚽', title: 'Mi Once',        subtitle: 'Top jugadores · Reto semanal',      accent: '#93C5FD' },
   sopacracks:  { emoji: '🔤', title: 'Sopa de Cracks', subtitle: 'Top jugadores · Puzzle semanal',    accent: '#6EE7B7' },

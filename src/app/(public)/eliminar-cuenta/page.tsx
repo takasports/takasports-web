@@ -59,7 +59,7 @@ export default function EliminarCuentaPage() {
         <ul className="list-disc pl-6 space-y-1">
           <li>Tu perfil: nombre, correo electrónico, avatar y preferencias.</li>
           <li>Tu actividad e historial en los juegos y tu posición en la Liga Taka.</li>
-          <li>Tus predicciones, quinielas y tu participación en ligas privadas.</li>
+          <li>Tus predicciones y tu participación en ligas privadas.</li>
           <li>Tus equipos y competiciones favoritos, recordatorios y artículos guardados.</li>
           <li>Tus suscripciones a notificaciones.</li>
         </ul>

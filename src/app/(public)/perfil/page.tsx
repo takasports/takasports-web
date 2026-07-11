@@ -1154,10 +1154,10 @@ export default function PerfilPage() {
 
             {/* PICKS DE QUINIELA */}
             <section>
-              <SectionHeader title={quinielaSaved ? `Mis picks · ${quinielaSaved.jornada}` : 'Mis picks de quiniela'} />
+              <SectionHeader title={quinielaSaved ? `Mis picks · ${quinielaSaved.jornada}` : 'Mis predicciones'} />
               {!quinielaSaved ? (
                 <Link
-                  href="/quiniela"
+                  href="/predicciones"
                   className="flex items-center justify-between px-4 py-3 rounded-xl transition-all hover:brightness-110"
                   style={{
                     background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)',
@@ -1206,11 +1206,11 @@ export default function PerfilPage() {
                       {quinielaSaved.picks.length} predicciones enviadas
                     </span>
                     <Link
-                      href="/quiniela"
+                      href="/predicciones"
                       className="text-[10px] font-semibold transition-opacity hover:opacity-70"
                       style={{ color: '#9B7CF6', fontFamily: 'var(--font-sport)' }}
                     >
-                      Ver quiniela →
+                      Ver Predicciones →
                     </Link>
                   </div>
                 </div>
@@ -1457,7 +1457,7 @@ export default function PerfilPage() {
                     Explora la colección de badges →
                   </p>
                   <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-                    Juega y desbloquea logros. Empieza por la quiniela o los juegos diarios.
+                    Juega y desbloquea logros. Empieza por Predicciones o los juegos diarios.
                   </p>
                 </Link>
               </section>
@@ -1510,7 +1510,7 @@ export default function PerfilPage() {
                 {[
                   { label: 'Calendario', href: '/calendario' },
                   { label: 'Noticias', href: '/noticias' },
-                  { label: 'Quiniela', href: '/quiniela' },
+                  { label: 'Predicciones', href: '/predicciones' },
                   { label: 'Juegos', href: '/juegos' },
                 ].map(({ label, href }) => (
                   <Link

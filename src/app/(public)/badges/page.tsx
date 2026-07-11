@@ -320,10 +320,10 @@ export default function BadgesPage() {
                 Inicia sesión para ver tus badges desbloqueados
               </p>
               <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-                Juega en la quiniela, el Ranked y los juegos para desbloquear badges.
+                Juega en Predicciones, el Ranked y los juegos para desbloquear badges.
               </p>
               <Link
-                href="/quiniela"
+                href="/predicciones"
                 className="inline-block mt-3 text-[12px] font-black px-4 py-2 rounded-xl transition-opacity hover:opacity-80"
                 style={{
                   background: 'rgba(124,58,237,0.15)',
