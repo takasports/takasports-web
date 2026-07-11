@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { captureException } from '@/lib/monitoring'
 
 interface Props {
   children: React.ReactNode
@@ -22,9 +23,10 @@ export class StatBlockBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(err: Error) {
-    if (typeof window !== 'undefined') {
-      console.error(`[stats:${this.props.blockId}]`, err)
-    }
+    // Antes solo console.error en browser → el fallo del bloque no llegaba a
+    // monitorización. captureException registra en los Logs de Vercel (y en
+    // Sentry cuando se cablee el DSN web).
+    captureException(err, { scope: 'stat-block', blockId: this.props.blockId })
   }
 
   render() {
