@@ -148,13 +148,9 @@ export default function NewsFeed({
               <Link
                 key={article._id}
                 href={`/noticias/${article.slug ?? article._id}`}
-                className="news-card flex gap-3.5 rounded-xl p-3"
+                className="news-card tk-glass flex gap-3.5 rounded-xl p-3"
                 data-reveal
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                  textDecoration: 'none',
-                }}
+                style={{ textDecoration: 'none' }}
               >
                 {/* Thumbnail */}
                 <div className="flex-shrink-0 rounded-lg overflow-hidden w-[88px] h-[64px] lg:w-[120px] lg:h-[84px]">
@@ -221,13 +217,9 @@ export default function NewsFeed({
               <Link
                 key={article._id}
                 href={`/noticias/${article.slug ?? article._id}`}
-                className="news-card rounded-xl overflow-hidden block"
+                className="news-card tk-glass rounded-xl overflow-hidden block"
                 data-reveal
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                  textDecoration: 'none',
-                }}
+                style={{ textDecoration: 'none' }}
               >
                 <div className="overflow-hidden" style={{ height: 120 }}>
                   <Thumb url={imgUrl} title={article.title} w={400} h={120} sport={article.sport} category={article.category} />

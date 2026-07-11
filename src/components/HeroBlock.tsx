@@ -24,13 +24,8 @@ function CompactStripItem({ art }: { art: Article }) {
   return (
     <Link
       href={href}
-      className="group flex flex-col rounded-xl overflow-hidden transition-all hover:brightness-110 hover:-translate-y-0.5"
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        textDecoration: 'none',
-        boxShadow: '0 1px 0 rgba(255,255,255,0.02) inset',
-      }}
+      className="group tk-glass flex flex-col rounded-xl overflow-hidden transition-all hover:brightness-110 hover:-translate-y-0.5"
+      style={{ textDecoration: 'none' }}
     >
       <div className="relative w-full" style={{ aspectRatio: '16 / 9', background: '#06060F' }}>
         {imgUrl ? (
@@ -451,8 +446,8 @@ function SecondaryMini({ art }: { art: Article }) {
     <Link
       href={href}
       data-carousel-card
-      className="snap-start shrink-0 flex gap-2.5 rounded-xl p-2.5 transition-all active:brightness-110"
-      style={{ width: '78%', background: 'var(--bg-card)', border: `1px solid ${accent}30`, textDecoration: 'none' }}
+      className="snap-start shrink-0 tk-glass flex gap-2.5 rounded-xl p-2.5 transition-all active:brightness-110"
+      style={{ width: '78%', border: `1px solid ${accent}30`, borderTopColor: 'rgba(255,255,255,0.22)', textDecoration: 'none' }}
     >
       <div className="relative shrink-0 rounded-lg overflow-hidden" style={{ width: 54, height: 54, background: '#06060F' }}>
         {imgUrl ? (

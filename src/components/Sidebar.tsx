@@ -61,8 +61,10 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
                 href={`/rankings?tab=jugadores`}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all hover:brightness-110"
                 style={{
-                  background: i < 3 ? `linear-gradient(135deg, var(--bg-card) 60%, ${medalColor.glow})` : 'var(--bg-card)',
+                  // Vidrio Taka: velo en vez del opaco; el glow de medalla (top-3) se conserva.
+                  background: i < 3 ? `linear-gradient(135deg, rgba(255,255,255,0.05) 60%, ${medalColor.glow})` : 'rgba(255,255,255,0.05)',
                   border: `1px solid ${medalColor.border}`,
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)',
                   textDecoration: 'none',
                 }}
               >
@@ -154,8 +156,9 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
               href="/calendario"
               className="flex items-center justify-between p-2.5 rounded-xl transition-all hover:brightness-110"
               style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderTop: '1px solid rgba(255,255,255,0.16)',
                 borderLeft: `3px solid ${event.accent}`,
                 textDecoration: 'none',
               }}

@@ -201,8 +201,8 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
         width: 'clamp(198px, 56vw, 228px)',
         borderRadius: 16,
         background: isLive
-          ? 'linear-gradient(160deg, rgba(255,77,46,0.10) 0%, var(--bg-card) 58%)'
-          : `linear-gradient(165deg, ${sportColor}14 0%, var(--bg-card) 52%)`,
+          ? 'linear-gradient(160deg, rgba(255,77,46,0.10) 0%, rgba(255,255,255,0.04) 58%)'
+          : `linear-gradient(165deg, ${sportColor}14 0%, rgba(255,255,255,0.04) 52%)`,
         border: isLive ? '1px solid rgba(255,77,46,0.25)' : `1px solid ${sportColor}22`,
         borderTop: `2.5px solid ${isLive ? '#FF4D2E' : sportColor}`,
         boxShadow: isLive
