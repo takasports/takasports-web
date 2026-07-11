@@ -29,7 +29,6 @@ const COLOR_HINT = '#FCD34D'
 const STORAGE_KEY = 'ts_sopa_cracks_state'
 const HINT_PENALTY_SECONDS = 30
 const TIME_ATTACK_LIMIT = 3 * 60   // 3 minutos
-const INTRUDER_BONUS_PTS = 20      // Bonus visual al encontrar la intrusa
 const POINTS_PER_WORD = 10         // Escala única de puntos por palabra: sidebar, recordPlay y modal final
 const COLOR_INTRUDER = '#A78BFA'   // violeta, distinto del verde clásico
 
@@ -857,7 +856,6 @@ export default function SopaCracksPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-black uppercase tracking-widest opacity-80 inline-flex items-center gap-1">
                       {playerInfo.intruder ? <><TargetIcon size={11} className="inline-block align-middle mr-1" />Palabra intrusa</> : '✓ Encontrado'}
-                      {playerInfo.intruder && <span className="opacity-70">· +{INTRUDER_BONUS_PTS} XP</span>}
                     </p>
                     <p className="text-sm font-black truncate inline-flex items-center gap-1.5 w-full" style={{ fontFamily: 'var(--font-display)' }}>
                       <CountryFlag country={playerInfo.player.country} width={14} />
@@ -969,7 +967,7 @@ export default function SopaCracksPage() {
                   </div>
                   {intruderFound && (
                     <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.3)', color: COLOR_INTRUDER, fontFamily: 'var(--font-sport)' }}>
-                      +{INTRUDER_BONUS_PTS} XP
+                      ¡Hallada!
                     </span>
                   )}
                 </div>
