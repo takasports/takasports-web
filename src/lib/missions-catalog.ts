@@ -2,8 +2,10 @@
 // (missions.ts, localStorage) y el servidor (/api/games/missions/claim).
 // Sin 'use client' ni APIs de navegador: importable desde ambos lados.
 //
-// F4·T5: las recompensas están en PUNTOS reales (un juego da 1–12, así que
-// una misión diaria vale ~5–15 y una semanal ~25). Tope: 40 pts/día de misión.
+// F4·T5 (escala TACAÑA, revisión del dueño 2026-07-11): las misiones son un
+// extra pequeño — el grueso sale de jugar/predecir. Recompensas en PUNTOS
+// reales: diarias 2–6, semanales 10 (siempre ≤ lo que da el propio juego).
+// Tope: 15 pts/día de misión.
 // El monto lo fija SIEMPRE el servidor desde este catálogo — el cliente solo
 // dice QUÉ misión, nunca CUÁNTOS puntos.
 
@@ -42,47 +44,47 @@ export interface MissionTemplate {
   verify: MissionVerify
 }
 
-export const MISSION_DAILY_CAP = 40
+export const MISSION_DAILY_CAP = 15
 
 export const TEMPLATES: Record<string, MissionTemplate> = {
   'd-quad': {
     id: 'd-quad', title: 'Cuatro en raya', description: 'Termina una partida de los 4 juegos hoy',
-    emoji: '🎯', goal: { kind: 'play-all-four' }, reward: 15, period: 'daily',
+    emoji: '🎯', goal: { kind: 'play-all-four' }, reward: 6, period: 'daily',
     verify: { via: 'all-four' },
   },
   'd-trivia7': {
     id: 'd-trivia7', title: 'Trivia rápida', description: 'Saca ≥70 pts en CrackQuiz',
-    emoji: '⚡', goal: { kind: 'score-at-least', gameId: 'crackquiz', min: 70 }, reward: 8, period: 'daily',
+    emoji: '⚡', goal: { kind: 'score-at-least', gameId: 'crackquiz', min: 70 }, reward: 3, period: 'daily',
     verify: { via: 'score', gameId: 'crackquiz', periodType: 'daily', min: 70 },
   },
   'd-warmup': {
     id: 'd-warmup', title: 'Calienta motores', description: 'Termina 2 partidas hoy (cualquier juego)',
-    emoji: '🔥', goal: { kind: 'play-any', target: 2 }, reward: 5, period: 'daily',
+    emoji: '🔥', goal: { kind: 'play-any', target: 2 }, reward: 2, period: 'daily',
     verify: { via: 'client' },
   },
   'd-hawkeye': {
     id: 'd-hawkeye', title: 'Ojo de halcón', description: 'Resuelve TakaGrid 9/9',
-    emoji: '🦅', goal: { kind: 'solved-exact', gameId: 'takagrid', solved: 9 }, reward: 12, period: 'daily',
+    emoji: '🦅', goal: { kind: 'solved-exact', gameId: 'takagrid', solved: 9 }, reward: 5, period: 'daily',
     verify: { via: 'takagrid-solved', solved: 9 },
   },
   'd-combo': {
     id: 'd-combo', title: 'Combo de fuego', description: 'Saca ≥100 pts en CrackQuiz',
-    emoji: '💥', goal: { kind: 'score-at-least', gameId: 'crackquiz', min: 100 }, reward: 12, period: 'daily',
+    emoji: '💥', goal: { kind: 'score-at-least', gameId: 'crackquiz', min: 100 }, reward: 5, period: 'daily',
     verify: { via: 'score', gameId: 'crackquiz', periodType: 'daily', min: 100 },
   },
   'd-double-quiz': {
     id: 'd-double-quiz', title: 'Doble jugada', description: 'Termina 2 partidas de CrackQuiz (sin contar la práctica)',
-    emoji: '🎲', goal: { kind: 'play-game', gameId: 'crackquiz', target: 2 }, reward: 6, period: 'daily',
+    emoji: '🎲', goal: { kind: 'play-game', gameId: 'crackquiz', target: 2 }, reward: 2, period: 'daily',
     verify: { via: 'client' },
   },
   'w-once': {
     id: 'w-once', title: 'Once de la semana', description: 'Completa tu Once de la semana (los 11 jugadores)',
-    emoji: '🏆', goal: { kind: 'play-game', gameId: 'mionce', target: 1 }, reward: 25, period: 'weekly',
+    emoji: '🏆', goal: { kind: 'play-game', gameId: 'mionce', target: 1 }, reward: 10, period: 'weekly',
     verify: { via: 'exists', gameId: 'mionce', periodType: 'weekly' },
   },
   'w-sopa': {
     id: 'w-sopa', title: 'Sopa limpia', description: 'Resuelve la Sopa semanal completa',
-    emoji: '🥣', goal: { kind: 'score-at-least', gameId: 'sopacracks', min: 80 }, reward: 25, period: 'weekly',
+    emoji: '🥣', goal: { kind: 'score-at-least', gameId: 'sopacracks', min: 80 }, reward: 10, period: 'weekly',
     verify: { via: 'score', gameId: 'sopacracks', periodType: 'weekly', min: 80 },
   },
 }

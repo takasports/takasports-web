@@ -3,13 +3,13 @@
 // Acredita los PUNTOS reales de una misión completada (F4·T5). El monto lo fija
 // el SERVIDOR desde missions-catalog (el cliente solo dice qué misión, nunca
 // cuántos puntos). La RPC award_mission_points es idempotente por
-// usuario+misión+periodo y aplica el tope diario de 40 pts de misión.
+// usuario+misión+periodo y aplica el tope diario (MISSION_DAILY_CAP).
 //
 // Anti-trampa: (1) la misión debe ser la ACTIVA de hoy/esta semana (selección
 // determinista, misma seed que el cliente); (2) el completado se verifica contra
 // game_plays (partidas reales, con techo antifraude) para las 6 misiones que se
 // pueden; las 2 de conteo ("juega N veces") confían en el cliente porque
-// game_plays deduplica por periodo — el tope de 40/día acota el abuso.
+// game_plays deduplica por periodo — el tope diario acota el abuso.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'

@@ -80,7 +80,7 @@ function Avatar({ url, name, size = 28 }: { url: string | null; name: string | n
 const EARN_WAYS: { emoji: string; label: string; hint: string; href: string }[] = [
   { emoji: '🎮', label: 'Juegos',       hint: '1–12', href: '/juegos' },
   { emoji: '🔮', label: 'Predicciones', hint: '3–6',  href: '/predicciones' },
-  { emoji: '🎯', label: 'Misiones',     hint: '5–25', href: '/juegos' },
+  { emoji: '🎯', label: 'Misiones',     hint: '2–10', href: '/juegos' },
   { emoji: '🔥', label: 'Racha',        hint: 'hitos', href: '/juegos' },
   { emoji: '🏅', label: 'Insignias',    hint: '+50',  href: '/perfil' },
 ]
