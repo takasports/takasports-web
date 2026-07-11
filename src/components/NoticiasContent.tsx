@@ -219,11 +219,15 @@ export default function NoticiasContent({
         </div>
       </div>
 
-      {/* ── FILTRO DEPORTE — sticky ── */}
+      {/* ── FILTRO DEPORTE — sticky ──
+          Anclado bajo la consola (HeaderConsole publica su altura real como
+          --console-h). Antes top:56 fijo → en /noticias la consola (~132px,
+          z-50) lo TAPABA al hacer scroll. El fallback 56px cubre los hubs
+          /[sport], que montan Header simple sin consola. */}
       <div
         className="sticky z-40 px-4 sm:px-6 xl:px-10 pt-3 pb-0"
         style={{
-          top: 56,
+          top: 'var(--console-h, 56px)',
           background: 'rgba(9,9,15,0.96)',
           backdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(255,255,255,0.04)',
