@@ -10,7 +10,6 @@ import { ensureAudio, sfx, SOUND_KEY, getSoundPref, winFanfare, fireConfetti } f
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
-import { addXp, xpForCrackquiz } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
@@ -1084,7 +1083,6 @@ export default function CrackQuizPage() {
       payload: { correct, total: QUESTIONS_PER_ROUND, streak: newStreak, combo: maxCombo, answers: answersForPayload },
     }).then(r => { if (r.awarded > 0) setAwardedPoints(r.awarded) })
       .catch(() => { /* no toast — el resto del flujo no se afecta */ })
-    addXp('crackquiz', xpForCrackquiz(correct))
     reportPlay('crackquiz', { score })
     trackGameEvent({ gameId: 'crackquiz', event: 'completed', period, meta: { score, correct, total: QUESTIONS_PER_ROUND, combo: maxCombo } })
   // eslint-disable-next-line react-hooks/exhaustive-deps

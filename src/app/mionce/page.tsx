@@ -12,7 +12,6 @@ import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import GameOnboarding from '@/components/games/GameOnboarding'
-import { addXp, xpForMionce } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
 import { collectPlayer } from '@/lib/album'
 import { saveLineup, SAVED_LINEUP_LIMIT, loadSavedLineups } from '@/lib/mionce-saved'
@@ -905,10 +904,9 @@ export default function MiOncePage() {
           .catch(() => { /* sin toast — el resto del flujo no se afecta */ })
         bestScoreRef.current = Math.max(bestScoreRef.current, score)
       }
-      // XP + misión + racha + evento "completed": exactamente 1 vez por semana.
+      // misión + racha + evento "completed": exactamente 1 vez por semana.
       if (!alreadyScored) {
         trackGameComplete({ game: 'mi_once', correct: validCount, total: 11 })
-        addXp('mionce', xpForMionce(isTagged ? validCount : filledCount))
         reportPlay('mionce', { score })
         trackGameEvent({ gameId: 'mionce', event: 'completed', period, meta: { formation, filled: filledCount, valid: validCount, tagged: isTagged } })
         scoredWeekRef.current = week.key

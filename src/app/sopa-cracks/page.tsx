@@ -7,7 +7,6 @@ import GameLayout from '@/components/games/GameLayout'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { madridWeekNumber } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
-import { addXp, xpForSopacracks } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
@@ -392,7 +391,6 @@ export default function SopaCracksPage() {
         durationMs: seconds * 1000,
       }).then(r => { if (r.awarded > 0) setAwardedPoints(r.awarded) })
         .catch(() => { /* sin toast — el resto del flujo no se afecta */ })
-      addXp('sopacracks', xpForSopacracks(foundCount) + (intruderFound ? INTRUDER_BONUS_PTS : 0))
       reportPlay('sopacracks', { score })
       trackGameEvent({ gameId: 'sopacracks', event: 'completed', period, meta: { seconds, intruder: intruderFound, timeAttack, found: foundCount } })
     }
@@ -432,8 +430,6 @@ export default function SopaCracksPage() {
       if (matchesWord && sameCells(cells, p.cells)) {
         if (p.intruder) {
           setIntruderFound(true)
-          // Bonus XP por encontrar la intrusa
-          addXp('sopacracks', INTRUDER_BONUS_PTS)
         } else {
           setFound(prev => [...prev, p.word])
         }

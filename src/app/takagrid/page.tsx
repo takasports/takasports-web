@@ -14,7 +14,6 @@ import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { madridParts, madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
-import { addXp, xpForTakagrid } from '@/lib/meta-progression'
 import { reportPlay } from '@/lib/missions'
 import { collectPlayer } from '@/lib/album'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
@@ -931,7 +930,6 @@ export default function TakaGridPage() {
           score,
           payload: { solved: solvedArr, hardMode },
         })
-        addXp('takagrid', xpForTakagrid(solvedCount) + (hardMode ? 15 : 0))
         reportPlay('takagrid', { score, solved: solvedCount })
         trackGameEvent({ gameId: 'takagrid', event: 'completed', period, meta: { solved: solvedCount, hardMode } })
 
