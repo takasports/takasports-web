@@ -278,6 +278,31 @@ function GamesSection() {
           )
         })}
       </div>
+
+      {/* Liga Taka — ranking general al que suman todos los juegos */}
+      <Link
+        href="/liga-taka"
+        className="group mt-3 flex items-center gap-3 rounded-xl px-4 py-3 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+        style={{
+          background: 'linear-gradient(135deg, rgba(167,139,250,0.14), rgba(147,197,253,0.06))',
+          border: '1px solid rgba(167,139,250,0.28)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 20px -12px rgba(0,0,0,0.6)',
+          textDecoration: 'none',
+        }}
+      >
+        <span className="text-xl flex-shrink-0" aria-hidden="true">⚡</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-black leading-tight" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
+            Liga Taka
+          </p>
+          <p className="text-[11px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+            El ranking general — todos tus puntos en una tabla
+          </p>
+        </div>
+        <span className="text-[11px] font-black uppercase tracking-widest flex-shrink-0 transition-opacity group-hover:opacity-70" style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
+          Ver →
+        </span>
+      </Link>
     </section>
   )
 }

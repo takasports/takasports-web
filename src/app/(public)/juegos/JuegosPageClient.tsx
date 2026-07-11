@@ -1047,7 +1047,7 @@ export default function JuegosPageClient() {
             <h2 className="section-label">Liga Taka</h2>
           </div>
           <Link
-            href="/predicciones"
+            href="/liga-taka"
             className="group block rounded-2xl p-5 sm:p-6 transition-transform hover:translate-y-[-2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             style={{
               background: 'linear-gradient(135deg, rgba(147,197,253,0.12), rgba(167,139,250,0.08))',
@@ -1067,7 +1067,7 @@ export default function JuegosPageClient() {
                   El ranking general de TakaSports
                 </h3>
                 <p className="text-[13px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
-                  Reúne todos tus puntos en una sola tabla: <strong style={{ color: '#F0F0F5' }}>Predicciones</strong>, <strong style={{ color: '#F0F0F5' }}>Mundial</strong> y <strong style={{ color: '#F0F0F5' }}>minijuegos</strong>.
+                  Reúne todos tus puntos en una sola tabla: <strong style={{ color: '#F0F0F5' }}>juegos</strong>, <strong style={{ color: '#F0F0F5' }}>predicciones</strong>, <strong style={{ color: '#F0F0F5' }}>misiones</strong> y <strong style={{ color: '#F0F0F5' }}>racha</strong>.
                 </p>
               </div>
               <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest flex-shrink-0 transition-opacity group-hover:opacity-80" style={{ color: '#93C5FD', fontFamily: 'var(--font-sport)' }}>

@@ -5,6 +5,7 @@
 // Consume /api/ranked/leaderboard?sport=<sport>
 
 import { useState, useEffect, useCallback, type KeyboardEvent } from 'react'
+import Link from 'next/link'
 import TakaPoint from '@/components/TakaPoint'
 import { LeaderboardBadgesRow, LeaderboardTitleLine } from '@/components/badges/LeaderboardBadgeChip'
 import type { LeaderboardBadge, LeaderboardEquipment } from '@/lib/leaderboard-badges'
@@ -291,6 +292,16 @@ export default function RankedLeaderboard({ activeSport }: Props) {
             })}
           </div>
         )}
+      </div>
+
+      <div className="text-center mt-4">
+        <Link
+          href="/liga-taka"
+          className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded"
+          style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}
+        >
+          Ver la Liga Taka completa →
+        </Link>
       </div>
     </div>
   )
