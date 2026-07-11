@@ -42,7 +42,7 @@ export default function RankRow({
   return (
     <div
       className="rounded-xl overflow-hidden transition-all hover:brightness-110"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderLeft: `3px solid ${sportAccent}` }}
+      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)', borderLeft: `3px solid ${sportAccent}` }}
     >
       <div
         className={`flex items-center gap-3 px-4 py-2.5 ${canExpand ? 'cursor-pointer' : ''}`}

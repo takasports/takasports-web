@@ -761,7 +761,7 @@ function MedalBadge({ rank }: { rank: number }) {
 
 function PlaceholderBlockCard({ block, accent }: { block: StatBlock; accent: string }) {
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', opacity: 0.7 }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)', opacity: 0.7 }}>
       <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2.5">
           <span className="section-accent" style={{ background: accent, opacity: 0.4 }} />
@@ -913,7 +913,7 @@ function WorldCupGroupCard({ block, accent, isLive, meta }: {
   const WC_COLS = ['PJ', 'V', 'E', 'D', 'GD', 'PTS']
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}>
       <div className="px-4 py-3 flex items-center justify-between gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="section-accent" style={{ background: accent }} />
@@ -1001,7 +1001,7 @@ function PlayoffSeriesCard({ block, accent, isLive, meta }: {
   if (block.placeholder) return <PlaceholderBlockCard block={block} accent={accent} />
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}>
       <div className="px-5 py-4 flex items-center justify-between gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2.5 flex-wrap">
           <span className="section-accent" style={{ background: accent }} />
@@ -1092,7 +1092,7 @@ function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter, isLive
   }
 
   return (
-    <section id={block.id} aria-labelledby={`${block.id}-title`} className="rounded-2xl overflow-hidden scroll-mt-24" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+    <section id={block.id} aria-labelledby={`${block.id}-title`} className="rounded-2xl overflow-hidden scroll-mt-24" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}>
       <div className="px-5 py-4 flex items-center justify-between gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2.5 flex-wrap min-w-0">
           <span className="section-accent" style={{ background: accent }} />
@@ -1827,7 +1827,7 @@ function ResumenCard({ card, onOpen }: { card: SummaryCard; onOpen: () => void }
   return (
     <button onClick={onOpen}
       className="text-left rounded-2xl overflow-hidden transition-all hover:brightness-110 active:scale-[0.99] w-full"
-      style={{ background: 'var(--bg-card)', border: `1px solid ${card.accent}20`, cursor: 'pointer' }}>
+      style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${card.accent}20`, borderTop: '1px solid rgba(255,255,255,0.16)', cursor: 'pointer' }}>
       {/* Header */}
       <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-2.5"
         style={{ borderBottom: `1px solid ${card.accent}15`, background: `${card.accent}08` }}>

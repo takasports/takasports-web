@@ -39,7 +39,7 @@ export default function PredictWidget({ category = 'jugadores' }: { category?: s
 
   return (
     <div className="rounded-2xl p-5 mb-6"
-      style={{ background: 'var(--bg-card)', border: '1px solid rgba(245,158,11,0.18)' }}>
+      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(245,158,11,0.18)', borderTop: '1px solid rgba(255,255,255,0.18)' }}>
       <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1"
         style={{ color: '#f59e0b', fontFamily: 'var(--font-sport)' }}>
         Apoyo de la afición · esta semana

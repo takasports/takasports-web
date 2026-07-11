@@ -14,7 +14,8 @@ export default function FeaturedCard({ entry }: { entry: RankingEntry }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:brightness-105"
       style={{
-        background: `linear-gradient(to right, ${sportAccent}06, var(--bg-card))`,
+        background: `linear-gradient(to right, ${sportAccent}0f, rgba(255,255,255,0.04))`,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)',
         border: `1px solid ${sportAccent}20`,
         borderLeft: `2px solid ${sportAccent}60`,
       }}>
