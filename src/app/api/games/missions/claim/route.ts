@@ -61,9 +61,16 @@ function isCompleted(tpl: MissionTemplate, rows: GamePlayRow[], dayKey: string, 
       return !!row && typeof row.score === 'number' && row.score >= v.min
     }
     case 'takagrid-solved': {
+      // La web guarda payload.solved como bool[9]; la app nativa lo guarda como
+      // NÚMERO de aciertos. Aceptamos ambos para verificar contra la partida real.
       const solvedVal = find('takagrid', dayKey)?.payload?.solved
-      const arr = Array.isArray(solvedVal) ? (solvedVal as unknown[]) : []
-      return arr.filter(Boolean).length >= v.solved
+      const solved =
+        typeof solvedVal === 'number'
+          ? solvedVal
+          : Array.isArray(solvedVal)
+            ? solvedVal.filter(Boolean).length
+            : 0
+      return solved >= v.solved
     }
     case 'all-four': {
       return (
