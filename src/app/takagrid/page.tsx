@@ -14,7 +14,7 @@ import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { madridParts, madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
-import { reportPlay } from '@/lib/missions'
+import { reportPlay, claimMissions } from '@/lib/missions'
 import { collectPlayer } from '@/lib/album'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
 
@@ -924,13 +924,13 @@ export default function TakaGridPage() {
         const solvedArr = current.flat().map(c => c.playerId !== null)
         const period = currentDayISO()
         const score = solvedCount * (hardMode ? 20 : 10)
+        const completedMissions = reportPlay('takagrid', { score, solved: solvedCount })
         void recordPlay({
           gameId:  'takagrid',
           period,
           score,
           payload: { solved: solvedArr, hardMode },
-        })
-        reportPlay('takagrid', { score, solved: solvedCount })
+        }).then(() => { void claimMissions(completedMissions) }).catch(() => { /* best-effort */ })
         trackGameEvent({ gameId: 'takagrid', event: 'completed', period, meta: { solved: solvedCount, hardMode } })
 
         const prev = loadStreak()

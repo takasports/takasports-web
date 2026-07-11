@@ -100,7 +100,7 @@ function MissionRow({ item }: { item: Item }) {
           fontFamily: 'var(--font-sport)',
         }}
       >
-        +{template.rewardXp} XP
+        +{template.reward} pts
       </span>
     </div>
   )

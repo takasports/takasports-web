@@ -1,40 +1,33 @@
 // Misiones diarias y semanales — segunda capa de la "Liga Taka". Cada misión
-// es una instancia de una plantilla del pool, seleccionada deterministamente
-// por seed día/semana. Los juegos llaman a reportPlay() al terminar y, si la
-// misión se completa, se entrega su recompensa de XP vía addXp().
+// es una instancia de una plantilla del catálogo (missions-catalog), seleccionada
+// deterministamente por seed día/semana.
+//
+// F4·T5: el progreso/estado vive en localStorage (UX instantánea), pero los
+// PUNTOS los concede el SERVIDOR. Al terminar una partida el juego llama a
+// reportPlay(); si una misión se completa, reportPlay la DEVUELVE y el juego
+// llama a claimMissions() —tras persistir la partida— para acreditar los puntos
+// reales vía /api/games/missions/claim (que reverifica contra game_plays).
 
 'use client'
 
 import type { GameId } from './games-store'
-import { addXp } from './meta-progression'
 import { madridDayISO, madridWeekISO } from './taka-time'
+import {
+  TEMPLATES,
+  activeDailyIds,
+  activeWeeklyIds,
+  targetOf,
+  type MissionPeriod,
+  type MissionTemplate,
+} from './missions-catalog'
+
+export type { MissionTemplate }
 
 const STORAGE_KEY = 'ts_missions'
-// v3 (Fase 3·parte 2): d-hawkeye vuelve al pool con meta `solved-exact`
-// (payload.solved===9), ahora que los 50 grids de TakaGrid son resolubles.
-// v2 (Fase 2): d-hawkeye fuera + w-once "completar" en vez de "11/11 perfecto".
-// El bump fuerza a todos los clientes a regenerar misiones corregidas.
-const SCHEMA_VERSION = 3
+// v4 (F4·T5): recompensas en PUNTOS reales + acreditación en el servidor (claim).
+// El bump regenera misiones limpias en todos los clientes.
+const SCHEMA_VERSION = 4
 const CHANGED_EVENT = 'ts:missions-changed'
-
-export type MissionPeriod = 'daily' | 'weekly'
-
-export type MissionGoal =
-  | { kind: 'play-any'; target: number }
-  | { kind: 'play-game'; gameId: GameId; target: number }
-  | { kind: 'play-all-four' }
-  | { kind: 'score-at-least'; gameId: GameId; min: number }
-  | { kind: 'solved-exact'; gameId: GameId; solved: number }
-
-export interface MissionTemplate {
-  id: string
-  title: string
-  description: string
-  emoji: string
-  goal: MissionGoal
-  rewardXp: number
-  period: MissionPeriod
-}
 
 export interface MissionInstance {
   templateId: string
@@ -54,99 +47,14 @@ interface MissionsState {
   instances: MissionInstance[]
 }
 
-// ── Plantillas ───────────────────────────────────────────────────
-
-export const TEMPLATES: Record<string, MissionTemplate> = {
-  'd-quad': {
-    id: 'd-quad', title: 'Cuatro en raya', description: 'Termina una partida de los 4 juegos hoy',
-    emoji: '🎯', goal: { kind: 'play-all-four' }, rewardXp: 100, period: 'daily',
-  },
-  'd-trivia7': {
-    id: 'd-trivia7', title: 'Trivia rápida', description: 'Saca ≥70 pts en CrackQuiz',
-    emoji: '⚡', goal: { kind: 'score-at-least', gameId: 'crackquiz', min: 70 }, rewardXp: 50, period: 'daily',
-  },
-  'd-warmup': {
-    id: 'd-warmup', title: 'Calienta motores', description: 'Termina 2 partidas hoy (cualquier juego)',
-    emoji: '🔥', goal: { kind: 'play-any', target: 2 }, rewardXp: 30, period: 'daily',
-  },
-  // Reactivada en Fase 3·parte 2: los 50 grids son resolubles (test de solvencia)
-  // y la meta es `solved-exact` (payload.solved===9), independiente del modo hard
-  // (antes min:90 se cumplía con 5/9 en hard porque score = solved×20).
-  'd-hawkeye': {
-    id: 'd-hawkeye', title: 'Ojo de halcón', description: 'Resuelve TakaGrid 9/9',
-    emoji: '🦅', goal: { kind: 'solved-exact', gameId: 'takagrid', solved: 9 }, rewardXp: 60, period: 'daily',
-  },
-  'd-combo': {
-    id: 'd-combo', title: 'Combo de fuego', description: 'Saca ≥100 pts en CrackQuiz',
-    emoji: '💥', goal: { kind: 'score-at-least', gameId: 'crackquiz', min: 100 }, rewardXp: 80, period: 'daily',
-  },
-  'd-double-quiz': {
-    id: 'd-double-quiz', title: 'Doble jugada', description: 'Termina 2 partidas de CrackQuiz (sin contar la práctica)',
-    emoji: '🎲', goal: { kind: 'play-game', gameId: 'crackquiz', target: 2 }, rewardXp: 40, period: 'daily',
-  },
-  'w-once': {
-    id: 'w-once', title: 'Once de la semana', description: 'Completa tu Once de la semana (los 11 jugadores)',
-    emoji: '🏆', goal: { kind: 'play-game', gameId: 'mionce', target: 1 }, rewardXp: 120, period: 'weekly',
-  },
-  'w-sopa': {
-    id: 'w-sopa', title: 'Sopa limpia', description: 'Resuelve la Sopa semanal completa',
-    emoji: '🥣', goal: { kind: 'score-at-least', gameId: 'sopacracks', min: 80 }, rewardXp: 100, period: 'weekly',
-  },
-}
-
-const DAILY_POOL: string[]  = ['d-quad', 'd-trivia7', 'd-warmup', 'd-combo', 'd-double-quiz', 'd-hawkeye']
-const WEEKLY_POOL: string[] = ['w-once', 'w-sopa']
-const DAILY_COUNT = 2
-const WEEKLY_COUNT = 1
-
 // ── Helpers internos ─────────────────────────────────────────────
 
-function todayKey(): string {
-  return madridDayISO()
-}
-
-function weekKey(): string {
-  return madridWeekISO()
-}
-
-function seedFromKey(k: string): number {
-  let h = 2166136261
-  for (let i = 0; i < k.length; i++) { h ^= k.charCodeAt(i); h = Math.imul(h, 16777619) }
-  return h >>> 0
-}
-
-function mulberry32(seed: number) {
-  return () => {
-    seed = (seed + 0x6D2B79F5) | 0
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-function targetOf(g: MissionGoal): number {
-  switch (g.kind) {
-    case 'play-any':       return g.target
-    case 'play-game':      return g.target
-    case 'play-all-four':  return 4
-    case 'score-at-least': return 1
-    case 'solved-exact':   return 1
-  }
-}
-
-function pickIds(seed: number, pool: string[], n: number): string[] {
-  const rand = mulberry32(seed)
-  const arr = pool.slice()
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1))
-    ;[arr[i], arr[j]] = [arr[j], arr[i]]
-  }
-  return arr.slice(0, n)
-}
+function todayKey(): string { return madridDayISO() }
+function weekKey(): string { return madridWeekISO() }
 
 function genInstances(dailyK: string, weeklyK: string): MissionInstance[] {
-  const daily  = pickIds(seedFromKey('d-' + dailyK),  DAILY_POOL,  DAILY_COUNT)
-  const weekly = pickIds(seedFromKey('w-' + weeklyK), WEEKLY_POOL, WEEKLY_COUNT)
+  const daily  = activeDailyIds(dailyK)
+  const weekly = activeWeeklyIds(weeklyK)
   const make = (tid: string, k: string): MissionInstance => ({
     templateId: tid,
     period: TEMPLATES[tid].period,
@@ -223,16 +131,21 @@ export interface PlayReport {
   solved?: number
 }
 
+export interface CompletedMission {
+  missionId: string
+  period: string
+}
+
 /**
- * Cada juego llama a esto después de terminar una partida puntuable
- * (justo después de su addXp). Actualiza progreso de las misiones activas y
- * entrega la recompensa via addXp(gameId, rewardXp) al completarse.
+ * Cada juego llama a esto al terminar una partida puntuable. Actualiza el
+ * progreso local (UX instantánea) y DEVUELVE las misiones recién completadas
+ * para que el juego las reclame con claimMissions() tras persistir la partida.
  */
-export function reportPlay(gameId: GameId, p: PlayReport): void {
-  if (typeof window === 'undefined') return
+export function reportPlay(gameId: GameId, p: PlayReport): CompletedMission[] {
+  if (typeof window === 'undefined') return []
   const s = loadMissions()
   let changed = false
-  const completedRewards: Array<{ gameId: GameId; reward: number }> = []
+  const completed: CompletedMission[] = []
 
   for (const inst of s.instances) {
     if (inst.done) continue
@@ -279,7 +192,7 @@ export function reportPlay(gameId: GameId, p: PlayReport): void {
       if (!inst.done && inst.progress >= inst.target) {
         inst.done = true
         inst.claimedAt = new Date().toISOString()
-        completedRewards.push({ gameId, reward: t.rewardXp })
+        completed.push({ missionId: inst.templateId, period: inst.key })
       }
     }
   }
@@ -287,10 +200,28 @@ export function reportPlay(gameId: GameId, p: PlayReport): void {
   if (changed) {
     saveMissions(s)
     try { window.dispatchEvent(new CustomEvent(CHANGED_EVENT)) } catch { /* ignore */ }
-    // Entregamos el XP tras persistir, para que un eventual handler que lea
-    // misiones desde el event ts:meta-changed las vea ya marcadas como done.
-    for (const r of completedRewards) addXp(r.gameId, r.reward)
   }
+  return completed
+}
+
+/**
+ * Reclama al servidor los PUNTOS reales de las misiones completadas. Best-effort
+ * (nunca rompe el flujo del juego). Se llama DESPUÉS de que recordPlay haya
+ * persistido la partida, para que el servidor reverifique contra game_plays.
+ * La idempotencia y el tope diario los aplica la RPC award_mission_points.
+ */
+export async function claimMissions(completed: CompletedMission[]): Promise<void> {
+  if (typeof window === 'undefined' || completed.length === 0) return
+  await Promise.allSettled(
+    completed.map(c =>
+      fetch('/api/games/missions/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mission_id: c.missionId, period: c.period }),
+        credentials: 'include',
+      }),
+    ),
+  )
 }
 
 export function onMissionsChange(handler: () => void): () => void {

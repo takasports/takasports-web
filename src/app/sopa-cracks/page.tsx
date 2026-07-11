@@ -7,7 +7,7 @@ import GameLayout from '@/components/games/GameLayout'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { madridWeekNumber } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
-import { reportPlay } from '@/lib/missions'
+import { reportPlay, claimMissions } from '@/lib/missions'
 import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 import GamePointsToast from '@/components/games/GamePointsToast'
@@ -377,6 +377,7 @@ export default function SopaCracksPage() {
       // jugar, no un ranking aparte.
       const period = currentWeekISO()
       const score = (timeAttack ? foundCount : activeWords.length) * POINTS_PER_WORD
+      const completedMissions = reportPlay('sopacracks', { score })
       recordPlay({
         gameId:     'sopacracks',
         period,
@@ -389,9 +390,8 @@ export default function SopaCracksPage() {
           timeAttack,
         },
         durationMs: seconds * 1000,
-      }).then(r => { if (r.awarded > 0) setAwardedPoints(r.awarded) })
+      }).then(r => { if (r.awarded > 0) setAwardedPoints(r.awarded); void claimMissions(completedMissions) })
         .catch(() => { /* sin toast — el resto del flujo no se afecta */ })
-      reportPlay('sopacracks', { score })
       trackGameEvent({ gameId: 'sopacracks', event: 'completed', period, meta: { seconds, intruder: intruderFound, timeAttack, found: foundCount } })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

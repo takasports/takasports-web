@@ -12,7 +12,7 @@ import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import GameOnboarding from '@/components/games/GameOnboarding'
-import { reportPlay } from '@/lib/missions'
+import { reportPlay, claimMissions, type CompletedMission } from '@/lib/missions'
 import { collectPlayer } from '@/lib/album'
 import { saveLineup, SAVED_LINEUP_LIMIT, loadSavedLineups } from '@/lib/mionce-saved'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -887,27 +887,28 @@ export default function MiOncePage() {
       // Anti-farmeo: el premio de Liga Taka (XP + misión + racha) se otorga UNA
       // sola vez por semana ISO. Como prevFilledRef se reinicia a 0 en cada
       // montaje, sin este guard recargar con el once completo en localStorage —o
-      // quitar y volver a poner un jugador— re-disparaba addXp/reportPlay. Los
+      // quitar y volver a poner un jugador— re-disparaba reportPlay. Los
       // puntos y el ranking ya eran idempotentes server-side; el daño era XP/
       // misión/racha, que sí inflaban la Liga Taka.
       const alreadyScored = scoredWeekRef.current === week.key
       const isNewBest = score > bestScoreRef.current
       // Ranking (server: greatest + idempotente): registra solo una mejor marca
       // semanal, para que mejorar el once siga subiendo en la tabla.
+      let completedMissions: CompletedMission[] = []
       if (!alreadyScored || isNewBest) {
         recordPlay({
           gameId:  'mionce',
           period,
           score,
           payload: { formation, filled: filledCount, valid: validCount, tagged: isTagged, slots },
-        }).then(r => { if (r.awarded > 0) setAwardedPoints(r.awarded) })
+        }).then(r => { if (r.awarded > 0) setAwardedPoints(r.awarded); void claimMissions(completedMissions) })
           .catch(() => { /* sin toast — el resto del flujo no se afecta */ })
         bestScoreRef.current = Math.max(bestScoreRef.current, score)
       }
       // misión + racha + evento "completed": exactamente 1 vez por semana.
       if (!alreadyScored) {
         trackGameComplete({ game: 'mi_once', correct: validCount, total: 11 })
-        reportPlay('mionce', { score })
+        completedMissions = reportPlay('mionce', { score })
         trackGameEvent({ gameId: 'mionce', event: 'completed', period, meta: { formation, filled: filledCount, valid: validCount, tagged: isTagged } })
         scoredWeekRef.current = week.key
       }
