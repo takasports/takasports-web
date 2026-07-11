@@ -199,13 +199,9 @@ export default function NewsPageFeed({
                     <Link
                       key={article._id}
                       href={`/noticias/${article.slug ?? article._id}`}
-                      className="news-card flex gap-3.5 rounded-xl p-3"
+                      className="news-card tk-glass flex gap-3.5 rounded-xl p-3"
                       data-reveal
-                      style={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        textDecoration: 'none',
-                      }}
+                      style={{ textDecoration: 'none' }}
                     >
                       <div className="flex-shrink-0 rounded-lg overflow-hidden w-[88px] h-[64px] lg:w-[112px] lg:h-[80px]">
                         <Thumb
@@ -290,13 +286,9 @@ export default function NewsPageFeed({
                     <Link
                       key={article._id}
                       href={`/noticias/${article.slug ?? article._id}`}
-                      className={`news-card rounded-xl overflow-hidden block${isOrphan2 ? ' col-span-2' : ''}${isOrphan3 ? ' lg:col-span-3' : ''}`}
+                      className={`news-card tk-glass rounded-xl overflow-hidden block${isOrphan2 ? ' col-span-2' : ''}${isOrphan3 ? ' lg:col-span-3' : ''}`}
                       data-reveal
-                      style={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        textDecoration: 'none',
-                      }}
+                      style={{ textDecoration: 'none' }}
                     >
                       <div className="overflow-hidden" style={{ height: 110 }}>
                         <Thumb

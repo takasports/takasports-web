@@ -243,7 +243,7 @@ function ArticleSidebar({
 
       <div
         className="rounded-2xl p-5"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}
       >
         <div className="flex flex-col gap-3">
           {article.publishedAt && (
@@ -312,7 +312,7 @@ function ArticleSidebar({
           <Link
             href={`/noticias/${nextArticle.slug ?? nextArticle._id}`}
             className="news-card flex gap-3 rounded-xl p-3 block"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none' }}
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)', textDecoration: 'none' }}
           >
             {(nextArticle.imageUrl || nextArticle.image?.asset) && (
               <div className="flex-shrink-0 rounded-lg overflow-hidden" style={{ width: 72, height: 52 }}>
@@ -354,7 +354,7 @@ function ArticleSidebar({
                   key={rel._id}
                   href={`/noticias/${rel.slug ?? rel._id}`}
                   className="news-card flex gap-3 rounded-xl p-3"
-                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none' }}
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)', textDecoration: 'none' }}
                 >
                   {relImg && (
                     <div className="flex-shrink-0 rounded-lg overflow-hidden" style={{ width: 72, height: 52 }}>
@@ -1316,7 +1316,7 @@ export default async function NoticiaPage({
                 rel="author"
                 aria-label={`Más artículos de ${articleAuthor}`}
                 className="author-box hero-enter group mt-8 flex items-center gap-3.5 rounded-2xl p-4"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none' }}
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)', textDecoration: 'none' }}
               >
                 <span
                   aria-hidden="true"
@@ -1356,7 +1356,7 @@ export default async function NoticiaPage({
                   <Link
                     href={`/noticias/${nextArticle.slug ?? nextArticle._id}`}
                     className="news-card flex gap-4 rounded-2xl p-4"
-                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none' }}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)', textDecoration: 'none' }}
                   >
                     {(nextArticle.imageUrl || nextArticle.image?.asset) && (
                       <div className="flex-shrink-0 rounded-xl overflow-hidden" style={{ width: 100, height: 70 }}>
@@ -1396,7 +1396,7 @@ export default async function NoticiaPage({
                       return (
                         <Link key={rel._id} href={`/noticias/${rel.slug ?? rel._id}`}
                           className="news-card rounded-xl overflow-hidden block"
-                          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none' }}>
+                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)', textDecoration: 'none' }}>
                           <div className="overflow-hidden" style={{ height: 110, background: 'linear-gradient(145deg,#1a1a2e,#120820)' }}>
                             {relImg && <Image src={relImg} alt={rel.title} width={400} height={110} className="w-full h-full object-cover" />}
                           </div>
@@ -1500,7 +1500,7 @@ export default async function NoticiaPage({
               <Link
                 href={`/noticias/${nextArticle.slug ?? nextArticle._id}`}
                 className="group flex items-center gap-5 rounded-2xl p-4 transition-all hover:brightness-110"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none' }}
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)', textDecoration: 'none' }}
               >
                 {(nextArticle.imageUrl || nextArticle.image?.asset) && (
                   <div className="flex-shrink-0 rounded-xl overflow-hidden" style={{ width: 120, height: 80 }}>

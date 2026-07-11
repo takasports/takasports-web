@@ -75,8 +75,9 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
                   className="group flex items-start gap-3 p-2.5 rounded-xl transition-all hover:brightness-110"
                   style={{
                     textDecoration: 'none',
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderTop: '1px solid rgba(255,255,255,0.16)',
                   }}
                 >
                   {/* Número */}
@@ -128,8 +129,9 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
                   className="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all hover:brightness-110"
                   style={{
                     textDecoration: 'none',
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderTop: '1px solid rgba(255,255,255,0.16)',
                     borderLeft: `3px solid ${accent}`,
                   }}
                 >
