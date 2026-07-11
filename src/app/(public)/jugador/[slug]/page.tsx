@@ -71,7 +71,7 @@ function MatchRow({ r, teamId }: { r: TeamResult; teamId: string }) {
     <Link href={`/partido/${r.matchRef}`}>
       <div
         className="flex items-center gap-3 py-3 px-4 rounded-xl mb-1.5 transition-all hover:bg-white/5"
-        style={{ background: 'rgba(255,255,255,0.025)' }}
+        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}
       >
         <div
           className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 text-[11px] font-black"
@@ -229,7 +229,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
                 <div
                   data-sport={sportSlug}
                   className="rounded-2xl p-5 mb-6"
-                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}
                 >
                   <div
                     className="text-[10px] font-black uppercase tracking-widest mb-4"
@@ -266,7 +266,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
           {hasRecent && (
             <div
               className="rounded-2xl p-4"
-              style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}
             >
               <div
                 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"

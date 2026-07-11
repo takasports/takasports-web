@@ -163,7 +163,7 @@ function ResultRow({ r, teamId }: { r: TeamResult; teamId: string }) {
     <Link href={`/partido/${r.matchRef}`}>
       <div
         className="flex items-center gap-3 py-3 px-4 rounded-xl mb-1.5 transition-all hover:bg-white/5"
-        style={{ background: 'rgba(255,255,255,0.025)' }}
+        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}
       >
         {/* Result badge */}
         <div

@@ -88,7 +88,7 @@ function playerHref(p: PlayerRow) {
 function StandingsTable({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
   if (!rows.length) return <p className="text-[12px] text-[var(--text-muted)] px-4 py-6 text-center">Sin datos</p>
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}>
       <div className="flex items-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-widest text-[#3A3A4A]"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', fontFamily: 'var(--font-sport)' }}>
         <span className="w-6 text-center">#</span>
@@ -128,7 +128,7 @@ function LeaderList({ title, players, metric, def }: { title: string; players: P
         style={{ color: def.accent, fontFamily: 'var(--font-sport)' }}>
         {title}
       </div>
-      <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}>
         {players.slice(0, 10).map((p, i) => {
           const href = playerHref(p)
           const inner = (
