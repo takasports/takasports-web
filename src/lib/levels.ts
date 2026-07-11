@@ -1,23 +1,27 @@
 // ─────────────────────────────────────────────────────────────────
-// Levels — fórmula XP → Level para el sistema de progresión Taka.
+// Levels — fórmula puntos → Level para el sistema de progresión Taka.
 //
-// Diseño:
-//   · XP = puntos Taka acumulados lifetime (sum de point_transactions.amount > 0)
-//          + 200 XP por cada badge desbloqueado.
-//   · Los puntos son universales: vienen de ranked, quiniela,
-//     streak milestones, juegos diarios, etc.
-//   · El level es puramente cosmético — NO da ventajas mecánicas.
+// F4·T5: el nivel deriva EXCLUSIVAMENTE de los puntos del ledger
+// (point_transactions). NO hay bonus aparte por insignia: cada insignia
+// acredita +50 PUNTOS REALES al desbloquearse (source='badge'), que ya
+// cuentan tanto para el nivel como para la Liga Taka. Antes se sumaban
+// 200 XP/insignia por fuera del ledger (no contaba para el ranking) — retirado.
 //
-// Tabla de niveles:
+// Los puntos son universales: ranked/predicciones, mundial, racha,
+// minijuegos, misiones e insignias. El level es puramente cosmético — NO
+// da ventajas mecánicas.
+//
+// Curva (recalibrada F4·T5 a la economía real, ~15–30 pts/día de un
+// usuario enganchado; primeros niveles rápidos, techo en ~1½ año):
 //   L1 Novato          0
-//   L2 Aficionado      500
-//   L3 Pronosticador   1500
-//   L4 Analista        3500
-//   L5 Experto         7500
-//   L6 Crack           15000
-//   L7 Maestro         30000
-//   L8 Leyenda         60000
-//   L9 Mito            100000
+//   L2 Aficionado      100
+//   L3 Pronosticador   300
+//   L4 Analista        700
+//   L5 Experto         1500
+//   L6 Crack           3000
+//   L7 Maestro         5000
+//   L8 Leyenda         7500
+//   L9 Mito            11000
 // ─────────────────────────────────────────────────────────────────
 
 export interface LevelDef {
@@ -29,17 +33,15 @@ export interface LevelDef {
 
 export const LEVELS: LevelDef[] = [
   { level: 1, name: 'Novato',         minXp: 0,      color: '#94a3b8' },
-  { level: 2, name: 'Aficionado',     minXp: 500,    color: '#60a5fa' },
-  { level: 3, name: 'Pronosticador',  minXp: 1500,   color: '#22d3ee' },
-  { level: 4, name: 'Analista',       minXp: 3500,   color: '#34d399' },
-  { level: 5, name: 'Experto',        minXp: 7500,   color: '#a78bfa' },
-  { level: 6, name: 'Crack',          minXp: 15000,  color: '#f97316' },
-  { level: 7, name: 'Maestro',        minXp: 30000,  color: '#ef4444' },
-  { level: 8, name: 'Leyenda',        minXp: 60000,  color: '#fbbf24' },
-  { level: 9, name: 'Mito',           minXp: 100000, color: '#fb7185' },
+  { level: 2, name: 'Aficionado',     minXp: 100,    color: '#60a5fa' },
+  { level: 3, name: 'Pronosticador',  minXp: 300,    color: '#22d3ee' },
+  { level: 4, name: 'Analista',       minXp: 700,    color: '#34d399' },
+  { level: 5, name: 'Experto',        minXp: 1500,   color: '#a78bfa' },
+  { level: 6, name: 'Crack',          minXp: 3000,   color: '#f97316' },
+  { level: 7, name: 'Maestro',        minXp: 5000,   color: '#ef4444' },
+  { level: 8, name: 'Leyenda',        minXp: 7500,   color: '#fbbf24' },
+  { level: 9, name: 'Mito',           minXp: 11000,  color: '#fb7185' },
 ]
-
-export const XP_PER_BADGE = 200
 
 export interface LevelInfo {
   current: LevelDef
@@ -69,12 +71,10 @@ export function computeLevel(xp: number): LevelInfo {
 }
 
 /**
- * Calcula XP total de un user dados los inputs del ledger + badges.
- * XP = suma de puntos positivos en point_transactions + bonus por badges.
+ * XP total de un usuario = sus puntos Taka lifetime (suma positiva del
+ * ledger point_transactions). Las insignias YA están dentro de esa suma
+ * (acreditan +50 puntos reales al desbloquearse), así que no se suman aparte.
  */
-export function computeXp(opts: {
-  lifetimePts: number    // SUM(amount) WHERE amount > 0 FROM point_transactions
-  badgesCount: number
-}): number {
-  return Math.max(0, Math.floor(opts.lifetimePts) + opts.badgesCount * XP_PER_BADGE)
+export function computeXp(lifetimePts: number): number {
+  return Math.max(0, Math.floor(lifetimePts))
 }

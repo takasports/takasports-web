@@ -2,16 +2,12 @@
 // User progress — FUENTE ÚNICA del XP y nivel de un usuario.
 //
 // La placa pública (/api/placa/[userId]) y el perfil propio
-// (/api/quiniela/me) deben mostrar SIEMPRE el mismo nivel. Antes cada
-// ruta calculaba el XP por su cuenta (la placa reimplementaba la fórmula
-// a mano y contaba TODAS las filas de insignias; el perfil usaba
-// computeXp con las insignias que resolvían a definición) → podían
-// divergir. Este módulo centraliza el cálculo para que no vuelva a pasar.
+// (/api/quiniela/me) muestran SIEMPRE el mismo nivel usando este módulo.
 //
-// XP = suma de puntos positivos (point_transactions.amount > 0)
-//      + XP_PER_BADGE por cada insignia DISTINTA desbloqueada.
-// La insignia cuenta por haberse ganado (una fila), no por que el código
-// tenga su definición: un fallo de catálogo no debe borrar XP ya ganado.
+// F4·T5: XP = suma de puntos positivos del ledger (point_transactions).
+// Las insignias YA están dentro de esa suma (cada una acredita +50 puntos
+// reales al desbloquearse, source='badge'), así que NO se suman aparte.
+// Seguimos contando badgesCount para mostrarlo, pero no altera el XP.
 // ─────────────────────────────────────────────────────────────────
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -19,19 +15,21 @@ import { computeXp, computeLevel, type LevelInfo } from './levels'
 
 export interface UserProgress {
   lifetimePts: number   // suma de puntos positivos del ledger
-  badgesCount: number   // insignias distintas desbloqueadas
-  xp: number            // XP total (puntos + bonus por insignias)
+  badgesCount: number   // insignias distintas desbloqueadas (informativo)
+  xp: number            // XP total = puntos lifetime (insignias incluidas vía su +50)
   level: LevelInfo      // nivel + progreso derivados del XP
 }
 
 /**
  * Parte PURA: dados los importes positivos del ledger y los ids de
  * insignia del usuario, deriva su XP y nivel. Testeable sin BD.
+ * Los puntos de insignia (+50) ya llegan dentro de `ptAmounts`; `badgeIds`
+ * solo aporta el conteo informativo.
  */
 export function userProgressFrom(ptAmounts: number[], badgeIds: string[]): UserProgress {
   const lifetimePts = ptAmounts.reduce((sum, a) => sum + (a ?? 0), 0)
   const badgesCount = new Set(badgeIds).size
-  const xp = computeXp({ lifetimePts, badgesCount })
+  const xp = computeXp(lifetimePts)
   return { lifetimePts, badgesCount, xp, level: computeLevel(xp) }
 }
 

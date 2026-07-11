@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { userProgressFrom } from './user-progress'
-import { XP_PER_BADGE } from './levels'
 
 describe('userProgressFrom', () => {
   it('usuario sin puntos ni insignias → XP 0, nivel 1 (Novato)', () => {
@@ -11,27 +10,29 @@ describe('userProgressFrom', () => {
     expect(p.level.current.level).toBe(1)
   })
 
-  it('suma solo los puntos del ledger cuando no hay insignias', () => {
+  it('XP = suma de puntos del ledger', () => {
     const p = userProgressFrom([100, 250, 50], [])
     expect(p.lifetimePts).toBe(400)
     expect(p.xp).toBe(400)
-    expect(p.level.current.level).toBe(1) // 400 < 500 → sigue en L1
+    // Curva F4·T5: L3 Pronosticador = 300..700 → 400 cae en L3.
+    expect(p.level.current.level).toBe(3)
+    expect(p.level.current.name).toBe('Pronosticador')
   })
 
-  it('cada insignia suma XP_PER_BADGE y puede subir de nivel', () => {
-    // 100 pts + 2 insignias (200 c/u) = 500 XP → L2 Aficionado.
-    const p = userProgressFrom([100], ['pleno_jornada', 'sp_semana_1'])
+  it('las insignias se cuentan pero NO suman XP aparte (su +50 ya está en el ledger)', () => {
+    // Los puntos de insignia entran al ledger como source=badge; aquí llegan
+    // ya sumados en ptAmounts. badgeIds solo aporta el conteo informativo.
+    const p = userProgressFrom([150], ['pleno_jornada', 'sp_semana_1'])
     expect(p.badgesCount).toBe(2)
-    expect(p.xp).toBe(100 + 2 * XP_PER_BADGE)
-    expect(p.xp).toBe(500)
-    expect(p.level.current.level).toBe(2)
+    expect(p.xp).toBe(150)                 // NO 150 + bonus por insignia
+    expect(p.level.current.level).toBe(2)  // 100..300 → Aficionado
     expect(p.level.current.name).toBe('Aficionado')
   })
 
   it('cuenta insignias DISTINTAS (deduplica ids repetidos)', () => {
     const p = userProgressFrom([], ['a', 'a', 'b'])
     expect(p.badgesCount).toBe(2)
-    expect(p.xp).toBe(2 * XP_PER_BADGE)
+    expect(p.xp).toBe(0)                    // sin puntos → XP 0 (insignias no suman aquí)
   })
 
   it('ignora importes nulos/indefinidos sin romper la suma', () => {
@@ -46,9 +47,9 @@ describe('userProgressFrom', () => {
     const a = userProgressFrom(pts, badges)
     const b = userProgressFrom(pts, badges)
     expect(a.xp).toBe(b.xp)
-    expect(a.level.current.level).toBe(b.level.current.level)
-    // 2040 pts + 600 = 2640 XP → L3 Pronosticador (1500..3500)
-    expect(a.xp).toBe(2640)
-    expect(a.level.current.level).toBe(3)
+    // 2040 pts → curva F4·T5 L5 Experto (1500..3000).
+    expect(a.xp).toBe(2040)
+    expect(a.level.current.level).toBe(5)
+    expect(a.level.current.name).toBe('Experto')
   })
 })

@@ -54,6 +54,10 @@ const BADGE_PUSH_COPY: Record<string, { title: string; body: string }> = {
   top3_mundial_2026:          { title: '🏆 Podio Mundial 2026',    body: 'TOP 3 en el Mundial. Badge legendario desbloqueado.' },
 }
 
+// F4·T5 — puntos reales que acredita cada insignia NUEVA al ledger
+// (source='badge'). Cuentan para el nivel Y la Liga Taka.
+const BADGE_POINTS = 50
+
 export interface BadgeAwardResult {
   awarded: string[]      // badges nuevos que se otorgaron en esta llamada
   alreadyHad: string[]   // badges que el user ya tenía (no se re-otorgaron)
@@ -161,6 +165,20 @@ export async function awardBadges(
     // loguea silenciosamente sin romper el award del badge.
     void unlockCosmeticsForBadge(db, userId, badgeId).catch(err => {
       console.warn('[awardBadges] cosmetic unlock failed', { userId, badgeId, err: err?.message })
+    })
+
+    // F4·T5 — +50 PUNTOS REALES al ledger por la insignia nueva (source='badge').
+    // Solo para toInsert (insignias realmente nuevas) → sin doble conteo. El
+    // backfill de insignias históricas va en el reinicio del ledger (Paso 6).
+    void db.rpc('award_points', {
+      p_user_id: userId,
+      p_amount:  BADGE_POINTS,
+      p_sport:   'all',
+      p_source:  'badge',
+      p_reason:  def.name,
+      p_context: { badge_id: badgeId },
+    }).then(({ error }) => {
+      if (error) console.warn('[awardBadges] award_points failed', { userId, badgeId, err: error.message })
     })
   }
 
