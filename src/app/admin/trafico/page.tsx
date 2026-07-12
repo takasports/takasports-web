@@ -15,7 +15,7 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/admin-auth'
-import { getGa4Summary, getSearchDetail, shortPath, type Ga4Summary, type SearchDetail } from '@/lib/traffic'
+import { getGa4Summary, getSearchDetail, getAppDownloads, shortPath, type Ga4Summary, type SearchDetail, type AppDownloads } from '@/lib/traffic'
 import {
   getTrafficSummary,
   checkRoutes,
@@ -37,6 +37,12 @@ const nf = (n?: number | null) => (n == null ? '–' : Math.round(n).toLocaleStr
 const pct = (ctr?: number | null) => (ctr == null ? '–' : `${(ctr * 100).toFixed(1).replace('.', ',')}%`)
 
 const ACCENTS = ['#7C3AED', '#8B5CF6', '#F472B6', '#60A5FA', '#86EFAC', '#FCD34D']
+
+/** Código ISO de país (2 letras) → emoji de bandera. */
+function flag(code: string): string {
+  if (!/^[A-Za-z]{2}$/.test(code)) return '🏳️'
+  return String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65))
+}
 
 function TrendChip({ trend }: { trend?: 'up' | 'down' | 'flat' }) {
   if (!trend) return null
@@ -134,8 +140,8 @@ function PendingCard({ title, children }: { title: string; children: ReactNode }
 export default async function TraficoPage() {
   await requireAdmin('/admin/trafico')
 
-  const [ga4, gsc, search, routes, deploy]: [Ga4Summary, TrafficSummary, SearchDetail, RouteCheck[], DeployStatus] =
-    await Promise.all([getGa4Summary(), getTrafficSummary(), getSearchDetail(), checkRoutes(), checkVercelDeploy()])
+  const [ga4, gsc, search, ios, routes, deploy]: [Ga4Summary, TrafficSummary, SearchDetail, AppDownloads, RouteCheck[], DeployStatus] =
+    await Promise.all([getGa4Summary(), getTrafficSummary(), getSearchDetail(), getAppDownloads(), checkRoutes(), checkVercelDeploy()])
 
   const okCount = routes.filter((r) => r.ok).length
 
@@ -240,12 +246,35 @@ export default async function TraficoPage() {
 
         {/* ── DESCARGAS APP iOS ── */}
         <section className="mb-12">
-          <SectionTitle>Descargas app iOS</SectionTitle>
-          <PendingCard title="App Store aún no conectada a este panel">
-            Las descargas se ven ahora en el <b>informe diario de Telegram</b> (taka-system, 9:15) y en{' '}
-            <a href="https://appstoreconnect.apple.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--purple)', textDecoration: 'underline' }}>App Store Connect</a>.
-            Se conectarán aquí en la siguiente fase (App Store Connect · Sales Reports API).
-          </PendingCard>
+          <SectionTitle hint={ios.available && ios.day ? `foto del ${ios.day} · informe diario` : undefined}>Descargas app iOS</SectionTitle>
+          {ios.available ? (
+            <>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <BigCard label="Total · desde lanzamiento" value={nf(ios.total)} sub={ios.launchDate ? `desde ${ios.launchDate}` : undefined} accent="#FCD34D" />
+                <BigCard label="Últimos 7 días" value={nf(ios.d7)} accent="#86EFAC" />
+                <BigCard label="Ayer" value={nf(ios.yesterday)} accent="#60A5FA" />
+                <BigCard label="Plataforma" value={<span style={{ fontSize: '1rem', fontFamily: 'var(--font-sport)' }}>iOS · App Store</span>} sub="Android: próximamente" accent="#F472B6" />
+              </div>
+              {ios.countries && ios.countries.length > 0 && (
+                <div>
+                  <p className="section-label" style={{ marginBottom: 10 }}>Por país · desde lanzamiento</p>
+                  <div className="flex flex-wrap gap-2">
+                    {ios.countries.slice(0, 15).map(([code, n]) => (
+                      <span key={code} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 'var(--radius-full)', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontFamily: 'var(--font-sport)', fontSize: 12, fontWeight: 600 }}>
+                        {flag(code)} {code} <span style={{ color: '#F8F8FF', fontWeight: 800 }}>{n}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <PendingCard title="Descargas iOS — aún sin datos">
+              {ios.note && <p style={{ marginBottom: 8 }}>{ios.note}</p>}
+              El informe diario de taka-system (9:15) guarda las descargas en Supabase y este bloque las lee. Se enciende con la próxima ejecución (o corre el informe una vez). También en{' '}
+              <a href="https://appstoreconnect.apple.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--purple)', textDecoration: 'underline' }}>App Store Connect</a>.
+            </PendingCard>
+          )}
         </section>
 
         {/* ── SALUD WEB ── */}

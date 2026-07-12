@@ -10,6 +10,7 @@
 // usuario suele no tener el scope analytics.readonly). GSC usa OAuth primero.
 
 import { getServiceAccountToken, getOauthAccessToken, hasServiceAccount } from './google-auth'
+import { adminSupabase } from './supabase-admin'
 
 const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '478319346' // propiedad "Deportes"
 const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || null
@@ -240,5 +241,62 @@ export async function getSearchDetail(): Promise<SearchDetail> {
     return { available: true, topPages, topQueries }
   } catch (e) {
     return { available: false, note: e instanceof Error ? e.message : String(e) }
+  }
+}
+
+// ── Descargas app iOS (desde Supabase traffic_daily) ──────────────────────────
+// La foto diaria la escribe taka-system (informe de las 9:15) con la .p8 de Apple;
+// la web solo LEE la última fila (la credencial de Apple no vive en Vercel).
+
+export interface AppDownloads {
+  available: boolean
+  day?: string
+  yesterday?: number
+  d7?: number
+  total?: number
+  launchDate?: string
+  countries?: [string, number][]
+  note?: string
+}
+
+interface TrafficRowRaw {
+  app?: { launchDate?: string; countries?: [string, number][]; pending?: boolean; error?: string; empty?: boolean }
+}
+
+export async function getAppDownloads(): Promise<AppDownloads> {
+  const supa = adminSupabase()
+  if (!supa) return { available: false, note: 'Supabase no configurado' }
+
+  const { data, error } = await supa
+    .from('traffic_daily')
+    .select('day, ios_downloads_yesterday, ios_downloads_7d, ios_downloads_total, raw')
+    .order('day', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) return { available: false, note: error.message }
+  if (!data) return { available: false, note: 'aún sin datos (el informe diario corre a las 9:15)' }
+
+  const row = data as {
+    day: string
+    ios_downloads_yesterday: number | null
+    ios_downloads_7d: number | null
+    ios_downloads_total: number | null
+    raw: TrafficRowRaw | null
+  }
+  const app = row.raw?.app
+  // Sin cifras y con la capa iOS en error/pendiente → tratar como no disponible.
+  if (row.ios_downloads_total == null && (app?.pending || app?.error || app?.empty)) {
+    return { available: false, note: app?.error ?? 'App Store Connect aún sin datos/credenciales' }
+  }
+
+  return {
+    available: true,
+    day: row.day,
+    yesterday: row.ios_downloads_yesterday ?? undefined,
+    d7: row.ios_downloads_7d ?? undefined,
+    total: row.ios_downloads_total ?? undefined,
+    launchDate: app?.launchDate,
+    countries: app?.countries,
   }
 }
