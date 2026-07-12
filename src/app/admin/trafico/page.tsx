@@ -1,11 +1,13 @@
 // /admin/trafico
 // Panel ÚNICO de tráfico web + app. Esquema (de arriba abajo):
-//   1. Resumen        — 4 KPIs de un vistazo (ahora, ayer, clics 24h, descargas)
-//   2. EN VIVO        — quién está ahora, de dónde, en qué página (auto-refresco)
-//   3. Visitas (GA4)  — 30 días + dispositivos + canales + países + top páginas
-//   4. Búsqueda (GSC) — clics 24h/7d/28d + top búsquedas y páginas
-//   5. Descargas iOS  — total/7d/ayer + países (vía Supabase, informe diario)
-//   6. Salud web      — rutas + deploy
+//   0. Alertas        — banner rojo/ámbar si algo va mal; verde si todo bien
+//   1. Resumen        — 4 KPIs con % vs periodo anterior (▲▼)
+//   2. En vivo        — quién está ahora, de dónde, en qué página (auto-refresco)
+//   3. Visitas (GA4)  — 30 días + calidad + dispositivos + canales + países + páginas
+//   4. Búsqueda (GSC) — clics 24h/7d/28d con comparativa + top búsquedas y páginas
+//   5. Histórico      — visitas + clics + descargas juntas en el tiempo (Supabase)
+//   6. Descargas iOS  — total/7d/ayer + países
+//   7. Salud web      — rutas + deploy
 //
 // Protección: allowlist ADMIN_EMAILS. Degradación elegante bloque a bloque.
 
@@ -14,8 +16,8 @@ import Link from 'next/link'
 import { requireAdmin } from '@/lib/admin-auth'
 import RealtimePanel from './RealtimePanel'
 import {
-  getGa4Summary, getSearchDetail, getSearchTotals, getGa4Realtime, getAppDownloads, shortPath,
-  type Ga4Summary, type SearchDetail, type SearchTotals, type Ga4Realtime, type AppDownloads,
+  getGa4Summary, getSearchDetail, getSearchTotals, getGa4Realtime, getAppDownloads, getTrafficHistory, shortPath,
+  type Ga4Summary, type SearchDetail, type SearchTotals, type Ga4Realtime, type AppDownloads, type TrafficHistoryDay,
 } from '@/lib/traffic'
 import { checkRoutes, checkVercelDeploy, type RouteCheck, type DeployStatus } from '@/lib/seo-audit'
 
@@ -29,6 +31,15 @@ export const metadata = {
 
 const nf = (n?: number | null) => (n == null ? '–' : Math.round(n).toLocaleString('es-ES'))
 const pct = (ctr?: number | null) => (ctr == null ? '–' : `${(ctr * 100).toFixed(1).replace('.', ',')}%`)
+function fmtDur(s?: number | null) {
+  if (s == null) return '–'
+  const m = Math.floor(s / 60), r = Math.round(s % 60)
+  return m ? `${m} min ${r}s` : `${r}s`
+}
+function deltaPct(cur?: number | null, prev?: number | null): number | null {
+  if (cur == null || prev == null || prev === 0) return null
+  return Math.round(((cur - prev) / prev) * 100)
+}
 
 const ACCENTS = ['#7C3AED', '#8B5CF6', '#F472B6', '#60A5FA', '#86EFAC', '#FCD34D']
 const DEVICE_LABEL: Record<string, string> = { mobile: '📱 Móvil', desktop: '💻 Escritorio', tablet: '📲 Tablet', smart_tv: '📺 TV' }
@@ -45,7 +56,15 @@ function TrendChip({ trend }: { trend?: 'up' | 'down' | 'flat' }) {
   return <span style={{ color: c, fontSize: 13, fontWeight: 800, marginLeft: 8 }}>{t}</span>
 }
 
-function KpiMini({ icon, label, value, sub, accent }: { icon: string; label: string; value: ReactNode; sub?: string; accent: string }) {
+/** ▲/▼ con el % de cambio vs periodo anterior. */
+function DeltaChip({ cur, prev }: { cur?: number | null; prev?: number | null }) {
+  const d = deltaPct(cur, prev)
+  if (d == null) return null
+  const up = d >= 0
+  return <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 800, color: up ? '#86EFAC' : '#FCA5A5' }}>{up ? '▲' : '▼'} {up ? '+' : ''}{d}%</span>
+}
+
+function KpiMini({ icon, label, value, sub, accent }: { icon: string; label: string; value: ReactNode; sub?: ReactNode; accent: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-card)', border: '1px solid var(--border)', borderLeft: `3px solid ${accent}`, borderRadius: 'var(--radius-lg)', padding: '14px 16px' }}>
       <span style={{ fontSize: 24, lineHeight: 1 }}>{icon}</span>
@@ -69,6 +88,16 @@ function BigCard({ label, value, sub, accent = 'var(--purple)', children }: { la
   )
 }
 
+/** Stat compacto (calidad). */
+function Stat({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderLeft: `3px solid ${accent}`, borderRadius: 'var(--radius-lg)', padding: '12px 16px' }}>
+      <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 900, color: '#F8F8FF', lineHeight: 1 }}>{value}</p>
+      <p className="section-label" style={{ marginTop: 5 }}>{label}</p>
+    </div>
+  )
+}
+
 function SectionTitle({ children, hint }: { children: ReactNode; hint?: ReactNode }) {
   return (
     <div className="flex items-center gap-2.5 mb-4" style={{ flexWrap: 'wrap' }}>
@@ -77,6 +106,10 @@ function SectionTitle({ children, hint }: { children: ReactNode; hint?: ReactNod
       {hint && <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>{hint}</span>}
     </div>
   )
+}
+
+function Subhead({ children }: { children: ReactNode }) {
+  return <p className="section-label" style={{ marginBottom: 10 }}>{children}</p>
 }
 
 /** Gráfica de barras de 30 días (última barra resaltada). */
@@ -96,6 +129,24 @@ function Bars30({ series }: { series: { date: string; users: number }[] }) {
         <span>{series[0]?.date.slice(5).replace('-', '/')}</span>
         <span>pico {max}/día</span>
         <span>{series[series.length - 1]?.date.slice(5).replace('-', '/')}</span>
+      </div>
+    </div>
+  )
+}
+
+/** Mini-sparkline etiquetada (histórico). */
+function MiniSpark({ label, values, latest, accent }: { label: string; values: number[]; latest: string; accent: string }) {
+  const max = Math.max(...values, 1)
+  return (
+    <div>
+      <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+        <span className="section-label">{label}</span>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: '#F8F8FF', fontSize: 16 }}>{latest}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 40 }}>
+        {values.map((v, i) => (
+          <div key={i} title={String(v)} style={{ flex: 1, height: Math.max(2, Math.round((v / max) * 38)), background: accent, opacity: i === values.length - 1 ? 1 : 0.5, borderRadius: 2 }} />
+        ))}
       </div>
     </div>
   )
@@ -147,10 +198,6 @@ function RankTable({ rows }: { rows: { label: string; value: string; sub?: strin
   )
 }
 
-function Subhead({ children }: { children: ReactNode }) {
-  return <p className="section-label" style={{ marginBottom: 10 }}>{children}</p>
-}
-
 function PendingCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div style={{ background: 'var(--bg-card)', border: '1px dashed var(--border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)' }}>
@@ -163,10 +210,21 @@ function PendingCard({ title, children }: { title: string; children: ReactNode }
 export default async function TraficoPage() {
   await requireAdmin('/admin/trafico')
 
-  const [ga4, searchTotals, search, ios, realtime, routes, deploy]: [Ga4Summary, SearchTotals, SearchDetail, AppDownloads, Ga4Realtime, RouteCheck[], DeployStatus] =
-    await Promise.all([getGa4Summary(), getSearchTotals(), getSearchDetail(), getAppDownloads(), getGa4Realtime(), checkRoutes(), checkVercelDeploy()])
+  const [ga4, searchTotals, search, ios, realtime, history, routes, deploy]: [Ga4Summary, SearchTotals, SearchDetail, AppDownloads, Ga4Realtime, TrafficHistoryDay[], RouteCheck[], DeployStatus] =
+    await Promise.all([getGa4Summary(), getSearchTotals(), getSearchDetail(), getAppDownloads(), getGa4Realtime(), getTrafficHistory(), checkRoutes(), checkVercelDeploy()])
 
   const okCount = routes.filter((r) => r.ok).length
+
+  // ── Alertas ──
+  const alerts: { level: 'red' | 'yellow'; msg: string }[] = []
+  const downRoutes = routes.filter((r) => !r.ok)
+  if (downRoutes.length) alerts.push({ level: 'red', msg: `${downRoutes.length} página(s) de la web no responden: ${downRoutes.map((r) => r.path).join(', ')}` })
+  if (deploy.available && !deploy.ok) alerts.push({ level: 'red', msg: `El último deploy está en estado ${deploy.state} (revisa Vercel)` })
+  const clicsDelta = deltaPct(searchTotals.d28?.clicks, searchTotals.prevD28?.clicks)
+  if (clicsDelta != null && clicsDelta <= -30) alerts.push({ level: 'yellow', msg: `Los clics de Google han bajado ${Math.abs(clicsDelta)}% vs el mes anterior` })
+  const visitsDelta = deltaPct(ga4.total28, ga4.prevTotal28)
+  if (visitsDelta != null && visitsDelta <= -30) alerts.push({ level: 'yellow', msg: `Las visitas han bajado ${Math.abs(visitsDelta)}% vs el mes anterior` })
+  const hasRed = alerts.some((a) => a.level === 'red')
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
@@ -179,11 +237,24 @@ export default async function TraficoPage() {
           <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 6 }}>Web y app en un sitio · datos en vivo · {new Date().toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}</p>
         </div>
 
+        {/* 0 · ALERTAS */}
+        <div style={{ background: alerts.length ? (hasRed ? 'rgba(239,68,68,0.10)' : 'rgba(234,179,8,0.10)') : 'rgba(34,197,94,0.08)', border: `1px solid ${alerts.length ? (hasRed ? 'rgba(239,68,68,0.4)' : 'rgba(234,179,8,0.4)') : 'rgba(34,197,94,0.35)'}`, borderRadius: 'var(--radius-lg)', padding: '12px 16px', marginBottom: 24 }}>
+          {alerts.length === 0 ? (
+            <p style={{ color: '#86EFAC', fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-sport)' }}>🟢 Todo en orden — web operativa y sin caídas de tráfico.</p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {alerts.map((a, i) => (
+                <p key={i} style={{ color: a.level === 'red' ? '#FCA5A5' : '#FDE68A', fontWeight: 700, fontSize: 13.5, fontFamily: 'var(--font-sport)' }}>{a.level === 'red' ? '🔴' : '🟡'} {a.msg}</p>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* 1 · RESUMEN */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <KpiMini icon="🟢" label="Ahora en la web" value={realtime.available ? realtime.activeUsers : '–'} sub="tiempo real" accent="#22C55E" />
-          <KpiMini icon="👥" label="Visitas · ayer" value={ga4.available ? nf(ga4.yesterday) : '–'} sub={ga4.available ? `28 días: ${nf(ga4.total28)}` : 'GA4 pendiente'} accent="#7C3AED" />
-          <KpiMini icon="🔍" label="Clics Google · 24h" value={searchTotals.h24 ? nf(searchTotals.h24.clicks) : '–'} sub={searchTotals.d7 ? `7 días: ${nf(searchTotals.d7.clicks)}` : undefined} accent="#8B5CF6" />
+          <KpiMini icon="👥" label="Visitas · 28 días" value={ga4.available ? <>{nf(ga4.total28)}<DeltaChip cur={ga4.total28} prev={ga4.prevTotal28} /></> : '–'} sub={ga4.available ? `ayer ${nf(ga4.yesterday)}` : 'GA4 pendiente'} accent="#7C3AED" />
+          <KpiMini icon="🔍" label="Clics Google · 28d" value={searchTotals.d28 ? <>{nf(searchTotals.d28.clicks)}<DeltaChip cur={searchTotals.d28.clicks} prev={searchTotals.prevD28?.clicks} /></> : '–'} sub={searchTotals.h24 ? `24h: ${nf(searchTotals.h24.clicks)}` : undefined} accent="#8B5CF6" />
           <KpiMini icon="📱" label="Descargas iOS" value={ios.available ? nf(ios.total) : '–'} sub={ios.available ? 'desde el lanzamiento' : 'pendiente'} accent="#FCD34D" />
         </div>
 
@@ -197,7 +268,7 @@ export default async function TraficoPage() {
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <BigCard label="Usuarios · ayer" value={<>{nf(ga4.yesterday)}<TrendChip trend={ga4.trend} /></>} sub={`anteayer ${nf(ga4.dayBefore)}`} accent="#7C3AED" />
-                <BigCard label="Usuarios · 28 días" value={nf(ga4.total28)} sub={ga4.newUsers28 != null ? `${nf(ga4.newUsers28)} nuevos` : undefined} accent="#8B5CF6" />
+                <BigCard label="Usuarios · 28 días" value={<>{nf(ga4.total28)}<DeltaChip cur={ga4.total28} prev={ga4.prevTotal28} /></>} sub={ga4.prevTotal28 != null ? `mes anterior: ${nf(ga4.prevTotal28)}` : undefined} accent="#8B5CF6" />
                 <BigCard label="Media · 7 días" value={nf(ga4.avg7)} sub="usuarios/día" accent="#F472B6" />
                 <BigCard label="Orgánico · 7d" value={ga4.organicPct == null ? '–' : `${ga4.organicPct}%`} sub="llega desde búsqueda" accent="#60A5FA" />
               </div>
@@ -209,40 +280,39 @@ export default async function TraficoPage() {
                 </div>
               )}
 
+              {(ga4.pagesPerSession != null || ga4.avgSessionSec != null || ga4.engagementRate != null) && (
+                <div className="mb-6">
+                  <Subhead>Calidad de la visita · 28d</Subhead>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Stat label="Páginas por sesión" value={ga4.pagesPerSession != null ? ga4.pagesPerSession.toFixed(1).replace('.', ',') : '–'} accent="#7C3AED" />
+                    <Stat label="Tiempo medio" value={fmtDur(ga4.avgSessionSec)} accent="#8B5CF6" />
+                    <Stat label="Interacción" value={ga4.engagementRate != null ? `${Math.round(ga4.engagementRate * 100)}%` : '–'} accent="#F472B6" />
+                  </div>
+                </div>
+              )}
+
               <div className="grid lg:grid-cols-2 gap-6 mb-6">
                 {ga4.devices && ga4.devices.length > 0 && (
-                  <div>
-                    <Subhead>Dispositivos · 28d</Subhead>
-                    <BarList items={ga4.devices.map((d) => ({ label: DEVICE_LABEL[d.category] ?? d.category, pct: d.pct }))} />
-                  </div>
+                  <div><Subhead>Dispositivos · 28d</Subhead><BarList items={ga4.devices.map((d) => ({ label: DEVICE_LABEL[d.category] ?? d.category, pct: d.pct }))} /></div>
                 )}
                 {ga4.channels && ga4.channels.length > 0 && (
-                  <div>
-                    <Subhead>De dónde llega la gente · 7d</Subhead>
-                    <BarList items={ga4.channels.map((c) => ({ label: c.channel, pct: c.pct }))} />
-                  </div>
+                  <div><Subhead>De dónde llega la gente · 7d</Subhead><BarList items={ga4.channels.map((c) => ({ label: c.channel, pct: c.pct }))} /></div>
                 )}
               </div>
 
               <div className="grid lg:grid-cols-2 gap-6">
                 {ga4.webCountries && ga4.webCountries.length > 0 && (
-                  <div>
-                    <Subhead>Países · 28d</Subhead>
-                    <CountryChips items={ga4.webCountries} />
-                  </div>
+                  <div><Subhead>Países · 28d</Subhead><CountryChips items={ga4.webCountries} /></div>
                 )}
                 {ga4.topPages && ga4.topPages.length > 0 && (
-                  <div>
-                    <Subhead>Páginas más vistas · 7d</Subhead>
-                    <RankTable rows={ga4.topPages.map((p) => ({ label: shortPath(p.path), value: nf(p.views) }))} />
-                  </div>
+                  <div><Subhead>Páginas más vistas · 7d</Subhead><RankTable rows={ga4.topPages.map((p) => ({ label: shortPath(p.path), value: nf(p.views) }))} /></div>
                 )}
               </div>
             </>
           ) : (
             <PendingCard title="Visitas GA4 pendientes de conectar">
               {ga4.note && <p style={{ marginBottom: 8 }}>Motivo: <code style={{ fontSize: 12 }}>{ga4.note}</code></p>}
-              Añade en Vercel la service account de Google (<code style={{ fontSize: 12 }}>GOOGLE_SA_CLIENT_EMAIL</code> / <code style={{ fontSize: 12 }}>GOOGLE_SA_PRIVATE_KEY</code>) — la misma de tu informe diario. Se enciende tras el redeploy.
+              Añade en Vercel la service account de Google (<code style={{ fontSize: 12 }}>GOOGLE_SA_CLIENT_EMAIL</code> / <code style={{ fontSize: 12 }}>GOOGLE_SA_PRIVATE_KEY</code>). Se enciende tras el redeploy.
             </PendingCard>
           )}
         </section>
@@ -253,21 +323,15 @@ export default async function TraficoPage() {
           {searchTotals.available && searchTotals.d28 ? (
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <BigCard label="Clics" value={nf(searchTotals.d28.clicks)} sub={`24h: ${nf(searchTotals.h24?.clicks)} · 7d: ${nf(searchTotals.d7?.clicks)} · 28d`} accent="#7C3AED" />
-                <BigCard label="Apariciones" value={nf(searchTotals.d28.impressions)} sub={`24h: ${nf(searchTotals.h24?.impressions)} · 28d`} accent="#8B5CF6" />
+                <BigCard label="Clics" value={<>{nf(searchTotals.d28.clicks)}<DeltaChip cur={searchTotals.d28.clicks} prev={searchTotals.prevD28?.clicks} /></>} sub={`24h: ${nf(searchTotals.h24?.clicks)} · 7d: ${nf(searchTotals.d7?.clicks)} · 28d`} accent="#7C3AED" />
+                <BigCard label="Apariciones" value={<>{nf(searchTotals.d28.impressions)}<DeltaChip cur={searchTotals.d28.impressions} prev={searchTotals.prevD28?.impressions} /></>} sub={`24h: ${nf(searchTotals.h24?.impressions)} · 28d`} accent="#8B5CF6" />
                 <BigCard label="Entran de cada 100" value={pct(searchTotals.d28.ctr)} sub="CTR · 28 días" accent="#F472B6" />
                 <BigCard label="Puesto medio" value={searchTotals.d28.position ? searchTotals.d28.position.toFixed(1) : '–'} sub="posición · 28 días" accent="#60A5FA" />
               </div>
               {search.available && (
                 <div className="grid lg:grid-cols-2 gap-6">
-                  <div>
-                    <Subhead>Top búsquedas · 7d</Subhead>
-                    <RankTable rows={(search.topQueries ?? []).map((q) => ({ label: q.key, value: nf(q.clicks), sub: `${nf(q.impressions)} vistas` }))} />
-                  </div>
-                  <div>
-                    <Subhead>Páginas top en Google · 7d</Subhead>
-                    <RankTable rows={(search.topPages ?? []).map((p) => ({ label: p.key.replace(/^https?:\/\/[^/]+/, '') || '/', value: nf(p.clicks), sub: `pos ${p.position.toFixed(0)}` }))} />
-                  </div>
+                  <div><Subhead>Top búsquedas · 7d</Subhead><RankTable rows={(search.topQueries ?? []).map((q) => ({ label: q.key, value: nf(q.clicks), sub: `${nf(q.impressions)} vistas` }))} /></div>
+                  <div><Subhead>Páginas top en Google · 7d</Subhead><RankTable rows={(search.topPages ?? []).map((p) => ({ label: p.key.replace(/^https?:\/\/[^/]+/, '') || '/', value: nf(p.clicks), sub: `pos ${p.position.toFixed(0)}` }))} /></div>
                 </div>
               )}
             </>
@@ -276,22 +340,31 @@ export default async function TraficoPage() {
           )}
         </section>
 
-        {/* 5 · DESCARGAS APP iOS */}
+        {/* 5 · HISTÓRICO UNIFICADO */}
+        {history.length > 0 && (
+          <section className="mb-12">
+            <SectionTitle hint={`${history.length} día${history.length > 1 ? 's' : ''} · crece cada día a las 9:15`}>Histórico</SectionTitle>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)' }} className="grid md:grid-cols-3 gap-8">
+              <MiniSpark label="Visitas · por día" values={history.map((h) => h.visits ?? 0)} latest={nf(history[history.length - 1]?.visits)} accent="var(--purple)" />
+              <MiniSpark label="Clics Google · vent. 7d" values={history.map((h) => h.clics ?? 0)} latest={nf(history[history.length - 1]?.clics)} accent="#8B5CF6" />
+              <MiniSpark label="Descargas iOS · total" values={history.map((h) => h.downloads ?? 0)} latest={nf(history[history.length - 1]?.downloads)} accent="#FCD34D" />
+            </div>
+          </section>
+        )}
+
+        {/* 6 · DESCARGAS APP iOS */}
         <section className="mb-12">
           <SectionTitle hint={ios.available && ios.day ? `foto del ${ios.day} · informe diario` : undefined}>Descargas app iOS</SectionTitle>
           {ios.available ? (
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <BigCard label="Total · desde lanzamiento" value={nf(ios.total)} sub={ios.launchDate ? `desde ${ios.launchDate}` : undefined} accent="#FCD34D" />
-                <BigCard label="Últimos 7 días" value={nf(ios.d7)} accent="#86EFAC" />
+                <BigCard label="Últimos 7 días" value={<>{nf(ios.d7)}<DeltaChip cur={ios.d7} prev={ios.prev7d} /></>} sub={ios.prev7d != null ? `7d antes: ${nf(ios.prev7d)}` : undefined} accent="#86EFAC" />
                 <BigCard label="Ayer" value={nf(ios.yesterday)} accent="#60A5FA" />
                 <BigCard label="Plataforma" value={<span style={{ fontSize: '1rem', fontFamily: 'var(--font-sport)' }}>iOS · App Store</span>} sub="Android: próximamente" accent="#F472B6" />
               </div>
               {ios.countries && ios.countries.length > 0 && (
-                <div>
-                  <Subhead>Por país · desde lanzamiento</Subhead>
-                  <CountryChips items={ios.countries.map(([code, n]) => ({ country: code, countryCode: code, users: n }))} />
-                </div>
+                <div><Subhead>Por país · desde lanzamiento</Subhead><CountryChips items={ios.countries.map(([code, n]) => ({ country: code, countryCode: code, users: n }))} /></div>
               )}
             </>
           ) : (
@@ -303,7 +376,7 @@ export default async function TraficoPage() {
           )}
         </section>
 
-        {/* 6 · SALUD WEB */}
+        {/* 7 · SALUD WEB */}
         <section>
           <SectionTitle>Salud de la web</SectionTitle>
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)' }}>
