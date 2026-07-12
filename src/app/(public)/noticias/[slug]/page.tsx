@@ -30,6 +30,7 @@ import {
 } from '@/lib/article-autolink'
 import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
 import RankingMentionCards from '@/components/articles/RankingMentionCards'
+import ArticleQuiz from '@/components/articles/ArticleQuiz'
 import { matchEntriesInText } from '@/lib/rankings-match'
 
 export const revalidate = 3600
@@ -1101,6 +1102,28 @@ export default async function NoticiaPage({
                               <div className="tk-sc-foot">Datos verificados de la fuente</div>
                             </div>
                           </figure>
+                        )
+                      },
+                      // T7·2 — pregunta interactiva (autoevaluación, sin puntos).
+                      // Client component; inerte hasta que WF-07/08 emita el bloque.
+                      articleQuiz: ({ value }) => {
+                        const v = (value || {}) as {
+                          question?: string
+                          options?: string[]
+                          correctIndex?: number
+                          explanation?: string
+                          eyebrow?: string
+                        }
+                        if (!v.question || !Array.isArray(v.options) || v.options.length < 2) return null
+                        return (
+                          <ArticleQuiz
+                            question={v.question}
+                            options={v.options}
+                            correctIndex={typeof v.correctIndex === 'number' ? v.correctIndex : -1}
+                            explanation={v.explanation}
+                            eyebrow={v.eyebrow}
+                            accent={badgeColor}
+                          />
                         )
                       },
                     },
