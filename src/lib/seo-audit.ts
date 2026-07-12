@@ -172,8 +172,12 @@ async function getGscAccessToken(): Promise<string | null> {
   return getServiceAccountAccessToken()
 }
 
-/** OAuth 2.0: intercambia el refresh token del usuario por un access token. */
-async function getOauthAccessToken(): Promise<string | null> {
+/**
+ * OAuth 2.0: intercambia el refresh token del usuario por un access token.
+ * Exportado para reusarlo desde `@/lib/traffic` (GA4). El scope del token lo fija
+ * el refresh token al crearse; si no incluye analytics.readonly, GA4 dará 403.
+ */
+export async function getOauthAccessToken(): Promise<string | null> {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET
   const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN

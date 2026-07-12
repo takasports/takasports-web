@@ -200,6 +200,26 @@ export default async function AdminDashboardPage() {
           <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 6 }}>
             Métricas en vivo. Generadas en {new Date().toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}.
           </p>
+          <Link
+            href="/admin/trafico"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              marginTop: 14,
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-full)',
+              background: 'rgba(124,58,237,0.12)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-sport)',
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            📈 Ver tráfico (visitas + Google + salud) →
+          </Link>
         </div>
 
         {/* Métricas principales */}
