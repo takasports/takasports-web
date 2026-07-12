@@ -15,12 +15,14 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/admin-auth'
-import { getGa4Summary, getSearchDetail, getAppDownloads, shortPath, type Ga4Summary, type SearchDetail, type AppDownloads } from '@/lib/traffic'
+import RealtimePanel from './RealtimePanel'
 import {
-  getTrafficSummary,
+  getGa4Summary, getSearchDetail, getSearchTotals, getGa4Realtime, getAppDownloads, shortPath,
+  type Ga4Summary, type SearchDetail, type SearchTotals, type Ga4Realtime, type AppDownloads,
+} from '@/lib/traffic'
+import {
   checkRoutes,
   checkVercelDeploy,
-  type TrafficSummary,
   type RouteCheck,
   type DeployStatus,
 } from '@/lib/seo-audit'
@@ -140,8 +142,8 @@ function PendingCard({ title, children }: { title: string; children: ReactNode }
 export default async function TraficoPage() {
   await requireAdmin('/admin/trafico')
 
-  const [ga4, gsc, search, ios, routes, deploy]: [Ga4Summary, TrafficSummary, SearchDetail, AppDownloads, RouteCheck[], DeployStatus] =
-    await Promise.all([getGa4Summary(), getTrafficSummary(), getSearchDetail(), getAppDownloads(), checkRoutes(), checkVercelDeploy()])
+  const [ga4, searchTotals, search, ios, realtime, routes, deploy]: [Ga4Summary, SearchTotals, SearchDetail, AppDownloads, Ga4Realtime, RouteCheck[], DeployStatus] =
+    await Promise.all([getGa4Summary(), getSearchTotals(), getSearchDetail(), getAppDownloads(), getGa4Realtime(), checkRoutes(), checkVercelDeploy()])
 
   const okCount = routes.filter((r) => r.ok).length
 
@@ -168,6 +170,9 @@ export default async function TraficoPage() {
           <b> Visitas (GA4)</b> = personas que entran a la web · <b>Búsqueda (Search Console)</b> = apariciones y clics en Google ·
           <b> Descargas</b> = instalaciones de la app iOS.
         </div>
+
+        {/* ── EN VIVO (GA4 realtime, auto-refresco) ── */}
+        <RealtimePanel initial={realtime} />
 
         {/* ── VISITAS REALES · GA4 ── */}
         <section className="mb-12">
@@ -212,14 +217,14 @@ export default async function TraficoPage() {
 
         {/* ── BÚSQUEDA EN GOOGLE · SEARCH CONSOLE ── */}
         <section className="mb-12">
-          <SectionTitle>Búsqueda en Google · Search Console</SectionTitle>
-          {gsc.available && gsc.lastDay ? (
+          <SectionTitle hint="ventana de 28 días — cuadra con lo que ves en Search Console">Búsqueda en Google · Search Console</SectionTitle>
+          {searchTotals.available && searchTotals.d28 ? (
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <BigCard label="Apariciones" value={nf(gsc.impressions)} sub={`media 7d ${nf(gsc.avgImpressions7)}`} accent="#7C3AED" />
-                <BigCard label="Clics" value={<>{nf(gsc.clicks)}<TrendChip trend={gsc.clicksTrend} /></>} sub={`media 7d ${nf(gsc.avgClicks7)}`} accent="#8B5CF6" />
-                <BigCard label="Entran de cada 100" value={pct(gsc.ctr)} sub={`media 7d ${pct(gsc.avgCtr7)}`} accent="#F472B6" />
-                <BigCard label="Puesto medio" value={gsc.position?.toFixed(1) ?? '–'} sub={`media 7d ${gsc.avgPosition7?.toFixed(1) ?? '–'}`} accent="#60A5FA" />
+                <BigCard label="Apariciones · 28 días" value={nf(searchTotals.d28.impressions)} sub={`últimos 7d: ${nf(searchTotals.d7?.impressions)}`} accent="#7C3AED" />
+                <BigCard label="Clics · 28 días" value={nf(searchTotals.d28.clicks)} sub={`últimos 7d: ${nf(searchTotals.d7?.clicks)}`} accent="#8B5CF6" />
+                <BigCard label="Entran de cada 100" value={pct(searchTotals.d28.ctr)} sub="CTR · 28 días" accent="#F472B6" />
+                <BigCard label="Puesto medio" value={searchTotals.d28.position ? searchTotals.d28.position.toFixed(1) : '–'} sub="posición · 28 días" accent="#60A5FA" />
               </div>
               {search.available && (
                 <div className="grid lg:grid-cols-2 gap-6">
@@ -233,14 +238,9 @@ export default async function TraficoPage() {
                   </div>
                 </div>
               )}
-              {gsc.opportunity && (
-                <p style={{ marginTop: 16, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                  💡 <b>Tarea:</b> &quot;{gsc.opportunity.query}&quot; te ve {nf(gsc.opportunity.impressions)} veces pero casi nadie entra ({pct(gsc.opportunity.ctr)}) → mejora su título en Sanity.
-                </p>
-              )}
             </>
           ) : (
-            <PendingCard title="Search Console sin datos">{gsc.note ?? 'Google tarda 2-3 días en tener datos.'}</PendingCard>
+            <PendingCard title="Search Console sin datos">{searchTotals.note ?? 'Google tarda 2-3 días en tener datos.'}</PendingCard>
           )}
         </section>
 

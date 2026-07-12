@@ -300,3 +300,118 @@ export async function getAppDownloads(): Promise<AppDownloads> {
     countries: app?.countries,
   }
 }
+
+// ── Search Console: totales por VENTANA (28d / 7d) ────────────────────────────
+// Antes el panel mostraba UN día suelto → parecía "mal" frente a la UI de Search
+// Console, que muestra rangos (28 días, 3 meses…). Esto da totales claros que
+// cuadran con lo que ve el usuario en Google.
+
+export interface GscWindow { clicks: number; impressions: number; ctr: number; position: number }
+export interface SearchTotals {
+  available: boolean
+  d28?: GscWindow
+  d7?: GscWindow
+  series?: { date: string; clicks: number }[]
+  rangeStart?: string
+  rangeEnd?: string
+  note?: string
+}
+
+async function gscAggregate(token: string, startDate: string, endDate: string): Promise<GscWindow> {
+  const url = `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(GSC_SITE_URL)}/searchAnalytics/query`
+  const res = await timedFetch(url, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ startDate, endDate, dimensions: [] }),
+  })
+  if (!res.ok) throw new Error(`GSC agg ${res.status}: ${(await res.text()).slice(0, 140)}`)
+  const row = ((await res.json()) as { rows?: GscApiRow[] }).rows?.[0]
+  return row
+    ? { clicks: row.clicks, impressions: row.impressions, ctr: row.ctr, position: row.position }
+    : { clicks: 0, impressions: 0, ctr: 0, position: 0 }
+}
+
+async function gscSeries(token: string, startDate: string, endDate: string): Promise<{ date: string; clicks: number }[]> {
+  const url = `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(GSC_SITE_URL)}/searchAnalytics/query`
+  const res = await timedFetch(url, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ startDate, endDate, dimensions: ['date'], rowLimit: 40 }),
+  })
+  if (!res.ok) return []
+  const rows = ((await res.json()) as { rows?: GscApiRow[] }).rows ?? []
+  return rows.map((r) => ({ date: r.keys?.[0] ?? '', clicks: r.clicks })).filter((d) => d.date)
+}
+
+export async function getSearchTotals(): Promise<SearchTotals> {
+  let token: string | null
+  try {
+    token = (await getOauthAccessToken()) ?? (await getServiceAccountToken([WEBMASTERS_SCOPE]))
+  } catch (e) {
+    return { available: false, note: `auth GSC: ${e instanceof Error ? e.message : String(e)}` }
+  }
+  if (!token) return { available: false, note: 'Google sin configurar' }
+
+  try {
+    const start28 = ymd(28), start7 = ymd(7), end = ymd(1)
+    const [d28, d7, series] = await Promise.all([
+      gscAggregate(token, start28, end),
+      gscAggregate(token, start7, end),
+      gscSeries(token, start28, end),
+    ])
+    return { available: true, d28, d7, series, rangeStart: start28, rangeEnd: end }
+  } catch (e) {
+    return { available: false, note: e instanceof Error ? e.message : String(e) }
+  }
+}
+
+// ── GA4 Realtime — quién está EN VIVO (últimos 30 min): cuántos, de dónde, dónde ─
+
+export interface RealtimeGeo { country: string; countryCode: string; city: string; users: number }
+export interface RealtimePage { page: string; users: number }
+export interface Ga4Realtime {
+  available: boolean
+  activeUsers: number
+  byLocation?: RealtimeGeo[]
+  byPage?: RealtimePage[]
+  note?: string
+}
+
+async function ga4RealtimeReport(token: string, body: Record<string, unknown>): Promise<Ga4Row[]> {
+  const url = `https://analyticsdata.googleapis.com/v1beta/properties/${GA4_PROPERTY_ID}:runRealtimeReport`
+  const res = await timedFetch(url, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`GA4 realtime ${res.status}: ${(await res.text()).slice(0, 140)}`)
+  return ((await res.json()) as { rows?: Ga4Row[] }).rows ?? []
+}
+
+export async function getGa4Realtime(): Promise<Ga4Realtime> {
+  let token: string | null = null
+  try {
+    token = (await getServiceAccountToken([ANALYTICS_SCOPE])) ?? (await getOauthAccessToken())
+  } catch (e) {
+    return { available: false, activeUsers: 0, note: `auth: ${e instanceof Error ? e.message : String(e)}` }
+  }
+  if (!token) return { available: false, activeUsers: 0, note: 'Sin service account de Google' }
+
+  try {
+    const [totalRows, locRows, pageRows] = await Promise.all([
+      ga4RealtimeReport(token, { metrics: [{ name: 'activeUsers' }] }),
+      ga4RealtimeReport(token, { dimensions: [{ name: 'country' }, { name: 'countryId' }, { name: 'city' }], metrics: [{ name: 'activeUsers' }], limit: 10 }),
+      ga4RealtimeReport(token, { dimensions: [{ name: 'unifiedScreenName' }], metrics: [{ name: 'activeUsers' }], limit: 10 }),
+    ])
+    const activeUsers = Number(totalRows[0]?.metricValues?.[0]?.value ?? 0)
+    const byLocation = locRows
+      .map((r) => ({ country: r.dimensionValues?.[0]?.value ?? '', countryCode: r.dimensionValues?.[1]?.value ?? '', city: r.dimensionValues?.[2]?.value ?? '', users: Number(r.metricValues?.[0]?.value ?? 0) }))
+      .filter((l) => l.users > 0)
+    const byPage = pageRows
+      .map((r) => ({ page: r.dimensionValues?.[0]?.value ?? '', users: Number(r.metricValues?.[0]?.value ?? 0) }))
+      .filter((p) => p.users > 0)
+    return { available: true, activeUsers, byLocation, byPage }
+  } catch (e) {
+    return { available: false, activeUsers: 0, note: e instanceof Error ? e.message : String(e) }
+  }
+}
