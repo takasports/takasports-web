@@ -1,41 +1,61 @@
-// Visitas reales de la web — GA4 Data API (usuarios activos por día + canal).
+// Datos del panel /admin/trafico — capa de "adquisición": cómo llega la gente a
+// la WEB (GA4 + Search Console). Complementa a seo-audit (salud) y, cuando se
+// conecte, a las descargas de la APP (App Store Connect).
 //
-// Complementa a `@/lib/seo-audit` (que cubre Search Console): mientras GSC mide
-// apariciones/clics EN Google, esto mide la gente que de verdad ENTRA a la web.
-// Son números distintos a propósito — ver /admin/trafico para el contexto.
+// GA4 mide gente que ENTRA a la web; Search Console mide apariciones/clics EN
+// Google. Son números distintos a propósito. Todo degrada con elegancia: si
+// falta una credencial, el bloque dice "pendiente" en vez de romper.
 //
-// Auth: reutiliza el mismo token OAuth de usuario que GSC. OJO: el scope lo fija
-// el refresh token al crearse. Si no incluye `analytics.readonly`, la Data API
-// responde 403 y este módulo degrada con elegancia (available:false + nota),
-// igual que hace seo-audit. En cuanto el token tenga el scope, se enciende solo.
+// Auth (./google-auth): GA4 usa service account primero (el token OAuth de
+// usuario suele no tener el scope analytics.readonly). GSC usa OAuth primero.
 
-import { getOauthAccessToken } from './seo-audit'
+import { getServiceAccountToken, getOauthAccessToken, hasServiceAccount } from './google-auth'
 
-// Propiedad GA4 numérica (la Data API usa el ID numérico, no el "G-…").
-// Por defecto la propiedad "Deportes" (la misma que lee el informe de taka-system).
-const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '478319346'
-// ID de medición del tag del sitio (para verificar que la propiedad coincide).
+const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '478319346' // propiedad "Deportes"
 const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || null
+const GSC_SITE_URL = process.env.SEARCH_CONSOLE_SITE_URL || 'https://www.takasportsmedia.com/'
+const ANALYTICS_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly'
+const WEBMASTERS_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly'
+const FETCH_TIMEOUT_MS = 12_000
 
-const FETCH_TIMEOUT_MS = 10_000
+// ── Tipos ────────────────────────────────────────────────────────────────────
 
-export interface Ga4Day {
-  date: string // YYYY-MM-DD
-  users: number
-}
+export interface Ga4Day { date: string; users: number }
+export interface Ga4Channel { channel: string; users: number; pct: number }
+export interface Ga4Page { path: string; views: number }
 
 export interface Ga4Summary {
   available: boolean
   propertyId: string
   measurementId: string | null
-  series?: Ga4Day[] // últimos ~8 días, orden ascendente
+  via?: 'service-account' | 'oauth'
+  series?: Ga4Day[]
   yesterday?: number
   dayBefore?: number
   avg7?: number
-  organicPct?: number // % de usuarios de "Organic Search" en 7d
+  organicPct?: number
   trend?: 'up' | 'down' | 'flat'
+  channels?: Ga4Channel[]
+  topPages?: Ga4Page[]
+  hasServiceAccount: boolean
   note?: string
 }
+
+export interface GscItem {
+  key: string
+  clicks: number
+  impressions: number
+  ctr: number
+  position: number
+}
+export interface SearchDetail {
+  available: boolean
+  topPages?: GscItem[]
+  topQueries?: GscItem[]
+  note?: string
+}
+
+// ── Utilidades ───────────────────────────────────────────────────────────────
 
 async function timedFetch(url: string, init?: RequestInit): Promise<Response> {
   const ctrl = new AbortController()
@@ -56,12 +76,32 @@ const trendOf = (cur: number, base: number): 'up' | 'down' | 'flat' => {
   return 'flat'
 }
 
+function ymd(n: number): string {
+  const d = new Date()
+  d.setUTCDate(d.getUTCDate() - n)
+  return d.toISOString().slice(0, 10)
+}
+
+/** "20260712" (GA4) → "2026-07-12". */
+function fmtGaDate(s: string): string {
+  return s.length === 8 ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}` : s
+}
+
+/** Acorta un pagePath largo para pintarlo (deja "/" y recorta la cola). */
+export function shortPath(p: string): string {
+  if (!p || p === '/') return '/ (portada)'
+  const clean = p.split('?')[0]
+  return clean.length > 40 ? clean.slice(0, 39) + '…' : clean
+}
+
+// ── GA4 (Data API) ─────────────────────────────────────────────────────────
+
 interface Ga4Row {
   dimensionValues?: { value?: string }[]
   metricValues?: { value?: string }[]
 }
 
-async function runReport(token: string, body: Record<string, unknown>): Promise<Ga4Row[]> {
+async function ga4RunReport(token: string, body: Record<string, unknown>): Promise<Ga4Row[]> {
   const url = `https://analyticsdata.googleapis.com/v1beta/properties/${GA4_PROPERTY_ID}:runReport`
   const res = await timedFetch(url, {
     method: 'POST',
@@ -70,11 +110,9 @@ async function runReport(token: string, body: Record<string, unknown>): Promise<
   })
   if (!res.ok) {
     const detail = (await res.text()).slice(0, 200)
-    // 403 casi siempre = el token no tiene scope analytics.readonly o el usuario
-    // no está añadido a la propiedad GA4. Mensaje accionable en vez de críptico.
     if (res.status === 403) {
       throw new Error(
-        `GA4 403: falta el scope analytics.readonly en el token OAuth, o el usuario no tiene acceso a la propiedad ${GA4_PROPERTY_ID}`,
+        `GA4 403: la credencial no tiene acceso a la propiedad ${GA4_PROPERTY_ID} (o falta el scope analytics.readonly)`,
       )
     }
     throw new Error(`GA4 runReport ${res.status}: ${detail}`)
@@ -83,82 +121,124 @@ async function runReport(token: string, body: Record<string, unknown>): Promise<
   return data.rows ?? []
 }
 
-/** Formatea "20260712" (GA4) → "2026-07-12". */
-function fmtGaDate(s: string): string {
-  return s.length === 8 ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}` : s
-}
-
 export async function getGa4Summary(): Promise<Ga4Summary> {
   const baseline: Ga4Summary = {
     available: false,
     propertyId: GA4_PROPERTY_ID,
     measurementId: GA4_MEASUREMENT_ID,
+    hasServiceAccount: hasServiceAccount(),
   }
 
-  let token: string | null
+  // GA4 necesita scope analytics.readonly → service account primero.
+  let token: string | null = null
+  let via: 'service-account' | 'oauth' | undefined
   try {
-    token = await getOauthAccessToken()
+    token = await getServiceAccountToken([ANALYTICS_SCOPE])
+    if (token) via = 'service-account'
+    if (!token) {
+      token = await getOauthAccessToken()
+      if (token) via = 'oauth'
+    }
   } catch (e) {
     return { ...baseline, note: `auth GA4: ${e instanceof Error ? e.message : String(e)}` }
   }
-  if (!token) return { ...baseline, note: 'Google sin configurar (OAuth)' }
+  if (!token) return { ...baseline, note: 'Sin service account de Google configurada (GOOGLE_SA_CLIENT_EMAIL / GOOGLE_SA_PRIVATE_KEY)' }
 
   try {
     // 1) Usuarios activos por día — últimos 8 días completos (hasta ayer).
-    const daily = await runReport(token, {
+    const daily = await ga4RunReport(token, {
       dateRanges: [{ startDate: '8daysAgo', endDate: 'yesterday' }],
       dimensions: [{ name: 'date' }],
       metrics: [{ name: 'activeUsers' }],
       orderBys: [{ dimension: { dimensionName: 'date' } }],
     })
-
     const series: Ga4Day[] = daily
-      .map((r) => ({
-        date: fmtGaDate(r.dimensionValues?.[0]?.value ?? ''),
-        users: Number(r.metricValues?.[0]?.value ?? 0),
-      }))
+      .map((r) => ({ date: fmtGaDate(r.dimensionValues?.[0]?.value ?? ''), users: Number(r.metricValues?.[0]?.value ?? 0) }))
       .filter((d) => d.date)
-
-    if (!series.length) {
-      return { ...baseline, available: true, series: [], note: 'sin datos de GA4 en el periodo' }
-    }
 
     const yesterday = series[series.length - 1]?.users ?? 0
     const dayBefore = series.length >= 2 ? series[series.length - 2].users : 0
     const avg7 = mean(series.slice(-7).map((d) => d.users))
 
-    // 2) Reparto por canal (7d) para el % de tráfico orgánico de búsqueda.
+    // 2) Reparto por canal (7d) — de dónde llega la gente.
+    let channels: Ga4Channel[] | undefined
     let organicPct: number | undefined
     try {
-      const byChannel = await runReport(token, {
+      const byChannel = await ga4RunReport(token, {
         dateRanges: [{ startDate: '7daysAgo', endDate: 'yesterday' }],
         dimensions: [{ name: 'sessionDefaultChannelGroup' }],
         metrics: [{ name: 'activeUsers' }],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
       })
-      let total = 0
-      let organic = 0
-      for (const r of byChannel) {
-        const ch = r.dimensionValues?.[0]?.value ?? ''
-        const u = Number(r.metricValues?.[0]?.value ?? 0)
-        total += u
-        if (ch === 'Organic Search') organic += u
+      const rows = byChannel.map((r) => ({ channel: r.dimensionValues?.[0]?.value ?? '—', users: Number(r.metricValues?.[0]?.value ?? 0) }))
+      const total = rows.reduce((s, r) => s + r.users, 0)
+      if (total > 0) {
+        channels = rows.map((r) => ({ ...r, pct: Math.round((r.users / total) * 100) }))
+        organicPct = channels.find((c) => /organic/i.test(c.channel))?.pct
       }
-      if (total > 0) organicPct = Math.round((organic / total) * 100)
-    } catch {
-      // el % de canal es secundario: si falla, seguimos sin él.
-    }
+    } catch { /* el reparto por canal es secundario */ }
+
+    // 3) Top páginas/pantallas (7d) — qué se ve más.
+    let topPages: Ga4Page[] | undefined
+    try {
+      const pages = await ga4RunReport(token, {
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'yesterday' }],
+        dimensions: [{ name: 'pagePath' }],
+        metrics: [{ name: 'screenPageViews' }],
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+        limit: 8,
+      })
+      topPages = pages.map((r) => ({ path: r.dimensionValues?.[0]?.value ?? '', views: Number(r.metricValues?.[0]?.value ?? 0) })).filter((p) => p.path)
+    } catch { /* top páginas secundario */ }
 
     return {
       ...baseline,
       available: true,
+      via,
       series,
       yesterday,
       dayBefore,
       avg7,
       organicPct,
       trend: trendOf(yesterday, avg7),
+      channels,
+      topPages,
     }
   } catch (e) {
-    return { ...baseline, note: e instanceof Error ? e.message : String(e) }
+    return { ...baseline, via, note: e instanceof Error ? e.message : String(e) }
+  }
+}
+
+// ── Search Console: detalle (top páginas + top búsquedas) ─────────────────────
+
+interface GscApiRow { keys?: string[]; clicks: number; impressions: number; ctr: number; position: number }
+
+async function gscQuery(token: string, dimension: 'page' | 'query'): Promise<GscItem[]> {
+  const url = `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(GSC_SITE_URL)}/searchAnalytics/query`
+  const res = await timedFetch(url, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    // Ventana de 7 días terminada hace 3 (GSC va ~2-3 días retrasado).
+    body: JSON.stringify({ startDate: ymd(9), endDate: ymd(3), dimensions: [dimension], rowLimit: 8 }),
+  })
+  if (!res.ok) throw new Error(`GSC ${dimension} ${res.status}: ${(await res.text()).slice(0, 160)}`)
+  const data = (await res.json()) as { rows?: GscApiRow[] }
+  return (data.rows ?? []).map((r) => ({ key: r.keys?.[0] ?? '', clicks: r.clicks, impressions: r.impressions, ctr: r.ctr, position: r.position }))
+}
+
+export async function getSearchDetail(): Promise<SearchDetail> {
+  let token: string | null
+  try {
+    token = (await getOauthAccessToken()) ?? (await getServiceAccountToken([WEBMASTERS_SCOPE]))
+  } catch (e) {
+    return { available: false, note: `auth GSC: ${e instanceof Error ? e.message : String(e)}` }
+  }
+  if (!token) return { available: false, note: 'Google sin configurar' }
+
+  try {
+    const [topPages, topQueries] = await Promise.all([gscQuery(token, 'page'), gscQuery(token, 'query')])
+    return { available: true, topPages, topQueries }
+  } catch (e) {
+    return { available: false, note: e instanceof Error ? e.message : String(e) }
   }
 }

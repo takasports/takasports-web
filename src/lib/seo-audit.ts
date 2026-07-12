@@ -12,7 +12,7 @@
 //
 // Sin dependencias nuevas: el JWT del service account se firma con `crypto`.
 
-import { createSign } from 'crypto'
+import { getOauthAccessToken, getServiceAccountToken } from './google-auth'
 import { sendTelegram } from './telegram'
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -156,84 +156,16 @@ export async function checkVercelDeploy(): Promise<DeployStatus> {
 
 // ── B) Google Search Console API ─────────────────────────────────────────────
 
-function base64url(input: Buffer | string): string {
-  return Buffer.from(input).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
-
 /**
  * Access token para la Search Console API. Prioriza OAuth (cuenta de usuario)
  * porque las cuentas de servicio creadas tras abril/2026 no se pueden añadir a
  * Search Console (bug conocido de Google). Si no hay OAuth, cae al service
- * account (para cuando Google arregle el bug).
+ * account. El minteo de tokens vive en `./google-auth` (compartido con GA4).
  */
 async function getGscAccessToken(): Promise<string | null> {
   const oauth = await getOauthAccessToken()
   if (oauth) return oauth
-  return getServiceAccountAccessToken()
-}
-
-/**
- * OAuth 2.0: intercambia el refresh token del usuario por un access token.
- * Exportado para reusarlo desde `@/lib/traffic` (GA4). El scope del token lo fija
- * el refresh token al crearse; si no incluye analytics.readonly, GA4 dará 403.
- */
-export async function getOauthAccessToken(): Promise<string | null> {
-  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID
-  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET
-  const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN
-  if (!clientId || !clientSecret || !refreshToken) return null
-
-  const res = await timedFetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
-    }),
-  })
-  if (!res.ok) throw new Error(`oauth refresh ${res.status}: ${(await res.text()).slice(0, 200)}`)
-  const data = (await res.json()) as { access_token?: string }
-  return data.access_token ?? null
-}
-
-/** Mint de access token a partir del service account (RS256, sin googleapis). */
-async function getServiceAccountAccessToken(): Promise<string | null> {
-  const clientEmail = process.env.GSC_CLIENT_EMAIL
-  let privateKey = process.env.GSC_PRIVATE_KEY
-  if (!clientEmail || !privateKey) return null
-  // En Vercel la private key suele guardarse con "\n" literales.
-  privateKey = privateKey.replace(/\\n/g, '\n')
-
-  const now = Math.floor(Date.now() / 1000)
-  const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
-  const claim = base64url(
-    JSON.stringify({
-      iss: clientEmail,
-      scope: 'https://www.googleapis.com/auth/webmasters.readonly',
-      aud: 'https://oauth2.googleapis.com/token',
-      iat: now,
-      exp: now + 3600,
-    }),
-  )
-  const signingInput = `${header}.${claim}`
-  const signature = base64url(createSign('RSA-SHA256').update(signingInput).sign(privateKey))
-  const assertion = `${signingInput}.${signature}`
-
-  const res = await timedFetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion,
-    }),
-  })
-  if (!res.ok) {
-    throw new Error(`token exchange ${res.status}: ${(await res.text()).slice(0, 200)}`)
-  }
-  const data = (await res.json()) as { access_token?: string }
-  return data.access_token ?? null
+  return getServiceAccountToken(['https://www.googleapis.com/auth/webmasters.readonly'])
 }
 
 interface GscRow {
