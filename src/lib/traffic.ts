@@ -24,20 +24,27 @@ const FETCH_TIMEOUT_MS = 12_000
 export interface Ga4Day { date: string; users: number }
 export interface Ga4Channel { channel: string; users: number; pct: number }
 export interface Ga4Page { path: string; views: number }
+export interface Ga4Device { category: string; users: number; pct: number }
+export interface Ga4Country { country: string; countryCode: string; users: number }
 
 export interface Ga4Summary {
   available: boolean
   propertyId: string
   measurementId: string | null
   via?: 'service-account' | 'oauth'
-  series?: Ga4Day[]
+  series?: Ga4Day[] // 30 días
   yesterday?: number
   dayBefore?: number
   avg7?: number
+  total28?: number
+  sessions28?: number
+  newUsers28?: number
   organicPct?: number
   trend?: 'up' | 'down' | 'flat'
   channels?: Ga4Channel[]
   topPages?: Ga4Page[]
+  devices?: Ga4Device[]
+  webCountries?: Ga4Country[]
   hasServiceAccount: boolean
   note?: string
 }
@@ -146,64 +153,86 @@ export async function getGa4Summary(): Promise<Ga4Summary> {
   if (!token) return { ...baseline, note: 'Sin service account de Google configurada (GOOGLE_SA_CLIENT_EMAIL / GOOGLE_SA_PRIVATE_KEY)' }
 
   try {
-    // 1) Usuarios activos por día — últimos 8 días completos (hasta ayer).
-    const daily = await ga4RunReport(token, {
-      dateRanges: [{ startDate: '8daysAgo', endDate: 'yesterday' }],
-      dimensions: [{ name: 'date' }],
-      metrics: [{ name: 'activeUsers' }],
-      orderBys: [{ dimension: { dimensionName: 'date' } }],
-    })
+    const t = token
+    const safe = async (fn: () => Promise<Ga4Row[]>): Promise<Ga4Row[] | undefined> => {
+      try { return await fn() } catch { return undefined }
+    }
+
+    // Serie de 30 días (esencial) + enriquecimiento en paralelo (cada uno degrada).
+    const [daily, channelsRes, pagesRes, devicesRes, countriesRes, totalsRes] = await Promise.all([
+      ga4RunReport(t, {
+        dateRanges: [{ startDate: '29daysAgo', endDate: 'yesterday' }],
+        dimensions: [{ name: 'date' }], metrics: [{ name: 'activeUsers' }],
+        orderBys: [{ dimension: { dimensionName: 'date' } }],
+      }),
+      safe(() => ga4RunReport(t, {
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'yesterday' }],
+        dimensions: [{ name: 'sessionDefaultChannelGroup' }], metrics: [{ name: 'activeUsers' }],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+      })),
+      safe(() => ga4RunReport(t, {
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'yesterday' }],
+        dimensions: [{ name: 'pagePath' }], metrics: [{ name: 'screenPageViews' }],
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }], limit: 8,
+      })),
+      safe(() => ga4RunReport(t, {
+        dateRanges: [{ startDate: '28daysAgo', endDate: 'yesterday' }],
+        dimensions: [{ name: 'deviceCategory' }], metrics: [{ name: 'activeUsers' }],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+      })),
+      safe(() => ga4RunReport(t, {
+        dateRanges: [{ startDate: '28daysAgo', endDate: 'yesterday' }],
+        dimensions: [{ name: 'country' }, { name: 'countryId' }], metrics: [{ name: 'activeUsers' }],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }], limit: 8,
+      })),
+      safe(() => ga4RunReport(t, {
+        dateRanges: [{ startDate: '28daysAgo', endDate: 'yesterday' }],
+        metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'newUsers' }],
+      })),
+    ])
+
     const series: Ga4Day[] = daily
       .map((r) => ({ date: fmtGaDate(r.dimensionValues?.[0]?.value ?? ''), users: Number(r.metricValues?.[0]?.value ?? 0) }))
       .filter((d) => d.date)
-
     const yesterday = series[series.length - 1]?.users ?? 0
     const dayBefore = series.length >= 2 ? series[series.length - 2].users : 0
     const avg7 = mean(series.slice(-7).map((d) => d.users))
 
-    // 2) Reparto por canal (7d) — de dónde llega la gente.
-    let channels: Ga4Channel[] | undefined
-    let organicPct: number | undefined
-    try {
-      const byChannel = await ga4RunReport(token, {
-        dateRanges: [{ startDate: '7daysAgo', endDate: 'yesterday' }],
-        dimensions: [{ name: 'sessionDefaultChannelGroup' }],
-        metrics: [{ name: 'activeUsers' }],
-        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
-      })
-      const rows = byChannel.map((r) => ({ channel: r.dimensionValues?.[0]?.value ?? '—', users: Number(r.metricValues?.[0]?.value ?? 0) }))
+    // Canales + % orgánico
+    let channels: Ga4Channel[] | undefined, organicPct: number | undefined
+    if (channelsRes?.length) {
+      const rows = channelsRes.map((r) => ({ channel: r.dimensionValues?.[0]?.value ?? '—', users: Number(r.metricValues?.[0]?.value ?? 0) }))
       const total = rows.reduce((s, r) => s + r.users, 0)
       if (total > 0) {
         channels = rows.map((r) => ({ ...r, pct: Math.round((r.users / total) * 100) }))
         organicPct = channels.find((c) => /organic/i.test(c.channel))?.pct
       }
-    } catch { /* el reparto por canal es secundario */ }
-
-    // 3) Top páginas/pantallas (7d) — qué se ve más.
-    let topPages: Ga4Page[] | undefined
-    try {
-      const pages = await ga4RunReport(token, {
-        dateRanges: [{ startDate: '7daysAgo', endDate: 'yesterday' }],
-        dimensions: [{ name: 'pagePath' }],
-        metrics: [{ name: 'screenPageViews' }],
-        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-        limit: 8,
-      })
-      topPages = pages.map((r) => ({ path: r.dimensionValues?.[0]?.value ?? '', views: Number(r.metricValues?.[0]?.value ?? 0) })).filter((p) => p.path)
-    } catch { /* top páginas secundario */ }
+    }
+    // Top páginas
+    const topPages = pagesRes
+      ?.map((r) => ({ path: r.dimensionValues?.[0]?.value ?? '', views: Number(r.metricValues?.[0]?.value ?? 0) }))
+      .filter((p) => p.path)
+    // Dispositivos
+    let devices: Ga4Device[] | undefined
+    if (devicesRes?.length) {
+      const rows = devicesRes.map((r) => ({ category: r.dimensionValues?.[0]?.value ?? '', users: Number(r.metricValues?.[0]?.value ?? 0) }))
+      const total = rows.reduce((s, r) => s + r.users, 0)
+      if (total > 0) devices = rows.map((r) => ({ ...r, pct: Math.round((r.users / total) * 100) }))
+    }
+    // Países del tráfico web
+    const webCountries = countriesRes
+      ?.map((r) => ({ country: r.dimensionValues?.[0]?.value ?? '', countryCode: r.dimensionValues?.[1]?.value ?? '', users: Number(r.metricValues?.[0]?.value ?? 0) }))
+      .filter((c) => c.users > 0)
+    // Totales 28d
+    const tv = totalsRes?.[0]?.metricValues
+    const total28 = tv ? Number(tv[0]?.value ?? 0) : undefined
+    const sessions28 = tv ? Number(tv[1]?.value ?? 0) : undefined
+    const newUsers28 = tv ? Number(tv[2]?.value ?? 0) : undefined
 
     return {
-      ...baseline,
-      available: true,
-      via,
-      series,
-      yesterday,
-      dayBefore,
-      avg7,
-      organicPct,
-      trend: trendOf(yesterday, avg7),
-      channels,
-      topPages,
+      ...baseline, available: true, via, series, yesterday, dayBefore, avg7,
+      total28, sessions28, newUsers28, organicPct, trend: trendOf(yesterday, avg7),
+      channels, topPages, devices, webCountries,
     }
   } catch (e) {
     return { ...baseline, via, note: e instanceof Error ? e.message : String(e) }
@@ -309,12 +338,30 @@ export async function getAppDownloads(): Promise<AppDownloads> {
 export interface GscWindow { clicks: number; impressions: number; ctr: number; position: number }
 export interface SearchTotals {
   available: boolean
+  h24?: GscWindow
   d28?: GscWindow
   d7?: GscWindow
   series?: { date: string; clicks: number }[]
   rangeStart?: string
   rangeEnd?: string
   note?: string
+}
+
+// Últimas 24h con datos HORARIOS (iguala la vista "24 horas" de Search Console).
+async function gscHourly24(token: string): Promise<GscWindow> {
+  const url = `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(GSC_SITE_URL)}/searchAnalytics/query`
+  const res = await timedFetch(url, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ startDate: ymd(1), endDate: ymd(0), dimensions: ['HOUR'], dataState: 'HOURLY_ALL', rowLimit: 48 }),
+  })
+  if (!res.ok) throw new Error(`GSC 24h ${res.status}`)
+  const rows = ((await res.json()) as { rows?: GscApiRow[] }).rows ?? []
+  const last24 = [...rows].sort((a, b) => ((a.keys?.[0] ?? '') < (b.keys?.[0] ?? '') ? -1 : 1)).slice(-24)
+  const clicks = last24.reduce((s, r) => s + r.clicks, 0)
+  const impressions = last24.reduce((s, r) => s + r.impressions, 0)
+  const position = impressions ? last24.reduce((s, r) => s + r.position * r.impressions, 0) / impressions : 0
+  return { clicks, impressions, ctr: impressions ? clicks / impressions : 0, position }
 }
 
 async function gscAggregate(token: string, startDate: string, endDate: string): Promise<GscWindow> {
@@ -354,12 +401,13 @@ export async function getSearchTotals(): Promise<SearchTotals> {
 
   try {
     const start28 = ymd(28), start7 = ymd(7), end = ymd(1)
-    const [d28, d7, series] = await Promise.all([
+    const [d28, d7, series, h24] = await Promise.all([
       gscAggregate(token, start28, end),
       gscAggregate(token, start7, end),
       gscSeries(token, start28, end),
+      gscHourly24(token).catch(() => undefined),
     ])
-    return { available: true, d28, d7, series, rangeStart: start28, rangeEnd: end }
+    return { available: true, h24, d28, d7, series, rangeStart: start28, rangeEnd: end }
   } catch (e) {
     return { available: false, note: e instanceof Error ? e.message : String(e) }
   }
