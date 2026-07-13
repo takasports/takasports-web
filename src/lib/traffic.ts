@@ -38,6 +38,9 @@ export interface Ga4Summary {
   avg7?: number
   total28?: number
   prevTotal28?: number // usuarios de los 28 días ANTERIORES (para el % de cambio)
+  users7d?: number
+  prevUsers7d?: number
+  allTimeUsers?: number // usuarios de todo el histórico (opción "Total")
   sessions28?: number
   newUsers28?: number
   pagesPerSession?: number
@@ -163,7 +166,7 @@ export async function getGa4Summary(): Promise<Ga4Summary> {
     }
 
     // Serie de 30 días (esencial) + enriquecimiento en paralelo (cada uno degrada).
-    const [daily, channelsRes, pagesRes, devicesRes, countriesRes, totalsRes, prevRes] = await Promise.all([
+    const [daily, channelsRes, pagesRes, devicesRes, countriesRes, totalsRes, prevRes, allTimeRes] = await Promise.all([
       ga4RunReport(t, {
         dateRanges: [{ startDate: '29daysAgo', endDate: 'yesterday' }],
         dimensions: [{ name: 'date' }], metrics: [{ name: 'activeUsers' }],
@@ -195,6 +198,10 @@ export async function getGa4Summary(): Promise<Ga4Summary> {
       })),
       safe(() => ga4RunReport(t, {
         dateRanges: [{ startDate: '56daysAgo', endDate: '29daysAgo' }],
+        metrics: [{ name: 'activeUsers' }],
+      })),
+      safe(() => ga4RunReport(t, {
+        dateRanges: [{ startDate: '2020-01-01', endDate: 'today' }],
         metrics: [{ name: 'activeUsers' }],
       })),
     ])
@@ -240,11 +247,14 @@ export async function getGa4Summary(): Promise<Ga4Summary> {
     const avgSessionSec = tv ? Number(tv[4]?.value ?? 0) : undefined
     const engagementRate = tv ? Number(tv[5]?.value ?? 0) : undefined
     const prevTotal28 = prevRes?.[0]?.metricValues ? Number(prevRes[0].metricValues[0]?.value ?? 0) : undefined
+    const allTimeUsers = allTimeRes?.[0]?.metricValues ? Number(allTimeRes[0].metricValues[0]?.value ?? 0) : undefined
+    const users7d = series.length ? series.slice(-7).reduce((s, d) => s + d.users, 0) : undefined
+    const prevUsers7d = series.length >= 14 ? series.slice(-14, -7).reduce((s, d) => s + d.users, 0) : undefined
 
     return {
       ...baseline, available: true, via, series, yesterday, dayBefore, avg7,
-      total28, prevTotal28, sessions28, newUsers28, pagesPerSession, avgSessionSec, engagementRate,
-      organicPct, trend: trendOf(yesterday, avg7),
+      total28, prevTotal28, users7d, prevUsers7d, allTimeUsers, sessions28, newUsers28,
+      pagesPerSession, avgSessionSec, engagementRate, organicPct, trend: trendOf(yesterday, avg7),
       channels, topPages, devices, webCountries,
     }
   } catch (e) {
@@ -383,6 +393,8 @@ export interface SearchTotals {
   d28?: GscWindow
   prevD28?: GscWindow // 28 días anteriores (para el % de cambio)
   d7?: GscWindow
+  prevD7?: GscWindow
+  allTime?: GscWindow // ~16 meses (máximo de Search Console) → opción "Total"
   series?: { date: string; clicks: number }[]
   rangeStart?: string
   rangeEnd?: string
@@ -443,14 +455,16 @@ export async function getSearchTotals(): Promise<SearchTotals> {
 
   try {
     const start28 = ymd(28), start7 = ymd(7), end = ymd(1)
-    const [d28, d7, series, h24, prevD28] = await Promise.all([
+    const [d28, d7, series, h24, prevD28, prevD7, allTime] = await Promise.all([
       gscAggregate(token, start28, end),
       gscAggregate(token, start7, end),
       gscSeries(token, start28, end),
       gscHourly24(token).catch(() => undefined),
       gscAggregate(token, ymd(56), ymd(29)).catch(() => undefined),
+      gscAggregate(token, ymd(14), ymd(8)).catch(() => undefined),
+      gscAggregate(token, ymd(480), ymd(1)).catch(() => undefined),
     ])
-    return { available: true, h24, d28, prevD28, d7, series, rangeStart: start28, rangeEnd: end }
+    return { available: true, h24, d28, prevD28, d7, prevD7, allTime, series, rangeStart: start28, rangeEnd: end }
   } catch (e) {
     return { available: false, note: e instanceof Error ? e.message : String(e) }
   }

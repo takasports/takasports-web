@@ -47,9 +47,9 @@ export default function RealtimePanel({ initial }: { initial: Ga4Realtime }) {
 
   return (
     <section
+      className={live ? undefined : 'tk-glass'}
       style={{
-        background: live ? 'rgba(34,197,94,0.06)' : 'var(--bg-card)',
-        border: `1px solid ${live ? 'rgba(34,197,94,0.35)' : 'var(--border)'}`,
+        ...(live ? { background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.35)' } : {}),
         borderRadius: 'var(--radius-lg)',
         padding: 'var(--space-lg)',
         marginBottom: 32,
