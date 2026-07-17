@@ -1477,6 +1477,8 @@ interface PlayerLeader {
   name: string; team: string; value: number; matches: number
   extra?: Record<string, string>
   playerId?: string; teamLogo?: string; leagueSlug?: string
+  /** Foto resuelta por el cron; si no hay, la fila cae al escudo del club. */
+  photo?: string; photoAttribution?: string
 }
 
 // Build the /jugador deep-link slug from an ESPN league slug + athlete id.
@@ -1525,7 +1527,7 @@ function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: src.map((g, i) => ({
       rank: i + 1, name: g.name, team: '',
       value: g.value.toString(), trend: 'flat' as const,
-      logo: g.teamLogo, href: playerHref(g),
+      logo: g.photo ?? g.teamLogo, href: playerHref(g),
     }))}}
   }
 
@@ -1535,7 +1537,7 @@ function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: lg.goals.slice(0, 10).map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
-      logo: g.teamLogo, href: playerHref(g),
+      logo: g.photo ?? g.teamLogo, href: playerHref(g),
     }))}}
   }
 
@@ -1550,7 +1552,7 @@ function applyLivePlayerToBlock(
       value: (g.value * 2).toString(),
       sub: `${g.value} goles`,
       trend: 'flat' as const,
-      logo: g.teamLogo, href: playerHref(g),
+      logo: g.photo ?? g.teamLogo, href: playerHref(g),
     }))}}
   }
 
@@ -1563,7 +1565,7 @@ function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: source.map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
-      logo: g.teamLogo, href: playerHref(g),
+      logo: g.photo ?? g.teamLogo, href: playerHref(g),
     }))}}
   }
 
@@ -1576,7 +1578,7 @@ function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: source.map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
-      logo: g.teamLogo, href: playerHref(g),
+      logo: g.photo ?? g.teamLogo, href: playerHref(g),
     }))}}
   }
 

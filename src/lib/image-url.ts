@@ -15,6 +15,8 @@ const OPTIMIZED_HOSTS = [
   'cdninstagram.com',
   'fbcdn.net',
   'api-sports.io',
+  'espncdn.com',          // headshots/escudos ESPN → next/image en vez del proxy
+  'upload.wikimedia.org', // fotos libres Wikimedia (fallback de la cascada de fotos)
   'cloudfront.net',
   'twimg.com',
   'pbs.twimg.com',

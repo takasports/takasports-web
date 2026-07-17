@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { tfetch } from '@/lib/stats-cache'
 import { SOCCER_LEAGUES } from '@/lib/stats-leagues'
+import { getPhotosByEspnId } from '@/lib/sport-entities'
 
 export interface PlayerLeader {
   name: string
@@ -14,6 +15,10 @@ export interface PlayerLeader {
   teamLogo?: string
   /** ESPN league slug (e.g. "soccer/esp.1") for building the player slug. */
   leagueSlug?: string
+  /** Foto ya resuelta por la cascada (sport_entity_images). Sin ella se cae al escudo. */
+  photo?: string
+  /** Atribución obligatoria cuando la licencia lo exige (Wikimedia CC). */
+  photoAttribution?: string
 }
 
 export interface LeaguePlayerData {
@@ -218,13 +223,48 @@ async function buildCombined(): Promise<Record<CombinedKey, PlayerLeader[]>> {
 
 // ── GET ───────────────────────────────────────────────────────────────────────
 
-export async function GET() {
+/**
+ * Pega a cada líder la foto que el cron ya resolvió. Es una lectura de NUESTRA caché
+ * (sport_entity_images), no una llamada a terceros: aquí no se resuelve nada. Si la
+ * base no responde, no hay foto y cada fila cae al escudo del club, como hasta ahora.
+ */
+async function attachPhotos(data: PlayersResponse): Promise<PlayersResponse> {
+  const all = [
+    ...data.leagues.flatMap(league => [...league.goals, ...league.assists]),
+    ...Object.values(data.combined).flat(),
+  ]
+  const ids = [...new Set(all.map(p => p.playerId).filter((id): id is string => Boolean(id)))]
+  if (!ids.length) return data
+
+  const photos = await getPhotosByEspnId('football', ids)
+  for (const leader of all) {
+    const photo = leader.playerId ? photos.get(leader.playerId) : undefined
+    if (!photo) continue
+    leader.photo = photo.url
+    leader.photoAttribution = photo.attribution ?? undefined
+  }
+  return data
+}
+
+/**
+ * Payload completo de líderes. Exportado para reusarlo desde el cron de entidades sin
+ * un self-fetch HTTP — mismo patrón que getStandingsData() en standings/route.ts.
+ */
+export async function getPlayersData(): Promise<PlayersResponse> {
   const [leagues, combined] = await Promise.all([
     Promise.all(LEAGUES.map(fetchEspnLeague)),
     buildCombined(),
   ])
-  return NextResponse.json(
-    { leagues, combined, season: SEASON_LABEL, updatedAt: new Date().toISOString() } satisfies PlayersResponse,
-    { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } },
-  )
+  return attachPhotos({
+    leagues,
+    combined,
+    season: SEASON_LABEL,
+    updatedAt: new Date().toISOString(),
+  })
+}
+
+export async function GET() {
+  return NextResponse.json(await getPlayersData(), {
+    headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+  })
 }

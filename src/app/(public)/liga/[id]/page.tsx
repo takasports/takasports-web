@@ -58,7 +58,7 @@ interface StandRow {
   rank: number; name: string; abbr: string; value: string
   extra: Record<string, string>; teamId?: string; logo?: string
 }
-interface PlayerRow { name: string; team: string; value: number; matches: number; playerId?: string; teamLogo?: string; leagueSlug?: string }
+interface PlayerRow { name: string; team: string; value: number; matches: number; playerId?: string; teamLogo?: string; leagueSlug?: string; photo?: string }
 
 async function fetchData(def: LeagueDef): Promise<{ rows: StandRow[]; goals: PlayerRow[]; assists: PlayerRow[] }> {
   const base = apiBase()
@@ -135,7 +135,26 @@ function LeaderList({ title, players, metric, def }: { title: string; players: P
             <div className="flex items-center gap-2.5 px-4 py-2.5"
               style={{ borderBottom: i < Math.min(players.length, 10) - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none' }}>
               <span className="w-5 text-[11px] font-black tabular-nums text-right" style={{ color: i < 3 ? def.accent : '#5A5A72' }}>{i + 1}</span>
-              {p.teamLogo && <Image src={p.teamLogo} alt="" width={22} height={22} unoptimized style={{ objectFit: 'contain', flexShrink: 0 }} />}
+              {/* Foto si el cron la resolvió: redonda y encuadrada arriba, porque las de
+                  Commons son fotos de acción y la cara suele quedar en la parte alta.
+                  Sin foto, el escudo del club como hasta ahora. */}
+              {(p.photo ?? p.teamLogo) && (
+                <Image
+                  src={(p.photo ?? p.teamLogo)!}
+                  alt=""
+                  width={22}
+                  height={22}
+                  unoptimized
+                  style={{
+                    objectFit: p.photo ? 'cover' : 'contain',
+                    objectPosition: 'top',
+                    borderRadius: p.photo ? '50%' : undefined,
+                    width: 22,
+                    height: 22,
+                    flexShrink: 0,
+                  }}
+                />
+              )}
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-semibold truncate text-white">{p.name}</div>
                 <div className="text-[10px] truncate" style={{ color: '#7A7A92' }}>{p.team} · {p.matches} PJ</div>
