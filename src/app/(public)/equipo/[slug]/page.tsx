@@ -7,6 +7,7 @@ import type { TeamDetail, TeamResult, RosterPlayer } from '@/app/api/team/[slug]
 import { TeamTabs } from './TeamTabs'
 import { StandingsTab } from './StandingsTab'
 import { RosterTab } from './RosterTab'
+import { RosterCredits } from './RosterCredits'
 import { ShareButton } from '@/components/ShareButton'
 import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
@@ -510,6 +511,11 @@ export default async function EquipoPage({ params }: { params: Promise<{ slug: s
           <Suspense>
             <RelatedArticlesByEntity entityName={team.name} limit={6} />
           </Suspense>
+        </div>
+        {/* Créditos CC de las fotos de la plantilla — última línea de la página a
+            propósito (no ensucia la información; ver RosterCredits para el porqué legal). */}
+        <div className="max-w-2xl mx-auto px-4 pb-8">
+          <RosterCredits roster={team.roster} />
         </div>
       </div>
     </>

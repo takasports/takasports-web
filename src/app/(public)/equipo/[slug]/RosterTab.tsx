@@ -78,56 +78,6 @@ function PlayerRow({ player, leagueSlug }: { player: RosterPlayer; leagueSlug: s
   return href ? <Link href={href} prefetch={false}>{inner}</Link> : inner
 }
 
-/**
- * Crédito LEGALMENTE obligatorio de las fotos CC (Wikimedia) de la plantilla, agregado en
- * un desplegable discreto. Agrupa por autor+licencia — varios jugadores comparten
- * fotógrafo y no repetimos línea por cara. Solo se pinta si alguna foto lo exige.
- */
-function RosterCredits({ roster }: { roster: RosterPlayer[] }) {
-  const [open, setOpen] = useState(false)
-
-  const byAttribution = new Map<string, string[]>()
-  for (const p of roster) {
-    if (!p.photo || !p.photoAttribution) continue
-    const names = byAttribution.get(p.photoAttribution) ?? []
-    names.push(p.name)
-    byAttribution.set(p.photoAttribution, names)
-  }
-  if (byAttribution.size === 0) return null
-
-  return (
-    <div className="px-4">
-      <div className="flex justify-end pt-1">
-        <button
-          aria-expanded={open}
-          onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-1.5 text-[11px] cursor-pointer select-none transition-colors"
-          style={{ color: 'var(--text-muted)', background: 'none', border: 'none', padding: '4px 2px' }}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 8h.01M11 12h1v4h1" strokeLinecap="round" />
-          </svg>
-          Créditos de fotos
-        </button>
-      </div>
-      {open && (
-        <div
-          role="note"
-          className="mt-1 rounded-lg px-3 py-2.5"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-        >
-          {[...byAttribution.entries()].map(([attribution, names]) => (
-            <div key={attribution} className="text-[11px] leading-relaxed" style={{ color: '#9090A4' }}>
-              {attribution} · {names.join(', ')}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function SortBtn({
   label, active, onClick,
 }: { label: string; active: boolean; onClick: () => void }) {
@@ -201,7 +151,6 @@ export function RosterTab({ roster, leagueSlug }: { roster: RosterPlayer[]; leag
           </div>
         )
       })}
-      <RosterCredits roster={roster} />
     </div>
   )
 }
