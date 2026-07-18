@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { SITE_URL } from '@/lib/constants'
 import type { TeamResult } from '@/app/api/team/[slug]/route'
+import { fetchPlayerGamelog, type MatchLogEntry } from '@/lib/player-gamelog'
+import { fetchPlayerWikidata, type CareerStint, type Honor } from '@/lib/player-wikidata'
+import { getPhotosByEspnId } from '@/lib/sport-entities'
 
 // ── Types ────────────────────────────────────────────────────────────
 export interface PlayerStat {
@@ -15,6 +18,10 @@ export interface PlayerDetail {
   name: string
   /** Real headshot (NBA has them; soccer does not — falls back to club crest). */
   headshot?: string
+  /** Foto resuelta por la cascada (sport_entity_images) — primaria en fútbol. */
+  photo?: string
+  /** Crédito obligatorio cuando la foto es CC (Wikimedia); ausente en otras fuentes. */
+  photoAttribution?: string
   flag?: string
   position?: string
   jersey?: string
@@ -24,8 +31,14 @@ export interface PlayerDetail {
   team?: { id: string; name: string; logo?: string; slug: string }
   season?: string
   stats: PlayerStat[]
-  /** Recent matches of the player's club (ESPN has no per-player soccer log). */
+  /** Recent matches of the player's club (contexto de equipo). */
   recent: TeamResult[]
+  /** Log de partidos DEL JUGADOR (ESPN gamelog): su línea por partido. */
+  matchLog?: MatchLogEntry[]
+  /** Trayectoria de clubes sénior (Wikidata P54, filtrada). */
+  career?: CareerStint[]
+  /** Distinciones individuales (Wikidata P166); NO incluye títulos de equipo. */
+  honors?: Honor[]
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -231,6 +244,16 @@ export async function GET(
     return NextResponse.json({ error: 'not found' }, { status: 404 })
   }
 
+  // Trayectoria + distinciones desde Wikidata, en paralelo con las fetches de ESPN de
+  // abajo. La resolución por nombre lleva su propio guardarraíl de ocupación por deporte;
+  // devuelve null en deportes sin guardarraíl (tenis/MMA aún no), así que llamamos siempre.
+  const wikidataPromise = fetchPlayerWikidata(asString(ath.displayName) ?? '', leagueSlug.split('/')[0])
+
+  // Foto resuelta por el cron — lectura de NUESTRA caché, no de terceros en request.
+  const photoPromise = leagueSlug.startsWith('soccer')
+    ? getPhotosByEspnId('football', [playerId])
+    : null
+
   // ESPN auto-resolves the player's real domestic competition in the overview's
   // top-level `league` block (e.g. a search slug tagged "uefa.champions" still
   // returns league.slug "esp.1"). Trust that so stats use the domestic season.
@@ -305,6 +328,14 @@ export async function GET(
     })
   }
 
+  // Log de partidos del jugador (su línea por partido). Fútbol y NBA lo exponen.
+  // El gamelog de NBA exige la liga en la ruta ('basketball/nba'); el de fútbol usa solo
+  // 'soccer'. leagueSlug ya es 'basketball/nba' para NBA.
+  const matchLog =
+    sport === 'soccer' || (sport === 'basketball' && leagueId === 'nba')
+      ? await fetchPlayerGamelog(sport === 'soccer' ? 'soccer' : leagueSlug, playerId, 8)
+      : []
+
   // Player's club recent matches — reuse the existing team endpoint.
   let recent: TeamResult[] = []
   if (teamSlug) {
@@ -316,12 +347,17 @@ export async function GET(
     recent = played.slice(-10).reverse()
   }
 
+  const wikidata = await wikidataPromise
+  const photo = photoPromise ? (await photoPromise).get(playerId) : undefined
+
   const detail: PlayerDetail = {
     id: playerId,
     leagueSlug,
     leagueLabel,
     name: asString(ath.displayName) ?? '—',
     headshot: asString(asObj(ath.headshot)?.href),
+    photo: photo?.url,
+    photoAttribution: photo?.attribution ?? undefined,
     flag: asString(flag?.href),
     position: asString(position?.displayName) ?? asString(position?.name),
     jersey: asString(ath.jersey),
@@ -334,6 +370,9 @@ export async function GET(
     season,
     stats,
     recent,
+    matchLog,
+    career: wikidata?.career,
+    honors: wikidata?.honors,
   }
 
   return NextResponse.json(detail)

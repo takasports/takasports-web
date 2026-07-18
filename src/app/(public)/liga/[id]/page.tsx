@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ShareButton } from '@/components/ShareButton'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
+import { fetchLeagueTableRows } from '@/lib/espn-standings'
 
 export const revalidate = 1800
 
@@ -14,6 +15,9 @@ interface LeagueDef {
   leagueSlug: string         // ESPN slug, e.g. "soccer/esp.1"
   playersKey: string         // /api/stats/players league.id
   accent: string
+  /** Ligas fuera de la API agregada de stats (Latam): se sirven de ESPN directo,
+   *  sin pasar por el monolito de /estadisticas ni tocar su comportamiento. */
+  direct?: boolean
 }
 
 const LEAGUES: Record<string, LeagueDef> = {
@@ -22,6 +26,10 @@ const LEAGUES: Record<string, LeagueDef> = {
   'ita.1':   { id: 'ita.1',   label: 'Serie A',        tableBlockId: 'tabla-serie-a',    leagueSlug: 'soccer/ita.1', playersKey: 'ita.1', accent: '#22c55e' },
   'ger.1':   { id: 'ger.1',   label: 'Bundesliga',     tableBlockId: 'tabla-bundesliga', leagueSlug: 'soccer/ger.1', playersKey: 'ger.1', accent: '#f59e0b' },
   'fra.1':   { id: 'fra.1',   label: 'Ligue 1',        tableBlockId: 'tabla-ligue1',     leagueSlug: 'soccer/fra.1', playersKey: 'fra.1', accent: '#3b82f6' },
+  // Latinoamérica — vía ESPN directa (ver `direct`). Tabla + goleadores/asistentes.
+  'bra.1':   { id: 'bra.1',   label: 'Brasileirão',    tableBlockId: '', leagueSlug: 'soccer/bra.1', playersKey: '', accent: '#f59e0b', direct: true },
+  'mex.1':   { id: 'mex.1',   label: 'Liga MX',        tableBlockId: '', leagueSlug: 'soccer/mex.1', playersKey: '', accent: '#16a34a', direct: true },
+  'arg.1':   { id: 'arg.1',   label: 'Liga Argentina', tableBlockId: '', leagueSlug: 'soccer/arg.1', playersKey: '', accent: '#6CACE4', direct: true },
 }
 
 export function generateStaticParams() {
@@ -76,6 +84,62 @@ async function fetchData(def: LeagueDef): Promise<{ rows: StandRow[]; goals: Pla
   } catch {
     return { rows: [], goals: [], assists: [] }
   }
+}
+
+// Goleadores + asistentes de una liga desde el endpoint `statistics` de ESPN (ambas
+// categorías inline, con nombre y equipo — sin resolver por atleta). Mismo parseo que
+// /api/stats/players, pero aquí directo para las ligas Latam que no van por la agregada.
+async function fetchLeagueLeaders(leagueSlug: string): Promise<{ goals: PlayerRow[]; assists: PlayerRow[] }> {
+  try {
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/${leagueSlug}/statistics`,
+      { next: { revalidate: 1800 } },
+    )
+    if (!res.ok) return { goals: [], assists: [] }
+    const json = await res.json()
+    const stats = (json.stats ?? []) as Array<{ name?: string; displayName?: string; leaders?: unknown[] }>
+    const parse = (display: string, name: string): PlayerRow[] => {
+      const cat = stats.find(c => c.displayName === display || c.name === name)
+      return ((cat?.leaders ?? []) as Array<Record<string, unknown>>).slice(0, 10).map(l => {
+        const ath = (l.athlete ?? {}) as Record<string, unknown>
+        const team = (ath.team ?? {}) as Record<string, unknown>
+        const teamId = typeof team.id === 'string' ? team.id : undefined
+        const logos = (team.logos ?? []) as Array<{ href?: string }>
+        const m = /Matches:\s*(\d+)/.exec(typeof l.displayValue === 'string' ? l.displayValue : '')
+        return {
+          name: (ath.displayName as string) ?? '',
+          team: (team.displayName as string) ?? '',
+          value: Math.round((l.value as number) ?? 0),
+          matches: m ? parseInt(m[1]) : 0,
+          playerId: ath.id as string | undefined,
+          teamLogo: logos[0]?.href ?? (teamId ? `https://a.espncdn.com/i/teamlogos/soccer/500/${teamId}.png` : undefined),
+          leagueSlug,
+        }
+      }).filter(p => p.name)
+    }
+    return { goals: parse('Goals', 'goals'), assists: parse('Assists', 'assists') }
+  } catch {
+    return { goals: [], assists: [] }
+  }
+}
+
+// Ligas Latam: tabla (fetchLeagueTableRows, ya soportada en TABLE_LEAGUE_SLUGS) +
+// goleadores/asistentes directos. Mapea a la MISMA forma que fetchData para reusar el render.
+async function fetchDirect(def: LeagueDef): Promise<{ rows: StandRow[]; goals: PlayerRow[]; assists: PlayerRow[] }> {
+  const [table, leaders] = await Promise.all([
+    fetchLeagueTableRows(def.leagueSlug),
+    fetchLeagueLeaders(def.leagueSlug),
+  ])
+  const rows: StandRow[] = table.map(t => ({
+    rank: t.rank,
+    name: t.name,
+    abbr: t.abbr,
+    value: String(t.pts),
+    extra: { V: String(t.w), E: String(t.d), D: String(t.l), DG: t.gd > 0 ? `+${t.gd}` : String(t.gd) },
+    teamId: t.teamId,
+    logo: t.logo,
+  }))
+  return { rows, goals: leaders.goals, assists: leaders.assists }
 }
 
 function teamHref(def: LeagueDef, teamId?: string) {
@@ -177,7 +241,7 @@ function LeaderList({ title, players, metric, def }: { title: string; players: P
 async function Content({ id }: { id: string }) {
   const def = LEAGUES[id]
   if (!def) notFound()
-  const { rows, goals, assists } = await fetchData(def)
+  const { rows, goals, assists } = def.direct ? await fetchDirect(def) : await fetchData(def)
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">

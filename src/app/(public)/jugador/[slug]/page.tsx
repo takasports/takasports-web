@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { PlayerDetail } from '@/app/api/jugador/[slug]/route'
-import PlayerAvatar from '@/components/PlayerAvatar'
+import PlayerPhoto from '@/components/PlayerPhoto'
+import { accentForSport } from '@/lib/sports'
 import type { TeamResult } from '@/app/api/team/[slug]/route'
 import { ShareButton } from '@/components/ShareButton'
 import BreadcrumbsNav from '@/components/BreadcrumbsNav'
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     player.team ? ` · ${player.team.name}` : ''
   } — estadísticas de la temporada en ${player.leagueLabel}`
   const canonical = `${SITE_URL}/jugador/${slug}`
-  const ogImageUrl = player.team?.logo ?? `${SITE_URL}/taka-icon.png`
+  const ogImageUrl = player.photo ?? player.team?.logo ?? `${SITE_URL}/taka-icon.png`
   return {
     title,
     description,
@@ -51,6 +52,35 @@ async function fetchPlayer(slug: string): Promise<PlayerDetail | null> {
     if (!res.ok) return null
     return res.json()
   } catch { return null }
+}
+
+/** Lee un stat curado por label y lo convierte a número (formato es-ES tolerado). */
+function statNum(stats: PlayerDetail['stats'], label: string): number | null {
+  const raw = stats.find(s => s.label === label)?.value
+  if (!raw) return null
+  const n = parseFloat(raw.replace(/\./g, '').replace(',', '.'))
+  return Number.isFinite(n) ? n : null
+}
+const fmtEs = (n: number) => n.toLocaleString('es-ES')
+
+// ESPN devuelve la posición en inglés; en la cabecera hablamos español. El mapa es POR
+// DEPORTE: "Forward" es Delantero en fútbol pero Alero en la NBA.
+const POSITION_ES: Record<string, string> = {
+  Forward: 'Delantero', Attacker: 'Delantero', Striker: 'Delantero',
+  Midfielder: 'Centrocampista', 'Attacking Midfielder': 'Mediapunta',
+  'Defensive Midfielder': 'Pivote', Defender: 'Defensa',
+  'Centre-Back': 'Central', 'Full-Back': 'Lateral', Goalkeeper: 'Portero',
+}
+const POSITION_ES_NBA: Record<string, string> = {
+  Forward: 'Alero', 'Small Forward': 'Alero', 'Power Forward': 'Ala-pívot',
+  Guard: 'Exterior', 'Point Guard': 'Base', 'Shooting Guard': 'Escolta',
+  Center: 'Pívot', 'Forward-Center': 'Ala-pívot', 'Guard-Forward': 'Alero',
+}
+
+const RESULT_STYLE: Record<string, { letter: string; color: string }> = {
+  W: { letter: 'V', color: '#22c55e' },
+  D: { letter: 'E', color: '#f59e0b' },
+  L: { letter: 'D', color: '#ef4444' },
 }
 
 function formatShortDate(iso: string): string {
@@ -118,18 +148,76 @@ function MatchRow({ r, teamId }: { r: TeamResult; teamId: string }) {
 
 // ── Content ───────────────────────────────────────────────────────────
 function PlayerContent({ player }: { player: PlayerDetail }) {
-  const accent = '#7C3AED'
+  const sportSlug = player.leagueSlug.split('/')[0] === 'soccer' ? 'futbol'
+    : player.leagueSlug.startsWith('basketball') ? 'baloncesto' : ''
+  // Acento del deporte (fútbol verde, NBA naranja…) en vez del morado genérico.
+  const accent = accentForSport(sportSlug || undefined)
+  const isSoccer = sportSlug === 'futbol'
+
   const bio: string[] = []
-  if (player.position) bio.push(player.position)
+  const posMap = sportSlug === 'baloncesto' ? POSITION_ES_NBA : POSITION_ES
+  if (player.position) bio.push(posMap[player.position] ?? player.position)
   if (player.jersey) bio.push(`#${player.jersey}`)
   if (player.age != null) bio.push(`${player.age} años`)
   if (player.nationality) bio.push(player.nationality)
   if (player.height) bio.push(player.height)
 
-  const sportSlug = player.leagueSlug.split('/')[0] === 'soccer' ? 'futbol'
-    : player.leagueSlug.startsWith('basketball') ? 'baloncesto' : ''
   const showRadar = !!sportSlug && hasRadarData(player.stats)
   const hasRecent = player.recent.length > 0 && !!player.team
+
+  // Titulares derivados (solo fútbol): calculados de las stats reales, nunca inventados.
+  const goals = statNum(player.stats, 'Goles')
+  const assists = statNum(player.stats, 'Asistencias')
+  const minutes = statNum(player.stats, 'Minutos')
+  const matches = statNum(player.stats, 'Partidos')
+  const goalsPer90 = goals != null && minutes ? goals / (minutes / 90) : null
+  const minPerGoal = goals && minutes ? Math.round(minutes / goals) : null
+  // Forma: últimos 5 del log del jugador, de más antiguo (izq.) a más reciente (dcha.).
+  const forma = (player.matchLog ?? []).slice(0, 5).reverse()
+  // NBA: los valores ya vienen formateados del API ('26.8', '50.7%') → solo coma decimal.
+  const isBasketball = sportSlug === 'baloncesto'
+  const statStr = (label: string) => player.stats.find(s => s.label === label)?.value
+  const esNum = (v?: string) => v?.replace('.', ',')
+  const heroTiles = isSoccer
+    ? ([
+        goals != null && { value: fmtEs(goals), label: 'Goles', hot: true },
+        assists != null && { value: fmtEs(assists), label: 'Asistencias' },
+        minutes != null && {
+          value: fmtEs(minutes),
+          label: matches != null ? `Minutos (${fmtEs(matches)} PJ)` : 'Minutos',
+        },
+        goalsPer90 != null && { value: goalsPer90.toFixed(2).replace('.', ','), label: 'Goles / 90' },
+        minPerGoal != null && { value: fmtEs(minPerGoal), label: 'Min / gol' },
+      ].filter(Boolean) as { value: string; label: string; hot?: boolean }[])
+    : isBasketball
+      ? ([
+          statStr('Puntos/partido') && { value: esNum(statStr('Puntos/partido'))!, label: 'PTS / partido', hot: true },
+          statStr('Rebotes/partido') && { value: esNum(statStr('Rebotes/partido'))!, label: 'REB / partido' },
+          statStr('Asist./partido') && { value: esNum(statStr('Asist./partido'))!, label: 'AST / partido' },
+          statStr('% Tiros campo') && { value: esNum(statStr('% Tiros campo'))!, label: 'Tiros campo' },
+          statStr('Partidos') && { value: statStr('Partidos')!, label: 'Partidos' },
+        ].filter(Boolean) as { value: string; label: string; hot?: boolean }[])
+      : []
+  // Columnas de la tabla de partidos según deporte (línea del jugador).
+  const logCols: { head: string; key: string; accent?: boolean; white?: boolean }[] = isSoccer
+    ? [
+        { head: 'G', key: 'totalGoals', accent: true },
+        { head: 'A', key: 'goalAssists', white: true },
+        { head: 'Tiros', key: 'totalShots' },
+      ]
+    : [
+        { head: 'PTS', key: 'points', accent: true },
+        { head: 'REB', key: 'totalRebounds', white: true },
+        { head: 'AST', key: 'assists', white: true },
+      ]
+  const logGrid = isSoccer
+    ? '52px minmax(0,1fr) 58px 24px 24px 40px'
+    : '52px minmax(0,1fr) 58px 30px 30px 30px'
+  const glassCard = {
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderTop: '1px solid rgba(255,255,255,0.16)',
+  }
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 py-6">
@@ -163,19 +251,28 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         {/* ── Columna principal ── */}
         <div className="flex-1 min-w-0 w-full">
-          {/* Header */}
+          {/* Header — Vidrio Taka: panel translúcido con glow del deporte */}
           <div
-            className="rounded-2xl p-5 mb-6 flex items-center gap-5"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+            className="relative rounded-2xl p-5 mb-6 flex items-center gap-5 backdrop-blur-xl"
+            style={glassCard}
           >
-            <div
-              className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0"
-              style={{ background: `${accent}18` }}
-            >
-              <PlayerAvatar headshot={player.headshot} teamLogo={player.team?.logo}
-                teamName={player.team?.name} name={player.name} accent={accent} />
+            <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none" aria-hidden>
+              <div
+                className="absolute -top-16 -left-10 w-56 h-56 rounded-full"
+                style={{ background: `radial-gradient(circle, ${accent}2E, transparent 65%)`, filter: 'blur(26px)' }}
+              />
             </div>
-            <div className="flex-1 min-w-0">
+            <PlayerPhoto
+              photo={player.photo}
+              attribution={player.photoAttribution}
+              headshot={player.headshot}
+              teamLogo={player.team?.logo}
+              teamName={player.team?.name}
+              name={player.name}
+              accent={accent}
+              size={88}
+            />
+            <div className="relative flex-1 min-w-0">
               <div
                 className="text-[11px] font-black uppercase tracking-widest mb-1 flex items-center gap-1.5"
                 style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
@@ -192,44 +289,118 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
               {bio.length > 0 && (
                 <div className="text-[12px] text-[#9A9AAA] mt-1">{bio.join(' · ')}</div>
               )}
-              {player.team && (
-                <Link
-                  href={`/equipo/${player.team.slug}`}
-                  className="inline-flex items-center gap-1.5 mt-2 text-[12px] font-semibold transition-opacity hover:opacity-80"
-                  style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
-                >
-                  {player.team.name} ›
-                </Link>
-              )}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {player.team && (
+                  <Link
+                    href={`/equipo/${player.team.slug}`}
+                    className="inline-flex items-center gap-1.5 text-[12px] font-semibold transition-opacity hover:opacity-80"
+                    style={{ color: accent, fontFamily: 'var(--font-sport)' }}
+                  >
+                    {player.team.name} ›
+                  </Link>
+                )}
+                {player.season && (
+                  <span
+                    className="text-[10px] font-bold tracking-wider rounded-md px-2 py-0.5"
+                    style={{ color: accent, background: `${accent}1F`, border: `1px solid ${accent}4D`, fontFamily: 'var(--font-sport)' }}
+                  >
+                    {player.season}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Season stats */}
+          {/* Season stats — titulares derivados (fútbol) o grid clásico (otros deportes) */}
           {player.stats.length > 0 && (
             <>
               <div
-                className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
-                style={{ fontFamily: 'var(--font-sport)' }}
+                className="text-[10px] font-black uppercase tracking-widest mb-3"
+                style={{ color: accent, fontFamily: 'var(--font-sport)' }}
               >
-                {player.season ? `Estadísticas · ${player.season}` : 'Estadísticas de la temporada'}
+                {player.season ? `Temporada ${player.season}` : 'Estadísticas de la temporada'}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
-                {player.stats.map(s => (
-                  <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                    <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
-                      {s.value}
+
+              {heroTiles.length > 0 ? (
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-2">
+                  {heroTiles.map(t => (
+                    <div
+                      key={t.label}
+                      className="rounded-xl p-3 text-center backdrop-blur-xl"
+                      style={t.hot
+                        ? { background: `${accent}14`, border: `1px solid ${accent}59`, borderTop: `1px solid ${accent}80` }
+                        : glassCard}
+                    >
+                      <div className="text-xl font-black" style={{ fontFamily: 'var(--font-display)', color: t.hot ? accent : '#fff' }}>
+                        {t.value}
+                      </div>
+                      <div className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: t.hot ? `${accent}B3` : 'var(--text-muted)' }}>
+                        {t.label}
+                      </div>
                     </div>
-                    <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide mt-0.5">{s.label}</div>
+                  ))}
+                  {forma.length > 0 && (
+                    <div className="rounded-xl p-3 text-center backdrop-blur-xl" style={glassCard}>
+                      <div className="flex justify-center gap-1 mt-1">
+                        {forma.map(m => {
+                          const rs = RESULT_STYLE[m.result ?? ''] ?? { letter: '·', color: '#9A9AAA' }
+                          return (
+                            <span
+                              key={m.eventId}
+                              className="w-[15px] h-[15px] rounded text-[9px] font-black flex items-center justify-center"
+                              style={{ background: `${rs.color}26`, color: rs.color }}
+                            >
+                              {rs.letter}
+                            </span>
+                          )
+                        })}
+                      </div>
+                      <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wide mt-1.5">Forma</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+                  {player.stats.map(s => (
+                    <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
+                        {s.value}
+                      </div>
+                      <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide mt-0.5">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Grid completo plegado: los titulares mandan, el detalle no estorba */}
+              {heroTiles.length > 0 && (
+                <details className="group rounded-2xl mb-6 backdrop-blur-xl" style={glassCard}>
+                  <summary className="list-none [&::-webkit-details-marker]:hidden cursor-pointer select-none flex items-center gap-2 px-4 py-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-sport)' }}>
+                      Todas las estadísticas
+                    </span>
+                    <span className="text-[10px] text-[var(--text-muted)]">{player.stats.length}</span>
+                    <span className="ml-auto text-[11px] text-[var(--text-muted)] transition-transform group-open:rotate-180">▾</span>
+                  </summary>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 px-4 pb-4">
+                    {player.stats.map(s => (
+                      <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                        <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
+                          {s.value}
+                        </div>
+                        <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide mt-0.5">{s.label}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </details>
+              )}
 
               {/* Perfil de rendimiento — radar/barras que se "viste" del deporte */}
               {showRadar && (
                 <div
                   data-sport={sportSlug}
-                  className="rounded-2xl p-5 mb-6"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}
+                  className="rounded-2xl p-5 mb-6 backdrop-blur-xl"
+                  style={glassCard}
                 >
                   <div
                     className="text-[10px] font-black uppercase tracking-widest mb-4"
@@ -241,6 +412,134 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
                 </div>
               )}
             </>
+          )}
+
+          {/* Últimos partidos — la línea DEL JUGADOR (no la del club) */}
+          {(isSoccer || isBasketball) && (player.matchLog?.length ?? 0) > 0 && (
+            <>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+                  Últimos partidos
+                </span>
+                <span className="text-[9px] font-semibold rounded px-1.5 py-0.5" style={{ color: accent, background: `${accent}1F` }}>
+                  línea del jugador
+                </span>
+              </div>
+              <div className="rounded-2xl mb-6 overflow-hidden backdrop-blur-xl" style={glassCard}>
+                <div
+                  className="grid gap-1 px-4 py-2 text-[9px] uppercase tracking-wider text-[var(--text-muted)]"
+                  style={{ gridTemplateColumns: logGrid, borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                >
+                  <span>Fecha</span><span>Rival</span><span className="text-center">Res</span>
+                  {logCols.map(c => <span key={c.head} className="text-center">{c.head}</span>)}
+                </div>
+                {player.matchLog!.map((m, i) => {
+                  const rs = m.result ? RESULT_STYLE[m.result] : undefined
+                  return (
+                    <div
+                      key={m.eventId}
+                      className="grid gap-1 px-4 py-2.5 items-center text-[12px] text-[#DDDDE6]"
+                      style={{
+                        gridTemplateColumns: logGrid,
+                        borderBottom: i < player.matchLog!.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                      }}
+                    >
+                      <span className="text-[11px] text-[var(--text-muted)]">{formatShortDate(m.date)}</span>
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        {m.opponentLogo && (
+                          <Image src={m.opponentLogo} alt="" width={16} height={16} unoptimized
+                            style={{ objectFit: 'contain', flexShrink: 0 }} />
+                        )}
+                        <span className="truncate">{m.homeAway === '@' ? '@' : 'vs'} {m.opponent}</span>
+                      </span>
+                      <span className="text-center">
+                        {rs ? (
+                          <span className="text-[10px] font-bold rounded px-1.5 py-0.5" style={{ color: rs.color, background: `${rs.color}22` }}>
+                            {rs.letter} {m.score ?? ''}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-[var(--text-muted)]">{m.score ?? '—'}</span>
+                        )}
+                      </span>
+                      {logCols.map(c => {
+                        const v = m.stats[c.key] ?? 0
+                        const color = c.accent && v > 0 ? accent : c.white && v > 0 ? '#fff' : undefined
+                        return (
+                          <span
+                            key={c.head}
+                            className={`text-center${color ? ' font-black' : ''}`}
+                            style={color ? { color, fontFamily: 'var(--font-display)' } : undefined}
+                          >
+                            {v}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Trayectoria — desplegable, abierto por defecto */}
+          {(player.career?.length ?? 0) > 0 && (
+            <details open className="group rounded-2xl mb-2 backdrop-blur-xl" style={glassCard}>
+              <summary className="list-none [&::-webkit-details-marker]:hidden cursor-pointer select-none flex items-center gap-2 px-4 py-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-sport)' }}>
+                  Trayectoria
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  {player.career!.length} {player.career!.length === 1 ? 'club' : 'clubes'}
+                </span>
+                <span className="ml-auto text-[11px] text-[var(--text-muted)] transition-transform group-open:rotate-180">▾</span>
+              </summary>
+              <div className="px-4 pb-4">
+                <div className="pl-3 space-y-2.5" style={{ borderLeft: `2px solid ${accent}66` }}>
+                  {player.career!.map(c => (
+                    <div key={`${c.club}-${c.from ?? ''}`}>
+                      <div className="text-[12px] font-bold text-white flex items-center gap-1.5">
+                        {c.club}
+                        {!c.to && (
+                          <span className="text-[9px] font-bold rounded px-1.5 py-px" style={{ color: accent, background: `${accent}1F` }}>
+                            ACTUAL
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-[var(--text-muted)]">{c.from ?? '?'} — {c.to ?? 'hoy'}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </details>
+          )}
+
+          {/* Distinciones individuales — desplegable, plegado por defecto */}
+          {(player.honors?.length ?? 0) > 0 && (
+            <details className="group rounded-2xl mb-6 backdrop-blur-xl" style={glassCard}>
+              <summary className="list-none [&::-webkit-details-marker]:hidden cursor-pointer select-none flex items-center gap-2 px-4 py-3">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-sport)' }}>
+                  Distinciones
+                </span>
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  {player.honors!.length} {player.honors!.length === 1 ? 'premio' : 'premios'}
+                </span>
+                <span className="ml-auto text-[11px] text-[var(--text-muted)] transition-transform group-open:rotate-180">▾</span>
+              </summary>
+              <div className="px-4 pb-4">
+                <div className="flex flex-wrap gap-1.5">
+                  {player.honors!.map(h => (
+                    <span
+                      key={`${h.title}-${h.year ?? ''}`}
+                      className="text-[11px] rounded-md px-2 py-1 text-[#DDDDE6]"
+                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)' }}
+                    >
+                      {h.title}{h.year ? ` · ${h.year}` : ''}
+                    </span>
+                  ))}
+                </div>
+                <div className="text-[9px] text-[var(--text-muted)] mt-2">Premios individuales.</div>
+              </div>
+            </details>
           )}
 
           {player.stats.length === 0 && !hasRecent && (
@@ -303,7 +602,7 @@ export default async function JugadorPage({ params }: { params: Promise<{ slug: 
     '@type': 'Person',
     name: player.name,
     url: canonicalUrl,
-    ...(player.headshot ? { image: player.headshot } : {}),
+    ...(player.photo || player.headshot ? { image: player.photo ?? player.headshot } : {}),
     ...(player.nationality ? { nationality: { '@type': 'Country', name: player.nationality } } : {}),
     ...(player.position ? { jobTitle: player.position } : {}),
     ...(player.team ? {
