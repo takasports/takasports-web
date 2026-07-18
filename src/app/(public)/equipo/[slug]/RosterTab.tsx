@@ -17,6 +17,10 @@ const POS_LABEL: Record<string, string> = {
 
 function PlayerRow({ player, leagueSlug }: { player: RosterPlayer; leagueSlug: string }) {
   const href = player.id ? `/jugador/${leagueSlug.replaceAll('/', '_')}_${player.id}` : undefined
+  // Cara: foto de la caché propia (cascada Wikimedia) antes que el headshot de ESPN, que
+  // fuera del top-5 europeo casi nunca existe. El crédito CC de las fotos va agregado al
+  // pie de la plantilla (RosterCredits), no por fila — en 32px no cabe un ⓘ por cara.
+  const face = player.photo ?? player.headshot
   const inner = (
     <div
       className={`flex items-center gap-3 py-2.5 px-4 rounded-xl mb-1 hover:bg-white/5 transition-all${href ? ' cursor-pointer' : ''}`}
@@ -26,9 +30,9 @@ function PlayerRow({ player, leagueSlug }: { player: RosterPlayer; leagueSlug: s
         className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
         style={{ background: 'rgba(124,58,237,0.18)', border: '1px solid rgba(124,58,237,0.25)' }}
       >
-        {player.headshot ? (
-          <Image src={player.headshot} alt={player.name} width={32} height={32} unoptimized
-            style={{ objectFit: 'cover', borderRadius: '50%' }} />
+        {face ? (
+          <Image src={face} alt={player.name} width={32} height={32} unoptimized
+            style={{ objectFit: 'cover', width: 32, height: 32, borderRadius: '50%' }} />
         ) : (
           <span className="text-[11px] font-black text-[#C4B5FD]" style={{ fontFamily: 'var(--font-sport)' }}>
             {player.jersey ?? player.name.charAt(0)}
@@ -72,6 +76,56 @@ function PlayerRow({ player, leagueSlug }: { player: RosterPlayer; leagueSlug: s
     </div>
   )
   return href ? <Link href={href} prefetch={false}>{inner}</Link> : inner
+}
+
+/**
+ * Crédito LEGALMENTE obligatorio de las fotos CC (Wikimedia) de la plantilla, agregado en
+ * un desplegable discreto. Agrupa por autor+licencia — varios jugadores comparten
+ * fotógrafo y no repetimos línea por cara. Solo se pinta si alguna foto lo exige.
+ */
+function RosterCredits({ roster }: { roster: RosterPlayer[] }) {
+  const [open, setOpen] = useState(false)
+
+  const byAttribution = new Map<string, string[]>()
+  for (const p of roster) {
+    if (!p.photo || !p.photoAttribution) continue
+    const names = byAttribution.get(p.photoAttribution) ?? []
+    names.push(p.name)
+    byAttribution.set(p.photoAttribution, names)
+  }
+  if (byAttribution.size === 0) return null
+
+  return (
+    <div className="px-4">
+      <div className="flex justify-end pt-1">
+        <button
+          aria-expanded={open}
+          onClick={() => setOpen(v => !v)}
+          className="flex items-center gap-1.5 text-[11px] cursor-pointer select-none transition-colors"
+          style={{ color: 'var(--text-muted)', background: 'none', border: 'none', padding: '4px 2px' }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8h.01M11 12h1v4h1" strokeLinecap="round" />
+          </svg>
+          Créditos de fotos
+        </button>
+      </div>
+      {open && (
+        <div
+          role="note"
+          className="mt-1 rounded-lg px-3 py-2.5"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          {[...byAttribution.entries()].map(([attribution, names]) => (
+            <div key={attribution} className="text-[11px] leading-relaxed" style={{ color: '#9090A4' }}>
+              {attribution} · {names.join(', ')}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function SortBtn({
@@ -147,6 +201,7 @@ export function RosterTab({ roster, leagueSlug }: { roster: RosterPlayer[]; leag
           </div>
         )
       })}
+      <RosterCredits roster={roster} />
     </div>
   )
 }

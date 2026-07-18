@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getZone, zoneFromNote } from '@/lib/league-zones'
 import type { StandingZone } from '@/lib/league-zones'
+import { getPhotosByEspnId, upsertSportEntities, type SeedEntity } from '@/lib/sport-entities'
 export type { StandingZone }
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -28,7 +29,12 @@ export interface RosterPlayer {
   posAbbr: string
   age?: number
   nationality?: string
+  /** Headshot de ESPN (sin atribución). Escaso fuera del top-5 europeo. */
   headshot?: string
+  /** Foto resuelta por nuestra cascada (Wikimedia/ESPN), cacheada. Se prefiere a `headshot`. */
+  photo?: string
+  /** Crédito LEGALMENTE obligatorio cuando `photo` es CC (Wikimedia). Ausente si no lo exige. */
+  photoAttribution?: string
   goals: number
   assists: number
   shotsOnTarget: number
@@ -276,6 +282,46 @@ function buildRoster(athletes: unknown[]): RosterPlayer[] {
   }).filter(Boolean) as RosterPlayer[]
 }
 
+// ── Fotos de plantilla (caché propia + siembra lazy) ─────────────────
+//
+// ESPN casi no trae headshots de plantilla fuera del top-5 europeo (medido: 1 de 51 en
+// Brasileirão). Aquí rellenamos la cara desde NUESTRA caché (sport_entity_images, resuelta
+// por el cron vía la cascada Wikimedia) y, de paso, sembramos a los que aún no están para
+// que el cron les resuelva la foto de cara a la próxima visita.
+//
+// Lazy a propósito: solo se paga por los equipos que alguien mira, y como la page cachea la
+// respuesta 300 s, la siembra corre como mucho cada 5 min por equipo — no satura ni el cron
+// ni a Wikimedia. Todo va con guardarraíl: si Supabase no está, la plantilla cae al dorsal
+// como siempre y la página no se rompe. Solo fútbol: la caché es football-only y el resto
+// (NBA) ya trae buenos headshots de ESPN.
+async function enrichAndSeedRoster(
+  roster: RosterPlayer[],
+  leagueSlug: string,
+  club: string,
+): Promise<void> {
+  const espnIds = roster.map(p => p.id).filter(Boolean)
+  if (!espnIds.length) return
+  try {
+    const photos = await getPhotosByEspnId('football', espnIds)
+    for (const player of roster) {
+      const hit = photos.get(player.id)
+      if (!hit) continue
+      player.photo = hit.url
+      if (hit.attribution) player.photoAttribution = hit.attribution
+    }
+
+    // Siembra idempotente (upsert por slug). Guardo leagueSlug + club para que el pipeline
+    // de snapshots también cubra a estos jugadores, no solo a los líderes.
+    const seeds: SeedEntity[] = roster
+      .filter(p => p.id)
+      .map(p => ({ type: 'player', sport: 'football', name: p.name, espnId: p.id, leagueSlug, club }))
+    await upsertSportEntities(seeds)
+  } catch (err) {
+    // Nunca romper la ficha de equipo por un fallo de la caché de fotos.
+    console.error('[team] enrichAndSeedRoster failed:', err)
+  }
+}
+
 // ── League table ─────────────────────────────────────────────────────
 async function fetchTeamTable(leagueSlug: string, teamId: string): Promise<TeamTableRow[]> {
   try {
@@ -373,6 +419,12 @@ export async function GET(
     // Roster
     const athletes = asArr(rosterJson?.athletes)
     const roster = buildRoster(athletes)
+
+    // Rellena caras desde la caché propia + siembra lazy (solo fútbol). Muta `roster` en
+    // sitio, así que el jugador destacado (una referencia a un elemento) también hereda foto.
+    if (sport === 'soccer') {
+      await enrichAndSeedRoster(roster, leagueSlug, asString(team.displayName) ?? '')
+    }
 
     // Featured player: most goals, then most assists
     const outfield = roster.filter(p => p.posAbbr !== 'GK')
