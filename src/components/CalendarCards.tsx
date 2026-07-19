@@ -134,51 +134,57 @@ export function LiveHeroCard(p: HeroProps) {
 
   const inner = (
     <div
-      className={`cal-card cal-card--live rounded-xl flex flex-col hover:brightness-110 ${p.flashing ? 'ts-flash' : ''}`}
+      className={`cal-card cal-card--live flex flex-col hover:brightness-110 ${p.flashing ? 'ts-flash' : ''}`}
       style={{
         ['--row-accent' as string]: '#FF4D2E',
         width: 300,
         flexShrink: 0,
-        background: 'linear-gradient(145deg, rgba(255,77,46,0.10) 0%, rgba(28,20,18,0.85) 60%, rgba(15,15,22,0.9) 100%)',
-        border: '1px solid rgba(255,77,46,0.25)',
+        borderRadius: 15,
+        // VIDRIO v2: mismo velo que la fila en vivo de la lista — tinte rojo + canto
+        // specular + espina de acento. El box-shadow flotante lo pone .cal-card (CSS)
+        // para conservar el lift del hover.
+        background: 'linear-gradient(158deg, rgba(255,77,46,0.16) 0%, rgba(255,255,255,0.026) 46%, rgba(255,255,255,0.012) 100%)',
+        border: '1px solid rgba(255,77,46,0.4)',
+        borderTopColor: 'rgba(255,77,46,0.55)',
+        borderLeft: '4px solid #FF4D2E',
       }}
     >
-      {/* Halo animado */}
-      <span aria-hidden className="absolute -top-12 -right-12 w-32 h-32 rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(255,77,46,0.18) 0%, transparent 70%)', filter: 'blur(8px)' }} />
+      {/* Luz refractada (blob) roja + brillo specular superior */}
+      <span aria-hidden className="pointer-events-none absolute"
+        style={{ top: -40, left: -10, width: 150, height: 110, background: 'radial-gradient(60% 60% at 30% 40%, rgba(255,77,46,0.3), transparent 70%)', filter: 'blur(6px)', opacity: 0.7 }} />
+      <span aria-hidden className="pointer-events-none absolute"
+        style={{ top: 0, left: 0, right: 0, height: '42%', background: 'linear-gradient(180deg, rgba(255,255,255,0.07), transparent)', borderRadius: '15px 15px 0 0' }} />
 
-      {/* Header */}
-      <div className="relative flex items-center justify-between px-3.5 pt-3 pb-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="cal-live-tag flex items-center gap-1 pl-1.5 pr-2.5 py-0.5 text-[8.5px] font-black uppercase"
-            style={{ background: 'rgba(255,77,46,0.18)', color: '#FF4D2E', fontFamily: 'var(--font-sport)', letterSpacing: '0.1em' }}>
-            <span className="w-1 h-1 rounded-full animate-pulse" style={{ background: '#FF4D2E', boxShadow: '0 0 6px #FF4D2E' }} />
-            EN VIVO
+      {/* Header: pastilla EN VIVO idéntica a la de la fila + competición a la derecha */}
+      <div className="relative flex items-center justify-between gap-2 px-3.5 pt-3 pb-2">
+        <span className="inline-flex items-center gap-1 rounded-full flex-shrink-0"
+          style={{ padding: '2.5px 8px', background: 'rgba(255,77,46,0.2)', border: '1px solid rgba(255,77,46,0.5)', boxShadow: '0 0 10px rgba(255,77,46,0.2)' }}>
+          <span className="rounded-full" style={{ width: 5, height: 5, background: '#fff', boxShadow: '0 0 6px #fff', animation: 'live-pulse 1.6s ease-out infinite' }} />
+          <span className="text-[8.5px] font-black uppercase tracking-[0.05em] tabular-nums" style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}>
+            {liveLabel && liveLabel !== 'EN VIVO' ? `EN VIVO · ${liveLabel}` : 'EN VIVO'}
           </span>
+        </span>
+        <span className="flex items-center gap-1.5 min-w-0">
           {tennis && <span style={{ color: '#d97706' }}><TennisIcon size={10} /></span>}
-          <span className="text-[8.5px] font-bold uppercase tracking-wider truncate"
-            style={{ color: compColor, fontFamily: 'var(--font-sport)', maxWidth: 140 }}>
+          <span className="text-[8.5px] font-black uppercase tracking-wider truncate"
+            style={{ color: compColor, fontFamily: 'var(--font-sport)', maxWidth: 150 }}>
             {p.comp}
           </span>
-        </div>
-        <span className="text-[8.5px] font-black uppercase tabular-nums px-1.5 py-0.5 rounded flex-shrink-0"
-          style={{ color: '#FF4D2E', background: 'rgba(255,77,46,0.10)', fontFamily: 'var(--font-display)' }}>
-          {liveLabel}
         </span>
       </div>
 
-      {/* Body: Home — Score — Away */}
+      {/* Body: Home — Cápsula — Away */}
       <div className="relative flex items-center px-3.5 py-3 gap-2">
         {/* Home */}
         <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-          <TeamLogo logo={p.homeLogo} photo={p.homePhoto} name={p.homeTeam} size={36} sport={p.sport} />
+          <TeamLogo logo={p.homeLogo} photo={p.homePhoto} name={p.homeTeam} size={40} sport={p.sport} accent={compColor} abbr={p.homeAbbr} />
           <span className="text-[10px] font-black truncate w-full text-center" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {shortName(p.homeTeam, p.homeAbbr)}
           </span>
         </div>
 
-        {/* Score */}
-        <div className="flex flex-col items-center justify-center flex-shrink-0 px-1 gap-0.5">
+        {/* Marcador en cápsula esmerilada (blanca): el rojo queda para el estado */}
+        <div className="flex flex-col items-center justify-center flex-shrink-0 px-1 gap-1">
           {racing ? (
             <div className="flex flex-col items-center gap-1">
               <span className="text-[9px] font-black uppercase tracking-[0.15em] inline-flex items-center gap-1"
@@ -198,24 +204,25 @@ export function LiveHeroCard(p: HeroProps) {
                   Sets
                 </span>
               )}
-              <div className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center gap-2"
+                style={{ padding: '5px 13px', borderRadius: 12, background: 'rgba(0,0,0,0.34)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
                 <span className="font-black tabular-nums leading-none"
-                  style={{ fontSize: 28, color: '#FF4D2E', fontFamily: 'var(--font-display)', textShadow: '0 0 12px rgba(255,77,46,0.4)' }}>
+                  style={{ fontSize: 26, color: '#fff', fontFamily: 'var(--font-display)', textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
                   {p.homeScore ?? 0}
                 </span>
-                <span className="text-[16px] font-light leading-none" style={{ color: '#3A3A4A' }}>—</span>
+                <span className="text-[15px] font-light leading-none" style={{ color: '#55555F' }}>—</span>
                 <span className="font-black tabular-nums leading-none"
-                  style={{ fontSize: 28, color: '#FF4D2E', fontFamily: 'var(--font-display)', textShadow: '0 0 12px rgba(255,77,46,0.4)' }}>
+                  style={{ fontSize: 26, color: '#fff', fontFamily: 'var(--font-display)', textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
                   {p.awayScore ?? 0}
                 </span>
-              </div>
+              </span>
             </>
           )}
         </div>
 
         {/* Away */}
         <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-          <TeamLogo logo={p.awayLogo} photo={p.awayPhoto} name={p.awayTeam} size={36} sport={p.sport} />
+          <TeamLogo logo={p.awayLogo} photo={p.awayPhoto} name={p.awayTeam} size={40} sport={p.sport} accent={compColor} abbr={p.awayAbbr} />
           <span className="text-[10px] font-black truncate w-full text-center" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
             {shortName(p.awayTeam, p.awayAbbr)}
           </span>
@@ -224,12 +231,10 @@ export function LiveHeroCard(p: HeroProps) {
 
       {/* Footer */}
       <div className="relative flex items-center justify-between px-3.5 pb-3 pt-1 gap-2 border-t" style={{ borderColor: 'rgba(255,77,46,0.12)' }}>
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="text-[9px] font-semibold uppercase tracking-wider truncate" style={{ color: '#7A8A7E', fontFamily: 'var(--font-sport)' }}>
-            {p.matchRef ? 'Ver detalles →' : p.sport}
-          </span>
-          <BroadcastChip comp={p.comp ?? ''} sport={p.sport} tz={p.tz} fallback={p.broadcast} />
-        </div>
+        <span className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: p.matchRef ? '#C0C0D4' : '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+          {p.matchRef ? 'Ver ficha →' : p.sport}
+        </span>
+        <BroadcastChip comp={p.comp ?? ''} sport={p.sport} tz={p.tz} fallback={p.broadcast} />
         {/* Sin campana de recordatorio: el partido YA está en vivo (M22). */}
       </div>
     </div>
@@ -238,27 +243,6 @@ export function LiveHeroCard(p: HeroProps) {
   return p.matchRef
     ? <Link href={`/partido/${p.matchRef}`} className="block no-underline">{inner}</Link>
     : inner
-}
-
-// ─── Favorite heart (toggles team in localStorage favorites) ──────────────
-export function FavoriteHeart({ active, onClick, size = 16 }: {
-  active: boolean
-  onClick: () => void
-  size?: number
-}) {
-  return (
-    <button
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick() }}
-      className="flex items-center justify-center transition-all flex-shrink-0"
-      style={{ width: 34, height: 34, cursor: 'pointer', background: 'transparent', border: 'none' }}
-      aria-label={active ? 'Quitar de favoritos' : 'Añadir a favoritos'}
-    >
-      <svg width={size} height={size} viewBox="0 0 16 16" fill={active ? '#F472B6' : 'none'}>
-        <path d="M8 13.5s-5-3-5-7a3 3 0 015-2 3 3 0 015 2c0 4-5 7-5 7z"
-          stroke={active ? '#F472B6' : '#5A5A6A'} strokeWidth="1.4" strokeLinejoin="round" />
-      </svg>
-    </button>
-  )
 }
 
 // ─── Broadcast chip (where to watch) ──────────────────────────────────────
@@ -524,11 +508,11 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
         // VIDRIO TAKA teñido por deporte: velo translúcido + tinte del acento + canto de
         // luz specular arriba + sombra que la hace FLOTAR (separa las tarjetas). En vivo = rojo.
         background: isLive
-          ? 'linear-gradient(158deg, rgba(255,59,59,0.16) 0%, rgba(255,255,255,0.026) 46%, rgba(255,255,255,0.012) 100%)'
+          ? 'linear-gradient(158deg, rgba(255,77,46,0.16) 0%, rgba(255,255,255,0.026) 46%, rgba(255,255,255,0.012) 100%)'
           : `linear-gradient(158deg, color-mix(in srgb, ${accent} 15%, rgba(255,255,255,0.05)) 0%, rgba(255,255,255,0.028) 46%, rgba(255,255,255,0.015) 100%)`,
-        border: `1px solid ${isLive ? 'rgba(255,59,59,0.4)' : 'rgba(255,255,255,0.12)'}`,
-        borderTopColor: isLive ? 'rgba(255,59,59,0.5)' : 'rgba(255,255,255,0.28)',
-        borderLeft: `4px solid ${isLive ? '#FF3B3B' : accent}`,
+        border: `1px solid ${isLive ? 'rgba(255,77,46,0.4)' : 'rgba(255,255,255,0.12)'}`,
+        borderTopColor: isLive ? 'rgba(255,77,46,0.5)' : 'rgba(255,255,255,0.28)',
+        borderLeft: `4px solid ${isLive ? '#FF4D2E' : accent}`,
         boxShadow: '0 10px 24px -10px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -14px 22px -16px rgba(0,0,0,0.45)',
       }}
     >
@@ -536,7 +520,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
       <div
         aria-hidden
         className="pointer-events-none absolute"
-        style={{ top: -40, left: -10, width: 150, height: 110, background: `radial-gradient(60% 60% at 30% 40%, ${isLive ? 'rgba(255,59,59,0.3)' : `color-mix(in srgb, ${accent} 26%, transparent)`}, transparent 70%)`, filter: 'blur(6px)', opacity: 0.7 }}
+        style={{ top: -40, left: -10, width: 150, height: 110, background: `radial-gradient(60% 60% at 30% 40%, ${isLive ? 'rgba(255,77,46,0.3)' : `color-mix(in srgb, ${accent} 26%, transparent)`}, transparent 70%)`, filter: 'blur(6px)', opacity: 0.7 }}
       />
       {/* Brillo specular del borde superior */}
       <div aria-hidden className="pointer-events-none absolute" style={{ top: 0, left: 0, right: 0, height: '42%', background: 'linear-gradient(180deg, rgba(255,255,255,0.07), transparent)', borderRadius: '15px 15px 0 0' }} />
@@ -568,7 +552,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
               </span>
             ) : null}
             {isLive && !paused ? (
-              <span className="inline-flex items-center gap-1 rounded-full flex-shrink-0" style={{ padding: '2.5px 8px', background: 'rgba(255,59,59,0.2)', border: '1px solid rgba(255,59,59,0.5)', boxShadow: '0 0 10px rgba(255,59,59,0.2)' }}>
+              <span className="inline-flex items-center gap-1 rounded-full flex-shrink-0" style={{ padding: '2.5px 8px', background: 'rgba(255,77,46,0.2)', border: '1px solid rgba(255,77,46,0.5)', boxShadow: '0 0 10px rgba(255,77,46,0.2)' }}>
                 <span className="rounded-full" style={{ width: 5, height: 5, background: '#fff', boxShadow: '0 0 6px #fff', animation: 'live-pulse 1.6s ease-out infinite' }} />
                 <span className="text-[8.5px] font-black uppercase tracking-[0.05em] tabular-nums" style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}>
                   {liveLabel && liveLabel !== 'EN VIVO' ? `EN VIVO · ${liveLabel}` : 'EN VIVO'}
@@ -858,116 +842,3 @@ export function matchRowPropsEqual(a: MatchRowProps, b: MatchRowProps): boolean 
 }
 export const MatchRow = memo(MatchRowInner, matchRowPropsEqual)
 
-// ── Past result row (compact, for resultados tab) ─────────────────────────
-export function PastMatchRow({ event, isFav, onToggleFav }: {
-  event: SportEvent
-  isFav?: boolean
-  onToggleFav?: () => void
-}) {
-  // FASE 3: Resultados con el mismo color POR DEPORTE que la lista principal.
-  const compColor = accentForSport(event.sport, '#A78BFA')
-  const hs = event.homeScore
-  const as_ = event.awayScore
-  const hasScore = hs !== null && hs !== undefined && as_ !== null && as_ !== undefined
-
-  const hasVs = !!event.away
-  const racing = isRacing(event.sport)
-  const tennis = isTennis(event.sport)
-  const combat = isCombat(event.sport)
-  const inner = (
-    <div
-      className="relative grid items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2.5 sm:py-3 rounded-xl transition-all hover:brightness-105"
-      style={{
-        gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)',
-        background: 'rgba(255,255,255,0.025)',
-        border: '1px solid rgba(255,255,255,0.04)',
-        borderLeftWidth: 3,
-        borderLeftColor: compColor,
-      }}
-    >
-      <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
-        {onToggleFav && <FavoriteHeart active={!!isFav} onClick={onToggleFav} />}
-      </div>
-
-      {/* Home (or solo entity) */}
-      <div className="flex items-center gap-2 min-w-0 justify-end text-right pr-1">
-        <div className="min-w-0 flex flex-col items-end">
-          <span className="text-[12px] sm:text-[13px] font-bold truncate max-w-full leading-snug" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-            {event.home}
-          </span>
-        </div>
-        <TeamLogo logo={event.homeLogo} name={event.home} size={28} sport={event.sport} />
-      </div>
-
-      <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 min-w-[80px] sm:min-w-[88px] px-2">
-        <span className="text-[8.5px] font-black uppercase tracking-[0.18em] leading-none" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
-          FT
-        </span>
-        {hasScore ? (
-          <span className="flex items-center gap-2 leading-none tabular-nums font-black"
-            style={{ fontSize: 20, color: '#C0C0D8', fontFamily: 'var(--font-sport)' }}>
-            <span>{hs}</span>
-            <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
-            <span>{as_}</span>
-          </span>
-        ) : event.resultNote ? null : (
-          <span className="text-[14px] font-bold" style={{ color: '#7C7C8C' }}>–</span>
-        )}
-        {/* Fase/grupo (Mundial: "Grupo A", "Octavos"…) */}
-        {event.stage && (
-          <span className="text-[8px] font-bold uppercase tracking-[0.14em] leading-none truncate max-w-[88px]"
-            style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
-            {event.stage}
-          </span>
-        )}
-      </div>
-
-      {hasVs ? (
-        <div className="flex items-center gap-2 min-w-0 pl-1 pr-9 sm:pr-1">
-          <TeamLogo logo={event.awayLogo} name={event.away!} size={28} sport={event.sport} />
-          <span className="text-[12px] sm:text-[13px] font-bold truncate leading-snug" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-            {event.away}
-          </span>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 min-w-0 pl-1 pr-9 sm:pr-1 opacity-60">
-          <span className="inline-flex items-center justify-center rounded-full flex-shrink-0"
-            style={{ width: 28, height: 28, background: `${compColor}14`, border: `1px solid ${compColor}28`, color: compColor }}>
-            {racing ? <F1Icon size={14} /> : tennis ? <TennisIcon size={14} /> : <SportIcon sport={event.sport} size={14} />}
-          </span>
-          <div className="min-w-0">
-            {event.resultNote ? (
-              <>
-                <span className="text-[8.5px] font-black uppercase tracking-[0.14em] block"
-                  style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-                  Ganador
-                </span>
-                <span className="text-[12px] font-bold truncate block leading-snug"
-                  style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-                  🏆 {event.resultNote}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="text-[10px] font-bold uppercase tracking-[0.12em] truncate block"
-                  style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-                  {racing ? 'Carrera' : tennis ? 'Individual' : combat ? 'Cartelera' : 'Evento'}
-                </span>
-                {event.comp && (
-                  <span className="text-[9px] truncate block mt-0.5"
-                    style={{ color: compColor, fontFamily: 'var(--font-sport)' }}>
-                    {event.comp}
-                  </span>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-
-  if (event.matchRef)
-    return <Link href={`/partido/${event.matchRef}`} className="block no-underline">{inner}</Link>
-  return inner
-}

@@ -107,7 +107,7 @@ export default function BottomNav() {
                           width: 8,
                           height: 8,
                           borderRadius: '50%',
-                          background: '#FF3B3B',
+                          background: '#FF4D2E',
                           border: '1.5px solid rgba(16,16,22,0.9)',
                         }}
                       />
