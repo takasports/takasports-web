@@ -6,7 +6,9 @@ import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 // puede precocinarse (ISR): el middleware le aplica FAST_CACHE y `revalidate=300`
 // regenera el árbol de datos en segundo plano cada 5 min. La metadata por defecto
 // (title/canonical/OG de /estadisticas) la aporta layout.tsx.
-export const revalidate = 300
+// INCIDENTE 2026-07-19: ver [sport]/page.tsx — SSG dejaba la vista interactiva sin
+// hidratar para siempre en producción. Dinámico hasta arreglar la toolchain.
+export const dynamic = 'force-dynamic'
 
 export default async function EstadisticasPage() {
   return (

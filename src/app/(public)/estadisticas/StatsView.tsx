@@ -1,4 +1,3 @@
-import dynamicImport from 'next/dynamic'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { getStandingsData, shardStandingsForSport, type StatsStandingsResponse } from '@/app/api/stats/standings/route'
@@ -174,9 +173,9 @@ async function fetchPlayersForDirectory(): Promise<PlayersResponse | null> {
   }
 }
 
-const EstadisticasClient = dynamicImport(() => import('./EstadisticasClient'), {
-  loading: () => <EstadisticasLoading />,
-})
+// Gate cliente con import estático — el next/dynamic anterior + Next 16 dejaba la
+// página SSG clavada en el fallback para siempre (ver EstadisticasClientGate).
+import EstadisticasClientGate from './EstadisticasClientGate'
 
 // Vista compartida por /estadisticas (portada, sport='') y /estadisticas/[sport].
 // `sport` = slug de la URL ('' = portada con "Destacados").
@@ -203,13 +202,12 @@ export async function EstadisticasView({ sport }: { sport: string }) {
   const clientSport = sport ? (SLUG_TO_CLIENT_ID[sport] ?? sport) : undefined
   return (
     <>
-      {/* useSearchParams (sección/género) obliga a un límite Suspense para que la
-          página pueda generarse estáticamente; el contenido interactivo se pinta
-          en cliente tras hidratar (con initialData ya servido). El SEO lo cubren
-          los directorios server-rendered de abajo. */}
-      <Suspense fallback={<EstadisticasLoading />}>
-        <EstadisticasClient initialData={initialData} initialSport={clientSport} />
-      </Suspense>
+      {/* SIN Suspense aquí a propósito (incidente 2026-07-19): un boundary suspendido
+          durante el prerender SSG no se reanudaba nunca al hidratar con Next 16 y la
+          página quedaba clavada en el esqueleto. El gate cliente pinta el esqueleto en
+          prerender (sin ejecutar useSearchParams) y crea su PROPIO Suspense ya en
+          cliente. El SEO lo cubren los directorios server-rendered de abajo. */}
+      <EstadisticasClientGate initialData={initialData} initialSport={clientSport} />
       <ClasificacionesHub data={full} />
       <PlayersDirectory data={playersData} />
     </>
