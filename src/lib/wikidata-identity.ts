@@ -53,9 +53,18 @@ export const WIKIDATA_COUNTRY_QID: Record<string, string[]> = {
   Gambia: ['Q1005'], Mali: ['Q912'], Gabon: ['Q1000'],
 }
 
-// P31 ("instancia de") de una entidad-club de fútbol: "club deportivo" o "club de fútbol".
-// Filtra el nombre del club (colisiona con barrios/ríos/distritos) al resolver su QID.
-export const FOOTBALL_CLUB_P31 = new Set(['Q476028', 'Q847017'])
+// P31 ("instancia de") de una entidad-club de fútbol. Filtra el nombre del club (colisiona
+// con barrios/ríos/distritos) al resolver su QID para el rescate. Wikidata tipa los clubes de
+// varias formas y hay que cubrirlas TODAS: el FC Barcelona NO es Q476028 sino Q103229495
+// ("men's association football team") + Q20639856 ("professional sports team"), así que con un
+// set estrecho Pedri/Raphinha se quedaban sin rescate. Ser permisivo aquí es seguro: el rescate
+// exige después P54=<esa QID>, de modo que un tipo de más solo puede no encontrar a nadie.
+export const FOOTBALL_CLUB_P31 = new Set([
+  'Q476028',      // association football club
+  'Q847017',      // sports club
+  'Q103229495',   // men's association football team
+  'Q20639856',    // professional sports team
+])
 
 /** Los valores de tipo entidad llegan como { 'entity-type': 'item', id: 'Q…' }. */
 export function claimEntityIds(claims: WikiClaims | null, property: string): string[] {

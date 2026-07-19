@@ -118,14 +118,18 @@ describe('selectCorroboratedCandidate', () => {
 })
 
 describe('rescueCandidateByClub', () => {
-  // Fetch simulado: enruta por la forma de la URL a respuestas canónicas.
+  // Fetch simulado: enruta por la forma de la URL a respuestas canónicas. Los dos wbgetentities
+  // (club y jugadores) se distinguen por si la URL lleva algún id de la búsqueda de club.
   function fakeFetch(routes: Record<string, unknown>) {
+    const clubIds = (((routes.clubSearch as { search?: Array<{ id?: string }> })?.search) ?? [])
+      .map(s => s.id)
+      .filter((id): id is string => Boolean(id))
     return async <T,>(url: string): Promise<T> => {
       if (url.includes('wbsearchentities')) return routes.clubSearch as T
       if (url.includes('list=search')) return routes.playerSearch as T
       if (url.includes('wbgetentities')) {
-        // Dos wbgetentities: el del club (tras clubSearch) y el de jugadores (tras playerSearch).
-        return (url.includes('Q17479') || url.includes('Q995561') ? routes.clubEntities : routes.playerEntities) as T
+        const isClub = clubIds.some(id => url.includes(id))
+        return (isClub ? routes.clubEntities : routes.playerEntities) as T
       }
       throw new Error(`unexpected url ${url}`)
     }
@@ -154,6 +158,24 @@ describe('rescueCandidateByClub', () => {
       fetchJson,
     )
     expect(chosen?.qid).toBe('Q47491410')
+  })
+
+  it('reconoce un club tipado como "men\'s association football team" (Q103229495, estilo FC Barcelona)', async () => {
+    const fetchJson = fakeFetch({
+      clubSearch: { search: [{ id: 'Q1492' }, { id: 'Q7156' }] },   // ciudad primero, club después
+      clubEntities: {
+        entities: {
+          Q1492: { claims: claims({ p31: ['Q515'] }) },              // ciudad → descartada
+          Q7156: { claims: claims({ p31: ['Q103229495', 'Q20639856'] }) }, // Barça: SIN Q476028 → antes fallaba
+        },
+      },
+      playerSearch: { query: { search: [{ title: 'Q66606355' }] } },
+      playerEntities: {
+        entities: { Q66606355: { claims: claims({ occupation: FOOTBALLER, photo: 'pedri.jpg' }) } },
+      },
+    })
+    const chosen = await rescueCandidateByClub({ name: 'Pedri', club: 'Barcelona' }, FOOTBALLER, fetchJson)
+    expect(chosen?.qid).toBe('Q66606355')
   })
 
   it('sin club no hay ancla → null', async () => {
