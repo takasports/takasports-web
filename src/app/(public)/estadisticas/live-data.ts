@@ -1,7 +1,18 @@
 // Fontanería de datos EN VIVO de /estadisticas: ids de bloques live, metadatos de
 // frescura por fuente y merge de líderes por jugador. Extraído del monolito.
 
+import { getZone } from '@/lib/league-zones'
 import type { StatBlock, StatRow } from './stats-types'
+
+/**
+ * Ratio por partido para métricas de TOTAL ("1,16 /PJ"). Información nueva de datos que
+ * ya viajan (valor ÷ PJ), pedida por el dueño en lugar de una barra decorativa. Coma
+ * decimal (es). No aplica a métricas que ya son por-partido (PPG de NBA) ni sin PJ.
+ */
+function perMatchLabel(value: number, matches: number | undefined): string | undefined {
+  if (!matches || matches <= 0 || !Number.isFinite(value)) return undefined
+  return `${(value / matches).toFixed(2).replace('.', ',')} /PJ`
+}
 
 export const LIVE_BLOCK_IDS = new Set([
   'tabla-laliga', 'tabla-premier', 'tabla-serie-a', 'tabla-bundesliga', 'tabla-ligue1', 'tabla-ucl', 'tabla-uel',
@@ -204,7 +215,8 @@ export function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: src.map((g, i) => ({
       rank: i + 1, name: g.name, team: '',
       value: g.value.toString(), trend: 'flat' as const,
-      logo: g.photo ?? g.teamLogo, href: playerHref(g),
+      photo: g.photo, logo: g.teamLogo, kind: 'player' as const,
+      perMatch: perMatchLabel(g.value, g.matches), href: playerHref(g),
     }))}}
   }
 
@@ -214,7 +226,8 @@ export function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: lg.goals.slice(0, 10).map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
-      logo: g.photo ?? g.teamLogo, href: playerHref(g),
+      photo: g.photo, logo: g.teamLogo, kind: 'player' as const,
+      perMatch: perMatchLabel(g.value, g.matches), href: playerHref(g),
     }))}}
   }
 
@@ -229,7 +242,8 @@ export function applyLivePlayerToBlock(
       value: (g.value * 2).toString(),
       sub: `${g.value} goles`,
       trend: 'flat' as const,
-      logo: g.photo ?? g.teamLogo, href: playerHref(g),
+      photo: g.photo, logo: g.teamLogo, kind: 'player' as const,
+      href: playerHref(g),
     }))}}
   }
 
@@ -242,7 +256,8 @@ export function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: source.map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
-      logo: g.photo ?? g.teamLogo, href: playerHref(g),
+      photo: g.photo, logo: g.teamLogo, kind: 'player' as const,
+      perMatch: perMatchLabel(g.value, g.matches), href: playerHref(g),
     }))}}
   }
 
@@ -255,7 +270,8 @@ export function applyLivePlayerToBlock(
     return { isLive: true, block: { ...block, rows: source.map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
       value: g.value.toString(), sub: `${g.matches} PJ`, trend: 'flat' as const,
-      logo: g.photo ?? g.teamLogo, href: playerHref(g),
+      photo: g.photo, logo: g.teamLogo, kind: 'player' as const,
+      perMatch: perMatchLabel(g.value, g.matches), href: playerHref(g),
     }))}}
   }
 
@@ -273,5 +289,7 @@ export function toStatRows(rows: LiveStandingRow[], teamKey?: string, leagueSlug
       ? `/equipo/${leagueSlug.replaceAll('/', '_')}_${r.teamId}`
       : undefined,
     logo: r.logo,
+    kind: 'club' as const,
+    zone: leagueSlug ? getZone(leagueSlug, r.rank) : undefined,
   }))
 }

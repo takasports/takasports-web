@@ -1,5 +1,7 @@
 // Tipos compartidos del árbol de /estadisticas (extraídos del monolito EstadisticasClient).
 
+import type { StandingZone } from '@/lib/league-zones'
+
 // ─────────────────────────────────────────────────────────────────
 // TIPOS
 // ─────────────────────────────────────────────────────────────────
@@ -14,8 +16,16 @@ export interface StatRow {
   extra?: Record<string, string>
   /** Deep-link target (player or club detail page). */
   href?: string
-  /** Club crest URL — shown on club table rows and as the avatar on player rows. */
+  /** Escudo del club. En filas 'player' va de insignia junto a la cara; en 'club', plano. */
   logo?: string
+  /** Cara del jugador (cascada Wikimedia/ESPN). Manda sobre el escudo en filas 'player'. */
+  photo?: string
+  /** Ratio por partido precomputado ("0,77 /PJ"). Solo en métricas de TOTAL con PJ conocidos. */
+  perMatch?: string
+  /** Zona de clasificación (UCL/UEL/descenso) en tablas de liga conocida. */
+  zone?: StandingZone
+  /** Discrimina el tratamiento visual del avatar. Sin valor = render legado (NBA/estáticos). */
+  kind?: 'player' | 'club'
 }
 
 export interface StatBlock {
