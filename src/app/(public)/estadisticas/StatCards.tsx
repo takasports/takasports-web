@@ -11,6 +11,39 @@ import { trackStatsBlockOpen, trackStatsGroupOpen } from '@/lib/analytics'
 import type { MetricGroup, StatBlock, StatRow } from './stats-types'
 import { TeamLeagueContext } from './sports-config'
 import { LIVE_PLAYER_BLOCK_IDS, applyLivePlayerToBlock, getBlockMeta, type BlockMeta, type LivePlayerData } from './live-data'
+import type { StandingZone } from '@/lib/league-zones'
+
+// Zona de clasificación en tablas de liga — paleta canónica del sitio (espejo EXACTO
+// del ZONE_COLOR de la ficha de equipo, StandingsTab.tsx).
+const ZONE_DOT: Record<StandingZone, string> = {
+  champions:          '#3b82f6',
+  europa:             '#f97316',
+  conference:         '#10b981',
+  promotion:          '#22c55e',
+  promotion_playoff:  '#3b82f6',
+  playoffs:           '#3b82f6',
+  relegation_playoff: '#f59e0b',
+  relegation:         '#ef4444',
+}
+const ZONE_LABEL: Record<StandingZone, string> = {
+  champions:          'Zona Champions',
+  europa:             'Zona Europa League',
+  conference:         'Zona Conference',
+  promotion:          'Zona de ascenso',
+  promotion_playoff:  'Playoff de ascenso',
+  playoffs:           'Zona de playoffs',
+  relegation_playoff: 'Playoff de descenso',
+  relegation:         'Zona de descenso',
+}
+
+/** Iniciales (máx. 2) para el avatar cuando no hay ni cara ni escudo. */
+function rowInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return '—'
+  return parts.length === 1
+    ? parts[0].slice(0, 2).toUpperCase()
+    : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
 
 export function TrendArrow({ trend }: { trend?: 'up' | 'down' | 'flat' }) {
   if (!trend || trend === 'flat') return <span className="inline-block w-4" aria-hidden />
@@ -306,13 +339,65 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
               borderLeft: row.rank <= 3 ? `3px solid ${accent}50` : '3px solid transparent',
             }}
           >
+            {row.kind === 'club' && (
+              <span
+                className="flex-shrink-0 rounded-full"
+                style={{ width: 6, height: 6, background: row.zone ? ZONE_DOT[row.zone] : 'transparent' }}
+                title={row.zone ? ZONE_LABEL[row.zone] : undefined}
+                aria-label={row.zone ? ZONE_LABEL[row.zone] : undefined}
+              />
+            )}
             <div className="w-8 flex-shrink-0 flex items-center"><MedalBadge rank={row.rank} /></div>
-            {row.logo && (
+            {row.kind === 'player' ? (
+              // Avatar de jugador: cara en círculo + escudo de insignia; sin cara, el
+              // escudo ocupa el círculo; sin nada, iniciales. Consistencia SofaScore.
+              <div className="relative flex-shrink-0" style={{ width: 32, height: 32 }}>
+                <div
+                  className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center"
+                  style={{ background: '#16161F', border: '1px solid rgba(255,255,255,0.14)' }}
+                >
+                  {row.photo ? (
+                    <Image src={row.photo} alt={row.name} width={32} height={32} unoptimized
+                      style={{ objectFit: 'cover', width: 32, height: 32 }} />
+                  ) : row.logo ? (
+                    <Image src={row.logo} alt={row.name} width={22} height={22} unoptimized
+                      style={{ objectFit: 'contain', width: 22, height: 22 }} />
+                  ) : (
+                    <span className="text-[11px] font-black" style={{ color: '#7C7C8C' }}>{rowInitials(row.name)}</span>
+                  )}
+                </div>
+                {row.photo && row.logo && (
+                  <span
+                    className="absolute flex items-center justify-center rounded-full"
+                    style={{ bottom: -2, right: -3, width: 16, height: 16, background: '#0B0B12', border: '1px solid rgba(255,255,255,0.12)' }}
+                  >
+                    <Image src={row.logo} alt="" width={12} height={12} unoptimized
+                      style={{ objectFit: 'contain', width: 12, height: 12 }} />
+                  </span>
+                )}
+              </div>
+            ) : row.kind === 'club' ? (
+              // Fila de club: escudo SIEMPRE (iniciales como último recurso).
+              row.logo ? (
+                <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
+                  <Image src={row.logo} alt={row.name} width={24} height={24} unoptimized
+                    style={{ objectFit: 'contain', width: 24, height: 24 }} />
+                </div>
+              ) : (
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: '#16161F', border: '1px solid rgba(255,255,255,0.12)' }}
+                >
+                  <span className="text-[10px] font-black" style={{ color: '#7C7C8C' }}>{rowInitials(row.name)}</span>
+                </div>
+              )
+            ) : row.logo ? (
+              // Render legado (NBA/estáticos, sin `kind`): intacto para no tocar rutas no migradas.
               <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
                 <Image src={row.logo} alt={row.name} width={26} height={26} unoptimized
                   style={{ objectFit: 'contain', width: 26, height: 26 }} />
               </div>
-            )}
+            ) : null}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 {row.flag && <span className="text-xs leading-none flex-shrink-0">{row.flag}</span>}
@@ -340,10 +425,17 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
                 {row.extra?.[k] ?? '—'}
               </span>
             ))}
-            <span className="w-14 text-right font-black tabular-nums"
-              style={{ color: row.rank <= 3 ? accent : '#8080A0', fontFamily: 'var(--font-display)', fontSize: row.rank === 1 ? 16 : 14 }}>
-              {row.value}
-            </span>
+            <div className="w-14 text-right flex-shrink-0">
+              <div className="font-black tabular-nums"
+                style={{ color: row.rank <= 3 ? accent : '#8080A0', fontFamily: 'var(--font-display)', fontSize: row.rank === 1 ? 16 : 14 }}>
+                {row.value}
+              </div>
+              {row.perMatch && (
+                <div className="text-[10px] tabular-nums" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
+                  {row.perMatch}
+                </div>
+              )}
+            </div>
             <div className="w-5 flex-shrink-0 flex items-center justify-end">
               <TrendArrow trend={row.trend} />
             </div>
