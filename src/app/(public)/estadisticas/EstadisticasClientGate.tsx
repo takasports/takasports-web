@@ -2,17 +2,15 @@
 
 // Puerta de montaje en cliente para EstadisticasClient.
 //
-// POR QUÉ EXISTE (incidente 2026-07-19): con Next 16, el patrón anterior
-// (next/dynamic en el Server Component StatsView + useSearchParams dentro del
-// cliente) dejaba la página SSG clavada PARA SIEMPRE en el fallback de Suspense:
-// el boundary suspendido durante el prerender no se reanudaba nunca al hidratar.
-// En dev funcionaba (sin prerender), por eso el bug pasó invisible: TODO build de
-// producción (Vercel incluido) servía el esqueleto eterno en /estadisticas.
-//
-// El arreglo: importar el cliente ESTÁTICAMENTE desde un client component y
-// montarlo tras un gate de useEffect. El HTML sigue llevando el esqueleto (igual
-// que antes: el SEO lo cubren los directorios server-rendered de StatsView) y el
-// contenido interactivo aparece al hidratar, que era el contrato original.
+// HISTORIA (2026-07-19): se creó durante la caza de un "esqueleto eterno en /estadisticas"
+// que se creía un bug de SSG de Next 16, pero era el SERVICE WORKER sirviendo HTML fósil a
+// los navegadores de prueba (ver memoria verificacion-navegador-sw). Con Chromium prístino
+// (serviceWorkers:block) la página montaba bien también con el patrón anterior (next/dynamic).
+// Aun así el gate SE QUEDA: es un patrón limpio y sin riesgo — al diferir el montaje (y con él
+// el useSearchParams de EstadisticasClient) a después de la hidratación, el prerender solo
+// emite el esqueleto y NINGÚN boundary de Suspense queda suspendido en el HTML, evitando de
+// raíz el footgun conocido useSearchParams+Suspense-en-prerender. El SEO lo cubren los
+// directorios server-rendered de StatsView.
 import { Suspense, useEffect, useState } from 'react'
 import EstadisticasClient from './EstadisticasClient'
 import EstadisticasLoading from './loading'

@@ -173,8 +173,8 @@ async function fetchPlayersForDirectory(): Promise<PlayersResponse | null> {
   }
 }
 
-// Gate cliente con import estático — el next/dynamic anterior + Next 16 dejaba la
-// página SSG clavada en el fallback para siempre (ver EstadisticasClientGate).
+// Gate cliente con import estático (patrón limpio; ver EstadisticasClientGate para
+// la historia del falso "bug de SSG" que en realidad era el service worker).
 import EstadisticasClientGate from './EstadisticasClientGate'
 
 // Vista compartida por /estadisticas (portada, sport='') y /estadisticas/[sport].
@@ -202,11 +202,9 @@ export async function EstadisticasView({ sport }: { sport: string }) {
   const clientSport = sport ? (SLUG_TO_CLIENT_ID[sport] ?? sport) : undefined
   return (
     <>
-      {/* SIN Suspense aquí a propósito (incidente 2026-07-19): un boundary suspendido
-          durante el prerender SSG no se reanudaba nunca al hidratar con Next 16 y la
-          página quedaba clavada en el esqueleto. El gate cliente pinta el esqueleto en
-          prerender (sin ejecutar useSearchParams) y crea su PROPIO Suspense ya en
-          cliente. El SEO lo cubren los directorios server-rendered de abajo. */}
+      {/* Sin <Suspense> aquí: el gate cliente ya crea el suyo tras hidratar, y así el
+          prerender no ejecuta el useSearchParams del cliente ni deja un boundary
+          suspendido en el HTML. El SEO lo cubren los directorios de abajo. */}
       <EstadisticasClientGate initialData={initialData} initialSport={clientSport} />
       <ClasificacionesHub data={full} />
       <PlayersDirectory data={playersData} />

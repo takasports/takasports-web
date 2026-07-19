@@ -8,13 +8,13 @@ import { EstadisticasView, SPORT_META } from '../StatsView'
 // lista da 404 REAL (Next 16 no propaga el 404 desde notFound() en ISR, así que
 // esto es lo que evita el soft-404). `revalidate = 300` regenera los datos en
 // segundo plano cada 5 min; hereda FAST_CACHE del middleware.
-// INCIDENTE 2026-07-19: con SSG (revalidate estático), Next 16.2.6/Turbopack omitía
-// del flight los client components de la PAGE → el layout hidrataba pero la vista
-// interactiva quedaba en esqueleto PARA SIEMPRE en producción (dev no lo sufría; el
-// SEO server-rendered disimulaba el hueco). Forzamos render dinámico — igual que
-// /equipo, que siempre funcionó — hasta poder volver a ISR con la toolchain arreglada.
-// El coste de CDN lo amortigua el fetch-cache interno (revalidate en getStandingsData).
-export const dynamic = 'force-dynamic'
+//
+// SSG/ISR (no force-dynamic): el 2026-07-19 se puso force-dynamic creyendo que SSG
+// dejaba la vista sin hidratar en prod, pero ese "bug" era el service worker
+// sirviendo HTML fósil a los navegadores de prueba (ver memoria verificacion-navegador-sw).
+// Verificado con Chromium prístino (serviceWorkers:block): SSG + EstadisticasClientGate
+// monta perfecto. Revertido a ISR para recuperar el caché de CDN de esta página insignia.
+export const revalidate = 300
 export const dynamicParams = false
 
 export function generateStaticParams() {
