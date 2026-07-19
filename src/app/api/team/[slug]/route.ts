@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getZone, zoneFromNote } from '@/lib/league-zones'
 import type { StandingZone } from '@/lib/league-zones'
 import { getPhotosByEspnId, upsertSportEntities, type SeedEntity } from '@/lib/sport-entities'
+import { FOOTBALL_LEAGUE_SLUGS } from '@/lib/football-leagues'
 export type { StandingZone }
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -319,9 +320,16 @@ async function enrichAndSeedRoster(
       if (hit.attribution) player.photoAttribution = hit.attribution
     }
 
-    // Siembra idempotente (upsert por slug). Guardo leagueSlug + club para que el pipeline
-    // de snapshots también cubra a estos jugadores; nacionalidad + fecha de nacimiento son las
-    // señales con las que el cron corroborará la foto contra homónimos (ver entity-images.ts).
+    // Siembra idempotente (upsert por slug), SOLO de competiciones que el sitio cubre. Antes
+    // se sembraba la plantilla de cualquier equipo que alguien abriera, y la cola del cron
+    // acabó con 38.000 pendientes de ligas que no mostramos (6.000 jugadoras de la NCAA
+    // femenina, quinta división inglesa, amistosos de club…) creciendo más rápido de lo que
+    // se drena. Las fotos YA resueltas se siguen leyendo arriba para todos los equipos: esto
+    // solo evita meter en la cola a quien nunca vamos a enseñar.
+    // Guardo leagueSlug + club para que el pipeline de snapshots también cubra a estos
+    // jugadores; nacionalidad + fecha de nacimiento son las señales con las que el cron
+    // corroborará la foto contra homónimos (ver entity-images.ts).
+    if (!FOOTBALL_LEAGUE_SLUGS.has(leagueSlug)) return
     const seeds: SeedEntity[] = roster
       .filter(p => p.id)
       .map(p => ({

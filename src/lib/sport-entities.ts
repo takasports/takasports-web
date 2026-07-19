@@ -6,6 +6,7 @@
 // para que volver a sembrar sea idempotente sin necesitar constraints extra.
 
 import { adminSupabase } from '@/lib/supabase-admin'
+import { FOOTBALL_LEAGUE_SLUGS } from '@/lib/football-leagues'
 import type { EntityType, ResolvableEntity } from '@/lib/entity-images'
 
 export interface SeedEntity {
@@ -128,6 +129,44 @@ export async function getPhotosByEspnId(
   return photos
 }
 
+const PENDING_SELECT =
+  'id, type, sport, name, espn_id, apisports_id, wikidata_id, meta, sport_entity_images!left(kind)'
+
+function toResolvable(row: Record<string, unknown>): ResolvableEntity {
+  const meta = (row.meta as Record<string, unknown> | null) ?? {}
+  const metaStr = (k: string) => (typeof meta[k] === 'string' ? (meta[k] as string) : null)
+  return {
+    id: row.id as string,
+    type: row.type as EntityType,
+    sport: row.sport as string,
+    name: row.name as string,
+    espnId: (row.espn_id as string | null) ?? null,
+    apisportsId: (row.apisports_id as number | null) ?? null,
+    wikidataId: (row.wikidata_id as string | null) ?? null,
+    // Señales de identidad para corroborar el match de foto (ver entity-images.ts).
+    club: metaStr('club'),
+    nationality: metaStr('nationality'),
+    birthDate: metaStr('birthDate'),
+  }
+}
+
+/** Un lote de pendientes; `onlyCovered` lo restringe a competiciones que el sitio cubre. */
+async function queryPendingEntities(
+  db: NonNullable<ReturnType<typeof adminSupabase>>,
+  type: EntityType,
+  limit: number,
+  onlyCovered: boolean,
+): Promise<ResolvableEntity[]> {
+  let query = db
+    .from('sport_entities')
+    .select(PENDING_SELECT)
+    .eq('type', type)
+    .is('sport_entity_images', null)
+  if (onlyCovered) query = query.in('meta->>leagueSlug', [...FOOTBALL_LEAGUE_SLUGS])
+  const { data, error } = await query.limit(limit)
+  return error || !data ? [] : data.map(toResolvable)
+}
+
 /**
  * Entidades a las que aún no se les ha resuelto imagen, en lotes.
  *
@@ -135,6 +174,13 @@ export async function getPhotosByEspnId(
  * tipo de entidad (headshot para jugadores, logo para equipos), así que equivale a "le
  * falta la suya". Si algún día resolvemos varios kinds por entidad, hay que filtrar por
  * kind. Los 'missing' cuentan como resueltos: ya tienen fila, así que no se reintentan.
+ *
+ * PRIORIZADO: primero las competiciones que el sitio cubre. La consulta no tenía orden, así
+ * que los 12 huecos de cada pasada iban a filas arbitrarias — y con el 75% de la cola en
+ * ligas que no mostramos (6.000 jugadoras de la NCAA femenina, quinta división inglesa…),
+ * un titular del Madrid podía esperar detrás de decenas de miles que nadie mira. Cuando ya
+ * no quedan pendientes de nuestras competiciones, la segunda pasada va a por el resto, así
+ * que nada se queda sin procesar para siempre.
  */
 export async function listEntitiesNeedingImage(
   type: EntityType,
@@ -142,31 +188,16 @@ export async function listEntitiesNeedingImage(
 ): Promise<ResolvableEntity[]> {
   const db = adminSupabase()
   if (!db) return []
-  const { data, error } = await db
-    .from('sport_entities')
-    .select('id, type, sport, name, espn_id, apisports_id, wikidata_id, meta, sport_entity_images!left(kind)')
-    .eq('type', type)
-    .is('sport_entity_images', null)
-    .limit(limit)
-  if (error || !data) return []
 
-  return data.map(row => {
-    const meta = (row.meta as Record<string, unknown> | null) ?? {}
-    const metaStr = (k: string) => (typeof meta[k] === 'string' ? (meta[k] as string) : null)
-    return {
-      id: row.id as string,
-      type: row.type as EntityType,
-      sport: row.sport as string,
-      name: row.name as string,
-      espnId: (row.espn_id as string | null) ?? null,
-      apisportsId: (row.apisports_id as number | null) ?? null,
-      wikidataId: (row.wikidata_id as string | null) ?? null,
-      // Señales de identidad para corroborar el match de foto (ver entity-images.ts).
-      club: metaStr('club'),
-      nationality: metaStr('nationality'),
-      birthDate: metaStr('birthDate'),
-    }
-  })
+  const covered = await queryPendingEntities(db, type, limit, true)
+  const missing = limit - covered.length
+  if (missing <= 0) return covered
+
+  // Sin filtro de liga: recoge también a quien no tiene leagueSlug en meta (si filtrase por
+  // "no cubierta", los NULL se caerían de ambas pasadas y no se resolverían nunca).
+  const rest = await queryPendingEntities(db, type, limit, false)
+  const seen = new Set(covered.map(e => e.id))
+  return [...covered, ...rest.filter(e => !seen.has(e.id)).slice(0, missing)]
 }
 
 export interface SnapshotEntity {

@@ -78,6 +78,15 @@ export const FOOTBALL_LEAGUES: FootballLeague[] = [
 /** Subconjunto que entra en el feed en vivo. */
 export const LIVE_FOOTBALL = FOOTBALL_LEAGUES.filter((l) => l.live)
 
+/** Slugs que el sitio CUBRE, para preguntar en O(1) "¿esta competición es nuestra?".
+ *  Lo usa la caché de fotos: solo se siembran (y se priorizan) plantillas de estas
+ *  competiciones. Sin ese filtro, visitar un equipo cualquiera metía su plantilla entera
+ *  en la cola del cron — así llegaron 6.000 jugadoras de la NCAA femenina y 38.000 más de
+ *  ligas que no mostramos, que dejaban a los cracks esperando detrás para siempre. */
+export const FOOTBALL_LEAGUE_SLUGS: ReadonlySet<string> = new Set(
+  FOOTBALL_LEAGUES.map((l) => l.slug),
+)
+
 /** Ligas regulares (round-robin) con clasificación disponible en ESPN. Las
  *  copas y torneos de selecciones se excluyen (no tienen tabla simple). Se usa
  *  en el detalle de partido (/partido) para mostrar la tabla de la liga. */
