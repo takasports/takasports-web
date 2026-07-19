@@ -17,8 +17,12 @@ export interface SeedEntity {
   wikidataId?: string | null
   /** "soccer/esp.1" — necesario para pedir las stats por jugador a ESPN Core. Se guarda en meta. */
   leagueSlug?: string | null
-  /** Club actual (para detectar traspasos entre snapshots). Se guarda en meta. */
+  /** Club actual (detecta traspasos entre snapshots Y ancla el rescate de foto). Se guarda en meta. */
   club?: string | null
+  /** País en INGLÉS (ESPN) — corrobora el match de foto contra homónimos. Se guarda en meta. */
+  nationality?: string | null
+  /** Fecha de nacimiento ISO "YYYY-MM-DD" (ESPN) — señal dura anti-homónimo. Se guarda en meta. */
+  birthDate?: string | null
 }
 
 /**
@@ -45,6 +49,7 @@ export async function upsertSportEntities(entities: SeedEntity[]): Promise<numbe
   const db = adminSupabase()
   if (!db) return 0
 
+  const metaBySlug = new Map<string, Record<string, string>>()
   const bySlug = new Map<string, Record<string, unknown>>()
   for (const entity of entities) {
     const slug = entitySlug(entity)
@@ -52,6 +57,9 @@ export async function upsertSportEntities(entities: SeedEntity[]): Promise<numbe
     const meta: Record<string, string> = {}
     if (entity.leagueSlug) meta.leagueSlug = entity.leagueSlug
     if (entity.club) meta.club = entity.club
+    if (entity.nationality) meta.nationality = entity.nationality
+    if (entity.birthDate) meta.birthDate = entity.birthDate
+    metaBySlug.set(slug, meta)
     bySlug.set(slug, {
       type: entity.type,
       sport: entity.sport,
@@ -64,8 +72,20 @@ export async function upsertSportEntities(entities: SeedEntity[]): Promise<numbe
       updated_at: new Date().toISOString(),
     })
   }
-  const rows = [...bySlug.values()]
-  if (!rows.length) return 0
+  const slugs = [...bySlug.keys()]
+  if (!slugs.length) return 0
+
+  // Merge NO destructivo de meta: una re-siembra pobre (el cron de líderes solo trae
+  // leagueSlug+club) no debe borrar la nacionalidad/fecha de nacimiento que el team route ya
+  // guardó — son las señales que corroboran la foto. Se leen los meta actuales y las claves
+  // nuevas mandan por clave, pero las ausentes conservan su valor previo.
+  const { data: existing } = await db.from('sport_entities').select('slug, meta').in('slug', slugs)
+  for (const row of existing ?? []) {
+    const prev = (row.meta as Record<string, string> | null) ?? {}
+    const slug = row.slug as string
+    metaBySlug.set(slug, { ...prev, ...(metaBySlug.get(slug) ?? {}) })
+  }
+  const rows = slugs.map(slug => ({ ...bySlug.get(slug)!, meta: metaBySlug.get(slug) }))
 
   const { error } = await db.from('sport_entities').upsert(rows, { onConflict: 'slug' })
   return error ? 0 : rows.length
@@ -124,21 +144,29 @@ export async function listEntitiesNeedingImage(
   if (!db) return []
   const { data, error } = await db
     .from('sport_entities')
-    .select('id, type, sport, name, espn_id, apisports_id, wikidata_id, sport_entity_images!left(kind)')
+    .select('id, type, sport, name, espn_id, apisports_id, wikidata_id, meta, sport_entity_images!left(kind)')
     .eq('type', type)
     .is('sport_entity_images', null)
     .limit(limit)
   if (error || !data) return []
 
-  return data.map(row => ({
-    id: row.id as string,
-    type: row.type as EntityType,
-    sport: row.sport as string,
-    name: row.name as string,
-    espnId: (row.espn_id as string | null) ?? null,
-    apisportsId: (row.apisports_id as number | null) ?? null,
-    wikidataId: (row.wikidata_id as string | null) ?? null,
-  }))
+  return data.map(row => {
+    const meta = (row.meta as Record<string, unknown> | null) ?? {}
+    const metaStr = (k: string) => (typeof meta[k] === 'string' ? (meta[k] as string) : null)
+    return {
+      id: row.id as string,
+      type: row.type as EntityType,
+      sport: row.sport as string,
+      name: row.name as string,
+      espnId: (row.espn_id as string | null) ?? null,
+      apisportsId: (row.apisports_id as number | null) ?? null,
+      wikidataId: (row.wikidata_id as string | null) ?? null,
+      // Señales de identidad para corroborar el match de foto (ver entity-images.ts).
+      club: metaStr('club'),
+      nationality: metaStr('nationality'),
+      birthDate: metaStr('birthDate'),
+    }
+  })
 }
 
 export interface SnapshotEntity {

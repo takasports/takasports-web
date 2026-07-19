@@ -247,7 +247,17 @@ export async function GET(
   // Trayectoria + distinciones desde Wikidata, en paralelo con las fetches de ESPN de
   // abajo. La resolución por nombre lleva su propio guardarraíl de ocupación por deporte;
   // devuelve null en deportes sin guardarraíl (tenis/MMA aún no), así que llamamos siempre.
-  const wikidataPromise = fetchPlayerWikidata(asString(ath.displayName) ?? '', leagueSlug.split('/')[0])
+  // Le pasamos nacionalidad/club/fecha de ESPN para CORROBORAR la identidad y no traer la
+  // trayectoria de un homónimo (el bug de "Pedro" del Flamengo con el ex-Barça).
+  const wikidataPromise = fetchPlayerWikidata(
+    {
+      name: asString(ath.displayName) ?? '',
+      nationality: asString(ath.citizenship) ?? null,
+      club: asString(asObj(ath.team)?.name) ?? asString(asObj(ath.team)?.displayName) ?? null,
+      birthDate: asString(ath.dateOfBirth)?.slice(0, 10) ?? null,
+    },
+    leagueSlug.split('/')[0],
+  )
 
   // Foto resuelta por el cron — lectura de NUESTRA caché, no de terceros en request.
   const photoPromise = leagueSlug.startsWith('soccer')

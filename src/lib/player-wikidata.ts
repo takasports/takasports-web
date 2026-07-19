@@ -1,24 +1,26 @@
 // Trayectoria de clubes y distinciones individuales de un jugador, desde Wikidata.
 //
-// Se busca por NOMBRE con el mismo guardarraíl de ocupación (P106 = futbolista) que la
-// cascada de fotos, para no traer homónimos. Cacheado por el revalidate de la ruta de
-// perfil; Wikidata tolera bien este volumen. Honestidad de datos:
+// Se busca por NOMBRE y se CORROBORA la identidad (nacionalidad / club / fecha de nacimiento)
+// con la MISMA lógica que la cascada de fotos (wikidata-identity.ts), para no traer homónimos:
+// un mononimio como "Pedro" devolvía la trayectoria del ex-Barça y la pegaba al del Flamengo.
+// Cacheado por el revalidate de la ruta de perfil; Wikidata tolera bien este volumen.
+// Honestidad de datos:
 //   - Trayectoria: P54 mezcla selecciones y filiales → se filtran por patrón de nombre.
 //   - Distinciones: P166 son premios INDIVIDUALES (Golden Boy, Bota de Oro, Jugador del
 //     Mes…). Los TÍTULOS de equipo no viven aquí de forma fiable → esos se difieren a
 //     api-football. Por eso el campo se llama "honors" (distinciones), no "trofeos".
 
+import {
+  WIKIDATA_OCCUPATION,
+  rescueCandidateByClub,
+  selectCorroboratedCandidate,
+  type Candidate,
+  type IdentitySignals,
+  type WikiClaims,
+} from '@/lib/wikidata-identity'
+
 const WIKI_HEADERS = { 'User-Agent': 'TakaSports/1.0 (+https://www.takasportsmedia.com)' }
 const WIKI_TIMEOUT_MS = 12_000
-
-// Ocupación (P106) por deporte — guardarraíl anti-homónimos. Solo QIDs verificados contra
-// la API (Q937857 futbolista, Q3665646 jugador de baloncesto). Un deporte sin entrada aquí
-// NO busca por nombre: preferimos no mostrar trayectoria a arriesgarnos a coger otra persona.
-const OCCUPATION_BY_SPORT: Record<string, string> = {
-  soccer: 'Q937857',
-  football: 'Q937857',
-  basketball: 'Q3665646',
-}
 
 // Selecciones (sub-XX / absoluta), filiales (" II", " B", reserve) y juveniles: fuera de
 // la trayectoria de clubes sénior. Robusto en es/en para este dominio.
@@ -91,32 +93,50 @@ function mergeStints(stints: CareerStint[]): CareerStint[] {
   return merged.reverse()   // más reciente primero
 }
 
-export async function fetchPlayerWikidata(name: string, sport: string): Promise<PlayerWikidata | null> {
-  const occupation = OCCUPATION_BY_SPORT[sport]
+// wget devuelve null ante un fallo; el rescate compartido exige un fetcher que LANCE (para no
+// confundir "falló la red" con "no existe"). Este wrapper adapta uno al otro.
+async function throwingWget<T>(url: string): Promise<T> {
+  const data = await wget(url)
+  if (data === null) throw new Error('wiki fetch failed')
+  return data as T
+}
+
+export async function fetchPlayerWikidata(
+  signals: IdentitySignals,
+  sport: string,
+): Promise<PlayerWikidata | null> {
+  const occupation = WIKIDATA_OCCUPATION[sport]
   if (!occupation) return null   // deporte sin guardarraíl verificado → no arriesgar homónimos
 
   const search = await wget(
     `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(
-      name,
+      signals.name,
     )}&language=es&uselang=es&type=item&limit=5&format=json&origin=*`,
   )
   const hits = (search?.search ?? []) as Array<{ id?: string }>
   const ids = hits.map(h => h.id).filter((id): id is string => Boolean(id))
-  if (!ids.length) return null
 
-  const ent = await wget(
-    `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join('|')}&props=claims&format=json&origin=*`,
-  )
-  const entities = (ent?.entities ?? {}) as Record<string, { claims?: Record<string, Snak[]> }>
+  const ent = ids.length
+    ? await wget(
+        `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join('|')}&props=claims&format=json&origin=*`,
+      )
+    : null
+  const entities = (ent?.entities ?? {}) as Record<string, { claims?: WikiClaims }>
+  const candidates: Candidate[] = ids
+    .map(id => ({ qid: id, claims: entities[id]?.claims ?? null }))
+    .filter((c): c is Candidate => c.claims !== null)
 
-  let qid: string | null = null
-  for (const id of ids) {
-    const occupations = (entities[id]?.claims?.P106 ?? []).map(snakId)
-    if (occupations.includes(occupation)) { qid = id; break }
+  // Misma corroboración que la foto: nacionalidad / fecha de nacimiento y, si por nombre no se
+  // confirma a nadie, rescate anclado en el club. Sin match → sin trayectoria (mejor que la de otro).
+  let chosen = selectCorroboratedCandidate(signals, occupation, candidates)
+  if (!chosen) {
+    try { chosen = await rescueCandidateByClub(signals, occupation, throwingWget) }
+    catch { chosen = null }
   }
-  if (!qid) return null
+  if (!chosen) return null
 
-  const claims = entities[qid].claims ?? {}
+  const qid = chosen.qid
+  const claims = (chosen.claims ?? {}) as unknown as Record<string, Snak[]>
   const p54 = claims.P54 ?? []
   const p166 = claims.P166 ?? []
 

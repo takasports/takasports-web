@@ -19,6 +19,13 @@
 // exigiría un servicio de pago o créditos de generación, ambos fuera del presupuesto.
 
 import { adminSupabase } from '@/lib/supabase-admin'
+import {
+  WIKIDATA_OCCUPATION,
+  rescueCandidateByClub,
+  selectCorroboratedCandidate,
+  type Candidate,
+  type WikiClaims,
+} from '@/lib/wikidata-identity'
 
 export type ImageKind = 'headshot' | 'logo'
 export type EntityType = 'player' | 'team' | 'league'
@@ -32,6 +39,13 @@ export interface ResolvableEntity {
   apisportsId?: number | null
   espnId?: string | null
   wikidataId?: string | null
+  /**
+   * Señales de identidad (de ESPN) para CORROBORAR el match por nombre contra Wikidata y no
+   * coger un homónimo. Todas opcionales: cuantas más falten, más conservador es el match.
+   */
+  nationality?: string | null   // país en INGLÉS, tal cual lo da ESPN ("Brazil", "Spain")
+  birthDate?: string | null     // ISO "YYYY-MM-DD"
+  club?: string | null          // club actual (nombre ESPN) — habilita el rescate por club
 }
 
 export interface ResolvedImage {
@@ -89,32 +103,8 @@ const ESPN_SPORT: Record<string, string> = {
   mma: 'mma',
 }
 
-// sport → QID de ocupación (P106) en Wikidata. Es un GUARDARRAÍL anti-homónimos:
-// sin él, buscar "Michael Jordan" para fútbol devuelve al baloncestista y acabamos
-// pintando la cara equivocada en una ficha. Solo QIDs verificados contra la API:
-// Q937857 = "futbolista". Un deporte sin entrada aquí no busca por nombre.
-const WIKIDATA_OCCUPATION: Record<string, string> = {
-  football: 'Q937857',
-}
-
-interface WikidataSnak {
-  mainsnak?: { datavalue?: { value?: unknown } }
-}
-type WikidataClaims = Record<string, WikidataSnak[] | undefined>
-
-/** Los valores de tipo entidad llegan como { 'entity-type': 'item', id: 'Q…' }. */
-function claimEntityIds(claims: WikidataClaims | null, property: string): string[] {
-  return (claims?.[property] ?? [])
-    .map(claim => claim.mainsnak?.datavalue?.value)
-    .map(value =>
-      typeof value === 'object' && value !== null && 'id' in value
-        ? String((value as { id: unknown }).id)
-        : null,
-    )
-    .filter((id): id is string => id !== null)
-}
-
-function claimString(claims: WikidataClaims | null, property: string): string | null {
+/** El campo P18 (imagen) llega como string con el nombre de fichero en Commons. */
+function claimString(claims: WikiClaims | null, property: string): string | null {
   const value = claims?.[property]?.[0]?.mainsnak?.datavalue?.value
   return typeof value === 'string' ? value : null
 }
@@ -179,13 +169,16 @@ async function wikiJson<T>(url: string): Promise<T> {
 }
 
 /**
- * Claims de Wikidata del deportista. Si no conocemos su QID lo buscamos por nombre y
- * nos quedamos con el primer resultado cuya ocupación coincida con el deporte —
- * ese filtro es lo único que impide traerse la foto de un homónimo.
+ * Claims de Wikidata del deportista. Con QID conocido va directo; si no, busca por nombre y
+ * CORROBORA la identidad (fecha de nacimiento / nacionalidad / club) antes de aceptar un
+ * candidato — ese filtro es lo único que impide traerse la foto de un homónimo. Si no puede
+ * confirmar a nadie por nombre, intenta el rescate anclado en el club. Toda la decisión vive
+ * en wikidata-identity.ts (compartida con la trayectoria del perfil); aquí solo se aporta el
+ * fetch, que lanza TransientError ante un fallo transitorio (no null → no se marca 'missing').
  */
-async function wikidataClaims(e: ResolvableEntity): Promise<WikidataClaims | null> {
+async function wikidataClaims(e: ResolvableEntity): Promise<WikiClaims | null> {
   if (e.wikidataId) {
-    const data = await wikiJson<{ claims?: WikidataClaims }>(
+    const data = await wikiJson<{ claims?: WikiClaims }>(
       `https://www.wikidata.org/w/api.php?action=wbgetclaims&entity=${e.wikidataId}&format=json&origin=*`,
     )
     return data?.claims ?? null
@@ -194,24 +187,29 @@ async function wikidataClaims(e: ResolvableEntity): Promise<WikidataClaims | nul
   const occupation = WIKIDATA_OCCUPATION[e.sport]
   if (!occupation) return null
 
+  const signals = { name: e.name, nationality: e.nationality, birthDate: e.birthDate, club: e.club }
+
   const search = await wikiJson<{ search?: Array<{ id?: string }> }>(
     `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(
       e.name,
     )}&language=es&uselang=es&type=item&limit=5&format=json&origin=*`,
   )
   const ids = (search?.search ?? []).map(hit => hit.id).filter((id): id is string => Boolean(id))
-  if (!ids.length) return null
+  if (!ids.length) return (await rescueCandidateByClub(signals, occupation, wikiJson))?.claims ?? null
 
-  const entities = await wikiJson<{ entities?: Record<string, { claims?: WikidataClaims }> }>(
+  const entities = await wikiJson<{ entities?: Record<string, { claims?: WikiClaims }> }>(
     `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join(
       '|',
     )}&props=claims&format=json&origin=*`,
   )
-  for (const id of ids) {
-    const claims = entities?.entities?.[id]?.claims ?? null
-    if (claimEntityIds(claims, 'P106').includes(occupation)) return claims
-  }
-  return null
+  const candidates: Candidate[] = ids
+    .map(id => ({ qid: id, claims: entities?.entities?.[id]?.claims ?? null }))
+    .filter((c): c is Candidate => c.claims !== null)
+
+  const chosen =
+    selectCorroboratedCandidate(signals, occupation, candidates) ??
+    (await rescueCandidateByClub(signals, occupation, wikiJson))
+  return chosen?.claims ?? null
 }
 
 /** El campo Artist de Commons viene como HTML (`<a href="…">Nombre</a>`). */

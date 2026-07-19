@@ -29,6 +29,10 @@ export interface RosterPlayer {
   posAbbr: string
   age?: number
   nationality?: string
+  /** País en INGLÉS (ESPN) — no se muestra; corrobora el match de foto anti-homónimo al sembrar. */
+  nationalityEn?: string
+  /** Fecha de nacimiento ISO "YYYY-MM-DD" (ESPN) — señal dura anti-homónimo al sembrar. */
+  birthDate?: string
   /** Headshot de ESPN (sin atribución). Escaso fuera del top-5 europeo. */
   headshot?: string
   /** Foto resuelta por nuestra cascada (Wikimedia/ESPN), cacheada. Se prefiere a `headshot`. */
@@ -253,6 +257,9 @@ function buildRoster(athletes: unknown[]): RosterPlayer[] {
     const a = asObj(raw)
     if (!a) return null
     const pos = asObj(a.position)
+    // Nacionalidad en inglés tal cual la da ESPN — para display se traduce a español (abajo),
+    // pero la siembra necesita el original para casarlo con el mapa país→QID de Wikidata.
+    const citizenshipEn = asString(asObj(a.citizenshipCountry)?.name) ?? asString(a.citizenship)
     const stats: Record<string, number> = {}
     const cats = asArr(asObj(asObj(a.statistics)?.splits)?.categories) as Record<string, unknown>[]
     for (const cat of cats) {
@@ -270,7 +277,9 @@ function buildRoster(athletes: unknown[]): RosterPlayer[] {
       position:     asString(pos?.displayName) ?? asString(pos?.name) ?? '—',
       posAbbr:      asString(pos?.abbreviation) ?? '—',
       age:          asNumber(a.age),
-      nationality:  (() => { const n = asString(asObj(a.citizenshipCountry)?.name) ?? asString(a.citizenship); return n ? (COUNTRY_ES[n] ?? n) : undefined })(),
+      nationality:  citizenshipEn ? (COUNTRY_ES[citizenshipEn] ?? citizenshipEn) : undefined,
+      nationalityEn: citizenshipEn,
+      birthDate:    asString(a.dateOfBirth)?.slice(0, 10),
       headshot:     asString(asObj(a.headshot)?.href),
       goals:        stats.totalGoals ?? stats.goals ?? 0,
       assists:      stats.goalAssists ?? stats.assists ?? 0,
@@ -311,10 +320,15 @@ async function enrichAndSeedRoster(
     }
 
     // Siembra idempotente (upsert por slug). Guardo leagueSlug + club para que el pipeline
-    // de snapshots también cubra a estos jugadores, no solo a los líderes.
+    // de snapshots también cubra a estos jugadores; nacionalidad + fecha de nacimiento son las
+    // señales con las que el cron corroborará la foto contra homónimos (ver entity-images.ts).
     const seeds: SeedEntity[] = roster
       .filter(p => p.id)
-      .map(p => ({ type: 'player', sport: 'football', name: p.name, espnId: p.id, leagueSlug, club }))
+      .map(p => ({
+        type: 'player', sport: 'football', name: p.name, espnId: p.id, leagueSlug, club,
+        nationality: p.nationalityEn ?? null,
+        birthDate: p.birthDate ?? null,
+      }))
     await upsertSportEntities(seeds)
   } catch (err) {
     // Nunca romper la ficha de equipo por un fallo de la caché de fotos.
