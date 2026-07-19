@@ -3,10 +3,11 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import PlayerAvatar from '@/components/PlayerAvatar'
-import type { TeamDetail, TeamResult, RosterPlayer } from '@/app/api/team/[slug]/route'
+import type { TeamDetail, TeamResult } from '@/app/api/team/[slug]/route'
 import { TeamTabs } from './TeamTabs'
 import { StandingsTab } from './StandingsTab'
 import { RosterTab } from './RosterTab'
+import { FeaturedPlayerCard } from './FeaturedPlayerCard'
 import { ShareButton } from '@/components/ShareButton'
 import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
@@ -90,68 +91,6 @@ const POS_LABEL: Record<string, string> = {
   DF: 'Defensas', D: 'Defensas',
   MF: 'Centrocampistas', M: 'Centrocampistas',
   FW: 'Delanteros', F: 'Delanteros',
-}
-
-// ── Featured Player ────────────────────────────────────────────────────
-function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterPlayer; teamColor?: string; leagueSlug: string }) {
-  const accent = teamColor ? `#${teamColor}` : '#7C3AED'
-  const href = player.id ? `/jugador/${leagueSlug.replaceAll('/', '_')}_${player.id}` : undefined
-  const card = (
-    <div
-      className={`rounded-2xl p-5 mb-6 flex gap-4 items-center${href ? ' transition-all hover:bg-white/[0.06]' : ''}`}
-      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-    >
-      {/* Headshot or placeholder */}
-      <div
-        className="flex-shrink-0 rounded-xl overflow-hidden flex items-center justify-center"
-        style={{ width: 72, height: 72, background: `${accent}22` }}
-      >
-        {player.headshot ? (
-          <Image src={player.headshot} alt={player.name} width={72} height={72} unoptimized
-            style={{ objectFit: 'cover', borderRadius: 'var(--radius-card)' }} />
-        ) : (
-          <span className="font-black text-2xl" style={{ color: accent, fontFamily: 'var(--font-display)' }}>
-            {player.jersey ? `#${player.jersey}` : player.name.charAt(0)}
-          </span>
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span
-            className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-            style={{ background: `${accent}33`, color: accent, fontFamily: 'var(--font-sport)' }}
-          >
-            Figura del equipo
-          </span>
-        </div>
-        <div className="font-black text-lg text-white truncate" style={{ fontFamily: 'var(--font-display)' }}>
-          {player.name}
-        </div>
-        <div className="text-[12px] text-[var(--text-muted)] uppercase tracking-wide mt-0.5">
-          {player.posAbbr} {player.jersey ? `· #${player.jersey}` : ''}
-          {player.nationality ? ` · ${player.nationality}` : ''}
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="flex gap-4 flex-shrink-0">
-        {[
-          { label: 'Goles', value: player.goals },
-          { label: 'Asist.', value: player.assists },
-          { label: 'PJ', value: player.gamesPlayed },
-        ].map(s => (
-          <div key={s.label} className="text-center">
-            <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
-              {s.value}
-            </div>
-            <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">{s.label}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-  return href ? <Link href={href} prefetch={false}>{card}</Link> : card
 }
 
 // ── Results Tab ────────────────────────────────────────────────────────
