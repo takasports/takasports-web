@@ -132,6 +132,16 @@ export async function getPhotosByEspnId(
 const PENDING_SELECT =
   'id, type, sport, name, espn_id, apisports_id, wikidata_id, meta, sport_entity_images!left(kind)'
 
+// Un 'missing' se reintenta pasado este plazo. Motivo doble: (1) Commons gana fotos nuevas
+// con el tiempo —un debutante de hoy puede tener foto en 3 meses—, y (2) rescata falsos
+// negativos por rate-limit de Wikimedia, que marcaban 'missing' a jugadores que SÍ tienen
+// foto (le pasó a Vitão). Al reintentarse se actualiza checked_at, así que se auto-limita:
+// si sigue sin foto, no vuelve a probar hasta dentro de otros 90 días.
+const MISSING_RETRY_DAYS = 90
+
+const STALE_MISSING_SELECT =
+  'id, type, sport, name, espn_id, apisports_id, wikidata_id, meta, sport_entity_images!inner(kind,status,checked_at)'
+
 function toResolvable(row: Record<string, unknown>): ResolvableEntity {
   const meta = (row.meta as Record<string, unknown> | null) ?? {}
   const metaStr = (k: string) => (typeof meta[k] === 'string' ? (meta[k] as string) : null)
@@ -150,7 +160,7 @@ function toResolvable(row: Record<string, unknown>): ResolvableEntity {
   }
 }
 
-/** Un lote de pendientes; `onlyCovered` lo restringe a competiciones que el sitio cubre. */
+/** Un lote de pendientes (SIN fila de imagen); `onlyCovered` lo restringe a competiciones que el sitio cubre. */
 async function queryPendingEntities(
   db: NonNullable<ReturnType<typeof adminSupabase>>,
   type: EntityType,
@@ -167,20 +177,43 @@ async function queryPendingEntities(
   return error || !data ? [] : data.map(toResolvable)
 }
 
+/** Un lote de entidades CUBIERTAS marcadas 'missing' hace más de MISSING_RETRY_DAYS, para reintentar. */
+async function queryStaleMissingEntities(
+  db: NonNullable<ReturnType<typeof adminSupabase>>,
+  type: EntityType,
+  limit: number,
+  cutoffIso: string,
+): Promise<ResolvableEntity[]> {
+  const { data, error } = await db
+    .from('sport_entities')
+    .select(STALE_MISSING_SELECT)
+    .eq('type', type)
+    .in('meta->>leagueSlug', [...FOOTBALL_LEAGUE_SLUGS])
+    .eq('sport_entity_images.kind', 'headshot')
+    .eq('sport_entity_images.status', 'missing')
+    .lt('sport_entity_images.checked_at', cutoffIso)
+    .limit(limit)
+  return error || !data ? [] : data.map(toResolvable)
+}
+
 /**
- * Entidades a las que aún no se les ha resuelto imagen, en lotes.
+ * Entidades a las que hay que resolver imagen, en lotes, POR PRIORIDAD. Tres pasadas, cada
+ * una rellena los huecos que deje la anterior (dedup por id, se corta en `limit`):
  *
- * Filtra por "sin NINGUNA fila en sport_entity_images". Hoy resolvemos un único kind por
- * tipo de entidad (headshot para jugadores, logo para equipos), así que equivale a "le
- * falta la suya". Si algún día resolvemos varios kinds por entidad, hay que filtrar por
- * kind. Los 'missing' cuentan como resueltos: ya tienen fila, así que no se reintentan.
+ *   1. Cubiertas SIN foto aún — lo que de verdad importa. Antes la consulta no tenía orden,
+ *      así que los 12 huecos iban a filas arbitrarias y, con el 75% de la cola en ligas que
+ *      no mostramos (6.000 jugadoras de la NCAA femenina, quinta división inglesa…), un
+ *      titular del Madrid podía esperar detrás de decenas de miles que nadie mira.
+ *   2. Cubiertas marcadas 'missing' pero caducadas → reintento (ver MISSING_RETRY_DAYS).
+ *      Antes un 'missing' no se reintentaba JAMÁS, así que un falso negativo por rate-limit
+ *      condenaba al jugador para siempre.
+ *   3. El resto sin foto (ligas no cubiertas / sin leagueSlug) para que nada quede sin
+ *      procesar nunca. Sin filtro de liga a propósito: si filtrara por "no cubierta", las
+ *      entidades sin leagueSlug se caerían de las tres pasadas.
  *
- * PRIORIZADO: primero las competiciones que el sitio cubre. La consulta no tenía orden, así
- * que los 12 huecos de cada pasada iban a filas arbitrarias — y con el 75% de la cola en
- * ligas que no mostramos (6.000 jugadoras de la NCAA femenina, quinta división inglesa…),
- * un titular del Madrid podía esperar detrás de decenas de miles que nadie mira. Cuando ya
- * no quedan pendientes de nuestras competiciones, la segunda pasada va a por el resto, así
- * que nada se queda sin procesar para siempre.
+ * Nota: hoy resolvemos un único kind por tipo (headshot para jugadores). Si algún día hay
+ * varios kinds por entidad, las pasadas 1 y 3 (que miran "sin NINGUNA fila") habrá que
+ * filtrarlas por kind.
  */
 export async function listEntitiesNeedingImage(
   type: EntityType,
@@ -189,15 +222,23 @@ export async function listEntitiesNeedingImage(
   const db = adminSupabase()
   if (!db) return []
 
-  const covered = await queryPendingEntities(db, type, limit, true)
-  const missing = limit - covered.length
-  if (missing <= 0) return covered
+  const out: ResolvableEntity[] = []
+  const seen = new Set<string>()
+  const take = (batch: ResolvableEntity[]) => {
+    for (const e of batch) {
+      if (out.length >= limit) break
+      if (!seen.has(e.id)) { seen.add(e.id); out.push(e) }
+    }
+  }
 
-  // Sin filtro de liga: recoge también a quien no tiene leagueSlug en meta (si filtrase por
-  // "no cubierta", los NULL se caerían de ambas pasadas y no se resolverían nunca).
-  const rest = await queryPendingEntities(db, type, limit, false)
-  const seen = new Set(covered.map(e => e.id))
-  return [...covered, ...rest.filter(e => !seen.has(e.id)).slice(0, missing)]
+  take(await queryPendingEntities(db, type, limit, true))
+  if (out.length < limit) {
+    const cutoff = new Date(Date.now() - MISSING_RETRY_DAYS * 86_400_000).toISOString()
+    take(await queryStaleMissingEntities(db, type, limit, cutoff))
+  }
+  if (out.length < limit) take(await queryPendingEntities(db, type, limit, false))
+
+  return out
 }
 
 export interface SnapshotEntity {
