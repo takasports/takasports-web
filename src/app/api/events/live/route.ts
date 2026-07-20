@@ -572,21 +572,33 @@ async function fetchF1Live(): Promise<LiveScore[]> {
 }
 
 // ── API-Sports (solo si hay key) ────────────────────────────────
+// CUOTA DE PAGO: api-sports.io free = 100 req/día (y la cuenta está SUSPENDIDA,
+// ver CLAUDE.md). Es solo un MERGE de fallback: añade partidos que ESPN no cubre,
+// así que su frescura importa poco. Tiene su PROPIA caché de 5 min DESACOPLADA del
+// LIVE_TTL del endpoint — si no, el apretón de latencia (LIVE_TTL 60→20s, para la
+// frescura de ESPN que es GRATIS) triplicaría estas llamadas de pago (~1440→4320/
+// día). Con esta caché quedan ~288/día como mucho, y el `no-store` del fetch evita
+// además que el Data Cache de Next las cachee de más. NUNCA ligar esto al LIVE_TTL.
+const API_SPORTS_TTL = 5 * 60_000
+let apiSportsCache: { data: LiveScore[]; ts: number } | null = null
 
 async function fetchApiSportsLive(): Promise<LiveScore[]> {
   const key = process.env.API_SPORTS_KEY
   if (!key) return []
+  if (apiSportsCache && Date.now() - apiSportsCache.ts < API_SPORTS_TTL) return apiSportsCache.data
   try {
     const res = await fetch('https://v3.football.api-sports.io/fixtures?live=all', {
       headers: { 'x-apisports-key': key },
       cache: 'no-store',
     })
     if (!res.ok) {
+      // Suspendida/agotada → cachea el vacío 5 min para NO re-golpear la cuota.
       console.error(`[live] API-Sports responded ${res.status}`)
+      apiSportsCache = { data: [], ts: Date.now() }
       return []
     }
     const json = await res.json()
-    if (!Array.isArray(json.response)) return []
+    if (!Array.isArray(json.response)) { apiSportsCache = { data: [], ts: Date.now() }; return [] }
 
     const results: LiveScore[] = []
     for (const f of json.response) {
@@ -632,9 +644,11 @@ async function fetchApiSportsLive(): Promise<LiveScore[]> {
         },
       ))
     }
+    apiSportsCache = { data: results, ts: Date.now() }
     return results
   } catch (err) {
     console.error('[live] API-Sports fetch failed:', err)
+    apiSportsCache = { data: [], ts: Date.now() }
     return []
   }
 }
