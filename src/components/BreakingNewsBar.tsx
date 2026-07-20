@@ -24,6 +24,10 @@ export default function BreakingNewsBar({
   const trackRef = useRef<HTMLDivElement>(null)
   const [paused, setPaused] = useState(false)
   const [fetched, setFetched] = useState<TickerItem[]>([])
+  // Ocultar "Último momento" al bajar (móvil), manteniendo "En directo" fijo.
+  const [hidden, setHidden] = useState(false)
+  const hiddenRef = useRef(false)
+  const lastYRef = useRef(0)
 
   // Autofetch (modo consola site-wide): si NO llegan items/titles por props,
   // pide los titulares recientes a /api/articles y prioriza los "breaking".
@@ -68,6 +72,45 @@ export default function BreakingNewsBar({
     requestAnimationFrame(() => { el.style.animation = '' })
   }, [resolved.length])
 
+  // Ocultar en scroll-down, mostrar en scroll-up (solo móvil). Mismo patrón
+  // anti-tiritones que usaba LiveStrip: throttle con rAF (1 evaluación/frame),
+  // zona muerta de 8px y un candado de ~320ms tras cada cambio (duración de la
+  // transición) para que el reflow del colapso no dispare el rebote.
+  useEffect(() => {
+    let raf = 0
+    let locked = false
+    let unlock: ReturnType<typeof setTimeout> | null = null
+
+    const setHiddenSafe = (next: boolean) => {
+      if (next === hiddenRef.current) return
+      hiddenRef.current = next
+      setHidden(next)
+      locked = true
+      if (unlock) clearTimeout(unlock)
+      unlock = setTimeout(() => { locked = false; lastYRef.current = window.scrollY }, 320)
+    }
+
+    const evaluate = () => {
+      raf = 0
+      if (window.innerWidth >= 1024) { setHiddenSafe(false); return }
+      const y = window.scrollY
+      if (y < 48) { setHiddenSafe(false); lastYRef.current = y; return }
+      if (locked) { lastYRef.current = y; return }
+      const delta = y - lastYRef.current
+      if (Math.abs(delta) < 8) return
+      lastYRef.current = y
+      setHiddenSafe(delta > 0) // baja → oculta · sube → muestra
+    }
+
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(evaluate) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+      if (unlock) clearTimeout(unlock)
+    }
+  }, [])
+
   if (resolved.length === 0) return null
 
   // Duplicate items so the ticker scrolls seamlessly
@@ -75,14 +118,15 @@ export default function BreakingNewsBar({
 
   return (
     <div
-      className="w-full overflow-hidden flex items-center"
+      className="w-full overflow-hidden flex items-center transition-all duration-300"
       style={{
-        height: 36,
+        maxHeight: hidden ? 0 : 36,
+        opacity: hidden ? 0 : 1,
         background: 'rgba(9,9,15,0.95)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        borderBottom: hidden ? 'none' : '1px solid rgba(255,255,255,0.05)',
       }}
     >
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 w-full flex items-center gap-3 overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 w-full flex items-center gap-3 overflow-hidden" style={{ height: 36 }}>
         {/* Badge */}
         <div
           className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-0.5 rounded"
