@@ -31,7 +31,13 @@ interface CacheEntry { data: LiveScore[]; ts: number; hasLive: boolean }
 let cache: CacheEntry | null = null
 let staleCache: CacheEntry | null = null
 
-const LIVE_TTL  = 60_000
+// Fase 3 (frescura en vivo, 2026-07-20): la caché in-memory era la mayor fuente de
+// retardo (hasta 60s antes de que el origen re-consultara ESPN). Bajada a 20s para
+// alinear las cuatro capas (in-memory + revalidate ESPN + s-maxage CDN + poll de
+// cliente) todas a ~20s → peor caso de ~60s a ~20s, sin infra nueva y a €0. El CDN
+// sigue colapsando a todos los clientes en un fetch de origen, así que el coste sube
+// poco; ESPN tolera de sobra (~2 req/s en su API que mueve espn.com). Idle intacto.
+const LIVE_TTL  = 20_000
 const IDLE_TTL  = 5 * 60_000
 const STALE_MAX = 10 * 60_000
 
@@ -193,7 +199,7 @@ async function fetchTeamLeague(slug: string, sport: string, comp: string, league
   try {
     const res = await fetch(
       `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
-      { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }
+      { next: { revalidate: 20 }, signal: AbortSignal.timeout(6000) }
     )
     if (!res.ok) return []
     const json = await res.json()
@@ -326,9 +332,9 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
     // si el cruce falla, se degrada a como estaba antes (sin matchRef, no una regresión).
     const [eventsRes, sbRes] = await Promise.all([
       fetch(`https://site.api.espn.com/apis/site/v2/sports/${slug}/events?limit=50`,
-        { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }),
+        { next: { revalidate: 20 }, signal: AbortSignal.timeout(6000) }),
       fetch(`https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
-        { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }).catch(() => null),
+        { next: { revalidate: 20 }, signal: AbortSignal.timeout(6000) }).catch(() => null),
     ])
     if (!eventsRes.ok) return []
     const json = await eventsRes.json()
@@ -437,7 +443,7 @@ async function fetchUfcLive(): Promise<LiveScore[]> {
   try {
     const res = await fetch(
       'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
-      { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }
+      { next: { revalidate: 20 }, signal: AbortSignal.timeout(6000) }
     )
     if (!res.ok) return []
     const json = await res.json()
@@ -510,7 +516,7 @@ async function fetchF1Live(): Promise<LiveScore[]> {
   try {
     const res = await fetch(
       'https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard',
-      { next: { revalidate: 30 }, signal: AbortSignal.timeout(6000) }
+      { next: { revalidate: 20 }, signal: AbortSignal.timeout(6000) }
     )
     if (!res.ok) return []
     const json = await res.json()
@@ -637,11 +643,13 @@ async function fetchApiSportsLive(): Promise<LiveScore[]> {
 
 // Cache headers para CDN edge: todos los usuarios polleando comparten una sola
 // respuesta cacheada en el CDN en vez de invocar la función cada vez.
-// LIVE: 30s fresh + 60s stale-while-revalidate (matches client polling interval).
+// LIVE: 20s fresh + 40s stale-while-revalidate (alineado con el poll de cliente de
+//       20s; el swr sirve la respuesta al instante y refresca en segundo plano, así
+//       que el usuario nunca espera aunque caiga justo antes del refresco del CDN).
 // IDLE: 120s fresh + 300s stale (no urge si no hay partidos en vivo).
 function cacheHeaders(hasLive: boolean, extra: Record<string, string> = {}): Record<string, string> {
-  const sMax = hasLive ? 30 : 120
-  const swr  = hasLive ? 60 : 300
+  const sMax = hasLive ? 20 : 120
+  const swr  = hasLive ? 40 : 300
   return {
     'Cache-Control': `public, s-maxage=${sMax}, stale-while-revalidate=${swr}`,
     'CDN-Cache-Control': `public, s-maxage=${sMax}, stale-while-revalidate=${swr}`,

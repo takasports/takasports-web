@@ -94,15 +94,18 @@ async function fetchLiveSharedCached(): Promise<RawLiveFixture[]> {
   return _liveInflight
 }
 
-// Cadencia del polling: 30s con partidos en juego, 60s sin ellos. La mayor
-// parte del día no hay nada en vivo → la mitad de peticiones sin que se note.
+// Cadencia del polling: 20s con partidos en juego, 60s sin ellos. La mayor
+// parte del día no hay nada en vivo → un tercio de peticiones sin que se note.
+// El 20s empareja con el s-maxage del endpoint (Fase 3, frescura en vivo): el CDN
+// colapsa todos los clientes en un fetch de origen, así que bajar de 30→20s casi
+// no cuesta y el peor caso de frescura cae con las capas de servidor.
 export function livePollMs(data: RawLiveFixture[]): number {
-  return data.some(f => isLiveStatus(f.status)) ? 30_000 : 60_000
+  return data.some(f => isLiveStatus(f.status)) ? 20_000 : 60_000
 }
 
 export function useLiveFixtures() {
   const [fixtures, setFixtures] = useState<RawLiveFixture[]>([])
-  const [pollMs, setPollMs] = useState(30_000)
+  const [pollMs, setPollMs] = useState(20_000)
 
   const fetch_ = useCallback(async () => {
     const data = await fetchLiveSharedCached()
@@ -117,7 +120,7 @@ export function useLiveFixtures() {
 
 export function useLiveScores(events: SportEvent[]) {
   const [scores, setScores] = useState<Map<string, LiveScore>>(new Map())
-  const [pollMs, setPollMs] = useState(30_000)
+  const [pollMs, setPollMs] = useState(20_000)
 
   const fetch_ = useCallback(async () => {
     try {
