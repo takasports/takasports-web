@@ -486,6 +486,63 @@ export function MedalIcon({ size = 32, className }: IconProps) {
   )
 }
 
+// ── Métricas de estadísticas (tanda v2: sustituyen a los emojis 🧤🗺️✅🧑‍✈️🏗️🏍️).
+// El guante es DE PORTERO (dedos); GlovesIcon (más abajo) es el de boxeo. ──
+
+export function KeeperGloveIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M10 18V8.5a2.5 2.5 0 015 0V14m0-5.5V6a2.5 2.5 0 015 0v8m0-5a2.5 2.5 0 015 0v9c0 6-4 9-9 9s-8-2.5-8-7l-2.2-4.4a2.3 2.3 0 014-2.2L12 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="currentColor" fillOpacity="0.12" />
+    </svg>
+  )
+}
+
+export function BracketIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M5 7h6v6H5zM5 19h6v6H5zM21 13h6v6h-6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M11 10h4v12h-4M15 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function CheckCircleIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <circle cx="16" cy="16" r="11" stroke="currentColor" strokeWidth="2" />
+      <path d="M10.5 16.5l3.8 3.8 7.2-8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function HelmetIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M6 17a10 10 0 0120 0v3H6v-3z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="currentColor" fillOpacity="0.12" />
+      <path d="M16 7v-2M6 20h20M13 17h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M26 15l3 1v3l-3 1" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function WrenchIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M20.5 5a7 7 0 00-6.8 8.7L5 22.4A2.8 2.8 0 109 26.4l8.7-8.7A7 7 0 0027 11l-1.8 1.8h-4.5l-1.5-1.5V6.8L21 5h-.5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="currentColor" fillOpacity="0.12" />
+    </svg>
+  )
+}
+
+export function MotoIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      <circle cx="7" cy="22" r="3.6" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="25" cy="22" r="3.6" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M7 22l4-8h6l3 4h3M11 14l-2-3h4M17 14l4-5h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 // Medalla de podio teñida por puesto (oro/plata/bronce). A diferencia de
 // MedalIcon (que hereda currentColor), ésta lleva el color del puesto fijo
 // — sustituye los emojis 🥇🥈🥉 en clasificaciones y leaderboards.

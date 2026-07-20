@@ -12,7 +12,7 @@ import { trackStatsBlockOpen, trackStatsGroupOpen, trackSearch } from '@/lib/ana
 import { StatsSearchModal, type SearchableRow } from '@/components/StatsSearchModal'
 import MundialBracket from '@/components/mundial/MundialBracket'
 import type { StatBlock } from './stats-types'
-import { FUTBOL_FEMENINO_BLOCKS, LEAGUE_FILTERS, SECTION_BLOCK_COUNT, SPORTS, TeamLeagueContext, buildTeamLeague } from './sports-config'
+import { FUTBOL_FEMENINO_BLOCKS, LEAGUE_FILTERS, SECTION_BLOCK_COUNT, SPORTS, StatIcon, TeamLeagueContext, buildTeamLeague } from './sports-config'
 import { BLOCK_TO_META_KEY, LIVE_BLOCK_IDS, LIVE_PLAYER_BLOCK_IDS, applyLivePlayerToBlock, getBlockMeta, toStatRows, type LivePlayerData, type LiveStandingsData } from './live-data'
 import { MetricGroupAccordion, PlayoffSeriesCard, StatBlockCard } from './StatCards'
 import { WC_START, WorldCupCountdown, WorldCupGroupCard } from './MundialCards'
@@ -595,17 +595,30 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                   style={{
                     fontFamily: 'var(--font-sport)',
                     color: isActive ? s.accent : s.id === 'mundial' ? '#f59e0b' : 'var(--text-muted)',
-                    background: s.id === 'mundial' && !isActive ? 'rgba(245,158,11,0.08)' : 'none',
+                    // Tanda v2: el tab activo (y el Mundial) llevan casquete de vidrio —
+                    // velo del acento que cae a transparente + canto de luz arriba.
+                    background: isActive
+                      ? `linear-gradient(180deg, color-mix(in srgb, ${s.accent} 14%, rgba(255,255,255,0.04)), transparent 85%)`
+                      : s.id === 'mundial' ? 'linear-gradient(180deg, rgba(245,158,11,0.14), transparent 85%)' : 'none',
                     border: 'none',
                     borderBottom: isActive ? `2px solid ${s.accent}` : s.id === 'mundial' ? '2px solid rgba(245,158,11,0.35)' : '2px solid transparent',
-                    borderRadius: s.id === 'mundial' && !isActive ? '6px 6px 0 0' : undefined,
+                    borderRadius: isActive || s.id === 'mundial' ? '10px 10px 0 0' : undefined,
+                    boxShadow: isActive
+                      ? `inset 0 1px 0 color-mix(in srgb, ${s.accent} 30%, rgba(255,255,255,0.2))`
+                      : s.id === 'mundial' ? 'inset 0 1px 0 rgba(245,158,11,0.3)' : undefined,
                     marginBottom: -1, cursor: 'pointer',
                     opacity: isEmpty && !isActive ? 0.45 : 1,
                   }}
                   title={isEmpty ? `${s.label}: sin datos verificables hoy` : `${s.label}: ${count} bloques con datos`}>
-                  <span className="text-sm leading-none">{s.emoji}</span>
+                  <StatIcon k={s.emoji} size={15} />
                   {s.label}
-                  {s.id === 'mundial' && <span className="text-[9px] font-black px-1 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.2)', color: '#f59e0b', letterSpacing: '0.05em' }}>🔜</span>}
+                  {s.id === 'mundial' && (
+                    // El 🔜 era vestigial: el Mundial 2026 YA está en juego → punto rojo de directo.
+                    <span className="inline-flex items-center gap-1 text-[8px] font-black rounded-full" style={{ padding: '1.5px 7px', background: 'rgba(255,77,46,0.16)', color: '#FF4D2E', border: '1px solid rgba(255,77,46,0.4)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)', letterSpacing: '0.06em' }}>
+                      <span className="rounded-full" style={{ width: 4, height: 4, background: '#FF4D2E', boxShadow: '0 0 5px #FF4D2E' }} />
+                      EN JUEGO
+                    </span>
+                  )}
                   {s.id !== 'mundial' && count > 0 && (
                     <span className="text-[9px] font-black tabular-nums px-1.5 py-0.5 rounded-full"
                       style={{
@@ -630,8 +643,15 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
           {/* TAB 2: SECCIÓN */}
           {!isFemenino && sport.sections.length > 1 && (
             <div className="py-2.5 flex items-center gap-1 overflow-x-auto scrollbar-hide">
-              <div className="flex items-center gap-1 p-1 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              {/* Tanda v2: bandeja de VIDRIO (velo + canto specular + sombra que la despega) */}
+              <div className="flex items-center gap-1 p-1"
+                style={{
+                  borderRadius: 14,
+                  background: 'linear-gradient(158deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.022) 55%, rgba(255,255,255,0.012) 100%)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderTopColor: 'rgba(255,255,255,0.22)',
+                  boxShadow: '0 8px 20px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
+                }}>
                 {sport.sections.map(sec => (
                   <button key={sec.id}
                     onClick={() => handleSectionChange(sec.id)}
@@ -639,14 +659,22 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                       ? `${sec.label}, ${SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`)} tablas`
                       : sec.label}
                     aria-current={sectionId === sec.id ? 'true' : undefined}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                    className="flex items-center gap-1.5 px-3.5 py-2 text-[10px] font-black uppercase tracking-widest transition-all"
                     style={{
-                      background: sectionId === sec.id ? `${sport.accent}18` : 'transparent',
+                      // Píldora activa = vidrio teñido con halo del acento (tanda v2).
+                      borderRadius: 10,
+                      background: sectionId === sec.id
+                        ? `linear-gradient(158deg, color-mix(in srgb, ${sport.accent} 18%, rgba(255,255,255,0.06)) 0%, rgba(255,255,255,0.03) 100%)`
+                        : 'transparent',
                       color: sectionId === sec.id ? sport.accent : '#4A4A6A',
-                      border: sectionId === sec.id ? `1px solid ${sport.accent}35` : '1px solid transparent',
+                      border: sectionId === sec.id ? `1px solid color-mix(in srgb, ${sport.accent} 35%, rgba(255,255,255,0.12))` : '1px solid transparent',
+                      borderTopColor: sectionId === sec.id ? `color-mix(in srgb, ${sport.accent} 30%, rgba(255,255,255,0.35))` : 'transparent',
+                      boxShadow: sectionId === sec.id
+                        ? `0 4px 12px -6px color-mix(in srgb, ${sport.accent} 40%, transparent), inset 0 1px 0 rgba(255,255,255,0.15)`
+                        : undefined,
                       fontFamily: 'var(--font-sport)', cursor: 'pointer',
                     }}>
-                    <span className="text-xs">{sec.icon}</span>
+                    <StatIcon k={sec.icon} size={13} />
                     {sec.label}
                     {(SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`) ?? 0) > 0 && (
                       <span className="text-[8px] px-1 py-0.5 rounded font-black ml-0.5"

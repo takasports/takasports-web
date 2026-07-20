@@ -5,6 +5,30 @@
 
 import React from 'react'
 import type { MetricGroup, SportConfig, StatBlock } from './stats-types'
+import {
+  BasketballIcon, BoltIcon, BracketIcon, CalendarIcon, CheckCircleIcon, F1Icon,
+  FootballIcon, GlobeIcon, GoalIcon, HelmetIcon, KeeperGloveIcon, MotoIcon, PersonIcon, StadiumIcon,
+  StarIcon, TargetIcon, TennisIcon, TrophyIcon, UFCIcon, WrenchIcon, YellowCardIcon,
+} from '@/components/icons/GameIcons'
+
+// ─────────────────────────────────────────────────────────────────
+// ICONOS (tanda visual v2): la config guarda CLAVES ('bolt', 'trophy'…)
+// y StatIcon las resuelve al SVG de GameIcons en currentColor. Sustituye
+// a los emojis (variaban por SO y no aceptaban el acento del deporte).
+// ─────────────────────────────────────────────────────────────────
+const STAT_ICONS = {
+  star: StarIcon, globe: GlobeIcon, football: FootballIcon, goal: GoalIcon,
+  basketball: BasketballIcon, f1: F1Icon, tennis: TennisIcon, ufc: UFCIcon,
+  trophy: TrophyIcon, target: TargetIcon, yellowcard: YellowCardIcon,
+  calendar: CalendarIcon, stadium: StadiumIcon, person: PersonIcon,
+  bolt: BoltIcon, glove: KeeperGloveIcon, bracket: BracketIcon, check: CheckCircleIcon, moto: MotoIcon,
+  helmet: HelmetIcon, wrench: WrenchIcon,
+} as const
+
+export function StatIcon({ k, size = 14, className }: { k: string; size?: number; className?: string }) {
+  const Icon = STAT_ICONS[k as keyof typeof STAT_ICONS]
+  return Icon ? <Icon size={size} className={className} /> : null
+}
 
 
 // ─────────────────────────────────────────────────────────────────
@@ -77,7 +101,7 @@ export const FUTBOL_JUGADORES_GROUPS: MetricGroup[] = [
   {
     id: 'ataque',
     label: 'Ataque',
-    icon: '⚡',
+    icon: 'bolt',
     description: 'Goles, asistencias y producción ofensiva',
     blocks: [
       {
@@ -93,7 +117,7 @@ export const FUTBOL_JUGADORES_GROUPS: MetricGroup[] = [
   {
     id: 'tiro',
     label: 'Tiro',
-    icon: '🎯',
+    icon: 'target',
     description: 'Volumen y precisión de disparo (5 grandes ligas)',
     blocks: [
       {
@@ -109,7 +133,7 @@ export const FUTBOL_JUGADORES_GROUPS: MetricGroup[] = [
   {
     id: 'disciplina',
     label: 'Disciplina',
-    icon: '🟨',
+    icon: 'yellowcard',
     description: 'Tarjetas y faltas (5 grandes ligas)',
     blocks: [
       {
@@ -129,7 +153,7 @@ export const FUTBOL_JUGADORES_GROUPS: MetricGroup[] = [
   {
     id: 'porteria',
     label: 'Portería',
-    icon: '🧤',
+    icon: 'glove',
     description: 'Porteros con más paradas (5 grandes ligas)',
     blocks: [
       {
@@ -172,17 +196,17 @@ export const SPORTS: SportConfig[] = [
     // sin que el usuario tenga que navegar. Renderizado especial via <ResumenView/>
     // (no usa sections.blocks). Id se mantiene 'resumen' para no romper URLs
     // guardadas; el label es 'Destacados' alineado con la pastilla del calendario.
-    id: 'resumen', label: 'Destacados', emoji: '⭐', accent: '#7C3AED',
-    sections: [{ id: 'home', label: 'Hoy', icon: '⭐', blocks: [] }],
+    id: 'resumen', label: 'Destacados', emoji: 'star', accent: '#7C3AED',
+    sections: [{ id: 'home', label: 'Hoy', icon: 'star', blocks: [] }],
   },
   {
-    id: 'mundial', label: 'Mundial 2026', emoji: '🌍', accent: '#f59e0b',
+    id: 'mundial', label: 'Mundial 2026', emoji: 'globe', accent: '#f59e0b',
     sections: [
       // "Cuadro" es la pestaña de entrada del Mundial (sections[0] = default):
       // la llave de eliminatorias renderizada por <MundialBracket/> (sin StatBlocks).
-      { id: 'cuadro', label: 'Cuadro', icon: '🗺️', blocks: [] },
+      { id: 'cuadro', label: 'Cuadro', icon: 'bracket', blocks: [] },
       {
-        id: 'grupos', label: 'Grupos', icon: '🏆',
+        id: 'grupos', label: 'Grupos', icon: 'trophy',
         blocks: WC_GROUPS_FALLBACK.map(g => ({
           id: g.id,
           title: g.label,
@@ -191,14 +215,14 @@ export const SPORTS: SportConfig[] = [
         })),
       },
       {
-        id: 'wc-goleo', label: 'Goleadores', icon: '⚽',
+        id: 'wc-goleo', label: 'Goleadores', icon: 'goal',
         blocks: [
           { id: 'wc-scorers', title: 'Mundial 2026 · Goleadores', metric: 'Goles',  rows: [] },
           { id: 'wc-assists', title: 'Mundial 2026 · Asistencias', metric: 'Asist.', rows: [] },
         ],
       },
       {
-        id: 'calendario', label: 'Próximos partidos', icon: '📅',
+        id: 'calendario', label: 'Próximos partidos', icon: 'calendar',
         blocks: [{
           id: 'wc-schedule',
           title: 'Próximos partidos · Mundial 2026',
@@ -207,7 +231,7 @@ export const SPORTS: SportConfig[] = [
         }],
       },
       {
-        id: 'clasificados', label: 'Clasificados', icon: '✅',
+        id: 'clasificados', label: 'Clasificados', icon: 'check',
         blocks: [{
           id: 'wc-qualified', title: 'Selecciones clasificadas · 48 plazas',
           metric: 'Grupo', rows: [],
@@ -216,11 +240,11 @@ export const SPORTS: SportConfig[] = [
     ],
   },
   {
-    id: 'futbol', label: 'Fútbol', emoji: '⚽', accent: '#34D399',
+    id: 'futbol', label: 'Fútbol', emoji: 'football', accent: '#34D399',
     sections: [
-      { id: 'jugadores', label: 'Jugadores', icon: '👤', groups: FUTBOL_JUGADORES_GROUPS },
+      { id: 'jugadores', label: 'Jugadores', icon: 'person', groups: FUTBOL_JUGADORES_GROUPS },
       {
-        id: 'competiciones', label: 'Competiciones', icon: '🏆',
+        id: 'competiciones', label: 'Competiciones', icon: 'trophy',
         blocks: [
           {
             id: 'tabla-laliga', title: 'Tabla LaLiga', metric: 'Pts', league: 'LaLiga',
@@ -353,7 +377,7 @@ export const SPORTS: SportConfig[] = [
         ],
       },
       {
-        id: 'selecciones', label: 'Selecciones', icon: '🌍',
+        id: 'selecciones', label: 'Selecciones', icon: 'globe',
         blocks: [
           {
             id: 'ranking-fifa', title: 'Ranking Mundial · Elo', metric: 'Pts',
@@ -375,10 +399,10 @@ export const SPORTS: SportConfig[] = [
     ],
   },
   {
-    id: 'baloncesto', label: 'Baloncesto', emoji: '🏀', accent: '#f59e0b',
+    id: 'baloncesto', label: 'Baloncesto', emoji: 'basketball', accent: '#f59e0b',
     sections: [
       {
-        id: 'jugadores', label: 'Jugadores', icon: '👤',
+        id: 'jugadores', label: 'Jugadores', icon: 'person',
         blocks: [
           {
             id: 'nba-scoring', title: 'Anotadores (PPG)', metric: 'PPG',
@@ -489,7 +513,7 @@ export const SPORTS: SportConfig[] = [
         ],
       },
       {
-        id: 'equipos', label: 'Equipos', icon: '🏟️',
+        id: 'equipos', label: 'Equipos', icon: 'stadium',
         blocks: [
           {
             id: 'nba-este', title: 'Conferencia Este', metric: 'W-L',
@@ -518,10 +542,10 @@ export const SPORTS: SportConfig[] = [
     ],
   },
   {
-    id: 'formula1', label: 'F1', emoji: '🏎️', accent: '#ef4444',
+    id: 'formula1', label: 'F1', emoji: 'f1', accent: '#ef4444',
     sections: [
       {
-        id: 'pilotos', label: 'Pilotos', icon: '🧑‍✈️',
+        id: 'pilotos', label: 'Pilotos', icon: 'helmet',
         blocks: [
           {
             id: 'f1-campeonato', title: 'Campeonato de Pilotos', metric: 'Pts',
@@ -546,21 +570,21 @@ export const SPORTS: SportConfig[] = [
         ],
       },
       {
-        id: 'calendario-f1', label: 'Calendario', icon: '📅',
+        id: 'calendario-f1', label: 'Calendario', icon: 'calendar',
         blocks: [{
           id: 'f1-calendario', title: 'Próximos GP · Temporada 2026', metric: 'Fecha',
           rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'Jolpica · calendario', trend: 'flat' as const }],
         }],
       },
       {
-        id: 'sprints-f1', label: 'Sprints', icon: '⚡',
+        id: 'sprints-f1', label: 'Sprints', icon: 'bolt',
         blocks: [{
           id: 'f1-sprints', title: 'Sprint Wins · Temporada 2026', metric: 'Vic',
           rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'Jolpica · sprints temp.', trend: 'flat' as const }],
         }],
       },
       {
-        id: 'constructores', label: 'Constructores', icon: '🏗️',
+        id: 'constructores', label: 'Constructores', icon: 'wrench',
         blocks: [
           {
             id: 'f1-constructores', title: 'Campeonato de Constructores', metric: 'Pts',
@@ -579,10 +603,10 @@ export const SPORTS: SportConfig[] = [
     ],
   },
   {
-    id: 'tenis', label: 'Tenis', emoji: '🎾', accent: '#E0B33A',
+    id: 'tenis', label: 'Tenis', emoji: 'tennis', accent: '#E0B33A',
     sections: [
       {
-        id: 'atp', label: 'ATP', icon: '👨',
+        id: 'atp', label: 'ATP', icon: 'person',
         blocks: [
           {
             // NO MENTIR (misma regla que femenino y "SPORTS COMPLETO"): sin filas
@@ -595,7 +619,7 @@ export const SPORTS: SportConfig[] = [
         ],
       },
       {
-        id: 'wta', label: 'WTA', icon: '👩',
+        id: 'wta', label: 'WTA', icon: 'person',
         blocks: [
           {
             // NO MENTIR: sin filas hardcodeadas. applyLive rellena desde wtaRanking
@@ -609,10 +633,10 @@ export const SPORTS: SportConfig[] = [
     ],
   },
   {
-    id: 'ufc', label: 'MMA', emoji: '🥊', accent: '#D4AF37',
+    id: 'ufc', label: 'MMA', emoji: 'ufc', accent: '#D4AF37',
     sections: [
       {
-        id: 'ranking-ufc', label: 'Top general', icon: '🏆',
+        id: 'ranking-ufc', label: 'Top general', icon: 'trophy',
         blocks: [
           {
             id: 'ufc-p4p', title: 'Pound for Pound (Top 10)', metric: 'Pos.',
@@ -625,7 +649,7 @@ export const SPORTS: SportConfig[] = [
         ],
       },
       {
-        id: 'pesos-masc', label: 'Pesos masculinos', icon: '🥊',
+        id: 'pesos-masc', label: 'Pesos masculinos', icon: 'ufc',
         blocks: [
           { id: 'ufc-hw',  title: 'Peso pesado · Top 5',  metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
           { id: 'ufc-lhw', title: 'Semipesado · Top 5',   metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
@@ -638,7 +662,7 @@ export const SPORTS: SportConfig[] = [
         ],
       },
       {
-        id: 'pesos-fem', label: 'Pesos femeninos', icon: '🥊',
+        id: 'pesos-fem', label: 'Pesos femeninos', icon: 'ufc',
         blocks: [
           { id: 'ufc-w-bw',  title: 'Gallo · Top 5',  metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
           { id: 'ufc-w-flw', title: 'Mosca · Top 5',  metric: 'Pos.', rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'ufc.com', trend: 'flat' as const }] },
@@ -648,17 +672,17 @@ export const SPORTS: SportConfig[] = [
     ],
   },
   {
-    id: 'motogp', label: 'MotoGP', emoji: '🏍️', accent: '#dc2626',
+    id: 'motogp', label: 'MotoGP', emoji: 'moto', accent: '#dc2626',
     sections: [
       {
-        id: 'pilotos-motogp', label: 'Pilotos', icon: '🧑‍✈️',
+        id: 'pilotos-motogp', label: 'Pilotos', icon: 'helmet',
         blocks: [{
           id: 'motogp-pilotos', title: 'Campeonato MotoGP', metric: 'Pts',
           rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'motogp.com (cron lunes)', trend: 'flat' as const }],
         }],
       },
       {
-        id: 'constructores-motogp', label: 'Constructores', icon: '🏗️',
+        id: 'constructores-motogp', label: 'Constructores', icon: 'wrench',
         blocks: [{
           id: 'motogp-constructores', title: 'Campeonato Constructores', metric: 'Pts',
           rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'motogp.com (cron lunes)', trend: 'flat' as const }],

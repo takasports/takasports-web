@@ -9,7 +9,7 @@ import { PodiumMedal } from '@/components/icons/GameIcons'
 import { StatBlockBoundary } from '@/components/StatBlockBoundary'
 import { trackStatsBlockOpen, trackStatsGroupOpen } from '@/lib/analytics'
 import type { MetricGroup, StatBlock, StatRow } from './stats-types'
-import { TeamLeagueContext } from './sports-config'
+import { StatIcon, TeamLeagueContext } from './sports-config'
 import { LIVE_PLAYER_BLOCK_IDS, applyLivePlayerToBlock, getBlockMeta, type BlockMeta, type LivePlayerData } from './live-data'
 import type { StandingZone } from '@/lib/league-zones'
 
@@ -497,10 +497,43 @@ export function MetricGroupAccordion({ group, accent, expanded, onToggle, expand
   return (
     <div className="mb-3">
       <button onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all hover:brightness-110"
-        style={{ background: expanded ? `${accent}10` : 'rgba(255,255,255,0.03)', border: expanded ? `1px solid ${accent}30` : '1px solid rgba(255,255,255,0.07)', cursor: 'pointer' }}>
-        <div className="flex items-center gap-3">
-          <span className="text-lg leading-none">{group.icon}</span>
+        className="relative overflow-hidden w-full flex items-center justify-between transition-all hover:brightness-110"
+        style={{
+          // VIDRIO TAKA (tanda v2): fila de vidrio con espina — receta de las filas
+          // del calendario. Cerrado = vidrio neutro apagado; abierto = teñido del
+          // acento con espina, canto specular y sombra que lo hace flotar.
+          padding: '12px 15px 12px 14px',
+          borderRadius: 14,
+          cursor: 'pointer',
+          background: expanded
+            ? `linear-gradient(158deg, color-mix(in srgb, ${accent} 15%, rgba(255,255,255,0.05)) 0%, rgba(255,255,255,0.028) 46%, rgba(255,255,255,0.015) 100%)`
+            : 'linear-gradient(158deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.022) 50%, rgba(255,255,255,0.012) 100%)',
+          border: `1px solid ${expanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.09)'}`,
+          borderTopColor: expanded ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.2)',
+          borderLeft: `4px solid ${expanded ? accent : 'rgba(255,255,255,0.10)'}`,
+          boxShadow: expanded
+            ? '0 10px 24px -10px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -14px 22px -16px rgba(0,0,0,0.45)'
+            : '0 8px 20px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
+        }}>
+        {/* Blob refractado (solo abierto) + canto specular superior */}
+        {expanded && (
+          <span aria-hidden className="pointer-events-none absolute"
+            style={{ top: -40, left: -10, width: 150, height: 110, background: `radial-gradient(60% 60% at 30% 40%, color-mix(in srgb, ${accent} 26%, transparent), transparent 70%)`, filter: 'blur(6px)', opacity: 0.7 }} />
+        )}
+        <span aria-hidden className="pointer-events-none absolute"
+          style={{ top: 0, left: 0, right: 0, height: '46%', background: 'linear-gradient(180deg, rgba(255,255,255,0.06), transparent)' }} />
+        <div className="relative flex items-center gap-3" style={{ zIndex: 1 }}>
+          {/* Icono SVG en cuadrado tintado con bisel: gris cerrado, acento abierto */}
+          <span className="flex items-center justify-center flex-shrink-0"
+            style={{
+              width: 30, height: 30, borderRadius: 9,
+              background: expanded ? `color-mix(in srgb, ${accent} 20%, transparent)` : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${expanded ? `color-mix(in srgb, ${accent} 38%, transparent)` : 'rgba(255,255,255,0.12)'}`,
+              color: expanded ? accent : '#9090B0',
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,${expanded ? '0.22' : '0.1'}), 0 2px 6px -2px rgba(0,0,0,0.5)`,
+            }}>
+            <StatIcon k={group.icon} size={17} />
+          </span>
           <div className="text-left">
             <p className="text-xs font-black uppercase tracking-widest" style={{ color: expanded ? accent : '#9090B0', fontFamily: 'var(--font-sport)' }}>
               {group.label}
@@ -512,7 +545,7 @@ export function MetricGroupAccordion({ group, accent, expanded, onToggle, expand
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="relative flex items-center gap-2 flex-shrink-0" style={{ zIndex: 1 }}>
           {liveCount > 0 && (
             <span className="text-[8px] font-black px-2 py-0.5 rounded-full"
               style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)', fontFamily: 'var(--font-sport)' }}>
@@ -531,9 +564,12 @@ export function MetricGroupAccordion({ group, accent, expanded, onToggle, expand
               +{soonCount} prox.
             </span>
           )}
-          <span className="font-black text-xs" style={{ color: expanded ? accent : '#4A4A6A' }}>
-            {expanded ? '▲' : '▼'}
-          </span>
+          {/* Chevrón SVG que rota (antes ▲▼ de texto) */}
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden
+            className="transition-transform duration-200"
+            style={{ color: expanded ? accent : '#4A4A6A', transform: expanded ? 'rotate(180deg)' : undefined }}>
+            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </div>
       </button>
 
