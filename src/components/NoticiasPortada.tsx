@@ -5,7 +5,8 @@ import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
+import { getSportStyle, getSportLabel } from '@/lib/sports'
+import { SportIcon } from '@/components/icons/GameIcons'
 import HCarousel from '@/components/HCarousel'
 
 const ROTATION_MS     = 5000   // big cards
@@ -45,12 +46,12 @@ function Badge({ sport, category }: { sport?: string; category?: string }) {
 function SportPlaceholder({ sport, category, size = 'big' }: { sport?: string; category?: string; size?: 'big' | 'strip' }) {
   const { bg, accent } = getSportStyle(sport, category)
   const label = getSportLabel(sport, category)
-  const emoji = getSportEmoji(label)
-  const emojiSize = size === 'big' ? '7rem' : '4rem'
+  // Tanda v3: marca de agua = SportIcon gigante teñido (antes emoji difuminado del SO).
+  const iconSize = size === 'big' ? 110 : 62
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ background: bg }}>
-      <div style={{ fontSize: emojiSize, lineHeight: 1, opacity: 0.12, userSelect: 'none', filter: 'blur(1px)' }}>
-        {emoji}
+      <div aria-hidden style={{ lineHeight: 0, opacity: 0.13, userSelect: 'none', color: accent }}>
+        <SportIcon sport={label} size={iconSize} />
       </div>
       {/* subtle radial glow */}
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${accent}18 0%, transparent 70%)` }} />

@@ -5,6 +5,7 @@
 import React from 'react'
 import type { BlockMeta, LivePlayerData, LiveStandingsData } from './live-data'
 import { FreshnessBadge, MedalBadge } from './StatCards'
+import { StatIcon } from './sports-config'
 
 // ─────────────────────────────────────────────────────────────────
 // RESUMEN — landing cross-sport con lo más relevante de cada deporte
@@ -12,7 +13,7 @@ import { FreshnessBadge, MedalBadge } from './StatCards'
 export interface SummaryCard {
   sportId: string
   sportLabel: string
-  emoji: string
+  icon: string   // clave de StatIcon ('globe', 'football'…) — tanda v3, fuera emojis
   accent: string
   title: string
   metric: string
@@ -32,7 +33,7 @@ export function buildSummaryCards(
   // 🌍 Mundial 2026: clasificados destacados (primero — evento estrella)
   if (liveData?.worldCupQualified?.length) {
     cards.push({
-      sportId: 'mundial', sportLabel: 'Mundial 2026', emoji: '🌍', accent: '#f59e0b',
+      sportId: 'mundial', sportLabel: 'Mundial 2026', icon: 'globe', accent: '#f59e0b',
       title: 'Mundial 2026 · Clasificados', metric: 'Grupo',
       rows: liveData.worldCupQualified.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: r.value, flag: r.flag,
@@ -47,7 +48,7 @@ export function buildSummaryCards(
   const laliga = livePlayerData?.leagues.find(l => l.id === 'esp.1')
   if (laliga && laliga.goals.length) {
     cards.push({
-      sportId: 'futbol', sportLabel: 'LaLiga', emoji: '⚽', accent: '#22c55e',
+      sportId: 'futbol', sportLabel: 'LaLiga', icon: 'football', accent: '#22c55e',
       title: 'Goleadores LaLiga', metric: 'Goles',
       rows: laliga.goals.slice(0, 5).map((p, i) => ({
         rank: i + 1, name: p.name, sub: p.team, value: String(p.value),
@@ -61,7 +62,7 @@ export function buildSummaryCards(
   const laligaTable = liveData?.football?.find(f => f.id === 'tabla-laliga')
   if (laligaTable && laligaTable.rows.length) {
     cards.push({
-      sportId: 'futbol', sportLabel: 'LaLiga', emoji: '⚽', accent: '#22c55e',
+      sportId: 'futbol', sportLabel: 'LaLiga', icon: 'football', accent: '#22c55e',
       title: 'Clasificación LaLiga', metric: 'Pts',
       rows: laligaTable.rows.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: r.value,
@@ -75,7 +76,7 @@ export function buildSummaryCards(
   const premierTable = liveData?.football?.find(f => f.id === 'tabla-premier')
   if (premierTable && premierTable.rows.length) {
     cards.push({
-      sportId: 'futbol', sportLabel: 'Premier League', emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', accent: '#6C2D91',
+      sportId: 'futbol', sportLabel: 'Premier League', icon: 'football', accent: '#6C2D91',
       title: 'Clasificación Premier', metric: 'Pts',
       rows: premierTable.rows.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: r.value,
@@ -88,7 +89,7 @@ export function buildSummaryCards(
   // 🏀 NBA scoring leaders
   if (liveData?.nbaScoring?.length) {
     cards.push({
-      sportId: 'baloncesto', sportLabel: 'NBA', emoji: '🏀', accent: '#ef4444',
+      sportId: 'baloncesto', sportLabel: 'NBA', icon: 'basketball', accent: '#ef4444',
       title: 'NBA · Anotadores', metric: 'PPG',
       rows: liveData.nbaScoring.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value,
@@ -101,7 +102,7 @@ export function buildSummaryCards(
   // 🏀 NBA Conferencia Este
   if (liveData?.nbaEast?.length) {
     cards.push({
-      sportId: 'baloncesto', sportLabel: 'NBA Este', emoji: '🏀', accent: '#ef4444',
+      sportId: 'baloncesto', sportLabel: 'NBA Este', icon: 'basketball', accent: '#ef4444',
       title: 'NBA · Conferencia Este', metric: 'V-D',
       rows: liveData.nbaEast.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: r.value,
@@ -114,7 +115,7 @@ export function buildSummaryCards(
   // 🏀 NBA Conferencia Oeste
   if (liveData?.nbaWest?.length) {
     cards.push({
-      sportId: 'baloncesto', sportLabel: 'NBA Oeste', emoji: '🏀', accent: '#f59e0b',
+      sportId: 'baloncesto', sportLabel: 'NBA Oeste', icon: 'basketball', accent: '#f59e0b',
       title: 'NBA · Conferencia Oeste', metric: 'V-D',
       rows: liveData.nbaWest.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: r.value,
@@ -127,7 +128,7 @@ export function buildSummaryCards(
   // 🏎️ F1 pilotos
   if (liveData?.f1Drivers?.length) {
     cards.push({
-      sportId: 'f1', sportLabel: 'Fórmula 1', emoji: '🏎️', accent: '#f97316',
+      sportId: 'f1', sportLabel: 'Fórmula 1', icon: 'f1', accent: '#f97316',
       title: 'F1 · Mundial Pilotos', metric: 'Pts',
       rows: liveData.f1Drivers.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
@@ -140,7 +141,7 @@ export function buildSummaryCards(
   // 🎾 ATP top
   if (liveData?.atpRanking?.length) {
     cards.push({
-      sportId: 'tenis', sportLabel: 'ATP', emoji: '🎾', accent: '#84cc16',
+      sportId: 'tenis', sportLabel: 'ATP', icon: 'tennis', accent: '#84cc16',
       title: 'Tenis · ATP Ranking', metric: 'Pts',
       rows: liveData.atpRanking.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
@@ -153,7 +154,7 @@ export function buildSummaryCards(
   // 🎾 WTA top
   if (liveData?.wtaRanking?.length) {
     cards.push({
-      sportId: 'tenis', sportLabel: 'WTA', emoji: '🎾', accent: '#d946ef',
+      sportId: 'tenis', sportLabel: 'WTA', icon: 'tennis', accent: '#d946ef',
       title: 'Tenis · WTA Ranking', metric: 'Pts',
       rows: liveData.wtaRanking.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
@@ -166,7 +167,7 @@ export function buildSummaryCards(
   // ⚽ Femenino: goleadoras
   if (liveData?.womenGoals?.length) {
     cards.push({
-      sportId: 'futbol', sportLabel: 'Liga F', emoji: '⚽', accent: '#ec4899',
+      sportId: 'futbol', sportLabel: 'Liga F', icon: 'football', accent: '#ec4899',
       title: 'Liga F · Goleadoras', metric: 'Goles',
       rows: liveData.womenGoals.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value,
@@ -180,7 +181,7 @@ export function buildSummaryCards(
   // 🏎️ F1 Sprint Wins (si hay sprints en el calendario)
   if (liveData?.f1Sprints?.length) {
     cards.push({
-      sportId: 'f1', sportLabel: 'F1', emoji: '🏎️', accent: '#f97316',
+      sportId: 'f1', sportLabel: 'F1', icon: 'f1', accent: '#f97316',
       title: 'F1 · Sprint Wins', metric: 'Vic',
       rows: liveData.f1Sprints.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
@@ -193,7 +194,7 @@ export function buildSummaryCards(
   // 🏍️ MotoGP: pilotos top
   if (liveData?.motogpRiders?.length) {
     cards.push({
-      sportId: 'motogp', sportLabel: 'MotoGP', emoji: '🏍️', accent: '#dc2626',
+      sportId: 'motogp', sportLabel: 'MotoGP', icon: 'moto', accent: '#dc2626',
       title: 'MotoGP · Mundial Pilotos', metric: 'Pts',
       rows: liveData.motogpRiders.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.abbr, value: r.value, flag: r.flag,
@@ -206,7 +207,7 @@ export function buildSummaryCards(
   // 🥊 UFC P4P top
   if (liveData?.ufcP4P?.length) {
     cards.push({
-      sportId: 'ufc', sportLabel: 'UFC', emoji: '🥊', accent: '#f97316',
+      sportId: 'ufc', sportLabel: 'UFC', icon: 'ufc', accent: '#f97316',
       title: 'UFC · Pound for Pound', metric: 'Pos.',
       rows: liveData.ufcP4P.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: `#${r.rank}`, flag: r.flag,
@@ -219,7 +220,7 @@ export function buildSummaryCards(
   // 🌍 Ranking Mundial Elo (selecciones)
   if (liveData?.fifaRanking?.length) {
     cards.push({
-      sportId: 'futbol', sportLabel: 'Selecciones', emoji: '🌍', accent: '#3b82f6',
+      sportId: 'futbol', sportLabel: 'Selecciones', icon: 'globe', accent: '#3b82f6',
       title: 'Ranking Mundial · Elo', metric: 'Pts',
       rows: liveData.fifaRanking.slice(0, 5).map(r => ({
         rank: r.rank, name: r.name, sub: r.sub, value: r.value, flag: r.flag,
@@ -241,7 +242,18 @@ export function ResumenCard({ card, onOpen }: { card: SummaryCard; onOpen: () =>
       <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-2.5"
         style={{ borderBottom: `1px solid ${card.accent}15`, background: `${card.accent}08` }}>
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-base leading-none">{card.emoji}</span>
+          {/* Cuadrado tintado con bisel (idioma de los acordeones); el icono se aclara
+              hacia blanco para que los acentos oscuros (morado Premier) no se apaguen. */}
+          <span className="inline-flex items-center justify-center flex-shrink-0"
+            style={{
+              width: 24, height: 24, borderRadius: 7,
+              background: `color-mix(in srgb, ${card.accent} 20%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${card.accent} 38%, transparent)`,
+              color: `color-mix(in srgb, ${card.accent} 72%, #fff)`,
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 6px -2px rgba(0,0,0,0.5)',
+            }}>
+            <StatIcon k={card.icon} size={14} />
+          </span>
           <h3 className="font-black text-[13px] truncate"
             style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
             {card.title}

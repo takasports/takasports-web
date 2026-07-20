@@ -1,4 +1,5 @@
-import { getSportStyle, getSportEmoji, getSportLabel } from '@/lib/sports'
+import { getSportStyle, getSportLabel } from '@/lib/sports'
+import { SportIcon } from '@/components/icons/GameIcons'
 
 interface Props {
   sport?: string
@@ -11,7 +12,6 @@ interface Props {
 export default function SportPlaceholder({ sport, category, className, style, emojiSize = 32 }: Props) {
   const { bg, accent } = getSportStyle(sport, category)
   const label = getSportLabel(sport, category)
-  const emoji = getSportEmoji(label)
 
   return (
     <div
@@ -28,9 +28,9 @@ export default function SportPlaceholder({ sport, category, className, style, em
       />
       <span
         aria-hidden
-        style={{ fontSize: emojiSize, lineHeight: 1, position: 'relative', opacity: 0.55 }}
+        style={{ lineHeight: 0, position: 'relative', opacity: 0.5, color: accent }}
       >
-        {emoji}
+        <SportIcon sport={label} size={emojiSize} />
       </span>
     </div>
   )

@@ -2,7 +2,8 @@
 
 import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getSportEmoji, getSportLabel } from '@/lib/sports'
+import { accentForSport, getSportLabel } from '@/lib/sports'
+import { SportIcon } from '@/components/icons/GameIcons'
 
 interface TickerItem {
   title: string
@@ -108,14 +109,18 @@ export default function BreakingNewsBar({
           >
             {doubled.map((item, i) => {
               const label = item.sport ? getSportLabel(item.sport) : null
-              const emoji = label ? getSportEmoji(label) : null
               const href = item.slug ? `/noticias/${item.slug}` : null
               const content = (
                 <span
                   className="inline-flex items-center gap-1.5 text-xs transition-colors hover:text-white"
                   style={{ color: '#B4B4C8' }}
                 >
-                  {emoji && <span>{emoji}</span>}
+                  {/* Tanda v3: SportIcon teñido del acento en vez de emoji (variaba por SO) */}
+                  {label && (
+                    <span className="flex-shrink-0 inline-flex" style={{ color: accentForSport(label) }}>
+                      <SportIcon sport={label} size={12} />
+                    </span>
+                  )}
                   {item.title}
                 </span>
               )

@@ -110,6 +110,8 @@ export const SPORT_EMOJI: Record<string, string> = {
   'Lucha libre': '🎭',
 }
 
+/** SOLO para metadata de texto (título de pestaña/OG en [sport]/page.tsx), donde
+ *  no existe el SVG. En UI usar SportIcon de GameIcons (tanda v3: fuera emojis). */
 export function getSportEmoji(sport: string): string {
   return SPORT_EMOJI[sport] ?? SPORT_EMOJI[SLUG_TO_LABEL[sport.toLowerCase()]] ?? '🏆'
 }

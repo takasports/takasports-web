@@ -2,7 +2,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { sanityClient, eventDetailQuery, relatedByEventQuery, urlFor } from '@/lib/sanity'
-import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
+import { getSportStyle, getSportLabel } from '@/lib/sports'
+import { SportIcon } from '@/components/icons/GameIcons'
 import { SOURCE_TZ } from '@/lib/timezone'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 
@@ -136,11 +137,10 @@ function MetaChip({ icon, text }: { icon: string; text: string }) {
 
 function SportPill({ sport, accent }: { sport: string; accent: string }) {
   const label = getSportLabel(sport)
-  const emoji = getSportEmoji(label)
   return (
     <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full"
       style={{ background: `${accent}1f`, color: accent, border: `1px solid ${accent}40`, fontFamily: 'var(--font-sport)' }}>
-      {emoji} {label}
+      <SportIcon sport={sport} size={12} /> {label}
     </span>
   )
 }

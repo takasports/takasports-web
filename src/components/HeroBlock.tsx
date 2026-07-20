@@ -5,7 +5,8 @@ import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel, getSportEmoji } from '@/lib/sports'
+import { getSportStyle, getSportLabel } from '@/lib/sports'
+import { SportIcon } from '@/components/icons/GameIcons'
 import { useTilt } from '@/hooks/useTilt'
 import HCarousel from '@/components/HCarousel'
 
@@ -42,7 +43,7 @@ function CompactStripItem({ art }: { art: Article }) {
             className="absolute inset-0 flex items-center justify-center"
             style={{ background: `linear-gradient(135deg, ${accent}22, ${accent}06)` }}
           >
-            <div style={{ fontSize: '2.6rem', opacity: 0.35 }}>{getSportEmoji(label)}</div>
+            <div aria-hidden style={{ lineHeight: 0, opacity: 0.35, color: accent }}><SportIcon sport={label} size={42} /></div>
           </div>
         )}
         {/* sutil oscurecido inferior para que el borde pegue con la card */}
@@ -223,8 +224,8 @@ function BigCard({
         <KenBurnsImage key={animKey} src={imgUrl} alt={article.title} animKey={animKey} priority still={still} onError={() => setImgFailed(true)} />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ background: getSportStyle(article.sport, article.category).bg }}>
-          <div style={{ fontSize: '10rem', lineHeight: 1, opacity: 0.1, userSelect: 'none', filter: 'blur(2px)' }}>
-            {getSportEmoji(getSportLabel(article.sport, article.category))}
+          <div aria-hidden style={{ lineHeight: 0, opacity: 0.11, userSelect: 'none', color: getSportStyle(article.sport, article.category).accent }}>
+            <SportIcon sport={getSportLabel(article.sport, article.category)} size={150} />
           </div>
           <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${getSportStyle(article.sport, article.category).accent}15 0%, transparent 70%)` }} />
         </div>
@@ -367,8 +368,8 @@ function SmallCard({
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ background: getSportStyle(article.sport, article.category).bg }}>
-          <div style={{ fontSize: '5rem', lineHeight: 1, opacity: 0.12, userSelect: 'none', filter: 'blur(1px)' }}>
-            {getSportEmoji(getSportLabel(article.sport, article.category))}
+          <div aria-hidden style={{ lineHeight: 0, opacity: 0.13, userSelect: 'none', color: accent }}>
+            <SportIcon sport={getSportLabel(article.sport, article.category)} size={80} />
           </div>
           <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${accent}18 0%, transparent 70%)` }} />
         </div>
@@ -454,7 +455,7 @@ function SecondaryMini({ art }: { art: Article }) {
           <Image src={imgUrl} alt={art.title} fill sizes="54px" className="object-cover" onError={() => setImgFailed(true)} />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center" style={{ background: getSportStyle(art.sport, art.category).bg }}>
-            <span style={{ fontSize: '1.5rem', lineHeight: 1, opacity: 0.2 }}>{getSportEmoji(label)}</span>
+            <span aria-hidden style={{ lineHeight: 0, opacity: 0.22, color: getSportStyle(art.sport, art.category).accent }}><SportIcon sport={label} size={24} /></span>
           </div>
         )}
       </div>

@@ -750,5 +750,6 @@ export function SportIcon({ sport, size = 32, className }: { sport: string } & I
   if (key === 'ufc' || key === 'mma') return <UFCIcon size={size} className={className} />
   if (key === 'rugby') return <RugbyIcon size={size} className={className} />
   if (key === 'wwe' || key === 'wrestling') return <WWEIcon size={size} className={className} />
+  if (key === 'motogp' || key === 'moto gp') return <MotoIcon size={size} className={className} />
   return <TrophyIcon size={size} className={className} />
 }

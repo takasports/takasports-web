@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { RankingEntry } from '@/lib/rankings'
-import { getSportEmoji, getSportStyle } from '@/lib/sports'
-import { CalendarIcon, LiveDotIcon } from '@/components/icons/GameIcons'
+import { getSportStyle } from '@/lib/sports'
+import { CalendarIcon, LiveDotIcon, SportIcon } from '@/components/icons/GameIcons'
 
 interface SportEvent {
   _id: string
@@ -61,7 +61,6 @@ function formatEventDate(dateStr?: string): string {
 }
 
 export default function SportHubHeader({ sport, label, topRankings, upcomingEvents }: Props) {
-  const emoji = getSportEmoji(label)
   const style = getSportStyle(sport)
   const accent = style.accent
   const description = SPORT_DESCRIPTIONS[sport] ?? `Últimas noticias, resultados y análisis de ${label}.`
@@ -142,13 +141,17 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
               className="shrink-0"
               aria-hidden="true"
               style={{
+                // Tanda v3: squircle de VIDRIO con SportIcon en el acento (antes emoji 38px).
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: 64, height: 64, borderRadius: 16, fontSize: 38, lineHeight: 1,
-                background: `${accent}1a`, border: `1px solid ${accent}33`,
-                boxShadow: `0 8px 24px ${accent}14`,
+                width: 64, height: 64, borderRadius: 16,
+                background: `linear-gradient(158deg, color-mix(in srgb, ${accent} 22%, rgba(255,255,255,0.05)) 0%, color-mix(in srgb, ${accent} 6%, rgba(255,255,255,0.02)) 100%)`,
+                border: `1px solid color-mix(in srgb, ${accent} 38%, transparent)`,
+                borderTopColor: `color-mix(in srgb, ${accent} 30%, rgba(255,255,255,0.35))`,
+                boxShadow: `0 8px 24px color-mix(in srgb, ${accent} 14%, transparent), inset 0 1px 0 rgba(255,255,255,0.2)`,
+                color: `color-mix(in srgb, ${accent} 78%, #fff)`,
               }}
             >
-              {emoji}
+              <SportIcon sport={sport} size={34} />
             </span>
             <div>
               <h1
