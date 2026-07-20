@@ -1,11 +1,19 @@
 'use client'
 
-// PWAManager — invita a instalar la web como app (A2HS) y avisa de versión nueva.
-// 1) Instalar: captura `beforeinstallprompt` (Android/Chrome) y muestra un botón
-//    discreto, descartable (recuerda el descarte). No aparece si ya está instalada.
+// PWAManager — invita a llevarse TakaSports al móvil y avisa de versión nueva.
+//
+// 1) App CTA (SOLO móvil, según plataforma):
+//    · iOS  → hay app nativa en el App Store ("Taka Sports"). Banner con enlace
+//             directo a la ficha. No depende de ninguna API del navegador, así
+//             que sale igual en Safari, Chrome iOS, etc.
+//    · Android → aún no hay app nativa; se ofrece instalar la web como app (A2HS)
+//             capturando `beforeinstallprompt` (Chromium). Si el navegador no lo
+//             dispara, no se muestra nada (no forzamos instrucciones manuales).
+//    En escritorio NO aparece nunca. Descartable: al cerrar se silencia 14 días.
+//    No compite con el aviso de cookies (espera al consentimiento).
 // 2) Actualizar: detecta un service worker en espera (nueva versión) y ofrece
 //    aplicarla (postMessage SKIP_WAITING → recarga al cambiar de controlador).
-// Sin librerías, 0 KB extra. iOS no expone API de instalación (se hace a mano).
+// Sin librerías, 0 KB extra.
 
 import { useEffect, useState } from 'react'
 
@@ -14,9 +22,27 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-const A2HS_DISMISS_KEY = 'taka:a2hs-dismissed'
+// Ficha real del App Store (bundle com.takasportsmedia.app).
+const APP_STORE_URL = 'https://apps.apple.com/es/app/taka-sports/id6787799706'
+const SNOOZE_KEY = 'taka:app-cta-snooze' // guarda el ms del descarte
+const SNOOZE_MS = 14 * 24 * 60 * 60 * 1000 // 14 días
+
+type Platform = 'ios' | 'android'
+
+function detectPlatform(): Platform | null {
+  if (typeof navigator === 'undefined') return null
+  const ua = navigator.userAgent || ''
+  const isIOS =
+    /iphone|ipad|ipod/i.test(ua) ||
+    // iPadOS 13+ se hace pasar por Mac de escritorio: lo delata el táctil.
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  if (isIOS) return 'ios'
+  if (/android/i.test(ua)) return 'android'
+  return null // escritorio u otro → sin banner
+}
 
 export default function PWAManager() {
+  const [platform, setPlatform] = useState<Platform | null>(null)
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [showInstall, setShowInstall] = useState(false)
   const [updateReady, setUpdateReady] = useState(false)
@@ -43,15 +69,33 @@ export default function PWAManager() {
     return () => window.removeEventListener('load', onLoad)
   }, [])
 
-  // ── 1) Invitación a instalar ──────────────────────────────────────────────
+  // ── 1) Invitación a llevarse la app ───────────────────────────────────────
   useEffect(() => {
-    let dismissed = false
-    try { dismissed = localStorage.getItem(A2HS_DISMISS_KEY) === '1' } catch {}
+    const plat = detectPlatform()
+    if (!plat) return // escritorio → nunca
+
+    setPlatform(plat)
+
+    // ¿Silenciada hace poco?
+    let snoozed = false
+    try {
+      const raw = localStorage.getItem(SNOOZE_KEY)
+      if (raw) snoozed = Date.now() - Number(raw) < SNOOZE_MS
+    } catch {}
+    // ¿Ya corre como app instalada (PWA en pantalla de inicio)?
     const standalone =
       window.matchMedia?.('(display-mode: standalone)')?.matches ||
       (navigator as unknown as { standalone?: boolean }).standalone === true
-    if (dismissed || standalone) return
+    if (snoozed || standalone) return
 
+    if (plat === 'ios') {
+      // iOS: la ficha del App Store es un simple enlace, no hace falta ningún
+      // evento. Aparece con un leve retardo para no saltar sobre el contenido.
+      const t = setTimeout(() => setShowInstall(true), 1600)
+      return () => clearTimeout(t)
+    }
+
+    // Android: esperamos a que Chromium ofrezca instalar la PWA.
     const onPrompt = (e: Event) => {
       e.preventDefault()
       setDeferred(e as BeforeInstallPromptEvent)
@@ -120,7 +164,7 @@ export default function PWAManager() {
 
   const dismissInstall = () => {
     setShowInstall(false)
-    try { localStorage.setItem(A2HS_DISMISS_KEY, '1') } catch {}
+    try { localStorage.setItem(SNOOZE_KEY, String(Date.now())) } catch {}
   }
 
   const applyUpdate = async () => {
@@ -159,6 +203,48 @@ export default function PWAManager() {
               textTransform: 'uppercase', letterSpacing: '0.04em', cursor: 'pointer',
             }}>
             Actualizar
+          </button>
+        </div>
+      ) : platform === 'ios' ? (
+        <div
+          style={{
+            pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 10,
+            maxWidth: 420, width: '100%', padding: '10px 10px 10px 14px',
+            borderRadius: 14, background: 'rgba(20,18,30,0.96)',
+            border: '1px solid rgba(124,58,237,0.4)',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.45)',
+          }}>
+          <span aria-hidden style={{
+            flexShrink: 0, width: 34, height: 34, borderRadius: 9,
+            background: 'rgba(124,58,237,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {/* Manzana Apple */}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#A78BFA" aria-hidden>
+              <path d="M16.36 12.9c.02 2.42 2.12 3.22 2.14 3.23-.02.06-.34 1.16-1.12 2.3-.67.98-1.37 1.95-2.47 1.97-1.08.02-1.43-.64-2.66-.64-1.24 0-1.62.62-2.64.66-1.06.04-1.87-1.06-2.55-2.03-1.38-2-2.44-5.65-1.02-8.12.7-1.22 1.96-2 3.33-2.02 1.04-.02 2.02.7 2.66.7.63 0 1.83-.87 3.08-.74.53.02 2 .21 2.95 1.62-.08.05-1.76 1.03-1.74 3.07zM14.4 5.6c.56-.68.94-1.63.84-2.58-.81.03-1.79.54-2.37 1.22-.52.6-.98 1.56-.86 2.48.9.07 1.83-.46 2.39-1.13z"/>
+            </svg>
+          </span>
+          <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#ECECF6', lineHeight: 1.3 }}>
+            Descarga Taka Sports
+            <span style={{ display: 'block', fontSize: 11, fontWeight: 500, color: '#A0A0B4' }}>
+              La app para iPhone — gratis en el App Store
+            </span>
+          </span>
+          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer"
+            aria-label="Descargar Taka Sports en el App Store"
+            onClick={() => { try { localStorage.setItem(SNOOZE_KEY, String(Date.now())) } catch {} }}
+            style={{
+              flexShrink: 0, padding: '7px 14px', borderRadius: 10,
+              background: '#7C3AED', color: '#fff', fontSize: 12, fontWeight: 900,
+              textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
+            }}>
+            Descargar
+          </a>
+          <button onClick={dismissInstall} aria-label="Ahora no, ocultar"
+            style={{
+              flexShrink: 0, width: 30, height: 30, borderRadius: 8, border: 'none',
+              background: 'transparent', color: '#8A8A9E', fontSize: 18, lineHeight: 1, cursor: 'pointer',
+            }}>
+            ×
           </button>
         </div>
       ) : (
