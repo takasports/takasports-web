@@ -6,9 +6,7 @@ import { fetchEspnEvents } from '@/lib/espn'
 import { fetchPublicReels } from '@/lib/instagram-public'
 import { getRanking } from '@/lib/rankings-data'
 import { SEED_REELS } from '@/lib/seed-reels'
-import Header from '@/components/Header'
-import BreakingNewsBar from '@/components/BreakingNewsBar'
-import LiveStrip from '@/components/LiveStrip'
+import HeaderConsole from '@/components/HeaderConsole'
 import HomeContent from '@/components/HomeContent'
 import SignalIntro from '@/components/SignalIntro'
 import WelcomeOnboarding from '@/components/WelcomeOnboarding'
@@ -208,10 +206,11 @@ export default async function Home() {
       {videoListJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoListJsonLd) }} />
       )}
-      <Header />
       <h1 className="sr-only">TakaSports — Noticias deportivas en tiempo real</h1>
-      <BreakingNewsBar items={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
-      <LiveStrip />
+      {/* Consola sticky (Header + Último momento + En directo) igual que en (public):
+          "En directo" queda fijo al scrollear, "Último momento" se colapsa, y el
+          filtro de abajo se ancla a --console-h (sin hueco). */}
+      <HeaderConsole breakingItems={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
       <HomeContent articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} />
       <NewsletterSection source="home" />
       <Footer />

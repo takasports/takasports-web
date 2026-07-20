@@ -435,7 +435,10 @@ export default function HomeContent({
       <div
         className="sticky z-40 px-4 sm:px-6 xl:px-10 pt-2 sm:pt-3 pb-0"
         style={{
-          top: 56,
+          // Se ancla a la altura REAL de la consola (Header + Último momento + En
+          // directo), que varía cuando "Último momento" se colapsa al scrollear.
+          // Antes era top:56 fijo → dejaba un hueco bajo la cabecera en la home.
+          top: 'var(--console-h, 56px)',
           background: 'rgba(9,9,15,0.96)',
           backdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(255,255,255,0.04)',

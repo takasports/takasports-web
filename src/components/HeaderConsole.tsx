@@ -28,7 +28,13 @@ import LiveStrip from './LiveStrip'
 // hacer scroll. La altura es dinámica (breaking puede no estar; el directo se
 // colapsa en móvil), por eso se mide con ResizeObserver y no se hardcodea. El
 // fallback 56px cubre las rutas sin consola (hubs /futbol…, header simple).
-export default function HeaderConsole() {
+export default function HeaderConsole({
+  breakingItems,
+}: {
+  // La home pasa sus titulares SSR; el resto de (public) deja que BreakingNewsBar
+  // autofetch los suyos. Sin prop = autofetch (comportamiento previo intacto).
+  breakingItems?: { title: string; slug?: string; sport?: string }[]
+} = {}) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -49,7 +55,7 @@ export default function HeaderConsole() {
   return (
     <div ref={ref} className="sticky top-0 z-50">
       <Header sticky={false} />
-      <BreakingNewsBar />
+      <BreakingNewsBar items={breakingItems} />
       <LiveStrip />
     </div>
   )
