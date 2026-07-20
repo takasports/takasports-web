@@ -40,6 +40,7 @@ export default function LiveStrip() {
   const [fetchedAt,    setFetchedAt]    = useState<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastYRef = useRef(0)
+  const hiddenRef = useRef(false) // espejo de `hidden` para leerlo en el handler sin cerrar sobre estado viejo
   const { sports: followedSports } = useFollowedSports()
 
   const fetchLive = useCallback(async () => {
@@ -76,17 +77,48 @@ export default function LiveStrip() {
     fetchUpcoming()
   }, [fetchLive, fetchUpcoming])
 
-  // Ocultar en scroll-down, mostrar en scroll-up (solo mobile)
+  // Ocultar en scroll-down, mostrar en scroll-up (solo mobile).
+  // La barra vive en la consola sticky y al ocultarse COLAPSA su alto (48→0), lo que
+  // reclama espacio y desplaza el contenido. Ese salto se leía como un scroll en la
+  // dirección contraria y volvía a alternar el estado → "tiritones" arriba/abajo.
+  // Para evitarlo: (1) throttle con rAF (una evaluación por frame), (2) zona muerta
+  // de 8px que ignora el micro-scroll, y (3) un CANDADO de ~320ms tras cada cambio
+  // (la duración de la transición) para que el salto de layout no provoque el rebote.
   useEffect(() => {
-    const onScroll = () => {
-      if (window.innerWidth >= 1024) { setHidden(false); return }
-      const y = window.scrollY
-      if (y < 40) { setHidden(false); lastYRef.current = y; return }
-      setHidden(y > lastYRef.current + 4)
-      lastYRef.current = y
+    let raf = 0
+    let locked = false
+    let unlock: ReturnType<typeof setTimeout> | null = null
+
+    const setHiddenSafe = (next: boolean) => {
+      if (next === hiddenRef.current) return
+      hiddenRef.current = next
+      setHidden(next)
+      // Bloquear mientras dura la animación: los eventos de scroll que dispare el
+      // reflow no deben re-alternar el estado. Al soltar, resincronizar la ref.
+      locked = true
+      if (unlock) clearTimeout(unlock)
+      unlock = setTimeout(() => { locked = false; lastYRef.current = window.scrollY }, 320)
     }
+
+    const evaluate = () => {
+      raf = 0
+      if (window.innerWidth >= 1024) { setHiddenSafe(false); return }
+      const y = window.scrollY
+      if (y < 48) { setHiddenSafe(false); lastYRef.current = y; return }
+      if (locked) { lastYRef.current = y; return }
+      const delta = y - lastYRef.current
+      if (Math.abs(delta) < 8) return // zona muerta: ignora el temblor fino
+      lastYRef.current = y
+      setHiddenSafe(delta > 0) // baja → oculta · sube → muestra
+    }
+
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(evaluate) }
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+      if (unlock) clearTimeout(unlock)
+    }
   }, [])
 
   // Polling con pausa cuando la pestaña no está visible.
