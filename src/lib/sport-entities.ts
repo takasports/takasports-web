@@ -209,13 +209,35 @@ export interface SnapshotEntity {
 }
 
 /**
+ * Tamaño de la COHORTE de snapshots: los jugadores a los que seguimos la pista semana a
+ * semana. Capacidad semanal del cron = 48 pasadas (cada hora lun+mar) × BATCH 20 = 960,
+ * así que 600 completa la cohorte cada semana con margen de sobra para reintentos.
+ */
+const SNAPSHOT_COHORT = 600
+
+/**
  * Jugadores de fútbol a los que aún NO se les ha tomado snapshot de rendimiento en la
  * semana `weekStart` (YYYY-MM-DD del lunes), en lotes.
  *
- * A esta escala (~cientos) traigo todos los jugadores y filtro contra el set de "ya hechos
- * esta semana" en memoria: es correcto sin depender del anti-join de PostgREST (que es
- * frágil cuando el filtro va sobre la tabla embebida). Solo devuelve entidades con
- * meta.leagueSlug — sin liga no se puede pedir la línea de stats a ESPN Core.
+ * COHORTE ESTABLE (arreglo 2026-07-20): antes esta consulta no filtraba por liga ni tenía
+ * orden, así que cada semana medía a ~40 jugadores DISTINTOS y arbitrarios de los 53.000
+ * de la tabla (medido: cero jugadores con dos semanas, y la muestra llena de ligas que no
+ * cubrimos — Malasia, Rusia, México 2ª). Sin repetir sujeto no hay serie temporal, así que
+ * la curva histórica que necesita el Valor Taka nunca habría existido por mucho que
+ * pasaran los meses.
+ *
+ * Ahora se restringe a NUESTRAS competiciones y se ordena por id (arbitrario pero
+ * ESTABLE), tomando siempre los mismos `SNAPSHOT_COHORT` primeros: cada semana se mide al
+ * MISMO grupo, que es lo que produce curva. De paso, la consulta baja de traer 53.000
+ * filas por pasada a traer 600.
+ *
+ * Se filtra contra el set de "ya hechos esta semana" en memoria: es correcto sin depender
+ * del anti-join de PostgREST (frágil cuando el filtro va sobre la tabla embebida). Solo
+ * devuelve entidades con meta.leagueSlug — sin liga no se puede pedir la línea a ESPN Core.
+ *
+ * Refinamiento futuro: la cohorte ideal serían los jugadores que el sitio muestra de verdad
+ * (los líderes de /estadisticas), pero hoy no hay marca de relevancia en `meta` para
+ * distinguirlos; "primeros N de nuestras ligas" ya es un salto enorme frente a aleatorio.
  */
 export async function listEntitiesNeedingSnapshot(
   weekStart: string,
@@ -236,6 +258,9 @@ export async function listEntitiesNeedingSnapshot(
     .eq('type', 'player')
     .eq('sport', 'football')
     .not('espn_id', 'is', null)
+    .in('meta->>leagueSlug', [...FOOTBALL_LEAGUE_SLUGS])
+    .order('id', { ascending: true })
+    .limit(SNAPSHOT_COHORT)
   if (error || !data) return []
 
   const out: SnapshotEntity[] = []
