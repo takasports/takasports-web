@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { isLiveStatus } from '@/lib/live-events'
 
 const TABS = [
@@ -20,6 +20,7 @@ const TABS = [
 export default function BottomNav() {
   const pathname = usePathname() || '/'
   const [hasLive, setHasLive] = useState(false)
+  const capsuleRef = useRef<HTMLDivElement | null>(null)
 
   // Directos para el punto rojo del Calendario. Poll cada 60s, en pausa con la pestaña
   // oculta (batería/red), igual criterio que el resto del polling de la web.
@@ -41,6 +42,41 @@ export default function BottomNav() {
     return () => { alive = false; clearInterval(id); document.removeEventListener('visibilitychange', onVis) }
   }, [])
 
+  // La cápsula ENCOGE mientras se hace scroll (arriba o abajo) y vuelve al parar —
+  // paridad con el tab bar de la app (useTabBarChrome). Se muta el estilo a mano
+  // (sin re-render por frame) con un debounce que la restaura ~560 ms tras cesar
+  // el scroll. Respeta prefers-reduced-motion.
+  useEffect(() => {
+    const el = capsuleRef.current
+    if (!el) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return
+
+    let shrunk = false
+    let restore: ReturnType<typeof setTimeout> | null = null
+
+    const onScroll = () => {
+      if (!shrunk) {
+        shrunk = true
+        el.style.transition = 'transform 170ms ease, opacity 170ms ease'
+        el.style.transform = 'translateY(8px) scale(0.88)'
+        el.style.opacity = '0.66'
+      }
+      if (restore) clearTimeout(restore)
+      restore = setTimeout(() => {
+        shrunk = false
+        el.style.transition = 'transform 320ms ease, opacity 320ms ease'
+        el.style.transform = ''
+        el.style.opacity = ''
+      }, 560)
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (restore) clearTimeout(restore)
+    }
+  }, [])
+
   const onTap = () => {
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
       try { navigator.vibrate(8) } catch {}
@@ -54,7 +90,7 @@ export default function BottomNav() {
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 10px)' }}
     >
       {/* Wrapper con la sombra (sin overflow, que la recortaría) */}
-      <div className="pointer-events-auto mx-auto" style={{ maxWidth: 460, borderRadius: 30, boxShadow: '0 18px 40px -14px rgba(0,0,0,0.7)' }}>
+      <div ref={capsuleRef} className="pointer-events-auto mx-auto" style={{ maxWidth: 460, borderRadius: 30, boxShadow: '0 18px 40px -14px rgba(0,0,0,0.7)', willChange: 'transform', transformOrigin: 'center bottom' }}>
         {/* Cápsula: velo translúcido + blur real + canto de luz specular arriba */}
         <ul
           className="flex items-stretch justify-around overflow-hidden"
