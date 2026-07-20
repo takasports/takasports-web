@@ -80,6 +80,11 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'TakaSports',
   },
+  // Smart App Banner NATIVO de Apple (solo iOS/Safari móvil): una barra fina que
+  // muestra "OBTENER" a quien no tiene la app y "ABRIR" a quien ya la tiene. Es la
+  // ÚNICA invitación a la app en iOS — el banner propio (PWAManager) queda solo
+  // para Android, donde no hay app nativa. app-id de la ficha "Taka Sports".
+  itunes: { appId: '6787799706' },
   openGraph: {
     title: 'TakaSports — Noticias deportivas en tiempo real',
     description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario, rankings y juegos.',
