@@ -113,7 +113,16 @@ function parseScore(v: unknown): number | null {
   return null
 }
 
-const FINAL_STATUSES = new Set(['STATUS_FINAL', 'STATUS_FULL_TIME', 'STATUS_ENDED'])
+// Estados de ESPN para "partido terminado". Incluye las variantes de prórroga y
+// penaltis (STATUS_FINAL_AET / STATUS_FINAL_PEN y sus alias): las eliminatorias
+// —finales incluidas— se deciden así, y sin ellas se caían de Resultados (la
+// final del Mundial ARG-ESP acabó en STATUS_FINAL_AET). Alineado con el resto
+// del repo (ficha de partido, /api/match, cron sync-mundial).
+export const FINAL_STATUSES = new Set([
+  'STATUS_FINAL', 'STATUS_FULL_TIME', 'STATUS_FT', 'STATUS_ENDED',
+  'STATUS_FINAL_PEN', 'STATUS_FINAL_AET',
+  'STATUS_FULL_TIME_ET', 'STATUS_FULL_TIME_AET', 'STATUS_PENALTY',
+])
 
 interface RawEvent {
   isoDate: string
@@ -209,7 +218,7 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
 
     const statusName = ((comp.status as Record<string, unknown>)?.type as Record<string, unknown>)?.name as string | undefined
     if (statusName === 'STATUS_POSTPONED') continue
-    if (statusName === 'STATUS_FINAL' && dateLabel !== 'Hoy') continue
+    if (statusName && FINAL_STATUSES.has(statusName) && dateLabel !== 'Hoy') continue
 
     const competitors = (comp.competitors as Record<string, unknown>[]) ?? []
 
@@ -340,7 +349,7 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
 
         const statusName = ((m.status as Record<string, unknown>)?.type as Record<string, unknown>)?.name as string | undefined
         if (statusName === 'STATUS_POSTPONED') continue
-        if (statusName === 'STATUS_FINAL' && dateLabel !== 'Hoy') continue
+        if (statusName && FINAL_STATUSES.has(statusName) && dateLabel !== 'Hoy') continue
 
         const competitors = (m.competitors as Record<string, unknown>[]) ?? []
         if (competitors.length < 2) continue
