@@ -516,6 +516,7 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
   const drawerRef = useRef<HTMLElement>(null)
   const hamburgerRef = useRef<HTMLButtonElement>(null)
   const navRef = useRef<HTMLElement>(null)
+  const headerRef = useRef<HTMLElement>(null)
   // Subrayado magnético: una sola línea que se desliza bajo el enlace de sección
   // activo (en vez de un subrayado fijo por enlace). Se mide con getBoundingClientRect.
   const [navLine, setNavLine] = useState<{ left: number; width: number; top: number; ready: boolean }>({ left: 0, width: 0, top: 0, ready: false })
@@ -684,9 +685,32 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
     return () => { window.removeEventListener('resize', measure); ro?.disconnect() }
   }, [pathname])
 
+  // --console-h: cuando el Header se fija ÉL MISMO (sticky), publica su altura
+  // real para que las barras sticky de debajo se anclen a `var(--console-h)` y
+  // queden PEGADAS a él. Antes solo lo publicaba HeaderConsole, así que en las
+  // rutas con header simple (p. ej. /calendario) la barra de abajo se quedaba
+  // en top:0 y se metía DEBAJO del header. Con sticky={false} no lo publica:
+  // ahí manda el contenedor de la consola, que mide Header+Último momento+Directo.
+  useEffect(() => {
+    if (!sticky) return
+    const el = headerRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const apply = () => {
+      document.documentElement.style.setProperty('--console-h', `${el.offsetHeight}px`)
+    }
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(el)
+    return () => {
+      ro.disconnect()
+      document.documentElement.style.removeProperty('--console-h')
+    }
+  }, [sticky])
+
   return (
     <>
       <header
+        ref={headerRef}
         className={`${sticky ? 'sticky top-0 z-50' : 'relative z-40'} w-full`}
         style={{
           background: 'rgba(9,9,15,0.94)',

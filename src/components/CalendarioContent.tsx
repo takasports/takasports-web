@@ -1096,9 +1096,16 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
           className="mb-4 -mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-4 sm:px-6 xl:px-10 pt-2 pb-3"
           style={{
             position: 'sticky',
-            top: 0,
+            // Pegada JUSTO debajo del header, que también es sticky (z-50). Antes
+            // era top:0 → la barra se metía DEBAJO del header: la fila de días
+            // quedaba tapada y por la parte translúcida se veían pasar los
+            // partidos (la "franja"). El header publica su altura en --console-h.
+            top: 'var(--console-h, 56px)',
             zIndex: 30,
-            background: 'linear-gradient(180deg, rgba(10,10,18,0.96) 0%, rgba(10,10,18,0.88) 80%, rgba(10,10,18,0) 100%)',
+            // Opaca donde hay controles; el degradado solo suaviza los últimos
+            // px del padding inferior. Antes empezaba a desvanecerse al 80%,
+            // justo sobre los chips, y el contenido se transparentaba tras ellos.
+            background: 'linear-gradient(180deg, rgba(10,10,18,0.98) 0%, rgba(10,10,18,0.98) 94%, rgba(10,10,18,0) 100%)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
           }}
