@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ShareButton } from '@/components/ShareButton'
 import BreadcrumbsNav from '@/components/BreadcrumbsNav'
+import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
 import { fetchLeagueTableRows } from '@/lib/espn-standings'
 
@@ -147,7 +148,8 @@ function teamHref(def: LeagueDef, teamId?: string) {
   return teamId ? `/equipo/${def.leagueSlug.replace('/', '_')}_${teamId}` : undefined
 }
 function playerHref(p: PlayerRow) {
-  return p.playerId && p.leagueSlug ? `/jugador/${p.leagueSlug.replace('/', '_')}_${p.playerId}` : undefined
+  // Slug con el nombre dentro; el id al final es lo que resuelve la ficha.
+  return p.playerId ? `/jugador/${canonicalPlayerSlug(p.name, p.playerId)}` : undefined
 }
 
 function StandingsTable({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {

@@ -11,6 +11,7 @@ import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import PlayerStatsRadar, { hasRadarData } from '@/components/PlayerStatsRadar'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
+import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 export const revalidate = 1800
 
@@ -19,12 +20,24 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const player = await fetchPlayer(slug)
   if (!player) return { title: 'Jugador' }
+
+  // Consolidación por canonical, NO por redirect. Se probó `permanentRedirect` tanto
+  // aquí como en el componente: en ambos casos Next no llega a emitir un 308 HTTP
+  // (la respuesta ya está streameando) y lo degrada a <meta http-equiv="refresh">,
+  // que además sirve la ficha entera con un 200 en la URL vieja y deja el canonical
+  // vacío. Un meta refresh es peor señal que no redirigir, así que la URL antigua
+  // responde 200 pero declara como canónica la nueva — que es la vía estándar para
+  // consolidar duplicados. Los enlaces internos y el sitemap ya apuntan solo a la
+  // nueva, así que la vieja se queda sin enlaces y sale del índice por su propio peso.
   // Sin sufijo " | TakaSports": el root layout ya aplica title.template '%s | TakaSports'.
   const title = `${player.name} · ${player.leagueLabel}`
   const description = `${player.name}${player.position ? ` · ${player.position}` : ''}${
     player.team ? ` · ${player.team.name}` : ''
   } — estadísticas de la temporada en ${player.leagueLabel}`
-  const canonical = `${SITE_URL}/jugador/${slug}`
+  // Canonical al slug con nombre, no al que haya pedido el visitante: si entra por
+  // el formato histórico, el canonical ya apunta a la URL buena (y la página, además,
+  // redirige 308).
+  const canonical = `${SITE_URL}/jugador/${canonicalPlayerSlug(player.name, player.id)}`
   const ogImageUrl = player.photo ?? player.team?.logo ?? `${SITE_URL}/taka-icon.png`
   return {
     title,
@@ -595,7 +608,13 @@ export default async function JugadorPage({ params }: { params: Promise<{ slug: 
   const player = await fetchPlayer(slug)
   if (!player) notFound()
 
-  const canonicalUrl = `${SITE_URL}/jugador/${slug}`
+  // Una ficha, una URL canónica. Se llegue por donde se llegue (el slug histórico
+  // que sigue circulando en enlaces compartidos y en la app, o el nombre con otra
+  // grafía), el canonical y el JSON-LD apuntan siempre a la misma. El ID manda; la
+  // parte del nombre es decorativa. Ver la nota en generateMetadata.
+  const canonicalSlug = canonicalPlayerSlug(player.name, player.id)
+
+  const canonicalUrl = `${SITE_URL}/jugador/${canonicalSlug}`
 
   const playerJsonLd = {
     '@context': 'https://schema.org',

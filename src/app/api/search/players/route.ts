@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 export interface SearchHit {
   type: 'player' | 'team'
@@ -76,7 +77,7 @@ export async function GET(req: Request) {
           type: 'player',
           name,
           subtitle: c.subtitle || (sport === 'soccer' ? league.toUpperCase() : 'NBA'),
-          href: `/jugador/${sportSeg}_${leagueSeg}_${id}`,
+          href: `/jugador/${canonicalPlayerSlug(name, id)}`,
         })
       } else {
         const id = idFromUid(uid, 't')

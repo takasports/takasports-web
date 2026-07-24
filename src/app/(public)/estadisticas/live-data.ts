@@ -3,6 +3,7 @@
 
 import { getZone } from '@/lib/league-zones'
 import type { StatBlock, StatRow } from './stats-types'
+import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 /**
  * Ratio por partido para métricas de TOTAL ("1,16 /PJ"). Información nueva de datos que
@@ -169,10 +170,10 @@ export interface PlayerLeader {
   photo?: string; photoAttribution?: string
 }
 
-// Build the /jugador deep-link slug from an ESPN league slug + athlete id.
-export function playerHref(p: { playerId?: string; leagueSlug?: string }): string | undefined {
-  if (!p.playerId || !p.leagueSlug) return undefined
-  return `/jugador/${p.leagueSlug.replaceAll('/', '_')}_${p.playerId}`
+// Slug de la ficha: nombre legible + id de ESPN al final (el id es el que resuelve).
+export function playerHref(p: { playerId?: string; name?: string }): string | undefined {
+  if (!p.playerId) return undefined
+  return `/jugador/${canonicalPlayerSlug(p.name, p.playerId)}`
 }
 export interface LeaguePlayerData {
   id: string; label: string

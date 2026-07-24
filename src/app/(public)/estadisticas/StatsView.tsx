@@ -4,6 +4,7 @@ import { getStandingsData, shardStandingsForSport, type StatsStandingsResponse }
 import type { PlayersResponse } from '@/app/api/stats/players/route'
 import { SITE_URL } from '@/lib/constants'
 import EstadisticasLoading from './loading'
+import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 // ── Landings de estadísticas por deporte ──────────────────────────────────────
 // El deporte vive en la RUTA DE PATH (/estadisticas/[sport]) en vez de en el
@@ -113,9 +114,9 @@ function ClasificacionesHub({ data }: { data: StatsStandingsResponse | null }) {
   )
 }
 
-function playerHref(leagueSlug: string | undefined, playerId: string | undefined): string | null {
-  if (!leagueSlug || !playerId) return null
-  return `/jugador/${leagueSlug.replace('/', '_')}_${playerId}`
+function playerHref(name: string, playerId: string | undefined): string | null {
+  if (!playerId) return null
+  return `/jugador/${canonicalPlayerSlug(name, playerId)}`
 }
 
 // Directorio de jugadores: goleadores + asistentes por liga, deduplicados, cada
@@ -130,13 +131,13 @@ function PlayersDirectory({ data }: { data: PlayersResponse | null }) {
     // Goleadores primero (value = goles), luego asistentes (value = asistencias).
     // Separados para etiquetar la cifra sin ambigüedad. (Fix A1 SEO)
     for (const p of (lg.goals ?? [])) {
-      const href = playerHref(p.leagueSlug, p.playerId)
+      const href = playerHref(p.name, p.playerId)
       if (!href || seen.has(href)) continue
       seen.add(href)
       players.push({ name: p.name, href, meta: `${p.value} ${p.value === 1 ? 'gol' : 'goles'}` })
     }
     for (const p of (lg.assists ?? [])) {
-      const href = playerHref(p.leagueSlug, p.playerId)
+      const href = playerHref(p.name, p.playerId)
       if (!href || seen.has(href)) continue
       seen.add(href)
       players.push({ name: p.name, href, meta: `${p.value} asist.` })

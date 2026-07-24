@@ -3,6 +3,7 @@ import { SITE_URL } from '@/lib/constants'
 import type { TeamResult } from '@/app/api/team/[slug]/route'
 import { fetchPlayerGamelog, type MatchLogEntry } from '@/lib/player-gamelog'
 import { fetchPlayerWikidata, type CareerStint, type Honor } from '@/lib/player-wikidata'
+import { resolvePlayerSlug } from '@/lib/player-slug'
 import { getPhotosByEspnId } from '@/lib/sport-entities'
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -235,13 +236,18 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params
-  // slug shape: "<sport>_<league>_<playerId>" e.g. "soccer_esp.1_231388"
-  const parts = slug.split('_')
-  if (parts.length < 3) {
+  // Se aceptan DOS formatos, a propósito y de forma permanente:
+  //   - "kylian-mbappe-231388"  → el canónico de la web (keyword en la URL)
+  //   - "soccer_esp.1_231388"   → el histórico, que la app móvil ya publicada
+  //     construye por concatenación y guarda como identidad de equipos seguidos.
+  //     Mientras haya instalaciones de esa versión NO se puede retirar.
+  // Ver src/lib/player-slug.ts.
+  const ref = await resolvePlayerSlug(slug)
+  if (!ref) {
     return NextResponse.json({ error: 'bad slug' }, { status: 400 })
   }
-  const playerId   = parts[parts.length - 1]
-  let leagueSlug   = parts.slice(0, -1).join('/')
+  const playerId   = ref.espnId
+  let leagueSlug   = ref.leagueSlug
 
   const overviewJson = await jsonFetch(
     `https://site.web.api.espn.com/apis/common/v3/sports/${leagueSlug}/athletes/${playerId}`,

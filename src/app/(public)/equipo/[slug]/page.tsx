@@ -12,6 +12,7 @@ import { ShareButton } from '@/components/ShareButton'
 import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import { SITE_URL, SITE_NAME, LOGO_URL, ICON_URL } from '@/lib/constants'
+import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 // Solo estas 5 ligas tienen página /liga/[id]. team.leagueSlug llega como
 // "soccer/esp.1" (con el deporte delante), así que enlazar a /liga/${leagueSlug}
@@ -96,7 +97,7 @@ const POS_LABEL: Record<string, string> = {
 // ── Featured Player ────────────────────────────────────────────────────
 function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterPlayer; teamColor?: string; leagueSlug: string }) {
   const accent = teamColor ? `#${teamColor}` : '#7C3AED'
-  const href = player.id ? `/jugador/${leagueSlug.replaceAll('/', '_')}_${player.id}` : undefined
+  const href = player.id ? `/jugador/${canonicalPlayerSlug(player.name, player.id)}` : undefined
   const card = (
     <div
       className={`rounded-2xl p-5 mb-6 flex gap-4 items-center${href ? ' transition-all hover:bg-white/[0.06]' : ''}`}

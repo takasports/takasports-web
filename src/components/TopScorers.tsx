@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { ScorerRow } from '@/lib/espn-standings'
+import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 // Tabla de máximos goleadores (Pichichi) de una competición. Cada jugador
 // enlaza a su ficha /jugador. Presentacional (server component) — datos vía
@@ -16,7 +17,6 @@ export function TopScorers({
   title?: string
 }) {
   if (!scorers.length) return null
-  const leaguePart = espnSlug.replace('/', '_')
 
   return (
     <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -26,7 +26,7 @@ export function TopScorers({
       </p>
       <ul className="flex flex-col">
         {scorers.map((s, i) => {
-          const href = `/jugador/${leaguePart}_${s.playerId}`
+          const href = `/jugador/${canonicalPlayerSlug(s.name, s.playerId)}`
           const accent = i === 0 ? '#FCD34D' : i === 1 ? '#D1D5DB' : i === 2 ? '#D97706' : 'var(--text-muted)'
           return (
             <li key={s.playerId}>

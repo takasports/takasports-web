@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { RosterPlayer } from '@/app/api/team/[slug]/route'
+import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 type SortKey = 'jersey' | 'goals' | 'assists' | 'gamesPlayed'
 
@@ -16,7 +17,7 @@ const POS_LABEL: Record<string, string> = {
 }
 
 function PlayerRow({ player, leagueSlug }: { player: RosterPlayer; leagueSlug: string }) {
-  const href = player.id ? `/jugador/${leagueSlug.replaceAll('/', '_')}_${player.id}` : undefined
+  const href = player.id ? `/jugador/${canonicalPlayerSlug(player.name, player.id)}` : undefined
   // Cara: foto de la caché propia (cascada Wikimedia) antes que el headshot de ESPN, que
   // fuera del top-5 europeo casi nunca existe. El crédito CC de las fotos va agregado al
   // pie de la plantilla (RosterCredits), no por fila — en 32px no cabe un ⓘ por cara.

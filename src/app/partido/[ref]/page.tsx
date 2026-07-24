@@ -23,6 +23,7 @@ import { GoalIcon, YellowCardIcon, RedCardIcon } from '@/components/icons/GameIc
 import { fetchH2H, fetchRecentFormByTeams, type H2HResult, type FormResult } from '@/lib/past-events'
 import { estimateOutcome, matchDominance, type OutcomeEstimate, type Dominance } from '@/lib/match-estimate'
 import { accentForSport } from '@/lib/sports'
+import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 // Cache 2 min en ISR. Partidos en vivo se refrescan a 30s vía LiveRefresh
 // (router.refresh client-side), partidos finalizados aprovechan el cache.
@@ -353,7 +354,7 @@ function PlayerName({ name, playerId, leagueSlug, className }: {
   if (playerId && leagueSlug) {
     return (
       <Link
-        href={`/jugador/${leagueSlug.replace('/', '_')}_${playerId}`}
+        href={`/jugador/${canonicalPlayerSlug(name, playerId)}`}
         className={`hover:underline ${className ?? ''}`}
         style={{ color: 'inherit', textDecoration: 'none' }}
       >
@@ -1033,7 +1034,7 @@ function playerDisplayName(p: LineupPlayer): string {
 }
 
 function lineupHref(leagueSlug: string | undefined, p: LineupPlayer): string | undefined {
-  return leagueSlug && p.id ? `/jugador/${leagueSlug.replace('/', '_')}_${p.id}` : undefined
+  return p.id ? `/jugador/${canonicalPlayerSlug(p.name, p.id)}` : undefined
 }
 
 interface PlayerMarks { goals: number; yellow: boolean; red: boolean }

@@ -6,6 +6,7 @@ import { getAllEntryIdsFromDb } from '@/lib/rankings-data'
 import { SITE_URL } from '@/lib/constants'
 import { COMPETITIONS } from '@/lib/calendar-competitions'
 import { GLOSARIO_TERMS } from '@/lib/glosario-terms'
+import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 const BASE_URL = SITE_URL
 
@@ -56,9 +57,12 @@ async function statRoutes(): Promise<MetadataRoute.Sitemap> {
     }
     if (playRes.ok) {
       const p = await playRes.json()
-      const push = (arr: { playerId?: string; leagueSlug?: string }[] | undefined) => {
-        for (const x of arr ?? []) if (x.playerId && x.leagueSlug)
-          playerUrls.add(`${BASE_URL}/jugador/${x.leagueSlug.replace('/', '_')}_${x.playerId}`)
+      // Slug canónico (nombre + id). El sitemap NO debe listar el formato histórico:
+      // esas URLs ahora responden 308 hacia estas, y un sitemap lleno de redirecciones
+      // desperdicia crawl budget y retrasa la reindexación.
+      const push = (arr: { playerId?: string; name?: string }[] | undefined) => {
+        for (const x of arr ?? []) if (x.playerId)
+          playerUrls.add(`${BASE_URL}/jugador/${canonicalPlayerSlug(x.name, x.playerId)}`)
       }
       for (const lg of p.leagues ?? []) { push(lg.goals); push(lg.assists) }
       for (const k of Object.keys(p.combined ?? {})) push(p.combined[k])

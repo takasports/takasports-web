@@ -5,6 +5,7 @@ import PlayerAvatar from '@/components/PlayerAvatar'
 import type { PlayerDetail } from '@/app/api/jugador/[slug]/route'
 import { getSportStyle } from '@/lib/sports'
 import { SITE_URL } from '@/lib/constants'
+import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 export const revalidate = 1800
 
@@ -106,7 +107,7 @@ function PlayerHead({ p }: { p: PlayerDetail }) {
           name={p.name} accent="#C4B5FD" headshotSize={64} logoSize={56} textClass="text-2xl" />
       </div>
       <div className="min-w-0">
-        <Link href={`/jugador/${p.leagueSlug.replaceAll('/', '_')}_${p.id}`}
+        <Link href={`/jugador/${canonicalPlayerSlug(p.name, p.id)}`}
           className="font-black text-[15px] text-white leading-tight hover:underline block truncate"
           style={{ fontFamily: 'var(--font-display)' }}>
           {p.name}
