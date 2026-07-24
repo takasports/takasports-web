@@ -143,11 +143,27 @@ export default function EventHero({
         {posterUrl ? (
           /* ── Póster oficial / IA (Fases 2-3) ── */
           <div style={{ display: 'flex', justifyContent: 'center' }}>
+            {/* Sigue siendo <img> y no next/image a propósito: poster_url es un campo
+                libre de game_events.meta, así que el host es arbitrario y next/image
+                lanzaría en runtime con cualquier dominio fuera de remotePatterns.
+                Lo que sí se arregla: es la imagen LCP de /ufc, así que se prioriza su
+                descarga (fetchPriority) y se reserva su espacio con aspect-ratio de
+                póster (2:3) + object-fit contain, que antes provocaba layout shift.
+                Si la proporción real difiere, contain la encaja sin deformarla. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={posterUrl} alt={eventName} style={{
-              maxWidth: 'min(560px, 100%)', maxHeight: 520, width: 'auto', borderRadius: 14,
-              boxShadow: '0 16px 48px rgba(0,0,0,0.6)', border: '1px solid rgba(248,113,113,0.25)',
-            }} />
+            <img
+              src={posterUrl}
+              alt={eventName}
+              width={560}
+              height={840}
+              fetchPriority="high"
+              decoding="async"
+              style={{
+                maxWidth: 'min(560px, 100%)', maxHeight: 520, width: 'auto', height: 'auto',
+                aspectRatio: '2 / 3', objectFit: 'contain', borderRadius: 14,
+                boxShadow: '0 16px 48px rgba(0,0,0,0.6)', border: '1px solid rgba(248,113,113,0.25)',
+              }}
+            />
           </div>
         ) : (
           /* ── Banner de título (sin fotos: las caras están en las cartas) ── */

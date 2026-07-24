@@ -5,6 +5,7 @@ import { sanityClient, urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import ScrollToTop from '@/components/ScrollToTop'
+import SearchTracker from './SearchTracker'
 import { SITE_URL } from '@/lib/constants'
 
 // Búsqueda cachea 60s por query: la mayoría de hits son del mismo término
@@ -121,6 +122,7 @@ export default async function BuscarPage({
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+      <SearchTracker query={query} resultCount={results.length} sport={sportFilter} />
       {query && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(searchJsonLd) }} />
       )}

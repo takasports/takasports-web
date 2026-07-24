@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ShareButton } from '@/components/ShareButton'
+import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
 import { fetchLeagueTableRows } from '@/lib/espn-standings'
 
@@ -39,7 +40,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const lg = LEAGUES[id]
-  if (!lg) return { title: 'Liga | TakaSports' }
+  if (!lg) return { title: 'Liga' }   // sin sufijo: title.template del root ya lo añade
   // Sin sufijo manual de marca: la plantilla raíz ya añadía " | TakaSports", lo
   // que producía el doble sufijo "...| TakaSports | TakaSports" (76 chars). Con
   // absolute controlamos el título exacto y evitamos el truncado. (Fase 0 SEO)
@@ -205,7 +206,10 @@ function LeaderList({ title, players, metric, def }: { title: string; players: P
               {(p.photo ?? p.teamLogo) && (
                 <Image
                   src={(p.photo ?? p.teamLogo)!}
-                  alt=""
+                  // Si es la FOTO del jugador, el alt dice de quién es (contexto real
+                  // para Google Imágenes y lectores de pantalla). Si es el escudo del
+                  // club es decorativo: el equipo ya va en texto al lado → alt vacío.
+                  alt={p.photo ? p.name : ''}
                   width={22}
                   height={22}
                   unoptimized
@@ -243,8 +247,64 @@ async function Content({ id }: { id: string }) {
   if (!def) notFound()
   const { rows, goals, assists } = def.direct ? await fetchDirect(def) : await fetchData(def)
 
+  const canonical = `${SITE_URL}/liga/${id}`
+
+  // Esta ruta era la única ficha de entidad sin NINGÚN dato estructurado: ni la liga
+  // como entidad, ni la clasificación, ni breadcrumbs. Se marcan las tres cosas.
+  const leagueJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsOrganization',
+    name: def.label,
+    url: canonical,
+    sport: 'Football',
+    ...(rows.length ? {
+      // La clasificación como lista ORDENADA: `position` es lo que permite a Google
+      // leerla como tabla de posiciones y no como un listado suelto de equipos.
+      subOrganization: {
+        '@type': 'ItemList',
+        name: `Clasificación de ${def.label}`,
+        itemListOrder: 'https://schema.org/ItemListOrderAscending',
+        numberOfItems: rows.length,
+        itemListElement: rows.map(r => ({
+          '@type': 'ListItem',
+          position: r.rank,
+          item: {
+            '@type': 'SportsTeam',
+            name: r.name,
+            ...(r.logo ? { logo: r.logo } : {}),
+            ...(r.teamId ? { url: `${SITE_URL}/equipo/${r.teamId}` } : {}),
+          },
+        })),
+      },
+    } : {}),
+  }
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Estadísticas', item: `${SITE_URL}/estadisticas` },
+      { '@type': 'ListItem', position: 3, name: 'Fútbol', item: `${SITE_URL}/estadisticas/futbol` },
+      { '@type': 'ListItem', position: 4, name: def.label, item: canonical },
+    ],
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(leagueJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+
+      <BreadcrumbsNav
+        className="mb-4 text-xs flex items-center gap-2 flex-wrap"
+        items={[
+          { label: 'Inicio', href: '/' },
+          { label: 'Estadísticas', href: '/estadisticas' },
+          { label: 'Fútbol', href: '/estadisticas/futbol' },
+          { label: def.label },
+        ]}
+      />
+
       <div className="flex items-center justify-between mb-6">
         <Link href="/estadisticas/futbol"
           className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)] hover:text-white transition-colors"

@@ -12,7 +12,7 @@ import SportHubHeader from '@/components/SportHubHeader'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { urlFor } from '@/lib/sanity'
-import { SITE_URL, LOGO_URL } from '@/lib/constants'
+import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 300
 
@@ -75,7 +75,8 @@ export async function generateMetadata({
       locale: 'es_ES',
       type: 'website',
       url: `${SITE_URL}/${sport}`,
-      images: [{ url: LOGO_URL, width: 800, height: 800, alt: `${label} — TakaSports` }],
+      // Sin `images`: deja que Next use ./opengraph-image.tsx (tarjeta 1200×630 del
+      // deporte). Fijar LOGO_URL a 800×800 la anulaba y daba una tarjeta cuadrada.
     },
     twitter: {
       card: 'summary_large_image',

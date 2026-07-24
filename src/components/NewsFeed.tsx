@@ -193,10 +193,18 @@ export default function NewsFeed({
                       </p>
                     )}
                   </div>
+                  {/* <time dateTime> en vez de <p>: "hace 2 h" es legible para una
+                      persona pero opaco para un buscador. El atributo dateTime da la
+                      fecha exacta en formato máquina, que es lo que Google usa para
+                      ordenar y fechar noticias. Visualmente idéntico. */}
                   {article.publishedAt && (
-                    <p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>
+                    <time
+                      dateTime={article.publishedAt}
+                      className="block text-[10px] mt-1"
+                      style={{ color: 'var(--text-faint)' }}
+                    >
                       {timeAgo(article.publishedAt)}
-                    </p>
+                    </time>
                   )}
                 </div>
               </Link>
@@ -240,9 +248,13 @@ export default function NewsFeed({
                     {article.title}
                   </h3>
                   {article.publishedAt && (
-                    <p className="text-[10px] mt-2" style={{ color: 'var(--text-faint)' }}>
+                    <time
+                      dateTime={article.publishedAt}
+                      className="block text-[10px] mt-2"
+                      style={{ color: 'var(--text-faint)' }}
+                    >
                       {timeAgo(article.publishedAt)}
-                    </p>
+                    </time>
                   )}
                 </div>
               </Link>

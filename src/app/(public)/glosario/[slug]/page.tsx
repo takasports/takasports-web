@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { SITE_URL, LOGO_URL } from '@/lib/constants'
+import { SITE_URL } from '@/lib/constants'
 import {
   GLOSARIO_TERMS,
   getGlosarioTerm,
@@ -40,12 +40,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const term = getGlosarioTerm(slug)
-  if (!term) return { title: 'Glosario | TakaSports' }
+  // Sin sufijo " | TakaSports": el root layout ya aplica title.template.
+  if (!term) return { title: 'Glosario' }
   const canonical = `${SITE_URL}/glosario/${term.slug}`
   return {
     title: `${term.term} — ¿Qué es y cómo funciona?`,
     description: term.summary,
     alternates: { canonical },
+    // Sin `images`: deja que Next use ./opengraph-image.tsx (tarjeta con el término).
     openGraph: {
       title: `${term.term} — Glosario TakaSports`,
       description: term.summary,
@@ -53,7 +55,6 @@ export async function generateMetadata({
       siteName: 'TakaSports',
       locale: 'es_ES',
       type: 'article',
-      images: [{ url: LOGO_URL, width: 1200, height: 630, alt: term.term }],
     },
     twitter: {
       card: 'summary_large_image',

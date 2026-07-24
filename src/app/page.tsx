@@ -161,7 +161,14 @@ export default async function Home() {
             item: {
               '@type': 'VideoObject',
               name: r.title,
-              contentUrl: r.instagram_url,
+              // `description` es obligatorio para Google en VideoObject; sin él la
+              // ficha no opta a resultados de vídeo. No hay caption en Sanity, así
+              // que se usa el título (es la descripción real del reel).
+              description: r.title,
+              // embedUrl, NO contentUrl: no existe fichero de vídeo servible, y
+              // contentUrl apuntando a la página HTML del post no valida. Misma
+              // decisión ya tomada en video-sitemap.xml (player_loc embebible).
+              embedUrl: `${r.instagram_url!.replace(/\/+$/, '')}/embed/`,
               thumbnailUrl: urlFor(r.thumbnail!).width(640).height(640).url(),
               ...(r.publishedAt ? { uploadDate: new Date(r.publishedAt).toISOString() } : {}),
             },

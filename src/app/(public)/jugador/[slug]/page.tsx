@@ -605,6 +605,18 @@ export default async function JugadorPage({ params }: { params: Promise<{ slug: 
     ...(player.photo || player.headshot ? { image: player.photo ?? player.headshot } : {}),
     ...(player.nationality ? { nationality: { '@type': 'Country', name: player.nationality } } : {}),
     ...(player.position ? { jobTitle: player.position } : {}),
+    // `sameAs` a Wikidata es la señal que DESAMBIGUA al atleta como entidad: sin ella
+    // Google no puede unir esta ficha al deportista real (hay homónimos de sobra) y no
+    // opta a Knowledge Panel. El QID viene ya corroborado por nacionalidad/club/fecha
+    // en player-wikidata.ts, así que no se enlaza a un homónimo.
+    ...(player.wikidataQid ? { sameAs: [`https://www.wikidata.org/wiki/${player.wikidataQid}`] } : {}),
+    ...(player.birthDate ? { birthDate: player.birthDate } : {}),
+    ...(player.height ? { height: player.height } : {}),
+    // P166 de Wikidata: distinciones INDIVIDUALES (Balón de Oro, Bota de Oro…), ya
+    // filtradas de ruido no deportivo. Los títulos de equipo no entran aquí.
+    ...(player.honors?.length
+      ? { award: player.honors.map(h => (h.year ? `${h.title} (${h.year})` : h.title)) }
+      : {}),
     ...(player.team ? {
       memberOf: {
         '@type': 'SportsTeam',

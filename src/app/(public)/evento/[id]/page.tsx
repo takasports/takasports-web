@@ -5,7 +5,7 @@ import { sanityClient, eventDetailQuery, relatedByEventQuery, urlFor } from '@/l
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { SportIcon } from '@/components/icons/GameIcons'
 import { SOURCE_TZ } from '@/lib/timezone'
-import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
+import { SITE_URL } from '@/lib/constants'
 
 export const revalidate = 300
 
@@ -97,12 +97,14 @@ function articleImageUrl(a: RelatedArticle, w = 320, h = 180): string | null {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id }  = await params
   const event: SanityEventDetail | null = await sanityClient.fetch(eventDetailQuery, { id }).catch(() => null)
-  if (!event) return { title: 'Evento | TakaSports' }
+  if (!event) return { title: 'Evento' }
 
   const sportLabel = getSportLabel(event.sport)
+  // Sin sufijo " | TakaSports": el root layout ya aplica title.template '%s | TakaSports'.
+  // Incluirlo aquí producía "… | TakaSports | TakaSports" en TODOS los eventos.
   const title = event.away
-    ? `${event.home} vs ${event.away} · ${event.competition?.name ?? sportLabel} | TakaSports`
-    : `${event.home} · ${event.competition?.name ?? sportLabel} | TakaSports`
+    ? `${event.home} vs ${event.away} · ${event.competition?.name ?? sportLabel}`
+    : `${event.home} · ${event.competition?.name ?? sportLabel}`
   const description = [
     event.competition?.name ?? sportLabel,
     event.stage,
@@ -114,12 +116,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title,
     description,
     alternates: { canonical: `${SITE_URL}/evento/${id}` },
+    // Sin `images` explícito: así Next usa ./opengraph-image.tsx, que compone una
+    // tarjeta 1200×630 con los equipos y la competición reales (fetch a Sanity).
+    // Fijar LOGO_URL aquí anulaba esa tarjeta y compartía siempre el logo genérico.
     openGraph: {
       title, description, type: 'website',
       url: `${SITE_URL}/evento/${id}`, siteName: 'TakaSports', locale: 'es_ES',
-      images: [{ url: LOGO_URL, width: 1200, height: 630, alt: SITE_NAME, type: 'image/png' }],
     },
-    twitter:   { card: 'summary_large_image', title, description, site: '@takasportsx', creator: '@takasportsx', images: [LOGO_URL] },
+    twitter:   { card: 'summary_large_image', title, description, site: '@takasportsx', creator: '@takasportsx' },
     robots:    { index: true, follow: true },
   }
 }
@@ -226,11 +230,17 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
       organizer: { '@type': 'SportsOrganization', name: event.competition.name },
       superEvent: { '@type': 'SportsEvent', name: event.competition.name },
     } : {}),
+    // `competitor` describe "quiénes juegan", pero no quién es local. homeTeam/awayTeam
+    // sí lo tipan, que es lo que Google necesita para tratarlo como enfrentamiento.
+    // NO se emite `score`: los eventos de Sanity son de calendario y no llevan resultado
+    // (el marcador vive en /partido, con datos de ESPN). Inventarlo sería marcado falso.
     ...(event.away ? {
       competitor: [
         { '@type': 'SportsTeam', name: event.home },
         { '@type': 'SportsTeam', name: event.away },
       ],
+      homeTeam: { '@type': 'SportsTeam', name: event.home },
+      awayTeam: { '@type': 'SportsTeam', name: event.away },
     } : {}),
   }
 

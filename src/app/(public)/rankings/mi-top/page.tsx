@@ -6,10 +6,15 @@ import { findEntryByIdFromDb } from '@/lib/rankings-data'
 import { findEntryById } from '@/lib/rankings-search'
 import type { RankingEntry } from '@/lib/rankings'
 import RankRow from '@/components/rankings/RankRow'
+import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: 'Mi Top · Ranking Taka',
   description: 'Tu watchlist personal del Ranking Taka — los deportistas, clubes y creadores que sigues.',
+  // Página personal tras login (redirige a /login si no hay sesión): nada que
+  // indexar. Sin esto heredaba el canonical del root, apuntando a la home.
+  robots: { index: false, follow: true },
+  alternates: { canonical: `${SITE_URL}/rankings/mi-top` },
 }
 
 export const dynamic = 'force-dynamic'

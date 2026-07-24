@@ -39,6 +39,15 @@ export interface PlayerDetail {
   career?: CareerStint[]
   /** Distinciones individuales (Wikidata P166); NO incluye títulos de equipo. */
   honors?: Honor[]
+  /**
+   * QID de Wikidata YA corroborado por identidad (mismo match que career/honors).
+   * Se expone para emitir `sameAs` en el JSON-LD de la ficha: es lo que permite a
+   * Google desambiguar al atleta como entidad (puerta al Knowledge Panel).
+   * Coste 0: la llamada a Wikidata ya se hacía, solo se propagaba a medias.
+   */
+  wikidataQid?: string
+  /** ISO 8601 (YYYY-MM-DD). Ya se leía de ESPN para corroborar identidad. */
+  birthDate?: string
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -374,6 +383,7 @@ export async function GET(
     age: asNumber(ath.age),
     nationality: citizenshipEn ? (COUNTRY_ES[citizenshipEn] ?? citizenshipEn) : asString(flag?.alt),
     height: asString(ath.displayHeight),
+    birthDate: asString(ath.dateOfBirth)?.slice(0, 10),
     team: teamId
       ? { id: teamId, name: asString(team?.name) ?? asString(team?.displayName) ?? '', logo: teamLogo, slug: teamSlug! }
       : undefined,
@@ -383,6 +393,7 @@ export async function GET(
     matchLog,
     career: wikidata?.career,
     honors: wikidata?.honors,
+    wikidataQid: wikidata?.qid,
   }
 
   return NextResponse.json(detail)

@@ -58,7 +58,11 @@ export default async function ReelsPage() {
         thumbnailUrl: r.thumbnail_url
           ? (r.thumbnail_url.startsWith('http') ? r.thumbnail_url : `${SITE_URL}${r.thumbnail_url}`)
           : `${SITE_URL}/taka-icon.png`,
-        contentUrl: r.instagram_url,
+        // embedUrl, NO contentUrl: instagram_url es la página HTML del post, no un
+        // fichero de vídeo servible, así que como contentUrl no valida para resultados
+        // de vídeo. Se usa el reproductor embebible, igual que player_loc en
+        // video-sitemap.xml (ver la nota de esa ruta).
+        embedUrl: `${r.instagram_url.replace(/\/+$/, '')}/embed/`,
         uploadDate: safeUploadDate(r.timestamp),
       },
     })),

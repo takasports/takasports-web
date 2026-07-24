@@ -19,6 +19,7 @@ const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID
 const geist = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
+  display: 'swap',
 })
 
 // Barlow Condensed 900 — para títulos editoriales largos (hero, artículos, secciones)
@@ -32,19 +33,26 @@ const barlowCondensed = Barlow_Condensed({
 })
 
 // Bebas Neue — solo para labels cortos de sección ("REELS", "CALENDARIO", etc.)
-// All-caps agresivo, perfecto en contextos breves de impacto
+// All-caps agresivo, perfecto en contextos breves de impacto.
+// preload:false — no pinta nunca el elemento LCP (solo labels). Con preload activo
+// Next emitía un <link rel="preload"> que competía por ancho de banda con la imagen
+// del hero justo durante el LCP en móvil. Carga igual, solo que sin prioridad.
 const bebasNeue = Bebas_Neue({
   variable: '--font-headline',
   subsets: ['latin'],
   weight: '400',
   display: 'swap',
+  preload: false,
 })
 
+// preload:false — 3 pesos = 3 archivos precargados solo para badges/chips de deporte.
+// Misma razón que Bebas Neue: liberar la ruta crítica del LCP.
 const barlowSemiCondensed = Barlow_Semi_Condensed({
   variable: '--font-sport',
   subsets: ['latin'],
   weight: ['500', '600', '700'],
   display: 'swap',
+  preload: false,
 })
 
 export const metadata: Metadata = {
@@ -132,8 +140,10 @@ export default function RootLayout({
     >
       <head>
         <link rel="preconnect" href="https://cdn.sanity.io" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Sin preconnect a fonts.googleapis.com / fonts.gstatic.com: next/font
+            descarga las fuentes en build y las sirve desde nuestro propio origen
+            (/_next/static/media). En runtime NUNCA se conecta a Google, así que
+            esos dos preconnect solo ocupaban cupo de conexiones tempranas. */}
         <link rel="dns-prefetch" href="https://site.api.espn.com" />
         <link rel="dns-prefetch" href="https://v3.football.api-sports.io" />
         <link rel="alternate" type="application/rss+xml" title="TakaSports — Noticias deportivas" href="/rss.xml" />

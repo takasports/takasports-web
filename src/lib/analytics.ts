@@ -56,6 +56,22 @@ export function trackSearch(query: string) {
   track('search', { search_term: query })
 }
 
+/**
+ * Búsqueda en la página /buscar. Aparte del término, manda cuántos resultados
+ * hubo: las búsquedas que devuelven 0 son la lista literal de contenido que la
+ * gente busca y no encontramos — la señal más accionable para decidir qué
+ * publicar. En GA4 se explota filtrando el evento `search` por results_count=0.
+ * /buscar es noindex, así que esta intención NO llega por Search Console.
+ */
+export function trackSiteSearch(params: { query: string; resultCount: number; sport?: string }) {
+  track('search', {
+    search_term: params.query,
+    results_count: params.resultCount,
+    no_results: params.resultCount === 0,
+    ...(params.sport ? { sport_filter: params.sport } : {}),
+  })
+}
+
 // ── Navegación ────────────────────────────────────────────────────
 
 export function trackSportFilter(sport: string) {
