@@ -5,6 +5,7 @@ import type { PlayersResponse } from '@/app/api/stats/players/route'
 import { SITE_URL } from '@/lib/constants'
 import EstadisticasLoading from './loading'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
+import { canonicalTeamSlug } from '@/lib/team-slug'
 
 // ── Landings de estadísticas por deporte ──────────────────────────────────────
 // El deporte vive en la RUTA DE PATH (/estadisticas/[sport]) en vez de en el
@@ -35,9 +36,9 @@ export const SLUG_TO_CLIENT_ID: Record<string, string> = { f1: 'formula1' }
 // reparta autoridad a las páginas profundas evergreen a 1 clic. (Fase 1 SEO, jun 2026)
 const LIGA_HUB_IDS = new Set(['esp.1', 'eng.1', 'ita.1', 'ger.1', 'fra.1'])
 
-function teamHref(leagueSlug: string | undefined, teamId: string | undefined): string | null {
-  if (!leagueSlug || !teamId) return null
-  return `/equipo/${leagueSlug.replace('/', '_')}_${teamId}`
+function teamHref(name: string, teamId: string | undefined): string | null {
+  if (!teamId) return null
+  return `/equipo/${canonicalTeamSlug(name, teamId)}`
 }
 
 type DirTeam = { name: string; href: string; meta?: string }
@@ -81,7 +82,7 @@ function ClasificacionesHub({ data }: { data: StatsStandingsResponse | null }) {
   for (const lg of data.football ?? []) {
     const teams = (lg.rows ?? [])
       .map((r): DirTeam | null => {
-        const href = teamHref(lg.leagueSlug, r.teamId)
+        const href = teamHref(r.name, r.teamId)
         // value = puntos en fútbol (route.ts standings) → "45 pts".
         return href ? { name: r.name, href, meta: `${r.value} pts` } : null
       })
@@ -93,7 +94,7 @@ function ClasificacionesHub({ data }: { data: StatsStandingsResponse | null }) {
 
   const nbaTeams = [...(data.nbaEast ?? []), ...(data.nbaWest ?? [])]
     // value = récord "w-l" en NBA (route.ts standings).
-    .map((r): DirTeam | null => (r.teamId ? { name: r.name, href: `/equipo/basketball_nba_${r.teamId}`, meta: r.value } : null))
+    .map((r): DirTeam | null => (r.teamId ? { name: r.name, href: `/equipo/${canonicalTeamSlug(r.name, r.teamId)}`, meta: r.value } : null))
     .filter((x): x is DirTeam => x !== null)
   if (nbaTeams.length) groups.push({ title: 'NBA', hubHref: null, teams: nbaTeams })
 

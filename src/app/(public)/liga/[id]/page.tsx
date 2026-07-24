@@ -7,6 +7,7 @@ import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
 import { fetchLeagueTableRows } from '@/lib/espn-standings'
+import { canonicalTeamSlug } from '@/lib/team-slug'
 
 export const revalidate = 1800
 
@@ -144,8 +145,9 @@ async function fetchDirect(def: LeagueDef): Promise<{ rows: StandRow[]; goals: P
   return { rows, goals: leaders.goals, assists: leaders.assists }
 }
 
-function teamHref(def: LeagueDef, teamId?: string) {
-  return teamId ? `/equipo/${def.leagueSlug.replace('/', '_')}_${teamId}` : undefined
+function teamHref(name: string, teamId?: string) {
+  // Slug con el nombre dentro; el teamId al final resuelve la ficha (y su liga).
+  return teamId ? `/equipo/${canonicalTeamSlug(name, teamId)}` : undefined
 }
 function playerHref(p: PlayerRow) {
   // Slug con el nombre dentro; el id al final es lo que resuelve la ficha.
@@ -165,7 +167,7 @@ function StandingsTable({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
         <span className="w-8 text-center font-black text-[var(--text-muted)]">PTS</span>
       </div>
       {rows.map(r => {
-        const href = teamHref(def, r.teamId)
+        const href = teamHref(r.name, r.teamId)
         const inner = (
           <div className="flex items-center gap-2 px-4 py-2.5"
             style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
@@ -274,7 +276,7 @@ async function Content({ id }: { id: string }) {
             '@type': 'SportsTeam',
             name: r.name,
             ...(r.logo ? { logo: r.logo } : {}),
-            ...(r.teamId ? { url: `${SITE_URL}/equipo/${r.teamId}` } : {}),
+            ...(r.teamId ? { url: `${SITE_URL}/equipo/${canonicalTeamSlug(r.name, r.teamId)}` } : {}),
           },
         })),
       },

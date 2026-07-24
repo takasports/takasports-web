@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import type { LeagueTableRow, StandingZone } from '@/app/api/match/[ref]/route'
+import { canonicalTeamSlug } from '@/lib/team-slug'
 
 const ZONE_COLOR: Record<StandingZone, string> = {
   champions:          '#3b82f6',
@@ -43,11 +44,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function LeagueTableBlock({
   rows,
   leagueLabel,
-  leagueSlug,
 }: {
   rows: LeagueTableRow[]
   leagueLabel: string
-  leagueSlug: string
 }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
@@ -112,7 +111,7 @@ export function LeagueTableBlock({
               const isHome = row.highlight === 'home'
               const isAway = row.highlight === 'away'
               const accent = isHome ? '#A78BFA' : isAway ? '#f59e0b' : undefined
-              const teamHref = row.teamId ? `/equipo/${leagueSlug.replace('/', '_')}_${row.teamId}` : undefined
+              const teamHref = row.teamId ? `/equipo/${canonicalTeamSlug(row.name, row.teamId)}` : undefined
               return (
                 <tr
                   key={row.rank}

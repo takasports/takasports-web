@@ -24,6 +24,7 @@ import { fetchH2H, fetchRecentFormByTeams, type H2HResult, type FormResult } fro
 import { estimateOutcome, matchDominance, type OutcomeEstimate, type Dominance } from '@/lib/match-estimate'
 import { accentForSport } from '@/lib/sports'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
+import { canonicalTeamSlug } from '@/lib/team-slug'
 
 // Cache 2 min en ISR. Partidos en vivo se refrescan a 30s vía LiveRefresh
 // (router.refresh client-side), partidos finalizados aprovechan el cache.
@@ -230,7 +231,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
       <div className="flex items-center justify-between gap-4">
         {/* Home team */}
         {match.homeTeamId ? (
-          <Link href={`/equipo/${match.leagueSlug.replace('/', '_')}_${match.homeTeamId}`}
+          <Link href={`/equipo/${canonicalTeamSlug(match.homeTeam, match.homeTeamId)}`}
             className="flex flex-col items-center gap-2 flex-1 hover:opacity-80 transition-opacity">
             <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={68} />
             <p className="text-center font-bold text-sm leading-tight"
@@ -256,7 +257,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
         />
         {/* Away team */}
         {match.awayTeamId ? (
-          <Link href={`/equipo/${match.leagueSlug.replace('/', '_')}_${match.awayTeamId}`}
+          <Link href={`/equipo/${canonicalTeamSlug(match.awayTeam, match.awayTeamId)}`}
             className="flex flex-col items-center gap-2 flex-1 hover:opacity-80 transition-opacity">
             <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={68} />
             <p className="text-center font-bold text-sm leading-tight"
@@ -1861,7 +1862,7 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
         {/* ── Tab 5: Clasificación ─────────────────────── */}
         <div>
           {hasTable ? (
-            <LeagueTableBlock rows={match.leagueTable!} leagueLabel={match.leagueTableLabel ?? match.leagueLabel} leagueSlug={match.leagueSlug} />
+            <LeagueTableBlock rows={match.leagueTable!} leagueLabel={match.leagueTableLabel ?? match.leagueLabel} />
           ) : (
             <EmptyState message="Clasificación no disponible" kind="table" />
           )}

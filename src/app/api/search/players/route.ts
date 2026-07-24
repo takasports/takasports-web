@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
+import { canonicalTeamSlug } from '@/lib/team-slug'
 
 export interface SearchHit {
   type: 'player' | 'team'
@@ -89,7 +90,7 @@ export async function GET(req: Request) {
           type: 'team',
           name,
           subtitle: c.subtitle || (sport === 'soccer' ? league.toUpperCase() : 'NBA'),
-          href: `/equipo/${sportSeg}_${leagueSeg}_${id}`,
+          href: `/equipo/${canonicalTeamSlug(name, id)}`,
           logo: sport === 'soccer'
             ? `https://a.espncdn.com/i/teamlogos/soccer/500/${id}.png`
             : undefined,

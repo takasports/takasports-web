@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import type { TeamTableRow, StandingZone } from '@/app/api/team/[slug]/route'
+import { canonicalTeamSlug } from '@/lib/team-slug'
 
 const ZONE_COLOR: Record<StandingZone, string> = {
   champions:          '#3b82f6',
@@ -28,10 +29,8 @@ const ZONE_LABEL: Record<StandingZone, string> = {
 
 export function StandingsTab({
   table,
-  leagueSlug,
 }: {
   table: TeamTableRow[]
-  leagueSlug: string
 }) {
   const router = useRouter()
 
@@ -60,7 +59,7 @@ export function StandingsTab({
         {table.map(row => {
           const isMain = row.isMain
           const rowHref = row.teamId && !isMain
-            ? `/equipo/${leagueSlug.replace('/', '_')}_${row.teamId}`
+            ? `/equipo/${canonicalTeamSlug(row.name, row.teamId)}`
             : undefined
           return (
             <div

@@ -4,6 +4,7 @@
 import { getZone } from '@/lib/league-zones'
 import type { StatBlock, StatRow } from './stats-types'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
+import { canonicalTeamSlug } from '@/lib/team-slug'
 
 /**
  * Ratio por partido para métricas de TOTAL ("1,16 /PJ"). Información nueva de datos que
@@ -286,8 +287,8 @@ export function toStatRows(rows: LiveStandingRow[], teamKey?: string, leagueSlug
     flag: r.flag,
     value: r.value, sub: r.sub, trend: r.trend ?? 'flat',
     extra: Object.fromEntries(Object.entries(r.extra).filter(([k]) => k !== teamKey)),
-    href: leagueSlug && r.teamId
-      ? `/equipo/${leagueSlug.replaceAll('/', '_')}_${r.teamId}`
+    href: r.teamId
+      ? `/equipo/${canonicalTeamSlug(r.name, r.teamId)}`
       : undefined,
     logo: r.logo,
     kind: 'club' as const,

@@ -7,6 +7,7 @@ import { SITE_URL } from '@/lib/constants'
 import { COMPETITIONS } from '@/lib/calendar-competitions'
 import { GLOSARIO_TERMS } from '@/lib/glosario-terms'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
+import { canonicalTeamSlug } from '@/lib/team-slug'
 
 const BASE_URL = SITE_URL
 
@@ -46,20 +47,22 @@ async function statRoutes(): Promise<MetadataRoute.Sitemap> {
 
     if (standRes.ok) {
       const s = await standRes.json()
+      // Slug canónico (nombre + teamId). Un club que juega liga + competición europea
+      // salía en dos bloques (esp.1 y uefa.champions) → dos URLs; con el slug nuevo
+      // ambas producen la misma cadena y el Set las funde en una. Menos duplicación.
       for (const g of s.football ?? []) {
-        const ls = g.leagueSlug as string | undefined
-        if (!ls) continue
+        if (!g.leagueSlug) continue
         for (const r of g.rows ?? []) if (r.teamId)
-          teamUrls.add(`${BASE_URL}/equipo/${ls.replace('/', '_')}_${r.teamId}`)
+          teamUrls.add(`${BASE_URL}/equipo/${canonicalTeamSlug(r.name, r.teamId)}`)
       }
       for (const r of [...(s.nbaEast ?? []), ...(s.nbaWest ?? [])])
-        if (r.teamId) teamUrls.add(`${BASE_URL}/equipo/basketball_nba_${r.teamId}`)
+        if (r.teamId) teamUrls.add(`${BASE_URL}/equipo/${canonicalTeamSlug(r.name, r.teamId)}`)
     }
     if (playRes.ok) {
       const p = await playRes.json()
-      // Slug canónico (nombre + id). El sitemap NO debe listar el formato histórico:
-      // esas URLs ahora responden 308 hacia estas, y un sitemap lleno de redirecciones
-      // desperdicia crawl budget y retrasa la reindexación.
+      // Slug canónico (nombre + id). El sitemap solo lista la URL canónica: el formato
+      // histórico sigue resolviendo, pero declara esta como canonical y no queremos
+      // sembrar el índice con las dos.
       const push = (arr: { playerId?: string; name?: string }[] | undefined) => {
         for (const x of arr ?? []) if (x.playerId)
           playerUrls.add(`${BASE_URL}/jugador/${canonicalPlayerSlug(x.name, x.playerId)}`)

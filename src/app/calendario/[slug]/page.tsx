@@ -423,7 +423,7 @@ export default async function CompetitionCalendarPage({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
               {groups.map((g) => (
-                <LeagueTableBlock key={g.name} rows={g.rows} leagueLabel={g.name} leagueSlug={comp.espnSlug!} />
+                <LeagueTableBlock key={g.name} rows={g.rows} leagueLabel={g.name} />
               ))}
             </div>
           </section>
@@ -442,7 +442,6 @@ export default async function CompetitionCalendarPage({
                 <LeagueTableBlock
                   rows={tableRows}
                   leagueLabel={comp.displayName}
-                  leagueSlug={comp.espnSlug!}
                 />
               )}
               {scorers.length > 0 && (

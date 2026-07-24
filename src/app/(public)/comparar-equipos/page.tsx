@@ -6,6 +6,7 @@ import type { TeamDetail } from '@/app/api/team/[slug]/route'
 import DivergentBar from '@/components/comparators/DivergentBar'
 import { getSportStyle } from '@/lib/sports'
 import { SITE_URL } from '@/lib/constants'
+import { canonicalTeamSlug } from '@/lib/team-slug'
 
 export const revalidate = 1800
 
@@ -122,7 +123,7 @@ function TeamHead({ t }: { t: TeamDetail }) {
           accent="#C4B5FD" logoSize={56} textClass="text-2xl" />
       </div>
       <div className="min-w-0">
-        <Link href={`/equipo/${t.leagueSlug.replaceAll('/', '_')}_${t.id}`}
+        <Link href={`/equipo/${canonicalTeamSlug(t.name, t.id)}`}
           className="font-black text-[15px] text-white leading-tight hover:underline block truncate"
           style={{ fontFamily: 'var(--font-display)' }}>
           {t.name}

@@ -3,6 +3,7 @@ import { getZone, zoneFromNote } from '@/lib/league-zones'
 import type { StandingZone } from '@/lib/league-zones'
 import { getPhotosByEspnId, upsertSportEntities, type SeedEntity } from '@/lib/sport-entities'
 import { FOOTBALL_LEAGUE_SLUGS } from '@/lib/football-leagues'
+import { resolveTeamSlug } from '@/lib/team-slug'
 export type { StandingZone }
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -395,11 +396,14 @@ export async function GET(
 ) {
   const { slug } = await params
 
-  // slug shape: "<sport>_<league>_<teamId>" e.g. "soccer_esp.1_86"
-  const parts = slug.split('_')
-  if (parts.length < 3) return NextResponse.json(null, { status: 400 })
-  const teamId    = parts[parts.length - 1]
-  const leagueSlug = parts.slice(0, -1).join('/')
+  // Dos formatos, a propósito y de forma permanente (ver src/lib/team-slug.ts):
+  //   - "real-madrid-86"        → el canónico de la web
+  //   - "soccer_esp.1_86"       → el histórico que la app publicada construye y guarda
+  //     como identidad de los equipos seguidos. No se retira mientras haya instalaciones.
+  const ref = await resolveTeamSlug(slug)
+  if (!ref) return NextResponse.json(null, { status: 400 })
+  const teamId    = ref.teamId
+  const leagueSlug = ref.leagueSlug
   const sport     = leagueSlug.split('/')[0]
   const league    = leagueSlug.split('/').slice(1).join('.')
   const leagueLabel = COMP_LABELS[leagueSlug] ?? leagueSlug

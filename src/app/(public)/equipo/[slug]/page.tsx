@@ -12,6 +12,7 @@ import { ShareButton } from '@/components/ShareButton'
 import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import { SITE_URL, SITE_NAME, LOGO_URL, ICON_URL } from '@/lib/constants'
+import { canonicalTeamSlug } from '@/lib/team-slug'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 // Solo estas 5 ligas tienen página /liga/[id]. team.leagueSlug llega como
@@ -36,7 +37,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = team.standingSummary
     ? `${team.name} — ${team.standingSummary}. ${team.record?.summary ?? ''} en ${team.leagueLabel}`
     : `${team.name} · ${team.leagueLabel} en TakaSports`
-  const canonical = `${SITE_URL}/equipo/${slug}`
+  // Canonical al slug con nombre, no al que pidió el visitante: si entra por el formato
+  // histórico o por la URL de competición europea (soccer_uefa.champions_86), el canonical
+  // apunta igualmente a la única forma buena. Consolida los duplicados existentes.
+  const canonical = `${SITE_URL}/equipo/${canonicalTeamSlug(team.name, team.id)}`
   const ogImageUrl = team.logo ?? `${SITE_URL}/taka-icon.png`
   return {
     title,
@@ -458,7 +462,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
       >
         <ResultsTab results={team.results} teamId={team.id} />
         <RosterTab roster={team.roster} leagueSlug={team.leagueSlug} />
-        <StandingsTab table={team.leagueTable} leagueSlug={team.leagueSlug} />
+        <StandingsTab table={team.leagueTable} />
       </TeamTabs>
     </div>
   )
@@ -470,7 +474,10 @@ export default async function EquipoPage({ params }: { params: Promise<{ slug: s
   const team = await fetchTeamDetail(slug)
   if (!team) notFound()
 
-  const canonicalUrl = `${SITE_URL}/equipo/${slug}`
+  // Una ficha, una URL canónica. Ver la nota en la migración de /jugador: no se
+  // redirige (Next degrada el 308 a meta-refresh en rutas ISR con streaming); se
+  // consolida por canonical, y los enlaces internos y el sitemap ya apuntan aquí.
+  const canonicalUrl = `${SITE_URL}/equipo/${canonicalTeamSlug(team.name, team.id)}`
 
   const teamJsonLd = {
     '@context': 'https://schema.org',

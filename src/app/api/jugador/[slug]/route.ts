@@ -4,6 +4,7 @@ import type { TeamResult } from '@/app/api/team/[slug]/route'
 import { fetchPlayerGamelog, type MatchLogEntry } from '@/lib/player-gamelog'
 import { fetchPlayerWikidata, type CareerStint, type Honor } from '@/lib/player-wikidata'
 import { resolvePlayerSlug } from '@/lib/player-slug'
+import { canonicalTeamSlug } from '@/lib/team-slug'
 import { getPhotosByEspnId } from '@/lib/sport-entities'
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -298,6 +299,9 @@ export async function GET(
   const teamLogo = teamId
     ? `https://a.espncdn.com/i/teamlogos/${LOGO_PATH[logoSport] ?? logoSport}/500/${teamId}.png`
     : undefined
+  // Slug LEGACY solo para el fetch interno a /api/team de aquí abajo: la liga ya la
+  // tenemos, así que evitamos que ese fetch pague la resolución del formato nuevo. El
+  // slug que se DEVUELVE al cliente (abajo, para los enlaces) sí es el canónico.
   const teamSlug = teamId ? `${leagueSlug.replaceAll('/', '_')}_${teamId}` : undefined
   const position = asObj(ath.position)
   const citizenshipEn = asString(ath.citizenship)
@@ -391,7 +395,12 @@ export async function GET(
     height: asString(ath.displayHeight),
     birthDate: asString(ath.dateOfBirth)?.slice(0, 10),
     team: teamId
-      ? { id: teamId, name: asString(team?.name) ?? asString(team?.displayName) ?? '', logo: teamLogo, slug: teamSlug! }
+      ? (() => {
+          const teamName = asString(team?.name) ?? asString(team?.displayName) ?? ''
+          // slug canónico (nombre-teamId): es lo que la ficha del jugador usa para
+          // enlazar a su equipo, así que no debe llevar el formato legacy.
+          return { id: teamId, name: teamName, logo: teamLogo, slug: canonicalTeamSlug(teamName, teamId) }
+        })()
       : undefined,
     season,
     stats,
