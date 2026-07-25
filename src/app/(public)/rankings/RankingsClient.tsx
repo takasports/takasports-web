@@ -69,14 +69,14 @@ const LIGA_FILTERS_BY_SPORT: Record<string, { label: string; slug: string }[]> =
 
 // Tarjetas explicativas del Ranking por track (deportistas vs contenido)
 const FACTOR_CARDS_ATLETA = [
-  { label: 'Rendimiento', pct: '40%', color: '#22c55e',
-    desc: 'Stats reales del deporte: goles, asistencias, PPG, victorias, podios. Es el peso principal.' },
+  { label: 'Rendimiento', pct: '45%', color: '#22c55e',
+    desc: 'Stats reales del deporte: goles y asistencias, PER, ranking mundial, puntos del campeonato. Es el peso principal.' },
   { label: 'Contexto', pct: '20%', color: '#60a5fa',
     desc: 'Nivel de la competición y posición de su equipo en la tabla. Jugar en Top-4 pesa más.' },
-  { label: 'Mediático', pct: '25%', color: '#f59e0b',
-    desc: 'Alcance en redes sociales, búsquedas en Google y menciones en prensa especializada.' },
-  { label: 'Narrativa', pct: '15%', color: '#c084fc',
-    desc: 'Momento de carrera, hitos históricos y peso simbólico. Lectura editorial transparente.' },
+  { label: 'Forma', pct: '20%', color: '#c084fc',
+    desc: 'Momentum reciente: cómo ha evolucionado su puntuación en las últimas semanas.' },
+  { label: 'Mediático', pct: '15%', color: '#f59e0b',
+    desc: 'Alcance y popularidad, medido por las visitas a su página de Wikipedia.' },
 ]
 const FACTOR_CARDS_CONTENIDO = [
   { label: 'Audiencia', pct: '50%', color: '#f59e0b',
