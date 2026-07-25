@@ -31,7 +31,13 @@ export const revalidate = 300
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const team = await fetchTeamDetail(slug)
-  if (!team) return { title: 'Equipo' }
+  // Equipo inexistente: noindex + self-canonical (ver nota en /jugador). Evita el
+  // soft-404 con canonical-al-home.
+  if (!team) return {
+    title: 'Equipo no encontrado',
+    robots: { index: false, follow: true },
+    alternates: { canonical: `${SITE_URL}/equipo/${slug}` },
+  }
   // Sin sufijo " | TakaSports": el root layout ya aplica title.template '%s | TakaSports'.
   const title = `${team.name} · ${team.leagueLabel}`
   const description = team.standingSummary

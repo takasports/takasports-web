@@ -28,7 +28,7 @@ import {
   type EntityIndex,
   type AutolinkContext,
 } from '@/lib/article-autolink'
-import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
+import { SITE_URL, LOGO_URL, ICON_URL, SOCIAL_SAMEAS } from '@/lib/constants'
 import RankingMentionCards from '@/components/articles/RankingMentionCards'
 import ArticleQuiz from '@/components/articles/ArticleQuiz'
 import { matchEntriesInText } from '@/lib/rankings-match'
@@ -101,7 +101,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const article = await sanityClient.fetch<Article>(articleDetailQuery, { id: slug })
-  if (!article) return { title: 'TakaSports' }
+  // Artículo inexistente: noindex + self-canonical (evita el soft-404 con canonical-al-home).
+  if (!article) return {
+    title: 'Noticia no encontrada',
+    robots: { index: false, follow: true },
+    alternates: { canonical: `${SITE_URL}/noticias/${slug}` },
+  }
 
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1200).height(630).url() : undefined)
   const canonical = `${SITE_URL}/noticias/${article.slug ?? slug}`
@@ -512,10 +517,7 @@ export default async function NoticiaPage({
       name: articleAuthor,
       url: `${SITE_URL}/autor/redaccion`,
       logo: { '@type': 'ImageObject', url: `${SITE_URL}/taka-logo.png` },
-      sameAs: [
-        'https://www.instagram.com/takasportsmedia',
-        'https://x.com/takasportsx',
-      ],
+      sameAs: SOCIAL_SAMEAS,
     },
     publisher: { '@id': `${SITE_URL}/#organization` },
     copyrightHolder: { '@id': `${SITE_URL}/#organization` },

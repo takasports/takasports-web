@@ -125,8 +125,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/estadisticas/motogp`,     lastModified: STATIC_LASTMOD, changeFrequency: 'weekly',  priority: 0.7 },
     { url: `${BASE_URL}/estadisticas/ufc`,        lastModified: STATIC_LASTMOD, changeFrequency: 'weekly',  priority: 0.7 },
     { url: `${BASE_URL}/estadisticas/mundial`,    lastModified: STATIC_LASTMOD, changeFrequency: 'daily',   priority: 0.85 },
-    // League hubs: tabla + goleadores + asistencias en una vista
-    ...['esp.1', 'eng.1', 'ita.1', 'ger.1', 'fra.1'].map(id => ({
+    // League hubs: tabla + goleadores + asistencias en una vista. Incluye las ligas
+    // Latam (bra/mex/arg): son indexables y de alto valor para la audiencia
+    // hispanohablante, pero faltaban en el sitemap y quedaban huérfanas.
+    ...['esp.1', 'eng.1', 'ita.1', 'ger.1', 'fra.1', 'bra.1', 'mex.1', 'arg.1'].map(id => ({
       url: `${BASE_URL}/liga/${id}`,
       lastModified: STATIC_LASTMOD,
       changeFrequency: 'hourly' as const,

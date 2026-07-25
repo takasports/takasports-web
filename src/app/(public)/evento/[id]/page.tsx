@@ -97,7 +97,12 @@ function articleImageUrl(a: RelatedArticle, w = 320, h = 180): string | null {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id }  = await params
   const event: SanityEventDetail | null = await sanityClient.fetch(eventDetailQuery, { id }).catch(() => null)
-  if (!event) return { title: 'Evento' }
+  // Evento inexistente: noindex + self-canonical (evita el soft-404 con canonical-al-home).
+  if (!event) return {
+    title: 'Evento no encontrado',
+    robots: { index: false, follow: true },
+    alternates: { canonical: `${SITE_URL}/evento/${id}` },
+  }
 
   const sportLabel = getSportLabel(event.sport)
   // Sin sufijo " | TakaSports": el root layout ya aplica title.template '%s | TakaSports'.

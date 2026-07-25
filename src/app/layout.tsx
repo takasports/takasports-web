@@ -11,7 +11,7 @@ import DeviceCapInit from '@/components/DeviceCapInit'
 // inicial. Ver F3.3 (jun 2026).
 import ClientOnlyLayoutScripts from '@/components/ClientOnlyLayoutScripts'
 import PWAManager from '@/components/PWAManager'
-import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
+import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL, SOCIAL_SAMEAS } from '@/lib/constants'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID
@@ -176,15 +176,9 @@ export default function RootLayout({
                 logo: { '@type': 'ImageObject', url: LOGO_URL, width: 512, height: 512 },
                 image: { '@type': 'ImageObject', url: LOGO_URL, width: 512, height: 512 },
                 description: 'Plataforma de noticias y análisis deportivos en español. Fútbol, NBA, F1, UFC, tenis y más. Resultados en vivo, rankings editoriales y juegos interactivos.',
-                // Perfiles reales (fuente: barra social del footer). Consolida la
-                // entidad de marca en el Knowledge Graph y la desambigua de homónimos.
-                sameAs: [
-                  'https://www.instagram.com/taka.sports',
-                  'https://x.com/takasportsx',
-                  'https://www.tiktok.com/@taka.sports',
-                  'https://www.youtube.com/@takasports',
-                  'https://www.threads.net/@taka.sports',
-                ],
+                // Perfiles reales (fuente única: SOCIAL_SAMEAS en constants). Consolida
+                // la entidad de marca en el Knowledge Graph y la desambigua de homónimos.
+                sameAs: SOCIAL_SAMEAS,
                 areaServed: { '@type': 'Country', name: 'España' },
                 knowsAbout: ['Fútbol', 'Baloncesto', 'Fórmula 1', 'UFC', 'Tenis', 'Lucha libre', 'Rugby', 'MotoGP'],
                 contactPoint: {

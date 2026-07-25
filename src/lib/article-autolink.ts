@@ -14,6 +14,8 @@
 
 import { unstable_cache } from 'next/cache'
 import { SITE_URL } from './constants'
+import { canonicalPlayerSlug } from './player-slug'
+import { canonicalTeamSlug } from './team-slug'
 
 const ENTITY_CACHE_TTL = 60 * 60 // 1h
 
@@ -142,9 +144,8 @@ export const getEntityIndex = unstable_cache(
       if (!isTeamNameAcceptable(t.name)) continue
       const key = normalize(t.name)
       if (key in byKey) continue
-      const slug = `${t.leagueSlug.replace('/', '_')}_${t.teamId}`
       byKey[key] = {
-        url: `/equipo/${slug}`,
+        url: `/equipo/${canonicalTeamSlug(t.name, t.teamId)}`,
         displayName: t.name,
         sport: leagueToSport(t.leagueSlug),
         isPlayer: false,
@@ -155,9 +156,8 @@ export const getEntityIndex = unstable_cache(
       if (!isPlayerNameAcceptable(p.name)) continue
       const key = normalize(p.name)
       if (key in byKey) continue
-      const slug = `${p.leagueSlug.replace('/', '_')}_${p.playerId}`
       byKey[key] = {
-        url: `/jugador/${slug}`,
+        url: `/jugador/${canonicalPlayerSlug(p.name, p.playerId)}`,
         displayName: p.name,
         sport: leagueToSport(p.leagueSlug),
         isPlayer: true,

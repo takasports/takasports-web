@@ -52,7 +52,12 @@ export async function generateMetadata({
   const match    = await fetchMatchDetail(ref)
   // Nota: el título NO debe llevar "| TakaSports" — la plantilla del layout raíz
   // (title.template '%s | TakaSports') ya lo añade. Incluirlo aquí lo duplicaba.
-  if (!match) return { title: 'Partido' }
+  // Partido inexistente: noindex + self-canonical (evita el soft-404 con canonical-al-home).
+  if (!match) return {
+    title: 'Partido no encontrado',
+    robots: { index: false, follow: true },
+    alternates: { canonical: `${SITE_URL}/partido/${ref}` },
+  }
 
   let title = ''
   let description = ''

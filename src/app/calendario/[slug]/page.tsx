@@ -28,6 +28,11 @@ export async function generateStaticParams() {
   return COMPETITIONS.map((c) => ({ slug: c.slug }))
 }
 
+// COMPETITIONS es un conjunto fijo (generateStaticParams las enumera todas), así que
+// un slug de competición inexistente debe dar 404 REAL en vez de un 200 con canonical
+// heredado del root. El caso "existe pero sin eventos" ya se maneja con noindex abajo.
+export const dynamicParams = false
+
 // Carga + filtra los eventos de una competición. Memoizado por request con
 // React.cache para que generateMetadata y la página no dupliquen el fetch.
 const loadCompetitionEvents = cache(async (comp: CompetitionConfig): Promise<SportEvent[]> => {

@@ -39,6 +39,12 @@ export function generateStaticParams() {
   return Object.keys(LEAGUES).map(id => ({ id }))
 }
 
+// LEAGUES es un conjunto fijo, así que un id fuera de la lista debe dar 404 REAL,
+// no un 200 con contenido vacío. Sin esto, /liga/zzz respondía 200 y heredaba el
+// canonical del layout raíz (apuntando al home) — un soft-404 que ensucia GSC.
+// Mismo patrón ya usado en /[sport] y /estadisticas/[sport].
+export const dynamicParams = false
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const lg = LEAGUES[id]
@@ -340,6 +346,25 @@ async function Content({ id }: { id: string }) {
         <LeaderList title="Goleadores" players={goals} metric="Goles" def={def} />
         <LeaderList title="Asistencias" players={assists} metric="Asist." def={def} />
       </div>
+
+      {/* Otras ligas: enlaza los 8 hubs entre sí. Da a las ligas Latam (bra/mex/arg)
+          los enlaces internos que les faltaban —eran indexables pero huérfanas— y
+          mejora la navegación entre competiciones para todas. */}
+      <nav className="mt-10" aria-label="Otras ligas">
+        <div className="text-[10px] font-black uppercase tracking-widest mb-3"
+          style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
+          Otras ligas
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {Object.values(LEAGUES).filter(l => l.id !== def.id).map(l => (
+            <Link key={l.id} href={`/liga/${l.id}`}
+              className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors hover:bg-white/[0.08]"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#C0C0D4' }}>
+              {l.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
     </div>
   )
 }

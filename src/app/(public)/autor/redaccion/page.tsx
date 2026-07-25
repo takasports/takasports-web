@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from '@/components/DynamicImage'
 import { sanityClient, urlFor } from '@/lib/sanity'
-import { SITE_URL, LOGO_URL } from '@/lib/constants'
+import { SITE_URL, LOGO_URL, SOCIAL_SAMEAS } from '@/lib/constants'
 import { timeAgo } from '@/lib/timeAgo'
 
 export const revalidate = 1800
@@ -72,10 +72,7 @@ export default async function RedaccionAuthorPage() {
     description:
       'Equipo editorial de TakaSports Media. Redactamos, verificamos y publicamos noticias, análisis y rankings deportivos con estándares periodísticos.',
     knowsAbout: ['Fútbol', 'Baloncesto', 'Fórmula 1', 'UFC', 'Tenis', 'WWE', 'Rugby', 'MotoGP'],
-    sameAs: [
-      'https://www.instagram.com/takasportsmedia',
-      'https://x.com/takasportsx',
-    ],
+    sameAs: SOCIAL_SAMEAS,
     parentOrganization: { '@id': `${SITE_URL}/#organization` },
     // Mismas policies que el publisher raíz: refuerzan el EEAT del autor
     publishingPrinciples: `${SITE_URL}/politica-editorial`,

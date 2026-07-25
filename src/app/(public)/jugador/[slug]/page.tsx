@@ -19,7 +19,14 @@ export const revalidate = 1800
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const player = await fetchPlayer(slug)
-  if (!player) return { title: 'Jugador' }
+  // Jugador inexistente: noindex + self-canonical. Next 16 no propaga el 404 en
+  // ISR (la página sigue 200), pero esto evita lo peor —heredar el canonical del
+  // root (→ home) y un robots "index" contradictorio—. Patrón de rankings/[id].
+  if (!player) return {
+    title: 'Jugador no encontrado',
+    robots: { index: false, follow: true },
+    alternates: { canonical: `${SITE_URL}/jugador/${slug}` },
+  }
 
   // Consolidación por canonical, NO por redirect. Se probó `permanentRedirect` tanto
   // aquí como en el componente: en ambos casos Next no llega a emitir un 308 HTTP
