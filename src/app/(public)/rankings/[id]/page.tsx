@@ -321,7 +321,8 @@ export default async function EntryDetailPage(
                 />
               ))}
             </div>
-            {Math.abs(editorialAdj) >= 0.1 && (
+            {/* Creadores: el ajuste editorial es INTERNO → no se desglosa en público. */}
+            {Math.abs(editorialAdj) >= 0.1 && !['creadores', 'periodistas', 'creadores_wwe'].includes(cat) && (
               <div className="mt-4 pt-4 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                 <div className="flex items-center justify-between">
                   <span className="text-[11px]" style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>

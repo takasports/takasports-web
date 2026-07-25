@@ -111,11 +111,14 @@ export const SCORE_WEIGHTS = {
 // Contenido (creadores/periodistas): criterio PROPIO, paralelo al deportivo.
 // Audiencia(mediático) manda; luego contenido(rendimiento), momento(narrativa)
 // y profundidad(contexto).
+// Creadores (migración 111): Audiencia 50 · Crecimiento 25 · Relevancia 25.
+// mediatico=audiencia (followers reales), rendimiento=crecimiento (actividad/
+// momentum), narrativa=relevancia (Wikipedia + prensa). contexto sin uso.
 export const CREATOR_WEIGHTS = {
   mediatico:   0.50,
-  rendimiento: 0.30,
-  narrativa:   0.15,
-  contexto:    0.05,
+  rendimiento: 0.25,
+  narrativa:   0.25,
+  contexto:    0.00,
 } as const
 
 export type FactorWeights = Record<keyof NonNullable<RankingEntry['factors']>, number>

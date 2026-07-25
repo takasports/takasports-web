@@ -80,13 +80,11 @@ const FACTOR_CARDS_ATLETA = [
 ]
 const FACTOR_CARDS_CONTENIDO = [
   { label: 'Audiencia', pct: '50%', color: '#f59e0b',
-    desc: 'Seguidores y suscriptores ponderados por plataforma (YouTube, Instagram, TikTok, Twitch, X). Es el peso principal.' },
-  { label: 'Contenido', pct: '30%', color: '#22c55e',
-    desc: 'Calidad, frecuencia y engagement de lo que publica.' },
-  { label: 'Momento', pct: '15%', color: '#c084fc',
-    desc: 'Crecimiento, viralidad reciente y relevancia en el debate actual.' },
-  { label: 'Profundidad', pct: '5%', color: '#60a5fa',
-    desc: 'Nivel de análisis y conocimiento del deporte que cubre.' },
+    desc: 'Seguidores reales ponderados por plataforma (YouTube, Twitch, TikTok, Instagram, X). Es el peso principal.' },
+  { label: 'Crecimiento', pct: '25%', color: '#22c55e',
+    desc: 'Ritmo de publicación y evolución reciente del canal.' },
+  { label: 'Relevancia', pct: '25%', color: '#c084fc',
+    desc: 'Notoriedad en el debate deportivo, medida por su presencia en Wikipedia y prensa.' },
 ]
 
 type DbData = Partial<Record<string, RankingEntry[]>>
