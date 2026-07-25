@@ -52,11 +52,11 @@ export interface RankingEntry {
   scoreSport?: number    // score específico del deporte (rendimiento-heavy) — usado cuando hay filtro de deporte
   rankSport?: number     // posición dentro del deporte — usado cuando hay filtro de deporte
   trendReason?: string   // razón del movimiento (aparece como tooltip)
-  factors?: {            // desglose editorial de la puntuación
-    rendimiento: number  // forma reciente + stats (35 %)
-    contexto:    number  // nivel competición + contexto equipo (25 %)
-    mediatico:   number  // followers, menciones, alcance global (25 %)
-    narrativa:   number  // momentos virales, arco narrativo (15 %)
+  factors?: {            // desglose objetivo de la puntuación (deportistas)
+    rendimiento: number  // goles/asistencias/tiros reales (45 %)
+    contexto:    number  // clasificación del equipo en su liga (20 %)
+    mediatico:   number  // alcance/popularidad — Wikipedia pageviews (15 %)
+    narrativa:   number  // FORMA: momentum del score reciente (20 %)
   }
   editorialBoost?: number  // ajuste subjetivo Taka (-15 a +15) — requiere editorialNote
   editorialNote?: string   // razón del ajuste editorial visible al usuario
@@ -93,19 +93,19 @@ export function calcTrend(score: number, scorePrev: number): Trend {
 // ⚠️ ESPEJO EN SQL: el trigger f_recompute_score_auto() de
 // supabase/migrations/028_creator_formula.sql recalcula `score_auto` en la DB
 // con ESTOS MISMOS pesos. SQL no puede importar TS, así que si cambias un peso
-// AQUÍ, cámbialo también en la migración 028 (y viceversa). Si divergen, el
-// desglose de la ficha mentiría respecto al score real que sirve la DB.
+// AQUÍ, cámbialo también en la migración del trigger f_recompute_score_auto
+// (y viceversa). Si divergen, el desglose de la ficha mentiría respecto al score
+// real que sirve la DB.
 //
-// Deportistas (v6, 2026-05-09): rendimiento 40 % + contexto 20 % +
-// mediático 25 % + narrativa 15 %. Notas v6: curva suave de bonus por posición
-// de equipo (Top-1 +8 ↔ último -6) en lugar del binario v5; penalty sin-stats
-// 9→4 (el proxy del equipo cubre); CAP sin-stats 62→72; YouthNarr +4 narrativa
-// para ≤21 con stats reales; enrich-photos universal (TheSportsDB + Wikipedia).
+// Deportistas (migración 110, 2026-07-25): Rendimiento 45 · Contexto 20 ·
+// Mediático 15 · Forma 20. Rendimiento = goles/asistencias reales; la "narrativa"
+// es ahora la FORMA (momentum del score reciente, de ranking_score_history).
+// Orden de claves = orden de suma del trigger SQL (rend→ctx→med→narr): NO reordenar.
 export const SCORE_WEIGHTS = {
-  rendimiento: 0.40,
+  rendimiento: 0.45,
   contexto:    0.20,
-  mediatico:   0.25,
-  narrativa:   0.15,
+  mediatico:   0.15,
+  narrativa:   0.20,
 } as const
 
 // Contenido (creadores/periodistas): criterio PROPIO, paralelo al deportivo.
