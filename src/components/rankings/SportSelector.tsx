@@ -21,10 +21,11 @@ const SPORT_OPTIONS: { slug: string; label: string; Icon: IconC }[] = [
   )},
 ]
 
-export default function SportSelector({ active, onChange }: { active: string; onChange: (s: string) => void }) {
+export default function SportSelector({ active, onChange, only }: { active: string; onChange: (s: string) => void; only?: string[] }) {
+  const options = only ? SPORT_OPTIONS.filter(s => only.includes(s.slug)) : SPORT_OPTIONS
   return (
     <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-      {SPORT_OPTIONS.map((s) => {
+      {options.map((s) => {
         const isActive = active === s.slug
         const accent = s.slug ? getSportStyle(s.slug).accent : '#7C3AED'
         const Icon = s.Icon

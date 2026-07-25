@@ -283,6 +283,8 @@ function rowToEntry(row: any): RankingEntry {
     editorialBoost: row.editorial_boost !== null ? Number(row.editorial_boost) : undefined,
     editorialNote:  row.editorial_note ?? undefined,
     category:       row.category ?? undefined,
+    track:          row.track ?? undefined,
+    ageGroup:       row.age_group ?? undefined,
     handles:        row.handles ?? undefined,
   }
 }

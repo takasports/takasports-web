@@ -61,6 +61,8 @@ export interface RankingEntry {
   editorialBoost?: number  // ajuste subjetivo Taka (-15 a +15) — requiere editorialNote
   editorialNote?: string   // razón del ajuste editorial visible al usuario
   category?: string        // jugadores | clubes | entrenadores | etc. — disponible para entradas de DB
+  track?: 'deportista' | 'equipo' | 'creador'  // grupo de alto nivel — de la vista ranking_view
+  ageGroup?: string        // 'sub21' → filtro Cantera (de la vista ranking_view)
   handles?: {              // redes sociales — disponible para creadores/periodistas desde DB
     instagram?: string
     twitter?: string

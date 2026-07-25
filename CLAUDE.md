@@ -112,10 +112,11 @@ El contenido de noticias viene de n8n (taka-system) → Sanity. Claude Code **nu
 
 ## Rankings — sistema híbrido
 
-- Score 0–100 calculado por Gemini Flash vía n8n (WF-09).
+- Score 0–100 = **fórmula determinista, SIN IA** (no hay Gemini). Suma ponderada de 4 factores (rendimiento/contexto/mediático/narrativa) con pesos por track. Fuente de verdad: trigger SQL `f_recompute_score_auto` (migración 028), espejada en `src/lib/rankings.ts`. La calcula el pipeline n8n **WF-11/WF-12** (dom+mié 22:00), NO WF-09 (que es Cleanup).
+- Dos capas en `ranking_entries`: `*_auto` (cron) + `*_manual` (editorial), fusionadas por la vista materializada `ranking_view` vía `COALESCE(manual, auto)`; `editorial_locked` protege una entrada del cron.
 - Override editorial vía `POST /api/rankings/override` (requiere `RANKINGS_ADMIN_TOKEN`).
 - Ingest manual: `npm run rankings:sync` (lee DB) o `npm run rankings:seed` (siembra inicial).
-- Coste: $0 (Gemini Flash gratuito en cuota actual).
+- Coste: $0 (fuentes públicas: ESPN, FBref, Elo ATP/WTA, Jolpica F1, Wikipedia).
 
 ## Convenciones de código
 

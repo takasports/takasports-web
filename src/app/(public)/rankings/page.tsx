@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import RankingsClient from './RankingsClient'
 import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
-import { getTopMovers, getAllRankings, getLastIngestTime, type RankingCategory } from '@/lib/rankings-data'
+import { getAllRankings, getLastIngestTime, type RankingCategory } from '@/lib/rankings-data'
 
 // Rankings: revalidar cada 30 min. La ingesta semanal y las ediciones del
 // admin fuerzan revalidatePath('/rankings') al instante; el temporizador solo
@@ -167,7 +167,7 @@ function categoriesForView(): RankingCategory[] {
   const ALL: RankingCategory[] = [
     'jugadores', 'jugadoras', 'clubes', 'clubes_femenino',
     'creadores', 'periodistas', 'luchadoras_ufc',
-    'creadores_wwe', 'sub21', 'latam', 'concacaf',
+    'creadores_wwe', 'sub21',
   ]
   return ALL
 }
@@ -179,8 +179,7 @@ function categoriesForView(): RankingCategory[] {
 export default async function Page() {
   const targetCats = categoriesForView()
 
-  const [{ movers, fallers }, dbData, lastUpdated] = await Promise.all([
-    getTopMovers(3),
+  const [dbData, lastUpdated] = await Promise.all([
     getAllRankings(targetCats),
     getLastIngestTime(),
   ])
@@ -193,7 +192,7 @@ export default async function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <BreadcrumbJsonLd items={[{ name: 'TakaSports', path: '' }, { name: 'Rankings', path: '/rankings' }]} />
-      <RankingsClient initialMovers={movers} initialFallers={fallers} dbData={dbData} lastUpdated={lastUpdated ?? undefined} />
+      <RankingsClient dbData={dbData} lastUpdated={lastUpdated ?? undefined} />
     </>
   )
 }
