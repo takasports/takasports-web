@@ -143,6 +143,9 @@ export async function POST(req: NextRequest) {
   }
   if ('editorialNote' in overrides)    update.editorial_note         = overrides.editorialNote
   if ('locked' in overrides)           update.editorial_locked       = overrides.locked
+  // active NO es un override (_manual); es columna directa. Desactivar oculta la
+  // entry del ranking; reactivar la devuelve. No pasa por COALESCE ni por reset-all.
+  if ('active' in overrides)           update.active                 = overrides.active === true
   const f = overrides.factors as Record<string, unknown> | undefined
   if (f && typeof f === 'object') {
     for (const [k, col] of [

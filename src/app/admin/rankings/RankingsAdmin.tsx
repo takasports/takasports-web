@@ -16,6 +16,7 @@ interface Entry {
   score: number
   trend: string
   insight: string | null
+  active: boolean
   editorial_locked: boolean
   score_prev: number | null
   // raw DB cols para mostrar breakdown
@@ -111,6 +112,22 @@ function EditPanel({
     if (res.ok) { setStatus('✓ Override eliminado'); setTimeout(() => { onSaved(); onClose() }, 700) }
     else setStatus('Error al limpiar')
     setSaving(false)
+  }
+
+  async function toggleActive() {
+    setSaving(true)
+    setStatus('')
+    try {
+      const res = await fetch('/api/rankings/override', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ id: entry.id, category: entry.category, overrides: { active: !entry.active } }),
+      })
+      if (!res.ok) { const err = await res.json(); setStatus('Error: ' + (err.error ?? res.status)) }
+      else { setStatus(entry.active ? '✓ Desactivado' : '✓ Activado'); setTimeout(() => { onSaved(); onClose() }, 700) }
+    } catch { setStatus('Error de red') }
+    finally { setSaving(false) }
   }
 
   const inputCls = 'w-full px-3 py-1.5 rounded-lg text-xs outline-none'
@@ -245,6 +262,20 @@ function EditPanel({
           </button>
         </div>
 
+        {/* Activar / Desactivar */}
+        <button
+          onClick={toggleActive}
+          disabled={saving}
+          className="py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+          style={{
+            background: entry.active ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.1)',
+            color: entry.active ? '#f87171' : '#22c55e',
+            border: `1px solid ${entry.active ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.3)'}`,
+            cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sport)',
+          }}>
+          {entry.active ? '⊘ Desactivar — ocultar del ranking' : '✓ Activar — mostrar en el ranking'}
+        </button>
+
         {status && (
           <p className="text-center text-xs font-semibold"
             style={{ color: status.startsWith('✓') ? '#22c55e' : '#f87171', fontFamily: 'var(--font-sport)' }}>
@@ -267,7 +298,7 @@ function EntryRow({ entry, onRefresh }: { entry: Entry; onRefresh: () => void })
       <tr
         onClick={() => setEditing(true)}
         className="cursor-pointer transition-colors"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', opacity: entry.active === false ? 0.5 : 1 }}
         onMouseEnter={e => (e.currentTarget.style.background = 'rgba(124,58,237,0.06)')}
         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
       >
@@ -287,8 +318,14 @@ function EntryRow({ entry, onRefresh }: { entry: Entry; onRefresh: () => void })
             {entry.editorial_locked && <span title="Bloqueado del cron" style={{ fontSize: 11 }}>🔒</span>}
             {hasOverride && !entry.editorial_locked && <span title="Override activo" style={{ fontSize: 11 }}>✏️</span>}
             <div>
-              <p className="text-xs font-bold" style={{ color: '#D0D0E0', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-xs font-bold flex items-center gap-1.5" style={{ color: '#D0D0E0', fontFamily: 'var(--font-sport)' }}>
                 {entry.name}
+                {entry.active === false && (
+                  <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider"
+                    style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
+                    inactivo
+                  </span>
+                )}
               </p>
               <p className="text-[10px]" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
                 {entry.subtitle}
@@ -337,12 +374,13 @@ export default function RankingsAdmin() {
   const [loading,  setLoading]    = useState(false)
   const [source,   setSource]     = useState<'db' | 'static' | 'error'>('db')
   const [search,   setSearch]     = useState('')
+  const [showInactive, setShowInactive] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch(
-        `/api/rankings/admin-list?category=${category}`,
+        `/api/rankings/admin-list?category=${category}${showInactive ? '&includeInactive=1' : ''}`,
         { credentials: 'same-origin' },
       )
       if (!res.ok) { setSource('error'); setEntries([]); return }
@@ -354,7 +392,7 @@ export default function RankingsAdmin() {
     } finally {
       setLoading(false)
     }
-  }, [category])
+  }, [category, showInactive])
 
   useEffect(() => { load() }, [load])
 
@@ -423,6 +461,17 @@ export default function RankingsAdmin() {
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#D0D0E0', fontFamily: 'var(--font-sport)', width: 180 }}
           />
           <button
+            onClick={() => setShowInactive(v => !v)}
+            className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+            style={{
+              background: showInactive ? 'rgba(239,68,68,0.14)' : 'rgba(255,255,255,0.06)',
+              color: showInactive ? '#f87171' : '#8E8E9E',
+              border: showInactive ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.08)',
+              cursor: 'pointer', fontFamily: 'var(--font-sport)',
+            }}>
+            {showInactive ? '● Inactivos' : '○ Inactivos'}
+          </button>
+          <button
             onClick={load}
             disabled={loading}
             className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
@@ -469,6 +518,7 @@ export default function RankingsAdmin() {
           <p><span style={{ color: '#9B7CF6' }}>✏️ Override</span> — sobreescribe el valor automático del cron. La vista <code style={{ color: '#C4B5FD' }}>ranking_view</code> aplica <code>COALESCE(manual, auto)</code>.</p>
           <p className="mt-1"><span style={{ color: '#9B7CF6' }}>🔒 Locked</span> — el cron nunca toca esa entry. Útil para posiciones que quieres fijar indefinidamente.</p>
           <p className="mt-1"><span style={{ color: '#9B7CF6' }}>Reset</span> — elimina todos los overrides de una entry. Vuelve al valor automático del cron.</p>
+          <p className="mt-1"><span style={{ color: '#f87171' }}>⊘ Desactivar</span> — oculta la entry del ranking (active=false). Usa <span style={{ color: '#f87171' }}>○/● Inactivos</span> arriba para verlas y reactivarlas. ⚠️ Un <em>creador</em> que esté en el catálogo del cron se reactiva solo en la siguiente corrida — para quitarlo del todo hay que sacarlo también del catálogo.</p>
           <p className="mt-1">Acceso: tu email debe estar en <code style={{ color: '#C4B5FD' }}>ADMIN_EMAILS</code> y debes estar logueado en TakaSports.</p>
         </div>
       </div>

@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
     const entries = (STATIC_FALLBACK[category] ?? []).map(e => ({
       id: e.id, category, name: e.name, subtitle: e.subtitle,
       rank: e.rank, score: e.score, trend: e.trend, insight: e.insight,
+      active: true,
       editorial_locked: false,
       rank_auto: e.rank, rank_manual: null,
       score_auto: e.score, score_manual: null,
@@ -68,7 +69,7 @@ export async function GET(req: NextRequest) {
   const { data: rawData, error: rawErr } = await sb
     .from('ranking_entries')
     .select([
-      'id', 'name', 'subtitle', 'score_prev',
+      'id', 'name', 'subtitle', 'score_prev', 'active',
       'rank_auto', 'rank_manual',
       'score_auto', 'score_manual',
       'insight_auto', 'insight_manual',
@@ -85,6 +86,7 @@ export async function GET(req: NextRequest) {
     const entries = (STATIC_FALLBACK[category] ?? []).map(e => ({
       id: e.id, category, name: e.name, subtitle: e.subtitle,
       rank: e.rank, score: e.score, trend: e.trend, insight: e.insight,
+      active: true,
       editorial_locked: false,
       rank_auto: e.rank, rank_manual: null,
       score_auto: e.score, score_manual: null,
@@ -110,6 +112,7 @@ export async function GET(req: NextRequest) {
       score: v.score,
       trend: v.trend ?? 'flat',
       insight: v.insight ?? null,
+      active: raw.active ?? true,
       editorial_locked: raw.editorial_locked ?? false,
       rank_auto:    raw.rank_auto    ?? null,
       rank_manual:  raw.rank_manual  ?? null,
@@ -122,6 +125,36 @@ export async function GET(req: NextRequest) {
       score_prev: raw.score_prev ?? null,
     }
   })
+
+  // Inactivos (active=false): no están en ranking_view, se piden aparte para
+  // poder reactivarlos desde el panel. Se anexan al final marcados inactive.
+  if (url.searchParams.get('includeInactive') === '1') {
+    const activeIds = new Set(entries.map(e => e.id))
+    const inactive = (rawData as any[])
+      .filter(r => r.active === false && !activeIds.has(r.id))
+      .map(r => ({
+        id: r.id,
+        category,
+        name:     r.name     ?? r.id,
+        subtitle: r.subtitle ?? '',
+        rank:  r.rank_manual ?? r.rank_auto ?? 999,
+        score: r.score_manual ?? r.score_auto ?? 0,
+        trend: 'flat',
+        insight: r.insight_manual ?? r.insight_auto ?? null,
+        active: false,
+        editorial_locked: r.editorial_locked ?? false,
+        rank_auto:    r.rank_auto    ?? null,
+        rank_manual:  r.rank_manual  ?? null,
+        score_auto:   r.score_auto   ?? null,
+        score_manual: r.score_manual ?? null,
+        insight_auto:   r.insight_auto   ?? null,
+        insight_manual: r.insight_manual ?? null,
+        editorial_boost: r.editorial_boost ?? null,
+        editorial_note:  r.editorial_note  ?? null,
+        score_prev: r.score_prev ?? null,
+      }))
+    entries.push(...inactive)
+  }
 
   return NextResponse.json({ entries, source: 'db' })
 }
