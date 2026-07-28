@@ -316,12 +316,13 @@ export interface AppDownloads {
   prev7d?: number // 7 días anteriores (para el % de cambio)
   total?: number
   launchDate?: string
-  countries?: [string, number][]
+  countries?: [string, number][] // acumulado desde el lanzamiento
+  countries7d?: [string, number][] // últimos 7 días → de dónde son las últimas descargas
   note?: string
 }
 
 interface TrafficRowRaw {
-  app?: { launchDate?: string; countries?: [string, number][]; prev7?: number; pending?: boolean; error?: string; empty?: boolean }
+  app?: { launchDate?: string; countries?: [string, number][]; countries7d?: [string, number][]; prev7?: number; pending?: boolean; error?: string; empty?: boolean }
 }
 
 export async function getAppDownloads(): Promise<AppDownloads> {
@@ -360,6 +361,7 @@ export async function getAppDownloads(): Promise<AppDownloads> {
     total: row.ios_downloads_total ?? undefined,
     launchDate: app?.launchDate,
     countries: app?.countries,
+    countries7d: app?.countries7d,
   }
 }
 

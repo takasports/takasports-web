@@ -405,6 +405,9 @@ export default async function TraficoPage() {
               <BigCard label="Ayer" value={nf(ios.yesterday)} accent="#60A5FA" />
               <BigCard label="Plataforma" value={<span style={{ fontSize: '1rem', fontFamily: 'var(--font-sport)' }}>iOS · App Store</span>} sub="Android: próximamente" accent="#F472B6" />
             </div>
+            {ios.countries7d && ios.countries7d.length > 0 && (
+              <div style={{ marginBottom: 16 }}><Subhead hint="De dónde vienen las descargas más recientes (últimos 7 días).">Por país · últimos 7 días 🆕</Subhead><CountryChips items={ios.countries7d.map(([code, n]) => ({ country: code, countryCode: code, users: n }))} /></div>
+            )}
             {ios.countries && ios.countries.length > 0 && (
               <div><Subhead>Por país · desde lanzamiento</Subhead><CountryChips items={ios.countries.map(([code, n]) => ({ country: code, countryCode: code, users: n }))} /></div>
             )}
