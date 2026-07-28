@@ -65,6 +65,8 @@ const STEPS = [
   ['F1 — posición campeonato (contexto)',    'ingest-f1-context.mjs'],
   ['UFC — rankings división (rend+ctx)',     'ingest-ufc-rankings.mjs'],
   ['Periodistas — social reach (rend+ctx)',  'ingest-creator-social.mjs'],
+  // Anclar va ANTES de la relevancia: sin canal no hay engagement que medir.
+  ['Creadores — anclar canal de YouTube',    'anchor-creator-youtube.mjs'],
   ['Creadores — relevancia (engagement YT)', 'ingest-creator-relevance.mjs'],
   ['Wikipedia EN×ES (mediático)',            'ingest-wikipedia-views.mjs'],
   ['Forma (momentum del histórico)',         'ingest-narrativa-decay.mjs'],
