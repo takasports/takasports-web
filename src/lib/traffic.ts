@@ -12,7 +12,8 @@
 import { getServiceAccountToken, getOauthAccessToken, hasServiceAccount } from './google-auth'
 import { adminSupabase } from './supabase-admin'
 
-const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '478319346' // propiedad "Deportes"
+const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '478319346' // propiedad "Deportes" (WEB)
+const GA4_APP_PROPERTY_ID = process.env.GA4_APP_PROPERTY_ID || '547400035' // propiedad "taka-eef70" (APP iOS)
 const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || null
 const GSC_SITE_URL = process.env.SEARCH_CONSOLE_SITE_URL || 'https://www.takasportsmedia.com/'
 const ANALYTICS_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly'
@@ -116,8 +117,8 @@ interface Ga4Row {
   metricValues?: { value?: string }[]
 }
 
-async function ga4RunReport(token: string, body: Record<string, unknown>): Promise<Ga4Row[]> {
-  const url = `https://analyticsdata.googleapis.com/v1beta/properties/${GA4_PROPERTY_ID}:runReport`
+async function ga4RunReport(token: string, propertyId: string, body: Record<string, unknown>): Promise<Ga4Row[]> {
+  const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`
   const res = await timedFetch(url, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
@@ -127,7 +128,7 @@ async function ga4RunReport(token: string, body: Record<string, unknown>): Promi
     const detail = (await res.text()).slice(0, 200)
     if (res.status === 403) {
       throw new Error(
-        `GA4 403: la credencial no tiene acceso a la propiedad ${GA4_PROPERTY_ID} (o falta el scope analytics.readonly)`,
+        `GA4 403: la credencial no tiene acceso a la propiedad ${propertyId} (o falta el scope analytics.readonly)`,
       )
     }
     throw new Error(`GA4 runReport ${res.status}: ${detail}`)
@@ -136,11 +137,12 @@ async function ga4RunReport(token: string, body: Record<string, unknown>): Promi
   return data.rows ?? []
 }
 
-export async function getGa4Summary(): Promise<Ga4Summary> {
+/** Resumen web por defecto; pásale `GA4_APP_PROPERTY_ID` + 'unifiedScreenName' para la app. */
+export async function getGa4Summary(propertyId: string = GA4_PROPERTY_ID, screenDim = 'pagePath'): Promise<Ga4Summary> {
   const baseline: Ga4Summary = {
     available: false,
-    propertyId: GA4_PROPERTY_ID,
-    measurementId: GA4_MEASUREMENT_ID,
+    propertyId,
+    measurementId: propertyId === GA4_PROPERTY_ID ? GA4_MEASUREMENT_ID : null,
     hasServiceAccount: hasServiceAccount(),
   }
 
@@ -161,46 +163,47 @@ export async function getGa4Summary(): Promise<Ga4Summary> {
 
   try {
     const t = token
+    const run = (body: Record<string, unknown>) => ga4RunReport(t, propertyId, body)
     const safe = async (fn: () => Promise<Ga4Row[]>): Promise<Ga4Row[] | undefined> => {
       try { return await fn() } catch { return undefined }
     }
 
     // Serie de 30 días (esencial) + enriquecimiento en paralelo (cada uno degrada).
     const [daily, channelsRes, pagesRes, devicesRes, countriesRes, totalsRes, prevRes, allTimeRes] = await Promise.all([
-      ga4RunReport(t, {
+      run({
         dateRanges: [{ startDate: '29daysAgo', endDate: 'yesterday' }],
         dimensions: [{ name: 'date' }], metrics: [{ name: 'activeUsers' }],
         orderBys: [{ dimension: { dimensionName: 'date' } }],
       }),
-      safe(() => ga4RunReport(t, {
+      safe(() => run({
         dateRanges: [{ startDate: '7daysAgo', endDate: 'yesterday' }],
         dimensions: [{ name: 'sessionDefaultChannelGroup' }], metrics: [{ name: 'activeUsers' }],
         orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
       })),
-      safe(() => ga4RunReport(t, {
+      safe(() => run({
         dateRanges: [{ startDate: '7daysAgo', endDate: 'yesterday' }],
-        dimensions: [{ name: 'pagePath' }], metrics: [{ name: 'screenPageViews' }],
+        dimensions: [{ name: screenDim }], metrics: [{ name: 'screenPageViews' }],
         orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }], limit: 8,
       })),
-      safe(() => ga4RunReport(t, {
+      safe(() => run({
         dateRanges: [{ startDate: '28daysAgo', endDate: 'yesterday' }],
         dimensions: [{ name: 'deviceCategory' }], metrics: [{ name: 'activeUsers' }],
         orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
       })),
-      safe(() => ga4RunReport(t, {
+      safe(() => run({
         dateRanges: [{ startDate: '28daysAgo', endDate: 'yesterday' }],
         dimensions: [{ name: 'country' }, { name: 'countryId' }], metrics: [{ name: 'activeUsers' }],
         orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }], limit: 8,
       })),
-      safe(() => ga4RunReport(t, {
+      safe(() => run({
         dateRanges: [{ startDate: '28daysAgo', endDate: 'yesterday' }],
         metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'newUsers' }, { name: 'screenPageViewsPerSession' }, { name: 'averageSessionDuration' }, { name: 'engagementRate' }],
       })),
-      safe(() => ga4RunReport(t, {
+      safe(() => run({
         dateRanges: [{ startDate: '56daysAgo', endDate: '29daysAgo' }],
         metrics: [{ name: 'activeUsers' }],
       })),
-      safe(() => ga4RunReport(t, {
+      safe(() => run({
         dateRanges: [{ startDate: '2020-01-01', endDate: 'today' }],
         metrics: [{ name: 'activeUsers' }],
       })),
@@ -482,8 +485,8 @@ export interface Ga4Realtime {
   note?: string
 }
 
-async function ga4RealtimeReport(token: string, body: Record<string, unknown>): Promise<Ga4Row[]> {
-  const url = `https://analyticsdata.googleapis.com/v1beta/properties/${GA4_PROPERTY_ID}:runRealtimeReport`
+async function ga4RealtimeReport(token: string, propertyId: string, body: Record<string, unknown>): Promise<Ga4Row[]> {
+  const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runRealtimeReport`
   const res = await timedFetch(url, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
@@ -493,7 +496,8 @@ async function ga4RealtimeReport(token: string, body: Record<string, unknown>): 
   return ((await res.json()) as { rows?: Ga4Row[] }).rows ?? []
 }
 
-export async function getGa4Realtime(): Promise<Ga4Realtime> {
+/** Tiempo real web por defecto; pásale `GA4_APP_PROPERTY_ID` para la app. */
+export async function getGa4Realtime(propertyId: string = GA4_PROPERTY_ID): Promise<Ga4Realtime> {
   let token: string | null = null
   try {
     token = (await getServiceAccountToken([ANALYTICS_SCOPE])) ?? (await getOauthAccessToken())
@@ -503,10 +507,12 @@ export async function getGa4Realtime(): Promise<Ga4Realtime> {
   if (!token) return { available: false, activeUsers: 0, note: 'Sin service account de Google' }
 
   try {
+    const tk = token
+    const rt = (body: Record<string, unknown>) => ga4RealtimeReport(tk, propertyId, body)
     const [totalRows, locRows, pageRows] = await Promise.all([
-      ga4RealtimeReport(token, { metrics: [{ name: 'activeUsers' }] }),
-      ga4RealtimeReport(token, { dimensions: [{ name: 'country' }, { name: 'countryId' }, { name: 'city' }], metrics: [{ name: 'activeUsers' }], limit: 10 }),
-      ga4RealtimeReport(token, { dimensions: [{ name: 'unifiedScreenName' }], metrics: [{ name: 'activeUsers' }], limit: 10 }),
+      rt({ metrics: [{ name: 'activeUsers' }] }),
+      rt({ dimensions: [{ name: 'country' }, { name: 'countryId' }, { name: 'city' }], metrics: [{ name: 'activeUsers' }], limit: 10 }),
+      rt({ dimensions: [{ name: 'unifiedScreenName' }], metrics: [{ name: 'activeUsers' }], limit: 10 }),
     ])
     const activeUsers = Number(totalRows[0]?.metricValues?.[0]?.value ?? 0)
     const byLocation = locRows
@@ -520,3 +526,8 @@ export async function getGa4Realtime(): Promise<Ga4Realtime> {
     return { available: false, activeUsers: 0, note: e instanceof Error ? e.message : String(e) }
   }
 }
+
+// ── Atajos de la APP (propiedad GA4 taka-eef70). La app usa `unifiedScreenName`
+// (nombre de pantalla) en vez de `pagePath`. Sin datos hasta publicar la app.
+export const getAppGa4Summary = () => getGa4Summary(GA4_APP_PROPERTY_ID, 'unifiedScreenName')
+export const getAppGa4Realtime = () => getGa4Realtime(GA4_APP_PROPERTY_ID)

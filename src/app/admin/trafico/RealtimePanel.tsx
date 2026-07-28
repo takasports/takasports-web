@@ -14,7 +14,15 @@ function flag(code: string): string {
   return String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65))
 }
 
-export default function RealtimePanel({ initial }: { initial: Ga4Realtime }) {
+export default function RealtimePanel({
+  initial,
+  src = '/api/admin/trafico/realtime',
+  label = 'En vivo · ahora mismo',
+}: {
+  initial: Ga4Realtime
+  src?: string
+  label?: string
+}) {
   const [rt, setRt] = useState<Ga4Realtime>(initial)
   const [beat, setBeat] = useState(false)
   const [updatedAt, setUpdatedAt] = useState<string>('')
@@ -24,7 +32,7 @@ export default function RealtimePanel({ initial }: { initial: Ga4Realtime }) {
     let alive = true
     async function tick() {
       try {
-        const res = await fetch('/api/admin/trafico/realtime', { cache: 'no-store' })
+        const res = await fetch(src, { cache: 'no-store' })
         if (!res.ok) return
         const data = (await res.json()) as Ga4Realtime
         if (!alive) return
@@ -41,7 +49,7 @@ export default function RealtimePanel({ initial }: { initial: Ga4Realtime }) {
       alive = false
       if (timer.current) clearInterval(timer.current)
     }
-  }, [])
+  }, [src])
 
   const live = rt.available && rt.activeUsers > 0
 
@@ -64,7 +72,7 @@ export default function RealtimePanel({ initial }: { initial: Ga4Realtime }) {
             {live && <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22C55E', animation: 'tk-pulse 1.6s ease-out infinite' }} />}
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: live ? '#22C55E' : 'var(--text-faint)', boxShadow: beat ? '0 0 0 6px rgba(34,197,94,0.25)' : 'none', transition: 'box-shadow .3s' }} />
           </span>
-          <h2 className="section-label" style={{ color: live ? '#86EFAC' : 'var(--text-muted)' }}>En vivo · ahora mismo</h2>
+          <h2 className="section-label" style={{ color: live ? '#86EFAC' : 'var(--text-muted)' }}>{label}</h2>
         </div>
         <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>
           {rt.available ? `actualizado ${updatedAt || 'al cargar'} · cada 25s` : 'GA4 pendiente'}
