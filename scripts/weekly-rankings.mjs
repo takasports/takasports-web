@@ -144,7 +144,10 @@ function runStep([label, script], incidencias) {
   }
   console.log(`\n▶ ${label}...`)
   try {
-    execFileSync(NODE, DRY ? [p] : [p, '--apply'], { cwd: PROJECT, stdio: 'inherit', timeout: 15 * 60 * 1000 })
+    // 25 min por paso: el mediático de Wikipedia tarda ~19 con la caché
+    // caliente (cientos de artículos × 2 idiomas, con el rate-limit de
+    // Wikimedia). Con el límite anterior de 15 se perdía entero cada semana.
+    execFileSync(NODE, DRY ? [p] : [p, '--apply'], { cwd: PROJECT, stdio: 'inherit', timeout: 25 * 60 * 1000 })
     console.log('  → ok')
     return 'ok'
   } catch (e) {

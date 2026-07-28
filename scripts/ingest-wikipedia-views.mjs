@@ -302,12 +302,18 @@ async function main() {
 
   if (!APPLY) { console.log('\nDRY RUN.'); return }
 
+  // En serie eran ~660 peticiones de una en una, un par de minutos de reloj que
+  // sumaban al timeout del orquestador. Cada score es distinto, así que no se
+  // pueden agrupar por valor: se lanzan de 8 en 8.
   let ok = 0, fail = 0
-  for (const u of results) {
-    const { error: err } = await sb.from('ranking_entries')
-      .update({ mediatico_auto: u.newScore })
-      .eq('id', u.entryId).eq('category', u.category)   // la PK es (id, category)
-    if (err) { fail++; if (VERBOSE) console.error(`FAIL ${u.entryId}: ${err.message}`) } else ok++
+  const WRITE_CONCURRENCY = 8
+  for (let i = 0; i < results.length; i += WRITE_CONCURRENCY) {
+    await Promise.all(results.slice(i, i + WRITE_CONCURRENCY).map(async (u) => {
+      const { error: err } = await sb.from('ranking_entries')
+        .update({ mediatico_auto: u.newScore })
+        .eq('id', u.entryId).eq('category', u.category)   // la PK es (id, category)
+      if (err) { fail++; if (VERBOSE) console.error(`FAIL ${u.entryId}: ${err.message}`) } else ok++
+    }))
   }
   console.log(`Done. OK=${ok} FAIL=${fail}`)
 }
