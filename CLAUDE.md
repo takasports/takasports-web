@@ -112,11 +112,14 @@ El contenido de noticias viene de n8n (taka-system) → Sanity. Claude Code **nu
 
 ## Rankings — sistema híbrido
 
-- Score 0–100 = **fórmula determinista, SIN IA** (no hay Gemini). Suma ponderada de 4 factores (rendimiento/contexto/mediático/narrativa) con pesos por track. Fuente de verdad: trigger SQL `f_recompute_score_auto` (migración 028), espejada en `src/lib/rankings.ts`. La calcula el pipeline n8n **WF-11/WF-12** (dom+mié 22:00), NO WF-09 (que es Cleanup).
-- Dos capas en `ranking_entries`: `*_auto` (cron) + `*_manual` (editorial), fusionadas por la vista materializada `ranking_view` vía `COALESCE(manual, auto)`; `editorial_locked` protege una entrada del cron.
-- Override editorial vía `POST /api/rankings/override` (requiere `RANKINGS_ADMIN_TOKEN`).
-- Ingest manual: `npm run rankings:sync` (lee DB) o `npm run rankings:seed` (siembra inicial).
-- Coste: $0 (fuentes públicas: ESPN, FBref, Elo ATP/WTA, Jolpica F1, Wikipedia).
+- Score 0–100 = **fórmula determinista, SIN IA** (no hay Gemini). Suma ponderada de 4 factores (rendimiento/contexto/mediático/**forma**) con pesos por track — deportistas 45/20/15/20. Fuente de verdad del cálculo: trigger SQL `f_recompute_score_auto` (migración 110), espejado en `src/lib/rankings.ts`.
+- **El pipeline de scoring vive EN ESTE REPO**: `scripts/weekly-rankings.mjs` (16 pasos) lo dispara launchd `com.taka.weekly-rankings-update` **dom 23:45 y mié 22:00**. Es la AUTORIDAD. Los scripts de `taka-system` (run-rankings.js, ingest-espn-*) solo siembran identidad y cobertura, y corren antes. Si tocas una fórmula allí y no la ves en la web, es que este pipeline la sobrescribió.
+- **`active` tiene un dueño único**: `scripts/curate-active-entries.mjs`. Colapsa por IDENTIDAD (nombre+deporte+género) cruzando categorías, protege el núcleo curado del corte del top-N y respeta `suppressed`. Ningún otro script debe escribir `active` — cuatro procesos peleándose por esa columna hacían desaparecer cracks del ranking cada semana.
+- **`suppressed`** (migración 116) = retirada editorial permanente, intocable por los automatismos. `editorial_locked` protege FACTORES; `suppressed` protege PRESENCIA.
+- ⚠️ La PK de `ranking_entries` es **(id, category)** — el mismo id puede ser otra persona en otra categoría (`alcaraz-sub21` = futbolista del Everton en `jugadores`, tenista en `sub21`). Toda escritura debe filtrar por ambas.
+- Dos capas: `*_auto` (cron) + `*_manual` (editorial), fusionadas por la vista materializada `ranking_view` vía `COALESCE(manual, auto)`. Tras cambiar datos: `SELECT refresh_ranking_view()`.
+- Override editorial vía `POST /api/rankings/override` (requiere `RANKINGS_ADMIN_TOKEN`) o el panel `/admin/rankings`.
+- Coste: $0 (fuentes públicas: Understat, ESPN, Elo ATP/WTA, Jolpica F1, Wikipedia).
 
 ## Convenciones de código
 

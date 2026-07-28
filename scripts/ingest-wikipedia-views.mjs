@@ -5,20 +5,23 @@
 // Actualiza `mediatico_auto` usando pageviews de Wikipedia como
 // proxy de atención mediática global.
 //
-// Wikipedia pageviews correlacionan fuertemente con:
-//   - Cobertura mediática internacional
-//   - Búsquedas en Google (pero sin rate-limit)
-//   - Picos de relevancia (torneos, transferencias, polémicas)
+// ── BILINGÜE EN×ES (2026-07-28) ──────────────────────────────────
+// El score sale de la MEDIA GEOMÉTRICA sqrt(vistas_EN × vistas_ES):
+// premia al que es famoso en los dos idiomas y penaliza al mono-idioma.
+// Solo-EN inflaba a las estrellas NBA en un sitio hispanohablante
+// (Brunson salía 95, por encima de medio LaLiga). Sin artículo en ES,
+// se usa EN solo.
 //
-// Escala log (media mensual de vistas):
-//   ≥ 100K vistas/mes → 95   (superestrellas globales)
-//   ≥  50K           → 88
-//   ≥  20K           → 80
-//   ≥  10K           → 73
-//   ≥   5K           → 65
-//   ≥   2K           → 57
-//   ≥   1K           → 50
-//   <   1K           → 42
+//   score = clamp(17.5 · log10(vistas) − 13.25, 45, 98)
+//   2,4M/mes → 98 · 140K → 77 · 10K → 57
+//
+// ── TÍTULOS HORNEADOS (anti-homónimo) ────────────────────────────
+// Para los ~124 atletas del catálogo, el título de Wikipedia viene de
+// `scripts/data/wiki-titles{,-es}.json`, resueltos por Wikidata. La
+// búsqueda difusa (opensearch) fallaba justo en los que más pesan:
+// Jaylen Brown caía en un artículo de baloncesto en silla de ruedas,
+// Donovan Mitchell en un beisbolista, Rodri/Gavi en desambiguaciones.
+// El resto de entradas (miles, ingestadas de ESPN) sí usan opensearch.
 //
 // Fuente: Wikimedia Analytics REST API (gratuita, sin auth)
 //
@@ -31,10 +34,30 @@
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { fileURLToPath } from 'url'
+import { readFileSync, writeFileSync } from 'fs'
 import path from 'path'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 config({ path: path.join(__dirname, '..', '.env.local') })
+
+// Títulos resueltos por Wikidata (id de la entry → título del artículo).
+const readTitles = (f) => {
+  try { return JSON.parse(readFileSync(path.join(__dirname, 'data', f), 'utf8')) }
+  catch { console.warn(`⚠️  ${f} no encontrado — se usará búsqueda difusa para todos`); return {} }
+}
+const WIKI_TITLES_EN = readTitles('wiki-titles.json')
+const WIKI_TITLES_ES = readTitles('wiki-titles-es.json')
+
+// Caché de títulos resueltos por búsqueda difusa (id → título, o null si no hay
+// artículo). Sin ella, cada corrida semanal repetía ~660 búsquedas por nombre;
+// Wikimedia respondía con 429 y el paso se comía el timeout de 15 min del
+// orquestador. Con caché, la corrida normal solo pide pageviews.
+const CACHE_PATH = path.join(__dirname, 'data', 'wiki-title-cache.json')
+const readCache = () => {
+  try { return JSON.parse(readFileSync(CACHE_PATH, 'utf8')) } catch { return {} }
+}
+const TITLE_CACHE = readCache()
+let cacheDirty = false
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -55,12 +78,18 @@ function dateRange() {
   return { start: fmt(start), end: fmt(end) }
 }
 
-// Log scale: views/60d → score 35-99
-function viewsToScore(views60d) {
-  const monthly = views60d / 2
-  if (monthly <= 0) return 35
-  const s = 30 + 70 * Math.log10(monthly + 1) / Math.log10(150000)
-  return Math.round(Math.min(99, Math.max(35, s)) * 10) / 10
+// Media mensual de vistas → score. Calibración verificada contra casos reales:
+// 2,4M → 98 (Messi) · 140K → 77 · 10K → 57. El suelo 45 significa "sin señal".
+function viewsToScore(monthlyViews) {
+  if (!(monthlyViews > 0)) return 45
+  const s = 17.5 * Math.log10(monthlyViews) - 13.25
+  return Math.round(Math.min(98, Math.max(45, s)) * 10) / 10
+}
+
+// Combina EN y ES: media geométrica si hay artículo en español con tráfico real,
+// EN solo en caso contrario.
+function combineViews(enMonthly, esMonthly) {
+  return esMonthly > 0 ? Math.sqrt(enMonthly * esMonthly) : enMonthly
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
@@ -97,16 +126,17 @@ async function searchWikiTitle(name) {
   return titles?.[0] ?? null
 }
 
-// Obtiene total de pageviews en el rango de fechas
-async function fetchPageviews(title, start, end) {
+// Vistas MENSUALES medias de un artículo en el proyecto indicado.
+async function fetchPageviews(title, start, end, project = 'en.wikipedia') {
   const enc = encodeURIComponent(title.replace(/ /g, '_'))
   // all-access/all-agents incluye desktop + mobile + bots (más estable para volumen real)
-  const url = `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/${enc}/daily/${start}/${end}`
+  const url = `https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/${project}/all-access/all-agents/${enc}/daily/${start}/${end}`
   const r = await fetchWithRetry(url, { headers: { 'User-Agent': 'takasports-rankings/1.0' } })
   if (!r?.ok) return null
   const d = await r.json()
   const items = d?.items ?? []
-  return items.reduce((sum, item) => sum + (item.views ?? 0), 0)
+  const total = items.reduce((sum, item) => sum + (item.views ?? 0), 0)
+  return total / 2      // la ventana es de 60 días → media mensual
 }
 
 async function main() {
@@ -117,12 +147,18 @@ async function main() {
   console.log('\nLoading DB entries...')
   const query = sb.from('ranking_entries')
     .select('id, name, category, sport, mediatico_auto')
+    // Solo lo que se ve. Sin este filtro recorría las ~16.000 filas de la tabla
+    // (la mayoría inactivas), a 2-3 peticiones cada una: el paso se comía el
+    // timeout de 15 min del orquestador semanal y se perdía entero.
+    .eq('active', true)
   if (SPORT_FILTER) query.eq('sport', SPORT_FILTER)
   const { data: entries, error } = await query
   if (error) throw error
-  // Solo personas individuales — excluir clubes
-  const people = entries.filter(e => e.category !== 'clubes' && e.category !== 'clubes_femenino')
-  console.log(`  ${people.length} personas (de ${entries.length} entradas totales)`)
+  // Excluir clubes (no son personas) y creadores: en ellos `mediatico_auto` es la
+  // AUDIENCIA (followers) que calcula f_sync_creator_scores(), no fama en Wikipedia.
+  const SKIP = new Set(['clubes', 'clubes_femenino', 'creadores', 'creadores_wwe'])
+  const people = entries.filter(e => !SKIP.has(e.category))
+  console.log(`  ${people.length} personas activas (de ${entries.length} entradas activas)`)
 
   const { start, end } = dateRange()
   console.log(`  Rango: ${start} → ${end}`)
@@ -131,38 +167,81 @@ async function main() {
   let searched = 0, notFound = 0, errors = 0
 
   console.log('\nProcessing Wikipedia lookups...')
-  for (const e of people) {
-    const title = await searchWikiTitle(e.name).catch(() => null)
-    await sleep(150)
-    if (!title) { notFound++; continue }
+  let bakedUsed = 0
 
-    const views = await fetchPageviews(title, start, end).catch(() => null)
-    await sleep(150)
-    if (views === null) { errors++; continue }
+  // En serie esto eran ~1,2 s por persona × ~950 = 19 min, y el orquestador
+  // semanal mata cada paso a los 15 → el mediático se perdía entero cada
+  // semana. Wikimedia admite de sobra esta concurrencia para un cliente
+  // identificado por User-Agent.
+  const CONCURRENCY = 6
+
+  async function processOne(e) {
+    // Título horneado por Wikidata > caché de búsquedas previas > búsqueda difusa.
+    let titleEn = WIKI_TITLES_EN[e.id]
+    if (titleEn) bakedUsed++
+    else if (e.id in TITLE_CACHE) titleEn = TITLE_CACHE[e.id]
+    else {
+      titleEn = await searchWikiTitle(e.name).catch(() => null)
+      TITLE_CACHE[e.id] = titleEn        // se cachea también el null: no volver a buscarlo
+      cacheDirty = true
+    }
+    if (!titleEn) { notFound++; return }
+
+    const enViews = await fetchPageviews(titleEn, start, end, 'en.wikipedia').catch(() => null)
+    if (enViews === null) { errors++; return }
+
+    // Español: título horneado si lo hay; si no, se prueba el MISMO título
+    // inglés (la mayoría de artículos de personas se titulan igual en ambas).
+    // No se busca por nombre a ciegas: eso reintroduce los homónimos. Si el
+    // artículo no existe en es.wikipedia, devuelve 0 y se puntúa solo con EN.
+    // Sin este intento solo 62 de 272 salían bilingües y el mediático volvía a
+    // inflar a la NBA en un sitio hispanohablante.
+    const titleEs = WIKI_TITLES_ES[e.id] ?? titleEn
+    const esViews = await fetchPageviews(titleEs, start, end, 'es.wikipedia').catch(() => null) ?? 0
 
     searched++
-    const newScore = viewsToScore(views)
+    const combined = combineViews(enViews, esViews)
     results.push({
       entryId: e.id, category: e.category, name: e.name, sport: e.sport,
-      wikiTitle: title, views60d: views, newScore,
+      wikiTitle: titleEn, enViews, esViews, views: combined,
+      newScore: viewsToScore(combined),
+      bilingual: esViews > 0,
       prev: e.mediatico_auto !== null ? Number(e.mediatico_auto) : null,
     })
-
-    if (searched % 50 === 0) console.log(`  ${searched}/${people.length} procesados...`)
   }
 
-  results.sort((a, b) => b.views60d - a.views60d)
+  const saveCache = () => {
+    if (!cacheDirty) return
+    const ordered = Object.fromEntries(Object.entries(TITLE_CACHE).sort(([a], [b]) => a.localeCompare(b)))
+    writeFileSync(CACHE_PATH, JSON.stringify(ordered, null, 0))
+    cacheDirty = false
+  }
 
-  console.log(`\n--- Top 25 mediático (Wikipedia views) ---`)
+  for (let i = 0; i < people.length; i += CONCURRENCY) {
+    await Promise.all(people.slice(i, i + CONCURRENCY).map(processOne))
+    await sleep(120)
+    if (i % (CONCURRENCY * 20) === 0 && i > 0) {
+      console.log(`  ${i}/${people.length} procesados...`)
+      saveCache()   // guardado incremental: si esto se corta, no se pierde lo resuelto
+    }
+  }
+  saveCache()
+  console.log(`  caché de títulos: ${Object.keys(TITLE_CACHE).length} entradas`)
+
+  results.sort((a, b) => b.views - a.views)
+
+  console.log(`\n--- Top 25 mediático (Wikipedia EN×ES) ---`)
   results.slice(0, 25).forEach(u => {
     const prev = u.prev !== null ? u.prev.toFixed(1).padStart(5) : '    -'
     const delta = u.prev !== null ? u.newScore - u.prev : null
     const dlt = delta !== null ? `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}` : 'NEW'
-    const views = u.views60d >= 1000 ? `${(u.views60d / 1000).toFixed(0)}K` : String(u.views60d)
-    console.log(`  ${views.padStart(6)} vistas  ${u.name.padEnd(28)} [${(u.sport ?? '?').padEnd(10)}]  ${prev} → ${u.newScore.toFixed(1).padStart(5)} (${dlt})`)
+    const k = (v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(Math.round(v))
+    const fuente = u.bilingual ? `EN ${k(u.enViews)}×ES ${k(u.esViews)}` : `EN ${k(u.enViews)}`
+    console.log(`  ${k(u.views).padStart(6)}  ${u.name.padEnd(26)} [${(u.sport ?? '?').padEnd(10)}] ${fuente.padEnd(22)} ${prev} → ${u.newScore.toFixed(1).padStart(5)} (${dlt})`)
   })
 
-  console.log(`\nResultados: ${results.length} actualizaciones, ${notFound} sin artículo, ${errors} errores`)
+  const bil = results.filter(r => r.bilingual).length
+  console.log(`\nResultados: ${results.length} actualizaciones (${bil} bilingües, ${bakedUsed} con título horneado), ${notFound} sin artículo, ${errors} errores`)
 
   if (!APPLY) { console.log('\nDRY RUN.'); return }
 
@@ -170,7 +249,7 @@ async function main() {
   for (const u of results) {
     const { error: err } = await sb.from('ranking_entries')
       .update({ mediatico_auto: u.newScore })
-      .eq('id', u.entryId).eq('category', u.category)
+      .eq('id', u.entryId).eq('category', u.category)   // la PK es (id, category)
     if (err) { fail++; if (VERBOSE) console.error(`FAIL ${u.entryId}: ${err.message}`) } else ok++
   }
   console.log(`Done. OK=${ok} FAIL=${fail}`)

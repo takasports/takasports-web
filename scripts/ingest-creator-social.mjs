@@ -2,16 +2,22 @@
 // ─────────────────────────────────────────────────────────────────
 // ingest-creator-social.mjs
 //
-// Actualiza rendimiento_auto y contexto_auto de creadores/periodistas.
+// Actualiza rendimiento_auto y contexto_auto de PERIODISTAS.
 //
 // Factores actualizados:
-//   rendimiento_auto (40%) — Alcance: max(yt_subs, twitch_followers, ig_followers)
-//                            log10-normalizado, cap 15M
-//   contexto_auto    (20%) — Presencia: nº plataformas con handle activo
+//   rendimiento_auto — Alcance: max(yt_subs, twitch_followers, ig_followers)
+//                      log10-normalizado, cap 15M
+//   contexto_auto    — Presencia: nº plataformas con handle activo
 //
-// Factores NO tocados:
-//   mediatico_auto   (25%) — Wikipedia pageviews (ingest-wikipedia-views.mjs)
-//   narrativa_auto   (15%) — decay temporal (ingest-narrativa-decay.mjs)
+// ── YA NO TOCA A LOS CREADORES (2026-07-28) ──────────────────────
+// Los creadores (`creadores`, `creadores_wwe`) los puntúa f_sync_creator_scores()
+// desde `creator_raw_metrics`, con la fórmula de la migración 111:
+//     Audiencia (mediatico) 50 · Crecimiento (rendimiento) 25 · Relevancia 25
+// Este script venía de la fórmula vieja (40/20/25/15) y escribía en
+// `rendimiento_auto` el ALCANCE por followers — o sea, pisaba el Crecimiento con
+// una segunda copia de la Audiencia, que ya pesa el 50%. El creador que dejaba de
+// publicar mantenía su nota mientras el que crecía no lo notaba.
+// Los periodistas no pasan por f_sync, así que ahí sí sigue siendo la fuente.
 //
 // Fuentes:
 //   Twitch:    GQL anónimo — funciona sin ninguna API key
@@ -191,10 +197,10 @@ async function main() {
   const { data: entries, error } = await sb
     .from('ranking_entries')
     .select('id, name, sport, category, handles, rendimiento_auto, contexto_auto')
-    .in('category', ['creadores', 'periodistas', 'creadores_wwe'])
+    .in('category', ['periodistas'])     // creadores → f_sync_creator_scores(), ver cabecera
     .not('handles', 'is', null)
   if (error) throw error
-  console.log(`${entries.length} creadores con handles\n`)
+  console.log(`${entries.length} periodistas con handles\n`)
 
   // ── YouTube (API v3 opcional) ────────────────────────────────────
   const ytIds = entries.map(e => e.handles?.youtube).filter(Boolean)
@@ -253,7 +259,7 @@ async function main() {
       `  → rend=${newRendimiento?.toFixed(1).padStart(5) ?? ' null'}  ctx=${newContexto}`
     )
 
-    updates.push({ id: entry.id, name: entry.name, newRendimiento, newContexto })
+    updates.push({ id: entry.id, category: entry.category, name: entry.name, newRendimiento, newContexto })
   }
 
   const withData = updates.filter(u => u.newRendimiento !== null)
@@ -269,7 +275,10 @@ async function main() {
       contexto_auto: u.newContexto,
       last_auto_update: new Date().toISOString(),
     }
-    const { error: err } = await sb.from('ranking_entries').update(patch).eq('id', u.id)
+    // La PK es (id, category): sin el segundo filtro se pisan filas homónimas
+    // de otras categorías.
+    const { error: err } = await sb.from('ranking_entries').update(patch)
+      .eq('id', u.id).eq('category', u.category)
     if (err) { fail++; console.error(`FAIL ${u.id}: ${err.message}`) } else ok++
   }
   console.log(`Done. OK=${ok} FAIL=${fail}`)

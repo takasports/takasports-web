@@ -147,6 +147,7 @@ async function main() {
       .from('ranking_entries')
       .update({ rendimiento_auto: u.newScore })
       .eq('id', u.id)
+      .eq('category', u.category)   // la PK es (id, category)
       .eq('category', u.category)
     if (err) { fail++; console.error(`FAIL ${u.id}: ${err.message}`) } else ok++
   }

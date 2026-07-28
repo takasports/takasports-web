@@ -114,21 +114,42 @@ function nameVariants(rawName) {
   return [...new Set([full, two, ...(alias ? [alias] : [])])]
 }
 
-async function fetchStandings(espnSlug) {
-  const r = await fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${espnSlug}/standings`)
-  if (!r.ok) return null
-  const d = await r.json()
+function parseStandings(d) {
   const entries = d?.children?.[0]?.standings?.entries ?? d?.standings?.entries ?? []
-  if (!entries.length) return null
+  if (!entries.length) return { map: null, played: 0 }
   const total = entries.length
   const map = new Map()
+  let played = 0
   for (const e of entries) {
     const name = normTeam(e.team?.displayName ?? '')
     const teamId = e.team?.id
     const stats = Object.fromEntries((e.stats ?? []).map(s => [s.name, s.value ?? s.displayValue]))
     const rank = Number(stats.rank) || 0
+    played += Number(stats.gamesPlayed) || 0
     if (name && rank && teamId) map.set(teamId, { name, rank, total })
   }
+  return { map, played }
+}
+
+// ── PRETEMPORADA ─────────────────────────────────────────────────
+// En julio la temporada nueva aún no ha empezado: ESPN devuelve una tabla con 0
+// partidos jugados y las posiciones salen alfabéticas o vacías. Sin este
+// fallback, el Real Madrid y el City aparecían a media tabla y su contexto se
+// hundía (Haaland 67,9 · Mbappé 66,3), que es justo lo que hacía que un suplente
+// con buen xG por 90 los adelantara en el ranking. Si la tabla en curso no tiene
+// partidos, se usa la de la temporada anterior.
+async function fetchStandings(espnSlug) {
+  const base = `https://site.api.espn.com/apis/v2/sports/soccer/${espnSlug}/standings`
+  const r = await fetch(base).catch(() => null)
+  if (r?.ok) {
+    const { map, played } = parseStandings(await r.json())
+    if (map && played > 0) return map
+  }
+  const prevSeason = new Date().getFullYear() - 1
+  const r2 = await fetch(`${base}?season=${prevSeason}`).catch(() => null)
+  if (!r2?.ok) return null
+  const { map } = parseStandings(await r2.json())
+  if (map) console.log(`    ↩︎ ${espnSlug}: pretemporada — usando la clasificación de ${prevSeason}`)
   return map
 }
 
@@ -318,14 +339,30 @@ async function main() {
 
   if (!APPLY) { console.log('\nDRY RUN.'); return }
 
-  let ok = 0, fail = 0
+  // Agrupado por (categoría, valor): eran ~3.000 peticiones de una en una y el
+  // paso no cabía en el timeout de 15 min del orquestador. Como el contexto solo
+  // depende de la posición del equipo, hay pocos valores distintos y esto queda
+  // en unas decenas de escrituras.
+  const buckets = new Map()
   for (const u of updates) {
-    const { error: err } = await sb.from('ranking_entries')
-      .update({ contexto_auto: u.newScore })
-      .eq('id', u.entryId).eq('category', u.category)
-    if (err) { fail++; if (VERBOSE) console.error(`FAIL ${u.entryId}: ${err.message}`) } else ok++
+    const k = `${u.category}|${u.newScore}`
+    if (!buckets.has(k)) buckets.set(k, [])
+    buckets.get(k).push(u.entryId)
   }
-  console.log(`Done. OK=${ok} FAIL=${fail}`)
+
+  let ok = 0, fail = 0
+  for (const [k, ids] of buckets) {
+    const cut = k.lastIndexOf('|')
+    const [category, score] = [k.slice(0, cut), Number(k.slice(cut + 1))]
+    for (let i = 0; i < ids.length; i += 500) {
+      const batch = ids.slice(i, i + 500)
+      const { error: err } = await sb.from('ranking_entries')
+        .update({ contexto_auto: score })
+        .in('id', batch).eq('category', category)   // la PK es (id, category)
+      if (err) { fail += batch.length; if (VERBOSE) console.error(`FAIL ${category}: ${err.message}`) } else ok += batch.length
+    }
+  }
+  console.log(`Done. OK=${ok} FAIL=${fail} (${buckets.size} escrituras agrupadas)`)
 }
 
 main().catch(err => { console.error(err); process.exit(1) })

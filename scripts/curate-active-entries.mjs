@@ -124,6 +124,47 @@ function normalizeName(s) {
     .replace(/(jr|junior)$/, '')
 }
 
+// Palabras que no identifican a nadie: sufijos de club y partículas.
+const NAME_STOPWORDS = new Set(['de','del','la','el','los','las','y','fc','cf','ac','sc','cd','ud','rc','club','afc','sd'])
+
+function nameTokens(s) {
+  const t = (s || '')
+    .replace(/[øØ]/g, 'o').replace(/[łŁ]/g, 'l').replace(/[đĐ]/g, 'd')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .split(/\s+/)
+    .filter(x => x && !NAME_STOPWORDS.has(x))
+  // "Jr." solo se quita como SUFIJO: «Júnior Alonso» se llama Júnior de nombre.
+  if (t.length > 1 && (t[t.length - 1] === 'jr' || t[t.length - 1] === 'junior')) t.pop()
+  return t
+}
+
+// ¿Son dos escrituras del MISMO nombre? Exige que el apellido coincida exacto y
+// que cada token del nombre más corto case con uno del largo, por igualdad o por
+// prefijo (inicial incluida). Así "Kimi Antonelli", "A. Kimi Antonelli" y
+// "Andrea Kimi Antonelli" son la misma persona, y "Gio Reyna" es "Giovanni
+// Reyna" — pero "Adrián Pérez" y "Aldahir Pérez" siguen siendo dos personas.
+function sameNameVariant(a, b) {
+  const [ta, tb] = [nameTokens(a), nameTokens(b)]
+  if (!ta.length || !tb.length) return false
+  if (ta[ta.length - 1] !== tb[tb.length - 1]) return false        // apellido exacto
+  const [short, long] = ta.length <= tb.length ? [ta, tb] : [tb, ta]
+  // Conjuntos idénticos: seguro ("FC Barcelona" ≡ "Barcelona").
+  if (short.length === long.length && short.join(' ') === long.join(' ')) return true
+  // Con un solo token no hay nada que confirme la identidad: el apellido suelto
+  // fusionaba «AC Milan» con «Facundo Milán» y «Vinicius Jr.» con «Carlos
+  // Vinícius». Hacen falta al menos nombre + apellido en las dos.
+  if (short.length < 2) return false
+  const pool = [...long]
+  for (const t of short) {
+    const i = pool.findIndex(u => u === t || u.startsWith(t) || t.startsWith(u))
+    if (i === -1) return false
+    pool.splice(i, 1)
+  }
+  return true
+}
+
 // El género forma parte de la identidad: el Manchester City femenino no es el
 // masculino, y los rankings masculino y femenino son competiciones distintas.
 const identityKey = (e) => `${normalizeName(e.name)}|${canonicalSport(e.sport)}${e.gender === 'f' ? '|f' : ''}`
@@ -247,10 +288,61 @@ async function main() {
   console.log(`  ${collapsedGroups} personas con filas duplicadas → ${collapsed} filas colapsadas`)
   console.log(`  ${survivors.length} identidades únicas`)
 
+  // ── 1b. Variantes del mismo nombre ──────────────────────────────
+  // El paso anterior exige el nombre IDÉNTICO, así que se le escapaban
+  // "Kimi Antonelli" / "A. Kimi Antonelli" / "Andrea Kimi Antonelli" (tres
+  // filas del mismo piloto en el top-10) o "FC Barcelona" / "Barcelona".
+  // Aquí se agrupa por apellido + deporte + género y se fusionan solo las
+  // variantes compatibles, y SOLO si una de las dos es una fila curada: las
+  // variantes de nombre las generan los seeds hechos a mano; los ingests de
+  // ESPN usan siempre la misma grafía. Sin ese requisito, el riesgo de fundir
+  // dos personas distintas es real — hay 7 «Martínez» y 3 «González» activos.
+  const anchors = new Map()
+  for (const e of survivors) {
+    if (PROTECTED_HOMONYMS.has(identityKey(e))) continue
+    const t = nameTokens(e.name)
+    if (!t.length) continue
+    const k = `${t[t.length - 1]}|${canonicalSport(e.sport)}${e.gender === 'f' ? '|f' : ''}`
+    if (!anchors.has(k)) anchors.set(k, [])
+    anchors.get(k).push(e)
+  }
+
+  const merged = new Set()
+  let variantGroups = 0, variantRows = 0
+  for (const [, group] of anchors) {
+    if (group.length < 2) continue
+    for (let i = 0; i < group.length; i++) {
+      if (merged.has(rowKey(group[i]))) continue
+      const cluster = [group[i]]
+      for (let j = i + 1; j < group.length; j++) {
+        if (merged.has(rowKey(group[j]))) continue
+        if (identityKey(group[i]) === identityKey(group[j])) continue   // ya lo vio el paso 1
+        if (!sameNameVariant(group[i].name, group[j].name)) continue
+        if (isIngested(group[i]) && isIngested(group[j])) continue      // ambas de ingest → no tocar
+        cluster.push(group[j])
+      }
+      if (cluster.length < 2) continue
+      cluster.sort(canonicalFirst)
+      const winner = cluster[0]
+      variantGroups++
+      for (const e of cluster.slice(1)) {
+        merged.add(rowKey(e))
+        variantRows++
+        if (e.active) toDeactivate.push(e)
+        if ((e.category === 'sub21' || e.age_group === 'sub21') && winner.age_group !== 'sub21') ageGroupFix.push(winner)
+      }
+      if (VERBOSE) {
+        console.log(`  VARIANTE keep="${winner.name}" (${winner.id}/${winner.category}) drop=${cluster.slice(1).map(e => `"${e.name}" (${e.id}/${e.category})`).join(', ')}`)
+      }
+    }
+  }
+  const survivors2 = survivors.filter(e => !merged.has(rowKey(e)))
+  console.log(`  ${variantGroups} nombres con variantes → ${variantRows} filas más colapsadas`)
+
   // ── 2. Top-N por (sport, category) sobre los supervivientes ─────
   console.log('\n[2/3] Aplicando top-N por deporte/categoría...')
   const groups = new Map()
-  for (const e of survivors) {
+  for (const e of survivors2) {
     const key = `${e.sport}/${e.category}`
     if (!groups.has(key)) groups.set(key, [])
     groups.get(key).push(e)
