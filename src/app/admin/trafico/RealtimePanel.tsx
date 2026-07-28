@@ -103,15 +103,19 @@ export default function RealtimePanel({
           <div>
             <p className="section-label" style={{ marginBottom: 8 }}>De dónde</p>
             <div className="flex flex-col gap-1.5">
-              {(rt.byLocation ?? []).slice(0, 6).map((l, i) => (
-                <div key={i} className="flex items-center gap-2" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                  <span>{flag(l.countryCode)}</span>
-                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {l.city && l.city !== '(not set)' ? `${l.city}, ` : ''}{l.country}
-                  </span>
-                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: '#F8F8FF' }}>{l.users}</span>
-                </div>
-              ))}
+              {(rt.byLocation ?? []).length > 0 ? (
+                (rt.byLocation ?? []).slice(0, 6).map((l, i) => (
+                  <div key={i} className="flex items-center gap-2" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                    <span>{flag(l.countryCode)}</span>
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {l.city && l.city !== '(not set)' ? `${l.city}, ` : ''}{l.country}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: '#F8F8FF' }}>{l.users}</span>
+                  </div>
+                ))
+              ) : (
+                <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>GA4 oculta la ubicación con muy pocos usuarios</span>
+              )}
             </div>
           </div>
 
@@ -119,12 +123,16 @@ export default function RealtimePanel({
           <div>
             <p className="section-label" style={{ marginBottom: 8 }}>Qué está viendo</p>
             <div className="flex flex-col gap-1.5">
-              {(rt.byPage ?? []).slice(0, 6).map((p, i) => (
-                <div key={i} className="flex items-center gap-2" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.page}</span>
-                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: '#F8F8FF' }}>{p.users}</span>
-                </div>
-              ))}
+              {(rt.byPage ?? []).length > 0 ? (
+                (rt.byPage ?? []).slice(0, 6).map((p, i) => (
+                  <div key={i} className="flex items-center gap-2" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.page}</span>
+                    <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: '#F8F8FF' }}>{p.users}</span>
+                  </div>
+                ))
+              ) : (
+                <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>—</span>
+              )}
             </div>
           </div>
         </div>

@@ -115,27 +115,6 @@ function Subhead({ children, hint }: { children: ReactNode; hint?: string }) {
   return <p className="section-label" style={{ marginBottom: 10, cursor: hint ? 'help' : undefined }} title={hint}>{children}{hint ? ' ⓘ' : ''}</p>
 }
 
-function Bars30({ series }: { series: { date: string; users: number }[] }) {
-  if (!series.length) return null
-  const max = Math.max(...series.map((d) => d.users), 1)
-  return (
-    <div className="tk-glass" style={{ borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 96 }}>
-        {series.map((d, i) => {
-          const h = Math.max(2, Math.round((d.users / max) * 92))
-          const last = i === series.length - 1
-          return <div key={d.date} title={`${d.date}: ${d.users} usuarios`} style={{ flex: 1, height: h, background: last ? '#F472B6' : 'var(--purple)', opacity: last ? 1 : 0.65, borderRadius: 2 }} />
-        })}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 10, color: 'var(--text-faint)' }}>
-        <span>{series[0]?.date.slice(5).replace('-', '/')}</span>
-        <span>pico {max}/día</span>
-        <span>{series[series.length - 1]?.date.slice(5).replace('-', '/')}</span>
-      </div>
-    </div>
-  )
-}
-
 function MiniSpark({ label, values, latest, accent }: { label: string; values: number[]; latest: string; accent: string }) {
   const max = Math.max(...values, 1)
   return (
@@ -149,6 +128,69 @@ function MiniSpark({ label, values, latest, accent }: { label: string; values: n
           <div key={i} title={String(v)} style={{ flex: 1, height: Math.max(2, Math.round((v / max) * 38)), background: accent, opacity: i === values.length - 1 ? 1 : 0.5, borderRadius: 2 }} />
         ))}
       </div>
+    </div>
+  )
+}
+
+/** Gráfica de ÁREA de usuarios/día (30d) + badge de crecimiento (7d vs 7d previos). */
+function AreaChart({ series }: { series: { date: string; users: number }[] }) {
+  if (series.length < 2) return null
+  const W = 100, H = 34
+  const max = Math.max(...series.map((d) => d.users), 1)
+  const pts = series.map((d, i) => [(i / (series.length - 1)) * W, H - (d.users / max) * H] as const)
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(' ')
+  const area = `${line} L${W},${H} L0,${H} Z`
+  const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0)
+  const a = avg(series.slice(-7).map((d) => d.users)), b = avg(series.slice(-14, -7).map((d) => d.users))
+  const growth = b ? Math.round(((a - b) / b) * 100) : null
+  return (
+    <div className="tk-glass" style={{ borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)' }}>
+      <div className="flex items-center justify-between" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+        <span className="section-label">Usuarios por día · últimos 30 días</span>
+        {growth != null && (
+          <span style={{ fontFamily: 'var(--font-sport)', fontWeight: 800, fontSize: 12, color: growth >= 0 ? '#86EFAC' : '#FCA5A5' }}>
+            {growth >= 0 ? '▲' : '▼'} {growth >= 0 ? '+' : ''}{growth}% <span style={{ color: 'var(--text-faint)', fontWeight: 600 }}>vs semana previa</span>
+          </span>
+        )}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: 130, display: 'block' }}>
+        <defs>
+          <linearGradient id="tk-area-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#A78BFA" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="#A78BFA" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#tk-area-grad)" />
+        <path d={line} fill="none" stroke="#A78BFA" strokeWidth={1.5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+      </svg>
+      <div className="flex justify-between" style={{ marginTop: 8, fontSize: 10, color: 'var(--text-faint)' }}>
+        <span>{series[0]?.date.slice(5).replace('-', '/')}</span>
+        <span>pico {max}/día</span>
+        <span>{series[series.length - 1]?.date.slice(5).replace('-', '/')}</span>
+      </div>
+    </div>
+  )
+}
+
+/** "De dónde te ven": barras por país con bandera, número y %. */
+function GeoBars({ items }: { items: { country: string; countryCode: string; users: number }[] }) {
+  if (!items.length) return null
+  const top = items.slice(0, 8)
+  const max = Math.max(...top.map((i) => i.users), 1)
+  const total = items.reduce((s, i) => s + i.users, 0) || 1
+  return (
+    <div className="tk-glass" style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+      {top.map((c, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+          <span style={{ fontSize: 17 }}>{flag(c.countryCode)}</span>
+          <span style={{ minWidth: 100, fontFamily: 'var(--font-sport)', fontWeight: 700, color: 'var(--text-primary)', fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.country}</span>
+          <div style={{ flex: 1, height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{ width: `${Math.round((c.users / max) * 100)}%`, height: '100%', background: ACCENTS[i % ACCENTS.length], borderRadius: 4 }} />
+          </div>
+          <span style={{ minWidth: 34, textAlign: 'right', fontFamily: 'var(--font-display)', fontWeight: 800, color: '#F8F8FF', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>{c.users}</span>
+          <span style={{ minWidth: 34, textAlign: 'right', color: 'var(--text-faint)', fontSize: 11 }}>{Math.round((c.users / total) * 100)}%</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -229,7 +271,7 @@ function VisitsBlock({ ga4, kind }: { ga4: Ga4Summary; kind: 'web' | 'app' }) {
           </div>
 
           {ga4.series && ga4.series.length > 0 && (
-            <div className="mb-6"><Subhead>Usuarios por día · últimos 30 días</Subhead><Bars30 series={ga4.series} /></div>
+            <div className="mb-6"><AreaChart series={ga4.series} /></div>
           )}
 
           {(ga4.pagesPerSession != null || ga4.avgSessionSec != null || ga4.engagementRate != null) && (
@@ -254,7 +296,7 @@ function VisitsBlock({ ga4, kind }: { ga4: Ga4Summary; kind: 'web' | 'app' }) {
 
           <div className="grid lg:grid-cols-2 gap-6">
             {ga4.webCountries && ga4.webCountries.length > 0 && (
-              <div><Subhead>Países · 28d</Subhead><CountryChips items={ga4.webCountries} /></div>
+              <div><Subhead hint="De qué países te ven (últimos 28 días).">De dónde te ven · 28d</Subhead><GeoBars items={ga4.webCountries} /></div>
             )}
             {ga4.topPages && ga4.topPages.length > 0 && (
               <div><Subhead>{isApp ? 'Pantallas más vistas · 7d' : 'Páginas más vistas · 7d'}</Subhead><RankTable rows={ga4.topPages.map((p) => ({ label: shortPath(p.path), value: nf(p.views) }))} /></div>

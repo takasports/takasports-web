@@ -522,12 +522,15 @@ export async function getGa4Realtime(propertyId: string = GA4_PROPERTY_ID): Prom
       rt({ dimensions: [{ name: 'unifiedScreenName' }], metrics: [{ name: 'activeUsers' }], limit: 10 }),
     ])
     const activeUsers = Number(totalRows[0]?.metricValues?.[0]?.value ?? 0)
+    // GA4 devuelve "(other)" para país/ciudad/pantalla cuando hay poca gente
+    // (anonimización por privacidad) → lo descartamos para no pintar basura.
+    const notOther = (s: string) => s && s !== '(other)'
     const byLocation = locRows
       .map((r) => ({ country: r.dimensionValues?.[0]?.value ?? '', countryCode: r.dimensionValues?.[1]?.value ?? '', city: r.dimensionValues?.[2]?.value ?? '', users: Number(r.metricValues?.[0]?.value ?? 0) }))
-      .filter((l) => l.users > 0)
+      .filter((l) => l.users > 0 && notOther(l.country))
     const byPage = pageRows
       .map((r) => ({ page: r.dimensionValues?.[0]?.value ?? '', users: Number(r.metricValues?.[0]?.value ?? 0) }))
-      .filter((p) => p.users > 0)
+      .filter((p) => p.users > 0 && notOther(p.page))
     return { available: true, activeUsers, byLocation, byPage }
   } catch (e) {
     return { available: false, activeUsers: 0, note: e instanceof Error ? e.message : String(e) }
