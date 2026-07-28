@@ -120,6 +120,7 @@ export default function RankingsClient({
   const [gender, setGender]                 = useState<'m' | 'f'>(initialGender)
   const [ligaFilter, setLigaFilter]         = useState(initialLiga)
   const [cantera, setCantera]               = useState(initialCantera)
+  const [periodistas, setPeriodistas]       = useState(searchParams.get('periodistas') === '1')
   const [sortMode, setSortMode]             = useState<'score' | 'hot'>('score')
   const [searchQuery, setSearchQuery]       = useState(initialQuery)
   const [badgeFilter, setBadgeFilter]       = useState<'' | 'Histórico' | 'Revelación' | 'Nuevo'>(initialBadge)
@@ -156,13 +157,20 @@ export default function RankingsClient({
   let entries: RankingEntry[] = []
 
   if (isCreador) {
-    // Lista unificada creadores + periodistas + creadores_wwe (fútbol/UFC/WWE)
+    // Creadores y periodistas NO se mezclan: sus notas no son comparables. La de
+    // un creador sale de datos medibles (audiencia real, crecimiento, engagement
+    // de YouTube); la de un periodista de TV o radio está puesta a mano, porque
+    // de ellos no hay una sola métrica que recoger — sus factores están todos en
+    // el valor por defecto. Mezclados, los periodistas encabezaban la lista por
+    // decreto y por delante de creadores con datos reales.
     const byId = new Map<string, RankingEntry>()
-    for (const e of [
-      ...db('creadores',     RANKING_CREADORES).filter(e => !e.featured),
-      ...db('periodistas',   RANKING_PERIODISTAS).filter(e => !e.featured),
-      ...db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => !e.featured),
-    ]) byId.set(e.id, e)
+    for (const e of (periodistas
+      ? [...db('periodistas', RANKING_PERIODISTAS).filter(e => !e.featured)]
+      : [
+          ...db('creadores',     RANKING_CREADORES).filter(e => !e.featured),
+          ...db('creadores_wwe', RANKING_CREADORES_WWE).filter(e => !e.featured),
+        ]
+    )) byId.set(e.id, e)
     entries = [...byId.values()]
       .filter(e => CREADOR_SPORTS.includes(e.sport ?? '') && (!activeSport || e.sport === activeSport))
       .sort((a, b) => getDisplayScore(b) - getDisplayScore(a))
@@ -220,11 +228,12 @@ export default function RankingsClient({
     if (ligaFilter) params.set('liga', ligaFilter)
     if (gender === 'f') params.set('gender', 'f')
     if (cantera) params.set('cantera', '1')
+    if (periodistas) params.set('periodistas', '1')
     if (badgeFilter) params.set('badge', badgeFilter)
     if (searchQuery.trim()) params.set('q', searchQuery.trim())
     const query = params.toString()
     router.replace(query ? `?${query}` : '?', { scroll: false })
-  }, [track, activeSport, ligaFilter, gender, cantera, badgeFilter, searchQuery, router])
+  }, [track, activeSport, ligaFilter, gender, cantera, periodistas, badgeFilter, searchQuery, router])
 
   // ── Handlers ─────────────────────────────────────────────────────
   const handleTrackChange = (t: Track) => {
@@ -233,6 +242,7 @@ export default function RankingsClient({
     setGender('m')
     setLigaFilter('')
     setCantera(false)
+    setPeriodistas(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   const handleSportChange = (sport: string) => {
@@ -422,6 +432,22 @@ export default function RankingsClient({
                 </button>
               )
             })}
+          </div>
+        )}
+
+        {/* ── Periodistas — solo en Creadores ───────────────────── */}
+        {isCreador && (
+          <div className="flex items-center gap-1.5 mt-2 mb-1">
+            <button onClick={() => setPeriodistas(p => !p)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+              style={{
+                background: periodistas ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.04)',
+                color: periodistas ? '#a78bfa' : 'var(--text-muted)',
+                border: periodistas ? '1px solid rgba(124,58,237,0.45)' : '1px solid rgba(255,255,255,0.07)',
+                cursor: 'pointer', fontFamily: 'var(--font-sport)',
+              }}>
+              🎙 Periodistas
+            </button>
           </div>
         )}
 
