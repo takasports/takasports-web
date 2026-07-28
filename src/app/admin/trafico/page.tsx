@@ -18,9 +18,9 @@ import TrafficTabs from './TrafficTabs'
 import WorldMap from './WorldMap'
 import {
   getGa4Summary, getAppGa4Summary, getSearchDetail, getSearchTotals, getGa4Realtime, getAppGa4Realtime,
-  getAppDownloads, getTrafficHistory, getTopContent, getAudience, shortPath,
+  getAppDownloads, getTrafficHistory, getTopContent, getAudience, getWebCountriesByWindow, shortPath,
   type Ga4Summary, type SearchDetail, type SearchTotals, type Ga4Realtime, type AppDownloads,
-  type TrafficHistoryDay, type ContentItem, type Audience,
+  type TrafficHistoryDay, type ContentItem, type Audience, type CountryWindow,
 } from '@/lib/traffic'
 import { checkRoutes, checkVercelDeploy, type RouteCheck, type DeployStatus } from '@/lib/seo-audit'
 
@@ -251,7 +251,7 @@ function PendingCard({ title, children }: { title: string; children: ReactNode }
 }
 
 /** Bloque de "visitas GA4" reutilizable para web (propiedad Deportes) y app (taka-eef70). */
-function VisitsBlock({ ga4, kind }: { ga4: Ga4Summary; kind: 'web' | 'app' }) {
+function VisitsBlock({ ga4, kind, geo }: { ga4: Ga4Summary; kind: 'web' | 'app'; geo?: CountryWindow[] }) {
   const isApp = kind === 'app'
   return (
     <section className="mb-12">
@@ -295,8 +295,8 @@ function VisitsBlock({ ga4, kind }: { ga4: Ga4Summary; kind: 'web' | 'app' }) {
             )}
           </div>
 
-          {ga4.webCountries && ga4.webCountries.length > 0 && (
-            <div className="mb-6"><Subhead hint="Cada punto es un país; el tamaño = cuánta gente te ve desde ahí (28 días).">De dónde te ven · mapa</Subhead><WorldMap items={ga4.webCountries} /></div>
+          {geo && geo.length > 0 && (
+            <div className="mb-6"><Subhead hint="Cada punto es un país; tamaño = usuarios (28d). Pasa el cursor por un país para ver 24h / 7 días / mes.">De dónde te ven · mapa</Subhead><WorldMap items={geo} /></div>
           )}
 
           <div className="grid lg:grid-cols-2 gap-6">
@@ -321,11 +321,11 @@ function VisitsBlock({ ga4, kind }: { ga4: Ga4Summary; kind: 'web' | 'app' }) {
 export default async function TraficoPage() {
   await requireAdmin('/admin/trafico')
 
-  const [ga4, searchTotals, search, ios, realtime, history, routes, deploy, appGa4, appRealtime, content, audience]: [
-    Ga4Summary, SearchTotals, SearchDetail, AppDownloads, Ga4Realtime, TrafficHistoryDay[], RouteCheck[], DeployStatus, Ga4Summary, Ga4Realtime, ContentItem[], Audience,
+  const [ga4, searchTotals, search, ios, realtime, history, routes, deploy, appGa4, appRealtime, content, audience, webGeo]: [
+    Ga4Summary, SearchTotals, SearchDetail, AppDownloads, Ga4Realtime, TrafficHistoryDay[], RouteCheck[], DeployStatus, Ga4Summary, Ga4Realtime, ContentItem[], Audience, CountryWindow[],
   ] = await Promise.all([
     getGa4Summary(), getSearchTotals(), getSearchDetail(), getAppDownloads(), getGa4Realtime(), getTrafficHistory(),
-    checkRoutes(), checkVercelDeploy(), getAppGa4Summary(), getAppGa4Realtime(), getTopContent(), getAudience(),
+    checkRoutes(), checkVercelDeploy(), getAppGa4Summary(), getAppGa4Realtime(), getTopContent(), getAudience(), getWebCountriesByWindow(),
   ])
 
   const okCount = routes.filter((r) => r.ok).length
@@ -354,7 +354,7 @@ export default async function TraficoPage() {
     <>
       <PeriodExplorer periods={periods} />
       <RealtimePanel initial={realtime} />
-      <VisitsBlock ga4={ga4} kind="web" />
+      <VisitsBlock ga4={ga4} kind="web" geo={webGeo} />
 
       {/* Contenido que rinde */}
       {content.length > 0 && (

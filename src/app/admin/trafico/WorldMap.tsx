@@ -1,12 +1,16 @@
-// Mapamundi de "de dónde te ven": el fondo son los países (WORLD_PATHS, ya
-// proyectados equirectangular a 1000x500) y encima un punto por país con tráfico,
-// posicionado por lat/long con LA MISMA proyección → encajan exactos. El radio
-// del punto ∝ nº de usuarios. Sin librerías: solo SVG. Server component (estático).
+'use client'
 
+// Mapamundi INTERACTIVO de "de dónde te ven". Fondo = países (WORLD_PATHS, ya
+// proyectados equirectangular a 1000x500); encima un punto por país con tráfico
+// (radio ∝ √usuarios de 28d), posicionado por lat/long con la MISMA proyección.
+// Al pasar el cursor por un punto → tooltip con usuarios en 24h / 7 días / mes.
+// Sin librerías: solo SVG + estado de hover.
+
+import { useState } from 'react'
 import { WORLD_PATHS } from '@/lib/world-paths'
+import type { CountryWindow } from '@/lib/traffic'
 
-// Centroides aprox. (lon, lat) de los países frecuentes. Si un país no está aquí,
-// simplemente no pinta su punto (raro). ISO A2 en mayúsculas.
+// Centroides aprox. (lon, lat) de los países frecuentes. ISO A2 en mayúsculas.
 const LATLNG: Record<string, [number, number]> = {
   ES: [-3.7, 40.4], AR: [-64, -34], CL: [-71, -30], MX: [-102, 23], US: [-98, 39],
   PE: [-75, -10], EC: [-78, -1.5], CO: [-73, 4], FR: [2.3, 47], SN: [-14.5, 14.5],
@@ -26,37 +30,71 @@ const LATLNG: Record<string, [number, number]> = {
 function proj(lon: number, lat: number): [number, number] {
   return [((lon + 180) / 360) * 1000, ((90 - lat) / 180) * 500]
 }
+function flag(code: string): string {
+  if (!/^[A-Za-z]{2}$/.test(code)) return '🌐'
+  return String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65))
+}
 
-export default function WorldMap({ items }: { items: { country: string; countryCode: string; users: number }[] }) {
+// viewBox recortado (fuera Antártida y polos vacíos): 0 30 1000 380.
+const VB = { x: 0, y: 30, w: 1000, h: 380 }
+
+export default function WorldMap({ items }: { items: CountryWindow[] }) {
+  const [hover, setHover] = useState<string | null>(null)
+
   const pts = items
     .map((i) => ({ ...i, ll: LATLNG[(i.countryCode || '').toUpperCase()] }))
     .filter((p): p is typeof p & { ll: [number, number] } => Array.isArray(p.ll))
-    .sort((a, b) => a.users - b.users) // menores primero → los grandes se pintan encima
-  const max = Math.max(...pts.map((p) => p.users), 1)
+    .sort((a, b) => a.d28 - b.d28) // menores primero → los grandes encima
+  const max = Math.max(...pts.map((p) => p.d28), 1)
+  const hovered = pts.find((p) => p.countryCode.toUpperCase() === hover)
+  const tip = hovered ? proj(hovered.ll[0], hovered.ll[1]) : null
+  const tipLeft = tip ? ((tip[0] - VB.x) / VB.w) * 100 : 0
+  const tipTop = tip ? ((tip[1] - VB.y) / VB.h) * 100 : 0
 
   return (
-    <div className="tk-glass" style={{ borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)', overflow: 'hidden' }}>
-      <svg viewBox="0 30 1000 380" style={{ width: '100%', height: 'auto', display: 'block' }} role="img" aria-label="Mapa de dónde te ven">
-        {/* Landmasses */}
-        <g>
-          {WORLD_PATHS.map((c) => (
-            <path key={c.id} d={c.d} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" strokeWidth={0.4} />
-          ))}
-        </g>
-        {/* Puntos de tráfico */}
-        {pts.map((p, i) => {
-          const [x, y] = proj(p.ll[0], p.ll[1])
-          const r = 4 + Math.sqrt(p.users / max) * 20
-          return (
-            <g key={i}>
-              <circle cx={x} cy={y} r={r} fill="#A78BFA" fillOpacity={0.28} />
-              <circle cx={x} cy={y} r={Math.max(2.2, r * 0.32)} fill="#C4B5FD">
-                <title>{`${p.country}: ${p.users}`}</title>
-              </circle>
-            </g>
-          )
-        })}
-      </svg>
+    <div className="tk-glass" style={{ borderRadius: 'var(--radius-lg)', padding: 12, overflow: 'hidden' }}>
+      <div style={{ position: 'relative' }}>
+        <svg viewBox={`${VB.x} ${VB.y} ${VB.w} ${VB.h}`} style={{ width: '100%', height: 'auto', display: 'block' }} role="img" aria-label="Mapa de dónde te ven">
+          <g>
+            {WORLD_PATHS.map((c) => (
+              <path key={c.id} d={c.d} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" strokeWidth={0.4} />
+            ))}
+          </g>
+          {pts.map((p, i) => {
+            const [x, y] = proj(p.ll[0], p.ll[1])
+            const r = 4 + Math.sqrt(p.d28 / max) * 20
+            const active = p.countryCode.toUpperCase() === hover
+            return (
+              <g key={i} onMouseEnter={() => setHover(p.countryCode.toUpperCase())} onMouseLeave={() => setHover(null)} style={{ cursor: 'pointer' }}>
+                <circle cx={x} cy={y} r={Math.max(r, 11)} fill="transparent" />
+                <circle cx={x} cy={y} r={r} fill="#A78BFA" fillOpacity={active ? 0.55 : 0.28} />
+                <circle cx={x} cy={y} r={Math.max(2.2, r * 0.32)} fill={active ? '#FFFFFF' : '#C4B5FD'} />
+              </g>
+            )
+          })}
+        </svg>
+
+        {hovered && (
+          <div
+            style={{
+              position: 'absolute', left: `${tipLeft}%`, top: `${tipTop}%`, transform: 'translate(-50%, -118%)',
+              pointerEvents: 'none', zIndex: 5, minWidth: 140,
+              background: 'rgba(13,13,20,0.96)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 10,
+              padding: '8px 12px', boxShadow: '0 10px 28px rgba(0,0,0,0.55)',
+            }}
+          >
+            <div style={{ fontFamily: 'var(--font-sport)', fontWeight: 800, fontSize: 13, color: '#F8F8FF', marginBottom: 6 }}>
+              {flag(hovered.countryCode)} {hovered.country}
+            </div>
+            {([['24h', hovered.h24], ['7 días', hovered.d7], ['Mes', hovered.d28]] as const).map(([label, val]) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 18, fontSize: 12, lineHeight: 1.5 }}>
+                <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+                <b style={{ color: '#F8F8FF', fontVariantNumeric: 'tabular-nums' }}>{val}</b>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

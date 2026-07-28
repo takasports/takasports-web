@@ -542,6 +542,45 @@ export async function getGa4Realtime(propertyId: string = GA4_PROPERTY_ID): Prom
 export const getAppGa4Summary = () => getGa4Summary(GA4_APP_PROPERTY_ID, 'unifiedScreenName')
 export const getAppGa4Realtime = () => getGa4Realtime(GA4_APP_PROPERTY_ID)
 
+// ── Usuarios por país en 3 ventanas (para el tooltip del mapamundi) ───────────
+export interface CountryWindow { country: string; countryCode: string; h24: number; d7: number; d28: number }
+
+export async function getWebCountriesByWindow(): Promise<CountryWindow[]> {
+  let token: string | null = null
+  try {
+    token = (await getServiceAccountToken([ANALYTICS_SCOPE])) ?? (await getOauthAccessToken())
+  } catch { return [] }
+  if (!token) return []
+  const t = token
+  const q = (start: string, end: string) =>
+    ga4RunReport(t, GA4_PROPERTY_ID, {
+      dateRanges: [{ startDate: start, endDate: end }],
+      dimensions: [{ name: 'country' }, { name: 'countryId' }],
+      metrics: [{ name: 'activeUsers' }],
+      orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+      limit: 60,
+    }).catch(() => [] as Ga4Row[])
+
+  try {
+    const [r24, r7, r28] = await Promise.all([q('yesterday', 'yesterday'), q('7daysAgo', 'yesterday'), q('28daysAgo', 'yesterday')])
+    const map = new Map<string, CountryWindow>()
+    const add = (rows: Ga4Row[], key: 'h24' | 'd7' | 'd28') => {
+      for (const r of rows) {
+        const country = r.dimensionValues?.[0]?.value ?? ''
+        const code = r.dimensionValues?.[1]?.value ?? ''
+        if (!code || code === '(other)') continue
+        const u = Number(r.metricValues?.[0]?.value ?? 0)
+        const cur = map.get(code) ?? { country, countryCode: code, h24: 0, d7: 0, d28: 0 }
+        cur[key] = u
+        if (!cur.country) cur.country = country
+        map.set(code, cur)
+      }
+    }
+    add(r24, 'h24'); add(r7, 'd7'); add(r28, 'd28')
+    return [...map.values()].sort((a, b) => b.d28 - a.d28)
+  } catch { return [] }
+}
+
 // ── Contenido que rinde: top ARTÍCULOS (por título vía Sanity) + engagement ────
 
 export interface ContentItem { path: string; slug: string; title: string; views: number; avgSec: number }
