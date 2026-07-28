@@ -2,12 +2,22 @@
 // ─────────────────────────────────────────────────────────────────
 // fix-duplicates-and-categories.mjs
 //
-// Fix one-time:
-//   1. Desactiva entradas duplicadas — por cada (sport, category,
-//      nombre normalizado), mantiene la de mayor score_auto;
-//      en empate, prefiere entradas editoriales (con country/emoji)
-//      sobre las ESPN-ingested (id empieza por "espn-").
-//   2. Desactiva europeos mal categorizados en latam/concacaf.
+// Retira entradas concretas mal catalogadas o corruptas y las marca
+// `suppressed` para que ningún proceso automático las resucite.
+//
+// ── QUÉ YA NO HACE (2026-07-28) ──────────────────────────────────
+// Antes deduplicaba por (sport, category, nombre). Se ha quitado:
+//   · duplicaba la lógica de curate-active-entries.mjs, que ahora es el
+//     DUEÑO ÚNICO de `active` y colapsa por identidad (nombre + deporte
+//     + género) CRUZANDO categorías — que es donde estaban los clones
+//     de verdad (`saka` vs `espn-…`, `yamal` vs `yamal-sub21`);
+//   · agrupaba dentro de la misma categoría, así que fusionaba
+//     homónimos (Nico González, Álvaro García, Idrissa Gueye, Pedro)
+//     sin protección alguna;
+//   · escribía con `.in('id', ids)` SIN filtrar categoría, y la PK es
+//     (id, category): desactivar `alcaraz-sub21` en jugadores (el
+//     futbolista del Everton) tumbaba también su fila en sub21, que es
+//     OTRA PERSONA (el tenista).
 //
 // Uso:
 //   node scripts/fix-duplicates-and-categories.mjs           # DRY RUN
@@ -24,8 +34,7 @@ config({ path: path.join(__dirname, '..', '.env.local') })
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-const APPLY   = process.argv.includes('--apply')
-const VERBOSE = process.argv.includes('--verbose')
+const APPLY = process.argv.includes('--apply')
 
 if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('Missing SUPABASE keys'); process.exit(1) }
 
@@ -43,123 +52,40 @@ const WRONG_DATA_IDS = [
   'jokic-prev',  // ID de Jokic pero nombre "Jayson Tatum" — corrupción de datos
 ]
 
-function normalize(s) {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '')
-}
-
-// Prefiere entradas editoriales (con emoji/country) sobre ESPN-ingested
-function editorialScore(e) {
-  let bonus = 0
-  if (e.emoji)   bonus += 2
-  if (e.country) bonus += 1
-  if (e.id?.startsWith('espn-')) bonus -= 5
-  return bonus
-}
-
-async function loadAllActive(sb) {
-  let all = [], page = 0
-  while (true) {
-    const { data, error } = await sb
-      .from('ranking_entries')
-      .select('id, name, sport, category, active, score_auto, emoji, country, editorial_boost')
-      .eq('active', true)
-      .range(page * 1000, (page + 1) * 1000 - 1)
-    if (error) throw error
-    all = all.concat(data)
-    if (data.length < 1000) break
-    page++
-  }
-  return all
-}
-
 async function main() {
   console.log(`Mode: ${APPLY ? 'APPLY' : 'DRY RUN'}`)
   const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
 
-  console.log('\nLoading active entries...')
-  const all = await loadAllActive(sb)
-  console.log(`  ${all.length} entradas activas`)
+  const targets = [...WRONG_CATEGORY_IDS, ...WRONG_DATA_IDS]
+  const { data, error } = await sb
+    .from('ranking_entries')
+    .select('id, name, sport, category, active, suppressed')
+    .in('id', targets)
+  if (error) throw error
 
-  const toDeactivate = new Set()
-
-  // ── 1. Duplicados ─────────────────────────────────────────────
-  console.log('\n[1/3] Detectando duplicados...')
-  const groups = new Map()
-  for (const e of all) {
-    const key = `${e.sport}|${e.category}|${normalize(e.name)}`
-    if (!groups.has(key)) groups.set(key, [])
-    groups.get(key).push(e)
+  const pending = data.filter(e => !e.suppressed)
+  for (const e of data) {
+    const estado = e.suppressed ? 'ya suprimida' : e.active ? 'ACTIVA → suprimir' : 'inactiva → suprimir'
+    console.log(`  ${e.id}/${e.category} — ${e.name} (${e.sport}) — ${estado}`)
+  }
+  for (const id of targets) {
+    if (!data.some(e => e.id === id)) console.log(`  – ${id} no existe`)
   }
 
-  let dupGroups = 0
-  for (const [key, entries] of groups) {
-    if (entries.length <= 1) continue
-    dupGroups++
-
-    // Sort: mayor score_auto primero; en empate, preferir editorial
-    entries.sort((a, b) => {
-      const scoreDiff = (b.score_auto ?? 0) - (a.score_auto ?? 0)
-      if (Math.abs(scoreDiff) > 0.5) return scoreDiff
-      return editorialScore(b) - editorialScore(a)
-    })
-
-    const winner = entries[0]
-    const losers = entries.slice(1)
-
-    // No desactivar si tiene editorial_boost (override manual explícito)
-    const eligibleLosers = losers.filter(e => !e.editorial_boost)
-
-    if (VERBOSE) {
-      const [,, name] = key.split('|')
-      console.log(`  DUP ${key}: keep=${winner.id}(${winner.score_auto?.toFixed(1)}) drop=${eligibleLosers.map(e => e.id).join(',')}`)
-    }
-    for (const e of eligibleLosers) toDeactivate.add(e.id)
-  }
-  console.log(`  ${dupGroups} grupos duplicados → ${toDeactivate.size} a desactivar`)
-
-  // ── 2. Europeos en categoría LATAM/CONCACAF ───────────────────
-  console.log('\n[2/3] Mal categorizados...')
-  let wrongCat = 0
-  for (const id of WRONG_CATEGORY_IDS) {
-    const entry = all.find(e => e.id === id)
-    if (entry) {
-      toDeactivate.add(id)
-      wrongCat++
-      console.log(`  ✗ ${id} — ${entry.name} (${entry.sport}/${entry.category})`)
-    } else {
-      console.log(`  – ${id} ya inactivo o no existe`)
-    }
-  }
-
-  // ── 3. Entradas con datos corruptos ───────────────────────────
-  console.log('\n[3/3] Datos corruptos...')
-  let wrongData = 0
-  for (const id of WRONG_DATA_IDS) {
-    const entry = all.find(e => e.id === id)
-    if (entry) {
-      toDeactivate.add(id)
-      wrongData++
-      console.log(`  ✗ ${id} — name="${entry.name}" (sospechoso)`)
-    } else {
-      console.log(`  – ${id} ya inactivo o no existe`)
-    }
-  }
-
-  console.log(`\nTotal a desactivar: ${toDeactivate.size}`)
-  console.log(`  duplicados: ${toDeactivate.size - wrongCat - wrongData}  mal_cat: ${wrongCat}  datos_corruptos: ${wrongData}`)
-
+  console.log(`\nA suprimir: ${pending.length}`)
   if (!APPLY) { console.log('\nDRY RUN.'); return }
 
-  // Apply in batches of 500
-  const ids = [...toDeactivate]
-  let ok = 0, fail = 0
-  for (let i = 0; i < ids.length; i += 500) {
-    const batch = ids.slice(i, i + 500)
-    const { error } = await sb.from('ranking_entries').update({ active: false }).in('id', batch)
-    if (error) { fail += batch.length; console.error(`FAIL: ${error.message}`) }
-    else ok += batch.length
+  let ok = 0
+  for (const e of pending) {
+    const { error: err } = await sb
+      .from('ranking_entries')
+      .update({ suppressed: true, active: false })
+      .eq('id', e.id)
+      .eq('category', e.category)      // ← la PK es (id, category)
+    if (err) console.error(`FAIL ${e.id}/${e.category}: ${err.message}`)
+    else ok++
   }
-  console.log(`Done. OK=${ok} FAIL=${fail}`)
+  console.log(`Done. suprimidas=${ok}`)
 }
 
 main().catch(err => { console.error(err); process.exit(1) })

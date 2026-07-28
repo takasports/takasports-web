@@ -273,7 +273,7 @@ function EditPanel({
             border: `1px solid ${entry.active ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.3)'}`,
             cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sport)',
           }}>
-          {entry.active ? '⊘ Desactivar — ocultar del ranking' : '✓ Activar — mostrar en el ranking'}
+          {entry.active ? '⊘ Retirar del ranking — permanente' : '✓ Activar — mostrar en el ranking'}
         </button>
 
         {status && (
@@ -518,7 +518,7 @@ export default function RankingsAdmin() {
           <p><span style={{ color: '#9B7CF6' }}>✏️ Override</span> — sobreescribe el valor automático del cron. La vista <code style={{ color: '#C4B5FD' }}>ranking_view</code> aplica <code>COALESCE(manual, auto)</code>.</p>
           <p className="mt-1"><span style={{ color: '#9B7CF6' }}>🔒 Locked</span> — el cron nunca toca esa entry. Útil para posiciones que quieres fijar indefinidamente.</p>
           <p className="mt-1"><span style={{ color: '#9B7CF6' }}>Reset</span> — elimina todos los overrides de una entry. Vuelve al valor automático del cron.</p>
-          <p className="mt-1"><span style={{ color: '#f87171' }}>⊘ Desactivar</span> — oculta la entry del ranking (active=false). Usa <span style={{ color: '#f87171' }}>○/● Inactivos</span> arriba para verlas y reactivarlas. ⚠️ Un <em>creador</em> que esté en el catálogo del cron se reactiva solo en la siguiente corrida — para quitarlo del todo hay que sacarlo también del catálogo.</p>
+          <p className="mt-1"><span style={{ color: '#f87171' }}>⊘ Retirar</span> — saca la entry del ranking de forma permanente (<code style={{ color: '#C4B5FD' }}>active=false</code> + <code style={{ color: '#C4B5FD' }}>suppressed=true</code>): ni la curación semanal ni el cron de creadores pueden devolverla. Usa <span style={{ color: '#f87171' }}>○/● Inactivos</span> arriba para verlas y reactivarlas — reactivar levanta el candado.</p>
           <p className="mt-1">Acceso: tu email debe estar en <code style={{ color: '#C4B5FD' }}>ADMIN_EMAILS</code> y debes estar logueado en TakaSports.</p>
         </div>
       </div>

@@ -145,7 +145,15 @@ export async function POST(req: NextRequest) {
   if ('locked' in overrides)           update.editorial_locked       = overrides.locked
   // active NO es un override (_manual); es columna directa. Desactivar oculta la
   // entry del ranking; reactivar la devuelve. No pasa por COALESCE ni por reset-all.
-  if ('active' in overrides)           update.active                 = overrides.active === true
+  //
+  // Va acompañado SIEMPRE de `suppressed`: sin ese candado, la curación semanal
+  // (curate-active-entries.mjs, dom 23:45) y f_sync_creator_scores() vuelven a
+  // activar la entry por su score y la baja editorial dura hasta el domingo.
+  // Reactivar desde el panel levanta el candado.
+  if ('active' in overrides) {
+    update.active     = overrides.active === true
+    update.suppressed = overrides.active !== true
+  }
   const f = overrides.factors as Record<string, unknown> | undefined
   if (f && typeof f === 'object') {
     for (const [k, col] of [
