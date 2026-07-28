@@ -15,6 +15,7 @@ import { requireAdmin } from '@/lib/admin-auth'
 import RealtimePanel from './RealtimePanel'
 import PeriodExplorer, { type PeriodData } from './PeriodExplorer'
 import TrafficTabs from './TrafficTabs'
+import WorldMap from './WorldMap'
 import {
   getGa4Summary, getAppGa4Summary, getSearchDetail, getSearchTotals, getGa4Realtime, getAppGa4Realtime,
   getAppDownloads, getTrafficHistory, getTopContent, getAudience, shortPath,
@@ -294,9 +295,13 @@ function VisitsBlock({ ga4, kind }: { ga4: Ga4Summary; kind: 'web' | 'app' }) {
             )}
           </div>
 
+          {ga4.webCountries && ga4.webCountries.length > 0 && (
+            <div className="mb-6"><Subhead hint="Cada punto es un país; el tamaño = cuánta gente te ve desde ahí (28 días).">De dónde te ven · mapa</Subhead><WorldMap items={ga4.webCountries} /></div>
+          )}
+
           <div className="grid lg:grid-cols-2 gap-6">
             {ga4.webCountries && ga4.webCountries.length > 0 && (
-              <div><Subhead hint="De qué países te ven (últimos 28 días).">De dónde te ven · 28d</Subhead><GeoBars items={ga4.webCountries} /></div>
+              <div><Subhead>Por país · 28d</Subhead><GeoBars items={ga4.webCountries} /></div>
             )}
             {ga4.topPages && ga4.topPages.length > 0 && (
               <div><Subhead>{isApp ? 'Pantallas más vistas · 7d' : 'Páginas más vistas · 7d'}</Subhead><RankTable rows={ga4.topPages.map((p) => ({ label: shortPath(p.path), value: nf(p.views) }))} /></div>
