@@ -24,7 +24,7 @@ function deltaPct(cur?: number | null, prev?: number | null): number | null {
 
 function Delta({ cur, prev }: { cur: number | null; prev: number | null }) {
   const d = deltaPct(cur, prev)
-  if (d == null) return null
+  if (d == null || d === 0) return null
   const up = d >= 0
   return <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 800, color: up ? '#86EFAC' : '#FCA5A5' }}>{up ? '▲' : '▼'} {up ? '+' : ''}{d}%</span>
 }

@@ -242,15 +242,19 @@ export async function getGa4Summary(propertyId: string = GA4_PROPERTY_ID, screen
       ?.map((r) => ({ country: r.dimensionValues?.[0]?.value ?? '', countryCode: r.dimensionValues?.[1]?.value ?? '', users: Number(r.metricValues?.[0]?.value ?? 0) }))
       .filter((c) => c.users > 0)
     // Totales 28d
+    // Totales: si la consulta CORRIÓ (aunque devuelva vacío = propiedad sin datos,
+    // p.ej. la app antes de publicar), los usuarios son 0 (no "–"), para que las
+    // tarjetas de cabecera salgan consistentes. La calidad (páginas/tiempo/interacción)
+    // sí queda undefined cuando no hay filas → su sub-bloque se oculta.
     const tv = totalsRes?.[0]?.metricValues
-    const total28 = tv ? Number(tv[0]?.value ?? 0) : undefined
-    const sessions28 = tv ? Number(tv[1]?.value ?? 0) : undefined
-    const newUsers28 = tv ? Number(tv[2]?.value ?? 0) : undefined
+    const total28 = totalsRes ? Number(tv?.[0]?.value ?? 0) : undefined
+    const sessions28 = totalsRes ? Number(tv?.[1]?.value ?? 0) : undefined
+    const newUsers28 = totalsRes ? Number(tv?.[2]?.value ?? 0) : undefined
     const pagesPerSession = tv ? Number(tv[3]?.value ?? 0) : undefined
     const avgSessionSec = tv ? Number(tv[4]?.value ?? 0) : undefined
     const engagementRate = tv ? Number(tv[5]?.value ?? 0) : undefined
-    const prevTotal28 = prevRes?.[0]?.metricValues ? Number(prevRes[0].metricValues[0]?.value ?? 0) : undefined
-    const allTimeUsers = allTimeRes?.[0]?.metricValues ? Number(allTimeRes[0].metricValues[0]?.value ?? 0) : undefined
+    const prevTotal28 = prevRes ? Number(prevRes[0]?.metricValues?.[0]?.value ?? 0) : undefined
+    const allTimeUsers = allTimeRes ? Number(allTimeRes[0]?.metricValues?.[0]?.value ?? 0) : undefined
     const users7d = series.length ? series.slice(-7).reduce((s, d) => s + d.users, 0) : undefined
     const prevUsers7d = series.length >= 14 ? series.slice(-14, -7).reduce((s, d) => s + d.users, 0) : undefined
 
