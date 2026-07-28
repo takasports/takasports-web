@@ -17,8 +17,9 @@ import PeriodExplorer, { type PeriodData } from './PeriodExplorer'
 import TrafficTabs from './TrafficTabs'
 import {
   getGa4Summary, getAppGa4Summary, getSearchDetail, getSearchTotals, getGa4Realtime, getAppGa4Realtime,
-  getAppDownloads, getTrafficHistory, shortPath,
-  type Ga4Summary, type SearchDetail, type SearchTotals, type Ga4Realtime, type AppDownloads, type TrafficHistoryDay,
+  getAppDownloads, getTrafficHistory, getTopContent, getAudience, shortPath,
+  type Ga4Summary, type SearchDetail, type SearchTotals, type Ga4Realtime, type AppDownloads,
+  type TrafficHistoryDay, type ContentItem, type Audience,
 } from '@/lib/traffic'
 import { checkRoutes, checkVercelDeploy, type RouteCheck, type DeployStatus } from '@/lib/seo-audit'
 
@@ -273,11 +274,11 @@ function VisitsBlock({ ga4, kind }: { ga4: Ga4Summary; kind: 'web' | 'app' }) {
 export default async function TraficoPage() {
   await requireAdmin('/admin/trafico')
 
-  const [ga4, searchTotals, search, ios, realtime, history, routes, deploy, appGa4, appRealtime]: [
-    Ga4Summary, SearchTotals, SearchDetail, AppDownloads, Ga4Realtime, TrafficHistoryDay[], RouteCheck[], DeployStatus, Ga4Summary, Ga4Realtime,
+  const [ga4, searchTotals, search, ios, realtime, history, routes, deploy, appGa4, appRealtime, content, audience]: [
+    Ga4Summary, SearchTotals, SearchDetail, AppDownloads, Ga4Realtime, TrafficHistoryDay[], RouteCheck[], DeployStatus, Ga4Summary, Ga4Realtime, ContentItem[], Audience,
   ] = await Promise.all([
     getGa4Summary(), getSearchTotals(), getSearchDetail(), getAppDownloads(), getGa4Realtime(), getTrafficHistory(),
-    checkRoutes(), checkVercelDeploy(), getAppGa4Summary(), getAppGa4Realtime(),
+    checkRoutes(), checkVercelDeploy(), getAppGa4Summary(), getAppGa4Realtime(), getTopContent(), getAudience(),
   ])
 
   const okCount = routes.filter((r) => r.ok).length
@@ -307,6 +308,27 @@ export default async function TraficoPage() {
       <PeriodExplorer periods={periods} />
       <RealtimePanel initial={realtime} />
       <VisitsBlock ga4={ga4} kind="web" />
+
+      {/* Contenido que rinde */}
+      {content.length > 0 && (
+        <section className="mb-12">
+          <SectionTitle hint="artículos más vistos (28d) con el tiempo medio por visita">Contenido que rinde</SectionTitle>
+          <RankTable rows={content.map((c) => ({ label: c.title, value: nf(c.views), sub: `${c.avgSec}s/vista` }))} />
+        </section>
+      )}
+
+      {/* Audiencia y retención */}
+      {audience.available && (
+        <section className="mb-12">
+          <SectionTitle hint="¿la gente vuelve? ¿crece tu audiencia propia?">Audiencia y retención</SectionTitle>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <BigCard label="Vuelven · 28d" value={audience.returningPct == null ? '–' : `${audience.returningPct}%`} sub={`${nf(audience.returningUsers28)} de ${nf((audience.newUsers28 ?? 0) + (audience.returningUsers28 ?? 0))}`} accent="#7C3AED" hint="% de usuarios que ya habían venido antes (recurrentes). Alto = el contenido crea hábito; bajo = casi todo es tráfico de paso." />
+            <BigCard label="Registrados" value={nf(audience.profilesTotal)} sub={audience.profilesNew7 ? `+${audience.profilesNew7} en 7d` : 'cuentas con login'} accent="#8B5CF6" />
+            <BigCard label="Newsletter" value={nf(audience.newsletterTotal)} sub={audience.newsletterNew7 ? `+${audience.newsletterNew7} en 7d` : 'suscriptores activos'} accent="#F472B6" />
+            <BigCard label="Push" value={nf(audience.pushTotal)} sub={audience.pushNew7 ? `+${audience.pushNew7} en 7d` : 'dispositivos suscritos'} accent="#60A5FA" />
+          </div>
+        </section>
+      )}
 
       {/* Búsqueda en Google · Search Console */}
       <section className="mb-12">

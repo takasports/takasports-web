@@ -11,6 +11,7 @@
 
 import { getServiceAccountToken, getOauthAccessToken, hasServiceAccount } from './google-auth'
 import { adminSupabase } from './supabase-admin'
+import { sanityClient } from './sanity'
 
 const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '478319346' // propiedad "Deportes" (WEB)
 const GA4_APP_PROPERTY_ID = process.env.GA4_APP_PROPERTY_ID || '547400035' // propiedad "taka-eef70" (APP iOS)
@@ -535,3 +536,117 @@ export async function getGa4Realtime(propertyId: string = GA4_PROPERTY_ID): Prom
 // (nombre de pantalla) en vez de `pagePath`. Sin datos hasta publicar la app.
 export const getAppGa4Summary = () => getGa4Summary(GA4_APP_PROPERTY_ID, 'unifiedScreenName')
 export const getAppGa4Realtime = () => getGa4Realtime(GA4_APP_PROPERTY_ID)
+
+// ── Contenido que rinde: top ARTÍCULOS (por título vía Sanity) + engagement ────
+
+export interface ContentItem { path: string; slug: string; title: string; views: number; avgSec: number }
+
+export async function getTopContent(): Promise<ContentItem[]> {
+  let token: string | null = null
+  try {
+    token = (await getServiceAccountToken([ANALYTICS_SCOPE])) ?? (await getOauthAccessToken())
+  } catch { return [] }
+  if (!token) return []
+
+  try {
+    const rows = await ga4RunReport(token, GA4_PROPERTY_ID, {
+      dateRanges: [{ startDate: '28daysAgo', endDate: 'yesterday' }],
+      dimensions: [{ name: 'pagePath' }],
+      metrics: [{ name: 'screenPageViews' }, { name: 'userEngagementDuration' }],
+      dimensionFilter: { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'CONTAINS', value: '/noticias/' } } },
+      orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+      limit: 10,
+    })
+    const items: ContentItem[] = rows
+      .map((r) => {
+        const path = r.dimensionValues?.[0]?.value ?? ''
+        const views = Number(r.metricValues?.[0]?.value ?? 0)
+        const eng = Number(r.metricValues?.[1]?.value ?? 0)
+        const slug = path.replace(/^\/noticias\//, '').split('?')[0].replace(/\/$/, '')
+        return { path, slug, title: slug.replace(/-/g, ' '), views, avgSec: views ? Math.round(eng / views) : 0 }
+      })
+      .filter((i) => i.slug)
+
+    // Título real desde Sanity (cae al slug legible si falla).
+    try {
+      const slugs = items.map((i) => i.slug)
+      const docs = await sanityClient.fetch<{ slug: string; title: string }[]>(
+        `*[_type=="article" && slug.current in $slugs]{ "slug": slug.current, title }`,
+        { slugs },
+      )
+      const map = new Map((docs ?? []).map((d) => [d.slug, d.title]))
+      for (const it of items) it.title = map.get(it.slug) ?? it.title
+    } catch {
+      /* Sanity opcional: dejamos el slug legible */
+    }
+    return items
+  } catch {
+    return []
+  }
+}
+
+// ── Audiencia y retención: % que vuelve (GA4) + suscriptores/registros (Supabase) ─
+
+export interface Audience {
+  available: boolean
+  returningPct?: number
+  newUsers28?: number
+  returningUsers28?: number
+  pushTotal?: number
+  pushNew7?: number
+  newsletterTotal?: number
+  newsletterNew7?: number
+  profilesTotal?: number
+  profilesNew7?: number
+}
+
+export async function getAudience(): Promise<Audience> {
+  const out: Audience = { available: false }
+
+  // GA4: nuevos vs recurrentes (28d)
+  try {
+    const token = (await getServiceAccountToken([ANALYTICS_SCOPE])) ?? (await getOauthAccessToken())
+    if (token) {
+      const rows = await ga4RunReport(token, GA4_PROPERTY_ID, {
+        dateRanges: [{ startDate: '28daysAgo', endDate: 'yesterday' }],
+        dimensions: [{ name: 'newVsReturning' }],
+        metrics: [{ name: 'activeUsers' }],
+      })
+      let nw = 0, ret = 0
+      for (const r of rows) {
+        const k = r.dimensionValues?.[0]?.value
+        const u = Number(r.metricValues?.[0]?.value ?? 0)
+        if (k === 'returning') ret += u
+        else nw += u
+      }
+      const tot = nw + ret
+      if (tot > 0) {
+        out.available = true
+        out.newUsers28 = nw
+        out.returningUsers28 = ret
+        out.returningPct = Math.round((ret / tot) * 100)
+      }
+    }
+  } catch {
+    /* GA4 opcional */
+  }
+
+  // Supabase: suscriptores push + newsletter + registros (total y nuevos 7d)
+  const supa = adminSupabase()
+  if (supa) {
+    const since = ymd(7)
+    const countOf = async (q: PromiseLike<{ count: number | null }>) => (await q).count ?? 0
+    try {
+      out.pushTotal = await countOf(supa.from('push_subscriptions').select('*', { count: 'exact', head: true }))
+      out.pushNew7 = await countOf(supa.from('push_subscriptions').select('*', { count: 'exact', head: true }).gte('created_at', since))
+      out.newsletterTotal = await countOf(supa.from('newsletter_subscribers').select('*', { count: 'exact', head: true }).is('unsubscribed_at', null))
+      out.newsletterNew7 = await countOf(supa.from('newsletter_subscribers').select('*', { count: 'exact', head: true }).is('unsubscribed_at', null).gte('created_at', since))
+      out.profilesTotal = await countOf(supa.from('profiles').select('*', { count: 'exact', head: true }))
+      out.profilesNew7 = await countOf(supa.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', since))
+      out.available = true
+    } catch {
+      /* Supabase opcional */
+    }
+  }
+  return out
+}
