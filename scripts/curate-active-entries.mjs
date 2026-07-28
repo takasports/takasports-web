@@ -89,12 +89,19 @@ const PRIMARY_CATEGORIES = new Set([
   'jugadores', 'jugadoras', 'clubes', 'clubes_femenino', 'entrenadores', 'luchadoras_ufc',
 ])
 
-// Categorías RETIRADAS del producto (la web ya no las muestra; en la app entran
-// por track='deportista'). No se dan altas nuevas: sus scores vienen de ligas
+// Categorías CONGELADAS: la web ya no las muestra, pero en la app entran por
+// track='deportista'. No se dan altas nuevas — sus scores vienen de ligas
 // débiles sin coeficiente de fuerza aplicado, así que promocionar filas nuevas
 // las colaría por encima de Vinicius/Yamal. Solo se mantiene lo ya activo y se
 // depuran duplicados. Retirarlas del todo es una decisión aparte.
 const FROZEN_CATEGORIES = new Set(['latam', 'concacaf'])
+
+// Categorías RETIRADAS del producto: siempre inactivas.
+// `entrenadores` se retiró en el rediseño y la web dejó de pintarlos, pero
+// `ranking_view` los mapea a track='deportista' y la APP seguía mostrándolos
+// mezclados con los futbolistas — Ancelotti salía 6º y Guardiola 12º del
+// ranking de deportistas. Un entrenador no compite con un delantero.
+const RETIRED_CATEGORIES = new Set(['entrenadores'])
 
 // Mismo deporte con dos etiquetas históricas. Sin esto, `becky` (sport 'wwe') y
 // `wwe-becky` (sport 'wrestling') se leen como dos personas y el clon revive.
@@ -247,11 +254,12 @@ async function main() {
   const toDeactivate = []
   const ageGroupFix  = []            // supervivientes que heredan la cantera
 
-  // ── 0. Suprimidas: fuera, pase lo que pase ──────────────────────
-  const suppressed = all.filter(e => e.suppressed)
-  for (const e of suppressed) if (e.active) toDeactivate.push(e)
-  const pool = all.filter(e => !e.suppressed)
-  if (suppressed.length) console.log(`  ${suppressed.length} suprimidas (retirada editorial) — excluidas`)
+  // ── 0. Suprimidas y retiradas: fuera, pase lo que pase ──────────
+  const out = all.filter(e => e.suppressed || RETIRED_CATEGORIES.has(e.category))
+  for (const e of out) if (e.active) toDeactivate.push(e)
+  const pool = all.filter(e => !e.suppressed && !RETIRED_CATEGORIES.has(e.category))
+  const nRetired = out.filter(e => !e.suppressed).length
+  if (out.length) console.log(`  ${out.length - nRetired} suprimidas + ${nRetired} de categorías retiradas — excluidas`)
 
   // ── 1. Colapso por IDENTIDAD (una persona = una fila) ───────────
   console.log('\n[1/3] Colapsando identidades (misma persona, varias filas)...')
