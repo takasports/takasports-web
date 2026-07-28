@@ -91,19 +91,54 @@ function nameVariants(rawName) {
   return [...new Set([full, twoToken, ...(lastName ? [lastName] : []), ...(alias ? [alias] : [])])]
 }
 
-// Score calibrado para fútbol femenino (G+A real, no xG)
-// Cap: tier1→95, tier2→88
-function gi90ToScore(gi90, tier = 1) {
-  const cap = tier === 1 ? 95 : 88
-  let s
-  if      (gi90 >= 0.70) s = 90 + Math.min(5, (gi90 - 0.70) * 25)
-  else if (gi90 >= 0.50) s = 82 + (gi90 - 0.50) / 0.20 * 8
-  else if (gi90 >= 0.35) s = 74 + (gi90 - 0.35) / 0.15 * 8
-  else if (gi90 >= 0.22) s = 64 + (gi90 - 0.22) / 0.13 * 10
-  else if (gi90 >= 0.12) s = 52 + (gi90 - 0.12) / 0.10 * 12
-  else if (gi90 >= 0.04) s = 40 + (gi90 - 0.04) / 0.08 * 12
-  else                   s = Math.max(30, 40 - (0.04 - gi90) * 50)
-  return Math.round(Math.min(cap, Math.max(0, s)) * 10) / 10
+// ── PERCENTIL POR POSICIÓN (mismo criterio que el masculino) ─────
+// Medir a todas por goles+asistencias comparaba a una centrocampista de
+// creación con una delantera centro: Aitana Bonmatí, dos veces Balón de Oro,
+// salía en 73. Ahora cada jugadora compite con las de SU puesto, y el por-90
+// se regresa a la media de su grupo según minutos para que media temporada no
+// valga lo mismo que una entera.
+const POSITION_RANGES = {
+  FWD: [50, 95],
+  MID: [48, 93],
+  DEF: [44, 88],
+}
+const SHRINK_MINUTES = 900   // ~10 partidos
+
+function positionBucket(pos) {
+  const c = (pos ?? '').trim().toUpperCase()[0]
+  if (c === 'G') return 'GK'
+  if (c === 'D') return 'DEF'
+  if (c === 'F') return 'FWD'
+  return 'MID'
+}
+
+// Devuelve Map<jugadora, score>. Las porteras quedan fuera (G+A no las mide).
+function scoreByPercentile(players) {
+  const groups = new Map()
+  for (const p of players) {
+    const b = positionBucket(p.pos)
+    if (!groups.has(b)) groups.set(b, [])
+    groups.get(b).push(p)
+  }
+  const scores = new Map()
+  for (const [bucket, group] of groups) {
+    const range = POSITION_RANGES[bucket]
+    if (!range) continue
+    const totalMin = group.reduce((s, p) => s + p.min, 0) || 1
+    const mean = group.reduce((s, p) => s + p.gi90 * p.min, 0) / totalMin
+    for (const p of group) {
+      p.gi90adj = (p.gi90 * p.min + mean * SHRINK_MINUTES) / (p.min + SHRINK_MINUTES)
+    }
+    group.sort((a, b) => a.gi90adj - b.gi90adj)
+    const last = Math.max(group.length - 1, 1)
+    group.forEach((p, i) => {
+      const pct = group.length < 2 ? 0.5 : i / last
+      // El tope por nivel de liga se mantiene: un torneo tier2 no reparte 95.
+      const cap = p.tier === 1 ? range[1] : Math.min(range[1], 88)
+      scores.set(p, Math.round(Math.min(cap, range[0] + (range[1] - range[0]) * pct) * 10) / 10)
+    })
+  }
+  return scores
 }
 
 async function loadEntries(sb) {
@@ -162,16 +197,24 @@ async function main() {
   const bestByEntry = new Map()
   const allPlayers  = []
 
+  // El percentil necesita toda la población, así que primero se junta.
   for (const [leagueName, { tier, players }] of Object.entries(seed)) {
     for (const p of players) {
       if (p.min < MIN_MINUTES) continue
-      const gi90 = (p.g + p.a) / (p.min / 90)
-      allPlayers.push({ ...p, league: leagueName, tier, gi90 })
+      allPlayers.push({ ...p, league: leagueName, tier, gi90: (p.g + p.a) / (p.min / 90) })
+    }
+  }
+  const percentileScores = scoreByPercentile(allPlayers)
+
+  {
+    for (const p of allPlayers) {
+      const { league: leagueName, tier, gi90 } = p
+      const newScore = percentileScores.get(p)
+      if (newScore === undefined) continue      // portera: no se toca
 
       for (const variant of nameVariants(p.player)) {
         const matched = byNorm.get(variant) ?? []
         for (const e of matched) {
-          const newScore = gi90ToScore(gi90, tier)
           const existing = bestByEntry.get(e.id)
           if (!existing || newScore > existing.newScore) {
             bestByEntry.set(e.id, {
@@ -195,28 +238,20 @@ async function main() {
     }
   }
 
-  // Filter out low-GI defenders/GKs with no relevant history
-  const updates = [], skipped = []
-  for (const u of bestByEntry.values()) {
-    const pos = (u.position ?? '').toUpperCase()
-    const isDefensive = pos.startsWith('D') || pos === 'GK' || pos === 'G'
-    if (isDefensive && u.gi90 < 0.04 && (u.prev === null || u.prev < MIN_PREV_REND)) {
-      skipped.push(u)
-      continue
-    }
-    updates.push(u)
-  }
+  // Ya no hace falta apartar a las defensas de G+A bajo: compiten entre ellas.
+  // Las porteras no llegan hasta aquí (scoreByPercentile no las puntúa).
+  const updates = [...bestByEntry.values()], skipped = []
 
-  updates.sort((a, b) => b.gi90 - a.gi90)
-  allPlayers.sort((a, b) => b.gi90 - a.gi90)
+  updates.sort((a, b) => b.newScore - a.newScore)
+  allPlayers.sort((a, b) => (percentileScores.get(b) ?? 0) - (percentileScores.get(a) ?? 0))
 
-  console.log('\n--- Top 20 jugadoras por GI90 (todas las ligas) ---')
+  console.log('\n--- Top 20 jugadoras por percentil de posición ---')
   allPlayers.slice(0, 20).forEach(p => {
-    const score = gi90ToScore(p.gi90, p.tier)
+    const score = percentileScores.get(p)
     console.log(
       `  GI=${p.gi90.toFixed(3)} (${p.g}g+${p.a}a/${p.min}min)` +
       `  ${p.player.padEnd(26)} [${(p.pos ?? '??').padEnd(6)}]` +
-      `  ${p.league.padEnd(22)} → ${score.toFixed(1)}`
+      `  ${p.league.padEnd(22)} → ${score?.toFixed(1) ?? '–'}`
     )
   })
 

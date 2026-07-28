@@ -52,6 +52,10 @@ const WIKI_TITLES_ES = readTitles('wiki-titles-es.json')
 // artículo). Sin ella, cada corrida semanal repetía ~660 búsquedas por nombre;
 // Wikimedia respondía con 429 y el paso se comía el timeout de 15 min del
 // orquestador. Con caché, la corrida normal solo pide pageviews.
+// Ids generados por los ingests masivos (los curados se sirven de wiki-titles).
+const INGESTED_ID_RE = /^(espn-|f1-|atp-|wta-|ufc-|wwe-|coach-)/
+const NO_ARTICLE_SCORE = 50
+
 const CACHE_PATH = path.join(__dirname, 'data', 'wiki-title-cache.json')
 const readCache = () => {
   try { return JSON.parse(readFileSync(CACHE_PATH, 'utf8')) } catch { return {} }
@@ -116,6 +120,27 @@ async function fetchWithRetry(url, opts = {}, retries = 2) {
   return null
 }
 
+function nameTokens(s) {
+  return (s || '')
+    .replace(/\s*\(.*?\)\s*/g, ' ')          // "Rodri (footballer, born 1996)" → "Rodri"
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9 ]/g, ' ')
+    .split(/\s+/).filter(Boolean)
+}
+
+// ¿El artículo encontrado es DE ESA persona?
+// opensearch siempre devuelve algo: para un jugador sin artículo caía en el
+// primer resultado parecido y le asignábamos las visitas de un desconocido —
+// así había suplentes de la NWSL por encima de Bonmatí. Se exige que el
+// apellido aparezca en el título y que coincida la mayoría del nombre.
+function titleMatchesName(title, name) {
+  const t = nameTokens(title), n = nameTokens(name)
+  if (!t.length || !n.length) return false
+  if (!t.includes(n[n.length - 1])) return false
+  const hits = n.filter(x => t.includes(x)).length
+  return hits >= Math.max(1, Math.ceil(n.length * 0.6))
+}
+
 // Busca el artículo de Wikipedia más relevante para un nombre de persona
 async function searchWikiTitle(name) {
   const q = encodeURIComponent(name)
@@ -123,7 +148,7 @@ async function searchWikiTitle(name) {
   const r = await fetchWithRetry(url, { headers: { 'User-Agent': 'takasports-rankings/1.0' } })
   if (!r?.ok) return null
   const [, titles] = await r.json()
-  return titles?.[0] ?? null
+  return (titles ?? []).find(t => titleMatchesName(t, name)) ?? null
 }
 
 // Vistas MENSUALES medias de un artículo en el proyecto indicado.
@@ -145,15 +170,23 @@ async function main() {
   const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
 
   console.log('\nLoading DB entries...')
-  const query = sb.from('ranking_entries')
-    .select('id, name, category, sport, mediatico_auto')
-    // Solo lo que se ve. Sin este filtro recorría las ~16.000 filas de la tabla
-    // (la mayoría inactivas), a 2-3 peticiones cada una: el paso se comía el
-    // timeout de 15 min del orquestador semanal y se perdía entero.
-    .eq('active', true)
-  if (SPORT_FILTER) query.eq('sport', SPORT_FILTER)
-  const { data: entries, error } = await query
-  if (error) throw error
+  // Solo lo que se ve: sin el filtro `active` recorría las ~16.000 filas de la
+  // tabla (la mayoría inactivas), a 2-3 peticiones cada una, y el paso se comía
+  // el timeout de 15 min del orquestador semanal. Y paginado, porque sin
+  // `range` PostgREST corta en 1.000 filas SIN AVISAR (hay ~1.170 activas).
+  let entries = [], page = 0
+  while (true) {
+    const query = sb.from('ranking_entries')
+      .select('id, name, category, sport, mediatico_auto')
+      .eq('active', true)
+      .range(page * 1000, (page + 1) * 1000 - 1)
+    if (SPORT_FILTER) query.eq('sport', SPORT_FILTER)
+    const { data, error } = await query
+    if (error) throw error
+    entries = entries.concat(data)
+    if (data.length < 1000) break
+    page++
+  }
   // Excluir clubes (no son personas) y creadores: en ellos `mediatico_auto` es la
   // AUDIENCIA (followers) que calcula f_sync_creator_scores(), no fama en Wikipedia.
   const SKIP = new Set(['clubes', 'clubes_femenino', 'creadores', 'creadores_wwe'])
@@ -179,13 +212,37 @@ async function main() {
     // Título horneado por Wikidata > caché de búsquedas previas > búsqueda difusa.
     let titleEn = WIKI_TITLES_EN[e.id]
     if (titleEn) bakedUsed++
-    else if (e.id in TITLE_CACHE) titleEn = TITLE_CACHE[e.id]
+    else if (e.id in TITLE_CACHE) {
+      titleEn = TITLE_CACHE[e.id]
+      // La caché se llenó antes de validar los títulos: se revisan al leerlos.
+      if (titleEn && !titleMatchesName(titleEn, e.name)) {
+        titleEn = null
+        TITLE_CACHE[e.id] = null
+        cacheDirty = true
+      }
+    }
     else {
       titleEn = await searchWikiTitle(e.name).catch(() => null)
       TITLE_CACHE[e.id] = titleEn        // se cachea también el null: no volver a buscarlo
       cacheDirty = true
     }
-    if (!titleEn) { notFound++; return }
+    if (!titleEn) {
+      notFound++
+      // Sin artículo propio = sin repercusión medible. A las filas ingestadas de
+      // ESPN se les baja a 50 para que no arrastren un valor heredado o de un
+      // homónimo: había suplentes con mediático 82 por delante de Bonmatí. Las
+      // curadas no se tocan (tienen título horneado; si no lo tienen, es que
+      // falta resolverlo a mano, no que no exista).
+      if (INGESTED_ID_RE.test(e.id) && Number(e.mediatico_auto) > NO_ARTICLE_SCORE) {
+        results.push({
+          entryId: e.id, category: e.category, name: e.name, sport: e.sport,
+          wikiTitle: null, enViews: 0, esViews: 0, views: 0,
+          newScore: NO_ARTICLE_SCORE, bilingual: false,
+          prev: e.mediatico_auto !== null ? Number(e.mediatico_auto) : null,
+        })
+      }
+      return
+    }
 
     const enViews = await fetchPageviews(titleEn, start, end, 'en.wikipedia').catch(() => null)
     if (enViews === null) { errors++; return }

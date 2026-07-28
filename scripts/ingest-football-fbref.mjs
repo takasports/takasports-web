@@ -87,16 +87,71 @@ function nameVariants(rawName) {
   return variants
 }
 
-function xgiToScore(xgi90) {
-  let s
-  if      (xgi90 >= 0.80) s = 92 + Math.min(7, (xgi90 - 0.80) * 35)
-  else if (xgi90 >= 0.60) s = 85 + (xgi90 - 0.60) / 0.20 * 7
-  else if (xgi90 >= 0.45) s = 78 + (xgi90 - 0.45) / 0.15 * 7
-  else if (xgi90 >= 0.30) s = 68 + (xgi90 - 0.30) / 0.15 * 10
-  else if (xgi90 >= 0.18) s = 57 + (xgi90 - 0.18) / 0.12 * 11
-  else if (xgi90 >= 0.08) s = 45 + (xgi90 - 0.08) / 0.10 * 12
-  else                    s = Math.max(35, 45 - (0.08 - xgi90) * 50)
-  return Math.round(Math.min(99, Math.max(0, s)) * 10) / 10
+// ── PERCENTIL POR POSICIÓN ───────────────────────────────────────
+// El xGI90 en bruto mide producción ofensiva, así que comparaba a un
+// centrocampista con un delantero centro y hundía a quien juega para que otro
+// marque: Pedri 71,6 · Declan Rice 70,9 · Trent 62 — con Haaland en 99. Ahora
+// cada jugador se compara con los de SU posición: se ordena a toda la población
+// de las 5 grandes (≥450 min) dentro de su grupo y su percentil se mapea a un
+// rango. Verificado: Pedri 85,8 · Bellingham 91,7 · De Bruyne 92,5, y los
+// delanteros de élite se quedan donde estaban (Haaland 95,4 · Yamal 95,6).
+//
+// Understat lista las posiciones jugadas en orden D→F ("D M S", "F M S"), así
+// que la PRIMERA letra es la más defensiva = su puesto de referencia. Un lateral
+// ("D M S") va a DEF y no compite contra los mediapuntas.
+//
+// Los porteros quedan fuera: su xGI no significa nada y no hay paradas en esta
+// fuente, así que se conserva el valor que ya tuvieran.
+const POSITION_RANGES = {
+  FWD: [50, 96],   // el techo lo iguala apply-score-caps.mjs
+  MID: [48, 94],
+  DEF: [44, 90],
+}
+
+function positionBucket(pos) {
+  const c = (pos ?? '').trim().toUpperCase()[0]
+  if (c === 'G') return 'GK'
+  if (c === 'D') return 'DEF'
+  if (c === 'F') return 'FWD'
+  return 'MID'
+}
+
+// Minutos de "confianza": por debajo de esto, el dato se mezcla con la media de
+// su posición. Un por-90 sobre 450 minutos es ruido — Kai Havertz salía 94,9 con
+// 4,9 goles en media temporada lesionado, por delante de quien jugó 3.000
+// minutos. Con K=900 (~10 partidos), el que juega una temporada entera manda su
+// dato casi entero y el de media temporada tira hacia la media de su puesto.
+const SHRINK_MINUTES = 1350
+
+// Percentil (0..1) de cada jugador dentro de su grupo → score del rango.
+function scoreByPercentile(players) {
+  const groups = new Map()
+  for (const p of players) {
+    const b = positionBucket(p.position)
+    if (!groups.has(b)) groups.set(b, [])
+    groups.get(b).push(p)
+  }
+  const scores = new Map()
+  for (const [bucket, group] of groups) {
+    const range = POSITION_RANGES[bucket]
+    if (!range) continue                       // GK: sin dato útil, no se toca
+
+    // Media del grupo ponderada por minutos (el jugador de 3.000 min pesa más
+    // que el de 450 al definir qué es "normal" en esa posición).
+    const totalMin = group.reduce((s, p) => s + p.minutes, 0) || 1
+    const mean = group.reduce((s, p) => s + p.xgi90 * p.minutes, 0) / totalMin
+
+    for (const p of group) {
+      p.xgi90adj = (p.xgi90 * p.minutes + mean * SHRINK_MINUTES) / (p.minutes + SHRINK_MINUTES)
+    }
+    group.sort((a, b) => a.xgi90adj - b.xgi90adj)
+    const last = Math.max(group.length - 1, 1)
+    group.forEach((p, i) => {
+      const pct = group.length < 2 ? 0.5 : i / last
+      scores.set(p, Math.round((range[0] + (range[1] - range[0]) * pct) * 10) / 10)
+    })
+  }
+  return scores
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
@@ -126,12 +181,23 @@ async function main() {
   const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
 
   console.log('\nLoading DB football entries...')
-  const { data: entries, error } = await sb
-    .from('ranking_entries')
-    .select('id, name, category, rendimiento_auto')
-    .eq('sport', 'futbol')
-  if (error) throw error
-  console.log(`  ${entries.length} entradas de fútbol`)
+  // Paginado y solo activas: sin `range` PostgREST corta en 1.000 filas EN
+  // SILENCIO — había 4.238 filas de fútbol y se leían las 1.000 primeras, así
+  // que a media plantilla no le llegaba nunca el rendimiento real.
+  let entries = [], page = 0
+  while (true) {
+    const { data, error } = await sb
+      .from('ranking_entries')
+      .select('id, name, category, rendimiento_auto')
+      .eq('sport', 'futbol')
+      .eq('active', true)
+      .range(page * 1000, (page + 1) * 1000 - 1)
+    if (error) throw error
+    entries = entries.concat(data)
+    if (data.length < 1000) break
+    page++
+  }
+  console.log(`  ${entries.length} entradas de fútbol activas`)
 
   // Índice DB por nombre normalizado (todas las variantes)
   const byNorm = new Map()
@@ -141,10 +207,10 @@ async function main() {
     byNorm.get(key).push(e)
   }
 
-  // Primera liga que matchea un entry gana (evita doble update de transferidos)
-  const bestByEntry = new Map()
+  // El percentil necesita la población COMPLETA, así que primero se descargan
+  // todas las ligas y solo después se puntúa.
   console.log('\nFetching Understat leagues...')
-
+  const allPlayers = []
   for (const league of LEAGUES) {
     let players
     try {
@@ -153,50 +219,54 @@ async function main() {
       console.error(`  ERROR ${league.name}: ${err.message}`)
       players = []
     }
-
     for (const p of players) {
       const minutes = parseInt(p.time) || 0
       if (minutes < MIN_MINUTES) continue
-      const nineties = minutes / 90
       const xg  = parseFloat(p.xG) || 0
       const xga = parseFloat(p.xA) || 0
-      const xgi90 = (xg + xga) / nineties
-
-      for (const variant of nameVariants(p.player_name)) {
-        const matched = byNorm.get(variant) ?? []
-        for (const e of matched) {
-          if (bestByEntry.has(e.id)) continue
-          bestByEntry.set(e.id, {
-            entryId: e.id, category: e.category, name: e.name,
-            ustName: p.player_name, league: league.name,
-            position: p.position, minutes,
-            xg, xga, xgi90,
-            prev: e.rendimiento_auto !== null ? Number(e.rendimiento_auto) : null,
-            newScore: xgiToScore(xgi90),
-          })
-        }
-      }
+      allPlayers.push({
+        ustName: p.player_name, league: league.name, position: p.position,
+        minutes, xg, xga, xgi90: (xg + xga) / (minutes / 90),
+      })
     }
-
     await sleep(800)
   }
 
-  // Filtrar defensas/porteros con xGI muy bajo y sin historial relevante
-  const updates = []
-  const skipped = []
-  for (const u of bestByEntry.values()) {
-    const pos = (u.position ?? '').toUpperCase()
-    const isDefensive = pos.startsWith('D') || pos === 'GK'
-    if (isDefensive && u.xgi90 < 0.08 && (u.prev === null || u.prev < MIN_PREV_REND)) {
-      skipped.push(u)
-      continue
+  const percentileScores = scoreByPercentile(allPlayers)
+  const byBucket = {}
+  for (const p of allPlayers) byBucket[positionBucket(p.position)] = (byBucket[positionBucket(p.position)] ?? 0) + 1
+  console.log(`  población: ${Object.entries(byBucket).map(([b, n]) => `${b} ${n}`).join(' · ')}`)
+
+  // Primera liga que matchea un entry gana (evita doble update de transferidos)
+  const bestByEntry = new Map()
+  for (const p of allPlayers) {
+    const newScore = percentileScores.get(p)
+    if (newScore === undefined) continue          // portero: no se toca
+    for (const variant of nameVariants(p.ustName)) {
+      const matched = byNorm.get(variant) ?? []
+      for (const e of matched) {
+        if (bestByEntry.has(e.id)) continue
+        bestByEntry.set(e.id, {
+          entryId: e.id, category: e.category, name: e.name,
+          ustName: p.ustName, league: p.league,
+          position: p.position, minutes: p.minutes,
+          xg: p.xg, xga: p.xga, xgi90: p.xgi90,
+          prev: e.rendimiento_auto !== null ? Number(e.rendimiento_auto) : null,
+          newScore,
+        })
+      }
     }
-    updates.push(u)
   }
 
-  updates.sort((a, b) => b.xgi90 - a.xgi90)
+  // Ya no hace falta apartar a los defensas de xGI bajo: compiten entre ellos,
+  // así que un central sin goles cae al suelo de SU grupo, no al de todos.
+  // Los porteros ni llegan aquí (scoreByPercentile no los puntúa).
+  const updates = [...bestByEntry.values()]
+  const skipped = []
 
-  console.log(`\n--- Top 25 fútbol por xGI90 ---`)
+  updates.sort((a, b) => b.newScore - a.newScore)
+
+  console.log(`\n--- Top 25 fútbol por percentil de posición ---`)
   updates.slice(0, 25).forEach(u => {
     const prev = u.prev !== null ? u.prev.toFixed(1).padStart(5) : '    -'
     const delta = u.prev !== null ? u.newScore - u.prev : null
