@@ -6,7 +6,7 @@
     "handle": "markitonavajaa",
     "estado": "OK",
     "nombre": "MarkitoNavaja",
-    "seguidores": 2000000,
+    "seguidores": 2200000,
     "coincide": true
   },
   {
@@ -14,11 +14,10 @@
     "name": "Markito Navaja",
     "net": "tiktok",
     "handle": "marrrkitonavaja",
-    "estado": "DUDOSO",
-    "nombre": null,
-    "seguidores": null,
-    "motivo": "sin nombre legible: TikTok - Make Your Day",
-    "coincide": null
+    "estado": "OK",
+    "nombre": "MARKITONAVAJA",
+    "seguidores": 4500000,
+    "coincide": true
   },
   {
     "id": "losdisplicentes",
@@ -46,7 +45,7 @@
     "handle": "postunited",
     "estado": "OK",
     "nombre": "Post United",
-    "seguidores": 2000000,
+    "seguidores": 2300000,
     "coincide": true
   },
   {
@@ -94,17 +93,8 @@
     "handle": "djmariio",
     "estado": "OK",
     "nombre": "DjMaRiiO",
-    "seguidores": 4000000,
+    "seguidores": 3600000,
     "coincide": true
-  },
-  {
-    "id": "djmariio",
-    "name": "DjMariio",
-    "net": "tiktok",
-    "handle": "djmariio",
-    "estado": "ROTO",
-    "motivo": "cuenta no encontrada",
-    "coincide": null
   },
   {
     "id": "djmariio",
@@ -118,20 +108,11 @@
   {
     "id": "gerardromero",
     "name": "Gerard Romero",
-    "net": "instagram",
-    "handle": "gerardromero13",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
-  },
-  {
-    "id": "gerardromero",
-    "name": "Gerard Romero",
     "net": "tiktok",
     "handle": "gerardromero13",
     "estado": "OK",
     "nombre": "gerardromero13",
-    "seguidores": null,
+    "seguidores": 0,
     "coincide": true
   },
   {
@@ -150,7 +131,7 @@
     "handle": "futbolcontemo",
     "estado": "OK",
     "nombre": "TEMO",
-    "seguidores": 830000,
+    "seguidores": 829000,
     "coincide": true
   },
   {
@@ -160,8 +141,27 @@
     "handle": "futbolcontemo",
     "estado": "OK",
     "nombre": "T E M O",
-    "seguidores": 32000000,
+    "seguidores": 3200000,
     "coincide": true
+  },
+  {
+    "id": "rafaelescrig",
+    "name": "Rafael Escrig",
+    "net": "instagram",
+    "handle": "rafaelescrig",
+    "estado": "OK",
+    "nombre": "Rafael Escrig",
+    "seguidores": 71600,
+    "coincide": true
+  },
+  {
+    "id": "rafaelescrig",
+    "name": "Rafael Escrig",
+    "net": "twitter",
+    "handle": "RafaEscrig",
+    "estado": "NO_VERIFICABLE",
+    "motivo": "X exige sesión",
+    "coincide": null
   },
   {
     "id": "elefutbol",
@@ -170,7 +170,7 @@
     "handle": "elefutbol",
     "estado": "OK",
     "nombre": "LFútbol",
-    "seguidores": 24000,
+    "seguidores": 23700,
     "coincide": true
   },
   {
@@ -182,25 +182,6 @@
     "nombre": "ELEFUTBOL",
     "seguidores": 11000000,
     "coincide": true
-  },
-  {
-    "id": "rafaelescrig",
-    "name": "Rafael Escrig",
-    "net": "instagram",
-    "handle": "rafaelescrig",
-    "estado": "OK",
-    "nombre": "Rafael Escrig",
-    "seguidores": 72000,
-    "coincide": true
-  },
-  {
-    "id": "rafaelescrig",
-    "name": "Rafael Escrig",
-    "net": "twitter",
-    "handle": "RafaEscrig",
-    "estado": "NO_VERIFICABLE",
-    "motivo": "X exige sesión",
-    "coincide": null
   },
   {
     "id": "xbuyer",
@@ -234,21 +215,11 @@
   {
     "id": "mundomaldini",
     "name": "Mundo Maldini",
-    "net": "instagram",
-    "handle": "mundomaldini",
-    "estado": "DUDOSO",
-    "nombre": "Alejandro Maldonado",
-    "seguidores": 14,
-    "coincide": false
-  },
-  {
-    "id": "mundomaldini",
-    "name": "Mundo Maldini",
     "net": "tiktok",
     "handle": "mundomaldini",
     "estado": "OK",
     "nombre": "Mundo Maldini",
-    "seguidores": 5375000,
+    "seguidores": 537500,
     "coincide": true
   },
   {
@@ -267,7 +238,7 @@
     "handle": "rivaldios10",
     "estado": "DUDOSO",
     "nombre": "La cabra🐐",
-    "seguidores": 1000000,
+    "seguidores": 1300000,
     "coincide": false
   },
   {
@@ -277,17 +248,8 @@
     "handle": "rivaldios10",
     "estado": "OK",
     "nombre": "Rivaldios10",
-    "seguidores": 51000000,
+    "seguidores": 5100000,
     "coincide": true
-  },
-  {
-    "id": "rivaldios",
-    "name": "Rivaldios",
-    "net": "twitter",
-    "handle": "rivaldios10",
-    "estado": "DUDOSO",
-    "nombre": "Juan Alberto",
-    "coincide": false
   },
   {
     "id": "faitelson",
@@ -363,7 +325,7 @@
     "handle": "lamediainglesa",
     "estado": "OK",
     "nombre": "La Media Inglesa",
-    "seguidores": 1037000,
+    "seguidores": 103700,
     "coincide": true
   },
   {
@@ -382,7 +344,7 @@
     "handle": "wargeadicto",
     "estado": "OK",
     "nombre": "Warge",
-    "seguidores": 32000,
+    "seguidores": 31700,
     "coincide": true
   },
   {
@@ -401,7 +363,7 @@
     "handle": "impactomma",
     "estado": "OK",
     "nombre": "Impacto MMA | MMA en Español",
-    "seguidores": 7,
+    "seguidores": 7122,
     "coincide": true
   },
   {
@@ -440,17 +402,8 @@
     "handle": "frankherreraa",
     "estado": "OK",
     "nombre": "Frank Herrera",
-    "seguidores": 17000000,
+    "seguidores": 1700000,
     "coincide": true
-  },
-  {
-    "id": "gcnenespanol",
-    "name": "GCN en Español",
-    "net": "instagram",
-    "handle": "gcncycling",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
   },
   {
     "id": "gcnenespanol",
@@ -473,40 +426,12 @@
   {
     "id": "ezzequiel-creator",
     "name": "Ezzequiel",
-    "net": "instagram",
-    "handle": "ezzequielok",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
-  },
-  {
-    "id": "ezzequiel-creator",
-    "name": "Ezzequiel",
     "net": "tiktok",
     "handle": "ezzequielok",
     "estado": "OK",
     "nombre": "EZZEQUIEL",
-    "seguidores": 7996000,
+    "seguidores": 799600,
     "coincide": true
-  },
-  {
-    "id": "spursito",
-    "name": "Spursito",
-    "net": "instagram",
-    "handle": "spursito",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
-  },
-  {
-    "id": "spursito",
-    "name": "Spursito",
-    "net": "tiktok",
-    "handle": "spursito",
-    "estado": "DUDOSO",
-    "nombre": "snjs",
-    "seguidores": null,
-    "coincide": false
   },
   {
     "id": "spursito",
@@ -534,7 +459,7 @@
     "handle": "victorabadg",
     "estado": "OK",
     "nombre": "Víctor Abad",
-    "seguidores": 556000,
+    "seguidores": 55600,
     "coincide": true
   },
   {
@@ -545,15 +470,6 @@
     "estado": "OK",
     "nombre": "Víctor Abad",
     "coincide": true
-  },
-  {
-    "id": "futbolenchileno",
-    "name": "Fútbol En Chileno",
-    "net": "instagram",
-    "handle": "futbolenchileno",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
   },
   {
     "id": "futbolenchileno",
@@ -590,7 +506,7 @@
     "handle": "soyeduardobates",
     "estado": "OK",
     "nombre": "Soy Eduardo Bates",
-    "seguidores": 74000,
+    "seguidores": 73800,
     "coincide": true
   },
   {
@@ -600,7 +516,7 @@
     "handle": "soyeduardobates",
     "estado": "OK",
     "nombre": "Soy Eduardo Bates",
-    "seguidores": 12000000,
+    "seguidores": 1200000,
     "coincide": true
   },
   {
@@ -612,17 +528,6 @@
     "nombre": "BoxeoMx™",
     "seguidores": 288,
     "coincide": true
-  },
-  {
-    "id": "boxeomx",
-    "name": "Boxeo MX",
-    "net": "tiktok",
-    "handle": "boxeomx",
-    "estado": "DUDOSO",
-    "nombre": null,
-    "seguidores": null,
-    "motivo": "sin nombre legible: Esta cuenta es privada. Sigue esta cuenta para ver",
-    "coincide": null
   },
   {
     "id": "boxeomx",
@@ -663,25 +568,6 @@
     "coincide": true
   },
   {
-    "id": "rolsogames-wwe",
-    "name": "Rolso Games",
-    "net": "instagram",
-    "handle": "rolsogamesoficial",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
-  },
-  {
-    "id": "rolsogames-wwe",
-    "name": "Rolso Games",
-    "net": "tiktok",
-    "handle": "rolsogamesoficial",
-    "estado": "OK",
-    "nombre": "Rolsogames",
-    "seguidores": 1304000,
-    "coincide": true
-  },
-  {
     "id": "david-suarez-creator",
     "name": "David Suárez",
     "net": "instagram",
@@ -698,7 +584,7 @@
     "handle": "davisuuarez2",
     "estado": "OK",
     "nombre": "Davisuuarez",
-    "seguidores": 55000000,
+    "seguidores": 5500000,
     "coincide": true
   },
   {
@@ -711,13 +597,23 @@
     "coincide": true
   },
   {
+    "id": "rolsogames-wwe",
+    "name": "Rolso Games",
+    "net": "tiktok",
+    "handle": "rolsogamesoficial",
+    "estado": "OK",
+    "nombre": "Rolsogames",
+    "seguidores": 130400,
+    "coincide": true
+  },
+  {
     "id": "generacionmma",
     "name": "Generación MMA",
     "net": "instagram",
     "handle": "generacionmma",
     "estado": "OK",
     "nombre": "GENERACIÓN MMA",
-    "seguidores": 25000,
+    "seguidores": 25100,
     "coincide": true
   },
   {
@@ -746,7 +642,7 @@
     "handle": "albertfabrega",
     "estado": "OK",
     "nombre": "Albert Fabrega",
-    "seguidores": 2988000,
+    "seguidores": 298800,
     "coincide": true
   },
   {
@@ -769,22 +665,13 @@
     "coincide": true
   },
   {
-    "id": "beisbolplay",
-    "name": "Béisbol Play",
-    "net": "twitter",
-    "handle": "beisbolplay",
-    "estado": "DUDOSO",
-    "nombre": "andres guijo",
-    "coincide": false
-  },
-  {
     "id": "soyalekay",
     "name": "Soyalekay",
     "net": "instagram",
     "handle": "soyalekay",
     "estado": "DUDOSO",
     "nombre": "Alex Garcia",
-    "seguidores": 25000,
+    "seguidores": 25100,
     "coincide": false
   },
   {
@@ -813,7 +700,7 @@
     "handle": "luchalibreonline",
     "estado": "OK",
     "nombre": "Lucha Libre Online",
-    "seguidores": 470000,
+    "seguidores": 469000,
     "coincide": true
   },
   {
@@ -824,16 +711,6 @@
     "estado": "NO_VERIFICABLE",
     "motivo": "X exige sesión",
     "coincide": null
-  },
-  {
-    "id": "mas-lucha-yt",
-    "name": "Más Lucha",
-    "net": "instagram",
-    "handle": "maslucha",
-    "estado": "DUDOSO",
-    "nombre": "Marya Novalea Pramitha",
-    "seguidores": 75,
-    "coincide": false
   },
   {
     "id": "mas-lucha-yt",
@@ -861,7 +738,7 @@
     "handle": "hablemosdef1",
     "estado": "OK",
     "nombre": "Hablemos de F1 🏎",
-    "seguidores": 3,
+    "seguidores": 2599,
     "coincide": true
   },
   {
@@ -873,24 +750,6 @@
     "nombre": "Hablemos de F1",
     "seguidores": 417,
     "coincide": true
-  },
-  {
-    "id": "hablemosdef1",
-    "name": "Hablemos de F1",
-    "net": "twitter",
-    "handle": "HablemosDeF1",
-    "estado": "DUDOSO",
-    "nombre": "Carrusss 🦖",
-    "coincide": false
-  },
-  {
-    "id": "gigantesbasket",
-    "name": "Gigantes del Basket",
-    "net": "instagram",
-    "handle": "gigantesbasket",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
   },
   {
     "id": "gigantesbasket",
@@ -908,7 +767,7 @@
     "handle": "adricontreras4",
     "estado": "OK",
     "nombre": "ADRI CONTRERAS.",
-    "seguidores": 961000,
+    "seguidores": 960000,
     "coincide": true
   },
   {
@@ -918,7 +777,7 @@
     "handle": "adricontreras4",
     "estado": "OK",
     "nombre": "Adri Contreras",
-    "seguidores": 49000000,
+    "seguidores": 4900000,
     "coincide": true
   },
   {
@@ -937,7 +796,7 @@
     "handle": "davooxeneize",
     "estado": "OK",
     "nombre": "Davoo Xeneize",
-    "seguidores": 2000000,
+    "seguidores": 1600000,
     "coincide": true
   },
   {
@@ -956,7 +815,7 @@
     "handle": "ariel_levy",
     "estado": "OK",
     "nombre": "Ariel Levy",
-    "seguidores": 355000,
+    "seguidores": 354000,
     "coincide": true
   },
   {
@@ -975,7 +834,7 @@
     "handle": "diegoaraniss",
     "estado": "OK",
     "nombre": "Diego Aranis S.",
-    "seguidores": 55000,
+    "seguidores": 55200,
     "coincide": true
   },
   {
@@ -1004,7 +863,7 @@
     "handle": "demas6basket",
     "estado": "OK",
     "nombre": "demas6basket",
-    "seguidores": 1899000,
+    "seguidores": 189900,
     "coincide": true
   },
   {
@@ -1023,17 +882,8 @@
     "handle": "uke.wrestling",
     "estado": "OK",
     "nombre": "Uke Wrestling",
-    "seguidores": 80000,
+    "seguidores": 80400,
     "coincide": true
-  },
-  {
-    "id": "uke-wrestling",
-    "name": "Uke Wrestling",
-    "net": "tiktok",
-    "handle": "ukewrestlingoficial",
-    "estado": "ROTO",
-    "motivo": "cuenta no encontrada",
-    "coincide": null
   },
   {
     "id": "uke-wrestling",
@@ -1051,7 +901,7 @@
     "handle": "las8esquinas",
     "estado": "OK",
     "nombre": "Las ocho esquinas",
-    "seguidores": 30000,
+    "seguidores": 29700,
     "coincide": true
   },
   {
@@ -1061,18 +911,8 @@
     "handle": "las8esquinas",
     "estado": "OK",
     "nombre": "Las 8 esquinas",
-    "seguidores": 4161,
+    "seguidores": 4160,
     "coincide": true
-  },
-  {
-    "id": "diamante23",
-    "name": "Diamante 23",
-    "net": "instagram",
-    "handle": "diamante23",
-    "estado": "DUDOSO",
-    "nombre": "Diamond Love",
-    "seguidores": 767,
-    "coincide": false
   },
   {
     "id": "diamante23",
@@ -1090,7 +930,7 @@
     "handle": "federacchi",
     "estado": "OK",
     "nombre": "Federico Racchi",
-    "seguidores": 329000,
+    "seguidores": 328000,
     "coincide": true
   },
   {
@@ -1100,7 +940,7 @@
     "handle": "federacchi",
     "estado": "OK",
     "nombre": "Fede Racchi",
-    "seguidores": 15000000,
+    "seguidores": 1500000,
     "coincide": true
   },
   {
@@ -1110,7 +950,7 @@
     "handle": "lauravizcaino_",
     "estado": "OK",
     "nombre": "Laura Vizcaíno",
-    "seguidores": 94000,
+    "seguidores": 94400,
     "coincide": true
   },
   {
@@ -1120,7 +960,7 @@
     "handle": "lauravizcaino_",
     "estado": "OK",
     "nombre": "LAURA VIZCAÍNO",
-    "seguidores": 2854000,
+    "seguidores": 285400,
     "coincide": true
   },
   {
@@ -1131,15 +971,6 @@
     "estado": "OK",
     "nombre": "Laura Vizcaíno",
     "coincide": true
-  },
-  {
-    "id": "hablemosmmachannel",
-    "name": "HablemosMMA",
-    "net": "instagram",
-    "handle": "hablemosmmach",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
   },
   {
     "id": "hablemosmmachannel",
@@ -1153,16 +984,6 @@
   {
     "id": "tp-wrestling",
     "name": "TP Wrestling",
-    "net": "instagram",
-    "handle": "tpwrestling",
-    "estado": "DUDOSO",
-    "nombre": "jabori 💛",
-    "seguidores": 62,
-    "coincide": false
-  },
-  {
-    "id": "tp-wrestling",
-    "name": "TP Wrestling",
     "net": "twitter",
     "handle": "TPWrestling",
     "estado": "OK",
@@ -1172,20 +993,11 @@
   {
     "id": "danidelasluchas",
     "name": "Dani la de las Luchas",
-    "net": "instagram",
-    "handle": "seamossororas",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
-  },
-  {
-    "id": "danidelasluchas",
-    "name": "Dani la de las Luchas",
     "net": "tiktok",
     "handle": "daniladelasluchas",
     "estado": "OK",
     "nombre": "Dani la de las luchas",
-    "seguidores": 236000,
+    "seguidores": 23600,
     "coincide": true
   },
   {
@@ -1219,15 +1031,6 @@
   {
     "id": "uhep-wrestling",
     "name": "Último Hombre En Pie",
-    "net": "instagram",
-    "handle": "uhep_podcast",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
-  },
-  {
-    "id": "uhep-wrestling",
-    "name": "Último Hombre En Pie",
     "net": "twitter",
     "handle": "uhep_podcast",
     "estado": "NO_VERIFICABLE",
@@ -1237,20 +1040,11 @@
   {
     "id": "gerynna-sotelo",
     "name": "Gerynna Sotelo",
-    "net": "instagram",
-    "handle": "gerynnasotelo",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
-  },
-  {
-    "id": "gerynna-sotelo",
-    "name": "Gerynna Sotelo",
     "net": "tiktok",
     "handle": "gerynnasotelo",
     "estado": "OK",
     "nombre": "Gery Sotelo (señora factos)",
-    "seguidores": 15000000,
+    "seguidores": 1500000,
     "coincide": true
   },
   {
@@ -1289,7 +1083,7 @@
     "handle": "wwecucu",
     "estado": "DUDOSO",
     "nombre": "Cucu | WWE Content Creator",
-    "seguidores": 28000,
+    "seguidores": 27900,
     "coincide": false
   },
   {
@@ -1299,7 +1093,7 @@
     "handle": "wwe_cucu",
     "estado": "DUDOSO",
     "nombre": "Cucu | WWE",
-    "seguidores": 696000,
+    "seguidores": 69700,
     "coincide": false
   },
   {
@@ -1309,7 +1103,7 @@
     "handle": "rj_figueroa",
     "estado": "OK",
     "nombre": "Roberto Figueroa",
-    "seguidores": 28000,
+    "seguidores": 28300,
     "coincide": true
   },
   {
@@ -1338,7 +1132,7 @@
     "handle": "mma.sin.limites",
     "estado": "OK",
     "nombre": "Cristian | MMA SIN LÍMITES",
-    "seguidores": 9,
+    "seguidores": 8566,
     "coincide": true
   },
   {
@@ -1348,7 +1142,7 @@
     "handle": "mma.sin.limites",
     "estado": "OK",
     "nombre": "MMA SIN LÍMITES - Cristian",
-    "seguidores": 665000,
+    "seguidores": 66500,
     "coincide": true
   },
   {
@@ -1358,7 +1152,7 @@
     "handle": "superluchas",
     "estado": "OK",
     "nombre": "Superluchas.com #WWE #CMLL",
-    "seguidores": 7,
+    "seguidores": 7151,
     "coincide": true
   },
   {
@@ -1368,7 +1162,7 @@
     "handle": "superluchas",
     "estado": "OK",
     "nombre": "SuperLuchas",
-    "seguidores": null,
+    "seguidores": 8,
     "coincide": true
   },
   {
@@ -1387,7 +1181,7 @@
     "handle": "cosasdelbasket",
     "estado": "OK",
     "nombre": "Cosas del Basket",
-    "seguidores": 1,
+    "seguidores": 1495,
     "coincide": true
   },
   {
@@ -1416,7 +1210,7 @@
     "handle": "retrocalcioshirts",
     "estado": "OK",
     "nombre": "Retro Calcio Shirts",
-    "seguidores": 85000,
+    "seguidores": 84900,
     "coincide": true
   },
   {
@@ -1426,7 +1220,7 @@
     "handle": "retrocalcioshirts",
     "estado": "OK",
     "nombre": "Retro Calcio Shirts",
-    "seguidores": 1312000,
+    "seguidores": 131200,
     "coincide": true
   },
   {
@@ -1445,17 +1239,8 @@
     "handle": "luchacentral",
     "estado": "OK",
     "nombre": "Lucha Central",
-    "seguidores": 21000,
+    "seguidores": 21200,
     "coincide": true
-  },
-  {
-    "id": "lucha-central-podcast",
-    "name": "Lucha Central",
-    "net": "twitter",
-    "handle": "LuchaCentral",
-    "estado": "DUDOSO",
-    "nombre": "Luciana Rc",
-    "coincide": false
   },
   {
     "id": "solowrestling-es",
@@ -1464,17 +1249,8 @@
     "handle": "solowrestling_oficial",
     "estado": "OK",
     "nombre": "SoloWrestling",
-    "seguidores": 4,
+    "seguidores": 3532,
     "coincide": true
-  },
-  {
-    "id": "solowrestling-es",
-    "name": "SoloWrestling",
-    "net": "twitter",
-    "handle": "solowrestling",
-    "estado": "DUDOSO",
-    "nombre": "Ariel",
-    "coincide": false
   },
   {
     "id": "mmadictos",
@@ -1483,7 +1259,7 @@
     "handle": "mmadictos",
     "estado": "OK",
     "nombre": "MMAdictos",
-    "seguidores": 42,
+    "seguidores": 41,
     "coincide": true
   },
   {
@@ -1502,7 +1278,7 @@
     "handle": "nachohernaez",
     "estado": "OK",
     "nombre": "Nacho Hernáez Muriel",
-    "seguidores": 29000,
+    "seguidores": 29300,
     "coincide": true
   },
   {
@@ -1512,7 +1288,7 @@
     "handle": "nachohernaez",
     "estado": "OK",
     "nombre": "Nacho Hernaez",
-    "seguidores": 2391000,
+    "seguidores": 239100,
     "coincide": true
   },
   {
@@ -1527,37 +1303,10 @@
   {
     "id": "popotillo",
     "name": "Mister Popotillo",
-    "net": "instagram",
-    "handle": "misterpopotillo",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
-    "coincide": null
-  },
-  {
-    "id": "popotillo",
-    "name": "Mister Popotillo",
-    "net": "tiktok",
-    "handle": "misterpopotillo",
-    "estado": "ROTO",
-    "motivo": "cuenta no encontrada",
-    "coincide": null
-  },
-  {
-    "id": "popotillo",
-    "name": "Mister Popotillo",
     "net": "twitter",
     "handle": "MisterPopotillo",
     "estado": "NO_VERIFICABLE",
     "motivo": "X exige sesión",
-    "coincide": null
-  },
-  {
-    "id": "doberdan-mma",
-    "name": "Doberdan",
-    "net": "instagram",
-    "handle": "eldoberdan13",
-    "estado": "ROTO",
-    "motivo": "perfil no disponible",
     "coincide": null
   },
   {
@@ -1596,7 +1345,7 @@
     "handle": "wrestlingespanol",
     "estado": "OK",
     "nombre": "WrestlingEspanol",
-    "seguidores": null,
+    "seguidores": 1,
     "coincide": true
   },
   {

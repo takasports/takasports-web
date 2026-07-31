@@ -43,6 +43,7 @@ if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('Missing SUPABASE keys'); pr
 
 const argOf = (flag) => { const i = process.argv.indexOf(flag); return i !== -1 ? process.argv[i + 1] : null }
 const ONLY_NET = argOf('--red')
+const APPLY = process.argv.includes('--apply')
 const LIMIT = Number(argOf('--limit')) || 0
 
 const NETS = ['instagram', 'tiktok', 'twitter']
@@ -67,13 +68,22 @@ function looksLikeSamePerson(profileName, creatorName, handle) {
   return words.length > 0 && words.some(w => p.includes(w))
 }
 
-// "516M seguidores, 373 siguiendo" → 516000000
+// Cifras de seguidores tal y como las pintan las redes en español:
+//   «1,3 M seguidores» · «25,1 mil seguidores» · «805.000 seguidores» · «4.5M Seguidores»
+// Con sufijo (M/mil/K) la coma es decimal; sin sufijo, el punto separa millares.
 function parseFollowers(text) {
-  const m = String(text || '').match(/([\d.,]+)\s*([MKmk])?\s*(seguidores|followers|Followers)/)
+  const m = String(text || '').match(/([\d.,]+)\s*(millones|mill|mil|[MKB])?\s*seguidores/i)
   if (!m) return null
-  const n = parseFloat(m[1].replace(/\./g, '').replace(',', '.'))
+  const raw = m[1]
+  const suf = (m[2] ?? '').toLowerCase()
+  const mult = suf.startsWith('m') && suf !== 'mil' ? 1e6 : suf === 'mil' || suf === 'k' ? 1e3 : suf === 'b' ? 1e9 : 1
+  // Con sufijo conviven los dos formatos: Instagram en español escribe «1,3 M»
+  // (coma decimal) y TikTok «4.5M» (punto decimal). Tomar el punto siempre como
+  // separador de millares convertía 4,5 M en 45 M.
+  const n = mult > 1
+    ? parseFloat(raw.includes(',') ? raw.replace(/\./g, '').replace(',', '.') : raw)
+    : parseFloat(raw.replace(/[.,]/g, ''))
   if (!Number.isFinite(n)) return null
-  const mult = /m/i.test(m[2] ?? '') ? 1e6 : /k/i.test(m[2] ?? '') ? 1e3 : 1
   return Math.round(n * mult)
 }
 
@@ -84,12 +94,16 @@ async function checkProfile(page, net, handle) {
     await page.waitForTimeout(2200)
     const title = (await page.title()) || ''
     const desc = await page.evaluate(() => document.querySelector('meta[name="description"]')?.content ?? '')
+    // El cuerpo de la página trae la cifra de seguidores incluso cuando la meta
+    // no la incluye (TikTok), así que se mira también ahí.
+    const body = (await page.innerText('body').catch(() => '')).replace(/\s+/g, ' ').slice(0, 1200)
+    const seguidores = parseFollowers(body) ?? parseFollowers(desc)
 
     if (net === 'instagram') {
       if (/no disponible|not available|Página no encontrada|Page Not Found/i.test(title)) return { estado: 'ROTO', motivo: 'perfil no disponible' }
       const nombre = title.match(/^(.*?)\s*\(@/)?.[1]?.trim() ?? null
       if (!nombre) return { estado: 'DUDOSO', motivo: `título inesperado: ${title.slice(0, 60)}` }
-      return { estado: 'OK', nombre, seguidores: parseFollowers(desc) }
+      return { estado: 'OK', nombre, seguidores }
     }
 
     if (net === 'tiktok') {
@@ -97,8 +111,10 @@ async function checkProfile(page, net, handle) {
       if (/no se encuentra|couldn't find this account|Watch the latest video from/i.test(txt) && /no se encuentra|couldn't find/i.test(txt)) {
         return { estado: 'ROTO', motivo: 'cuenta no encontrada' }
       }
-      const nombre = desc.match(/^(.*?)\s*\(@/)?.[1]?.trim() ?? title.match(/^(.*?)\s*\(@/)?.[1]?.trim() ?? null
-      return { estado: nombre ? 'OK' : 'DUDOSO', nombre, seguidores: parseFollowers(desc), motivo: nombre ? undefined : `sin nombre legible: ${title.slice(0, 50)}` }
+      const nombre = desc.match(/^(.*?)\s*\(@/)?.[1]?.trim()
+        ?? body.match(/([^·|]{2,40}?)\s+@?[\w.]+\s+\d[\d.,]*\s*[KMB]?\s*Siguiendo/i)?.[1]?.trim()
+        ?? null
+      return { estado: nombre ? 'OK' : 'DUDOSO', nombre, seguidores, motivo: nombre ? undefined : `sin nombre legible: ${title.slice(0, 50)}` }
     }
 
     // x.com: casi siempre exige sesión; se reporta como no verificable salvo
@@ -162,6 +178,32 @@ async function main() {
   console.log(`  ✗ ROTO           ${by('ROTO').length}`)
   console.log(`  ? DUDOSO         ${by('DUDOSO').length}`)
   console.log(`  · NO VERIFICABLE ${by('NO_VERIFICABLE').length}`)
+
+  // ── Guardar seguidores REALES ──────────────────────────────────
+  // Hasta ahora las cifras de Instagram y TikTok eran estimaciones puestas a
+  // mano porque se daba por hecho que esas redes no se podían leer. Sí se
+  // pueden con un navegador, así que se sustituyen por el dato verificado.
+  if (APPLY) {
+    const COL = { instagram: 'instagram_known', tiktok: 'tiktok_known' }
+    const porCreador = new Map()
+    for (const r of report) {
+      if (r.estado !== 'OK' || !r.seguidores || !COL[r.net]) continue
+      if (!porCreador.has(r.id)) porCreador.set(r.id, {})
+      porCreador.get(r.id)[COL[r.net]] = r.seguidores
+    }
+    let ok = 0, fail = 0
+    for (const [id, cols] of porCreador) {
+      const { data: existe } = await sb.from('creator_raw_metrics').select('creator_id').eq('creator_id', id).maybeSingle()
+      const payload = existe
+        ? { creator_id: id, ...cols, fetched_at: new Date().toISOString() }
+        : { creator_id: id, yt_subscribers: 0, twitch_known: 0, tiktok_known: 0, twitter_known: 0, instagram_known: 0, ...cols, fetched_at: new Date().toISOString() }
+      const { error: err } = await sb.from('creator_raw_metrics').upsert(payload, { onConflict: 'creator_id' })
+      if (err) { fail++; console.error(`FAIL ${id}: ${err.message}`) } else ok++
+    }
+    console.log(`\n  Seguidores reales guardados: ${ok} creadores (fallos ${fail})`)
+    const { error: syncErr } = await sb.rpc('f_sync_creator_scores')
+    console.log(syncErr ? `  ⚠️  f_sync: ${syncErr.message}` : '  ✓ f_sync_creator_scores() recalculado')
+  }
 
   const out = path.join(__dirname, 'data', 'handle-report.json')
   writeFileSync(out, JSON.stringify(report, null, 2))
