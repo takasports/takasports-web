@@ -187,11 +187,14 @@ async function main() {
     if (data.length < 1000) break
     page++
   }
-  // Excluir clubes (no son personas) y creadores: en ellos `mediatico_auto` es la
-  // AUDIENCIA (followers) que calcula f_sync_creator_scores(), no fama en Wikipedia.
-  const SKIP = new Set(['clubes', 'clubes_femenino', 'creadores', 'creadores_wwe'])
+  // Los CLUBES sí entran (desde 2026-07-28): eran el último track con el
+  // mediático puesto a mano precisamente porque este script los excluía, y un
+  // club tiene artículo de Wikipedia igual que un deportista.
+  // Siguen fuera los creadores: en ellos `mediatico_auto` es la AUDIENCIA
+  // (seguidores) que calcula f_sync_creator_scores(), no fama en Wikipedia.
+  const SKIP = new Set(['creadores', 'creadores_wwe'])
   const people = entries.filter(e => !SKIP.has(e.category))
-  console.log(`  ${people.length} personas activas (de ${entries.length} entradas activas)`)
+  console.log(`  ${people.length} entradas a medir (de ${entries.length} activas)`)
 
   const { start, end } = dateRange()
   console.log(`  Rango: ${start} → ${end}`)
