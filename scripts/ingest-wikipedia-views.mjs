@@ -45,8 +45,10 @@ const readTitles = (f) => {
   try { return JSON.parse(readFileSync(path.join(__dirname, 'data', f), 'utf8')) }
   catch { console.warn(`⚠️  ${f} no encontrado — se usará búsqueda difusa para todos`); return {} }
 }
-const WIKI_TITLES_EN = readTitles('wiki-titles.json')
-const WIKI_TITLES_ES = readTitles('wiki-titles-es.json')
+// Atletas (resueltos por Wikidata en taka-system) + clubes (resueltos por
+// gen-club-wiki-titles.mjs). Van juntos porque se buscan igual: por id de entry.
+const WIKI_TITLES_EN = { ...readTitles('wiki-titles.json'), ...readTitles('wiki-titles-clubs.json') }
+const WIKI_TITLES_ES = { ...readTitles('wiki-titles-es.json'), ...readTitles('wiki-titles-clubs-es.json') }
 
 // Caché de títulos resueltos por búsqueda difusa (id → título, o null si no hay
 // artículo). Sin ella, cada corrida semanal repetía ~660 búsquedas por nombre;
@@ -67,6 +69,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const APPLY   = process.argv.includes('--apply')
 const VERBOSE = process.argv.includes('--verbose')
+const SOLO_CLUBES = process.argv.includes('--clubes')
 const SPORT_FILTER = (() => {
   const i = process.argv.indexOf('--sport')
   return i !== -1 ? process.argv[i + 1] : null
@@ -193,7 +196,8 @@ async function main() {
   // Siguen fuera los creadores: en ellos `mediatico_auto` es la AUDIENCIA
   // (seguidores) que calcula f_sync_creator_scores(), no fama en Wikipedia.
   const SKIP = new Set(['creadores', 'creadores_wwe'])
-  const people = entries.filter(e => !SKIP.has(e.category))
+  const CLUBES = new Set(['clubes', 'clubes_femenino'])
+  const people = entries.filter(e => !SKIP.has(e.category) && (!SOLO_CLUBES || CLUBES.has(e.category)))
   console.log(`  ${people.length} entradas a medir (de ${entries.length} activas)`)
 
   const { start, end } = dateRange()
