@@ -67,8 +67,13 @@ const LIMITS = {
   'futbol/latam':              80,
   'futbol/concacaf':           50,
   'futbol/entrenadores':       50,
-  'futbol/clubes':             50,
-  'futbol/clubes_femenino':    50,
+  // Los clubes no son como los jugadores: hay ~250 filas en total, no miles, así
+  // que un corte de 50 no filtraba ruido — dejaba fuera media Europa. Con 50
+  // plazas, los equipos de LaLiga y la Premier competían contra los de MLS y
+  // Liga MX y quedaban apagados: la pestaña tenía 3 clubes de LaLiga y 12 de la
+  // MLS. Con el tope alto caben ambos y es el score quien los ordena.
+  'futbol/clubes':            120,
+  'futbol/clubes_femenino':    60,
   'tenis/jugadores':           60,
   'tenis/jugadoras':           60,
   'formula1/jugadores':        25,
@@ -127,6 +132,10 @@ function normalizeName(s) {
     .replace(/[øØ]/g, 'o').replace(/[łŁ]/g, 'l').replace(/[đĐ]/g, 'd')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .toLowerCase()
+    // El sufijo de equipo femenino se quita porque el género YA forma parte de
+    // la clave de identidad: sin esto, «Arsenal Femenino» y «Arsenal Women»
+    // eran dos equipos distintos y aparecían los dos en la lista.
+    .replace(/\b(femenino|femenina|feminin[eo]|women|womens|fem)\b/g, '')
     .replace(/[^a-z0-9]/g, '')
     .replace(/(jr|junior)$/, '')
 }
