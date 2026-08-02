@@ -65,6 +65,9 @@ const STEPS = [
   ['F1 — posición campeonato (contexto)',    'ingest-f1-context.mjs'],
   ['UFC — rankings división (rend+ctx)',     'ingest-ufc-rankings.mjs'],
   ['Equipos — resultados + nivel de liga',   'ingest-club-performance.mjs'],
+  // Después de TODOS los contextos: recorta a quien arrastre un contexto de
+  // élite jugando en una liga modesta.
+  ['Techo de contexto por nivel de liga',    'apply-league-context-cap.mjs'],
   ['Periodistas — social reach (rend+ctx)',  'ingest-creator-social.mjs'],
   // Anclar va ANTES de la relevancia: sin canal no hay engagement que medir.
   ['Creadores — anclar canal de YouTube',    'anchor-creator-youtube.mjs'],
