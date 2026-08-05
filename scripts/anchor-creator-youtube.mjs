@@ -117,16 +117,50 @@ async function main() {
 
   const { data: metrics, error: mErr } = await sb
     .from('creator_raw_metrics')
-    .select('creator_id, yt_channel_id')
+    .select('creator_id, yt_channel_id, yt_subscribers')
   if (mErr) throw mErr
   const known = new Map(metrics.map(m => [m.creator_id, m.yt_channel_id]))
+
+  // ── Refrescar los ya anclados ────────────────────────────────────
+  // Anclar solo lo nuevo dejaba la audiencia congelada en el día de la siembra:
+  // 67 creadores arrastraban su cifra original mientras el factor que más pesa
+  // (audiencia, 50%) fingía estar al día. Suscriptores de canales que ya
+  // conocemos cuestan 1 unidad de cuota por cada 50, así que se refrescan todos.
+  const yaAnclados = [...known.entries()].filter(([, cid]) => cid)
+  if (yaAnclados.length) {
+    let refrescados = 0, movidos = [], canijos = []
+    for (let i = 0; i < yaAnclados.length; i += 50) {
+      const lote = yaAnclados.slice(i, i + 50)
+      const j = await getJson(yt('channels', `part=statistics&maxResults=50&id=${lote.map(([, c]) => c).join(',')}`))
+      for (const c of j?.items ?? []) {
+        const subs = Number(c.statistics?.subscriberCount ?? 0)
+        const [creatorId] = lote.find(([, cid]) => cid === c.id) ?? []
+        if (!creatorId || !subs) continue
+        const antes = metrics.find(m => m.creator_id === creatorId)?.yt_subscribers ?? 0
+        if (antes === subs) continue
+        if (APPLY) await sb.from('creator_raw_metrics').update({ yt_subscribers: subs, fetched_at: new Date().toISOString() }).eq('creator_id', creatorId)
+        refrescados++
+        // Un salto brutal no es crecimiento: es que el dato sembrado era falso o
+        // que el canal anclado no era suyo. Impacto MMA arrastraba 22.800.000
+        // suscriptores contra los 252.000 reales — inflado noventa veces, y con
+        // eso encabezaba el ranking entero.
+        if (antes > 0 && (subs / antes > 20 || antes / subs > 20)) movidos.push(`${creatorId}: ${antes} → ${subs}`)
+        // Un canal de tres cifras no representa a nadie que esté en el ranking:
+        // casi siempre es un homónimo o una cuenta abandonada.
+        if (subs < 1000) canijos.push(`${creatorId}: ${subs} subs`)
+      }
+    }
+    console.log(`\n  Suscriptores refrescados: ${refrescados}${APPLY ? '' : ' (simulación)'}`)
+    if (movidos.length) console.log(`  ⚠️  Saltos sospechosos (revisar el anclaje):\n     ${movidos.join('\n     ')}`)
+    if (canijos.length) console.log(`  ⚠️  Canales demasiado pequeños para ser suyos:\n     ${canijos.join('\n     ')}`)
+  }
 
   const pending = entries.filter(e => {
     const h = e.handles?.youtube
     return h && String(h).trim() && !known.get(e.id)
   })
   console.log(`\n  ${entries.length} creadores activos · ${[...known.values()].filter(Boolean).length} ya anclados · ${pending.length} por anclar`)
-  if (!pending.length) { console.log('Nada que hacer.'); return }
+  if (!pending.length) { console.log('  Nada nuevo que anclar.'); return }
 
   // 1) Resolver ids
   const resolved = []
