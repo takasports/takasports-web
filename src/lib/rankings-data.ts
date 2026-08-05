@@ -56,7 +56,7 @@ const STATIC_FALLBACK: Record<RankingCategory, RankingEntry[]> = {
   concacaf:         RANKING_JUGADORES_CONCACAF,
 }
 
-function supabaseConfigured(): boolean {
+export function supabaseConfigured(): boolean {
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -64,7 +64,7 @@ function supabaseConfigured(): boolean {
 }
 
 // Cliente "fetch" (no SSR cookies) — más rápido y cacheable.
-function getReadClient() {
+export function getReadClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

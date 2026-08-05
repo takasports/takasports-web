@@ -6,6 +6,7 @@ import { getDisplayScore, scoreColor, isCreatorEntry } from '@/lib/rankings-ui'
 import { SCORE_WEIGHTS, CREATOR_WEIGHTS, weightedBase } from '@/lib/rankings'
 import { findEntryById, getEntrySources, getAllRankingEntries } from '@/lib/rankings-search'
 import { findEntryByIdFromDb, getAllEntryIdsFromDb, countryNameFromFlag } from '@/lib/rankings-data'
+import { getCreatorAudience } from '@/lib/creator-audience'
 import { getSportStyle } from '@/lib/sports'
 import ShareButton from './ShareButton'
 import PlayerAvatar from '@/components/rankings/PlayerAvatar'
@@ -162,6 +163,9 @@ export default async function EntryDetailPage(
   const avatar = entry.emoji && entry.emoji !== entry.country ? entry.emoji : sportEmoji
 
   const sources = getEntrySources(id)
+  // De dónde sale la audiencia de un creador, y qué parte está medida.
+  const audiencia = isCreatorEntry(entry) ? await getCreatorAudience(entry.id) : null
+
   const factors = entry.factors
   // Base objetiva (suma ponderada de factores) y ajuste editorial = lo que la
   // separa del Ranking mostrado (editorial_boost y/o score_manual). Reconcilia
@@ -312,15 +316,42 @@ export default async function EntryDetailPage(
             </p>
             <div className="flex flex-col gap-4">
               {(isCreatorEntry(entry) ? FACTOR_DEFS_CREATOR : FACTOR_DEFS).map(({ key, label, pct, color }) => (
-                <FactorBar
-                  key={key}
-                  value={factors[key as FactorKey]}
-                  color={color}
-                  label={label}
-                  pct={pct}
-                />
+                <div key={key}>
+                  <FactorBar
+                    value={factors[key as FactorKey]}
+                    color={color}
+                    label={label}
+                    pct={pct}
+                  />
+                  {/* De dónde sale la audiencia. Se dice cuál está medida y cuál
+                      es una estimación: una cifra que nadie comprueba puede
+                      estar equivocada por órdenes de magnitud sin que se note. */}
+                  {key === 'mediatico' && audiencia && audiencia.length > 0 && (
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                      {audiencia.map(p => (
+                        <span
+                          key={p.red}
+                          className="text-[10px] tabular-nums"
+                          style={{ color: p.medida ? '#6A6A82' : '#8A7A4A', fontFamily: 'var(--font-sport)' }}
+                          title={p.medida
+                            ? `${p.label}: cifra leída del perfil, se actualiza cada semana`
+                            : `${p.label}: estimación sin perfil anclado — no se ha podido comprobar`}
+                        >
+                          {p.label} {p.seguidores.toLocaleString('es-ES')}
+                          {!p.medida && <span style={{ color: '#A08A3A' }}> ·aprox</span>}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
+            {audiencia?.some(p => !p.medida) && (
+              <p className="text-[10px] mt-3" style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
+                Las cifras marcadas <span style={{ color: '#A08A3A' }}>·aprox</span> son estimaciones:
+                no tenemos anclado su perfil en esa red, así que no se pueden comprobar ni actualizar.
+              </p>
+            )}
             {/* Creadores: el ajuste editorial es INTERNO → no se desglosa en público. */}
             {Math.abs(editorialAdj) >= 0.1 && !['creadores', 'periodistas', 'creadores_wwe'].includes(cat) && (
               <div className="mt-4 pt-4 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
