@@ -76,6 +76,13 @@ const STEPS = [
   // peor que no medirla. @manololama (1 seguidor) y @jorgevaldano (privado, 13)
   // pasaban por buenos porque el nombre del perfil coincidía.
   ['Contenido — handles oficiales (Wikidata)', 'verify-handles-wikidata.mjs'],
+  // TikTok se lee por HTTP plano (su HTML trae followerCount en claro), así que
+  // resolver los que faltan no cuesta ni cuota ni navegador. Solo escribe los
+  // que confirma por nombre; los dudosos los deja en el informe.
+  // Antes de buscar por nombre, mirar si el propio creador declara sus redes en
+  // la descripción de su canal. Cuesta 1 unidad de cuota por cada 50 canales.
+  ['Contenido — redes declaradas en YouTube',  'mine-handles-from-youtube.mjs'],
+  ['Contenido — encontrar TikTok que faltan',  'resolve-tiktok-handles.mjs'],
   ['Contenido — seguidores reales IG/TikTok',  'verify-creator-handles.mjs'],
   // Anclar va ANTES de la relevancia: sin canal no hay engagement que medir.
   ['Creadores — anclar canal de YouTube',    'anchor-creator-youtube.mjs'],

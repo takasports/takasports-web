@@ -1,0 +1,1963 @@
+[
+  {
+    "id": "412-programa-futbol",
+    "name": "412 - El Programa del Fútbol",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "412-ElProgramadelFútbol"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "alaska-futbol",
+    "name": "Alaska",
+    "estado": "NO_ENCONTRADO",
+    "probados": [],
+    "previo": 0
+  },
+  {
+    "id": "alberto-edjogo",
+    "name": "Alberto Edjogo",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "albertoowono",
+      "AlbertoEdjogo"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "alfredo-martinez",
+    "name": "Alfredo Martínez",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "alfremartinezz",
+      "Alfremartinezz",
+      "AlfredoMartínez"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "alina-moine",
+    "name": "Alina Moine",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "AlinaMoine",
+      "instagram": "alinamoine09"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 422,
+    "nick": "Alina Moine",
+    "unico": "alinamoine",
+    "videos": 60,
+    "handle": "AlinaMoine",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 422 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "alvaro-carrera-wwe",
+    "name": "Álvaro Carrera",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "AlvCarrera",
+      "instagram": "alvaroalacarrera"
+    },
+    "estado": "OK",
+    "seguidores": 1540,
+    "nick": "Álvaro Carrera",
+    "unico": "alvaroalacarrera",
+    "videos": 340,
+    "handle": "alvaroalacarrera",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "andres-bermudez-ufc",
+    "name": "Andrés Bermúdez",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "andres_bermudez",
+      "instagram": "berma80"
+    },
+    "estado": "PROBABLE",
+    "seguidores": 1360,
+    "nick": "dannyz",
+    "unico": "berma80",
+    "videos": 86,
+    "handle": "berma80",
+    "origen": "anclado",
+    "nivel": "probable",
+    "previo": 0
+  },
+  {
+    "id": "angela-lerena",
+    "name": "Ángela Lerena",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "angelalerena"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 5,
+    "nick": "user06803852779",
+    "unico": "angelalerena",
+    "videos": 0,
+    "handle": "angelalerena",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «user06803852779»",
+    "previo": 0
+  },
+  {
+    "id": "antonio-casale",
+    "name": "Antonio Casale",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "antoniocasale"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 46,
+    "nick": "antoniocasale",
+    "unico": "antoniocasale",
+    "videos": 0,
+    "handle": "antoniocasale",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 46 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "arancha-rodriguez",
+    "name": "Arancha Rodríguez",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "AranchaMOBILE",
+      "instagram": "aranchamobile"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 40,
+    "nick": "Aranchamobile",
+    "unico": "aranchamobile",
+    "videos": 0,
+    "handle": "aranchamobile",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «Aranchamobile»",
+    "previo": 0
+  },
+  {
+    "id": "ariel-levy-wwe",
+    "name": "Ariel Levy",
+    "category": "creadores_wwe",
+    "handles": {
+      "twitter": "Ariel_Levy",
+      "instagram": "ariel_levy"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 25,
+    "nick": "סלייםםם\\u003E\\u003E\\u003E\\u003E\\u003E",
+    "unico": "ariel_levy",
+    "videos": 8,
+    "handle": "ariel_levy",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «סלייםםם\\u003E\\u003E\\u003E\\u003E\\u003E»",
+    "previo": 0
+  },
+  {
+    "id": "ariel-senosiain",
+    "name": "Ariel Senosiain",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "arielsenosiain"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 6,
+    "nick": "arielsenosiain",
+    "unico": "arielsenosiain",
+    "videos": 3,
+    "handle": "arielsenosiain",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 6 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "arquerosinguantes",
+    "name": "Arquero Sin Guantes",
+    "category": "creadores",
+    "handles": null,
+    "estado": "OK",
+    "seguidores": 1000000,
+    "nick": "Arquero sin guantes 🧤",
+    "unico": "arquerosinguantes",
+    "videos": 388,
+    "handle": "ArqueroSinGuantes",
+    "origen": "adivinado",
+    "nivel": "seguro",
+    "previo": 951000
+  },
+  {
+    "id": "beisbolplay",
+    "name": "Béisbol Play",
+    "category": "creadores",
+    "handles": {
+      "youtube": "UCQVmAmilXiZk0m7CQe-jcqw",
+      "instagram": "beisbolplay"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 13,
+    "nick": "user94816986878",
+    "unico": "beisbolplay",
+    "videos": 0,
+    "handle": "beisbolplay",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «user94816986878»",
+    "previo": 100000
+  },
+  {
+    "id": "benitosdr",
+    "name": "Benito SDR",
+    "category": "creadores",
+    "handles": null,
+    "estado": "DUDOSO",
+    "seguidores": 50,
+    "nick": "Benito Sdr",
+    "unico": "benitosdr",
+    "videos": 5,
+    "handle": "BenitoSDR",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 50 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "boxeomx",
+    "name": "Boxeo MX",
+    "category": "creadores",
+    "handles": {
+      "twitter": "BoxeoMX",
+      "youtube": "UCEH2rQNKFrGtwLFaEEZ01cw"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 35,
+    "nick": "BoxeoMx™",
+    "unico": "boxeomx",
+    "videos": 0,
+    "handle": "BoxeoMX",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 35 seguidores",
+    "previo": 35
+  },
+  {
+    "id": "bydiegox10",
+    "name": "ByDiegoX10",
+    "category": "creadores",
+    "handles": null,
+    "estado": "DUDOSO",
+    "seguidores": 5,
+    "nick": "ale10",
+    "unico": "bydiegox10",
+    "videos": 0,
+    "handle": "ByDiegoX10",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "se llama «ale10»",
+    "previo": 0
+  },
+  {
+    "id": "carlos-velez",
+    "name": "Carlos Antonio Vélez",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "velezfutbol",
+      "instagram": "velezfutbol"
+    },
+    "estado": "PROBABLE",
+    "seguidores": 55500,
+    "nick": "VelezFutbol",
+    "unico": "velezfutbol",
+    "videos": 63,
+    "handle": "velezfutbol",
+    "origen": "anclado",
+    "nivel": "probable",
+    "previo": 0
+  },
+  {
+    "id": "carlos-contreras-legaspi",
+    "name": "Carlos Contreras Legaspi",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "CCLegaspi",
+      "instagram": "cclegaspi"
+    },
+    "estado": "OK",
+    "seguidores": 63200,
+    "nick": "Carlos Contreras Legaspi",
+    "unico": "cclegaspi",
+    "videos": 376,
+    "handle": "cclegaspi",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "carlos-hermosillo",
+    "name": "Carlos Hermosillo",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "CHermosillo27",
+      "instagram": "chermosillo27"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 19,
+    "nick": "Carlos Hermosillo",
+    "unico": "carloshermosillo",
+    "videos": 0,
+    "handle": "CarlosHermosillo",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 19 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "carlos-martinez-tv",
+    "name": "Carlos Martínez",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "carlosplus",
+      "instagram": "carlosmartinezplus"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 19,
+    "nick": "Carlos Martinez",
+    "unico": "carlosmartinezplus",
+    "videos": 6,
+    "handle": "carlosmartinezplus",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 19 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "cesarlondono",
+    "name": "César Londoño",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "CésarLondoño"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "christian-tetzpa",
+    "name": "Christian Tetzpa",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "LaChicaKO",
+      "youtube": "@ChristianTetzpa",
+      "instagram": "christian_tetzpa"
+    },
+    "estado": "OK",
+    "seguidores": 30800,
+    "nick": "Christian Tetzpa",
+    "unico": "christian_tetzpa",
+    "videos": 95,
+    "handle": "christian_tetzpa",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "cristobal-soria",
+    "name": "Cristóbal Soria",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "cristobalsoria"
+    },
+    "estado": "OK",
+    "seguidores": 1400000,
+    "nick": "Cristóbal Soria",
+    "unico": "cristobalsoria",
+    "videos": 546,
+    "handle": "cristobalsoria",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "danny-segura-mma",
+    "name": "Danny Segura",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "dannyseguratv",
+      "instagram": "dannyseguratv"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 35,
+    "nick": "Danny Segura",
+    "unico": "dannyseguratv",
+    "videos": 8,
+    "handle": "dannyseguratv",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 35 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "daviddelasheras",
+    "name": "David de las Heras",
+    "category": "creadores",
+    "handles": {
+      "twitter": "David_Heras",
+      "youtube": "UCTXhUG-VHjdzbpDgWFkxSoQ"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 25,
+    "nick": "David De Las Heras",
+    "unico": "daviddelasheras",
+    "videos": 9,
+    "handle": "DaviddelasHeras",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 25 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "faitelson",
+    "name": "David Faitelson",
+    "category": "creadores",
+    "handles": {
+      "twitter": "Faitelson_ESPN",
+      "youtube": "UCO-N4VcqsiQ9UVELf5eE-2A"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 0,
+    "nick": "david",
+    "unico": "davidfaitelson",
+    "videos": 0,
+    "handle": "DavidFaitelson",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 0 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "decabecita",
+    "name": "De Cabecita",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "DeCabecita"
+    ],
+    "previo": 383000
+  },
+  {
+    "id": "diamante23",
+    "name": "Diamante 23",
+    "category": "creadores",
+    "handles": {
+      "twitter": "Diamante23",
+      "youtube": "UC6eumCpSUKgYj6vrM8JNbvw"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 3,
+    "nick": "diamante23",
+    "unico": "diamante23",
+    "videos": 0,
+    "handle": "Diamante23",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 3 seguidores",
+    "previo": 50000
+  },
+  {
+    "id": "diego-aranis-wwe",
+    "name": "Diego Aranís",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "diegoaraniss",
+      "Diego_AranisWWE",
+      "DiegoAranís"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "drafteados",
+    "name": "Drafteados",
+    "category": "creadores",
+    "handles": {
+      "twitter": "Drafteados",
+      "youtube": "UCTJNmeP0HiOU4-qOMNVNoGA",
+      "instagram": "drafteados"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 19,
+    "nick": "NBA",
+    "unico": "drafteados",
+    "videos": 0,
+    "handle": "drafteados",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «NBA»",
+    "previo": 0
+  },
+  {
+    "id": "edu-aguirre",
+    "name": "Edu Aguirre",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "EduAguirre7",
+      "instagram": "eduaguirre7"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 9,
+    "nick": "Edurne Aguirre",
+    "unico": "eduaguirre7",
+    "videos": 2,
+    "handle": "eduaguirre7",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «Edurne Aguirre»",
+    "previo": 0
+  },
+  {
+    "id": "futboleroec",
+    "name": "El Futbolero Ecuador",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "ElFutboleroEcuador"
+    ],
+    "previo": 754000
+  },
+  {
+    "id": "erickosores",
+    "name": "Erick Osores",
+    "category": "creadores",
+    "handles": null,
+    "estado": "DUDOSO",
+    "seguidores": 2,
+    "nick": "Erick Osores",
+    "unico": "erickosores",
+    "videos": 0,
+    "handle": "ErickOsores",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 2 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "fabriuruguayo",
+    "name": "Fabri Uruguayo",
+    "category": "creadores",
+    "handles": null,
+    "estado": "OK",
+    "seguidores": 283000,
+    "nick": "Fabriuruguayo",
+    "unico": "fabriuruguayo",
+    "videos": 3935,
+    "handle": "FabriUruguayo",
+    "origen": "adivinado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "falbak-wwe",
+    "name": "Falbak",
+    "category": "creadores_wwe",
+    "handles": {
+      "twitter": "Falbak_",
+      "youtube": "UCn4fZiy_ZSQpXev1MO3_BNA",
+      "instagram": "falbak__"
+    },
+    "estado": "OK",
+    "seguidores": 80800,
+    "nick": "Falbak",
+    "unico": "falbak__",
+    "videos": 841,
+    "handle": "falbak__",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "fanodric-podcast",
+    "name": "Fanodric Podcast",
+    "category": "creadores",
+    "handles": {
+      "youtube": "UCqgel-B6L4weQMfIJ_pobyw"
+    },
+    "estado": "OK",
+    "seguidores": 12900,
+    "nick": "Fanodric Podcast",
+    "unico": "fanodricpodcast",
+    "videos": 118,
+    "handle": "FanodricPodcast",
+    "origen": "adivinado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "fernando-costilla-wwe",
+    "name": "Fernando Costilla",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "FerCostilla",
+      "youtube": "@FernandoCostilla",
+      "instagram": "fcostillaes"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 46,
+    "nick": "fernandocostilla",
+    "unico": "fernandocostilla",
+    "videos": 0,
+    "handle": "FernandoCostilla",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 46 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "flavioazzaro",
+    "name": "Flavio Azzaro",
+    "category": "creadores",
+    "handles": null,
+    "estado": "DUDOSO",
+    "seguidores": 8,
+    "nick": "Flavio Azzaro",
+    "unico": "flavioazzaro",
+    "videos": 0,
+    "handle": "FlavioAzzaro",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 8 seguidores",
+    "previo": 281000
+  },
+  {
+    "id": "franko-bonetto",
+    "name": "Franko Bonetto",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "FrankoBonetto"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "ftotal",
+    "name": "FTotal",
+    "estado": "NO_ENCONTRADO",
+    "probados": [],
+    "previo": 0
+  },
+  {
+    "id": "futbolenchileno",
+    "name": "Fútbol En Chileno",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "futbolenchileno",
+      "FútbolEnChileno"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "futboltotal",
+    "name": "Futbol Total",
+    "category": "creadores",
+    "handles": null,
+    "estado": "DUDOSO",
+    "seguidores": 4,
+    "nick": "Jose Carlos Valenzuela",
+    "unico": "futboltotal",
+    "videos": 1,
+    "handle": "FutbolTotal",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "se llama «Jose Carlos Valenzuela»",
+    "previo": 0
+  },
+  {
+    "id": "gaston-edul",
+    "name": "Gastón Edul",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "gastonedul",
+      "instagram": "gastonedul"
+    },
+    "estado": "OK",
+    "seguidores": 2100000,
+    "nick": "Gastón Edul",
+    "unico": "gastonedul",
+    "videos": 762,
+    "handle": "gastonedul",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "gcnenespanol",
+    "name": "GCN en Español",
+    "category": "creadores",
+    "handles": {
+      "twitter": "GCNenEspanol",
+      "youtube": "UCdB_wHzRxuhLwzKdVFWYBig"
+    },
+    "estado": "OK",
+    "seguidores": 14900,
+    "nick": "GCN en Español",
+    "unico": "gcnenespanol",
+    "videos": 1297,
+    "handle": "GCNenEspanol",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 14900
+  },
+  {
+    "id": "generacionmma",
+    "name": "Generación MMA",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "generacionmma",
+      "GeneraciónMMA"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "gerardromero",
+    "name": "Gerard Romero",
+    "category": "creadores",
+    "handles": {
+      "twitch": "gerardromero",
+      "twitter": "gerardromero",
+      "youtube": "UC0Cbaofl1u2ZSCUjZ9yy-wg",
+      "instagram": "gerardromero"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 25,
+    "nick": "Gerardo",
+    "unico": "gerardromero",
+    "videos": 0,
+    "handle": "gerardromero",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «Gerardo»",
+    "previo": 0
+  },
+  {
+    "id": "gigantesbasket",
+    "name": "Gigantes del Basket",
+    "category": "creadores",
+    "handles": {
+      "twitter": "GigantesBasket",
+      "youtube": "UCXJnFRcssT0Q1ID_V6Or1sQ"
+    },
+    "estado": "OK",
+    "seguidores": 44200,
+    "nick": "GigantesBasket",
+    "unico": "gigantesbasket",
+    "videos": 2292,
+    "handle": "GigantesBasket",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "guillembalague",
+    "name": "Guillem Balagué",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "GuillemBalague",
+      "youtube": "@GuillemBalagueOfficial",
+      "instagram": "guillembalague"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 770,
+    "nick": "Stella",
+    "unico": "guillembalague",
+    "videos": 2,
+    "handle": "guillembalague",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «Stella»",
+    "previo": 0
+  },
+  {
+    "id": "hablemosmmachannel",
+    "name": "HablemosMMA",
+    "category": "creadores",
+    "handles": {
+      "twitter": "HablemosMMA",
+      "youtube": "UC0yIGnjX9FrfdamE2cSrFsQ"
+    },
+    "estado": "OK",
+    "seguidores": 32100,
+    "nick": "hablemos mma",
+    "unico": "hablemosmma",
+    "videos": 487,
+    "handle": "HablemosMMA",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 31900
+  },
+  {
+    "id": "helenacondis",
+    "name": "Helena Condis",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "HelenaCondis",
+      "instagram": "helenacondis"
+    },
+    "estado": "OK",
+    "seguidores": 3196,
+    "nick": "Helenacondis",
+    "unico": "helenacondis",
+    "videos": 20,
+    "handle": "helenacondis",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "horacio-pagani",
+    "name": "Horacio Pagani",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "horaciopagani",
+      "instagram": "soypagani"
+    },
+    "estado": "OK",
+    "seguidores": 2011,
+    "nick": "Horacio Pagani360",
+    "unico": "soypagani",
+    "videos": 5,
+    "handle": "soypagani",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "hugo-savinovich",
+    "name": "Hugo Savinovich",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "hugosavinovich",
+      "instagram": "hugosavinovich"
+    },
+    "estado": "OK",
+    "seguidores": 1181,
+    "nick": "Hugo Savinovich",
+    "unico": "hugosavinovich",
+    "videos": 0,
+    "handle": "hugosavinovich",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "impacto-mma",
+    "name": "Impacto MMA",
+    "category": "creadores",
+    "handles": {
+      "twitter": "ImpactoMMA",
+      "youtube": "UCsOqRu-Y0vUS5tt8jJhud4A",
+      "instagram": "impactomma"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 55,
+    "nick": "ImpactoMMA",
+    "unico": "impactomma",
+    "videos": 4,
+    "handle": "impactomma",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 55 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "irati-prat-mma",
+    "name": "Irati Prat",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "IratiPratSC",
+      "instagram": "irati_21"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 2,
+    "nick": "irati aio",
+    "unico": "irati_21",
+    "videos": 0,
+    "handle": "irati_21",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «irati aio»",
+    "previo": 0
+  },
+  {
+    "id": "iturralde-gonzalez",
+    "name": "Iturralde González",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "iturraldegonzal",
+      "IturraldeGonzález"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "ivan-mejia",
+    "name": "Iván Mejía Álvarez",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "PajaritoDeIvan",
+      "IvánMejíaÁlvarez"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "ivette-hernandez-ufc",
+    "name": "Ivette Hernández",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "ivette_hdez",
+      "instagram": "ivette_hdez"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 9,
+    "nick": "Ivette Hernandez",
+    "unico": "ivette_hdez",
+    "videos": 0,
+    "handle": "ivette_hdez",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 9 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "javetas",
+    "name": "Javetas en el arco",
+    "category": "creadores",
+    "handles": null,
+    "estado": "OK",
+    "seguidores": 7200000,
+    "nick": "Javetas en el arco",
+    "unico": "javetasenelarco",
+    "videos": 589,
+    "handle": "Javetasenelarco",
+    "origen": "adivinado",
+    "nivel": "seguro",
+    "previo": 5300000
+  },
+  {
+    "id": "javier-herraez",
+    "name": "Javier Herráez",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "javiherraez",
+      "instagram": "javi_herraez"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 0,
+    "nick": "javiherraez",
+    "unico": "javiherraez",
+    "videos": 0,
+    "handle": "javiherraez",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «javiherraez»",
+    "previo": 0
+  },
+  {
+    "id": "jerry-soto-wwe",
+    "name": "Jerry Soto",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "JerrySotoWWE",
+      "instagram": "jerrysotonarra"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 6,
+    "nick": "Jerry Soto",
+    "unico": "jerrysoto",
+    "videos": 0,
+    "handle": "JerrySoto",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 6 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "jorge-pietrasanta",
+    "name": "Jorge Pietrasanta",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "J_Pietra",
+      "instagram": "jorgepietrasanta_"
+    },
+    "estado": "OK",
+    "seguidores": 32600,
+    "nick": "Jorge Pietrasanta",
+    "unico": "jorgepietrasanta",
+    "videos": 136,
+    "handle": "JorgePietrasanta",
+    "origen": "adivinado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "marc-bartra-periodista",
+    "name": "Jorge Valdano",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "JorgeValdano"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 11,
+    "nick": "Jorge Valdano",
+    "unico": "jorgevaldano",
+    "videos": 0,
+    "handle": "JorgeValdano",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 11 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "jose-manuel-guillen",
+    "name": "José Manuel Guillén",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "jmguillent",
+      "instagram": "jmguillent"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 107,
+    "nick": "José Manuel Guillén",
+    "unico": "jmguillent",
+    "videos": 1,
+    "handle": "jmguillent",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 107 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "joserra-espn",
+    "name": "José Ramón Fernández",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "joserra_espn",
+      "JoséRamónFernández"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "pedrerol",
+    "name": "Josep Pedrerol",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "jpedrerol",
+      "youtube": "UC-ogW8JH2UhZb5eXHkY1_LQ"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 7,
+    "nick": "josep pedrerol",
+    "unico": "jpedrerol",
+    "videos": 0,
+    "handle": "jpedrerol",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 7 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "juanma-castano",
+    "name": "Juanma Castaño",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "juanmacastano",
+      "instagram": "juanmacastano_oficial"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 3,
+    "nick": "Juan Manuel",
+    "unico": "juanmacastano",
+    "videos": 0,
+    "handle": "juanmacastano",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «Juan Manuel»",
+    "previo": 0
+  },
+  {
+    "id": "julio-pavoni",
+    "name": "Julio Pavoni",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "JulioPavoni",
+      "instagram": "juliopavoni"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 3,
+    "nick": "juliaksije",
+    "unico": "juliopavoni",
+    "videos": 0,
+    "handle": "juliopavoni",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «juliaksije»",
+    "previo": 0
+  },
+  {
+    "id": "kikemateu",
+    "name": "Kike Mateu",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "kike_mateu",
+      "instagram": "kikemateu_"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 10,
+    "nick": "kike mateu",
+    "unico": "kike_mateu",
+    "videos": 0,
+    "handle": "kike_mateu",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 10 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "kilometro-cero",
+    "name": "Kilómetro Cero",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "KilómetroCero"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "kolmenero",
+    "name": "KOlmenero (Álvaro Colmenero)",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "KOlmenero(ÁlvaroColmenero)"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "lafecha",
+    "name": "La Fecha",
+    "estado": "NO_ENCONTRADO",
+    "probados": [],
+    "previo": 1800000
+  },
+  {
+    "id": "david-perogil",
+    "name": "La Fórmula de David Perogil",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "LaFórmuladeDavidPerogil"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "laliguilla",
+    "name": "La Liguilla",
+    "category": "creadores",
+    "handles": null,
+    "estado": "DUDOSO",
+    "seguidores": 97,
+    "nick": "laliguilla",
+    "unico": "laliguilla",
+    "videos": 5,
+    "handle": "LaLiguilla",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 97 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "latinlover",
+    "name": "Latin Lover",
+    "category": "creadores_wwe",
+    "handles": null,
+    "estado": "DUDOSO",
+    "seguidores": 19,
+    "nick": "LatinLover",
+    "unico": "latinlover",
+    "videos": 30,
+    "handle": "LatinLover",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 19 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "leoncitodelfut",
+    "name": "Leoncito del Fut",
+    "category": "creadores",
+    "handles": {
+      "youtube": "UCF57xtHviUkgZW6mDAuWnWw"
+    },
+    "estado": "OK",
+    "seguidores": 1900000,
+    "nick": "Leoncito del fútbol ⚽️🦁",
+    "unico": "leoncitodelfut",
+    "videos": 1376,
+    "handle": "LeoncitodelFut",
+    "origen": "adivinado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "lilian-garcia",
+    "name": "Lilian García",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "LilianGarcia",
+      "youtube": "@LilianGarcia",
+      "instagram": "liliangarcia"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 192,
+    "nick": "Lilian Garcia",
+    "unico": "liliangarcia",
+    "videos": 0,
+    "handle": "liliangarcia",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 192 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "losdisplicentes",
+    "name": "Los Displicentes",
+    "category": "creadores",
+    "handles": {
+      "twitter": "losDisplicentes",
+      "youtube": "UCRN-6-DPNncVEyeRAOmNAKg",
+      "instagram": "losdisplicentes"
+    },
+    "estado": "OK",
+    "seguidores": 38700,
+    "nick": "los displicentes",
+    "unico": "losdisplicentes",
+    "videos": 54,
+    "handle": "losdisplicentes",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "lucha-central-podcast",
+    "name": "Lucha Central",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "luchacentral",
+      "LuchaCentral"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "lucha-libre-online",
+    "name": "Lucha Libre Online",
+    "category": "creadores_wwe",
+    "handles": {
+      "twitter": "luchaonline",
+      "youtube": "UCgQ4okhw7MksyRngxOzT1vA",
+      "instagram": "luchalibreonline"
+    },
+    "estado": "OK",
+    "seguidores": 343800,
+    "nick": "Lucha Libre Online",
+    "unico": "luchalibreonline",
+    "videos": 3567,
+    "handle": "luchalibreonline",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "manolo-lama",
+    "name": "Manolo Lama",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "lamacope"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 2,
+    "nick": "manolo lama",
+    "unico": "manololama",
+    "videos": 0,
+    "handle": "ManoloLama",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 2 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "mariano-closs",
+    "name": "Mariano Closs",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "clossam590"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 175,
+    "nick": "Mariano Closs",
+    "unico": "marianocloss",
+    "videos": 22,
+    "handle": "MarianoCloss",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 175 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "mas-lucha-yt",
+    "name": "Más Lucha",
+    "category": "creadores_wwe",
+    "handles": {
+      "twitter": "maslucha",
+      "youtube": "UCycDOsJg6tInGaVbZylMFmg"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 23,
+    "nick": "Mas Lucha",
+    "unico": "maslucha",
+    "videos": 2,
+    "handle": "maslucha",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 23 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "mateo-paramo",
+    "name": "Mateo Páramo",
+    "category": "creadores",
+    "handles": {
+      "instagram": "paramopresenta"
+    },
+    "estado": "PROBABLE",
+    "seguidores": 78600,
+    "nick": "Páramo Presenta",
+    "unico": "paramopresenta",
+    "videos": 835,
+    "handle": "paramopresenta",
+    "origen": "anclado",
+    "nivel": "probable",
+    "previo": 0
+  },
+  {
+    "id": "amboade",
+    "name": "Matías Amboade",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "MatíasAmboade"
+    ],
+    "previo": 1400000
+  },
+  {
+    "id": "memoriasfutbol",
+    "name": "Memorias de Fútbol",
+    "category": "creadores",
+    "handles": {
+      "twitter": "Memorias_Futbol",
+      "youtube": "UCZxY-LThYQJHA3tgwMb-tyA"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 1,
+    "nick": "Cartas MEMORIAS",
+    "unico": "memorias_futbol",
+    "videos": 1,
+    "handle": "Memorias_Futbol",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «Cartas MEMORIAS»",
+    "previo": 0
+  },
+  {
+    "id": "miguel-perez-wwe",
+    "name": "Miguel Pérez",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "MiguelPerezWWE",
+      "instagram": "miguelperezwwe"
+    },
+    "estado": "OK",
+    "seguidores": 1470,
+    "nick": "MiguelPerezWWE",
+    "unico": "miguelperezwwe",
+    "videos": 156,
+    "handle": "miguelperezwwe",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "misterchip",
+    "name": "Míster Chip",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "2010MisterChip",
+      "instagram": "2010misterchip"
+    },
+    "estado": "OK",
+    "seguidores": 660200,
+    "nick": "MisterChip (Alexis)",
+    "unico": "2010misterchip",
+    "videos": 2079,
+    "handle": "2010misterchip",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "popotillo",
+    "name": "Mister Popotillo",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "misterpopotillo",
+      "MisterPopotillo"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "mmadictos",
+    "name": "MMAdictos",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "mmadictos",
+      "MMAdictos"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "morenabeltran",
+    "name": "Morena Beltrán",
+    "category": "creadores",
+    "handles": {
+      "twitter": "morenabeltran10",
+      "instagram": "morenabeltran10"
+    },
+    "estado": "PROBABLE",
+    "seguidores": 35500,
+    "nick": "user83201516981",
+    "unico": "morenabeltran10",
+    "videos": 23,
+    "handle": "morenabeltran10",
+    "origen": "anclado",
+    "nivel": "probable",
+    "previo": 0
+  },
+  {
+    "id": "mrpeet",
+    "name": "Mr. Peet",
+    "estado": "NO_ENCONTRADO",
+    "probados": [],
+    "previo": 67000
+  },
+  {
+    "id": "offsiders-podcast",
+    "name": "Offsiders",
+    "category": "creadores",
+    "handles": {
+      "youtube": "UCOiqjYtg2bcFqCaQK-eWVtw"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 232,
+    "nick": "offsiders",
+    "unico": "offsiders",
+    "videos": 19,
+    "handle": "Offsiders",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 232 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "opiniones-con-corea",
+    "name": "Opiniones con Corea",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "OpinionesconCorea"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "paco-gonzalez",
+    "name": "Paco González",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "PacoGonzlezCOPE",
+      "PacoGonzález"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "pipesierra",
+    "name": "Pipe Sierra",
+    "category": "creadores",
+    "handles": null,
+    "estado": "DUDOSO",
+    "seguidores": 902,
+    "nick": "felipesierra",
+    "unico": "pipesierra",
+    "videos": 36,
+    "handle": "PipeSierra",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "se llama «felipesierra»",
+    "previo": 0
+  },
+  {
+    "id": "planeta-wrestling-es",
+    "name": "Planeta Wrestling",
+    "category": "creadores_wwe",
+    "handles": {
+      "twitter": "planetawrestling",
+      "youtube": "UCXDvZTuaeWnHmU8CbF2qfww"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 41,
+    "nick": "user6953128020964",
+    "unico": "planetawrestling",
+    "videos": 25,
+    "handle": "planetawrestling",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «user6953128020964»",
+    "previo": 0
+  },
+  {
+    "id": "poldeportes",
+    "name": "Pol Deportes",
+    "category": "creadores",
+    "handles": null,
+    "estado": "DUDOSO",
+    "seguidores": 124,
+    "nick": "user67233884823",
+    "unico": "poldeportes",
+    "videos": 0,
+    "handle": "PolDeportes",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "se llama «user67233884823»",
+    "previo": 53000
+  },
+  {
+    "id": "puntodebreak",
+    "name": "Punto de Break",
+    "category": "creadores",
+    "handles": {
+      "twitter": "puntodebreak",
+      "youtube": "UCX63rwCh9MXXdPJm7xluffA"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 103,
+    "nick": "Puntodebreak",
+    "unico": "puntodebreak",
+    "videos": 65,
+    "handle": "puntodebreak",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 103 seguidores",
+    "previo": 103
+  },
+  {
+    "id": "rafaelescrig",
+    "name": "Rafael Escrig",
+    "category": "creadores",
+    "handles": {
+      "twitter": "RafaEscrig",
+      "youtube": "UCI6UqgxW3E541DQ7mO48qRw",
+      "instagram": "rafaelescrig"
+    },
+    "estado": "OK",
+    "seguidores": 196600,
+    "nick": "Rafael Escrig",
+    "unico": "rafaelescrig",
+    "videos": 309,
+    "handle": "rafaelescrig",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 196000
+  },
+  {
+    "id": "rubigol",
+    "name": "Rubigol",
+    "estado": "NO_ENCONTRADO",
+    "probados": [],
+    "previo": 0
+  },
+  {
+    "id": "santoswrestling",
+    "name": "Santos Wrestling Pty",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "SantosWrestlingPty"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "sebastian-vignolo",
+    "name": "Sebastián Vignolo",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "pollovignolo",
+      "instagram": "sebastianpollovignolo"
+    },
+    "estado": "PROBABLE",
+    "seguidores": 433800,
+    "nick": "Pollo vignolo AURA❤️",
+    "unico": "sebastianpollovignolo",
+    "videos": 617,
+    "handle": "sebastianpollovignolo",
+    "origen": "anclado",
+    "nivel": "probable",
+    "previo": 0
+  },
+  {
+    "id": "sergio-basket",
+    "name": "SergioBasket",
+    "category": "creadores",
+    "handles": {
+      "youtube": "UCXlVmSc-fSgs7EgjRZWtr7w"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 7,
+    "nick": "Sergi",
+    "unico": "sergiobasket",
+    "videos": 0,
+    "handle": "SergioBasket",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 7 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "siro-lopez",
+    "name": "Siro López",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "sirolopez",
+      "instagram": "sirolopez"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 3,
+    "nick": "Siro López",
+    "unico": "sirolopez",
+    "videos": 0,
+    "handle": "sirolopez",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 3 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "skyline-racing",
+    "name": "Skyline Racing",
+    "category": "creadores",
+    "handles": {
+      "youtube": "UC5UpUmoVlLx2jMbesfh3Y0g"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 30200,
+    "nick": "El tio Skyline",
+    "unico": "skylineracing",
+    "videos": 144,
+    "handle": "SkylineRacing",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "se llama «El tio Skyline»",
+    "previo": 0
+  },
+  {
+    "id": "sofimartinez",
+    "name": "Sofi Martínez",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "SofiMartínez"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "solofutbolmemes",
+    "name": "Solo Fútbol Memes",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "SoloFútbolMemes"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "solowrestling-es",
+    "name": "SoloWrestling",
+    "category": "creadores_wwe",
+    "handles": {
+      "twitter": "solowrestling",
+      "youtube": "UC53gtIkOFfcrarBmIZBvcCA",
+      "instagram": "solowrestling_oficial"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 124,
+    "nick": "Wrestling",
+    "unico": "solowrestling",
+    "videos": 165,
+    "handle": "solowrestling",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 124 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "sportmaniaticos",
+    "name": "Sportmaniáticos",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "Sportmaniáticos"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "spursito",
+    "name": "Spursito",
+    "category": "creadores",
+    "handles": {
+      "twitch": "spursito",
+      "twitter": "Spursito",
+      "youtube": "UCTbi__ayOOaw8YQG-UK9TdQ"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 1,
+    "nick": "snjs",
+    "unico": "spursito",
+    "videos": 0,
+    "handle": "Spursito",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «snjs»",
+    "previo": 1
+  },
+  {
+    "id": "superluchas-wwe",
+    "name": "Superluchas",
+    "category": "creadores_wwe",
+    "handles": {
+      "twitter": "Superluchas",
+      "youtube": "UCyUVrodW-gpHsl2WRiyMLfA",
+      "instagram": "superluchas"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 8,
+    "nick": "SuperLuchas",
+    "unico": "superluchas",
+    "videos": 0,
+    "handle": "superluchas",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 8 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "susana-guasch",
+    "name": "Susana Guasch",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "susanaguasch",
+      "sguasch",
+      "SusanaGuasch"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "tomasroncero",
+    "name": "Tomás Roncero",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "As_TomasRoncero",
+      "instagram": "as_tomasgroncero"
+    },
+    "estado": "OK",
+    "seguidores": 83500,
+    "nick": "Tomás Roncero",
+    "unico": "as_tomasroncero",
+    "videos": 46,
+    "handle": "As_TomasRoncero",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "tp-wrestling",
+    "name": "TP Wrestling",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "TPWrestling"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "troy-santiago-ufc",
+    "name": "Troy Santiago",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "TroySantiagoTV"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 8,
+    "nick": "troyyyyy:)",
+    "unico": "troysantiago",
+    "videos": 0,
+    "handle": "TroySantiago",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "se llama «troyyyyy:)»",
+    "previo": 0
+  },
+  {
+    "id": "ubaldoshow",
+    "name": "Ubaldo Show",
+    "category": "creadores",
+    "handles": null,
+    "estado": "DUDOSO",
+    "seguidores": 7,
+    "nick": "ubaldoshow",
+    "unico": "ubaldoshow",
+    "videos": 0,
+    "handle": "UbaldoShow",
+    "origen": "adivinado",
+    "dudoso": true,
+    "razon": "solo 7 seguidores",
+    "previo": 0
+  },
+  {
+    "id": "ligaufcchile",
+    "name": "UFC & Boxeo En Español",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "UFC&BoxeoEnEspañol"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "uke-wrestling",
+    "name": "Uke Wrestling",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "uke.wrestling",
+      "UkeWrestling"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "uhep-wrestling",
+    "name": "Último Hombre En Pie",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "uhep_podcast",
+      "ÚltimoHombreEnPie"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "venasfutboleras",
+    "name": "Venas Futboleras",
+    "category": "creadores",
+    "handles": null,
+    "estado": "OK",
+    "seguidores": 449800,
+    "nick": "Venas futboleras",
+    "unico": "venasfutboleras",
+    "videos": 3294,
+    "handle": "VenasFutboleras",
+    "origen": "adivinado",
+    "nivel": "seguro",
+    "previo": 456000
+  },
+  {
+    "id": "victor-davila-ufc",
+    "name": "Víctor Dávila",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "mastervic10",
+      "instagram": "victordavilaufc"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 60,
+    "nick": "mastervic",
+    "unico": "mastervic10",
+    "videos": 6,
+    "handle": "mastervic10",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "se llama «mastervic»",
+    "previo": 0
+  },
+  {
+    "id": "walter-queijeiro",
+    "name": "Walter Queijeiro",
+    "category": "periodistas",
+    "handles": {
+      "twitter": "wqueijeiro"
+    },
+    "estado": "OK",
+    "seguidores": 106400,
+    "nick": "Walter Queijeiro",
+    "unico": "wqueijeiro",
+    "videos": 269,
+    "handle": "wqueijeiro",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "warge-wargeadicto",
+    "name": "Warge",
+    "category": "creadores_wwe",
+    "handles": {
+      "twitter": "Wargeadicto",
+      "youtube": "UC3t8NLLbzTAD-GKXbvunEaw",
+      "instagram": "wargeadicto"
+    },
+    "estado": "OK",
+    "seguidores": 5803,
+    "nick": "Warge Pro Wrestling",
+    "unico": "wargeadicto",
+    "videos": 0,
+    "handle": "wargeadicto",
+    "origen": "anclado",
+    "nivel": "seguro",
+    "previo": 0
+  },
+  {
+    "id": "wrestlespanol",
+    "name": "Wrestling en Español",
+    "estado": "NO_ENCONTRADO",
+    "probados": [
+      "WrestlingEsp",
+      "WrestlingenEspañol"
+    ],
+    "previo": 0
+  },
+  {
+    "id": "xbuyer",
+    "name": "xBuyer",
+    "category": "creadores",
+    "handles": {
+      "twitch": "xbuyer_",
+      "twitter": "xBuyer_",
+      "youtube": "UCA0XgBQ2IWaYis9WUohXYiA"
+    },
+    "estado": "DUDOSO",
+    "seguidores": 61,
+    "nick": "xbuyer🐐",
+    "unico": "xbuyer_",
+    "videos": 15,
+    "handle": "xBuyer_",
+    "origen": "anclado",
+    "dudoso": true,
+    "razon": "solo 61 seguidores",
+    "previo": 634600
+  }
+]
