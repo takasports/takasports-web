@@ -1,0 +1,1101 @@
+[
+  {
+    "id": "adri-contreras",
+    "category": "creadores",
+    "name": "Adri Contreras",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "albertfabrega",
+    "category": "creadores",
+    "name": "Albert Fàbrega",
+    "wikidata": "Q119113175",
+    "desc": "mecánico de competición de automovilismo, reportero y presentador de televisión español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "alberto-edjogo",
+    "category": "periodistas",
+    "name": "Alberto Edjogo",
+    "wikidata": "Q4712008",
+    "desc": "futbolista ecuatoguineano",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "alfredo-duro",
+    "category": "periodistas",
+    "name": "Alfredo Duro",
+    "wikidata": "Q20652352",
+    "desc": "periodista deportivo",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "alfredo-martinez",
+    "category": "periodistas",
+    "name": "Alfredo Martínez",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "alina-moine",
+    "category": "periodistas",
+    "name": "Alina Moine",
+    "wikidata": "Q5668983",
+    "desc": "periodista deportiva y modelo argentina",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "alvaro-carrera-wwe",
+    "category": "periodistas",
+    "name": "Álvaro Carrera",
+    "wikidata": "Q110001765",
+    "desc": "futbolista español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "alvaro-morales",
+    "category": "periodistas",
+    "name": "Álvaro Morales",
+    "wikidata": "Q8075576",
+    "desc": "comentarista deportivo mexicano",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "andres-bermudez-ufc",
+    "category": "periodistas",
+    "name": "Andrés Bermúdez",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "angela-lerena",
+    "category": "periodistas",
+    "name": "Ángela Lerena",
+    "wikidata": "Q43253930",
+    "desc": "periodista deportiva argentina",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "antonio-casale",
+    "category": "periodistas",
+    "name": "Antonio Casale",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "arancha-rodriguez",
+    "category": "periodistas",
+    "name": "Arancha Rodríguez",
+    "wikidata": "Q122838765",
+    "desc": "periodista deportiva española",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "ariel-levy-wwe",
+    "category": "creadores_wwe",
+    "name": "Ariel Levy",
+    "wikidata": "Q5704066",
+    "desc": "actor y luchador profesional chileno",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "ariel-senosiain",
+    "category": "periodistas",
+    "name": "Ariel Senosiain",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "arquerosinguantes",
+    "category": "creadores",
+    "name": "Arquero Sin Guantes",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "beisbolplay",
+    "category": "creadores",
+    "name": "Béisbol Play",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "benitosdr",
+    "category": "creadores",
+    "name": "Benito SDR",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "boxeomx",
+    "category": "creadores",
+    "name": "Boxeo MX",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "bydiegox10",
+    "category": "creadores",
+    "name": "ByDiegoX10",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "carlos-velez",
+    "category": "periodistas",
+    "name": "Carlos Antonio Vélez",
+    "wikidata": "Q5749697",
+    "desc": "periodista deportivo colombiano",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "carlos-contreras-legaspi",
+    "category": "periodistas",
+    "name": "Carlos Contreras Legaspi",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "carlos-hermosillo",
+    "category": "periodistas",
+    "name": "Carlos Hermosillo",
+    "wikidata": "Q956498",
+    "desc": "exfutbolista, funcionario, político y comentarista mexicano",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "carlos-martinez-tv",
+    "category": "periodistas",
+    "name": "Carlos Martínez",
+    "wikidata": "Q2528896",
+    "desc": "futbolista español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "cesarlondono",
+    "category": "creadores",
+    "name": "César Londoño",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "christian-martinoli",
+    "category": "periodistas",
+    "name": "Christian Martinoli",
+    "wikidata": "Q5767488",
+    "desc": "periodista, actor de doblaje y narrador deportivo mexicano",
+    "estado": "CORREGIR",
+    "cambios": {
+      "instagram": "martinoliazteca"
+    }
+  },
+  {
+    "id": "christian-tetzpa",
+    "category": "periodistas",
+    "name": "Christian Tetzpa",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "cosasdelbasket",
+    "category": "creadores",
+    "name": "Cosas del Basket",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "cristobal-soria",
+    "category": "periodistas",
+    "name": "Cristóbal Soria",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "danidelasluchas",
+    "category": "creadores_wwe",
+    "name": "Dani la de las Luchas",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "danny-segura-mma",
+    "category": "periodistas",
+    "name": "Danny Segura",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "daviddelasheras",
+    "category": "creadores",
+    "name": "David de las Heras",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "faitelson",
+    "category": "creadores",
+    "name": "David Faitelson",
+    "wikidata": "Q3370704",
+    "desc": "periodista mexicano",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "david-suarez-creator",
+    "category": "creadores",
+    "name": "David Suárez",
+    "wikidata": "Q3018844",
+    "desc": "futbolista francés",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "davooxeneize",
+    "category": "creadores",
+    "name": "Davoo Xeneize",
+    "wikidata": "Q130354842",
+    "desc": "youtuber y streamer argentino",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "decabecita",
+    "category": "creadores",
+    "name": "De Cabecita",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "demas6basket",
+    "category": "creadores",
+    "name": "demas6Basket",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "diamante23",
+    "category": "creadores",
+    "name": "Diamante 23",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "diego-aranis-wwe",
+    "category": "creadores_wwe",
+    "name": "Diego Aranís",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "djmariio",
+    "category": "creadores",
+    "name": "DjMariio",
+    "wikidata": "Q108262328",
+    "desc": "youtuber, streamer y locutor español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "doberdan-mma",
+    "category": "creadores",
+    "name": "Doberdan",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "drafteados",
+    "category": "creadores",
+    "name": "Drafteados",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "edu-aguirre",
+    "category": "periodistas",
+    "name": "Edu Aguirre",
+    "wikidata": "Q139822238",
+    "desc": "",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "eduardo-bates-wwe",
+    "category": "creadores_wwe",
+    "name": "Eduardo Bates",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "efeuno",
+    "category": "creadores",
+    "name": "Efeuno (Víctor Abad)",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "futboleroec",
+    "category": "creadores",
+    "name": "El Futbolero Ecuador",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "erickosores",
+    "category": "creadores",
+    "name": "Erick Osores",
+    "wikidata": "Q113027271",
+    "desc": "periodista peruano",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "ezzequiel-creator",
+    "category": "creadores",
+    "name": "Ezzequiel",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "fabriuruguayo",
+    "category": "creadores",
+    "name": "Fabri Uruguayo",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "falbak-wwe",
+    "category": "creadores_wwe",
+    "name": "Falbak",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "federico-racchi",
+    "category": "creadores",
+    "name": "Federico Racchi",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "fernando-costilla-wwe",
+    "category": "periodistas",
+    "name": "Fernando Costilla",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "flavioazzaro",
+    "category": "creadores",
+    "name": "Flavio Azzaro",
+    "wikidata": "Q139806561",
+    "desc": "periodista deportivo argentino",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "frank-herrera",
+    "category": "creadores",
+    "name": "Frank Herrera",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "futbolcontemo",
+    "category": "creadores",
+    "name": "Fútbol con Temo",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "futbolenchileno",
+    "category": "creadores",
+    "name": "Fútbol En Chileno",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "futboltotal",
+    "category": "creadores",
+    "name": "Futbol Total",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "gaston-edul",
+    "category": "periodistas",
+    "name": "Gastón Edul",
+    "wikidata": "Q134083825",
+    "desc": "periodista argentino",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "gaston-tonga-reyno",
+    "category": "periodistas",
+    "name": "Gastón Reyno",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "gcnenespanol",
+    "category": "creadores",
+    "name": "GCN en Español",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "generacionmma",
+    "category": "creadores",
+    "name": "Generación MMA",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "gerardromero",
+    "category": "creadores",
+    "name": "Gerard Romero",
+    "wikidata": "Q112913293",
+    "desc": "periodista deportivo y 'streamer' español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "gerynna-sotelo",
+    "category": "creadores",
+    "name": "Gerynna Sotelo",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "gigantesbasket",
+    "category": "creadores",
+    "name": "Gigantes del Basket",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "guillembalague",
+    "category": "periodistas",
+    "name": "Guillem Balagué",
+    "wikidata": "Q5616094",
+    "desc": "periodista español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "hablemosdef1",
+    "category": "creadores",
+    "name": "Hablemos de F1",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "hablemosmmachannel",
+    "category": "creadores",
+    "name": "HablemosMMA",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "helenacondis",
+    "category": "periodistas",
+    "name": "Helena Condis",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "horacio-pagani",
+    "category": "periodistas",
+    "name": "Horacio Pagani",
+    "wikidata": "Q3140492",
+    "desc": "periodista deportivo argentino",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "hugo-savinovich",
+    "category": "periodistas",
+    "name": "Hugo Savinovich",
+    "wikidata": "Q3648113",
+    "desc": "luchador profesional y comentarista de lucha libre ecuatoriano",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "impacto-mma",
+    "category": "creadores",
+    "name": "Impacto MMA",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "irati-prat-mma",
+    "category": "periodistas",
+    "name": "Irati Prat",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "iturralde-gonzalez",
+    "category": "periodistas",
+    "name": "Iturralde González",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "ivan-mejia",
+    "category": "periodistas",
+    "name": "Iván Mejía Álvarez",
+    "wikidata": "Q5923505",
+    "desc": "periodista deportivo colombiano",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "ivette-hernandez-ufc",
+    "category": "periodistas",
+    "name": "Ivette Hernández",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "javetas",
+    "category": "creadores",
+    "name": "Javetas en el arco",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "javier-herraez",
+    "category": "periodistas",
+    "name": "Javier Herráez",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "jerry-soto-wwe",
+    "category": "periodistas",
+    "name": "Jerry Soto",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "jordi-marti",
+    "category": "periodistas",
+    "name": "Jordi Martí",
+    "wikidata": "Q11928321",
+    "desc": "Spanish writer, journalist and politician",
+    "estado": "REVISION_MANUAL",
+    "cambios": {
+      "twitter": "jordimartifont_"
+    }
+  },
+  {
+    "id": "jorge-pietrasanta",
+    "category": "periodistas",
+    "name": "Jorge Pietrasanta",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "marc-bartra-periodista",
+    "category": "periodistas",
+    "name": "Jorge Valdano",
+    "wikidata": "Q298305",
+    "desc": "futbolista y entrenador argentino",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "jose-manuel-guillen",
+    "category": "periodistas",
+    "name": "José Manuel Guillén",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "joserra-espn",
+    "category": "periodistas",
+    "name": "José Ramón Fernández",
+    "wikidata": "Q9014706",
+    "desc": "periodista deportivo mexicano",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "josepdt11",
+    "category": "periodistas",
+    "name": "Josep de Tena",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "pedrerol",
+    "category": "periodistas",
+    "name": "Josep Pedrerol",
+    "wikidata": "Q9013308",
+    "desc": "periodista y presentador deportivo español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "jota-jordi",
+    "category": "periodistas",
+    "name": "Jota Jordi",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "juanfe-sanz",
+    "category": "periodistas",
+    "name": "Juanfe Sanz",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "juanma-castano",
+    "category": "periodistas",
+    "name": "Juanma Castaño",
+    "wikidata": "Q5199013",
+    "desc": "periodista español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "julio-pavoni",
+    "category": "periodistas",
+    "name": "Julio Pavoni",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "kikemateu",
+    "category": "periodistas",
+    "name": "Kike Mateu",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "kolmenero",
+    "category": "creadores",
+    "name": "KOlmenero (Álvaro Colmenero)",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "lafecha",
+    "category": "creadores",
+    "name": "La Fecha",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "laliguilla",
+    "category": "creadores",
+    "name": "La Liguilla",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "lamediainglesa",
+    "category": "creadores",
+    "name": "La Media Inglesa",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "las8esquinas",
+    "category": "creadores",
+    "name": "Las 8 Esquinas",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "latinlover",
+    "category": "creadores_wwe",
+    "name": "Latin Lover",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "laura-vizcaino",
+    "category": "creadores",
+    "name": "Laura Vizcaíno",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "elefutbol",
+    "category": "creadores",
+    "name": "LFútbol (Iker Ruiz del Barco)",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "lilian-garcia",
+    "category": "periodistas",
+    "name": "Lilian García",
+    "wikidata": "Q1057037",
+    "desc": "cantante española nacionalizada estadounidense (n. 1966)",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "losdisplicentes",
+    "category": "creadores",
+    "name": "Los Displicentes",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "lucha-central-podcast",
+    "category": "creadores_wwe",
+    "name": "Lucha Central",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "lucha-libre-online",
+    "category": "creadores_wwe",
+    "name": "Lucha Libre Online",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "luis-garcia-dr",
+    "category": "periodistas",
+    "name": "Luis García \"El Doctor\"",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "luquitasrodriguez",
+    "category": "creadores",
+    "name": "Luquitas Rodríguez",
+    "wikidata": "Q111743493",
+    "desc": "comediante y streamer argentino",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "manolo-lama",
+    "category": "periodistas",
+    "name": "Manolo Lama",
+    "wikidata": "Q737080",
+    "desc": "periodista deportivo español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "manu-carreno",
+    "category": "periodistas",
+    "name": "Manu Carreño",
+    "wikidata": "Q5991985",
+    "desc": "presentador español de radio y televisión",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "mariano-closs",
+    "category": "periodistas",
+    "name": "Mariano Closs",
+    "wikidata": "Q5997650",
+    "desc": "periodista y relator argentino",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "markitonavaja",
+    "category": "creadores",
+    "name": "Markito Navaja",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "mas-lucha-yt",
+    "category": "creadores_wwe",
+    "name": "Más Lucha",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "mateo-paramo",
+    "category": "creadores",
+    "name": "Mateo Páramo",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "amboade",
+    "category": "creadores",
+    "name": "Matías Amboade",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "memoriasfutbol",
+    "category": "creadores",
+    "name": "Memorias de Fútbol",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "miguel-perez-wwe",
+    "category": "periodistas",
+    "name": "Miguel Pérez",
+    "wikidata": "Q6844743",
+    "desc": "beisbolista venezolano",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "misterchip",
+    "category": "periodistas",
+    "name": "Míster Chip",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "popotillo",
+    "category": "creadores_wwe",
+    "name": "Mister Popotillo",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "mma-sin-limites",
+    "category": "creadores",
+    "name": "MMA Sin Límites",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "mmadictos",
+    "category": "creadores",
+    "name": "MMAdictos",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "morenabeltran",
+    "category": "creadores",
+    "name": "Morena Beltrán",
+    "wikidata": "Q109353015",
+    "desc": "periodista y presentadora argentina",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "mrpeet",
+    "category": "creadores",
+    "name": "Mr. Peet",
+    "wikidata": "Q111975290",
+    "desc": "locutor y periodista deportivo peruano",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "mundomaldini",
+    "category": "creadores",
+    "name": "Mundo Maldini",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "nachohernaez",
+    "category": "creadores",
+    "name": "NachoHernaez",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "f1-journalist",
+    "category": "periodistas",
+    "name": "Nico Rosberg",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "paco-gonzalez",
+    "category": "periodistas",
+    "name": "Paco González",
+    "wikidata": "Q3781191",
+    "desc": "locutor y presentador de radio y televisión español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "pipesierra",
+    "category": "creadores",
+    "name": "Pipe Sierra",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "planeta-wrestling-es",
+    "category": "creadores_wwe",
+    "name": "Planeta Wrestling",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "poldeportes",
+    "category": "creadores",
+    "name": "Pol Deportes",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "postunited",
+    "category": "creadores",
+    "name": "Post United",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "puntodebreak",
+    "category": "creadores",
+    "name": "Punto de Break",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "rafaescrig-futbol",
+    "category": "periodistas",
+    "name": "Rafa Escrig",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "rafaelescrig",
+    "category": "creadores",
+    "name": "Rafael Escrig",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "retrocalcioshirts",
+    "category": "creadores",
+    "name": "RetrocalcioShirts",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "rivaldios",
+    "category": "creadores",
+    "name": "Rivaldios",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "roberto-figueroa-aaa",
+    "category": "creadores_wwe",
+    "name": "Roberto Figueroa",
+    "wikidata": "Q140839089",
+    "desc": "Mexican journalist (2024)",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "rolsogames-wwe",
+    "category": "creadores_wwe",
+    "name": "Rolso Games",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "rubigol",
+    "category": "creadores",
+    "name": "Rubigol",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "santoswrestling",
+    "category": "creadores_wwe",
+    "name": "Santos Wrestling Pty",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "sebastian-vignolo",
+    "category": "periodistas",
+    "name": "Sebastián Vignolo",
+    "wikidata": "Q6123009",
+    "desc": "periodista argentino",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "siro-lopez",
+    "category": "periodistas",
+    "name": "Siro López",
+    "wikidata": "Q16632149",
+    "desc": "periodista deportivo español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "sofimartinez",
+    "category": "creadores",
+    "name": "Sofi Martínez",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "solofutbolmemes",
+    "category": "creadores",
+    "name": "Solo Fútbol Memes",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "sebastian-martinez-wwe",
+    "category": "periodistas",
+    "name": "Solo Wrestling",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "solowrestling-es",
+    "category": "creadores_wwe",
+    "name": "SoloWrestling",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "soyalekay",
+    "category": "creadores_wwe",
+    "name": "Soyalekay",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "spursito",
+    "category": "creadores",
+    "name": "Spursito",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "superluchas-wwe",
+    "category": "creadores_wwe",
+    "name": "Superluchas",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "susana-guasch",
+    "category": "periodistas",
+    "name": "Susana Guasch",
+    "wikidata": "Q6136332",
+    "desc": "presentadora de televisión y periodista española",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "tomasroncero",
+    "category": "periodistas",
+    "name": "Tomás Roncero",
+    "wikidata": "Q6148632",
+    "desc": "periodista deportivo español",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "tp-wrestling",
+    "category": "creadores_wwe",
+    "name": "TP Wrestling",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "troy-santiago-ufc",
+    "category": "periodistas",
+    "name": "Troy Santiago",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "ubaldoshow",
+    "category": "creadores",
+    "name": "Ubaldo Show",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "ligaufcchile",
+    "category": "creadores",
+    "name": "UFC & Boxeo En Español",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "uke-wrestling",
+    "category": "creadores_wwe",
+    "name": "Uke Wrestling",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "uhep-wrestling",
+    "category": "creadores_wwe",
+    "name": "Último Hombre En Pie",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "venasfutboleras",
+    "category": "creadores",
+    "name": "Venas Futboleras",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "victor-davila-ufc",
+    "category": "periodistas",
+    "name": "Víctor Dávila",
+    "wikidata": "Q29995129",
+    "desc": "futbolista chileno",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "walter-queijeiro",
+    "category": "periodistas",
+    "name": "Walter Queijeiro",
+    "wikidata": "Q6166259",
+    "desc": "periodista argentino",
+    "estado": "OK",
+    "cambios": {}
+  },
+  {
+    "id": "warge-wargeadicto",
+    "category": "creadores_wwe",
+    "name": "Warge",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "wrestlespanol",
+    "category": "creadores_wwe",
+    "name": "Wrestling en Español",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "wwecucu",
+    "category": "creadores_wwe",
+    "name": "WWECucu",
+    "estado": "SIN_FICHA"
+  },
+  {
+    "id": "xbuyer",
+    "category": "creadores",
+    "name": "xBuyer",
+    "estado": "SIN_FICHA"
+  }
+]

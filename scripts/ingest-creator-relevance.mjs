@@ -55,7 +55,7 @@ const APPLY = process.argv.includes('--apply')
 if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('Missing SUPABASE keys'); process.exit(1) }
 if (!YT_KEY) { console.error('Falta YOUTUBE_API_KEY — sin ella no hay relevancia que calcular'); process.exit(1) }
 
-const CATEGORIES = ['creadores', 'creadores_wwe']
+const CATEGORIES = ['creadores', 'creadores_wwe', 'periodistas']
 const NEUTRAL = 55        // sin canal de YouTube: ni premio ni castigo
 const PIVOT   = 0.05      // ratio "normal": mediana ≈ 5% de los suscriptores
 const FLOOR   = 45

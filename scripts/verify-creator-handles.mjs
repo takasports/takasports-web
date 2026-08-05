@@ -87,6 +87,34 @@ function parseFollowers(text) {
   return Math.round(n * mult)
 }
 
+// ── Detectar okupas y homónimos ──────────────────────────────────
+// Que el perfil exista y se llame igual NO significa que sea el nuestro:
+// @manololama tiene 1 seguidor y 0 publicaciones, @jorgevaldano es privado con
+// 13 y @clossmariano con 2. Los tres pasaban la comprobación de nombre con
+// sobresaliente. Lo que los delata es el perfil vacío o cerrado:
+//   · 0 publicaciones            → cuenta ocupada, nunca ha publicado
+//   · privado y < 5.000 seguidores → un particular, no la figura pública
+// Un perfil pequeño PERO público y con publicaciones sí puede ser real: hay
+// cuentas de nicho legítimas con 1.500 seguidores (Cosas del Basket).
+const MIN_SEGUIDORES_PRIVADO = 5000
+function esOkupa({ publicaciones, privado, seguidores }) {
+  if (publicaciones === 0) return 'perfil sin publicaciones'
+  if (privado && (seguidores ?? 0) < MIN_SEGUIDORES_PRIVADO) return `perfil privado con ${seguidores ?? 0} seguidores`
+  return null
+}
+
+// La meta description de Instagram es la fuente limpia: «1.061 seguidores,
+// 216 siguiendo, 32 publicaciones - Nombre (@handle) en Instagram».
+function parseMetaIG(desc) {
+  const n = (t) => { const v = parseFollowers(`${t} seguidores`); return v }
+  const seg = desc.match(/([\d.,]+\s*(?:millones|mill|mil|[MKB])?)\s*seguidores/i)?.[1]
+  const pub = desc.match(/([\d.,]+\s*(?:millones|mill|mil|[MKB])?)\s*publicaciones/i)?.[1]
+  return {
+    seguidores: seg ? n(seg) : null,
+    publicaciones: pub ? n(pub) : null,
+  }
+}
+
 async function checkProfile(page, net, handle) {
   const url = URL_OF[net](handle)
   try {
@@ -103,7 +131,12 @@ async function checkProfile(page, net, handle) {
       if (/no disponible|not available|Página no encontrada|Page Not Found/i.test(title)) return { estado: 'ROTO', motivo: 'perfil no disponible' }
       const nombre = title.match(/^(.*?)\s*\(@/)?.[1]?.trim() ?? null
       if (!nombre) return { estado: 'DUDOSO', motivo: `título inesperado: ${title.slice(0, 60)}` }
-      return { estado: 'OK', nombre, seguidores }
+      const meta = parseMetaIG(desc)
+      const privado = /perfil es privado|This account is private/i.test(body)
+      const segIG = meta.seguidores ?? seguidores
+      const okupa = esOkupa({ publicaciones: meta.publicaciones, privado, seguidores: segIG })
+      if (okupa) return { estado: 'OKUPA', nombre, seguidores: segIG, motivo: okupa }
+      return { estado: 'OK', nombre, seguidores: segIG, publicaciones: meta.publicaciones }
     }
 
     if (net === 'tiktok') {
@@ -134,7 +167,7 @@ async function main() {
     .from('ranking_entries')
     .select('id, name, category, handles')
     .eq('active', true)
-    .in('category', ['creadores', 'creadores_wwe'])
+    .in('category', ['creadores', 'creadores_wwe', 'periodistas'])
     .order('score_auto', { ascending: false, nullsFirst: false })
   if (error) throw error
 
@@ -163,7 +196,7 @@ async function main() {
     const estado = res.estado === 'OK' && coincide === false ? 'DUDOSO' : res.estado
     const row = { ...j, ...res, estado, coincide }
     report.push(row)
-    const mark = { OK: '✓', ROTO: '✗', DUDOSO: '?', NO_VERIFICABLE: '·' }[estado]
+    const mark = { OK: '✓', ROTO: '✗', DUDOSO: '?', OKUPA: '⛔', NO_VERIFICABLE: '·' }[estado]
     console.log(
       `${String(i + 1).padStart(3)}/${work.length} ${mark} ${j.name.padEnd(24).slice(0, 24)} ${j.net.padEnd(9)} @${j.handle.padEnd(22).slice(0, 22)}` +
       `${res.nombre ? ` → «${res.nombre}»` : ''}${res.seguidores ? ` (${res.seguidores.toLocaleString('es-ES')})` : ''}${res.motivo ? ` — ${res.motivo}` : ''}`,
@@ -177,6 +210,7 @@ async function main() {
   console.log(`  ✓ OK             ${by('OK').length}`)
   console.log(`  ✗ ROTO           ${by('ROTO').length}`)
   console.log(`  ? DUDOSO         ${by('DUDOSO').length}`)
+  console.log(`  ⛔ OKUPA          ${by('OKUPA').length}  (perfil de otra persona — se desancla)`)
   console.log(`  · NO VERIFICABLE ${by('NO_VERIFICABLE').length}`)
 
   // ── Guardar seguidores REALES ──────────────────────────────────
@@ -191,6 +225,21 @@ async function main() {
       if (!porCreador.has(r.id)) porCreador.set(r.id, {})
       porCreador.get(r.id)[COL[r.net]] = r.seguidores
     }
+    // Desanclar los perfiles okupados: dejar el enlace apuntando a un
+    // desconocido es peor que no tener enlace, y su cifra de seguidores
+    // envenenaba la nota de audiencia.
+    let desanclados = 0
+    for (const r of report.filter(x => x.estado === 'OKUPA')) {
+      const { data: fila } = await sb.from('ranking_entries').select('handles, category').eq('id', r.id).limit(1).maybeSingle()
+      if (!fila) continue
+      const h = { ...(fila.handles ?? {}) }
+      delete h[r.net]
+      // PK compuesta (id, category): filtrar por las dos.
+      const { error: err } = await sb.from('ranking_entries').update({ handles: h }).eq('id', r.id).eq('category', fila.category)
+      if (!err) { desanclados++; console.log(`  ⛔ ${r.name} — ${r.net} @${r.handle} desanclado (${r.motivo})`) }
+    }
+    if (desanclados) console.log(`\n  Perfiles desanclados: ${desanclados}`)
+
     let ok = 0, fail = 0
     for (const [id, cols] of porCreador) {
       const { data: existe } = await sb.from('creator_raw_metrics').select('creator_id').eq('creator_id', id).maybeSingle()

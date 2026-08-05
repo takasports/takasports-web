@@ -49,7 +49,7 @@ const APPLY = process.argv.includes('--apply')
 if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('Missing SUPABASE keys'); process.exit(1) }
 if (!YT_KEY) { console.error('Falta YOUTUBE_API_KEY'); process.exit(1) }
 
-const CATEGORIES = ['creadores', 'creadores_wwe']
+const CATEGORIES = ['creadores', 'creadores_wwe', 'periodistas']
 const CHANNEL_ID_RE = /^UC[\w-]{22}$/
 
 const yt = (p, q) => `https://www.googleapis.com/youtube/v3/${p}?${q}&key=${YT_KEY}`

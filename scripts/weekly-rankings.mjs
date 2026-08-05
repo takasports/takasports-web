@@ -68,7 +68,15 @@ const STEPS = [
   // Después de TODOS los contextos: recorta a quien arrastre un contexto de
   // élite jugando en una liga modesta.
   ['Techo de contexto por nivel de liga',    'apply-league-context-cap.mjs'],
-  ['Periodistas — social reach (rend+ctx)',  'ingest-creator-social.mjs'],
+  // Los periodistas ya NO se puntúan aparte (migración 118): pasan por
+  // f_sync_creator_scores como cualquier creador, así que ingest-creator-social
+  // solo escribía factores que f_sync sobrescribía a continuación.
+  //
+  // Corroborar handles va PRIMERO: medir la audiencia de un perfil ajeno es
+  // peor que no medirla. @manololama (1 seguidor) y @jorgevaldano (privado, 13)
+  // pasaban por buenos porque el nombre del perfil coincidía.
+  ['Contenido — handles oficiales (Wikidata)', 'verify-handles-wikidata.mjs'],
+  ['Contenido — seguidores reales IG/TikTok',  'verify-creator-handles.mjs'],
   // Anclar va ANTES de la relevancia: sin canal no hay engagement que medir.
   ['Creadores — anclar canal de YouTube',    'anchor-creator-youtube.mjs'],
   ['Creadores — relevancia (engagement YT)', 'ingest-creator-relevance.mjs'],
