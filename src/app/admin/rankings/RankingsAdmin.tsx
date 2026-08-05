@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import ResearchPanel from './ResearchPanel'
 
 type Category =
   | 'jugadores' | 'jugadoras' | 'clubes' | 'clubes_femenino'
@@ -30,19 +31,23 @@ interface Entry {
   editorial_note: string | null
 }
 
+// Las categorías que SIGUEN vivas. 'entrenadores' está retirada
+// (RETIRED_CATEGORIES en curate-active-entries) y 'latam'/'concacaf' están
+// congeladas: se dejaron de curar, así que ofrecerlas para editar era invitar a
+// tocar datos que ningún proceso vuelve a mirar.
+//
+// El producto enseña TRES pistas (Deportistas · Equipos · Contenido); estas son
+// las categorías de base que las alimentan.
 const CATEGORIES: { id: Category; label: string }[] = [
   { id: 'jugadores',      label: 'Jugadores'      },
   { id: 'jugadoras',      label: 'Jugadoras'      },
+  { id: 'sub21',          label: 'Sub-21'         },
+  { id: 'luchadoras_ufc', label: 'UFC Fem.'       },
   { id: 'clubes',         label: 'Clubes'         },
   { id: 'clubes_femenino',label: 'Clubes Fem.'    },
-  { id: 'entrenadores',   label: 'Entrenadores'   },
   { id: 'creadores',      label: 'Creadores'      },
   { id: 'periodistas',    label: 'Periodistas'    },
-  { id: 'luchadoras_ufc', label: 'UFC Fem.'       },
   { id: 'creadores_wwe',  label: 'WWE'            },
-  { id: 'sub21',          label: 'Sub-21'         },
-  { id: 'latam',          label: 'LATAM'          },
-  { id: 'concacaf',       label: 'CONCACAF'       },
 ]
 
 const TREND_ICONS: Record<string, string> = {
@@ -114,18 +119,25 @@ function EditPanel({
     setSaving(false)
   }
 
+  // Retirada editorial. Escribe `suppressed`, NO `active`.
+  //
+  // El botón decía «permanente» pero solo apagaba `active`, que es propiedad de
+  // curate-active-entries y se recalcula entero cada domingo: quien retirabas
+  // reaparecía a los pocos días sin que nadie entendiera por qué. `suppressed`
+  // (migración 116) es la columna que ningún automatismo toca.
   async function toggleActive() {
     setSaving(true)
     setStatus('')
+    const readmitir = entry.active === false
     try {
-      const res = await fetch('/api/rankings/override', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const qs = new URLSearchParams({ id: entry.id, category: entry.category })
+      if (readmitir) qs.set('deshacer', '1')
+      const res = await fetch(`/api/rankings/entry?${qs}`, {
+        method: 'DELETE',
         credentials: 'same-origin',
-        body: JSON.stringify({ id: entry.id, category: entry.category, overrides: { active: !entry.active } }),
       })
       if (!res.ok) { const err = await res.json(); setStatus('Error: ' + (err.error ?? res.status)) }
-      else { setStatus(entry.active ? '✓ Desactivado' : '✓ Activado'); setTimeout(() => { onSaved(); onClose() }, 700) }
+      else { setStatus(readmitir ? '✓ Readmitido' : '✓ Retirado'); setTimeout(() => { onSaved(); onClose() }, 700) }
     } catch { setStatus('Error de red') }
     finally { setSaving(false) }
   }
@@ -369,6 +381,7 @@ function EntryRow({ entry, onRefresh }: { entry: Entry; onRefresh: () => void })
 
 // ── Componente principal ──────────────────────────────────────────────────
 export default function RankingsAdmin() {
+  const [vista, setVista]         = useState<'listado' | 'alta'>('listado')
   const [category, setCategory]   = useState<Category>('jugadores')
   const [entries,  setEntries]    = useState<Entry[]>([])
   const [loading,  setLoading]    = useState(false)
@@ -423,7 +436,30 @@ export default function RankingsAdmin() {
         </p>
       </div>
 
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto mb-5 flex gap-2">
+        {([['listado', 'Listado'], ['alta', '+ Alta por investigación']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setVista(id)}
+            className="px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all"
+            style={{
+              background: vista === id ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.04)',
+              color: vista === id ? '#C4B5FD' : '#5A5A72',
+              border: vista === id ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.07)',
+              cursor: 'pointer', fontFamily: 'var(--font-sport)',
+            }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {vista === 'alta' && (
+        <div className="max-w-5xl mx-auto">
+          <ResearchPanel />
+        </div>
+      )}
+
+      <div className="max-w-5xl mx-auto" style={{ display: vista === 'listado' ? undefined : 'none' }}>
         {/* Category tabs */}
         <div className="flex gap-1.5 overflow-x-auto scrollbar-hide mb-4 pb-1">
           {CATEGORIES.map(cat => (
