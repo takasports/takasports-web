@@ -119,6 +119,61 @@ export const BOARDS: PositionClubBoard[] = [
   { id: 'b46', formation: '4-2-3-1', clubs: { gk: 'Liverpool', lb: 'Internazionale', cb1: 'Lazio', cb2: 'Athletic Club', rb: 'Feyenoord', dm1: 'Real Betis', dm2: 'Juventus', lam: 'Tottenham', cam: 'Fiorentina', ram: 'Manchester United', st: 'Sporting CP' } },
   { id: 'b47', formation: '4-2-3-1', clubs: { gk: 'Arsenal', lb: 'Chelsea', cb1: 'Internazionale', cb2: 'Lazio', rb: 'Milan', dm1: 'Botafogo', dm2: 'Bayer Leverkusen', lam: 'Valencia', cam: 'Napoli', ram: 'Roma', st: 'Athletic Club' } },
   { id: 'b48', formation: '4-2-3-1', clubs: { gk: 'Manchester City', lb: 'West Ham', cb1: 'Real Sociedad', cb2: 'Juventus', rb: 'Newcastle', dm1: 'FC Barcelona', dm2: 'Corinthians', lam: 'Real Madrid', cam: 'Chelsea', ram: 'LA Galaxy', st: 'Aston Villa' } },
+
+  // ── Ampliación 2026-08-07 ──────────────────────────────────────
+  // Generados con `npx tsx scripts/gen-mionce-boards.ts 24 77` (cada celda
+  // con ≥2 jugadores reales, 11 clubes distintos por tablero) y filtrados
+  // contra los 48 de arriba. Se AÑADEN al final: los índices 0–47 no se
+  // tocan, porque las semanas anteriores al corte de rotación los resuelven
+  // por índice (ver LEGACY_BOARD_COUNT).
+  { id: 'b49', formation: '4-3-3', clubs: { gk: 'Atlético de Madrid', lb: 'Bayer Leverkusen', cb1: 'Milan', cb2: 'Chelsea', rb: 'Lazio', cm1: 'Marsella', cm2: 'Manchester United', cm3: 'Real Madrid', lw: 'Arsenal', st: 'Crystal Palace', rw: 'Athletic Club' } },
+  { id: 'b50', formation: '4-3-3', clubs: { gk: 'Juventus', lb: 'Marsella', cb1: 'Everton', cb2: 'Villarreal', rb: 'Napoli', cm1: 'Lazio', cm2: 'Paris Saint-Germain', cm3: 'Internazionale', lw: 'Tottenham', st: 'Benfica', rw: 'Galatasaray' } },
+  { id: 'b51', formation: '4-3-3', clubs: { gk: 'Juventus', lb: 'Internazionale', cb1: 'Atlético de Madrid', cb2: 'Villarreal', rb: 'Bayer Leverkusen', cm1: 'Bayern Múnich', cm2: 'Manchester United', cm3: 'Milan', lw: 'Benfica', st: 'Borussia Dortmund', rw: 'Sampdoria' } },
+  { id: 'b52', formation: '4-3-3', clubs: { gk: 'Roma', lb: 'Stuttgart', cb1: 'Chelsea', cb2: 'Real Sociedad', rb: 'Napoli', cm1: 'FC Barcelona', cm2: 'Tottenham', cm3: 'Sampdoria', lw: 'Manchester City', st: 'Everton', rw: 'Aston Villa' } },
+  { id: 'b53', formation: '4-3-3', clubs: { gk: 'Manchester United', lb: 'FC Barcelona', cb1: 'Tottenham', cb2: 'Manchester City', rb: 'Feyenoord', cm1: 'LA Galaxy', cm2: 'Liverpool', cm3: 'Fiorentina', lw: 'Newcastle', st: 'River Plate', rw: 'Arsenal' } },
+  { id: 'b54', formation: '4-3-3', clubs: { gk: 'Chelsea', lb: 'Tottenham', cb1: 'Roma', cb2: 'Bayern Múnich', rb: 'Manchester City', cm1: 'Internazionale', cm2: 'LA Galaxy', cm3: 'Borussia Dortmund', lw: 'Fiorentina', st: 'Stuttgart', rw: 'Bayer Leverkusen' } },
+  { id: 'b55', formation: '4-3-3', clubs: { gk: 'Real Madrid', lb: 'Tottenham', cb1: 'Bayer Leverkusen', cb2: 'Villarreal', rb: 'Manchester United', cm1: 'Chelsea', cm2: 'River Plate', cm3: 'Milan', lw: 'Everton', st: 'Valencia', rw: 'Crystal Palace' } },
+  { id: 'b56', formation: '4-3-3', clubs: { gk: 'Manchester United', lb: 'Liverpool', cb1: 'Real Sociedad', cb2: 'Borussia Dortmund', rb: 'Arsenal', cm1: 'Bayern Múnich', cm2: 'Chelsea', cm3: 'River Plate', lw: 'Sampdoria', st: 'Tottenham', rw: 'Marsella' } },
+  { id: 'b57', formation: '4-3-3', clubs: { gk: 'FC Barcelona', lb: 'Atlético de Madrid', cb1: 'Bayer Leverkusen', cb2: 'Manchester United', rb: 'Villarreal', cm1: 'Bayern Múnich', cm2: 'Manchester City', cm3: 'Paris Saint-Germain', lw: 'Real Madrid', st: 'Real Betis', rw: 'Athletic Club' } },
+  { id: 'b58', formation: '4-3-3', clubs: { gk: 'Real Madrid', lb: 'Roma', cb1: 'Juventus', cb2: 'Villarreal', rb: 'RB Leipzig', cm1: 'Lazio', cm2: 'Milan', cm3: 'Bayer Leverkusen', lw: 'LA Galaxy', st: 'Manchester United', rw: 'Everton' } },
+  { id: 'b59', formation: '4-3-3', clubs: { gk: 'FC Barcelona', lb: 'Borussia Dortmund', cb1: 'Everton', cb2: 'Chelsea', rb: 'Mónaco', cm1: 'Manchester United', cm2: 'LA Galaxy', cm3: 'Real Madrid', lw: 'Marsella', st: 'Bayern Múnich', rw: 'Stuttgart' } },
+  { id: 'b60', formation: '4-3-3', clubs: { gk: 'Paris Saint-Germain', lb: 'Villarreal', cb1: 'Real Madrid', cb2: 'Lazio', rb: 'Manchester United', cm1: 'FC Barcelona', cm2: 'Mónaco', cm3: 'Marsella', lw: 'Newcastle', st: 'River Plate', rw: 'Crystal Palace' } },
+  { id: 'b61', formation: '4-3-3', clubs: { gk: 'Bayern Múnich', lb: 'Newcastle', cb1: 'Stuttgart', cb2: 'Marsella', rb: 'Villarreal', cm1: 'Lazio', cm2: 'Manchester City', cm3: 'Manchester United', lw: 'Feyenoord', st: 'Chelsea', rw: 'Borussia Dortmund' } },
+  { id: 'b62', formation: '4-3-3', clubs: { gk: 'Atlético de Madrid', lb: 'Marsella', cb1: 'Mónaco', cb2: 'Athletic Club', rb: 'Feyenoord', cm1: 'Real Sociedad', cm2: 'Roma', cm3: 'Borussia Dortmund', lw: 'Sampdoria', st: 'Liverpool', rw: 'Valencia' } },
+  { id: 'b63', formation: '4-3-3', clubs: { gk: 'Arsenal', lb: 'Lazio', cb1: 'Real Sociedad', cb2: 'Napoli', rb: 'Real Madrid', cm1: 'Internazionale', cm2: 'Manchester United', cm3: 'Atlético de Madrid', lw: 'Sampdoria', st: 'Liverpool', rw: 'Mónaco' } },
+  { id: 'b64', formation: '4-3-3', clubs: { gk: 'Aston Villa', lb: 'Marsella', cb1: 'Manchester City', cb2: 'Chelsea', rb: 'Bayern Múnich', cm1: 'Tottenham', cm2: 'Liverpool', cm3: 'Paris Saint-Germain', lw: 'Real Betis', st: 'RB Leipzig', rw: 'Galatasaray' } },
+  { id: 'b65', formation: '4-3-3', clubs: { gk: 'Manchester City', lb: 'Marsella', cb1: 'Stuttgart', cb2: 'Internazionale', rb: 'West Ham', cm1: 'Borussia Dortmund', cm2: 'Manchester United', cm3: 'Real Madrid', lw: 'Napoli', st: 'Sporting CP', rw: 'Lazio' } },
+  { id: 'b66', formation: '4-3-3', clubs: { gk: 'Paris Saint-Germain', lb: 'Real Sociedad', cb1: 'West Ham', cb2: 'Internazionale', rb: 'Manchester City', cm1: 'Villarreal', cm2: 'Lazio', cm3: 'Roma', lw: 'Mónaco', st: 'LA Galaxy', rw: 'Fiorentina' } },
+  { id: 'b67', formation: '4-3-3', clubs: { gk: 'Bayern Múnich', lb: 'Lazio', cb1: 'West Ham', cb2: 'Feyenoord', rb: 'Newcastle', cm1: 'Mónaco', cm2: 'Marsella', cm3: 'LA Galaxy', lw: 'Fiorentina', st: 'Internazionale', rw: 'Real Betis' } },
+  { id: 'b68', formation: '4-3-3', clubs: { gk: 'Arsenal', lb: 'Newcastle', cb1: 'Feyenoord', cb2: 'Borussia Dortmund', rb: 'Lazio', cm1: 'Paris Saint-Germain', cm2: 'Real Sociedad', cm3: 'Bayern Múnich', lw: 'Aston Villa', st: 'Tottenham', rw: 'River Plate' } },
+  { id: 'b69', formation: '4-3-3', clubs: { gk: 'Chelsea', lb: 'Feyenoord', cb1: 'Borussia Dortmund', cb2: 'Tottenham', rb: 'Stuttgart', cm1: 'Atlético de Madrid', cm2: 'Real Betis', cm3: 'Real Madrid', lw: 'Roma', st: 'West Ham', rw: 'Manchester United' } },
+  { id: 'b70', formation: '4-3-3', clubs: { gk: 'FC Barcelona', lb: 'Feyenoord', cb1: 'Villarreal', cb2: 'Stuttgart', rb: 'Aston Villa', cm1: 'Mónaco', cm2: 'Manchester City', cm3: 'Marsella', lw: 'Paris Saint-Germain', st: 'Tottenham', rw: 'Athletic Club' } },
+  { id: 'b71', formation: '4-3-3', clubs: { gk: 'Manchester United', lb: 'Chelsea', cb1: 'Milan', cb2: 'Manchester City', rb: 'Real Madrid', cm1: 'Bayer Leverkusen', cm2: 'Villarreal', cm3: 'Liverpool', lw: 'Roma', st: 'Napoli', rw: 'Mónaco' } },
+  { id: 'b72', formation: '4-3-3', clubs: { gk: 'Juventus', lb: 'Real Madrid', cb1: 'Bayer Leverkusen', cb2: 'Atlético de Madrid', rb: 'Manchester City', cm1: 'Valencia', cm2: 'Napoli', cm3: 'Roma', lw: 'Atalanta', st: 'RB Leipzig', rw: 'Aston Villa' } },
+  { id: 'b73', formation: '4-4-2', clubs: { gk: 'FC Barcelona', lb: 'Internazionale', cb1: 'Paris Saint-Germain', cb2: 'Newcastle', rb: 'Everton', lm: 'Valencia', cm1: 'Roma', cm2: 'Juventus', rm: 'Real Sociedad', st1: 'Stuttgart', st2: 'Fiorentina' } },
+  { id: 'b74', formation: '4-4-2', clubs: { gk: 'Liverpool', lb: 'Lazio', cb1: 'Celtic', cb2: 'Feyenoord', rb: 'Chelsea', lm: 'Valencia', cm1: 'Real Madrid', cm2: 'FC Barcelona', rm: 'Napoli', st1: 'Mónaco', st2: 'Sporting CP' } },
+  { id: 'b75', formation: '4-4-2', clubs: { gk: 'Athletic Club', lb: 'Real Sociedad', cb1: 'Paris Saint-Germain', cb2: 'Celtic', rb: 'Manchester United', lm: 'Internazionale', cm1: 'Atlético de Madrid', cm2: 'Marsella', rm: 'Manchester City', st1: 'Feyenoord', st2: 'Fiorentina' } },
+  { id: 'b76', formation: '4-4-2', clubs: { gk: 'Manchester United', lb: 'Manchester City', cb1: 'Chelsea', cb2: 'Everton', rb: 'Feyenoord', lm: 'Fiorentina', cm1: 'Napoli', cm2: 'Atlético de Madrid', rm: 'Roma', st1: 'Tottenham', st2: 'Real Betis' } },
+  { id: 'b77', formation: '4-4-2', clubs: { gk: 'Liverpool', lb: 'Bayer Leverkusen', cb1: 'Lazio', cb2: 'Arsenal', rb: 'Manchester United', lm: 'Real Madrid', cm1: 'River Plate', cm2: 'Mónaco', rm: 'LA Galaxy', st1: 'Bayern Múnich', st2: 'Manchester City' } },
+  { id: 'b78', formation: '4-4-2', clubs: { gk: 'Aston Villa', lb: 'Real Sociedad', cb1: 'Newcastle', cb2: 'Paris Saint-Germain', rb: 'Villarreal', lm: 'Juventus', cm1: 'Liverpool', cm2: 'Atlético de Madrid', rm: 'Internazionale', st1: 'Stuttgart', st2: 'Marsella' } },
+  { id: 'b79', formation: '4-4-2', clubs: { gk: 'Roma', lb: 'Celtic', cb1: 'Atlético de Madrid', cb2: 'FC Barcelona', rb: 'Newcastle', lm: 'Real Betis', cm1: 'Liverpool', cm2: 'Borussia Dortmund', rm: 'Botafogo', st1: 'Manchester United', st2: 'Crystal Palace' } },
+  { id: 'b80', formation: '4-4-2', clubs: { gk: 'Manchester United', lb: 'Chelsea', cb1: 'Liverpool', cb2: 'Bayer Leverkusen', rb: 'Celtic', lm: 'Real Betis', cm1: 'Villarreal', cm2: 'Manchester City', rm: 'Paris Saint-Germain', st1: 'Internazionale', st2: 'Tottenham' } },
+  { id: 'b81', formation: '4-4-2', clubs: { gk: 'Roma', lb: 'Manchester City', cb1: 'Tottenham', cb2: 'Everton', rb: 'Aston Villa', lm: 'Lazio', cm1: 'Bayer Leverkusen', cm2: 'Juventus', rm: 'Real Madrid', st1: 'RB Leipzig', st2: 'Feyenoord' } },
+  { id: 'b82', formation: '4-4-2', clubs: { gk: 'Paris Saint-Germain', lb: 'Celtic', cb1: 'Stuttgart', cb2: 'Internazionale', rb: 'Bayern Múnich', lm: 'Arsenal', cm1: 'Bayer Leverkusen', cm2: 'Chelsea', rm: 'Borussia Dortmund', st1: 'RB Leipzig', st2: 'Atlético de Madrid' } },
+  { id: 'b83', formation: '4-4-2', clubs: { gk: 'Manchester City', lb: 'Borussia Dortmund', cb1: 'Milan', cb2: 'Napoli', rb: 'Bayer Leverkusen', lm: 'Sampdoria', cm1: 'Villarreal', cm2: 'Real Sociedad', rm: 'Roma', st1: 'Everton', st2: 'Mónaco' } },
+  { id: 'b84', formation: '4-4-2', clubs: { gk: 'Internazionale', lb: 'Paris Saint-Germain', cb1: 'Liverpool', cb2: 'Manchester City', rb: 'Borussia Dortmund', lm: 'Bayern Múnich', cm1: 'Tottenham', cm2: 'Atlético de Madrid', rm: 'Marsella', st1: 'West Ham', st2: 'Napoli' } },
+  { id: 'b85', formation: '4-4-2', clubs: { gk: 'Manchester City', lb: 'Arsenal', cb1: 'Newcastle', cb2: 'Aston Villa', rb: 'Real Madrid', lm: 'Manchester United', cm1: 'Internazionale', cm2: 'Napoli', rm: 'Valencia', st1: 'Lazio', st2: 'Sampdoria' } },
+  { id: 'b86', formation: '4-4-2', clubs: { gk: 'Liverpool', lb: 'Mónaco', cb1: 'Internazionale', cb2: 'Marsella', rb: 'Tottenham', lm: 'Atlético de Madrid', cm1: 'Juventus', cm2: 'Bayer Leverkusen', rm: 'Valencia', st1: 'Manchester United', st2: 'Milan' } },
+  { id: 'b87', formation: '4-4-2', clubs: { gk: 'Tottenham', lb: 'Newcastle', cb1: 'Celtic', cb2: 'Manchester City', rb: 'RB Leipzig', lm: 'Milan', cm1: 'Manchester United', cm2: 'Botafogo', rm: 'Sampdoria', st1: 'Chelsea', st2: 'Bayern Múnich' } },
+  { id: 'b88', formation: '4-4-2', clubs: { gk: 'Paris Saint-Germain', lb: 'Milan', cb1: 'Internazionale', cb2: 'Villarreal', rb: 'Arsenal', lm: 'Napoli', cm1: 'Valencia', cm2: 'Liverpool', rm: 'Lazio', st1: 'Tottenham', st2: 'Bayern Múnich' } },
+  { id: 'b89', formation: '4-4-2', clubs: { gk: 'Internazionale', lb: 'RB Leipzig', cb1: 'Manchester United', cb2: 'Chelsea', rb: 'Celtic', lm: 'Atlético de Madrid', cm1: 'Marsella', cm2: 'Real Betis', rm: 'Corinthians', st1: 'Sampdoria', st2: 'Real Madrid' } },
+  { id: 'b90', formation: '4-4-2', clubs: { gk: 'Internazionale', lb: 'Arsenal', cb1: 'West Ham', cb2: 'Real Madrid', rb: 'Chelsea', lm: 'LA Galaxy', cm1: 'Tottenham', cm2: 'Bayer Leverkusen', rm: 'Marsella', st1: 'RB Leipzig', st2: 'Valencia' } },
+  { id: 'b91', formation: '4-4-2', clubs: { gk: 'Bayern Múnich', lb: 'Bayer Leverkusen', cb1: 'Real Madrid', cb2: 'Stuttgart', rb: 'Manchester City', lm: 'Chelsea', cm1: 'Marsella', cm2: 'River Plate', rm: 'Liverpool', st1: 'RB Leipzig', st2: 'Borussia Dortmund' } },
+  { id: 'b92', formation: '4-4-2', clubs: { gk: 'Real Madrid', lb: 'RB Leipzig', cb1: 'FC Barcelona', cb2: 'Arsenal', rb: 'Athletic Club', lm: 'Tottenham', cm1: 'Internazionale', cm2: 'Villarreal', rm: 'Bayer Leverkusen', st1: 'Aston Villa', st2: 'West Ham' } },
+  { id: 'b93', formation: '4-4-2', clubs: { gk: 'Arsenal', lb: 'Manchester City', cb1: 'Liverpool', cb2: 'FC Barcelona', rb: 'Chelsea', lm: 'Paris Saint-Germain', cm1: 'Real Sociedad', cm2: 'Fiorentina', rm: 'Marsella', st1: 'Galatasaray', st2: 'West Ham' } },
+  { id: 'b94', formation: '4-4-2', clubs: { gk: 'Internazionale', lb: 'Stuttgart', cb1: 'West Ham', cb2: 'Roma', rb: 'Chelsea', lm: 'Bayern Múnich', cm1: 'FC Barcelona', cm2: 'Villarreal', rm: 'Botafogo', st1: 'Crystal Palace', st2: 'Feyenoord' } },
+  { id: 'b95', formation: '4-4-2', clubs: { gk: 'Internazionale', lb: 'Celtic', cb1: 'Arsenal', cb2: 'Villarreal', rb: 'Everton', lm: 'Manchester United', cm1: 'Paris Saint-Germain', cm2: 'Lazio', rm: 'Liverpool', st1: 'Athletic Club', st2: 'Juventus' } },
+  { id: 'b96', formation: '4-4-2', clubs: { gk: 'Roma', lb: 'Tottenham', cb1: 'Mónaco', cb2: 'Newcastle', rb: 'Manchester United', lm: 'Sampdoria', cm1: 'Juventus', cm2: 'Atlético de Madrid', rm: 'LA Galaxy', st1: 'Athletic Club', st2: 'Stuttgart' } },
 ]
 
 // Convierte un tablero en un Challenge: cada slot recibe un tag de club con match
@@ -184,8 +239,14 @@ export function boardIndexForWeek(key: string): number {
   const m = /^(\d{4})-W(\d{2})$/.exec(key)
   if (!m) return 0
   const rand = mulberry32(Number(m[1]) * 100 + Number(m[2]))
-  return Math.floor(rand() * BOARDS.length)
+  return Math.floor(rand() * LEGACY_BOARD_COUNT)
 }
+
+/** Tamaño del catálogo cuando se jugaba con la fórmula vieja. Clavado: si
+ *  escalara con BOARDS.length, ampliar el catálogo le cambiaría el tablero a
+ *  quien tenga el once a medias en la semana en curso. Los tableros 0–47
+ *  tampoco deben reordenarse. */
+const LEGACY_BOARD_COUNT = 48
 
 export function getWeeklyChallenge(d: Date = new Date()): { challenge: Challenge; week: IsoWeek } {
   const week = getIsoWeek(d)

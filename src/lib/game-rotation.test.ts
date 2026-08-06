@@ -79,8 +79,19 @@ describe('Mi Once · rotación semanal', () => {
     ...Array.from({ length: 52 }, (_, i) => boardIndexForWeek(weekISO(2027, 1 + i))),
   ]
 
-  it('en un año usa casi todos los tableros (antes: 27 de 48)', () => {
-    expect(new Set(seq.slice(0, 52)).size).toBeGreaterThanOrEqual(BOARDS.length - 2)
+  it('un año entero sin repetir tablero (antes: 27 de 48, con repeticiones)', () => {
+    const year = seq.slice(0, 52)
+    expect(new Set(year).size).toBe(year.length)
+  })
+
+  it('a la vuelta han salido TODOS los tableros del catálogo', () => {
+    // Tres años de semanas reales (no las mismas 52 recicladas, que nunca
+    // podrían dar más de 52 tableros distintos).
+    const long: number[] = []
+    for (const year of [2027, 2028, 2029]) {
+      for (let w = 1; w <= 52; w++) long.push(boardIndexForWeek(weekISO(year, w)))
+    }
+    expect(new Set(long).size).toBe(BOARDS.length)
   })
 
   it('no repite tablero hasta pasada media vuelta', () => {
