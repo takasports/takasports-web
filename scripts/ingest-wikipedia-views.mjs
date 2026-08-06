@@ -101,7 +101,14 @@ function combineViews(enMonthly, esMonthly) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
-async function fetchWithRetry(url, opts = {}, retries = 2) {
+// El 429 de Wikimedia no se arregla insistiendo rápido: hay que esperar de
+// verdad. Con 3 intentos y esperas de 3/6/9 s fallaba la mitad de la tanda —
+// 68 de 130 clubes en una prueba. Cuatro intentos con 5/15/30/60 s dan tiempo
+// a que se abra la ventana, y como el paso ya va por tandas, ese rato extra
+// cabe de sobra en el presupuesto de 25 minutos.
+const ESPERA_429 = [5000, 15000, 30000, 60000]
+
+async function fetchWithRetry(url, opts = {}, retries = ESPERA_429.length - 1) {
   for (let i = 0; i <= retries; i++) {
     // Timeout duro por intento (15 s): una conexión colgada bloqueaba el cron
     // semanal entero hasta el límite de 15 min de execFileSync → ETIMEDOUT y
@@ -111,7 +118,7 @@ async function fetchWithRetry(url, opts = {}, retries = 2) {
     const timer = setTimeout(() => ac.abort(), 15000)
     try {
       const r = await fetch(url, { ...opts, signal: ac.signal })
-      if (r.status === 429) { await sleep(3000 * (i + 1)); continue }
+      if (r.status === 429) { await sleep(ESPERA_429[Math.min(i, ESPERA_429.length - 1)]); continue }
       return r
     } catch {
       if (i === retries) return null
@@ -197,13 +204,43 @@ async function main() {
   // (seguidores) que calcula f_sync_creator_scores(), no fama en Wikipedia.
   const SKIP = new Set(['creadores', 'creadores_wwe'])
   const CLUBES = new Set(['clubes', 'clubes_femenino'])
-  const people = entries.filter(e => !SKIP.has(e.category) && (!SOLO_CLUBES || CLUBES.has(e.category)))
+  let people = entries.filter(e => !SKIP.has(e.category) && (!SOLO_CLUBES || CLUBES.has(e.category)))
   console.log(`  ${people.length} entradas a medir (de ${entries.length} activas)`)
 
   const { start, end } = dateRange()
   console.log(`  Rango: ${start} → ${end}`)
 
+  // ── POR QUÉ SE MIDE POR TANDAS ───────────────────────────────────
+  // Wikimedia limita por ráfaga aunque el cliente vaya identificado, y con los
+  // reintentos el ritmo real cae a ~0,45 entradas por segundo: las 1.517 activas
+  // tardan CASI UNA HORA. El orquestador mata cada paso a los 25 minutos, así
+  // que este NUNCA terminaba — el registro `ranking_ingest_runs` lo venía
+  // diciendo desde el 2 de agosto («❌ Wikipedia EN×ES») y nadie lo miraba.
+  // Consecuencia: 158 de 214 clubes llevaban semanas con el mediático en el
+  // suelo, no porque no tuvieran artículo, sino porque nunca les llegó el turno.
+  //
+  // La solución no es correr más —eso empeora el 429— sino medir por tandas y
+  // rotar: cada pasada mide a los que hace más tiempo que no se miden, y en dos
+  // o tres pasadas están todos. El mediático se mueve despacio; refrescarlo cada
+  // semana y media es de sobra. Mejor un factor completo con una semana de
+  // retraso que uno que no se calcula nunca.
+  const POR_TANDA = Number(process.argv[process.argv.indexOf('--tanda') + 1]) || 400
+  const MEDIDOS_PATH = path.join(__dirname, 'data', 'wiki-views-last-measured.json')
+  let MEDIDOS = {}
+  try { MEDIDOS = JSON.parse(readFileSync(MEDIDOS_PATH, 'utf8')) } catch {}
+
+  // Primero quien no se ha medido nunca, luego el más antiguo.
+  const porAntiguedad = [...people].sort((a, b) => {
+    const ta = MEDIDOS[`${a.id}|${a.category}`] ?? ''
+    const tb = MEDIDOS[`${b.id}|${b.category}`] ?? ''
+    return ta.localeCompare(tb)
+  })
+  const nuncaMedidos = porAntiguedad.filter(e => !MEDIDOS[`${e.id}|${e.category}`]).length
+  people = porAntiguedad.slice(0, POR_TANDA)
+  console.log(`  tanda de ${people.length} (de ${porAntiguedad.length}) · sin medir nunca: ${nuncaMedidos}`)
+
   const results = []
+  const erroresPorEntrada = []
   let searched = 0, notFound = 0, errors = 0
 
   console.log('\nProcessing Wikipedia lookups...')
@@ -213,7 +250,10 @@ async function main() {
   // semanal mata cada paso a los 15 → el mediático se perdía entero cada
   // semana. Wikimedia admite de sobra esta concurrencia para un cliente
   // identificado por User-Agent.
-  const CONCURRENCY = 6
+  // Seis en paralelo era lo que disparaba el 429: bajando a tres el ritmo real
+  // SUBE, porque se pierde menos tiempo en esperas de castigo. Se puede ajustar
+  // con --conc para experimentar sin tocar el fichero.
+  const CONCURRENCY = Number(process.argv[process.argv.indexOf('--conc') + 1]) || 3
 
   async function processOne(e) {
     // Título horneado por Wikidata > caché de búsquedas previas > búsqueda difusa.
@@ -252,7 +292,7 @@ async function main() {
     }
 
     const enViews = await fetchPageviews(titleEn, start, end, 'en.wikipedia').catch(() => null)
-    if (enViews === null) { errors++; return }
+    if (enViews === null) { errors++; erroresPorEntrada.push(`${e.id}|${e.category}`); return }
 
     // Español: título horneado si lo hay; si no, se prueba el MISMO título
     // inglés (la mayoría de artículos de personas se titulan igual en ambas).
@@ -290,6 +330,22 @@ async function main() {
     }
   }
   saveCache()
+  // Se anota a quien SÍ se pudo mirar, incluidos los que no tienen artículo —
+  // si no, los irresolubles volverían a encabezar la cola cada semana y la
+  // rotación no avanzaría nunca.
+  //
+  // Pero NO a quien falló por límite de peticiones: ese no se ha medido, solo
+  // se le ha rebotado. Marcarlo lo mandaba al final de la cola y su factor se
+  // quedaba en el suelo otra semana más, que es justo el agujero que esto viene
+  // a tapar. En la primera tanda de clubes fallaron así 94 de 214.
+  const ahora = new Date().toISOString()
+  const fallidos = new Set(erroresPorEntrada)
+  for (const e of people) {
+    if (fallidos.has(`${e.id}|${e.category}`)) continue
+    MEDIDOS[`${e.id}|${e.category}`] = ahora
+  }
+  if (fallidos.size) console.log(`  ${fallidos.size} sin medir por límite de peticiones — siguen los primeros de la cola`)
+  if (APPLY) writeFileSync(MEDIDOS_PATH, JSON.stringify(MEDIDOS, null, 0))
   console.log(`  caché de títulos: ${Object.keys(TITLE_CACHE).length} entradas`)
 
   results.sort((a, b) => b.views - a.views)
