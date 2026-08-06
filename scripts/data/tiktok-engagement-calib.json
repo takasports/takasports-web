@@ -1,0 +1,652 @@
+[
+ {
+  "id": "adri-contreras",
+  "name": "Adri Contreras",
+  "seg": 4900000,
+  "vid": 3189,
+  "hearts": 735100000,
+  "ratio": 0.04704308816659307,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "rivaldios",
+  "name": "Rivaldios",
+  "seg": 5200000,
+  "vid": 780,
+  "hearts": 247100000,
+  "ratio": 0.06092209072978304,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "albertfabrega",
+  "name": "Albert Fàbrega",
+  "seg": 299200,
+  "vid": 1043,
+  "hearts": 6300000,
+  "ratio": 0.020188063022646523,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "leoncitodelfut",
+  "name": "Leoncito del Fut",
+  "seg": 1900000,
+  "vid": 1376,
+  "hearts": 111300000,
+  "ratio": 0.0425719094247246,
+  "tieneYT": true,
+  "relevanciaYT": 88
+ },
+ {
+  "id": "efeuno",
+  "name": "Efeuno (Víctor Abad)",
+  "seg": 55600,
+  "vid": 71,
+  "hearts": 885300,
+  "ratio": 0.22426284324652954,
+  "tieneYT": true,
+  "relevanciaYT": 76.8
+ },
+ {
+  "id": "fanodric-podcast",
+  "name": "Fanodric Podcast",
+  "seg": 12900,
+  "vid": 118,
+  "hearts": 223400,
+  "ratio": 0.1467612665878334,
+  "tieneYT": true,
+  "relevanciaYT": 77.6
+ },
+ {
+  "id": "arquerosinguantes",
+  "name": "Arquero Sin Guantes",
+  "seg": 1000000,
+  "vid": 388,
+  "hearts": 25300000,
+  "ratio": 0.06520618556701031,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "javetas",
+  "name": "Javetas en el arco",
+  "seg": 7200000,
+  "vid": 590,
+  "hearts": 226800000,
+  "ratio": 0.053389830508474574,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "fabriuruguayo",
+  "name": "Fabri Uruguayo",
+  "seg": 283000,
+  "vid": 3935,
+  "hearts": 14700000,
+  "ratio": 0.013200371765572174,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "cosasdelbasket",
+  "name": "Cosas del Basket",
+  "seg": 1510,
+  "vid": 288,
+  "hearts": 58400,
+  "ratio": 0.13428991905813098,
+  "tieneYT": true,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "venasfutboleras",
+  "name": "Venas Futboleras",
+  "seg": 449800,
+  "vid": 3294,
+  "hearts": 22800000,
+  "ratio": 0.015388340982958626,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "doberdan-mma",
+  "name": "Doberdan",
+  "seg": 8451,
+  "vid": 278,
+  "hearts": 1200000,
+  "ratio": 0.5107734898343307,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "mateo-paramo",
+  "name": "Mateo Páramo",
+  "seg": 78600,
+  "vid": 835,
+  "hearts": 3300000,
+  "ratio": 0.05028111715500297,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "futbolcontemo",
+  "name": "Fútbol con Temo",
+  "seg": 3200000,
+  "vid": 8276,
+  "hearts": 325100000,
+  "ratio": 0.012275706863218945,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "markitonavaja",
+  "name": "Markito Navaja",
+  "seg": 4500000,
+  "vid": 1641,
+  "hearts": 136400000,
+  "ratio": 0.01847112194461372,
+  "tieneYT": true,
+  "relevanciaYT": 72.7
+ },
+ {
+  "id": "gerynna-sotelo",
+  "name": "Gerynna Sotelo",
+  "seg": 1500000,
+  "vid": 5915,
+  "hearts": 84900000,
+  "ratio": 0.009568892645815723,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "mma-sin-limites",
+  "name": "MMA Sin Límites",
+  "seg": 66500,
+  "vid": 374,
+  "hearts": 3300000,
+  "ratio": 0.13268465280849182,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "nachohernaez",
+  "name": "NachoHernaez",
+  "seg": 239500,
+  "vid": 5910,
+  "hearts": 23100000,
+  "ratio": 0.016319955914924283,
+  "tieneYT": true,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "postunited",
+  "name": "Post United",
+  "seg": 7000000,
+  "vid": 4069,
+  "hearts": 217200000,
+  "ratio": 0.007625601235824878,
+  "tieneYT": true,
+  "relevanciaYT": 62.7
+ },
+ {
+  "id": "gigantesbasket",
+  "name": "Gigantes del Basket",
+  "seg": 44200,
+  "vid": 2292,
+  "hearts": 2600000,
+  "ratio": 0.0256647161482394,
+  "tieneYT": true,
+  "relevanciaYT": 81
+ },
+ {
+  "id": "lamediainglesa",
+  "name": "La Media Inglesa",
+  "seg": 103700,
+  "vid": 1561,
+  "hearts": 5400000,
+  "ratio": 0.0333589291042448,
+  "tieneYT": true,
+  "relevanciaYT": 69.9
+ },
+ {
+  "id": "hablemosmmachannel",
+  "name": "HablemosMMA",
+  "seg": 32100,
+  "vid": 487,
+  "hearts": 1200000,
+  "ratio": 0.07676217160183461,
+  "tieneYT": true,
+  "relevanciaYT": 76.7
+ },
+ {
+  "id": "laura-vizcaino",
+  "name": "Laura Vizcaíno",
+  "seg": 285200,
+  "vid": 1637,
+  "hearts": 8800000,
+  "ratio": 0.018848833214385772,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "retrocalcioshirts",
+  "name": "RetrocalcioShirts",
+  "seg": 131100,
+  "vid": 789,
+  "hearts": 3200000,
+  "ratio": 0.03093643625789,
+  "tieneYT": true,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "mundomaldini",
+  "name": "Mundo Maldini",
+  "seg": 537400,
+  "vid": 1591,
+  "hearts": 19900000,
+  "ratio": 0.023274761246563466,
+  "tieneYT": true,
+  "relevanciaYT": 65.5
+ },
+ {
+  "id": "las8esquinas",
+  "name": "Las 8 Esquinas",
+  "seg": 4164,
+  "vid": 111,
+  "hearts": 360500,
+  "ratio": 0.7799586329845696,
+  "tieneYT": true,
+  "relevanciaYT": 69.3
+ },
+ {
+  "id": "ezzequiel-creator",
+  "name": "Ezzequiel",
+  "seg": 798900,
+  "vid": 687,
+  "hearts": 20200000,
+  "ratio": 0.036804609248925424,
+  "tieneYT": true,
+  "relevanciaYT": 65.8
+ },
+ {
+  "id": "luquitasrodriguez",
+  "name": "Luquitas Rodríguez",
+  "seg": 297100,
+  "vid": 645,
+  "hearts": 12100000,
+  "ratio": 0.06314267897166145,
+  "tieneYT": true,
+  "relevanciaYT": 73.8
+ },
+ {
+  "id": "rafaelescrig",
+  "name": "Rafael Escrig",
+  "seg": 196600,
+  "vid": 309,
+  "hearts": 6400000,
+  "ratio": 0.10535083474075464,
+  "tieneYT": true,
+  "relevanciaYT": 80.4
+ },
+ {
+  "id": "federico-racchi",
+  "name": "Federico Racchi",
+  "seg": 1400000,
+  "vid": 649,
+  "hearts": 50700000,
+  "ratio": 0.05580013207131851,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "gcnenespanol",
+  "name": "GCN en Español",
+  "seg": 14900,
+  "vid": 1297,
+  "hearts": 138800,
+  "ratio": 0.007182294712113136,
+  "tieneYT": true,
+  "relevanciaYT": 67.7
+ },
+ {
+  "id": "losdisplicentes",
+  "name": "Los Displicentes",
+  "seg": 38700,
+  "vid": 54,
+  "hearts": 272300,
+  "ratio": 0.13029955019619102,
+  "tieneYT": true,
+  "relevanciaYT": 75.4
+ },
+ {
+  "id": "hablemosdef1",
+  "name": "Hablemos de F1",
+  "seg": 417,
+  "vid": 5,
+  "hearts": 1590,
+  "ratio": 0.762589928057554,
+  "tieneYT": true,
+  "relevanciaYT": 67.2
+ },
+ {
+  "id": "elefutbol",
+  "name": "LFútbol (Iker Ruiz del Barco)",
+  "seg": 11000000,
+  "vid": 2381,
+  "hearts": 730600000,
+  "ratio": 0.027895078462067124,
+  "tieneYT": true,
+  "relevanciaYT": 86.2
+ },
+ {
+  "id": "davooxeneize",
+  "name": "Davoo Xeneize",
+  "seg": 3900000,
+  "vid": 1019,
+  "hearts": 132900000,
+  "ratio": 0.03344153393221107,
+  "tieneYT": true,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "frank-herrera",
+  "name": "Frank Herrera",
+  "seg": 1700000,
+  "vid": 1497,
+  "hearts": 74600000,
+  "ratio": 0.02931352901882196,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "demas6basket",
+  "name": "demas6Basket",
+  "seg": 189700,
+  "vid": 1784,
+  "hearts": 10800000,
+  "ratio": 0.03191255487186518,
+  "tieneYT": true,
+  "relevanciaYT": 75.4
+ },
+ {
+  "id": "david-suarez-creator",
+  "name": "David Suárez",
+  "seg": 5500000,
+  "vid": 6116,
+  "hearts": 644800000,
+  "ratio": 0.01916879719365004,
+  "tieneYT": true,
+  "relevanciaYT": 80.5
+ },
+ {
+  "id": "eduardo-bates-wwe",
+  "name": "Eduardo Bates",
+  "seg": 1200000,
+  "vid": 1816,
+  "hearts": 68900000,
+  "ratio": 0.031617107195301024,
+  "tieneYT": true,
+  "relevanciaYT": 66.8
+ },
+ {
+  "id": "roberto-figueroa-aaa",
+  "name": "Roberto Figueroa",
+  "seg": 4678,
+  "vid": 134,
+  "hearts": 39200,
+  "ratio": 0.06253469718530053,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "lucha-libre-online",
+  "name": "Lucha Libre Online",
+  "seg": 343800,
+  "vid": 3567,
+  "hearts": 14500000,
+  "ratio": 0.011823852968023572,
+  "tieneYT": true,
+  "relevanciaYT": 61.9
+ },
+ {
+  "id": "danidelasluchas",
+  "name": "Dani la de las Luchas",
+  "seg": 23800,
+  "vid": 215,
+  "hearts": 1100000,
+  "ratio": 0.21496970881375807,
+  "tieneYT": true,
+  "relevanciaYT": 88
+ },
+ {
+  "id": "soyalekay",
+  "name": "Soyalekay",
+  "seg": 1000000,
+  "vid": 1051,
+  "hearts": 51300000,
+  "ratio": 0.04881065651760229,
+  "tieneYT": true,
+  "relevanciaYT": 66.5
+ },
+ {
+  "id": "rolsogames-wwe",
+  "name": "Rolso Games",
+  "seg": 131400,
+  "vid": 1265,
+  "hearts": 9900000,
+  "ratio": 0.05955926146515783,
+  "tieneYT": true,
+  "relevanciaYT": 80.9
+ },
+ {
+  "id": "falbak-wwe",
+  "name": "Falbak",
+  "seg": 80800,
+  "vid": 841,
+  "hearts": 4400000,
+  "ratio": 0.06475082704465451,
+  "tieneYT": true,
+  "relevanciaYT": 72.8
+ },
+ {
+  "id": "wwecucu",
+  "name": "WWECucu",
+  "seg": 71100,
+  "vid": 2189,
+  "hearts": 3700000,
+  "ratio": 0.023773129809641483,
+  "tieneYT": true,
+  "relevanciaYT": 78.6
+ },
+ {
+  "id": "carlos-velez",
+  "name": "Carlos Antonio Vélez",
+  "seg": 55500,
+  "vid": 63,
+  "hearts": 397900,
+  "ratio": 0.1137995137995138,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "misterchip",
+  "name": "Míster Chip",
+  "seg": 660200,
+  "vid": 2079,
+  "hearts": 12800000,
+  "ratio": 0.009325668216913293,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "sebastian-vignolo",
+  "name": "Sebastián Vignolo",
+  "seg": 433800,
+  "vid": 617,
+  "hearts": 9100000,
+  "ratio": 0.033999042048969086,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "horacio-pagani",
+  "name": "Horacio Pagani",
+  "seg": 2011,
+  "vid": 5,
+  "hearts": 8172,
+  "ratio": 0.8127299850820487,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "alvaro-carrera-wwe",
+  "name": "Álvaro Carrera",
+  "seg": 1540,
+  "vid": 340,
+  "hearts": 64900,
+  "ratio": 0.12394957983193276,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "christian-tetzpa",
+  "name": "Christian Tetzpa",
+  "seg": 30800,
+  "vid": 95,
+  "hearts": 1300000,
+  "ratio": 0.44429254955570746,
+  "tieneYT": true,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "gaston-edul",
+  "name": "Gastón Edul",
+  "seg": 2100000,
+  "vid": 762,
+  "hearts": 102500000,
+  "ratio": 0.06405449318835146,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "helenacondis",
+  "name": "Helena Condis",
+  "seg": 3196,
+  "vid": 20,
+  "hearts": 78000,
+  "ratio": 1.2202753441802252,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "jorge-pietrasanta",
+  "name": "Jorge Pietrasanta",
+  "seg": 32600,
+  "vid": 136,
+  "hearts": 426300,
+  "ratio": 0.09615211115120895,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "josepdt11",
+  "name": "Josep de Tena",
+  "seg": 2600000,
+  "vid": 6497,
+  "hearts": 417100000,
+  "ratio": 0.024691869620298124,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "juanfe-sanz",
+  "name": "Juanfe Sanz",
+  "seg": 7065,
+  "vid": 27,
+  "hearts": 58700,
+  "ratio": 0.30772456816335086,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "gaston-tonga-reyno",
+  "name": "Gastón Reyno",
+  "seg": 179200,
+  "vid": 1000,
+  "hearts": 8600000,
+  "ratio": 0.04799107142857143,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "cristobal-soria",
+  "name": "Cristóbal Soria",
+  "seg": 1400000,
+  "vid": 546,
+  "hearts": 35900000,
+  "ratio": 0.04696493982208268,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "tomasroncero",
+  "name": "Tomás Roncero",
+  "seg": 83400,
+  "vid": 46,
+  "hearts": 330700,
+  "ratio": 0.08620060473360443,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "alfredo-duro",
+  "name": "Alfredo Duro",
+  "seg": 81800,
+  "vid": 335,
+  "hearts": 1500000,
+  "ratio": 0.05473853227748787,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "miguel-perez-wwe",
+  "name": "Miguel Pérez",
+  "seg": 1470,
+  "vid": 156,
+  "hearts": 16800,
+  "ratio": 0.07326007326007326,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "carlos-contreras-legaspi",
+  "name": "Carlos Contreras Legaspi",
+  "seg": 63200,
+  "vid": 376,
+  "hearts": 3600000,
+  "ratio": 0.15149474818206302,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "jota-jordi",
+  "name": "Jota Jordi",
+  "seg": 355400,
+  "vid": 201,
+  "hearts": 4700000,
+  "ratio": 0.0657937101213124,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ },
+ {
+  "id": "walter-queijeiro",
+  "name": "Walter Queijeiro",
+  "seg": 106400,
+  "vid": 269,
+  "hearts": 1200000,
+  "ratio": 0.04192637728149369,
+  "tieneYT": false,
+  "relevanciaYT": 55
+ }
+]

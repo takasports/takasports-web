@@ -46,14 +46,24 @@ const SLOPE       = 1.2    // pts de forma por punto de score ganado
 const FLOOR       = 58
 const CEIL        = 92
 
-// Snapshots anteriores a esta fecha NO se usan: durante julio de 2026 los scores
-// se movieron por recálculos manuales del sistema (rendimiento objetivo desde
-// ESPN, mediático bilingüe EN×ES, coeficiente de fuerza de liga en latam), no
-// porque los deportistas cambiaran de forma. Medir sobre ese tramo daba
-// disparates — Bonmatí y Miedema al suelo 58 por un cambio de fuente, Luis
-// Enrique a 89 por una recalibración. Hasta que haya 2+ snapshots limpios, la
-// Forma es neutra: mejor un factor honesto en 75 que uno que mide mis ediciones.
-const CLEAN_SINCE = '2026-07-28T00:00:00Z'
+// Snapshots anteriores a esta fecha NO se usan: son tramos en los que los
+// scores se movieron por recálculos del sistema, no porque nadie cambiara de
+// forma. Medir sobre ellos convierte el factor en un registro de mis ediciones.
+//
+// Julio de 2026 (rendimiento objetivo desde ESPN, mediático bilingüe EN×ES,
+// coeficiente de fuerza de liga) ya dejó a Bonmatí y Miedema en el suelo 58 por
+// un cambio de fuente y a Luis Enrique en 89 por una recalibración.
+//
+// 2026-08-06: se avanza la fecha otra vez. Entre el 2 y el 5 de agosto entraron
+// los techos cross-deporte, el rendimiento de clubes por nivel de liga y la
+// refundición de creadores, y la simulación lo cantaba: el bloque entero de la
+// WWE al suelo 58 y una fila de futbolistas latinoamericanos al techo 92. Nadie
+// cambió de forma en tres días; cambió la fórmula.
+//
+// Con esto la Forma sigue neutra hasta que haya DOS fotos tomadas con el método
+// ya estable: domingo 9 y miércoles 12 de agosto. Prefiero un factor honesto en
+// 75 durante una semana más que uno que ordena por mis commits.
+const CLEAN_SINCE = '2026-08-06T00:00:00Z'
 
 // Creadores: su narrativa_auto es "Relevancia", no forma. No se toca.
 const SKIP_CATEGORIES = ['creadores', 'creadores_wwe', 'periodistas']

@@ -76,17 +76,22 @@ const STEPS = [
   // peor que no medirla. @manololama (1 seguidor) y @jorgevaldano (privado, 13)
   // pasaban por buenos porque el nombre del perfil coincidía.
   ['Contenido — handles oficiales (Wikidata)', 'verify-handles-wikidata.mjs'],
-  // TikTok se lee por HTTP plano (su HTML trae followerCount en claro), así que
-  // resolver los que faltan no cuesta ni cuota ni navegador. Solo escribe los
-  // que confirma por nombre; los dudosos los deja en el informe.
   // Antes de buscar por nombre, mirar si el propio creador declara sus redes en
   // la descripción de su canal. Cuesta 1 unidad de cuota por cada 50 canales.
   ['Contenido — redes declaradas en YouTube',  'mine-handles-from-youtube.mjs'],
+  // TikTok se lee por HTTP plano (su HTML trae followerCount en claro), así que
+  // resolver los que faltan no cuesta ni cuota ni navegador. Solo escribe los
+  // que confirma por nombre; los dudosos los deja en el informe.
   ['Contenido — encontrar TikTok que faltan',  'resolve-tiktok-handles.mjs'],
   ['Contenido — seguidores reales IG/TikTok',  'verify-creator-handles.mjs'],
   // Anclar va ANTES de la relevancia: sin canal no hay engagement que medir.
   ['Creadores — anclar canal de YouTube',    'anchor-creator-youtube.mjs'],
   ['Creadores — relevancia (engagement YT)', 'ingest-creator-relevance.mjs'],
+  // Va DESPUÉS: rellena la relevancia de quien no tiene canal de YouTube, que
+  // eran 85 de 165 perfiles clavados en el valor neutro. Nunca pisa la de
+  // YouTube — esa mira los 10 últimos vídeos y la de TikTok la vida entera del
+  // perfil, así que la reciente gana.
+  ['Creadores — relevancia (engagement TikTok)', 'ingest-tiktok-engagement.mjs'],
   ['Wikipedia EN×ES (mediático)',            'ingest-wikipedia-views.mjs'],
   ['Forma (momentum del histórico)',         'ingest-narrativa-decay.mjs'],
   ['Techos cross-deporte (96/95)',           'apply-score-caps.mjs'],
