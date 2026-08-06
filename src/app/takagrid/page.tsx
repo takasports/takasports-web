@@ -12,6 +12,7 @@ import { getDailyPuzzle, isValidAnswer, getValidAnswers, type CellCoord, type Gr
 import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag, AlertIcon, CameraIcon, BoltIcon, LightbulbIcon } from '@/components/icons/GameIcons'
 import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
+import { scoreTakagrid } from '@/lib/game-scoring'
 import { madridParts, madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { reportPlay, claimMissions } from '@/lib/missions'
@@ -823,6 +824,8 @@ export default function TakaGridPage() {
   const [activeCell, setActiveCell] = useState<CellCoord | null>(null)
   const [showResult, setShowResult] = useState(false)
   const celebratedRef = useRef(false)
+  // Primer clic en una celda → alimenta duration_ms, el desempate del ranking.
+  const gridStartRef = useRef<number | null>(null)
   const [streakState, setStreakState] = useState<StreakState>({ streak: 0, bestStreak: 0, lastFinishedDate: '', history: [] })
   const [hardMode, setHardMode] = useState(false)
   const [pistaCell, setPistaCell] = useState<CellCoord | null>(null)
@@ -862,6 +865,7 @@ export default function TakaGridPage() {
 
   const handleCellClick = useCallback((row: 0|1|2, col: 0|1|2) => {
     if (finished || grid[row][col].locked) return
+    if (gridStartRef.current === null) gridStartRef.current = Date.now()
     // En modo "esperando pista", el siguiente click destapa la inicial en
     // lugar de abrir la búsqueda de jugador.
     if (awaitingPistaCell && !pistaCell) {
@@ -920,16 +924,23 @@ export default function TakaGridPage() {
           if (getSoundPref()) { ensureAudio(); winFanfare() }
         }
 
-        // Sync con backend unificado. payload.solved = bool[9] row-major.
+        // Sync con backend unificado.
+        //   · payload.picks  = playerId elegido por celda (row-major, null si
+        //     falló) → el SERVIDOR revalida cada uno contra el puzzle del día y
+        //     recalcula el score. Es lo que hace comparable a web y app.
+        //   · payload.solved = bool[9] row-major (se mantiene: lo consumen el
+        //     histórico y la tarifa de Liga Taka).
         const solvedArr = current.flat().map(c => c.playerId !== null)
+        const picks = current.flat().map(c => c.playerId)
         const period = currentDayISO()
-        const score = solvedCount * (hardMode ? 20 : 10)
+        const score = scoreTakagrid(solvedCount, hardMode)
         const completedMissions = reportPlay('takagrid', { score, solved: solvedCount })
         void recordPlay({
           gameId:  'takagrid',
           period,
           score,
-          payload: { solved: solvedArr, hardMode },
+          payload: { solved: solvedArr, picks, hardMode },
+          durationMs: gridStartRef.current ? Date.now() - gridStartRef.current : undefined,
         }).then(() => { void claimMissions(completedMissions) }).catch(() => { /* best-effort */ })
         trackGameEvent({ gameId: 'takagrid', event: 'completed', period, meta: { solved: solvedCount, hardMode } })
 

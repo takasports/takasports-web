@@ -8,6 +8,7 @@ import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import { TrophyIcon, FireIcon, ClapIcon, FlexIcon, BoltIcon, DiceIcon } from '@/components/icons/GameIcons'
 import { ensureAudio, sfx, SOUND_KEY, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
+import { CRACKQUIZ, scoreCrackquizAnswer as scoreForAnswer, type ScoreBreakdown } from '@/lib/game-scoring'
 import { madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { reportPlay, claimMissions } from '@/lib/missions'
@@ -17,11 +18,13 @@ import PostGameResultModal from '@/components/games/PostGameResultModal'
 // ── Constants ────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'ts_crackquiz_state'
-const QUESTION_TIME = 20        // seconds per question
-const QUESTIONS_PER_ROUND = 10  // questions per daily round
-const BASE_PTS = 10             // base points per correct answer
-const TIME_BONUS_MAX = 5        // max bonus points for fast answer
-const STREAK_BONUS_MAX = 5      // max bonus points for consecutive correct answers
+// La fórmula de puntuación es CANÓNICA y vive en @/lib/game-scoring: la misma
+// que aplica el servidor al registrar la partida y la que replica la app. No
+// duplicar constantes aquí — si divergen, el marcador de la UI miente respecto
+// al score que acaba en el ranking.
+const QUESTION_TIME:      number = CRACKQUIZ.QUESTION_TIME
+const QUESTIONS_PER_ROUND: number = CRACKQUIZ.QUESTIONS_PER_ROUND
+const STREAK_BONUS_MAX:   number = CRACKQUIZ.STREAK_BONUS_MAX
 const TIMER_WARN_AT = 5         // seconds at which the timer enters warning state
 
 // ── Types ────────────────────────────────────────────────────────
@@ -46,23 +49,7 @@ interface HistoryEntry {
 type GamePhase = 'idle' | 'playing' | 'result'
 
 // ── Score helpers ─────────────────────────────────────────────────
-
-interface ScoreBreakdown {
-  total: number
-  base: number
-  time: number
-  streak: number
-}
-
-// streakBefore = consecutive correct answers BEFORE this one
-function scoreForAnswer(secondsLeft: number, correct: boolean, streakBefore: number): ScoreBreakdown {
-  if (!correct) return { total: 0, base: 0, time: 0, streak: 0 }
-  const base = BASE_PTS
-  const time = Math.round((secondsLeft / QUESTION_TIME) * TIME_BONUS_MAX)
-  // Nth consecutive correct (N = streakBefore + 1): +1 from the 2nd, capped
-  const streak = Math.min(streakBefore, STREAK_BONUS_MAX)
-  return { total: base + time + streak, base, time, streak }
-}
+// scoreForAnswer = scoreCrackquizAnswer de @/lib/game-scoring (fuente única).
 
 // Calendar-day difference between two YYYY-MM-DD keys (toKey - fromKey)
 function dayDiff(fromKey: string, toKey: string): number {
@@ -788,7 +775,7 @@ export default function CrackQuizPage() {
   const [currentStreak, setCurrentStreak] = useState(0)
   const [maxCombo, setMaxCombo] = useState(0)
   const [lastBreakdown, setLastBreakdown] = useState<ScoreBreakdown | null>(null)
-  const [answers, setAnswers] = useState<Array<{ selected: number; correct: number; points: number; streakBonus: number }>>([])
+  const [answers, setAnswers] = useState<Array<{ selected: number; correct: number; points: number; streakBonus: number; secondsLeft: number }>>([])
   const [soundOn, setSoundOn] = useState(false)
   const [showIntro, setShowIntro] = useState(false)
   const [practice, setPractice] = useState(false)
@@ -810,6 +797,10 @@ export default function CrackQuizPage() {
   const introTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const practiceRef = useRef(false)
   const soundRef = useRef(false)
+  // Inicio de la ronda: alimenta duration_ms, que es el DESEMPATE del ranking
+  // (score desc, duration asc nulls last). Sin él, las partidas caían al final
+  // de su grupo de empate.
+  const roundStartRef = useRef<number | null>(null)
 
   // ── Hydrate from localStorage ──────────────────────────────────
   useEffect(() => {
@@ -933,6 +924,7 @@ export default function CrackQuizPage() {
     setLastBreakdown(null)
     setDonChoice(null)
     setAwardedPoints(null)
+    roundStartRef.current = Date.now()
     setPhase('playing')
     startQuestion()
   }, [startQuestion, featuredQ])
@@ -984,7 +976,7 @@ export default function CrackQuizPage() {
 
     setAnswers(prev => [
       ...prev,
-      { selected: optionIndex, correct: q.correctIndex, points: breakdown.total, streakBonus: baseBreakdown.streak },
+      { selected: optionIndex, correct: q.correctIndex, points: breakdown.total, streakBonus: baseBreakdown.streak, secondsLeft },
     ])
     setScore(prev => Math.max(0, prev + breakdown.total))
     setCurrentStreak(prev => {
@@ -1068,12 +1060,15 @@ export default function CrackQuizPage() {
 
     // Sync con backend unificado (games-store). No bloqueante.
     const period = currentDayISO()
-    // Compact per-question outcome for the social heatmap. Enviamos la opción
-    // ELEGIDA (`selected`, 0–3, o -1 si no respondió): el servidor recalcula el
-    // acierto contra la respuesta oficial e ignora el `correct` del cliente.
+    // Parte por pregunta: opción ELEGIDA (`selected`, 0–3, o -1 si se agotó el
+    // tiempo) y segundos que quedaban al responder. Con eso el SERVIDOR
+    // recalcula el score entero (aciertos + rapidez + combo + doble o nada)
+    // contra la respuesta oficial — el `score` que va aquí es solo informativo,
+    // igual que el flag `correct` que consume el heatmap.
     const answersForPayload = questions.map((qq, i) => ({
       qId: qq.id,
       selected: answers[i] ? answers[i].selected : -1,
+      secondsLeft: answers[i] ? answers[i].secondsLeft : 0,
       correct: answers[i] ? answers[i].selected === qq.correctIndex : false,
     }))
     const completedMissions = reportPlay('crackquiz', { score })
@@ -1081,7 +1076,11 @@ export default function CrackQuizPage() {
       gameId:  'crackquiz',
       period,
       score,
-      payload: { correct, total: QUESTIONS_PER_ROUND, streak: newStreak, combo: maxCombo, answers: answersForPayload },
+      payload: {
+        correct, total: QUESTIONS_PER_ROUND, streak: newStreak, combo: maxCombo,
+        don: donChoice, answers: answersForPayload,
+      },
+      durationMs: roundStartRef.current ? Date.now() - roundStartRef.current : undefined,
     }).then(r => { if (r.awarded > 0) setAwardedPoints(r.awarded); void claimMissions(completedMissions) })
       .catch(() => { /* no toast — el resto del flujo no se afecta */ })
     trackGameEvent({ gameId: 'crackquiz', event: 'completed', period, meta: { score, correct, total: QUESTIONS_PER_ROUND, combo: maxCombo } })

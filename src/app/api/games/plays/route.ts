@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { POINTS_ENABLED_GAMES, pointsFor, type GameId as PointsGameId } from '@/lib/game-points'
+import { deriveGameScore } from '@/lib/game-score-server'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { apiError, readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
@@ -76,10 +77,23 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // ── Score SERVER-AUTORITATIVO ──────────────────────────────────
+    // El `score` del body es solo un aviso: se recalcula desde el payload
+    // contra el contenido oficial del día/semana (game-score-server). Así
+    // web y app puntúan con la MISMA fórmula aunque su UI difiera, y un POST
+    // inflado no entra al ranking. Si el payload no es verificable, la
+    // función degrada a los agregados y, en último caso, al score del cliente.
+    const derived = await deriveGameScore(
+      body.game_id,
+      body.period,
+      body.payload,
+      Math.floor(body.score),
+    )
+
     const { data, error } = await sb.rpc('record_game_play', {
       p_game_id:     body.game_id,
       p_period:      body.period,
-      p_score:       Math.floor(body.score),
+      p_score:       derived.score,
       p_payload:     body.payload ?? {},
       p_duration_ms: body.duration_ms ?? null,
     })
@@ -97,7 +111,7 @@ export async function POST(req: NextRequest) {
       // pointsFor valida y acota internamente cada campo del payload a su
       // dominio real (GAME_LIMITS) antes de derivar la tarifa → un parte
       // manipulado (correct>total, total gigante, tipos raros) nunca infla.
-      const amount = pointsFor(body.game_id as PointsGameId, body.score, body.payload)
+      const amount = pointsFor(body.game_id as PointsGameId, derived.score, body.payload)
       if (amount > 0) {
         try {
           const admin = adminSupabase()
@@ -114,7 +128,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ persisted: true, play: data, awarded })
+    // `score` = el que ha contado de verdad (puede diferir del enviado si el
+    // servidor lo recalculó). La UI puede usarlo para mostrar el marcador real.
+    return NextResponse.json({ persisted: true, play: data, awarded, score: derived.score })
   } catch (err) {
     captureException(err, { route: 'games/plays' })
     return NextResponse.json({ error: 'server_error' }, { status: 500 })

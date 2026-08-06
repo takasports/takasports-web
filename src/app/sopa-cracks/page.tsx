@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import GameLayout from '@/components/games/GameLayout'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
+import { SOPA, scoreSopa } from '@/lib/game-scoring'
 import { madridWeekNumber } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { reportPlay, claimMissions } from '@/lib/missions'
@@ -29,7 +30,7 @@ const COLOR_HINT = '#FCD34D'
 const STORAGE_KEY = 'ts_sopa_cracks_state'
 const HINT_PENALTY_SECONDS = 30
 const TIME_ATTACK_LIMIT = 3 * 60   // 3 minutos
-const POINTS_PER_WORD = 10         // Escala única de puntos por palabra: sidebar, recordPlay y modal final
+const POINTS_PER_WORD = SOPA.POINTS_PER_WORD  // escala única (sidebar + scoreSopa)
 const COLOR_INTRUDER = '#A78BFA'   // violeta, distinto del verde clásico
 
 // ── Selección de puzzle por semana ────────────────────────────
@@ -375,7 +376,11 @@ export default function SopaCracksPage() {
       // doble pago) y un único ranking — el contrarreloj es otra forma de
       // jugar, no un ranking aparte.
       const period = currentWeekISO()
-      const score = (timeAttack ? foundCount : activeWords.length) * POINTS_PER_WORD
+      // Se paga por palabra ENCONTRADA en ambas modalidades (en modo normal la
+      // ronda solo termina al encontrarlas todas, así que no cambia nada allí;
+      // en contrarreloj es lo que ya se hacía). Fórmula compartida con el
+      // servidor y con la app — ver @/lib/game-scoring.
+      const score = scoreSopa(foundCount)
       const completedMissions = reportPlay('sopacracks', { score })
       recordPlay({
         gameId:     'sopacracks',
@@ -1095,7 +1100,7 @@ export default function SopaCracksPage() {
           play={{
             game_id:     'sopacracks',
             period:      currentWeekISO(),
-            score:       activeWords.length * POINTS_PER_WORD,
+            score:       scoreSopa(activeWords.length),
             payload:     { found: activeWords.length, total: activeWords.length, seconds },
             duration_ms: seconds * 1000,
           } as GamePlay}

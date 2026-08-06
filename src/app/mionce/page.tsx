@@ -10,6 +10,7 @@ import { FORMATIONS, FORMATION_LIST, type SlotDef } from '@/lib/mionce-formation
 import { CountryFlag, LockIcon, ClipboardIcon } from '@/components/icons/GameIcons'
 import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
+import { scoreMionce } from '@/lib/game-scoring'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import GameOnboarding from '@/components/games/GameOnboarding'
 import { reportPlay, claimMissions, type CompletedMission } from '@/lib/missions'
@@ -868,7 +869,9 @@ export default function MiOncePage() {
   }, [formationSlots, slots, challenge])
 
   const validCount = formationSlots.filter(s => slots[s.id] && validBySlot[s.id]).length
-  const score = isTagged ? validCount * 10 : filledCount * 10
+  // Fórmula compartida con el servidor y la app (@/lib/game-scoring). En modo
+  // reto (posición×club) puntúan los válidos; en modo clásico, los colocados.
+  const score = scoreMionce(isTagged ? validCount : filledCount)
 
   const prevFilledRef = useRef(0)
   useEffect(() => {

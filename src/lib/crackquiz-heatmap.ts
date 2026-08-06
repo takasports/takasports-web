@@ -11,10 +11,10 @@
 // voto; además deduplicamos qId dentro de un mismo parte por si viene repetido.
 
 import { getDailyQuestionsFor } from './crackquiz-questions'
+import { CRACKQUIZ } from './game-scoring'
 
-/** Nº de preguntas de la ronda diaria — debe coincidir con QUESTIONS_PER_ROUND
- *  del cliente (src/app/crackquiz/page.tsx). */
-export const CRACKQUIZ_ROUND_SIZE = 10
+/** Nº de preguntas de la ronda diaria. Fuente única: game-scoring. */
+export const CRACKQUIZ_ROUND_SIZE = CRACKQUIZ.QUESTIONS_PER_ROUND
 
 export interface HeatmapPlayRow {
   payload: unknown
