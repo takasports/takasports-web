@@ -874,6 +874,13 @@ export default function MiOncePage() {
   const score = scoreMionce(isTagged ? validCount : filledCount)
 
   const prevFilledRef = useRef(0)
+  // Primer jugador colocado → alimenta duration_ms, el desempate del ranking
+  // (score desc, duración asc nulls last). Sin él, un once perfecto caía al
+  // final de su grupo de empate, que en Mi Once es casi toda la tabla.
+  const startedAtRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (filledCount > 0 && startedAtRef.current === null) startedAtRef.current = Date.now()
+  }, [filledCount])
   useEffect(() => {
     const period = currentWeekISO()
     if (prevFilledRef.current === 0 && filledCount === 1) {
@@ -904,6 +911,7 @@ export default function MiOncePage() {
           period,
           score,
           payload: { formation, filled: filledCount, valid: validCount, tagged: isTagged, slots },
+          durationMs: startedAtRef.current ? Date.now() - startedAtRef.current : undefined,
         }).then(r => { if (r.awarded > 0) setAwardedPoints(r.awarded); void claimMissions(completedMissions) })
           .catch(() => { /* sin toast — el resto del flujo no se afecta */ })
         bestScoreRef.current = Math.max(bestScoreRef.current, score)
