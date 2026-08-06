@@ -238,6 +238,113 @@ export const PUZZLES: GridPuzzle[] = [
   { rows: [C.villarreal, C.manCity, C.inter], cols: [C.argentina, C.southAmerica, C.def] },
   // 49 — Villarreal · Napoli · Manchester United  ×  Argentina · Latino · Leyenda histórica  (min 2)
   { rows: [C.villarreal, C.napoli, C.manUtd], cols: [C.argentina, C.latin, C.historic] },
+
+  // ── Ampliación 2026-08-07 ──────────────────────────────────────
+  // Generados con `npx tsx scripts/gen-takagrid-puzzles.ts` (garantiza ≥2
+  // candidatos reales por celda) y filtrados contra los 50 de arriba para no
+  // repetir combinación. Se AÑADEN al final a propósito: los índices 0–49 no
+  // se tocan nunca, porque el archivo de días ya jugados los resuelve por
+  // índice (ver LEGACY_PUZZLE_COUNT).
+  // 50 — Manchester City · Real Madrid · AC Milan  ×  Sudamérica · Defensas · En activo  (min 7)
+  { rows: [C.manCity, C.realMadrid, C.milan], cols: [C.southAmerica, C.def, C.current] },
+  // 51 — Juventus · Liverpool · Atlético de Madrid  ×  Centrocampistas · Delanteros · Leyenda histórica  (min 5)
+  { rows: [C.juventus, C.liverpool, C.atletico], cols: [C.mid, C.fwd, C.historic] },
+  // 52 — Roma · Paris SG · FC Barcelona  ×  Brasil · Defensas · Centrocampistas  (min 5)
+  { rows: [C.roma, C.psg, C.barcelona], cols: [C.brasil, C.def, C.mid] },
+  // 53 — Inter · Chelsea · Bayern Múnich  ×  Francia · Alemania · En activo  (min 4)
+  { rows: [C.inter, C.chelsea, C.bayern], cols: [C.france, C.germany, C.current] },
+  // 54 — Arsenal · Athletic Club · Paris SG  ×  España · España o Portugal · Delanteros  (min 3)
+  { rows: [C.arsenal, C.athletic, C.psg], cols: [C.spain, C.iberia, C.fwd] },
+  // 55 — Dortmund · Tottenham · Juventus  ×  Centrocampistas · Delanteros · En activo  (min 4)
+  { rows: [C.dortmund, C.tottenham, C.juventus], cols: [C.mid, C.fwd, C.current] },
+  // 56 — Real Sociedad · Arsenal · Bayern Múnich  ×  España · España o Portugal · En activo  (min 3)
+  { rows: [C.realSociedad, C.arsenal, C.bayern], cols: [C.spain, C.iberia, C.current] },
+  // 57 — Real Madrid · Manchester United · AC Milan  ×  Sudamérica · Centrocampistas · Delanteros  (min 11)
+  { rows: [C.realMadrid, C.manUtd, C.milan], cols: [C.southAmerica, C.mid, C.fwd] },
+  // 58 — Bayer Leverkusen · Inter · Chelsea  ×  Alemania · Centrocampistas · En activo  (min 4)
+  { rows: [C.leverkusen, C.inter, C.chelsea], cols: [C.germany, C.mid, C.current] },
+  // 59 — Valencia · Manchester City · Atlético de Madrid  ×  España · Argentina · Centrocampistas  (min 3)
+  { rows: [C.valenciaClub, C.manCity, C.atletico], cols: [C.spain, C.argentina, C.mid] },
+  // 60 — Liverpool · FC Barcelona · Roma  ×  Latino · Centrocampistas · Leyenda histórica  (min 5)
+  { rows: [C.liverpool, C.barcelona, C.roma], cols: [C.latin, C.mid, C.historic] },
+  // 61 — Tottenham · Dortmund · Napoli  ×  Defensas · Delanteros · Leyenda histórica  (min 3)
+  { rows: [C.tottenham, C.dortmund, C.napoli], cols: [C.def, C.fwd, C.historic] },
+  // 62 — Real Madrid · AC Milan · Paris SG  ×  Brasil · Francia · Latino  (min 5)
+  { rows: [C.realMadrid, C.milan, C.psg], cols: [C.brasil, C.france, C.latin] },
+  // 63 — Inter · Arsenal · FC Barcelona  ×  Brasil · Francia · Países Bajos  (min 3)
+  { rows: [C.inter, C.arsenal, C.barcelona], cols: [C.brasil, C.france, C.netherlands] },
+  // 64 — Liverpool · Atlético de Madrid · Juventus  ×  Latino · Centrocampistas · Delanteros  (min 5)
+  { rows: [C.liverpool, C.atletico, C.juventus], cols: [C.latin, C.mid, C.fwd] },
+  // 65 — Real Sociedad · Bayern Múnich · Manchester City  ×  España · España o Portugal · Centrocampistas  (min 3)
+  { rows: [C.realSociedad, C.bayern, C.manCity], cols: [C.spain, C.iberia, C.mid] },
+  // 66 — Bayer Leverkusen · Chelsea · Inter  ×  Alemania · Defensas · Centrocampistas  (min 3)
+  { rows: [C.leverkusen, C.chelsea, C.inter], cols: [C.germany, C.def, C.mid] },
+  // 67 — Tottenham · Roma · Dortmund  ×  Defensas · Centrocampistas · En activo  (min 4)
+  { rows: [C.tottenham, C.roma, C.dortmund], cols: [C.def, C.mid, C.current] },
+  // 68 — Athletic Club · Paris SG · Chelsea  ×  España · Delanteros · En activo  (min 3)
+  { rows: [C.athletic, C.psg, C.chelsea], cols: [C.spain, C.fwd, C.current] },
+  // 69 — Arsenal · FC Barcelona · AC Milan  ×  Brasil · Francia · España o Portugal  (min 4)
+  { rows: [C.arsenal, C.barcelona, C.milan], cols: [C.brasil, C.france, C.iberia] },
+  // 70 — Real Sociedad · Liverpool · Juventus  ×  España o Portugal · Centrocampistas · En activo  (min 3)
+  { rows: [C.realSociedad, C.liverpool, C.juventus], cols: [C.iberia, C.mid, C.current] },
+  // 71 — Atlético de Madrid · Manchester City · Real Madrid  ×  España · Argentina · Defensas  (min 3)
+  { rows: [C.atletico, C.manCity, C.realMadrid], cols: [C.spain, C.argentina, C.def] },
+  // 72 — Athletic Club · Bayern Múnich · Paris SG  ×  España o Portugal · Delanteros · En activo  (min 3)
+  { rows: [C.athletic, C.bayern, C.psg], cols: [C.iberia, C.fwd, C.current] },
+  // 73 — Roma · Real Madrid · Manchester United  ×  Latino · Defensas · Centrocampistas  (min 5)
+  { rows: [C.roma, C.realMadrid, C.manUtd], cols: [C.latin, C.def, C.mid] },
+  // 74 — Dortmund · Inter · Chelsea  ×  Alemania · Centrocampistas · Delanteros  (min 4)
+  { rows: [C.dortmund, C.inter, C.chelsea], cols: [C.germany, C.mid, C.fwd] },
+  // 75 — AC Milan · FC Barcelona · Arsenal  ×  Brasil · Francia · En activo  (min 4)
+  { rows: [C.milan, C.barcelona, C.arsenal], cols: [C.brasil, C.france, C.current] },
+  // 76 — Atlético de Madrid · Napoli · Manchester City  ×  Argentina · Latino · Delanteros  (min 3)
+  { rows: [C.atletico, C.napoli, C.manCity], cols: [C.argentina, C.latin, C.fwd] },
+  // 77 — Real Sociedad · Bayern Múnich · Liverpool  ×  España · Centrocampistas · En activo  (min 3)
+  { rows: [C.realSociedad, C.bayern, C.liverpool], cols: [C.spain, C.mid, C.current] },
+  // 78 — Tottenham · Juventus · Dortmund  ×  Defensas · Delanteros · En activo  (min 4)
+  { rows: [C.tottenham, C.juventus, C.dortmund], cols: [C.def, C.fwd, C.current] },
+  // 79 — AC Milan · Paris SG · Juventus  ×  Brasil · Francia · Italia  (min 4)
+  { rows: [C.milan, C.psg, C.juventus], cols: [C.brasil, C.france, C.italy] },
+  // 80 — Valencia · Manchester City · Chelsea  ×  España · Argentina · Sudamérica  (min 3)
+  { rows: [C.valenciaClub, C.manCity, C.chelsea], cols: [C.spain, C.argentina, C.southAmerica] },
+  // 81 — Bayer Leverkusen · Arsenal · Real Madrid  ×  Alemania · Defensas · En activo  (min 3)
+  { rows: [C.leverkusen, C.arsenal, C.realMadrid], cols: [C.germany, C.def, C.current] },
+  // 82 — Roma · Atlético de Madrid · Manchester United  ×  Sudamérica · Defensas · Centrocampistas  (min 5)
+  { rows: [C.roma, C.atletico, C.manUtd], cols: [C.southAmerica, C.def, C.mid] },
+  // 83 — Inter · FC Barcelona · Bayern Múnich  ×  Francia · Defensas · Centrocampistas  (min 4)
+  { rows: [C.inter, C.barcelona, C.bayern], cols: [C.france, C.def, C.mid] },
+  // 84 — Valencia · Liverpool · Napoli  ×  Latino · Delanteros · Leyenda histórica  (min 4)
+  { rows: [C.valenciaClub, C.liverpool, C.napoli], cols: [C.latin, C.fwd, C.historic] },
+  // 85 — Tottenham · Dortmund · Roma  ×  Defensas · Centrocampistas · Leyenda histórica  (min 3)
+  { rows: [C.tottenham, C.dortmund, C.roma], cols: [C.def, C.mid, C.historic] },
+  // 86 — Juventus · Paris SG · AC Milan  ×  Brasil · Italia · En activo  (min 4)
+  { rows: [C.juventus, C.psg, C.milan], cols: [C.brasil, C.italy, C.current] },
+  // 87 — Real Madrid · Inter · Arsenal  ×  Brasil · Francia · Centrocampistas  (min 4)
+  { rows: [C.realMadrid, C.inter, C.arsenal], cols: [C.brasil, C.france, C.mid] },
+  // 88 — Athletic Club · Manchester City · Bayern Múnich  ×  España · España o Portugal · Delanteros  (min 3)
+  { rows: [C.athletic, C.manCity, C.bayern], cols: [C.spain, C.iberia, C.fwd] },
+  // 89 — FC Barcelona · Manchester United · Napoli  ×  Argentina · Sudamérica · En activo  (min 3)
+  { rows: [C.barcelona, C.manUtd, C.napoli], cols: [C.argentina, C.southAmerica, C.current] },
+  // 90 — Chelsea · Valencia · Atlético de Madrid  ×  España · Argentina · Delanteros  (min 3)
+  { rows: [C.chelsea, C.valenciaClub, C.atletico], cols: [C.spain, C.argentina, C.fwd] },
+  // 91 — Bayer Leverkusen · Tottenham · Roma  ×  Defensas · Centrocampistas · En activo  (min 3)
+  { rows: [C.leverkusen, C.tottenham, C.roma], cols: [C.def, C.mid, C.current] },
+  // 92 — Arsenal · Real Madrid · Inter  ×  Francia · Alemania · Países Bajos  (min 3)
+  { rows: [C.arsenal, C.realMadrid, C.inter], cols: [C.france, C.germany, C.netherlands] },
+  // 93 — Liverpool · AC Milan · Tottenham  ×  Inglaterra · Centrocampistas · Delanteros  (min 3)
+  { rows: [C.liverpool, C.milan, C.tottenham], cols: [C.england, C.mid, C.fwd] },
+  // 94 — FC Barcelona · Juventus · Paris SG  ×  Brasil · Francia · Sudamérica  (min 4)
+  { rows: [C.barcelona, C.juventus, C.psg], cols: [C.brasil, C.france, C.southAmerica] },
+  // 95 — Athletic Club · Bayern Múnich · Chelsea  ×  España · España o Portugal · En activo  (min 3)
+  { rows: [C.athletic, C.bayern, C.chelsea], cols: [C.spain, C.iberia, C.current] },
+  // 96 — Atlético de Madrid · Manchester City · Valencia  ×  España · Argentina · Leyenda histórica  (min 3)
+  { rows: [C.atletico, C.manCity, C.valenciaClub], cols: [C.spain, C.argentina, C.historic] },
+  // 97 — Real Sociedad · Liverpool · Bayern Múnich  ×  España · España o Portugal · Centrocampistas  (min 3)
+  { rows: [C.realSociedad, C.liverpool, C.bayern], cols: [C.spain, C.iberia, C.mid] },
+  // 98 — Manchester United · AC Milan · Real Madrid  ×  Argentina · Francia · Países Bajos  (min 3)
+  { rows: [C.manUtd, C.milan, C.realMadrid], cols: [C.argentina, C.france, C.netherlands] },
+  // 99 — Dortmund · Inter · Chelsea  ×  Alemania · Defensas · Delanteros  (min 4)
+  { rows: [C.dortmund, C.inter, C.chelsea], cols: [C.germany, C.def, C.fwd] },
 ]
 
 
@@ -280,8 +387,14 @@ export function puzzleIndexForDay(dayISO: string): number {
   }
   const [y, m, d] = dayISO.split('-').map(Number)
   const rand = mulberry32(y * 10000 + m * 100 + d)
-  return Math.floor(rand() * PUZZLES.length)
+  return Math.floor(rand() * LEGACY_PUZZLE_COUNT)
 }
+
+/** Tamaño del catálogo cuando se jugaba con la fórmula vieja. Está CLAVADO a
+ *  propósito: el archivo (`/takagrid/[fecha]`) resuelve los días pasados por
+ *  índice, así que si esto creciera con el catálogo, cada ampliación reescribiría
+ *  el grid que se jugó aquel día. Los puzzles 0–49 tampoco deben reordenarse. */
+const LEGACY_PUZZLE_COUNT = 50
 
 /** Sal propia de este juego: dos juegos con el mismo tamaño de catálogo no
  *  deben rotar sincronizados. */

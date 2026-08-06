@@ -86,17 +86,21 @@ function formatRemaining(deadlineIso: string): string | null {
 }
 
 /**
- * Estado fijo cuando Ranked Fútbol está pausado: reorienta el CTA al Mundial,
- * que es el único producto de predicciones activo. Sin fetch, sin cache.
+ * Estado fijo cuando Ranked Fútbol está pausado. Sin fetch, sin cache.
+ *
+ * Antes anunciaba 'MUNDIAL' en tono `urgent`, pero el torneo acabó el
+ * 19-jul-2026: la píldora seguía pulsando en rojo hacia un cuadro cerrado.
+ * Ahora es una invitación neutra a la sección, cuyo deporte de entrada
+ * (UFC mientras el fútbol siga apagado) lo decide PrediccionesHub.
  * Para revertir: poner RANKED_FUTBOL_ENABLED=true en feature-flags.ts.
  */
-function deriveStateMundial(): BadgeState {
+function deriveStatePaused(): BadgeState {
   return {
     label: 'Predicciones',
-    badge: 'MUNDIAL',
-    badgeTone: 'urgent',
-    pulseSpeed: 1.6,
-    dotColor: '#FBBF24',
+    badge: 'JUEGA',
+    badgeTone: 'idle',
+    pulseSpeed: 1.8,
+    dotColor: '#F97316',
   }
 }
 
@@ -216,7 +220,7 @@ export default function PorraCTA({ href, active, variant, onNavigate }: Props) {
     return () => clearInterval(id)
   }, [status?.deadline])
 
-  const state = RANKED_FUTBOL_ENABLED ? deriveState(status) : deriveStateMundial()
+  const state = RANKED_FUTBOL_ENABLED ? deriveState(status) : deriveStatePaused()
 
   // Estado del user para analytics.
   const userState: PorraUserState | undefined = status

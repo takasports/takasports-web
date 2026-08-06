@@ -28,11 +28,13 @@ interface RankedEntry {
   equipment?:   LeaderboardEquipment & ApiEquipment
 }
 
+// Mismo criterio de orden que SPORTS en PrediccionesHub: delante lo jugable,
+// el Mundial 2026 al final como archivo del torneo ya cerrado.
 const TABS: { id: RankedSport; label: string; emoji: string; accent: string; available: boolean }[] = [
   { id: 'global',  label: 'Liga Total',    emoji: '⚡', accent: '#A78BFA', available: true },
-  { id: 'mundial', label: 'Mundial 2026',  emoji: '🏆', accent: '#FBBF24', available: true },
-  { id: 'futbol',  label: 'Ranked Fútbol', emoji: '⚽', accent: '#4ADE80', available: RANKED_FUTBOL_ENABLED },
   { id: 'ufc',     label: 'Ranked UFC',    emoji: '🥊', accent: '#F87171', available: true },
+  { id: 'futbol',  label: 'Ranked Fútbol', emoji: '⚽', accent: '#4ADE80', available: RANKED_FUTBOL_ENABLED },
+  { id: 'mundial', label: 'Mundial 2026',  emoji: '🏆', accent: '#FBBF24', available: true },
 ]
 
 function Avatar({ url, name }: { url: string | null; name: string | null }) {

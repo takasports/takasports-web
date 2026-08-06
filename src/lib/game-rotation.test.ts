@@ -31,14 +31,17 @@ function closestRepeat(seq: readonly number[]): number {
 }
 
 describe('TakaGrid · rotación diaria', () => {
-  const seq = Array.from({ length: 120 }, (_, i) => puzzleIndexForDay(dayISO('2026-08-08', i)))
+  const seq = Array.from({ length: GRIDS.length * 3 }, (_, i) =>
+    puzzleIndexForDay(dayISO('2026-08-08', i)),
+  )
 
   it('no repite un grid hasta pasada media vuelta al catálogo', () => {
     expect(closestRepeat(seq)).toBeGreaterThanOrEqual(Math.floor(GRIDS.length / 2))
   })
 
-  it('en 90 días usa el catálogo entero', () => {
-    expect(new Set(seq.slice(0, 90)).size).toBe(GRIDS.length)
+  it('no desperdicia catálogo: a la vuelta han salido todos los puzzles', () => {
+    // Con el dado anterior, 8 de los 50 puzzles no aparecían en tres meses.
+    expect(new Set(seq.slice(0, GRIDS.length * 2)).size).toBe(GRIDS.length)
   })
 
   it('el 22 y el 23 de agosto ya no son el mismo grid', () => {
@@ -48,15 +51,21 @@ describe('TakaGrid · rotación diaria', () => {
   })
 
   it('los días anteriores al corte no cambian (archivo intacto)', () => {
-    // Fórmula vieja: dado sembrado con AAAAMMDD.
+    // Fórmula vieja: dado sembrado con AAAAMMDD sobre los 50 puzzles que había
+    // ENTONCES. Ese 50 está clavado en el código a propósito: si escalara con el
+    // catálogo, cada ampliación reescribiría el grid de los días ya jugados.
+    const LEGACY_COUNT = 50
     const legacy = (y: number, m: number, d: number) => {
       let t = (y * 10000 + m * 100 + d + 0x6D2B79F5) | 0
       t = Math.imul(t ^ (t >>> 15), t | 1)
       t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-      return Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * GRIDS.length)
+      return Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * LEGACY_COUNT)
     }
     expect(puzzleIndexForDay('2026-08-06')).toBe(legacy(2026, 8, 6))
     expect(puzzleIndexForDay('2026-07-01')).toBe(legacy(2026, 7, 1))
+    expect(puzzleIndexForDay('2026-03-15')).toBe(legacy(2026, 3, 15))
+    // Y siempre dentro del tramo histórico del catálogo.
+    expect(puzzleIndexForDay('2026-08-06')).toBeLessThan(LEGACY_COUNT)
   })
 
   it('es determinista', () => {

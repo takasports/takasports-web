@@ -53,6 +53,9 @@ type HubTab   = 'ranked' | 'creadores' | 'privadas'
 type SportTab = 'futbol' | 'ufc' | 'mundial'
 
 // ── Sports config ────────────────────────────────────────────────────
+// Orden = prioridad de escaparate. Lo primero de la lista es lo que el usuario
+// ve al entrar, así que SOLO puede encabezar algo jugable hoy: un torneo
+// terminado en cabecera manda el tráfico a un cuadro cerrado.
 const SPORTS: {
   id: SportTab
   label: string
@@ -62,10 +65,10 @@ const SPORTS: {
   badge?: string
 }[] = [
   {
-    id:        'mundial',
-    label:     'Mundial 2026',
-    emoji:     '🏆',
-    accent:    '#FBBF24',
+    id:        'ufc',
+    label:     'Ranked UFC',
+    emoji:     '🥊',
+    accent:    '#F87171',
     available: true,
   },
   {
@@ -79,11 +82,14 @@ const SPORTS: {
     badge:     RANKED_FUTBOL_ENABLED ? undefined : 'Pronto',
   },
   {
-    id:        'ufc',
-    label:     'Ranked UFC',
-    emoji:     '🥊',
-    accent:    '#F87171',
+    // El Mundial 2026 acabó el 19-jul-2026: se queda como archivo consultable
+    // (picks, aciertos y ranking del torneo), nunca como pestaña de entrada.
+    id:        'mundial',
+    label:     'Mundial 2026',
+    emoji:     '🏆',
+    accent:    '#FBBF24',
     available: true,
+    badge:     'Finalizado',
   },
 ]
 
@@ -91,7 +97,7 @@ const SPORTS: {
 // el marco "La Señal" es común; el eyebrow + la línea de apoyo cambian con el
 // deporte activo. El dato vivo del evento lo aporta el hero de cada cliente.
 const HERO_COPY: Record<SportTab, { eyebrow: string; sub: string }> = {
-  mundial: { eyebrow: 'Mundial 2026',  sub: 'Pronostica cada partido y escala el Ranking Ranked.' },
+  mundial: { eyebrow: 'Mundial 2026',  sub: 'El torneo terminó. Consulta aquí tus picks y el ranking final.' },
   ufc:     { eyebrow: 'Ranked UFC',    sub: 'Predice cada combate. El estelar vale el doble.' },
   futbol:  { eyebrow: 'Ranked Fútbol', sub: RANKED_FUTBOL_ENABLED ? 'Pronostica la jornada y compite en el Ranking.' : 'Predicciones de Liga. Muy pronto.' },
 }
@@ -103,12 +109,15 @@ const HUB_TABS: { id: HubTab; label: string }[] = [
   { id: 'privadas',  label: 'Ligas Privadas' },
 ]
 
-// Mundial es la tab por defecto cuando está disponible
+// Deporte de entrada = el primero de SPORTS que esté disponible Y sea jugable
+// hoy. Mientras Ranked Fútbol siga apagado, es UFC (cartelera abierta todo el
+// año); en cuanto se encienda, pasará a encabezar SPORTS y será este default.
+const DEFAULT_SPORT: SportTab = SPORTS.find(s => s.available && s.id !== 'mundial')?.id ?? 'ufc'
 
 // ── Componente principal ─────────────────────────────────────────────
 export default function PrediccionesHub() {
   const [hubTab,   setHubTab]   = useState<HubTab>('ranked')
-  const [sportTab, setSportTab] = useState<SportTab>('mundial')
+  const [sportTab, setSportTab] = useState<SportTab>(DEFAULT_SPORT)
   const { streak }              = useStreak()
   const { points }              = usePoints()
   const activeSport             = SPORTS.find(s => s.id === sportTab) ?? SPORTS[0]
