@@ -1,4 +1,5 @@
 import { madridDayISO } from './taka-time'
+import { bagDraw, dayOrdinal, useBagForDay } from './content-rotation'
 
 export type QuizCategory =
   | 'historia'
@@ -1279,7 +1280,86 @@ function composeRound(shuffled: QuizQuestion[], count: number): QuizQuestion[] {
 /** Selección diaria determinista para un día concreto "YYYY-MM-DD". Fuente
  *  única del set del día; la usan tanto el cliente web (vía getDailyQuestions)
  *  como el endpoint /api/crackquiz/today (para que la app reciba EL MISMO set). */
+// ── Bolsas de la ronda diaria ────────────────────────────────────
+//
+// La ronda son 10 preguntas con curva de dificultad (4 fáciles / 4 medias / 2
+// difíciles) y tope de fútbol (6 de 10). Para que además no se REPITAN de un día
+// para otro, cada combinación (dificultad × fútbol/otro) es su propia BOLSA y se
+// reparte sin reposición. Antes se barajaba el mazo entero cada día de forma
+// independiente: con 351 preguntas y 10 al día, las repeticiones eran cuestión
+// de semanas — y las difíciles, de días (solo hay 27 de fútbol).
+//
+// Vueltas completas por bolsa con el catálogo actual: d1-fut 37 días, d1-otro
+// 31, d2-fut 27, d2-otro 68, d3-fut 27, d3-otro 38. Es decir: ninguna pregunta
+// se repite en ~un mes, y la garantía dura de la bolsa (ver content-rotation)
+// es media vuelta.
+
+interface BagSpec { difficulty: QuizDifficulty; football: boolean; count: number }
+
+const DAILY_TEMPLATE: readonly BagSpec[] = [
+  { difficulty: 1, football: true,  count: 2 },
+  { difficulty: 1, football: false, count: 2 },
+  { difficulty: 2, football: true,  count: 3 },
+  { difficulty: 2, football: false, count: 1 },
+  { difficulty: 3, football: true,  count: 1 },
+  { difficulty: 3, football: false, count: 1 },
+]
+
+const ROUND_SIZE = DAILY_TEMPLATE.reduce((n, b) => n + b.count, 0)   // 10
+
+let BAGS: Map<string, QuizQuestion[]> | null = null
+
+function bagKey(b: Pick<BagSpec, 'difficulty' | 'football'>): string {
+  return `${b.difficulty}${b.football ? 'f' : 'o'}`
+}
+
+function bagsOf(): Map<string, QuizQuestion[]> {
+  if (BAGS) return BAGS
+  const map = new Map<string, QuizQuestion[]>()
+  for (const q of QUESTIONS) {
+    const k = bagKey({ difficulty: q.difficulty, football: q.sport === 'football' })
+    const arr = map.get(k)
+    if (arr) arr.push(q)
+    else map.set(k, [q])
+  }
+  BAGS = map
+  return map
+}
+
+/** Sal por bolsa: cada una rota por su cuenta, sin sincronizarse con las demás. */
+function saltFor(b: BagSpec): number {
+  return 400 + b.difficulty * 2 + (b.football ? 1 : 0)
+}
+
 export function getDailyQuestionsFor(day: string, count = 10): QuizQuestion[] {
+  // La plantilla asume la ronda de 10; para otros tamaños (o días anteriores al
+  // corte de rotación) se conserva la composición vieja.
+  if (count === ROUND_SIZE && useBagForDay(day)) {
+    const ordinal = dayOrdinal(day)
+    const bags = bagsOf()
+    const picked: QuizQuestion[] = []
+    const used = new Set<string>()
+
+    for (const spec of DAILY_TEMPLATE) {
+      const pool = bags.get(bagKey(spec)) ?? []
+      if (pool.length === 0) continue
+      for (const idx of bagDraw(ordinal, spec.count, pool.length, saltFor(spec))) {
+        const q = pool[idx]
+        if (q && !used.has(q.id)) { used.add(q.id); picked.push(q) }
+      }
+    }
+    // Si alguna bolsa se quedó corta, se completa con el resto del catálogo.
+    if (picked.length < count) {
+      const rand = mulberry32(dayOrdinal(day))
+      for (const q of seededShuffle(QUESTIONS, rand)) {
+        if (picked.length >= count) break
+        if (!used.has(q.id)) { used.add(q.id); picked.push(q) }
+      }
+    }
+    // La ronda "calienta": de fácil a difícil (orden estable dentro de nivel).
+    return picked.sort((a, b) => a.difficulty - b.difficulty)
+  }
+
   const seed = day.split('-').reduce((acc, n) => acc * 100 + parseInt(n), 0)
   const rand = mulberry32(seed)
   const shuffled = seededShuffle(QUESTIONS, rand)

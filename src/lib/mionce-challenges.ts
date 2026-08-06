@@ -12,6 +12,7 @@
 
 import { playerClubs, type Player } from './players-catalog'
 import { madridWeekISO } from './taka-time'
+import { bagPick, weekOrdinal, useBagForWeek } from './content-rotation'
 
 export type FormationId = '4-3-3' | '4-4-2' | '3-5-2' | '4-2-3-1'
 
@@ -165,22 +166,36 @@ export function getIsoWeek(d: Date = new Date()): IsoWeek {
   return { year: Number(y), week: Number(w), key }
 }
 
+/** Sal propia de este juego (ver content-rotation). */
+const ROTATION_SALT = 202
+
+/**
+ * Índice del tablero de una semana ISO ("YYYY-Www").
+ *
+ * Desde ROTATION_FROM_WEEK se reparte con BOLSA: el dado sembrado anterior solo
+ * usaba 27 de los 48 tableros en un año natural y repetía alguno hasta 5 veces.
+ * Las semanas anteriores al corte conservan la fórmula vieja (hay sopas y onces
+ * a medias cuando esto se despliega).
+ */
+export function boardIndexForWeek(key: string): number {
+  if (useBagForWeek(key)) {
+    return bagPick(weekOrdinal(key), BOARDS.length, ROTATION_SALT)
+  }
+  const m = /^(\d{4})-W(\d{2})$/.exec(key)
+  if (!m) return 0
+  const rand = mulberry32(Number(m[1]) * 100 + Number(m[2]))
+  return Math.floor(rand() * BOARDS.length)
+}
+
 export function getWeeklyChallenge(d: Date = new Date()): { challenge: Challenge; week: IsoWeek } {
   const week = getIsoWeek(d)
-  const seed = week.year * 100 + week.week
-  const rand = mulberry32(seed)
-  const idx = Math.floor(rand() * BOARDS.length)
-  return { challenge: boardToChallenge(BOARDS[idx]), week }
+  return { challenge: boardToChallenge(BOARDS[boardIndexForWeek(week.key)]), week }
 }
 
 // Igual que getWeeklyChallenge pero a partir de la clave ISO "YYYY-Www" (sin
-// Date). Mismo seed → MISMO tablero, para que el servidor calcule el reto/once
-// de una semana dada sin depender de la zona horaria del runtime.
+// Date), para que el servidor calcule el reto/once de una semana dada sin
+// depender de la zona horaria del runtime.
 export function getChallengeForWeek(key: string): Challenge | null {
-  const m = /^(\d{4})-W(\d{2})$/.exec(key)
-  if (!m) return null
-  const seed = Number(m[1]) * 100 + Number(m[2])
-  const rand = mulberry32(seed)
-  const idx = Math.floor(rand() * BOARDS.length)
-  return boardToChallenge(BOARDS[idx])
+  if (!/^\d{4}-W\d{2}$/.test(key)) return null
+  return boardToChallenge(BOARDS[boardIndexForWeek(key)])
 }

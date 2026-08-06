@@ -4,6 +4,7 @@
 
 import { PLAYERS_DEDUP, playerClubs, type Player } from './players-catalog'
 import { madridParts, madridDayISO } from './taka-time'
+import { bagPick, dayOrdinal, useBagForDay } from './content-rotation'
 
 // ── Tipos ────────────────────────────────────────────────────────
 
@@ -263,12 +264,32 @@ export function getTodayKey(d: Date = new Date()): DayKey {
   return { year: p.year, month: p.month, day: p.day, key: madridDayISO(d) }
 }
 
+/**
+ * Índice del puzzle de un día concreto ("YYYY-MM-DD", hora Taka).
+ *
+ * Desde ROTATION_FROM_DAY se reparte con BOLSA (permutación sin reposición):
+ * antes era un dado sembrado por fecha y salían días consecutivos con el mismo
+ * grid — el 22 y 23 de agosto de 2026, sin ir más lejos— mientras 8 de los 50
+ * puzzles no aparecían en tres meses. Los días anteriores al corte conservan la
+ * fórmula vieja para que el archivo (`/takagrid/[fecha]`) siga mostrando el grid
+ * que de verdad se jugó ese día.
+ */
+export function puzzleIndexForDay(dayISO: string): number {
+  if (useBagForDay(dayISO)) {
+    return bagPick(dayOrdinal(dayISO), PUZZLES.length, ROTATION_SALT)
+  }
+  const [y, m, d] = dayISO.split('-').map(Number)
+  const rand = mulberry32(y * 10000 + m * 100 + d)
+  return Math.floor(rand() * PUZZLES.length)
+}
+
+/** Sal propia de este juego: dos juegos con el mismo tamaño de catálogo no
+ *  deben rotar sincronizados. */
+const ROTATION_SALT = 101
+
 export function getDailyPuzzle(d: Date = new Date()): { puzzle: GridPuzzle; dayKey: DayKey } {
   const dayKey = getTodayKey(d)
-  const seed = dayKey.year * 10000 + dayKey.month * 100 + dayKey.day
-  const rand = mulberry32(seed)
-  const idx = Math.floor(rand() * PUZZLES.length)
-  return { puzzle: PUZZLES[idx], dayKey }
+  return { puzzle: PUZZLES[puzzleIndexForDay(dayKey.key)], dayKey }
 }
 
 // ── Validador ────────────────────────────────────────────────────

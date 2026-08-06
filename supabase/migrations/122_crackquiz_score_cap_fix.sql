@@ -1,5 +1,10 @@
 -- 122_crackquiz_score_cap_fix.sql  ·  Paridad web↔app (Fase 1)
 --
+-- ✅ APLICADA a producción el 2026-08-06 (vía MCP, migración
+-- `crackquiz_score_cap_fix`). Verificada: cap 220 presente, `security definer`
+-- y `search_path = public, pg_temp` preservados, grants intactos
+-- (authenticated + service_role, sin anon/public).
+--
 -- QUÉ ARREGLA: el techo de CrackQuiz (180) estaba por DEBAJO de su máximo real,
 -- así que las mejores partidas se recortaban en silencio.
 --

@@ -35,7 +35,7 @@ import { getDailyPuzzle, isValidAnswer } from './takagrid-puzzles'
 import { getPlayerById } from './players-catalog'
 import { getChallengeForWeek } from './mionce-challenges'
 import { FORMATIONS } from './mionce-formations'
-import { PUZZLES as SOPA_PUZZLES } from './sopa-puzzles'
+import { getWeeklyPuzzle } from './sopa-puzzles'
 
 const SCORED_GAMES: ReadonlySet<string> = new Set<ScoredGameId>([
   'crackquiz', 'takagrid', 'sopacracks', 'mionce',
@@ -211,8 +211,7 @@ async function deriveSopa(
 }
 
 async function weekWordCount(week: string): Promise<number> {
-  const m = /^(\d{4})-W(\d{2})$/.exec(week)
-  if (!m) return 14
+  if (!/^\d{4}-W\d{2}$/.test(week)) return 14
   const admin = adminSupabase()
   if (admin) {
     const { data } = await admin
@@ -222,8 +221,8 @@ async function weekWordCount(week: string): Promise<number> {
       .maybeSingle()
     if (data && Array.isArray(data.words) && data.words.length >= 5) return data.words.length
   }
-  const weekNumber = Number(m[2])
-  return SOPA_PUZZLES[weekNumber % SOPA_PUZZLES.length].words.length
+  // Misma selección semanal que juegan web y app (sopa-puzzles es la fuente).
+  return getWeeklyPuzzle(week).words.length
 }
 
 // ── Mi Once ──────────────────────────────────────────────────────

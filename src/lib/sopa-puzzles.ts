@@ -8,6 +8,7 @@
 // Palabras sin entrada (Zarra, managers, etc.) caen al heurístico por nombre.
 
 import { searchPlayers, getPlayerById, type Player } from './players-catalog'
+import { bagPick, weekOrdinal, useBagForWeek } from './content-rotation'
 
 export interface Puzzle {
   id: string
@@ -152,6 +153,41 @@ export function findPlayerForWord(word: string, playerIds?: Record<string, strin
   const target = word.toLowerCase()
   const exact = res.find(p => p.name.toLowerCase().split(/\s+/).includes(target))
   return exact ?? res[0]
+}
+
+// ── Selección semanal ─────────────────────────────────────────────
+//
+// FUENTE ÚNICA de "qué sopa toca esta semana" y de su semilla de cuadrícula.
+// Antes esto vivía DUPLICADO en la página (`getCurrentPuzzle` + hash del id) y
+// en `/api/sopa-cracks/today`; si una de las dos cambiaba, la app y la web
+// jugaban sopas distintas.
+
+/** Sal propia de este juego (ver content-rotation). */
+const ROTATION_SALT = 303
+
+/**
+ * Índice de la sopa estática de una semana ISO. Desde ROTATION_FROM_WEEK va por
+ * BOLSA; antes era `semana % 13`, que repetía el mismo puzzle en la misma semana
+ * todos los años y siempre en el mismo orden.
+ */
+export function puzzleIndexForWeek(weekISO: string): number {
+  if (useBagForWeek(weekISO)) {
+    return bagPick(weekOrdinal(weekISO), PUZZLES.length, ROTATION_SALT)
+  }
+  const weekNumber = Number(weekISO.slice(-2))
+  return (Number.isFinite(weekNumber) ? weekNumber : 0) % PUZZLES.length
+}
+
+export function getWeeklyPuzzle(weekISO: string): Puzzle {
+  return PUZZLES[puzzleIndexForWeek(weekISO)]
+}
+
+/** Semilla de construcción de la cuadrícula. La app la recibe tal cual desde
+ *  `/api/sopa-cracks/today` y NO la recalcula. */
+export function gridSeedFor(puzzleId: string, weekISO: string): number {
+  let h = 0
+  for (const ch of puzzleId) h = (h * 31 + ch.charCodeAt(0)) | 0
+  return h + (Number(weekISO.slice(-2)) || 0)
 }
 
 // Mueve el cursor del teclado en la cuadrícula (a11y). Las flechas desplazan una

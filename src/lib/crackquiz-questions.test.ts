@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   QUESTIONS,
   getDailyQuestions,
+  getDailyQuestionsFor,
   getPracticeQuestions,
   listCategories,
   type QuizCategory,
@@ -118,6 +119,39 @@ describe('crackquiz · selección diaria usa difficulty', () => {
     const round = getDailyQuestions(ROUND)
     const football = round.filter(q => q.sport === 'football').length
     expect(football, `demasiado fútbol en la ronda (${football}/${ROUND})`).toBeLessThanOrEqual(6)
+  })
+
+  it('las rondas no se repiten de un día para otro (bolsa sin reposición)', () => {
+    // Antes el mazo se barajaba entero cada día de forma independiente, así que
+    // una misma pregunta podía caer dos días seguidos. Ahora cada combinación
+    // dificultad×deporte es su propia bolsa: nada vuelve hasta agotarla.
+    const DAYS = 40
+    const lastSeen = new Map<string, number>()
+    let closest = Infinity
+    for (let i = 0; i < DAYS; i++) {
+      const d = new Date('2026-08-08T12:00:00Z')
+      d.setUTCDate(d.getUTCDate() + i)
+      for (const q of getDailyQuestionsFor(d.toISOString().slice(0, 10), ROUND)) {
+        const prev = lastSeen.get(q.id)
+        if (prev !== undefined) closest = Math.min(closest, i - prev)
+        lastSeen.set(q.id, i)
+      }
+    }
+    expect(closest, 'una pregunta ha vuelto demasiado pronto').toBeGreaterThanOrEqual(10)
+  })
+
+  it('la composición de la ronda se mantiene día tras día', () => {
+    for (let i = 0; i < 30; i++) {
+      const d = new Date('2026-08-08T12:00:00Z')
+      d.setUTCDate(d.getUTCDate() + i)
+      const day = d.toISOString().slice(0, 10)
+      const round = getDailyQuestionsFor(day, ROUND)
+      expect(round, day).toHaveLength(ROUND)
+      expect(new Set(round.map(q => q.id)).size, `${day}: preguntas repetidas`).toBe(ROUND)
+      expect(round.map(q => q.difficulty).join(''), `${day}: curva rota`).toBe('1111222233')
+      expect(round.filter(q => q.sport === 'football').length, `${day}: demasiado fútbol`)
+        .toBeLessThanOrEqual(6)
+    }
   })
 
   it('getPracticeQuestions filtra por categoría y ordena por dificultad', () => {

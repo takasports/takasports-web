@@ -1,27 +1,21 @@
 // GET /api/sopa-cracks/today?week=YYYY-Www  (default = semana actual de Madrid)
 //
-// Sirve el MISMO puzzle semanal que juega la web: el estático PUZZLES[week % len]
-// o, si la redacción inyectó un featured para esa semana, ese. Además devuelve el
-// `seed` EXACTO que usa la web (hash31(puzzle.id) + nº de semana) para que la app
-// reconstruya la cuadrícula idéntica con su propio buildGrid (mismo mulberry32,
-// mismo orden de direcciones, mismo relleno). La app NO recalcula el seed.
+// Sirve el MISMO puzzle semanal que juega la web —lo decide `getWeeklyPuzzle`
+// (sopa-puzzles.ts, fuente única para web, app y servidor)— o, si la redacción
+// inyectó un featured para esa semana, ese. Además devuelve el `seed` EXACTO con
+// el que la web construye la cuadrícula, para que la app la reconstruya idéntica
+// con su propio buildGrid (mismo mulberry32, mismo orden de direcciones, mismo
+// relleno). La app NO recalcula el seed.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
-import { PUZZLES, type Puzzle } from '@/lib/sopa-puzzles'
+import { getWeeklyPuzzle, gridSeedFor, type Puzzle } from '@/lib/sopa-puzzles'
 import { madridWeekISO } from '@/lib/taka-time'
 
 export const dynamic = 'force-dynamic'
 
 function assertWeek(s: string | null): s is string {
   return !!s && /^\d{4}-W\d{2}$/.test(s)
-}
-
-// Igual que en el cliente web (sopa-cracks/page.tsx): hash de 31 del id.
-function hash31(id: string): number {
-  let h = 0
-  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) | 0
-  return h
 }
 
 export async function GET(req: NextRequest) {
@@ -32,7 +26,8 @@ export async function GET(req: NextRequest) {
   const week = param ?? madridWeekISO()
   const weekNumber = Number(week.slice(-2))
 
-  let puzzle: Puzzle = PUZZLES[weekNumber % PUZZLES.length]
+  // Misma selección que juega la web (sopa-puzzles.ts es la fuente única).
+  let puzzle: Puzzle = getWeeklyPuzzle(week)
   let source: 'static' | 'featured' = 'static'
 
   // Override editorial (si existe para esta semana).
@@ -60,7 +55,7 @@ export async function GET(req: NextRequest) {
     /* sin featured — se sirve el puzzle estático */
   }
 
-  const seed = hash31(puzzle.id) + weekNumber
+  const seed = gridSeedFor(puzzle.id, week)
 
   return NextResponse.json(
     { week, weekNumber, source, puzzle, seed },

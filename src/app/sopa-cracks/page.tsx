@@ -15,7 +15,7 @@ import GamePointsToast from '@/components/games/GamePointsToast'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
 import TimeAttackInfoModal from '@/components/games/TimeAttackInfoModal'
 import { type Player } from '@/lib/players-catalog'
-import { PUZZLES, findPlayerForWord, moveCursor, type Puzzle } from '@/lib/sopa-puzzles'
+import { findPlayerForWord, getWeeklyPuzzle, gridSeedFor, moveCursor, type Puzzle } from '@/lib/sopa-puzzles'
 import { CountryFlag, TargetIcon, BoltIcon } from '@/components/icons/GameIcons'
 import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 
@@ -34,15 +34,13 @@ const POINTS_PER_WORD = SOPA.POINTS_PER_WORD  // escala única (sidebar + scoreS
 const COLOR_INTRUDER = '#A78BFA'   // violeta, distinto del verde clásico
 
 // ── Selección de puzzle por semana ────────────────────────────
+// Qué sopa toca y con qué semilla se construye la cuadrícula lo decide
+// sopa-puzzles.ts (misma fuente que /api/sopa-cracks/today, que es lo que juega
+// la app). Antes estaba duplicado aquí y podían divergir.
 
 // Semana ISO en hora Taka (Madrid), fuente única en taka-time.
 function getISOWeek(d: Date): number {
   return madridWeekNumber(d)
-}
-
-function getCurrentPuzzle(): Puzzle {
-  const week = getISOWeek(new Date())
-  return PUZZLES[week % PUZZLES.length]
 }
 
 // ── Generación del grid ───────────────────────────────────────
@@ -201,7 +199,7 @@ function fmtTime(s: number): string {
 // ── Componente principal ──────────────────────────────────────
 
 export default function SopaCracksPage() {
-  const staticPuzzle = useMemo(() => getCurrentPuzzle(), [])
+  const staticPuzzle = useMemo(() => getWeeklyPuzzle(currentWeekISO()), [])
   const [featuredPuzzle, setFeaturedPuzzle] = useState<Puzzle | null>(null)
   const puzzle = featuredPuzzle ?? staticPuzzle
 
@@ -229,11 +227,7 @@ export default function SopaCracksPage() {
       .catch(() => { /* silencioso */ })
     return () => { cancelled = true }
   }, [])
-  const seed = useMemo(() => {
-    let h = 0
-    for (const ch of puzzle.id) h = (h * 31 + ch.charCodeAt(0)) | 0
-    return h + getISOWeek(new Date())
-  }, [puzzle.id])
+  const seed = useMemo(() => gridSeedFor(puzzle.id, currentWeekISO()), [puzzle.id])
 
   const { letters, placed } = useMemo(() => buildGrid(puzzle, seed), [puzzle, seed])
 
