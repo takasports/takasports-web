@@ -89,6 +89,35 @@ const FACTOR_CARDS_CONTENIDO = [
 
 type DbData = Partial<Record<string, RankingEntry[]>>
 
+// Cuándo vuelve a recalcularse. Espejo del launchd que dispara
+// scripts/weekly-rankings.mjs (com.taka.weekly-rankings-update): domingos a las
+// 23:45 y miércoles a las 22:00. Si allí cambia el horario, aquí también.
+const PASADAS = [
+  { dia: 0, hora: 23, min: 45 },  // domingo
+  { dia: 3, hora: 22, min: 0 },   // miércoles
+]
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+
+function proximaActualizacion(ahora: Date): string {
+  let proxima: Date | null = null
+  for (const p of PASADAS) {
+    for (let suma = 0; suma <= 7; suma++) {
+      const d = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + suma, p.hora, p.min)
+      if (d.getDay() !== p.dia || d <= ahora) continue
+      if (!proxima || d < proxima) proxima = d
+      break
+    }
+  }
+  if (!proxima) return 'esta semana'
+  const dias = Math.round(
+    (new Date(proxima.getFullYear(), proxima.getMonth(), proxima.getDate()).getTime() -
+      new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime()) / 86400000,
+  )
+  if (dias === 0) return 'hoy'
+  if (dias === 1) return 'mañana'
+  return `el ${DIAS[proxima.getDay()]}`
+}
+
 export default function RankingsClient({
   dbData         = {},
   lastUpdated,
@@ -117,6 +146,7 @@ export default function RankingsClient({
   const [ligaFilter, setLigaFilter]         = useState(initialLiga)
   const [cantera, setCantera]               = useState(initialCantera)
   const [sortMode, setSortMode]             = useState<'score' | 'hot'>('score')
+  const [toolsOpen, setToolsOpen]           = useState(false)
   const [searchQuery, setSearchQuery]       = useState(initialQuery)
 
   const isCreador = track === 'creador'
@@ -327,7 +357,10 @@ export default function RankingsClient({
                     const soloFecha = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
                     const diffDays = Math.round((soloFecha(now) - soloFecha(d)) / 86400000)
                     const label = diffDays <= 0 ? 'hoy' : diffDays === 1 ? 'ayer' : `hace ${diffDays} días`
-                    return `Actualizado ${label} · ${d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                    // Decir cuándo vuelve a cambiar es lo único que le faltaba
+                    // a la cabecera para tener calendario: el ranking se
+                    // recalcula solo, pero no lo contaba en ninguna parte.
+                    return `Actualizado ${label} · ${d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} · próxima ${proximaActualizacion(now)}`
                   }
                   const now = new Date()
                   const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -346,11 +379,31 @@ export default function RankingsClient({
                   contexto 20, mediático 15, forma 20. El texto anterior
                   prometía «estadística» y «percepción pública» — esta última
                   era el factor subjetivo que se retiró justamente para que el
-                  ranking no dependiera de opiniones. */}
+                  ranking no dependiera de opiniones.
+
+                  El ritmo de actualización NO va aquí: lo dice el sello de
+                  arriba («próxima el domingo»), y repetirlo costaba una línea
+                  entera de las tres que ocupa este párrafo en móvil. */}
               Rankings propios de Taka: rendimiento medido, nivel de competición,
-              repercusión mediática y forma reciente. Se recalcula dos veces por semana.
+              repercusión mediática y forma reciente.
             </p>
-            <div className="mt-4 flex justify-center gap-2 flex-wrap">
+            {/* Reyes del deporte, Comparador y Mi Top son herramientas, no la
+                razón por la que alguien abre un ranking. Como tres botones
+                grandes competían con las pestañas que hay justo debajo —dos
+                niveles de navegación discutiendo por el mismo sitio— y metían
+                casi una pantalla de cabecera antes del primer nombre en móvil.
+                Ahora es un solo control que se abre si lo buscas. */}
+            <div className="mt-4 flex flex-col items-center gap-2">
+              <button
+                onClick={() => setToolsOpen(o => !o)}
+                aria-expanded={toolsOpen}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
+                style={{ background: 'rgba(255,255,255,0.05)', color: '#8A8AA0', border: '1px solid rgba(255,255,255,0.09)', cursor: 'pointer', fontFamily: 'var(--font-sport)' }}
+              >
+                Herramientas <span style={{ fontSize: 8 }}>{toolsOpen ? '▲' : '▼'}</span>
+              </button>
+              {toolsOpen && (
+            <div className="flex justify-center gap-2 flex-wrap">
               <Link
                 href="/rankings/todos"
                 className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
@@ -372,6 +425,8 @@ export default function RankingsClient({
               >
                 ❤ Mi Top
               </Link>
+            </div>
+              )}
             </div>
           </div>
         </div>
