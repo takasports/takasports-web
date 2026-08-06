@@ -54,6 +54,57 @@ describe('crackquiz · integridad estructural del banco', () => {
     }
   })
 
+  it('no hay preguntas equivalentes (mismo tema Y misma respuesta)', () => {
+    // El duplicado exacto casi nunca ocurre; el que sí ocurre —y ocurrió al
+    // ampliar el banco— es la MISMA pregunta reescrita: "¿En qué ciudad juega
+    // el Celtic FC?" y "¿En qué ciudad juega el Celtic de Escocia?". Se detecta
+    // por solape de palabras significativas + respuesta correcta idéntica.
+    // Preguntas con el mismo molde pero distinta respuesta ("máximo goleador de
+    // la Bundesliga" vs "…de la Serie A") NO son duplicados y no se marcan.
+    const STOP = new Set([
+      'cual', 'que', 'quien', 'fue', 'gano', 'the', 'del', 'las', 'los', 'con',
+      'por', 'para', 'ano', 'anos', 'mas', 'como', 'una', 'este', 'esta',
+    ])
+    // Singulariza a lo bruto: sin esto, "Eurocopa" y "Eurocopas" cuentan como
+    // palabras distintas y una pregunta reescrita en plural se cuela.
+    const stem = (w: string): string => (w.length > 4 && w.endsWith('s') ? w.slice(0, -1) : w)
+    const keywords = (s: string): Set<string> =>
+      new Set(
+        s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+          .split(/[^a-z0-9]+/)
+          .filter(w => w.length > 3 && !STOP.has(w))
+          .map(stem),
+      )
+
+    const items = QUESTIONS.map(q => ({
+      id: q.id,
+      text: q.question,
+      answer: q.options[q.correctIndex].toLowerCase().trim(),
+      kw: keywords(q.question),
+    }))
+
+    const clashes: string[] = []
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        if (items[i].answer !== items[j].answer) continue
+        const a = items[i].kw, b = items[j].kw
+        const shared = [...a].filter(w => b.has(w)).length
+        const union = new Set([...a, ...b]).size
+        if (union === 0) continue
+        // Una es la otra reescrita: o sus palabras son un subconjunto (misma
+        // pregunta con un matiz de más), o el solape es altísimo. Coincidir en
+        // la respuesta NO basta: "¿Cuántos Mundiales ha ganado Alemania?" y
+        // "…Italia?" responden 4 las dos y son preguntas distintas — ahí cada
+        // una aporta su propia entidad, así que ninguna contiene a la otra.
+        const subset = shared === a.size || shared === b.size
+        if (subset || shared / union >= 0.75) {
+          clashes.push(`${items[i].id} ≈ ${items[j].id}: "${items[i].text}" / "${items[j].text}"`)
+        }
+      }
+    }
+    expect(clashes, `preguntas equivalentes:\n${clashes.join('\n')}`).toEqual([])
+  })
+
   it('no hay enunciados duplicados exactos', () => {
     const seen = new Map<string, string>()
     for (const q of QUESTIONS) {
@@ -181,6 +232,19 @@ describe('crackquiz · centinelas de factualidad', () => {
     bk003: 'Boston Celtics',    // NBA 2024
     tn003: 'Novak Djokovic',    // récord masculino de Slams
     mt001: '7',                 // títulos F1 de Schumacher
+    // Ampliación 2026-08-07: los datos más fáciles de apuntar mal del lote.
+    fb106: 'Lucien Laurent',    // primer gol de la historia de los Mundiales (1930)
+    fb112: 'Alemania Federal',  // 3 finales seguidas: 82, 86 y 90 (ganó solo la última)
+    fb116: '5',                 // Copas de Europa consecutivas del Madrid desde 1956
+    fb124: 'Lazio',             // última Recopa (1999)
+    fb136: 'Lev Yashin',        // único portero con Balón de Oro
+    fb154: 'Independiente',     // más Libertadores
+    fb156: 'Gerd Müller',       // máximo goleador de la Bundesliga
+    fb157: 'Silvio Piola',      // máximo goleador de la Serie A
+    fb158: '41',                // récord de goles de Lewandowski en una Bundesliga
+    fb160: 'El IFAB',           // redacta las Reglas de Juego
+    fb164: '9,15 m',            // radio del círculo central
+    fb171: '7',                 // mínimo de jugadores para seguir jugando
   }
   for (const [id, answer] of Object.entries(EXPECTED)) {
     it(`${id} → "${answer}"`, () => {

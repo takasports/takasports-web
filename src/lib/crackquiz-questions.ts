@@ -1025,6 +1025,87 @@ export const QUESTIONS: QuizQuestion[] = [
   { id: 'fb104', question: '¿Qué entrenador dirigió al Barcelona del "tiki-taka" y el sextete (2008-2012)?', options: ['Luis Enrique', 'Pep Guardiola', 'Tito Vilanova', 'Frank Rijkaard'], correctIndex: 1, category: 'clubes', sport: 'football', difficulty: 1 },
   { id: 'fb105', question: '¿Qué club ganó su primera Champions League en 2025?', options: ['Inter de Milán', 'Paris Saint-Germain', 'Arsenal', 'Borussia Dortmund'], correctIndex: 1, category: 'champions', sport: 'football', difficulty: 2 },
 
+  // ── Ampliación 2026-08-07 · fútbol ──────────────────────────────
+  // 60 preguntas para las bolsas de fútbol, que eran las que antes se
+  // agotaban (la de fútbol difícil tenía 27 → una vuelta cada 27 días).
+  // Criterio de redacción: SOLO hechos estables y comprobables (finales,
+  // palmarés cerrados, récords históricos, Reglas de Juego). Nada que
+  // dependa de la temporada en curso, y lo que envejece va anclado con
+  // año — un dato "vigente" se convierte en una respuesta mal puesta en
+  // cuanto pasa el tiempo, y este banco ya arrastró bugs de ese tipo.
+
+  // Mundiales
+  { id: 'fb106', question: '¿Quién marcó el primer gol de la historia de los Mundiales, en 1930?', options: ['Guillermo Stábile', 'Lucien Laurent', 'Bert Patenaude', 'Pedro Cea'], correctIndex: 1, category: 'mundiales', sport: 'football', difficulty: 3 },
+  { id: 'fb107', question: '¿En qué estadio se jugó la final del Mundial de 1950?', options: ['Maracaná', 'Estadio Centenario', 'La Bombonera', 'Estadio Azteca'], correctIndex: 0, category: 'mundiales', sport: 'football', difficulty: 2 },
+  { id: 'fb108', question: '¿Quién fue el máximo goleador del Mundial de 1970?', options: ['Pelé', 'Gerd Müller', 'Jairzinho', 'Bobby Charlton'], correctIndex: 1, category: 'mundiales', sport: 'football', difficulty: 3 },
+  { id: 'fb109', question: '¿Qué selección eliminó a Brasil en los cuartos de final del Mundial 2022?', options: ['Argentina', 'Países Bajos', 'Croacia', 'Marruecos'], correctIndex: 2, category: 'mundiales', sport: 'football', difficulty: 2 },
+  { id: 'fb111', question: '¿Qué país fue sede del Mundial de 2002 junto a Corea del Sur?', options: ['China', 'Japón', 'Australia', 'Tailandia'], correctIndex: 1, category: 'mundiales', sport: 'football', difficulty: 1 },
+  { id: 'fb112', question: '¿Qué selección disputó tres finales de Mundial consecutivas en 1982, 1986 y 1990?', options: ['Países Bajos', 'Argentina', 'Alemania Federal', 'Italia'], correctIndex: 2, category: 'mundiales', sport: 'football', difficulty: 3 },
+  { id: 'fb114', question: '¿Cuántos goles marcó Kylian Mbappé en la final del Mundial 2022?', options: ['1', '2', '3', '4'], correctIndex: 2, category: 'mundiales', sport: 'football', difficulty: 2 },
+  { id: 'fb115', question: '¿Qué selección ganó el Mundial de 1954 en la llamada "final de Berna"?', options: ['Hungría', 'Alemania Federal', 'Uruguay', 'Austria'], correctIndex: 1, category: 'mundiales', sport: 'football', difficulty: 3 },
+
+  // Champions / Copa de Europa
+  { id: 'fb116', question: '¿Cuántas Copas de Europa consecutivas ganó el Real Madrid a partir de 1956?', options: ['3', '4', '5', '6'], correctIndex: 2, category: 'champions', sport: 'football', difficulty: 2 },
+  { id: 'fb117', question: '¿Qué club inglés ganó la Copa de Europa en 1979 y 1980?', options: ['Aston Villa', 'Nottingham Forest', 'Liverpool', 'Leeds United'], correctIndex: 1, category: 'champions', sport: 'football', difficulty: 3 },
+  { id: 'fb118', question: '¿Qué club ganó la Copa de Europa de 1982?', options: ['Aston Villa', 'Everton', 'Tottenham', 'Ipswich Town'], correctIndex: 0, category: 'champions', sport: 'football', difficulty: 3 },
+  { id: 'fb119', question: '¿Con qué club ganó José Mourinho la Champions League en 2004?', options: ['Chelsea', 'Inter de Milán', 'Oporto', 'Benfica'], correctIndex: 2, category: 'champions', sport: 'football', difficulty: 2 },
+  { id: 'fb120', question: '¿Qué club completó el triplete (liga, copa y Champions) en 2010?', options: ['FC Barcelona', 'Inter de Milán', 'Bayern Múnich', 'Manchester United'], correctIndex: 1, category: 'champions', sport: 'football', difficulty: 2 },
+  { id: 'fb121', question: '¿Qué club completó el triplete en 2013?', options: ['Bayern Múnich', 'Borussia Dortmund', 'Real Madrid', 'Chelsea'], correctIndex: 0, category: 'champions', sport: 'football', difficulty: 2 },
+  { id: 'fb122', question: '¿Qué jugador acumula más partidos en la historia de la Champions League (hasta 2024)?', options: ['Iker Casillas', 'Lionel Messi', 'Xavi Hernández', 'Cristiano Ronaldo'], correctIndex: 3, category: 'champions', sport: 'football', difficulty: 3 },
+  { id: 'fb123', question: '¿Qué entrenador ha ganado más veces la Champions League (hasta 2024)?', options: ['Pep Guardiola', 'Carlo Ancelotti', 'Zinedine Zidane', 'Bob Paisley'], correctIndex: 1, category: 'champions', sport: 'football', difficulty: 2 },
+  { id: 'fb124', question: '¿Qué club ganó la última edición de la Recopa de Europa, en 1999?', options: ['Chelsea', 'Lazio', 'Mallorca', 'Parma'], correctIndex: 1, category: 'champions', sport: 'football', difficulty: 3 },
+  { id: 'fb125', question: '¿En qué estadio ganó el Manchester United la Champions de 1999 con dos goles en el descuento?', options: ['Wembley', 'Camp Nou', 'San Siro', 'Old Trafford'], correctIndex: 1, category: 'champions', sport: 'football', difficulty: 3 },
+
+  // Selecciones
+  { id: 'fb126', question: '¿Qué selección ganó la primera Eurocopa, en 1960?', options: ['Unión Soviética', 'Yugoslavia', 'España', 'Francia'], correctIndex: 0, category: 'selecciones', sport: 'football', difficulty: 3 },
+  { id: 'fb127', question: '¿En qué año ganó Grecia la Eurocopa?', options: ['2000', '2004', '2008', '2012'], correctIndex: 1, category: 'selecciones', sport: 'football', difficulty: 2 },
+  { id: 'fb128', question: '¿Quién es el máximo goleador histórico de la Eurocopa (hasta 2024)?', options: ['Michel Platini', 'Cristiano Ronaldo', 'Alan Shearer', 'Antoine Griezmann'], correctIndex: 1, category: 'selecciones', sport: 'football', difficulty: 2 },
+  { id: 'fb129', question: '¿Qué selección ganó la Copa América 2021 en el Maracaná?', options: ['Brasil', 'Argentina', 'Uruguay', 'Colombia'], correctIndex: 1, category: 'selecciones', sport: 'football', difficulty: 2 },
+  { id: 'fb130', question: '¿Qué capitán levantó el Mundial de 1998 y la Eurocopa 2000 con Francia?', options: ['Zinedine Zidane', 'Marcel Desailly', 'Didier Deschamps', 'Laurent Blanc'], correctIndex: 2, category: 'selecciones', sport: 'football', difficulty: 3 },
+  { id: 'fb133', question: '¿Qué selección ganó la Eurocopa 1992 tras entrar como sustituta de Yugoslavia?', options: ['Dinamarca', 'Suecia', 'Noruega', 'Países Bajos'], correctIndex: 0, category: 'selecciones', sport: 'football', difficulty: 3 },
+  { id: 'fb134', question: '¿Qué club ganó la primera edición de la Copa Intercontinental, en 1960?', options: ['Real Madrid', 'Peñarol', 'Santos', 'Benfica'], correctIndex: 0, category: 'historia', sport: 'football', difficulty: 3 },
+
+  // Jugadores
+  { id: 'fb135', question: '¿Quién ganó el Balón de Oro en 2018?', options: ['Cristiano Ronaldo', 'Lionel Messi', 'Luka Modrić', 'Antoine Griezmann'], correctIndex: 2, category: 'jugadores', sport: 'football', difficulty: 2 },
+  { id: 'fb136', question: '¿Quién es el único portero que ha ganado el Balón de Oro?', options: ['Dino Zoff', 'Lev Yashin', 'Gianluigi Buffon', 'Oliver Kahn'], correctIndex: 1, category: 'jugadores', sport: 'football', difficulty: 3 },
+  { id: 'fb137', question: '¿Quién ganó el Balón de Oro en 2006, tras el Mundial de Alemania?', options: ['Thierry Henry', 'Fabio Cannavaro', 'Gianluigi Buffon', 'Ronaldinho'], correctIndex: 1, category: 'jugadores', sport: 'football', difficulty: 3 },
+  { id: 'fb139', question: '¿Quién ganó la Bota de Oro europea de la temporada 2023-24 con 36 goles?', options: ['Erling Haaland', 'Harry Kane', 'Kylian Mbappé', 'Artem Dovbyk'], correctIndex: 1, category: 'jugadores', sport: 'football', difficulty: 3 },
+  { id: 'fb140', question: '¿En qué club debutó como profesional Zinedine Zidane?', options: ['Burdeos', 'Cannes', 'Marsella', 'Juventus'], correctIndex: 1, category: 'jugadores', sport: 'football', difficulty: 3 },
+  { id: 'fb141', question: '¿Qué apodo recibía Ferenc Puskás?', options: ['El Cañoncito Pum', 'La Pulga', 'El Divino', 'La Saeta Rubia'], correctIndex: 0, category: 'jugadores', sport: 'football', difficulty: 3 },
+  { id: 'fb142', question: '¿En qué club argentino se formó Alfredo Di Stéfano?', options: ['Boca Juniors', 'River Plate', 'Independiente', 'Racing Club'], correctIndex: 1, category: 'jugadores', sport: 'football', difficulty: 2 },
+  { id: 'fb143', question: '¿Qué jugador fue apodado "El Fenómeno"?', options: ['Ronaldinho', 'Ronaldo Nazário', 'Romário', 'Rivaldo'], correctIndex: 1, category: 'jugadores', sport: 'football', difficulty: 1 },
+  { id: 'fb144', question: '¿Con qué club ganó Diego Maradona dos Scudetti en Italia?', options: ['Roma', 'Napoli', 'Fiorentina', 'Lazio'], correctIndex: 1, category: 'jugadores', sport: 'football', difficulty: 1 },
+
+  // Clubes
+  { id: 'fb145', question: '¿Qué club ganó la primera edición de la Premier League (1992-93)?', options: ['Arsenal', 'Blackburn Rovers', 'Manchester United', 'Liverpool'], correctIndex: 2, category: 'clubes', sport: 'football', difficulty: 2 },
+  { id: 'fb148', question: '¿Qué dos clubes comparten el estadio de San Siro?', options: ['Milan e Inter', 'Roma y Lazio', 'Juventus y Torino', 'Génova y Sampdoria'], correctIndex: 0, category: 'clubes', sport: 'football', difficulty: 1 },
+  { id: 'fb149', question: '¿Qué clubes disputan el "Derbi della Mole" en Turín?', options: ['Milan e Inter', 'Juventus y Torino', 'Roma y Lazio', 'Nápoles y Salernitana'], correctIndex: 1, category: 'clubes', sport: 'football', difficulty: 3 },
+  { id: 'fb150', question: '¿Qué club alemán es conocido como "el club obrero del Ruhr" y juega en el Veltins-Arena?', options: ['Borussia Dortmund', 'Schalke 04', 'Bayer Leverkusen', 'Werder Bremen'], correctIndex: 1, category: 'clubes', sport: 'football', difficulty: 3 },
+  { id: 'fb151', question: '¿Qué club portugués es conocido como "As Águias" (Las Águilas)?', options: ['Sporting CP', 'Oporto', 'Benfica', 'Braga'], correctIndex: 2, category: 'clubes', sport: 'football', difficulty: 2 },
+  { id: 'fb153', question: '¿Qué club ganó la Copa Libertadores de 2024?', options: ['Flamengo', 'River Plate', 'Botafogo', 'Palmeiras'], correctIndex: 2, category: 'clubes', sport: 'football', difficulty: 3 },
+  { id: 'fb154', question: '¿Qué club es el más laureado de la Copa Libertadores (hasta 2024)?', options: ['Boca Juniors', 'Independiente', 'Peñarol', 'River Plate'], correctIndex: 1, category: 'clubes', sport: 'football', difficulty: 3 },
+
+  // Récords e historia
+  { id: 'fb155', question: '¿Quién es el máximo goleador histórico de la Premier League?', options: ['Wayne Rooney', 'Alan Shearer', 'Harry Kane', 'Thierry Henry'], correctIndex: 1, category: 'records', sport: 'football', difficulty: 2 },
+  { id: 'fb156', question: '¿Quién es el máximo goleador histórico de la Bundesliga?', options: ['Robert Lewandowski', 'Gerd Müller', 'Klaus Fischer', 'Jupp Heynckes'], correctIndex: 1, category: 'records', sport: 'football', difficulty: 3 },
+  { id: 'fb157', question: '¿Quién es el máximo goleador histórico de la Serie A?', options: ['Francesco Totti', 'Silvio Piola', 'Gunnar Nordahl', 'Roberto Baggio'], correctIndex: 1, category: 'records', sport: 'football', difficulty: 3 },
+  { id: 'fb158', question: '¿Cuántos goles marcó Robert Lewandowski en la Bundesliga 2020-21, récord de la competición?', options: ['39', '40', '41', '43'], correctIndex: 2, category: 'records', sport: 'football', difficulty: 3 },
+  { id: 'fb159', question: '¿En qué año se disputó la primera final de la Copa de Europa?', options: ['1950', '1956', '1960', '1963'], correctIndex: 1, category: 'historia', sport: 'football', difficulty: 2 },
+  { id: 'fb160', question: '¿Qué organismo redacta las Reglas de Juego del fútbol?', options: ['La FIFA', 'La UEFA', 'El IFAB', 'El COI'], correctIndex: 2, category: 'historia', sport: 'football', difficulty: 3 },
+
+  // Reglas (hechos estables del reglamento)
+  { id: 'fb161', question: '¿A qué distancia de la línea de meta está el punto de penalti?', options: ['9,15 metros', '10 metros', '11 metros', '12 metros'], correctIndex: 2, category: 'reglas', sport: 'football', difficulty: 2 },
+  { id: 'fb163', question: '¿Cuánto mide de alto una portería reglamentaria?', options: ['2,20 m', '2,44 m', '2,50 m', '3,00 m'], correctIndex: 1, category: 'reglas', sport: 'football', difficulty: 3 },
+  { id: 'fb164', question: '¿Cuál es el radio del círculo central de un campo de fútbol?', options: ['7,32 m', '9,15 m', '10 m', '11 m'], correctIndex: 1, category: 'reglas', sport: 'football', difficulty: 3 },
+  { id: 'fb165', question: '¿Puede marcarse gol directamente desde un saque de banda?', options: ['Sí, siempre', 'No', 'Solo si lo toca otro jugador', 'Solo en la segunda parte'], correctIndex: 1, category: 'reglas', sport: 'football', difficulty: 2 },
+  { id: 'fb166', question: '¿Se puede estar en fuera de juego recibiendo directamente un saque de banda?', options: ['Sí', 'No', 'Solo en campo contrario', 'Solo si hay VAR'], correctIndex: 1, category: 'reglas', sport: 'football', difficulty: 3 },
+  { id: 'fb167', question: '¿Cuánto dura la prórroga completa en un partido eliminatorio?', options: ['20 minutos', '30 minutos', '15 minutos', '40 minutos'], correctIndex: 1, category: 'reglas', sport: 'football', difficulty: 1 },
+  { id: 'fb168', question: '¿En qué Mundial se usó el VAR por primera vez?', options: ['2014', '2018', '2022', '2010'], correctIndex: 1, category: 'reglas', sport: 'football', difficulty: 2 },
+  { id: 'fb169', question: '¿Qué se señala si un portero toca con las manos una cesión hecha con el pie por un compañero?', options: ['Penalti', 'Libre indirecto', 'Libre directo', 'Saque de banda'], correctIndex: 1, category: 'reglas', sport: 'football', difficulty: 3 },
+  { id: 'fb170', question: '¿Puede marcarse gol olímpico, es decir, directamente desde un saque de esquina?', options: ['Sí', 'No', 'Solo si lo toca el portero', 'Solo en prórroga'], correctIndex: 0, category: 'reglas', sport: 'football', difficulty: 2 },
+  { id: 'fb171', question: '¿Cuántos jugadores debe tener como mínimo un equipo para que el partido continúe?', options: ['6', '7', '8', '9'], correctIndex: 1, category: 'reglas', sport: 'football', difficulty: 3 },
+  { id: 'fb172', question: '¿Qué tarjeta ve un jugador que recibe su segunda amonestación en el mismo partido?', options: ['Amarilla', 'Roja', 'Azul', 'Ninguna, solo aviso'], correctIndex: 1, category: 'reglas', sport: 'football', difficulty: 1 },
+
   // ═══════════════════════════════════════════════════════════════
   // BALONCESTO (6A)
   // ═══════════════════════════════════════════════════════════════
@@ -1071,7 +1152,6 @@ export const QUESTIONS: QuizQuestion[] = [
   { id: 'tn002', question: '¿En qué superficie se juega Roland Garros?', options: ['Hierba', 'Tierra batida', 'Cemento', 'Moqueta'], correctIndex: 1, category: 'reglas', sport: 'tennis', difficulty: 1 },
   { id: 'tn003', question: '¿Quién tiene el récord masculino de más Grand Slams?', options: ['Roger Federer', 'Rafael Nadal', 'Novak Djokovic', 'Pete Sampras'], correctIndex: 2, category: 'records', sport: 'tennis', difficulty: 1 },
   { id: 'tn004', question: '¿Cuántos Wimbledon ganó Roger Federer, récord masculino?', options: ['6', '7', '8', '9'], correctIndex: 2, category: 'records', sport: 'tennis', difficulty: 2 },
-  { id: 'tn005', question: '¿Qué tenista ganó el Open de Australia 2024?', options: ['Novak Djokovic', 'Jannik Sinner', 'Daniil Medvedev', 'Carlos Alcaraz'], correctIndex: 1, category: 'records', sport: 'tennis', difficulty: 2 },
   { id: 'tn006', question: '¿De qué país es Carlos Alcaraz?', options: ['Argentina', 'España', 'Italia', 'Serbia'], correctIndex: 1, category: 'jugadores', sport: 'tennis', difficulty: 1 },
   { id: 'tn007', question: '¿Quién ganó Wimbledon 2023 batiendo a Djokovic en la final?', options: ['Daniil Medvedev', 'Carlos Alcaraz', 'Jannik Sinner', 'Stefanos Tsitsipas'], correctIndex: 1, category: 'records', sport: 'tennis', difficulty: 2 },
   { id: 'tn008', question: '¿Cuántos Grand Slams ganó Serena Williams?', options: ['21', '22', '23', '24'], correctIndex: 2, category: 'records', sport: 'tennis', difficulty: 2 },
