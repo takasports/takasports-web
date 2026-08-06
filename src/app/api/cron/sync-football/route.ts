@@ -206,16 +206,20 @@ async function handle(req: Request) {
 
   const fixtures: FootballFixture[] = []
   const stateByEspnId = new Map<string, EspnState>()
+  // Dedupe con su propio registro y no con el de estados: un mismo partido no
+  // debería llegar por dos scoreboards, pero si pasa (supercopas que ESPN
+  // cuelga de dos slugs) nos quedamos con el primero. Usar el mapa de estados
+  // como registro dejaría pasar un duplicado cada vez que el primero llegara
+  // sin estado legible.
+  const seen = new Set<string>()
 
   for (const r of settled) {
     if (r.status !== 'fulfilled') continue
     for (const ev of r.value.events) {
+      if (seen.has(ev.id)) continue
       const fixture = toFixture(ev, r.value.src.comp, r.value.src.slug)
       if (!fixture) continue
-      // Dedupe: un mismo partido no debería llegar por dos scoreboards, pero si
-      // pasa (supercopas que ESPN cuelga de dos slugs) nos quedamos con el
-      // primero para que la identidad del evento sea estable.
-      if (stateByEspnId.has(ev.id)) continue
+      seen.add(ev.id)
       const state = readState(ev)
       if (state) stateByEspnId.set(ev.id, state)
       fixtures.push(fixture)
@@ -316,21 +320,25 @@ async function handle(req: Request) {
 
     // score_ranked_prediction escribe el resultado, marca el evento como
     // resolved y acredita puntos en una sola transacción idempotente.
-    try {
-      await admin.rpc('score_ranked_prediction', {
-        p_event_id:   id,
-        p_winner:     state.winner,
-        p_home_score: state.homeScore,
-        p_away_score: state.awayScore,
-      })
-      resolved++
-    } catch {
-      scoringFailures++
-    }
+    //
+    // OJO: supabase-js NO lanza cuando la RPC falla, devuelve { error }. Con un
+    // try/catch alrededor, un fallo de scoring se contaría como éxito y la
+    // alerta de más abajo no saltaría nunca: partidos resueltos, usuarios sin
+    // sus puntos y ni un log. Hay que mirar `error` explícitamente.
+    const { error: rpcErr } = await admin.rpc('score_ranked_prediction', {
+      p_event_id:   id,
+      p_winner:     state.winner,
+      p_home_score: state.homeScore,
+      p_away_score: state.awayScore,
+    })
+    if (rpcErr) scoringFailures++
+    else resolved++
   }
 
   // ── 5. Cerrar los ya empezados ─────────────────────────────────────────────
-  try { await admin.rpc('close_started_ranked_events') } catch { /* no-op */ }
+  // Cosmético: los picks ya se bloquean 60 min antes del kickoff en la API, así
+  // que si esto falla nadie puede colar una predicción tardía.
+  await admin.rpc('close_started_ranked_events')
 
   if (scoringFailures > 0) {
     await sendTelegram(
