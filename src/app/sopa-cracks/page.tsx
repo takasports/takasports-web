@@ -15,7 +15,7 @@ import GamePointsToast from '@/components/games/GamePointsToast'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
 import TimeAttackInfoModal from '@/components/games/TimeAttackInfoModal'
 import { type Player } from '@/lib/players-catalog'
-import { findPlayerForWord, getWeeklyPuzzle, gridSeedFor, moveCursor, type Puzzle } from '@/lib/sopa-puzzles'
+import { buildGrid, findPlayerForWord, getWeeklyPuzzle, gridSeedFor, moveCursor, type Puzzle } from '@/lib/sopa-puzzles'
 import { CountryFlag, TargetIcon, BoltIcon } from '@/components/icons/GameIcons'
 import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 
@@ -44,91 +44,8 @@ function getISOWeek(d: Date): number {
 }
 
 // ── Generación del grid ───────────────────────────────────────
-
-const DIRS: ReadonlyArray<[number, number]> = [
-  [0, 1],   // →
-  [0, -1],  // ←
-  [1, 0],   // ↓
-  [-1, 0],  // ↑
-  [1, 1],   // ↘
-  [-1, -1], // ↖
-  [1, -1],  // ↙
-  [-1, 1],  // ↗
-]
-
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-
-interface BuiltGrid {
-  letters: string[][]
-  placed: Placed[]
-}
-
-// Mulberry32 — PRNG determinista por seed
-function mulberry32(seed: number) {
-  return function () {
-    seed |= 0
-    seed = (seed + 0x6D2B79F5) | 0
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-function buildGrid(puzzle: Puzzle, seed: number): BuiltGrid {
-  const N = puzzle.size
-  const rand = mulberry32(seed)
-  const letters: string[][] = Array.from({ length: N }, () => Array(N).fill(''))
-  const placed: Placed[] = []
-
-  // Lista de palabras + intrusa (si la hay) marcada con flag.
-  const toPlace: Array<{ word: string; intruder: boolean }> = [
-    ...puzzle.words.map(w => ({ word: w, intruder: false })),
-    ...(puzzle.intruder ? [{ word: puzzle.intruder, intruder: true }] : []),
-  ]
-  // Ordenar por longitud descendente — colocar las largas primero
-  const sorted = toPlace.sort((a, b) => b.word.length - a.word.length)
-
-  for (const item of sorted) {
-    const { word } = item
-    let placedOk = false
-    for (let attempt = 0; attempt < 200 && !placedOk; attempt++) {
-      const dir = DIRS[Math.floor(rand() * DIRS.length)]
-      const r0 = Math.floor(rand() * N)
-      const c0 = Math.floor(rand() * N)
-
-      // Comprobar cabida
-      const cells: Cell[] = []
-      let fits = true
-      for (let i = 0; i < word.length; i++) {
-        const r = r0 + dir[0] * i
-        const c = c0 + dir[1] * i
-        if (r < 0 || r >= N || c < 0 || c >= N) { fits = false; break }
-        const existing = letters[r][c]
-        if (existing && existing !== word[i]) { fits = false; break }
-        cells.push({ r, c })
-      }
-      if (!fits) continue
-
-      // Colocar
-      for (let i = 0; i < word.length; i++) {
-        letters[cells[i].r][cells[i].c] = word[i]
-      }
-      placed.push(item.intruder ? { word, cells, intruder: true } : { word, cells })
-      placedOk = true
-    }
-  }
-
-  // Rellenar huecos
-  for (let r = 0; r < N; r++) {
-    for (let c = 0; c < N; c++) {
-      if (!letters[r][c]) {
-        letters[r][c] = ALPHABET[Math.floor(rand() * 26)]
-      }
-    }
-  }
-
-  return { letters, placed }
-}
+// buildGrid vive ahora en @/lib/sopa-puzzles (puro y testeable: así se puede
+// comprobar que las palabras de cada sopa CABEN de verdad en la cuadrícula).
 
 // ── Helpers de selección ──────────────────────────────────────
 

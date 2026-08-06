@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { PUZZLES, findPlayerForWord, moveCursor } from './sopa-puzzles'
+import { PUZZLES, buildGrid, findPlayerForWord, gridSeedFor, moveCursor } from './sopa-puzzles'
 import { getPlayerById } from './players-catalog'
 
 // Forma comparable: minúsculas, sin acentos, sin espacios ni signos.
@@ -37,6 +37,47 @@ describe('sopa-cracks · playerIds', () => {
         expect(valid.has(word), `${pz.id}/${word} no está en el puzzle`).toBe(true)
       }
     }
+  })
+})
+
+describe('sopa-cracks · las palabras caben en la cuadrícula', () => {
+  // buildGrid descarta en silencio lo que no logra colocar en 200 intentos. Con
+  // 31 sopas (la mayoría generadas desde el catálogo) hay que comprobarlo: una
+  // sopa a la que le falten palabras se juega "corta" sin que nadie se entere.
+  it('cada puzzle coloca TODAS sus palabras, con la semilla de cualquier semana', () => {
+    // La semilla depende de la semana en la que toque el puzzle, así que no
+    // basta con probar una: se recorren las 53 posibles.
+    for (const pz of PUZZLES) {
+      for (let week = 1; week <= 53; week++) {
+        const seed = gridSeedFor(pz.id, `2026-W${String(week).padStart(2, '0')}`)
+        const placedWords = new Set(buildGrid(pz, seed).placed.map(p => p.word))
+        for (const w of pz.words) {
+          expect(placedWords.has(w), `${pz.id} (semana ${week}): "${w}" no cabe`).toBe(true)
+        }
+      }
+    }
+  })
+
+  it('ninguna palabra excede el lado de su cuadrícula', () => {
+    for (const pz of PUZZLES) {
+      for (const w of [...pz.words, ...(pz.intruder ? [pz.intruder] : [])]) {
+        expect(w.length, `${pz.id}: "${w}" mide más que el lado (${pz.size})`)
+          .toBeLessThanOrEqual(pz.size)
+        expect(/^[A-Z]+$/.test(w), `${pz.id}: "${w}" tiene caracteres no válidos`).toBe(true)
+      }
+    }
+  })
+
+  it('no hay palabras repetidas dentro de un puzzle', () => {
+    for (const pz of PUZZLES) {
+      const all = [...pz.words, ...(pz.intruder ? [pz.intruder] : [])]
+      expect(new Set(all).size, `${pz.id}: palabras repetidas`).toBe(all.length)
+    }
+  })
+
+  it('los ids de puzzle son únicos', () => {
+    const ids = PUZZLES.map(p => p.id)
+    expect(new Set(ids).size).toBe(ids.length)
   })
 })
 
