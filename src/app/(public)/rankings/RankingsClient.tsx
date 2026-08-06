@@ -109,10 +109,6 @@ export default function RankingsClient({
   const initialLiga    = searchParams.get('liga') ?? ''
   const initialGender  = searchParams.get('gender') === 'f' ? 'f' : 'm'
   const initialCantera = searchParams.get('cantera') === '1'
-  const initialBadgeRaw = searchParams.get('badge') ?? ''
-  const initialBadge: '' | 'Histórico' | 'Revelación' | 'Nuevo' =
-    initialBadgeRaw === 'Histórico' || initialBadgeRaw === 'Revelación' || initialBadgeRaw === 'Nuevo'
-      ? initialBadgeRaw : ''
   const initialQuery = searchParams.get('q') ?? ''
 
   const [track, setTrack]                   = useState<Track>(initialTrack)
@@ -122,7 +118,6 @@ export default function RankingsClient({
   const [cantera, setCantera]               = useState(initialCantera)
   const [sortMode, setSortMode]             = useState<'score' | 'hot'>('score')
   const [searchQuery, setSearchQuery]       = useState(initialQuery)
-  const [badgeFilter, setBadgeFilter]       = useState<'' | 'Histórico' | 'Revelación' | 'Nuevo'>(initialBadge)
 
   const isCreador = track === 'creador'
   const sportAccent = activeSport && !isCreador ? getSportStyle(activeSport).accent : (isCreador ? '#f59e0b' : '#7C3AED')
@@ -224,11 +219,10 @@ export default function RankingsClient({
     if (ligaFilter) params.set('liga', ligaFilter)
     if (gender === 'f') params.set('gender', 'f')
     if (cantera) params.set('cantera', '1')
-    if (badgeFilter) params.set('badge', badgeFilter)
     if (searchQuery.trim()) params.set('q', searchQuery.trim())
     const query = params.toString()
     router.replace(query ? `?${query}` : '?', { scroll: false })
-  }, [track, activeSport, ligaFilter, gender, cantera, badgeFilter, searchQuery, router])
+  }, [track, activeSport, ligaFilter, gender, cantera, searchQuery, router])
 
   // ── Handlers ─────────────────────────────────────────────────────
   const handleTrackChange = (t: Track) => {
@@ -259,7 +253,6 @@ export default function RankingsClient({
   const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   const q = norm(searchQuery.trim())
   const finalEntries = sortedEntries
-    .filter(e => !badgeFilter || e.badge === badgeFilter)
     .filter(e => !q || norm(e.name).includes(q) || norm(e.subtitle).includes(q))
 
   const listScores = finalEntries.map(getDisplayScore)
@@ -472,28 +465,6 @@ export default function RankingsClient({
               </button>
             )}
           </div>
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
-            {([
-              { id: '',           label: 'Todos',      color: '#8E8E9E', Icon: null },
-              { id: 'Histórico',  label: 'Histórico',  color: '#facc15', Icon: CrownIcon },
-              { id: 'Revelación', label: 'Revelación', color: '#22c55e', Icon: StarIcon },
-              { id: 'Nuevo',      label: 'Nuevo',      color: '#60a5fa', Icon: null },
-            ] as const).map(b => {
-              const isActive = badgeFilter === b.id
-              return (
-                <button key={b.id} onClick={() => setBadgeFilter(b.id)}
-                  className="flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all inline-flex items-center gap-1.5"
-                  style={{
-                    background: isActive ? `${b.color}18` : 'rgba(255,255,255,0.04)',
-                    color: isActive ? b.color : '#5A5A72',
-                    border: isActive ? `1px solid ${b.color}40` : '1px solid rgba(255,255,255,0.06)',
-                    cursor: 'pointer', fontFamily: 'var(--font-sport)',
-                  }}>
-                  {b.Icon && <b.Icon size={11} />}{b.label}
-                </button>
-              )
-            })}
-          </div>
         </div>
 
         <div className="flex items-center justify-between gap-2 mb-6 mt-2">
@@ -556,21 +527,11 @@ export default function RankingsClient({
               onClear: () => setLigaFilter(''),
             })
           }
-          if (badgeFilter) {
-            const badgeColor: Record<string, string> = {
-              'Histórico': '#facc15', 'Revelación': '#22c55e', 'Nuevo': '#60a5fa',
-            }
-            applied.push({
-              key: 'badge', label: badgeFilter, color: badgeColor[badgeFilter],
-              onClear: () => setBadgeFilter(''),
-            })
-          }
           return (
             <AppliedFiltersBar
               filters={applied}
               accent={sportAccent}
               onClearAll={() => {
-                setBadgeFilter('')
                 setGender('m')
                 setActiveSport('')
                 setLigaFilter('')
@@ -590,11 +551,10 @@ export default function RankingsClient({
           <div className="py-16 text-center flex flex-col items-center gap-2">
             <span style={{ color: '#5A5A72' }}><SearchIcon size={28} /></span>
             <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-              {q || badgeFilter ? 'Sin coincidencias' : 'Sin datos para esta combinación'}
+              {q ? 'Sin coincidencias' : 'Sin datos para esta combinación'}
             </p>
             <p className="text-xs" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
               {q ? `No encontramos a "${searchQuery}" en este ranking.` :
-               badgeFilter ? `Ninguna entrada con badge ${badgeFilter} aquí.` :
                'Prueba a cambiar el filtro o seleccionar otro deporte — ampliamos el índice cada semana.'}
             </p>
           </div>
