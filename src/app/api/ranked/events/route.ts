@@ -1,10 +1,15 @@
-// GET /api/ranked/events?sport=mundial&status=open
+// GET /api/ranked/events?sport=futbol&status=open
 //
 // Devuelve ranked_events filtrados por sport. Lectura PÚBLICA (sin auth).
+//
+// A diferencia del leaderboard, aquí el deporte es OBLIGATORIO: un listado de
+// eventos que mezclara fútbol y UFC no lo sabe pintar ningún cliente. Sin
+// deporte reconocible se devuelve vacío, nunca "todo".
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { apiError } from '@/lib/api-utils'
+import { normalizeRankedSport } from '@/lib/ranked-sports'
 
 function hasEnv() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -14,8 +19,10 @@ export async function GET(req: NextRequest) {
   if (!hasEnv()) return NextResponse.json({ events: [] })
 
   const { searchParams } = new URL(req.url)
-  const sport  = searchParams.get('sport') ?? 'mundial'
+  const sport  = normalizeRankedSport(searchParams.get('sport') ?? 'football')
   const status = searchParams.get('status')   // 'open' | 'closed' | 'resolved' | null (all)
+
+  if (!sport) return NextResponse.json({ events: [] })
 
   // Cliente SIN cookies (los eventos son públicos, iguales para todos) → la
   // respuesta no depende del usuario y se puede cachear en el CDN.

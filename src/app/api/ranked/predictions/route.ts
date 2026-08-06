@@ -12,6 +12,7 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { awardBadges, badgesEarnedOnRankedPick } from '@/lib/badge-awards'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { apiError } from '@/lib/api-utils'
+import { normalizeRankedSport } from '@/lib/ranked-sports'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +27,8 @@ export async function GET(req: NextRequest) {
   const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ predictions: {}, reason: 'no_session' })
 
-  const sport = new URL(req.url).searchParams.get('sport') ?? 'mundial'
+  const sport = normalizeRankedSport(new URL(req.url).searchParams.get('sport') ?? 'football')
+  if (!sport) return NextResponse.json({ predictions: {} })
 
   // Trae event_ids de ese deporte primero, luego filtra predicciones
   const { data: events } = await sb

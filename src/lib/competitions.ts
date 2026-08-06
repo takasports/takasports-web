@@ -84,9 +84,16 @@ export const LEAGUE_IMPORTANCE: Record<string, number> = {
   'Bundesliga': 10,
   'F1': 9,
   'Fórmula 1': 9,
+  // Supercopa de Europa: título continental entre el campeón de Champions y el
+  // de Europa League. Sin entrada propia caía al default (4) y quedaba por
+  // debajo de una segunda ronda de copa nacional.
+  'Super Cup': 10,
   'UEFA': 9,
   'UFC': 8,
   'Ligue 1': 8,
+  // Europa League: partido europeo de clubes con nombre. A 6 quedaba por debajo
+  // de Ligue 1 y se caía de los destacados salvo cartelazo.
+  'Europa': 8,
   'Copa Rey': 7,
   'Liga F': 7,
   // ATP/WTA 500 y genéricos
@@ -99,7 +106,10 @@ export const LEAGUE_IMPORTANCE: Record<string, number> = {
   'Premier Padel': 6,
   'WPT': 6,
   'Pádel': 5,
-  'Europa': 6,
+  // Tercera competición europea y copa de la liga inglesa: existen, pero sus
+  // rondas iniciales enfrentan a equipos de tercera y cuarta división.
+  'Conference': 6,
+  'Carabao Cup': 5,
   // Selecciones / FIFA — 'Mundial de Clubes' antes que 'Mundial' (match por substring)
   'Mundial de Clubes': 9,
   'Mundial': 12,

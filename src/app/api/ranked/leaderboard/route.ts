@@ -1,6 +1,9 @@
-// GET /api/ranked/leaderboard?sport=mundial&limit=50
+// GET /api/ranked/leaderboard?sport=futbol|ufc|mundial|global&limit=50
 // Ranking de usuarios por puntos acumulados en un deporte.
 // Público — no requiere auth.
+//
+// `sport` se normaliza (futbol→football) y 'global' —o ausente, o desconocido—
+// significa sin filtro: la clasificación Liga Total suma todos los deportes.
 //
 // Usa la función SQL get_ranked_leaderboard() que hace GROUP BY en Postgres,
 // evitando traer todas las filas de point_transactions a memoria JS.
@@ -12,6 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { normalizeRankedSport } from '@/lib/ranked-sports'
 import { fetchEquipmentByUser, type UserEquipment } from '@/lib/equipment'
 import { fetchBadgesByUser, type LeaderboardBadge } from '@/lib/leaderboard-badges'
 import { fetchLevelsByUser } from '@/lib/level-progression'
@@ -51,7 +55,10 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url)
-  const sport = searchParams.get('sport') ?? 'mundial'
+  // La pestaña de fútbol se llama 'futbol' en la UI y 'football' en la columna
+  // `sport`; normalizeRankedSport es el único sitio donde vive esa traducción.
+  // `null` = sin filtro de deporte, que es exactamente lo que quiere Liga Total.
+  const sport = normalizeRankedSport(searchParams.get('sport'))
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 200)
 
   const sb = await createServerSupabaseClient()
@@ -69,12 +76,12 @@ export async function GET(req: NextRequest) {
   const liveBase = sb.from('ranked_events')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'closed')
-  const liveQuery = sport === 'global' ? liveBase : liveBase.eq('sport', sport)
+  const liveQuery = sport === null ? liveBase : liveBase.eq('sport', sport)
 
   // Leaderboard + check de partidos en curso (para auto-refresh del cliente)
   const [lbResult, liveResult] = await Promise.all([
     lbClient.rpc('get_ranked_leaderboard', {
-      p_sport: sport === 'global' ? null : sport,
+      p_sport: sport,
       p_limit: limit,
     }),
     liveQuery,

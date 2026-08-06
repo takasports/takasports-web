@@ -42,6 +42,10 @@
       "schedule": "0 8 * * 1"
     },
     {
+      "path": "/api/cron/sync-football",
+      "schedule": "*/30 * * * *"
+    },
+    {
       "path": "/api/cron/sync-mundial",
       "schedule": "*/30 * * 6,7 *"
     },
@@ -62,7 +66,7 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/admin/ranked/close-week?sport=mundial&award=1",
+      "path": "/api/admin/ranked/close-week?sport=football&award=1",
       "schedule": "5 0 * * 1"
     },
     {
