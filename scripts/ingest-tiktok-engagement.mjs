@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────
-// ingest-tiktok-engagement.mjs  →  RELEVANCIA de quien vive en TikTok
+// ingest-tiktok-engagement.mjs  →  RELEVANCIA y CRECIMIENTO de quien vive en TikTok
 //
 // ── EL PROBLEMA ──────────────────────────────────────────────────
 // La Relevancia pesa un 25% del score de Contenido y se medía SOLO con
@@ -34,6 +34,19 @@
 // reciente: alguien que arrasó hace tres años y hoy no publica seguiría
 // puntuando bien. La de YouTube, que mira los 10 últimos vídeos, es mejor
 // señal — y por eso esta NO la pisa nunca: solo rellena a quien no tiene canal.
+//
+// ── Y EL CRECIMIENTO, POR RESTA ──────────────────────────────────
+// El Crecimiento (otro 25%) sale de los vídeos publicados en 30 días, y TikTok
+// solo publica el TOTAL de toda la vida del perfil. Pero restando dos fotos sí
+// sale: si el lunes tenía 590 vídeos y el jueves 598, publicó 8 en tres días.
+//
+// Por eso cada pasada guarda una foto en `creator_platform_snapshots`
+// (migración 121) y, si hay una anterior de hace 3 días o más, calcula el ritmo
+// y lo extrapola a 30. La primera vez no hay con qué comparar y solo se
+// guarda — el dato aparece en la segunda pasada.
+//
+// Se exigen 3 días como mínimo porque con uno el ruido manda: quien sube dos
+// vídeos un martes saldría publicando 60 al mes.
 //
 // Uso:
 //   node scripts/ingest-tiktok-engagement.mjs           # DRY RUN
@@ -69,6 +82,10 @@ const NEUTRAL = 55
 const MIN_SEGUIDORES = 5000
 // Y con cuatro vídeos publicados la media por vídeo no dice nada.
 const MIN_VIDEOS = 10
+
+// Ventana para el crecimiento por resta.
+const MIN_DIAS_VENTANA = 3    // menos que esto es ruido
+const MAX_DIAS_VENTANA = 45   // más viejo que esto ya no describe el presente
 
 const limpia = (h) => String(h ?? '').trim().replace(/^@/, '').replace(/^https?:\/\/[^/]+\//, '').replace(/\/$/, '').split(/[/?]/)[0]
 
@@ -111,24 +128,62 @@ async function main() {
   const { data: met } = await sb.from('creator_raw_metrics').select('creator_id, yt_channel_id, yt_subscribers')
   const yt = new Map((met ?? []).map(m => [m.creator_id, m]))
 
-  // Solo quien NO tiene una relevancia de YouTube utilizable. La de YouTube
-  // mira los últimos 10 vídeos y esta la vida entera del perfil: la reciente
-  // gana siempre.
-  const objetivo = ents.filter(e => {
-    if (!limpia(e.handles?.tiktok)) return false
-    const m = yt.get(e.id)
-    return !m?.yt_channel_id || Number(m.yt_subscribers ?? 0) < 5000
-  })
-  console.log(`${ents.length} perfiles de contenido · ${objetivo.length} sin relevancia de YouTube y con TikTok\n`)
-  if (!objetivo.length) { console.log('Nada que calcular.'); return }
+  // Se visita a TODO el que tenga TikTok: la foto de seguidores y vídeos vale
+  // para el histórico aunque su nota la mande YouTube. Una sola petición por
+  // perfil sirve para las dos cosas.
+  const conTikTok = ents.filter(e => limpia(e.handles?.tiktok))
+  // Pero la NOTA solo se escribe a quien no tiene una relevancia de YouTube
+  // utilizable: la de YouTube mira los últimos 10 vídeos y esta la vida entera
+  // del perfil, así que la reciente gana siempre.
+  const mandaYouTube = (id) => {
+    const m = yt.get(id)
+    return Boolean(m?.yt_channel_id) && Number(m.yt_subscribers ?? 0) >= 5000
+  }
+  const objetivo = conTikTok.filter(e => !mandaYouTube(e.id))
+  console.log(`${ents.length} perfiles de contenido · ${conTikTok.length} con TikTok · ${objetivo.length} sin relevancia de YouTube\n`)
+  if (!conTikTok.length) { console.log('Nada que calcular.'); return }
+
+  // Foto anterior de cada perfil, para el crecimiento por resta.
+  const desdeMax = new Date(Date.now() - MAX_DIAS_VENTANA * 86400000).toISOString()
+  const { data: fotos } = await sb
+    .from('creator_platform_snapshots')
+    .select('creator_id, videos, captured_at')
+    .eq('red', 'tiktok')
+    .gte('captured_at', desdeMax)
+    .order('captured_at', { ascending: false })
+  const anterior = new Map()
+  for (const f of fotos ?? []) if (!anterior.has(f.creator_id)) anterior.set(f.creator_id, f)
 
   const resultados = []
   const descartados = []
-  for (const e of objetivo) {
+  const nuevasFotos = []
+  const crecimientos = []
+  for (const e of conTikTok) {
     const h = limpia(e.handles.tiktok)
     const p = await leePerfil(h)
     await new Promise(r => setTimeout(r, 700))
-    if (!p) { descartados.push(`${e.name} (no se pudo leer)`); continue }
+    if (!p) { if (!mandaYouTube(e.id)) descartados.push(`${e.name} (no se pudo leer)`); continue }
+
+    // 1) La foto se guarda siempre que haya datos, mande quien mande la nota.
+    if (p.videos || p.seguidores) {
+      nuevasFotos.push({ creator_id: e.id, red: 'tiktok', seguidores: p.seguidores || null, videos: p.videos || null })
+    }
+
+    // 2) Crecimiento por resta, solo para quien no tiene YouTube que lo mida.
+    const prev = anterior.get(e.id)
+    if (!mandaYouTube(e.id) && prev?.videos && p.videos) {
+      const dias = (Date.now() - new Date(prev.captured_at).getTime()) / 86400000
+      const nuevos = p.videos - prev.videos
+      // Un total que BAJA significa vídeos borrados, no actividad negativa.
+      if (dias >= MIN_DIAS_VENTANA && nuevos >= 0) {
+        crecimientos.push({
+          id: e.id, name: e.name, dias: Math.round(dias), nuevos,
+          videos30d: Math.round((nuevos / dias) * 30),
+        })
+      }
+    }
+
+    if (mandaYouTube(e.id)) continue
     if (p.seguidores < MIN_SEGUIDORES) { descartados.push(`${e.name} (solo ${p.seguidores} seguidores)`); continue }
     if (p.videos < MIN_VIDEOS) { descartados.push(`${e.name} (solo ${p.videos} vídeos)`); continue }
     if (!p.corazones) { descartados.push(`${e.name} (sin corazones)`); continue }
@@ -159,6 +214,18 @@ async function main() {
   console.log(`\n  Pasan de neutro ${NEUTRAL} a medido: ${resultados.filter(r => r.previo === NEUTRAL).length}`)
   console.log(`  Se quedan en neutro: ${siguenNeutros}`)
 
+  console.log(`\n--- Crecimiento por resta de fotos (${crecimientos.length}) ---`)
+  if (!crecimientos.length) {
+    const yaHay = anterior.size
+    console.log(yaHay
+      ? `  Ninguna foto anterior llega a los ${MIN_DIAS_VENTANA} días de antigüedad todavía.`
+      : `  Primera pasada: no hay foto anterior con la que comparar. El dato aparece en la siguiente.`)
+  }
+  for (const c of crecimientos.sort((a, b) => b.videos30d - a.videos30d)) {
+    console.log(`  ${c.name.padEnd(26).slice(0, 26)} +${String(c.nuevos).padStart(4)} vídeos en ${String(c.dias).padStart(2)} días → ${String(c.videos30d).padStart(3)}/30d`)
+  }
+  console.log(`\n  Fotos a guardar: ${nuevasFotos.length}`)
+
   if (!APPLY) { console.log('\nDRY RUN.'); return }
 
   let ok = 0, fail = 0
@@ -169,6 +236,26 @@ async function main() {
       .eq('id', r.id).eq('category', r.category)
     if (err) { fail++; console.error(`FAIL ${r.id}: ${err.message}`) } else ok++
   }
+  // Las fotos. El índice único es por EXPRESIÓN (la fecha en UTC), y a un índice
+  // por expresión no se le puede apuntar con `onConflict`, así que en vez de
+  // upsert se borra la foto de hoy y se reinserta: relanzar el pipeline el mismo
+  // día deja el mismo resultado en vez de duplicar o de reventar el lote entero
+  // por una sola fila repetida.
+  const hoy = new Date(); hoy.setUTCHours(0, 0, 0, 0)
+  await sb.from('creator_platform_snapshots')
+    .delete().eq('red', 'tiktok').gte('captured_at', hoy.toISOString())
+  for (let i = 0; i < nuevasFotos.length; i += 200) {
+    const { error: err } = await sb.from('creator_platform_snapshots').insert(nuevasFotos.slice(i, i + 200))
+    if (err) console.error(`  ⚠️  fotos: ${err.message}`)
+  }
+
+  for (const c of crecimientos) {
+    const { error: err } = await sb.from('creator_raw_metrics')
+      .update({ videos_last_30d: c.videos30d })
+      .eq('creator_id', c.id)
+    if (err) { fail++; console.error(`FAIL crecimiento ${c.id}: ${err.message}`) }
+  }
+
   const { error: errSync } = await sb.rpc('f_sync_creator_scores')
   console.log(errSync ? `  ⚠️  f_sync: ${errSync.message}` : '  ✓ f_sync_creator_scores() recalculado')
   console.log(`\nDone. OK=${ok} FAIL=${fail}`)
