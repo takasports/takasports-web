@@ -224,7 +224,19 @@ async function main() {
   // o tres pasadas están todos. El mediático se mueve despacio; refrescarlo cada
   // semana y media es de sobra. Mejor un factor completo con una semana de
   // retraso que uno que no se calcula nunca.
-  const POR_TANDA = Number(process.argv[process.argv.indexOf('--tanda') + 1]) || 400
+  // Cuántas entradas caben en una tanda NO se puede fijar de antemano: depende
+  // del humor de Wikimedia ese día. En una prueba fallaron 68 de 130 por límite
+  // de peticiones y en la siguiente, con menos paralelismo, 9 de 120 — el mismo
+  // número de entradas tardó menos de la mitad.
+  //
+  // Así que el tope real es de TIEMPO, no de cantidad: se procesa hasta agotar
+  // el presupuesto y se guarda lo hecho. El orquestador mata cada paso a los 25
+  // minutos, así que 18 deja margen para escribir resultados y cerrar. La
+  // cantidad queda como tope de seguridad por si un día todo va rapidísimo.
+  const POR_TANDA = Number(process.argv[process.argv.indexOf('--tanda') + 1]) || 700
+  const MINUTOS = Number(process.argv[process.argv.indexOf('--minutos') + 1]) || 18
+  const LIMITE_MS = MINUTOS * 60000
+  const ARRANQUE = Date.now()
   const MEDIDOS_PATH = path.join(__dirname, 'data', 'wiki-views-last-measured.json')
   let MEDIDOS = {}
   try { MEDIDOS = JSON.parse(readFileSync(MEDIDOS_PATH, 'utf8')) } catch {}
@@ -321,14 +333,23 @@ async function main() {
     cacheDirty = false
   }
 
+  let procesados = 0
   for (let i = 0; i < people.length; i += CONCURRENCY) {
+    if (Date.now() - ARRANQUE > LIMITE_MS) {
+      console.log(`  ⏱  presupuesto de ${MINUTOS} min agotado en ${i}/${people.length} — el resto va en la próxima pasada`)
+      people = people.slice(0, i)   // los no mirados NO se marcan como medidos
+      break
+    }
     await Promise.all(people.slice(i, i + CONCURRENCY).map(processOne))
+    procesados = i + CONCURRENCY
     await sleep(120)
     if (i % (CONCURRENCY * 20) === 0 && i > 0) {
-      console.log(`  ${i}/${people.length} procesados...`)
+      const min = ((Date.now() - ARRANQUE) / 60000).toFixed(1)
+      console.log(`  ${i}/${people.length} procesados (${min} min)...`)
       saveCache()   // guardado incremental: si esto se corta, no se pierde lo resuelto
     }
   }
+  void procesados
   saveCache()
   // Se anota a quien SÍ se pudo mirar, incluidos los que no tienen artículo —
   // si no, los irresolubles volverían a encabezar la cola cada semana y la
