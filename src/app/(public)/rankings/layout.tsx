@@ -3,7 +3,7 @@ import { SITE_URL, LOGO_URL, ICON_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: 'Ranking Taka — Rankings deportivos',
-  description: 'Los mejores jugadores, equipos y deportistas del mundo según el Ranking Taka. Fútbol, NBA, F1, Tenis, UFC y más. Actualizado semanalmente.',
+  description: 'Los mejores jugadores, equipos y deportistas del mundo según el Ranking Taka. Fútbol, NBA, F1, Tenis, UFC y más. Se recalcula dos veces por semana.',
   alternates: { canonical: `${SITE_URL}/rankings` },
   openGraph: {
     title: 'Ranking Taka — Rankings deportivos | TakaSports',

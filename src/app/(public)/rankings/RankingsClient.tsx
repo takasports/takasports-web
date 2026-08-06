@@ -318,9 +318,15 @@ export default function RankingsClient({
                   if (lastUpdated) {
                     const d = new Date(lastUpdated)
                     const now = new Date()
-                    const diffMs = now.getTime() - d.getTime()
-                    const diffDays = Math.floor(diffMs / 86400000)
-                    const label = diffDays === 0 ? 'hoy' : diffDays === 1 ? 'hace 1 día' : `hace ${diffDays} días`
+                    // Días de CALENDARIO, no milisegundos entre medias: el
+                    // pipeline corre a las 22:00 y a las 23:45, así que a la una
+                    // de la madrugada del día siguiente habían pasado 3 horas
+                    // —cero días redondeando hacia abajo— y el sello decía
+                    // «Actualizado hoy · 5 ago 2026» un 6 de agosto,
+                    // contradiciéndose a sí mismo en la misma línea.
+                    const soloFecha = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+                    const diffDays = Math.round((soloFecha(now) - soloFecha(d)) / 86400000)
+                    const label = diffDays <= 0 ? 'hoy' : diffDays === 1 ? 'ayer' : `hace ${diffDays} días`
                     return `Actualizado ${label} · ${d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`
                   }
                   const now = new Date()
@@ -336,7 +342,13 @@ export default function RankingsClient({
             </h1>
             <p className="text-sm max-w-xl mx-auto leading-relaxed"
               style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-              Rankings propios de Taka: rendimiento, estadística, influencia mediática y percepción pública.
+              {/* Los cuatro factores REALES (migración 110): rendimiento 45,
+                  contexto 20, mediático 15, forma 20. El texto anterior
+                  prometía «estadística» y «percepción pública» — esta última
+                  era el factor subjetivo que se retiró justamente para que el
+                  ranking no dependiera de opiniones. */}
+              Rankings propios de Taka: rendimiento medido, nivel de competición,
+              repercusión mediática y forma reciente. Se recalcula dos veces por semana.
             </p>
             <div className="mt-4 flex justify-center gap-2 flex-wrap">
               <Link
