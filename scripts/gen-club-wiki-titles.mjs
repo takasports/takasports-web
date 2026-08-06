@@ -41,14 +41,27 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const APPLY = process.argv.includes('--apply')
 if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('Missing SUPABASE keys'); process.exit(1) }
 
-const UA = { 'User-Agent': 'TakaSportsRankings/1.0 (https://takasportsmedia.com)' }
-const getJson = async (url) => {
-  const r = await fetch(url, { headers: UA, signal: AbortSignal.timeout(20000) }).catch(() => null)
-  if (!r?.ok) return null
-  return r.json().catch(() => null)
-}
 const sleep = (ms) => new Promise(r => setTimeout(r, ms))
+const UA = { 'User-Agent': 'TakaSportsRankings/1.0 (https://takasportsmedia.com)' }
 
+// Reintentos con espera creciente ante el 429 de Wikimedia.
+//
+// Sin esto, un club que pillara el límite de peticiones se daba por
+// IRRESOLUBLE para siempre y se quedaba con su factor mediático en el suelo. Y
+// pasaba en masa: 41 clubes «sin resolver» incluían a Borussia Dortmund,
+// Flamengo, Palmeiras y el PSV — nombres que Wikidata conoce de sobra. No era
+// que el filtro los rechazara: es que la API nunca llegó a contestar, porque
+// otro paso del pipeline estaba consultándola a la vez.
+const getJson = async (url) => {
+  for (let intento = 0; intento < 4; intento++) {
+    const r = await fetch(url, { headers: UA, signal: AbortSignal.timeout(20000) }).catch(() => null)
+    if (r?.ok) return r.json().catch(() => null)
+    // 429 y 5xx son temporales; el resto (404, 400) no mejora esperando.
+    if (r && r.status !== 429 && r.status < 500) return null
+    await sleep(2000 * (intento + 1))
+  }
+  return null
+}
 // La descripción tiene que decir que es un equipo de ESE deporte.
 const ES_DEL_DEPORTE = {
   futbol:     /f[úu]tbol|football|soccer/i,
