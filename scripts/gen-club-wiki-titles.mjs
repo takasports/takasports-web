@@ -68,6 +68,45 @@ const ES_DEL_DEPORTE = {
   baloncesto: /baloncesto|basketball/i,
   formula1:   /f[óo]rmula|formula one|escuder[íi]a|motorsport|racing team|constructor/i,
 }
+
+// ── Cuando la descripción no dice el deporte ─────────────────────
+// Wikidata describe a los clubes GRANDES como «club deportivo de Dortmund,
+// Alemania» — sin nombrar el fútbol. El filtro de arriba los rechazaba a todos,
+// y por eso 41 clubes se quedaban sin artículo: Borussia Dortmund, Flamengo,
+// Palmeiras, PSV, Marsella, Espanyol, Valencia… Los grandes, precisamente.
+//
+// Se me pasó dos veces: primero culpé al filtro sin mirarlo, luego al límite de
+// peticiones. Lo que lo resolvió fue consultar a mano qué devolvía Wikidata:
+// las entidades correctas estaban ahí y con descripción genérica.
+//
+// La solución no es aflojar la expresión regular —«club deportivo» casa igual
+// con uno de balonmano— sino preguntar por la propiedad ESTRUCTURADA P641
+// (deporte), que es justo para esto.
+const DESC_GENERICA = /\bclub deportivo|sports club|professional (sports )?club\b/i
+const QID_DEPORTE = {
+  futbol:     new Set(['Q2736']),            // fútbol asociación
+  baloncesto: new Set(['Q5372']),            // baloncesto
+  formula1:   new Set(['Q1968', 'Q5386']),   // Fórmula 1 / automovilismo
+}
+
+// P641 de varias entidades de una tacada (1 petición por lote de 40).
+async function deportesDe(qids) {
+  const out = new Map()
+  for (let i = 0; i < qids.length; i += 40) {
+    const d = await getJson(
+      `https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=claims` +
+      `&ids=${qids.slice(i, i + 40).join('|')}`,
+    )
+    for (const [qid, ent] of Object.entries(d?.entities ?? {})) {
+      const deportes = (ent?.claims?.P641 ?? [])
+        .map(c => c?.mainsnak?.datavalue?.value?.id)
+        .filter(Boolean)
+      out.set(qid, new Set(deportes))
+    }
+    await sleep(120)
+  }
+  return out
+}
 // Señales de que NO es un club: ciudades, regiones, temporadas, estadios…
 const NO_ES_CLUB = /\b(ciudad|city in|municipality|municipio|capital|regi[óo]n|province|provincia|season|temporada|stadium|estadio|pel[íi]cula|film|album|[áa]lbum)\b/i
 const ES_FEMENINO = /femenin|women|feminine|f[ée]minin/i
@@ -103,9 +142,20 @@ async function resolver(nombre, deporte, esFem) {
       // devuelve antes al filial que al primer equipo con más frecuencia de la
       // deseable.
       const cands = []
+      // Los que la descripción no delata pero podrían serlo: se comprueban
+      // después contra P641, en una sola petición para todos.
+      const porConfirmar = []
       for (const it of d?.search ?? []) {
         const desc = `${it.description ?? ''} ${it.label ?? ''}`
-        if (!patron.test(desc)) continue
+        if (!patron.test(desc)) {
+          if (DESC_GENERICA.test(it.description ?? '')
+              && !NO_ES_CLUB.test(it.description ?? '')
+              && !ENTIDAD_SECUNDARIA.test(`${it.label ?? ''} ${it.description ?? ''}`)
+              && esFem === ES_FEMENINO.test(desc)) {
+            porConfirmar.push(it)
+          }
+          continue
+        }
         if (NO_ES_CLUB.test(it.description ?? '')) continue
         if (ENTIDAD_SECUNDARIA.test(`${it.label ?? ''} ${it.description ?? ''}`)) continue
         // Un equipo femenino solo casa con una entidad femenina, y al revés.
@@ -113,6 +163,17 @@ async function resolver(nombre, deporte, esFem) {
         const l = normLabel(it.label ?? ''), n = normLabel(limpiaNombre(nombre))
         const puntos = l === n ? 3 : l.startsWith(n) || n.startsWith(l) ? 2 : l.includes(n) || n.includes(l) ? 1 : 0
         cands.push({ it, puntos })
+      }
+      if (porConfirmar.length) {
+        const deportes = await deportesDe(porConfirmar.map(i => i.id))
+        const validos = QID_DEPORTE[deporte] ?? QID_DEPORTE.futbol
+        for (const it of porConfirmar) {
+          const suyos = deportes.get(it.id) ?? new Set()
+          if (![...suyos].some(q => validos.has(q))) continue
+          const l = normLabel(it.label ?? ''), n = normLabel(limpiaNombre(nombre))
+          const puntos = l === n ? 3 : l.startsWith(n) || n.startsWith(l) ? 2 : l.includes(n) || n.includes(l) ? 1 : 0
+          cands.push({ it, puntos })
+        }
       }
       for (const c of cands) {
         if (!todos.some(t => t.it.id === c.it.id)) todos.push(c)
