@@ -60,7 +60,13 @@ const NEUTRAL = 55        // sin canal de YouTube: ni premio ni castigo
 const PIVOT   = 0.05      // ratio "normal": mediana ≈ 5% de los suscriptores
 const FLOOR   = 45
 const CEIL    = 88
-const RECENT  = 10        // vídeos recientes a mirar
+const RECENT  = 10        // vídeos para la MEDIANA de visitas (relevancia)
+// Para contar publicaciones del último mes hace falta mirar más atrás: quien
+// sube a diario tendría 30 en 30 días y con solo 10 nunca llegaría al tramo
+// alto de actividad (≥12). Pedir 25 en vez de 10 cuesta lo mismo — una unidad
+// de cuota por llamada, no por elemento.
+const RECENT_FECHAS = 25
+const DIAS_ACTIVIDAD = 30
 // Por debajo de esta audiencia el ratio es ruido: un canal de 273 suscriptores
 // con 50 visitas por vídeo salía con 83 de relevancia, por delante de gente con
 // cientos de miles de seguidores. Sin audiencia mínima no hay señal que medir.
@@ -132,9 +138,22 @@ async function main() {
     if (!st?.subs || !st.uploads) { sinDatos.push(e.name); continue }
     if (st.subs < MIN_SUBS) { sinDatos.push(`${e.name} (solo ${st.subs} subs)`); continue }
 
-    const pl = await getJson(yt('playlistItems', `part=contentDetails&maxResults=${RECENT}&playlistId=${st.uploads}`))
-    const videoIds = (pl?.items ?? []).map(i => i.contentDetails?.videoId).filter(Boolean)
+    const pl = await getJson(yt('playlistItems', `part=contentDetails&maxResults=${RECENT_FECHAS}&playlistId=${st.uploads}`))
+    const items = pl?.items ?? []
+    const videoIds = items.slice(0, RECENT).map(i => i.contentDetails?.videoId).filter(Boolean)
     if (!videoIds.length) { sinDatos.push(e.name); continue }
+
+    // ── Crecimiento, de regalo ────────────────────────────────────
+    // La respuesta ya trae la fecha de publicación de cada vídeo y se estaba
+    // tirando. Sin ella, `videos_last_30d` seguía a null para 49 de los 80
+    // creadores con canal, y f_creator_actividad_score devolvía su valor por
+    // defecto (65) — o sea, el 25% del score de Contenido era una constante
+    // para cuatro de cada cinco. Pesaba en la fórmula sin distinguir a nadie.
+    const desde = Date.now() - DIAS_ACTIVIDAD * 86400000
+    const videos30d = items.filter(i => {
+      const f = i.contentDetails?.videoPublishedAt
+      return f && new Date(f).getTime() >= desde
+    }).length
 
     const vs = await getJson(yt('videos', `part=statistics&id=${videoIds.join(',')}`))
     const views = (vs?.items ?? []).map(v => Number(v.statistics?.viewCount) || 0)
@@ -147,7 +166,7 @@ async function main() {
 
     results.push({
       id: e.id, category: e.category, name: e.name,
-      subs: st.subs, med, ratio,
+      subs: st.subs, med, ratio, videos30d,
       prev: e.narrativa_auto === null ? null : Number(e.narrativa_auto),
       score,
     })
@@ -160,6 +179,7 @@ async function main() {
     console.log(
       `  ${r.name.padEnd(26)} subs=${String(r.subs).padStart(8)}` +
       ` mediana=${String(Math.round(r.med)).padStart(7)} ratio=${r.ratio.toFixed(3).padStart(6)}` +
+      ` vídeos30d=${String(r.videos30d).padStart(2)}` +
       `  ${prev} → ${r.score.toFixed(1).padStart(5)}`,
     )
   }
@@ -180,6 +200,13 @@ async function main() {
       .update({ narrativa_auto: r.score })
       .eq('id', r.id).eq('category', r.category)   // la PK es (id, category)
     if (err) { fail++; console.error(`FAIL ${r.id}: ${err.message}`) } else ok++
+    // El crecimiento no vive en ranking_entries: lo calcula
+    // f_creator_actividad_score desde creator_raw_metrics, y f_sync lo baja al
+    // factor. Aquí solo se guarda el dato crudo.
+    const { error: errMet } = await sb.from('creator_raw_metrics')
+      .update({ videos_last_30d: r.videos30d })
+      .eq('creator_id', r.id)
+    if (errMet) console.error(`FAIL vídeos ${r.id}: ${errMet.message}`)
   }
   for (const e of toNeutral) {
     const { error: err } = await sb.from('ranking_entries')
@@ -187,6 +214,9 @@ async function main() {
       .eq('id', e.id).eq('category', e.category)
     if (err) fail++; else ok++
   }
+  // f_sync baja el crecimiento recién guardado al factor de cada ficha.
+  const { error: errSync } = await sb.rpc('f_sync_creator_scores')
+  console.log(errSync ? `  ⚠️  f_sync: ${errSync.message}` : '  ✓ f_sync_creator_scores() recalculado')
   console.log(`\nDone. OK=${ok} FAIL=${fail}`)
 }
 
