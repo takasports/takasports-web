@@ -19,16 +19,11 @@ import {
   PreviewMiOnce,
   PreviewSopaCracks,
 } from '@/components/games/GameVisuals'
-import StreakChip from '@/components/games/StreakChip'
-import MetaProgressionStrip from '@/components/games/MetaProgressionStrip'
 import MissionsCard from '@/components/games/MissionsCard'
-import TuDiaTaka from '@/components/games/TuDiaTaka'
-import StreakAtRiskBanner from '@/components/games/StreakAtRiskBanner'
-import PushOptIn from '@/components/games/PushOptIn'
-import GameStatusBadge from '@/components/games/GameStatusBadge'
+import GamesStatusBar from '@/components/games/GamesStatusBar'
 import LeaderboardTabs from '@/components/games/LeaderboardTabs'
-import GuestRankingHint from '@/components/games/GuestRankingHint'
-import { getGamePeriod } from '@/lib/games-periods'
+import { formatCountdown, getGamePeriod } from '@/lib/games-periods'
+import { useGamesOverview, type GameCardState } from '@/hooks/useGamesOverview'
 import type { GameId } from '@/lib/games-store'
 
 // (iconos y previews movidos a src/components/games/GameVisuals.tsx)
@@ -259,6 +254,10 @@ const GAMES: Game[] = [
 // (arcade), NO puntos de Liga Taka — no mezclar las dos escalas en la UI.
 const LIGA_TAKA_MAX: Record<string, number> = { crackquiz: 5, takagrid: 5, mionce: 12, sopacracks: 12 }
 
+/** Juegos con periodo y estado propio: son los que cuentan para "N/M jugados"
+ *  y los que muestran "hecho / cierra en X" en su tarjeta. */
+const TRACKED_GAMES: readonly GameId[] = ['crackquiz', 'takagrid', 'sopacracks', 'mionce']
+
 // ── Componentes de badges ────────────────────────────────────
 
 function DifficultyDots({ level }: { level: Difficulty }) {
@@ -386,14 +385,22 @@ function FeaturedGameCard({ game }: { game: Game }) {
 
 // ── Card disponible (live, no hero) ───────────────────────────
 
-function LiveGameCard({ game }: { game: Game }) {
+function LiveGameCard({ game, state }: { game: Game; state?: GameCardState }) {
+  // El estado del juego (hecho / pendiente / cuánto queda) se pinta DENTRO de
+  // la tarjeta. Antes vivía en un bloque aparte ("Tu día Taka") que repetía los
+  // mismos cuatro juegos más arriba en la página: el mismo juego salía dos
+  // veces, una como ficha de estado y otra como tarjeta.
+  const period = getGamePeriod(game.id as GameId)
+  const played = state?.played ?? false
+  const countdown = period.nextResetMs > 0 ? formatCountdown(period.nextResetMs) : null
+
   return (
     <Link
       href={game.href!}
       className="group rounded-2xl overflow-hidden relative flex flex-col transition-all hover:translate-y-[-2px]"
       style={{
         background: 'var(--bg-card)',
-        border: `1px solid ${game.accentDim}40`,
+        border: `1px solid ${played ? 'rgba(134,239,172,0.28)' : `${game.accentDim}40`}`,
       }}
     >
       <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${game.accentDim}, ${game.accent})` }} />
@@ -406,7 +413,7 @@ function LiveGameCard({ game }: { game: Game }) {
         </div>
       )}
 
-      <div className="relative z-10 p-5 pt-2 flex flex-col gap-4 flex-1">
+      <div className="relative z-10 p-5 pt-2 flex flex-col gap-3 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div
             className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -414,15 +421,21 @@ function LiveGameCard({ game }: { game: Game }) {
           >
             {game.icon}
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <GameStatusBadge gameId={game.id as GameId} period={getGamePeriod(game.id as GameId)} variant="live" />
+          {played ? (
             <span
-              className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A5A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
+              className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full inline-flex items-center gap-1"
+              style={{ background: 'rgba(134,239,172,0.12)', color: '#86EFAC', border: '1px solid rgba(134,239,172,0.3)', fontFamily: 'var(--font-sport)' }}
             >
-              {game.category}
+              ✓ Hecho{state?.score != null ? ` · ${state.score}` : ''}
             </span>
-          </div>
+          ) : countdown ? (
+            <span
+              className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full"
+              style={{ background: `${game.accentDim}18`, color: game.accent, border: `1px solid ${game.accentDim}35`, fontFamily: 'var(--font-sport)' }}
+            >
+              Cierra en {countdown}
+            </span>
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-1 flex-1">
@@ -432,39 +445,37 @@ function LiveGameCard({ game }: { game: Game }) {
           >
             {game.name}
           </h3>
-          <p
-            className="text-[9px] font-black uppercase tracking-widest"
-            style={{ color: game.accent, fontFamily: 'var(--font-sport)', opacity: 0.85 }}
-          >
-            {game.tagline}
-          </p>
-          <p className="text-[11px] leading-relaxed mt-1" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
             {game.description}
           </p>
         </div>
 
-        <div className="flex items-center gap-3 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+        <div className="flex items-center gap-2.5 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
           <DifficultyDots level={game.difficulty} />
           <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
-          <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>·</span>
+          <span className="text-[9px]" style={{ color: '#3A3A52' }}>·</span>
           <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
-          <span className="ml-auto text-[9px] font-black" style={{ color: `${game.accent}A0`, fontFamily: 'var(--font-sport)' }}>
-            {LIGA_TAKA_MAX[game.id] ?? game.pts} pts
-          </span>
+          {/* Una sola escala: los puntos que suma a la Liga Taka. */}
+          {LIGA_TAKA_MAX[game.id] && (
+            <span className="ml-auto text-[9px] font-black" style={{ color: `${game.accent}A0`, fontFamily: 'var(--font-sport)' }}>
+              {LIGA_TAKA_MAX[game.id]} pts
+            </span>
+          )}
         </div>
 
         <span
-          className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-center transition-all group-hover:gap-3 inline-flex items-center justify-center gap-2"
+          className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-center transition-all inline-flex items-center justify-center gap-2"
           style={{
-            background: `linear-gradient(135deg,${game.accentDim},${game.accentDim}D0)`,
-            color: '#F0FFF4',
+            background: played ? 'rgba(255,255,255,0.05)' : `linear-gradient(135deg,${game.accentDim},${game.accentDim}D0)`,
+            color: played ? 'var(--text-secondary)' : '#F0FFF4',
+            border: played ? '1px solid rgba(255,255,255,0.08)' : undefined,
             fontFamily: 'var(--font-sport)',
             letterSpacing: '0.06em',
-            boxShadow: `0 4px 18px ${game.accentDim}40`,
+            boxShadow: played ? undefined : `0 4px 18px ${game.accentDim}40`,
           }}
         >
-          Jugar ahora
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="#F0FFF4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          {played ? 'Ver resultado' : 'Jugar ahora'}
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </span>
       </div>
     </Link>
@@ -881,11 +892,19 @@ export default function JuegosPageClient() {
       .catch(() => { /* use fallback */ })
   }, [])
 
-  const mundialGame     = GAMES.find(g => g.id === 'mundial')!
-  const prediccionGames = GAMES.filter(g => g.category === 'Predicciones' && g.id !== 'mundial')
-  const minijuegos      = GAMES.filter(g => g.status === 'live' && !g.externalLinks && g.category !== 'Predicciones')
-  const partnerGames    = GAMES.filter(g => !!g.externalLinks)
-  const comingGames     = GAMES.filter(g => g.status === 'coming' && g.category !== 'Predicciones')
+  const mundialGame  = GAMES.find(g => g.id === 'mundial')!
+  // Todo lo jugable, en una sola rejilla: predicciones y minijuegos juntos.
+  // Antes iban en dos secciones y los minijuegos salían ADEMÁS como fichas en
+  // "Tu día Taka", así que el mismo juego aparecía dos veces en la página.
+  const jugables     = GAMES.filter(g => g.status === 'live' && !g.externalLinks && g.id !== 'mundial')
+  const partnerGames = GAMES.filter(g => !!g.externalLinks)
+  const comingGames  = GAMES.filter(g => g.status === 'coming')
+
+  // Estado del usuario: UNA lectura para la barra y para todas las tarjetas.
+  const overview = useGamesOverview(TRACKED_GAMES)
+  const nextGame = overview.pending
+    .map(id => GAMES.find(g => g.id === id))
+    .find((g): g is Game => !!g?.href)
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh', position: 'relative' }}>
@@ -917,8 +936,11 @@ export default function JuegosPageClient() {
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24" style={{ position: 'relative', zIndex: 1 }}>
 
-        {/* ── HERO ────────────────────────────────────────── */}
-        <div className="relative pt-10 pb-8">
+        {/* ── HERO ────────────────────────────────────────────
+            Compacto a propósito: el titular ocupaba media pantalla y empujaba
+            todos los juegos por debajo del pliegue. Un hub de juegos tiene que
+            enseñar juegos. */}
+        <div className="relative pt-8 pb-5">
           <div
             className="absolute -top-8 left-0 w-96 h-48 pointer-events-none"
             style={{
@@ -932,62 +954,40 @@ export default function JuegosPageClient() {
               <span className="section-label">Zona de juegos</span>
             </div>
             <h1
-              className="font-black leading-none mb-3"
+              className="font-black leading-none mb-2"
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(2rem, 4vw, 3rem)',
+                fontSize: 'clamp(1.7rem, 3vw, 2.4rem)',
                 color: '#F8F8FF',
                 letterSpacing: '-0.02em',
               }}
             >
-              Pon a prueba<br />tu instinto deportivo.
+              Pon a prueba tu instinto deportivo.
             </h1>
-            <p className="text-sm" style={{ color: 'var(--text-muted)', maxWidth: 460 }}>
-              Predicciones, trivia, fantasy y arcade. Compite cada semana y sube en el ranking.
+            <p className="text-[13px]" style={{ color: 'var(--text-muted)', maxWidth: 520 }}>
+              Predicciones, trivia, fantasy y puzzles. Compite cada semana y sube en el ranking.
             </p>
-            <div className="mt-5 max-w-[520px]">
-              <MetaProgressionStrip />
-            </div>
-            <div className="mt-3">
-              <StreakChip />
-            </div>
           </div>
         </div>
 
-        {/* ── HINT INVITADOS ──────────────────────────────── */}
-        <GuestRankingHint />
+        {/* ── ESTADO DEL JUGADOR (una sola barra) ───────────── */}
+        <div className="mb-8">
+          <GamesStatusBar overview={overview} nextHref={nextGame?.href} nextLabel={nextGame?.name} />
+        </div>
 
-        {/* ── RACHA EN RIESGO (sólo si aplica) ─────────────── */}
-        <StreakAtRiskBanner />
-
-        {/* ── TU DÍA TAKA ──────────────────────────────────── */}
-        <section className="mb-6">
-          <div className="flex items-center justify-end mb-2">
-            <PushOptIn accent="#93C5FD" />
-          </div>
-          <TuDiaTaka />
-        </section>
-
-        {/* ── MISIONES DEL DÍA ─────────────────────────────── */}
-        <section className="mb-6">
-          <MissionsCard />
-        </section>
-
-        {/* PREDICCIONES — categoría destacada */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-5">
+        {/* ── JUEGA HOY ────────────────────────────────────────
+            Todo lo jugable en un solo sitio y con su estado dentro de la
+            tarjeta. Antes estaba partido en tres bloques ("Tu día Taka",
+            "Predicciones" y "Minijuegos") y los cuatro minijuegos salían dos
+            veces en la misma página. */}
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
               <span className="section-accent" />
-              <h2 className="section-label">Predicciones</h2>
-              <span
-                className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest"
-                style={{ background: 'rgba(124,58,237,0.12)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.25)', fontFamily: 'var(--font-sport)' }}
-              >
-                Lo más jugado
-              </span>
+              <h2 className="section-label">Juega hoy</h2>
             </div>
-            <p className="text-[10px] hidden sm:block" style={{ color: '#2A2A40', fontFamily: 'var(--font-sport)' }}>
-              Mundial, ranked y más
+            <p className="text-[10px] hidden sm:block" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+              Todo suma a tu Liga Taka
             </p>
           </div>
 
@@ -996,124 +996,76 @@ export default function JuegosPageClient() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {prediccionGames.map(game => (
-              game.status === 'live'
-                ? <LiveGameCard key={game.id} game={game} />
-                : <ComingGameCard key={game.id} game={game} />
+            {jugables.map(game => (
+              <LiveGameCard key={game.id} game={game} state={overview.byGame[game.id]} />
             ))}
           </div>
         </section>
 
-        {/* MINIJUEGOS */}
-        {minijuegos.length > 0 && (
-          <section className="mb-12">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2.5">
-                <span className="section-accent" />
-                <h2 className="section-label">Minijuegos</h2>
-                <span
-                  className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest"
-                  style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.2)', fontFamily: 'var(--font-sport)' }}
-                >
-                  {minijuegos.length} juegos
-                </span>
-              </div>
-              <p className="text-[10px] hidden sm:block" style={{ color: '#2A2A40', fontFamily: 'var(--font-sport)' }}>
-                Suma puntos a tu Liga Taka
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {minijuegos.map(game => (
-                <LiveGameCard key={game.id} game={game} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* APP AMIGA */}
-        {partnerGames.length > 0 && (
-          <section className="mb-12">
-            <div className="flex items-center gap-2.5 mb-5">
-              <span className="section-accent" />
-              <h2 className="section-label">App amiga</h2>
-            </div>
-            {partnerGames.map(game => (
-              <div key={game.id} className="mb-4">
-                <ExternalGameCard game={game} />
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* ── LIGA TAKA (ranking general) ───────────────────── */}
-        <section className="mb-12">
-          <div className="flex items-center gap-2.5 mb-5">
-            <span className="section-accent" />
-            <h2 className="section-label">Liga Taka</h2>
-          </div>
-          <Link
-            href="/liga-taka"
-            className="group block rounded-2xl p-5 sm:p-6 transition-transform hover:translate-y-[-2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-            style={{
-              background: 'linear-gradient(135deg, rgba(147,197,253,0.12), rgba(167,139,250,0.08))',
-              border: '1px solid rgba(147,197,253,0.25)',
-            }}
-          >
-            <div className="flex items-center gap-4">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 text-2xl"
-                style={{ background: 'rgba(147,197,253,0.15)', border: '1px solid rgba(147,197,253,0.3)' }}
-                aria-hidden="true"
-              >
-                ⚡
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-black leading-tight mb-1" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.05rem, 2.5vw, 1.35rem)', color: '#F0F0F5' }}>
-                  El ranking general de TakaSports
-                </h3>
-                <p className="text-[13px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
-                  Reúne todos tus puntos en una sola tabla: <strong style={{ color: '#F0F0F5' }}>juegos</strong>, <strong style={{ color: '#F0F0F5' }}>predicciones</strong>, <strong style={{ color: '#F0F0F5' }}>misiones</strong> y <strong style={{ color: '#F0F0F5' }}>racha</strong>.
-                </p>
-              </div>
-              <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest flex-shrink-0 transition-opacity group-hover:opacity-80" style={{ color: '#93C5FD', fontFamily: 'var(--font-sport)' }}>
-                Ver ranking general →
-              </span>
-            </div>
-            <span className="sm:hidden inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest mt-3" style={{ color: '#93C5FD', fontFamily: 'var(--font-sport)' }}>
-              Ver ranking general →
-            </span>
-          </Link>
+        {/* ── MISIONES DEL DÍA ─────────────────────────────── */}
+        <section className="mb-10">
+          <MissionsCard />
         </section>
 
         {/* ── RANKINGS ──────────────────────────────────────── */}
         <LeaderboardTabs quinielaJornada={quinielaJornada} />
 
-        {/* ── PRÓXIMOS JUEGOS ──────────────────────────────── */}
-        {comingGames.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2.5">
-              <span className="section-accent" />
-              <h2 className="section-label">Próximamente</h2>
-              <span
-                className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest"
-                style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A5A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
-              >
-                {comingGames.length} juegos
-              </span>
-            </div>
-            <p className="text-[10px] hidden sm:block" style={{ color: '#2A2A40', fontFamily: 'var(--font-sport)' }}>
-              Actívate para recibir acceso anticipado
-            </p>
-          </div>
+        {/* ── LIGA TAKA ────────────────────────────────────────
+            Enlace en una línea. Ocupaba una tarjeta enorme explicando lo que el
+            propio ranking de arriba ya enseña. */}
+        <Link
+          href="/liga-taka"
+          className="group flex items-center gap-3 rounded-2xl px-4 py-3.5 mb-10 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          style={{
+            background: 'linear-gradient(135deg, rgba(147,197,253,0.10), rgba(167,139,250,0.06))',
+            border: '1px solid rgba(147,197,253,0.22)',
+          }}
+        >
+          <span className="text-lg leading-none flex-shrink-0" aria-hidden>⚡</span>
+          <p className="text-[13px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)' }}>
+            <strong style={{ color: '#F0F0F5' }}>Liga Taka</strong> — juegos, predicciones, misiones y
+            racha en una sola clasificación general.
+          </p>
+          <span
+            className="text-[10px] font-black uppercase tracking-widest flex-shrink-0 whitespace-nowrap"
+            style={{ color: '#93C5FD', fontFamily: 'var(--font-sport)' }}
+          >
+            Ver →
+          </span>
+        </Link>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {comingGames.map(game => (
-              <ComingGameCard key={game.id} game={game} />
+        {/* ── MÁS ──────────────────────────────────────────────
+            Lo secundario, al final y sin competir con lo jugable: la app amiga
+            y lo que está por venir. */}
+        {(partnerGames.length > 0 || comingGames.length > 0) && (
+          <section>
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="section-accent" />
+              <h2 className="section-label">Más adelante</h2>
+              {comingGames.length > 0 && (
+                <span
+                  className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest"
+                  style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A5A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
+                >
+                  {comingGames.length} en camino
+                </span>
+              )}
+            </div>
+
+            {partnerGames.map(game => (
+              <div key={game.id} className="mb-4">
+                <ExternalGameCard game={game} />
+              </div>
             ))}
-          </div>
-        </section>
+
+            {comingGames.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {comingGames.map(game => (
+                  <ComingGameCard key={game.id} game={game} />
+                ))}
+              </div>
+            )}
+          </section>
         )}
 
       </div>
