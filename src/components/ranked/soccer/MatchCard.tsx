@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { StarIcon, LiveDotIcon, LockIcon } from '@/components/icons/GameIcons'
-import TakaPoint from '@/components/TakaPoint'
 import { getCompAccent } from '@/lib/competitions'
 import { competitionArt } from './competition-art'
 import TeamCrest from './TeamCrest'
@@ -69,6 +68,60 @@ export default function MatchCard({
     />
   )
 
+  // ── Veredicto ──────────────────────────────────────────────────────────────
+  // Quién cayó, para atenuarlo en el marcador.
+  const loserSide: SoccerPick | null =
+    isResolved && winner === '1' ? '2' : isResolved && winner === '2' ? '1' : null
+
+  // Tendencia que marca el resultado EN CURSO. Es lo que permite decirle al
+  // usuario si su pick sigue vivo mientras el partido se juega — sin esto, un
+  // partido en directo es una tarjeta que no cuenta nada.
+  const liveTrend: SoccerPick | null =
+    liveScore && liveScore.home != null && liveScore.away != null
+      ? liveScore.home > liveScore.away ? '1' : liveScore.away > liveScore.home ? '2' : 'X'
+      : null
+
+  const exactHit = !!(
+    isResolved && exactScore && myPick === winner &&
+    exactScore.home === event.result?.home_score &&
+    exactScore.away === event.result?.away_score
+  )
+  const hit = isResolved && myPick != null && myPick === winner
+
+  /** Por qué se pagó lo que se pagó. Sin esto, un "+12" no se entiende. */
+  const winReason = [
+    event.featured ? 'Partido del Día ×2' : null,
+    exactHit ? 'marcador exacto' : null,
+  ].filter(Boolean).join(' · ')
+
+  const teamOf = (v: SoccerPick | null) =>
+    v === '1' ? event.team_home : v === '2' ? event.team_away : 'el empate'
+
+  /** Rótulo inferior: verde si acertaste, rojo mientras se juega, apagado si
+   *  fallaste. El fallo NO va en rojo: no se castiga al que juega, se le invita
+   *  a volver. Sin pick y sin jugar, no hay rótulo: no hay nada que sentenciar. */
+  const band: { bg: string; fg: string; text: string; pts?: string | null; note?: string; border?: string } | null =
+    isResolved && myPick
+      ? hit
+        ? {
+            bg: `linear-gradient(90deg, ${theme.accent}, #A7F3D0 70%, transparent)`,
+            fg: '#04140C', pts: `+${pts ?? 0}`, text: 'pts · Acertaste',
+            note: winReason || undefined,
+          }
+        : {
+            bg: 'rgba(255,255,255,0.05)', fg: 'var(--text-muted)',
+            pts: '0', text: 'pts · Fallaste',
+            border: '1px solid rgba(255,255,255,0.07)',
+          }
+      : isClosed && myPick && liveTrend
+        ? {
+            bg: 'linear-gradient(90deg, var(--color-live), #FF7A5C 65%, transparent)',
+            fg: '#fff',
+            text: myPick === liveTrend ? 'Tu pick sigue vivo' : 'Vas perdiendo el pick',
+            note: liveTrend === 'X' && myPick !== 'X' ? 'empate = sin puntos' : `ahora gana ${teamOf(liveTrend)}`,
+          }
+        : null
+
   // Boleto: la tendencia manda (1 · X · 2) y debajo a quién apuestas. Antes
   // cada botón apilaba escudo + "LOCAL" + nombre —tres líneas— y la fila se
   // comía media tarjeta repitiendo unos escudos que ya están arriba, grandes.
@@ -114,7 +167,7 @@ export default function MatchCard({
         />
       )}
 
-      <div style={{ position: 'relative', padding: '13px 16px 14px 14px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'relative', padding: band ? '13px 16px 12px 14px' : '13px 16px 14px 14px', display: 'flex', flexDirection: 'column' }}>
       {/* ── Cabecera ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
         {event.featured && (
@@ -169,32 +222,36 @@ export default function MatchCard({
               la tarjeta en móvil en vez de partirse en dos líneas. */}
           <span style={{
             fontFamily: 'var(--font-display)', fontSize: 'clamp(12px, 3.2vw, 17px)', fontWeight: 900,
-            color: '#ECECF6', lineHeight: 1.05, textAlign: 'right', letterSpacing: '-0.01em',
+            // El perdedor se atenúa: con el marcador grande, atenuar al que cayó
+            // hace que el resultado se lea de un vistazo sin tener que sumar.
+            color: loserSide === '1' ? 'var(--text-muted)' : '#ECECF6',
+            lineHeight: 1.05, textAlign: 'right', letterSpacing: '-0.01em',
             minWidth: 0, overflowWrap: 'break-word',
           }}>{event.team_home}</span>
           {crest('home', 30)}
         </div>
 
-        <div style={{ width: 'clamp(56px, 15vw, 72px)', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+        {/* Marcador de emisión. Cuando el partido acabó, el resultado es LO que
+            importa: iba en una cajita del mismo tamaño que la hora de un
+            partido sin jugar. Ahora manda él. */}
+        <div style={{ width: 'clamp(64px, 17vw, 96px)', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           {isResolved && event.result ? (
             <>
-              <div style={{ padding: '5px 10px', borderRadius: 'var(--radius-md)', background: `${theme.accent}18`, border: `1px solid ${theme.accent}30` }}>
-                <span style={{
-                  fontSize: 20, fontWeight: 900, color: theme.accent,
-                  fontFamily: 'var(--font-display)', letterSpacing: '-0.03em', lineHeight: 1,
-                }}>{event.result.home_score ?? '?'}–{event.result.away_score ?? '?'}</span>
-              </div>
-              <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.22)', fontFamily: 'var(--font-sport)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Final</span>
+              <span style={{
+                fontFamily: 'var(--font-display)', fontSize: 'clamp(28px, 7vw, 38px)', fontWeight: 900,
+                color: '#F4F4FA', letterSpacing: '-0.03em', lineHeight: 0.92,
+                fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+              }}>{event.result.home_score ?? '?'}–{event.result.away_score ?? '?'}</span>
+              <span style={{ fontSize: 8.5, fontWeight: 900, color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', letterSpacing: '0.16em', textTransform: 'uppercase' }}>Final</span>
             </>
           ) : isClosed && liveScore && (liveScore.home != null || liveScore.away != null) ? (
             <>
-              <div style={{ padding: '5px 10px', borderRadius: 'var(--radius-md)', background: 'rgba(248,113,113,0.14)', border: '1px solid rgba(248,113,113,0.35)' }}>
-                <span style={{
-                  fontSize: 20, fontWeight: 900, color: '#F87171',
-                  fontFamily: 'var(--font-display)', letterSpacing: '-0.03em', lineHeight: 1,
-                }}>{liveScore.home ?? 0}–{liveScore.away ?? 0}</span>
-              </div>
-              <span style={{ fontSize: 7, color: 'rgba(248,113,113,0.85)', fontFamily: 'var(--font-sport)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              <span style={{
+                fontFamily: 'var(--font-display)', fontSize: 'clamp(28px, 7vw, 38px)', fontWeight: 900,
+                color: 'var(--color-live)', letterSpacing: '-0.03em', lineHeight: 0.92,
+                fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+              }}>{liveScore.home ?? 0}–{liveScore.away ?? 0}</span>
+              <span style={{ fontSize: 8.5, fontWeight: 900, color: 'var(--color-live)', fontFamily: 'var(--font-sport)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
                 {liveScore.clock || 'Directo'}
               </span>
             </>
@@ -218,13 +275,48 @@ export default function MatchCard({
           {crest('away', 30)}
           <span style={{
             fontFamily: 'var(--font-display)', fontSize: 'clamp(12px, 3.2vw, 17px)', fontWeight: 900,
-            color: '#ECECF6', lineHeight: 1.05, textAlign: 'left', letterSpacing: '-0.01em',
+            color: loserSide === '2' ? 'var(--text-muted)' : '#ECECF6',
+            lineHeight: 1.05, textAlign: 'left', letterSpacing: '-0.01em',
             minWidth: 0, overflowWrap: 'break-word',
           }}>{event.team_away}</span>
         </div>
       </div>
 
-      {/* ── Tendencia ── */}
+      {/* ── Tendencia ──
+          Ya resuelto, los tres botones dejan de ser botones: son el registro de
+          lo que elegiste, y ocupaban el mismo sitio que cuando podías jugar.
+          Colapsan a una línea. */}
+      {isResolved ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+          padding: '8px 10px', borderRadius: 'var(--radius-md)',
+          background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)',
+        }}>
+          {myPick ? (
+            <>
+              <span style={{ fontFamily: 'var(--font-sport)', fontSize: 8.5, fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Tu pick</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: hit ? theme.accent : '#F87171' }}>
+                {myPick} · {teamOf(myPick)}
+              </span>
+              {exactScore && (
+                <>
+                  <span style={{ fontFamily: 'var(--font-sport)', fontSize: 8.5, fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginLeft: 6 }}>Tu marcador</span>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: exactHit ? theme.accent : 'var(--text-secondary)' }}>
+                    {exactScore.home} - {exactScore.away}
+                  </span>
+                </>
+              )}
+              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 800, color: 'var(--text-muted)' }}>
+                {exactHit ? '✓ clavado' : hit ? '✓ acertado' : `ganó ${teamOf(winner)}`}
+              </span>
+            </>
+          ) : (
+            <span style={{ fontFamily: 'var(--font-sport)', fontSize: 10, color: 'var(--text-muted)' }}>
+              No jugaste este partido · ganó {teamOf(winner)}
+            </span>
+          )}
+        </div>
+      ) : (
       <div style={{ display: 'flex', gap: 7 }}>
         {picks.map(p => {
           const isActive  = myPick === p.val
@@ -247,7 +339,9 @@ export default function MatchCard({
           )
         })}
       </div>
+      )}
 
+      {!isResolved && (
       <ExactScoreBlock
         event={event}
         myPick={myPick}
@@ -262,22 +356,6 @@ export default function MatchCard({
         showTooltip={showExactTooltip === true}
         onTooltipDismiss={onExactTooltipDismiss}
       />
-
-      {/* ── Puntos ── */}
-      {isResolved && myPick && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
-          {pts != null && pts > 0 ? (
-            <>
-              <TakaPoint size={13} />
-              <span style={{ fontSize: 11, fontWeight: 900, color: theme.accent, fontFamily: 'var(--font-sport)' }}>+{pts} pts</span>
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-sport)' }}>¡Acertaste!</span>
-            </>
-          ) : (
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-sport)' }}>
-              Fallaste — ganó {winner === '1' ? event.team_home : winner === '2' ? event.team_away : 'el empate'}
-            </span>
-          )}
-        </div>
       )}
 
       {/* ── Compartir ── */}
@@ -306,12 +384,39 @@ export default function MatchCard({
         >{shared ? '✓ Copiado' : '↗ Compartir pick'}</button>
       )}
 
-      {!myPick && !isOpen && (
+      {!myPick && !isOpen && !isResolved && (
         <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-sport)', marginTop: 8 }}>
           {isClosed ? 'Predicciones cerradas' : isLocked ? 'Picks bloqueados — el partido empieza en menos de 1 h' : 'Sin predicción'}
         </span>
       )}
       </div>
+
+      {/* ── Rótulo inferior (lower third) ──────────────────────────────────
+          El veredicto, a sangre y en el canto de la tarjeta, como el rótulo de
+          una retransmisión. Antes el "+12 pts ¡Acertaste!" era una línea de
+          11 px perdida al fondo: el momento de recompensa, que es lo que hace
+          volver al usuario, pasaba desapercibido. */}
+      {band && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 9, padding: '9px 14px',
+          fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 900,
+          letterSpacing: '0.1em', textTransform: 'uppercase',
+          background: band.bg, color: band.fg,
+          borderTop: band.border ?? 'none',
+        }}>
+          {band.pts != null && (
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 19, letterSpacing: '-0.01em', lineHeight: 1 }}>
+              {band.pts}
+            </span>
+          )}
+          <span>{band.text}</span>
+          {band.note && (
+            <span style={{ marginLeft: 'auto', fontSize: 9.5, letterSpacing: '0.08em', opacity: 0.85, textAlign: 'right' }}>
+              {band.note}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
