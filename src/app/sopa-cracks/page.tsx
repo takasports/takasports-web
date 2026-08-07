@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import GameLayout from '@/components/games/GameLayout'
+import GameOnboarding from '@/components/games/GameOnboarding'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
 import { SOPA, scoreSopa } from '@/lib/game-scoring'
 import { madridWeekNumber } from '@/lib/taka-time'
@@ -519,6 +520,16 @@ export default function SopaCracksPage() {
   return (
     <GameLayout accent="#6EE7B7" accentDim="#34D399">
       <>
+        <GameOnboarding
+          storageKey="ts-onboarded-sopacracks"
+          accent="#6EE7B7"
+          ctaFinal="Buscar cracks"
+          steps={[
+            { emoji: '🔎', title: 'Encuentra los apellidos', body: 'Están en horizontal, vertical y diagonal, y también del revés. En el móvil toca la primera letra y luego la última; con ratón, arrastra.' },
+            { emoji: '🕵️', title: 'Hay una intrusa', body: 'Escondida en la cuadrícula hay una palabra que no aparece en la lista. Encontrarla da bonus, pero no hace falta para terminar.' },
+            { emoji: '⏱️', title: 'Contrarreloj opcional', body: 'Puedes jugar tranquilo o activar los 3 minutos antes de empezar. Las pistas suman 30 segundos.' },
+          ]}
+        />
         {/* HERO */}
         <div className="relative pt-10 pb-8">
           <div className="flex items-center gap-2.5 mb-3">

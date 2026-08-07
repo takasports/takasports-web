@@ -17,6 +17,7 @@
 
 import Link from 'next/link'
 import { FireIcon, BoltIcon } from '@/components/icons/GameIcons'
+import PushOptIn from '@/components/games/PushOptIn'
 import type { GamesOverview } from '@/hooks/useGamesOverview'
 
 interface Props {
@@ -129,8 +130,12 @@ export default function GamesStatusBar({ overview, nextHref, nextLabel }: Props)
         </>
       )}
 
-      {/* Progreso del día + siguiente */}
+      {/* Progreso del día + avisos + siguiente */}
       <div className="flex items-center gap-3 ml-auto">
+        {/* El aviso de racha vive AQUÍ, junto a la racha, que es lo que
+            protege. Antes era un chip suelto alineado a la derecha de la
+            página, sin nada que explicara de qué avisaba. */}
+        {!loading && <PushOptIn accent="#FDBA74" />}
         <span
           className="text-[11px] font-black uppercase tracking-widest whitespace-nowrap"
           style={{ color: !loading && allDone ? '#86EFAC' : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}

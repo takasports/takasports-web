@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import GameLayout from '@/components/games/GameLayout'
+import GameOnboarding from '@/components/games/GameOnboarding'
 import { getDailyQuestions, getPracticeQuestions, listCategories, todayKey, type QuizQuestion, type QuizCategory, type QuizSport } from '@/lib/crackquiz-questions'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import { TrophyIcon, FireIcon, ClapIcon, FlexIcon, BoltIcon, DiceIcon } from '@/components/icons/GameIcons'
@@ -1126,6 +1127,17 @@ export default function CrackQuizPage() {
           [style*="cq-timer-pulse"], [style*="cq-combo-pop"], [style*="cq-score-float"] { animation: none !important; }
         }
       `}</style>
+      <GameOnboarding
+        storageKey="ts-onboarded-crackquiz"
+        accent="#FCD34D"
+        ctaFinal="Empezar la ronda"
+        steps={[
+          { emoji: '⏱️', title: `${QUESTIONS_PER_ROUND} preguntas, ${QUESTION_TIME}s cada una`, body: 'Cuanto antes respondas, más puntos vale el acierto. Si se acaba el tiempo, cuenta como fallo.' },
+          { emoji: '🔥', title: 'Encadena aciertos', body: `Cada acierto seguido suma un extra, hasta +${STREAK_BONUS_MAX}. Un fallo lo reinicia, así que el combo se cuida.` },
+          { emoji: '🎲', title: 'Doble o nada', body: 'Antes de la última pregunta puedes apostar el combo acumulado: si aciertas lo duplicas, si fallas lo pierdes.' },
+        ]}
+      />
+
       <GameLayout accent="#FCD34D" accentDim="#F59E0B" mainStyle={{ paddingTop: 40 }}>
         {/* Page header */}
         <div className="mb-8">
