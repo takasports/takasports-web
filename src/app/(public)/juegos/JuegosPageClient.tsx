@@ -81,53 +81,56 @@ function IconMundial({ size = 26 }: { size?: number }) {
 
 const GAMES: Game[] = [
   {
+    // Carta destacada del hub. Era el Mundial —que acabó el 19-jul-2026— con
+    // el rótulo "Predicciones abiertas" y el botón "Jugar el Mundial": el
+    // escaparate de /juegos llevaba semanas empujando a un cuadro cerrado.
     id: 'mundial',
-    name: 'Mundial',
-    tagline: 'Vive el Mundial partido a partido.',
-    description: 'Predice el resultado de cada partido del Mundial y compite en el ranking global. Los partidos destacados puntúan doble.',
-    accent: '#FBBF24',
-    accentDim: '#B45309',
+    name: 'La Fecha',
+    tagline: 'Los partidos que importan de cada día.',
+    description: 'Cada día publicamos los partidos destacados. Acierta la tendencia, clava el marcador y llévate el Partido del Día, que puntúa doble.',
+    accent: '#4ADE80',
+    accentDim: '#16A34A',
     status: 'active',
-    href: '/mundial',
-    icon: <IconMundial />,
-    heroNote: 'Mundial 2026 · Predicciones abiertas',
-    ctaLabel: 'Jugar el Mundial',
-    format: 'Por partido',
+    href: '/predicciones',
+    icon: <IconQuiniela />,
+    heroNote: 'Nueva Fecha cada día · Predicciones abiertas',
+    ctaLabel: 'Jugar La Fecha',
+    format: 'Diario',
     category: 'Predicciones',
     difficulty: 2,
-    timeEst: '~2 min',
+    timeEst: '~1 min',
     pts: 300,
   },
   {
-    id: 'quiniela',
-    name: 'Predicciones',
-    tagline: 'Predice. Acumula. Domina.',
-    description: 'Elige el resultado de cada partido de la jornada y compite en el ranking semanal con todos los usuarios.',
-    accent: '#A78BFA',
-    accentDim: '#7C3AED',
+    id: 'ranked-ufc',
+    name: 'Ranked UFC',
+    tagline: 'Predice cada combate del cartel.',
+    description: 'Elige al ganador de cada pelea de la velada. El estelar puntúa doble y acertar el método suma extra.',
+    accent: '#F87171',
+    accentDim: '#B91C1C',
     status: 'live',
     href: '/predicciones',
     icon: <IconQuiniela />,
-    format: 'Semanal',
+    format: 'Por velada',
     category: 'Predicciones',
     difficulty: 2,
     timeEst: '~2 min',
     pts: 100,
   },
   {
-    id: 'ranked-futbol',
-    name: 'Ranked Fútbol',
-    tagline: 'Acierta los partidos destacados.',
-    description: 'Predice los partidos destacados de cada jornada y escala en el ranking. Los duelos top puntúan doble.',
-    accent: '#86EFAC',
-    accentDim: '#16A34A',
+    id: 'mundial-archivo',
+    name: 'Mundial 2026',
+    tagline: 'El torneo terminó.',
+    description: 'Consulta el cuadro completo, tus picks y el ranking final del Mundial 2026.',
+    accent: '#FBBF24',
+    accentDim: '#B45309',
     status: 'coming',
-    icon: <IconQuiniela />,
-    format: 'Por jornada',
+    icon: <IconMundial />,
+    format: 'Archivo',
     category: 'Predicciones',
     difficulty: 2,
     timeEst: '~2 min',
-    releaseTarget: 'Pronto',
+    releaseTarget: 'Finalizado',
     pts: 200,
   },
   {
@@ -867,7 +870,10 @@ export default function JuegosPageClient() {
   const [quinielaJornada, setQuinielaJornada] = useState<string | undefined>(undefined)
 
   useEffect(() => {
-    fetch('/api/quiniela')
+    // Etiqueta de la Fecha en curso, para los periodos del ranking. Antes leía
+    // /api/quiniela, que sigue sirviendo la jornada del stack retirado: una
+    // etiqueta que ya no corresponde a nada jugable.
+    fetch('/api/ranked/football/status')
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (typeof data?.jornada === 'string') setQuinielaJornada(data.jornada)

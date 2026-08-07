@@ -152,12 +152,15 @@ const SECONDARY_GAMES = [
   },
 ]
 
-// ── Banner Predicciones Mundial ─────────────────────────────────
-// CTA destacado sobre la sección de Juegos. Lleva al predictor del Mundial.
-function MundialBanner() {
+// ── Banner de La Fecha ──────────────────────────────────────────
+// CTA destacado sobre la sección de Juegos, el más visible de la portada.
+// Anunciaba "Predicciones del Mundial" con badge "Nuevo" y llevaba a /mundial:
+// el torneo acabó el 19-jul-2026, así que la portada empujaba a un cuadro
+// cerrado. Ahora lleva a La Fecha, que es lo que se puede jugar hoy.
+function FechaBanner() {
   return (
     <Link
-      href="/mundial"
+      href="/predicciones"
       className="group block mt-8 rounded-2xl overflow-hidden relative transition-all hover:-translate-y-0.5"
       style={{
         background: 'linear-gradient(110deg, #1a0b3d 0%, #2d0f55 45%, #4c1d95 100%)',
@@ -177,7 +180,7 @@ function MundialBanner() {
           className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl"
           style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
         >
-          🏆
+          ⚽
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1">
@@ -188,14 +191,14 @@ function MundialBanner() {
               Nuevo
             </span>
             <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
-              Mundial 2026
+              La Fecha
             </span>
           </div>
           <h3 className="text-base sm:text-xl font-black truncate" style={{ color: '#fff', fontFamily: 'var(--font-display)', letterSpacing: '0.01em' }}>
-            Predicciones del Mundial
+            Los partidos de hoy
           </h3>
           <p className="text-[11px] sm:text-xs mt-0.5 truncate" style={{ color: 'rgba(255,255,255,0.7)' }}>
-            Predice cada partido, suma puntos y escala en la clasificación Taka.
+            Acierta los partidos destacados del día. El Partido del Día vale doble.
           </p>
         </div>
         <span
@@ -516,7 +519,7 @@ export default function HomeContent({
         </div>
 
         {/* ── 3.4 BANNER PREDICCIONES MUNDIAL ────────────────────── */}
-        <MundialBanner />
+        <FechaBanner />
 
         {/* ── 3.5 JUEGOS ─────────────────────────────────────────── */}
         <GamesSection />
