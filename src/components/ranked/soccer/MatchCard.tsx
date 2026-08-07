@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { StarIcon, LiveDotIcon, LockIcon } from '@/components/icons/GameIcons'
 import TakaPoint from '@/components/TakaPoint'
 import { getCompAccent } from '@/lib/competitions'
+import { competitionArt } from './competition-art'
 import TeamCrest from './TeamCrest'
 import PickButton from './PickButton'
 import ExactScoreBlock from './ExactScoreBlock'
@@ -58,6 +59,7 @@ export default function MatchCard({
   const showLockWarning = event.status === 'open' && !isLocked && lockMs < 6 * 60 * 60 * 1000
 
   const compColor = getCompAccent(event.competition, theme.accent)
+  const art       = competitionArt(event.competition)
   const crest = (side: 'home' | 'away', size: number) => (
     <TeamCrest
       name={side === 'home' ? event.team_home : event.team_away}
@@ -67,52 +69,74 @@ export default function MatchCard({
     />
   )
 
-  const picks: { label: string; visual: React.ReactNode; sub: string; val: SoccerPick }[] = [
-    { label: 'Local',  visual: crest('home', 22), sub: event.team_home ?? '', val: '1' },
-    { label: 'Empate', visual: <span style={{ fontSize: 20, lineHeight: 1 }}>⚖️</span>, sub: 'X', val: 'X' },
-    { label: 'Visita', visual: crest('away', 22), sub: event.team_away ?? '', val: '2' },
+  // Boleto: la tendencia manda (1 · X · 2) y debajo a quién apuestas. Antes
+  // cada botón apilaba escudo + "LOCAL" + nombre —tres líneas— y la fila se
+  // comía media tarjeta repitiendo unos escudos que ya están arriba, grandes.
+  const picks: { label: string; sub: string; aria: string; val: SoccerPick }[] = [
+    { label: '1', sub: event.team_home ?? 'Local',  aria: `Gana ${event.team_home ?? 'el local'}`,   val: '1' },
+    { label: 'X', sub: 'Empate',                    aria: 'Empate',                                  val: 'X' },
+    { label: '2', sub: event.team_away ?? 'Visita', aria: `Gana ${event.team_away ?? 'el visitante'}`, val: '2' },
   ]
 
   return (
     <div
+      // `cal-card` aporta la silueta broadcast del sistema: profundidad, hover y
+      // —sobre todo— la MUESCA DIAGONAL de la esquina inferior derecha teñida de
+      // la competición, que es la firma de forma de «La Señal». La tarjeta vivía
+      // fuera de ese lenguaje y por eso se leía como un dashboard cualquiera.
+      className="cal-card"
       style={{
+        ['--row-accent' as string]: event.featured ? theme.accent : compColor,
+        position: 'relative',
         background: event.featured ? theme.cardBgFeat : theme.cardBg,
         borderTop:    `1px solid ${event.featured ? `${theme.accent}35` : 'rgba(255,255,255,0.1)'}`,
         borderRight:  `1px solid ${event.featured ? `${theme.accent}20` : 'rgba(255,255,255,0.07)'}`,
         borderBottom: `1px solid ${event.featured ? `${theme.accent}20` : 'rgba(255,255,255,0.07)'}`,
         borderLeft:   `3px solid ${event.featured ? theme.accent : compColor}`,
-        borderRadius: 18,
-        padding: '14px 16px 14px 14px',
+        borderRadius: 'var(--radius-card)',
         display: 'flex', flexDirection: 'column',
-        boxShadow: event.featured
-          ? `0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 ${theme.accent}18`
-          : '0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
         animation: `fCardIn 0.4s ease-out ${animDelay}ms both`,
       }}
     >
+      {/* Arte del torneo, entrando por la derecha y disolviéndose hacia el texto.
+          Son las mismas ilustraciones que ya usa /calendario. */}
+      {art && (
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            backgroundImage: `url(${art})`,
+            backgroundSize: 'cover', backgroundPosition: 'right center',
+            opacity: event.featured ? 0.3 : 0.24,
+            WebkitMaskImage: 'linear-gradient(to left, #000 0%, transparent 78%)',
+            maskImage: 'linear-gradient(to left, #000 0%, transparent 78%)',
+          }}
+        />
+      )}
+
+      <div style={{ position: 'relative', padding: '13px 16px 14px 14px', display: 'flex', flexDirection: 'column' }}>
       {/* ── Cabecera ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
         {event.featured && (
-          <span style={{
-            fontSize: 9, fontWeight: 900, padding: '3px 8px', borderRadius: 'var(--radius-sm)',
-            background: `linear-gradient(90deg,${theme.accent}2A,${theme.accent}14)`,
-            border: `1px solid ${theme.accent}55`, color: theme.accent,
-            fontFamily: 'var(--font-sport)', letterSpacing: '0.07em',
+          <span className="cal-live-tag" style={{
+            fontSize: 9, fontWeight: 900, padding: '4px 10px',
+            background: `linear-gradient(90deg, ${theme.accent}, #A7F3D0)`,
+            color: '#04140C', fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
           }}>
             <StarIcon size={9} className="inline-block align-middle mr-1" />PARTIDO DEL DÍA · X2
           </span>
         )}
-        <span style={{
-          fontSize: 9, fontWeight: 800, padding: '3px 7px', borderRadius: 'var(--radius-sm)',
-          background: `${compColor}1A`, border: `1px solid ${compColor}40`,
-          color: compColor, fontFamily: 'var(--font-sport)',
-          textTransform: 'uppercase', letterSpacing: '0.07em',
+        <span className="cal-live-tag" style={{
+          fontSize: 9, fontWeight: 900, padding: '4px 9px',
+          background: compColor, color: '#0A0A12',
+          fontFamily: 'var(--font-sport)',
+          textTransform: 'uppercase', letterSpacing: '0.09em',
         }}>{event.competition}</span>
         {event.meta?.stage && (
-          <span style={{
-            fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 'var(--radius-sm)',
+          <span className="cal-live-tag" style={{
+            fontSize: 9, fontWeight: 700, padding: '4px 9px',
             background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-            color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-sport)',
+            color: 'var(--text-muted)', fontFamily: 'var(--font-sport)',
             textTransform: 'uppercase', letterSpacing: '0.07em',
           }}>{event.meta.stage}</span>
         )}
@@ -133,21 +157,25 @@ export default function MatchCard({
         )}
       </div>
 
-      {/* ── Enfrentamiento ── */}
+      {/* ── Enfrentamiento ──
+          Sin la caja negra que lo envolvía: tapaba el arte del torneo y añadía
+          una segunda superficie dentro de la tarjeta sin aportar jerarquía. */}
       <div style={{
-        background: 'rgba(0,0,0,0.25)', borderRadius: 'var(--radius-card)',
-        padding: '12px 10px', marginBottom: 12,
-        display: 'flex', alignItems: 'center', gap: 6,
+        marginBottom: 12,
+        display: 'flex', alignItems: 'center', gap: 8,
       }}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
-          {crest('home', 40)}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+          {/* minWidth:0 + overflowWrap: sin ellos "Manchester United" desbordaba
+              la tarjeta en móvil en vez de partirse en dos líneas. */}
           <span style={{
-            fontSize: 12, fontWeight: 900, color: '#ECECF6',
-            fontFamily: 'var(--font-sport)', lineHeight: 1.2, textAlign: 'right',
+            fontFamily: 'var(--font-display)', fontSize: 'clamp(12px, 3.2vw, 17px)', fontWeight: 900,
+            color: '#ECECF6', lineHeight: 1.05, textAlign: 'right', letterSpacing: '-0.01em',
+            minWidth: 0, overflowWrap: 'break-word',
           }}>{event.team_home}</span>
+          {crest('home', 30)}
         </div>
 
-        <div style={{ width: 64, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <div style={{ width: 'clamp(56px, 15vw, 72px)', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
           {isResolved && event.result ? (
             <>
               <div style={{ padding: '5px 10px', borderRadius: 'var(--radius-md)', background: `${theme.accent}18`, border: `1px solid ${theme.accent}30` }}>
@@ -172,17 +200,26 @@ export default function MatchCard({
             </>
           ) : (
             <>
-              <span style={{ fontSize: 13, fontWeight: 900, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-sport)', letterSpacing: '0.08em' }}>VS</span>
-              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-sport)', textAlign: 'center' }}>{timeLabel(event.event_date)}</span>
+              {/* La HORA manda sobre el "VS": es el dato que decide si te da
+                  tiempo a jugar. Antes iba en cuerpo 9 debajo de un VS grande. */}
+              <span style={{
+                fontFamily: 'var(--font-display)', fontSize: 21, fontWeight: 900,
+                color: '#F4F4FA', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+              }}>{timeLabel(event.event_date)}</span>
+              <span style={{
+                fontSize: 8, fontWeight: 900, color: 'var(--text-muted)',
+                fontFamily: 'var(--font-sport)', letterSpacing: '0.18em',
+              }}>VS</span>
             </>
           )}
         </div>
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 5 }}>
-          {crest('away', 40)}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+          {crest('away', 30)}
           <span style={{
-            fontSize: 12, fontWeight: 900, color: '#ECECF6',
-            fontFamily: 'var(--font-sport)', lineHeight: 1.2, textAlign: 'left',
+            fontFamily: 'var(--font-display)', fontSize: 'clamp(12px, 3.2vw, 17px)', fontWeight: 900,
+            color: '#ECECF6', lineHeight: 1.05, textAlign: 'left', letterSpacing: '-0.01em',
+            minWidth: 0, overflowWrap: 'break-word',
           }}>{event.team_away}</span>
         </div>
       </div>
@@ -198,8 +235,8 @@ export default function MatchCard({
             <PickButton
               key={p.val}
               label={p.label}
-              visual={p.visual}
               sublabel={p.sub}
+              ariaLabel={p.aria}
               active={isActive}
               correct={isCorrect || isWinRow}
               wrong={isWrong}
@@ -274,6 +311,7 @@ export default function MatchCard({
           {isClosed ? 'Predicciones cerradas' : isLocked ? 'Picks bloqueados — el partido empieza en menos de 1 h' : 'Sin predicción'}
         </span>
       )}
+      </div>
     </div>
   )
 }

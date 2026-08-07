@@ -34,6 +34,12 @@ const T = FOOTBALL_THEME
 const ANIMATIONS = `
 @keyframes fCardIn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
 @keyframes fFadeInUp { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+/* El corte diagonal del CTA solo tiene sentido cuando la franja es una BARRA
+   horizontal. En móvil el botón pasa a ocupar el ancho completo debajo, y ahí
+   la diagonal se comería una esquina sin significar nada. */
+@media (min-width: 640px) {
+  .fecha-cta { clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%); }
+}
 `
 
 function vibrate(ms: number) {
@@ -274,78 +280,94 @@ export default function FootballClient() {
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-16">
       <style>{ANIMATIONS}</style>
 
-      {/* ═══ Hero de la Fecha ═══ */}
-      <div
-        className="relative rounded-2xl overflow-hidden mt-4 mb-8"
-        style={{
-          background: 'radial-gradient(ellipse 90% 120% at 15% 55%, #06210F 0%, #071410 45%, #050B09 100%)',
-          border: `1px solid ${T.accent}1F`,
-          boxShadow: `0 0 0 1px ${T.accent}0A, 0 32px 80px rgba(0,0,0,0.6)`,
-        }}
-      >
-        <div aria-hidden style={{ position: 'absolute', top: -100, left: '10%', width: 500, height: 500, background: `radial-gradient(ellipse,${T.accent}12 0%,transparent 60%)`, pointerEvents: 'none' }} />
+      {/* ═══ Franja de emisión ═══
+          Sustituye al héroe propio que tenía esta vista. La página ya abre con
+          la cabecera «PREDICCIONES · La Señal»; un segundo héroe justo debajo
+          hacía que todo empezara dos veces y competía con el primero. Esto es
+          una barra de estado de emisión: día, cuenta atrás, premio y la acción. */}
+      {nextFecha ? (
+        <div
+          // En móvil se apila: la barra horizontal deja de serlo y el CTA baja a
+          // ancho completo. Con `flex-wrap` a secas, el botón se estiraba a lo
+          // alto ocupando media pantalla y el día se partía en tres líneas.
+          className="tk-glass-tint tk-glass-spine mt-4 mb-7 overflow-hidden flex flex-col sm:flex-row sm:items-stretch"
+          style={{ ['--ga' as string]: T.accent, borderRadius: 'var(--radius-card)' }}
+        >
+          <div className="flex-1 min-w-0 flex items-center gap-4 sm:gap-5 px-4 sm:px-5 py-4 flex-wrap">
+            <div className="min-w-0">
+              <p className="whitespace-nowrap" style={{
+                fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 900,
+                color: '#F4F4FA', letterSpacing: '-0.01em', lineHeight: 1, textTransform: 'capitalize',
+              }}>{nextFecha.label}</p>
+              <p style={{ fontFamily: 'var(--font-sport)', fontSize: 11, color: 'var(--text-secondary)', marginTop: 3 }}>
+                {nextFecha.events.length} {nextFecha.events.length === 1 ? 'partido destacado' : 'partidos destacados'}
+                {(() => {
+                  const p = fechaProgress(nextFecha, predictedIds)
+                  return p.done > 0 ? ` · ${p.done} de ${p.total} pronosticados` : ''
+                })()}
+              </p>
+            </div>
 
-        <div className="relative px-6 py-7">
-          <span style={{ fontSize: 9, fontWeight: 900, fontFamily: 'var(--font-sport)', color: `${T.accent}70`, textTransform: 'uppercase', letterSpacing: '0.22em' }}>
-            Los partidos que importan, cada día
-          </span>
-
-          <h1 style={{
-            fontFamily: 'var(--font-display)', fontSize: 'clamp(2.2rem, 5.5vw, 3.6rem)',
-            fontWeight: 900, color: T.accent, letterSpacing: '-0.04em', lineHeight: 0.9,
-            marginTop: 8, textShadow: `0 0 80px ${T.accent}40`,
-          }}>
-            LA FECHA
-          </h1>
-
-          {nextFecha ? (
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4">
-              <div>
-                <p style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 900, color: '#F0F4F1', letterSpacing: '-0.01em', textTransform: 'capitalize' }}>
-                  {nextFecha.label}
-                </p>
-                <p style={{ fontFamily: 'var(--font-sport)', fontSize: 11, color: 'var(--text-muted)' }}>
-                  {nextFecha.events.length} {nextFecha.events.length === 1 ? 'partido' : 'partidos'}
-                  {(() => {
-                    const p = fechaProgress(nextFecha, predictedIds)
-                    return p.done > 0 ? ` · ${p.done}/${p.total} pronosticados` : ''
-                  })()}
-                </p>
-              </div>
-
-              {nextFecha.firstLockAt && (
-                <div style={{ padding: '6px 12px', borderRadius: 999, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.28)' }}>
-                  <span style={{ fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 900, color: '#FBBF24' }}>
-                    <LockIcon size={10} className="inline-block align-middle mr-1" />
-                    cierra en {formatCountdown(nextFecha.firstLockAt - nowMs)}
-                  </span>
+            {nextFecha.firstLockAt && (
+              <>
+                <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'rgba(255,255,255,0.09)' }} />
+                <div className="whitespace-nowrap">
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 900, color: 'var(--color-warning)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                    {formatCountdown(nextFecha.firstLockAt - nowMs)}
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
+                    <LockIcon size={8} className="inline-block align-middle mr-1" />cierra
+                  </p>
                 </div>
-              )}
+              </>
+            )}
 
-              {nextFecha.featured && (
-                <div style={{ padding: '6px 12px', borderRadius: 999, background: `${T.accent}14`, border: `1px solid ${T.accent}38` }}>
-                  <span style={{ fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 900, color: T.accent }}>
-                    <StarIcon size={10} className="inline-block align-middle mr-1" />
-                    {nextFecha.featured.team_home} - {nextFecha.featured.team_away} · x2
-                  </span>
+            {plenoBonus(nextFecha.events.length) > 0 && (
+              <>
+                <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'rgba(255,255,255,0.09)' }} />
+                <div className="whitespace-nowrap">
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 900, color: T.accent, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                    +{plenoBonus(nextFecha.events.length)}
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
+                    pleno
+                  </p>
                 </div>
-              )}
+              </>
+            )}
 
-              {loggedIn && totalPts > 0 && (
+            {loggedIn && totalPts > 0 && (
+              <>
+                <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'rgba(255,255,255,0.09)' }} />
                 <div className="flex items-center gap-1.5">
                   <TakaPoint size={14} />
                   <span style={{ fontFamily: 'var(--font-sport)', fontSize: 12, fontWeight: 900, color: '#A78BFA' }}>{totalPts} pts</span>
                 </div>
-              )}
-            </div>
-          ) : (
-            <p style={{ marginTop: 14, fontSize: 13, color: 'var(--text-secondary)', maxWidth: 460, lineHeight: 1.5 }}>
-              No hay Fecha abierta ahora mismo. Solo publicamos días con partidos que merezcan la pena —
-              vuelve cuando arranquen las ligas, o prueba la cartelera de UFC.
-            </p>
+              </>
+            )}
+          </div>
+
+          {nextFecha.featured && (
+            <a
+              href={`#fecha-${nextFecha.dateKey}`}
+              className="fecha-cta flex items-center justify-center px-6 py-3 sm:py-0"
+              style={{
+                background: T.accent, color: '#04140C',
+                fontFamily: 'var(--font-sport)', fontWeight: 900, fontSize: 12,
+                letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none',
+              }}
+            >
+              <StarIcon size={11} className="inline-block align-middle mr-1.5" />
+              {nextFecha.featured.team_home} - {nextFecha.featured.team_away}
+            </a>
           )}
         </div>
-      </div>
+      ) : (
+        <p className="mt-6 mb-8" style={{ fontSize: 13, color: 'var(--text-secondary)', maxWidth: 460, lineHeight: 1.5 }}>
+          No hay Fecha abierta ahora mismo. Solo publicamos días con partidos que merezcan la pena —
+          vuelve cuando arranquen las ligas, o prueba la cartelera de UFC.
+        </p>
+      )}
 
       {error && (
         <div className="mb-6 rounded-xl px-4 py-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.28)' }}>
@@ -368,60 +390,74 @@ export default function FootballClient() {
         const complete = prog.total > 0 && prog.done === prog.total
         const pleno = plenoBonus(fecha.events.length)
         return (
-          <section key={fecha.dateKey} className="mb-9">
-            {/* Cabecera de la Fecha */}
-            <div className="flex items-center gap-3 mb-4 flex-wrap">
-              <h2 style={{
-                fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 900,
-                color: '#F0F4F1', letterSpacing: '-0.01em', textTransform: 'capitalize',
+          <section key={fecha.dateKey} id={`fecha-${fecha.dateKey}`} className="mb-9 scroll-mt-24">
+            {/* Cabecera de la Fecha — banderín de retransmisión (`cal-pennant`),
+                la misma primitiva que separa los días en /calendario. */}
+            <div className="flex items-center gap-2.5 mb-4 flex-wrap">
+              <h2 className="cal-pennant" style={{
+                fontFamily: 'var(--font-headline)', fontSize: 17,
+                letterSpacing: '0.06em', lineHeight: 1, textTransform: 'uppercase',
+                padding: '7px 16px 13px', background: T.accent, color: '#04140C',
               }}>{fecha.label}</h2>
+              <span style={{ flex: 1, height: 1, minWidth: 20, background: 'linear-gradient(to right, rgba(255,255,255,0.14), transparent)' }} />
               {/* El pleno se anuncia ANTES de jugar: un premio que solo se
                   descubre al cobrarlo no empuja a completar la Fecha. */}
               {pleno > 0 && (
                 <span
+                  className="cal-live-tag"
                   title={`Acierta los ${fecha.events.length} partidos de esta Fecha y te llevas ${pleno} puntos extra`}
                   style={{
-                    fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
-                    letterSpacing: '0.08em', textTransform: 'uppercase',
-                    padding: '3px 8px', borderRadius: 999,
-                    background: 'rgba(167,139,250,0.12)',
-                    border: '1px solid rgba(167,139,250,0.32)',
+                    fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
+                    letterSpacing: '0.09em', textTransform: 'uppercase', padding: '5px 11px',
+                    background: 'rgba(167,139,250,0.13)',
+                    border: '1px solid rgba(167,139,250,0.34)',
                     color: '#C4B5FD',
                   }}
                 >
                   Pleno +{pleno}
                 </span>
               )}
-              <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)', minWidth: 20 }} />
-              <span style={{
+              <span className="cal-live-tag" style={{
                 fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
-                letterSpacing: '0.08em', textTransform: 'uppercase',
-                padding: '3px 9px', borderRadius: 999,
-                background: complete ? `${T.accent}18` : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${complete ? `${T.accent}40` : 'rgba(255,255,255,0.08)'}`,
+                letterSpacing: '0.09em', textTransform: 'uppercase', padding: '5px 11px',
+                background: complete ? `${T.accent}1F` : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${complete ? `${T.accent}55` : 'rgba(255,255,255,0.09)'}`,
                 color: complete ? T.accent : 'var(--text-muted)',
               }}>
-                {complete ? '✓ Fecha completa' : `${prog.done}/${prog.total}`}
+                {complete ? '✓ Fecha completa' : `${prog.done} / ${prog.total}`}
               </span>
             </div>
 
-            <div className="flex flex-col gap-3">
-              {fecha.events.map((ev, i) => (
-                <MatchCard
-                  key={ev.id}
-                  event={ev}
-                  pred={preds[ev.id]}
-                  submitting={submitting}
-                  theme={T}
-                  liveScore={liveScores[ev.id]}
-                  onPick={handlePick}
-                  onExactSet={handleExactSet}
-                  activeExactCount={activeExactCount}
-                  showExactTooltip={tooltipEventId === ev.id}
-                  onExactTooltipDismiss={dismissExactTip}
-                  animDelay={fi === 0 ? i * 60 : 0}
-                  nowMs={nowMs}
-                />
+            {/* Dos columnas en escritorio: el arte del torneo respira y la Fecha
+                entera se ve de un vistazo, que es lo que empuja a completarla.
+                El Partido del Día ocupa el ancho completo por jerarquía. */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {/* El Partido del Día ABRE la Fecha. Por hora de saque puede caer
+                  en mitad de la lista, y una tarjeta a doble ancho encajada
+                  entre dos filas de la rejilla parece un fallo de maquetación,
+                  no una jerarquía. El resto sigue en orden cronológico. */}
+              {[...fecha.events]
+                .sort((a, b) =>
+                  (b.featured ? 1 : 0) - (a.featured ? 1 : 0) ||
+                  a.event_date.localeCompare(b.event_date),
+                )
+                .map((ev, i) => (
+                <div key={ev.id} className={ev.featured ? 'lg:col-span-2' : undefined}>
+                  <MatchCard
+                    event={ev}
+                    pred={preds[ev.id]}
+                    submitting={submitting}
+                    theme={T}
+                    liveScore={liveScores[ev.id]}
+                    onPick={handlePick}
+                    onExactSet={handleExactSet}
+                    activeExactCount={activeExactCount}
+                    showExactTooltip={tooltipEventId === ev.id}
+                    onExactTooltipDismiss={dismissExactTip}
+                    animDelay={fi === 0 ? i * 60 : 0}
+                    nowMs={nowMs}
+                  />
+                </div>
               ))}
             </div>
           </section>

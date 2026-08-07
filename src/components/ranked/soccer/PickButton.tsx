@@ -8,11 +8,17 @@ import type { SoccerTheme } from './types'
 // llega por tema y el visual del equipo por slot, para que sirva a clubes.
 
 export default function PickButton({
-  label, visual, sublabel, active, correct, wrong, disabled, theme, onClick,
+  label, visual, sublabel, ariaLabel, active, correct, wrong, disabled, theme, onClick,
 }: {
+  /** La tendencia: 1 · X · 2. Es la marca del boleto, y va grande. */
   label: string
-  visual: ReactNode
+  /** Escudo opcional. Se retiró de los botones: entre el escudo, "LOCAL" y el
+   *  nombre del equipo eran tres líneas por botón y la fila de picks se comía
+   *  media tarjeta. El escudo ya está, grande, en el enfrentamiento de arriba. */
+  visual?: ReactNode
   sublabel?: string
+  /** Nombre accesible: "1" a secas no dice nada a un lector de pantalla. */
+  ariaLabel?: string
   active: boolean
   correct: boolean
   wrong: boolean
@@ -47,24 +53,25 @@ export default function PickButton({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={active}
+      aria-label={ariaLabel}
       style={{
         flex: 1, minWidth: 0,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-        padding: '9px 6px', borderRadius: 'var(--radius-card)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+        padding: '9px 6px', borderRadius: 'var(--radius-md)',
         background: bg, border: `1px solid ${border}`, boxShadow: shadow,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled && !active && !correct && !wrong ? 0.55 : 1,
         transition: 'background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease',
       }}
     >
-      <span style={{ opacity: visualOp, lineHeight: 1, display: 'inline-flex' }}>{visual}</span>
+      {visual && <span style={{ opacity: visualOp, lineHeight: 1, display: 'inline-flex' }}>{visual}</span>}
       <span style={{
-        fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 900,
-        color, letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1,
+        fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 900,
+        color, letterSpacing: '0.02em', lineHeight: 1,
       }}>{label}</span>
       {sublabel && (
         <span style={{
-          fontFamily: 'var(--font-sport)', fontSize: 8, fontWeight: 700,
+          fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 700,
           color: sub, lineHeight: 1.2, textAlign: 'center',
           maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>{sublabel}</span>

@@ -7,6 +7,8 @@
 // —así es como la ficha de partido de la app dejó de enlazar—.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { SPORT_ACCENT } from '@/lib/sports'
+
 export type SoccerPick = '1' | 'X' | '2'
 
 /** `meta` de un evento de fútbol. Lo escribe el cron sync-football. */
@@ -78,10 +80,19 @@ export interface SoccerTheme {
   cardBgFeat: string
 }
 
+/**
+ * Tema de Ranked Fútbol.
+ *
+ * El acento sale del motor de deportes (`SPORT_ACCENT.futbol`), no de un hex a
+ * mano: es lo que hace que la sección respire igual que rankings, estadísticas
+ * y los hubs de deporte. Antes usaba `#4ADE80` —el verde del DIRECTO del
+ * calendario, deliberadamente fuera de este motor—, con lo que el mismo color
+ * significaba dos cosas: "esto es fútbol" y "esto está en vivo".
+ */
 export const FOOTBALL_THEME: SoccerTheme = {
-  accent:     '#4ADE80',
-  accentDim:  '#22C55E',
-  accentDeep: '#166534',
+  accent:     SPORT_ACCENT.futbol,
+  accentDim:  '#10B981',
+  accentDeep: '#065F46',
   cardBg:     'linear-gradient(145deg, #121A16 0%, #0C1310 100%)',
   cardBgFeat: 'linear-gradient(145deg, #0F2018 0%, #081410 100%)',
 }

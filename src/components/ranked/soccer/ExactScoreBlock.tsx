@@ -160,7 +160,7 @@ export default function ExactScoreBlock({
         marginTop: 10, padding: '8px 10px', borderRadius: 10,
         background: 'rgba(167,139,250,0.04)',
         border: '1px dashed rgba(167,139,250,0.18)',
-        display: 'flex', alignItems: 'center', gap: 8,
+        display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
       }}>
         <span style={{ display: 'inline-flex', lineHeight: 1, opacity: 0.6 }} aria-hidden><TargetIcon size={12} /></span>
         <span style={{
@@ -180,18 +180,20 @@ export default function ExactScoreBlock({
   // ── 2. Con pick, sin marcador ──
   if (!exactScore) {
     return (
-      <div style={{ position: 'relative', marginTop: 10 }}>
+      <div style={{ marginTop: 10 }}>
         {showTooltip && exactSlotAvailable && (
           <div
             role="tooltip"
+            // En el flujo, no flotando. Iba en `position:absolute; bottom:100%`
+            // y se montaba encima de los botones 1·X·2 —muy visible en el
+            // Partido del Día, que ocupa el ancho completo—, tapando justo lo
+            // que el usuario tiene que pulsar.
             style={{
-              position: 'absolute', bottom: '100%', left: 0, right: 0, marginBottom: 6,
-              display: 'flex', alignItems: 'flex-start', gap: 8,
+              display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8,
               padding: '8px 10px', borderRadius: 10,
               background: 'linear-gradient(145deg, rgba(167,139,250,0.28) 0%, rgba(124,58,237,0.18) 100%)',
               border: '1px solid rgba(196,181,253,0.5)',
-              boxShadow: '0 10px 24px rgba(124,58,237,0.32)',
-              zIndex: 5, animation: 'fFadeInUp 0.3s ease-out both',
+              animation: 'fFadeInUp 0.3s ease-out both',
             }}
           >
             <span style={{ display: 'inline-flex', lineHeight: 1 }} aria-hidden><LightbulbIcon size={14} /></span>
