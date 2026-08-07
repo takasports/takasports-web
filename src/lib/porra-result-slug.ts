@@ -37,8 +37,21 @@ export function jornadaToSlug(jornada: string): string {
 export function formatJornadaFromSlug(slug: string): string {
   return slug
     .split('-')
-    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .map((w) => {
+      if (!w) return w
+      const withAccent = ACCENTED[w] ?? w
+      return withAccent[0].toUpperCase() + withAccent.slice(1)
+    })
     .join(' ')
+}
+
+// El slug quita los acentos por ser URL-safe, así que al recomponer la etiqueta
+// salían "Sabado" y "Miercoles" — y esa etiqueta es lo que se imprime en la
+// imagen de OpenGraph que la gente comparte por WhatsApp. Se restauran los
+// nombres de día y mes, que es lo único que aparece en las Fechas.
+const ACCENTED: Record<string, string> = {
+  miercoles: 'miércoles',
+  sabado:    'sábado',
 }
 
 /** Construye el slug final con los datos del resultado. */
