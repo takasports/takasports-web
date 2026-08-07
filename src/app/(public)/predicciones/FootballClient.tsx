@@ -22,6 +22,10 @@ import {
   type SoccerEvent, type SoccerPick, type PredMap, type LiveScore,
 } from '@/components/ranked/soccer/types'
 import { createClient } from '@/lib/supabase'
+// Emparejado de nombres tolerante a alias ("PSG" ↔ "Paris Saint-Germain").
+// Vive en lib/quiniela por historia; es una utilidad pura y la usan también
+// PorraMatchWidget y /api/quiniela — sobrevive a la retirada de ese stack.
+import { nameMatch } from '@/lib/quiniela'
 import { StarIcon, LockIcon } from '@/components/icons/GameIcons'
 import TakaPoint from '@/components/TakaPoint'
 
@@ -166,6 +170,38 @@ export default function FootballClient() {
     vibrate(12)
     void send(eventId, pick, preds[eventId]?.prediction?.exactScore ?? null)
   }, [preds, send])
+
+  // ── Pick que llega desde una noticia ───────────────────────────────────────
+  // PorraMatchWidget (el picker que va dentro de los artículos) deja la
+  // elección en sessionStorage y manda al usuario aquí. Solo lo recogía el
+  // formulario de la quiniela retirada, así que sin esto el pick que el lector
+  // acaba de tocar en la noticia se pierde en silencio y el circuito
+  // artículo → predicción se rompe.
+  //
+  // Se aplica únicamente con sesión iniciada: si no, guardar dispararía el
+  // login nada más aterrizar, que es una emboscada. La clave se limpia
+  // siempre — un pick de hace días no debe revivir en otra visita.
+  const pendingConsumed = useRef(false)
+  useEffect(() => {
+    if (pendingConsumed.current || loading || loggedIn === null) return
+    let raw: string | null = null
+    try { raw = sessionStorage.getItem('porra:pendingPick') } catch { return }
+    if (!raw) return
+    pendingConsumed.current = true
+    try { sessionStorage.removeItem('porra:pendingPick') } catch { /* */ }
+    if (!loggedIn) return
+
+    try {
+      const p = JSON.parse(raw) as { home?: string; away?: string; pick?: SoccerPick }
+      if (!p?.home || !p?.away || !p?.pick) return
+      const target = events.find(e =>
+        e.status === 'open' &&
+        nameMatch(e.team_home ?? '', p.home!) &&
+        nameMatch(e.team_away ?? '', p.away!),
+      )
+      if (target && !preds[target.id]) void send(target.id, p.pick, null)
+    } catch { /* pick corrupto: se descarta */ }
+  }, [loading, loggedIn, events, preds, send])
 
   const handleExactSet = useCallback((eventId: string, exact: { home: number; away: number } | null) => {
     const currentPick = preds[eventId]?.prediction?.pick
