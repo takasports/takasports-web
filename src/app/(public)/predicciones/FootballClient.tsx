@@ -16,7 +16,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import MatchCard from '@/components/ranked/soccer/MatchCard'
-import { groupIntoFechas, fechaProgress, formatCountdown, todayKey } from '@/components/ranked/soccer/fecha'
+import { groupIntoFechas, fechaProgress, formatCountdown, todayKey, plenoBonus } from '@/components/ranked/soccer/fecha'
 import {
   FOOTBALL_THEME, MAX_ACTIVE_EXACT,
   type SoccerEvent, type SoccerPick, type PredMap, type LiveScore,
@@ -366,15 +366,33 @@ export default function FootballClient() {
       {fechas.map((fecha, fi) => {
         const prog = fechaProgress(fecha, predictedIds)
         const complete = prog.total > 0 && prog.done === prog.total
+        const pleno = plenoBonus(fecha.events.length)
         return (
           <section key={fecha.dateKey} className="mb-9">
             {/* Cabecera de la Fecha */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
               <h2 style={{
                 fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 900,
                 color: '#F0F4F1', letterSpacing: '-0.01em', textTransform: 'capitalize',
               }}>{fecha.label}</h2>
-              <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+              {/* El pleno se anuncia ANTES de jugar: un premio que solo se
+                  descubre al cobrarlo no empuja a completar la Fecha. */}
+              {pleno > 0 && (
+                <span
+                  title={`Acierta los ${fecha.events.length} partidos de esta Fecha y te llevas ${pleno} puntos extra`}
+                  style={{
+                    fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
+                    letterSpacing: '0.08em', textTransform: 'uppercase',
+                    padding: '3px 8px', borderRadius: 999,
+                    background: 'rgba(167,139,250,0.12)',
+                    border: '1px solid rgba(167,139,250,0.32)',
+                    color: '#C4B5FD',
+                  }}
+                >
+                  Pleno +{pleno}
+                </span>
+              )}
+              <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)', minWidth: 20 }} />
               <span style={{
                 fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
                 letterSpacing: '0.08em', textTransform: 'uppercase',

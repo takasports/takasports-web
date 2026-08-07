@@ -106,6 +106,21 @@ export function fechaProgress(fecha: Fecha, predictedIds: ReadonlySet<string>): 
   }
 }
 
+// ── Pleno de la Fecha ────────────────────────────────────────────────────────
+// Espejo de la RPC award_fecha_pleno (migración 124). Se replica aquí para
+// poder ANUNCIAR el premio antes de jugar —un bonus que solo se descubre al
+// cobrarlo no empuja a nadie a completar la Fecha—, pero quien paga es el
+// servidor: esto es cartel, no contabilidad.
+
+/** Partidos mínimos para que una Fecha pague pleno. Por debajo, acertar no
+ *  tiene mérito y el premio saldría más barato en los días pobres. */
+export const PLENO_MIN_MATCHES = 3
+
+/** Puntos de pleno de una Fecha, o 0 si es demasiado pequeña para pagarlo. */
+export function plenoBonus(matches: number): number {
+  return matches >= PLENO_MIN_MATCHES ? matches * 2 : 0
+}
+
 /** Cuenta atrás corta: "2h 14m", "45m", "1d 3h". */
 export function formatCountdown(ms: number): string {
   if (ms <= 0) return '0m'

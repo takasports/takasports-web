@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { dateKeyOf, fechaLabel, groupIntoFechas, fechaProgress, formatCountdown } from './fecha'
+import { dateKeyOf, fechaLabel, groupIntoFechas, fechaProgress, formatCountdown, plenoBonus, PLENO_MIN_MATCHES } from './fecha'
 import { SOCCER_LOCK_MS, type SoccerEvent } from './types'
 
 function ev(over: Partial<SoccerEvent> & { id: string }): SoccerEvent {
@@ -95,6 +95,21 @@ describe('fechaProgress', () => {
       ev({ id: 'c', meta: { date_key: '2026-08-22' } }),
     ], new Date('2026-08-22T10:00:00Z'))
     expect(fechaProgress(fecha, new Set(['a', 'c']))).toEqual({ done: 2, total: 3 })
+  })
+})
+
+describe('plenoBonus', () => {
+  // Espejo de award_fecha_pleno (migración 124). Si la RPC cambia de escala y
+  // esto no, la web anunciaría un premio que el servidor no paga.
+  it('no paga pleno en Fechas demasiado pequeñas', () => {
+    expect(plenoBonus(1)).toBe(0)
+    expect(plenoBonus(PLENO_MIN_MATCHES - 1)).toBe(0)
+  })
+
+  it('escala con el tamaño de la Fecha: clavar seis vale más que clavar tres', () => {
+    expect(plenoBonus(3)).toBe(6)
+    expect(plenoBonus(6)).toBe(12)
+    expect(plenoBonus(6)).toBeGreaterThan(plenoBonus(3))
   })
 })
 

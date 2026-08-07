@@ -6,11 +6,12 @@
 //
 // Requiere header `x-cron-secret` o `Authorization: Bearer <CRON_SECRET>`.
 //
-// Hace tres cosas, en este orden:
+// Hace cuatro cosas, en este orden:
 //   1. PUBLICAR  — solo días que aún no existen en base de datos.
 //   2. LIQUIDAR  — actualiza status/result de los ya publicados y reparte
 //                  puntos de los que ESPN da por terminados.
-//   3. CERRAR    — close_started_ranked_events() para los ya empezados.
+//   3. PLENO     — premia a quien clavó una Fecha entera, en cuanto cierra.
+//   4. CERRAR    — close_started_ranked_events() para los ya empezados.
 //
 // ── La regla de oro ────────────────────────────────────────────────────────
 // Una Fecha publicada NO se recalcula jamás. El cron corre cada 30 min; si
@@ -246,13 +247,17 @@ async function handle(req: Request) {
     return NextResponse.json({ ok: false, error: 'db_read_failed' }, { status: 500 })
   }
 
-  const existingIds  = new Set<string>()
+  const existingIds   = new Set<string>()
   const publishedDays = new Set<string>()
-  const resolvedIds  = new Set<string>()
+  const resolvedIds   = new Set<string>()
+  const dateKeyById   = new Map<string, string>()
   for (const row of existingRows ?? []) {
     const r = row as { id: string; status: string; meta?: { date_key?: string } }
     existingIds.add(r.id)
-    if (r.meta?.date_key) publishedDays.add(r.meta.date_key)
+    if (r.meta?.date_key) {
+      publishedDays.add(r.meta.date_key)
+      dateKeyById.set(r.id, r.meta.date_key)
+    }
     if (r.status === 'resolved') resolvedIds.add(r.id)
   }
 
@@ -305,6 +310,9 @@ async function handle(req: Request) {
   // ── 4. Liquidar lo publicado ───────────────────────────────────────────────
   let resolved = 0
   let scoringFailures = 0
+  /** Días cuya composición ha cambiado en esta pasada: son los únicos donde el
+   *  pleno puede haberse completado ahora. */
+  const touchedDays = new Set<string>()
 
   for (const [espnId, state] of stateByEspnId) {
     const id = rankedFootballId(espnId)
@@ -331,8 +339,23 @@ async function handle(req: Request) {
       p_home_score: state.homeScore,
       p_away_score: state.awayScore,
     })
-    if (rpcErr) scoringFailures++
-    else resolved++
+    if (rpcErr) {
+      scoringFailures++
+    } else {
+      resolved++
+      const dk = dateKeyById.get(id)
+      if (dk) touchedDays.add(dk)
+    }
+  }
+
+  // ── 4b. Pleno de la Fecha ──────────────────────────────────────────────────
+  // Solo puede completarse un día en el que acabamos de resolver algo. La RPC
+  // se encarga de comprobar que la Fecha esté cerrada entera y de no pagar dos
+  // veces, así que llamarla de más es inofensivo.
+  let plenos = 0
+  for (const dateKey of touchedDays) {
+    const { data: awarded, error: plenoErr } = await admin.rpc('award_fecha_pleno', { p_date_key: dateKey })
+    if (!plenoErr && typeof awarded === 'number') plenos += awarded
   }
 
   // ── 5. Cerrar los ya empezados ─────────────────────────────────────────────
@@ -353,6 +376,7 @@ async function handle(req: Request) {
     newDates:  newDates.map(d => ({ date: d.dateKey, matches: d.matches.length })),
     published,
     resolved,
+    plenos,
     scoringFailures,
   })
 }

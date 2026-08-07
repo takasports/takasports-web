@@ -46,6 +46,10 @@
       "schedule": "*/30 * * * *"
     },
     {
+      "path": "/api/cron/football-reminders",
+      "schedule": "15,45 * * * *"
+    },
+    {
       "path": "/api/cron/sync-mundial",
       "schedule": "*/30 * * 6,7 *"
     },
