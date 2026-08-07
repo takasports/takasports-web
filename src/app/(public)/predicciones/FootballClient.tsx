@@ -363,10 +363,19 @@ export default function FootballClient() {
           )}
         </div>
       ) : (
-        <p className="mt-6 mb-8" style={{ fontSize: 13, color: 'var(--text-secondary)', maxWidth: 460, lineHeight: 1.5 }}>
-          No hay Fecha abierta ahora mismo. Solo publicamos días con partidos que merezcan la pena —
-          vuelve cuando arranquen las ligas, o prueba la cartelera de UFC.
-        </p>
+        <div className="mt-4 mb-8 py-10 px-6 text-center" style={{
+          borderRadius: 'var(--radius-card)',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px dashed rgba(255,255,255,0.08)',
+        }}>
+          <p style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 900, color: '#F0F4F1', letterSpacing: '-0.01em' }}>
+            Sin Fecha abierta
+          </p>
+          <p className="mx-auto mt-2" style={{ fontSize: 13, color: 'var(--text-secondary)', maxWidth: 430, lineHeight: 1.5 }}>
+            Solo publicamos días con partidos que merezcan la pena. Volvemos en cuanto
+            arranquen las ligas — mientras, la cartelera de UFC sí está abierta.
+          </p>
+        </div>
       )}
 
       {error && (
@@ -464,13 +473,6 @@ export default function FootballClient() {
         )
       })}
 
-      {fechas.length === 0 && !loading && (
-        <div className="py-16 text-center">
-          <p style={{ fontFamily: 'var(--font-sport)', fontSize: 13, color: 'var(--text-muted)' }}>
-            Sin Fechas abiertas. Volvemos en cuanto haya fútbol que merezca destacarse.
-          </p>
-        </div>
-      )}
     </div>
   )
 }

@@ -32,8 +32,8 @@ interface RankedEntry {
 // el Mundial 2026 al final como archivo del torneo ya cerrado.
 const TABS: { id: RankedSport; label: string; emoji: string; accent: string; available: boolean }[] = [
   { id: 'global',  label: 'Liga Total',    emoji: '⚡', accent: '#A78BFA', available: true },
-  { id: 'ufc',     label: 'Ranked UFC',    emoji: '🥊', accent: '#F87171', available: true },
-  { id: 'futbol',  label: 'Ranked Fútbol', emoji: '⚽', accent: '#4ADE80', available: RANKED_FUTBOL_ENABLED },
+  { id: 'ufc',     label: 'UFC',           emoji: '🥊', accent: '#F87171', available: true },
+  { id: 'futbol',  label: 'Fútbol',        emoji: '⚽', accent: '#4ADE80', available: RANKED_FUTBOL_ENABLED },
   { id: 'mundial', label: 'Mundial 2026',  emoji: '🏆', accent: '#FBBF24', available: true },
 ]
 
@@ -127,12 +127,12 @@ export default function RankedLeaderboard({ activeSport }: Props) {
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-8 mt-2">
+    <div className="max-w-[820px] mx-auto px-4 sm:px-6 pb-8 mt-2">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <span className="section-accent" />
         <h2 className="section-label" style={{ color: '#F0F0F8', fontFamily: 'var(--font-sport)' }}>
-          RANKING RANKED
+          LIGA TAKA
         </h2>
       </div>
 
@@ -149,7 +149,7 @@ export default function RankedLeaderboard({ activeSport }: Props) {
             tabIndex={tab === t.id ? 0 : -1}
             onClick={() => t.available && setTab(t.id)}
             onKeyDown={e => onTabKeyDown(e, idx)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            className="cal-live-tag flex items-center gap-1.5 px-3.5 py-2 text-[10px] font-black uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             style={{
               background: tab === t.id && t.available
                 ? `${t.accent}18`
@@ -164,7 +164,7 @@ export default function RankedLeaderboard({ activeSport }: Props) {
             <span className="inline-flex"><RankedCategoryIcon sport={t.id} size={14} /></span>
             <span>{t.label}</span>
             {!t.available && (
-              <span className="text-[7px] px-1 py-0.5 rounded-full ml-0.5" style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A52' }}>
+              <span className="text-[7px] px-1 py-0.5 ml-0.5" style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A52' }}>
                 Pronto
               </span>
             )}
@@ -230,14 +230,18 @@ export default function RankedLeaderboard({ activeSport }: Props) {
                 badges:      e.badges,
               })
               return (
-                <PlacaRowV3
-                  key={e.pid ?? i}
-                  placa={placa}
-                  rank={e.rank}
-                  score={e.total}
-                  scoreLabel="pts"
-                  sportAccent={accent}
-                />
+                // PlacaRowV3 se limita a 600px de ancho (es una placa, no una
+                // fila): sin centrarla, el podio quedaba pegado a la izquierda
+                // contra medio panel vacío mientras el resto iba a todo lo ancho.
+                <div key={e.pid ?? i} className="w-full flex justify-center">
+                  <PlacaRowV3
+                    placa={placa}
+                    rank={e.rank}
+                    score={e.total}
+                    scoreLabel="pts"
+                    sportAccent={accent}
+                  />
+                </div>
               )
             })}
 
