@@ -210,6 +210,9 @@ export default function PorraCTA({ href, active, variant, onNavigate }: Props) {
   // status (mostraría una jornada que el user no puede jugar) — el
   // componente cae en deriveStateMundial() abajo.
   const liveStatus = usePorraStatus()
+  // Con Ranked Fútbol encendido, el estado viene de la Fecha en curso
+  // (/api/ranked/football/status). Apagado, no se consulta nada y el CTA cae al
+  // estado neutro de abajo.
   const status = RANKED_FUTBOL_ENABLED ? liveStatus : null
 
   // Re-render cada 60s para que el contador "CIERRA 2H 14M" baje.

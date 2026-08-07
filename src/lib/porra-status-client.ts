@@ -54,7 +54,11 @@ export async function fetchPorraStatus(): Promise<PorraStatus | null> {
   // callers lo esperen. Lo limpiamos al finalizar (éxito o error).
   inflight = (async () => {
     try {
-      const r = await fetch('/api/quiniela/status', { cache: 'no-store' })
+      // Fuente única del estado que anuncian el Header, el widget de noticias,
+      // el teaser de portada y el toast de liquidación. Apunta a las FECHAS de
+      // Ranked Fútbol; antes leía /api/quiniela/status, que sigue sirviendo la
+      // jornada del stack retirado —una jornada que ya nadie puede jugar—.
+      const r = await fetch('/api/ranked/football/status', { cache: 'no-store' })
       if (!r.ok) return null
       const data = (await r.json()) as PorraStatus
       writePorraCache(data)

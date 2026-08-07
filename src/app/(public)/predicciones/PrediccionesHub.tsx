@@ -23,8 +23,10 @@ import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 import { RankedCategoryIcon, FireIcon } from '@/components/icons/GameIcons'
 
 // Carga dinámica — solo se carga el cliente activo
-const QuinielaClient = dynamic(
-  () => import('@/app/quiniela/QuinielaClient'),
+// Ranked Fútbol — la vista de Fechas. Sustituye al viejo QuinielaClient, que
+// se retira con el resto del stack `quiniela` de predicciones.
+const FootballClient = dynamic(
+  () => import('./FootballClient'),
   { ssr: false, loading: () => <QuinielaLoadingShim /> }
 )
 
@@ -65,21 +67,21 @@ const SPORTS: {
   badge?: string
 }[] = [
   {
+    // La Fecha: el producto principal de la sección. Encabeza mientras el flag
+    // esté encendido; si se apaga, DEFAULT_SPORT cae solo a UFC.
+    id:        'futbol',
+    label:     'Fútbol',
+    emoji:     '⚽',
+    accent:    '#4ADE80',
+    available: RANKED_FUTBOL_ENABLED,
+    badge:     RANKED_FUTBOL_ENABLED ? undefined : 'Pronto',
+  },
+  {
     id:        'ufc',
     label:     'Ranked UFC',
     emoji:     '🥊',
     accent:    '#F87171',
     available: true,
-  },
-  {
-    // Sistema completo armado (QuinielaClient + APIs + DB). Para reactivar:
-    // poner RANKED_FUTBOL_ENABLED=true en src/lib/feature-flags.ts.
-    id:        'futbol',
-    label:     'Ranked Fútbol',
-    emoji:     '⚽',
-    accent:    '#4ADE80',
-    available: RANKED_FUTBOL_ENABLED,
-    badge:     RANKED_FUTBOL_ENABLED ? undefined : 'Pronto',
   },
   {
     // El Mundial 2026 acabó el 19-jul-2026: se queda como archivo consultable
@@ -99,7 +101,7 @@ const SPORTS: {
 const HERO_COPY: Record<SportTab, { eyebrow: string; sub: string }> = {
   mundial: { eyebrow: 'Mundial 2026',  sub: 'El torneo terminó. Consulta aquí tus picks y el ranking final.' },
   ufc:     { eyebrow: 'Ranked UFC',    sub: 'Predice cada combate. El estelar vale el doble.' },
-  futbol:  { eyebrow: 'Ranked Fútbol', sub: RANKED_FUTBOL_ENABLED ? 'Pronostica la jornada y compite en el Ranking.' : 'Predicciones de Liga. Muy pronto.' },
+  futbol:  { eyebrow: 'La Fecha', sub: RANKED_FUTBOL_ENABLED ? 'Los partidos que importan de cada día. Acierta y sube en la Liga Taka.' : 'Predicciones de Liga. Muy pronto.' },
 }
 
 // Tabs del hub (todas disponibles)
@@ -394,12 +396,10 @@ export default function PrediccionesHub() {
 
           {/* Sport content (tabpanel del selector de deporte) */}
           <div role="tabpanel" id="sportpanel" aria-labelledby={`sporttab-${sportTab}`} tabIndex={0} className="focus-visible:outline-none">
-          {/* Ranked Fútbol — actualmente "Pronto". Para reactivar: cambiar
-              available:true en SPORTS arriba y dejar este render activo. */}
           {sportTab === 'futbol' && (
             SPORTS.find(s => s.id === 'futbol')?.available
-              ? <QuinielaClient embedded />
-              : <SportComingSoon sport="Ranked Fútbol" iconSport="futbol" accent="#4ADE80" />
+              ? <FootballClient />
+              : <SportComingSoon sport="Fútbol" iconSport="futbol" accent="#4ADE80" />
           )}
           {sportTab === 'ufc'    && <UfcClient />}
           {sportTab === 'mundial' && <MundialClient />}

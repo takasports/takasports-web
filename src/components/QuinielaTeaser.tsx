@@ -50,13 +50,16 @@ export default function QuinielaTeaser() {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    fetch('/api/quiniela')
+    // Fecha en curso de Ranked Fútbol. Antes leía /api/quiniela, que sigue
+    // devolviendo la jornada del stack retirado: partidos que el usuario ya no
+    // puede jugar y que además no coinciden con los de /predicciones.
+    fetch('/api/ranked/football/status')
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         setLoaded(true)
         if (data?.matches?.length) {
           setMatches(data.matches.slice(0, 3))
-          setTotal(data.matches.length)
+          setTotal(data.totalMatches ?? data.matches.length)
           if (data.jornada) setJornada(data.jornada)
         }
       })
@@ -87,7 +90,7 @@ export default function QuinielaTeaser() {
             }}
           >
             <span className="w-1 h-1 rounded-full" style={{ background: '#A78BFA' }} />
-            QUINIELA
+            LA FECHA
           </span>
           <span className="text-[11px]" style={{ color: '#7a7a92' }}>{jornada}</span>
         </div>
