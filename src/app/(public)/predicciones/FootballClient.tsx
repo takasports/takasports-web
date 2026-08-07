@@ -133,6 +133,19 @@ export default function FootballClient() {
         body: JSON.stringify(body),
       })
       if (res.status === 401) {
+        // Sin sesión. Antes esto mandaba a Google directamente y el pick se
+        // perdía por el camino: el usuario volvía logueado y con la Fecha en
+        // blanco, teniendo que acordarse de lo que había elegido. Lo dejamos
+        // en el mismo buzón que usa el picker de las noticias, así que al
+        // aterrizar se aplica solo.
+        const ev = events.find(e => e.id === eventId)
+        if (ev) {
+          try {
+            sessionStorage.setItem('porra:pendingPick', JSON.stringify({
+              home: ev.team_home, away: ev.team_away, pick, ts: Date.now(),
+            }))
+          } catch { /* sin sessionStorage: se pierde, no es crítico */ }
+        }
         const sb = createClient()
         if (sb) {
           await sb.auth.signInWithOAuth({
@@ -164,7 +177,7 @@ export default function FootballClient() {
       }
     } catch { setError('No se pudo guardar la predicción.') }
     finally { setSubmitting(false) }
-  }, [submitting, load])
+  }, [submitting, load, events])
 
   const handlePick = useCallback((eventId: string, pick: SoccerPick) => {
     vibrate(12)
@@ -210,14 +223,19 @@ export default function FootballClient() {
   }, [preds, send])
 
   // ── Derivados ──────────────────────────────────────────────────────────────
-  const now = useMemo(() => new Date(nowMs), [nowMs])
+  // El reloj corre cada segundo para las cuentas atrás, pero el agrupado en
+  // Fechas solo cambia de minuto en minuto (etiquetas "Hoy"/"Mañana" y qué
+  // cierre es el próximo). Anclándolo al minuto nos ahorramos rehacer el
+  // agrupado —con su formateo de fechas por partido— sesenta veces por minuto.
+  const nowMinute = Math.floor(nowMs / 60_000)
 
   // Las Fechas ya pasadas no se listan: la sección es "qué se juega ahora",
   // no un archivo. El historial vive en el perfil y en la Liga Taka.
   const fechas = useMemo(() => {
-    const today = todayKey(now)
-    return groupIntoFechas(events, now).filter(f => f.dateKey >= today)
-  }, [events, now])
+    const at = new Date(nowMinute * 60_000)
+    const today = todayKey(at)
+    return groupIntoFechas(events, at).filter(f => f.dateKey >= today)
+  }, [events, nowMinute])
 
   const predictedIds = useMemo(() => new Set(Object.keys(preds)), [preds])
 
