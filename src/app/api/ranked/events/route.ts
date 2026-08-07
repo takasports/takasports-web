@@ -32,17 +32,36 @@ export async function GET(req: NextRequest) {
     { auth: { persistSession: false } },
   )
 
+  // ── El tope se aplica por el extremo VIEJO, nunca por el futuro ────────────
+  // Antes esto pedía los 200 PRIMEROS por fecha ascendente. Con un torneo
+  // cerrado de 104 partidos daba igual, pero `ranked_events` acumula temporada
+  // tras temporada: en cuanto un deporte pasa de 200 filas, el tope empieza a
+  // recortar por el final —es decir, por los eventos FUTUROS— y desaparecen del
+  // cliente mientras el cron los sigue publicando tan campante. Sin error y sin
+  // log: la sección simplemente se queda sin nada que pronosticar.
+  //
+  // Ya estaba ocurriendo: UFC tenía 210 filas y diez combates de UFC 331 y una
+  // Fight Night (19-sep a 18-oct) no llegaban a la web. Ranked Fútbol habría
+  // caído en lo mismo hacia finales de septiembre.
+  //
+  // Pidiendo los más RECIENTES y devolviéndolos en orden ascendente, el recorte
+  // se lleva historia antigua —que a nadie le bloquea— y jamás lo que queda por
+  // jugar. El contrato de la respuesta no cambia: sigue saliendo cronológica.
+  const LIMIT = 300
+
   let q = sb
     .from('ranked_events')
     .select('id, sport, competition, event_date, team_home, team_away, fighter_a, fighter_b, featured, status, result, meta')
     .eq('sport', sport)
-    .order('event_date', { ascending: true })
-    .limit(200)
+    .order('event_date', { ascending: false })
+    .limit(LIMIT)
 
   if (status) q = q.eq('status', status)
 
   const { data, error } = await q
   if (error) return apiError('server_error', 500)
+
+  const events = (data ?? []).slice().reverse()
 
   // El cierre de eventos ya iniciados (close_started_ranked_events) lo ejecutan
   // YA los crons sync-mundial (cada 30 min jun/jul) y sync-ufc (cada 15 min en
@@ -51,7 +70,7 @@ export async function GET(req: NextRequest) {
   // que el cron, pero los picks ya se bloquean 60 min antes del evento → el
   // estado "cerrado" es cosmético, no afecta a quién puede pronosticar.
   return NextResponse.json(
-    { events: data ?? [] },
+    { events },
     {
       headers: {
         'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=30',
