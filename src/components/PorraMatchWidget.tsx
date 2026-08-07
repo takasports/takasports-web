@@ -144,8 +144,13 @@ export default function PorraMatchWidget({ title, tags }: Props) {
   const [pick, setPick] = useState<Pick | null>(null)
 
   const match = useMemo(() => {
-    if (!status?.matches?.length) return null
-    return findMatch(status.matches, title, tags)
+    // Se busca contra TODOS los partidos abiertos, no solo los de la Fecha en
+    // curso: una noticia publicada el miércoles sobre el partido del sábado
+    // también merece su picker. `matches` queda de respaldo por si el endpoint
+    // aún no sirve `upcoming`.
+    const pool = status?.upcoming?.length ? status.upcoming : status?.matches
+    if (!pool?.length) return null
+    return findMatch(pool, title, tags)
   }, [status, title, tags])
 
   // Trackea que el widget se materializó para este artículo (una vez por mount).

@@ -36,6 +36,10 @@ export interface PorraStatus {
   deadline: string | null
   totalMatches: number
   matches?: PorraMatch[]
+  /** Todos los partidos abiertos, no solo los de la Fecha en curso. Lo consume
+   *  el widget de las noticias para cubrir artículos sobre partidos de días
+   *  siguientes; el resto de superficies se queda con `matches`. */
+  upcoming?: PorraMatch[]
   isAuthed: boolean
   hasPicked: boolean
   picksCount: number

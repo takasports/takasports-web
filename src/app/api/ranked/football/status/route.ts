@@ -20,7 +20,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { RANKED_FOOTBALL_SPORT } from '@/lib/football-ranked'
-import { groupIntoFechas } from '@/components/ranked/soccer/fecha'
+import { groupIntoFechas, fechaLabel } from '@/components/ranked/soccer/fecha'
 import { SOCCER_LOCK_MS, type SoccerEvent } from '@/components/ranked/soccer/types'
 
 export const dynamic = 'force-dynamic'
@@ -75,6 +75,22 @@ export async function GET(req: NextRequest) {
     deadline:     new Date(current.firstLockAt!).toISOString(),
     totalMatches: current.events.length,
     matches,
+    // TODOS los partidos abiertos, no solo los de la Fecha en curso. Lo usa el
+    // widget de las noticias, que cruza el titular del artículo con los equipos:
+    // limitado a la Fecha de hoy, una noticia sobre un partido del sábado no
+    // encontraba nada y el artículo se quedaba sin puerta de entrada al juego.
+    // La portada y el CTA siguen leyendo `matches` (la Fecha en curso).
+    upcoming: events
+      .filter(e => e.status === 'open')
+      .map(e => ({
+        home:     e.team_home ?? '',
+        away:     e.team_away ?? '',
+        comp:     e.competition,
+        kickoff:  e.event_date,
+        homeLogo: e.meta?.home_logo ?? undefined,
+        awayLogo: e.meta?.away_logo ?? undefined,
+        featured: e.featured,
+      })),
   }
 
   // ── Parte por usuario ──────────────────────────────────────────────────────
@@ -103,7 +119,94 @@ export async function GET(req: NextRequest) {
       away: byId.get(r.event_id)?.team_away ?? '',
       pick: r.prediction?.pick ?? '',
     })),
+    lastSettled: await lastSettledFecha(admin, user.id),
   })
+}
+
+// ── Última Fecha liquidada del usuario ───────────────────────────────────────
+// Alimenta PorraSettlementToast, que al volver el usuario le enseña cómo le fue
+// y le ofrece compartirlo en /predicciones/resultado/[slug] —una landing con su
+// propia imagen de OpenGraph—. Toda esa cadena ya estaba construida y llevaba
+// desconectada desde la retirada de la quiniela: el toast leía `lastSettled` y
+// nadie se lo daba, así que el único bucle de crecimiento de la sección no
+// llegaba a arrancar nunca.
+async function lastSettledFecha(
+  admin: NonNullable<ReturnType<typeof adminSupabase>>,
+  userId: string,
+): Promise<{
+  jornada: string
+  correctCount: number
+  totalPicks: number
+  totalWon: number
+  settledAt: string | null
+  featuredHit: boolean
+  exactHits: number
+} | null> {
+  // Se parte de los EVENTOS de fútbol recientes, no de las predicciones del
+  // usuario. Filtrar por "sus N últimas predicciones" parecía equivalente, pero
+  // un jugador activo de UFC llenaría ese cupo con combates y sus Fechas de
+  // fútbol se caerían de la lista sin que nada avisara.
+  const since = new Date(Date.now() - 14 * 86_400_000).toISOString()
+  const { data: evs } = await admin
+    .from('ranked_events')
+    .select('id, featured, result, meta, updated_at')
+    .eq('sport', RANKED_FOOTBALL_SPORT)
+    .eq('status', 'resolved')
+    .gte('event_date', since)
+    .order('event_date', { ascending: false })
+    .limit(120)
+
+  if (!evs || evs.length === 0) return null
+
+  type Ev = { id: string; featured: boolean; result: { home_score?: number; away_score?: number } | null; meta?: { date_key?: string }; updated_at: string }
+  const evById = new Map((evs as Ev[]).map(e => [e.id, e]))
+
+  const { data: preds } = await admin
+    .from('ranked_predictions')
+    .select('event_id, is_correct, points_awarded, prediction')
+    .eq('user_id', userId)
+    .not('is_correct', 'is', null)
+    .in('event_id', [...evById.keys()])
+
+  if (!preds || preds.length === 0) return null
+
+  // La Fecha más reciente EN LA QUE JUGÓ (no la última que se resolvió): si no
+  // participó ayer, se le enseña el resultado del día que sí jugó.
+  let latest = ''
+  for (const p of preds as { event_id: string }[]) {
+    const dk = evById.get(p.event_id)?.meta?.date_key
+    if (dk && dk > latest) latest = dk
+  }
+  if (!latest) return null
+
+  const mine = (preds as { event_id: string; is_correct: boolean | null; points_awarded: number | null; prediction?: { exactScore?: { home: number; away: number } } }[])
+    .filter(p => evById.get(p.event_id)?.meta?.date_key === latest)
+  if (mine.length === 0) return null
+
+  let correct = 0, won = 0, exactHits = 0, featuredHit = false, settledAt: string | null = null
+  for (const p of mine) {
+    const ev = evById.get(p.event_id)!
+    if (p.is_correct) {
+      correct++
+      if (ev.featured) featuredHit = true
+      const ex = p.prediction?.exactScore
+      if (ex && ex.home === ev.result?.home_score && ex.away === ev.result?.away_score) exactHits++
+    }
+    won += p.points_awarded ?? 0
+    if (!settledAt || ev.updated_at > settledAt) settledAt = ev.updated_at
+  }
+
+  return {
+    // El slug compartible se construye a partir de esto, así que va en el mismo
+    // idioma que la cabecera de la Fecha en la web.
+    jornada: fechaLabel(latest),
+    correctCount: correct,
+    totalPicks: mine.length,
+    totalWon: won,
+    settledAt,
+    featuredHit,
+    exactHits,
+  }
 }
 
 /** Reexportado para que quede claro de dónde sale el deadline del CTA. */
