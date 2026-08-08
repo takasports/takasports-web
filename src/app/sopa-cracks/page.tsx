@@ -33,6 +33,9 @@ const HINT_PENALTY_SECONDS = 30
 const TIME_ATTACK_LIMIT = 3 * 60   // 3 minutos
 const POINTS_PER_WORD = SOPA.POINTS_PER_WORD  // escala única (sidebar + scoreSopa)
 const COLOR_INTRUDER = '#A78BFA'   // violeta, distinto del verde clásico
+/** Palabras mínimas para que una sopa a medias cuente como partida jugada.
+ *  Con menos, abrir el juego y encontrar una sola palabra salvaría la racha. */
+const SOPA_PARTIAL_MIN = 3
 
 // ── Selección de puzzle por semana ────────────────────────────
 // Qué sopa toca y con qué semilla se construye la cuadrícula lo decide
@@ -266,6 +269,72 @@ export default function SopaCracksPage() {
   const allFound = found.length === activeWords.length
   // En contrarreloj puede acabar antes (timeOver) o al encontrar todo
   const roundDone = allFound || timeOver
+
+  // ── Guardado parcial ──────────────────────────────────────────
+  //
+  // Una sopa a medias valía CERO: la partida solo se registraba al encontrarlas
+  // todas, así que quien dejaba 8 de 10 no sumaba puntos, no constaba como
+  // jugada y su racha se rompía igual. Ahora el progreso se guarda solo, a
+  // partir de un mínimo (para que abrir y tocar una palabra no regale racha) y
+  // como mucho cada 10 s. El servidor se queda con la mejor marca, así que
+  // guardar de más nunca resta.
+  const savedFoundRef = useRef(0)
+  useEffect(() => {
+    if (!hydrated || wonRef.current) return
+    if (found.length < SOPA_PARTIAL_MIN) return
+    if (found.length <= savedFoundRef.current) return
+
+    const id = setTimeout(() => {
+      savedFoundRef.current = found.length
+      void recordPlay({
+        gameId:  'sopacracks',
+        period:  currentWeekISO(),
+        score:   scoreSopa(found.length),
+        payload: {
+          found:     found.length,
+          total:     activeWords.length,
+          seconds,
+          intruder:  intruderFound,
+          timeAttack,
+          partial:   true,
+        },
+        durationMs: seconds * 1000,
+      }).catch(() => { /* best-effort: no molestamos al jugador */ })
+    }, 10_000)
+    return () => clearTimeout(id)
+    // `seconds` cambia cada segundo: fuera de deps a propósito, o reprogramaría
+    // el guardado sin parar y no llegaría a dispararse nunca.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [found.length, hydrated, activeWords.length, intruderFound, timeAttack])
+
+  // Y al salir (cambiar de pestaña, cerrar o navegar), se vuelca lo que haya
+  // sin esperar al temporizador: si no, quien encuentra cuatro palabras y se va
+  // a los diez segundos las pierde igual.
+  const flushRef = useRef<() => void>(() => {})
+  flushRef.current = () => {
+    if (wonRef.current || found.length < SOPA_PARTIAL_MIN) return
+    if (found.length <= savedFoundRef.current) return
+    savedFoundRef.current = found.length
+    void recordPlay({
+      gameId:  'sopacracks',
+      period:  currentWeekISO(),
+      score:   scoreSopa(found.length),
+      payload: {
+        found: found.length, total: activeWords.length, seconds,
+        intruder: intruderFound, timeAttack, partial: true,
+      },
+      durationMs: seconds * 1000,
+    }).catch(() => { /* best-effort */ })
+  }
+
+  useEffect(() => {
+    const onHide = () => { if (document.visibilityState === 'hidden') flushRef.current() }
+    document.addEventListener('visibilitychange', onHide)
+    return () => {
+      document.removeEventListener('visibilitychange', onHide)
+      flushRef.current()
+    }
+  }, [])
 
   // Detener cronómetro y disparar fin de partida cuando la ronda termina.
   // En modo contrarreloj, "ganar" no requiere todas las palabras: el ranking

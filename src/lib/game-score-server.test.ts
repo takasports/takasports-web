@@ -158,6 +158,35 @@ describe('deriveGameScore · sopacracks', () => {
   })
 })
 
+describe('deriveGameScore · partidas a medias', () => {
+  // Antes una sopa o un once sin terminar no se registraban siquiera. Ahora se
+  // guardan en cuanto pasan un mínimo, y el servidor tiene que puntuarlas por
+  // lo hecho — ni cero ni el máximo.
+  it('una sopa a medias puntúa por las palabras encontradas', async () => {
+    const media = await deriveGameScore('sopacracks', WEEK, { found: 6, total: 10, partial: true }, 60)
+    expect(media.score).toBe(60)
+    const entera = await deriveGameScore('sopacracks', WEEK, { found: 10, total: 10 }, 100)
+    expect(entera.score).toBeGreaterThan(media.score)
+  })
+
+  it('un once a medias puntúa por los huecos válidos, revalidados', async () => {
+    const challenge = getChallengeForWeek(WEEK)!
+    const defs = FORMATIONS[challenge.recommendedFormation]
+    const used = new Set<string>()
+    const slots: Record<string, string> = {}
+    for (const def of defs.slice(0, 5)) {
+      const tag = challenge.slotTags![def.id]
+      const p = PLAYERS_DEDUP.find(x => !used.has(x.id) && x.position === def.position && tag.match(x))
+      if (p) { used.add(p.id); slots[def.id] = p.id }
+    }
+    const n = Object.keys(slots).length
+    const r = await deriveGameScore('mionce', WEEK, { slots, partial: true }, 0)
+    expect(r.source).toBe('server')
+    expect(r.score).toBe(n * 10)
+    expect(r.score).toBeLessThan(110)   // no es un once completo
+  })
+})
+
 describe('deriveGameScore · juegos fuera del alcance', () => {
   it('quiniela conserva su propio scoring', async () => {
     const r = await deriveGameScore('quiniela', 'laliga-J12', { anything: true }, 340)

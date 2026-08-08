@@ -763,6 +763,10 @@ function Pitch({ slots, players, slotTags, validBySlot, onSlotClick, onSlotClear
 // ── Page ─────────────────────────────────────────────────────────
 
 export default function MiOncePage() {
+  /** Válidos mínimos para que un once a medias cuente como partida guardada.
+   *  Con menos, colocar un par de jugadores ya registraría marca. */
+  const MIONCE_PARTIAL_MIN = 4
+
   const [hydrated, setHydrated] = useState(false)
   const [formation, setFormation] = useState<FormationId>('4-3-3')
   const [slots, setSlots] = useState<Record<string, string>>({})
@@ -925,6 +929,25 @@ export default function MiOncePage() {
       }
       saveScored({ week: week.key, best: bestScoreRef.current })
     }
+    // Guardado parcial: un once de 10 de 11 valía CERO — la partida solo se
+    // registraba al colocar el último, así que quien dejaba el once a medias no
+    // sumaba puntos ni constaba como jugada. Ahora, a partir de un mínimo de
+    // válidos, la mejor marca parcial se guarda igual. El servidor se queda con
+    // la mayor, así que completarlo después sigue mejorando la posición; el
+    // premio de racha/misión sigue reservado al once completo (el guard de
+    // arriba), que es lo que evita farmear.
+    if (filledCount < 11 && validCount >= MIONCE_PARTIAL_MIN && score > bestScoreRef.current) {
+      bestScoreRef.current = score
+      void recordPlay({
+        gameId:  'mionce',
+        period,
+        score,
+        payload: { formation, filled: filledCount, valid: validCount, tagged: isTagged, slots, partial: true },
+        durationMs: startedAtRef.current ? Date.now() - startedAtRef.current : undefined,
+      }).catch(() => { /* best-effort */ })
+      saveScored({ week: week.key, best: bestScoreRef.current })
+    }
+
     prevFilledRef.current = filledCount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filledCount])
