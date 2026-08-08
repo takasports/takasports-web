@@ -18,9 +18,9 @@ import TrafficTabs from './TrafficTabs'
 import WorldMap from './WorldMap'
 import {
   getGa4Summary, getAppGa4Summary, getSearchDetail, getSearchTotals, getGa4Realtime, getAppGa4Realtime,
-  getAppDownloads, getTrafficHistory, getTopContent, getAudience, getWebCountriesByWindow, shortPath,
+  getAppDownloads, getTrafficHistory, getTopContent, getAudience, getWebCountriesByWindow, getGamesTraffic, shortPath,
   type Ga4Summary, type SearchDetail, type SearchTotals, type Ga4Realtime, type AppDownloads,
-  type TrafficHistoryDay, type ContentItem, type Audience, type CountryWindow,
+  type TrafficHistoryDay, type ContentItem, type Audience, type CountryWindow, type GamesTraffic,
 } from '@/lib/traffic'
 import { checkRoutes, checkVercelDeploy, type RouteCheck, type DeployStatus } from '@/lib/seo-audit'
 
@@ -321,11 +321,11 @@ function VisitsBlock({ ga4, kind, geo }: { ga4: Ga4Summary; kind: 'web' | 'app';
 export default async function TraficoPage() {
   await requireAdmin('/admin/trafico')
 
-  const [ga4, searchTotals, search, ios, realtime, history, routes, deploy, appGa4, appRealtime, content, audience, webGeo]: [
-    Ga4Summary, SearchTotals, SearchDetail, AppDownloads, Ga4Realtime, TrafficHistoryDay[], RouteCheck[], DeployStatus, Ga4Summary, Ga4Realtime, ContentItem[], Audience, CountryWindow[],
+  const [ga4, searchTotals, search, ios, realtime, history, routes, deploy, appGa4, appRealtime, content, audience, webGeo, games]: [
+    Ga4Summary, SearchTotals, SearchDetail, AppDownloads, Ga4Realtime, TrafficHistoryDay[], RouteCheck[], DeployStatus, Ga4Summary, Ga4Realtime, ContentItem[], Audience, CountryWindow[], GamesTraffic,
   ] = await Promise.all([
     getGa4Summary(), getSearchTotals(), getSearchDetail(), getAppDownloads(), getGa4Realtime(), getTrafficHistory(),
-    checkRoutes(), checkVercelDeploy(), getAppGa4Summary(), getAppGa4Realtime(), getTopContent(), getAudience(), getWebCountriesByWindow(),
+    checkRoutes(), checkVercelDeploy(), getAppGa4Summary(), getAppGa4Realtime(), getTopContent(), getAudience(), getWebCountriesByWindow(), getGamesTraffic(),
   ])
 
   const okCount = routes.filter((r) => r.ok).length
@@ -361,6 +361,66 @@ export default async function TraficoPage() {
         <section className="mb-12">
           <SectionTitle hint="artículos más vistos (28d) con el tiempo medio por visita">Contenido que rinde</SectionTitle>
           <RankTable rows={content.map((c) => ({ label: c.title, value: nf(c.views), sub: `${c.avgSec}s/vista` }))} />
+        </section>
+      )}
+
+      {/* Zona de juegos — ¿llega alguien, y desde dónde? */}
+      {games.available && (
+        <section className="mb-12">
+          <SectionTitle hint="90 días · para saber si el problema de los juegos es el juego o que no llega nadie">
+            Zona de juegos
+          </SectionTitle>
+
+          <div className="grid lg:grid-cols-2 gap-4">
+            <div>
+              <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 8 }}>
+                Visitas por página
+              </p>
+              {games.pages.length > 0 ? (
+                <RankTable
+                  rows={games.pages.map((p) => ({
+                    label: shortPath(p.path),
+                    value: nf(p.views),
+                    sub: `${nf(p.users)} personas`,
+                  }))}
+                />
+              ) : (
+                <div className="tk-glass" style={{ borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)', fontSize: 13, color: 'var(--text-secondary)' }}>
+                  Ninguna visita registrada en 90 días.
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 8 }}>
+                Desde dónde se llega al hub
+              </p>
+              {games.referrers.length > 0 ? (
+                <RankTable
+                  rows={games.referrers.map((r) => ({ label: r.from, value: nf(r.views) }))}
+                />
+              ) : (
+                <div className="tk-glass" style={{ borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)', fontSize: 13, color: 'var(--text-secondary)' }}>
+                  Sin referentes: nadie llega desde otra página.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {games.landings.length > 0 && (
+            <div className="mt-4">
+              <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 8 }}>
+                Sesiones que empiezan directamente en un juego
+              </p>
+              <RankTable
+                rows={games.landings.map((l) => ({
+                  label: shortPath(l.path),
+                  value: nf(l.sessions),
+                  sub: l.channel,
+                }))}
+              />
+            </div>
+          )}
         </section>
       )}
 

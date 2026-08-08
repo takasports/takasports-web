@@ -694,3 +694,108 @@ export async function getAudience(): Promise<Audience> {
   }
   return out
 }
+
+// ── Zona de juegos ────────────────────────────────────────────────
+//
+// Por qué existe: en 90 días los minijuegos suman ~28 visitas al hub y 10
+// aperturas de juego, mientras Predicciones tiene actividad diaria. Antes de
+// seguir puliendo mecánicas hay que saber si el problema es el juego o que no
+// llega nadie — y eso solo lo contesta GA4, que aquí (Vercel) sí tiene
+// credencial de service account.
+
+export interface GamesPage { path: string; views: number; users: number }
+export interface GamesReferrer { from: string; views: number }
+export interface GamesLanding { path: string; channel: string; sessions: number }
+export interface GamesTraffic {
+  available: boolean
+  pages: GamesPage[]
+  referrers: GamesReferrer[]
+  landings: GamesLanding[]
+}
+
+/** Rutas que forman la zona de juegos. El hub primero. */
+const GAME_PATHS = ['/juegos', '/crackquiz', '/takagrid', '/mionce', '/sopa-cracks'] as const
+
+/** Referente crudo → etiqueta legible ("la propia web", "Google", el dominio…). */
+function labelReferrer(raw: string): string {
+  if (!raw) return 'Directo / sin referente'
+  try {
+    const u = new URL(raw)
+    if (u.hostname.endsWith('takasportsmedia.com')) {
+      return `Web propia · ${u.pathname === '/' ? 'portada' : u.pathname}`
+    }
+    return u.hostname.replace(/^www\./, '')
+  } catch {
+    return raw
+  }
+}
+
+export async function getGamesTraffic(days = 90): Promise<GamesTraffic> {
+  const vacio: GamesTraffic = { available: false, pages: [], referrers: [], landings: [] }
+
+  let token: string | null = null
+  try {
+    token = (await getServiceAccountToken([ANALYTICS_SCOPE])) ?? (await getOauthAccessToken())
+  } catch { return vacio }
+  if (!token) return vacio
+
+  const dateRanges = [{ startDate: `${days}daysAgo`, endDate: 'yesterday' }]
+  const enJuegos = (field: string) => ({
+    orGroup: {
+      expressions: GAME_PATHS.map(p => ({
+        filter: { fieldName: field, stringFilter: { matchType: 'BEGINS_WITH', value: p } },
+      })),
+    },
+  })
+
+  try {
+    const [pageRows, refRows, landRows] = await Promise.all([
+      ga4RunReport(token, GA4_PROPERTY_ID, {
+        dateRanges,
+        dimensions: [{ name: 'pagePath' }],
+        metrics: [{ name: 'screenPageViews' }, { name: 'totalUsers' }],
+        dimensionFilter: enJuegos('pagePath'),
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+        limit: 20,
+      }),
+      ga4RunReport(token, GA4_PROPERTY_ID, {
+        dateRanges,
+        dimensions: [{ name: 'pageReferrer' }],
+        metrics: [{ name: 'screenPageViews' }],
+        dimensionFilter: {
+          filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: '/juegos' } },
+        },
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+        limit: 12,
+      }),
+      ga4RunReport(token, GA4_PROPERTY_ID, {
+        dateRanges,
+        dimensions: [{ name: 'landingPage' }, { name: 'sessionDefaultChannelGroup' }],
+        metrics: [{ name: 'sessions' }],
+        dimensionFilter: enJuegos('landingPage'),
+        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+        limit: 12,
+      }),
+    ])
+
+    return {
+      available: true,
+      pages: pageRows.map(r => ({
+        path:  r.dimensionValues?.[0]?.value ?? '',
+        views: Number(r.metricValues?.[0]?.value ?? 0),
+        users: Number(r.metricValues?.[1]?.value ?? 0),
+      })).filter(p => p.path),
+      referrers: refRows.map(r => ({
+        from:  labelReferrer(r.dimensionValues?.[0]?.value ?? ''),
+        views: Number(r.metricValues?.[0]?.value ?? 0),
+      })),
+      landings: landRows.map(r => ({
+        path:     r.dimensionValues?.[0]?.value ?? '',
+        channel:  r.dimensionValues?.[1]?.value ?? '—',
+        sessions: Number(r.metricValues?.[0]?.value ?? 0),
+      })),
+    }
+  } catch {
+    return vacio
+  }
+}
