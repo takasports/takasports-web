@@ -13,6 +13,7 @@ import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag, AlertI
 import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { scoreTakagrid } from '@/lib/game-scoring'
+import { averageRarity, rarityFor, rarityLabel, type TakagridHeatmap } from '@/lib/takagrid-heatmap'
 import { madridParts, madridDayISO } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import { reportPlay, claimMissions } from '@/lib/missions'
@@ -646,6 +647,21 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
 }) {
   const [tab, setTab] = useState<'result' | 'reveal'>('result')
   const [sharingImg, setSharingImg] = useState(false)
+
+  // Rareza de la comunidad. Se pide al abrir el resultado y falla en silencio:
+  // si aún no hay muestra del día, simplemente no se pinta el bloque.
+  const [heatmap, setHeatmap] = useState<TakagridHeatmap | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/api/games/takagrid/heatmap?period=${dayKey}`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (!cancelled && j?.byCell) setHeatmap({ byCell: j.byCell, totalPlays: j.totalPlays ?? 0 }) })
+      .catch(() => { /* sin rareza, el resto del resultado no se toca */ })
+    return () => { cancelled = true }
+  }, [dayKey])
+
+  const picks = useMemo(() => grid.flat().map(c => c.playerId), [grid])
+  const avgRarity = useMemo(() => averageRarity(heatmap, picks), [heatmap, picks])
   const ResultIcon = solved === 9 ? TrophyIcon : solved >= 6 ? StarIcon : solved >= 3 ? ClapIcon : FlexIcon
   const resultColor = solved === 9 ? '#FCD34D' : solved >= 6 ? '#FDBA74' : solved >= 3 ? '#FB923C' : '#86EFAC'
   const msg = solved === 9 ? '¡Perfecto! 9/9' : solved >= 6 ? `Muy bien! ${solved}/9` : solved >= 3 ? `Bien! ${solved}/9` : `${solved}/9 — ¡Mañana mejor!`
@@ -655,7 +671,10 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
       row.map(c => c.playerId ? '🟧' : c.wrong !== null ? '🟥' : '⬛').join('')
     ).join('\n')
     const streakLine = streak >= 2 ? `🔥 Racha: ${streak} días\n` : ''
-    const text = `TakaGrid ${dayKey}\n${msg}\n${streakLine}\n${rows}\n\ntakasportsmedia.com`
+    // La rareza es lo que se presume: "9/9" lo firma cualquiera, "9/9 con un
+    // 8% de rareza" es otra cosa.
+    const rarityLine = avgRarity !== null ? `💎 Rareza: ${avgRarity}%\n` : ''
+    const text = `TakaGrid ${dayKey}\n${msg}\n${streakLine}${rarityLine}\n${rows}\n\ntakasportsmedia.com`
     try {
       if (navigator.share) await navigator.share({ title: 'TakaGrid', text })
       else await navigator.clipboard.writeText(text)
@@ -729,6 +748,51 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
                   <span className="text-[11px] font-black" style={{ color: '#FB923C', fontFamily: 'var(--font-sport)' }}>
                     ¡Racha de {streak} días!
                   </span>
+                </div>
+              )}
+
+              {/* ── Rareza ───────────────────────────────────────
+                  Resolver nueve celdas tiene mérito; resolverlas con jugadores
+                  que no se le ocurrieron a nadie tiene más. Hasta ahora dos
+                  grids de 9/9 eran indistinguibles. */}
+              {avgRarity !== null && (
+                <div className="w-full rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                      Tu rareza
+                    </span>
+                    <span className="text-[11px] font-black" style={{ color: avgRarity <= 20 ? '#C4B5FD' : ACCENT, fontFamily: 'var(--font-sport)' }}>
+                      {avgRarity}% de media
+                    </span>
+                  </div>
+                  <p className="text-[11px] leading-snug text-left" style={{ color: 'var(--text-secondary)' }}>
+                    {avgRarity <= 20
+                      ? 'Has tirado de memoria fina: casi nadie eligió a los tuyos.'
+                      : avgRarity <= 45
+                        ? 'Mezcla de nombres obvios y alguna joya.'
+                        : 'Los mismos nombres que eligió casi todo el mundo. ¿Te atreves con los raros mañana?'}
+                  </p>
+                  <div className="mt-2.5 flex flex-col gap-1.5">
+                    {grid.flat().map((c, i) => {
+                      if (!c.playerId) return null
+                      const pct = rarityFor(heatmap, i, c.playerId)
+                      if (pct === null) return null
+                      const p = getPlayerById(c.playerId)
+                      return (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="text-[10px] truncate flex-1 text-left" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                            {p?.name ?? c.playerId}
+                          </span>
+                          <div className="h-1 rounded-full overflow-hidden w-16 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                            <div className="h-full" style={{ width: `${pct}%`, background: pct <= 15 ? '#C4B5FD' : ACCENT }} />
+                          </div>
+                          <span className="text-[9px] tabular-nums w-20 text-right flex-shrink-0" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                            {rarityLabel(pct)} · {pct}%
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               )}
 
