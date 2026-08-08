@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import GameLayout from '@/components/games/GameLayout'
 import GameOnboarding from '@/components/games/GameOnboarding'
+import GuestSaveCta from '@/components/games/GuestSaveCta'
 import { getDailyQuestions, getPracticeQuestions, listCategories, todayKey, type QuizQuestion, type QuizCategory, type QuizSport } from '@/lib/crackquiz-questions'
 import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import { TrophyIcon, FireIcon, ClapIcon, FlexIcon, BoltIcon, DiceIcon } from '@/components/icons/GameIcons'
@@ -733,6 +734,13 @@ function ResultScreen({
           )
         })}
       </div>
+
+      {/* Invitados: la partida ya está en el dispositivo, entrar la sube */}
+      {!practice && (
+        <div className="mb-3">
+          <GuestSaveCta accent="#FCD34D" />
+        </div>
+      )}
 
       {/* Compartir resultado */}
       <div className="mb-3">

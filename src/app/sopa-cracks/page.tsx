@@ -14,6 +14,7 @@ import ShareResultButton from '@/components/games/ShareResultButton'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 import GamePointsToast from '@/components/games/GamePointsToast'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
+import GuestSaveCta from '@/components/games/GuestSaveCta'
 import TimeAttackInfoModal from '@/components/games/TimeAttackInfoModal'
 import { type Player } from '@/lib/players-catalog'
 import { buildGrid, findPlayerForWord, getWeeklyPuzzle, gridSeedFor, moveCursor, type Puzzle } from '@/lib/sopa-puzzles'
@@ -1064,6 +1065,7 @@ export default function SopaCracksPage() {
               <p className="text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>
                 Ranking semanal de Sopa — tus aciertos suman a tu Liga Taka.
               </p>
+              <div className="mt-3"><GuestSaveCta accent={COLOR_ACCENT} /></div>
             </div>
 
             {/* Próximo puzzle */}

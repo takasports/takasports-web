@@ -19,6 +19,7 @@ import { trackGameEvent } from '@/lib/games-telemetry'
 import { reportPlay, claimMissions } from '@/lib/missions'
 import { collectPlayer } from '@/lib/album'
 import MyPositionBanner from '@/components/games/MyPositionBanner'
+import GuestSaveCta from '@/components/games/GuestSaveCta'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -797,6 +798,8 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
               )}
 
               <MyPositionBanner gameId="takagrid" period={dayKey} accent={ACCENT} />
+
+              <div className="w-full"><GuestSaveCta accent={ACCENT} /></div>
 
               <div className="grid grid-cols-3 gap-2 w-full">
                 <button onClick={handleShare} className="py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5"

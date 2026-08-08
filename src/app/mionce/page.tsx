@@ -19,6 +19,7 @@ import { saveLineup, SAVED_LINEUP_LIMIT, loadSavedLineups } from '@/lib/mionce-s
 import { useSearchParams, useRouter } from 'next/navigation'
 import PostGameResultModal from '@/components/games/PostGameResultModal'
 import GamePointsToast from '@/components/games/GamePointsToast'
+import GuestSaveCta from '@/components/games/GuestSaveCta'
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -1660,6 +1661,13 @@ export default function MiOncePage() {
         accent={ACCENT}
         onDismiss={() => setAwardedPoints(null)}
       />
+
+      {/* Invitados con el once ya montado: entrar sube la partida a su cuenta */}
+      {isComplete && (
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-8">
+          <GuestSaveCta accent={ACCENT} />
+        </div>
+      )}
       </GameLayout>
     </>
   )
