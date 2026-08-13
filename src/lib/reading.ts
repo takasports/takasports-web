@@ -1,19 +1,19 @@
-// Minutos de lectura estimados a partir del número de caracteres del cuerpo.
-// Se calcula sobre `readChars` (que las queries de Sanity devuelven con
-// length(pt::text(body))) para no arrastrar el body entero hasta un listado.
+// Minutos de lectura estimados. Se calcula sobre el número de PALABRAS, que las
+// queries piden con length(string::split(pt::text(body), " ")) para no arrastrar
+// el cuerpo entero hasta un listado.
 //
-// 5,3 caracteres por palabra es la media del español escrito contando el
-// espacio; 200 ppm es el ritmo de lectura habitual en pantalla para prosa
-// larga. Redondeamos hacia arriba y nunca bajamos de 1 min.
-const CHARS_PER_WORD = 5.3
+// 200 ppm es el ritmo habitual de lectura en pantalla para prosa larga, y es el
+// mismo divisor que usa la cabecera de la ficha de artículo: así el bloque de la
+// home y el artículo nunca se contradicen (contar caracteres y dividir por una
+// media de letras por palabra daba 7 min donde la ficha decía 6).
 const WORDS_PER_MINUTE = 200
 
-export function readingMinutes(chars?: number | null): number | null {
-  if (!chars || chars <= 0) return null
-  return Math.max(1, Math.round(chars / CHARS_PER_WORD / WORDS_PER_MINUTE))
+export function readingMinutes(words?: number | null): number | null {
+  if (!words || words <= 0) return null
+  return Math.max(1, Math.round(words / WORDS_PER_MINUTE))
 }
 
-export function readingLabel(chars?: number | null): string | null {
-  const min = readingMinutes(chars)
+export function readingLabel(words?: number | null): string | null {
+  const min = readingMinutes(words)
   return min ? `${min} min de lectura` : null
 }

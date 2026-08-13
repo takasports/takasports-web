@@ -23,7 +23,7 @@ export interface Reportaje {
   sport?: string
   category?: string
   author?: string | null
-  readChars?: number | null
+  readWords?: number | null
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
 }
@@ -83,7 +83,7 @@ function SportBadge({ sport, category }: { sport?: string; category?: string }) 
 }
 
 function Meta({ r, className = '' }: { r: Reportaje; className?: string }) {
-  const read = readingLabel(r.readChars)
+  const read = readingLabel(r.readWords)
   return (
     <div
       className={`flex items-center gap-2 flex-wrap ${className}`}
@@ -190,7 +190,7 @@ function MiniCard({ r, n }: { r: Reportaje; n: number }) {
           {r.title}
         </h4>
         <div style={{ fontFamily: 'var(--font-sport)', fontSize: 9.5, color: '#5A5A74', letterSpacing: '0.04em' }}>
-          {[readingLabel(r.readChars)?.replace(' de lectura', ''), getSportLabel(r.sport, r.category)].filter(Boolean).join(' · ')}
+          {[readingLabel(r.readWords)?.replace(' de lectura', ''), getSportLabel(r.sport, r.category)].filter(Boolean).join(' · ')}
         </div>
       </div>
     </Link>

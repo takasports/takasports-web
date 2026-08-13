@@ -36,7 +36,7 @@ const QUERY = `*[_type == "article"
   "category": select(defined(headline) => competition, category),
   "isTaka": defined(headline),
   "author": select(defined(headline) => author, author->name),
-  "readChars": length(pt::text(body))
+  "readWords": length(string::split(pt::text(body), " "))
 }`
 
 const COUNT_QUERY = `count(*[_type == "article"
@@ -45,7 +45,7 @@ const COUNT_QUERY = `count(*[_type == "article"
 
 interface Row {
   _id: string
-  readChars?: number | null
+  readWords?: number | null
   author?: string | null
   imageUrl?: string | null
   image?: { asset?: { _ref?: string } } | null
@@ -80,12 +80,12 @@ export async function GET(req: NextRequest) {
     ])
 
     const reportajes = rows.map(row => {
-      const { readChars, author, image, ...rest } = row
+      const { readWords, author, image, ...rest } = row
       return {
         ...rest,
         imageUrl: resolveCover(row),
         author: displayAuthor(author),
-        readingMinutes: readingMinutes(readChars),
+        readingMinutes: readingMinutes(readWords),
       }
     })
 

@@ -18,7 +18,7 @@ export default function ReportajeCard({ r, lcp }: { r: Reportaje; lcp?: boolean 
   const img = coverUrl(r, 720, 480)
   const { accent } = getSportStyle(r.sport, r.category)
   const label = getSportLabel(r.sport, r.category)
-  const read = readingLabel(r.readChars)
+  const read = readingLabel(r.readWords)
 
   return (
     <Link
