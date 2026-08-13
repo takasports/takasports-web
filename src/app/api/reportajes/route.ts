@@ -36,7 +36,7 @@ const QUERY = `*[_type == "article"
   "category": select(defined(headline) => competition, category),
   "isTaka": defined(headline),
   "author": select(defined(headline) => author, author->name),
-  "readChars": select(defined(headline) => length(pt::text(body)), length(body))
+  "readChars": length(pt::text(body))
 }`
 
 const COUNT_QUERY = `count(*[_type == "article"

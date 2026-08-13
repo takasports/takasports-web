@@ -42,10 +42,13 @@ const LISTING_FIELDS = `
 // aquí no se ordenan por frescura sino por firma y minutos de lectura, que es lo que
 // las hace valer. `readChars` = caracteres del cuerpo, para estimar la lectura sin
 // traerse el body entero al listado.
+// `body` es Portable Text en los dos schemas, así que pt::text() sirve para
+// ambos: con length(body) a secas contaríamos BLOQUES (~20) en vez de
+// caracteres y todo saldría "1 min de lectura".
 const REPORTAJE_FIELDS = `
   ${LISTING_FIELDS},
   "author": select(defined(headline) => author, author->name),
-  "readChars": select(defined(headline) => length(pt::text(body)), length(body))
+  "readChars": length(pt::text(body))
 `
 
 // 4 = la pieza principal + las tres de la tira. Slice fijo: GROQ no admite
