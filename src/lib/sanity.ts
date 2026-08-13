@@ -40,15 +40,15 @@ const LISTING_FIELDS = `
 // Reportajes — piezas de fondo marcadas a mano con type=="reportaje" en el Studio.
 // Van en su propio bloque (home + /reportajes) porque el feed las entierra en 48 h:
 // aquí no se ordenan por frescura sino por firma y minutos de lectura, que es lo que
-// las hace valer. `readChars` = caracteres del cuerpo, para estimar la lectura sin
-// traerse el body entero al listado.
-// `body` es Portable Text en los dos schemas, así que pt::text() sirve para
-// ambos: con length(body) a secas contaríamos BLOQUES (~20) en vez de
-// caracteres y todo saldría "1 min de lectura".
+// las hace valer. `readWords` cuenta las palabras del cuerpo en la propia query
+// para estimar la lectura sin traerse el body entero al listado — palabras y no
+// caracteres, porque es lo que cuenta la cabecera de la ficha y así el bloque de
+// la home nunca dice un número distinto al del artículo. `body` es Portable Text
+// en los dos schemas, de ahí el pt::text().
 const REPORTAJE_FIELDS = `
   ${LISTING_FIELDS},
   "author": select(defined(headline) => author, author->name),
-  "readChars": length(pt::text(body))
+  "readWords": length(string::split(pt::text(body), " "))
 `
 
 // 4 = la pieza principal + las tres de la tira. Slice fijo: GROQ no admite
@@ -110,8 +110,13 @@ export const articleDetailQuery = `*[_type == "article" && (slug.current == $id 
   "imageUrl": select(defined(headline) => imageUrl, null),
   "image": select(defined(headline) => mainImage, image),
   "imageAlt": select(defined(headline) => imageAlt, null),
-  "bodyPortable": select(defined(headline) => body, null),
-  "bodyText": select(!defined(headline) => body, null),
+  // El reparto va por la FORMA del cuerpo, no por el pipeline que lo creó:
+  // body es Portable Text también en los artículos escritos a mano en el Studio
+  // (los que no tienen headline), y mandarlos a bodyText —que el lector trata
+  // como string— reventaba la ficha con un 500 al llamar a .trim(). Medido: los
+  // 2.607 artículos del dataset tienen el cuerpo en array, ninguno en texto plano.
+  "bodyPortable": select(defined(body[0]._type) => body, null),
+  "bodyText": select(!defined(body[0]._type) => body, null),
   "isTaka": defined(headline),
   "author": select(defined(headline) => author, null),
   "takaStatus": select(defined(headline) => status, null),

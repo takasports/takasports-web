@@ -461,7 +461,9 @@ export default async function NoticiaPage({
   const articleImages = multiRatioImages()
 
   function bodyWordCount(): number | undefined {
-    if (article.bodyText) return article.bodyText.trim().split(/\s+/).length
+    // typeof: `bodyText` solo es string cuando el cuerpo viene en texto plano.
+    // Si llegara un Portable Text por aquí, .trim() tumbaría la ficha entera.
+    if (typeof article.bodyText === 'string' && article.bodyText) return article.bodyText.trim().split(/\s+/).length
     if (article.bodyPortable && article.bodyPortable.length > 0) {
       const text = article.bodyPortable
         .filter((b) => b._type === 'block' && Array.isArray(b.children))
@@ -492,7 +494,7 @@ export default async function NoticiaPage({
     articleSection: article.category ?? undefined,
     wordCount: bodyWordCount(),
     articleBody: (() => {
-      if (article.bodyText) return article.bodyText || undefined
+      if (typeof article.bodyText === 'string' && article.bodyText) return article.bodyText
       if (article.bodyPortable) {
         const text = article.bodyPortable
           .filter((b) => b._type === 'block' && Array.isArray(b.children))
@@ -558,7 +560,7 @@ export default async function NoticiaPage({
     })),
   } : null
 
-  const paragraphs = article.bodyText
+  const paragraphs = typeof article.bodyText === 'string' && article.bodyText
     ? article.bodyText.split('\n').filter((p) => p.trim().length > 0)
     : []
   // Índice del primer párrafo REAL (no heading **...**) → recibe la capitular.
@@ -585,7 +587,7 @@ export default async function NoticiaPage({
     autolinkIndex && autolinkCtx ? { index: autolinkIndex, ctx: autolinkCtx } : undefined
 
   // Matching de entries del Índice Taka mencionadas en el artículo → cards al final
-  const bodyTextForMatch = article.bodyText ??
+  const bodyTextForMatch = (typeof article.bodyText === 'string' ? article.bodyText : null) ??
     (article.bodyPortable
       ? article.bodyPortable
           .filter((b) => b._type === 'block')
