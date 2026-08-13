@@ -9,6 +9,7 @@ import { timeAgo } from '@/lib/timeAgo'
 import { CATEGORY_TO_SLUG, getSportStyle, getSportLabel } from '@/lib/sports'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import SportPlaceholder from '@/components/SportPlaceholder'
+import { ReportajeSello } from '@/components/ReportajesBlock'
 import CategoriesFilter from './CategoriesFilter'
 import ViewToggle from './ViewToggle'
 
@@ -20,6 +21,7 @@ interface Article {
   publishedAt?: string
   category?: string
   sport?: string
+  type?: string
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
 }
@@ -177,6 +179,7 @@ export default function NewsFeed({
                           Nuevo
                         </span>
                       )}
+                      {article.type === 'reportaje' && <ReportajeSello compact />}
                     </div>
                     <h3
                       className="news-title text-[13px] font-semibold leading-snug line-clamp-2"

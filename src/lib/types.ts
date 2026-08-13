@@ -3,7 +3,7 @@
 
 // ── Slugs canónicos ───────────────────────────────────────────
 export type SportSlug = 'futbol' | 'baloncesto' | 'formula1' | 'tenis' | 'ufc' | 'rugby' | 'wwe'
-export type ArticleType = 'noticia' | 'breaking' | 'analisis' | 'cronica' | 'entrevista' | 'galeria'
+export type ArticleType = 'noticia' | 'breaking' | 'reportaje' | 'analisis' | 'cronica' | 'entrevista' | 'galeria'
 export type ArticlePriority = 'hero' | 'destacado' | 'normal' | 'secundario'
 export type ArticleStatus = 'borrador' | 'pendiente_aprobacion' | 'aprobado' | 'publicado' | 'archivado'
 export type EventStatus = 'programado' | 'en_vivo' | 'finalizado' | 'cancelado'

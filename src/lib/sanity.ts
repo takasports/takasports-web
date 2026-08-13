@@ -31,10 +31,38 @@ const LISTING_FIELDS = `
   "image": select(defined(headline) => mainImage, image),
   publishedAt,
   sport,
+  type,
   "category": select(defined(headline) => competition, category),
   "isTaka": defined(headline),
   "takaStatus": select(defined(headline) => status, null)
 `
+
+// Reportajes — piezas de fondo marcadas a mano con type=="reportaje" en el Studio.
+// Van en su propio bloque (home + /reportajes) porque el feed las entierra en 48 h:
+// aquí no se ordenan por frescura sino por firma y minutos de lectura, que es lo que
+// las hace valer. `readChars` = caracteres del cuerpo, para estimar la lectura sin
+// traerse el body entero al listado.
+const REPORTAJE_FIELDS = `
+  ${LISTING_FIELDS},
+  "author": select(defined(headline) => author, author->name),
+  "readChars": select(defined(headline) => length(pt::text(body)), length(body))
+`
+
+// 4 = la pieza principal + las tres de la tira. Slice fijo: GROQ no admite
+// parámetro en el rango.
+export const reportajesQuery = `*[_type == "article"
+  && type == "reportaje"
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+] | order(publishedAt desc)[0...4] {
+  ${REPORTAJE_FIELDS}
+}`
+
+export const reportajesAllQuery = `*[_type == "article"
+  && type == "reportaje"
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+] | order(publishedAt desc)[0...60] {
+  ${REPORTAJE_FIELDS}
+}`
 
 // Feed principal — normaliza artículos viejos (status=="publicado") + nuevos de Taka System (tienen headline)
 export const articlesQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...40] {

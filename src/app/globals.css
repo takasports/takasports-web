@@ -24,6 +24,12 @@
   --purple: #7C3AED;
   --purple-light: #8B5CF6;
 
+  /* Reportajes — acento cálido propio. El violeta es "el sitio"; este ámbar
+     marca la pieza de fondo (bloque de home, sello y /reportajes) para que se
+     distinga del feed de un vistazo sin salirse de la paleta oscura. */
+  --reportaje: #E8A33D;
+  --reportaje-dim: #B9822F;
+
   /* Text — 4 niveles claros */
   --text-primary: #EBEBF5;
   --text-secondary: #9090A4;

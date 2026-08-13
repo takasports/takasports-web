@@ -7,6 +7,7 @@ import HeroBlock from '@/components/HeroBlock'
 import ReelsSection from '@/components/ReelsSection'
 import LiveEventsSection from '@/components/LiveEventsSection'
 import NewsFeed from '@/components/NewsFeed'
+import ReportajesBlock, { type Reportaje } from '@/components/ReportajesBlock'
 import Sidebar from '@/components/Sidebar'
 import type { RankingEntry } from '@/lib/rankings'
 import QuinielaTeaser from '@/components/QuinielaTeaser'
@@ -341,12 +342,14 @@ export default function HomeContent({
   events,
   topPlayers,
   featuredBySport = {},
+  reportajes = [],
 }: {
   articles: Article[]
   reels: SanityReel[]
   events: SportEvent[]
   topPlayers?: RankingEntry[]
   featuredBySport?: Record<string, Article[]>
+  reportajes?: Reportaje[]
 }) {
   const router = useRouter()
   const [activeSport, setActiveSport] = useState<string>('Todo')
@@ -507,6 +510,12 @@ export default function HomeContent({
             </button>
           </div>
         )}
+
+        {/* ── 1.5 REPORTAJES ─────────────────────────────────────── */}
+        {/* Justo bajo la portada: es el segundo bloque de la home a propósito.
+            Se autooculta si no hay ninguno publicado. No se filtra por el chip
+            de deporte activo — un reportaje no es actualidad de un deporte. */}
+        <ReportajesBlock reportajes={reportajes} />
 
         {/* ── 2. CALENDARIO ──────────────────────────────────────── */}
         <div className="mt-6">

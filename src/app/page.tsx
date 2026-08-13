@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { sanityClient, articlesQuery, articlesBySlugsQuery, reelsQuery, eventsQuery } from '@/lib/sanity'
+import { sanityClient, articlesQuery, articlesBySlugsQuery, reelsQuery, eventsQuery, reportajesQuery } from '@/lib/sanity'
 import { HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, CATEGORY_TO_SLUG } from '@/lib/sports'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents } from '@/lib/espn'
@@ -8,6 +8,7 @@ import { getRanking } from '@/lib/rankings-data'
 import { SEED_REELS } from '@/lib/seed-reels'
 import HeaderConsole from '@/components/HeaderConsole'
 import HomeContent from '@/components/HomeContent'
+import type { Reportaje } from '@/components/ReportajesBlock'
 import SignalIntro from '@/components/SignalIntro'
 import WelcomeOnboarding from '@/components/WelcomeOnboarding'
 import Footer from '@/components/Footer'
@@ -92,7 +93,7 @@ export default async function Home() {
     )
   )
 
-  const [rawArticles, sanityReels, rawEvents, espnEvents, igReels, topPlayers, perSportRaw] = await Promise.all([
+  const [rawArticles, sanityReels, rawEvents, espnEvents, igReels, topPlayers, perSportRaw, reportajes] = await Promise.all([
     sanityClient.fetch<HomeArticle[]>(articlesQuery).catch(() => []),
     sanityClient.fetch(reelsQuery).catch(() => []),
     sanityClient.fetch(eventsQuery).catch(() => []),
@@ -109,6 +110,7 @@ export default async function Home() {
           .catch(() => [] as HomeArticle[])
       })
     ),
+    sanityClient.fetch<Reportaje[]>(reportajesQuery).catch(() => [] as Reportaje[]),
   ])
 
   const articles = sortForHome(rawArticles)
@@ -218,7 +220,7 @@ export default async function Home() {
           "En directo" queda fijo al scrollear, "Último momento" se colapsa, y el
           filtro de abajo se ancla a --console-h (sin hueco). */}
       <HeaderConsole breakingItems={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
-      <HomeContent articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} />
+      <HomeContent articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} reportajes={reportajes} />
       <NewsletterSection source="home" />
       <Footer />
       <WelcomeOnboarding />
