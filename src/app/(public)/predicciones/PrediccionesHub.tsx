@@ -101,7 +101,7 @@ const SPORTS: {
 const HERO_COPY: Record<SportTab, { eyebrow: string; sub: string }> = {
   mundial: { eyebrow: 'Mundial 2026',  sub: 'El torneo terminó. Consulta aquí tus picks y el ranking final.' },
   ufc:     { eyebrow: 'Ranked UFC',    sub: 'Predice cada combate. El estelar vale el doble.' },
-  futbol:  { eyebrow: 'La Fecha', sub: RANKED_FUTBOL_ENABLED ? 'Los partidos que importan de cada día. Acierta y sube en la Liga Taka.' : 'Predicciones de Liga. Muy pronto.' },
+  futbol:  { eyebrow: 'La Jornada', sub: RANKED_FUTBOL_ENABLED ? 'Los partidos que importan de cada semana. Acierta y sube en la Liga Taka.' : 'Predicciones de Liga. Muy pronto.' },
 }
 
 // Tabs del hub (todas disponibles)

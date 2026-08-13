@@ -1,25 +1,25 @@
 // GET/POST /api/cron/sync-football
 //
-// Publica y liquida las FECHAS de Ranked Fútbol: lee el fixture del núcleo
-// europeo desde ESPN, decide con `football-ranked` qué partidos destacados
-// componen cada día y los vuelca a `ranked_events` con sport='football'.
+// Publica y liquida las JORNADAS de Ranked Fútbol: lee el fixture del núcleo
+// europeo desde ESPN, decide con `football-ranked` qué 7-9 partidos destacados
+// componen cada semana y los vuelca a `ranked_events` con sport='football'.
 //
 // Requiere header `x-cron-secret` o `Authorization: Bearer <CRON_SECRET>`.
 //
 // Hace cuatro cosas, en este orden:
-//   1. PUBLICAR  — solo días que aún no existen en base de datos.
+//   1. PUBLICAR  — solo semanas que aún no existen en base de datos.
 //   2. LIQUIDAR  — actualiza status/result de los ya publicados y reparte
 //                  puntos de los que ESPN da por terminados.
-//   3. PLENO     — premia a quien clavó una Fecha entera, en cuanto cierra.
+//   3. PLENO     — premia a quien clavó una Jornada entera, en cuanto cierra.
 //   4. CERRAR    — close_started_ranked_events() para los ya empezados.
 //
 // ── La regla de oro ────────────────────────────────────────────────────────
-// Una Fecha publicada NO se recalcula jamás. El cron corre cada 30 min; si
-// pudiera reseleccionar, un partido ya pronosticado podría desaparecer del día
-// (dejando la predicción huérfana) o perder su x2 a media semana. Publicar es
-// irreversible: a partir de ahí el cron solo actualiza resultados.
+// Una Jornada publicada NO se recalcula jamás. El cron corre cada 30 min; si
+// pudiera reseleccionar, un partido ya pronosticado podría desaparecer de la
+// semana (dejando la predicción huérfana) o perder su x2 a media Jornada.
+// Publicar es irreversible: a partir de ahí el cron solo actualiza resultados.
 //
-// Es seguro llamarlo N veces: la publicación salta los días existentes y
+// Es seguro llamarlo N veces: la publicación salta las semanas existentes y
 // score_ranked_prediction solo puntúa predicciones con is_correct IS NULL.
 
 import { NextResponse } from 'next/server'
@@ -32,7 +32,7 @@ import {
   RANKED_FOOTBALL_SOURCES,
   RANKED_FOOTBALL_SPORT,
   RANKED_WINDOW_DAYS,
-  buildRankedDates,
+  buildRankedWeeks,
   scoreFixtures,
   rankedFootballId,
   toDateKey,
@@ -247,42 +247,43 @@ async function handle(req: Request) {
     return NextResponse.json({ ok: false, error: 'db_read_failed' }, { status: 500 })
   }
 
-  const existingIds   = new Set<string>()
-  const publishedDays = new Set<string>()
-  const resolvedIds   = new Set<string>()
-  const dateKeyById   = new Map<string, string>()
+  const existingIds    = new Set<string>()
+  const publishedWeeks = new Set<string>()
+  const resolvedIds    = new Set<string>()
+  const weekKeyById    = new Map<string, string>()
   for (const row of existingRows ?? []) {
-    const r = row as { id: string; status: string; meta?: { date_key?: string } }
+    const r = row as { id: string; status: string; meta?: { date_key?: string; week_key?: string } }
     existingIds.add(r.id)
-    if (r.meta?.date_key) {
-      publishedDays.add(r.meta.date_key)
-      dateKeyById.set(r.id, r.meta.date_key)
+    if (r.meta?.week_key) {
+      publishedWeeks.add(r.meta.week_key)
+      weekKeyById.set(r.id, r.meta.week_key)
     }
     if (r.status === 'resolved') resolvedIds.add(r.id)
   }
 
-  // ── 3. Publicar las Fechas nuevas ──────────────────────────────────────────
-  // Solo días futuros: un día ya jugado que nunca llegó a publicarse no se
+  // ── 3. Publicar las Jornadas nuevas ────────────────────────────────────────
+  // Solo días futuros: un partido ya jugado que nunca llegó a publicarse no se
   // publica ahora — abrir a predicción un partido con resultado conocido sería
   // regalar puntos.
   const todayKey = toDateKey(new Date().toISOString())
   const publishable = scoreFixtures(fixtures).filter(f => f.dateKey >= todayKey)
-  const newDates = buildRankedDates(publishable, publishedDays)
+  const newWeeks = buildRankedWeeks(publishable, publishedWeeks)
 
   let published = 0
-  for (const date of newDates) {
-    const rows = date.matches.map(m => ({
+  for (const week of newWeeks) {
+    const rows = week.matches.map(m => ({
       id:          rankedFootballId(m.espnId),
       sport:       RANKED_FOOTBALL_SPORT,
       competition: m.comp,
       event_date:  m.isoDate,
       team_home:   m.home,
       team_away:   m.away,
-      featured:    m.espnId === date.featuredEspnId,
+      featured:    m.espnId === week.featuredEspnId,
       status:      'open',
       result:      null,
       meta: {
-        date_key:        date.dateKey,
+        date_key:        m.dateKey,
+        week_key:        week.weekKey,
         espn_id:         m.espnId,
         league_slug:     m.leagueSlug,
         home_logo:       m.homeLogo  ?? null,
@@ -292,15 +293,15 @@ async function handle(req: Request) {
         stage:           m.stage     ?? null,
         venue:           m.venue     ?? null,
         // Se guarda para poder auditar meses después por qué este partido entró
-        // en la Fecha (o por qué fue el Partido del Día) sin reconstruir el
-        // estado del fixture de aquel día.
+        // en la Jornada (o por qué fue el Partidazo) sin reconstruir el
+        // estado del fixture de aquella semana.
         highlight_score: m.score,
       },
     }))
 
     // ignoreDuplicates: si dos ejecuciones del cron se solapan, la segunda no
-    // debe pisar lo que escribió la primera — el estado y el featured del día
-    // ya publicado mandan.
+    // debe pisar lo que escribió la primera — el estado y el featured de la
+    // semana ya publicada mandan.
     const { error } = await admin
       .from('ranked_events')
       .upsert(rows, { onConflict: 'id', ignoreDuplicates: true })
@@ -310,9 +311,9 @@ async function handle(req: Request) {
   // ── 4. Liquidar lo publicado ───────────────────────────────────────────────
   let resolved = 0
   let scoringFailures = 0
-  /** Días cuya composición ha cambiado en esta pasada: son los únicos donde el
-   *  pleno puede haberse completado ahora. */
-  const touchedDays = new Set<string>()
+  /** Semanas cuya composición ha cambiado en esta pasada: son las únicas donde
+   *  el pleno puede haberse completado ahora. */
+  const touchedWeeks = new Set<string>()
 
   for (const [espnId, state] of stateByEspnId) {
     const id = rankedFootballId(espnId)
@@ -343,18 +344,18 @@ async function handle(req: Request) {
       scoringFailures++
     } else {
       resolved++
-      const dk = dateKeyById.get(id)
-      if (dk) touchedDays.add(dk)
+      const wk = weekKeyById.get(id)
+      if (wk) touchedWeeks.add(wk)
     }
   }
 
-  // ── 4b. Pleno de la Fecha ──────────────────────────────────────────────────
-  // Solo puede completarse un día en el que acabamos de resolver algo. La RPC
-  // se encarga de comprobar que la Fecha esté cerrada entera y de no pagar dos
-  // veces, así que llamarla de más es inofensivo.
+  // ── 4b. Pleno de la Jornada ─────────────────────────────────────────────────
+  // Solo puede completarse una semana en la que acabamos de resolver algo. La
+  // RPC se encarga de comprobar que la Jornada esté cerrada entera y de no
+  // pagar dos veces, así que llamarla de más es inofensivo.
   let plenos = 0
-  for (const dateKey of touchedDays) {
-    const { data: awarded, error: plenoErr } = await admin.rpc('award_fecha_pleno', { p_date_key: dateKey })
+  for (const weekKey of touchedWeeks) {
+    const { data: awarded, error: plenoErr } = await admin.rpc('award_jornada_pleno', { p_week_key: weekKey })
     if (!plenoErr && typeof awarded === 'number') plenos += awarded
   }
 
@@ -373,7 +374,7 @@ async function handle(req: Request) {
   return NextResponse.json({
     ok: true,
     fetched:   fixtures.length,
-    newDates:  newDates.map(d => ({ date: d.dateKey, matches: d.matches.length })),
+    newWeeks:  newWeeks.map(w => ({ week: w.weekKey, matches: w.matches.length })),
     published,
     resolved,
     plenos,

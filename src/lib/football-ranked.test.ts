@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import {
   RANKED_FOOTBALL_SOURCES,
-  MIN_PER_DATE,
-  MAX_PER_DATE,
+  MIN_PER_WEEK,
+  MAX_PER_WEEK,
   toDateKey,
+  toWeekKey,
   scoreFixture,
   scoreFixtures,
-  selectForDate,
-  buildRankedDates,
+  selectForWeek,
+  buildRankedWeeks,
   rankedFootballId,
   type FootballFixture,
 } from './football-ranked'
@@ -52,7 +53,7 @@ describe('alcance (núcleo europeo)', () => {
   })
 })
 
-// ── Agrupación por día ───────────────────────────────────────────────────────
+// ── Agrupación por día y por semana ─────────────────────────────────────────
 
 describe('toDateKey', () => {
   it('agrupa por el día de Madrid, que es el que la UI imprime', () => {
@@ -60,6 +61,21 @@ describe('toDateKey', () => {
     expect(toDateKey('2026-08-15T22:30Z')).toBe('2026-08-16')
     // Un Champions de las 21:00 CEST sigue en su propio día.
     expect(toDateKey('2026-08-15T19:00Z')).toBe('2026-08-15')
+  })
+})
+
+describe('toWeekKey', () => {
+  it('agrupa lun-dom bajo el lunes de esa semana', () => {
+    // Sábado 15 y domingo 16 de agosto de 2026 caen en la misma semana ISO:
+    // el lunes 10 de agosto.
+    expect(toWeekKey('2026-08-15T19:00Z')).toBe('2026-08-10')
+    expect(toWeekKey('2026-08-16T17:00Z')).toBe('2026-08-10')
+    // El lunes siguiente ya es otra semana.
+    expect(toWeekKey('2026-08-17T19:00Z')).toBe('2026-08-17')
+  })
+
+  it('un lunes se pertenece a sí mismo', () => {
+    expect(toWeekKey('2026-08-10T12:00Z')).toBe('2026-08-10')
   })
 })
 
@@ -76,6 +92,20 @@ describe('scoreFixture', () => {
     const clasico = scoreFixture(fx({ comp: 'LaLiga', home: 'Real Madrid', away: 'Barcelona' }))
     const gris    = scoreFixture(fx({ comp: 'LaLiga', home: 'Getafe',      away: 'Alaves'    }))
     expect(clasico).toBeGreaterThan(gris)
+  })
+
+  it('sube un derbi por encima de dos equipos de la misma liga sin rivalidad', () => {
+    // Sevilla y Betis no son marquee por sí solos: sin el boost de rivalidad,
+    // el derbi puntuaría exactamente igual que cualquier otro partido de LaLiga.
+    const derbi = scoreFixture(fx({ comp: 'LaLiga', home: 'Sevilla',  away: 'Real Betis' }))
+    const gris  = scoreFixture(fx({ comp: 'LaLiga', home: 'Getafe',   away: 'Alaves'     }))
+    expect(derbi).toBeGreaterThan(gris)
+  })
+
+  it('reconoce el cruce en cualquier orden (local o visitante)', () => {
+    const a = scoreFixture(fx({ comp: 'Serie A', home: 'Inter',  away: 'Milan' }))
+    const b = scoreFixture(fx({ comp: 'Serie A', home: 'Milan',  away: 'Inter' }))
+    expect(a).toBe(b)
   })
 
   it('reconoce selecciones aunque ESPN las mande en inglés', () => {
@@ -99,150 +129,156 @@ describe('scoreFixture', () => {
   })
 })
 
-// ── Selección por Fecha ──────────────────────────────────────────────────────
+// ── Selección por Jornada ────────────────────────────────────────────────────
 
-describe('selectForDate', () => {
-  it('no pasa del techo de 6 aunque el día tenga liga entera', () => {
-    const day = scoreFixtures(Array.from({ length: 10 }, () => fx({ comp: 'LaLiga' })))
-    const date = selectForDate(day)!
-    expect(date.matches).toHaveLength(MAX_PER_DATE)
+describe('selectForWeek', () => {
+  it('no pasa del techo de 9 aunque la semana tenga varias ligas enteras', () => {
+    const week = scoreFixtures(Array.from({ length: 15 }, () => fx({ comp: 'LaLiga' })))
+    const jornada = selectForWeek(week)!
+    expect(jornada.matches).toHaveLength(MAX_PER_WEEK)
   })
 
-  it('devuelve todo cuando el día tiene menos partidos que el mínimo', () => {
-    const day = scoreFixtures([fx({ comp: 'LaLiga' }), fx({ comp: 'LaLiga' })])
-    const date = selectForDate(day)!
-    expect(date.matches).toHaveLength(2)
+  it('devuelve todo cuando la semana tiene menos partidos que el mínimo', () => {
+    const week = scoreFixtures([fx({ comp: 'LaLiga' }), fx({ comp: 'LaLiga' })])
+    const jornada = selectForWeek(week)!
+    expect(jornada.matches).toHaveLength(2)
   })
 
-  it('prefiere una Fecha de un solo partidazo antes que rellenarla con morralla', () => {
+  it('prefiere una Jornada corta de partidazos antes que rellenarla con morralla', () => {
     // Final de Champions + tres partidos de copa menor: el relleno NO entra,
-    // ni siquiera para llegar al mínimo de 3.
-    const day = scoreFixtures([
+    // ni siquiera para llegar al mínimo de 7.
+    const week = scoreFixtures([
       fx({ espnId: 'ucl', comp: 'Champions', stage: 'Final', home: 'Real Madrid', away: 'Liverpool' }),
       fx({ comp: 'Copa Francia' }),
       fx({ comp: 'Copa Francia' }),
       fx({ comp: 'Copa Francia' }),
     ])
-    const date = selectForDate(day)!
-    expect(date.matches.map(m => m.espnId)).toEqual(['ucl'])
-    expect(date.matches.length).toBeLessThan(MIN_PER_DATE)
+    const jornada = selectForWeek(week)!
+    expect(jornada.matches.map(m => m.espnId)).toEqual(['ucl'])
+    expect(jornada.matches.length).toBeLessThan(MIN_PER_WEEK)
   })
 
   it('deja pasar toda la parrilla top cuando compiten de tú a tú', () => {
     // Todos por encima del 60% del mejor → entran por la regla principal, sin
     // necesidad de la de rescate.
-    const day = scoreFixtures([
+    const week = scoreFixtures([
       fx({ espnId: 'a', comp: 'Premier',  home: 'Arsenal', away: 'Chelsea' }),
       fx({ espnId: 'b', comp: 'LaLiga' }),
       fx({ espnId: 'c', comp: 'Serie A' }),
       fx({ espnId: 'd', comp: 'Bundesliga' }),
     ])
-    expect(selectForDate(day)!.matches).toHaveLength(4)
+    expect(selectForWeek(week)!.matches).toHaveLength(4)
   })
 
   it('rescata hasta el mínimo a los que se quedan a las puertas del corte', () => {
     // Final de Champions en prime time = 16,5; Copa del Rey en prime time = 7,5.
     // El 7,5 no llega al 60% del mejor (9,9) pero sí supera el suelo absoluto,
-    // así que la Fecha se completa con ellos en vez de quedarse en un partido.
-    const day = scoreFixtures([
+    // así que la Jornada se completa con ellos en vez de quedarse en un partido.
+    const week = scoreFixtures([
       fx({ espnId: 'ucl', comp: 'Champions', stage: 'Final', home: 'Ajax',   away: 'Benfica' }),
       fx({ espnId: 'c1',  comp: 'Copa Rey',  home: 'Eibar',  away: 'Mirandes' }),
       fx({ espnId: 'c2',  comp: 'Copa Rey',  home: 'Burgos', away: 'Huesca' }),
       fx({ espnId: 'c3',  comp: 'Copa Rey',  home: 'Lugo',   away: 'Racing' }),
+      fx({ espnId: 'c4',  comp: 'Copa Rey',  home: 'Cadiz',  away: 'Ferrol' }),
+      fx({ espnId: 'c5',  comp: 'Copa Rey',  home: 'Leonesa', away: 'Ponferradina' }),
+      fx({ espnId: 'c6',  comp: 'Copa Rey',  home: 'Sanse',  away: 'Alcorcon' }),
     ])
-    const date = selectForDate(day)!
-    expect(date.matches).toHaveLength(MIN_PER_DATE)
-    expect(date.matches[0].espnId).toBe('ucl')
-    expect(date.featuredEspnId).toBe('ucl')
+    const jornada = selectForWeek(week)!
+    expect(jornada.matches).toHaveLength(MIN_PER_WEEK)
+    expect(jornada.matches[0].espnId).toBe('ucl')
+    expect(jornada.featuredEspnId).toBe('ucl')
   })
 
-  it('marca como Partido del Día el de mayor puntuación, y está entre los elegidos', () => {
-    const day = scoreFixtures([
+  it('marca como Partidazo de la Jornada el de mayor puntuación, y está entre los elegidos', () => {
+    const week = scoreFixtures([
       fx({ espnId: 'gris',    comp: 'LaLiga' }),
       fx({ espnId: 'clasico', comp: 'LaLiga', home: 'Real Madrid', away: 'Barcelona' }),
       fx({ espnId: 'otro',    comp: 'LaLiga' }),
     ])
-    const date = selectForDate(day)!
-    expect(date.featuredEspnId).toBe('clasico')
-    expect(date.matches.map(m => m.espnId)).toContain(date.featuredEspnId)
+    const jornada = selectForWeek(week)!
+    expect(jornada.featuredEspnId).toBe('clasico')
+    expect(jornada.matches.map(m => m.espnId)).toContain(jornada.featuredEspnId)
   })
 
   it('desempata por id para que dos ejecuciones elijan el mismo destacado', () => {
-    // Dos partidos idénticos en puntuación: sin desempate estable, el Partido
-    // del Día dependería del orden en que ESPN devolviera el JSON.
+    // Dos partidos idénticos en puntuación: sin desempate estable, el Partidazo
+    // de la Jornada dependería del orden en que ESPN devolviera el JSON.
     const base = { comp: 'LaLiga', home: 'Getafe', away: 'Alaves', isoDate: '2026-08-15T19:00Z' }
-    const asc  = selectForDate(scoreFixtures([fx({ ...base, espnId: 'aaa' }), fx({ ...base, espnId: 'bbb' })]))!
-    const desc = selectForDate(scoreFixtures([fx({ ...base, espnId: 'bbb' }), fx({ ...base, espnId: 'aaa' })]))!
+    const asc  = selectForWeek(scoreFixtures([fx({ ...base, espnId: 'aaa' }), fx({ ...base, espnId: 'bbb' })]))!
+    const desc = selectForWeek(scoreFixtures([fx({ ...base, espnId: 'bbb' }), fx({ ...base, espnId: 'aaa' })]))!
     expect(asc.featuredEspnId).toBe('aaa')
     expect(desc.featuredEspnId).toBe('aaa')
   })
 
-  it('devuelve null si el día está vacío', () => {
-    expect(selectForDate([])).toBeNull()
+  it('devuelve null si la semana está vacía', () => {
+    expect(selectForWeek([])).toBeNull()
   })
 
-  it('NO publica un día en el que no hay nada que merezca destacarse', () => {
+  it('NO publica una semana en la que no hay nada que merezca destacarse', () => {
     // El bug que destapó la prueba contra ESPN real: una jornada de segunda
     // ronda de Carabao Cup coronaba un Bristol City - Walsall como Partido del
-    // Día ×2. Antes que un destacado que no destaca, no hay Fecha.
-    const day = scoreFixtures([
+    // Día ×2. Antes que un destacado que no destaca, no hay Jornada.
+    const week = scoreFixtures([
       fx({ comp: 'Carabao Cup', home: 'Bristol City',    away: 'Walsall' }),
       fx({ comp: 'Carabao Cup', home: 'Wycombe Wanderers', away: 'Stevenage' }),
       fx({ comp: 'Carabao Cup', home: 'Grimsby Town',    away: 'Blackpool' }),
     ])
-    expect(selectForDate(day)).toBeNull()
+    expect(selectForWeek(week)).toBeNull()
   })
 
-  it('aplica el suelo también dentro de un día bueno', () => {
-    // Un partidazo no arrastra consigo a la morralla del mismo día.
-    const day = scoreFixtures([
+  it('aplica el suelo también dentro de una semana buena', () => {
+    // Un partidazo no arrastra consigo a la morralla de la misma semana.
+    const week = scoreFixtures([
       fx({ espnId: 'liga', comp: 'LaLiga',       home: 'Real Madrid',  away: 'Sevilla' }),
       fx({ espnId: 'copa', comp: 'Carabao Cup',  home: 'Grimsby Town', away: 'Blackpool' }),
     ])
-    expect(selectForDate(day)!.matches.map(m => m.espnId)).toEqual(['liga'])
+    expect(selectForWeek(week)!.matches.map(m => m.espnId)).toEqual(['liga'])
   })
 
   it('deja pasar la Supercopa de Europa, que antes puntuaba como copa menor', () => {
     // 'Super Cup' no tenía entrada en LEAGUE_IMPORTANCE y caía al default (4):
-    // un PSG - Aston Villa por un título europeo se quedaba fuera de su Fecha.
-    const day = scoreFixtures([
+    // un PSG - Aston Villa por un título europeo se quedaba fuera de su Jornada.
+    const week = scoreFixtures([
       fx({ comp: 'Super Cup', home: 'Paris Saint-Germain', away: 'Aston Villa' }),
     ])
-    expect(selectForDate(day)).not.toBeNull()
+    expect(selectForWeek(week)).not.toBeNull()
   })
 })
 
-// ── Fechas de una tanda ──────────────────────────────────────────────────────
+// ── Jornadas de una tanda ────────────────────────────────────────────────────
 
-describe('buildRankedDates', () => {
-  it('parte la tanda en un bloque por día, en orden cronológico', () => {
-    const dates = buildRankedDates(scoreFixtures([
-      fx({ isoDate: '2026-08-16T19:00Z' }),
+describe('buildRankedWeeks', () => {
+  it('parte la tanda en un bloque por semana (lun-dom), en orden cronológico', () => {
+    const weeks = buildRankedWeeks(scoreFixtures([
+      // 17-ago-2026 (lunes) → semana del 17.
+      fx({ isoDate: '2026-08-17T19:00Z' }),
+      // 15 y 16-ago-2026 (sáb/dom) → semana del 10.
       fx({ isoDate: '2026-08-15T19:00Z' }),
-      fx({ isoDate: '2026-08-15T17:00Z' }),
+      fx({ isoDate: '2026-08-16T17:00Z' }),
     ]))
-    expect(dates.map(d => d.dateKey)).toEqual(['2026-08-15', '2026-08-16'])
-    expect(dates[0].matches).toHaveLength(2)
+    expect(weeks.map(w => w.weekKey)).toEqual(['2026-08-10', '2026-08-17'])
+    expect(weeks[0].matches).toHaveLength(2)
   })
 
-  it('da un Partido del Día por Fecha, no uno por tanda', () => {
-    const dates = buildRankedDates(scoreFixtures([
+  it('da un Partidazo por Jornada, no uno por tanda', () => {
+    const weeks = buildRankedWeeks(scoreFixtures([
       fx({ isoDate: '2026-08-15T19:00Z' }),
-      fx({ isoDate: '2026-08-16T19:00Z' }),
+      fx({ isoDate: '2026-08-17T19:00Z' }),
     ]))
-    expect(dates).toHaveLength(2)
-    expect(new Set(dates.map(d => d.featuredEspnId)).size).toBe(2)
+    expect(weeks).toHaveLength(2)
+    expect(new Set(weeks.map(w => w.featuredEspnId)).size).toBe(2)
   })
 
-  it('NUNCA recalcula un día ya publicado', () => {
+  it('NUNCA recalcula una semana ya publicada', () => {
     // La regla de oro: si el cron pudiera reseleccionar, un partido ya
-    // pronosticado podría desaparecer de la Fecha o perder su x2 a media semana.
+    // pronosticado podría desaparecer de la Jornada o perder su x2 a mitad de
+    // semana.
     const fixtures = scoreFixtures([
       fx({ isoDate: '2026-08-15T19:00Z' }),
-      fx({ isoDate: '2026-08-16T19:00Z' }),
+      fx({ isoDate: '2026-08-17T19:00Z' }),
     ])
-    const dates = buildRankedDates(fixtures, new Set(['2026-08-15']))
-    expect(dates.map(d => d.dateKey)).toEqual(['2026-08-16'])
+    const weeks = buildRankedWeeks(fixtures, new Set(['2026-08-10']))
+    expect(weeks.map(w => w.weekKey)).toEqual(['2026-08-17'])
   })
 
   it('es idempotente: la misma tanda produce exactamente la misma selección', () => {
@@ -250,9 +286,9 @@ describe('buildRankedDates', () => {
       fx({ espnId: 'a', comp: 'Champions', isoDate: '2026-08-15T19:00Z', home: 'Bayern', away: 'Inter' }),
       fx({ espnId: 'b', comp: 'LaLiga',    isoDate: '2026-08-15T17:00Z' }),
       fx({ espnId: 'c', comp: 'Premier',   isoDate: '2026-08-15T15:00Z', home: 'Arsenal', away: 'Everton' }),
-      fx({ espnId: 'd', comp: 'Serie A',   isoDate: '2026-08-16T19:00Z' }),
+      fx({ espnId: 'd', comp: 'Serie A',   isoDate: '2026-08-17T19:00Z' }),
     ])
-    expect(buildRankedDates(fixtures)).toEqual(buildRankedDates([...fixtures].reverse()))
+    expect(buildRankedWeeks(fixtures)).toEqual(buildRankedWeeks([...fixtures].reverse()))
   })
 })
 

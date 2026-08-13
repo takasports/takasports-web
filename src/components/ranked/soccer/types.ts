@@ -13,11 +13,15 @@ export type SoccerPick = '1' | 'X' | '2'
 
 /** `meta` de un evento de fútbol. Lo escribe el cron sync-football. */
 export interface SoccerEventMeta {
-  /** Día de la Fecha (YYYY-MM-DD, hora de Madrid). Lo calcula el SERVIDOR.
+  /** Día del kickoff (YYYY-MM-DD, hora de Madrid). Lo calcula el SERVIDOR.
    *  Los clientes agrupan por este valor y NO lo recalculan: si cliente y
    *  servidor discreparan por zona horaria, un partido aparecería bajo una
-   *  cabecera distinta de la Fecha con la que se puntúa. */
+   *  sub-cabecera de día distinta. */
   date_key?: string
+  /** Lunes de la semana de la Jornada (YYYY-MM-DD, hora de Madrid). Es la
+   *  unidad real de selección y de Pleno — dos partidos con el mismo
+   *  week_key compiten por el mismo cupo y pagan el mismo premio. */
+  week_key?: string
   espn_id?: string
   league_slug?: string
   home_logo?: string | null

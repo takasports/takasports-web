@@ -175,6 +175,71 @@ function isMarquee(name: string | null | undefined): boolean {
   return MARQUEE_TEAMS.some(t => n.includes(t))
 }
 
+// Clásicos y derbis: el boost es por PAREJA, no por equipo — un Real Madrid
+// cualquiera ya sube por marquee, pero un Sevilla-Betis no sube nada sin esto
+// aunque sea el partido con más ambiente de la jornada. `a`/`b` son fragmentos
+// en minúsculas, sin orden (Madrid-Barça puntúa igual que Barça-Madrid).
+//
+// El boost es más alto en los clásicos de mayor entidad global (Madrid-Barça,
+// Inter-Milan, Bayern-Dortmund) que en derbis regionales — mismo criterio que
+// stageBoost: no todos los "partido especial" son igual de especiales.
+interface RivalryPair { a: string; b: string; label: string; boost: number }
+
+const RIVALRIES: RivalryPair[] = [
+  // LaLiga
+  { a: 'real madrid', b: 'barcelona',        label: 'Clásico', boost: 6 },
+  { a: 'real madrid', b: 'atlético madrid',  label: 'Derbi',   boost: 4 },
+  { a: 'real madrid', b: 'atletico madrid',  label: 'Derbi',   boost: 4 },
+  { a: 'sevilla',     b: 'real betis',       label: 'Derbi',   boost: 4 },
+  { a: 'barcelona',   b: 'espanyol',         label: 'Derbi',   boost: 3 },
+  { a: 'athletic',    b: 'real sociedad',    label: 'Derbi',   boost: 3 },
+  { a: 'celta',       b: 'deportivo',        label: 'Derbi',   boost: 3 },
+  { a: 'valencia',    b: 'villarreal',       label: 'Derbi',   boost: 2 },
+  // Premier League
+  { a: 'manchester united', b: 'manchester city', label: 'Derbi',   boost: 5 },
+  { a: 'liverpool',         b: 'everton',         label: 'Derbi',   boost: 4 },
+  { a: 'liverpool',         b: 'manchester united', label: 'Clásico', boost: 4 },
+  { a: 'arsenal',           b: 'tottenham',       label: 'Derbi',   boost: 4 },
+  { a: 'chelsea',           b: 'arsenal',         label: 'Derbi',   boost: 2 },
+  { a: 'chelsea',           b: 'tottenham',       label: 'Derbi',   boost: 2 },
+  // Serie A
+  { a: 'inter',   b: 'milan',    label: 'Derbi',   boost: 5 },
+  { a: 'roma',    b: 'lazio',    label: 'Derbi',   boost: 5 },
+  { a: 'juventus', b: 'inter',   label: 'Clásico', boost: 4 },
+  { a: 'juventus', b: 'milan',   label: 'Clásico', boost: 3 },
+  { a: 'napoli',   b: 'juventus', label: 'Clásico', boost: 3 },
+  // Bundesliga
+  { a: 'bayern',              b: 'borussia dortmund', label: 'Clásico', boost: 5 },
+  { a: 'borussia dortmund',   b: 'schalke',           label: 'Derbi',   boost: 4 },
+  // Ligue 1
+  { a: 'paris saint', b: 'marseille', label: 'Clásico', boost: 5 },
+  { a: 'paris saint', b: 'lyon',      label: 'Derbi',   boost: 2 },
+  // Selecciones (nombres ya en español, ver toSpanishNation)
+  { a: 'argentina', b: 'brasil',      label: 'Clásico', boost: 3 },
+  { a: 'españa',    b: 'portugal',    label: 'Derbi',   boost: 2 },
+  { a: 'alemania',  b: 'inglaterra',  label: 'Clásico', boost: 2 },
+]
+
+function matchRivalry(home?: string | null, away?: string | null): RivalryPair | null {
+  if (!home || !away) return null
+  const h = home.toLowerCase()
+  const a = away.toLowerCase()
+  for (const r of RIVALRIES) {
+    if ((h.includes(r.a) && a.includes(r.b)) || (h.includes(r.b) && a.includes(r.a))) return r
+  }
+  return null
+}
+
+/** Puntos extra por ser clásico/derbi, o 0 si el cruce no está en la lista. */
+export function rivalryBoost(home?: string | null, away?: string | null): number {
+  return matchRivalry(home, away)?.boost ?? 0
+}
+
+/** 'Clásico' | 'Derbi' | null — para el badge de highlightReason. */
+export function rivalryLabel(home?: string | null, away?: string | null): string | null {
+  return matchRivalry(home, away)?.label ?? null
+}
+
 // Selecciones nacionales importantes. Los nombres llegan ya traducidos a español
 // (lib/nation-names traduce "Brazil"→"Brasil"… en el origen), así que la lista va
 // en español. Sirve para que sus partidos —sobre todo los amistosos de parón
@@ -218,6 +283,7 @@ export function getEventHighlightScore(args: {
 }): number {
   let score = getLeagueScore(args.comp)
   if (isMarquee(args.home) || isMarquee(args.away)) score += 2
+  score += rivalryBoost(args.home, args.away)
   // Selecciones importantes: aunque sea un amistoso (base 3), debe destacar.
   // +5 si juega una; +6 si se enfrentan dos (p. ej. Brasil vs EE. UU.). Así un
   // España–Brasil amistoso (8-9) supera a las ligas medias y a los amistosos
@@ -253,6 +319,8 @@ export function highlightReason(args: {
   const txt = `${args.comp} ${args.stage ?? ''}`.toLowerCase()
   if (/\bfinal\b|gran final/.test(txt)) return 'Final'
   if (/semifinal|semis/.test(txt)) return 'Semifinal'
+  const rivalry = rivalryLabel(args.home, args.away)
+  if (rivalry) return rivalry
   const nations = (isMarqueeNation(args.home) ? 1 : 0) + (isMarqueeNation(args.away) ? 1 : 0)
   if (nations >= 1) return 'Selección'
   if (isMarquee(args.home) || isMarquee(args.away)) return 'Cartelazo'

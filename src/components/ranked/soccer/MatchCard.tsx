@@ -7,7 +7,7 @@ import { competitionArt } from './competition-art'
 import TeamCrest from './TeamCrest'
 import PickButton from './PickButton'
 import ExactScoreBlock from './ExactScoreBlock'
-import { timeLabel, formatCountdown } from './fecha'
+import { timeLabel, formatCountdown } from './jornada'
 import {
   MAX_ACTIVE_EXACT, SOCCER_LOCK_MS,
   type SoccerEvent, type SoccerPick, type SoccerTheme, type LiveScore, type PredictionRow,
@@ -176,7 +176,8 @@ export default function MatchCard({
             background: `linear-gradient(90deg, ${theme.accent}, #A7F3D0)`,
             color: '#04140C', fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
           }}>
-            <StarIcon size={9} className="inline-block align-middle mr-1" />PARTIDO DEL DÍA · X2
+            <StarIcon size={9} className="inline-block align-middle mr-1" />
+            {event.sport === 'football' ? 'PARTIDAZO · X2' : 'PARTIDO DEL DÍA · X2'}
           </span>
         )}
         <span className="cal-live-tag" style={{

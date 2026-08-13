@@ -1,6 +1,6 @@
 // GET /api/ranked/football/status
 //
-// Estado LIGERO de la Fecha en curso, para las superficies que anuncian las
+// Estado LIGERO de la Jornada en curso, para las superficies que anuncian las
 // predicciones fuera de /predicciones: la píldora del Header (PorraCTA), el
 // widget de las noticias (PorraMatchWidget), el teaser de la portada y el toast
 // de liquidación.
@@ -8,11 +8,11 @@
 // Devuelve el MISMO contrato que el viejo /api/quiniela/status a propósito: las
 // cuatro superficies leen de un único store cliente (porra-status-client), así
 // que conservando la forma basta con repuntar ese store para que todas pasen a
-// hablar de Fechas en vez de la quiniela retirada.
+// hablar de Jornadas en vez de la quiniela retirada.
 //
-//   · jornada      → etiqueta de la Fecha ("Hoy", "sábado 22 ago")
-//   · deadline     → cierre del PRIMER partido del día (el que de verdad corre)
-//   · totalMatches → partidos de la Fecha
+//   · jornada      → etiqueta de la Jornada ("Esta Jornada", "Jornada del…")
+//   · deadline     → cierre del PRIMER partido aún por jugar de la semana
+//   · totalMatches → partidos de la Jornada (7-9 en una semana normal)
 //   · matches[]    → para el widget de noticias (cruza equipos con el artículo)
 //   · con sesión: hasPicked + picksCount + userPicks
 
@@ -20,7 +20,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { RANKED_FOOTBALL_SPORT } from '@/lib/football-ranked'
-import { groupIntoFechas, fechaLabel } from '@/components/ranked/soccer/fecha'
+import { groupIntoJornadas, jornadaLabel } from '@/components/ranked/soccer/jornada'
 import { SOCCER_LOCK_MS, type SoccerEvent } from '@/components/ranked/soccer/types'
 
 export const dynamic = 'force-dynamic'
@@ -51,11 +51,11 @@ export async function GET(req: NextRequest) {
   const events = data as unknown as SoccerEvent[]
   const now    = new Date()
 
-  // La Fecha "en curso" es la primera que todavía tiene algún partido con los
-  // picks abiertos. Si la de hoy ya cerró entera, el CTA debe apuntar a la
-  // siguiente — no a una que el usuario ya no puede jugar.
-  const fechas  = groupIntoFechas(events, now)
-  const current = fechas.find(f => f.firstLockAt !== null) ?? null
+  // La Jornada "en curso" es la primera que todavía tiene algún partido con
+  // los picks abiertos. Si la de esta semana ya cerró entera, el CTA debe
+  // apuntar a la siguiente — no a una que el usuario ya no puede jugar.
+  const jornadas = groupIntoJornadas(events, now)
+  const current  = jornadas.find(j => j.firstLockAt !== null) ?? null
   if (!current) return NextResponse.json(EMPTY)
 
   const matches = current.events.map(e => ({
@@ -70,16 +70,17 @@ export async function GET(req: NextRequest) {
 
   const base = {
     jornada:      current.label,
-    // El deadline que le importa al usuario es el del primer partido: a partir
-    // de ahí ya no puede completar la Fecha entera.
+    // El deadline que le importa al usuario es el del primer partido aún por
+    // jugar: a partir de ahí ya no puede completar picks sobre ese partido.
     deadline:     new Date(current.firstLockAt!).toISOString(),
     totalMatches: current.events.length,
     matches,
-    // TODOS los partidos abiertos, no solo los de la Fecha en curso. Lo usa el
-    // widget de las noticias, que cruza el titular del artículo con los equipos:
-    // limitado a la Fecha de hoy, una noticia sobre un partido del sábado no
-    // encontraba nada y el artículo se quedaba sin puerta de entrada al juego.
-    // La portada y el CTA siguen leyendo `matches` (la Fecha en curso).
+    // TODOS los partidos abiertos, no solo los de la Jornada en curso. Lo usa
+    // el widget de las noticias, que cruza el titular del artículo con los
+    // equipos: limitado a la Jornada actual, una noticia sobre un partido de
+    // la semana siguiente no encontraba nada y el artículo se quedaba sin
+    // puerta de entrada al juego. La portada y el CTA siguen leyendo
+    // `matches` (la Jornada en curso).
     upcoming: events
       .filter(e => e.status === 'open')
       .map(e => ({
@@ -119,18 +120,18 @@ export async function GET(req: NextRequest) {
       away: byId.get(r.event_id)?.team_away ?? '',
       pick: r.prediction?.pick ?? '',
     })),
-    lastSettled: await lastSettledFecha(admin, user.id),
+    lastSettled: await lastSettledJornada(admin, user.id),
   })
 }
 
-// ── Última Fecha liquidada del usuario ───────────────────────────────────────
+// ── Última Jornada liquidada del usuario ─────────────────────────────────────
 // Alimenta PorraSettlementToast, que al volver el usuario le enseña cómo le fue
 // y le ofrece compartirlo en /predicciones/resultado/[slug] —una landing con su
 // propia imagen de OpenGraph—. Toda esa cadena ya estaba construida y llevaba
 // desconectada desde la retirada de la quiniela: el toast leía `lastSettled` y
 // nadie se lo daba, así que el único bucle de crecimiento de la sección no
 // llegaba a arrancar nunca.
-async function lastSettledFecha(
+async function lastSettledJornada(
   admin: NonNullable<ReturnType<typeof adminSupabase>>,
   userId: string,
 ): Promise<{
@@ -144,9 +145,11 @@ async function lastSettledFecha(
 } | null> {
   // Se parte de los EVENTOS de fútbol recientes, no de las predicciones del
   // usuario. Filtrar por "sus N últimas predicciones" parecía equivalente, pero
-  // un jugador activo de UFC llenaría ese cupo con combates y sus Fechas de
-  // fútbol se caerían de la lista sin que nada avisara.
-  const since = new Date(Date.now() - 14 * 86_400_000).toISOString()
+  // un jugador activo de UFC llenaría ese cupo con combates y sus Jornadas de
+  // fútbol se caerían de la lista sin que nada avisara. 21 días porque una
+  // Jornada semanal cabe holgada dentro de la ventana (antes eran 14 para
+  // Fechas diarias).
+  const since = new Date(Date.now() - 21 * 86_400_000).toISOString()
   const { data: evs } = await admin
     .from('ranked_events')
     .select('id, featured, result, meta, updated_at')
@@ -158,7 +161,7 @@ async function lastSettledFecha(
 
   if (!evs || evs.length === 0) return null
 
-  type Ev = { id: string; featured: boolean; result: { home_score?: number; away_score?: number } | null; meta?: { date_key?: string }; updated_at: string }
+  type Ev = { id: string; featured: boolean; result: { home_score?: number; away_score?: number } | null; meta?: { week_key?: string }; updated_at: string }
   const evById = new Map((evs as Ev[]).map(e => [e.id, e]))
 
   const { data: preds } = await admin
@@ -170,17 +173,17 @@ async function lastSettledFecha(
 
   if (!preds || preds.length === 0) return null
 
-  // La Fecha más reciente EN LA QUE JUGÓ (no la última que se resolvió): si no
-  // participó ayer, se le enseña el resultado del día que sí jugó.
+  // La Jornada más reciente EN LA QUE JUGÓ (no la última que se resolvió): si
+  // no participó esta semana, se le enseña el resultado de la que sí jugó.
   let latest = ''
   for (const p of preds as { event_id: string }[]) {
-    const dk = evById.get(p.event_id)?.meta?.date_key
-    if (dk && dk > latest) latest = dk
+    const wk = evById.get(p.event_id)?.meta?.week_key
+    if (wk && wk > latest) latest = wk
   }
   if (!latest) return null
 
   const mine = (preds as { event_id: string; is_correct: boolean | null; points_awarded: number | null; prediction?: { exactScore?: { home: number; away: number } } }[])
-    .filter(p => evById.get(p.event_id)?.meta?.date_key === latest)
+    .filter(p => evById.get(p.event_id)?.meta?.week_key === latest)
   if (mine.length === 0) return null
 
   let correct = 0, won = 0, exactHits = 0, featuredHit = false, settledAt: string | null = null
@@ -198,8 +201,8 @@ async function lastSettledFecha(
 
   return {
     // El slug compartible se construye a partir de esto, así que va en el mismo
-    // idioma que la cabecera de la Fecha en la web.
-    jornada: fechaLabel(latest),
+    // idioma que la cabecera de la Jornada en la web.
+    jornada: jornadaLabel(latest),
     correctCount: correct,
     totalPicks: mine.length,
     totalWon: won,

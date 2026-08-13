@@ -1,12 +1,12 @@
 'use client'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Ranked Fútbol — la vista de FECHAS.
+// Ranked Fútbol — la vista de JORNADAS.
 //
-// La unidad de juego es el DÍA: cada Fecha trae 3-6 partidos destacados y un
-// Partido del Día que vale x2. La selección la hace el servidor (cron
-// sync-football); aquí solo se agrupa por `meta.date_key` —nunca se recalcula—
-// y se pinta.
+// La unidad de juego es la SEMANA (lun-dom): cada Jornada trae 7-9 partidos
+// destacados y UN Partidazo que vale x2. La selección la hace el servidor
+// (cron sync-football); aquí solo se agrupa por `meta.week_key` —nunca se
+// recalcula— y se pinta, con sub-cabeceras por día dentro de cada Jornada.
 //
 // Comparte componentes con el archivo del Mundial vía components/ranked/soccer.
 // El cliente del Mundial todavía tiene los suyos propios: se unifica cuando ese
@@ -16,7 +16,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import MatchCard from '@/components/ranked/soccer/MatchCard'
-import { groupIntoFechas, fechaProgress, formatCountdown, todayKey, plenoBonus } from '@/components/ranked/soccer/fecha'
+import { groupIntoJornadas, jornadaProgress, formatCountdown, thisWeekKey, plenoBonus } from '@/components/ranked/soccer/jornada'
 import {
   FOOTBALL_THEME, MAX_ACTIVE_EXACT,
   type SoccerEvent, type SoccerPick, type PredMap, type LiveScore,
@@ -82,7 +82,7 @@ export default function FootballClient() {
   const load = useCallback(async () => {
     setLoading(true); setError(null)
     try { await fetchCore() }
-    catch { setError('No se pudieron cargar las Fechas. Inténtalo de nuevo.') }
+    catch { setError('No se pudieron cargar las Jornadas. Inténtalo de nuevo.') }
     finally { setLoading(false) }
   }, [fetchCore])
 
@@ -140,7 +140,7 @@ export default function FootballClient() {
       })
       if (res.status === 401) {
         // Sin sesión. Antes esto mandaba a Google directamente y el pick se
-        // perdía por el camino: el usuario volvía logueado y con la Fecha en
+        // perdía por el camino: el usuario volvía logueado y con la Jornada en
         // blanco, teniendo que acordarse de lo que había elegido. Lo dejamos
         // en el mismo buzón que usa el picker de las noticias, así que al
         // aterrizar se aplica solo.
@@ -230,17 +230,18 @@ export default function FootballClient() {
 
   // ── Derivados ──────────────────────────────────────────────────────────────
   // El reloj corre cada segundo para las cuentas atrás, pero el agrupado en
-  // Fechas solo cambia de minuto en minuto (etiquetas "Hoy"/"Mañana" y qué
-  // cierre es el próximo). Anclándolo al minuto nos ahorramos rehacer el
-  // agrupado —con su formateo de fechas por partido— sesenta veces por minuto.
+  // Jornadas solo cambia de minuto en minuto (etiquetas "Hoy"/"Mañana" en las
+  // sub-cabeceras de día y qué cierre es el próximo). Anclándolo al minuto nos
+  // ahorramos rehacer el agrupado sesenta veces por minuto.
   const nowMinute = Math.floor(nowMs / 60_000)
 
-  // Las Fechas ya pasadas no se listan: la sección es "qué se juega ahora",
-  // no un archivo. El historial vive en el perfil y en la Liga Taka.
-  const fechas = useMemo(() => {
+  // Las Jornadas de semanas ya pasadas no se listan: la sección es "qué se
+  // juega ahora", no un archivo. El historial vive en el perfil y en la Liga
+  // Taka.
+  const jornadas = useMemo(() => {
     const at = new Date(nowMinute * 60_000)
-    const today = todayKey(at)
-    return groupIntoFechas(events, at).filter(f => f.dateKey >= today)
+    const week = thisWeekKey(at)
+    return groupIntoJornadas(events, at).filter(j => j.weekKey >= week)
   }, [events, nowMinute])
 
   const predictedIds = useMemo(() => new Set(Object.keys(preds)), [preds])
@@ -254,18 +255,18 @@ export default function FootballClient() {
   // con pick y sin marcador.
   const tooltipEventId = useMemo<string | null>(() => {
     if (exactTipDismissed || activeExactCount > 0) return null
-    for (const f of fechas) {
-      for (const ev of f.events) {
+    for (const j of jornadas) {
+      for (const ev of j.events) {
         if (ev.status !== 'open') continue
         const p = preds[ev.id]?.prediction
         if (p?.pick && !p?.exactScore) return ev.id
       }
     }
     return null
-  }, [fechas, preds, exactTipDismissed, activeExactCount])
+  }, [jornadas, preds, exactTipDismissed, activeExactCount])
 
-  const nextFecha = fechas[0] ?? null
-  const totalPts  = Object.values(preds).reduce((a, p) => a + (p.points_awarded ?? 0), 0)
+  const nextJornada = jornadas[0] ?? null
+  const totalPts    = Object.values(preds).reduce((a, p) => a + (p.points_awarded ?? 0), 0)
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) {
@@ -284,12 +285,12 @@ export default function FootballClient() {
           Sustituye al héroe propio que tenía esta vista. La página ya abre con
           la cabecera «PREDICCIONES · La Señal»; un segundo héroe justo debajo
           hacía que todo empezara dos veces y competía con el primero. Esto es
-          una barra de estado de emisión: día, cuenta atrás, premio y la acción. */}
-      {nextFecha ? (
+          una barra de estado de emisión: semana, cuenta atrás, premio y la acción. */}
+      {nextJornada ? (
         <div
           // En móvil se apila: la barra horizontal deja de serlo y el CTA baja a
           // ancho completo. Con `flex-wrap` a secas, el botón se estiraba a lo
-          // alto ocupando media pantalla y el día se partía en tres líneas.
+          // alto ocupando media pantalla y la etiqueta se partía en tres líneas.
           className="tk-glass-tint tk-glass-spine mt-4 mb-7 overflow-hidden flex flex-col sm:flex-row sm:items-stretch"
           style={{ ['--ga' as string]: T.accent, borderRadius: 'var(--radius-card)' }}
         >
@@ -298,22 +299,22 @@ export default function FootballClient() {
               <p className="whitespace-nowrap" style={{
                 fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 900,
                 color: '#F4F4FA', letterSpacing: '-0.01em', lineHeight: 1, textTransform: 'capitalize',
-              }}>{nextFecha.label}</p>
+              }}>{nextJornada.label}</p>
               <p style={{ fontFamily: 'var(--font-sport)', fontSize: 11, color: 'var(--text-secondary)', marginTop: 3 }}>
-                {nextFecha.events.length} {nextFecha.events.length === 1 ? 'partido destacado' : 'partidos destacados'}
+                {nextJornada.events.length} {nextJornada.events.length === 1 ? 'partido destacado' : 'partidos destacados'}
                 {(() => {
-                  const p = fechaProgress(nextFecha, predictedIds)
+                  const p = jornadaProgress(nextJornada, predictedIds)
                   return p.done > 0 ? ` · ${p.done} de ${p.total} pronosticados` : ''
                 })()}
               </p>
             </div>
 
-            {nextFecha.firstLockAt && (
+            {nextJornada.firstLockAt && (
               <>
                 <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'rgba(255,255,255,0.09)' }} />
                 <div className="whitespace-nowrap">
                   <p style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 900, color: 'var(--color-warning)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                    {formatCountdown(nextFecha.firstLockAt - nowMs)}
+                    {formatCountdown(nextJornada.firstLockAt - nowMs)}
                   </p>
                   <p style={{ fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
                     <LockIcon size={8} className="inline-block align-middle mr-1" />cierra
@@ -322,12 +323,12 @@ export default function FootballClient() {
               </>
             )}
 
-            {plenoBonus(nextFecha.events.length) > 0 && (
+            {plenoBonus(nextJornada.events.length) > 0 && (
               <>
                 <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'rgba(255,255,255,0.09)' }} />
                 <div className="whitespace-nowrap">
                   <p style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 900, color: T.accent, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                    +{plenoBonus(nextFecha.events.length)}
+                    +{plenoBonus(nextJornada.events.length)}
                   </p>
                   <p style={{ fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
                     pleno
@@ -347,9 +348,9 @@ export default function FootballClient() {
             )}
           </div>
 
-          {nextFecha.featured && (
+          {nextJornada.featured && (
             <a
-              href={`#fecha-${nextFecha.dateKey}`}
+              href={`#jornada-${nextJornada.weekKey}`}
               className="fecha-cta flex items-center justify-center px-6 py-3 sm:py-0"
               style={{
                 background: T.accent, color: '#04140C',
@@ -358,7 +359,7 @@ export default function FootballClient() {
               }}
             >
               <StarIcon size={11} className="inline-block align-middle mr-1.5" />
-              {nextFecha.featured.team_home} - {nextFecha.featured.team_away}
+              {nextJornada.featured.team_home} - {nextJornada.featured.team_away}
             </a>
           )}
         </div>
@@ -369,11 +370,11 @@ export default function FootballClient() {
           border: '1px dashed rgba(255,255,255,0.08)',
         }}>
           <p style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 900, color: '#F0F4F1', letterSpacing: '-0.01em' }}>
-            Sin Fecha abierta
+            Sin Jornada abierta
           </p>
           <p className="mx-auto mt-2" style={{ fontSize: 13, color: 'var(--text-secondary)', maxWidth: 430, lineHeight: 1.5 }}>
-            Solo publicamos días con partidos que merezcan la pena. Volvemos en cuanto
-            arranquen las ligas — mientras, la cartelera de UFC sí está abierta.
+            Solo publicamos semanas con partidos que merezcan la pena. Volvemos en
+            cuanto arranquen las ligas — mientras, la cartelera de UFC sí está abierta.
           </p>
         </div>
       )}
@@ -384,7 +385,7 @@ export default function FootballClient() {
         </div>
       )}
 
-      {loggedIn === false && fechas.length > 0 && (
+      {loggedIn === false && jornadas.length > 0 && (
         <div className="mb-6 rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: `${T.accent}0D`, border: `1px solid ${T.accent}30` }}>
           <span style={{ display: 'inline-flex', color: T.accent }}><LockIcon size={18} /></span>
           <p style={{ flex: 1, fontFamily: 'var(--font-sport)', fontSize: 12, color: 'var(--text-secondary)' }}>
@@ -393,28 +394,28 @@ export default function FootballClient() {
         </div>
       )}
 
-      {/* ═══ Fechas ═══ */}
-      {fechas.map((fecha, fi) => {
-        const prog = fechaProgress(fecha, predictedIds)
+      {/* ═══ Jornadas ═══ */}
+      {jornadas.map((jornada, ji) => {
+        const prog = jornadaProgress(jornada, predictedIds)
         const complete = prog.total > 0 && prog.done === prog.total
-        const pleno = plenoBonus(fecha.events.length)
+        const pleno = plenoBonus(jornada.events.length)
         return (
-          <section key={fecha.dateKey} id={`fecha-${fecha.dateKey}`} className="mb-9 scroll-mt-24">
-            {/* Cabecera de la Fecha — banderín de retransmisión (`cal-pennant`),
+          <section key={jornada.weekKey} id={`jornada-${jornada.weekKey}`} className="mb-10 scroll-mt-24">
+            {/* Cabecera de la Jornada — banderín de retransmisión (`cal-pennant`),
                 la misma primitiva que separa los días en /calendario. */}
             <div className="flex items-center gap-2.5 mb-4 flex-wrap">
               <h2 className="cal-pennant" style={{
                 fontFamily: 'var(--font-headline)', fontSize: 17,
                 letterSpacing: '0.06em', lineHeight: 1, textTransform: 'uppercase',
                 padding: '7px 16px 13px', background: T.accent, color: '#04140C',
-              }}>{fecha.label}</h2>
+              }}>{jornada.label}</h2>
               <span style={{ flex: 1, height: 1, minWidth: 20, background: 'linear-gradient(to right, rgba(255,255,255,0.14), transparent)' }} />
               {/* El pleno se anuncia ANTES de jugar: un premio que solo se
-                  descubre al cobrarlo no empuja a completar la Fecha. */}
+                  descubre al cobrarlo no empuja a completar la Jornada. */}
               {pleno > 0 && (
                 <span
                   className="cal-live-tag"
-                  title={`Acierta los ${fecha.events.length} partidos de esta Fecha y te llevas ${pleno} puntos extra`}
+                  title={`Acierta los ${jornada.events.length} partidos de esta Jornada y te llevas ${pleno} puntos extra`}
                   style={{
                     fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
                     letterSpacing: '0.09em', textTransform: 'uppercase', padding: '5px 11px',
@@ -433,42 +434,66 @@ export default function FootballClient() {
                 border: `1px solid ${complete ? `${T.accent}55` : 'rgba(255,255,255,0.09)'}`,
                 color: complete ? T.accent : 'var(--text-muted)',
               }}>
-                {complete ? '✓ Fecha completa' : `${prog.done} / ${prog.total}`}
+                {complete ? '✓ Jornada completa' : `${prog.done} / ${prog.total}`}
               </span>
             </div>
 
-            {/* Dos columnas en escritorio: el arte del torneo respira y la Fecha
-                entera se ve de un vistazo, que es lo que empuja a completarla.
-                El Partido del Día ocupa el ancho completo por jerarquía. */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              {/* El Partido del Día ABRE la Fecha. Por hora de saque puede caer
-                  en mitad de la lista, y una tarjeta a doble ancho encajada
-                  entre dos filas de la rejilla parece un fallo de maquetación,
-                  no una jerarquía. El resto sigue en orden cronológico. */}
-              {[...fecha.events]
-                .sort((a, b) =>
-                  (b.featured ? 1 : 0) - (a.featured ? 1 : 0) ||
-                  a.event_date.localeCompare(b.event_date),
-                )
-                .map((ev, i) => (
-                <div key={ev.id} className={ev.featured ? 'lg:col-span-2' : undefined}>
-                  <MatchCard
-                    event={ev}
-                    pred={preds[ev.id]}
-                    submitting={submitting}
-                    theme={T}
-                    liveScore={liveScores[ev.id]}
-                    onPick={handlePick}
-                    onExactSet={handleExactSet}
-                    activeExactCount={activeExactCount}
-                    showExactTooltip={tooltipEventId === ev.id}
-                    onExactTooltipDismiss={dismissExactTip}
-                    animDelay={fi === 0 ? i * 60 : 0}
-                    nowMs={nowMs}
-                  />
+            {/* El Partidazo ABRE la Jornada, a ancho completo, con independencia
+                del día en que caiga: en una semana puede ser el partido del
+                martes y no tendría jerarquía si esperara su turno cronológico
+                entre el resto. El resto de la Jornada va debajo, agrupado por
+                día — el ritual diario sigue existiendo dentro de la semana. */}
+            {jornada.featured && (
+              <div className="mb-3">
+                <MatchCard
+                  event={jornada.featured}
+                  pred={preds[jornada.featured.id]}
+                  submitting={submitting}
+                  theme={T}
+                  liveScore={liveScores[jornada.featured.id]}
+                  onPick={handlePick}
+                  onExactSet={handleExactSet}
+                  activeExactCount={activeExactCount}
+                  showExactTooltip={tooltipEventId === jornada.featured.id}
+                  onExactTooltipDismiss={dismissExactTip}
+                  animDelay={ji === 0 ? 0 : 0}
+                  nowMs={nowMs}
+                />
+              </div>
+            )}
+
+            {jornada.days.map(day => {
+              const rest = day.events.filter(e => e.id !== jornada.featured?.id)
+              if (rest.length === 0) return null
+              return (
+                <div key={day.dateKey} className="mb-3">
+                  <p style={{
+                    fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 800,
+                    letterSpacing: '0.08em', textTransform: 'uppercase',
+                    color: 'var(--text-muted)', marginBottom: 8, paddingLeft: 2,
+                  }}>{day.label}</p>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    {rest.map((ev, i) => (
+                      <MatchCard
+                        key={ev.id}
+                        event={ev}
+                        pred={preds[ev.id]}
+                        submitting={submitting}
+                        theme={T}
+                        liveScore={liveScores[ev.id]}
+                        onPick={handlePick}
+                        onExactSet={handleExactSet}
+                        activeExactCount={activeExactCount}
+                        showExactTooltip={tooltipEventId === ev.id}
+                        onExactTooltipDismiss={dismissExactTip}
+                        animDelay={ji === 0 ? i * 60 : 0}
+                        nowMs={nowMs}
+                      />
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </section>
         )
       })}

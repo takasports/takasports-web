@@ -1,19 +1,27 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Motor de "Fechas" — Ranked Fútbol
+// Motor de "Jornadas" — Ranked Fútbol
 //
-// Convierte el fixture crudo de ESPN en las FECHAS jugables de la sección de
-// predicciones: para cada día, los 3-6 partidos más destacados y UN "Partido
-// del Día" que vale x2.
+// Convierte el fixture crudo de ESPN en las JORNADAS jugables de la sección de
+// predicciones: para cada semana, los 7-9 partidos más destacados y UN
+// "Partidazo de la Jornada" que vale x2.
 //
 // Todo lo de este archivo es PURO y determinista: mismas entradas → mismas
 // salidas, sin reloj ni red. Es lo que permite testearlo y, sobre todo, que el
 // cron pueda re-ejecutarse cada 30 min sin que la selección baile.
 //
-// Decisiones de producto (7-ago-2026):
-//   · La unidad de juego es el DÍA (una "Fecha"); la de premio, la semana.
+// Decisiones de producto:
+//   · La unidad de PREMIO y de SELECCIÓN es la SEMANA ("Jornada"), lun-dom
+//     hora de Madrid. Antes era el día ("Fecha") — se cambió el 13-ago-2026
+//     porque forzar un destacado diario producía relleno en días flojos
+//     (Bristol City-Walsall, y luego un Deportivo-Elche de lunes coronado
+//     "Partido del Día" sin serlo) y diluía el x2 a "sale casi todos los
+//     días". La semana da margen para elegir de verdad; el día a día lo
+//     sostienen ya noticias/directos/calendario, no esta sección.
 //   · Alcance = núcleo europeo (Champions/Europa/Conference/top-5/copas/
 //     selecciones). Fuera Liga MX, MLS, Brasileirão y segundas divisiones.
-//   · 1 Partido del Día por Fecha, no por semana → más momentos de x2.
+//   · 1 Partidazo por Jornada, no por día → que el x2 vuelva a significar algo.
+//   · Clásicos y derbis puntúan aparte (rivalryBoost en competitions.ts): un
+//     Sevilla-Betis debe poder colarse aunque LaLiga por sí sola no baste.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { FOOTBALL_LEAGUES, type FootballLeague } from '@/lib/football-leagues'
@@ -54,7 +62,7 @@ const CORE_SLUGS: ReadonlySet<string> = new Set([
   'soccer/fifa.friendly',
 ])
 
-/** Competiciones que alimentan las Fechas, con su nombre visible ya resuelto. */
+/** Competiciones que alimentan las Jornadas, con su nombre visible ya resuelto. */
 export const RANKED_FOOTBALL_SOURCES: readonly FootballLeague[] =
   FOOTBALL_LEAGUES.filter(l => CORE_SLUGS.has(l.slug))
 
@@ -62,40 +70,41 @@ export const RANKED_FOOTBALL_SOURCES: readonly FootballLeague[] =
 
 /**
  * Listón mínimo de calidad, en la escala de `getEventHighlightScore`. Un
- * partido por debajo NO entra en ninguna Fecha, y un día sin ningún partido que
- * lo supere sencillamente no se publica.
+ * partido por debajo NO entra en ninguna Jornada, y una semana sin ningún
+ * partido que lo supere sencillamente no se publica.
  *
  * Es la corrección más importante del motor. Sin este suelo, el corte era solo
- * RELATIVO al mejor partido del día: un martes de agosto con nada más que
- * segundas rondas de Carabao Cup coronaba un Bristol City - Walsall como
- * "Partido del Día ×2". Un destacado que no destaca quema la credibilidad de
- * la sección entera, y el usuario que entra ese día no vuelve.
+ * RELATIVO al mejor partido de la semana: una semana con nada más que segundas
+ * rondas de Carabao Cup coronaba un Bristol City - Walsall como "Partidazo de
+ * la Jornada ×2". Un destacado que no destaca quema la credibilidad de la
+ * sección entera, y el usuario que entra esa semana no vuelve.
  *
  * Calibrado para que entren LaLiga/Premier/Serie A/Bundesliga (10-11), Ligue 1
  * y Europa League (8), Champions (12), Supercopa (10) y Copa del Rey (7 + prime
  * time), y se queden fuera las rondas iniciales de copas menores (4-6,5).
- * Si un día no llega, la sección no miente: no hay Fecha y el hub ofrece UFC.
  */
 export const MIN_ABSOLUTE_SCORE = 7.5
 
-/** Suelo blando: por debajo de esto una Fecha se considera pobre, y se intenta
- *  completar bajando el listón (pero nunca por debajo de HARD_FLOOR_RATIO). */
-export const MIN_PER_DATE = 3
-/** Techo duro: más de 6 picks en un día convierte el ritual diario en tarea. */
-export const MAX_PER_DATE = 6
-/** Un partido entra si puntúa al menos este % del mejor partido del día. */
+/** Suelo blando: por debajo de esto una Jornada se considera pobre, y se
+ *  intenta completar bajando el listón (pero nunca por debajo de
+ *  HARD_FLOOR_RATIO). 7 es "se siente una jornada de verdad" sin llegar a la
+ *  sensación de tarea de una quiniela de 14. */
+export const MIN_PER_WEEK = 7
+/** Techo duro: más de 9 picks convierte la Jornada en deberes. */
+export const MAX_PER_WEEK = 9
+/** Un partido entra si puntúa al menos este % del mejor de la semana. */
 export const RELATIVE_THRESHOLD = 0.6
-/** Listón absoluto al completar hasta MIN_PER_DATE. Preferimos una Fecha de un
- *  solo partidazo antes que un partidazo rodeado de relleno. */
+/** Listón absoluto al completar hasta MIN_PER_WEEK. Preferimos una Jornada
+ *  corta pero de partidazos antes que rellenarla con morralla. */
 export const HARD_FLOOR_RATIO = 0.4
 
-/** Ventana de fixture que se abre a predicción, en días. Coincide con el ciclo
- *  de la Jornada Taka (lun-dom) para que el usuario siempre vea "su" semana. */
-export const RANKED_WINDOW_DAYS = 7
+/** Ventana de fixture que se abre a predicción, en días. Con esto siempre hay
+ *  al menos una semana completa por delante para elegir. */
+export const RANKED_WINDOW_DAYS = 10
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
-/** Partido normalizado desde ESPN, antes de decidir si entra en una Fecha. */
+/** Partido normalizado desde ESPN, antes de decidir si entra en una Jornada. */
 export interface FootballFixture {
   espnId: string
   /** ISO UTC del kickoff. */
@@ -116,21 +125,26 @@ export interface FootballFixture {
 
 export interface ScoredFixture extends FootballFixture {
   /** Puntuación de "destacado". Se guarda en meta para poder auditar por qué
-   *  un partido entró (o no) sin tener que reconstruir el estado de aquel día. */
+   *  un partido entró (o no) sin tener que reconstruir el estado de aquella
+   *  semana. */
   score: number
-  /** Día al que pertenece la Fecha, en hora de Madrid (YYYY-MM-DD). */
+  /** Día del kickoff, en hora de Madrid (YYYY-MM-DD). Se conserva para
+   *  agrupar la Jornada por día en la UI (sub-cabeceras "sábado", "domingo"). */
   dateKey: string
+  /** Semana a la que pertenece la Jornada: el lunes de esa semana ISO, en hora
+   *  de Madrid (YYYY-MM-DD). Es la unidad real de selección y de premio. */
+  weekKey: string
 }
 
-export interface RankedDate {
-  /** YYYY-MM-DD en Europe/Madrid. */
-  dateKey: string
+export interface RankedWeek {
+  /** YYYY-MM-DD del lunes de la semana, en Europe/Madrid. */
+  weekKey: string
   matches: ScoredFixture[]
-  /** espnId del Partido del Día (x2). Siempre uno, y siempre de `matches`. */
+  /** espnId del Partidazo de la Jornada (x2). Siempre uno, y siempre de `matches`. */
   featuredEspnId: string
 }
 
-// ── Agrupación por día ───────────────────────────────────────────────────────
+// ── Agrupación por día y por semana ──────────────────────────────────────────
 
 const DATE_KEY_FMT = new Intl.DateTimeFormat('en-CA', {
   timeZone: SOURCE_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
@@ -140,24 +154,39 @@ const DATE_KEY_FMT = new Intl.DateTimeFormat('en-CA', {
  * Día al que pertenece un kickoff, en hora de Madrid.
  *
  * En Madrid y NO en UTC porque es la zona en la que la UI imprime las horas
- * (SOURCE_TZ): la cabecera de la Fecha tiene que decir el mismo día que la hora
- * que el usuario lee en la tarjeta. Madrid va 1-2 h por delante de UTC, así que
- * un kickoff de madrugada (00:30 CEST del domingo = 22:30 UTC del sábado) caería
- * en el bloque del día anterior si agrupáramos por UTC.
+ * (SOURCE_TZ): la sub-cabecera del día dentro de la Jornada tiene que decir el
+ * mismo día que la hora que el usuario lee en la tarjeta.
  */
 export function toDateKey(isoDate: string): string {
   return DATE_KEY_FMT.format(new Date(isoDate))   // en-CA ya emite YYYY-MM-DD
+}
+
+/**
+ * Lunes (YYYY-MM-DD, hora de Madrid) de la semana ISO a la que pertenece un
+ * kickoff. Es la unidad de selección y de premio: dos partidos con el mismo
+ * `weekKey` compiten por el mismo cupo de 7-9 y pagan el mismo Pleno.
+ */
+export function toWeekKey(isoDate: string): string {
+  const dateKey = toDateKey(isoDate)
+  const [y, m, d] = dateKey.split('-').map(Number)
+  // Mediodía UTC para que el cálculo del día de la semana no se mueva por el
+  // desfase horario de Madrid respecto a UTC.
+  const at = new Date(Date.UTC(y, m - 1, d, 12))
+  const isoDow = at.getUTCDay() === 0 ? 7 : at.getUTCDay()   // lunes=1 … domingo=7
+  at.setUTCDate(at.getUTCDate() - (isoDow - 1))
+  return DATE_KEY_FMT.format(at)
 }
 
 // ── Puntuación ───────────────────────────────────────────────────────────────
 
 /**
  * Puntúa un partido con el mismo criterio que el modo Destacados del
- * calendario (importancia de liga + cartelazo + selección + fase + prime time).
+ * calendario (importancia de liga + cartelazo + clásico/derbi + selección +
+ * fase + prime time).
  *
  * NO se le pasa `isLive`: ese boost cambia con el reloj y haría que el ranking
- * del día bailara entre dos ejecuciones del cron. La selección tiene que ser
- * una función del fixture, no del momento en que se calcula.
+ * de la semana bailara entre dos ejecuciones del cron. La selección tiene que
+ * ser una función del fixture, no del momento en que se calcula.
  */
 export function scoreFixture(fx: FootballFixture): number {
   return getEventHighlightScore({
@@ -173,8 +202,8 @@ export function scoreFixture(fx: FootballFixture): number {
 }
 
 /** Orden determinista: score desc y, a igualdad, espnId asc. El desempate por
- *  id importa — sin él, dos ejecuciones podrían elegir distinto Partido del Día
- *  para la misma Fecha según cómo llegara ordenado el JSON de ESPN. */
+ *  id importa — sin él, dos ejecuciones podrían elegir distinto Partidazo de
+ *  la Jornada según cómo llegara ordenado el JSON de ESPN. */
 function byScoreThenId(a: ScoredFixture, b: ScoredFixture): number {
   if (b.score !== a.score) return b.score - a.score
   return a.espnId.localeCompare(b.espnId)
@@ -183,21 +212,22 @@ function byScoreThenId(a: ScoredFixture, b: ScoredFixture): number {
 // ── Selección ────────────────────────────────────────────────────────────────
 
 /**
- * Elige los partidos destacados de UN día y designa el Partido del Día.
+ * Elige los partidos destacados de UNA semana y designa el Partidazo.
  *
  * Reglas, por orden:
  *   0. Se descarta todo lo que no llegue a MIN_ABSOLUTE_SCORE. Si no queda
- *      nada, ese día NO tiene Fecha (devuelve null).
- *   1. De lo que queda, entran los que puntúen ≥ 60% del mejor del día, hasta 6.
- *   2. Si salen menos de 3, se completa hasta 3 bajando el listón al 40% del
+ *      nada, esa semana NO tiene Jornada (devuelve null).
+ *   1. De lo que queda, entran los que puntúen ≥ 60% del mejor de la semana,
+ *      hasta 9.
+ *   2. Si salen menos de 7, se completa hasta 7 bajando el listón al 40% del
  *      mejor — nunca por debajo del suelo absoluto.
- *   3. El Partido del Día es el de mayor puntuación.
+ *   3. El Partidazo de la Jornada es el de mayor puntuación.
  *
- * Las reglas 0 y 2 son deliberadamente tacañas: si un martes solo hay una final
- * de Champions y tres partidos de copa menor, la Fecha es la final y punto. Un
- * pick de relleno no suma emoción, resta credibilidad al "destacado".
+ * Las reglas 0 y 2 son deliberadamente tacañas: si una semana solo hay una
+ * final de Champions y el resto son rondas de copa menor, la Jornada es la
+ * final y lo que la acompañe de verdad — no se rellena hasta 7 con relleno.
  */
-export function selectForDate(fixtures: ScoredFixture[]): RankedDate | null {
+export function selectForWeek(fixtures: ScoredFixture[]): RankedWeek | null {
   const eligible = fixtures.filter(f => f.score >= MIN_ABSOLUTE_SCORE)
   if (eligible.length === 0) return null
 
@@ -206,56 +236,58 @@ export function selectForDate(fixtures: ScoredFixture[]): RankedDate | null {
 
   let picked = sorted
     .filter(f => f.score >= best * RELATIVE_THRESHOLD)
-    .slice(0, MAX_PER_DATE)
+    .slice(0, MAX_PER_WEEK)
 
-  if (picked.length < MIN_PER_DATE) {
+  if (picked.length < MIN_PER_WEEK) {
     picked = sorted
       .filter(f => f.score >= best * HARD_FLOOR_RATIO)
-      .slice(0, MIN_PER_DATE)
+      .slice(0, MIN_PER_WEEK)
   }
 
   return {
-    dateKey:        sorted[0].dateKey,
+    weekKey:        sorted[0].weekKey,
     matches:        picked,
     featuredEspnId: picked[0].espnId,
   }
 }
 
 /**
- * Construye todas las Fechas de una tanda de fixtures.
+ * Construye todas las Jornadas de una tanda de fixtures.
  *
- * `skipDateKeys` son los días que YA existen en base de datos: una Fecha
+ * `skipWeekKeys` son las semanas que YA existen en base de datos: una Jornada
  * publicada no se recalcula jamás. Es la regla de oro del motor — si el cron
- * pudiera re-seleccionar, un partido ya pronosticado podría desaparecer de la
- * Fecha (dejando la predicción huérfana) o perder su x2 a mitad de semana.
- * Publicar es un acto irreversible; el cron solo añade días nuevos.
+ * pudiera reseleccionar, un partido ya pronosticado podría desaparecer de la
+ * Jornada (dejando la predicción huérfana) o perder su x2 a mitad de semana.
+ * Publicar es un acto irreversible; el cron solo añade semanas nuevas.
  */
-export function buildRankedDates(
+export function buildRankedWeeks(
   fixtures: ScoredFixture[],
-  skipDateKeys: ReadonlySet<string> = new Set(),
-): RankedDate[] {
-  const byDate = new Map<string, ScoredFixture[]>()
+  skipWeekKeys: ReadonlySet<string> = new Set(),
+): RankedWeek[] {
+  const byWeek = new Map<string, ScoredFixture[]>()
   for (const fx of fixtures) {
-    if (skipDateKeys.has(fx.dateKey)) continue
-    const bucket = byDate.get(fx.dateKey)
+    if (skipWeekKeys.has(fx.weekKey)) continue
+    const bucket = byWeek.get(fx.weekKey)
     if (bucket) bucket.push(fx)
-    else byDate.set(fx.dateKey, [fx])
+    else byWeek.set(fx.weekKey, [fx])
   }
 
-  const dates: RankedDate[] = []
-  for (const [, dayFixtures] of [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    const date = selectForDate(dayFixtures)
-    if (date) dates.push(date)
+  const weeks: RankedWeek[] = []
+  for (const [, weekFixtures] of [...byWeek.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const week = selectForWeek(weekFixtures)
+    if (week) weeks.push(week)
   }
-  return dates
+  return weeks
 }
 
-/** Añade score + dateKey a los fixtures crudos. Paso previo a la selección. */
+/** Añade score + dateKey + weekKey a los fixtures crudos. Paso previo a la
+ *  selección. */
 export function scoreFixtures(fixtures: FootballFixture[]): ScoredFixture[] {
   return fixtures.map(fx => ({
     ...fx,
     score:   scoreFixture(fx),
     dateKey: toDateKey(fx.isoDate),
+    weekKey: toWeekKey(fx.isoDate),
   }))
 }
 
