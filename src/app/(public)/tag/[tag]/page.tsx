@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { sanityClient, articlesByTagQuery, allTagsQuery, tagCountQuery, MIN_TAG_ARTICLES, isJunkTag } from '@/lib/sanity'
+import { sanityClient, articlesByTagQuery, tagCountQuery, MIN_TAG_ARTICLES, isJunkTag } from '@/lib/sanity'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { timeAgo } from '@/lib/timeAgo'
 import Image from '@/components/DynamicImage'
@@ -9,22 +9,24 @@ import { urlFor } from '@/lib/sanity'
 import ScrollToTop from '@/components/ScrollToTop'
 import { SITE_URL } from '@/lib/constants'
 
-export const revalidate = 3600
-// Tags nuevos detectados en runtime también se renderizan vía ISR (no 404).
+// Los tags llevan texto humano crudo en la URL (a diferencia del resto del
+// sitio, que va slugificado en ASCII). Con ISR, Next emite la cabecera
+// `x-next-cache-tags` con el pathname dentro, y las cabeceras HTTP solo
+// admiten Latin-1: cualquier tag con un carácter fuera de ese rango (ć, €, ʻ…)
+// reventaba con 500 en producción — `/tag/luka modrić`, `/tag/edin terzić`,
+// `/tag/466m€`. Misma clase de caracteres que ya obligó a la tabla aparte de
+// `toNameSlug` en los slugs de jugador. Renderizando en dinámico no se genera
+// esa entrada de caché, así que la cabecera no llega a construirse.
+// Es contención, no la cura: la cura es slugificar la URL del tag (pendiente
+// de decidir, porque mueve URLs ya indexadas).
+export const dynamic = 'force-dynamic'
+// Tags nuevos detectados en runtime también se renderizan (no 404).
 export const dynamicParams = true
 
-// F3.5 (jun 2026): pre-generamos páginas de tags para que Next las trate
-// como SSG cacheables en lugar de Dynamic. Tags nuevos no listados aquí
-// caen al primer hit vía ISR (dynamicParams=true).
-export async function generateStaticParams() {
-  const tags = await sanityClient
-    .fetch<string[]>(allTagsQuery)
-    .catch(() => [] as string[])
-  // Pre-genera solo las 50 etiquetas más recientes (antes 200) para bajar las
-  // consultas a Sanity por build; el resto se generan on-demand (dynamicParams),
-  // sin perder SEO (se sirven y cachean igual).
-  return tags.filter(Boolean).slice(0, 50).map((tag) => ({ tag: encodeURIComponent(tag) }))
-}
+// El pre-render de las 50 etiquetas más recientes (F3.5, jun 2026) se retira
+// con `force-dynamic`: son incompatibles, y era justo el camino que servía bien
+// los tags con acentos raros mientras el resto caía en ISR y devolvía 500.
+// Se ahorra además una consulta a Sanity por build.
 
 interface Article {
   _id: string
