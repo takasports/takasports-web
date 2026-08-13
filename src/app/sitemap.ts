@@ -113,6 +113,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: hubLastMod, changeFrequency: 'hourly', priority: 1 },
     { url: `${BASE_URL}/noticias`, lastModified: hubLastMod, changeFrequency: 'hourly', priority: 0.9 },
+    // Reportajes: cambia poco (piezas de fondo, no actualidad) pero pesa en la
+    // marca, así que va con prioridad alta y frecuencia semanal.
+    { url: `${BASE_URL}/reportajes`, lastModified: hubLastMod, changeFrequency: 'weekly', priority: 0.85 },
     { url: `${BASE_URL}/calendario`, lastModified: STATIC_LASTMOD, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE_URL}/estadisticas`, lastModified: STATIC_LASTMOD, changeFrequency: 'hourly', priority: 0.8 },
     // Una entrada por deporte para que Google indexe cada vista por separado
