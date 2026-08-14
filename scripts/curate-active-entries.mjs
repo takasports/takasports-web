@@ -139,16 +139,13 @@ const FEM_SUFFIX_RE = /\b(femenino|femenina|feminin[eo]|women|womens|fem)\b/g
 // propia nota (Inter 82,0 y 85,4; PSG 87,5 y 85,3; Lyon 82,9 y 82,6).
 // La clave es el nombre compactado (sin acentos, sin signos, sin sufijo
 // femenino); el valor es la grafía a la que se reduce.
-// OJO: solo se declaran aquí los casos en los que la fila CURADA —la que
-// sobrevive al colapso, por `canonicalFirst`— tiene los datos al día. El Barça
-// y el Lyon femeninos también están duplicados, pero ahí la curada lleva sin
-// recalcular desde el 07/05/2026 mientras la del feed está fresca: fusionarlas
-// congelaría esos dos clubes en una nota de mayo. Se dejan fuera a propósito
-// hasta decidir cuál de las dos filas debe mandar. Ver también el recorte del
-// sufijo femenino, pendiente por el mismo motivo.
 const NAME_ALIASES = new Map([
   ['internazionale',    'Inter de Milan'],
   ['parissaintgermain', 'PSG'],
+  // El Lyon femenino entra por el nombre nuevo del club: el feed ya lo llama
+  // «OL Lyonnes» y la fila curada sigue como «Olympique Lyon Femenino».
+  ['ollyonnes',         'Olympique Lyon'],
+  ['olympiquelyon',     'Olympique Lyon'],
 ])
 
 function compactName(s) {
@@ -178,15 +175,12 @@ function nameTokens(s) {
     .replace(/[øØ]/g, 'o').replace(/[łŁ]/g, 'l').replace(/[đĐ]/g, 'd')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .toLowerCase()
-    // NOTA: aquí NO se recorta el sufijo femenino, y normalizeName sí lo hace.
-    // La incoherencia es real y tiene consecuencia: el ancla del paso 1b es el
-    // ÚLTIMO token, así que «FC Barcelona Femenino» ancla en "femenino" y
-    // «Barcelona» en "barcelona", y las dos filas del Barça femenino nunca
-    // llegan a compararse. Arreglarlo las fusiona, pero la que sobrevive
-    // (`barca-f`, curada) lleva sin recalcular desde el 07/05/2026 y la del
-    // feed está al día: el duplicado se iría y a cambio el club quedaría
-    // congelado en una nota vieja. Se deja como está hasta decidir qué fila
-    // debe mandar; el duplicado sigue visible mientras tanto.
+    // Mismo recorte de sufijo femenino que normalizeName; que una lo quitara y
+    // la otra no tenía consecuencia real. El ancla del paso 1b es el ÚLTIMO
+    // token, así que «FC Barcelona Femenino» anclaba en "femenino" y
+    // «Barcelona» en "barcelona": las dos filas del Barça femenino no llegaban
+    // a compararse y el club salía dos veces en el ranking.
+    .replace(FEM_SUFFIX_RE, '')
     .replace(/[^a-z0-9 ]/g, ' ')
     .split(/\s+/)
     .filter(x => x && !NAME_STOPWORDS.has(x))
