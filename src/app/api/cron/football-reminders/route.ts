@@ -1,17 +1,22 @@
 // GET /api/cron/football-reminders
 //
-// Aviso de cierre de la Fecha. Corre cada 30 min (ver vercel.json).
+// Aviso de cierre de la Jornada. Corre cada 30 min (ver vercel.json).
 //
-// ── Uno por FECHA, no uno por partido ──────────────────────────────────────
+// ── Uno por DÍA DE PARTIDOS, no uno por partido ────────────────────────────
 // El equivalente del Mundial notifica cada partido sin pronosticar por
 // separado. Allí colaba: eran pocos partidos al día y el torneo duraba un mes.
-// Aquí una Fecha trae de 3 a 6 partidos, así que ese mismo criterio dispararía
-// hasta seis notificaciones diarias a la misma persona — la vía rápida a que
-// desactive los avisos, o desinstale. Se manda UNA por Fecha, con el Partido
-// del Día como gancho y cuántos picks le faltan.
+// Aquí eso dispararía una avalancha a la misma persona — la vía rápida a que
+// desactive los avisos, o desinstale.
+//
+// El agrupado es por `meta.date_key` (DÍA), no por Jornada: una Jornada semanal
+// reparte sus 7-9 partidos en varios días, así que se manda un aviso por cada
+// día que tenga partidos (p. ej. sábado y domingo), con el Partidazo como
+// gancho y cuántos picks faltan de ESE día. Es deliberado: un único aviso el
+// lunes para una Jornada que se juega el fin de semana llegaría demasiado
+// pronto para ser útil.
 //
 // Ventana 30-60 min antes del primer cierre del día: con el cron cada 30 min
-// las ventanas se embaldosan sin solaparse, así que cada Fecha recibe su aviso
+// las ventanas se embaldosan sin solaparse, así que cada día recibe su aviso
 // exactamente una vez. Es deliberado preferir perder un aviso (si una pasada
 // del cron falla) a mandarlo dos veces.
 //
@@ -69,7 +74,7 @@ export async function GET(req: NextRequest) {
 
   const now = Date.now()
 
-  // Partidos abiertos de los próximos dos días: de ahí sacamos la Fecha cuyo
+  // Partidos abiertos de los próximos dos días: de ahí sacamos la Jornada cuyo
   // primer cierre cae en la ventana.
   const { data: rows, error } = await admin
     .from('ranked_events')
@@ -93,8 +98,8 @@ export async function GET(req: NextRequest) {
     else byDay.set(key, [r])
   }
 
-  // La Fecha cuyo PRIMER cierre entra en la ventana. El primer cierre es el
-  // momento a partir del cual ya no se puede completar la Fecha entera, que es
+  // La Jornada cuyo PRIMER cierre entra en la ventana. El primer cierre es el
+  // momento a partir del cual ya no se puede completar la Jornada entera, que es
   // justo lo que queremos avisar.
   let target: { dateKey: string; events: EventRow[]; lockAt: number } | null = null
   for (const [dateKey, events] of byDay) {
@@ -123,8 +128,8 @@ export async function GET(req: NextRequest) {
     subsByUser.set(s.user_id, arr)
   }
 
-  // Cuántos partidos de la Fecha lleva pronosticados cada usuario. Solo se
-  // avisa a quien NO la tiene completa: recordarle la Fecha a quien ya la
+  // Cuántos partidos de la Jornada lleva pronosticados cada usuario. Solo se
+  // avisa a quien NO la tiene completa: recordarle la Jornada a quien ya la
   // cerró es ruido puro.
   const eventIds = target.events.map(e => e.id)
   const { data: preds } = await admin
@@ -149,7 +154,7 @@ export async function GET(req: NextRequest) {
   const star = target.events.find(e => e.featured) ?? target.events[0]
   const starLabel = star.team_home && star.team_away
     ? `${star.team_home} - ${star.team_away}`
-    : 'el Partido del Día'
+    : 'el Partidazo'
   const mins = Math.max(1, Math.round((target.lockAt - now) / 60_000))
 
   let notified = 0
@@ -159,10 +164,10 @@ export async function GET(req: NextRequest) {
     toNotify.flatMap(([uid, subs]) => {
       const left = total - (doneByUser.get(uid) ?? 0)
       const payload = JSON.stringify({
-        title: `⏰ La Fecha cierra en ${mins} min`,
+        title: `⏰ La Jornada cierra en ${mins} min`,
         body: `⭐ ${starLabel} · te ${left === 1 ? 'falta 1 pick' : `faltan ${left} picks`}`,
         url: '/predicciones',
-        // Un tag por Fecha: si algo llegara repetido, el navegador reemplaza
+        // Un tag por Jornada: si algo llegara repetido, el navegador reemplaza
         // en vez de apilar notificaciones.
         tag: `fecha-${target!.dateKey}`,
       })
