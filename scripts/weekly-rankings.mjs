@@ -64,6 +64,12 @@ const STEPS = [
   ['Tenis — ranking ATP/WTA (contexto)',     'ingest-tennis-context.mjs'],
   ['F1 — posición campeonato (contexto)',    'ingest-f1-context.mjs'],
   ['UFC — rankings división (rend+ctx)',     'ingest-ufc-rankings.mjs'],
+  // WWE era el único deporte del ranking SIN ninguna fuente: sus factores
+  // llevaban desde mayo sin tocarse. Escribe solo `contexto` —quién lleva
+  // cinturón, de qué nivel y desde cuándo, según Wikipedia—; el rendimiento se
+  // queda sin fuente a propósito, porque la lucha libre es guionizada y un
+  // "rendimiento" ahí sería un número inventado con pinta de dato.
+  ['WWE — cinturones (contexto)',            'ingest-wwe-championships.mjs'],
   ['Equipos — resultados + nivel de liga',   'ingest-club-performance.mjs'],
   // Después de TODOS los contextos: recorta a quien arrastre un contexto de
   // élite jugando en una liga modesta.
