@@ -109,6 +109,7 @@ El contenido de noticias viene de n8n (taka-system) → Sanity. Claude Code **nu
 - Artículos: long-form 1300-1800 palabras, actualidad ≤3 días.
 - Para eliminar artículo: borrar en Sanity + marcar `content_items` como `rejected` en Supabase (taka-system DB).
 - Para publicar cambios web: `git push` → Vercel auto-deploy.
+- **El TÍTULO SEO no lo genera el pipeline**: WF-07/WF-08 escriben `headline`, `metaDescription` y `focusKeyword`, pero NO `seoTitle`. Ese campo —el `<title>` que ve Google en los 2.647 artículos— lo rellena `scripts/auto-seo-title.mjs`, que corre por cron cada 15 min vía `~/.taka/run-seo.sh` (saca los tokens del contenedor `taka-n8n`, así que **si Docker está apagado no se genera ninguno** y solo se entera `~/.taka/seo.log`). Vivía suelto en el home sin versionar; ahora el real está aquí y en `~/.taka` queda un shim. Tres niveles: reformulación con IA (37%), compresión con IA (55%) y recorte del titular (9%).
 
 ## Rankings — sistema híbrido
 
