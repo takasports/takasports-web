@@ -185,3 +185,19 @@ export function trackPorraExactSettled(params: {
 }) {
   track('porra_exact_settled', params)
 }
+
+// ── Avisos push ───────────────────────────────────────────────────
+
+/**
+ * Alta/baja de avisos push desde el final de un artículo. Se mide `sport`
+ * porque el interés declarado por deporte es lo que permitirá segmentar los
+ * envíos; y `source` porque el mismo componente puede colocarse en más sitios.
+ * Con 0 suscripciones al arrancar (13/08/2026), cualquier número es señal.
+ */
+export function trackPushSubscribe(params: { source: string; sport?: string }) {
+  track('push_subscribe', params)
+}
+
+export function trackPushUnsubscribe(params: { source: string; sport?: string }) {
+  track('push_unsubscribe', params)
+}

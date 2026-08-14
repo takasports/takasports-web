@@ -16,6 +16,7 @@ import ReadingProgress from '@/app/article/[id]/ReadingProgress'
 import ReadTracker from '@/app/article/[id]/ReadTracker'
 import ArticleTableOfContents from '@/components/ArticleTableOfContents'
 import ArticleComments from '@/components/ArticleComments'
+import ArticlePushCta from '@/components/ArticlePushCta'
 import MatchScheduleCard, { type MatchKickoffData } from '@/components/MatchScheduleCard'
 import PorraMatchWidget from '@/components/PorraMatchWidget'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
@@ -1496,6 +1497,18 @@ export default async function NoticiaPage({
                 </section>
               )
             })()}
+
+            {/* Justo al acabar de leer, que es cuando el lector ya ha decidido
+                si esto le interesa. Va ANTES de los comentarios y de la
+                newsletter del pie: pedir un clic cuesta menos que pedir un
+                correo, y hasta hoy los avisos solo se ofrecían en /juegos. */}
+            <div style={{ maxWidth: 680 }}>
+              <ArticlePushCta
+                sport={sportSlug ?? undefined}
+                sportLabel={sportLabel ?? undefined}
+                accent={badgeColor}
+              />
+            </div>
 
             <div style={{ maxWidth: 680 }}>
               <ArticleComments slug={article.slug ?? id} />
