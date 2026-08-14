@@ -154,7 +154,7 @@ async function main() {
   }
 
   const { data: filas, error } = await sb.from('ranking_entries')
-    .select('id, category, name, contexto_auto')
+    .select('id, category, name, subtitle, contexto_auto')
     .eq('sport', 'wwe').eq('category', 'jugadores').eq('active', true)
   if (error) throw error
 
@@ -177,6 +177,19 @@ async function main() {
       `  ${u.name.padEnd(16).slice(0, 16)} ctx ${String(antes).padStart(3)} → ${String(u.ctx).padStart(3)}` +
       `${u.cambia ? ' ' : ' ='}  ${u.titulo.slice(0, 38)}${u.dias ? ` (${u.dias}d)` : ''}`
     )
+  }
+
+  // Los subtítulos los escribe una persona y NINGÚN automatismo los revisa, así
+  // que caducan sin avisar: «Cody Rhodes · Campeón Indiscutible» siguió ahí
+  // meses después de que ese cinturón pasara a CM Punk (corregido 14/08/2026).
+  // Aquí no se tocan —son voz editorial, no dato— pero sí se cantan: este
+  // script es el único punto del sistema que sabe quién lleva cada título.
+  const RE_TITULO = /campeon|campeón|champion/i
+  const mentirosos = updates.filter(u => RE_TITULO.test(u.subtitle ?? '') && u.titulo === '—')
+  if (mentirosos.length) {
+    console.log('\n  ⚠️  Subtítulos que dicen "campeón" sin cinturón en Wikipedia:')
+    for (const u of mentirosos) console.log(`      ${u.name} → "${u.subtitle}"`)
+    console.log('      (revisar a mano: son copy editorial, el script no los cambia)')
   }
 
   if (!APPLY) { console.log('\nDRY RUN.'); return }
