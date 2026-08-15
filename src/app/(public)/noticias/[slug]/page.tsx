@@ -561,6 +561,26 @@ export default async function NoticiaPage({
     })),
   } : null
 
+  // VideoObject por cada embed de YouTube en el cuerpo — sin esto Google no puede
+  // indexar el vídeo como resultado enriquecido aunque el iframe ya esté embebido.
+  // uploadDate es una aproximación (fecha de publicación del artículo): no tenemos
+  // la fecha real de subida del vídeo sin llamar a la API de YouTube.
+  const videoJsonLdList = (article.bodyPortable ?? [])
+    .filter((b) => b._type === 'videoEmbed' && (b as { kind?: string }).kind === 'youtube' && (b as { videoId?: string }).videoId)
+    .map((b) => {
+      const v = b as { videoId?: string; sourceName?: string }
+      return {
+        '@context': 'https://schema.org',
+        '@type': 'VideoObject',
+        name: `${article.title} — vídeo${v.sourceName ? ` (${v.sourceName})` : ''}`,
+        description: article.short_summary ?? article.title,
+        thumbnailUrl: [`https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`],
+        uploadDate: article.publishedAt,
+        embedUrl: `https://www.youtube.com/embed/${v.videoId}`,
+        isPartOf: { '@id': canonical },
+      }
+    })
+
   const paragraphs = typeof article.bodyText === 'string' && article.bodyText
     ? article.bodyText.split('\n').filter((p) => p.trim().length > 0)
     : []
@@ -621,6 +641,9 @@ export default async function NoticiaPage({
       {faqJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       )}
+      {videoJsonLdList.map((v, i) => (
+        <script key={`video-jsonld-${i}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(v) }} />
+      ))}
       <ReadingProgress accent={accent} />
       <ReadTracker item={{
         slug: article.slug ?? id,
