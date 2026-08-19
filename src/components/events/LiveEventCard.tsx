@@ -252,7 +252,7 @@ export function LiveEventCard({ fix }: { fix: LiveFixture }) {
   )
 
   return fix.matchRef
-    ? <Link href={`/partido/${fix.matchRef}`} className="hover:opacity-80 transition-opacity">{inner}</Link>
+    ? <Link href={`/partido/${fix.matchRef}`} prefetch={false} className="hover:opacity-80 transition-opacity">{inner}</Link>
     : <Link href="/calendario" aria-label={`Ver en el calendario: ${ariaLabel}`} className="hover:opacity-80 transition-opacity">{inner}</Link>
 }
 
@@ -313,6 +313,6 @@ export function UpcomingEventCard({ ev }: { ev: UpcomingEvent }) {
 
   // Clicable: a la página de detalle si hay matchRef; si no, a la agenda.
   return ev.matchRef
-    ? <Link href={`/partido/${ev.matchRef}`} aria-label={`Ver detalle: ${label}`} className="hover:opacity-80 transition-opacity">{inner}</Link>
+    ? <Link href={`/partido/${ev.matchRef}`} prefetch={false} aria-label={`Ver detalle: ${label}`} className="hover:opacity-80 transition-opacity">{inner}</Link>
     : <Link href="/calendario" aria-label={`Ver en el calendario: ${label}`} className="hover:opacity-80 transition-opacity">{inner}</Link>
 }

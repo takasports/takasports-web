@@ -43,6 +43,15 @@ const AI_SEARCH_BOTS = [
   'ChatGPT-User',
 ]
 
+// Espacios de URL COMBINATORIOS: /comparar?p1=X&p2=Y son ~84×84 combinaciones de
+// una página dinámica que, por render, pide los líderes de cada liga y la ficha de
+// dos jugadores. Ya iban con robots noindex, pero noindex NO impide el crawleo: los
+// bots seguían los enlaces del grid (follow: true) y recorrían el espacio entero.
+// El 18/08/2026 eso, sumado al prefetch de los <Link> del grid, generó ~10.000
+// renders/3h y saturó Postgres hasta tumbar el pipeline editorial entero.
+// No se pierde nada en buscadores: estas páginas nunca se indexaron.
+const CRAWLER_TRAPS = ['/comparar', '/rankings/comparar']
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -50,7 +59,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/perfil/', '/admin/', '/buscar', '/buscar/'],
+        disallow: ['/api/', '/perfil/', '/admin/', '/buscar', '/buscar/', ...CRAWLER_TRAPS],
       },
       // Scrapers SEO: bloqueo total.
       ...SEO_SCRAPERS.map(userAgent => ({ userAgent, disallow: '/' })),
@@ -60,7 +69,7 @@ export default function robots(): MetadataRoute.Robots {
       ...AI_SEARCH_BOTS.map(userAgent => ({
         userAgent,
         allow: '/',
-        disallow: ['/api/', '/perfil/', '/admin/', '/buscar', '/buscar/'],
+        disallow: ['/api/', '/perfil/', '/admin/', '/buscar', '/buscar/', ...CRAWLER_TRAPS],
       })),
     ],
     sitemap: [

@@ -212,7 +212,13 @@ function CandidateGrid({ candidates, p1 }: { candidates: Candidate[]; p1?: strin
                 ? `/comparar?p1=${encodeURIComponent(p1)}&p2=${encodeURIComponent(c.slug)}`
                 : `/comparar?p1=${encodeURIComponent(c.slug)}`
               return (
-                <Link key={c.slug} href={href}
+                // prefetch={false}: el grid pinta hasta 84 tarjetas y /comparar es
+                // dinámico (lee searchParams), así que cada prefetch NO es un fichero
+                // cacheado sino un render de servidor completo — líderes de todas las
+                // ligas + ficha de jugador. Con el prefetch por defecto, una sola visita
+                // encargaba ~84 renders de golpe. Al usuario no le cuesta nada: la
+                // navegación real sigue igual, solo deja de precargarse a ciegas.
+                <Link key={c.slug} href={href} prefetch={false}
                   className="flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all hover:bg-white/5"
                   style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   {c.logo && (

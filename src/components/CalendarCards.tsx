@@ -241,7 +241,7 @@ export function LiveHeroCard(p: HeroProps) {
   )
 
   return p.matchRef
-    ? <Link href={`/partido/${p.matchRef}`} className="block no-underline">{inner}</Link>
+    ? <Link href={`/partido/${p.matchRef}`} prefetch={false} className="block no-underline">{inner}</Link>
     : inner
 }
 
@@ -633,7 +633,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
   }
 
   if (event.matchRef)
-    return <Link href={`/partido/${event.matchRef}`} className="block no-underline">{inner}</Link>
+    return <Link href={`/partido/${event.matchRef}`} prefetch={false} className="block no-underline">{inner}</Link>
 
   if (event.source === 'sanity')
     return <Link href={`/evento/${event.id}`} className="block no-underline">{inner}</Link>

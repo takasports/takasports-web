@@ -1550,7 +1550,7 @@ function H2HBlock({ h2h, homeTeam, awayTeam }: { h2h: H2HResult; homeTeam: strin
               </div>
             )
             return m.matchRef ? (
-              <Link key={m.id} href={`/partido/${m.matchRef}`} className="block no-underline">{row}</Link>
+              <Link key={m.id} href={`/partido/${m.matchRef}`} prefetch={false} className="block no-underline">{row}</Link>
             ) : (
               <div key={m.id}>{row}</div>
             )

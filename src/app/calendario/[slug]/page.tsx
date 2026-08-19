@@ -398,7 +398,7 @@ export default async function CompetitionCalendarPage({
                       return (
                         <li key={ev.id} className="rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                           {ev.matchRef ? (
-                            <Link href={`/partido/${ev.matchRef}`} className="block px-4 py-3 hover:brightness-110 transition-[filter]">
+                            <Link href={`/partido/${ev.matchRef}`} prefetch={false} className="block px-4 py-3 hover:brightness-110 transition-[filter]">
                               <div className="flex items-center gap-3">{inner}</div>
                               {meta && <p className="text-xs text-center truncate mt-1.5" style={{ color: 'var(--text-muted)' }}>{meta}</p>}
                             </Link>

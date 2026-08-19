@@ -361,7 +361,7 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
   )
 
   return matchRef
-    ? <Link href={`/partido/${matchRef}`} style={{ textDecoration: 'none' }}>{card}</Link>
+    ? <Link href={`/partido/${matchRef}`} prefetch={false} style={{ textDecoration: 'none' }}>{card}</Link>
     : card
 }
 
