@@ -331,6 +331,9 @@ function escapeOr(s: string): string {
   return s.replace(/[(),]/g, m => `\\${m}`)
 }
 
+/** Días hacia atrás que cuentan como "forma reciente". Cubre un parón de
+ *  selecciones (~2 semanas) con margen, sin llegar a la temporada anterior. */
+export const FORM_WINDOW_DAYS = 75
 export type FormResult = 'W' | 'D' | 'L'
 
 // Fetch the last N results for each team in the list. Returns a map from
@@ -358,12 +361,23 @@ async function _fetchRecentFormByTeamsUncached(
     .flatMap(t => [`home.eq.${escapeOr(t)}`, `away.eq.${escapeOr(t)}`])
     .join(',')
 
-  // Pull a generous slice — newest 600 rows max. With ~200 teams and a few
-  // games each per month this covers comfortably.
+  // VENTANA DE RECENCIA: la forma es "reciente" o no es forma.
+  //
+  // Sin ella, a un equipo que lleva meses sin jugar se le pintaban como forma
+  // las cinco barritas de la TEMPORADA PASADA. Comprobado el 21/08/2026 sobre
+  // la base real: de las 1.612 filas del archivo, 604 eran del curso anterior,
+  // y equipos como el Eintracht o el Stuttgart —último partido archivado hace
+  // 97 días— salían con forma como si acabaran de jugar.
+  //
+  // Ahora quien decide es la fecha. El tope de filas se queda como red de
+  // seguridad; medido, la consulta devuelve ~120 filas para 200 equipos, así
+  // que nunca ha sido el limitante.
+  const cutoff = new Date(Date.now() - FORM_WINDOW_DAYS * 86_400_000).toISOString()
   const { data, error } = await sb
     .from('past_events')
     .select('home,away,home_score,away_score,iso_date,match_ref,id')
     .or(orFilter)
+    .gte('iso_date', cutoff)
     .order('iso_date', { ascending: false })
     .limit(600)
 
