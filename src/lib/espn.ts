@@ -8,6 +8,7 @@ import { standingsUsable } from './standings-window'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from './nation-names'
 import { athletePhoto } from './athlete-photos'
 import { setsStrFromLinescores } from './tennis-sets'
+import { pickRacingSession } from './racing-sessions'
 
 interface EspnSource {
   slug: string
@@ -221,14 +222,20 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
 
   for (const raw of espnEvents) {
     const ev = raw as Record<string, unknown>
-    const isoDate = ev.date as string | undefined
+
+    // Motor: un Gran Premio es UN evento con VARIAS sesiones y `competitions[0]`
+    // son los libres del viernes. La sesión que representa al GP es la carrera:
+    // de ella salen la hora, el estado y (en el histórico) el ganador.
+    const racing = source.slug.startsWith('racing/')
+    const session = racing ? pickRacingSession(ev.competitions) : null
+    const comp = (session?.comp ?? ((ev.competitions as unknown[]) ?? [])[0]) as Record<string, unknown> | undefined
+    if (!comp) continue
+
+    const isoDate = (racing ? (comp.date as string | undefined) : undefined) ?? (ev.date as string | undefined)
     if (!isoDate) continue
 
     const dateLabel = toDateLabel(isoDate)
     if (dateLabel === 'Pasado') continue
-
-    const comp = ((ev.competitions as unknown[]) ?? [])[0] as Record<string, unknown> | undefined
-    if (!comp) continue
 
     const statusName = ((comp.status as Record<string, unknown>)?.type as Record<string, unknown>)?.name as string | undefined
     if (statusName === 'STATUS_POSTPONED') continue
@@ -277,7 +284,7 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
     const homeTeamId = source.teamSport && competitors.length >= 2
       ? ((competitors.find(c => c.homeAway === 'home') ?? competitors[0])?.team as Record<string, unknown>)?.id as string | undefined
       : undefined
-    const stage = wcGroups ? wcStageLabel(ev, homeTeamId, wcGroups) : undefined
+    const stage = wcGroups ? wcStageLabel(ev, homeTeamId, wcGroups) : session?.label
 
     // UFC: la velada llega como "UFC 329: A vs B" → parseamos los dos peleadores para
     // poner su CARA (foto del top-list curado) en la fila; el resto sale con el nombre.
@@ -639,11 +646,18 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
 
   for (const raw of espnEvents) {
     const ev = raw as Record<string, unknown>
-    const isoDate = ev.date as string | undefined
-    if (!isoDate) continue
 
-    const comp = ((ev.competitions as unknown[]) ?? [])[0] as Record<string, unknown> | undefined
+    // Misma corrección que en los futuros: en motor hay que mirar la CARRERA.
+    // Aquí importa el doble, porque de esta sesión sale el GANADOR: con los
+    // libres, `pastWinner` habría publicado como vencedor del Gran Premio al
+    // más rápido del viernes.
+    const racing = source.slug.startsWith('racing/')
+    const session = racing ? pickRacingSession(ev.competitions) : null
+    const comp = (session?.comp ?? ((ev.competitions as unknown[]) ?? [])[0]) as Record<string, unknown> | undefined
     if (!comp) continue
+
+    const isoDate = (racing ? (comp.date as string | undefined) : undefined) ?? (ev.date as string | undefined)
+    if (!isoDate) continue
 
     const statusName = ((comp.status as Record<string, unknown>)?.type as Record<string, unknown>)?.name as string | undefined
     if (!statusName || !FINAL_STATUSES.has(statusName)) continue
@@ -694,7 +708,7 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
     const homeTeamId = source.teamSport && competitors.length >= 2
       ? ((competitors.find(c => c.homeAway === 'home') ?? competitors[0])?.team as Record<string, unknown>)?.id as string | undefined
       : undefined
-    const stage = wcGroups ? wcStageLabel(ev, homeTeamId, wcGroups) : undefined
+    const stage = wcGroups ? wcStageLabel(ev, homeTeamId, wcGroups) : session?.label
 
     results.push({
       isoDate,
