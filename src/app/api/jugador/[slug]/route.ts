@@ -6,6 +6,7 @@ import { fetchPlayerWikidata, type CareerStint, type Honor } from '@/lib/player-
 import { resolvePlayerSlug } from '@/lib/player-slug'
 import { canonicalTeamSlug } from '@/lib/team-slug'
 import { getPhotosByEspnId } from '@/lib/sport-entities'
+import { buildTennisStats, findTennisRank, type TennisRank } from '@/lib/tennis-profile'
 
 // ── Types ────────────────────────────────────────────────────────────
 export interface PlayerStat {
@@ -89,6 +90,24 @@ const COMP_LABELS: Record<string, string> = {
 }
 
 const COUNTRY_ES: Record<string, string> = {
+  // Los 39 que faltaban salieron de recorrer el top-150 de ATP y WTA: la ficha
+  // de un tenista saca la nacionalidad de la CLASIFICACIÓN (el overview de ESPN
+  // no trae `citizenship` en tenis) y ahí Rybakina salía como "Kazakhstan" y
+  // Fritz como "USA". Ojo con los tres que ESPN nombra a su manera: 'USA'
+  // (no 'United States'), 'Great Britain' (no 'England') y 'Türkiye'.
+  'Andorra': 'Andorra', 'Armenia': 'Armenia', 'Australia': 'Australia',
+  'Austria': 'Austria', 'Belarus': 'Bielorrusia', 'Bolivia': 'Bolivia',
+  'Bosnia and Herzegovina': 'Bosnia y Herzegovina', 'Bulgaria': 'Bulgaria',
+  'Canada': 'Canadá', 'Chile': 'Chile', 'China': 'China', 'Czechia': 'Chequia',
+  'Denmark': 'Dinamarca', 'Finland': 'Finlandia', 'Georgia': 'Georgia',
+  'Great Britain': 'Reino Unido', 'Greece': 'Grecia', 'Hong Kong': 'Hong Kong',
+  'Hungary': 'Hungría', 'Indonesia': 'Indonesia', 'Kazakhstan': 'Kazajistán',
+  'Latvia': 'Letonia', 'Lithuania': 'Lituania', 'Monaco': 'Mónaco',
+  'New Zealand': 'Nueva Zelanda', 'Paraguay': 'Paraguay', 'Peru': 'Perú',
+  'Philippines': 'Filipinas', 'Romania': 'Rumanía', 'Russia': 'Rusia',
+  'Serbia': 'Serbia', 'Slovakia': 'Eslovaquia', 'Slovenia': 'Eslovenia',
+  'Switzerland': 'Suiza', 'Thailand': 'Tailandia', 'Türkiye': 'Turquía',
+  'USA': 'EEUU', 'Ukraine': 'Ucrania', 'Uzbekistan': 'Uzbekistán',
   'Spain': 'España', 'France': 'Francia', 'Brazil': 'Brasil', 'Germany': 'Alemania',
   'England': 'Inglaterra', 'Portugal': 'Portugal', 'Argentina': 'Argentina',
   'Italy': 'Italia', 'Netherlands': 'Países Bajos', 'Belgium': 'Bélgica',
@@ -276,9 +295,17 @@ export async function GET(
   )
 
   // Foto resuelta por el cron — lectura de NUESTRA caché, no de terceros en request.
-  const photoPromise = leagueSlug.startsWith('soccer')
-    ? getPhotosByEspnId('football', [playerId])
-    : null
+  // El tenis entra desde que se sembraron los cuadros ATP/WTA (261 jugadores):
+  // antes la ficha de un tenista salía con las iniciales aunque su cara ya
+  // estuviera resuelta y el calendario la pintase.
+  const entitySport = leagueSlug.startsWith('soccer')
+    ? 'football'
+    : leagueSlug.startsWith('tennis')
+      ? 'tennis'
+      : leagueSlug.startsWith('mma') || leagueSlug.startsWith('ufc')
+        ? 'mma'
+        : null
+  const photoPromise = entitySport ? getPhotosByEspnId(entitySport, [playerId]) : null
 
   // ESPN auto-resolves the player's real domestic competition in the overview's
   // top-level `league` block (e.g. a search slug tagged "uefa.champions" still
@@ -314,6 +341,9 @@ export async function GET(
   const leagueId = leagueSlug.split('/').slice(1).join('.')
   let stats: PlayerStat[] = []
   let season: string | undefined
+  // Bandera y nacionalidad de un tenista salen de la clasificación, no del
+  // overview del atleta (que en tenis no trae ni `flag` ni `citizenship`).
+  let tennisRank: TennisRank | null = null
 
   if (sport === 'soccer') {
     const y = seasonStartYear()
@@ -345,6 +375,26 @@ export async function GET(
         return [{ label: STAT_LABEL_ES[abbr] ?? asString(s?.displayName) ?? abbr, value }]
       })
     }
+  } else if (sport === 'tennis') {
+    // ESPN da 404 en /stats y un gamelog vacío para tenis, pero publica la
+    // CLASIFICACIÓN del tour (150 jugadores con puesto, puntos y semana
+    // anterior) en una sola llamada. Y en tenis el ranking no es una
+    // estadística más: es LA estadística. Ver lib/tennis-profile.ts.
+    const rankJson = await jsonFetch(
+      `https://site.api.espn.com/apis/site/v2/sports/${leagueSlug}/rankings`,
+      3600,
+    )
+    tennisRank = findTennisRank(rankJson, playerId)
+    stats = buildTennisStats(
+      tennisRank,
+      {
+        hand: asString(asObj(ath.hand)?.type),
+        debutYear: asNumber(ath.debutYear),
+        experience: asString(ath.displayExperience),
+      },
+      leagueLabel,
+    )
+    if (stats.length) season = `Ranking ${leagueLabel}`
   } else {
     const ss = asObj(ath.statsSummary)
     season = asString(ss?.displayName)
@@ -387,11 +437,13 @@ export async function GET(
     headshot: asString(asObj(ath.headshot)?.href),
     photo: photo?.url,
     photoAttribution: photo?.attribution ?? undefined,
-    flag: asString(flag?.href),
+    flag: asString(flag?.href) ?? tennisRank?.flag,
     position: asString(position?.displayName) ?? asString(position?.name),
     jersey: asString(ath.jersey),
     age: asNumber(ath.age),
-    nationality: citizenshipEn ? (COUNTRY_ES[citizenshipEn] ?? citizenshipEn) : asString(flag?.alt),
+    nationality: citizenshipEn
+      ? (COUNTRY_ES[citizenshipEn] ?? citizenshipEn)
+      : (asString(flag?.alt) ?? (tennisRank?.flagAlt ? (COUNTRY_ES[tennisRank.flagAlt] ?? tennisRank.flagAlt) : undefined)),
     height: asString(ath.displayHeight),
     birthDate: asString(ath.dateOfBirth)?.slice(0, 10),
     team: teamId
