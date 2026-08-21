@@ -9,7 +9,7 @@ import Link from 'next/link'
 import type { SportEvent, TeamStanding } from '@/lib/types'
 import type { FormResult } from '@/lib/past-events'
 import { matchStakes, standingLabel } from '@/lib/match-stakes'
-import { canonicalTeamSlug } from '@/lib/entity-slug'
+import { canonicalPlayerSlug, canonicalTeamSlug } from '@/lib/entity-slug'
 import { getLiveLabel, isCombat, isRacing, isTennis } from '@/lib/competitions'
 import { getBroadcastForTz, isSplitBroadcast } from '@/lib/broadcasts'
 import { formatDateLabel, isoToLocalDate } from '@/lib/calendar'
@@ -575,14 +575,24 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
   const stakes = finished ? null : matchStakes(event.homeStanding, event.awayStanding)
   // El historial solo tiene sentido ANTES de jugarse (después manda el marcador).
   const h2hNote = finished || isLive ? null : event.h2hNote
-  // Destino del NOMBRE de cada lado: su ficha de equipo. Sin id no hay slug
-  // posible → el nombre queda como texto, que es mejor que un enlace roto.
-  // (Tenis/UFC no enlazan: no hay ni un jugador de esos deportes en
-  // `sport_entities`, así que /jugador/<tenista> sería un 404.)
-  const sideHref = (teamId?: string, name?: string): string | null =>
-    teamId && name ? `/equipo/${canonicalTeamSlug(name, teamId)}` : null
-  const homeHref = sideHref(event.homeTeamId, rawHome)
-  const awayHref = sideHref(event.awayTeamId, rawAway)
+  // Destino del NOMBRE de cada lado: su ficha. Sin id no hay slug posible → el
+  // nombre queda como texto, que es mejor que un enlace roto.
+  //
+  // En tenis manda el ATLETA. Esto estuvo anotado como imposible («el scoreboard
+  // no trae athlete.id y `sport_entities` no tiene ni un tenista → 404»), y las
+  // dos mitades caducaron el 21/08/2026: la siembra de los cuadros ATP/WTA metió
+  // 261 jugadores, y los 16 del feed traen su id de ESPN. Comprobado contra
+  // producción: /jugador/iga-swiatek-3730 responde con su ficha.
+  //
+  // UFC sigue sin enlazar, y no por lo mismo: el feed trae VELADAS enteras
+  // («UFC Fight Night: Hernandez»), sin dos luchadores que enlazar.
+  const sideHref = (teamId?: string, athleteId?: string, name?: string): string | null => {
+    if (!name) return null
+    if (athleteId) return `/jugador/${canonicalPlayerSlug(name, athleteId)}`
+    return teamId ? `/equipo/${canonicalTeamSlug(name, teamId)}` : null
+  }
+  const homeHref = sideHref(event.homeTeamId, event.homeAthleteId, rawHome)
+  const awayHref = sideHref(event.awayTeamId, event.awayAthleteId, rawAway)
 
   // Destino de la tarjeta: ficha del partido, o del evento si viene de Sanity.
   const cardHref = event.matchRef
