@@ -101,6 +101,14 @@ export interface SportEvent {
   /** Historial en una línea ("3 victorias seguidas del Atlético"). Solo en los
    *  cruces con motivo de tabla — ver lib/h2h-notes.ts. */
   h2hNote?: string
+  /** Cómo acabó, si no fue de la forma normal: "Abandono" (STATUS_RETIRED) o
+   *  "W.O." (STATUS_WALKOVER). Sin esto un abandono se anunciaba como
+   *  "Final 0 – 0", que es cierto (nadie cerró un set) pero no se entiende. */
+  finishNote?: string
+  /** Tenis: set a set ("7-6 2-6 5-7"). En DIRECTO lo sirve /api/events/live con
+   *  el set activo marcado; cuando el partido acaba desaparece de ahí, así que
+   *  el propio evento lo lleva fijado desde los `linescores` del scoreboard. */
+  setsStr?: string
 }
 
 // Evento desde Sanity (futuro)

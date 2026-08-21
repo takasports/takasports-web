@@ -6,6 +6,7 @@ import { FOOTBALL_LEAGUES, TABLE_LEAGUE_SLUGS } from './football-leagues'
 import { fetchLeagueTableRows, standingsAreMeaningful } from './espn-standings'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from './nation-names'
 import { athletePhoto } from './athlete-photos'
+import { setsStrFromLinescores } from './tennis-sets'
 
 interface EspnSource {
   slug: string
@@ -60,6 +61,14 @@ function espnHeadshot(competitor: Record<string, unknown> | undefined): string |
   if (typeof hs === 'string') return hs
   const href = (hs as { href?: string }).href
   return typeof href === 'string' ? href : undefined
+}
+
+// Final "no normal" de un partido de tenis. Un abandono deja los sets sin
+// cerrar, así que la fila mostraba "Final 0 - 0": cierto y a la vez ilegible.
+function tennisFinishNote(statusName: string | undefined): string | undefined {
+  if (statusName === 'STATUS_RETIRED') return 'Abandono'
+  if (statusName === 'STATUS_WALKOVER') return 'W.O.'
+  return undefined
 }
 
 const DAYS_ES   = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
@@ -359,9 +368,14 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
         const dateLabel = toDateLabel(isoDate)
         if (dateLabel === 'Pasado') continue
 
-        const statusName = ((m.status as Record<string, unknown>)?.type as Record<string, unknown>)?.name as string | undefined
+        const statusType = (m.status as Record<string, unknown>)?.type as Record<string, unknown> | undefined
+        const statusName = statusType?.name as string | undefined
         if (statusName === 'STATUS_POSTPONED') continue
         if (statusName && FINAL_STATUSES.has(statusName) && dateLabel !== 'Hoy') continue
+        // Bandera de ESPN "el partido ya no sigue": cubre FINAL y también
+        // STATUS_RETIRED (abandono), que NO está en FINAL_STATUSES y por eso
+        // sigue viviendo en el feed como si estuviera por jugarse.
+        const isOver = statusType?.completed === true
 
         const competitors = (m.competitors as Record<string, unknown>[]) ?? []
         if (competitors.length < 2) continue
@@ -394,6 +408,29 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
             // (ESPN lo da en el propio scoreboard). Si falta, la fila muestra solo el nombre.
             homePhoto: espnHeadshot(competitors[0]) ?? athletePhoto(home),
             awayPhoto: espnHeadshot(competitors[1]) ?? athletePhoto(away),
+            // Los partidos de HOY ya terminados siguen en el feed (arriba solo se
+            // descartan los finales de OTROS días): al salir del directo, este es
+            // el único sitio del que la fila puede sacar el set a set.
+            //
+            // SOLO si el partido ya acabó: en uno EN JUEGO, los linescores traen
+            // el set en curso y aquí no hay forma de marcarlo como activo, así que
+            // "1-4" se leería como un set cerrado. Mientras se juega manda el
+            // directo, que sí distingue el set abierto.
+            setsStr:   isOver
+              ? (setsStrFromLinescores(competitors[0]?.linescores, competitors[1]?.linescores) || undefined)
+              : undefined,
+            // Un partido de HOY ya acabado tiene que PARECERLO: sin esto el feed
+            // lo servía como si estuviera por jugarse (sin marcador y sin marca de
+            // final), así que la fila enseñaba la hora del saque de un partido
+            // terminado — y nunca llegaba a pintar el set a set.
+            ...(isOver
+              ? {
+                  isPast: true,
+                  homeScore: countTennisSets(competitors[0]),
+                  awayScore: countTennisSets(competitors[1]),
+                  finishNote: tennisFinishNote(statusName),
+                }
+              : {}),
             source:    'espn' as const,
           },
         })
@@ -757,6 +794,10 @@ async function fetchTennisPast(slug: string, daysBack = 10): Promise<RawEvent[]>
             matchRef,
             homeScore: countTennisSets(competitors[0]),
             awayScore: countTennisSets(competitors[1]),
+            // Set a set FIJADO: al acabar, el partido sale de /api/events/live y
+            // con él su setsStr, así que la fila se quedaba solo con los sets
+            // ganados. Los linescores del scoreboard lo conservan.
+            setsStr:   setsStrFromLinescores(competitors[0]?.linescores, competitors[1]?.linescores) || undefined,
             homePhoto: espnHeadshot(competitors[0]) ?? athletePhoto(home),
             awayPhoto: espnHeadshot(competitors[1]) ?? athletePhoto(away),
             isPast:    true,

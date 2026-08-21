@@ -591,9 +591,12 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
       ? `/evento/${event.id}`
       : null
 
-  // Tenis: set a set. Solo cuando hay marcador real (en juego o terminado); en un
-  // partido por empezar no hay nada que enseñar.
-  const tennisSets = tennis && (isLive || finished) ? (liveScore?.setsStr ?? '') : ''
+  // Tenis: set a set. Del directo mientras se juega (trae el set activo marcado)
+  // y, cuando acaba y desaparece de /api/events/live, del propio evento (fijado
+  // desde los linescores del scoreboard). En un partido por empezar, nada.
+  const tennisSets = tennis && (isLive || finished)
+    ? (liveScore?.setsStr || event.setsStr || '')
+    : ''
 
   // Pronosticar: solo mientras el partido no haya arrancado (la quiniela cierra).
   const showPredict = !!canPredict && !isLive && !finished && !!onPredict
@@ -706,8 +709,10 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
                 {liveLabel}
               </span>
             ) : finished ? (
-              <span className="text-[8.5px] font-black uppercase tracking-[0.06em] rounded-full flex-shrink-0" style={{ padding: '2.5px 9px', color: '#9A9AAE', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', fontFamily: 'var(--font-sport)' }}>
-                Final
+              /* "Abandono" / "W.O." cuando el partido no acabó de forma normal
+                 (event.finishNote); si no, el "Final" de siempre. */
+              <span className="text-[8.5px] font-black uppercase tracking-[0.06em] rounded-full flex-shrink-0" style={{ padding: '2.5px 9px', color: event.finishNote ? '#C9A96A' : '#9A9AAE', background: event.finishNote ? 'rgba(201,169,106,0.1)' : 'rgba(255,255,255,0.05)', border: `1px solid ${event.finishNote ? 'rgba(201,169,106,0.28)' : 'rgba(255,255,255,0.1)'}`, fontFamily: 'var(--font-sport)' }}>
+                {event.finishNote ?? 'Final'}
               </span>
             ) : null}
             {eyebrowText ? (

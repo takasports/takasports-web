@@ -60,3 +60,29 @@ export function formatTennisSets(homeStr: string | undefined): string {
   }
   return parts.join(' ')
 }
+
+// ── Set a set desde `linescores` (partidos TERMINADOS del scoreboard) ────────
+// El directo (/api/events/live) da el marcador como cadena y de ahí sale el
+// setsStr con el set activo marcado. Pero cuando el partido ACABA y sale del
+// directo, la única fuente que queda es el scoreboard, que da los sets como
+// arrays por jugador: [{value:7,tiebreak:7,winner:true},{value:2},...]. Este
+// conversor los cruza en la misma línea "7-6 2-6 5-7" (sin asterisco: no hay
+// set en juego). Devuelve '' si los arrays no cuadran — mejor nada que una
+// línea a medias que parezca un resultado real.
+
+export interface TennisLinescore {
+  value?: number
+}
+
+export function setsStrFromLinescores(homeLs: unknown, awayLs: unknown): string {
+  if (!Array.isArray(homeLs) || !Array.isArray(awayLs)) return ''
+  if (homeLs.length === 0 || homeLs.length !== awayLs.length) return ''
+  const parts: string[] = []
+  for (let i = 0; i < homeLs.length; i++) {
+    const a = (homeLs[i] as TennisLinescore | undefined)?.value
+    const b = (awayLs[i] as TennisLinescore | undefined)?.value
+    if (typeof a !== 'number' || typeof b !== 'number') return ''
+    parts.push(`${a}-${b}`)
+  }
+  return parts.join(' ')
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSetsWon, parseCurrentSetScore, formatTennisSets } from './tennis-sets'
+import { parseSetsWon, parseCurrentSetScore, formatTennisSets, setsStrFromLinescores } from './tennis-sets'
 
 describe('parseSetsWon', () => {
   it('cuenta los sets ganados por cada jugador', () => {
@@ -56,5 +56,29 @@ describe('formatTennisSets', () => {
   it('sin marcador devuelve cadena vacía', () => {
     expect(formatTennisSets(undefined)).toBe('')
     expect(formatTennisSets('')).toBe('')
+  })
+})
+
+describe('setsStrFromLinescores', () => {
+  const ls = (...vals: number[]) => vals.map(value => ({ value }))
+
+  it('cruza los sets de los dos jugadores en una línea', () => {
+    // Caso real WTA 21/08/2026: Sweeny 7-6(7) 2-6 5-7.
+    expect(setsStrFromLinescores(ls(7, 2, 5), ls(6, 6, 7))).toBe('7-6 2-6 5-7')
+  })
+
+  it('sin marcar ningún set como activo (el partido está terminado)', () => {
+    expect(setsStrFromLinescores(ls(6, 6), ls(4, 2))).not.toContain('*')
+  })
+
+  it('arrays descuadrados o vacíos devuelven cadena vacía', () => {
+    expect(setsStrFromLinescores(ls(6, 4), ls(4))).toBe('')
+    expect(setsStrFromLinescores([], [])).toBe('')
+    expect(setsStrFromLinescores(undefined, ls(4))).toBe('')
+    expect(setsStrFromLinescores('6-4', '4-6')).toBe('')
+  })
+
+  it('un set sin value invalida la línea entera (nada de resultados a medias)', () => {
+    expect(setsStrFromLinescores([{ value: 6 }, {}], ls(4, 6))).toBe('')
   })
 })
