@@ -9,7 +9,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { SportEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
-import { SPORT_THEME, getEventHighlightScore, isCombat, isMundial, sportThemeKey } from '@/lib/competitions'
+import { SPORT_THEME, getEventHighlightScore, getLeagueScore, isCombat, isMundial, sportThemeKey } from '@/lib/competitions'
+import { orderCompGroups } from '@/lib/comp-group-order'
 import { formatDateLabel, groupDayByCompetition, groupEventsByDate, isoToLocalDate, namesMatch, orderedDateKeys } from '@/lib/calendar'
 import { nameMatch } from '@/lib/quiniela'
 import { SOURCE_TZ, TZ_KEY, getStoredTZ, setStoredTZ } from '@/lib/timezone'
@@ -1339,12 +1340,23 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               // hora los partidos DENTRO de cada liga. En Destacados venían por
               // relevancia ("caché"), no por hora → ver groupDayByCompetition.
               const { order: compOrder, byComp } = groupDayByCompetition(dayEvents)
-              // Ligas fijadas primero (orden estable; el resto, primera aparición).
-              compOrder.sort((a, b) => {
-                const pa = favComps.has(compConfigForGroup(a, byComp[a][0]?.sport)?.slug ?? '') ? 1 : 0
-                const pb = favComps.has(compConfigForGroup(b, byComp[b][0]?.sport)?.slug ?? '') ? 1 : 0
-                return pb - pa
-              })
+              // Orden de las LIGAS: fijadas → en vivo → por jugarse → terminadas,
+              // y dentro de cada estado por importancia. Antes era el orden de
+              // primera aparición, o sea la hora del primer partido: la Liga
+              // Argentina de madrugada, ya en FINAL, encabezaba el día por
+              // delante de Premier y LaLiga. Ver lib/comp-group-order.ts.
+              const orderedComps = orderCompGroups(
+                compOrder.map(comp => ({
+                  comp,
+                  pinned: favComps.has(compConfigForGroup(comp, byComp[comp][0]?.sport)?.slug ?? ''),
+                  events: byComp[comp].map(e => ({
+                    isoDate: e.isoDate,
+                    live: liveScores.has(e.id) && isLiveStatus(liveScores.get(e.id)?.status ?? ''),
+                    over: e.isPast === true || (e.homeScore != null && e.awayScore != null),
+                  })),
+                })),
+                getLeagueScore,
+              )
               return (
                 // key incluye el filtro/fecha/onlyLive: al cambiarlos la sección
                 // se re-monta y dispara la entrada en cascada (Fase B). No incluye
@@ -1358,7 +1370,7 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                     tone={dateKey < todayKey ? 'past' : 'upcoming'}
                     tz={tz}
                   />
-                  {compOrder.map((comp, compIdx) => {
+                  {orderedComps.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     // FASE 3 (José Tomás 2026-07-09): cabecera de liga en el color
                     // POR DEPORTE (verde fútbol, ámbar básket…), igual que las tarjetas
