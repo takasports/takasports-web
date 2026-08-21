@@ -72,6 +72,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // filas. Se pide en cliente (una vez, al montar) para no meter /api/quiniela
   // en el camino del SSR del calendario, que se regenera cada 300 s.
   const [predictableRefs, setPredictableRefs] = useState<Set<string>>(new Set())
+  // Buscador plegado tras la lupa: al entrar, la mayoría viene a MIRAR el día, no
+  // a buscar. Plegado ahorra una fila entera de cabecera (medido: de 353 px hasta
+  // el primer partido a 256). Se abre solo si ya hay texto escrito.
+  const [searchOpen, setSearchOpen] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set())
   // Histórico extendido (pestaña Resultados) — busca/pagina contra /api/events/past
@@ -1140,16 +1144,41 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
             WebkitBackdropFilter: 'blur(8px)',
           }}
         >
-          {availableDays.length > 0 && (
-            <div className="mb-2.5">
+          {/* UNA fila de controles: fecha + buscador (plegado tras la lupa) + en vivo.
+              Antes eran tres —fecha, buscador y "Mis deportes"— y empujaban el primer
+              partido 353 px hacia abajo en una pantalla de 900. */}
+          <div className="flex items-center gap-2 pb-1 -mx-1 px-1">
+            {availableDays.length > 0 && !searchOpen && (
               <DayChips days={availableDays} value={selectedDate} onChange={setSelectedDate} tz={tz} />
-            </div>
-          )}
-          {/* Toolbar — single scrollable row on mobile, two-row layout on sm+ */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
-            <SearchInput value={searchRaw} onChange={setSearchRaw} />
-            {/* Divider */}
-            <div className="flex-shrink-0 w-px h-4" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            )}
+            {searchOpen || searchRaw ? (
+              <>
+                <SearchInput value={searchRaw} onChange={setSearchRaw} />
+                <button
+                  onClick={() => { setSearchRaw(''); setSearchOpen(false) }}
+                  aria-label="Cerrar búsqueda"
+                  className="cal-press flex items-center justify-center rounded-full flex-shrink-0"
+                  style={{ width: 28, height: 28, background: 'rgba(255,255,255,0.05)', color: '#9090A8', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden>
+                    <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setSearchOpen(true)}
+                aria-label="Buscar equipo o competición"
+                className="cal-press flex items-center justify-center rounded-full flex-shrink-0"
+                style={{ width: 30, height: 30, background: 'rgba(255,255,255,0.04)', color: '#9090A8', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden>
+                  <circle cx="5" cy="5" r="3.4" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M7.6 7.6L10.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+            <span className="flex-1" />
             <button
               onClick={() => setOnlyLive(v => !v)}
               aria-pressed={onlyLive}
@@ -1165,8 +1194,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 boxShadow: onlyLive ? '0 0 12px rgba(255,77,46,0.18)' : 'none',
               }}
             >
-              {onlyLive && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#FF4D2E' }} />}
-              En vivo
+              {liveCount > 0 && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#FF4D2E' }} />}
+              {liveCount > 0 ? `${liveCount} en vivo` : 'En vivo'}
             </button>
             {hasActiveFilters && (
               <>
@@ -1205,37 +1234,10 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
               onSelectSport={(k) => { setActiveComp(null); setActiveFilter(k) }}
               onSelectComp={(slug) => { if (activeComp === slug) { setActiveComp(null) } else { setActiveFilter('Todo'); setActiveComp(slug) } }}
             />
-            {/* "Mis deportes": personaliza los Destacados. Vacío → se ven todos.
-                Se sincroniza con la app (usuarios con sesión). Editor completo en el
-                Perfil (fase posterior); aquí una fila mínima de chips. */}
-            {activeFilter === 'Destacados' && (
-              <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                <span className="text-[10px] font-black uppercase tracking-widest flex-shrink-0"
-                  style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
-                  Mis deportes
-                </span>
-                {FOLLOWABLE_SPORTS.map((slug) => {
-                  const on = followedSports.has(slug)
-                  return (
-                    <button
-                      key={slug}
-                      type="button"
-                      onClick={() => toggleFollowedSport(slug)}
-                      aria-pressed={on}
-                      className="flex-shrink-0 text-[11px] font-bold px-2.5 py-1.5 rounded-full transition-all"
-                      style={{
-                        background: on ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.04)',
-                        color: on ? '#C4B5FD' : '#8A8AA0',
-                        border: on ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.08)',
-                        fontFamily: 'var(--font-sport)',
-                      }}
-                    >
-                      {SLUG_TO_LABEL[slug] ?? slug}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+            {/* "Mis deportes" ya no vive aquí: era la CUARTA fila de controles y
+                repetía el concepto de "Destacados" justo debajo. Se edita en el
+                panel del ♥ de la cabecera, junto a los equipos que sigues, que es
+                donde el usuario ya va a buscar "lo mío". */}
           </div>
         </div>
       )}

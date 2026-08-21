@@ -61,6 +61,10 @@ export const COMPETITIONS: CompetitionConfig[] = [
     shortName: 'LaLiga',
     sport: 'Fútbol',
     matchComp: 'LaLiga',
+    // EXACTO: "LaLiga" es prefijo de "LaLiga 2", así que por subcadena la
+    // Segunda se colaba en la Primera — 34 partidos pasaban a 67, tanto en el
+    // filtro del calendario como en /calendario/laliga.
+    matchExact: true,
     description: 'Todos los partidos de la temporada de LaLiga: fechas, horarios, estadios y dónde verlos.',
     seasonLabel: '2025-2026',
     banner: '/banners/laliga.webp',

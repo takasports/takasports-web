@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { FOLLOWABLE_SPORTS, useFollowedSports } from '@/lib/useFollowedSports'
+import { SLUG_TO_LABEL } from '@/lib/sports'
 import Image from 'next/image'
 import { StarIcon } from '@/components/icons/GameIcons'
 
@@ -162,6 +164,10 @@ interface Props {
 }
 
 export default function FavoritesOnboarding({ onClose, onSave }: Props) {
+  // Deportes seguidos: vivían en una fila propia de la cabecera del calendario
+  // (cuarta fila de controles). Se mudan aquí, que es el sitio de "lo que sigues",
+  // y así la cabecera baja de cuatro filas a dos.
+  const { sports: followedSports, toggle: toggleFollowedSport } = useFollowedSports()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState<string>('Todos')
 
@@ -269,6 +275,40 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
               </svg>
             </button>
           </div>
+        </div>
+
+        {/* Deportes que sigues — ordenan los Destacados del calendario. */}
+        <div className="px-5 pt-3 pb-1">
+          <p className="text-[10px] font-black uppercase tracking-widest mb-2"
+            style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+            Deportes que sigues
+          </p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {FOLLOWABLE_SPORTS.map((slug) => {
+              const on = followedSports.has(slug)
+              return (
+                <button
+                  key={slug}
+                  type="button"
+                  onClick={() => toggleFollowedSport(slug)}
+                  aria-pressed={on}
+                  className="text-[11px] font-bold px-2.5 py-1.5 rounded-full transition-all"
+                  style={{
+                    background: on ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.04)',
+                    color: on ? '#C4B5FD' : '#8A8AA0',
+                    border: on ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    fontFamily: 'var(--font-sport)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {SLUG_TO_LABEL[slug] ?? slug}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[10px] mt-2" style={{ color: '#5C5C6C', fontFamily: 'var(--font-sport)' }}>
+            Sin ninguno marcado se ven todos.
+          </p>
         </div>
 
         {/* Sport filters */}
