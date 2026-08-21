@@ -24,6 +24,11 @@ export function normalizeStr(s: string): string {
 
 export function namesMatch(a: string, b: string): boolean {
   const na = normalizeStr(a), nb = normalizeStr(b)
+  // Un lado VACÍO no casa con nada. Sin esto, `''.includes(x)` es falso pero
+  // `x.includes('')` es TRUE, así que cualquier evento sin rival (una carrera de
+  // F1, una velada de UFC, un torneo de pádel) casaba con CUALQUIER texto: salía
+  // en todas las búsquedas y podía llevarse el marcador en vivo de otro partido.
+  if (!na || !nb) return false
   return na.includes(nb) || nb.includes(na)
 }
 

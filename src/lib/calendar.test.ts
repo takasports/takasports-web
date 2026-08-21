@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isoToLocalDate, groupEventsByDate, formatDateLabel } from './calendar'
+import { isoToLocalDate, groupEventsByDate, formatDateLabel, namesMatch } from './calendar'
 import type { SportEvent } from './types'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -60,5 +60,21 @@ describe('formatDateLabel — "Hoy" se calcula en el huso del usuario', () => {
 
   it('"Sin fecha" para unknown', () => {
     expect(formatDateLabel('unknown')).toBe('Sin fecha')
+  })
+})
+
+describe('namesMatch', () => {
+  it('empareja por subcadena en los dos sentidos', () => {
+    expect(namesMatch('Real Madrid', 'madrid')).toBe(true)
+    expect(namesMatch('Atlético', 'Atlético de Madrid')).toBe(true)
+    expect(namesMatch('Arsenal', 'Chelsea')).toBe(false)
+  })
+
+  it('un lado vacío NO casa con nada', () => {
+    // La carrera de F1 no tiene rival: sin esta guardia salía en toda búsqueda,
+    // porque 'loquesea'.includes('') es true.
+    expect(namesMatch('', 'Tirante')).toBe(false)
+    expect(namesMatch('Tirante', '')).toBe(false)
+    expect(namesMatch('', '')).toBe(false)
   })
 })
