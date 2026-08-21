@@ -829,10 +829,14 @@ export function DaySeparator({ dateKey, count, liveCount = 0, mineCount = 0, ton
         <div className="flex items-center gap-3 min-w-0">
           <span className="block flex-shrink-0 rounded-sm" style={{ width: 4, height: 20, background: bar }} />
           <div className="min-w-0">
-            <h2 className="font-black leading-none uppercase tracking-[0.18em]"
-              style={{ fontFamily: 'var(--font-sport)', fontSize: 14, color: tone === 'past' ? '#B8B8C8' : '#F0F0FA' }}>
-              {label}
-            </h2>
+            {/* El título del día enlaza a su URL propia (/calendario/dia/…): da a
+                cada jornada una página indexable y un sitio al que volver. */}
+            <Link href={`/calendario/dia/${dateKey}`} prefetch={false} className="no-underline hover:brightness-125">
+              <h2 className="font-black leading-none uppercase tracking-[0.18em]"
+                style={{ fontFamily: 'var(--font-sport)', fontSize: 14, color: tone === 'past' ? '#B8B8C8' : '#F0F0FA' }}>
+                {label}
+              </h2>
+            </Link>
             {subtitle && (
               <p className="text-[10px] mt-1 first-letter:uppercase tracking-wide" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
                 {subtitle}

@@ -18,6 +18,25 @@ const RANKINGS_LASTMOD = new Date('2026-05-28T00:00:00Z')
 const SPORT_HUB_FALLBACK_LASTMOD = new Date('2026-05-28T00:00:00Z')
 const TAG_LASTMOD = new Date('2026-05-28T00:00:00Z')
 
+// Ventana de días del calendario que entran al sitemap (ver /calendario/dia).
+function calendarDayUrls(): MetadataRoute.Sitemap {
+  const today = new Date()
+  const iso = (n: number) => {
+    const d = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + n))
+    return d.toISOString().slice(0, 10)
+  }
+  const out: MetadataRoute.Sitemap = []
+  for (let n = -1; n <= 14; n++) {
+    out.push({
+      url: `${BASE_URL}/calendario/dia/${iso(n)}`,
+      lastModified: today,
+      changeFrequency: 'daily' as const,
+      priority: n === 0 ? 0.8 : 0.6,
+    })
+  }
+  return out
+}
+
 function mostRecent(items: Array<{ publishedAt?: string; _updatedAt?: string }>): Date {
   let max = 0
   for (const a of items) {
@@ -166,6 +185,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const,
       priority: 0.75,
     })),
+    // Páginas de día (/calendario/dia/YYYY-MM-DD). Solo la ventana con datos
+    // reales: ayer + las dos próximas semanas. Más atrás el interés de búsqueda
+    // cae en picado y más adelante el feed aún no tiene partidos que enseñar.
+    // `lastModified` = hoy a propósito: su contenido cambia cada día.
+    ...calendarDayUrls(),
   ]
 
   // Combina entradas estáticas curadas + entradas auto-generadas de DB (top 2000)
