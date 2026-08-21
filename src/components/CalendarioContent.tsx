@@ -6,6 +6,7 @@ import { CompGroupHeader, DaySeparator, LiveHeroCard, LiveHeroStrip, MatchRow, S
 import { DayChips } from './CalendarDatePicker'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { SportEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
 import { SPORT_THEME, getEventHighlightScore, isCombat, isMundial, sportThemeKey } from '@/lib/competitions'
@@ -65,7 +66,12 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
   // Deportes seguidos (personalización de "Destacados"). Local + nube (sport:<slug>),
   // compartido con la app. Vacío → no filtra (se ve todo).
   const { sports: followedSports, toggle: toggleFollowedSport } = useFollowedSports()
+  const router = useRouter()
   const [onlyLive, setOnlyLive] = useState(false)
+  // matchRefs de la jornada ABIERTA de la quiniela → chip "Pronosticar" en esas
+  // filas. Se pide en cliente (una vez, al montar) para no meter /api/quiniela
+  // en el camino del SSR del calendario, que se regenera cada 300 s.
+  const [predictableRefs, setPredictableRefs] = useState<Set<string>>(new Set())
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [flashIds, setFlashIds] = useState<Set<string>>(new Set())
   // Histórico extendido (pestaña Resultados) — busca/pagina contra /api/events/past
@@ -171,6 +177,30 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
       window.history.replaceState(null, '', newUrl)
     } catch { /* ignore */ }
   }, [view, activeFilter, selectedDate])
+
+  const goToPredicciones = useCallback(() => { router.push('/predicciones') }, [router])
+
+  // Jornada abierta de la quiniela → qué partidos del calendario se pueden
+  // pronosticar. El matchRef del evento es `{slug con _}_{espnId}`, que es
+  // exactamente lo que reconstruimos aquí desde leagueSlug + espnId.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/quiniela')
+        if (!res.ok) return
+        const data = await res.json() as { matches?: Array<{ espnId?: string; leagueSlug?: string }> }
+        const refs = new Set<string>()
+        for (const m of data.matches ?? []) {
+          if (m.espnId && m.leagueSlug) refs.add(`${m.leagueSlug.replace('/', '_')}_${m.espnId}`)
+        }
+        if (!cancelled && refs.size) setPredictableRefs(refs)
+      } catch {
+        /* sin quiniela disponible → simplemente no aparece el chip */
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   // Carga la ventana de días PASADOS del timeline (una sola vez, al montar). El
   // endpoint con live=1 cubre los ~10 días recientes: los traemos de golpe y los
@@ -1352,6 +1382,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                               onToggleFav={() => toggleFavorite(event.home)}
                               formHome={recentForms[formKey(event, event.home)]}
                               formAway={event.away ? recentForms[formKey(event, event.away)] : undefined}
+                              canPredict={!!event.matchRef && predictableRefs.has(event.matchRef)}
+                              onPredict={goToPredicciones}
                               showReason={activeFilter === 'Destacados'}
                               tz={tz}
                             />
@@ -1430,6 +1462,8 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                       onToggleFav={() => toggleFavorite(event.home)}
                       formHome={recentForms[formKey(event, event.home)]}
                       formAway={event.away ? recentForms[formKey(event, event.away)] : undefined}
+                      canPredict={!!event.matchRef && predictableRefs.has(event.matchRef)}
+                      onPredict={goToPredicciones}
                       tz={tz}
                     />
                   )

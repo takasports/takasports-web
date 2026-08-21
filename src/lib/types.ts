@@ -90,6 +90,9 @@ export interface SportEvent {
   // fetchEspnEvents en una pasada final, así la reciben web Y app (feed).
   homeStanding?: TeamStanding
   awayStanding?: TeamStanding
+  /** Historial en una línea ("3 victorias seguidas del Atlético"). Solo en los
+   *  cruces con motivo de tabla — ver lib/h2h-notes.ts. */
+  h2hNote?: string
 }
 
 // Evento desde Sanity (futuro)

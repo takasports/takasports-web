@@ -423,7 +423,7 @@ export function MatchCrest({ photo, logo, accent, fav }: { photo?: string; logo?
 // ancho. Favorito = anillo en el escudo (se gestiona en "Mis equipos", como la app).
 // Recordatorio = campana mínima arriba-dcha SOLO en próximos (la web no tiene toque
 // largo). Conserva onClickUFC (modal cartelera), liveScore, tz y la agrupación por liga.
-export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, homeFav, awayFav, formHome, formAway, showComp, tz }: {
+export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, homeFav, awayFav, formHome, formAway, canPredict, onPredict, showComp, tz }: {
   event: SportEvent
   liveScore?: LiveScore
   isReminded: boolean
@@ -438,6 +438,10 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
   onToggleFav?: () => void
   formHome?: ('W'|'D'|'L')[]
   formAway?: ('W'|'D'|'L')[]
+  /** Este partido ENTRA en la jornada abierta de la quiniela → chip Pronosticar.
+   *  Solo unos 10 de todo el feed, así que no ensucia la lista. */
+  canPredict?: boolean
+  onPredict?: () => void
   showComp?: boolean
   showReason?: boolean
   tz?: string
@@ -512,6 +516,10 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
   // clasificación que traemos es la de HOY, no la de aquel día) → solo en
   // próximos y en directo.
   const stakes = finished ? null : matchStakes(event.homeStanding, event.awayStanding)
+  // El historial solo tiene sentido ANTES de jugarse (después manda el marcador).
+  const h2hNote = finished || isLive ? null : event.h2hNote
+  // Pronosticar: solo mientras el partido no haya arrancado (la quiniela cierra).
+  const showPredict = !!canPredict && !isLive && !finished && !!onPredict
   // Hueco a la derecha para no chocar con la pastilla/campana absolutas.
   // El estado ya NO va en la esquina (pasa a ceja centrada) → el marcador queda CENTRADO;
   // solo reservamos hueco a la dcha para la campana de recordatorio en próximos.
@@ -588,7 +596,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
       <div className="relative" style={{ zIndex: 1, paddingRight: contentPadRight }}>
         {/* Ceja CENTRADA encima del marcador: estado (EN VIVO·min / DESCANSO / FINAL) +
             fecha (Recordatorios) + título de velada / competición. */}
-        {(isLive || finished || eyebrowText || dateLabel || stakes) ? (
+        {(isLive || finished || eyebrowText || dateLabel || stakes || showPredict) ? (
           <div className="flex items-center justify-center gap-1.5" style={{ marginBottom: 5 }}>
             {dateLabel ? (
               <span className="flex-shrink-0 rounded-full" style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '1px 6px', color: accent, background: `${accent}14`, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
@@ -619,6 +627,23 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
             {/* Motivo del partido derivado de la tabla ("Líder vs 2º",
                 "Duelo de descenso"…). Realza lo importante en vez de esconder
                 lo secundario, que era lo único que sabía hacer "Destacados". */}
+            {/* Puente al juego: solo en los partidos de la jornada abierta.
+                Es un <button> y no un <a> porque toda la fila ya es un enlace
+                a la ficha (mismo apaño que la campana de recordatorio). */}
+            {showPredict ? (
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPredict?.() }}
+                className="inline-flex items-center gap-1 rounded-full flex-shrink-0 transition-colors hover:brightness-125"
+                style={{
+                  fontSize: 8.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em',
+                  padding: '2px 8px', fontFamily: 'var(--font-sport)', cursor: 'pointer',
+                  color: '#C4B5FD', background: 'rgba(124,58,237,0.16)', border: '1px solid rgba(124,58,237,0.4)',
+                }}
+                aria-label={`Pronosticar ${home}${away ? ` contra ${away}` : ''} en la quiniela`}
+              >
+                Pronosticar
+              </button>
+            ) : null}
             {stakes ? (
               <span
                 className="inline-flex items-center gap-1 rounded-full flex-shrink-0 truncate"
@@ -686,8 +711,18 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
 
       {/* Contexto (sub-línea fina): fase · sede · canal. La fase (stage) y la sede
           (venue) ya viajaban en el evento desde el feed de ESPN y no se pintaban. */}
+      {/* Historial (solo en los cruces con motivo). Va en su propia línea: es
+          una frase, no un dato suelto, y compite mal con sede/canal. */}
+      {h2hNote ? (
+        <div className="relative flex items-center justify-center gap-1.5 min-w-0" style={{ zIndex: 1, marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <span className="truncate" style={{ fontSize: 10, fontWeight: 700, color: '#9A8B6A', fontFamily: 'var(--font-sport)' }}>
+            {h2hNote}
+          </span>
+        </div>
+      ) : null}
+
       {(event.stage || event.venue || channel) ? (
-        <div className="relative flex items-center justify-center gap-1.5 min-w-0" style={{ zIndex: 1, marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)', color: '#61616D' }}>
+        <div className="relative flex items-center justify-center gap-1.5 min-w-0" style={{ zIndex: 1, marginTop: h2hNote ? 4 : 8, paddingTop: h2hNote ? 0 : 6, borderTop: h2hNote ? undefined : '1px solid rgba(255,255,255,0.07)', color: '#61616D' }}>
           {(event.stage || event.venue) ? (
             <span className="truncate" style={{ fontSize: 10, fontWeight: 600, color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>
               {[event.stage, event.venue].filter(Boolean).join(' · ')}
@@ -923,6 +958,7 @@ export function matchRowPropsEqual(a: MatchRowProps, b: MatchRowProps): boolean 
     a.awayFav !== b.awayFav ||
     a.formHome !== b.formHome ||
     a.formAway !== b.formAway ||
+    a.canPredict !== b.canPredict ||
     a.showComp !== b.showComp ||
     a.dateLabel !== b.dateLabel ||
     a.tz !== b.tz
