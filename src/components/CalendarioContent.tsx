@@ -11,6 +11,7 @@ import type { SportEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
 import { SPORT_THEME, getEventHighlightScore, getLeagueScore, isCombat, isMundial, sportThemeKey } from '@/lib/competitions'
 import { orderCompGroups } from '@/lib/comp-group-order'
+import { mergeFeedEvents } from '@/lib/calendar-initial-window'
 import { formatDateLabel, groupDayByCompetition, groupEventsByDate, isoToLocalDate, namesMatch, orderedDateKeys } from '@/lib/calendar'
 import { nameMatch } from '@/lib/quiniela'
 import { SOURCE_TZ, TZ_KEY, getStoredTZ, setStoredTZ } from '@/lib/timezone'
@@ -41,12 +42,50 @@ type ViewType = 'todos' | 'resultados' | 'recordatorios'
 
 type FormResult = 'W' | 'D' | 'L'
 
-export default function CalendarioContent({ events, pastEvents = [], recentForms = {}, initialTz = SOURCE_TZ }: {
+export default function CalendarioContent({
+  events: initialEvents,
+  hasDeferred = false,
+  pastEvents = [],
+  recentForms = {},
+  initialTz = SOURCE_TZ,
+}: {
   events: SportEvent[]
+  /** Hay días lejanos que el servidor NO mandó: se piden al montar. */
+  hasDeferred?: boolean
   pastEvents?: SportEvent[]
   recentForms?: Record<string, FormResult[]>
   initialTz?: string
 }) {
+  // El servidor solo pinta los días cercanos (ver lib/calendar-initial-window.ts:
+  // mandaba 1,43 MB de HTML para enseñar nueve partidos). El resto llega aquí,
+  // de /api/events/feed, que ya está cacheado 300 s en el borde.
+  //
+  // Se guarda APARTE y se funde con un useMemo en vez de copiar la prop a estado:
+  // así una revalidación del ISR que cambie `initialEvents` se ve al instante, sin
+  // el efecto de sincronización que hace falta cuando el estado clona una prop.
+  const [extraEvents, setExtraEvents] = useState<SportEvent[]>([])
+  const events = useMemo(
+    () => (extraEvents.length ? mergeFeedEvents(initialEvents, extraEvents) : initialEvents),
+    [initialEvents, extraEvents],
+  )
+  const pedidoRef = useRef(false)
+  useEffect(() => {
+    if (!hasDeferred || pedidoRef.current) return
+    pedidoRef.current = true   // StrictMode monta dos veces en desarrollo
+    let vivo = true
+    fetch('/api/events/feed')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (!vivo || !Array.isArray(d?.events)) return
+        setExtraEvents(d.events as SportEvent[])
+      })
+      .catch(() => {
+        // Sin los días lejanos el calendario sigue siendo útil (la semana está
+        // pintada) y el selector de fecha ya avisa cuando un día sale vacío.
+      })
+    return () => { vivo = false }
+  }, [hasDeferred])
+
   // Default tab = Calendario (todos): entras a la lista con separadores por
   // día. Default chip = 'Destacados': filtra la lista a los top 4 por día.
   const [view, setView] = useState<ViewType>('todos')

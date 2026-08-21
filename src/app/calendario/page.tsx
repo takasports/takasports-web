@@ -7,6 +7,8 @@ import { attachH2HNotes } from '@/lib/h2h-notes'
 import { attachAthletePhotos } from '@/lib/athlete-photos-attach'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { SOURCE_TZ } from '@/lib/timezone'
+import { isoToLocalDate } from '@/lib/calendar'
+import { splitInitialWindow } from '@/lib/calendar-initial-window'
 import Header from '@/components/Header'
 import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 import LiveStrip from '@/components/LiveStrip'
@@ -172,6 +174,13 @@ export default async function CalendarioPage() {
     }),
   }
 
+  // Solo los días cercanos viajan en el HTML; el resto lo pide el cliente al
+  // montar a /api/events/feed (cacheado 300 s en el borde). Medido: la página
+  // mandaba 1,43 MB de HTML —el 42% payload RSC— para enseñar nueve partidos.
+  // Ver lib/calendar-initial-window.ts.
+  const hoyIso = isoToLocalDate(new Date().toISOString(), SOURCE_TZ)
+  const { initial: initialEvents, deferred } = splitInitialWindow(events, hoyIso)
+
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script
@@ -187,7 +196,8 @@ export default async function CalendarioPage() {
         <LiveStrip />
       </div>
       <CalendarioContent
-        events={events}
+        events={initialEvents}
+        hasDeferred={deferred.length > 0}
         recentForms={recentForms}
         initialTz={SOURCE_TZ}
       />
