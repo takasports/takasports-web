@@ -71,3 +71,23 @@ export function mergeFeedEvents<T extends WindowedEvent>(actuales: readonly T[],
   }
   return out
 }
+
+/**
+ * Filtra a los eventos DESDE un día (inclusive). Lo usa `/api/events/feed?from=`
+ * para no reenviar al cliente los días que ya vienen pintados en el HTML.
+ *
+ * Sin esto el ahorro era falso: la página bajaba de 120 a 69 KB (gzip) pero el
+ * feed entero añadía otros 63, así que la sesión terminaba descargando MÁS que
+ * antes. Con el corte, el cliente solo pide lo que le falta.
+ *
+ * El día del corte se incluye a propósito (solapa uno): la ventana se calcula en
+ * Europe/Madrid y el lector puede estar en otro huso, así que un partido de
+ * madrugada podría caer justo en la costura. Duplicar un día no cuesta nada
+ * porque `mergeFeedEvents` deduplica por id; perderlo sí se vería.
+ */
+export function filterFromDay<T extends WindowedEvent>(events: readonly T[], from: string): T[] {
+  return events.filter(e => {
+    const dia = e.isoDate?.slice(0, 10)
+    return !dia || dia >= from
+  })
+}

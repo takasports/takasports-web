@@ -44,14 +44,14 @@ type FormResult = 'W' | 'D' | 'L'
 
 export default function CalendarioContent({
   events: initialEvents,
-  hasDeferred = false,
+  deferredFrom,
   pastEvents = [],
   recentForms = {},
   initialTz = SOURCE_TZ,
 }: {
   events: SportEvent[]
-  /** Hay días lejanos que el servidor NO mandó: se piden al montar. */
-  hasDeferred?: boolean
+  /** Día (YYYY-MM-DD) desde el que faltan eventos por pedir. Ausente = están todos. */
+  deferredFrom?: string
   pastEvents?: SportEvent[]
   recentForms?: Record<string, FormResult[]>
   initialTz?: string
@@ -70,10 +70,11 @@ export default function CalendarioContent({
   )
   const pedidoRef = useRef(false)
   useEffect(() => {
-    if (!hasDeferred || pedidoRef.current) return
+    if (!deferredFrom || pedidoRef.current) return
     pedidoRef.current = true   // StrictMode monta dos veces en desarrollo
     let vivo = true
-    fetch('/api/events/feed')
+    // Solo los días que faltan: el feed entero pesa casi lo que la página.
+    fetch(`/api/events/feed?from=${deferredFrom}`)
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
         if (!vivo || !Array.isArray(d?.events)) return
@@ -84,7 +85,7 @@ export default function CalendarioContent({
         // pintada) y el selector de fecha ya avisa cuando un día sale vacío.
       })
     return () => { vivo = false }
-  }, [hasDeferred])
+  }, [deferredFrom])
 
   // Default tab = Calendario (todos): entras a la lista con separadores por
   // día. Default chip = 'Destacados': filtra la lista a los top 4 por día.

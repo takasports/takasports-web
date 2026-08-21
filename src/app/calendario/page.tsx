@@ -8,7 +8,7 @@ import { attachAthletePhotos } from '@/lib/athlete-photos-attach'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { SOURCE_TZ } from '@/lib/timezone'
 import { isoToLocalDate } from '@/lib/calendar'
-import { splitInitialWindow } from '@/lib/calendar-initial-window'
+import { splitInitialWindow, windowEndDay } from '@/lib/calendar-initial-window'
 import Header from '@/components/Header'
 import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 import LiveStrip from '@/components/LiveStrip'
@@ -197,7 +197,7 @@ export default async function CalendarioPage() {
       </div>
       <CalendarioContent
         events={initialEvents}
-        hasDeferred={deferred.length > 0}
+        deferredFrom={deferred.length > 0 ? windowEndDay(hoyIso) : undefined}
         recentForms={recentForms}
         initialTz={SOURCE_TZ}
       />

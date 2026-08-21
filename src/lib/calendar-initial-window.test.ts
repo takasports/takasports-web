@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  splitInitialWindow, mergeFeedEvents, windowEndDay, INITIAL_WINDOW_DAYS,
+  splitInitialWindow, mergeFeedEvents, windowEndDay, filterFromDay, INITIAL_WINDOW_DAYS,
 } from './calendar-initial-window'
 
 const ev = (id: string, isoDate?: string, source: 'espn' | 'sanity' | 'padel' = 'espn') =>
@@ -90,5 +90,31 @@ describe('mergeFeedEvents', () => {
 
   it('sin nada que fundir devuelve lo mismo', () => {
     expect(mergeFeedEvents([ev('a')], []).map(e => e.id)).toEqual(['a'])
+  })
+})
+
+describe('filterFromDay', () => {
+  it('deja fuera lo anterior al corte y conserva el día del corte', () => {
+    const out = filterFromDay(
+      [ev('antes', '2026-08-27T20:00:00Z'), ev('corte', '2026-08-28T20:00:00Z'), ev('despues', '2026-09-01T20:00:00Z')],
+      '2026-08-28',
+    )
+    expect(out.map(e => e.id)).toEqual(['corte', 'despues'])
+  })
+
+  it('un evento sin fecha se conserva: no se puede descartar con criterio', () => {
+    expect(filterFromDay([ev('sinfecha', undefined)], '2026-08-28')).toHaveLength(1)
+  })
+
+  it('lo que sobrevive al corte es justo lo que splitInitialWindow aplazó, más el día de solape', () => {
+    const hoy = '2026-08-21'
+    const eventos = [
+      ev('a', '2026-08-22T10:00:00Z'), ev('b', '2026-08-28T10:00:00Z'), ev('c', '2026-09-05T10:00:00Z'),
+    ]
+    const { deferred } = splitInitialWindow(eventos, hoy, 8)
+    const pedidos = filterFromDay(eventos, windowEndDay(hoy, 8))
+    // Todo lo aplazado tiene que venir en la petición; el solape añade el día 28.
+    for (const d of deferred) expect(pedidos.map(e => e.id)).toContain(d.id)
+    expect(pedidos.map(e => e.id)).toEqual(['b', 'c'])
   })
 })
