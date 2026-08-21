@@ -329,6 +329,14 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
       const competitors: RawCompetitor[] = ev.competitors ?? []
       if (competitors.length < 2) continue
 
+      // DOBLES fuera. El feed del calendario los descarta desde siempre
+      // (`isTennisDoubles` en lib/espn.ts) porque su cuadro es el individual,
+      // pero la franja de directos no lo hacía: el 21/08/2026 los TRES tenis en
+      // vivo de la portada eran dobles, con los nombres partidos por la mitad
+      // ("L. Darderi / …"), y era lo primero y más grande que veía el usuario.
+      const nombresCrudos = [competitors[0]?.displayName, competitors[1]?.displayName]
+      if (nombresCrudos.some(n => typeof n === 'string' && n.includes('/'))) continue
+
       const home = normalizeAthlete({
         id: competitors[0]?.id as string | undefined,
         displayName: competitors[0]?.displayName as string | undefined,
