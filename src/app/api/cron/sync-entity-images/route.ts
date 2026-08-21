@@ -69,6 +69,62 @@ async function seedFromEspnLeaders(): Promise<number> {
   return upsertSportEntities([...byId.values()])
 }
 
+/**
+ * Siembra a los tenistas del cuadro EN CURSO (ATP y WTA) para que entren en la
+ * cascada de fotos. Hasta 2026-08-21 `sport_entities` no tenía ni un tenista, y
+ * son los únicos jugadores cuya CARA se ve en la fila del calendario.
+ *
+ * ESPN no publica headshot de tenis (la URL por id da 404), así que su única
+ * fuente posible es la rama de Wikimedia — que sí los tiene: Fils, Cobolli,
+ * Tirante, Bejlek y Gauff tienen foto (P18) y fecha de nacimiento (P569) en
+ * Wikidata, comprobado.
+ *
+ * Solo INDIVIDUALES: en dobles el "competidor" son dos personas y su id no
+ * identifica a nadie.
+ */
+async function seedFromTennisDraws(): Promise<number> {
+  const seeds = new Map<string, SeedEntity>()
+  for (const leagueSlug of ['tennis/atp', 'tennis/wta'] as const) {
+    try {
+      const res = await fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/${leagueSlug}/scoreboard`,
+        { next: { revalidate: 1800 }, signal: AbortSignal.timeout(8000) },
+      )
+      if (!res.ok) continue
+      const json = await res.json() as Record<string, unknown>
+      // En un torneo COMBINADO los dos endpoints devuelven el mismo evento con
+      // TODOS los cuadros, así que hay que quedarse con el del tour que se pide
+      // (mismo criterio que fetchTennisPast). Sin esto, el segundo tour pisaba al
+      // primero y los 261 jugadores acababan etiquetados como WTA.
+      const wantGrouping = leagueSlug.includes('wta') ? 'womens-singles' : 'mens-singles'
+      for (const ev of (json.events as Record<string, unknown>[]) ?? []) {
+        for (const g of (ev.groupings as Record<string, unknown>[]) ?? []) {
+          const gSlug = (g.grouping as Record<string, unknown> | undefined)?.slug
+          if (gSlug !== wantGrouping) continue
+          for (const m of (g.competitions as Record<string, unknown>[]) ?? []) {
+            for (const c of (m.competitors as Record<string, unknown>[]) ?? []) {
+              const athlete = c.athlete as Record<string, unknown> | undefined
+              const name = (athlete?.displayName ?? c.displayName) as string | undefined
+              const espnId = c.id as string | undefined
+              if (!name || !espnId) continue
+              if (name.includes('/')) continue        // dobles
+              if (name === 'TBD') continue
+              seeds.set(espnId, {
+                type: 'player',
+                sport: 'tennis',
+                name,
+                espnId,
+                leagueSlug,
+              })
+            }
+          }
+        }
+      }
+    } catch { /* un tour caído no impide sembrar el otro */ }
+  }
+  return seeds.size ? upsertSportEntities([...seeds.values()]) : 0
+}
+
 async function handle(req: Request) {
   if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
@@ -78,6 +134,7 @@ async function handle(req: Request) {
   }
 
   const seeded = await seedFromEspnLeaders()
+  const seededTennis = await seedFromTennisDraws()
   const pending = await listEntitiesNeedingImage('player', BATCH)
 
   // Secuencial a propósito: en paralelo dispararíamos 80 peticiones a Wikimedia de golpe.
@@ -93,6 +150,7 @@ async function handle(req: Request) {
   return NextResponse.json({
     ok: true,
     seeded,
+    seededTennis,
     checked: pending.length,
     bySource,
   })

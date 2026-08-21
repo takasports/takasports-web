@@ -7,6 +7,38 @@
 
 import { adminSupabase } from '@/lib/supabase-admin'
 import { FOOTBALL_LEAGUE_SLUGS } from '@/lib/football-leagues'
+
+/**
+ * Ligas cuyas entidades tienen PRIORIDAD en la cola de fotos: las que el sitio
+ * enseña de verdad. Sin esto la cola se llenaba de fútbol universitario y quinta
+ * división inglesa (ver el arreglo de 2026-07-20).
+ *
+ * El tenis entra aquí desde 2026-08-21: sus jugadores son los ÚNICOS del
+ * calendario que muestran cara en la fila, y ESPN no publica su headshot (404),
+ * así que dependen por completo de esta cascada. Si esperaran a la tercera
+ * pasada —la que no filtra por liga— irían detrás de miles de futbolistas.
+ */
+const COVERED_LEAGUE_SLUGS: ReadonlySet<string> = new Set([
+  ...FOOTBALL_LEAGUE_SLUGS,
+  'tennis/atp',
+  'tennis/wta',
+  'mma/ufc',
+])
+
+/**
+ * Deportes cuya CARA se ve en la fila del calendario. Van los PRIMEROS de la cola.
+ *
+ * En fútbol la fila enseña escudos, así que la foto del jugador solo se ve si
+ * entras a su ficha; en tenis y UFC la cara está en el propio listado. Además son
+ * pocos (261 tenistas del cuadro en curso) frente a los ~13.000 futbolistas
+ * pendientes: sin pasada propia tardarían semanas en resolverse, y con ella
+ * quedan listos en unas horas.
+ */
+const FACE_FIRST_LEAGUE_SLUGS: ReadonlySet<string> = new Set([
+  'tennis/atp',
+  'tennis/wta',
+  'mma/ufc',
+])
 import type { EntityType, ResolvableEntity } from '@/lib/entity-images'
 
 export interface SeedEntity {
@@ -166,13 +198,14 @@ async function queryPendingEntities(
   type: EntityType,
   limit: number,
   onlyCovered: boolean,
+  slugs: ReadonlySet<string> = COVERED_LEAGUE_SLUGS,
 ): Promise<ResolvableEntity[]> {
   let query = db
     .from('sport_entities')
     .select(PENDING_SELECT)
     .eq('type', type)
     .is('sport_entity_images', null)
-  if (onlyCovered) query = query.in('meta->>leagueSlug', [...FOOTBALL_LEAGUE_SLUGS])
+  if (onlyCovered) query = query.in('meta->>leagueSlug', [...slugs])
   const { data, error } = await query.limit(limit)
   return error || !data ? [] : data.map(toResolvable)
 }
@@ -188,7 +221,7 @@ async function queryStaleMissingEntities(
     .from('sport_entities')
     .select(STALE_MISSING_SELECT)
     .eq('type', type)
-    .in('meta->>leagueSlug', [...FOOTBALL_LEAGUE_SLUGS])
+    .in('meta->>leagueSlug', [...COVERED_LEAGUE_SLUGS])
     .eq('sport_entity_images.kind', 'headshot')
     .eq('sport_entity_images.status', 'missing')
     .lt('sport_entity_images.checked_at', cutoffIso)
@@ -231,7 +264,10 @@ export async function listEntitiesNeedingImage(
     }
   }
 
-  take(await queryPendingEntities(db, type, limit, true))
+  // 0) Los deportes que enseñan cara en la fila del calendario.
+  take(await queryPendingEntities(db, type, limit, true, FACE_FIRST_LEAGUE_SLUGS))
+  // 1) El resto de ligas que el sitio muestra.
+  if (out.length < limit) take(await queryPendingEntities(db, type, limit, true))
   if (out.length < limit) {
     const cutoff = new Date(Date.now() - MISSING_RETRY_DAYS * 86_400_000).toISOString()
     take(await queryStaleMissingEntities(db, type, limit, cutoff))
@@ -299,6 +335,8 @@ export async function listEntitiesNeedingSnapshot(
     .eq('type', 'player')
     .eq('sport', 'football')
     .not('espn_id', 'is', null)
+    // Snapshots de STATS: solo fútbol (lo dice el filtro de arriba), así que aquí
+    // manda el conjunto de fútbol, no el de ligas con foto.
     .in('meta->>leagueSlug', [...FOOTBALL_LEAGUE_SLUGS])
     .order('id', { ascending: true })
     .limit(SNAPSHOT_COHORT)

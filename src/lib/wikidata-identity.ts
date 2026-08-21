@@ -31,6 +31,15 @@ export const WIKIDATA_OCCUPATION: Record<string, string> = {
   soccer: 'Q937857',
   football: 'Q937857',
   basketball: 'Q3665646',
+  // Tenis y MMA: sin su ocupación aquí, la rama de Wikimedia de la cascada de
+  // fotos no arranca siquiera (entity-images la usa para filtrar homónimos), y
+  // era la ÚNICA fuente posible para estos deportes — ESPN no publica headshot
+  // de tenistas (devuelve 404) y `sport_entities` no tenía ni un tenista.
+  // QIDs leídos del propio Wikidata, no inventados: Fils y Gauff declaran
+  // Q10833314 (tenista); Adesanya, Q11607585 (luchador de MMA).
+  tennis: 'Q10833314',
+  mma: 'Q11607585',
+  ufc: 'Q11607585',
 }
 
 // País (nombre en INGLÉS, como lo da ESPN) → QIDs de nacionalidad aceptables en Wikidata.
