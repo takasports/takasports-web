@@ -57,6 +57,12 @@ export function matchStakes(
     return { label: 'Puestos europeos', tone: 'media' }
   }
 
+  // A partir de aquí, todo lo que queda habla de DESCENDER. En una liga cerrada
+  // (NBA) quedar último no es descender, es entrar en el sorteo: la etiqueta
+  // sería sencillamente falsa.
+  const conDescenso = home.relegation !== false && away.relegation !== false
+  if (!conDescenso) return null
+
   // Ambos en descenso (o playoff de descenso) → duelo directo abajo.
   if (home.zone && away.zone && DROP.has(home.zone) && DROP.has(away.zone)) {
     return { label: 'Duelo de descenso', tone: 'media' }
@@ -70,8 +76,17 @@ export function matchStakes(
   return null
 }
 
-/** Etiqueta compacta de posición para la fila: "4º · 38 pts". */
+/**
+ * Etiqueta compacta de posición para la fila: "4º · 38 pts", y en las ligas por
+ * conferencias con balance en vez de puntos, "3º Este · 60-22".
+ *
+ * La NBA no se mide en puntos —su stat `points` de ESPN vale 19 y no significa
+ * nada para el lector— sino en victorias-derrotas; y su puesto es de conferencia,
+ * así que sin decirlo un "3º" se leería como tercero de la liga.
+ */
 export function standingLabel(s: TeamStanding | undefined): string | null {
   if (!s) return null
-  return `${ord(s.rank)} · ${s.pts} pts`
+  const puesto = s.group ? `${ord(s.rank)} ${s.group}` : ord(s.rank)
+  const valor = s.relegation === false && s.record ? s.record : `${s.pts} pts`
+  return `${puesto} · ${valor}`
 }

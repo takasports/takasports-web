@@ -8,6 +8,7 @@ import { getZone, zoneFromNote } from '@/lib/league-zones'
 import type { StandingZone } from '@/lib/league-zones'
 import { TABLE_LEAGUE_SLUGS } from '@/lib/football-leagues'
 import { toSpanishNation } from '@/lib/nation-names'
+import { hasEnoughGames } from '@/lib/standings-window'
 
 // ── Tipos ────────────────────────────────────────────────────────────
 export interface LeagueTableRow {
@@ -100,19 +101,94 @@ export async function fetchLeagueTableRows(leagueSlug: string): Promise<Omit<Lea
   } catch { return [] }
 }
 
-// ── ¿La tabla dice algo? ─────────────────────────────────────────────
-// Al arrancar la temporada ESPN devuelve la clasificación COMPLETA con todos
-// los equipos a 0 puntos y el "rank" en orden alfabético: el 21/08/2026 la
-// Premier daba "1º AFC Bournemouth, 2º Arsenal" sin haberse jugado nada. Pintar
-// eso en la fila (o peor, etiquetarlo "Líder vs 2º") sería sencillamente falso.
-//
-// Con 1-2 jornadas el líder sigue siendo ruido, así que exigimos que alguien
-// haya jugado al menos MIN_GP partidos para dar la tabla por significativa.
-export const STANDINGS_MIN_GP = 3
+// El criterio de "¿esta tabla se puede enseñar hoy?" vive en standings-window.ts
+// (mínimo de jornadas + temporada en marcha). Se reexporta por compatibilidad.
+export { STANDINGS_MIN_GP } from '@/lib/standings-window'
 
 export function standingsAreMeaningful(rows: Array<{ gp: number }>): boolean {
   if (rows.length === 0) return false
-  return rows.some(r => r.gp >= STANDINGS_MIN_GP)
+  return hasEnoughGames(rows)
+}
+
+// ── Tabla COMPLETA (todos los grupos) + ventana de temporada ─────────
+// fetchLeagueTableRows lee solo `children[0]`, que en una liga normal es la
+// tabla entera pero en la NBA es solo el Este y en MLS/Argentina solo una
+// conferencia/zona: el rival del otro grupo no aparecía. Esta versión devuelve
+// TODOS los grupos, cada fila etiquetada con el suyo, más las fechas de la
+// temporada que ESPN declara — que es lo que permite encender y apagar el dato
+// solo (ver standings-window.ts).
+export interface LeagueTableGroupRow extends Omit<LeagueTableRow, 'highlight'> {
+  /** Nombre del grupo/conferencia ("Eastern Conference"), si la liga los tiene. */
+  group?: string
+  /** Balance de victorias-derrotas ("60-22"), para deportes sin puntos. */
+  record?: string
+}
+
+export interface LeagueTable {
+  rows: LeagueTableGroupRow[]
+  season?: { startDate?: string; endDate?: string; year?: number }
+}
+
+export async function fetchLeagueTable(leagueSlug: string): Promise<LeagueTable> {
+  try {
+    const res = await fetch(
+      `https://site.web.api.espn.com/apis/v2/sports/${leagueSlug}/standings`,
+      { next: { revalidate: 1800 } },
+    )
+    if (!res.ok) return { rows: [] }
+    const json = await res.json()
+    const seasonObj = asObj(json.season)
+    const season = seasonObj
+      ? {
+          startDate: asString(seasonObj.startDate),
+          endDate: asString(seasonObj.endDate),
+          year: typeof seasonObj.year === 'number' ? seasonObj.year : undefined,
+        }
+      : undefined
+
+    const groups = asArr(json.children) as Record<string, unknown>[]
+    const rows: LeagueTableGroupRow[] = []
+    // Una liga sin grupos reales no necesita etiqueta; con dos o más (NBA,
+    // MLS, Argentina) el nombre del grupo es imprescindible para no comparar
+    // puestos de tablas distintas.
+    const multi = groups.length > 1
+
+    for (const g of groups) {
+      const entries = asArr(asObj(g.standings)?.entries) as Record<string, unknown>[]
+      if (!entries.length) continue
+      const rankOf = (e: Record<string, unknown>) => {
+        const st = asArr(e.stats) as Array<{ name: string; value?: number }>
+        return (st.find(s => s.name === 'rank')?.value as number) ?? 999
+      }
+      entries.sort((a, b) => rankOf(a) - rankOf(b))
+      const groupName = multi ? asString(g.name) : undefined
+
+      entries.forEach((e, i) => {
+        const team = asObj(e.team) ?? {}
+        const stats = asArr(e.stats) as Array<{ name: string; value?: number }>
+        const sv = (name: string) => Math.round((stats.find(s => s.name === name)?.value as number) ?? 0)
+        const w = sv('wins'); const d = sv('ties'); const l = sv('losses')
+        const logos = asArr(team.logos) as Record<string, unknown>[]
+        rows.push({
+          rank: i + 1,
+          name: asString(team.displayName) ?? '—',
+          abbr: asString(team.abbreviation) ?? '',
+          logo: asString(logos[0]?.href),
+          teamId: asString(team.id),
+          pts: sv('points'),
+          gp: w + d + l,
+          w, d, l,
+          gf: sv('pointsFor'), gc: sv('pointsAgainst'), gd: sv('pointDifferential'),
+          zone: zoneFromNote(asString(asObj(e.note)?.description)) ?? getZone(leagueSlug, i + 1),
+          group: groupName,
+          record: `${w}-${l}`,
+        })
+      })
+    }
+    return { rows, season }
+  } catch {
+    return { rows: [] }
+  }
 }
 
 // ── Clasificación por grupos (torneos: Mundial) ──────────────────────

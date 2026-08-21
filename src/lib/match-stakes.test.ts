@@ -81,3 +81,35 @@ describe('standingLabel', () => {
     expect(standingLabel(undefined)).toBeNull()
   })
 })
+
+describe('ligas sin descenso (NBA)', () => {
+  // Balance V-D, puesto de conferencia y sin descenso posible.
+  const nba = (rank: number, record: string, group: string): TeamStanding =>
+    ({ rank, pts: 0, of: 15, record, group, relegation: false })
+
+  it('los dos últimos de una conferencia NO son un duelo de descenso', () => {
+    // En una liga de 15 esta pareja dispararía la heurística de zona baja.
+    expect(matchStakes(nba(14, '20-55', 'Este'), nba(15, '17-58', 'Este'))).toBeNull()
+  })
+
+  it('el duelo de cabeza sí aplica: es una liga, aunque sea cerrada', () => {
+    expect(matchStakes(nba(1, '60-22', 'Este'), nba(2, '58-24', 'Este'))).toEqual({
+      label: 'Líder vs 2º',
+      tone: 'alta',
+    })
+  })
+
+  it('la etiqueta usa el balance y nombra la conferencia', () => {
+    expect(standingLabel(nba(3, '55-27', 'Oeste'))).toBe('3º Oeste · 55-27')
+  })
+
+  it('en fútbol se siguen enseñando los puntos', () => {
+    expect(standingLabel({ rank: 4, pts: 38, of: 20 })).toBe('4º · 38 pts')
+  })
+
+  it('basta con que UNO de los dos declare que no hay descenso', () => {
+    const sinDescenso = { rank: 15, pts: 0, of: 15, relegation: false }
+    const conDescenso = { rank: 14, pts: 10, of: 15 }
+    expect(matchStakes(sinDescenso, conDescenso)).toBeNull()
+  })
+})

@@ -3,7 +3,8 @@ import { getSportStyle } from './sports'
 import { SOURCE_TZ } from './timezone'
 import { getSpanishBroadcast } from './broadcasts'
 import { FOOTBALL_LEAGUES, TABLE_LEAGUE_SLUGS } from './football-leagues'
-import { fetchLeagueTableRows, standingsAreMeaningful } from './espn-standings'
+import { fetchLeagueTable } from './espn-standings'
+import { standingsUsable } from './standings-window'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from './nation-names'
 import { athletePhoto } from './athlete-photos'
 import { setsStrFromLinescores } from './tennis-sets'
@@ -460,28 +461,66 @@ function standingKey(name: string): string {
     .trim()
 }
 
+// Ligas de las que el CALENDARIO saca clasificación. Es TABLE_LEAGUE_SLUGS (las
+// de fútbol, que ya alimentan /partido y /liga) más la NBA, que aquí sí encaja
+// porque la fila compara solo dentro de la misma conferencia. No se añade a
+// TABLE_LEAGUE_SLUGS para no cambiar de rebote esas otras páginas.
+const CALENDAR_STANDINGS_SLUGS: ReadonlySet<string> = new Set([
+  ...TABLE_LEAGUE_SLUGS,
+  'basketball/nba',
+])
+
+/** Nombres largos de conferencia → etiqueta corta para la fila. */
+function shortGroupName(group: string | undefined): string | undefined {
+  if (!group) return undefined
+  const g = group.toLowerCase()
+  if (g.includes('eastern')) return 'Este'
+  if (g.includes('western')) return 'Oeste'
+  return group.replace(/\s*(Conference|Conferencia|Zona|Group|Grupo)\s*/gi, '').trim() || group
+}
+
+/** ¿En esta liga quedar último significa descender? En la NBA, no. */
+function hasRelegation(leagueSlug: string): boolean {
+  return leagueSlug.startsWith('soccer/')
+}
+
 async function attachStandings(raw: RawEvent[]): Promise<void> {
   const slugs = new Set<string>()
   for (const r of raw) {
-    if (r.leagueSlug && TABLE_LEAGUE_SLUGS.has(r.leagueSlug)) slugs.add(r.leagueSlug)
+    if (r.leagueSlug && CALENDAR_STANDINGS_SLUGS.has(r.leagueSlug)) slugs.add(r.leagueSlug)
   }
   if (slugs.size === 0) return
 
+  const now = new Date()
   const tables = await Promise.allSettled(
-    [...slugs].map(async slug => ({ slug, rows: await fetchLeagueTableRows(slug) })),
+    [...slugs].map(async slug => ({ slug, table: await fetchLeagueTable(slug) })),
   )
 
   // slug → (nombre normalizado → puesto/puntos/zona). Se indexa por nombre
   // porque el evento trae `home`/`away` como texto, no el id de ESPN.
   const bySlug = new Map<string, Map<string, TeamStanding>>()
   for (const t of tables) {
-    if (t.status !== 'fulfilled' || t.value.rows.length === 0) continue
-    // Temporada recién arrancada: ESPN da la tabla entera a 0 puntos y ordenada
-    // alfabéticamente. Sin esto, la fila diría "1º · 0 pts" del Bournemouth.
-    if (!standingsAreMeaningful(t.value.rows)) continue
+    if (t.status !== 'fulfilled') continue
+    const { rows, season } = t.value.table
+    // ÚNICO interruptor: temporada en marcha + jornadas suficientes. Se enciende
+    // y se apaga solo con lo que publica ESPN — sin cron ni fechas a mano.
+    if (!standingsUsable(rows, season, now)) continue
+
+    const relegation = hasRelegation(t.value.slug)
+    const sizeByGroup = new Map<string, number>()
+    for (const row of rows) sizeByGroup.set(row.group ?? '', (sizeByGroup.get(row.group ?? '') ?? 0) + 1)
+
     const byName = new Map<string, TeamStanding>()
-    for (const row of t.value.rows) {
-      const st: TeamStanding = { rank: row.rank, pts: row.pts, zone: row.zone, of: t.value.rows.length }
+    for (const row of rows) {
+      const st: TeamStanding = {
+        rank: row.rank,
+        pts: row.pts,
+        zone: row.zone,
+        of: sizeByGroup.get(row.group ?? '') ?? rows.length,
+        record: row.record,
+        group: shortGroupName(row.group),
+        relegation,
+      }
       byName.set(standingKey(row.name), st)
       if (row.abbr) byName.set(standingKey(row.abbr), st)
     }
@@ -493,12 +532,10 @@ async function attachStandings(raw: RawEvent[]): Promise<void> {
     if (!byName || !r.event.away) continue
     const h = byName.get(standingKey(r.event.home))
     const a = byName.get(standingKey(r.event.away))
-    // Los DOS o ninguno. fetchLeagueTableRows solo lee el primer grupo del
-    // standings de ESPN, así que en ligas por conferencias/zonas (MLS,
-    // Argentina) el rival de la otra conferencia no aparece: pintar el puesto
-    // de uno solo parecería un fallo, y comparar puestos de tablas distintas
-    // sería peor. Con ambos presentes están por fuerza en la misma tabla.
-    if (h && a) {
+    // Los dos o ninguno, y del MISMO grupo. Comparar el 1º del Este con el 1º
+    // del Oeste daría un "Líder vs 1º" sin sentido, y enseñar el puesto de uno
+    // solo parecería un fallo. Con ambos en la misma tabla, todo cuadra.
+    if (h && a && h.group === a.group) {
       r.event.homeStanding = h
       r.event.awayStanding = a
     }

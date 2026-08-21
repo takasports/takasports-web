@@ -57,6 +57,14 @@ export interface TeamStanding {
   zone?: string
   /** Equipos en la tabla — permite saber si un puesto es "colista" o zona baja. */
   of?: number
+  /** Balance V-D ("60-22"). En deportes sin puntos (NBA) es lo que se enseña. */
+  record?: string
+  /** Grupo/conferencia del que sale el puesto ("Este"). Solo en ligas con varios:
+   *  sin él, un "1º" del Este y otro del Oeste parecerían el mismo puesto. */
+  group?: string
+  /** ¿La liga tiene descenso? En la NBA ir último no es descender, así que el
+   *  motivo "Duelo de descenso" no debe dispararse ahí. */
+  relegation?: boolean
 }
 
 export interface SportEvent {
