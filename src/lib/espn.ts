@@ -233,6 +233,9 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
     let awayLogo: string | undefined
     let homeAbbr: string | undefined
     let awayAbbr: string | undefined
+    // Ids de ESPN de los dos equipos → enlace de cada nombre a su ficha.
+    let homeId: string | undefined
+    let awayId: string | undefined
 
     if (source.teamSport && competitors.length >= 2) {
       const homeComp = competitors.find(c => c.homeAway === 'home') ?? competitors[0]
@@ -250,6 +253,8 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
       awayAbbr  = awayTeamObj?.abbreviation as string | undefined
       homeLogo  = (homeTeamObj?.logoDark ?? homeTeamObj?.logo) as string | undefined
       awayLogo  = (awayTeamObj?.logoDark ?? awayTeamObj?.logo) as string | undefined
+      homeId    = homeTeamObj?.id as string | undefined
+      awayId    = awayTeamObj?.id as string | undefined
     } else {
       home = (ev.name as string) ?? (ev.shortName as string) ?? source.sport
     }
@@ -296,6 +301,8 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
         awayLogo,
         homeAbbr,
         awayAbbr,
+        homeTeamId: homeId,
+        awayTeamId: awayId,
         homePhoto,
         awayPhoto,
         matchRef,
@@ -574,6 +581,9 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
     let awayLogo: string | undefined
     let homeAbbr: string | undefined
     let awayAbbr: string | undefined
+    // Ids de ESPN de los dos equipos → enlace de cada nombre a su ficha.
+    let homeId: string | undefined
+    let awayId: string | undefined
     let homeScore: number | null = null
     let awayScore: number | null = null
     let resultNote: string | undefined
@@ -594,6 +604,8 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
       awayAbbr  = awayTeamObj?.abbreviation as string | undefined
       homeLogo  = (homeTeamObj?.logoDark ?? homeTeamObj?.logo) as string | undefined
       awayLogo  = (awayTeamObj?.logoDark ?? awayTeamObj?.logo) as string | undefined
+      homeId    = homeTeamObj?.id as string | undefined
+      awayId    = awayTeamObj?.id as string | undefined
       homeScore = parseScore(homeComp.score)
       awayScore = parseScore(awayComp.score)
     } else {
@@ -628,6 +640,8 @@ async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEv
         awayLogo,
         homeAbbr,
         awayAbbr,
+        homeTeamId: homeId,
+        awayTeamId: awayId,
         matchRef,
         homeScore,
         awayScore,

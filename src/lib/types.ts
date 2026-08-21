@@ -79,6 +79,14 @@ export interface SportEvent {
   awayAbbr?: string
   homePhoto?: string      // athlete headshot/face image URL
   awayPhoto?: string
+  // Ids de ESPN de los equipos → enlace del nombre a su ficha (canonicalTeamSlug).
+  // Ya venían en el scoreboard y se descartaban al mapear el evento.
+  // NO hay equivalente para tenis/UFC: el scoreboard de tenis no trae `athlete.id`
+  // (solo guid/displayName) y, sobre todo, `sport_entities` no tiene ni un tenista,
+  // así que /jugador/<tenista> daría 404. Enlazar nombres de jugador espera a que
+  // el pipeline siembre esas fichas.
+  homeTeamId?: string
+  awayTeamId?: string
   matchRef?: string       // "{sport}_{league}_{espnId}" for detail page URL
   source?: 'espn' | 'sanity' | 'padel'
   // Scores for completed past events

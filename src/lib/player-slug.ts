@@ -31,45 +31,10 @@ export interface PlayerRef {
   leagueSlug: string
 }
 
-// Letras que NO se descomponen con NFD (su diacrítico no es un carácter combinante,
-// forma parte del glifo). Sin esto, media Europa del Este pierde la última letra:
-// "Mitrović" → "mitrovi", "Vlahović" → "vlahovi".
-const NON_DECOMPOSABLE: Record<string, string> = {
-  đ: 'd', Đ: 'D', ð: 'd', Ð: 'D',
-  ø: 'o', Ø: 'O', ł: 'l', Ł: 'L',
-  ß: 'ss', æ: 'ae', Æ: 'AE', œ: 'oe', Œ: 'OE',
-  ı: 'i', ħ: 'h', ŧ: 't',
-}
-
-/**
- * Nombre → parte legible del slug. Sin acentos, sin signos y sin guiones bajos:
- * ese "_" es justo lo que distingue un slug legacy de uno nuevo, así que no puede
- * aparecer nunca en la parte del nombre.
- *
- * NFD separa cada letra de su diacrítico y luego se tiran los combinantes, así que
- * cubre de una vez ć/č/š/ž/é/ñ/ü… sin mantener una tabla a mano. Solo hay que tratar
- * aparte las letras del mapa de arriba, que NFD no descompone.
- */
-export function toNameSlug(name: string): string {
-  let out = ''
-  for (const ch of name) out += NON_DECOMPOSABLE[ch] ?? ch
-  return out
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')   // marcas diacríticas combinantes
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-/**
- * Slug canónico de una ficha. Si el nombre se queda en nada al normalizar (nombres
- * en alfabetos no latinos, por ejemplo), cae a solo el id: sigue siendo una URL
- * válida y resoluble, simplemente sin keyword.
- */
-export function canonicalPlayerSlug(name: string | null | undefined, espnId: string): string {
-  const base = name ? toNameSlug(name) : ''
-  return base ? `${base}-${espnId}` : espnId
-}
+// toNameSlug / canonicalPlayerSlug viven en entity-slug.ts (puro, sin
+// `supabase-admin`) para que los pueda usar el calendario, que es cliente. Se
+// reexportan aquí para no romper a los que ya importaban de este módulo.
+export { toNameSlug, canonicalPlayerSlug } from '@/lib/entity-slug'
 
 /**
  * Formato antiguo "<sport>_<league>_<id>". Se reconoce por el "_", que el formato

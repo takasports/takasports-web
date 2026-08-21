@@ -9,6 +9,7 @@ import Link from 'next/link'
 import type { SportEvent, TeamStanding } from '@/lib/types'
 import type { FormResult } from '@/lib/past-events'
 import { matchStakes, standingLabel } from '@/lib/match-stakes'
+import { canonicalTeamSlug } from '@/lib/entity-slug'
 import { getLiveLabel, isCombat, isRacing, isTennis } from '@/lib/competitions'
 import { getBroadcastForTz, isSplitBroadcast } from '@/lib/broadcasts'
 import { formatDateLabel, isoToLocalDate } from '@/lib/calendar'
@@ -376,6 +377,30 @@ export function FormBars({ form, align }: { form?: FormResult[]; align: 'left' |
   )
 }
 
+// Nombre del equipo/jugador como enlace a su ficha, por encima del enlace
+// estirado de la tarjeta (z-3). Sin destino devuelve el texto tal cual: un
+// nombre sin id no tiene ficha a la que ir.
+export function TeamNameLink({ href, name, align, children }: {
+  href: string | null
+  name: string
+  align: 'left' | 'right'
+  children: React.ReactNode
+}) {
+  if (!href) return <>{children}</>
+  return (
+    <Link
+      href={href}
+      prefetch={false}
+      className={`pointer-events-auto relative z-[3] block no-underline hover:underline ${align === 'right' ? 'text-right' : 'text-left'}`}
+      style={{ textUnderlineOffset: 3, textDecorationColor: 'rgba(255,255,255,0.35)' }}
+      aria-label={`Ficha de ${name}`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </Link>
+  )
+}
+
 // Puesto y puntos bajo el nombre ("4º · 38 pts"). Solo en ligas con tabla; el
 // dato lo adjunta fetchEspnEvents al evento, así que no cuesta ninguna llamada
 // extra aquí. Sin clasificación no pinta nada (no deja hueco).
@@ -518,6 +543,22 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
   const stakes = finished ? null : matchStakes(event.homeStanding, event.awayStanding)
   // El historial solo tiene sentido ANTES de jugarse (después manda el marcador).
   const h2hNote = finished || isLive ? null : event.h2hNote
+  // Destino del NOMBRE de cada lado: su ficha de equipo. Sin id no hay slug
+  // posible → el nombre queda como texto, que es mejor que un enlace roto.
+  // (Tenis/UFC no enlazan: no hay ni un jugador de esos deportes en
+  // `sport_entities`, así que /jugador/<tenista> sería un 404.)
+  const sideHref = (teamId?: string, name?: string): string | null =>
+    teamId && name ? `/equipo/${canonicalTeamSlug(name, teamId)}` : null
+  const homeHref = sideHref(event.homeTeamId, rawHome)
+  const awayHref = sideHref(event.awayTeamId, rawAway)
+
+  // Destino de la tarjeta: ficha del partido, o del evento si viene de Sanity.
+  const cardHref = event.matchRef
+    ? `/partido/${event.matchRef}`
+    : event.source === 'sanity'
+      ? `/evento/${event.id}`
+      : null
+
   // Pronosticar: solo mientras el partido no haya arrancado (la quiniela cierra).
   const showPredict = !!canPredict && !isLive && !finished && !!onPredict
   // Hueco a la derecha para no chocar con la pastilla/campana absolutas.
@@ -568,6 +609,20 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
         boxShadow: '0 10px 24px -10px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -14px 22px -16px rgba(0,0,0,0.45)',
       }}
     >
+      {/* Enlace de la TARJETA a la ficha del partido, en capa (patrón "stretched
+          link") en vez de envolviendo la fila. Antes toda la fila era un <a>, así
+          que los nombres no podían enlazar a su equipo: un <a> dentro de otro <a>
+          es HTML inválido. Ahora la capa cubre el hueco y los nombres, la campana
+          y el chip se ponen por encima (z-3). */}
+      {cardHref ? (
+        <Link
+          href={cardHref}
+          prefetch={false}
+          className="absolute inset-0 z-[1]"
+          aria-label={`Ficha del partido: ${home}${away ? ` contra ${away}` : ''}`}
+        />
+      ) : null}
+
       {/* Luz refractada (blob) — el toque líquido, teñido del deporte */}
       <div
         aria-hidden
@@ -582,7 +637,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
       {canRemind ? (
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleReminder() }}
-          className="absolute z-[2] flex items-center justify-center rounded-full transition-colors"
+          className="absolute z-[3] flex items-center justify-center rounded-full transition-colors"
           style={{ top: 6, right: 7, width: 22, height: 22 }}
           aria-label={isReminded ? 'Quitar recordatorio' : 'Recordar'}
           title={isReminded ? 'Quitar recordatorio' : 'Recordar'}
@@ -593,7 +648,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
         </button>
       ) : null}
 
-      <div className="relative" style={{ zIndex: 1, paddingRight: contentPadRight }}>
+      <div className="relative pointer-events-none" style={{ zIndex: 2, paddingRight: contentPadRight }}>
         {/* Ceja CENTRADA encima del marcador: estado (EN VIVO·min / DESCANSO / FINAL) +
             fecha (Recordatorios) + título de velada / competición. */}
         {(isLive || finished || eyebrowText || dateLabel || stakes || showPredict) ? (
@@ -633,7 +688,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
             {showPredict ? (
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPredict?.() }}
-                className="inline-flex items-center gap-1 rounded-full flex-shrink-0 transition-colors hover:brightness-125"
+                className="pointer-events-auto relative z-[3] inline-flex items-center gap-1 rounded-full flex-shrink-0 transition-colors hover:brightness-125"
                 style={{
                   fontSize: 8.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em',
                   padding: '2px 8px', fontFamily: 'var(--font-sport)', cursor: 'pointer',
@@ -666,9 +721,11 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
              Bajo cada nombre, la forma reciente (últimos 5) si el SSR la trajo. */
           <div className="grid items-center" style={{ gridTemplateColumns: '1fr auto auto auto 1fr', gap: 7 }}>
             <span className="min-w-0">
-              <span className="block truncate text-right" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: homeLead ? 900 : 800, color: dimHome ? '#8A8A9E' : '#EDEDF5' }}>
-                {dispHome}
-              </span>
+              <TeamNameLink href={homeHref} name={rawHome} align="right">
+                <span className="block truncate text-right" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: homeLead ? 900 : 800, color: dimHome ? '#8A8A9E' : '#EDEDF5' }}>
+                  {dispHome}
+                </span>
+              </TeamNameLink>
               <FormBars form={formHome} align="right" />
               <StandingLine standing={event.homeStanding} align="right" />
             </span>
@@ -676,9 +733,11 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
             {scoreCapsule}
             {crest(event.awayLogo, event.awayPhoto, aFav)}
             <span className="min-w-0">
-              <span className="block truncate text-left" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: awayLead ? 900 : 800, color: dimAway ? '#8A8A9E' : '#EDEDF5' }}>
-                {dispAway}
-              </span>
+              <TeamNameLink href={awayHref} name={rawAway} align="left">
+                <span className="block truncate text-left" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: awayLead ? 900 : 800, color: dimAway ? '#8A8A9E' : '#EDEDF5' }}>
+                  {dispAway}
+                </span>
+              </TeamNameLink>
               <FormBars form={formAway} align="left" />
               <StandingLine standing={event.awayStanding} align="left" />
             </span>
@@ -714,7 +773,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
       {/* Historial (solo en los cruces con motivo). Va en su propia línea: es
           una frase, no un dato suelto, y compite mal con sede/canal. */}
       {h2hNote ? (
-        <div className="relative flex items-center justify-center gap-1.5 min-w-0" style={{ zIndex: 1, marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="relative pointer-events-none flex items-center justify-center gap-1.5 min-w-0" style={{ zIndex: 2, marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
           <span className="truncate" style={{ fontSize: 10, fontWeight: 700, color: '#9A8B6A', fontFamily: 'var(--font-sport)' }}>
             {h2hNote}
           </span>
@@ -722,7 +781,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
       ) : null}
 
       {(event.stage || event.venue || channel) ? (
-        <div className="relative flex items-center justify-center gap-1.5 min-w-0" style={{ zIndex: 1, marginTop: h2hNote ? 4 : 8, paddingTop: h2hNote ? 0 : 6, borderTop: h2hNote ? undefined : '1px solid rgba(255,255,255,0.07)', color: '#61616D' }}>
+        <div className="relative pointer-events-none flex items-center justify-center gap-1.5 min-w-0" style={{ zIndex: 2, marginTop: h2hNote ? 4 : 8, paddingTop: h2hNote ? 0 : 6, borderTop: h2hNote ? undefined : '1px solid rgba(255,255,255,0.07)', color: '#61616D' }}>
           {(event.stage || event.venue) ? (
             <span className="truncate" style={{ fontSize: 10, fontWeight: 600, color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>
               {[event.stage, event.venue].filter(Boolean).join(' · ')}
@@ -747,12 +806,6 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
       </div>
     )
   }
-
-  if (event.matchRef)
-    return <Link href={`/partido/${event.matchRef}`} prefetch={false} className="block no-underline">{inner}</Link>
-
-  if (event.source === 'sanity')
-    return <Link href={`/evento/${event.id}`} className="block no-underline">{inner}</Link>
 
   return inner
 }

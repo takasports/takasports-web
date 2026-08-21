@@ -19,8 +19,8 @@
 // tabla que sembrar ni bootstrap. El formato legacy (el de la app) NO paga esta
 // resolución: la liga viene en la propia URL.
 
-import { toNameSlug } from '@/lib/player-slug'
 import { SITE_URL } from '@/lib/constants'
+import { toNameSlug } from '@/lib/entity-slug'
 
 /** Referencia resuelta de un equipo, sea cual sea el formato de entrada. */
 export interface TeamRef {
@@ -29,11 +29,9 @@ export interface TeamRef {
   leagueSlug: string
 }
 
-/** Slug canónico de una ficha de equipo: nombre legible + teamId al final. */
-export function canonicalTeamSlug(name: string | null | undefined, teamId: string): string {
-  const base = name ? toNameSlug(name) : ''
-  return base ? `${base}-${teamId}` : teamId
-}
+// El constructor puro vive en entity-slug.ts (sin dependencias de servidor) para
+// que lo pueda usar el calendario, que es un componente cliente.
+export { canonicalTeamSlug } from '@/lib/entity-slug'
 
 /** Formato antiguo "<sport>_<league>_<teamId>", reconocido por el "_". */
 export function isLegacyTeamSlug(slug: string): boolean {
