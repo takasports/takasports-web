@@ -6,8 +6,9 @@
 import type { LiveScore } from './calendar-live'
 import { memo, useRef, useState } from 'react'
 import Link from 'next/link'
-import type { SportEvent } from '@/lib/types'
+import type { SportEvent, TeamStanding } from '@/lib/types'
 import type { FormResult } from '@/lib/past-events'
+import { matchStakes, standingLabel } from '@/lib/match-stakes'
 import { getLiveLabel, isCombat, isRacing, isTennis } from '@/lib/competitions'
 import { getBroadcastForTz, isSplitBroadcast } from '@/lib/broadcasts'
 import { formatDateLabel, isoToLocalDate } from '@/lib/calendar'
@@ -375,6 +376,22 @@ export function FormBars({ form, align }: { form?: FormResult[]; align: 'left' |
   )
 }
 
+// Puesto y puntos bajo el nombre ("4º · 38 pts"). Solo en ligas con tabla; el
+// dato lo adjunta fetchEspnEvents al evento, así que no cuesta ninguna llamada
+// extra aquí. Sin clasificación no pinta nada (no deja hueco).
+export function StandingLine({ standing, align }: { standing?: TeamStanding; align: 'left' | 'right' }) {
+  const label = standingLabel(standing)
+  if (!label) return null
+  return (
+    <span
+      className={`block truncate tabular-nums ${align === 'right' ? 'text-right' : 'text-left'}`}
+      style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.04em', color: '#6E6E80', fontFamily: 'var(--font-sport)', marginTop: 2 }}
+    >
+      {label}
+    </span>
+  )
+}
+
 // Cara del jugador (headshot de ESPN, redonda) o escudo (fútbol, cuadrado) que flanquea el
 // marcador en la fila. Prioriza la FOTO (tenis); si falla o no hay, el escudo; si tampoco,
 // NADA (la fila muestra solo el nombre — sin siglas raras). Aro tintado del acento (más si fav).
@@ -491,6 +508,10 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
 
   // Ceja: título de velada UFC parseado, o competición (vista Recordatorios).
   const eyebrowText = parsedTitle || (showComp && compLabel ? compLabel : '')
+  // Motivo del partido según la tabla. En partidos YA JUGADOS no aporta (la
+  // clasificación que traemos es la de HOY, no la de aquel día) → solo en
+  // próximos y en directo.
+  const stakes = finished ? null : matchStakes(event.homeStanding, event.awayStanding)
   // Hueco a la derecha para no chocar con la pastilla/campana absolutas.
   // El estado ya NO va en la esquina (pasa a ceja centrada) → el marcador queda CENTRADO;
   // solo reservamos hueco a la dcha para la campana de recordatorio en próximos.
@@ -567,7 +588,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
       <div className="relative" style={{ zIndex: 1, paddingRight: contentPadRight }}>
         {/* Ceja CENTRADA encima del marcador: estado (EN VIVO·min / DESCANSO / FINAL) +
             fecha (Recordatorios) + título de velada / competición. */}
-        {(isLive || finished || eyebrowText || dateLabel) ? (
+        {(isLive || finished || eyebrowText || dateLabel || stakes) ? (
           <div className="flex items-center justify-center gap-1.5" style={{ marginBottom: 5 }}>
             {dateLabel ? (
               <span className="flex-shrink-0 rounded-full" style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '1px 6px', color: accent, background: `${accent}14`, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
@@ -595,6 +616,23 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
                 {eyebrowText}
               </span>
             ) : null}
+            {/* Motivo del partido derivado de la tabla ("Líder vs 2º",
+                "Duelo de descenso"…). Realza lo importante en vez de esconder
+                lo secundario, que era lo único que sabía hacer "Destacados". */}
+            {stakes ? (
+              <span
+                className="inline-flex items-center gap-1 rounded-full flex-shrink-0 truncate"
+                style={{
+                  fontSize: 8.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em',
+                  padding: '2px 8px', maxWidth: '52%', fontFamily: 'var(--font-sport)',
+                  color: stakes.tone === 'alta' ? '#FCD34D' : '#C9A96A',
+                  background: stakes.tone === 'alta' ? 'rgba(252,211,77,0.1)' : 'rgba(201,169,106,0.08)',
+                  border: `1px solid ${stakes.tone === 'alta' ? 'rgba(252,211,77,0.28)' : 'rgba(201,169,106,0.22)'}`,
+                }}
+              >
+                {stakes.tone === 'alta' ? '★ ' : ''}{stakes.label}
+              </span>
+            ) : null}
           </div>
         ) : null}
 
@@ -607,6 +645,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
                 {dispHome}
               </span>
               <FormBars form={formHome} align="right" />
+              <StandingLine standing={event.homeStanding} align="right" />
             </span>
             {crest(event.homeLogo, event.homePhoto, hFav)}
             {scoreCapsule}
@@ -616,6 +655,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
                 {dispAway}
               </span>
               <FormBars form={formAway} align="left" />
+              <StandingLine standing={event.awayStanding} align="left" />
             </span>
           </div>
         ) : (

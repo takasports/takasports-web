@@ -1,8 +1,9 @@
-import type { SportEvent } from './types'
+import type { SportEvent, TeamStanding } from './types'
 import { getSportStyle } from './sports'
 import { SOURCE_TZ } from './timezone'
 import { getSpanishBroadcast } from './broadcasts'
-import { FOOTBALL_LEAGUES } from './football-leagues'
+import { FOOTBALL_LEAGUES, TABLE_LEAGUE_SLUGS } from './football-leagues'
+import { fetchLeagueTableRows, standingsAreMeaningful } from './espn-standings'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from './nation-names'
 import { athletePhoto } from './athlete-photos'
 
@@ -127,6 +128,9 @@ export const FINAL_STATUSES = new Set([
 interface RawEvent {
   isoDate: string
   event: SportEvent
+  /** Slug ESPN de la liga de origen ('soccer/esp.1'). Lo usa attachStandings
+   *  para pedir UNA tabla por liga presente en el feed. */
+  leagueSlug?: string
 }
 
 // Aborta el fetch a ESPN si tarda más de `ms`. Sin esto, una sola liga colgada
@@ -274,6 +278,7 @@ async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
 
     results.push({
       isoDate,
+      leagueSlug: source.slug,
       event: {
         id:        `espn-${source.slug.replace(/\//g, '-')}-${ev.id as string}`,
         home,
@@ -392,6 +397,70 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
   return results
 }
 
+// ── Clasificación en la fila (Fase 2 del rediseño del calendario) ───────────
+// Adjunta a cada evento el puesto y los puntos de sus dos equipos. Se hace en
+// UNA pasada al final y solo para las ligas que REALMENTE tienen partidos en el
+// feed (no las 20 de TABLE_LEAGUE_SLUGS a ciegas): una tabla por liga presente,
+// en paralelo, y el fetch de ESPN ya se cachea 30 min. Coste $0 (API pública).
+//
+// Va aquí y no en la página para que lo hereden los DOS clientes: el calendario
+// web (que llama a fetchEspnEvents en su SSR) y la app (que consume el mismo
+// feed por /api/events/feed).
+function standingKey(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\b(fc|cf|sl|sad|sc|afc|fk|ac|as|ss|rc|rcd|ud|sd|cd)\b/g, '')
+    .replace(/[^a-z0-9]/g, '')
+    .trim()
+}
+
+async function attachStandings(raw: RawEvent[]): Promise<void> {
+  const slugs = new Set<string>()
+  for (const r of raw) {
+    if (r.leagueSlug && TABLE_LEAGUE_SLUGS.has(r.leagueSlug)) slugs.add(r.leagueSlug)
+  }
+  if (slugs.size === 0) return
+
+  const tables = await Promise.allSettled(
+    [...slugs].map(async slug => ({ slug, rows: await fetchLeagueTableRows(slug) })),
+  )
+
+  // slug → (nombre normalizado → puesto/puntos/zona). Se indexa por nombre
+  // porque el evento trae `home`/`away` como texto, no el id de ESPN.
+  const bySlug = new Map<string, Map<string, TeamStanding>>()
+  for (const t of tables) {
+    if (t.status !== 'fulfilled' || t.value.rows.length === 0) continue
+    // Temporada recién arrancada: ESPN da la tabla entera a 0 puntos y ordenada
+    // alfabéticamente. Sin esto, la fila diría "1º · 0 pts" del Bournemouth.
+    if (!standingsAreMeaningful(t.value.rows)) continue
+    const byName = new Map<string, TeamStanding>()
+    for (const row of t.value.rows) {
+      const st: TeamStanding = { rank: row.rank, pts: row.pts, zone: row.zone, of: t.value.rows.length }
+      byName.set(standingKey(row.name), st)
+      if (row.abbr) byName.set(standingKey(row.abbr), st)
+    }
+    bySlug.set(t.value.slug, byName)
+  }
+
+  for (const r of raw) {
+    const byName = r.leagueSlug ? bySlug.get(r.leagueSlug) : undefined
+    if (!byName || !r.event.away) continue
+    const h = byName.get(standingKey(r.event.home))
+    const a = byName.get(standingKey(r.event.away))
+    // Los DOS o ninguno. fetchLeagueTableRows solo lee el primer grupo del
+    // standings de ESPN, así que en ligas por conferencias/zonas (MLS,
+    // Argentina) el rival de la otra conferencia no aparece: pintar el puesto
+    // de uno solo parecería un fallo, y comparar puestos de tablas distintas
+    // sería peor. Con ambos presentes están por fuerza en la misma tabla.
+    if (h && a) {
+      r.event.homeStanding = h
+      r.event.awayStanding = a
+    }
+  }
+}
+
 export async function fetchEspnEvents(): Promise<SportEvent[]> {
   const [leagueResults, tennisResults] = await Promise.all([
     Promise.allSettled(SOURCES.map(fetchLeague)),
@@ -408,6 +477,10 @@ export async function fetchEspnEvents(): Promise<SportEvent[]> {
   }
 
   raw.sort((a, b) => a.isoDate.localeCompare(b.isoDate))
+
+  // Puesto y puntos de cada equipo (una tabla por liga presente en el feed).
+  // Best-effort: si ESPN falla, los eventos salen sin standing y la fila los omite.
+  await attachStandings(raw)
 
   // ── Dedup ─────────────────────────────────────────────────────────────────
   // For non-team sports (F1, UFC) ESPN returns multiple sessions per event

@@ -100,6 +100,21 @@ export async function fetchLeagueTableRows(leagueSlug: string): Promise<Omit<Lea
   } catch { return [] }
 }
 
+// ── ¿La tabla dice algo? ─────────────────────────────────────────────
+// Al arrancar la temporada ESPN devuelve la clasificación COMPLETA con todos
+// los equipos a 0 puntos y el "rank" en orden alfabético: el 21/08/2026 la
+// Premier daba "1º AFC Bournemouth, 2º Arsenal" sin haberse jugado nada. Pintar
+// eso en la fila (o peor, etiquetarlo "Líder vs 2º") sería sencillamente falso.
+//
+// Con 1-2 jornadas el líder sigue siendo ruido, así que exigimos que alguien
+// haya jugado al menos MIN_GP partidos para dar la tabla por significativa.
+export const STANDINGS_MIN_GP = 3
+
+export function standingsAreMeaningful(rows: Array<{ gp: number }>): boolean {
+  if (rows.length === 0) return false
+  return rows.some(r => r.gp >= STANDINGS_MIN_GP)
+}
+
 // ── Clasificación por grupos (torneos: Mundial) ──────────────────────
 // A diferencia de fetchLeagueTableRows (una sola tabla, ligas round-robin de
 // TABLE_LEAGUE_SLUGS), devuelve TODOS los grupos del standings de ESPN: en el

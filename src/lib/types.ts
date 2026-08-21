@@ -47,6 +47,18 @@ export interface ArticlePreview {
 }
 
 // ── Eventos deportivos ────────────────────────────────────────
+/** Posición del equipo en su liga, adjuntada al evento para dar contexto en la
+ *  fila del calendario sin abrir la ficha. Sale de la clasificación de ESPN
+ *  (gratis) y solo existe en ligas round-robin (TABLE_LEAGUE_SLUGS). */
+export interface TeamStanding {
+  rank: number
+  pts: number
+  /** Zona de la tabla (champions/europa/descenso…) para el "motivo" del partido. */
+  zone?: string
+  /** Equipos en la tabla — permite saber si un puesto es "colista" o zona baja. */
+  of?: number
+}
+
 export interface SportEvent {
   id: string
   home: string
@@ -74,6 +86,10 @@ export interface SportEvent {
   awayScore?: number | null
   isPast?: boolean
   resultNote?: string     // F1/UFC pasados: ganador del evento (no hay marcador)
+  // Clasificación de cada equipo (solo ligas con tabla). La adjunta
+  // fetchEspnEvents en una pasada final, así la reciben web Y app (feed).
+  homeStanding?: TeamStanding
+  awayStanding?: TeamStanding
 }
 
 // Evento desde Sanity (futuro)
