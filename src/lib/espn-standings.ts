@@ -129,10 +129,18 @@ export interface LeagueTable {
   season?: { startDate?: string; endDate?: string; year?: number }
 }
 
-export async function fetchLeagueTable(leagueSlug: string): Promise<LeagueTable> {
+/**
+ * Tabla de una liga. Con `season` devuelve la de ESE año — el mismo endpoint
+ * acepta `?season=2025` y sirve el cierre del curso anterior, que es lo que
+ * rellena la fila en agosto mientras la tabla viva no dice nada
+ * (ver lib/last-season.ts).
+ */
+export async function fetchLeagueTable(leagueSlug: string, year?: number): Promise<LeagueTable> {
   try {
+    // `year` (no `season`): dentro se lee `json.season`, y compartir nombre lo tapaba.
+    const qs = year ? `?season=${year}` : ''
     const res = await fetch(
-      `https://site.web.api.espn.com/apis/v2/sports/${leagueSlug}/standings`,
+      `https://site.web.api.espn.com/apis/v2/sports/${leagueSlug}/standings${qs}`,
       { next: { revalidate: 1800 } },
     )
     if (!res.ok) return { rows: [] }

@@ -40,6 +40,10 @@ export function matchStakes(
   away: TeamStanding | undefined,
 ): MatchStakes | null {
   if (!home || !away) return null
+  // Puestos del año pasado: sirven para situar al lector ("2º el año pasado"),
+  // NO para anunciar un cartel. "Líder vs 2º" con la tabla del curso anterior
+  // sería falso — este año pueden ir decimoquintos.
+  if (home.lastSeason || away.lastSeason) return null
   const hi = Math.min(home.rank, away.rank)
   const lo = Math.max(home.rank, away.rank)
 
@@ -86,6 +90,11 @@ export function matchStakes(
  */
 export function standingLabel(s: TeamStanding | undefined): string | null {
   if (!s) return null
+  // Sin tabla útil todavía (agosto), la fila enseña el CIERRE del año pasado.
+  // Va sin puntos a propósito: el puesto sitúa, los 86 puntos de la temporada
+  // anterior no le dicen nada a nadie y alargan la línea. Ver lib/last-season.ts.
+  if (s.promoted) return 'Recién ascendido'
+  if (s.lastSeason) return `${ord(s.rank)} el año pasado`
   const puesto = s.group ? `${ord(s.rank)} ${s.group}` : ord(s.rank)
   const valor = s.relegation === false && s.record ? s.record : `${s.pts} pts`
   return `${puesto} · ${valor}`

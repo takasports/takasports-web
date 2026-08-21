@@ -5,6 +5,9 @@ import { getSpanishBroadcast } from './broadcasts'
 import { FOOTBALL_LEAGUES, TABLE_LEAGUE_SLUGS } from './football-leagues'
 import { fetchLeagueTable } from './espn-standings'
 import { standingsUsable } from './standings-window'
+import {
+  canPromote, pairLastSeason, previousSeasonYear, seasonLooksComplete, type SeasonRow,
+} from './last-season'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from './nation-names'
 import { athletePhoto } from './athlete-photos'
 import { setsStrFromLinescores } from './tennis-sets'
@@ -510,12 +513,19 @@ async function attachStandings(raw: RawEvent[]): Promise<void> {
   // slug → (nombre normalizado → puesto/puntos/zona). Se indexa por nombre
   // porque el evento trae `home`/`away` como texto, no el id de ESPN.
   const bySlug = new Map<string, Map<string, TeamStanding>>()
+  // Ligas cuya tabla viva aún no dice nada (agosto): se les pedirá la del año
+  // pasado en una segunda tanda. Ver lib/last-season.ts.
+  const pendientes: Array<{ slug: string; year: number }> = []
   for (const t of tables) {
     if (t.status !== 'fulfilled') continue
     const { rows, season } = t.value.table
     // ÚNICO interruptor: temporada en marcha + jornadas suficientes. Se enciende
     // y se apaga solo con lo que publica ESPN — sin cron ni fechas a mano.
-    if (!standingsUsable(rows, season, now)) continue
+    if (!standingsUsable(rows, season, now)) {
+      const year = previousSeasonYear(season)
+      if (year) pendientes.push({ slug: t.value.slug, year })
+      continue
+    }
 
     const relegation = hasRelegation(t.value.slug)
     const sizeByGroup = new Map<string, number>()
@@ -538,9 +548,57 @@ async function attachStandings(raw: RawEvent[]): Promise<void> {
     bySlug.set(t.value.slug, byName)
   }
 
+  // ── Segunda tanda: el año pasado, SOLO donde la tabla viva no vale ────────
+  // El 21/08/2026 eran 15 ligas de las 20 del feed. Cada una es una petición
+  // más a ESPN, cacheada 30 min igual que la otra, y desaparece sola en cuanto
+  // la temporada cumple tres jornadas.
+  const viejasPorLiga = new Map<string, Map<string, SeasonRow>>()
+  const metaPorLiga = new Map<string, { canPromote: boolean; of: number }>()
+  if (pendientes.length) {
+    const antiguas = await Promise.allSettled(
+      pendientes.map(async p => ({ slug: p.slug, table: await fetchLeagueTable(p.slug, p.year) })),
+    )
+    for (const v of antiguas) {
+      if (v.status !== 'fulfilled') continue
+      const filas = v.value.table.rows
+      // Si lo que llega no parece una temporada TERMINADA, mejor no enseñar nada
+      // que anunciar como cierre del año pasado una foto de la jornada 3.
+      if (!seasonLooksComplete(filas)) continue
+      const porNombre = new Map<string, SeasonRow>()
+      const comoSeason = filas.map(f => ({
+        name: f.name, abbr: f.abbr, rank: f.rank, pts: f.pts, gp: f.gp,
+        group: shortGroupName(f.group),
+      }))
+      for (const f of comoSeason) {
+        porNombre.set(standingKey(f.name), f)
+        if (f.abbr) porNombre.set(standingKey(f.abbr), f)
+      }
+      viejasPorLiga.set(v.value.slug, porNombre)
+      metaPorLiga.set(v.value.slug, {
+        canPromote: canPromote(v.value.slug, comoSeason),
+        of: comoSeason.length,
+      })
+    }
+  }
+
   for (const r of raw) {
     const byName = r.leagueSlug ? bySlug.get(r.leagueSlug) : undefined
-    if (!byName || !r.event.away) continue
+    if (!r.event.away) continue
+    if (!byName) {
+      const viejas = r.leagueSlug ? viejasPorLiga.get(r.leagueSlug) : undefined
+      const meta = r.leagueSlug ? metaPorLiga.get(r.leagueSlug) : undefined
+      if (!viejas || !meta) continue
+      const par = pairLastSeason(
+        viejas.get(standingKey(r.event.home)),
+        viejas.get(standingKey(r.event.away)),
+        meta,
+      )
+      if (par) {
+        r.event.homeStanding = par.home
+        r.event.awayStanding = par.away
+      }
+      continue
+    }
     const h = byName.get(standingKey(r.event.home))
     const a = byName.get(standingKey(r.event.away))
     // Los dos o ninguno, y del MISMO grupo. Comparar el 1º del Este con el 1º

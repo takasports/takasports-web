@@ -65,6 +65,14 @@ export interface TeamStanding {
   /** ¿La liga tiene descenso? En la NBA ir último no es descender, así que el
    *  motivo "Duelo de descenso" no debe dispararse ahí. */
   relegation?: boolean
+  /** El puesto es el FINAL de la temporada PASADA, no el de la tabla viva: en
+   *  agosto la tabla real no dice nada todavía (ver lib/last-season.ts). Se
+   *  etiqueta siempre como pasado y NUNCA alimenta el motivo del partido — un
+   *  "Líder vs 2º" del año anterior sería sencillamente falso. */
+  lastSeason?: boolean
+  /** No estaba en la tabla del año pasado porque subió de categoría. Con esto
+   *  `rank` no significa nada (vale 0) y la fila dice "Recién ascendido". */
+  promoted?: boolean
 }
 
 export interface SportEvent {
