@@ -1318,7 +1318,14 @@ export default function CalendarioContent({ events, pastEvents = [], recentForms
                 // se re-monta y dispara la entrada en cascada (Fase B). No incluye
                 // search ni liveScores → no re-anima al teclear ni en cada poll.
                 <section ref={dateKey === todayKey ? todaySepRef : undefined} key={`${activeFilter}|${selectedDate ?? ''}|${onlyLive ? 'L' : ''}|${dateKey}`}>
-                  <DaySeparator dateKey={dateKey} count={dayEvents.length} tone={dateKey < todayKey ? 'past' : 'upcoming'} tz={tz} />
+                  <DaySeparator
+                    dateKey={dateKey}
+                    count={dayEvents.length}
+                    liveCount={dayEvents.filter(e => liveScores.has(e.id) && isLiveStatus(liveScores.get(e.id)?.status ?? '')).length}
+                    mineCount={dayEvents.filter(e => eventHasFavorite(favorites, e)).length}
+                    tone={dateKey < todayKey ? 'past' : 'upcoming'}
+                    tz={tz}
+                  />
                   {compOrder.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     // FASE 3 (José Tomás 2026-07-09): cabecera de liga en el color

@@ -7,6 +7,7 @@ import type { LiveScore } from './calendar-live'
 import { memo, useRef, useState } from 'react'
 import Link from 'next/link'
 import type { SportEvent } from '@/lib/types'
+import type { FormResult } from '@/lib/past-events'
 import { getLiveLabel, isCombat, isRacing, isTennis } from '@/lib/competitions'
 import { getBroadcastForTz, isSplitBroadcast } from '@/lib/broadcasts'
 import { formatDateLabel, isoToLocalDate } from '@/lib/calendar'
@@ -352,6 +353,28 @@ export function CompGroupHeader({ comp, accent, count, first, crest, slug, banne
     : inner
 }
 
+// Forma reciente (últimos 5): barritas W/D/L bajo el nombre del equipo. El dato más
+// reciente va PRIMERO en el array (fetchRecentFormByTeams) y se pinta primero (el más
+// cercano al presente pegado al escudo no; simplemente izquierda→derecha = reciente→viejo).
+// Verde=victoria, gris=empate, rojo apagado=derrota. Fase 1 del rediseño del calendario:
+// este dato se calculaba en el SSR desde 2026-07 y no se pintaba en ninguna parte.
+export function FormBars({ form, align }: { form?: FormResult[]; align: 'left' | 'right' }) {
+  if (!form || form.length === 0) return null
+  const color = (r: FormResult) => r === 'W' ? '#34D399' : r === 'D' ? '#6B7280' : 'rgba(255,77,46,0.75)'
+  const title = form.slice(0, 5).map(r => r === 'W' ? 'V' : r === 'D' ? 'E' : 'D').join('-')
+  return (
+    <span
+      className={`flex items-center gap-[2.5px] mt-[3px] ${align === 'right' ? 'justify-end' : 'justify-start'}`}
+      aria-label={`Forma reciente: ${title}`}
+      title={`Últimos ${Math.min(form.length, 5)}: ${title}`}
+    >
+      {form.slice(0, 5).map((r, i) => (
+        <span key={i} className="block rounded-[2px]" style={{ width: 11, height: 3.5, background: color(r) }} />
+      ))}
+    </span>
+  )
+}
+
 // Cara del jugador (headshot de ESPN, redonda) o escudo (fútbol, cuadrado) que flanquea el
 // marcador en la fila. Prioriza la FOTO (tenis); si falla o no hay, el escudo; si tampoco,
 // NADA (la fila muestra solo el nombre — sin siglas raras). Aro tintado del acento (más si fav).
@@ -383,7 +406,7 @@ export function MatchCrest({ photo, logo, accent, fav }: { photo?: string; logo?
 // ancho. Favorito = anillo en el escudo (se gestiona en "Mis equipos", como la app).
 // Recordatorio = campana mínima arriba-dcha SOLO en próximos (la web no tiene toque
 // largo). Conserva onClickUFC (modal cartelera), liveScore, tz y la agrupación por liga.
-export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, homeFav, awayFav, showComp, tz }: {
+export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, homeFav, awayFav, formHome, formAway, showComp, tz }: {
   event: SportEvent
   liveScore?: LiveScore
   isReminded: boolean
@@ -576,16 +599,23 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
         ) : null}
 
         {isMatchup ? (
-          /* Marcador central: nombres + escudos ABRAZAN la cápsula (no se van a los lados) */
+          /* Marcador central: nombres + escudos ABRAZAN la cápsula (no se van a los lados).
+             Bajo cada nombre, la forma reciente (últimos 5) si el SSR la trajo. */
           <div className="grid items-center" style={{ gridTemplateColumns: '1fr auto auto auto 1fr', gap: 7 }}>
-            <span className="truncate text-right" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: homeLead ? 900 : 800, color: dimHome ? '#8A8A9E' : '#EDEDF5' }}>
-              {dispHome}
+            <span className="min-w-0">
+              <span className="block truncate text-right" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: homeLead ? 900 : 800, color: dimHome ? '#8A8A9E' : '#EDEDF5' }}>
+                {dispHome}
+              </span>
+              <FormBars form={formHome} align="right" />
             </span>
             {crest(event.homeLogo, event.homePhoto, hFav)}
             {scoreCapsule}
             {crest(event.awayLogo, event.awayPhoto, aFav)}
-            <span className="truncate text-left" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: awayLead ? 900 : 800, color: dimAway ? '#8A8A9E' : '#EDEDF5' }}>
-              {dispAway}
+            <span className="min-w-0">
+              <span className="block truncate text-left" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: awayLead ? 900 : 800, color: dimAway ? '#8A8A9E' : '#EDEDF5' }}>
+                {dispAway}
+              </span>
+              <FormBars form={formAway} align="left" />
             </span>
           </div>
         ) : (
@@ -614,11 +644,22 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
         )}
       </div>
 
-      {/* Canal (sub-línea fina) */}
-      {channel ? (
-        <div className="relative flex items-center justify-center gap-1.5" style={{ zIndex: 1, marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)', color: '#61616D' }}>
-          <TvIcon size={10} className="flex-shrink-0" />
-          <span className="truncate" style={{ fontSize: 10, fontWeight: 600, color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>{channel}</span>
+      {/* Contexto (sub-línea fina): fase · sede · canal. La fase (stage) y la sede
+          (venue) ya viajaban en el evento desde el feed de ESPN y no se pintaban. */}
+      {(event.stage || event.venue || channel) ? (
+        <div className="relative flex items-center justify-center gap-1.5 min-w-0" style={{ zIndex: 1, marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)', color: '#61616D' }}>
+          {(event.stage || event.venue) ? (
+            <span className="truncate" style={{ fontSize: 10, fontWeight: 600, color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>
+              {[event.stage, event.venue].filter(Boolean).join(' · ')}
+            </span>
+          ) : null}
+          {channel ? (
+            <>
+              {(event.stage || event.venue) ? <span aria-hidden style={{ fontSize: 10, color: '#61616D' }}>·</span> : null}
+              <TvIcon size={10} className="flex-shrink-0" />
+              <span className="truncate flex-shrink-0" style={{ fontSize: 10, fontWeight: 600, color: '#8A8A9E', fontFamily: 'var(--font-sport)', maxWidth: '46%' }}>{channel}</span>
+            </>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -685,9 +726,13 @@ export function formatDateSubtitle(localDate: string): string {
 }
 
 // Day separator — prominent header for each date in the events list.
-export function DaySeparator({ dateKey, count, tone = 'upcoming', tz }: {
+export function DaySeparator({ dateKey, count, liveCount = 0, mineCount = 0, tone = 'upcoming', tz }: {
   dateKey: string
   count: number
+  /** Partidos EN VIVO dentro del día (píldora roja en el resumen). */
+  liveCount?: number
+  /** Partidos con un equipo favorito del usuario ("N tuyos"). */
+  mineCount?: number
   tone?: 'upcoming' | 'past'
   tz?: string
 }) {
@@ -720,9 +765,17 @@ export function DaySeparator({ dateKey, count, tone = 'upcoming', tz }: {
             )}
           </div>
         </div>
-        <span className="flex items-center justify-center h-[22px] px-2.5 rounded-full text-[10px] font-black tabular-nums flex-shrink-0"
+        {/* Resumen del día: "N partidos · M en vivo · K tuyos" (Fase 1 del rediseño).
+            Los extras solo aparecen si aportan (M>0 / K>0) para no alargar el chip. */}
+        <span className="flex items-center justify-center gap-1 h-[22px] px-2.5 rounded-full text-[10px] font-black tabular-nums flex-shrink-0"
           style={{ background: isToday ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.05)', color: chipColor, border: `1px solid ${isToday ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.08)'}`, fontFamily: 'var(--font-sport)' }}>
           {count} {count === 1 ? 'partido' : 'partidos'}
+          {liveCount > 0 && (
+            <span style={{ color: '#FF6349' }}>· {liveCount} en vivo</span>
+          )}
+          {mineCount > 0 && (
+            <span style={{ color: '#6EE7B7' }}>· {mineCount} {mineCount === 1 ? 'tuyo' : 'tuyos'}</span>
+          )}
         </span>
       </div>
     </div>
@@ -818,14 +871,18 @@ export function LiveHeroStrip({ items }: { items: React.ReactNode[] }) {
 // (cierran sobre event/toggles estables). (FASE 7 tanda D — hallazgo [16])
 export type MatchRowProps = Parameters<typeof MatchRowInner>[0]
 export function matchRowPropsEqual(a: MatchRowProps, b: MatchRowProps): boolean {
-  // Solo comparamos las props que AFECTAN al render compacto. isFav/showReason/
-  // formHome/formAway ya no se pintan (la fila compacta no lleva forma ni motivo).
+  // Solo comparamos las props que AFECTAN al render compacto. isFav/showReason
+  // no se pintan. formHome/formAway SÍ se pintan (barritas de forma, Fase 1 del
+  // rediseño); comparación por referencia — recentForms se construye una vez en
+  // el SSR y sus arrays son estables entre renders.
   if (
     a.event !== b.event ||
     a.isReminded !== b.isReminded ||
     a.flashing !== b.flashing ||
     a.homeFav !== b.homeFav ||
     a.awayFav !== b.awayFav ||
+    a.formHome !== b.formHome ||
+    a.formAway !== b.formAway ||
     a.showComp !== b.showComp ||
     a.dateLabel !== b.dateLabel ||
     a.tz !== b.tz
