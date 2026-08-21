@@ -490,7 +490,7 @@ function ScoringTimeline({ events, homeTeam, awayTeam, leagueSlug }: { events: S
 }
 
 // ── Minuto a minuto (commentary) ───────────────────────────────────
-function CommentaryFeed({ entries }: { entries: CommentaryEntry[] }) {
+function CommentaryFeed({ entries, leagueSlug }: { entries: CommentaryEntry[]; leagueSlug?: string }) {
   if (!entries.length) return null
 
   const colorFor = (e: CommentaryEntry): string => {
@@ -559,7 +559,10 @@ function CommentaryFeed({ entries }: { entries: CommentaryEntry[] }) {
                 </span>
                 {e.player && (
                   <span className="text-[11px]" style={{ color: e.key ? '#C0C0D4' : '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-                    {' · '}{e.player}
+                    {' · '}
+                    {/* El nombre enlaza a su ficha. El id no viene en la crónica
+                        de ESPN: lo recupera la API cruzando con las alineaciones. */}
+                    <PlayerName name={e.player} playerId={e.playerId} leagueSlug={leagueSlug} />
                   </span>
                 )}
                 {e.assist && (
@@ -1799,7 +1802,7 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
         {/* ── Tab 1: Minuto a minuto ───────────────────── */}
         <div>
           {hasCommentary ? (
-            <CommentaryFeed entries={match.soccer!.commentary!} />
+            <CommentaryFeed entries={match.soccer!.commentary!} leagueSlug={match.leagueSlug} />
           ) : (
             <EmptyState message="El minuto a minuto aparecerá cuando arranque el partido." kind="events" />
           )}

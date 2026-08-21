@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { buildPlayerIndex, lookupPlayerId } from '@/lib/match-player-index'
 import type { StandingZone } from '@/lib/league-zones'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
 import { LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
@@ -55,7 +56,7 @@ export interface ScoringEvent {
 // Entrada del minuto a minuto (commentary de ESPN, ya localizada). El texto
 // original viene en inglés → no se usa: se reconstruye una etiqueta en español
 // a partir del tipo estructurado de jugada + equipo + jugador. ESPN no da el id
-// del atleta en commentary, así que el feed no enlaza (los goles sí enlazan en
+// del atleta en commentary; el id se recupera cruzando con las alineaciones (antes
 // el "Resumen" vía keyEvents).
 export interface CommentaryEntry {
   minute?: string
@@ -63,6 +64,10 @@ export interface CommentaryEntry {
   label: string         // etiqueta en español
   team?: 'home' | 'away'
   player?: string
+  /** id ESPN del atleta → enlace a /jugador. ESPN NO lo da en `commentary`
+   *  (solo el nombre), así que se recupera cruzando con las alineaciones del
+   *  propio partido — ver lib/match-player-index.ts. */
+  playerId?: string
   assist?: string       // segundo participante en goles (asistencia)
   key: boolean          // evento destacado (gol/tarjeta/cambio/penalti/VAR)
 }
@@ -472,8 +477,22 @@ function buildSoccer(json: Record<string, unknown>, homeId?: string): NonNullabl
 // (con su matiz "---xxx", vía commentaryLabelFor) y devolvemos lo más reciente
 // primero (estilo directo). Tipos no mapeados (saque de banda, «noplay», ruido)
 // se descartan para no colar inglés.
-function buildSoccerCommentary(json: Record<string, unknown>, homeName?: string, awayName?: string): CommentaryEntry[] {
+function buildSoccerCommentary(
+  json: Record<string, unknown>,
+  homeName?: string,
+  awayName?: string,
+): CommentaryEntry[] {
   const out: CommentaryEntry[] = []
+  // Nombre → id, sacado de las alineaciones del MISMO partido: es lo que
+  // convierte la crónica en algo navegable.
+  const index = buildPlayerIndex(
+    (asArr(json.rosters) as Record<string, unknown>[]).flatMap(r =>
+      (asArr(r.roster) as Record<string, unknown>[]).map(p => ({
+        id: asString(asObj(p.athlete)?.id) ?? '',
+        name: asString(asObj(p.athlete)?.displayName) ?? '',
+      })),
+    ),
+  )
   for (const c of asArr(json.commentary) as Record<string, unknown>[]) {
     const play = asObj(c.play)
     const rawType = asString(asObj(play?.type)?.type) ?? ''
@@ -507,6 +526,7 @@ function buildSoccerCommentary(json: Record<string, unknown>, homeName?: string,
       label: mapped.label,
       team,
       player,
+      playerId: lookupPlayerId(index, player),
       assist,
       key: mapped.key,
     })
