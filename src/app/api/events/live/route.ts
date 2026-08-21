@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { formatTennisSets, parseCurrentSetScore, parseSetsWon } from '@/lib/tennis-sets'
 import { normalizeTeam, normalizeAthlete, type NormalizedTeam } from '@/lib/teams-catalog'
 import { FOOTBALL_LEAGUES } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
@@ -118,50 +119,8 @@ function parseElapsed(clock: string | undefined): number | null {
   return match ? parseInt(match[1], 10) : null
 }
 
-function parseSetsWon(scoreStr: string | undefined): [number, number] {
-  if (!scoreStr) return [0, 0]
-  const sets = scoreStr.trim().split(/\s+/)
-  let home = 0, away = 0
-  for (const set of sets) {
-    const base = set.replace(/\(.*?\)/g, '')
-    const [a, b] = base.split('-').map(Number)
-    if (isNaN(a) || isNaN(b)) continue
-    if (a > b) home++
-    else if (b > a) away++
-  }
-  return [home, away]
-}
-
-function parseCurrentSetScore(scoreStr: string | undefined): string | null {
-  if (!scoreStr) return null
-  const sets = scoreStr.trim().split(/\s+/)
-  if (sets.length === 0) return null
-  const last = sets[sets.length - 1].replace(/\(.*?\)/g, '')
-  const parts = last.split('-').map(Number)
-  if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) return null
-  const [a, b] = parts
-  const isComplete = (a >= 6 || b >= 6) && Math.abs(a - b) >= 2
-  return isComplete ? null : last
-}
-
-/** Build a human-readable set-by-set string for tennis (e.g. "6-4 7-5 *3-2").
- *  The active (incomplete) set is prefixed with * for UI highlighting.
- *  Handles tiebreaks: "7-6(4)" is correctly treated as a completed set. */
-function formatTennisSets(homeStr: string | undefined): string {
-  if (!homeStr) return ''
-  const sets = homeStr.trim().split(/\s+/)
-  const parts: string[] = []
-  for (const set of sets) {
-    const hasTiebreak = /\(.*?\)/.test(set)
-    const base = set.replace(/\(.*?\)/g, '')
-    const [a, b] = base.split('-').map(Number)
-    if (isNaN(a) || isNaN(b)) continue
-    const isComplete = hasTiebreak || ((a >= 6 || b >= 6) && Math.abs(a - b) >= 2)
-    parts.push(isComplete ? `${a}-${b}` : `*${a}-${b}`)
-  }
-  return parts.join(' ')
-}
-
+// El parseo del marcador de tenis vive en lib/tennis-sets.ts: la fila del
+// calendario necesita el mismo set a set y no puede importar de una route.
 // ── Helpers ─────────────────────────────────────────────────────
 
 type RawCompetitor = Record<string, unknown>

@@ -26,6 +26,7 @@ export interface RawLiveFixture {
   awayPhoto?: string
   matchRef?: string
   clock?: string
+  setsStr?: string
 }
 
 export interface LiveScore {
@@ -34,6 +35,10 @@ export interface LiveScore {
   status: string
   elapsed: number | null
   clock?: string   // current set score for tennis e.g. "4-2"
+  /** Tenis: set a set ("6-4 7-5 *3-2"; el * marca el set en juego). Lo calcula
+   *  /api/events/live desde siempre; este tipo lo dejaba caer, así que la fila
+   *  del calendario enseñaba "1 - 0" sin decir cómo iba ningún set. */
+  setsStr?: string
 }
 
 
@@ -145,6 +150,7 @@ export function useLiveScores(events: SportEvent[]) {
             status:    m.status,
             elapsed:   m.elapsed,
             clock:     m.clock,
+            setsStr:   m.setsStr,
           })
         }
       }

@@ -401,6 +401,38 @@ export function TeamNameLink({ href, name, align, children }: {
   )
 }
 
+// Set a set de un partido de tenis ("6-4 7-5 *3-2"): cada set en su cápsula y
+// el que se está jugando resaltado con el acento. Sin esto un tenis en directo
+// solo decía "1 - 0" (sets ganados), que es el dato menos informativo de los tres
+// que ESPN manda en la misma respuesta.
+export function TennisSetLine({ setsStr, accent }: { setsStr: string; accent: string }) {
+  const sets = setsStr.split(' ').filter(Boolean)
+  if (sets.length === 0) return null
+  return (
+    <span className="inline-flex items-center gap-1" aria-label={`Sets: ${setsStr.replace(/\*/g, '')}`}>
+      {sets.map((set, i) => {
+        const activo = set.startsWith('*')
+        const txt = activo ? set.slice(1) : set
+        return (
+          <span
+            key={i}
+            className="tabular-nums rounded"
+            style={{
+              fontSize: 10, fontWeight: activo ? 900 : 700, padding: '1px 5px',
+              fontFamily: 'var(--font-sport)',
+              color: activo ? accent : '#9A9AAE',
+              background: activo ? `color-mix(in srgb, ${accent} 14%, transparent)` : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${activo ? `color-mix(in srgb, ${accent} 34%, transparent)` : 'rgba(255,255,255,0.08)'}`,
+            }}
+          >
+            {txt}
+          </span>
+        )
+      })}
+    </span>
+  )
+}
+
 // Puesto y puntos bajo el nombre ("4º · 38 pts"). Solo en ligas con tabla; el
 // dato lo adjunta fetchEspnEvents al evento, así que no cuesta ninguna llamada
 // extra aquí. Sin clasificación no pinta nada (no deja hueco).
@@ -558,6 +590,10 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
     : event.source === 'sanity'
       ? `/evento/${event.id}`
       : null
+
+  // Tenis: set a set. Solo cuando hay marcador real (en juego o terminado); en un
+  // partido por empezar no hay nada que enseñar.
+  const tennisSets = tennis && (isLive || finished) ? (liveScore?.setsStr ?? '') : ''
 
   // Pronosticar: solo mientras el partido no haya arrancado (la quiniela cierra).
   const showPredict = !!canPredict && !isLive && !finished && !!onPredict
@@ -770,6 +806,13 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
 
       {/* Contexto (sub-línea fina): fase · sede · canal. La fase (stage) y la sede
           (venue) ya viajaban en el evento desde el feed de ESPN y no se pintaban. */}
+      {/* Set a set del tenis, en su propia línea bajo el marcador. */}
+      {tennisSets ? (
+        <div className="relative pointer-events-none flex items-center justify-center gap-1.5" style={{ zIndex: 2, marginTop: 7, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <TennisSetLine setsStr={tennisSets} accent={accent} />
+        </div>
+      ) : null}
+
       {/* Historial (solo en los cruces con motivo). Va en su propia línea: es
           una frase, no un dato suelto, y compite mal con sede/canal. */}
       {h2hNote ? (
