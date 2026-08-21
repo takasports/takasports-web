@@ -10,6 +10,7 @@ import type { SportEvent, TeamStanding } from '@/lib/types'
 import type { FormResult } from '@/lib/past-events'
 import { matchStakes, standingLabel } from '@/lib/match-stakes'
 import { canonicalPlayerSlug, canonicalTeamSlug } from '@/lib/entity-slug'
+import { rowChannel } from '@/lib/comp-group-channel'
 import { getLiveLabel, isCombat, isRacing, isTennis } from '@/lib/competitions'
 import { getBroadcastForTz, isSplitBroadcast } from '@/lib/broadcasts'
 import { formatDateLabel, isoToLocalDate } from '@/lib/calendar'
@@ -293,9 +294,11 @@ export function compConfigForGroup(comp: string, sport?: string) {
 // ─── Competition sub-header ───────────────────────────────────────────────
 // Si la competición tiene página propia, la cabecera lleva su escudo oficial y
 // es un enlace a /calendario/[slug] (anclaje visual + descubrimiento).
-export function CompGroupHeader({ comp, accent, count, first, crest, slug, banner, pinned, onTogglePin }: {
+export function CompGroupHeader({ comp, accent, count, first, crest, slug, banner, pinned, onTogglePin, channel }: {
   comp: string; accent: string; count: number; first?: boolean; crest?: string; slug?: string
   banner?: string; pinned?: boolean; onTogglePin?: () => void
+  /** Canal común a TODA la liga: se anuncia aquí una vez y las filas no lo repiten. */
+  channel?: string | null
 }) {
   const inner = (
     <div className={`relative px-2 pb-2 ${first ? 'pt-1' : 'pt-4'}`}>
@@ -320,6 +323,15 @@ export function CompGroupHeader({ comp, accent, count, first, crest, slug, banne
         <span className="text-[11px] font-bold uppercase tracking-[0.12em] truncate flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
           {comp}
         </span>
+        {channel && (
+          /* El canal de toda la liga, una sola vez. Ver lib/comp-group-channel.ts. */
+          <span className="flex items-center gap-1 flex-shrink-0" style={{ maxWidth: '42%' }}>
+            <TvIcon size={10} />
+            <span className="text-[9.5px] font-bold uppercase tracking-[0.05em] truncate" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+              {channel}
+            </span>
+          </span>
+        )}
         {pinned && (
           <span className="text-[8px] font-black uppercase tracking-wider flex-shrink-0" style={{ color: accent, fontFamily: 'var(--font-sport)', opacity: 0.85 }}>
             Fijada
@@ -480,7 +492,7 @@ export function MatchCrest({ photo, logo, accent, fav }: { photo?: string; logo?
 // ancho. Favorito = anillo en el escudo (se gestiona en "Mis equipos", como la app).
 // Recordatorio = campana mínima arriba-dcha SOLO en próximos (la web no tiene toque
 // largo). Conserva onClickUFC (modal cartelera), liveScore, tz y la agrupación por liga.
-export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, homeFav, awayFav, formHome, formAway, canPredict, onPredict, showComp, tz }: {
+export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, dateLabel, onClickUFC, flashing, homeFav, awayFav, formHome, formAway, canPredict, onPredict, showComp, tz, groupChannel }: {
   event: SportEvent
   liveScore?: LiveScore
   isReminded: boolean
@@ -502,6 +514,8 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
   showComp?: boolean
   showReason?: boolean
   tz?: string
+  /** Canal que la cabecera de su liga ya anuncia: la fila no lo repite. */
+  groupChannel?: string | null
 }) {
   // Hora del partido (origen Madrid) convertida a la zona horaria del usuario.
   const displayTime = tz && tz !== SOURCE_TZ ? convertEventTime(event.time, tz, event.isoDate) : event.time
@@ -560,7 +574,12 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
   const centerTxt = showScore ? `${homeScoreVal ?? 0} – ${awayScoreVal ?? 0}` : (kickoff || (isMatchup ? 'VS' : ''))
 
   // Canal de TV localizado según la zona horaria elegida (espejo de la app).
-  const channel = getBroadcastForTz(compLabel, event.sport ?? '', tz ?? SOURCE_TZ) ?? event.broadcast
+  // El canal solo se pinta aquí si NO es el que su liga ya anuncia en la cabecera
+  // del grupo. Medido el 21/08: 16 de 22 filas del día repetían el mismo.
+  const channel = rowChannel(
+    getBroadcastForTz(compLabel, event.sport ?? '', tz ?? SOURCE_TZ) ?? event.broadcast,
+    groupChannel ?? null,
+  )
 
   // Recordatorio solo para PRÓXIMOS con ficha y fecha futura.
   const kickoffMs = event.isoDate ? new Date(event.isoDate).getTime() : NaN
@@ -718,11 +737,13 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
               <span className="text-[8.5px] font-black uppercase tracking-[0.05em] rounded-full flex-shrink-0" style={{ padding: '2.5px 9px', color: '#FBBF24', background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}>
                 {liveLabel}
               </span>
-            ) : finished ? (
-              /* "Abandono" / "W.O." cuando el partido no acabó de forma normal
-                 (event.finishNote); si no, el "Final" de siempre. */
-              <span className="text-[8.5px] font-black uppercase tracking-[0.06em] rounded-full flex-shrink-0" style={{ padding: '2.5px 9px', color: event.finishNote ? '#C9A96A' : '#9A9AAE', background: event.finishNote ? 'rgba(201,169,106,0.1)' : 'rgba(255,255,255,0.05)', border: `1px solid ${event.finishNote ? 'rgba(201,169,106,0.28)' : 'rgba(255,255,255,0.1)'}`, fontFamily: 'var(--font-sport)' }}>
-                {event.finishNote ?? 'Final'}
+            ) : finished && event.finishNote ? (
+              /* Solo cuando el final NO fue el normal: "Abandono", "W.O.". El
+                 "Final" de siempre se retiró — el marcador ya dice que terminó y
+                 el ganador va en negrita, así que en un grupo de cinco partidos
+                 jugados la palabra se imprimía cinco veces sin añadir nada. */
+              <span className="text-[8.5px] font-black uppercase tracking-[0.06em] rounded-full flex-shrink-0" style={{ padding: '2.5px 9px', color: '#C9A96A', background: 'rgba(201,169,106,0.1)', border: '1px solid rgba(201,169,106,0.28)', fontFamily: 'var(--font-sport)' }}>
+                {event.finishNote}
               </span>
             ) : null}
             {eyebrowText ? (
@@ -778,7 +799,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
                 </span>
               </TeamNameLink>
               <FormBars form={formHome} align="right" />
-              <StandingLine standing={event.homeStanding} align="right" />
+              {finished ? null : <StandingLine standing={event.homeStanding} align="right" />}
             </span>
             {crest(event.homeLogo, event.homePhoto, hFav)}
             {scoreCapsule}
@@ -790,7 +811,9 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
                 </span>
               </TeamNameLink>
               <FormBars form={formAway} align="left" />
-              <StandingLine standing={event.awayStanding} align="left" />
+              {/* Con el marcador delante, el puesto de la tabla ya no sitúa nada:
+                  el contexto de previa se reserva para lo que aún no se ha jugado. */}
+              {finished ? null : <StandingLine standing={event.awayStanding} align="left" />}
             </span>
           </div>
         ) : (
@@ -838,16 +861,21 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
         </div>
       ) : null}
 
-      {(event.stage || event.venue || channel) ? (
+      {/* La SEDE ya no se pinta aquí: vive en la ficha del partido, que es donde
+          hay sitio. En la lista ocupaba una línea entera por fila para un nombre
+          propio en gris — con el canal subido al grupo, era lo único que quedaba
+          en 18 de las 22 filas del día. La FASE (Mundial: "Semifinal") sí se
+          queda: es rara y cambia el significado del partido. */}
+      {(event.stage || channel) ? (
         <div className="relative pointer-events-none flex items-center justify-center gap-1.5 min-w-0" style={{ zIndex: 2, marginTop: h2hNote ? 4 : 8, paddingTop: h2hNote ? 0 : 6, borderTop: h2hNote ? undefined : '1px solid rgba(255,255,255,0.07)', color: '#61616D' }}>
-          {(event.stage || event.venue) ? (
+          {event.stage ? (
             <span className="truncate" style={{ fontSize: 10, fontWeight: 600, color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>
-              {[event.stage, event.venue].filter(Boolean).join(' · ')}
+              {event.stage}
             </span>
           ) : null}
           {channel ? (
             <>
-              {(event.stage || event.venue) ? <span aria-hidden style={{ fontSize: 10, color: '#61616D' }}>·</span> : null}
+              {event.stage ? <span aria-hidden style={{ fontSize: 10, color: '#61616D' }}>·</span> : null}
               <TvIcon size={10} className="flex-shrink-0" />
               <span className="truncate flex-shrink-0" style={{ fontSize: 10, fontWeight: 600, color: '#8A8A9E', fontFamily: 'var(--font-sport)', maxWidth: '46%' }}>{channel}</span>
             </>

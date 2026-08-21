@@ -11,6 +11,8 @@ import type { SportEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
 import { SPORT_THEME, getEventHighlightScore, getLeagueScore, isCombat, isMundial, sportThemeKey } from '@/lib/competitions'
 import { orderCompGroups } from '@/lib/comp-group-order'
+import { groupChannel } from '@/lib/comp-group-channel'
+import { getBroadcastForTz } from '@/lib/broadcasts'
 import { mergeFeedEvents } from '@/lib/calendar-initial-window'
 import { formatDateLabel, groupDayByCompetition, groupEventsByDate, isoToLocalDate, namesMatch, orderedDateKeys } from '@/lib/calendar'
 import { nameMatch } from '@/lib/quiniela'
@@ -938,37 +940,14 @@ export default function CalendarioContent({
     )
   }, [selectedUFCDate, filtered, tz])
 
-  // Build hero cards
+  // Tarjetas hero SOLO para los directos HUÉRFANOS — los que el feed en vivo
+  // conoce y la lista no (arrancaron después del último SSR, o su competición no
+  // está en el calendario). Los que YA están en la lista salían aquí además de
+  // abajo: el 21/08 el único partido en vivo se pintaba dos veces en la misma
+  // pantalla, y el carrusel era el bloque más alto de la cabecera. Para esos hay
+  // ahora una línea fina que lleva al primero.
   const liveHeroCards = useMemo(() => {
     const cards: React.ReactNode[] = []
-    for (const event of liveEventsInList) {
-      const score = liveScores.get(event.id)
-      cards.push(
-        <LiveHeroCard
-          key={event.id}
-          homeTeam={event.home}
-          awayTeam={event.away ?? ''}
-          homeAbbr={event.homeAbbr}
-          awayAbbr={event.awayAbbr}
-          homeLogo={event.homeLogo}
-          awayLogo={event.awayLogo}
-          homePhoto={event.homePhoto}
-          awayPhoto={event.awayPhoto}
-          homeScore={score?.homeGoals ?? 0}
-          awayScore={score?.awayGoals ?? 0}
-          status={score?.status ?? 'LIVE'}
-          elapsed={score?.elapsed ?? null}
-          sport={event.sport}
-          comp={event.comp}
-          matchRef={event.matchRef}
-          broadcast={event.broadcast}
-          tz={tz}
-          flashing={flashIds.has(event.id)}
-          isReminded={reminders.has(event.id)}
-          onToggleReminder={() => toggleReminder(event.id)}
-        />
-      )
-    }
     for (const fixture of orphanFixtures) {
       cards.push(
         <LiveHeroCard
@@ -1286,12 +1265,29 @@ export default function CalendarioContent({
       {/* Content */}
       {view === 'todos' && (
         <div className="relative z-[1] space-y-10">
-          {/* Live strip at top of TODOS view */}
-          {liveCount > 0 && !selectedDate && (
+          {/* Directos que NO están en la lista: siguen con su tarjeta, porque no
+              hay otro sitio donde verlos. */}
+          {liveHeroCards.length > 0 && !selectedDate && (
             <section>
-              <SectionHeader icon={<LiveDotIcon size={8} />} label="En Vivo" color="#FF4D2E" count={liveCount} hint={liveCount > 3 ? '← desliza →' : undefined} />
+              <SectionHeader icon={<LiveDotIcon size={8} />} label="En Vivo" color="#FF4D2E" count={liveHeroCards.length} hint={liveHeroCards.length > 3 ? '← desliza →' : undefined} />
               <LiveHeroStrip items={liveHeroCards} />
             </section>
+          )}
+
+          {/* Los que SÍ están en la lista: una línea que lleva al primero, en vez
+              de repetirlos arriba en un carrusel de 250 px. */}
+          {liveEventsInList.length > 0 && !selectedDate && (
+            <button
+              onClick={() => document.getElementById('primer-en-vivo')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+              className="cal-press flex items-center gap-2 w-full text-left"
+              style={{ padding: '9px 2px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'transparent', border: 'none', borderBottomWidth: 1, borderBottomStyle: 'solid', borderBottomColor: 'rgba(255,255,255,0.07)', cursor: 'pointer' }}
+            >
+              <span className="rounded-full flex-shrink-0" style={{ width: 7, height: 7, background: '#FF4D2E', animation: 'live-pulse 1.6s ease-out infinite' }} />
+              <span className="text-[11px] font-black uppercase tracking-[0.08em]" style={{ color: '#FF4D2E', fontFamily: 'var(--font-sport)' }}>
+                {liveEventsInList.length} en vivo ahora
+              </span>
+              <span className="ml-auto text-[10px] font-bold" style={{ color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>ir →</span>
+            </button>
           )}
 
           {/* El resumen grande de "tus equipos" se retiró de la lista: ocupaba
@@ -1417,11 +1413,22 @@ export default function CalendarioContent({
                     // y que la app. Antes usaba el color de marca de la competición.
                     const accent = accentForSport(compEvents[0]?.sport, '#A78BFA')
                     const cfg = compConfigForGroup(comp, compEvents[0]?.sport)
+                    // Canal de TODA la liga: se anuncia una vez en la cabecera y las
+                    // filas dejan de repetirlo (16 de 22 filas lo hacían el 21/08).
+                    // `getBroadcastForTz` solo depende de comp+deporte+zona, así que
+                    // si devuelve algo vale para el grupo entero; si no, se exige que
+                    // todos los eventos traigan el MISMO `broadcast`.
+                    const canalGrupo =
+                      getBroadcastForTz(comp, compEvents[0]?.sport ?? '', tz) ?? groupChannel(compEvents)
                     return (
                       <div key={comp} className="mb-2 relative cal-anim-in" style={{ animationDelay: `${Math.min(compIdx * 55, 280)}ms` }}>
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} crest={cfg?.crest} slug={cfg?.slug} banner={activeComp && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} channel={canalGrupo} crest={cfg?.crest} slug={cfg?.slug} banner={activeComp && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
                         <div className="space-y-1.5">
-                          {compEvents.map(event => (
+                          {compEvents.map(event => {
+                            // Ancla de la línea "N en vivo ahora → ir": el primero
+                            // que se esté jugando, esté en la liga que esté.
+                            const esAncla = event.id === liveEventsInList[0]?.id
+                            const fila = (
                             <MatchRow
                               key={event.id}
                               event={event}
@@ -1440,8 +1447,11 @@ export default function CalendarioContent({
                               onPredict={goToPredicciones}
                               showReason={activeFilter === 'Destacados'}
                               tz={tz}
+                              groupChannel={canalGrupo}
                             />
-                          ))}
+                            )
+                            return esAncla ? <div key={event.id} id="primer-en-vivo">{fila}</div> : fila
+                          })}
                         </div>
                       </div>
                     )
