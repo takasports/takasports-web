@@ -416,6 +416,10 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
             // (ESPN lo da en el propio scoreboard). Si falta, la fila muestra solo el nombre.
             homePhoto: espnHeadshot(competitors[0]) ?? athletePhoto(home),
             awayPhoto: espnHeadshot(competitors[1]) ?? athletePhoto(away),
+            // Id del atleta: lo usa attachAthletePhotos para leer la foto ya
+            // resuelta por el cron (Wikimedia), que es la buena.
+            homeAthleteId: competitors[0]?.id as string | undefined,
+            awayAthleteId: competitors[1]?.id as string | undefined,
             // Los partidos de HOY ya terminados siguen en el feed (arriba solo se
             // descartan los finales de OTROS días): al salir del directo, este es
             // el único sitio del que la fila puede sacar el set a set.

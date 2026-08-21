@@ -95,6 +95,10 @@ export interface SportEvent {
   // el pipeline siembre esas fichas.
   homeTeamId?: string
   awayTeamId?: string
+  /** Ids de ESPN de los atletas (tenis/UFC): con ellos la fila lee la foto YA
+   *  resuelta de nuestra caché en vez de depender de la lista estática. */
+  homeAthleteId?: string
+  awayAthleteId?: string
   matchRef?: string       // "{sport}_{league}_{espnId}" for detail page URL
   source?: 'espn' | 'sanity' | 'padel'
   // Scores for completed past events

@@ -11,6 +11,7 @@
 import { NextResponse } from 'next/server'
 import { fetchEspnEvents } from '@/lib/espn'
 import { attachH2HNotes } from '@/lib/h2h-notes'
+import { attachAthletePhotos } from '@/lib/athlete-photos-attach'
 
 export const revalidate = 300
 
@@ -20,6 +21,9 @@ export async function GET() {
   // consultas cacheadas). Se hace AQUÍ y no en fetchEspnEvents para que el lib
   // de ESPN no dependa de Supabase; el SSR del calendario llama a lo mismo.
   await attachH2HNotes(events)
+  // Cara del tenista/luchador desde NUESTRA caché resuelta (Wikimedia): manda
+  // sobre el headshot de ESPN y sobre la lista estática.
+  await attachAthletePhotos(events)
   return NextResponse.json(
     { events },
     { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } },
