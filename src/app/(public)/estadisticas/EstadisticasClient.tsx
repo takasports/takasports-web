@@ -332,6 +332,14 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
 
   // Fase del Mundial: decide si la pestaña puede anunciarse como directo.
   const wcFase = worldCupPhase(new Date())
+
+  // Con los 8 deportes en una sola línea que se desliza, el activo puede quedar
+  // fuera de la vista al entrar (en /estadisticas/futbol arrancaba enseñando
+  // "Destacados" y "Mundial"). Se centra al montar y en cada cambio.
+  const tabDeporteRef = useRef<HTMLButtonElement | null>(null)
+  useEffect(() => {
+    tabDeporteRef.current?.scrollIntoView({ block: 'nearest', inline: 'center' })
+  }, [sportId])
   const sport = SPORTS.find(s => s.id === sportId) ?? SPORTS[0]
   // Fondo atmosférico por deporte para el hero (reusa los WebP de /calendario).
   const statsBackdrop = ({ futbol: 'futbol', baloncesto: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc' } as Record<string, string>)[sportId] ?? null
@@ -540,51 +548,14 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                 </span>
               )}
             </div>
-            {/* Action buttons */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button onClick={() => { refreshOnceRef.current(); fetchPlayersRef.current() }} disabled={refreshing}
-                className="text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-opacity hover:opacity-80 disabled:opacity-40 inline-flex items-center gap-1"
-                style={{ background: 'rgba(34,197,94,0.08)', color: '#86efac', border: '1px solid rgba(34,197,94,0.2)', fontFamily: 'var(--font-sport)', cursor: refreshing ? 'wait' : 'pointer' }}>
-                {refreshing ? '⟳ Refrescando…' : '⟳ Refrescar'}
-              </button>
-              <button onClick={() => setSearchOpen(true)}
-                className="text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
-                style={{ background: 'rgba(255,255,255,0.04)', color: '#9090B0', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
-                aria-label="Buscar (⌘K)">
-                🔍 Buscar
-                <kbd className="hidden sm:inline text-[9px] font-mono px-1 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: '#5A5A72' }}>⌘K</kbd>
-              </button>
-              {favorites.size > 0 && (
-                <button onClick={() => setShowFavoritesOnly(v => !v)}
-                  className="text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
-                  style={{
-                    background: showFavoritesOnly ? 'rgba(251,191,36,0.14)' : 'rgba(255,255,255,0.04)',
-                    color: showFavoritesOnly ? '#fbbf24' : '#9090B0',
-                    border: showFavoritesOnly ? '1px solid rgba(251,191,36,0.32)' : '1px solid rgba(255,255,255,0.08)',
-                    fontFamily: 'var(--font-sport)', cursor: 'pointer',
-                  }}>
-                  {showFavoritesOnly ? '★' : '☆'} Favoritos
-                  {favorites.size > 0 && <span className="text-[9px] font-mono px-1 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)' }}>{favorites.size}</span>}
-                </button>
-              )}
-              <button onClick={() => setHideUnavailable(v => !v)}
-                className="text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-opacity hover:opacity-80 inline-flex items-center gap-1.5"
-                style={{
-                  background: hideUnavailable ? 'rgba(255,255,255,0.04)' : 'rgba(248,113,113,0.10)',
-                  color: hideUnavailable ? '#9090B0' : '#f87171',
-                  border: hideUnavailable ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(248,113,113,0.28)',
-                  fontFamily: 'var(--font-sport)', cursor: 'pointer',
-                }}
-                title={hideUnavailable ? 'Mostrar también bloques sin datos' : 'Ocultar bloques sin datos'}
-                aria-pressed={!hideUnavailable}>
-                {hideUnavailable ? '⊘ Vacíos' : '⊕ Ver todos'}
-              </button>
-              {fetchError && (
-                <span className="text-[11px]" style={{ color: '#f87171', fontFamily: 'var(--font-sport)' }}>
-                  ⚠ {fetchError}
-                </span>
-              )}
-            </div>
+            {/* Los botones de acción (buscar, refrescar, favoritos, vacíos) vivían
+                aquí en fila propia; se movieron a la derecha de la fila de deportes
+                como iconos. Solo queda el aviso de error, que no ocupa nada si no lo hay. */}
+            {fetchError && (
+              <span className="text-[11px]" style={{ color: '#f87171', fontFamily: 'var(--font-sport)' }}>
+                ⚠ {fetchError}
+              </span>
+            )}
           </div>
         </div>
 
@@ -592,15 +563,20 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
         <div className="sticky z-30 -mx-4 sm:-mx-6 xl:-mx-10 px-4 sm:px-6 xl:px-10"
           style={{ top: 56, background: 'var(--bg-base)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
 
-          {/* TAB 1: DEPORTE — wrap a 2 filas en móvil, scroll horizontal en desktop */}
-          <div className="flex flex-wrap sm:flex-nowrap gap-1 sm:overflow-x-auto scrollbar-hide pb-0"
-            style={{ borderBottom: '1px solid var(--border)' }}>
+          {/* TAB 1: DEPORTE — UNA sola línea que se desliza, con las utilidades
+              ancladas a su derecha. Antes envolvía a 3 filas en móvil y, contando
+              la fila de utilidades, la de secciones, la de género y la de ligas,
+              había SEIS filas de mandos (~330 px) antes del primer dato. */}
+          <div className="relative" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="flex flex-nowrap gap-1 overflow-x-auto scrollbar-hide pb-0"
+            style={{ paddingRight: favorites.size > 0 ? 116 : 88 }}>
             {SPORTS.map(s => {
               const count = sportAvailableCounts[s.id] ?? 0
               const isEmpty = count === 0 && s.id !== 'mundial'
               const isActive = sportId === s.id
               return (
                 <button key={s.id} onClick={() => handleSportChange(s.id)}
+                  ref={isActive ? tabDeporteRef : undefined}
                   aria-label={isEmpty ? `${s.label}, sin datos verificables hoy` : `${s.label}, ${count} ${count === 1 ? 'bloque' : 'bloques'} con datos`}
                   aria-current={isActive ? 'true' : undefined}
                   className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
@@ -652,11 +628,58 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
               )
             })}
           </div>
+            {/* Utilidades ancladas: el degradado deja ver que la fila sigue debajo. */}
+            <div className="absolute right-0 top-0 bottom-0 flex items-center gap-1 pl-6 pr-0"
+              style={{ background: 'linear-gradient(90deg, transparent, var(--bg-base) 22%)' }}>
+              <button onClick={() => setSearchOpen(true)} aria-label="Buscar en estadísticas (⌘K)" title="Buscar (⌘K)"
+                className="flex items-center justify-center w-7 h-7 rounded-full transition-opacity hover:opacity-80"
+                style={{ background: 'rgba(255,255,255,0.04)', color: '#9090B0', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontSize: 12 }}>
+                🔍
+              </button>
+              <button onClick={() => { refreshOnceRef.current(); fetchPlayersRef.current() }} disabled={refreshing}
+                aria-label="Refrescar los datos" title={refreshing ? 'Refrescando…' : 'Refrescar'}
+                className="flex items-center justify-center w-7 h-7 rounded-full transition-opacity hover:opacity-80 disabled:opacity-40"
+                style={{ background: 'rgba(34,197,94,0.08)', color: '#86efac', border: '1px solid rgba(34,197,94,0.2)', cursor: refreshing ? 'wait' : 'pointer', fontSize: 13 }}>
+                <span className={refreshing ? 'animate-spin' : ''} style={{ display: 'inline-block' }}>⟳</span>
+              </button>
+              {favorites.size > 0 && (
+                <button onClick={() => setShowFavoritesOnly(v => !v)}
+                  aria-label={showFavoritesOnly ? 'Ver todos los bloques' : 'Ver solo favoritos'}
+                  title={showFavoritesOnly ? 'Ver todos' : `Solo favoritos (${favorites.size})`}
+                  className="flex items-center justify-center w-7 h-7 rounded-full transition-opacity hover:opacity-80"
+                  style={{
+                    background: showFavoritesOnly ? 'rgba(251,191,36,0.14)' : 'rgba(255,255,255,0.04)',
+                    color: showFavoritesOnly ? '#fbbf24' : '#9090B0',
+                    border: showFavoritesOnly ? '1px solid rgba(251,191,36,0.32)' : '1px solid rgba(255,255,255,0.08)',
+                    cursor: 'pointer', fontSize: 13,
+                  }}>
+                  {showFavoritesOnly ? '★' : '☆'}
+                </button>
+              )}
+              <button onClick={() => setHideUnavailable(v => !v)}
+                aria-label={hideUnavailable ? 'Mostrar también los bloques sin datos' : 'Ocultar los bloques sin datos'}
+                title={hideUnavailable ? 'Mostrar también bloques sin datos' : 'Ocultar bloques sin datos'}
+                aria-pressed={!hideUnavailable}
+                className="flex items-center justify-center w-7 h-7 rounded-full transition-opacity hover:opacity-80"
+                style={{
+                  background: hideUnavailable ? 'rgba(255,255,255,0.04)' : 'rgba(248,113,113,0.10)',
+                  color: hideUnavailable ? '#9090B0' : '#f87171',
+                  border: hideUnavailable ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(248,113,113,0.28)',
+                  cursor: 'pointer', fontSize: 13,
+                }}>
+                {hideUnavailable ? '⊘' : '⊕'}
+              </button>
+            </div>
+          </div>
 
-          {/* TAB 2: SECCIÓN */}
-          {!isFemenino && sport.sections.length > 1 && (
-            <div className="py-2.5 flex items-center gap-1 overflow-x-auto scrollbar-hide">
-              {/* Tanda v2: bandeja de VIDRIO (velo + canto specular + sombra que la despega) */}
+          {/* TAB 2: SECCIÓN + GÉNERO + LIGA — una sola fila.
+              El género se pinta aunque la bandeja de secciones no: en femenino esa
+              bandeja se oculta, y si el interruptor viviera dentro no habría forma
+              de volver a masculino. */}
+          {((!isFemenino && sport.sections.length > 1) || sportId === 'futbol') && (
+            <div className="py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            {/* Tanda v2: bandeja de VIDRIO (velo + canto specular + sombra que la despega) */}
+            {!isFemenino && sport.sections.length > 1 && (
               <div className="flex items-center gap-1 p-1"
                 style={{
                   borderRadius: 14,
@@ -698,6 +721,67 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                   </button>
                 ))}
               </div>
+            )}
+
+            </div>
+          )}
+
+          {/* TAB 3: GÉNERO + LIGA — antes eran DOS filas. Juntas caben; metidas
+              además en la de secciones no: medido a 430 px, la bandeja de
+              secciones sola ocupa 421 de los 400 disponibles, así que el
+              interruptor y el filtro se salían de pantalla. */}
+          {(sportId === 'futbol') && (
+            <div className="pb-2.5 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            {sportId === 'futbol' && (['m', 'f'] as const).map(g => {
+              const isActive = gender === g
+              return (
+                <button key={g} onClick={() => {
+                  setGender(g); setExpandedBlocks({})
+                  if (typeof window !== 'undefined') {
+                    window.history.replaceState(
+                      { ...window.history.state, tsNav: { sportId, sectionId, gender: g } },
+                      '', buildStatsUrl(sportId, sectionId, g === 'f')
+                    )
+                  }
+                }}
+                  aria-label={g === 'm' ? 'Fútbol masculino' : 'Fútbol femenino'}
+                  aria-pressed={isActive}
+                  className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-[13px] font-black transition-all"
+                  style={{
+                    background: isActive ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.04)',
+                    color: isActive ? '#22c55e' : 'var(--text-muted)',
+                    border: isActive ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                    cursor: 'pointer', fontFamily: 'var(--font-sport)',
+                  }}
+                  title={g === 'm' ? 'Masculino' : 'Femenino'}>
+                  {g === 'm' ? '♂' : '♀'}
+                </button>
+              )
+            })}
+
+            {/* Liga — antes eran seis píldoras en fila propia. */}
+            {!isFemenino && (isFutbolJugadores || sectionId === 'competiciones') && (
+              <select
+                value={leagueFilter}
+                onChange={e => setLeagueFilter(e.target.value)}
+                aria-label="Filtrar por liga"
+                className="flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-semibold"
+                style={{
+                  background: leagueFilter === 'General' ? 'rgba(255,255,255,0.03)' : 'rgba(34,197,94,0.10)',
+                  color: leagueFilter === 'General' ? '#9090B0' : '#86efac',
+                  border: leagueFilter === 'General' ? '1px solid rgba(255,255,255,0.09)' : '1px solid rgba(34,197,94,0.25)',
+                  cursor: 'pointer', fontFamily: 'var(--font-sport)', appearance: 'none',
+                  paddingRight: 22,
+                  backgroundImage: 'linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%)',
+                  backgroundPosition: 'right 10px center, right 6px center',
+                  backgroundSize: '4px 4px, 4px 4px',
+                  backgroundRepeat: 'no-repeat',
+                }}>
+                {LEAGUE_FILTERS.map(liga => (
+                  <option key={liga} value={liga} style={{ background: '#13131A', color: '#EBEBF5' }}>{liga}</option>
+                ))}
+              </select>
+            )}
             </div>
           )}
         </div>
@@ -745,35 +829,6 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
           </div>
         )}
 
-        {/* ── Toggle Femenino — solo Fútbol ────────────── */}
-        {sportId === 'futbol' && (
-          <div className="flex items-center gap-1.5 mt-5 mb-5">
-            {(['m', 'f'] as const).map(g => {
-              const isActive = gender === g
-              return (
-                <button key={g} onClick={() => {
-                  setGender(g); setExpandedBlocks({})
-                  if (typeof window !== 'undefined') {
-                    window.history.replaceState(
-                      { ...window.history.state, tsNav: { sportId, sectionId, gender: g } },
-                      '', buildStatsUrl(sportId, sectionId, g === 'f')
-                    )
-                  }
-                }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
-                  style={{
-                    background: isActive ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.04)',
-                    color: isActive ? '#22c55e' : 'var(--text-muted)',
-                    border: isActive ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.07)',
-                    cursor: 'pointer', fontFamily: 'var(--font-sport)',
-                  }}>
-                  {g === 'm' ? '♂ Masculino' : '♀ Femenino'}
-                </button>
-              )
-            })}
-          </div>
-        )}
-
         {/* ── Fútbol Femenino — grid directo ──────────── */}
         {isFemenino && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
@@ -781,23 +836,6 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
               <StatBlockBoundary key={block.id} blockId={block.id}>
                 <StatBlockCard block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={isBlockLive(block)} meta={getBlockMeta(block.id, liveData?.meta, undefined, livePlayerData?.meta)} isFav={favorites.has(block.id)} onToggleFav={() => toggleFav(block.id)} />
               </StatBlockBoundary>
-            ))}
-          </div>
-        )}
-
-        {sportId !== 'resumen' && !isFemenino && (isFutbolJugadores || (isFutbol && sectionId === 'competiciones')) && (
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 mb-5">
-            {LEAGUE_FILTERS.map(liga => (
-              <button key={liga} onClick={() => setLeagueFilter(liga)}
-                className="flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-semibold transition-all"
-                style={{
-                  background: leagueFilter === liga ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.03)',
-                  color: leagueFilter === liga ? '#86efac' : '#3A3A52',
-                  border: leagueFilter === liga ? '1px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.05)',
-                  cursor: 'pointer', fontFamily: 'var(--font-sport)',
-                }}>
-                {liga}
-              </button>
             ))}
           </div>
         )}
