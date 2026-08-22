@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server'
 import { fetchEspnEvents } from '@/lib/espn'
 import { attachH2HNotes } from '@/lib/h2h-notes'
 import { attachAthletePhotos } from '@/lib/athlete-photos-attach'
+import { attachRecentForm } from '@/lib/recent-form-attach'
 import { filterFromDay } from '@/lib/calendar-initial-window'
 
 export const revalidate = 300
@@ -25,6 +26,9 @@ export async function GET(req: Request) {
   // Cara del tenista/luchador desde NUESTRA caché resuelta (Wikimedia): manda
   // sobre el headshot de ESPN y sobre la lista estática.
   await attachAthletePhotos(events)
+  // Barritas de forma reciente. La web las pinta desde su SSR; por API no salían,
+  // así que la app tenía la fila sin ellas. Una consulta agrupada y cacheada.
+  await attachRecentForm(events)
   // `?from=YYYY-MM-DD` devuelve solo desde ese día. Lo usa el calendario web,
   // que ya trae los días cercanos pintados en el HTML y solo necesita el resto:
   // sin el corte, la página bajaba de 120 a 69 KB pero el feed entero añadía

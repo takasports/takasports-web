@@ -75,6 +75,8 @@ export interface TeamStanding {
   promoted?: boolean
 }
 
+export type FormResult = 'W' | 'D' | 'L'
+
 export interface SportEvent {
   id: string
   home: string
@@ -118,6 +120,11 @@ export interface SportEvent {
   // fetchEspnEvents en una pasada final, así la reciben web Y app (feed).
   homeStanding?: TeamStanding
   awayStanding?: TeamStanding
+  /** Forma reciente (últimas 5, la más reciente primero). La adjunta
+   *  lib/recent-form-attach en /api/events/feed para que la APP también la
+   *  reciba: la web la calculaba en su SSR y por API no salía. */
+  homeForm?: FormResult[]
+  awayForm?: FormResult[]
   /** Historial en una línea ("3 victorias seguidas del Atlético"). Solo en los
    *  cruces con motivo de tabla — ver lib/h2h-notes.ts. */
   h2hNote?: string
