@@ -333,7 +333,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                       </p>
                     </div>
                     {article.publishedAt && (
-                      <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                      <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>
                         {timeAgo(article.publishedAt)}
                       </span>
                     )}

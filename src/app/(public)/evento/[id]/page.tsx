@@ -174,7 +174,7 @@ function RelatedArticleCard({ article }: { article: RelatedArticle }) {
             {article.title}
           </p>
           {article.publishedAt && (
-            <p className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
               {timeAgo(article.publishedAt)}
             </p>
           )}

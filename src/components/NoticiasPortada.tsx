@@ -122,7 +122,7 @@ function BigCard({ article, lcp = false }: { article: Article; lcp?: boolean }) 
         )}
         <div className="flex items-center gap-2">
           {article.publishedAt && (
-            <span className="text-[10px]" style={{ color: '#40405A', fontFamily: 'var(--font-sport)' }}>
+            <span className="text-[10px]" style={{ color: '#40405A', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
               {timeAgo(article.publishedAt)}
             </span>
           )}
@@ -188,7 +188,7 @@ function StripCard({ article }: { article: Article }) {
           {article.title}
         </h3>
         {article.publishedAt && (
-          <span className="text-[9px] mt-1 block" style={{ color: '#32324A', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[9px] mt-1 block" style={{ color: '#32324A', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
             {timeAgo(article.publishedAt)}
           </span>
         )}

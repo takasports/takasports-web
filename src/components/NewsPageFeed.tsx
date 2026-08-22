@@ -253,7 +253,7 @@ export default function NewsPageFeed({
                           )}
                         </div>
                         {article.publishedAt && (
-                          <p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }}>
+                          <p className="text-[10px] mt-1" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
                             {timeAgo(article.publishedAt)}
                           </p>
                         )}
@@ -316,7 +316,7 @@ export default function NewsPageFeed({
                           {article.title}
                         </h3>
                         {article.publishedAt && (
-                          <p className="text-[10px] mt-2" style={{ color: 'var(--text-faint)' }}>
+                          <p className="text-[10px] mt-2" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
                             {timeAgo(article.publishedAt)}
                           </p>
                         )}

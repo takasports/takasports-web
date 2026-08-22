@@ -269,7 +269,7 @@ export default function ArticleComments({ slug }: { slug: string }) {
                       <time
                         dateTime={c.created_at}
                         style={{ color: 'var(--text-faint)', fontSize: 11, fontFamily: 'var(--font-sport)' }}
-                      >
+ suppressHydrationWarning>
                         {timeAgo(c.created_at)}
                       </time>
                     </div>

@@ -1076,7 +1076,7 @@ export default function PerfilPage() {
                           <span
                             className="text-[10px] flex-shrink-0 ml-2"
                             style={{ color: 'var(--text-faint)', fontFamily: 'var(--font-sport)' }}
-                          >
+ suppressHydrationWarning>
                             {timeAgo(item.publishedAt)}
                           </span>
                         )}

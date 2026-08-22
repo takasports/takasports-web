@@ -93,7 +93,7 @@ function CompactStripItem({ art }: { art: Article }) {
           {art.title}
         </h3>
         {art.publishedAt && (
-          <p className="text-[10px] mt-2" style={{ color: '#52527A', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[10px] mt-2" style={{ color: '#52527A', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
             {timeAgo(art.publishedAt)}
           </p>
         )}
@@ -303,7 +303,7 @@ function BigCard({
 
         <div className="flex items-center gap-3">
           {article.publishedAt && (
-            <span className="text-xs" style={{ color: '#525266' }}>
+            <span className="text-xs" style={{ color: '#525266' }} suppressHydrationWarning>
               {timeAgo(article.publishedAt)}
             </span>
           )}
@@ -422,7 +422,7 @@ function SmallCard({
         )}
 
         {article.publishedAt && (
-          <p className="text-[10px] mt-1" style={{ color: '#3D3D58' }}>
+          <p className="text-[10px] mt-1" style={{ color: '#3D3D58' }} suppressHydrationWarning>
             {timeAgo(article.publishedAt)}
           </p>
         )}

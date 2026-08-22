@@ -313,11 +313,15 @@ function EventCard({ event, liveScore }: { event: SportEvent; liveScore?: LiveSc
             }}>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ background: '#FF4D2E' }} />
-              <span className="font-black tabular-nums"
+              {/* Marcador y minuto se pintan en el HTML prerenderizado y el cliente
+                  los recalcula al traer /api/events/live: un partido que iba por el
+                  63' cuando se generó la página va por el 71' cuando alguien la abre,
+                  y ese desajuste hacía a React descartar el árbol. */}
+              <span className="font-black tabular-nums" suppressHydrationWarning
                 style={{ color: scoreFlash ? '#FF9D85' : '#FF4D2E', fontFamily: 'var(--font-display)', fontSize: 16, letterSpacing: '0.04em', transition: 'color 0.7s' }}>
                 {scoreStr}
               </span>
-              <span className="text-[9px] font-black" style={{ color: '#E8552E', fontFamily: 'var(--font-sport)' }}>
+              <span className="text-[9px] font-black" suppressHydrationWarning style={{ color: '#E8552E', fontFamily: 'var(--font-sport)' }}>
                 {getLiveLabel(liveScore.status, liveScore.elapsed)}
               </span>
             </div>

@@ -349,7 +349,7 @@ function ReelCard({ reel, onClick }: { reel: Reel; onClick: () => void }) {
 
         <div>
           {reel.date && (
-            <p className="text-[9px] mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <p className="text-[9px] mb-1" style={{ color: 'rgba(255,255,255,0.45)' }} suppressHydrationWarning>
               {timeAgo(reel.date)}
             </p>
           )}

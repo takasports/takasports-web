@@ -90,7 +90,7 @@ export default async function RelatedArticlesByEntity({
                   <p
                     className="text-[10px] mt-0.5"
                     style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
-                  >
+ suppressHydrationWarning>
                     {timeAgo(a.publishedAt)}
                   </p>
                 )}

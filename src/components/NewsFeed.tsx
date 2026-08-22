@@ -205,7 +205,7 @@ export default function NewsFeed({
                       dateTime={article.publishedAt}
                       className="block text-[10px] mt-1"
                       style={{ color: 'var(--text-faint)' }}
-                    >
+ suppressHydrationWarning>
                       {timeAgo(article.publishedAt)}
                     </time>
                   )}
@@ -255,7 +255,7 @@ export default function NewsFeed({
                       dateTime={article.publishedAt}
                       className="block text-[10px] mt-2"
                       style={{ color: 'var(--text-faint)' }}
-                    >
+ suppressHydrationWarning>
                       {timeAgo(article.publishedAt)}
                     </time>
                   )}

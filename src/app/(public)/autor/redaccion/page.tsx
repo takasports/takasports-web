@@ -237,7 +237,7 @@ export default async function RedaccionAuthorPage() {
                         {a.title}
                       </h3>
                       {a.publishedAt && (
-                        <p className="text-[11px]" style={{ color: 'var(--text-faint)' }}>
+                        <p className="text-[11px]" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
                           {timeAgo(a.publishedAt)}
                         </p>
                       )}

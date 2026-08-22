@@ -265,7 +265,7 @@ function ArticleSidebar({
                     day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Madrid',
                   })}
                 </time>
-                <p className="text-[10px]" style={{ color: 'var(--text-faint)' }}>
+                <p className="text-[10px]" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
                   {timeAgo(article.publishedAt)}
                 </p>
               </div>
@@ -702,7 +702,7 @@ export default async function NoticiaPage({
                   </span>
                 )}
                 {article.publishedAt && (
-                  <time dateTime={article.publishedAt} className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                  <time dateTime={article.publishedAt} className="text-xs truncate" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>
                     {timeAgo(article.publishedAt)}
                   </time>
                 )}
@@ -733,6 +733,7 @@ export default async function NoticiaPage({
                   dateTime={article.publishedAt}
                   className="text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5"
                   style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: 'var(--font-sport)' }}
+                  suppressHydrationWarning
                 >
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.6 }}>
                     <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2" />

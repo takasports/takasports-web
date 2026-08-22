@@ -250,7 +250,7 @@ export default async function BuscarPage({
                             </span>
                           )}
                           {article.publishedAt && (
-                            <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>
+                            <span className="text-[10px]" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
                               {timeAgo(article.publishedAt)}
                             </span>
                           )}

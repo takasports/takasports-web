@@ -114,7 +114,7 @@ export default function ArchivoResults({
                   {article.title}
                 </h3>
                 {article.publishedAt && (
-                  <p className="text-[10px] mt-auto" style={{ color: 'var(--text-faint)' }}>
+                  <p className="text-[10px] mt-auto" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
                     {timeAgo(article.publishedAt)}
                   </p>
                 )}

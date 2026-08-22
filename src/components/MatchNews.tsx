@@ -68,7 +68,7 @@ export default async function MatchNews({
                   {a.title}
                 </h3>
                 {a.publishedAt && (
-                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
                     {timeAgo(a.publishedAt)}
                   </p>
                 )}

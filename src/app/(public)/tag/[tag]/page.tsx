@@ -274,7 +274,7 @@ export default async function TagPage({
                     </p>
                   )}
                   {article.publishedAt && (
-                    <p className="text-[10px] mt-auto pt-2" style={{ color: 'var(--text-faint)', borderTop: '1px solid var(--border)' }}>
+                    <p className="text-[10px] mt-auto pt-2" style={{ color: 'var(--text-faint)', borderTop: '1px solid var(--border)' }} suppressHydrationWarning>
                       {timeAgo(article.publishedAt)}
                     </p>
                   )}
