@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { SITE_URL } from '@/lib/constants'
-import { EstadisticasView, SPORT_META } from '../StatsView'
+import { EstadisticasView, SPORT_META, getSportMeta } from '../StatsView'
 
 // Landings de estadísticas por deporte como RUTA DE PATH (params SÍ se cachean, a
 // diferencia de ?sport=). `dynamicParams = false` → cualquier slug fuera de la
@@ -25,7 +25,7 @@ export async function generateMetadata({
   params,
 }: { params: Promise<{ sport: string }> }): Promise<Metadata> {
   const { sport } = await params
-  const meta = SPORT_META[sport]
+  const meta = getSportMeta(sport)
   // Slug inválido: metadata vacía (hereda el layout). La página devolverá 404.
   if (!meta) return {}
 
@@ -61,11 +61,12 @@ export default async function EstadisticasSportPage({
   params,
 }: { params: Promise<{ sport: string }> }) {
   const { sport } = await params
-  if (!SPORT_META[sport]) notFound()
+  const meta = getSportMeta(sport)
+  if (!meta) notFound()
   return (
     <>
       {/* H1 server-rendered con el deporte: la vista es cliente y no emitía H1. (Fix M1 SEO) */}
-      <h1 className="sr-only">Estadísticas de {SPORT_META[sport].label} en vivo</h1>
+      <h1 className="sr-only">Estadísticas de {meta.label} en vivo</h1>
       <EstadisticasView sport={sport} />
     </>
   )

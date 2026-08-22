@@ -10,6 +10,7 @@ import { espnStandingsSchema, jolpicaDriverStandingsSchema, safeParse } from '@/
 import { loadAllSnapshots, type StatSnapshot } from '@/lib/stat-snapshots'
 import { classifySeason, finishedBadge, labelFromStartYear, sameSeasonOnly, seasonLabel, type EspnSeason } from '@/lib/season-label'
 import { worldCupPhase } from '@/lib/world-cup-phase'
+import type { FaltanDeportes } from '@/lib/stats-sports'
 import { UFC_DIVISIONS } from '@/lib/ufc-scraper'
 import { toSpanishNation } from '@/lib/nation-names'
 
@@ -1244,7 +1245,13 @@ async function fetchWorldCupSchedule(): Promise<StandingRow[]> {
 
 // ── GET ───────────────────────────────────────────────────────────────────────
 
-const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
+// Las claves son los SLUGS DE URL de /estadisticas/[sport] (SPORT_META), porque es
+// lo que StatsView pasa tal cual. Estaba 'nba' en vez de 'baloncesto', así que el
+// shard caía en `if (!keys) return data` y devolvía el payload ENTERO: medido el
+// 21/08/2026, /estadisticas/baloncesto pesaba 72 KB más que /futbol por esto, y el
+// comentario de abajo prometía un 80% de reducción que ahí no ocurría nunca.
+// Los alias ('nba', 'football', 'tennis') se conservan por si algún cliente los usa.
+const SPORT_KEYS = {
   // Fútbol incluye TODAS las sub-secciones del sport (competiciones, selecciones, entrenadores, femenino).
   futbol: [
     'football',
@@ -1256,7 +1263,7 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
     'womenLigaF', 'womenGoals', 'womenAssists',
   ],
   football: ['football', 'uclScorers', 'uelScorers', 'uclAssists', 'uelAssists'],
-  nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaMvpRace', 'nbaDpoyRace', 'nbaRookieRace'],
+  baloncesto: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaMvpRace', 'nbaDpoyRace', 'nbaRookieRace'],
   f1: ['f1Drivers', 'f1Constructors', 'f1Poles', 'f1Calendar', 'f1Sprints'],
   tenis: ['atpRanking', 'wtaRanking'],
   tennis: ['atpRanking', 'wtaRanking'],
@@ -1265,7 +1272,17 @@ const SPORT_KEYS: Record<string, (keyof StatsStandingsResponse)[]> = {
   femenino: ['womenLigaF', 'womenGoals', 'womenAssists'],
   mundial: ['worldCup', 'worldCupKnockout', 'worldCupQualified', 'worldCupSchedule', 'mundialScorers', 'mundialAssists'],
   motogp: ['motogpRiders', 'motogpConstructors'],
-}
+  // Alias históricos por si algún cliente los usa; no son slugs de la web.
+  nba: ['nbaEast', 'nbaWest', 'nbaScoring', 'nbaRebounds', 'nbaAssists', 'nbaBlocks', 'nbaSteals', 'nbaEfficiency', 'nba3ptMade', 'nbaMvpRace', 'nbaDpoyRace', 'nbaRookieRace'],
+} satisfies Record<string, (keyof StatsStandingsResponse)[]>
+
+// Red de seguridad: si mañana se añade un deporte a SPORT_META y nadie le pone
+// claves aquí, ESTO NO COMPILA y el error dice cuál falta. Es lo que habría
+// cazado el desajuste 'nba' / 'baloncesto' el día que se introdujo, en vez de
+// dejar la landing sirviendo el payload entero durante meses sin avisar.
+type _SinShard = FaltanDeportes<keyof typeof SPORT_KEYS>
+const _deportesSinShard: [_SinShard] extends [never] ? true : `FALTA en SPORT_KEYS: ${_SinShard}` = true
+void _deportesSinShard
 
 async function buildPayload(): Promise<StatsStandingsResponse> {
   const [footballResults, f1, nba, nbaSeason, tennis, ufcP4P, womenLigaF, womenStats, worldCup, worldCupKnockout, worldCupSchedule, uclFixtures, uelFixtures] = await Promise.all([
@@ -1534,7 +1551,7 @@ export function shardStandingsForSport(
   data: StatsStandingsResponse,
   sport: string,
 ): Partial<StatsStandingsResponse> & { updatedAt: string; meta: Record<string, BlockMeta> } {
-  const keys = SPORT_KEYS[sport]
+  const keys = (SPORT_KEYS as Record<string, (keyof StatsStandingsResponse)[]>)[sport]
   if (!keys) return data
   const meta: Record<string, BlockMeta> = {}
   for (const k of keys) if (data.meta[k as string]) meta[k as string] = data.meta[k as string]
@@ -1562,7 +1579,7 @@ export async function GET(req: NextRequest) {
   // el árbol de ~40 fetches en cada request). Los datos ya tienen su propio
   // revalidate por fetch, así que 60s extra de caché de respuesta es inocuo.
   const headers = { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' }
-  if (sport && SPORT_KEYS[sport]) {
+  if (sport && sport in SPORT_KEYS) {
     return NextResponse.json(shardStandingsForSport(data, sport), { headers })
   }
   return NextResponse.json(data, { headers })
