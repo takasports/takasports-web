@@ -8,6 +8,8 @@ export type { StandingRow } from '@/lib/stats-editorial'
 import { withStaleFallback, tfetch } from '@/lib/stats-cache'
 import { espnStandingsSchema, jolpicaDriverStandingsSchema, safeParse } from '@/lib/stats-schemas'
 import { loadAllSnapshots, type StatSnapshot } from '@/lib/stat-snapshots'
+import { classifySeason, finishedBadge, labelFromStartYear, sameSeasonOnly, seasonLabel, type EspnSeason } from '@/lib/season-label'
+import { worldCupPhase } from '@/lib/world-cup-phase'
 import { UFC_DIVISIONS } from '@/lib/ufc-scraper'
 import { toSpanishNation } from '@/lib/nation-names'
 
@@ -19,6 +21,8 @@ export interface LeagueStandings {
   rows: StandingRow[]
   /** ESPN slug (e.g. "soccer/esp.1") — lets the client build /equipo deep-links. */
   leagueSlug?: string
+  /** Temporada de la que salen REALMENTE estas filas (ver season-label.ts). */
+  season?: SeasonState
 }
 
 export type FreshnessStatus = 'live' | 'stale' | 'historical' | 'unavailable'
@@ -99,6 +103,62 @@ function espnSeasonYear(json: unknown): number | undefined {
   return typeof s === 'number' ? s : (s as { year?: number } | null | undefined)?.year
 }
 
+// El objeto `season` completo (ventana + rótulo). Es lo que permite saber si las
+// filas que acabamos de traer son de un curso en marcha o de uno cerrado; sin él
+// un fallback a `?season=<año-1>` se presentaba como dato vivo. Ver season-label.ts.
+function espnSeason(json: unknown): EspnSeason | undefined {
+  const s = (json as { season?: unknown } | null | undefined)?.season
+  if (typeof s === 'number') return { year: s }
+  return (s as EspnSeason | null | undefined) ?? undefined
+}
+
+/** Estado de temporada que viaja al cliente pegado a cada bloque. */
+export interface SeasonState {
+  kind: 'current' | 'early' | 'finished'
+  /** "2025-26". Ausente si ESPN no da rótulo reconocible. */
+  label?: string
+  /** Jornadas jugadas por el que más lleva (0 en bloques de líderes). */
+  played: number
+}
+
+function seasonStateOf(
+  rows: readonly { gp: number }[],
+  season: EspnSeason | undefined,
+  now: Date,
+  fallbackYear?: number,
+): SeasonState {
+  const v = classifySeason({ rows, season, now, fallbackYear })
+  return { kind: v.kind, label: v.label, played: v.played }
+}
+
+/**
+ * Estado de un bloque de LÍDERES (goleadores, asistentes…).
+ *
+ * Aquí no hay jornadas que contar y —comprobado— el endpoint `/statistics` de
+ * ESPN devuelve el `season` SIN ventana de fechas, solo con el año y el rótulo:
+ *
+ *     {"year":2025,"displayName":"2025-26 UEFA Champions League","name":"Final"}
+ *
+ * Así que el criterio es el año: si los líderes vienen de una temporada anterior
+ * a la vigente, ese curso terminó. Es lo que distingue a los 15 goles de Mbappé
+ * en la Champions 2025-26 de los goleadores de una liga en marcha. Nunca devuelve
+ * 'early': una tabla de goleadores de la jornada 3 es un dato legítimo, al revés
+ * que una clasificación, donde el orden todavía no significa nada.
+ */
+function leadersSeasonState(season: EspnSeason | undefined, now: Date, fallbackYear?: number): SeasonState {
+  if (typeof fallbackYear === 'number') {
+    return { kind: 'finished', label: labelFromStartYear(fallbackYear), played: 0 }
+  }
+  const label = seasonLabel(season)
+  // Temporada europea vigente por su año de INICIO (ago–dic → este año).
+  const currentStart = now.getUTCMonth() >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
+  if (typeof season?.year === 'number' && season.year < currentStart) {
+    return { kind: 'finished', label, played: 0 }
+  }
+  const s = seasonStateOf([], season, now)
+  return s.kind === 'finished' ? s : { kind: 'current', label, played: 0 }
+}
+
 const FOOTBALL_LEAGUES = [
   ...SOCCER_LEAGUES.map(l => ({ slug: l.espnSlug, id: l.blockId, label: l.label })),
   ...EUROPEAN_CUPS.map(l => ({ slug: l.espnSlug, id: l.id, label: l.label })),
@@ -126,10 +186,14 @@ async function fetchFootball(slug: string, id: string, label: string): Promise<L
         const json = await res.json()
         const parsed = safeParse(espnStandingsSchema, json, `football:${slug}`)
         const yr = typeof json?.season === 'number' ? json.season : (json?.season?.year as number | undefined)
-        return { entries: parsed?.children?.[0]?.standings?.entries ?? [], yr }
+        return { entries: parsed?.children?.[0]?.standings?.entries ?? [], yr, season: espnSeason(json) }
       }
       const first = await grab()
       let entries = first.entries
+      // De qué respuesta salen las filas que acabemos usando: la temporada de la
+      // PRIMERA llamada o la de la del fallback. Sin esto se perdía el rastro y
+      // la Serie A cerrada del año pasado se servía como ● LIVE (ago 2026).
+      let season = first.season
       // Offseason rollover: ESPN pasa la liga a la nueva temporada mientras la
       // anterior sigue siendo la relevante. Dos variantes: (a) tabla vacía (0
       // entries), o (b) la temporada nueva ya EXISTE pero nadie ha jugado aún
@@ -142,9 +206,12 @@ async function fetchFootball(slug: string, id: string, label: string): Promise<L
           const s = (e.stats as RawStat[] | undefined) ?? []
           return sv(s, 'wins') + sv(s, 'ties') + sv(s, 'losses') > 0
         })
+      let fallbackYear: number | undefined
       if ((!entries.length || !played(entries)) && first.yr) {
         const prev = await grab(first.yr - 1)
-        if (prev.entries.length && played(prev.entries)) entries = prev.entries
+        if (prev.entries.length && played(prev.entries)) {
+          entries = prev.entries; season = prev.season; fallbackYear = first.yr - 1
+        }
       }
       if (!entries.length) return null
 
@@ -171,7 +238,11 @@ async function fetchFootball(slug: string, id: string, label: string): Promise<L
           logo: team?.id ? `https://a.espncdn.com/i/teamlogos/soccer/500/${team.id}.png` : undefined,
         }
       })
-      return { id, label, rows, leagueSlug: slug }
+      const gps = entries.map(e => {
+        const s = (e.stats as RawStat[] | undefined) ?? []
+        return { gp: sv(s, 'wins') + sv(s, 'ties') + sv(s, 'losses') }
+      })
+      return { id, label, rows, leagueSlug: slug, season: seasonStateOf(gps, season, new Date(), fallbackYear) }
     },
     fallback,
   )
@@ -279,9 +350,11 @@ async function fetchF1Poles(season: string): Promise<StandingRow[]> {
 
 // ── NBA via ESPN ──────────────────────────────────────────────────────────────
 
-async function fetchNBA(): Promise<{ east: StandingRow[]; west: StandingRow[] }> {
+type NbaStandings = { east: StandingRow[]; west: StandingRow[]; season?: SeasonState }
+
+async function fetchNBA(): Promise<NbaStandings> {
   const fallback = { east: [] as StandingRow[], west: [] as StandingRow[] }
-  const result = await withStaleFallback<{ east: StandingRow[]; west: StandingRow[] }>(
+  const result = await withStaleFallback<NbaStandings>(
     'nba:standings',
     30 * 60_000,
     async () => {
@@ -319,7 +392,16 @@ async function fetchNBA(): Promise<{ east: StandingRow[]; west: StandingRow[] }>
       }))
     }
 
-      return { east: parse(children[0] as Record<string, unknown>, 'Este'), west: parse(children[1] as Record<string, unknown>, 'Oeste') }
+      const east = parse(children[0] as Record<string, unknown>, 'Este')
+      const west = parse(children[1] as Record<string, unknown>, 'Oeste')
+      // "60-22" → 82 partidos. ESPN cambia los metadatos de temporada antes que
+      // las filas, así que en agosto servía el balance FINAL del curso pasado
+      // rotulado como el nuevo; el recuento de partidos es lo que lo delata.
+      const gps = [...east, ...west].map(r => {
+        const [w, l] = r.value.split('-').map(n => parseInt(n, 10))
+        return { gp: (Number.isFinite(w) ? w : 0) + (Number.isFinite(l) ? l : 0) }
+      })
+      return { east, west, season: seasonStateOf(gps, espnSeason(json), new Date()) }
     },
     fallback,
   )
@@ -471,20 +553,21 @@ function fetchUFCP4P(): Promise<StandingRow[]> {
 
 // ── Women's Liga F via ESPN ───────────────────────────────────────────────────
 
-async function fetchWomenLigaF(): Promise<StandingRow[]> {
+async function fetchWomenLigaF(): Promise<{ rows: StandingRow[]; season?: SeasonState }> {
   try {
     const grab = async (season?: number) => {
       const url = season ? `${BASE}/soccer/esp.w.1/standings?season=${season}` : `${BASE}/soccer/esp.w.1/standings`
       const res = await tfetch(url, { next: { revalidate: 3600 } })
-      if (!res.ok) return { entries: [] as Record<string, unknown>[], yr: undefined as number | undefined }
+      if (!res.ok) return { entries: [] as Record<string, unknown>[], yr: undefined as number | undefined, season: undefined as EspnSeason | undefined }
       const json = await res.json()
       const firstChild = ((json?.children as Record<string, unknown>[] | undefined)?.[0]) as Record<string, unknown> | undefined
       const standings = firstChild?.standings as Record<string, unknown> | undefined
       const entries = (standings?.entries as Record<string, unknown>[] | undefined) ?? []
-      return { entries, yr: espnSeasonYear(json) }
+      return { entries, yr: espnSeasonYear(json), season: espnSeason(json) }
     }
     const first = await grab()
     let entries = first.entries
+    let season = first.season
     // Mismo rollover de verano que las ligas masculinas: si ESPN ya pasó Liga F a
     // la nueva temporada (tabla vacía O recién creada con todos a 0 PJ), caemos a
     // season-1 para conservar la tabla relevante.
@@ -493,12 +576,19 @@ async function fetchWomenLigaF(): Promise<StandingRow[]> {
         const s = (e.stats as RawStat[] | undefined) ?? []
         return sv(s, 'wins') + sv(s, 'ties') + sv(s, 'losses') > 0
       })
+    let fallbackYear: number | undefined
     if ((!entries.length || !played(entries)) && first.yr) {
       const prev = await grab(first.yr - 1)
-      if (prev.entries.length && played(prev.entries)) entries = prev.entries
+      if (prev.entries.length && played(prev.entries)) {
+        entries = prev.entries; season = prev.season; fallbackYear = first.yr - 1
+      }
     }
-    if (!entries.length) return []
-    return entries.slice(0, 10).map((e, i) => {
+    if (!entries.length) return { rows: [] }
+    const gps = entries.map(e => {
+      const s = (e.stats as RawStat[] | undefined) ?? []
+      return { gp: sv(s, 'wins') + sv(s, 'ties') + sv(s, 'losses') }
+    })
+    const rows = entries.slice(0, 10).map((e, i) => {
       const team  = e.team as Record<string, unknown>
       const stats = (e.stats as RawStat[]) ?? []
       const w = sv(stats, 'wins'); const d = sv(stats, 'ties'); const l = sv(stats, 'losses')
@@ -510,14 +600,15 @@ async function fetchWomenLigaF(): Promise<StandingRow[]> {
         trend: 'flat' as const, extra: { V: String(w), E: String(d), D: String(l) },
       }
     })
-  } catch { return [] }
+    return { rows, season: seasonStateOf(gps, season, new Date(), fallbackYear) }
+  } catch { return { rows: [] } }
 }
 
-async function fetchWomenStats(): Promise<{ goals: StandingRow[]; assists: StandingRow[] }> {
+async function fetchWomenStats(): Promise<{ goals: StandingRow[]; assists: StandingRow[]; season?: SeasonState }> {
   const empty = { goals: [] as StandingRow[], assists: [] as StandingRow[] }
   const STAT_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.w.1/statistics'
   try {
-    const grab = async (season?: number): Promise<{ goals: StandingRow[]; assists: StandingRow[]; yr?: number } | null> => {
+    const grab = async (season?: number): Promise<{ goals: StandingRow[]; assists: StandingRow[]; yr?: number; season?: EspnSeason } | null> => {
       const res = await tfetch(season ? `${STAT_URL}?season=${season}` : STAT_URL, { next: { revalidate: 3600 } })
       if (!res.ok) return null
       const json = await res.json()
@@ -531,13 +622,19 @@ async function fetchWomenStats(): Promise<{ goals: StandingRow[]; assists: Stand
           trend: 'flat' as const, extra: {},
         }))
       }
-      return { goals: parse('Goals'), assists: parse('Assists'), yr: espnSeasonYear(json) }
+      return { goals: parse('Goals'), assists: parse('Assists'), yr: espnSeasonYear(json), season: espnSeason(json) }
     }
     const first = await grab()
     let out = first
+    let fallbackYear: number | undefined
     // Offseason rollover → cae a season-1 (igual que tabla y ligas masculinas).
-    if ((!out || (!out.goals.length && !out.assists.length)) && first?.yr) out = await grab(first.yr - 1)
-    return out ? { goals: out.goals, assists: out.assists } : empty
+    if ((!out || (!out.goals.length && !out.assists.length)) && first?.yr) {
+      fallbackYear = first.yr - 1
+      out = await grab(fallbackYear)
+    }
+    return out
+      ? { goals: out.goals, assists: out.assists, season: leadersSeasonState(out.season, new Date(), fallbackYear) }
+      : empty
   } catch { return empty }
 }
 
@@ -761,10 +858,10 @@ interface EspnStatCat { name?: string; displayName?: string; leaders?: EspnLeade
 async function fetchEuropeanCupLeaders(
   slug: string,
   kind: 'goals' | 'assists',
-): Promise<StandingRow[]> {
+): Promise<{ rows: StandingRow[]; season?: SeasonState }> {
   const base = `https://site.api.espn.com/apis/site/v2/sports/${slug}/statistics`
   const target = kind === 'goals' ? 'Goals' : 'Assists'
-  const grab = async (season?: number): Promise<{ rows: StandingRow[]; yr?: number } | null> => {
+  const grab = async (season?: number): Promise<{ rows: StandingRow[]; yr?: number; season?: EspnSeason } | null> => {
     const res = await tfetch(season ? `${base}?season=${season}` : base, { next: { revalidate: 1800 } })
     if (!res.ok) return null
     const json = await res.json() as { stats?: EspnStatCat[]; season?: unknown }
@@ -778,16 +875,21 @@ async function fetchEuropeanCupLeaders(
       trend: 'flat' as const,
       extra: {},
     }))
-    return { rows, yr: espnSeasonYear(json) }
+    return { rows, yr: espnSeasonYear(json), season: espnSeason(json) }
   }
   try {
     const first = await grab()
     let out = first
+    let fallbackYear: number | undefined
     // Offseason rollover → cae a season-1 (UCL/UEL ya terminadas en verano).
-    if ((!out || !out.rows.length) && first?.yr) out = await grab(first.yr - 1)
-    return out?.rows ?? []
+    if ((!out || !out.rows.length) && first?.yr) {
+      fallbackYear = first.yr - 1
+      out = await grab(fallbackYear)
+    }
+    if (!out) return { rows: [] }
+    return { rows: out.rows, season: leadersSeasonState(out.season, new Date(), fallbackYear) }
   } catch {
-    return []
+    return { rows: [] }
   }
 }
 
@@ -795,8 +897,8 @@ async function fetchEuropeanCupLeaders(
 // Para los goleadores/asistentes del Mundial, donde el sub es un país en inglés.
 // toSpanishNation deja intacto lo que no reconoce (clubes u otros), así que es
 // seguro aunque colara alguna fila que no fuese selección.
-function withSpanishNations(rows: StandingRow[]): StandingRow[] {
-  return rows.map((r) => ({ ...r, sub: toSpanishNation(r.sub) }))
+function withSpanishNations<T extends { rows: StandingRow[] }>(res: T): T {
+  return { ...res, rows: res.rows.map((r) => ({ ...r, sub: toSpanishNation(r.sub) })) }
 }
 
 
@@ -1194,6 +1296,11 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     fetchEuropeanCupLeaders('soccer/fifa.world',      'assists').then(withSpanishNations),
   ])
   const nbaLeaders = await fetchNBALeaders(nbaSeason)
+  // `nbaSeason` es el rótulo que se le pide a NBA.com y antes de octubre apunta al
+  // curso anterior. Quien sabe si ese curso ya terminó es la clasificación: si
+  // ESPN la da por no arrancada, estos promedios son los finales de aquel año.
+  const nbaLeadersSeason: SeasonState | undefined =
+    nba.season?.kind === 'finished' ? { kind: 'finished', label: nbaSeason, played: 0 } : undefined
   const [f1Calendar, f1Sprints] = f1.season
     ? await Promise.all([fetchF1Calendar(f1.season), fetchF1Sprints(f1.season)])
     : [[], []] as [StandingRow[], StandingRow[]]
@@ -1242,6 +1349,15 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   const live    = (source: string, key?: string): BlockMeta =>
     (key && staleSet.has(key)) ? stale(source) : ({ status: 'live', source, fetchedAt: now })
   const unavail = (source: string): BlockMeta => ({ status: 'unavailable', source, fetchedAt: now })
+  // Curso CERRADO: insignia gris "Final 2025-26" en vez del ● LIVE verde. No se
+  // oculta el bloque —en agosto la tabla del año pasado es el mejor dato que hay—
+  // pero deja de presentarse como si el campeonato estuviera en marcha. De paso,
+  // el cliente no inyecta su ItemList a Google (StatsJsonLd solo emite si isLive).
+  const hist = (source: string, label?: string): BlockMeta =>
+    ({ status: 'historical', source, fetchedAt: now, asOf: finishedBadge(label) })
+  /** live(), salvo que las filas vengan de una temporada terminada. */
+  const bySeason = (source: string, st: SeasonState | undefined, key?: string): BlockMeta =>
+    st?.kind === 'finished' ? hist(source, st.label) : live(source, key)
   // Snapshots (UFC/MotoGP/Elo desde el cron a Supabase): si llevan ≥ SNAP_STALE_DAYS
   // sin refrescarse (el cron semanal pudo fallar para ese bloque), no los etiquetamos
   // "live" — mostramos su antigüedad real para no presentar datos viejos como actuales.
@@ -1254,22 +1370,37 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
   }
 
   const wcStarted = worldCup.some(g => g.rows.some(r => r.sub !== 'Sin jugar'))
+  // El Mundial 2026 terminó el 19/07. La ventana de ESPN no lo delata (declara
+  // endDate 2026-12-31), así que la fecha de la final es una constante, igual que
+  // ya lo era la del primer partido. Ver lib/world-cup-phase.
+  const wcTerminado = worldCupPhase(new Date()) === 'terminado'
+  const wcMeta = (source: string, siEnCurso: BlockMeta): BlockMeta =>
+    wcTerminado ? hist(source, '2026') : siEnCurso
+
+  // La meta genérica 'football' ya no la lee ninguna tabla (cada tabla-* tiene la
+  // suya); la leen los dos bloques DERIVADOS que funden todas las ligas —"equipos
+  // más goleadores" y "defensas más sólidas"—, así que su temporada es la del
+  // grupo mayoritario, el mismo que el cliente usa para construirlos.
+  const footballSeason = sameSeasonOnly(football)
 
   const meta: Record<string, BlockMeta> = {
     // football meta is populated per-league below (each tabla- id can be stale independently)
-    football:        live('ESPN'),
+    football:        footballSeason.finished ? hist('ESPN', footballSeason.label) : live('ESPN'),
     f1Drivers:       f1.drivers.length      ? live(`Jolpica · ${f1.season} R${f1.round}`) : unavail('Jolpica'),
     f1Constructors:  f1.constructors.length ? live(`Jolpica · ${f1.season} R${f1.round}`) : unavail('Jolpica'),
     f1Poles:         f1.poles.length        ? live(`Jolpica · ${f1.season}`)              : unavail('Jolpica'),
-    nbaEast:         nba.east.length        ? live('ESPN', 'nbaEast') : unavail('ESPN'),
-    nbaWest:         nba.west.length        ? live('ESPN', 'nbaWest') : unavail('ESPN'),
-    nbaScoring:      nbaLeaders.scoring.length    ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
-    nbaRebounds:     nbaLeaders.rebounds.length   ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
-    nbaAssists:      nbaLeaders.assists.length    ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
-    nbaBlocks:       nbaLeaders.blocks.length     ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
-    nbaSteals:       nbaLeaders.steals.length     ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
-    nbaEfficiency:   nbaLeaders.efficiency.length ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
-    nba3ptMade:      nbaLeaders.threePt.length    ? live(`NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
+    nbaEast:         nba.east.length        ? bySeason('ESPN', nba.season, 'nbaEast') : unavail('ESPN'),
+    nbaWest:         nba.west.length        ? bySeason('ESPN', nba.season, 'nbaWest') : unavail('ESPN'),
+    // Los líderes de NBA.com se piden para `nbaSeason`, que antes de octubre es el
+    // curso ANTERIOR: si la clasificación dice que la temporada no ha arrancado,
+    // estos promedios son los finales de ese curso, no los de nadie en marcha.
+    nbaScoring:      nbaLeaders.scoring.length    ? bySeason(`NBA.com · ${nbaSeason}`, nbaLeadersSeason) : unavail('NBA.com'),
+    nbaRebounds:     nbaLeaders.rebounds.length   ? bySeason(`NBA.com · ${nbaSeason}`, nbaLeadersSeason) : unavail('NBA.com'),
+    nbaAssists:      nbaLeaders.assists.length    ? bySeason(`NBA.com · ${nbaSeason}`, nbaLeadersSeason) : unavail('NBA.com'),
+    nbaBlocks:       nbaLeaders.blocks.length     ? bySeason(`NBA.com · ${nbaSeason}`, nbaLeadersSeason) : unavail('NBA.com'),
+    nbaSteals:       nbaLeaders.steals.length     ? bySeason(`NBA.com · ${nbaSeason}`, nbaLeadersSeason) : unavail('NBA.com'),
+    nbaEfficiency:   nbaLeaders.efficiency.length ? bySeason(`NBA.com · ${nbaSeason}`, nbaLeadersSeason) : unavail('NBA.com'),
+    nba3ptMade:      nbaLeaders.threePt.length    ? bySeason(`NBA.com · ${nbaSeason}`, nbaLeadersSeason) : unavail('NBA.com'),
     atpRanking:      tennis.atp.length ? live('ESPN') : unavail('ESPN'),
     wtaRanking:      tennis.wta.length ? live('ESPN') : unavail('ESPN'),
     // Sin fallback hardcoded: si snapshot ausente → unavailable (no datos viejos disfrazados de live).
@@ -1277,14 +1408,18 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     ufcP4P:          ufcP4PR.snap ? snapMeta(ufcP4PR.snap) : unavail('Sin snapshot — esperando cron lunes UFC'),
     ufcChampions:    ufcChampionsR.snap ? snapMeta(ufcChampionsR.snap) : unavail('Sin snapshot — ejecutar cron UFC'),
     // Meta de cada división se inyecta debajo en el for-loop (no cabe aquí).
-    womenLigaF:          womenLigaF.length             ? live('ESPN') : unavail('ESPN'),
-    womenGoals:          womenStats.goals.length       ? live('ESPN') : unavail('ESPN'),
-    womenAssists:        womenStats.assists.length     ? live('ESPN') : unavail('ESPN'),
+    womenLigaF:          womenLigaF.rows.length        ? bySeason('ESPN', womenLigaF.season) : unavail('ESPN'),
+    womenGoals:          womenStats.goals.length       ? bySeason('ESPN', womenStats.season) : unavail('ESPN'),
+    womenAssists:        womenStats.assists.length     ? bySeason('ESPN', womenStats.season) : unavail('ESPN'),
     worldCup:         worldCup.length
-      ? wcStarted ? live('ESPN · FIFA World Cup 2026') : ({ status: 'stale', source: 'ESPN · FIFA World Cup 2026', fetchedAt: now, asOf: 'Grupos confirmados — torneo inicia 11 jun 2026' } satisfies BlockMeta)
+      ? wcMeta('ESPN · FIFA World Cup 2026', wcStarted
+          ? live('ESPN · FIFA World Cup 2026')
+          : ({ status: 'stale', source: 'ESPN · FIFA World Cup 2026', fetchedAt: now, asOf: 'Grupos confirmados — torneo inicia 11 jun 2026' } satisfies BlockMeta))
       : unavail('ESPN'),
     worldCupKnockout: worldCupKnockout.length
-      ? worldCupKnockout.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · FIFA World Cup 2026') : ({ status: 'stale', source: 'ESPN · FIFA World Cup 2026', fetchedAt: now, asOf: 'Partidos del día' } satisfies BlockMeta)
+      ? wcMeta('ESPN · FIFA World Cup 2026', worldCupKnockout.some(r => r.extra?.Estado === 'En juego')
+          ? live('ESPN · FIFA World Cup 2026')
+          : ({ status: 'stale', source: 'ESPN · FIFA World Cup 2026', fetchedAt: now, asOf: 'Partidos del día' } satisfies BlockMeta))
       : unavail('ESPN · Fase eliminatoria no iniciada'),
     uclFixtures: uclFixtures.length
       ? uclFixtures.some(r => r.extra?.Estado === 'En juego') ? live('ESPN · UEFA Champions League') : ({ status: 'stale', source: 'ESPN · UCL', fetchedAt: now, asOf: 'Fase KO' } satisfies BlockMeta)
@@ -1295,16 +1430,19 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     // ── Nuevos automatizados ────────────────────────────────────────────
     f1Calendar:        f1Calendar.length    ? live(`Jolpica · ${f1.season}`) : unavail('Jolpica'),
     f1Sprints:         f1Sprints.length     ? live(`Jolpica · sprints ${f1.season}`) : unavail('Jolpica · sin sprints aún'),
-    nbaMvpRace:        nbaMvpRace.length    ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
-    nbaDpoyRace:       nbaDpoyRace.length   ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
-    nbaRookieRace:     nbaRookieRace.length ? live(`Auto · NBA.com · ${nbaSeason}`) : unavail('NBA.com'),
-    uclScorers:        uclScorers.length    ? live('ESPN · UEFA Champions League') : unavail('ESPN'),
-    uelScorers:        uelScorers.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
-    uclAssists:        uclAssists.length    ? live('ESPN · UEFA Champions League') : unavail('ESPN'),
-    uelAssists:        uelAssists.length    ? live('ESPN · UEFA Europa League')    : unavail('ESPN'),
-    mundialScorers:    mundialScorers.length ? live('ESPN · FIFA World Cup 2026')  : unavail('ESPN · sin goleadores aún'),
-    mundialAssists:    mundialAssists.length ? live('ESPN · FIFA World Cup 2026')  : unavail('ESPN · sin asistencias aún'),
-    worldCupQualified: worldCupQualified.length ? live('Auto · FIFA World Cup 2026') : unavail('ESPN'),
+    // Derivadas de los promedios + la clasificación: heredan su temporada.
+    nbaMvpRace:        nbaMvpRace.length    ? bySeason(`Auto · NBA.com · ${nbaSeason}`, nbaLeadersSeason) : unavail('NBA.com'),
+    nbaDpoyRace:       nbaDpoyRace.length   ? bySeason(`Auto · NBA.com · ${nbaSeason}`, nbaLeadersSeason) : unavail('NBA.com'),
+    nbaRookieRace:     nbaRookieRace.length ? bySeason(`Auto · NBA.com · ${nbaSeason}`, nbaLeadersSeason) : unavail('NBA.com'),
+    uclScorers:        uclScorers.rows.length    ? bySeason('ESPN · UEFA Champions League', uclScorers.season) : unavail('ESPN'),
+    uelScorers:        uelScorers.rows.length    ? bySeason('ESPN · UEFA Europa League',    uelScorers.season) : unavail('ESPN'),
+    uclAssists:        uclAssists.rows.length    ? bySeason('ESPN · UEFA Champions League', uclAssists.season) : unavail('ESPN'),
+    uelAssists:        uelAssists.rows.length    ? bySeason('ESPN · UEFA Europa League',    uelAssists.season) : unavail('ESPN'),
+    // Los goleadores del Mundial son finales desde la final: el año de temporada
+    // (2026) coincide con el vigente, así que la regla general no los cazaba.
+    mundialScorers:    mundialScorers.rows.length ? wcMeta('ESPN · FIFA World Cup 2026', bySeason('ESPN · FIFA World Cup 2026', mundialScorers.season)) : unavail('ESPN · sin goleadores aún'),
+    mundialAssists:    mundialAssists.rows.length ? wcMeta('ESPN · FIFA World Cup 2026', bySeason('ESPN · FIFA World Cup 2026', mundialAssists.season)) : unavail('ESPN · sin asistencias aún'),
+    worldCupQualified: worldCupQualified.length ? wcMeta('Auto · FIFA World Cup 2026', live('Auto · FIFA World Cup 2026')) : unavail('ESPN'),
     worldCupSchedule:  worldCupSchedule.length  ? live('ESPN · scoreboard')          : unavail('ESPN'),
     motogpRiders:        motogpRidersR.snap    ? snapMeta(motogpRidersR.snap)    : unavail('Sin snapshot — ejecutar cron MotoGP'),
     motogpConstructors:  motogpConstructR.snap ? snapMeta(motogpConstructR.snap) : unavail('Sin snapshot — ejecutar cron MotoGP'),
@@ -1324,7 +1462,12 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     if (staleSet.has(league.id)) {
       meta[league.id] = { status: 'stale', source: 'ESPN · caché reciente', fetchedAt: now, asOf: 'fallback' }
     } else if (league.rows.length) {
-      meta[league.id] = { status: 'live', source: 'ESPN', fetchedAt: now }
+      // La liga puede estar sirviendo el curso pasado (fallback de offseason) o
+      // llevar dos jornadas. En el primer caso lo decimos; en el segundo el dato
+      // es legítimamente de hoy, y solo anotamos la jornada en la fuente.
+      meta[league.id] = league.season?.kind === 'finished'
+        ? hist('ESPN', league.season.label)
+        : { status: 'live', source: league.season?.kind === 'early' ? `ESPN · jornada ${league.season.played}` : 'ESPN', fetchedAt: now }
     } else {
       // Liga sin filas (p.ej. ESPN aún no publica la tabla de la nueva temporada):
       // marcar 'unavailable' para que el cliente vacíe el fallback hardcodeado en
@@ -1353,7 +1496,7 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     ufcP4P:         ufcP4PR.rows,
     ufcChampions:   ufcChampionsR.rows,
     ufcDivisions,
-    womenLigaF,
+    womenLigaF:          womenLigaF.rows,
     womenGoals:          womenStats.goals,
     womenAssists:        womenStats.assists,
     worldCup,
@@ -1366,12 +1509,12 @@ async function buildPayload(): Promise<StatsStandingsResponse> {
     nbaMvpRace,
     nbaDpoyRace,
     nbaRookieRace,
-    uclScorers,
-    uelScorers,
-    uclAssists,
-    uelAssists,
-    mundialScorers,
-    mundialAssists,
+    uclScorers:          uclScorers.rows,
+    uelScorers:          uelScorers.rows,
+    uclAssists:          uclAssists.rows,
+    uelAssists:          uelAssists.rows,
+    mundialScorers:      mundialScorers.rows,
+    mundialAssists:      mundialAssists.rows,
     worldCupQualified,
     motogpRiders:       motogpRidersR.rows,
     motogpConstructors: motogpConstructR.rows,

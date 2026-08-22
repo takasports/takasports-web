@@ -151,12 +151,15 @@ export function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: Bloc
     )
   }
   if (meta?.status === 'historical') {
+    // "Final 2025-26" y "Temp. 24/25" ya se explican solos; el prefijo "Hist ·"
+    // solo hace falta cuando el asOf es una antigüedad suelta ("hace 12 días").
+    const seExplicaSolo = /^(Final|Temp)/.test(meta.asOf ?? '')
     return (
       <span className={base} title={sourceTitle}
         role="status"
         aria-label={`Datos históricos${meta.asOf ? ` ${meta.asOf}` : ''}${meta.source ? ` desde ${meta.source}` : ''}`}
         style={{ background: 'rgba(148,163,184,0.10)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.25)', fontFamily: 'var(--font-sport)' }}>
-        Hist · {meta.asOf ?? '—'}
+        {seExplicaSolo ? meta.asOf : `Hist · ${meta.asOf ?? '—'}`}
       </span>
     )
   }
@@ -474,7 +477,7 @@ export function MetricGroupAccordion({ group, accent, expanded, onToggle, expand
   const visibleBlocks = group.blocks.filter(b => {
     if (b.placeholder && b.rows.length === 0) return false
     if (hideUnavailable) {
-      const m = getBlockMeta(b.id, liveMeta)
+      const m = getBlockMeta(b.id, liveMeta, undefined, livePlayerData?.meta)
       if (m?.status === 'unavailable') return false
     }
     return true
@@ -482,10 +485,17 @@ export function MetricGroupAccordion({ group, accent, expanded, onToggle, expand
 
   if (visibleBlocks.length === 0) return null
 
-  // Apply live player data to group blocks, preserving isLive per block
+  // Apply live player data to group blocks, preserving isLive per block.
+  // "Tener filas" no basta para ser LIVE: la Bota de Oro puede estar servida con
+  // el curso cerrado (ago 2026), y la insignia verde gana a la meta en
+  // FreshnessBadge, así que aquí se apaga antes de llegar allí.
   const liveVisibleBlocks = visibleBlocks.map(b => {
     if (livePlayerData && LIVE_PLAYER_BLOCK_IDS.has(b.id)) {
-      return applyLivePlayerToBlock(b, livePlayerData, leagueFilter)
+      const applied = applyLivePlayerToBlock(b, livePlayerData, leagueFilter)
+      const m = getBlockMeta(b.id, liveMeta, undefined, livePlayerData.meta)
+      return m?.status === 'historical' || m?.status === 'stale'
+        ? { ...applied, isLive: false }
+        : applied
     }
     return { block: b, isLive: false }
   })
@@ -584,7 +594,7 @@ export function MetricGroupAccordion({ group, accent, expanded, onToggle, expand
                 onToggle={() => onToggleBlock(block.id)}
                 leagueFilter={leagueFilter}
                 isLive={isLive}
-                meta={getBlockMeta(block.id, liveMeta)}
+                meta={getBlockMeta(block.id, liveMeta, undefined, livePlayerData?.meta)}
                 isFav={favorites?.has(block.id)}
                 onToggleFav={onToggleFav ? () => onToggleFav(block.id) : undefined}
               />

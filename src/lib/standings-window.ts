@@ -61,7 +61,7 @@ const GP_MARGIN_DAYS = 2
  * pero 82 partidos en 2 días son imposibles, y eso sí las delata.
  */
 export function gamesPlayedPlausible(
-  rows: Array<{ gp: number }>,
+  rows: readonly { gp: number }[],
   season: SeasonWindow | undefined,
   now: Date,
 ): boolean {
@@ -75,7 +75,7 @@ export function gamesPlayedPlausible(
 }
 
 /** ¿Ha jugado alguien lo suficiente como para que el orden signifique algo? */
-export function hasEnoughGames(rows: Array<{ gp: number }>): boolean {
+export function hasEnoughGames(rows: readonly { gp: number }[]): boolean {
   return rows.some(r => r.gp >= STANDINGS_MIN_GP)
 }
 
@@ -85,7 +85,7 @@ export function hasEnoughGames(rows: Array<{ gp: number }>): boolean {
  * cuando la temporada termina se apaga solo.
  */
 export function standingsUsable(
-  rows: Array<{ gp: number }>,
+  rows: readonly { gp: number }[],
   season: SeasonWindow | undefined,
   now: Date,
 ): boolean {

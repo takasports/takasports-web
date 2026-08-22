@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { tfetch } from '@/lib/stats-cache'
 import { SOCCER_LEAGUES } from '@/lib/stats-leagues'
 import { getPhotosByEspnId } from '@/lib/sport-entities'
+import { finishedBadge, sameSeasonOnly } from '@/lib/season-label'
 
 export interface PlayerLeader {
   name: string
@@ -21,11 +22,28 @@ export interface PlayerLeader {
   photoAttribution?: string
 }
 
+/** Temporada de la que salen realmente los líderes de una liga. */
+export interface LeaderSeason {
+  kind: 'current' | 'finished'
+  /** "2025-26". */
+  label: string
+}
+
 export interface LeaguePlayerData {
   id: string
   label: string
   goals: PlayerLeader[]
   assists: PlayerLeader[]
+  /** Qué curso describen estas cifras. En agosto no es el mismo en todas. */
+  season?: LeaderSeason
+}
+
+/** Frescura por bloque, misma forma que la de /api/stats/standings. */
+export interface PlayerBlockMeta {
+  status: 'live' | 'historical'
+  source: string
+  fetchedAt: string
+  asOf?: string
 }
 
 // Cross-league combined rankings (ESPN core API, free). Keys map 1:1 to blocks.
@@ -36,7 +54,10 @@ export type CombinedKey =
 export interface PlayersResponse {
   leagues: LeaguePlayerData[]
   combined: Record<CombinedKey, PlayerLeader[]>
+  /** Temporada de los bloques que funden varias ligas (Bota de Oro, Goleadores). */
   season: string
+  /** Por blockId — el cliente la usa para no rotular como ● LIVE un curso cerrado. */
+  meta: Record<string, PlayerBlockMeta>
   updatedAt: string
 }
 
@@ -48,7 +69,9 @@ function seasonStartYear(): number {
   return now.getUTCMonth() >= 7 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
 }
 const SEASON_START = seasonStartYear()
-const SEASON_LABEL = `${SEASON_START}-${String((SEASON_START + 1) % 100).padStart(2, '0')}`
+const seasonLabelOf = (startYear: number) =>
+  `${startYear}-${String((startYear + 1) % 100).padStart(2, '0')}`
+const SEASON_LABEL = seasonLabelOf(SEASON_START)
 
 // force-dynamic: igual que standings — no prerendear en build para no romper
 // el deploy con fetches lentas a ESPN. Solo se consume client-side. Las fetches
@@ -88,7 +111,7 @@ function parseLeaders(cat: EspnStat | undefined, leagueSlug: string): PlayerLead
 
 async function fetchEspnLeague(
   league: typeof LEAGUES[0],
-): Promise<Pick<LeaguePlayerData, 'id' | 'label' | 'goals' | 'assists'>> {
+): Promise<Pick<LeaguePlayerData, 'id' | 'label' | 'goals' | 'assists' | 'season'>> {
   const base = `https://site.api.espn.com/apis/site/v2/sports/${league.slug}/statistics`
   // Pide explícitamente la temporada vigente (SEASON_START). En el parón de
   // verano ESPN rota la liga a la nueva temporada (sin goleadores aún); si la
@@ -106,12 +129,24 @@ async function fetchEspnLeague(
     return (goals.length || assists.length) ? { goals, assists } : null
   }
   try {
-    const data = (await grab(SEASON_START)) ?? (await grab(SEASON_START - 1))
-    return { id: league.id, label: league.label, goals: data?.goals ?? [], assists: data?.assists ?? [] }
+    // Cuál de las dos temporadas acabó respondiendo es LA información que antes se
+    // perdía: el 21/08/2026 LaLiga traía 2026-27 (Mariano, 2 goles) y las otras
+    // cuatro el cierre de 2025-26 (Kane, 36), y todas se presentaban igual.
+    const current = await grab(SEASON_START)
+    if (current) {
+      return { ...league2(league), ...current, season: { kind: 'current', label: SEASON_LABEL } }
+    }
+    const prev = await grab(SEASON_START - 1)
+    if (prev) {
+      return { ...league2(league), ...prev, season: { kind: 'finished', label: seasonLabelOf(SEASON_START - 1) } }
+    }
+    return { ...league2(league), goals: [], assists: [] }
   } catch {
-    return { id: league.id, label: league.label, goals: [], assists: [] }
+    return { ...league2(league), goals: [], assists: [] }
   }
 }
+
+const league2 = (l: typeof LEAGUES[0]) => ({ id: l.id, label: l.label })
 
 // ── ESPN Core API — combined cross-league rankings (free) ──────────────────────
 // core leaders return value inline but athlete/team as $ref URLs. We sort by the
@@ -255,11 +290,36 @@ export async function getPlayersData(): Promise<PlayersResponse> {
     Promise.all(LEAGUES.map(fetchEspnLeague)),
     buildCombined(),
   ])
+  const now = new Date().toISOString()
+
+  // Los bloques que funden ligas (Bota de Oro, "Goleadores" sin filtro) toman la
+  // temporada del grupo mayoritario; en agosto eso es el curso cerrado, y decirlo
+  // es lo que evita que Kane con 36 goles del año pasado gane un ranking donde
+  // LaLiga compite con 2. El reparto en sí lo aplica el cliente con la misma regla.
+  const cross = sameSeasonOnly(leagues)
+  const crossLabel = cross.label ?? SEASON_LABEL
+  const meta: Record<string, PlayerBlockMeta> = {}
+  const stamp = (blockId: string, finished: boolean, label: string, source: string) => {
+    meta[blockId] = finished
+      ? { status: 'historical', source, fetchedAt: now, asOf: finishedBadge(label) }
+      : { status: 'live', source, fetchedAt: now }
+  }
+  for (const id of ['goleadores', 'asistencias', 'bota-oro']) {
+    stamp(id, cross.finished, crossLabel, `ESPN · ${crossLabel}`)
+  }
+  // El Pichichi es de una sola liga: lleva la suya, no la mayoritaria.
+  const laliga = leagues.find(l => l.id === 'esp.1')?.season
+  if (laliga) stamp('pichichi-laliga', laliga.kind === 'finished', laliga.label, `ESPN · ${laliga.label}`)
+  // Los rankings combinados (tarjetas, tiros, faltas) se piden SIEMPRE a la
+  // temporada vigente y sin respaldo (`seasons/${SEASON_START}`), así que son de
+  // este curso por construcción y no necesitan sello: sin meta ya salen en vivo.
+
   return attachPhotos({
     leagues,
     combined,
-    season: SEASON_LABEL,
-    updatedAt: new Date().toISOString(),
+    season: crossLabel,
+    meta,
+    updatedAt: now,
   })
 }
 

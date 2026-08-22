@@ -6,8 +6,11 @@ import { useEffect, useState } from 'react'
 import type { StatBlock } from './stats-types'
 import type { BlockMeta } from './live-data'
 import { FreshnessBadge } from './StatCards'
+import { WC_START, worldCupPhase } from '@/lib/world-cup-phase'
 
-export const WC_START = new Date('2026-06-11T17:00:00Z')
+// Las fechas y el reparto en fases viven en lib/world-cup-phase (con tests).
+// Se reexporta WC_START porque el cliente la importa desde aquí.
+export { WC_START } from '@/lib/world-cup-phase'
 
 export function WorldCupCountdown() {
   // now arranca en null para que SSR y el primer render de cliente coincidan
@@ -19,13 +22,23 @@ export function WorldCupCountdown() {
     return () => clearInterval(t)
   }, [])
 
-  const diff = now ? WC_START.getTime() - now.getTime() : 1
-  if (diff <= 0) return (
+  // Tres estados, no dos: el torneo también TERMINA. Con solo la fecha de inicio
+  // esto se quedaba en "● EN CURSO" para siempre (33 días después de la final,
+  // el 21/08/2026, seguía anunciándolo como en directo).
+  const fase = now ? worldCupPhase(now) : null
+  if (fase === 'terminado') return (
+    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full"
+      style={{ background: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.28)' }}>
+      Finalizado · 19 jul 2026
+    </span>
+  )
+  if (fase === 'en-curso') return (
     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full"
       style={{ background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
       ● EN CURSO
     </span>
   )
+  const diff = now ? WC_START.getTime() - now.getTime() : 1
   const days    = Math.floor(diff / 86400000)
   const hours   = Math.floor((diff % 86400000) / 3600000)
   const minutes = Math.floor((diff % 3600000)  / 60000)

@@ -15,9 +15,11 @@ import type { StatBlock } from './stats-types'
 import { FUTBOL_FEMENINO_BLOCKS, LEAGUE_FILTERS, SECTION_BLOCK_COUNT, SPORTS, StatIcon, TeamLeagueContext, buildTeamLeague } from './sports-config'
 import { BLOCK_TO_META_KEY, LIVE_BLOCK_IDS, LIVE_PLAYER_BLOCK_IDS, applyLivePlayerToBlock, getBlockMeta, toStatRows, type LivePlayerData, type LiveStandingsData } from './live-data'
 import { MetricGroupAccordion, PlayoffSeriesCard, StatBlockCard } from './StatCards'
-import { WC_START, WorldCupCountdown, WorldCupGroupCard } from './MundialCards'
+import { WorldCupCountdown, WorldCupGroupCard } from './MundialCards'
 import { ResumenView } from './ResumenView'
 import { buildStatsUrl, parseStatsLocation } from './stats-url'
+import { sameSeasonOnly } from '@/lib/season-label'
+import { worldCupPhase } from '@/lib/world-cup-phase'
 export default function EstadisticasClient({ initialData, initialSport }: { initialData?: LiveStandingsData | null; initialSport?: string }) {
   const searchParams = useSearchParams()
 
@@ -224,8 +226,13 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
         if (block.id === 'f-asistencias'     && liveData.womenAssists?.length)        return { ...block, rows: toStatRows(liveData.womenAssists),         placeholder: false }
         if (block.id === 'stats-dt'          && liveData.coachesWinRate?.length)      return { ...block, rows: toStatRows(liveData.coachesWinRate!, 'Club') }
 
+        // Los dos bloques de abajo funden TODAS las ligas en un solo ranking, y en
+        // agosto eso mezclaba cursos: el Bayern con 34 jornadas del año pasado
+        // contra el Alavés con 2 de este. sameSeasonOnly se queda con el grupo
+        // mayoritario para que se comparen temporadas iguales (la insignia del
+        // bloque, meta 'football', se calcula con la misma regla en el servidor).
         if (block.id === 'goles-equipo') {
-          const allTeams = (liveData.football ?? []).flatMap(league =>
+          const allTeams = sameSeasonOnly(liveData.football ?? []).items.flatMap(league =>
             league.rows.map(row => {
               const gf = parseInt(row.extra?.GF ?? '0') || 0
               const gp = (parseInt(row.extra?.V ?? '0') || 0) + (parseInt(row.extra?.E ?? '0') || 0) + (parseInt(row.extra?.D ?? '0') || 0)
@@ -241,7 +248,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
         }
 
         if (block.id === 'menos-goles') {
-          const allTeams = (liveData.football ?? []).flatMap(league =>
+          const allTeams = sameSeasonOnly(liveData.football ?? []).items.flatMap(league =>
             league.rows.map(row => {
               const gc = parseInt(row.extra?.GC ?? '0') || 0
               const gp = (parseInt(row.extra?.V ?? '0') || 0) + (parseInt(row.extra?.E ?? '0') || 0) + (parseInt(row.extra?.D ?? '0') || 0)
@@ -302,7 +309,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
       // actuales. Las vaciamos → el bloque pinta "Datos no disponibles" y el toggle
       // de vacíos lo oculta, en vez de datos viejos (NBA 24/25, femenino Sam Kerr…).
       if (liveData && !block.placeholder && block.rows.length > 0) {
-        const m = getBlockMeta(block.id, liveData.meta, block.cardType)
+        const m = getBlockMeta(block.id, liveData.meta, block.cardType, livePlayerData?.meta)
         if (m?.status === 'unavailable') return { ...block, rows: [] }
       }
       return block
@@ -313,13 +320,18 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
     const metaKey = block.cardType === 'fixtures'
       ? ({ 'tabla-ucl': 'uclFixtures', 'tabla-uel': 'uelFixtures' } as Record<string, string>)[block.id] ?? BLOCK_TO_META_KEY[block.id]
       : BLOCK_TO_META_KEY[block.id]
-    const meta = liveData?.meta?.[metaKey]
+    // Los bloques de goleadores/asistentes no tienen entrada en liveData.meta:
+    // su frescura la publica /api/stats/players (Bota de Oro y "Goleadores" son
+    // de la temporada mayoritaria, que en agosto es la cerrada).
+    const meta = liveData?.meta?.[metaKey] ?? livePlayerData?.meta?.[block.id]
     if (meta?.status === 'unavailable' || meta?.status === 'stale' || meta?.status === 'historical') return false
     if (liveData && LIVE_BLOCK_IDS.has(block.id) && block.rows.length > 0) return true
     if (livePlayerData && LIVE_PLAYER_BLOCK_IDS.has(block.id) && block.rows.length > 0) return true
     return false
   }
 
+  // Fase del Mundial: decide si la pestaña puede anunciarse como directo.
+  const wcFase = worldCupPhase(new Date())
   const sport = SPORTS.find(s => s.id === sportId) ?? SPORTS[0]
   // Fondo atmosférico por deporte para el hero (reusa los WebP de /calendario).
   const statsBackdrop = ({ futbol: 'futbol', baloncesto: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc' } as Record<string, string>)[sportId] ?? null
@@ -407,7 +419,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
   const filteredFlatBlocks = hideUnavailable
     ? favoriteFilteredBlocks.filter(b => {
         if (favorites.has(b.id)) return true
-        const m = getBlockMeta(b.id, liveData?.meta, b.cardType)
+        const m = getBlockMeta(b.id, liveData?.meta, b.cardType, livePlayerData?.meta)
         return m?.status !== 'unavailable'
       })
     : favoriteFilteredBlocks
@@ -612,14 +624,15 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                   title={isEmpty ? `${s.label}: sin datos verificables hoy` : `${s.label}: ${count} bloques con datos`}>
                   <StatIcon k={s.emoji} size={15} />
                   {s.label}
-                  {s.id === 'mundial' && (
-                    // El 🔜 era vestigial: el Mundial 2026 YA está en juego → punto rojo de directo.
+                  {s.id === 'mundial' && wcFase === 'en-curso' && (
+                    // Punto rojo de directo SOLO mientras se juega: el rótulo estaba
+                    // fijo y siguió diciendo "EN JUEGO" 33 días después de la final.
                     <span className="inline-flex items-center gap-1 text-[8px] font-black rounded-full" style={{ padding: '1.5px 7px', background: 'rgba(255,77,46,0.16)', color: '#FF4D2E', border: '1px solid rgba(255,77,46,0.4)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)', letterSpacing: '0.06em' }}>
                       <span className="rounded-full" style={{ width: 4, height: 4, background: '#FF4D2E', boxShadow: '0 0 5px #FF4D2E' }} />
                       EN JUEGO
                     </span>
                   )}
-                  {s.id !== 'mundial' && count > 0 && (
+                  {(s.id !== 'mundial' || wcFase !== 'en-curso') && count > 0 && (
                     <span className="text-[9px] font-black tabular-nums px-1.5 py-0.5 rounded-full"
                       style={{
                         background: isActive ? `${s.accent}1f` : 'rgba(74,222,128,0.10)',
@@ -711,15 +724,19 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                   <span className="font-black text-sm uppercase tracking-widest" style={{ fontFamily: 'var(--font-sport)', color: '#f59e0b' }}>
                     FIFA World Cup 2026
                   </span>
-                  {WC_START.getTime() - Date.now() <= 0
-                    ? null
-                    : <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>PRÓXIMO</span>
+                  {wcFase === 'antes'
+                    ? <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>PRÓXIMO</span>
+                    : null
                   }
                 </div>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {WC_START.getTime() - Date.now() <= 0
-                    ? 'Grupos en juego · Datos en vivo desde ESPN'
-                    : '11 jun – 19 jul 2026 · USA, Canadá, México · 48 selecciones · 12 grupos'
+                  {/* Tres estados, no dos: "Datos en vivo desde ESPN" seguía anunciándose
+                      un mes después de la final. */}
+                  {wcFase === 'antes'
+                    ? '11 jun – 19 jul 2026 · USA, Canadá, México · 48 selecciones · 12 grupos'
+                    : wcFase === 'en-curso'
+                      ? 'Grupos en juego · Datos en vivo desde ESPN'
+                      : 'Campeonato disputado del 11 jun al 19 jul 2026 · USA, Canadá, México'
                   }
                 </p>
               </div>
@@ -762,7 +779,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
             {applyLive(FUTBOL_FEMENINO_BLOCKS).map(block => (
               <StatBlockBoundary key={block.id} blockId={block.id}>
-                <StatBlockCard block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={isBlockLive(block)} meta={getBlockMeta(block.id, liveData?.meta)} isFav={favorites.has(block.id)} onToggleFav={() => toggleFav(block.id)} />
+                <StatBlockCard block={block} accent="#22c55e" expanded={!!expandedBlocks[block.id]} onToggle={() => toggleBlock(block.id)} isLive={isBlockLive(block)} meta={getBlockMeta(block.id, liveData?.meta, undefined, livePlayerData?.meta)} isFav={favorites.has(block.id)} onToggleFav={() => toggleFav(block.id)} />
               </StatBlockBoundary>
             ))}
           </div>
@@ -815,7 +832,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                 : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'
             }`}>
               {filteredFlatBlocks.map(block => {
-                const blockMeta = getBlockMeta(block.id, liveData?.meta, block.cardType)
+                const blockMeta = getBlockMeta(block.id, liveData?.meta, block.cardType, livePlayerData?.meta)
                 const live = isBlockLive(block)
                 let inner: React.ReactNode
                 if (block.id.startsWith('wc-group-'))

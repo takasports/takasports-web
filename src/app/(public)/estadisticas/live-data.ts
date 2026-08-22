@@ -5,6 +5,7 @@ import { getZone } from '@/lib/league-zones'
 import type { StatBlock, StatRow } from './stats-types'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { canonicalTeamSlug } from '@/lib/team-slug'
+import { sameSeasonOnly } from '@/lib/season-label'
 
 /**
  * Ratio por partido para métricas de TOTAL ("1,16 /PJ"). Información nueva de datos que
@@ -51,7 +52,8 @@ export interface LiveStandingRow {
   teamId?: string
   logo?: string
 }
-export interface LiveLeague { id: string; label: string; rows: LiveStandingRow[]; leagueSlug?: string }
+export interface LeagueSeasonState { kind: 'current' | 'early' | 'finished'; label?: string; played: number }
+export interface LiveLeague { id: string; label: string; rows: LiveStandingRow[]; leagueSlug?: string; season?: LeagueSeasonState }
 export type FreshnessStatus = 'live' | 'stale' | 'historical' | 'unavailable'
 export interface BlockMeta { status: FreshnessStatus; source: string; fetchedAt: string; asOf?: string }
 export interface LiveStandingsData {
@@ -101,7 +103,10 @@ export const BLOCK_TO_META_KEY: Record<string, string> = {
   // devuelve una liga vacía, el bloque se marque 'unavailable' y NO muestre el
   // fallback hardcodeado como ● LIVE. (fix Serie A jun 2026)
   'tabla-laliga': 'tabla-laliga', 'tabla-premier': 'tabla-premier', 'tabla-serie-a': 'tabla-serie-a',
-  'tabla-bundesliga': 'tabla-bundesliga', 'tabla-ligue1': 'tabla-ligue1', 'tabla-ucl': 'football', 'tabla-uel': 'football',
+  // UCL/UEL leían la meta GENÉRICA 'football' en vez de la suya, así que su
+  // insignia no reflejaba el estado real de esa competición (la ruta sí escribe
+  // meta['tabla-ucl'] y meta['tabla-uel'] desde el bucle por liga).
+  'tabla-bundesliga': 'tabla-bundesliga', 'tabla-ligue1': 'tabla-ligue1', 'tabla-ucl': 'tabla-ucl', 'tabla-uel': 'tabla-uel',
   'goles-equipo': 'football', 'menos-goles': 'football',
   'nba-este': 'nbaEast', 'nba-oeste': 'nbaWest',
   'nba-scoring': 'nbaScoring', 'nba-rebounds': 'nbaRebounds', 'nba-assists': 'nbaAssists',
@@ -150,7 +155,17 @@ export const FIXTURE_META_KEY: Record<string, string> = {
 export const STATIC_HIST_META: BlockMeta  = { status: 'historical', source: 'Estimado',    fetchedAt: '', asOf: 'Temp. 24/25' }
 export const HIST_PLAYER_META: BlockMeta  = { status: 'historical', source: 'API-Sports',  fetchedAt: '', asOf: 'Temp. 24/25' }
 
-export function getBlockMeta(blockId: string, liveMeta?: Record<string, BlockMeta>, cardType?: string): BlockMeta | undefined {
+/**
+ * Frescura de un bloque. `playerMeta` viene de /api/stats/players y cubre los
+ * bloques de goleadores/asistentes, que hasta ahora no tenían ninguna y por eso
+ * salían en vivo aunque describieran el curso pasado.
+ */
+export function getBlockMeta(
+  blockId: string,
+  liveMeta?: Record<string, BlockMeta>,
+  cardType?: string,
+  playerMeta?: Record<string, BlockMeta>,
+): BlockMeta | undefined {
   if (cardType === 'fixtures') {
     const fKey = FIXTURE_META_KEY[blockId]
     if (fKey && liveMeta?.[fKey]) return liveMeta[fKey]
@@ -159,7 +174,7 @@ export function getBlockMeta(blockId: string, liveMeta?: Record<string, BlockMet
   if (key && liveMeta?.[key]) return liveMeta[key]
   if (HISTORICAL_PLAYER_BLOCK_IDS.has(blockId)) return HIST_PLAYER_META
   if (STATIC_STALE_BLOCK_IDS.has(blockId)) return STATIC_HIST_META
-  return undefined
+  return playerMeta?.[blockId]
 }
 
 // ── Player stats types (from /api/stats/players) ──────────────────
@@ -179,10 +194,14 @@ export function playerHref(p: { playerId?: string; name?: string }): string | un
 export interface LeaguePlayerData {
   id: string; label: string
   goals: PlayerLeader[]; assists: PlayerLeader[]
+  /** Curso al que pertenecen estas cifras ("2025-26"). Ver season-label.ts. */
+  season?: { kind: 'current' | 'finished'; label: string }
 }
 export interface LivePlayerData {
   leagues: LeaguePlayerData[]
   combined?: Record<string, PlayerLeader[]>
+  /** Frescura por blockId, calculada en /api/stats/players. */
+  meta?: Record<string, BlockMeta>
 }
 
 // IDs of blocks that get player-stats live data (ESPN)
@@ -234,7 +253,10 @@ export function applyLivePlayerToBlock(
   }
 
   if (block.id === 'bota-oro') {
-    const all = leagues
+    // Solo ligas del MISMO curso: mezclarlas daba una Bota de Oro con los 36 goles
+    // de Kane del año pasado arriba y LaLiga —la única con datos de este año—
+    // fuera del top 12 entera, porque sus goleadores llevaban 2 goles (ago 2026).
+    const all = sameSeasonOnly(leagues).items
       .flatMap(l => l.goals.slice(0, 10).map(g => ({ ...g, league: l.label })))
       .sort((a, b) => b.value - a.value).slice(0, 10)
     if (!all.length) return { block, isLive: false }
@@ -251,9 +273,11 @@ export function applyLivePlayerToBlock(
 
   if (block.id === 'goleadores') {
     const filterId = leagueFilter ? LEAGUE_FILTER_TO_ID[leagueFilter] : null
+    // Con filtro de liga se respeta esa liga tal cual (su temporada es la suya);
+    // sin filtro se funden ligas, y ahí solo pueden compararse las del mismo curso.
     const source = filterId
       ? leagues.filter(l => l.id === filterId).flatMap(l => l.goals.slice(0, 10))
-      : leagues.flatMap(l => l.goals.slice(0, 6)).sort((a, b) => b.value - a.value).slice(0, 12)
+      : sameSeasonOnly(leagues).items.flatMap(l => l.goals.slice(0, 6)).sort((a, b) => b.value - a.value).slice(0, 12)
     if (!source.length) return { block, isLive: false }
     return { isLive: true, block: { ...block, rows: source.map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
@@ -267,7 +291,7 @@ export function applyLivePlayerToBlock(
     const filterId = leagueFilter ? LEAGUE_FILTER_TO_ID[leagueFilter] : null
     const source = filterId
       ? leagues.filter(l => l.id === filterId).flatMap(l => l.assists.slice(0, 10))
-      : leagues.flatMap(l => l.assists.slice(0, 5)).sort((a, b) => b.value - a.value).slice(0, 10)
+      : sameSeasonOnly(leagues).items.flatMap(l => l.assists.slice(0, 5)).sort((a, b) => b.value - a.value).slice(0, 10)
     if (!source.length) return { block, isLive: false }
     return { isLive: true, block: { ...block, rows: source.map((g, i) => ({
       rank: i + 1, name: g.name, team: g.team,
