@@ -687,7 +687,23 @@ async function fetchWorldCup(): Promise<LeagueStandings[]> {
       if (!name.startsWith('Group ')) continue
       const groupLetter = name.replace('Group ', '')
       const entries = (child.standings as Record<string, unknown>)?.entries as Record<string, unknown>[] ?? []
-      const rows: StandingRow[] = entries.map((e, i) => {
+      // ESPN NO devuelve los grupos del Mundial ordenados por posición —comprobado
+      // el 21/08/2026: el Grupo B llegaba Canadá, Bosnia, Suiza, Qatar y Suiza lo
+      // había GANADO—, y aquí el puesto se sacaba del índice del array. El `rank`
+      // que publica ESPN es la autoridad (incorpora los desempates oficiales, que
+      // puntos y diferencia de goles no pueden reproducir); si falta —pretemporada,
+      // todos a cero— se cae a puntos → dif. goles → GF, como fetchTournamentGroups.
+      const stat = (e: Record<string, unknown>, name: string) =>
+        Math.round(((e.stats as RawStat[] | undefined)?.find(x => x.name === name)?.value as number) ?? 0)
+      const conRank = entries.filter(e => stat(e, 'rank') > 0).length === entries.length
+      const ordenadas = [...entries].sort((a, b) =>
+        conRank
+          ? stat(a, 'rank') - stat(b, 'rank')
+          : (stat(b, 'points') - stat(a, 'points'))
+            || (stat(b, 'pointDifferential') - stat(a, 'pointDifferential'))
+            || (stat(b, 'pointsFor') - stat(a, 'pointsFor')),
+      )
+      const rows: StandingRow[] = ordenadas.map((e, i) => {
         const team  = e.team as Record<string, unknown>
         const stats = (e.stats as RawStat[]) ?? []
         const pj = sv(stats, 'gamesPlayed') || sv(stats, 'wins') + sv(stats, 'ties') + sv(stats, 'losses')
@@ -705,6 +721,9 @@ async function fetchWorldCup(): Promise<LeagueStandings[]> {
           trend: 'flat' as const,
           extra: { PJ: String(Math.round(pj)), V: String(w), E: String(d), D: String(l), GF: String(Math.round(gf)), GC: String(Math.round(gc)) },
           flag: m?.flag,
+          // El id de ESPN es lo único que resuelve la ficha de /equipo, y sin él
+          // las 48 selecciones no se podían enlazar desde ningún sitio.
+          teamId: team?.id as string | undefined,
         }
       })
       results.push({ id: `wc-group-${groupLetter.toLowerCase()}`, label: `Grupo ${groupLetter}`, rows })

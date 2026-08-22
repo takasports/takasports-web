@@ -90,12 +90,26 @@ function ClasificacionesHub({ data, sport }: { data: StatsStandingsResponse | nu
       .map((r): DirTeam | null => {
         const href = teamHref(r.name, r.teamId)
         // value = puntos en fútbol (route.ts standings) → "45 pts".
-        return href ? { name: r.name, href, meta: `${r.value} pts` } : null
+        return href ? { name: r.name, href, meta: `${r.value} ${r.value === '1' ? 'pt' : 'pts'}` } : null
       })
       .filter((x): x is DirTeam => x !== null)
     if (!teams.length) continue
     const ligaId = lg.leagueSlug?.replace('soccer/', '') ?? ''
     groups.push({ title: lg.label, hubHref: LIGA_HUB_IDS.has(ligaId) ? `/liga/${ligaId}` : null, teams, sport: 'futbol' })
+  }
+
+  // Las 48 selecciones del Mundial, por grupo. Estaban en el payload desde
+  // siempre pero sin `teamId`, que es lo único que resuelve la ficha de /equipo:
+  // eran 48 páginas a las que no apuntaba nada desde estadísticas.
+  for (const g of data.worldCup ?? []) {
+    const teams = (g.rows ?? [])
+      .map((r): DirTeam | null => {
+        const href = teamHref(r.name, r.teamId)
+        // value = puntos del grupo; "Sin jugar" cuando el torneo no ha empezado.
+        return href ? { name: r.name, href, meta: r.sub === 'Sin jugar' ? undefined : `${r.value} ${r.value === '1' ? 'pt' : 'pts'}` } : null
+      })
+      .filter((x): x is DirTeam => x !== null)
+    if (teams.length) groups.push({ title: g.label, hubHref: null, teams, sport: 'mundial' })
   }
 
   const nbaTeams = [...(data.nbaEast ?? []), ...(data.nbaWest ?? [])]
