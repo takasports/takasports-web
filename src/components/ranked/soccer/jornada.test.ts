@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  dateKeyOf, weekKeyOf, dayLabel, jornadaLabel, groupIntoJornadas,
+  dateKeyOf, weekKeyOf, dayLabel, jornadaLabel, jornadaRangeLabel, groupIntoJornadas,
   jornadaProgress, formatCountdown, plenoBonus, PLENO_MIN_MATCHES,
 } from './jornada'
 import { SOCCER_LOCK_MS, type SoccerEvent } from './types'
@@ -232,5 +232,39 @@ describe('groupIntoJornadas · Partidazo', () => {
     ], now)[0]
     expect(j.featured?.id).toBe('elegido')
     expect(j.featuredPlayable).toBe(true)
+  })
+})
+
+// ── Relativa para pintar, absoluta para salir fuera ──────────────────────────
+
+describe('jornadaRangeLabel', () => {
+  const enEsaSemana = new Date('2026-08-25T12:00:00Z')
+
+  it('nombra la semana aunque sea la que se está jugando', () => {
+    // jornadaLabel diría "Esta Jornada", que es correcto DENTRO de la web.
+    expect(jornadaLabel('2026-08-24', enEsaSemana)).toBe('Esta Jornada')
+    expect(jornadaRangeLabel('2026-08-24')).toBe('Jornada del 24 al 30 ago')
+  })
+
+  it('no depende del momento en que se pida', () => {
+    // Es lo que la hace válida como identidad y como texto compartible: el que
+    // abre el enlace por WhatsApp lo hace días después que el que lo mandó.
+    expect(jornadaRangeLabel('2026-08-24')).toBe(jornadaRangeLabel('2026-08-24'))
+    expect(jornadaLabel('2026-08-24', new Date('2026-09-10T12:00:00Z')))
+      .toBe(jornadaRangeLabel('2026-08-24'))
+  })
+
+  it('cruza el cambio de mes nombrando los dos', () => {
+    expect(jornadaRangeLabel('2026-08-31')).toBe('Jornada del 31 ago al 6 sep')
+  })
+
+  it('dos Jornadas distintas nunca comparten nombre absoluto', () => {
+    // Con la etiqueta relativa sí lo compartían: la de esta semana y la de la
+    // semana que viene se llaman ambas "Esta Jornada" en su momento, y por eso
+    // el toast de liquidación se silenciaba para siempre tras la primera.
+    const a = new Date('2026-08-25T12:00:00Z')
+    const b = new Date('2026-09-01T12:00:00Z')
+    expect(jornadaLabel('2026-08-24', a)).toBe(jornadaLabel('2026-08-31', b))
+    expect(jornadaRangeLabel('2026-08-24')).not.toBe(jornadaRangeLabel('2026-08-31'))
   })
 })

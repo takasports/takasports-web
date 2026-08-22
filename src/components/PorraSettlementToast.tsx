@@ -5,6 +5,10 @@
 // Comportamiento:
 //  · Lee /api/quiniela/status (cache compartido).
 //  · Si hay lastSettled Y no está en localStorage como "acked" → muestra toast.
+//    El "acked" se guarda por weekKey (identidad estable), NO por la etiqueta:
+//    la etiqueta de la Jornada en curso es siempre "Esta Jornada", así que
+//    guardarla silenciaba el toast PARA SIEMPRE a partir de la primera vez —
+//    el único bucle de retorno de la sección se autodestruía al estrenarse.
 //  · Auto-dismiss tras 12s o por click en cerrar.
 //  · Click en CTA → /predicciones (a ver detalle/ranking).
 //  · "Acked" persiste por jornada — la liquidación de cada jornada se nota una vez.
@@ -19,7 +23,10 @@ import { buildChallengeToken, buildChallengeUrl, buildChallengeText } from '@/li
 import { fetchPorraStatus, readPorraCache } from '@/lib/porra-status-client'
 import { StarIcon, TargetIcon, GlovesIcon } from '@/components/icons/GameIcons'
 
-const ACK_KEY = 'porra:settledAck:v1'
+// v2: la v1 guardaba la ETIQUETA de la jornada. Se cambia de clave a propósito
+// para que quien tenga un "Esta Jornada" guardado de la v1 no arrastre el
+// silencio a todas las jornadas siguientes.
+const ACK_KEY = 'porra:settledAck:v2'
 const AUTO_DISMISS_MS = 12_000
 
 /** Rutas donde el toast NUNCA debe aparecer. Auto-skip silencioso:
@@ -46,8 +53,14 @@ function readAcked(): string | null {
   try { return localStorage.getItem(ACK_KEY) } catch { return null }
 }
 
-function writeAcked(jornada: string) {
-  try { localStorage.setItem(ACK_KEY, jornada) } catch { /* quota */ }
+function writeAcked(id: string) {
+  try { localStorage.setItem(ACK_KEY, id) } catch { /* quota */ }
+}
+
+/** Con qué se recuerda una liquidación ya vista. El weekKey manda; la etiqueta
+ *  solo es el respaldo para una respuesta antigua que aún no lo traiga. */
+function ackIdOf(s: PorraSettlement): string {
+  return s.weekKey ?? s.jornada
 }
 
 function tone(settled: PorraSettlement): {
@@ -128,8 +141,13 @@ export default function PorraSettlementToast() {
 
   async function handleShareResult() {
     if (!settled) return
+    // Nombre ABSOLUTO: esto lo abre alguien en otro momento, y un
+    // "/resultado/esta-jornada-…" ni dice de qué semana habla ni distingue una
+    // Jornada de la siguiente — todas las de todos los usuarios colisionaban
+    // en la misma URL base.
+    const nombre = settled.shareLabel ?? settled.jornada
     const slug = buildResultSlug(
-      settled.jornada,
+      nombre,
       settled.correctCount,
       settled.totalPicks,
       settled.totalWon,
@@ -137,7 +155,7 @@ export default function PorraSettlementToast() {
     const url = typeof window !== 'undefined'
       ? `${window.location.origin}/predicciones/resultado/${slug}`
       : `https://takasportsmedia.com/predicciones/resultado/${slug}`
-    const text = `Mi porra de la ${settled.jornada}: ${settled.correctCount}/${settled.totalPicks} aciertos${settled.totalWon ? ` · +${settled.totalWon} pts` : ''}. ¿Le ganas?`
+    const text = `Mi ${nombre.toLowerCase()}: ${settled.correctCount}/${settled.totalPicks} aciertos${settled.totalWon ? ` · +${settled.totalWon} pts` : ''}. ¿Le ganas?`
     try {
       const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> }
       if (nav.share) {
@@ -170,7 +188,7 @@ export default function PorraSettlementToast() {
       if (typeof s.totalPicks !== 'number' || s.totalPicks <= 0) return
       if (typeof s.correctCount !== 'number' || s.correctCount < 0) return
       const acked = readAcked()
-      if (acked === s.jornada) return
+      if (acked === ackIdOf(s)) return
       setSettled(s)
       // Comparativa con amigos (P): requiere al menos 2 peers para mostrar
       // (muestra demasiado pequeña con 1 es ruidosa).
@@ -229,7 +247,7 @@ export default function PorraSettlementToast() {
   function handleClose() {
     if (!settled) return
     setClosing(true)
-    writeAcked(settled.jornada)
+    writeAcked(ackIdOf(settled))
     setTimeout(() => setSettled(null), 240)
   }
 

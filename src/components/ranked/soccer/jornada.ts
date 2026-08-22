@@ -88,6 +88,22 @@ export function jornadaLabel(weekKey: string, now: Date = new Date()): string {
   nextMonday.setTime(Date.UTC(ny, nm - 1, nd, 12) + 7 * 86_400_000)
   if (weekKey === DATE_KEY_FMT.format(nextMonday)) return 'Próxima Jornada'
 
+  return jornadaRangeLabel(weekKey)
+}
+
+/**
+ * Etiqueta ABSOLUTA de una Jornada: siempre "Jornada del 24 al 30 ago", nunca
+ * "Esta Jornada".
+ *
+ * `jornadaLabel` es relativa al momento en que se pinta, y eso está bien
+ * DENTRO de la web. Fuera de ella no: lo que se comparte por WhatsApp lo abre
+ * alguien tres días después, y una tarjeta que dice "Esta Jornada" habla de
+ * otra semana distinta a la del que la mandó. Peor aún, todos los usuarios
+ * compartían la misma URL base (`/predicciones/resultado/esta-jornada-…`).
+ *
+ * Regla: relativa para pintar, absoluta para identificar y para salir fuera.
+ */
+export function jornadaRangeLabel(weekKey: string): string {
   const [y, m, d] = weekKey.split('-').map(Number)
   const monday = new Date(Date.UTC(y, m - 1, d, 12))
   const sunday = new Date(monday); sunday.setUTCDate(sunday.getUTCDate() + 6)

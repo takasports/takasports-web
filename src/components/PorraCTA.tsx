@@ -20,7 +20,15 @@ export interface PorraMatch {
 }
 
 export interface PorraSettlement {
+  /** Etiqueta para PINTAR, relativa al momento ("Esta Jornada"). */
   jornada: string
+  /** Identidad ESTABLE (lunes de la semana). Es con lo que se recuerda qué
+   *  liquidación ya se enseñó: la etiqueta de arriba vale para otra Jornada
+   *  distinta cada semana. */
+  weekKey?: string
+  /** Nombre absoluto ("Jornada del 24 al 30 ago"), para lo que sale fuera de
+   *  la web: el enlace que se comparte y su imagen de OpenGraph. */
+  shareLabel?: string
   totalWon: number
   correctCount: number
   totalPicks: number

@@ -26,6 +26,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import MatchCard from '@/components/ranked/soccer/MatchCard'
+import JornadaReminderOptIn from '@/components/ranked/soccer/JornadaReminderOptIn'
 import { groupIntoJornadas, jornadaProgress, formatCountdown, thisWeekKey, plenoBonus } from '@/components/ranked/soccer/jornada'
 import {
   FOOTBALL_THEME, SOCCER_POINTS,
@@ -524,6 +525,10 @@ export default function FootballClient() {
                 martes y no tendría jerarquía si esperara su turno cronológico
                 entre el resto. El resto de la Jornada va debajo, agrupado por
                 día — el ritual diario sigue existiendo dentro de la semana. */}
+            {/* El momento de pedir el push: justo después de completar la
+                Jornada, no al aterrizar. Ver JornadaReminderOptIn. */}
+            {loggedIn && complete && <JornadaReminderOptIn accent={T.accent} />}
+
             {jornada.featured && jornada.featuredPlayable && (
               <div className="mb-3">
                 <MatchCard

@@ -20,7 +20,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { RANKED_FOOTBALL_SPORT } from '@/lib/football-ranked'
-import { groupIntoJornadas, jornadaLabel } from '@/components/ranked/soccer/jornada'
+import { groupIntoJornadas, jornadaLabel, jornadaRangeLabel } from '@/components/ranked/soccer/jornada'
 import { SOCCER_LOCK_MS, type SoccerEvent } from '@/components/ranked/soccer/types'
 
 export const dynamic = 'force-dynamic'
@@ -136,6 +136,13 @@ async function lastSettledJornada(
   userId: string,
 ): Promise<{
   jornada: string
+  /** Identidad ESTABLE de la Jornada (lunes de su semana). La etiqueta de
+   *  arriba es relativa —"Esta Jornada"— y no sirve para recordar qué
+   *  liquidación ya se le enseñó a este usuario: la semana que viene otra
+   *  Jornada distinta se llamaría igual. */
+  weekKey: string
+  /** Nombre absoluto, para el enlace que se comparte fuera de la web. */
+  shareLabel: string
   correctCount: number
   totalPicks: number
   totalWon: number
@@ -182,6 +189,19 @@ async function lastSettledJornada(
   }
   if (!latest) return null
 
+  // La Jornada tiene que estar CERRADA ENTERA. Mirando solo eventos resueltos,
+  // un martes con dos partidos ya jugados devolvía "así te fue la Jornada" a
+  // media semana — y como el toast se marca como visto, el usuario no volvía a
+  // ver el resultado de verdad. Mismo criterio que award_jornada_pleno, que
+  // tampoco paga hasta que no queda nada pendiente.
+  const { count: pendientes } = await admin
+    .from('ranked_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('sport', RANKED_FOOTBALL_SPORT)
+    .eq('meta->>week_key', latest)
+    .neq('status', 'resolved')
+  if ((pendientes ?? 0) > 0) return null
+
   const mine = (preds as { event_id: string; is_correct: boolean | null; points_awarded: number | null; prediction?: { exactScore?: { home: number; away: number } } }[])
     .filter(p => evById.get(p.event_id)?.meta?.week_key === latest)
   if (mine.length === 0) return null
@@ -200,9 +220,11 @@ async function lastSettledJornada(
   }
 
   return {
-    // El slug compartible se construye a partir de esto, así que va en el mismo
-    // idioma que la cabecera de la Jornada en la web.
+    // Para PINTAR el toast: relativa, como la cabecera de la web.
     jornada: jornadaLabel(latest),
+    // Para IDENTIFICAR y para SALIR FUERA: absolutas. Ver jornadaRangeLabel.
+    weekKey: latest,
+    shareLabel: jornadaRangeLabel(latest),
     correctCount: correct,
     totalPicks: mine.length,
     totalWon: won,
