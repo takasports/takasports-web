@@ -48,7 +48,9 @@ export function getCompAccent(comp: string, fallback = '#7C3AED'): string {
 }
 
 // League importance for "Destacados" ranking (higher = more important).
-// Escala 0-12 dejando margen para boosts (marquee +2, stage +3, live +1.5).
+// Escala 0-12 dejando margen para los boosts que se suman encima: peso de los
+// dos equipos (hasta +4, ver pairBoost), clásico/derbi (hasta +6), fase final
+// (hasta +4), en vivo (+1.5) y prime time (+0.5).
 export const LEAGUE_IMPORTANCE: Record<string, number> = {
   'Champions': 12,
   'UCL': 12,
@@ -147,8 +149,21 @@ export function isMundial(comp: string | null | undefined): boolean {
   return (comp ?? '').trim().toLowerCase() === 'mundial'
 }
 
-// Equipos / atletas "marquee" — siempre boost en Destacados aunque la liga
-// sea menor. Coincide por substring contra home/away (lowercased).
+// ── Peso de los protagonistas ────────────────────────────────────────────────
+// Esto era BINARIO: +2 si cualquiera de los dos era grande, y daba igual el
+// otro. Con eso un Crystal Palace-Manchester City puntuaba exactamente lo
+// mismo que un Barcelona-Athletic (13,5 los dos), y el Partidazo de la semana
+// acababa decidiéndose por el desempate alfabético del id de ESPN. Lo que hace
+// grande a un partido no es que juegue un grande: es CONTRA QUIÉN.
+//
+// Ahora hay dos niveles y se SUMAN los dos equipos, así que un cruce entre dos
+// nombres siempre gana a un grande contra un chico. Ningún partido baja de
+// puntuación respecto al modelo anterior —el nivel 2 es la lista de siempre—,
+// solo suben los emparejamientos que de verdad lo merecen; por eso el listón
+// absoluto de Ranked Fútbol (MIN_ABSOLUTE_SCORE) sigue calibrado.
+
+// Nivel 2 — elite global: su sola presencia ya hace notable un partido.
+// Coincide por substring contra home/away (lowercased).
 const MARQUEE_TEAMS = [
   // Fútbol — top clubes globales
   'real madrid', 'barcelona', 'atlético madrid', 'atletico madrid',
@@ -169,10 +184,43 @@ const MARQUEE_TEAMS = [
   'mcgregor', 'pereira', 'topuria', 'jones', 'aspinall', 'edwards',
 ]
 
-function isMarquee(name: string | null | undefined): boolean {
-  if (!name) return false
+// Nivel 1 — grandes nacionales y europeos habituales. No arrastran audiencia
+// global por sí solos, pero enfrentados a un nivel 2 hacen un partidazo, y
+// entre ellos hacen una buena tarde. Faltaban todos: por eso un
+// Sevilla-Atlético o un Real Madrid-Real Sociedad no se distinguían de un
+// Manchester City contra el colista.
+const BIG_TEAMS = [
+  // España
+  'athletic', 'real sociedad', 'sevilla', 'betis', 'villarreal', 'valencia',
+  // Inglaterra
+  'tottenham', 'newcastle', 'aston villa', 'west ham',
+  // Italia
+  'lazio', 'atalanta', 'fiorentina',
+  // Alemania
+  'leverkusen', 'leipzig', 'eintracht frankfurt',
+  // Francia
+  'marseille', 'lyon', 'monaco',
+  // Portugal / Países Bajos
+  'benfica', 'porto', 'sporting cp', 'ajax', 'psv',
+]
+
+/** Peso de un equipo: 2 elite global · 1 grande nacional · 0 el resto. */
+function clubTier(name: string | null | undefined): 0 | 1 | 2 {
+  if (!name) return 0
   const n = name.toLowerCase()
-  return MARQUEE_TEAMS.some(t => n.includes(t))
+  if (MARQUEE_TEAMS.some(t => n.includes(t))) return 2
+  if (BIG_TEAMS.some(t => n.includes(t))) return 1
+  return 0
+}
+
+/** Peso del EMPAREJAMIENTO: se suman los dos, no se mira solo al mayor. Es la
+ *  diferencia entre "juega un grande" y "es un partidazo". */
+export function pairBoost(home?: string | null, away?: string | null): number {
+  return clubTier(home) + clubTier(away)
+}
+
+function isMarquee(name: string | null | undefined): boolean {
+  return clubTier(name) === 2
 }
 
 // Clásicos y derbis: el boost es por PAREJA, no por equipo — un Real Madrid
@@ -282,7 +330,7 @@ export function getEventHighlightScore(args: {
   isLive?: boolean
 }): number {
   let score = getLeagueScore(args.comp)
-  if (isMarquee(args.home) || isMarquee(args.away)) score += 2
+  score += pairBoost(args.home, args.away)
   score += rivalryBoost(args.home, args.away)
   // Selecciones importantes: aunque sea un amistoso (base 3), debe destacar.
   // +5 si juega una; +6 si se enfrentan dos (p. ej. Brasil vs EE. UU.). Así un

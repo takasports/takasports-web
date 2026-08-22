@@ -232,6 +232,8 @@ function byScoreThenId(a: ScoredFixture, b: ScoredFixture): number {
  * Reglas, por orden:
  *   0. Se descarta todo lo que no llegue a MIN_ABSOLUTE_SCORE. Si no queda
  *      nada, esa semana NO tiene Jornada (devuelve null).
+ *   0b. Un equipo, un partido: en una semana con doblete se conserva el mejor
+ *      de cada equipo y se descarta el resto (ver `oneMatchPerTeam`).
  *   1. De lo que queda, entran los que puntúen ≥ 60% del mejor de la semana,
  *      hasta 9.
  *   2. Si salen menos de 7, se completa hasta 7 bajando el listón al 40% del
@@ -246,7 +248,7 @@ export function selectForWeek(fixtures: ScoredFixture[]): RankedWeek | null {
   const eligible = fixtures.filter(f => f.score >= MIN_ABSOLUTE_SCORE)
   if (eligible.length === 0) return null
 
-  const sorted = [...eligible].sort(byScoreThenId)
+  const sorted = oneMatchPerTeam([...eligible].sort(byScoreThenId))
   const best   = sorted[0].score
 
   let picked = sorted
@@ -264,6 +266,28 @@ export function selectForWeek(fixtures: ScoredFixture[]): RankedWeek | null {
     matches:        picked,
     featuredEspnId: picked[0].espnId,
   }
+}
+
+/**
+ * Un equipo, un partido por Jornada. Recibe los fixtures YA ordenados por
+ * calidad y se queda con el mejor de cada equipo.
+ *
+ * Sin esto, una semana con doblete de un grande gastaba dos de las nueve
+ * plazas en el mismo equipo: la Jornada del 24 al 30 de agosto tenía
+ * Real Madrid-Real Sociedad y Real Madrid-Málaga, y el segundo entraba por
+ * delante de partidos mejores solo por llevar al Madrid dentro. Pedirle al
+ * usuario dos veces por el mismo equipo tampoco añade nada que pronosticar.
+ */
+function oneMatchPerTeam(sortedByQuality: ScoredFixture[]): ScoredFixture[] {
+  const usados = new Set<string>()
+  const out: ScoredFixture[] = []
+  for (const f of sortedByQuality) {
+    const h = f.home.toLowerCase(), a = f.away.toLowerCase()
+    if (usados.has(h) || usados.has(a)) continue
+    usados.add(h); usados.add(a)
+    out.push(f)
+  }
+  return out
 }
 
 /**

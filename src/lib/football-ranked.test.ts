@@ -3,6 +3,7 @@ import {
   RANKED_FOOTBALL_SOURCES,
   MIN_PER_WEEK,
   MAX_PER_WEEK,
+  MIN_ABSOLUTE_SCORE,
   toDateKey,
   toWeekKey,
   scoreFixture,
@@ -17,6 +18,10 @@ import {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 let seq = 0
+// Equipos DISTINTOS por defecto en cada fixture. Antes todos salían
+// Getafe-Alaves y, desde que la selección aplica "un equipo, un partido"
+// (oneMatchPerTeam), una tanda sintética colapsaba a un único partido y los
+// tests de cupos medían otra cosa. Los que quieran un equipo concreto lo pasan.
 function fx(over: Partial<FootballFixture> = {}): FootballFixture {
   seq += 1
   return {
@@ -24,8 +29,8 @@ function fx(over: Partial<FootballFixture> = {}): FootballFixture {
     isoDate:    over.isoDate   ?? '2026-08-15T19:00Z',
     comp:       over.comp      ?? 'LaLiga',
     leagueSlug: over.leagueSlug ?? 'soccer/esp.1',
-    home:       over.home      ?? 'Getafe',
-    away:       over.away      ?? 'Alaves',
+    home:       over.home      ?? `Local ${seq}`,
+    away:       over.away      ?? `Visitante ${seq}`,
     stage:      over.stage,
   }
 }
@@ -243,6 +248,72 @@ describe('selectForWeek', () => {
       fx({ comp: 'Super Cup', home: 'Paris Saint-Germain', away: 'Aston Villa' }),
     ])
     expect(selectForWeek(week)).not.toBeNull()
+  })
+})
+
+// ── Calidad del emparejamiento ───────────────────────────────────────────────
+
+describe('selectForWeek · el partido lo hacen LOS DOS equipos', () => {
+  // El fallo que decidía el Partidazo a cara o cruz: el peso de los grandes era
+  // binario (+2 si CUALQUIERA de los dos lo era), así que un Crystal
+  // Palace-Manchester City empataba con un Barcelona-Athletic y el desempate
+  // acababa siendo el orden alfabético del id de ESPN.
+  it('un cruce entre dos nombres gana a un grande contra un chico', () => {
+    const week = selectForWeek(scoreFixtures([
+      fx({ espnId: 'a', comp: 'Premier', home: 'Crystal Palace', away: 'Manchester City' }),
+      fx({ espnId: 'b', comp: 'LaLiga',  home: 'Barcelona',      away: 'Athletic Club' }),
+    ]))!
+    expect(week.featuredEspnId).toBe('b')
+  })
+
+  it('sigue ganando aunque el desempate por id favoreciera al otro', () => {
+    // 'a' iría primero por id: si empataran en puntos, ganaría el equivocado.
+    const week = selectForWeek(scoreFixtures([
+      fx({ espnId: 'a', comp: 'LaLiga', home: 'Real Madrid', away: 'Levante' }),
+      fx({ espnId: 'z', comp: 'LaLiga', home: 'Sevilla',     away: 'Atlético Madrid' }),
+    ]))!
+    expect(week.featuredEspnId).toBe('z')
+  })
+
+  it('ningún partido baja de puntuación respecto al modelo binario', () => {
+    // Importa porque MIN_ABSOLUTE_SCORE es un listón ABSOLUTO calibrado sobre
+    // la escala vieja: si algún cruce bajara, dejaría de publicarse sin que
+    // nadie hubiera decidido excluirlo.
+    const unGrande = scoreFixtures([fx({ comp: 'Premier', home: 'Burnley', away: 'Liverpool' })])[0]
+    expect(unGrande.score).toBeGreaterThanOrEqual(MIN_ABSOLUTE_SCORE)
+    const dosGrandes = scoreFixtures([fx({ comp: 'Premier', home: 'Newcastle United', away: 'Liverpool' })])[0]
+    expect(dosGrandes.score).toBeGreaterThan(unGrande.score)
+  })
+})
+
+describe('selectForWeek · un equipo, un partido', () => {
+  it('en una semana con doblete se queda con el mejor de ese equipo', () => {
+    // Pasó de verdad: la Jornada del 24 al 30 traía Real Madrid-Real Sociedad
+    // Y Real Madrid-Málaga, gastando dos plazas de nueve en el mismo equipo.
+    const week = selectForWeek(scoreFixtures([
+      fx({ espnId: 'bueno', comp: 'LaLiga', home: 'Real Madrid', away: 'Real Sociedad' }),
+      fx({ espnId: 'peor',  comp: 'LaLiga', home: 'Real Madrid', away: 'Málaga' }),
+    ]))!
+    expect(week.matches.map(m => m.espnId)).toEqual(['bueno'])
+  })
+
+  it('descarta el doblete tanto si el equipo repite en casa como fuera', () => {
+    const week = selectForWeek(scoreFixtures([
+      fx({ espnId: 'bueno', comp: 'LaLiga', home: 'Barcelona', away: 'Athletic Club' }),
+      fx({ espnId: 'peor',  comp: 'LaLiga', home: 'Elche',     away: 'Barcelona' }),
+    ]))!
+    expect(week.matches.map(m => m.espnId)).toEqual(['bueno'])
+  })
+
+  it('no deja la Jornada corta por descartar: sigue llenando con lo siguiente', () => {
+    const fixtures = [
+      fx({ espnId: 'r1', comp: 'LaLiga', home: 'Real Madrid', away: 'Sevilla' }),
+      fx({ espnId: 'r2', comp: 'LaLiga', home: 'Real Madrid', away: 'Levante' }),
+      ...Array.from({ length: 8 }, (_, i) => fx({ comp: 'Premier' })),
+    ]
+    const week = selectForWeek(scoreFixtures(fixtures))!
+    expect(week.matches.length).toBeGreaterThanOrEqual(MIN_PER_WEEK)
+    expect(week.matches.filter(m => m.home === 'Real Madrid')).toHaveLength(1)
   })
 })
 
