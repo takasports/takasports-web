@@ -77,7 +77,10 @@ export default function SignalIntro() {
 
       {/* Logo con barrido de escáner */}
       <div className="ts-signal-logoin" style={{ position: 'relative', overflow: 'hidden', padding: '12px 20px' }}>
-        <LogoFull size={46} asLink={false} />
+        {/* Sin `priority`: esta intro NO existe en el HTML servido (hasta el
+            useEffect devuelve null), así que su preload aparecía en el <head>
+            solo en el cliente y rompía la hidratación de la cabecera. */}
+        <LogoFull size={46} asLink={false} priority={false} />
         <span
           className="ts-signal-sweep"
           aria-hidden="true"

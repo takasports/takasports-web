@@ -31,11 +31,20 @@ export function LogoFull({
   href = '/',
   asLink = true,
   onClick,
+  priority = true,
 }: {
   size?: number
   href?: string
   asLink?: boolean
   onClick?: () => void
+  /**
+   * `priority` mete un <link rel="preload"> en el <head>. Eso solo vale para un
+   * logo que el SERVIDOR ya pinta: si el componente aparece únicamente tras
+   * hidratar, el preload no está en el HTML servido, el <head> deja de coincidir
+   * y React tira la cabecera entera y la reconstruye (error #418). Pasar `false`
+   * en esos casos. Ver SignalIntro.
+   */
+  priority?: boolean
 }) {
   const height = size
   const width = Math.round(size * FULL_RATIO)
@@ -45,7 +54,7 @@ export function LogoFull({
       width={width}
       height={height}
       alt="TakaSports"
-      priority
+      priority={priority}
       style={{ width, height }}
     />
   )
