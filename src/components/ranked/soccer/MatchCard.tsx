@@ -9,7 +9,6 @@ import PickButton from './PickButton'
 import ExactScoreBlock from './ExactScoreBlock'
 import { timeLabel, formatCountdown } from './jornada'
 import {
-  SOCCER_LOCK_MS,
   type SoccerEvent, type SoccerPick, type SoccerTheme, type LiveScore, type PredictionRow,
 } from './types'
 
@@ -25,8 +24,8 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function MatchCard({
-  event, pred, submitting, theme, onPick, onExactSet,
-  showExactTooltip, onExactTooltipDismiss, animDelay = 0, liveScore, nowMs,
+  event, pred, submitting, theme, onPick, onExactSet, onCaptain,
+  showExactTooltip, onExactTooltipDismiss, animDelay = 0, liveScore, nowMs, deadlineMs,
 }: {
   event: SoccerEvent
   pred: PredictionRow | undefined
@@ -35,22 +34,31 @@ export default function MatchCard({
   liveScore?: LiveScore
   onPick: (id: string, pick: SoccerPick) => void
   onExactSet: (id: string, exact: { home: number; away: number } | null) => void
+  /** Marcar/desmarcar este partido como el ×2 de la Jornada. */
+  onCaptain: (id: string, captain: boolean) => void
   showExactTooltip?: boolean
   onExactTooltipDismiss?: () => void
   animDelay?: number
   /** Reloj del cliente, inyectado para que todas las tarjetas compartan el
    *  mismo tick y las cuentas atrás no se desincronicen entre sí. */
   nowMs: number
+  /** Cierre de la JORNADA a la que pertenece este partido, o null si ya pasó.
+   *  No lo decide la tarjeta: la Jornada cierra entera con su primer partido, y
+   *  si cada tarjeta se rigiera por su propio kickoff ofrecería botones que la
+   *  API va a rechazar. */
+  deadlineMs: number | null
 }) {
   const myPick     = pred?.prediction?.pick ?? null
   const exactScore = pred?.prediction?.exactScore ?? null
+  const isCaptain  = pred?.prediction?.captain === true
   const isResolved = event.status === 'resolved'
   const isClosed   = event.status === 'closed'
   const winner     = event.result?.winner ?? null
   const pts        = pred?.points_awarded ?? null
   const [shared, setShared] = useState(false)
 
-  const lockMs   = new Date(event.event_date).getTime() - SOCCER_LOCK_MS - nowMs
+  // Cuenta atrás de la JORNADA, no de este partido. Ver `deadlineMs`.
+  const lockMs   = deadlineMs === null ? 0 : deadlineMs - nowMs
   const isLocked = lockMs <= 0
   const isOpen   = event.status === 'open' && !isLocked
   const showLockWarning = event.status === 'open' && !isLocked && lockMs < 6 * 60 * 60 * 1000
@@ -88,7 +96,7 @@ export default function MatchCard({
 
   /** Por qué se pagó lo que se pagó. Sin esto, un "+24" no se entiende. */
   const winReason = [
-    event.featured ? 'Partidazo ×2' : null,
+    isCaptain ? 'tu capitán ×2' : null,
     exactHit ? 'marcador clavado' : null,
   ].filter(Boolean).join(' · ')
 
@@ -204,7 +212,7 @@ export default function MatchCard({
         )}
         {showLockWarning && (
           <span style={{ marginLeft: 'auto', fontSize: 8, color: 'rgba(251,191,36,0.55)', fontFamily: 'var(--font-sport)', fontWeight: 700, letterSpacing: '0.05em' }}>
-            ⏱ {formatCountdown(lockMs)} para el cierre
+            ⏱ {formatCountdown(lockMs)} para el cierre de la Jornada
           </span>
         )}
       </div>
@@ -349,11 +357,47 @@ export default function MatchCard({
       </div>
       )}
 
+      {/* ── Capitán ──
+          El ×2 lo pone el jugador, no la casa. Solo aparece con pick hecho:
+          antes de elegir ganador no hay nada que doblar. Ver SOCCER_POINTS. */}
+      {myPick && (isOpen || isCaptain) && (
+        <button
+          type="button"
+          onClick={() => { if (isOpen) onCaptain(event.id, !isCaptain) }}
+          disabled={!isOpen || submitting}
+          aria-pressed={isCaptain}
+          title={isCaptain
+            ? 'Este es tu ×2 de la Jornada'
+            : 'Dobla lo que pague este partido. Solo uno por Jornada.'}
+          style={{
+            marginTop: 10, width: '100%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '8px 12px', borderRadius: 'var(--radius-card)',
+            background: isCaptain ? `${theme.accent}1F` : 'rgba(255,255,255,0.035)',
+            border: `1px solid ${isCaptain ? `${theme.accent}66` : 'rgba(255,255,255,0.09)'}`,
+            color: isCaptain ? theme.accent : 'var(--text-muted)',
+            cursor: isOpen && !submitting ? 'pointer' : 'default',
+            fontFamily: 'var(--font-sport)',
+          }}
+        >
+          <span aria-hidden style={{ display: 'inline-flex' }}><StarIcon size={12} /></span>
+          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            {isCaptain ? 'Tu capitán · ×2' : 'Hacer capitán'}
+          </span>
+          {!isCaptain && (
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', opacity: 0.7 }}>
+              dobla lo que pague
+            </span>
+          )}
+        </button>
+      )}
+
       {!isResolved && (
       <ExactScoreBlock
         event={event}
         myPick={myPick}
         exactScore={exactScore}
+        isCaptain={isCaptain}
         isOpen={isOpen}
         isResolved={isResolved}
         isClosed={isClosed}
@@ -393,7 +437,7 @@ export default function MatchCard({
 
       {!myPick && !isOpen && !isResolved && (
         <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-sport)', marginTop: 8 }}>
-          {isClosed ? 'Predicciones cerradas' : isLocked ? 'Picks bloqueados — el partido empieza en menos de 1 h' : 'Sin predicción'}
+          {isClosed ? 'Predicciones cerradas' : isLocked ? 'La Jornada ya cerró' : 'Sin predicción'}
         </span>
       )}
       </div>

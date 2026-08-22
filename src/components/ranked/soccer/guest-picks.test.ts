@@ -104,3 +104,34 @@ describe('toPredMap', () => {
     expect(row.is_correct).toBeNull()
   })
 })
+
+describe('capitán de invitado', () => {
+  it('solo hay uno: marcarlo se lo quita al anterior', () => {
+    saveGuestPick('a', '1', null, true)
+    saveGuestPick('b', '2', null, true)
+    const store = readGuestPicks()
+    expect(store.a.captain).toBeUndefined()
+    expect(store.b.captain).toBe(true)
+  })
+
+  it('cambiar de opinión en el pick NO borra el ×2', () => {
+    // El cliente reenvía la predicción entera al cambiar de pick; sin conservar
+    // el capitán, un simple cambio de opinión te lo quitaba sin avisar.
+    saveGuestPick('a', '1', null, true)
+    saveGuestPick('a', 'X', null)
+    expect(readGuestPicks().a).toEqual({ pick: 'X', captain: true })
+  })
+
+  it('se puede retirar explícitamente', () => {
+    saveGuestPick('a', '1', null, true)
+    saveGuestPick('a', '1', null, false)
+    expect(readGuestPicks().a.captain).toBeUndefined()
+  })
+
+  it('viaja a PredMap con la forma del servidor', () => {
+    saveGuestPick('a', '1', { home: 2, away: 0 }, true)
+    expect(toPredMap(readGuestPicks()).a.prediction).toEqual({
+      pick: '1', exactScore: { home: 2, away: 0 }, captain: true,
+    })
+  })
+})

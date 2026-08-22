@@ -125,16 +125,17 @@ export interface Jornada {
   /** Todos los partidos de la semana, en orden cronológico. Es el universo del
    *  Pleno: el bonus exige haber acertado TODOS, incluidos los ya cerrados. */
   events:  SoccerEvent[]
-  /** Los que aún se pueden pronosticar (abiertos y a más de una hora del
-   *  kickoff). Es lo único sobre lo que el usuario puede actuar. */
+  /** Los que aún se pueden pronosticar. Con cierre único eso es "todos" o
+   *  "ninguno": lo que manda es `deadline`, no el kickoff de cada uno. */
   pending: SoccerEvent[]
-  /** Los que ya no admiten pick: bloqueados, en juego o resueltos. Van a un
-   *  bloque aparte, plegado — a mitad de semana son la mayoría de la Jornada y
-   *  mezclados con los abiertos convertían la pantalla en una lista larga
-   *  donde no se distinguía lo jugable de lo que ya pasó. */
+  /** Los que ya se jugaron. Van a un bloque aparte, plegado: cuando la Jornada
+   *  va por la mitad son la mayoría y en la lista principal solo alargan la
+   *  pantalla. Lo bloqueado-pero-sin-jugar NO entra aquí: una vez cerrada, la
+   *  Jornada es un marcador en vivo y esconderlo sería quitar justo lo que se
+   *  viene a mirar el domingo. */
   settled: SoccerEvent[]
-  /** Solo los PENDIENTES, partidos en bloques por día para las sub-cabeceras
-   *  de la UI ("sábado 22", "domingo 23"…). */
+  /** Todo lo que aún no se ha jugado, en bloques por día para las
+   *  sub-cabeceras de la UI ("sábado 22", "domingo 23"…). */
   days:    DayGroup[]
   /** El Partidazo de la Jornada (x2), si esta semana tiene uno. */
   featured: SoccerEvent | null
@@ -142,8 +143,13 @@ export interface Jornada {
    *  honor a ancho completo: un Partidazo ya resuelto abriendo la sección es
    *  un cartel de algo que el usuario ya no puede hacer. */
   featuredPlayable: boolean
-  /** Momento en que se cierra el primer partido aún por jugar: es el deadline
-   *  real que le importa al usuario ("te quedan 2 h para completar picks"). */
+  /** Cuándo cierra la JORNADA ENTERA: una hora antes de su primer partido,
+   *  sea cual sea. `null` si ya pasó.
+   *
+   *  Cerrando partido a partido, quien rellenaba el domingo por la mañana ya
+   *  había visto los resultados del sábado y tenía 24 h más de alineaciones que
+   *  quien lo hizo el jueves: esperar era la jugada óptima. Un cierre común deja
+   *  a todos en la misma línea de salida, y da una sola cuenta atrás. */
   firstLockAt: number | null
 }
 
@@ -163,18 +169,21 @@ export function groupIntoJornadas(events: SoccerEvent[], now: Date = new Date())
     .map(([weekKey, list]) => {
       const sorted = [...list].sort((a, b) => a.event_date.localeCompare(b.event_date))
 
-      // Jugable = abierto Y todavía a más de SOCCER_LOCK_MS del kickoff. El
-      // `status` por sí solo no basta: lo mueve un cron cada media hora, así
+      // La Jornada cierra ENTERA una hora antes de su primer partido. El
+      // `status` por sí solo no serviría: lo mueve un cron cada media hora, así
       // que un partido puede seguir 'open' cuando la API ya rechaza picks.
       const nowMs = now.getTime()
-      const isPending = (e: SoccerEvent) =>
-        e.status === 'open' && new Date(e.event_date).getTime() - SOCCER_LOCK_MS > nowMs
+      const deadline = sorted.length > 0
+        ? new Date(sorted[0].event_date).getTime() - SOCCER_LOCK_MS
+        : null
+      const abierta = deadline !== null && nowMs < deadline
 
-      const pending = sorted.filter(isPending)
-      const settled = sorted.filter(e => !isPending(e))
+      const pending = abierta ? sorted.filter(e => e.status === 'open') : []
+      const settled = sorted.filter(e => e.status === 'resolved')
+      const porJugar = sorted.filter(e => e.status !== 'resolved')
 
       const byDay = new Map<string, SoccerEvent[]>()
-      for (const ev of pending) {
+      for (const ev of porJugar) {
         const dk = dateKeyOf(ev)
         const bucket = byDay.get(dk)
         if (bucket) bucket.push(ev)
@@ -184,7 +193,7 @@ export function groupIntoJornadas(events: SoccerEvent[], now: Date = new Date())
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([dateKey, dayEvents]) => ({ dateKey, label: dayLabel(dateKey, now), events: dayEvents }))
 
-      const locks = pending.map(e => new Date(e.event_date).getTime() - SOCCER_LOCK_MS)
+
 
       // Una semana debería traer UN Partidazo, pero la tabla ha llegado a tener
       // varios con el mismo week_key (restos del modelo diario anterior). Ante
@@ -207,8 +216,8 @@ export function groupIntoJornadas(events: SoccerEvent[], now: Date = new Date())
         settled,
         days,
         featured,
-        featuredPlayable: !!featured && isPending(featured),
-        firstLockAt: locks.length > 0 ? Math.min(...locks) : null,
+        featuredPlayable: !!featured && abierta && featured.status === 'open',
+        firstLockAt: abierta ? deadline : null,
       }
     })
 }
@@ -235,9 +244,25 @@ export function jornadaProgress(jornada: Jornada, predictedIds: ReadonlySet<stri
  *  tiene mérito y el premio saldría más barato en las semanas pobres. */
 export const PLENO_MIN_MATCHES = 3
 
-/** Puntos de pleno de una Jornada, o 0 si es demasiado pequeña para pagarlo. */
-export function plenoBonus(matches: number): number {
-  return matches >= PLENO_MIN_MATCHES ? matches * 2 : 0
+/**
+ * Lo que paga el Pleno según cuántos FALLOS lleves. Espejo exacto de
+ * `award_jornada_pleno` (migración 131).
+ *
+ * Antes era todo o nada: acertar los N. Con un 55% de acierto por partido
+ * —que es bueno— eso cae una vez cada doscientas jornadas, y se anunciaba en
+ * la cabecera todas las semanas. Un premio que nadie gana enseña a ignorar el
+ * sitio donde lo pusimos.
+ *
+ * Escala con el tamaño de la Jornada: una semana de 7 no debe pagar como una
+ * de 9. Los escalones de 1 y 2 fallos piden un mínimo de partidos porque
+ * fallar dos de cuatro no es ninguna gesta.
+ */
+export function plenoBonus(matches: number, misses = 0): number {
+  if (matches < PLENO_MIN_MATCHES) return 0
+  if (misses === 0) return matches * 3
+  if (misses === 1 && matches >= 5) return matches
+  if (misses === 2 && matches >= 7) return Math.floor(matches / 2)
+  return 0
 }
 
 /** Cuenta atrás corta: "2h 14m", "45m", "1d 3h". */

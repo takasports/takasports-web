@@ -24,6 +24,8 @@ const KEY = 'taka:guestPicks:v1'
 export interface GuestPick {
   pick: SoccerPick
   exactScore?: { home: number; away: number }
+  /** El ×2 del invitado. Uno por Jornada — lo impone `saveGuestPick`. */
+  captain?: boolean
 }
 
 type GuestStore = Record<string, GuestPick>
@@ -53,14 +55,38 @@ export function readGuestPicks(): GuestStore {
   return read()
 }
 
-/** Guarda (o reemplaza) el pick de un partido. */
+/**
+ * Guarda (o reemplaza) el pick de un partido.
+ *
+ * `captain` sin valor CONSERVA el que hubiera: el cliente reenvía la predicción
+ * entera al cambiar de pick o tocar el marcador, y sin esto un simple cambio de
+ * opinión borraría el ×2 sin avisar. Igual que hace la API con sesión.
+ *
+ * Marcar capitán aquí se lo quita a todos los demás. El invitado no tiene
+ * Jornadas en el servidor que consultar, así que el alcance es su almacén
+ * entero: como en pantalla solo hay una Jornada abierta a la vez, coincide.
+ */
 export function saveGuestPick(
   eventId: string,
   pick: SoccerPick,
   exactScore: { home: number; away: number } | null,
+  captain?: boolean,
 ): void {
   const store = read()
-  store[eventId] = exactScore ? { pick, exactScore } : { pick }
+  const previo = store[eventId]
+  const esCapitan = captain ?? previo?.captain === true
+
+  if (esCapitan) {
+    for (const otro of Object.keys(store)) {
+      if (otro !== eventId) delete store[otro].captain
+    }
+  }
+
+  store[eventId] = {
+    pick,
+    ...(exactScore ? { exactScore } : {}),
+    ...(esCapitan ? { captain: true } : {}),
+  }
   write(store)
 }
 
@@ -94,7 +120,11 @@ export function toPredMap(store: GuestStore): PredMap {
   for (const [eventId, g] of Object.entries(store)) {
     out[eventId] = {
       event_id: eventId,
-      prediction: g.exactScore ? { pick: g.pick, exactScore: g.exactScore } : { pick: g.pick },
+      prediction: {
+        pick: g.pick,
+        ...(g.exactScore ? { exactScore: g.exactScore } : {}),
+        ...(g.captain ? { captain: true } : {}),
+      },
       points_awarded: null,
       is_correct: null,
     }

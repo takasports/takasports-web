@@ -74,13 +74,15 @@ function short(s: string, max = 10): string {
 }
 
 export default function ExactScoreBlock({
-  event, myPick, exactScore, isOpen, isResolved, isClosed,
+  event, myPick, exactScore, isCaptain, isOpen, isResolved, isClosed,
   winner, submitting, onSet,
   showTooltip, onTooltipDismiss,
 }: {
   event: SoccerEvent
   myPick: SoccerPick | null
   exactScore: { home: number; away: number } | null
+  /** Este partido es el ×2 del usuario: los dos importes van doblados. */
+  isCaptain: boolean
   isOpen: boolean
   isResolved: boolean
   isClosed: boolean
@@ -92,8 +94,8 @@ export default function ExactScoreBlock({
 }) {
   // Lo que paga clavarlo y lo que se renuncia por intentarlo. Ambos salen de
   // `soccerPayout`, que es el espejo del reparto real del servidor.
-  const exactPts    = soccerPayout(event.featured, true)
-  const tendencyPts = soccerPayout(event.featured, false)
+  const exactPts    = soccerPayout(isCaptain, true)
+  const tendencyPts = soccerPayout(isCaptain, false)
   const [editorOpen, setEditorOpen] = useState(false)
 
   // ── 4. Modo lectura ──

@@ -32,10 +32,11 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import MatchCard from '@/components/ranked/soccer/MatchCard'
 import JornadaReminderOptIn from '@/components/ranked/soccer/JornadaReminderOptIn'
 import GuestSaveBar from '@/components/ranked/soccer/GuestSaveBar'
+import JornadaLeaderboard from '@/components/ranked/soccer/JornadaLeaderboard'
 import {
   readGuestPicks, saveGuestPick, clearGuestPicks, pruneGuestPicks, toPredMap,
 } from '@/components/ranked/soccer/guest-picks'
-import { groupIntoJornadas, jornadaProgress, formatCountdown, thisWeekKey, plenoBonus } from '@/components/ranked/soccer/jornada'
+import { groupIntoJornadas, jornadaProgress, formatCountdown, thisWeekKey, plenoBonus, weekKeyOf } from '@/components/ranked/soccer/jornada'
 import {
   FOOTBALL_THEME, SOCCER_POINTS,
   type SoccerEvent, type SoccerPick, type PredMap, type LiveScore,
@@ -73,12 +74,12 @@ const ANIMATIONS = `
 // Los números salen de SOCCER_POINTS (espejo de la migración 128) para que
 // este cartel no pueda prometer un reparto distinto del que hace el servidor.
 // ─────────────────────────────────────────────────────────────────────────────
-function ScoringStrip({ pleno }: { pleno: number }) {
+function ScoringStrip({ pleno, matches }: { pleno: number; matches: number }) {
   const rules: { pts: string; label: string; hint?: string }[] = [
     { pts: `${SOCCER_POINTS.TENDENCY}`, label: 'acertar 1 · X · 2' },
-    { pts: `×${SOCCER_POINTS.FEATURED_MULTIPLIER}`, label: 'en el Partidazo' },
+    { pts: `×${SOCCER_POINTS.CAPTAIN_MULTIPLIER}`, label: 'tu capitán', hint: 'el partido que elijas, uno por Jornada' },
     { pts: `${SOCCER_POINTS.EXACT}`, label: 'clavar el marcador', hint: 'o 0 — sustituye a tu pick' },
-    ...(pleno > 0 ? [{ pts: `+${pleno}`, label: 'pleno de la Jornada', hint: 'aciertas los 1·X·2 de la semana' }] : []),
+    ...(pleno > 0 ? [{ pts: `+${pleno}`, label: 'pleno de la Jornada', hint: `o +${plenoBonus(matches, 1)} fallando uno` }] : []),
   ]
 
   return (
@@ -220,6 +221,7 @@ export default function FootballClient() {
     eventId: string,
     pick: SoccerPick,
     exactScore: { home: number; away: number } | null,
+    captain?: boolean,
   ) => {
     if (submitting) return
 
@@ -229,7 +231,7 @@ export default function FootballClient() {
     // nada a cambio. Ahora el pick se guarda aquí y la cuenta se ofrece en la
     // barra de abajo, por lo que da.
     if (loggedIn === false) {
-      saveGuestPick(eventId, pick, exactScore)
+      saveGuestPick(eventId, pick, exactScore, captain)
       const guest = readGuestPicks()
       setPreds(toPredMap(guest))
       setHasGuestPicks(Object.keys(guest).length > 0)
@@ -240,6 +242,7 @@ export default function FootballClient() {
     try {
       const body: Record<string, unknown> = { event_id: eventId, pick }
       if (exactScore) body.exactScore = exactScore
+      if (captain !== undefined) body.captain = captain
       const res = await fetch('/api/ranked/predictions', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
@@ -248,7 +251,7 @@ export default function FootballClient() {
         // Creíamos tener sesión y no la hay (caducó entre medias). No se
         // arrastra al usuario a Google en mitad de la Jornada: el pick se
         // guarda como invitado y la barra de abajo le ofrece volver a entrar.
-        saveGuestPick(eventId, pick, exactScore)
+        saveGuestPick(eventId, pick, exactScore, captain)
         setLoggedIn(false)
         const guest = readGuestPicks()
         setPreds(toPredMap(guest))
@@ -391,6 +394,32 @@ export default function FootballClient() {
     void send(eventId, currentPick, exact)
   }, [preds, send])
 
+  // ── Capitán ────────────────────────────────────────────────────────────────
+  // Solo hay uno por Jornada, así que marcar este implica quitárselo al que lo
+  // tuviera. Se refleja aquí mismo en vez de esperar a que vuelva el servidor:
+  // si no, durante el viaje se verían dos capitanes a la vez y el usuario
+  // volvería a tocar. Quien manda sigue siendo el servidor —lo hace también en
+  // su lado, por si hay dos pestañas abiertas—; esto es solo no mentir mientras.
+  const handleCaptain = useCallback((eventId: string, captain: boolean) => {
+    const currentPick = preds[eventId]?.prediction?.pick
+    if (!currentPick) return
+    const suSemana = weekKeyOf(events.find(e => e.id === eventId) ?? { event_date: '' } as SoccerEvent)
+    const deLaSemana = new Set(events.filter(e => weekKeyOf(e) === suSemana).map(e => e.id))
+
+    setPreds(prev => {
+      const next: PredMap = {}
+      for (const [id, row] of Object.entries(prev)) {
+        const esOtroDeLaSemana = id !== eventId && deLaSemana.has(id)
+        const debeSer = id === eventId ? captain : (esOtroDeLaSemana ? false : row.prediction.captain === true)
+        const pred = { ...row.prediction }
+        if (debeSer) pred.captain = true; else delete pred.captain
+        next[id] = { ...row, prediction: pred }
+      }
+      return next
+    })
+    void send(eventId, currentPick, preds[eventId]?.prediction?.exactScore ?? null, captain)
+  }, [preds, send, events])
+
   // ── Derivados ──────────────────────────────────────────────────────────────
   // El reloj corre cada segundo para las cuentas atrás, pero el agrupado en
   // Jornadas solo cambia de minuto en minuto (etiquetas "Hoy"/"Mañana" en las
@@ -445,6 +474,42 @@ export default function FootballClient() {
   // el usuario tiene que ver la siguiente y su cuenta atrás, no una cabecera sin
   // deadline sobre partidos que ya se jugaron.
   const nextJornada = jornadas.find(j => j.pending.length > 0) ?? jornadas[0] ?? null
+
+  // ── Tu Jornada, mientras se juega ──────────────────────────────────────────
+  // El sondeo de directo ya existía y cada tarjeta sabía si su pick seguía
+  // vivo, pero en ninguna parte se decía "vas 4 de 7". El domingo por la tarde
+  // es cuando la gente volvería, y no había nada que mirar de un vistazo.
+  //
+  // Cuenta los resueltos por su resultado y los que se están jugando por cómo
+  // van AHORA. Es provisional a propósito: un partido empatando a falta de diez
+  // minutos vale tanto como un motivo para no soltar el móvil.
+  const jornadaEnVivo = useMemo(() => {
+    if (!nextJornada || nextJornada.pending.length > 0) return null
+    let aciertos = 0, jugados = 0, puntos = 0, enJuego = 0
+    for (const ev of nextJornada.events) {
+      const pred = preds[ev.id]?.prediction
+      if (!pred) continue
+      const live = liveScores[ev.id]
+      const resuelto = ev.status === 'resolved' ? ev.result?.winner ?? null : null
+      const enVivo = live && live.home != null && live.away != null
+        ? (live.home > live.away ? '1' : live.away > live.home ? '2' : 'X') as SoccerPick
+        : null
+      const tendencia = resuelto ?? enVivo
+      if (!tendencia) continue
+      jugados++
+      if (!resuelto) enJuego++
+      if (pred.pick !== tendencia) continue
+      aciertos++
+      const exacto = pred.exactScore
+      const goles = resuelto
+        ? { home: ev.result?.home_score, away: ev.result?.away_score }
+        : { home: live?.home, away: live?.away }
+      const clavado = !!exacto && exacto.home === goles.home && exacto.away === goles.away
+      const base = exacto ? (clavado ? SOCCER_POINTS.EXACT : 0) : SOCCER_POINTS.TENDENCY
+      puntos += pred.captain ? base * SOCCER_POINTS.CAPTAIN_MULTIPLIER : base
+    }
+    return jugados > 0 ? { aciertos, jugados, puntos, enJuego } : null
+  }, [nextJornada, preds, liveScores])
   const totalPts    = Object.values(preds).reduce((a, p) => a + (p.points_awarded ?? 0), 0)
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -495,6 +560,23 @@ export default function FootballClient() {
               </p>
             </div>
 
+            {jornadaEnVivo && (
+              <>
+                <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'rgba(255,255,255,0.09)' }} />
+                <div className="whitespace-nowrap">
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 900, color: T.accent, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                    {jornadaEnVivo.aciertos} de {jornadaEnVivo.jugados}
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 6 }}>
+                      +{jornadaEnVivo.puntos} pts
+                    </span>
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
+                    {jornadaEnVivo.enJuego > 0 ? 'tu jornada · en juego' : 'tu jornada'}
+                  </p>
+                </div>
+              </>
+            )}
+
             {nextJornada.firstLockAt && (
               <>
                 <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'rgba(255,255,255,0.09)' }} />
@@ -503,7 +585,7 @@ export default function FootballClient() {
                     {formatCountdown(nextJornada.firstLockAt - nowMs)}
                   </p>
                   <p style={{ fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
-                    <LockIcon size={8} className="inline-block align-middle mr-1" />cierra
+                    <LockIcon size={8} className="inline-block align-middle mr-1" />cierra la jornada
                   </p>
                 </div>
               </>
@@ -565,7 +647,12 @@ export default function FootballClient() {
         </div>
       )}
 
-      {nextJornada && <ScoringStrip pleno={plenoBonus(nextJornada.events.length)} />}
+      {nextJornada && (
+        <ScoringStrip
+          pleno={plenoBonus(nextJornada.events.length)}
+          matches={nextJornada.events.length}
+        />
+      )}
 
       {error && (
         <div className="mb-6 rounded-xl px-4 py-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.28)' }}>
@@ -606,7 +693,7 @@ export default function FootballClient() {
               {pleno > 0 && (
                 <span
                   className="cal-live-tag"
-                  title={`Acierta los ${jornada.events.length} partidos de esta Jornada y te llevas ${pleno} puntos extra`}
+                  title={`Acierta los ${jornada.events.length} partidos y te llevas ${pleno} puntos extra. Fallando uno, +${plenoBonus(jornada.events.length, 1)}; fallando dos, +${plenoBonus(jornada.events.length, 2)}.`}
                   style={{
                     fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
                     letterSpacing: '0.09em', textTransform: 'uppercase', padding: '5px 11px',
@@ -648,10 +735,12 @@ export default function FootballClient() {
                   liveScore={liveScores[jornada.featured.id]}
                   onPick={handlePick}
                   onExactSet={handleExactSet}
+                  onCaptain={handleCaptain}
                   showExactTooltip={tooltipEventId === jornada.featured.id}
                   onExactTooltipDismiss={dismissExactTip}
                   animDelay={0}
                   nowMs={nowMs}
+                  deadlineMs={jornada.firstLockAt}
                 />
               </div>
             )}
@@ -679,10 +768,12 @@ export default function FootballClient() {
                         liveScore={liveScores[ev.id]}
                         onPick={handlePick}
                         onExactSet={handleExactSet}
+                      onCaptain={handleCaptain}
                         showExactTooltip={tooltipEventId === ev.id}
                         onExactTooltipDismiss={dismissExactTip}
                         animDelay={ji === 0 ? i * 60 : 0}
                         nowMs={nowMs}
+                  deadlineMs={jornada.firstLockAt}
                       />
                     ))}
                   </div>
@@ -720,12 +811,20 @@ export default function FootballClient() {
                       liveScore={liveScores[ev.id]}
                       onPick={handlePick}
                       onExactSet={handleExactSet}
+                      onCaptain={handleCaptain}
                       animDelay={0}
                       nowMs={nowMs}
+                  deadlineMs={jornada.firstLockAt}
                     />
                   ))}
                 </div>
               </details>
+            )}
+
+            {/* Quién va ganando ESTA semana. Solo con la Jornada ya cerrada:
+                con todo por jugar sería una lista de ceros. */}
+            {jornada.pending.length === 0 && (
+              <JornadaLeaderboard weekKey={jornada.weekKey} accent={T.accent} />
             )}
           </section>
         )

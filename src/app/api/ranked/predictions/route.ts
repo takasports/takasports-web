@@ -13,6 +13,8 @@ import { awardBadges, badgesEarnedOnRankedPick } from '@/lib/badge-awards'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { apiError } from '@/lib/api-utils'
 import { normalizeRankedSport } from '@/lib/ranked-sports'
+import { RANKED_FOOTBALL_SPORT } from '@/lib/football-ranked'
+import { SOCCER_LOCK_MS } from '@/components/ranked/soccer/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,6 +75,11 @@ interface PickBody {
   /** Marcador exacto opcional (fútbol). No es un extra: SUSTITUYE al
    *  pronóstico de tendencia en ese partido — ver migración 128. */
   exactScore?: { home: number; away: number }
+  /** Capitán: este partido vale ×2 para ESTE usuario. Uno por Jornada — al
+   *  marcarlo aquí se quita de los demás. `false` lo retira; omitirlo lo deja
+   *  como estaba (el cliente reenvía la predicción entera al cambiar de pick y
+   *  no debería perder el capitán por el camino). Ver migración 131. */
+  captain?: boolean
   /** UF3 — Método de victoria predicho (solo UFC, opcional). */
   method?: 'KO' | 'SUB' | 'DEC'
 }
@@ -93,6 +100,51 @@ function validateExactScore(v: unknown): { home: number; away: number } | null |
     o.away < 0 || o.away > 20
   ) return 'invalid'
   return { home: o.home, away: o.away }
+}
+
+/**
+ * Un capitán por Jornada: al marcar uno, se lo quita a los demás partidos de
+ * esa semana.
+ *
+ * Se hace DESPUÉS de guardar y no en una transacción porque no hay una: si
+ * fallara a mitad, el peor caso es un ×2 de más durante unos segundos hasta la
+ * siguiente escritura, y eso es preferible a rechazar el pick del usuario por
+ * un problema de limpieza. La liquidación lee la predicción tal cual esté al
+ * resolverse el partido, mucho después.
+ */
+async function dropCaptainElsewhere(
+  sb: Awaited<ReturnType<typeof supabaseForRequest>>['supabase'],
+  userId: string,
+  weekKey: string | undefined,
+  keepEventId: string,
+): Promise<void> {
+  if (!weekKey) return
+  const { data: semana } = await sb
+    .from('ranked_events')
+    .select('id')
+    .eq('sport', RANKED_FOOTBALL_SPORT)
+    .eq('meta->>week_key', weekKey)
+  const otros = (semana ?? [])
+    .map((e: { id: string }) => e.id)
+    .filter(id => id !== keepEventId)
+  if (otros.length === 0) return
+
+  const { data: previos } = await sb
+    .from('ranked_predictions')
+    .select('event_id, prediction')
+    .eq('user_id', userId)
+    .in('event_id', otros)
+
+  for (const row of (previos ?? []) as { event_id: string; prediction: Record<string, unknown> }[]) {
+    if (row.prediction?.captain !== true) continue
+    const limpio = { ...row.prediction }
+    delete limpio.captain
+    await sb
+      .from('ranked_predictions')
+      .update({ prediction: limpio })
+      .eq('user_id', userId)
+      .eq('event_id', row.event_id)
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -120,6 +172,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_method' }, { status: 400 })
   }
 
+  if (body.captain !== undefined && typeof body.captain !== 'boolean') {
+    return NextResponse.json({ error: 'invalid_captain' }, { status: 400 })
+  }
+
   const { supabase: sb, user } = await supabaseForRequest(req)
   if (!user) return NextResponse.json({ error: 'no_session' }, { status: 401 })
 
@@ -141,13 +197,13 @@ export async function POST(req: NextRequest) {
   // Verificar que el evento existe y está open
   const { data: event } = await sb
     .from('ranked_events')
-    .select('id, status, sport, event_date')
+    .select('id, status, sport, event_date, meta')
     .eq('id', body.event_id)
     .single()
 
   if (!event) return NextResponse.json({ error: 'event_not_found' }, { status: 404 })
 
-  const ev = event as { status: string; sport: string; event_date: string }
+  const ev = event as { status: string; sport: string; event_date: string; meta?: { week_key?: string } }
 
   if (ev.status !== 'open') {
     return NextResponse.json({ error: 'event_closed', status: ev.status }, { status: 409 })
@@ -169,18 +225,50 @@ export async function POST(req: NextRequest) {
   if (isUfc && exactScore) {
     return NextResponse.json({ error: 'exact_not_allowed_for_ufc' }, { status: 400 })
   }
+  if (isUfc && body.captain !== undefined) {
+    return NextResponse.json({ error: 'captain_not_allowed_for_ufc' }, { status: 400 })
+  }
 
-  // Lock picks: 30 min antes (UFC) / 60 min antes (fútbol).
-  const lockOffsetMs = isUfc ? UFC_LOCK_MS : 60 * 60 * 1000
-  const matchStart   = new Date(ev.event_date).getTime()
-  const lockAt       = matchStart - lockOffsetMs
-  const nowMs        = Date.now()
-  if (nowMs >= lockAt) {
-    const minsLeft = Math.max(0, Math.ceil((matchStart - nowMs) / 60_000))
-    const lockMins = Math.round(lockOffsetMs / 60_000)
+  // ── Cierre ─────────────────────────────────────────────────────────────────
+  // UFC y el archivo del Mundial cierran partido a partido: son carteleras y
+  // torneos, no Jornadas, y ahí no hay un bloque que compita entre sí.
+  //
+  // Ranked Fútbol cierra la JORNADA ENTERA con su primer partido. Cerrando cada
+  // uno por su cuenta, quien rellenaba el domingo por la mañana ya había visto
+  // los resultados del sábado y tenía 24 h más de alineaciones y lesiones que
+  // quien lo hizo el jueves: esperar era la jugada óptima, y eso es ventaja
+  // gratis por llegar tarde en una competición por puntos. Un cierre común deja
+  // a todo el mundo en la misma línea de salida — y le da a la semana una sola
+  // cuenta atrás y un solo recordatorio.
+  const nowMs = Date.now()
+  const lockOffsetMs = isUfc ? UFC_LOCK_MS : SOCCER_LOCK_MS
+
+  let deadline = new Date(ev.event_date).getTime() - lockOffsetMs
+  const weekKey = ev.meta?.week_key
+  if (!isUfc && ev.sport === RANKED_FOOTBALL_SPORT && weekKey) {
+    // El primer saque de la semana manda, aunque sea el de otro partido.
+    const { data: primero } = await sb
+      .from('ranked_events')
+      .select('event_date')
+      .eq('sport', RANKED_FOOTBALL_SPORT)
+      .eq('meta->>week_key', weekKey)
+      .order('event_date', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    const inicio = (primero as { event_date?: string } | null)?.event_date
+    if (inicio) deadline = new Date(inicio).getTime() - lockOffsetMs
+  }
+
+  if (nowMs >= deadline) {
+    const minsLeft = Math.max(0, Math.ceil((deadline - nowMs) / 60_000))
     return NextResponse.json(
-      { error: 'pick_locked', message: `Las predicciones se bloquean ${lockMins} min antes. Quedan ${minsLeft} min.` },
-      { status: 409 }
+      {
+        error: 'pick_locked',
+        message: minsLeft > 0
+          ? `Quedan ${minsLeft} min.`
+          : 'La Jornada ya está cerrada: se cierra entera con su primer partido.',
+      },
+      { status: 409 },
     )
   }
 
@@ -202,11 +290,18 @@ export async function POST(req: NextRequest) {
   // legítima, no un exploit. Un tope aquí solo servía para prohibirla.
 
   // Construye el JSONB final. Las keys opcionales se omiten cuando faltan.
-  //   Fútbol: { pick: '1'|'X'|'2', exactScore?: {home, away} }
+  //   Fútbol: { pick: '1'|'X'|'2', exactScore?: {home, away}, captain?: true }
   //   UFC:    { pick: 'a'|'b',     method?: 'KO'|'SUB'|'DEC' }
   const predictionPayload: Record<string, unknown> = { pick: body.pick }
   if (exactScore) predictionPayload.exactScore = exactScore
   if (isUfc && body.method) predictionPayload.method = body.method
+
+  // El capitán se CONSERVA si el body no dice nada de él. El cliente reenvía la
+  // predicción entera cada vez que cambias de pick o tocas el marcador, y sin
+  // esto un simple cambio de opinión te borraría el ×2 sin avisar.
+  const existingCaptain = (existing as { prediction?: { captain?: boolean } } | null)?.prediction?.captain === true
+  const wantsCaptain = body.captain ?? existingCaptain
+  if (wantsCaptain && !isUfc) predictionPayload.captain = true
 
   // ── Cambio de pick (el evento sigue open) ────────────────────────
   // Si ya hay predicción y el partido aún no ha empezado, permitimos
@@ -221,6 +316,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (updateErr) return apiError('server_error', 500)
+    if (wantsCaptain) await dropCaptainElsewhere(sb, user.id, weekKey, body.event_id)
     return NextResponse.json({ prediction: updated, updated: true }, { status: 200 })
   }
 
@@ -246,10 +342,13 @@ export async function POST(req: NextRequest) {
         .eq('event_id', body.event_id)
         .select()
         .single()
+      if (wantsCaptain) await dropCaptainElsewhere(sb, user.id, weekKey, body.event_id)
       return NextResponse.json({ prediction: fallback, updated: true }, { status: 200 })
     }
     return apiError('server_error', 500)
   }
+
+  if (wantsCaptain) await dropCaptainElsewhere(sb, user.id, weekKey, body.event_id)
 
   // ── Badges — solo en primera inserción ──────────────────────────
   // Usamos adminSupabase() para bypassear RLS en quiniela_badges

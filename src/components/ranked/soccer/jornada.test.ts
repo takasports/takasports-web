@@ -148,9 +148,26 @@ describe('plenoBonus', () => {
   })
 
   it('escala con el tamaño de la Jornada: clavar nueve vale más que clavar tres', () => {
-    expect(plenoBonus(3)).toBe(6)
-    expect(plenoBonus(9)).toBe(18)
+    expect(plenoBonus(3)).toBe(9)
+    expect(plenoBonus(9)).toBe(27)
     expect(plenoBonus(9)).toBeGreaterThan(plenoBonus(3))
+  })
+
+  it('paga escalonado: fallar uno o dos sigue valiendo algo', () => {
+    // Todo o nada exigía acertar los nueve: con un 55% por partido eso cae una
+    // vez cada doscientas jornadas, y se anunciaba en la cabecera cada semana.
+    expect(plenoBonus(9, 0)).toBe(27)
+    expect(plenoBonus(9, 1)).toBe(9)
+    expect(plenoBonus(9, 2)).toBe(4)
+    expect(plenoBonus(9, 3)).toBe(0)
+  })
+
+  it('en Jornadas cortas no regala los escalones', () => {
+    // Fallar dos de cuatro no es ninguna gesta.
+    expect(plenoBonus(4, 1)).toBe(0)
+    expect(plenoBonus(6, 2)).toBe(0)
+    expect(plenoBonus(5, 1)).toBe(5)
+    expect(plenoBonus(7, 2)).toBe(3)
   })
 })
 
@@ -168,50 +185,61 @@ describe('formatCountdown', () => {
 
 // ── Jugable vs cerrado ───────────────────────────────────────────────────────
 
-describe('groupIntoJornadas · pending / settled', () => {
-  // A mitad de semana la mayoría de la Jornada ya está jugada. Si todo va en la
-  // misma lista, la pantalla es larguísima y no se distingue lo que aún puedes
-  // pronosticar de lo que ya pasó — que era medio problema de esta sección.
-  const now = new Date('2026-08-22T12:00:00Z')
+describe('groupIntoJornadas · cierre único', () => {
+  // La Jornada cierra ENTERA una hora antes de su primer partido. Cerrando cada
+  // partido por su cuenta, quien rellenaba el domingo ya había visto el sábado:
+  // esperar era la jugada óptima.
+  const semana = () => [
+    ev({ id: 'sabado',  event_date: '2026-08-22T17:00:00Z', meta: { week_key: '2026-08-17', date_key: '2026-08-22' } }),
+    ev({ id: 'domingo', event_date: '2026-08-23T19:00:00Z', meta: { week_key: '2026-08-17', date_key: '2026-08-23' } }),
+  ]
+
+  it('antes del cierre, todo es jugable — incluido el partido de dentro de dos días', () => {
+    const j = groupIntoJornadas(semana(), new Date('2026-08-22T10:00:00Z'))[0]
+    expect(j.pending.map(e => e.id)).toEqual(['sabado', 'domingo'])
+    expect(j.firstLockAt).toBe(new Date('2026-08-22T16:00:00Z').getTime())
+  })
+
+  it('pasado el cierre no queda nada jugable, aunque el domingo no haya empezado', () => {
+    // Es justo el punto: el del domingo se cierra con el del sábado.
+    const j = groupIntoJornadas(semana(), new Date('2026-08-22T16:30:00Z'))[0]
+    expect(j.pending).toEqual([])
+    expect(j.firstLockAt).toBeNull()
+  })
+
+  it('el cierre lo marca el PRIMER partido, no el que se esté mirando', () => {
+    const j = groupIntoJornadas([...semana()].reverse(), new Date('2026-08-20T10:00:00Z'))[0]
+    expect(j.firstLockAt).toBe(new Date('2026-08-22T16:00:00Z').getTime())
+  })
+})
+
+describe('groupIntoJornadas · jugado vs por jugar', () => {
+  const now = new Date('2026-08-23T12:00:00Z')   // Jornada ya cerrada, en curso
 
   const jornada = () => groupIntoJornadas([
-    ev({ id: 'jugado',    event_date: '2026-08-21T19:00:00Z', status: 'resolved', meta: { week_key: '2026-08-17', date_key: '2026-08-21' } }),
-    ev({ id: 'enjuego',   event_date: '2026-08-22T11:30:00Z', status: 'closed',   meta: { week_key: '2026-08-17', date_key: '2026-08-22' } }),
-    // Abierto pero dentro de la hora de bloqueo: la API ya rechaza su pick.
-    ev({ id: 'bloqueado', event_date: '2026-08-22T12:30:00Z', status: 'open',     meta: { week_key: '2026-08-17', date_key: '2026-08-22' } }),
-    ev({ id: 'abierto',   event_date: '2026-08-23T19:00:00Z', status: 'open',     meta: { week_key: '2026-08-17', date_key: '2026-08-23' } }),
+    ev({ id: 'jugado',  event_date: '2026-08-22T17:00:00Z', status: 'resolved', meta: { week_key: '2026-08-17', date_key: '2026-08-22' } }),
+    ev({ id: 'enjuego', event_date: '2026-08-23T11:30:00Z', status: 'closed',   meta: { week_key: '2026-08-17', date_key: '2026-08-23' } }),
+    ev({ id: 'luego',   event_date: '2026-08-23T19:00:00Z', status: 'open',     meta: { week_key: '2026-08-17', date_key: '2026-08-23' } }),
   ], now)[0]
 
-  it('separa lo que aún se puede pronosticar de lo que ya no', () => {
+  it('al bloque plegado solo bajan los YA JUGADOS', () => {
+    // Lo cerrado-pero-sin-jugar se queda a la vista: una vez cerrada la
+    // Jornada es un marcador en vivo, y esconderlo sería quitar justo lo que
+    // se viene a mirar el domingo.
     const j = jornada()
-    expect(j.pending.map(e => e.id)).toEqual(['abierto'])
-    expect(j.settled.map(e => e.id)).toEqual(['jugado', 'enjuego', 'bloqueado'])
-  })
-
-  it('cuenta como cerrado el que sigue "open" pero ya entró en la hora de bloqueo', () => {
-    // El status lo mueve un cron cada media hora: fiarse solo de él deja
-    // tarjetas ofreciendo un botón que el servidor va a rechazar.
-    const j = jornada()
-    const bloqueado = j.settled.find(e => e.id === 'bloqueado')!
-    expect(new Date(bloqueado.event_date).getTime() - SOCCER_LOCK_MS).toBeLessThan(now.getTime())
-  })
-
-  it('los bloques por día solo traen partidos jugables', () => {
-    const j = jornada()
-    expect(j.days.flatMap(d => d.events.map(e => e.id))).toEqual(['abierto'])
+    expect(j.settled.map(e => e.id)).toEqual(['jugado'])
+    expect(j.days.flatMap(d => d.events.map(e => e.id))).toEqual(['enjuego', 'luego'])
   })
 
   it('el Pleno sigue midiéndose sobre la Jornada entera', () => {
-    // `events` es el universo del bonus: si encogiera al cerrarse cada partido,
-    // la Jornada parecería completa habiéndose escapado picks.
     const j = jornada()
-    expect(j.events).toHaveLength(4)
-    expect(jornadaProgress(j, new Set(['abierto']))).toEqual({ done: 1, total: 4 })
+    expect(j.events).toHaveLength(3)
+    expect(jornadaProgress(j, new Set(['luego']))).toEqual({ done: 1, total: 3 })
   })
 })
 
 describe('groupIntoJornadas · Partidazo', () => {
-  const now = new Date('2026-08-22T12:00:00Z')
+  const now = new Date('2026-08-20T12:00:00Z')
 
   it('no le da el hueco de honor a un Partidazo que ya no se puede jugar', () => {
     const j = groupIntoJornadas([
