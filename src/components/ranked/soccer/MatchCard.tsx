@@ -183,7 +183,11 @@ export default function MatchCard({
             color: '#04140C', fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
           }}>
             <StarIcon size={9} className="inline-block align-middle mr-1" />
-            {event.sport === 'football' ? 'PARTIDAZO · X2' : 'PARTIDO DEL DÍA · X2'}
+            {/* En fútbol el ×2 dejó de ser de la casa (migración 131): lo pone
+                el jugador con su capitán. El Partidazo se queda como lo que
+                siempre fue de verdad, el partido de la semana. Seguir diciendo
+                "X2" aquí sería prometer puntos que este partido ya no paga. */}
+            {event.sport === 'football' ? 'PARTIDAZO' : 'PARTIDO DEL DÍA · X2'}
           </span>
         )}
         <span className="cal-live-tag" style={{
