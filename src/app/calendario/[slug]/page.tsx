@@ -16,7 +16,7 @@ import {
   matchesCompetition,
   type CompetitionConfig,
 } from '@/lib/calendar-competitions'
-import { fetchLeagueTableRows, fetchTopScorers, fetchTournamentGroups } from '@/lib/espn-standings'
+import { fetchLeagueTableRows, fetchTopScorers, fetchTournamentGroups, byGroup, groupLabel } from '@/lib/espn-standings'
 import { LeagueTableBlock } from '@/app/partido/[ref]/LeagueTable'
 import { TopScorers } from '@/components/TopScorers'
 
@@ -443,12 +443,15 @@ export default async function CompetitionCalendarPage({
               <span className="section-label">Clasificación y goleadores</span>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-              {tableRows.length > 0 && (
+              {/* Una tabla por zona: en MLS y Liga Argentina ESPN devuelve dos
+                  grupos con los puestos empezando de cero en cada uno. */}
+              {byGroup(tableRows).map(g => (
                 <LeagueTableBlock
-                  rows={tableRows}
-                  leagueLabel={comp.displayName}
+                  key={g.name ?? 'unico'}
+                  rows={g.rows}
+                  leagueLabel={g.name ? `${comp.displayName} · ${groupLabel(g.name)}` : comp.displayName}
                 />
-              )}
+              ))}
               {scorers.length > 0 && (
                 <TopScorers
                   scorers={scorers}

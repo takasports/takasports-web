@@ -4,7 +4,7 @@ import type { StandingZone } from '@/lib/league-zones'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
 import { LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
-import { fetchLeagueTableRows, fetchTournamentGroups, type LeagueTableRow } from '@/lib/espn-standings'
+import { fetchLeagueTableRows, fetchTournamentGroups, byGroup, groupLabel, type LeagueTableRow } from '@/lib/espn-standings'
 import { getPastEventByRef, type H2HResult, type H2HMatch, type FormResult } from '@/lib/past-events'
 import {
   normalizeScoringType, commentaryLabelFor, SOCCER_STAT_ORDER, SOCCER_LABELS,
@@ -1293,12 +1293,26 @@ export async function GET(
       if (tableRows.length) {
         const homeTeamName = asString(homeTeamObj?.displayName)
         const awayTeamName = asString(awayTeamObj?.displayName)
-        detail.leagueTable = tableRows.map(row => ({
-          ...row,
-          highlight: row.name === homeTeamName ? 'home'
-                   : row.name === awayTeamName ? 'away'
-                   : undefined,
-        }))
+        const enElPartido = (r: { name: string }) => r.name === homeTeamName || r.name === awayTeamName
+        // Ligas por zonas (MLS, Liga Argentina): la tabla relevante es la del grupo
+        // que contiene a estos dos, no las dos pegadas. Si están en zonas distintas
+        // no hay clasificación que comparar — misma regla que en el Mundial y que en
+        // lib/last-season.ts: puestos de tablas distintas no se enfrentan.
+        const grupos = byGroup(tableRows)
+        const suyo = grupos.length > 1
+          ? grupos.find(g => g.rows.some(r => r.name === homeTeamName) && g.rows.some(r => r.name === awayTeamName))
+          : grupos[0]
+        if (suyo) {
+          detail.leagueTable = suyo.rows.map(row => ({
+            ...row,
+            highlight: enElPartido(row)
+              ? (row.name === homeTeamName ? 'home' as const : 'away' as const)
+              : undefined,
+          }))
+          if (grupos.length > 1 && suyo.name) {
+            detail.leagueTableLabel = `${leagueLabel} · ${groupLabel(suyo.name)}`
+          }
+        }
       } else if (wcGroups.length) {
         // Grupo del Mundial que contiene a los equipos del partido. Match por
         // teamId (los nombres del grupo van traducidos al español y los del

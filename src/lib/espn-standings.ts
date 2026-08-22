@@ -27,6 +27,8 @@ export interface LeagueTableRow {
   gd: number
   highlight?: 'home' | 'away'
   zone?: StandingZone
+  /** Conferencia/zona ("Eastern Conference", "Group A"). Ausente en liga única. */
+  group?: string
 }
 
 export interface ScorerRow {
@@ -59,46 +61,45 @@ function seasonStartYear(): number {
 
 // ── Clasificación ─────────────────────────────────────────────────────
 // Ligas con clasificación: lib/football-leagues (TABLE_LEAGUE_SLUGS).
+//
+// Leía solo `children[0]`, que en una liga round-robin es la tabla entera pero en
+// MLS o la Liga Argentina es UNA de las dos conferencias/zonas: /liga/arg.1 servía
+// 15 de los 30 equipos (medido el 21/08/2026 en producción, solo el Grupo A) y en
+// el detalle de un partido entre equipos de zonas distintas no aparecía ninguno.
+// Ahora delega en fetchLeagueTable, que lee TODOS los grupos y etiqueta cada fila
+// con el suyo. Los puestos se reinician por grupo, así que quien pinte estas filas
+// tiene que separarlas por `group` — comparar un 1º del Este con un 1º del Oeste no
+// significa nada.
 export async function fetchLeagueTableRows(leagueSlug: string): Promise<Omit<LeagueTableRow, 'highlight'>[]> {
   if (!TABLE_LEAGUE_SLUGS.has(leagueSlug)) return []
-  try {
-    const res = await fetch(
-      `https://site.web.api.espn.com/apis/v2/sports/${leagueSlug}/standings`,
-      { next: { revalidate: 1800 } }
-    )
-    if (!res.ok) return []
-    const json = await res.json()
-    const groups  = asArr(json.children) as Record<string, unknown>[]
-    const entries = asArr(asObj(groups[0]?.standings)?.entries) as Record<string, unknown>[]
-    if (!entries.length) return []
+  const { rows } = await fetchLeagueTable(leagueSlug)
+  return rows
+}
 
-    // ESPN no siempre devuelve las entradas ordenadas por posición (p. ej. MLS),
-    // y abajo usamos el índice como puesto. Ordenamos por el stat 'rank' de ESPN.
-    const rankOf = (e: Record<string, unknown>) => {
-      const st = asArr(e.stats) as Array<{ name: string; value?: number }>
-      return (st.find(s => s.name === 'rank')?.value as number) ?? 999
-    }
-    entries.sort((a, b) => rankOf(a) - rankOf(b))
+/**
+ * Nombre del grupo en español. ESPN los da en inglés ("Group A", "Eastern
+ * Conference") y el sitio está en español; se traduce al PINTAR, no en los datos,
+ * para no tocar las comparaciones por grupo que hacen el calendario y last-season.
+ */
+export function groupLabel(name: string | undefined): string | undefined {
+  if (!name) return undefined
+  const grupo = name.match(/^Group\s+(.+)$/i)
+  if (grupo) return `Grupo ${grupo[1]}`
+  return name
+    .replace(/^Eastern Conference$/i, 'Conferencia Este')
+    .replace(/^Western Conference$/i, 'Conferencia Oeste')
+    .replace(/^Regular Season$/i, 'Temporada regular')
+}
 
-    return entries.map((e, i) => {
-      const team  = asObj(e.team) ?? {}
-      const stats = asArr(e.stats) as Array<{ name: string; value?: number }>
-      const sv = (name: string) => Math.round((stats.find(s => s.name === name)?.value as number) ?? 0)
-      const w = sv('wins'); const d = sv('ties'); const l = sv('losses')
-      const pts = sv('points'); const gd = sv('pointDifferential')
-      const gf  = sv('pointsFor'); const gc = sv('pointsAgainst')
-      const logos = asArr(team.logos) as Record<string, unknown>[]
-      return {
-        rank: i + 1,
-        name: asString(team.displayName) ?? '—',
-        abbr: asString(team.abbreviation) ?? '',
-        logo: asString(logos[0]?.href),
-        teamId: asString(team.id),
-        pts, gp: w + d + l, w, d, l, gf, gc, gd,
-        zone: zoneFromNote(asString(asObj(e.note)?.description)) ?? getZone(leagueSlug, i + 1),
-      }
-    })
-  } catch { return [] }
+/** Reparte unas filas por grupo conservando el orden de llegada. */
+export function byGroup<T extends { group?: string }>(rows: readonly T[]): { name?: string; rows: T[] }[] {
+  const out: { name?: string; rows: T[] }[] = []
+  for (const r of rows) {
+    const last = out[out.length - 1]
+    if (last && last.name === r.group) last.rows.push(r)
+    else out.push({ name: r.group, rows: [r] })
+  }
+  return out
 }
 
 // El criterio de "¿esta tabla se puede enseñar hoy?" vive en standings-window.ts

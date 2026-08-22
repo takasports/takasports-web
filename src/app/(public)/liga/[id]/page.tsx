@@ -6,7 +6,7 @@ import { ShareButton } from '@/components/ShareButton'
 import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
-import { fetchLeagueTableRows } from '@/lib/espn-standings'
+import { fetchLeagueTableRows, byGroup, groupLabel } from '@/lib/espn-standings'
 import { canonicalTeamSlug } from '@/lib/team-slug'
 
 export const revalidate = 1800
@@ -74,6 +74,8 @@ function apiBase(): string {
 interface StandRow {
   rank: number; name: string; abbr: string; value: string
   extra: Record<string, string>; teamId?: string; logo?: string
+  /** Conferencia/zona en las ligas que la tienen (MLS, Argentina). */
+  group?: string
 }
 interface PlayerRow { name: string; team: string; value: number; matches: number; playerId?: string; teamLogo?: string; leagueSlug?: string; photo?: string }
 
@@ -147,6 +149,7 @@ async function fetchDirect(def: LeagueDef): Promise<{ rows: StandRow[]; goals: P
     extra: { V: String(t.w), E: String(t.d), D: String(t.l), DG: t.gd > 0 ? `+${t.gd}` : String(t.gd) },
     teamId: t.teamId,
     logo: t.logo,
+    group: t.group,
   }))
   return { rows, goals: leaders.goals, assists: leaders.assists }
 }
@@ -160,8 +163,32 @@ function playerHref(p: PlayerRow) {
   return p.playerId ? `/jugador/${canonicalPlayerSlug(p.name, p.playerId)}` : undefined
 }
 
+// La Liga Argentina y la MLS se juegan en DOS zonas, y ESPN las devuelve como
+// grupos separados con los puestos empezando de nuevo en cada uno. Pintarlas
+// seguidas daría dos "1º" sin explicación (y claves de React repetidas), así que
+// cada grupo lleva su propia tabla con su nombre.
 function StandingsTable({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
   if (!rows.length) return <p className="text-[12px] text-[var(--text-muted)] px-4 py-6 text-center">Sin datos</p>
+  const grupos = byGroup(rows)
+  if (grupos.length > 1) {
+    return (
+      <div className="flex flex-col gap-4">
+        {grupos.map(g => (
+          <div key={g.name ?? 'unico'}>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-2"
+              style={{ color: def.accent, fontFamily: 'var(--font-sport)' }}>
+              {groupLabel(g.name)}
+            </p>
+            <StandingsGroup rows={g.rows} def={def} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+  return <StandingsGroup rows={rows} def={def} />
+}
+
+function StandingsGroup({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}>
       <div className="flex items-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-widest text-[#3A3A4A]"
@@ -187,9 +214,11 @@ function StandingsTable({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
             <span className="w-8 text-center text-[13px] font-black tabular-nums text-white" style={{ fontFamily: 'var(--font-display)' }}>{r.value}</span>
           </div>
         )
+        // Clave por equipo, no por puesto: con dos zonas hay dos "1", dos "2"…
+        const key = r.teamId ?? `${r.group ?? ''}-${r.name}`
         return href
-          ? <Link key={r.rank} href={href} className="block hover:bg-white/5 transition-colors">{inner}</Link>
-          : <div key={r.rank}>{inner}</div>
+          ? <Link key={key} href={href} className="block hover:bg-white/5 transition-colors">{inner}</Link>
+          : <div key={key}>{inner}</div>
       })}
     </div>
   )
@@ -275,9 +304,12 @@ async function Content({ id }: { id: string }) {
         name: `Clasificación de ${def.label}`,
         itemListOrder: 'https://schema.org/ItemListOrderAscending',
         numberOfItems: rows.length,
-        itemListElement: rows.map(r => ({
+        // `position` es el índice en la lista, no el puesto: en una liga por zonas
+        // los puestos se repiten (dos 1º) y un ItemList con posiciones duplicadas
+        // no es una lista ordenada válida.
+        itemListElement: rows.map((r, i) => ({
           '@type': 'ListItem',
-          position: r.rank,
+          position: i + 1,
           item: {
             '@type': 'SportsTeam',
             name: r.name,
