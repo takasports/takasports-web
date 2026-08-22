@@ -51,10 +51,16 @@
   --border: rgba(255,255,255,0.06);
   --border-subtle: rgba(255,255,255,0.04);
 
-  /* Fonts (variables set by next/font in layout.tsx) */
-  --font-display: var(--font-display, system-ui);
-  --font-headline: var(--font-headline, system-ui); /* Bebas Neue — solo labels cortos */
-  --font-sport: var(--font-sport, system-ui);
+  /* Fonts — las declara next/font en layout.tsx sobre <html>, que es ESTE mismo
+     elemento. NO redeclararlas aquí.
+     Aquí vivían tres líneas del tipo `--font-display: var(--font-display, system-ui)`.
+     Una variable definida como SÍ MISMA es inválida en tiempo de valor computado
+     (CSS Variables §3): la propiedad se descarta y `var(--font-display)` deja de
+     resolver. Y como `:root` y la clase de next/font tienen la misma
+     especificidad y apuntan al mismo elemento, mandaba el orden de origen: esto.
+     Efecto medido en producción el 21/08/2026: las tres salían VACÍAS y el
+     <h1> del calendario pintaba en Geist. Barlow Condensed, Bebas Neue y Barlow
+     Semi Condensed se descargaban y no se usaban en ninguno de sus 2.140 sitios. */
 
   /* Radii */
   --radius-sm: 6px;
