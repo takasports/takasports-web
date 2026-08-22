@@ -7,6 +7,7 @@ import { competitionArt } from './competition-art'
 import TeamCrest from './TeamCrest'
 import PickButton from './PickButton'
 import ExactScoreBlock from './ExactScoreBlock'
+import ConsensusBar, { type Consensus } from './ConsensusBar'
 import { timeLabel, formatCountdown } from './jornada'
 import {
   type SoccerEvent, type SoccerPick, type SoccerTheme, type LiveScore, type PredictionRow,
@@ -25,7 +26,7 @@ import {
 
 export default function MatchCard({
   event, pred, submitting, theme, onPick, onExactSet, onCaptain,
-  showExactTooltip, onExactTooltipDismiss, animDelay = 0, liveScore, nowMs, deadlineMs,
+  showExactTooltip, onExactTooltipDismiss, animDelay = 0, liveScore, nowMs, deadlineMs, consensus,
 }: {
   event: SoccerEvent
   pred: PredictionRow | undefined
@@ -47,6 +48,10 @@ export default function MatchCard({
    *  si cada tarjeta se rigiera por su propio kickoff ofrecería botones que la
    *  API va a rechazar. */
   deadlineMs: number | null
+  /** Reparto de pronósticos de la comunidad en este partido. La tarjeta no
+   *  decide cuándo enseñarlo: eso lo resuelve ConsensusBar (hace falta pick
+   *  propio y muestra suficiente). */
+  consensus?: Consensus
 }) {
   const myPick     = pred?.prediction?.pick ?? null
   const exactScore = pred?.prediction?.exactScore ?? null
@@ -360,6 +365,14 @@ export default function MatchCard({
         })}
       </div>
       )}
+
+      <ConsensusBar
+        consensus={consensus}
+        myPick={myPick}
+        accent={theme.accent}
+        homeShort={event.meta?.home_abbr || event.team_home || 'Local'}
+        awayShort={event.meta?.away_abbr || event.team_away || 'Visitante'}
+      />
 
       {/* ── Capitán ──
           El ×2 lo pone el jugador, no la casa. Solo aparece con pick hecho:

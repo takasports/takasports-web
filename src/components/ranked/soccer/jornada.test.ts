@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest'
 import {
   dateKeyOf, weekKeyOf, dayLabel, jornadaLabel, jornadaRangeLabel, groupIntoJornadas,
   jornadaProgress, formatCountdown, plenoBonus, PLENO_MIN_MATCHES, jornadaStreak,
+  jornadaComplete, hasCaptain,
 } from './jornada'
+import type { PredMap } from './types'
 import { SOCCER_LOCK_MS, type SoccerEvent } from './types'
 
 function ev(over: Partial<SoccerEvent> & { id: string }): SoccerEvent {
@@ -343,5 +345,51 @@ describe('jornadaStreak', () => {
 
   it('sin haber jugado nunca, cero', () => {
     expect(jornadaStreak(semana('2026-08-17'), new Set())).toBe(0)
+  })
+})
+
+// ── Capitán obligatorio ──────────────────────────────────────────────────────
+
+describe('jornadaComplete', () => {
+  // El ×2 es valor esperado regalado: doblar el pick más seguro suma y no
+  // cuesta nada. Sin exigirlo, se podía rellenar la Jornada entera, leer
+  // "✓ Jornada completa" y haber dejado puntos sobre la mesa sin enterarse.
+  const now = new Date('2026-08-20T12:00:00Z')
+  const abierta = () => groupIntoJornadas([
+    ev({ id: 'a', event_date: '2026-08-22T17:00:00Z', meta: { week_key: '2026-08-17' } }),
+    ev({ id: 'b', event_date: '2026-08-23T17:00:00Z', meta: { week_key: '2026-08-17' } }),
+  ], now)[0]
+
+  const pred = (pick: '1' | 'X' | '2', captain = false): PredMap[string] => ({
+    event_id: 'x',
+    prediction: captain ? { pick, captain: true } : { pick },
+    points_awarded: null,
+    is_correct: null,
+  })
+
+  it('con todos los picks pero sin capitán, NO está completa', () => {
+    const preds: PredMap = { a: pred('1'), b: pred('2') }
+    expect(hasCaptain(abierta(), preds)).toBe(false)
+    expect(jornadaComplete(abierta(), preds)).toBe(false)
+  })
+
+  it('con todos los picks y capitán, sí', () => {
+    const preds: PredMap = { a: pred('1', true), b: pred('2') }
+    expect(jornadaComplete(abierta(), preds)).toBe(true)
+  })
+
+  it('faltando un pick no está completa, haya capitán o no', () => {
+    expect(jornadaComplete(abierta(), { a: pred('1', true) })).toBe(false)
+  })
+
+  it('con la Jornada ya cerrada deja de exigir capitán', () => {
+    // Ya no se puede nombrar: reclamarlo sería marcar como incompleto algo que
+    // el usuario no puede arreglar.
+    const cerrada = groupIntoJornadas([
+      ev({ id: 'a', event_date: '2026-08-22T17:00:00Z', meta: { week_key: '2026-08-17' } }),
+      ev({ id: 'b', event_date: '2026-08-23T17:00:00Z', meta: { week_key: '2026-08-17' } }),
+    ], new Date('2026-08-22T18:00:00Z'))[0]
+    expect(cerrada.pending).toEqual([])
+    expect(jornadaComplete(cerrada, { a: pred('1'), b: pred('2') })).toBe(true)
   })
 })

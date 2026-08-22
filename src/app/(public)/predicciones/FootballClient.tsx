@@ -33,10 +33,11 @@ import MatchCard from '@/components/ranked/soccer/MatchCard'
 import JornadaReminderOptIn from '@/components/ranked/soccer/JornadaReminderOptIn'
 import GuestSaveBar from '@/components/ranked/soccer/GuestSaveBar'
 import JornadaLeaderboard from '@/components/ranked/soccer/JornadaLeaderboard'
+import type { Consensus } from '@/components/ranked/soccer/ConsensusBar'
 import {
   readGuestPicks, saveGuestPick, clearGuestPicks, pruneGuestPicks, toPredMap,
 } from '@/components/ranked/soccer/guest-picks'
-import { groupIntoJornadas, jornadaProgress, formatCountdown, thisWeekKey, plenoBonus, weekKeyOf, jornadaStreak } from '@/components/ranked/soccer/jornada'
+import { groupIntoJornadas, jornadaProgress, formatCountdown, thisWeekKey, plenoBonus, weekKeyOf, jornadaStreak, jornadaComplete, hasCaptain } from '@/components/ranked/soccer/jornada'
 import {
   FOOTBALL_THEME, SOCCER_POINTS,
   type SoccerEvent, type SoccerPick, type PredMap, type LiveScore,
@@ -135,6 +136,7 @@ export default function FootballClient() {
   // los partidos que se pueden jugar ahora.
   const [hasGuestPicks, setHasGuestPicks] = useState(false)
   const [signingIn,  setSigningIn]  = useState(false)
+  const [consensus,  setConsensus]  = useState<Record<string, Consensus>>({})
   const [exactTipDismissed, setExactTipDismissed] = useState<boolean>(() => {
     try { return typeof window !== 'undefined' && localStorage.getItem('futbol:exactTip') === '1' }
     catch { return true }
@@ -440,6 +442,33 @@ export default function FootballClient() {
 
   const predictedIds = useMemo(() => new Set(Object.keys(preds)), [preds])
 
+  // ── Consenso de la comunidad ───────────────────────────────────────────────
+  // Se pide por Jornada visible, no por partido. La tarjeta solo lo enseña en
+  // los que el usuario ya ha pronosticado; traerlo entero de una vez evita
+  // nueve peticiones y que el reparto aparezca a trozos.
+  const semanasVisibles = useMemo(
+    () => jornadas.map(j => j.weekKey).join(','),
+    [jornadas],
+  )
+  useEffect(() => {
+    if (!semanasVisibles) return
+    let cancelado = false
+    void (async () => {
+      const partes = await Promise.all(
+        semanasVisibles.split(',').map(async wk => {
+          try {
+            const r = await fetch(`/api/ranked/consensus?week=${encodeURIComponent(wk)}`)
+            if (!r.ok) return {}
+            const d = await r.json() as { consensus?: Record<string, Consensus> }
+            return d.consensus ?? {}
+          } catch { return {} }
+        }),
+      )
+      if (!cancelado) setConsensus(Object.assign({}, ...partes))
+    })()
+    return () => { cancelado = true }
+  }, [semanasVisibles])
+
   // Jornadas seguidas jugadas. Solo con sesión: la de un invitado se evaporaría
   // al cambiar de navegador, y una racha que se pierde sola no motiva, irrita.
   const racha = useMemo(
@@ -708,7 +737,14 @@ export default function FootballClient() {
       {/* ═══ Jornadas ═══ */}
       {jornadas.map((jornada, ji) => {
         const prog = jornadaProgress(jornada, predictedIds)
-        const complete = prog.total > 0 && prog.done === prog.total
+        const complete = jornadaComplete(jornada, preds)
+        // Todo pickeado y sin capitán: el único caso en que la Jornada NO está
+        // completa aunque no falte ningún pronóstico. Se dice explícitamente
+        // porque es valor esperado que el usuario se estaba dejando en silencio.
+        const faltaCapitan = prog.total > 0
+          && prog.done === prog.total
+          && jornada.pending.length > 0
+          && !hasCaptain(jornada, preds)
         const pleno = plenoBonus(jornada.events.length)
         return (
           <section key={jornada.weekKey} id={`jornada-${jornada.weekKey}`} className="mb-10 scroll-mt-24">
@@ -741,13 +777,37 @@ export default function FootballClient() {
               <span className="cal-live-tag" style={{
                 fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
                 letterSpacing: '0.09em', textTransform: 'uppercase', padding: '5px 11px',
-                background: complete ? `${T.accent}1F` : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${complete ? `${T.accent}55` : 'rgba(255,255,255,0.09)'}`,
-                color: complete ? T.accent : 'var(--text-muted)',
+                background: complete ? `${T.accent}1F` : faltaCapitan ? 'rgba(251,191,36,0.13)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${complete ? `${T.accent}55` : faltaCapitan ? 'rgba(251,191,36,0.4)' : 'rgba(255,255,255,0.09)'}`,
+                color: complete ? T.accent : faltaCapitan ? 'var(--color-warning)' : 'var(--text-muted)',
               }}>
-                {complete ? '✓ Jornada completa' : `${prog.done} / ${prog.total}`}
+                {complete ? '✓ Jornada completa'
+                  : faltaCapitan ? 'Falta tu capitán'
+                  : `${prog.done} / ${prog.total}`}
               </span>
             </div>
+
+            {/* Dónde está ese capitán que falta. La chapa de arriba avisa, pero
+                el botón vive dentro de las tarjetas y hay nueve iguales: sin
+                esta línea el aviso es un reproche sin instrucciones. */}
+            {faltaCapitan && (
+              <div
+                className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3"
+                style={{
+                  borderRadius: 'var(--radius-card)',
+                  background: 'rgba(251,191,36,0.07)',
+                  border: '1px solid rgba(251,191,36,0.28)',
+                }}
+              >
+                <span aria-hidden style={{ display: 'inline-flex', color: 'var(--color-warning)' }}>
+                  <StarIcon size={14} />
+                </span>
+                <p style={{ fontFamily: 'var(--font-sport)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  <strong style={{ color: '#F4F4FA' }}>Te falta elegir capitán.</strong>{' '}
+                  Toca «Hacer capitán» en el partido que quieras doblar — es gratis y solo puedes poner uno.
+                </p>
+              </div>
+            )}
 
             {/* El Partidazo ABRE la Jornada, a ancho completo, con independencia
                 del día en que caiga: en una semana puede ser el partido del
@@ -774,6 +834,7 @@ export default function FootballClient() {
                   animDelay={0}
                   nowMs={nowMs}
                   deadlineMs={jornada.firstLockAt}
+                  consensus={consensus[jornada.featured.id]}
                 />
               </div>
             )}
@@ -807,6 +868,7 @@ export default function FootballClient() {
                         animDelay={ji === 0 ? i * 60 : 0}
                         nowMs={nowMs}
                   deadlineMs={jornada.firstLockAt}
+                  consensus={consensus[ev.id]}
                       />
                     ))}
                   </div>
@@ -848,6 +910,7 @@ export default function FootballClient() {
                       animDelay={0}
                       nowMs={nowMs}
                   deadlineMs={jornada.firstLockAt}
+                  consensus={consensus[ev.id]}
                     />
                   ))}
                 </div>
@@ -871,6 +934,7 @@ export default function FootballClient() {
           // y los ya cerrados no se pueden hacer.
           picks={[...pendingIds].filter(id => predictedIds.has(id)).length}
           total={pendingIds.size}
+          complete={jornadas.every(j => j.pending.length === 0 || jornadaComplete(j, preds))}
           accent={T.accent}
           busy={signingIn}
           onSignIn={handleSignIn}

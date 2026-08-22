@@ -16,16 +16,19 @@
 import { LockIcon } from '@/components/icons/GameIcons'
 
 export default function GuestSaveBar({
-  picks, total, accent, busy, onSignIn,
+  picks, total, complete, accent, busy, onSignIn,
 }: {
   picks: number
   total: number
+  /** Lo decide el padre con la misma regla que el resto de la pantalla: todos
+   *  los picks Y capitán. Calcularlo aquí como `picks >= total` decía "lo
+   *  tienes todo" a quien aún no había nombrado capitán. */
+  complete: boolean
   accent: string
   busy: boolean
   onSignIn: () => void
 }) {
   if (picks <= 0) return null
-  const complete = total > 0 && picks >= total
 
   return (
     // Reutiliza la primitiva sticky del sitio: en móvil se eleva sobre la

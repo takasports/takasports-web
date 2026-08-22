@@ -11,7 +11,7 @@
 
 import { toWeekKey } from '@/lib/football-ranked'
 import { SOURCE_TZ } from '@/lib/timezone'
-import { SOCCER_LOCK_MS, type SoccerEvent } from './types'
+import { SOCCER_LOCK_MS, type SoccerEvent, type PredMap } from './types'
 
 const DAYS_ES   = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 const MONTHS_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
@@ -232,6 +232,35 @@ export function jornadaProgress(jornada: Jornada, predictedIds: ReadonlySet<stri
     done:  jornada.events.filter(e => predictedIds.has(e.id)).length,
     total: jornada.events.length,
   }
+}
+
+/**
+ * ¿Ha nombrado capitán en esta Jornada?
+ *
+ * Importa porque el ×2 es valor esperado REGALADO: doblar el pick más seguro
+ * suma un par de puntos y no cuesta nada. Un juego no debería tener una jugada
+ * de ganancia garantizada que sea fácil pasar por alto — y el botón sale en las
+ * nueve tarjetas, así que se lee como decoración repetida en vez de como "hay
+ * uno y solo uno". Sin esto, se podía rellenar la Jornada entera, leer
+ * "✓ Jornada completa" y haber dejado puntos encima de la mesa sin enterarse.
+ */
+export function hasCaptain(jornada: Jornada, preds: PredMap): boolean {
+  return jornada.events.some(e => preds[e.id]?.prediction?.captain === true)
+}
+
+/**
+ * Una Jornada está completa cuando están TODOS los picks y hay capitán.
+ *
+ * Con la Jornada ya cerrada se deja de exigir el capitán: no se puede nombrar,
+ * así que reclamarlo sería marcar como incompleto algo que el usuario ya no
+ * puede arreglar.
+ */
+export function jornadaComplete(jornada: Jornada, preds: PredMap): boolean {
+  const total = jornada.events.length
+  if (total === 0) return false
+  const conPick = jornada.events.filter(e => preds[e.id]).length
+  if (conPick < total) return false
+  return jornada.pending.length === 0 || hasCaptain(jornada, preds)
 }
 
 // ── Pleno de la Jornada ──────────────────────────────────────────────────────
