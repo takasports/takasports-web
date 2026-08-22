@@ -70,13 +70,13 @@ export async function GET(req: NextRequest) {
 interface PickBody {
   event_id: string
   pick: '1' | 'X' | '2' | 'a' | 'b'
-  /** ME1 — Marcador exacto opcional (solo Mundial). */
+  /** Marcador exacto opcional (fútbol). No es un extra: SUSTITUYE al
+   *  pronóstico de tendencia en ese partido — ver migración 128. */
   exactScore?: { home: number; away: number }
   /** UF3 — Método de victoria predicho (solo UFC, opcional). */
   method?: 'KO' | 'SUB' | 'DEC'
 }
 
-const MAX_EXACT_ACTIVE = 5
 const SOCCER_PICKS = new Set(['1', 'X', '2'])
 const UFC_PICKS    = new Set(['a', 'b'])
 const UFC_METHODS  = new Set(['KO', 'SUB', 'DEC'])
@@ -192,38 +192,14 @@ export async function POST(req: NextRequest) {
     .eq('event_id', body.event_id)
     .maybeSingle()
 
-  const existingPrediction = (existing as { prediction?: { exactScore?: { home: number; away: number } } } | null)?.prediction
-  const hadExact = !!existingPrediction?.exactScore
-
-  // ME1 — Si se está añadiendo un exact NUEVO (no había antes en este evento),
-  // verificar que no excedemos MAX_EXACT_ACTIVE para el user.
-  if (exactScore && !hadExact) {
-    const { data: openEvents } = await sb
-      .from('ranked_events')
-      .select('id')
-      .eq('sport', ev.sport)
-      .neq('status', 'resolved')
-    const openIds = (openEvents ?? []).map((e: { id: string }) => e.id)
-    if (openIds.length > 0) {
-      const { data: activeExacts } = await sb
-        .from('ranked_predictions')
-        .select('event_id, prediction')
-        .eq('user_id', user.id)
-        .in('event_id', openIds)
-      const count = (activeExacts ?? [])
-        .filter((r) => !!(r as { prediction?: { exactScore?: unknown } }).prediction?.exactScore)
-        .length
-      if (count >= MAX_EXACT_ACTIVE) {
-        return NextResponse.json(
-          {
-            error: 'exact_limit',
-            message: `Ya tienes ${MAX_EXACT_ACTIVE} marcadores exactos activos. Espera al cierre de alguno antes de añadir otro.`,
-          },
-          { status: 409 },
-        )
-      }
-    }
-  }
+  // Ya NO hay cupo de marcadores exactos. Lo hubo (5 activos por usuario)
+  // mientras el exacto era un bonus que solo sumaba: sin tope, la jugada
+  // óptima era ponerlo en todos los partidos, porque fallarlo salía gratis.
+  // Desde la migración 128 el exacto SUSTITUYE al pronóstico de tendencia —
+  // clavarlo paga 12 pts (24 en el Partidazo) y fallarlo vale 0 aunque
+  // acertaras el ganador—, así que el riesgo es su propio límite: quien
+  // quiera jugarlos todos está apostando su Jornada entera y es una decisión
+  // legítima, no un exploit. Un tope aquí solo servía para prohibirla.
 
   // Construye el JSONB final. Las keys opcionales se omiten cuando faltan.
   //   Fútbol: { pick: '1'|'X'|'2', exactScore?: {home, away} }

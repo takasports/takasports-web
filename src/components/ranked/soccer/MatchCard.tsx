@@ -9,7 +9,7 @@ import PickButton from './PickButton'
 import ExactScoreBlock from './ExactScoreBlock'
 import { timeLabel, formatCountdown } from './jornada'
 import {
-  MAX_ACTIVE_EXACT, SOCCER_LOCK_MS,
+  SOCCER_LOCK_MS,
   type SoccerEvent, type SoccerPick, type SoccerTheme, type LiveScore, type PredictionRow,
 } from './types'
 
@@ -25,7 +25,7 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function MatchCard({
-  event, pred, submitting, theme, onPick, onExactSet, activeExactCount,
+  event, pred, submitting, theme, onPick, onExactSet,
   showExactTooltip, onExactTooltipDismiss, animDelay = 0, liveScore, nowMs,
 }: {
   event: SoccerEvent
@@ -35,7 +35,6 @@ export default function MatchCard({
   liveScore?: LiveScore
   onPick: (id: string, pick: SoccerPick) => void
   onExactSet: (id: string, exact: { home: number; away: number } | null) => void
-  activeExactCount: number
   showExactTooltip?: boolean
   onExactTooltipDismiss?: () => void
   animDelay?: number
@@ -50,7 +49,6 @@ export default function MatchCard({
   const winner     = event.result?.winner ?? null
   const pts        = pred?.points_awarded ?? null
   const [shared, setShared] = useState(false)
-  const exactSlotAvailable = !!exactScore || activeExactCount < MAX_ACTIVE_EXACT
 
   const lockMs   = new Date(event.event_date).getTime() - SOCCER_LOCK_MS - nowMs
   const isLocked = lockMs <= 0
@@ -88,10 +86,10 @@ export default function MatchCard({
   )
   const hit = isResolved && myPick != null && myPick === winner
 
-  /** Por qué se pagó lo que se pagó. Sin esto, un "+12" no se entiende. */
+  /** Por qué se pagó lo que se pagó. Sin esto, un "+24" no se entiende. */
   const winReason = [
-    event.featured ? 'Partido del Día ×2' : null,
-    exactHit ? 'marcador exacto' : null,
+    event.featured ? 'Partidazo ×2' : null,
+    exactHit ? 'marcador clavado' : null,
   ].filter(Boolean).join(' · ')
 
   const teamOf = (v: SoccerPick | null) =>
@@ -301,14 +299,23 @@ export default function MatchCard({
               </span>
               {exactScore && (
                 <>
-                  <span style={{ fontFamily: 'var(--font-sport)', fontSize: 8.5, fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginLeft: 6 }}>Tu marcador</span>
+                  <span style={{ fontFamily: 'var(--font-sport)', fontSize: 8.5, fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginLeft: 6 }}>Tu apuesta</span>
                   <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: exactHit ? theme.accent : 'var(--text-secondary)' }}>
                     {exactScore.home} - {exactScore.away}
                   </span>
                 </>
               )}
+              {/* Acertar el ganador y HABER apostado al marcador no es lo
+                  mismo que acertar a secas: en ese caso el partido pagó 0.
+                  Decir solo "✓ acertado" al lado de un +0 es incoherente. */}
               <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 800, color: 'var(--text-muted)' }}>
-                {exactHit ? '✓ clavado' : hit ? '✓ acertado' : `ganó ${teamOf(winner)}`}
+                {exactHit
+                  ? '✓ clavado'
+                  : exactScore && hit
+                  ? 'ganador sí, marcador no'
+                  : hit
+                  ? '✓ acertado'
+                  : `ganó ${teamOf(winner)}`}
               </span>
             </>
           ) : (
@@ -352,7 +359,6 @@ export default function MatchCard({
         isClosed={isClosed}
         winner={winner}
         submitting={submitting}
-        exactSlotAvailable={exactSlotAvailable}
         onSet={(v) => onExactSet(event.id, v)}
         showTooltip={showExactTooltip === true}
         onTooltipDismiss={onExactTooltipDismiss}

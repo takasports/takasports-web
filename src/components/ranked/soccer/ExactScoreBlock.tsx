@@ -2,17 +2,24 @@
 
 import { useState } from 'react'
 import { TargetIcon, LightbulbIcon } from '@/components/icons/GameIcons'
-import { MAX_ACTIVE_EXACT, type SoccerEvent, type SoccerPick } from './types'
+import { SOCCER_POINTS, soccerPayout, type SoccerEvent, type SoccerPick } from './types'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Marcador exacto. Cuatro modos, en este orden:
-//   4. Lectura   — partido cerrado/resuelto y el usuario había puesto marcador.
+// Marcador exacto — la jugada de riesgo. Cuatro modos, en este orden:
+//   4. Lectura   — partido cerrado/resuelto y el usuario había apostado.
 //   1. Sin pick  — pista sutil (primero hay que elegir ganador).
-//   2. Con pick  — CTA para añadirlo.
+//   2. Con pick  — CTA para apostar.
 //   3a/3b. Con marcador — resumen compacto o editor abierto.
 //
-// Trasladado del cliente del Mundial sin cambios de comportamiento: la paleta
-// morada es la del producto (puntos Taka), no la del torneo, así que se queda.
+// Lo importante de este bloque es lo que DICE, no lo que hace. Nació como un
+// bonus que solo sumaba (+3 si lo clavabas, nada si no) y con cinco huecos
+// gratis: rellenarlos siempre era la jugada óptima, así que no era una
+// decisión, era trabajo. Desde la migración 128 el marcador SUSTITUYE al
+// pronóstico de tendencia: 12 pts si lo clavas, 0 si no, aunque hubieras
+// acertado el ganador. Toda la copia de aquí existe para que el usuario
+// entienda ese canje ANTES de pulsar, no al ver el resultado.
+//
+// La paleta morada es la del producto (puntos Taka), no la del torneo.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ScoreStepper({
@@ -68,7 +75,7 @@ function short(s: string, max = 10): string {
 
 export default function ExactScoreBlock({
   event, myPick, exactScore, isOpen, isResolved, isClosed,
-  winner, submitting, exactSlotAvailable, onSet,
+  winner, submitting, onSet,
   showTooltip, onTooltipDismiss,
 }: {
   event: SoccerEvent
@@ -79,12 +86,14 @@ export default function ExactScoreBlock({
   isClosed: boolean
   winner: SoccerPick | null
   submitting: boolean
-  exactSlotAvailable: boolean
   onSet: (v: { home: number; away: number } | null) => void
   showTooltip?: boolean
   onTooltipDismiss?: () => void
 }) {
-  const bonusValue = event.featured ? 6 : 3
+  // Lo que paga clavarlo y lo que se renuncia por intentarlo. Ambos salen de
+  // `soccerPayout`, que es el espejo del reparto real del servidor.
+  const exactPts    = soccerPayout(event.featured, true)
+  const tendencyPts = soccerPayout(event.featured, false)
   const [editorOpen, setEditorOpen] = useState(false)
 
   // ── 4. Modo lectura ──
@@ -112,9 +121,13 @@ export default function ExactScoreBlock({
             padding: '2px 7px', borderRadius: 999,
             background: 'rgba(74,222,128,0.22)', color: '#86EFAC',
             fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900, letterSpacing: '0.08em',
-          }}>✓ CLAVADO · +{bonusValue} PTS</span>
+          }}>✓ CLAVADO · +{exactPts} PTS</span>
         )
       } else if (trendOk && realHome != null) {
+        // Acertó el ganador pero falló los goles: la apuesta se llevó por
+        // delante los puntos de tendencia. Se dice explícitamente, con el
+        // resultado real al lado — es el único momento en que el usuario
+        // aprende de verdad lo que cuesta esta jugada.
         bg = 'rgba(249,115,22,0.08)'
         border = 'rgba(249,115,22,0.28)'
         labelColor = '#FED7AA'
@@ -122,7 +135,7 @@ export default function ExactScoreBlock({
           <span style={{
             fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 700,
             color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em',
-          }}>fue {realHome}-{realAway}</span>
+          }}>fue {realHome}-{realAway} · 0 pts (apostaste los {tendencyPts})</span>
         )
       } else {
         bg = 'rgba(255,255,255,0.03)'
@@ -141,7 +154,7 @@ export default function ExactScoreBlock({
         <span style={{
           fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
           color: labelColor, letterSpacing: '0.08em',
-        }}>MI MARCADOR</span>
+        }}>MI APUESTA</span>
         <span style={{
           fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 900,
           color: '#fff', letterSpacing: '0.02em',
@@ -167,7 +180,7 @@ export default function ExactScoreBlock({
           flex: 1, fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 700,
           color: 'rgba(167,139,250,0.65)', letterSpacing: '0.02em',
         }}>
-          Marcador exacto · <strong style={{ color: '#C4B5FD' }}>+{bonusValue} pts</strong> si lo clavas
+          Apuesta al marcador · <strong style={{ color: '#C4B5FD' }}>{exactPts} pts</strong> si lo clavas
         </span>
         <span style={{
           fontFamily: 'var(--font-sport)', fontSize: 8, fontWeight: 800,
@@ -181,7 +194,7 @@ export default function ExactScoreBlock({
   if (!exactScore) {
     return (
       <div style={{ marginTop: 10 }}>
-        {showTooltip && exactSlotAvailable && (
+        {showTooltip && (
           <div
             role="tooltip"
             // En el flujo, no flotando. Iba en `position:absolute; bottom:100%`
@@ -201,7 +214,8 @@ export default function ExactScoreBlock({
               flex: 1, margin: 0, fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 700,
               color: '#fff', lineHeight: 1.35, letterSpacing: '0.01em',
             }}>
-              ¿Te atreves con el marcador exacto? <strong style={{ color: '#FDE68A' }}>+{bonusValue} pts</strong> si lo clavas.
+              ¿Te atreves con el marcador? Cambias tus {tendencyPts} pts por{' '}
+              <strong style={{ color: '#FDE68A' }}>{exactPts}</strong> — pero si no lo clavas, ese partido vale 0.
             </p>
             <button
               type="button"
@@ -215,42 +229,43 @@ export default function ExactScoreBlock({
             >✕</button>
           </div>
         )}
+        {/* Ya no hay cupo que gastar, así que el botón no se deshabilita nunca:
+            lo único que hay que comunicar es el CANJE. El "en vez de N" va en
+            el propio botón —no en un tooltip que se descarta— porque es la
+            mitad de la decisión y tiene que seguir ahí la décima vez. */}
         <button
           type="button"
           onClick={() => {
-            if (!exactSlotAvailable) return
             onSet({ home: 0, away: 0 })
             setEditorOpen(true)
             onTooltipDismiss?.()
           }}
-          disabled={!exactSlotAvailable || submitting}
+          disabled={submitting}
           style={{
             width: '100%',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             padding: '10px 12px', borderRadius: 'var(--radius-card)',
-            background: exactSlotAvailable
-              ? 'linear-gradient(145deg, rgba(167,139,250,0.18) 0%, rgba(124,58,237,0.08) 100%)'
-              : 'rgba(255,255,255,0.025)',
-            border: exactSlotAvailable
-              ? '1px solid rgba(167,139,250,0.4)'
-              : '1px dashed rgba(255,255,255,0.08)',
-            color: exactSlotAvailable ? '#E9D5FF' : 'rgba(255,255,255,0.3)',
-            cursor: exactSlotAvailable && !submitting ? 'pointer' : 'not-allowed',
+            background: 'linear-gradient(145deg, rgba(167,139,250,0.18) 0%, rgba(124,58,237,0.08) 100%)',
+            border: '1px solid rgba(167,139,250,0.4)',
+            color: '#E9D5FF',
+            cursor: submitting ? 'wait' : 'pointer',
             fontFamily: 'var(--font-sport)',
           }}
         >
           <span style={{ display: 'inline-flex', lineHeight: 1 }} aria-hidden><TargetIcon size={14} /></span>
           <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            {exactSlotAvailable ? 'Predecir marcador' : `Marcador exacto (${MAX_ACTIVE_EXACT}/${MAX_ACTIVE_EXACT} usados)`}
+            Apostar al marcador
           </span>
-          {exactSlotAvailable && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 3,
-              padding: '2px 7px', borderRadius: 999,
-              background: 'rgba(196,181,253,0.16)', color: '#C4B5FD',
-              fontSize: 9, fontWeight: 900, letterSpacing: '0.06em',
-            }}>+{bonusValue} PTS</span>
-          )}
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            padding: '2px 7px', borderRadius: 999,
+            background: 'rgba(196,181,253,0.16)', color: '#C4B5FD',
+            fontSize: 9, fontWeight: 900, letterSpacing: '0.06em',
+          }}>{exactPts} PTS</span>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
+            color: 'rgba(255,255,255,0.42)',
+          }}>en vez de {tendencyPts}</span>
         </button>
       </div>
     )
@@ -269,17 +284,23 @@ export default function ExactScoreBlock({
         <span style={{
           fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
           color: '#C4B5FD', letterSpacing: '0.08em',
-        }}>MI MARCADOR</span>
+        }}>MI APUESTA</span>
         <span style={{
           fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 900,
           color: '#fff', letterSpacing: '0.02em', lineHeight: 1,
         }}>{exactScore.home} - {exactScore.away}</span>
+        {/* El "o 0" viaja con el marcador hasta el cierre: si solo apareciera
+            al elegirlo, al repasar la Jornada parecería puntos asegurados. */}
+        <span style={{
+          fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800,
+          color: 'rgba(196,181,253,0.62)', letterSpacing: '0.05em',
+        }}>{exactPts} pts o 0</span>
         <button
           type="button"
           onClick={() => setEditorOpen(true)}
           disabled={submitting}
-          aria-label="Editar marcador exacto"
-          title="Puedes editarlo hasta 1 h antes del partido"
+          aria-label="Editar mi apuesta al marcador"
+          title="Puedes cambiarla o retirarla hasta 1 h antes del partido"
           style={{
             marginLeft: 'auto',
             display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -306,11 +327,11 @@ export default function ExactScoreBlock({
         <span style={{
           fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
           color: '#C4B5FD', letterSpacing: '0.1em',
-        }}>MI MARCADOR</span>
+        }}>MI APUESTA</span>
         <span style={{
           fontFamily: 'var(--font-sport)', fontSize: 8, fontWeight: 800,
           color: 'rgba(196,181,253,0.5)', letterSpacing: '0.06em',
-        }}>+{bonusValue} PTS SI LO CLAVAS</span>
+        }}>{exactPts} PTS SI LO CLAVAS · 0 SI NO</span>
         <button
           type="button"
           onClick={() => setEditorOpen(false)}
@@ -360,7 +381,7 @@ export default function ExactScoreBlock({
             cursor: submitting ? 'wait' : 'pointer', textDecoration: 'underline',
             textUnderlineOffset: 3,
           }}
-        >Quitar marcador</button>
+        >Volver a {tendencyPts} pts</button>
         <button
           type="button"
           onClick={() => setEditorOpen(false)}

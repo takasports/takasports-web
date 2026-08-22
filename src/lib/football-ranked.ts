@@ -98,8 +98,11 @@ export const RELATIVE_THRESHOLD = 0.6
  *  corta pero de partidazos antes que rellenarla con morralla. */
 export const HARD_FLOOR_RATIO = 0.4
 
-/** Ventana de fixture que se abre a predicción, en días. Con esto siempre hay
- *  al menos una semana completa por delante para elegir. */
+/** Ventana de fixture que se abre a predicción, en días. Tiene que dar de sí
+ *  para que la semana SIGUIENTE quepa ENTERA (lunes a domingo) antes de que la
+ *  publiquemos: con 10 días, el domingo de la próxima Jornada entra en la
+ *  ventana el jueves anterior, que es cuando se publica. Ver
+ *  `weekEndKey` y el parámetro `horizonDateKey` de `buildRankedWeeks`. */
 export const RANKED_WINDOW_DAYS = 10
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
@@ -174,6 +177,18 @@ export function toWeekKey(isoDate: string): string {
   const at = new Date(Date.UTC(y, m - 1, d, 12))
   const isoDow = at.getUTCDay() === 0 ? 7 : at.getUTCDay()   // lunes=1 … domingo=7
   at.setUTCDate(at.getUTCDate() - (isoDow - 1))
+  return DATE_KEY_FMT.format(at)
+}
+
+/**
+ * Domingo (YYYY-MM-DD) de la semana cuyo lunes es `weekKey`. Es el último día
+ * que puede tener partidos esa Jornada, y por tanto el que decide si ya la
+ * hemos VISTO entera. Ver `buildRankedWeeks`.
+ */
+export function weekEndKey(weekKey: string): string {
+  const [y, m, d] = weekKey.split('-').map(Number)
+  const at = new Date(Date.UTC(y, m - 1, d, 12))
+  at.setUTCDate(at.getUTCDate() + 6)
   return DATE_KEY_FMT.format(at)
 }
 
@@ -259,14 +274,38 @@ export function selectForWeek(fixtures: ScoredFixture[]): RankedWeek | null {
  * pudiera reseleccionar, un partido ya pronosticado podría desaparecer de la
  * Jornada (dejando la predicción huérfana) o perder su x2 a mitad de semana.
  * Publicar es un acto irreversible; el cron solo añade semanas nuevas.
+ *
+ * `horizonDateKey` es el último día del fixture que hemos podido MIRAR (el
+ * final de la ventana que se le pidió a ESPN). Una semana solo se publica si
+ * cabe entera por debajo de él.
+ *
+ * ── Por qué existe este parámetro ──────────────────────────────────────────
+ * Sin él, la regla de oro se volvía contra sí misma. Una semana entra en la
+ * ventana por su LUNES, diez días antes; en esa primera pasada el cron solo ve
+ * el lunes de esa semana, publica la Jornada con los partidos de ese único día
+ * —y como ya está publicada, jamás vuelve a mirarla—. De martes a domingo no
+ * se publica nunca nada.
+ *
+ * Así se rompió de verdad: la Jornada del 24 al 30 de agosto se publicó el 14
+ * con cinco partidos, los cinco del lunes 24, y coronó Partidazo a un
+ * Fulham-Chelsea que solo competía contra otros cuatro partidos de lunes. La
+ * del 31 igual. Al usuario le aparecían tres "Jornadas" apiladas, dos de ellas
+ * un día suelto disfrazado de semana.
+ *
+ * Exigiendo la semana completa, cada Jornada se publica el jueves anterior con
+ * su fixture entero delante y eligiendo entre todos sus partidos.
  */
 export function buildRankedWeeks(
   fixtures: ScoredFixture[],
   skipWeekKeys: ReadonlySet<string> = new Set(),
+  horizonDateKey?: string,
 ): RankedWeek[] {
   const byWeek = new Map<string, ScoredFixture[]>()
   for (const fx of fixtures) {
     if (skipWeekKeys.has(fx.weekKey)) continue
+    // Semana aún a medio ver: se deja para una pasada futura, cuando su
+    // domingo también esté dentro de la ventana.
+    if (horizonDateKey && weekEndKey(fx.weekKey) > horizonDateKey) continue
     const bucket = byWeek.get(fx.weekKey)
     if (bucket) bucket.push(fx)
     else byWeek.set(fx.weekKey, [fx])

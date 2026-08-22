@@ -7,7 +7,8 @@
 // Requiere header `x-cron-secret` o `Authorization: Bearer <CRON_SECRET>`.
 //
 // Hace cuatro cosas, en este orden:
-//   1. PUBLICAR  — solo semanas que aún no existen en base de datos.
+//   1. PUBLICAR  — solo semanas que aún no existen en base de datos Y cuyo
+//                  fixture se ve entero (lunes a domingo) dentro de la ventana.
 //   2. LIQUIDAR  — actualiza status/result de los ya publicados y reparte
 //                  puntos de los que ESPN da por terminados.
 //   3. PLENO     — premia a quien clavó una Jornada entera, en cuanto cierra.
@@ -36,6 +37,7 @@ import {
   scoreFixtures,
   rankedFootballId,
   toDateKey,
+  weekEndKey,
   type FootballFixture,
 } from '@/lib/football-ranked'
 
@@ -81,8 +83,14 @@ function yyyymmdd(d: Date): string {
  *  abre a predicción. */
 function espnDateRange(now = new Date()): string {
   const from = new Date(now); from.setUTCDate(now.getUTCDate() - LOOKBACK_DAYS)
-  const to   = new Date(now); to.setUTCDate(now.getUTCDate() + RANKED_WINDOW_DAYS)
-  return `${yyyymmdd(from)}-${yyyymmdd(to)}`
+  return `${yyyymmdd(from)}-${yyyymmdd(windowEnd(now))}`
+}
+
+/** Último día del fixture que esta pasada llega a ver. Es el horizonte que
+ *  decide qué Jornadas están completas y se pueden publicar. */
+function windowEnd(now = new Date()): Date {
+  const to = new Date(now); to.setUTCDate(now.getUTCDate() + RANKED_WINDOW_DAYS)
+  return to
 }
 
 function scoreToInt(s: string | { value: number } | undefined): number | null {
@@ -267,7 +275,12 @@ async function handle(req: Request) {
   // regalar puntos.
   const todayKey = toDateKey(new Date().toISOString())
   const publishable = scoreFixtures(fixtures).filter(f => f.dateKey >= todayKey)
-  const newWeeks = buildRankedWeeks(publishable, publishedWeeks)
+  // Solo semanas que hemos visto ENTERAS. Una Jornada publicada no se
+  // recalcula nunca, así que publicarla con medio fixture delante la congela
+  // coja para siempre — es lo que dejaba "Jornadas" de un solo día con un
+  // Partidazo elegido entre cinco partidos de lunes. Ver `buildRankedWeeks`.
+  const horizonKey = toDateKey(windowEnd().toISOString())
+  const newWeeks = buildRankedWeeks(publishable, publishedWeeks, horizonKey)
 
   let published = 0
   for (const week of newWeeks) {
@@ -371,10 +384,21 @@ async function handle(req: Request) {
     )
   }
 
+  // Semanas con partidos candidatos que HOY no se publican por no verse
+  // enteras. No es un error: se publicarán solas cuando su domingo entre en la
+  // ventana. Se listan para que una Jornada que no aparece nunca se pueda
+  // diagnosticar desde la respuesta del cron.
+  const deferredWeeks = [...new Set(
+    publishable
+      .filter(f => !publishedWeeks.has(f.weekKey) && weekEndKey(f.weekKey) > horizonKey)
+      .map(f => f.weekKey),
+  )].sort()
+
   return NextResponse.json({
     ok: true,
     fetched:   fixtures.length,
     newWeeks:  newWeeks.map(w => ({ week: w.weekKey, matches: w.matches.length })),
+    deferredWeeks,
     published,
     resolved,
     plenos,

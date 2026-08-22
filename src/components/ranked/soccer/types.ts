@@ -63,8 +63,8 @@ export interface PredictionRow {
   event_id:   string
   prediction: {
     pick: SoccerPick
-    /** Marcador exacto opcional: +3 pts (+6 si el partido es el destacado)
-     *  cuando coincide con el resultado real Y la tendencia es correcta. */
+    /** Marcador exacto opcional. NO es un extra sobre la tendencia: la
+     *  SUSTITUYE. Ver SOCCER_POINTS. */
     exactScore?: { home: number; away: number }
   }
   points_awarded: number | null
@@ -108,5 +108,32 @@ export const FOOTBALL_THEME: SoccerTheme = {
  *  un botón que el servidor va a rechazar. */
 export const SOCCER_LOCK_MS = 60 * 60 * 1000
 
-/** Máximo de marcadores exactos activos por usuario (validado server-side). */
-export const MAX_ACTIVE_EXACT = 5
+/**
+ * Lo que paga cada jugada. Espejo EXACTO de `score_ranked_prediction`
+ * (migración 128) — si cambias los números allí, cámbialos aquí: son los que
+ * la tarjeta le promete al usuario ANTES de jugar.
+ *
+ * El marcador exacto no suma sobre la tendencia, la REEMPLAZA: en el partido
+ * donde lo pongas, o clavas los goles o ese partido vale cero, aunque hubieras
+ * acertado quién ganaba. Cambias 3 puntos probables por 12 improbables.
+ *
+ * Fallar un exacto NO tumba el Pleno: `is_correct` sigue midiendo solo la
+ * tendencia, así que el partido puntúa 0 pero cuenta como acertado para el
+ * bonus de Jornada completa. Sin ese consuelo la apuesta no sería jugable.
+ */
+export const SOCCER_POINTS = {
+  /** Tendencia (1·X·2) acertada. */
+  TENDENCY:          3,
+  /** Marcador exacto clavado. Sustituye a TENDENCY, no se suma. */
+  EXACT:            12,
+  /** El Partidazo de la Jornada dobla lo que pague la jugada. */
+  FEATURED_MULTIPLIER: 2,
+} as const
+
+/** Lo que paga una jugada en un partido concreto, ya con el x2 del Partidazo
+ *  aplicado si toca. Una sola función para que ninguna tarjeta se invente un
+ *  número distinto del que reparte el servidor. */
+export function soccerPayout(featured: boolean, exact: boolean): number {
+  const base = exact ? SOCCER_POINTS.EXACT : SOCCER_POINTS.TENDENCY
+  return featured ? base * SOCCER_POINTS.FEATURED_MULTIPLIER : base
+}

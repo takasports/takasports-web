@@ -9,6 +9,7 @@ import {
   scoreFixtures,
   selectForWeek,
   buildRankedWeeks,
+  weekEndKey,
   rankedFootballId,
   type FootballFixture,
 } from './football-ranked'
@@ -289,6 +290,50 @@ describe('buildRankedWeeks', () => {
       fx({ espnId: 'd', comp: 'Serie A',   isoDate: '2026-08-17T19:00Z' }),
     ])
     expect(buildRankedWeeks(fixtures)).toEqual(buildRankedWeeks([...fixtures].reverse()))
+  })
+})
+
+// ── Horizonte: no publicar una semana a medio ver ────────────────────────────
+
+describe('weekEndKey', () => {
+  it('devuelve el domingo de la semana cuyo lunes se le pasa', () => {
+    expect(weekEndKey('2026-08-24')).toBe('2026-08-30')
+    // Cambio de mes por el medio.
+    expect(weekEndKey('2026-08-31')).toBe('2026-09-06')
+  })
+})
+
+describe('buildRankedWeeks · horizonte', () => {
+  // Este es el fallo que se llevó por delante la sección: una semana entra en
+  // la ventana de 10 días por su LUNES, así que en la primera pasada el cron
+  // solo veía ese día. Publicaba la Jornada con los partidos del lunes y, como
+  // publicar es irreversible, el resto de la semana no se publicaba jamás.
+  const semanaDel24 = () => scoreFixtures([
+    fx({ espnId: 'lun', isoDate: '2026-08-24T19:00Z', comp: 'Premier', home: 'Fulham',   away: 'Chelsea' }),
+    fx({ espnId: 'sab', isoDate: '2026-08-29T17:00Z', comp: 'LaLiga',  home: 'Barcelona', away: 'Sevilla' }),
+    fx({ espnId: 'dom', isoDate: '2026-08-30T19:00Z', comp: 'Premier', home: 'Arsenal',   away: 'Liverpool' }),
+  ])
+
+  it('aplaza la semana mientras solo se le vea el lunes', () => {
+    // Horizonte = lunes 24: el sábado y el domingo aún no se han mirado.
+    expect(buildRankedWeeks(semanaDel24(), new Set(), '2026-08-24')).toEqual([])
+  })
+
+  it('la publica entera en cuanto su domingo entra en la ventana', () => {
+    const weeks = buildRankedWeeks(semanaDel24(), new Set(), '2026-08-30')
+    expect(weeks).toHaveLength(1)
+    expect(weeks[0].matches).toHaveLength(3)
+  })
+
+  it('el Partidazo se elige entre TODA la semana, no entre los del primer día', () => {
+    // Con horizonte corto el único candidato sería el lunes; con la semana
+    // entera delante gana el partido de más nivel, caiga el día que caiga.
+    const weeks = buildRankedWeeks(semanaDel24(), new Set(), '2026-08-30')
+    expect(weeks[0].featuredEspnId).not.toBe('lun')
+  })
+
+  it('sin horizonte se comporta como antes (los consumidores que no lo pasan)', () => {
+    expect(buildRankedWeeks(semanaDel24())).toHaveLength(1)
   })
 })
 

@@ -106,13 +106,26 @@ export interface DayGroup {
 export interface Jornada {
   weekKey: string
   label:   string
-  /** Todos los partidos de la semana, en orden cronológico. */
+  /** Todos los partidos de la semana, en orden cronológico. Es el universo del
+   *  Pleno: el bonus exige haber acertado TODOS, incluidos los ya cerrados. */
   events:  SoccerEvent[]
-  /** Los mismos partidos, partidos en bloques por día para las sub-cabeceras
+  /** Los que aún se pueden pronosticar (abiertos y a más de una hora del
+   *  kickoff). Es lo único sobre lo que el usuario puede actuar. */
+  pending: SoccerEvent[]
+  /** Los que ya no admiten pick: bloqueados, en juego o resueltos. Van a un
+   *  bloque aparte, plegado — a mitad de semana son la mayoría de la Jornada y
+   *  mezclados con los abiertos convertían la pantalla en una lista larga
+   *  donde no se distinguía lo jugable de lo que ya pasó. */
+  settled: SoccerEvent[]
+  /** Solo los PENDIENTES, partidos en bloques por día para las sub-cabeceras
    *  de la UI ("sábado 22", "domingo 23"…). */
   days:    DayGroup[]
   /** El Partidazo de la Jornada (x2), si esta semana tiene uno. */
   featured: SoccerEvent | null
+  /** ¿El Partidazo sigue siendo jugable? Solo entonces merece el hueco de
+   *  honor a ancho completo: un Partidazo ya resuelto abriendo la sección es
+   *  un cartel de algo que el usuario ya no puede hacer. */
+  featuredPlayable: boolean
   /** Momento en que se cierra el primer partido aún por jugar: es el deadline
    *  real que le importa al usuario ("te quedan 2 h para completar picks"). */
   firstLockAt: number | null
@@ -134,8 +147,18 @@ export function groupIntoJornadas(events: SoccerEvent[], now: Date = new Date())
     .map(([weekKey, list]) => {
       const sorted = [...list].sort((a, b) => a.event_date.localeCompare(b.event_date))
 
+      // Jugable = abierto Y todavía a más de SOCCER_LOCK_MS del kickoff. El
+      // `status` por sí solo no basta: lo mueve un cron cada media hora, así
+      // que un partido puede seguir 'open' cuando la API ya rechaza picks.
+      const nowMs = now.getTime()
+      const isPending = (e: SoccerEvent) =>
+        e.status === 'open' && new Date(e.event_date).getTime() - SOCCER_LOCK_MS > nowMs
+
+      const pending = sorted.filter(isPending)
+      const settled = sorted.filter(e => !isPending(e))
+
       const byDay = new Map<string, SoccerEvent[]>()
-      for (const ev of sorted) {
+      for (const ev of pending) {
         const dk = dateKeyOf(ev)
         const bucket = byDay.get(dk)
         if (bucket) bucket.push(ev)
@@ -145,23 +168,40 @@ export function groupIntoJornadas(events: SoccerEvent[], now: Date = new Date())
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([dateKey, dayEvents]) => ({ dateKey, label: dayLabel(dateKey, now), events: dayEvents }))
 
-      const locks = sorted
-        .map(e => new Date(e.event_date).getTime() - SOCCER_LOCK_MS)
-        .filter(t => t > now.getTime())
+      const locks = pending.map(e => new Date(e.event_date).getTime() - SOCCER_LOCK_MS)
+
+      // Una semana debería traer UN Partidazo, pero la tabla ha llegado a tener
+      // varios con el mismo week_key (restos del modelo diario anterior). Ante
+      // el empate manda el que la propia Jornada eligió, que es el de mayor
+      // highlight_score; sin él, el primero cronológico —que era justo el
+      // criterio que colaba un partido ya resuelto en el hueco de honor—.
+      const flagged = sorted.filter(e => e.featured)
+      const featured = flagged.length <= 1
+        ? flagged[0] ?? null
+        : [...flagged].sort((a, b) =>
+            (Number(b.meta?.highlight_score ?? 0) - Number(a.meta?.highlight_score ?? 0)) ||
+            a.event_date.localeCompare(b.event_date),
+          )[0]
 
       return {
         weekKey,
         label:       jornadaLabel(weekKey, now),
         events:      sorted,
+        pending,
+        settled,
         days,
-        featured:    sorted.find(e => e.featured) ?? null,
+        featured,
+        featuredPlayable: !!featured && isPending(featured),
         firstLockAt: locks.length > 0 ? Math.min(...locks) : null,
       }
     })
 }
 
 /** Cuántos partidos de la Jornada ya tienen pick. Alimenta el "5/8" de la
- *  cabecera. */
+ *  cabecera. Cuenta sobre TODOS los partidos de la semana, no solo los
+ *  abiertos: es el mismo universo que exige el Pleno, y si el denominador
+ *  encogiera al cerrarse cada partido, la Jornada parecería completa cuando en
+ *  realidad se han escapado picks. */
 export function jornadaProgress(jornada: Jornada, predictedIds: ReadonlySet<string>): { done: number; total: number } {
   return {
     done:  jornada.events.filter(e => predictedIds.has(e.id)).length,

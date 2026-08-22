@@ -8,6 +8,16 @@
 // (cron sync-football); aquí solo se agrupa por `meta.week_key` —nunca se
 // recalcula— y se pinta, con sub-cabeceras por día dentro de cada Jornada.
 //
+// Dos reglas de encuadre, porque esta vista llegó a mostrar diecinueve
+// tarjetas de golpe repartidas en tres "Jornadas":
+//   · Se pintan como mucho DOS Jornadas: la de ahora y la siguiente. Lo que
+//     venga después no se puede pronosticar mejor por verlo con dos semanas de
+//     antelación, solo alarga la página.
+//   · Dentro de cada Jornada, lo cerrado no compite con lo abierto: los
+//     partidos que ya no admiten pick bajan a un bloque plegado al final. A
+//     mitad de semana son la mayoría, y mezclados hacían que la pantalla fuera
+//     larguísima sin que se distinguiera dónde quedaba algo por hacer.
+//
 // Comparte componentes con el archivo del Mundial vía components/ranked/soccer.
 // El cliente del Mundial todavía tiene los suyos propios: se unifica cuando ese
 // archivo se retire (no se refactoriza un producto congelado mientras se
@@ -18,7 +28,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import MatchCard from '@/components/ranked/soccer/MatchCard'
 import { groupIntoJornadas, jornadaProgress, formatCountdown, thisWeekKey, plenoBonus } from '@/components/ranked/soccer/jornada'
 import {
-  FOOTBALL_THEME, MAX_ACTIVE_EXACT,
+  FOOTBALL_THEME, SOCCER_POINTS,
   type SoccerEvent, type SoccerPick, type PredMap, type LiveScore,
 } from '@/components/ranked/soccer/types'
 import { createClient } from '@/lib/supabase'
@@ -31,6 +41,9 @@ import TakaPoint from '@/components/TakaPoint'
 
 const T = FOOTBALL_THEME
 
+/** Cuántas Jornadas se pintan a la vez: la de ahora y la siguiente. */
+const MAX_VISIBLE_JORNADAS = 2
+
 const ANIMATIONS = `
 @keyframes fCardIn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
 @keyframes fFadeInUp { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
@@ -41,6 +54,58 @@ const ANIMATIONS = `
   .fecha-cta { clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%); }
 }
 `
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cómo se puntúa, escrito. Estaba en ninguna parte: ni aquí ni en el hub había
+// una sola línea que dijera cuánto vale acertar, y las tarjetas solo enseñan
+// el premio del partido que estás mirando. Sin esto, la sección pide
+// pronósticos sin decir a cambio de qué, que es lo que la hacía ilegible.
+//
+// Los números salen de SOCCER_POINTS (espejo de la migración 128) para que
+// este cartel no pueda prometer un reparto distinto del que hace el servidor.
+// ─────────────────────────────────────────────────────────────────────────────
+function ScoringStrip({ pleno }: { pleno: number }) {
+  const rules: { pts: string; label: string; hint?: string }[] = [
+    { pts: `${SOCCER_POINTS.TENDENCY}`, label: 'acertar 1 · X · 2' },
+    { pts: `×${SOCCER_POINTS.FEATURED_MULTIPLIER}`, label: 'en el Partidazo' },
+    { pts: `${SOCCER_POINTS.EXACT}`, label: 'clavar el marcador', hint: 'o 0 — sustituye a tu pick' },
+    ...(pleno > 0 ? [{ pts: `+${pleno}`, label: 'pleno de la Jornada', hint: 'aciertas los 1·X·2 de la semana' }] : []),
+  ]
+
+  return (
+    <div
+      className="mb-7 flex flex-wrap items-stretch gap-x-6 gap-y-3 px-4 sm:px-5 py-3"
+      style={{
+        borderRadius: 'var(--radius-card)',
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.06)',
+      }}
+    >
+      <span style={{
+        fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 900,
+        letterSpacing: '0.14em', textTransform: 'uppercase',
+        color: 'var(--text-muted)', alignSelf: 'center',
+      }}>Cómo se puntúa</span>
+      {rules.map(r => (
+        <div key={r.label} className="min-w-0">
+          <p style={{ fontFamily: 'var(--font-sport)', fontSize: 12, lineHeight: 1.3, color: 'var(--text-secondary)' }}>
+            <strong style={{
+              fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900,
+              color: T.accent, marginRight: 6,
+            }}>{r.pts}</strong>
+            {r.label}
+          </p>
+          {r.hint && (
+            <p style={{
+              fontFamily: 'var(--font-sport)', fontSize: 10, lineHeight: 1.3,
+              color: 'var(--text-muted)', marginTop: 1,
+            }}>{r.hint}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function vibrate(ms: number) {
   try { navigator.vibrate?.(ms) } catch { /* sin soporte */ }
@@ -161,11 +226,11 @@ export default function FootballClient() {
         }
         return
       }
-      if (res.status === 409) {
-        const json = await res.json().catch(() => null) as { error?: string; message?: string } | null
-        if (json?.error === 'exact_limit') { setError(json.message ?? `Ya tienes ${MAX_ACTIVE_EXACT} marcadores exactos activos.`); return }
-        await load(); return
-      }
+      // 409 = el partido ya no admite pick (cerrado o dentro de la hora de
+      // bloqueo). Ya no hay cupo de marcadores exactos que agotar, así que
+      // cualquier 409 significa "se te pasó el plazo": se recarga para que la
+      // tarjeta pase a su estado real en vez de dejar un botón que no responde.
+      if (res.status === 409) { await load(); return }
       if (!res.ok) throw new Error('error')
       const data = await res.json() as { prediction?: { prediction: PredMap[string]['prediction'] } }
       if (data.prediction) {
@@ -237,35 +302,42 @@ export default function FootballClient() {
 
   // Las Jornadas de semanas ya pasadas no se listan: la sección es "qué se
   // juega ahora", no un archivo. El historial vive en el perfil y en la Liga
-  // Taka.
+  // Taka. Y del futuro, solo la siguiente — ver la cabecera del archivo.
   const jornadas = useMemo(() => {
     const at = new Date(nowMinute * 60_000)
     const week = thisWeekKey(at)
-    return groupIntoJornadas(events, at).filter(j => j.weekKey >= week)
+    return groupIntoJornadas(events, at)
+      .filter(j => j.weekKey >= week)
+      .slice(0, MAX_VISIBLE_JORNADAS)
   }, [events, nowMinute])
 
   const predictedIds = useMemo(() => new Set(Object.keys(preds)), [preds])
 
-  const activeExactCount = useMemo(() => {
-    const openIds = new Set(events.filter(e => e.status !== 'resolved').map(e => e.id))
-    return Object.keys(preds).filter(id => openIds.has(id) && preds[id]?.prediction?.exactScore).length
+  // ¿Ya ha apostado alguna vez al marcador? Se mira sobre lo que tiene vivo:
+  // si tiene una apuesta en curso, ya conoce la mecánica y el consejo sobra.
+  const hasActiveExact = useMemo(() => {
+    const liveIds = new Set(events.filter(e => e.status !== 'resolved').map(e => e.id))
+    return Object.keys(preds).some(id => liveIds.has(id) && preds[id]?.prediction?.exactScore)
   }, [events, preds])
 
-  // El tooltip del marcador exacto se enseña una sola vez, en el primer partido
-  // con pick y sin marcador.
+  // El consejo del marcador exacto se enseña una sola vez, en el primer partido
+  // pronosticado que aún se pueda apostar.
   const tooltipEventId = useMemo<string | null>(() => {
-    if (exactTipDismissed || activeExactCount > 0) return null
+    if (exactTipDismissed || hasActiveExact) return null
     for (const j of jornadas) {
-      for (const ev of j.events) {
-        if (ev.status !== 'open') continue
+      for (const ev of j.pending) {
         const p = preds[ev.id]?.prediction
         if (p?.pick && !p?.exactScore) return ev.id
       }
     }
     return null
-  }, [jornadas, preds, exactTipDismissed, activeExactCount])
+  }, [jornadas, preds, exactTipDismissed, hasActiveExact])
 
-  const nextJornada = jornadas[0] ?? null
+  // La barra de arriba es "qué puedes hacer ahora", así que apunta a la primera
+  // Jornada con partidos abiertos. Si la de esta semana ya está entera cerrada,
+  // el usuario tiene que ver la siguiente y su cuenta atrás, no una cabecera sin
+  // deadline sobre partidos que ya se jugaron.
+  const nextJornada = jornadas.find(j => j.pending.length > 0) ?? jornadas[0] ?? null
   const totalPts    = Object.values(preds).reduce((a, p) => a + (p.points_awarded ?? 0), 0)
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -304,7 +376,14 @@ export default function FootballClient() {
                 {nextJornada.events.length} {nextJornada.events.length === 1 ? 'partido destacado' : 'partidos destacados'}
                 {(() => {
                   const p = jornadaProgress(nextJornada, predictedIds)
-                  return p.done > 0 ? ` · ${p.done} de ${p.total} pronosticados` : ''
+                  const abiertos = nextJornada.pending.length
+                  // El "abiertos" solo se dice cuando difiere del total: a
+                  // mitad de semana es la diferencia entre "me faltan 3" y "me
+                  // quedan 3 que todavía puedo jugar".
+                  const cola = abiertos > 0 && abiertos < nextJornada.events.length
+                    ? ` · ${abiertos} aún abierto${abiertos === 1 ? '' : 's'}`
+                    : ''
+                  return `${p.done > 0 ? ` · ${p.done} de ${p.total} pronosticados` : ''}${cola}`
                 })()}
               </p>
             </div>
@@ -348,7 +427,7 @@ export default function FootballClient() {
             )}
           </div>
 
-          {nextJornada.featured && (
+          {nextJornada.featured && nextJornada.featuredPlayable && (
             <a
               href={`#jornada-${nextJornada.weekKey}`}
               className="fecha-cta flex items-center justify-center px-6 py-3 sm:py-0"
@@ -378,6 +457,8 @@ export default function FootballClient() {
           </p>
         </div>
       )}
+
+      {nextJornada && <ScoringStrip pleno={plenoBonus(nextJornada.events.length)} />}
 
       {error && (
         <div className="mb-6 rounded-xl px-4 py-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.28)' }}>
@@ -443,7 +524,7 @@ export default function FootballClient() {
                 martes y no tendría jerarquía si esperara su turno cronológico
                 entre el resto. El resto de la Jornada va debajo, agrupado por
                 día — el ritual diario sigue existiendo dentro de la semana. */}
-            {jornada.featured && (
+            {jornada.featured && jornada.featuredPlayable && (
               <div className="mb-3">
                 <MatchCard
                   event={jornada.featured}
@@ -453,17 +534,18 @@ export default function FootballClient() {
                   liveScore={liveScores[jornada.featured.id]}
                   onPick={handlePick}
                   onExactSet={handleExactSet}
-                  activeExactCount={activeExactCount}
                   showExactTooltip={tooltipEventId === jornada.featured.id}
                   onExactTooltipDismiss={dismissExactTip}
-                  animDelay={ji === 0 ? 0 : 0}
+                  animDelay={0}
                   nowMs={nowMs}
                 />
               </div>
             )}
 
             {jornada.days.map(day => {
-              const rest = day.events.filter(e => e.id !== jornada.featured?.id)
+              const rest = jornada.featuredPlayable
+                ? day.events.filter(e => e.id !== jornada.featured?.id)
+                : day.events
               if (rest.length === 0) return null
               return (
                 <div key={day.dateKey} className="mb-3">
@@ -483,7 +565,6 @@ export default function FootballClient() {
                         liveScore={liveScores[ev.id]}
                         onPick={handlePick}
                         onExactSet={handleExactSet}
-                        activeExactCount={activeExactCount}
                         showExactTooltip={tooltipEventId === ev.id}
                         onExactTooltipDismiss={dismissExactTip}
                         animDelay={ji === 0 ? i * 60 : 0}
@@ -494,6 +575,44 @@ export default function FootballClient() {
                 </div>
               )
             })}
+
+            {/* Los que ya no admiten pick. Plegados por defecto: a mitad de
+                semana son la mayoría de la Jornada, y en abierto empujaban lo
+                jugable fuera de pantalla. Se abre solo cuando ya no queda nada
+                abierto —entonces el bloque ES la Jornada y esconderlo dejaría
+                la sección en blanco—. */}
+            {jornada.settled.length > 0 && (
+              <details open={jornada.pending.length === 0} className="mt-1">
+                <summary style={{
+                  cursor: 'pointer', listStyle: 'none',
+                  fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 800,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  color: 'var(--text-muted)', padding: '8px 2px',
+                }}>
+                  Ya cerrados · {jornada.settled.length}
+                  {(() => {
+                    const sinPick = jornada.settled.filter(e => !predictedIds.has(e.id)).length
+                    return sinPick > 0 ? ` (${sinPick} sin pronosticar)` : ''
+                  })()}
+                </summary>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-2">
+                  {jornada.settled.map(ev => (
+                    <MatchCard
+                      key={ev.id}
+                      event={ev}
+                      pred={preds[ev.id]}
+                      submitting={submitting}
+                      theme={T}
+                      liveScore={liveScores[ev.id]}
+                      onPick={handlePick}
+                      onExactSet={handleExactSet}
+                      animDelay={0}
+                      nowMs={nowMs}
+                    />
+                  ))}
+                </div>
+              </details>
+            )}
           </section>
         )
       })}
