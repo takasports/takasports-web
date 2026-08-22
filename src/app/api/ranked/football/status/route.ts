@@ -110,11 +110,19 @@ export async function GET(req: NextRequest) {
   const rows = (myPicks ?? []) as { event_id: string; prediction?: { pick?: string } }[]
   const byId = new Map(current.events.map(e => [e.id, e]))
 
+  // Racha de Jornadas seguidas. `streakCurrent` llevaba desde el principio
+  // declarado en el tipo y sin que nadie lo rellenara: lo calculaba solo
+  // /api/quiniela/status, que es el stack retirado. Ver migración 132 para las
+  // dos reglas que lo hacen justo (una semana sin Jornada no rompe la racha, y
+  // la Jornada en curso tampoco mientras siga viva).
+  const { data: streak } = await admin.rpc('get_football_streak', { p_user: user.id })
+
   return NextResponse.json({
     ...base,
     isAuthed:   true,
     hasPicked:  rows.length > 0,
     picksCount: rows.length,
+    streakCurrent: typeof streak === 'number' ? streak : 0,
     userPicks:  rows.map(r => ({
       home: byId.get(r.event_id)?.team_home ?? '',
       away: byId.get(r.event_id)?.team_away ?? '',

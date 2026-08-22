@@ -36,7 +36,7 @@ import JornadaLeaderboard from '@/components/ranked/soccer/JornadaLeaderboard'
 import {
   readGuestPicks, saveGuestPick, clearGuestPicks, pruneGuestPicks, toPredMap,
 } from '@/components/ranked/soccer/guest-picks'
-import { groupIntoJornadas, jornadaProgress, formatCountdown, thisWeekKey, plenoBonus, weekKeyOf } from '@/components/ranked/soccer/jornada'
+import { groupIntoJornadas, jornadaProgress, formatCountdown, thisWeekKey, plenoBonus, weekKeyOf, jornadaStreak } from '@/components/ranked/soccer/jornada'
 import {
   FOOTBALL_THEME, SOCCER_POINTS,
   type SoccerEvent, type SoccerPick, type PredMap, type LiveScore,
@@ -440,6 +440,13 @@ export default function FootballClient() {
 
   const predictedIds = useMemo(() => new Set(Object.keys(preds)), [preds])
 
+  // Jornadas seguidas jugadas. Solo con sesión: la de un invitado se evaporaría
+  // al cambiar de navegador, y una racha que se pierde sola no motiva, irrita.
+  const racha = useMemo(
+    () => (loggedIn ? jornadaStreak(events, predictedIds) : 0),
+    [loggedIn, events, predictedIds],
+  )
+
   // Lo que el usuario puede pronosticar AHORA MISMO en esta pantalla: los
   // partidos abiertos de todas las Jornadas visibles. Es el universo del que
   // habla la barra de invitado — contar sus picks sobre una Jornada y el total
@@ -474,6 +481,12 @@ export default function FootballClient() {
   // el usuario tiene que ver la siguiente y su cuenta atrás, no una cabecera sin
   // deadline sobre partidos que ya se jugaron.
   const nextJornada = jornadas.find(j => j.pending.length > 0) ?? jornadas[0] ?? null
+
+  // La Jornada abierta sigue en blanco y hay racha que perder.
+  const rachaEnRiesgo = racha >= 2
+    && !!nextJornada
+    && nextJornada.pending.length > 0
+    && nextJornada.pending.every(e => !predictedIds.has(e.id))
 
   // ── Tu Jornada, mientras se juega ──────────────────────────────────────────
   // El sondeo de directo ya existía y cada tarjeta sabía si su pick seguía
@@ -600,6 +613,26 @@ export default function FootballClient() {
                   </p>
                   <p style={{ fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
                     pleno
+                  </p>
+                </div>
+              </>
+            )}
+
+            {racha >= 2 && (
+              <>
+                <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'rgba(255,255,255,0.09)' }} />
+                <div className="whitespace-nowrap" title="Jornadas seguidas en las que has jugado. Una semana sin Jornada no la rompe.">
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 900, color: 'var(--color-warning)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                    🔥 {racha}
+                  </p>
+                  {/* Una racha solo motiva cuando está en juego: mientras la
+                      Jornada siga abierta y no haya tocado nada, se le dice. */}
+                  <p style={{
+                    fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800,
+                    letterSpacing: '0.14em', textTransform: 'uppercase',
+                    color: rachaEnRiesgo ? 'var(--color-warning)' : 'var(--text-muted)', marginTop: 2,
+                  }}>
+                    {rachaEnRiesgo ? 'no la rompas' : 'seguidas'}
                   </p>
                 </div>
               </>

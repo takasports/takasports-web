@@ -265,6 +265,52 @@ export function plenoBonus(matches: number, misses = 0): number {
   return 0
 }
 
+// ── Racha de Jornadas ────────────────────────────────────────────────────────
+
+/**
+ * Jornadas seguidas en las que el usuario ha jugado. Espejo EXACTO de la RPC
+ * `get_football_streak` (migración 132), que es la que sirve el endpoint de
+ * estado para la app y el resto de superficies; aquí se recalcula en cliente
+ * porque la pantalla ya tiene todos los eventos y las predicciones cargados, y
+ * pedir otra vez lo mismo por red sería absurdo.
+ *
+ * Dos reglas la hacen justa, y son las que no hay que perder al tocarla:
+ *   · Una semana SIN Jornada publicada no rompe la racha. Hay semanas sin
+ *     Jornada a propósito (parón de selecciones, o nada que supere el listón),
+ *     y castigar por una semana en la que no se ofreció jugar sería absurdo.
+ *   · La Jornada en curso tampoco la rompe mientras siga viva: todavía se está
+ *     a tiempo. Solo corta una Jornada que acabó entera sin un solo pronóstico.
+ *
+ * Basta con UN pronóstico: la racha premia aparecer, no acertar.
+ */
+export function jornadaStreak(
+  events: SoccerEvent[],
+  predictedIds: ReadonlySet<string>,
+): number {
+  interface Semana { acabada: boolean; jugada: boolean }
+  const porSemana = new Map<string, Semana>()
+
+  for (const ev of events) {
+    const wk = weekKeyOf(ev)
+    const s = porSemana.get(wk) ?? { acabada: true, jugada: false }
+    if (ev.status !== 'resolved') s.acabada = false
+    if (predictedIds.has(ev.id)) s.jugada = true
+    porSemana.set(wk, s)
+  }
+
+  const semanas = [...porSemana.entries()].sort(([a], [b]) => b.localeCompare(a))
+
+  let racha = 0
+  let primera = true
+  for (const [, s] of semanas) {
+    if (s.jugada) racha += 1
+    else if (primera && !s.acabada) { /* sigue viva: ni suma ni corta */ }
+    else break
+    primera = false
+  }
+  return racha
+}
+
 /** Cuenta atrás corta: "2h 14m", "45m", "1d 3h". */
 export function formatCountdown(ms: number): string {
   if (ms <= 0) return '0m'

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   dateKeyOf, weekKeyOf, dayLabel, jornadaLabel, jornadaRangeLabel, groupIntoJornadas,
-  jornadaProgress, formatCountdown, plenoBonus, PLENO_MIN_MATCHES,
+  jornadaProgress, formatCountdown, plenoBonus, PLENO_MIN_MATCHES, jornadaStreak,
 } from './jornada'
 import { SOCCER_LOCK_MS, type SoccerEvent } from './types'
 
@@ -294,5 +294,54 @@ describe('jornadaRangeLabel', () => {
     const b = new Date('2026-09-01T12:00:00Z')
     expect(jornadaLabel('2026-08-24', a)).toBe(jornadaLabel('2026-08-31', b))
     expect(jornadaRangeLabel('2026-08-24')).not.toBe(jornadaRangeLabel('2026-08-31'))
+  })
+})
+
+// ── Racha de Jornadas ────────────────────────────────────────────────────────
+
+describe('jornadaStreak', () => {
+  // Espejo de la RPC get_football_streak (migración 132). Las dos reglas de
+  // abajo son las que la hacen justa; si se pierden, la racha castiga al
+  // usuario por cosas que no dependen de él.
+  const semana = (wk: string, opts: { resuelta?: boolean; n?: number } = {}) =>
+    Array.from({ length: opts.n ?? 2 }, (_, i) => ev({
+      id: `${wk}-${i}`,
+      status: opts.resuelta === false ? 'open' : 'resolved',
+      meta: { week_key: wk },
+    }))
+
+  it('cuenta Jornadas seguidas jugadas', () => {
+    const evs = [...semana('2026-08-03'), ...semana('2026-08-10'), ...semana('2026-08-17')]
+    expect(jornadaStreak(evs, new Set(evs.map(e => e.id)))).toBe(3)
+  })
+
+  it('basta UN pronóstico para conservarla: premia aparecer, no acertar', () => {
+    const evs = [...semana('2026-08-10'), ...semana('2026-08-17')]
+    expect(jornadaStreak(evs, new Set(['2026-08-10-0', '2026-08-17-1']))).toBe(2)
+  })
+
+  it('una Jornada acabada sin jugar la corta', () => {
+    const evs = [...semana('2026-08-03'), ...semana('2026-08-10'), ...semana('2026-08-17')]
+    const jugadas = new Set(['2026-08-03-0', '2026-08-17-0'])   // se saltó la del 10
+    expect(jornadaStreak(evs, jugadas)).toBe(1)
+  })
+
+  it('una semana SIN Jornada publicada NO la corta', () => {
+    // Parón de selecciones, o nada que supere el listón de calidad: no se le
+    // ofreció jugar, así que no se le puede castigar.
+    const evs = [...semana('2026-08-03'), ...semana('2026-08-17')]   // falta la del 10
+    expect(jornadaStreak(evs, new Set(evs.map(e => e.id)))).toBe(2)
+  })
+
+  it('la Jornada en curso sin jugar no la corta: aún está a tiempo', () => {
+    const evs = [
+      ...semana('2026-08-10'),
+      ...semana('2026-08-17', { resuelta: false }),
+    ]
+    expect(jornadaStreak(evs, new Set(['2026-08-10-0']))).toBe(1)
+  })
+
+  it('sin haber jugado nunca, cero', () => {
+    expect(jornadaStreak(semana('2026-08-17'), new Set())).toBe(0)
   })
 })
