@@ -27,8 +27,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { awardBadges } from './badge-awards'
 
-/** Fecha de cierre oficial del torneo. UTC para evitar ambigüedad. */
-export const MUNDIAL_CLOSE_DATE = new Date('2026-07-19T23:59:59Z')
+/**
+ * Fecha de cierre oficial del torneo. UTC para evitar ambigüedad.
+ *
+ * Es LA MISMA que usa la web para dejar de anunciar el Mundial como en juego,
+ * así que vive en un único sitio: `lib/world-cup-phase`. Estuvo escrita a mano
+ * en los dos ficheros y dos copias de un dato acaban divergiendo.
+ */
+export { WC_END as MUNDIAL_CLOSE_DATE } from './world-cup-phase'
+import { WC_END as MUNDIAL_CLOSE_DATE } from './world-cup-phase'
 
 export interface MundialPodiumEntry {
   userId: string
