@@ -11,6 +11,7 @@
 //                  fixture se ve entero (lunes a domingo) dentro de la ventana.
 //   2. LIQUIDAR  — actualiza status/result de los ya publicados y reparte
 //                  puntos de los que ESPN da por terminados.
+//   2b. RESCATE  — liquida partidos que se quedaron atrás del LOOKBACK.
 //   3. PLENO     — premia a quien clavó una Jornada entera, en cuanto cierra.
 //   4. CERRAR    — close_started_ranked_events() para los ya empezados.
 //
@@ -51,6 +52,26 @@ export const maxDuration = 60
  *  30 min, así que 3 días es margen de sobra para sobrevivir a una caída de
  *  ESPN o del propio cron sin dejar partidos sin puntuar. */
 const LOOKBACK_DAYS = 3
+
+// ── Rescate de partidos colgados ─────────────────────────────────────────────
+// El LOOKBACK de arriba dimensiona la ventana del SCOREBOARD, que es lo que se
+// pide para publicar. Usarla también para liquidar tenía una trampa: un partido
+// que por lo que sea no se resolvió dentro de esos 3 días salía de la ventana y
+// ya no volvía a mirarse NUNCA. Se quedaba en 'closed' para siempre y, con él,
+// su Jornada entera: award_jornada_pleno no paga mientras quede algo pendiente,
+// y el resultado de esa semana no se le llegaba a enseñar a nadie.
+//
+// Había cinco así en producción —del 15 al 19 de agosto, con el resultado
+// disponible en ESPN todo el tiempo— y el sistema no tenía forma de recuperarse.
+//
+// El rescate no amplía la ventana del scoreboard (traería cientos de partidos
+// que no nos importan): pregunta a la BASE qué partidos publicados siguen sin
+// resolver, y va a buscar el resultado de ESOS uno a uno por el endpoint
+// `summary`. Normalmente no hay ninguno y no cuesta una sola llamada.
+const RESCUE_DAYS = 30
+/** Tope por pasada: el cron corre cada 30 min, así que un atasco grande se
+ *  desagua en varias pasadas sin arriesgar el maxDuration de 60 s. */
+const RESCUE_MAX = 15
 
 // ── Tipos ESPN (subconjunto que usamos) ──────────────────────────────────────
 
@@ -159,6 +180,49 @@ function readState(ev: EspnEvent): EspnState | null {
     homeScore,
     awayScore,
     winner:    isResolved ? toWinner(homeScore, awayScore, home.winner, away.winner) : null,
+  }
+}
+
+/**
+ * Estado de UN partido concreto vía el endpoint `summary`. Es la vía del
+ * rescate: el scoreboard solo sirve rangos de fechas, y aquí lo que hay es una
+ * lista de partidos sueltos y viejos que hay que mirar de uno en uno.
+ *
+ * La forma es distinta a la del scoreboard —el partido cuelga de `header`—, así
+ * que no se puede reutilizar `readState`.
+ */
+async function fetchStateById(leagueSlug: string, espnId: string): Promise<EspnState | null> {
+  try {
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/${leagueSlug}/summary?event=${espnId}`,
+      { next: { revalidate: 0 }, signal: AbortSignal.timeout(10_000) },
+    )
+    if (!res.ok) return null
+    const json = await res.json() as {
+      header?: { competitions?: {
+        status?: { type?: { name?: string; state?: string } }
+        competitors?: EspnCompetitor[]
+      }[] }
+    }
+    const comp = json.header?.competitions?.[0]
+    const home = comp?.competitors?.find(c => c.homeAway === 'home')
+    const away = comp?.competitors?.find(c => c.homeAway === 'away')
+    if (!home || !away) return null
+
+    const statusName = comp?.status?.type?.name ?? ''
+    const isResolved = FINAL_STATUSES.has(statusName)
+    const homeScore  = scoreToInt(home.score)
+    const awayScore  = scoreToInt(away.score)
+    return {
+      statusName,
+      isResolved,
+      isLive:    comp?.status?.type?.state === 'in',
+      homeScore,
+      awayScore,
+      winner:    isResolved ? toWinner(homeScore, awayScore, home.winner, away.winner) : null,
+    }
+  } catch {
+    return null
   }
 }
 
@@ -362,6 +426,50 @@ async function handle(req: Request) {
     }
   }
 
+  // ── 4c. Rescate de los que se quedaron atrás ───────────────────────────────
+  // Se le pregunta a la BASE, no a la ventana: qué partidos publicados llevan
+  // ya jugados un rato y siguen sin resolver. Lo normal es que no haya
+  // ninguno; cuando lo hay, se busca su resultado uno a uno. Ver RESCUE_DAYS.
+  let rescued = 0
+  const rescueFrom = new Date(Date.now() - RESCUE_DAYS * 86_400_000).toISOString()
+  // 3 h de gracia sobre el kickoff: un partido recién empezado no está colgado,
+  // está jugándose.
+  const rescueTo = new Date(Date.now() - 3 * 3_600_000).toISOString()
+
+  const { data: stuck } = await admin
+    .from('ranked_events')
+    .select('id, meta')
+    .eq('sport', RANKED_FOOTBALL_SPORT)
+    .neq('status', 'resolved')
+    .gte('event_date', rescueFrom)
+    .lt('event_date', rescueTo)
+    .order('event_date', { ascending: true })
+    .limit(RESCUE_MAX)
+
+  for (const row of (stuck ?? []) as { id: string; meta?: { espn_id?: string; league_slug?: string; week_key?: string } }[]) {
+    const espnId = row.meta?.espn_id
+    const slug   = row.meta?.league_slug
+    if (!espnId || !slug) continue
+    // Si esta misma pasada ya lo vio por el scoreboard, no se pide dos veces.
+    if (stateByEspnId.has(espnId)) continue
+
+    const state = await fetchStateById(slug, espnId)
+    if (!state?.isResolved || state.winner === null) continue
+
+    const { error: rpcErr } = await admin.rpc('score_ranked_prediction', {
+      p_event_id:   row.id,
+      p_winner:     state.winner,
+      p_home_score: state.homeScore,
+      p_away_score: state.awayScore,
+    })
+    if (rpcErr) {
+      scoringFailures++
+    } else {
+      rescued++
+      if (row.meta?.week_key) touchedWeeks.add(row.meta.week_key)
+    }
+  }
+
   // ── 4b. Pleno de la Jornada ─────────────────────────────────────────────────
   // Solo puede completarse una semana en la que acabamos de resolver algo. La
   // RPC se encarga de comprobar que la Jornada esté cerrada entera y de no
@@ -384,6 +492,16 @@ async function handle(req: Request) {
     )
   }
 
+  // Un rescate ocasional es el sistema curándose solo. Uno grande o repetido
+  // significa que la liquidación normal no está funcionando y que hay Jornadas
+  // que no cierran (ni pagan Pleno ni enseñan resultado): eso sí hay que mirarlo.
+  if (rescued >= 5) {
+    await sendTelegram(
+      `⚠️ sync-football: ${rescued} partido(s) liquidados por RESCATE (llevaban colgados fuera de la ventana). ` +
+      `Si se repite, la liquidación normal no está entrando.`,
+    )
+  }
+
   // Semanas con partidos candidatos que HOY no se publican por no verse
   // enteras. No es un error: se publicarán solas cuando su domingo entre en la
   // ventana. Se listan para que una Jornada que no aparece nunca se pueda
@@ -401,6 +519,7 @@ async function handle(req: Request) {
     deferredWeeks,
     published,
     resolved,
+    rescued,
     plenos,
     scoringFailures,
   })
