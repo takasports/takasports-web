@@ -18,6 +18,10 @@
 //     mitad de semana son la mayoría, y mezclados hacían que la pantalla fuera
 //     larguísima sin que se distinguiera dónde quedaba algo por hacer.
 //
+// Y se puede jugar SIN CUENTA: los picks de invitado viven en localStorage
+// (components/ranked/soccer/guest-picks) con la misma forma que los del
+// servidor, así que la UI no distingue. Al entrar se suben solos. Ver `send`.
+//
 // Comparte componentes con el archivo del Mundial vía components/ranked/soccer.
 // El cliente del Mundial todavía tiene los suyos propios: se unifica cuando ese
 // archivo se retire (no se refactoriza un producto congelado mientras se
@@ -27,6 +31,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import MatchCard from '@/components/ranked/soccer/MatchCard'
 import JornadaReminderOptIn from '@/components/ranked/soccer/JornadaReminderOptIn'
+import GuestSaveBar from '@/components/ranked/soccer/GuestSaveBar'
+import {
+  readGuestPicks, saveGuestPick, clearGuestPicks, pruneGuestPicks, toPredMap,
+} from '@/components/ranked/soccer/guest-picks'
 import { groupIntoJornadas, jornadaProgress, formatCountdown, thisWeekKey, plenoBonus } from '@/components/ranked/soccer/jornada'
 import {
   FOOTBALL_THEME, SOCCER_POINTS,
@@ -121,6 +129,11 @@ export default function FootballClient() {
   const [submitting, setSubmitting] = useState(false)
   const [error,      setError]      = useState<string | null>(null)
   const [nowMs,      setNowMs]      = useState(() => Date.now())
+  // Hay picks de invitado guardados. Solo dice SI hay (para decidir si se
+  // monta la barra y si toca subirlos); cuántos son se cuenta abajo, contra
+  // los partidos que se pueden jugar ahora.
+  const [hasGuestPicks, setHasGuestPicks] = useState(false)
+  const [signingIn,  setSigningIn]  = useState(false)
   const [exactTipDismissed, setExactTipDismissed] = useState<boolean>(() => {
     try { return typeof window !== 'undefined' && localStorage.getItem('futbol:exactTip') === '1' }
     catch { return true }
@@ -140,9 +153,22 @@ export default function FootballClient() {
     ])
     const evData   = await evRes.json()   as { events?: SoccerEvent[] }
     const predData = await predRes.json() as { predictions?: PredMap; reason?: string }
-    setEvents(evData.events ?? [])
-    setPreds(predData.predictions ?? {})
-    setLoggedIn(predData.reason !== 'no_session')
+    const evs   = evData.events ?? []
+    const authed = predData.reason !== 'no_session'
+    setEvents(evs)
+    setLoggedIn(authed)
+
+    if (authed) {
+      setPreds(predData.predictions ?? {})
+      setHasGuestPicks(false)
+      return
+    }
+    // Sin sesión, los picks los pone el almacén local. Se podan contra los
+    // partidos de la Jornada actual: si no, el almacén acumula partidos de
+    // hace meses y la barra de invitado cuenta picks que ya no existen.
+    const guest = pruneGuestPicks(new Set(evs.map(e => e.id)))
+    setPreds(toPredMap(guest))
+    setHasGuestPicks(Object.keys(guest).length > 0)
   }, [])
 
   const load = useCallback(async () => {
@@ -196,6 +222,20 @@ export default function FootballClient() {
     exactScore: { home: number; away: number } | null,
   ) => {
     if (submitting) return
+
+    // ── Invitado: se juega en local y no se molesta a nadie ─────────────────
+    // Antes esto iba al servidor, volvía 401 y disparaba Google en el acto: la
+    // cuenta se pedía en el primer toque, antes de que la sección hubiera dado
+    // nada a cambio. Ahora el pick se guarda aquí y la cuenta se ofrece en la
+    // barra de abajo, por lo que da.
+    if (loggedIn === false) {
+      saveGuestPick(eventId, pick, exactScore)
+      const guest = readGuestPicks()
+      setPreds(toPredMap(guest))
+      setHasGuestPicks(Object.keys(guest).length > 0)
+      return
+    }
+
     setSubmitting(true)
     try {
       const body: Record<string, unknown> = { event_id: eventId, pick }
@@ -205,26 +245,14 @@ export default function FootballClient() {
         body: JSON.stringify(body),
       })
       if (res.status === 401) {
-        // Sin sesión. Antes esto mandaba a Google directamente y el pick se
-        // perdía por el camino: el usuario volvía logueado y con la Jornada en
-        // blanco, teniendo que acordarse de lo que había elegido. Lo dejamos
-        // en el mismo buzón que usa el picker de las noticias, así que al
-        // aterrizar se aplica solo.
-        const ev = events.find(e => e.id === eventId)
-        if (ev) {
-          try {
-            sessionStorage.setItem('porra:pendingPick', JSON.stringify({
-              home: ev.team_home, away: ev.team_away, pick, ts: Date.now(),
-            }))
-          } catch { /* sin sessionStorage: se pierde, no es crítico */ }
-        }
-        const sb = createClient()
-        if (sb) {
-          await sb.auth.signInWithOAuth({
-            provider: 'google',
-            options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/predicciones` },
-          })
-        }
+        // Creíamos tener sesión y no la hay (caducó entre medias). No se
+        // arrastra al usuario a Google en mitad de la Jornada: el pick se
+        // guarda como invitado y la barra de abajo le ofrece volver a entrar.
+        saveGuestPick(eventId, pick, exactScore)
+        setLoggedIn(false)
+        const guest = readGuestPicks()
+        setPreds(toPredMap(guest))
+        setHasGuestPicks(Object.keys(guest).length > 0)
         return
       }
       // 409 = el partido ya no admite pick (cerrado o dentro de la hora de
@@ -249,7 +277,7 @@ export default function FootballClient() {
       }
     } catch { setError('No se pudo guardar la predicción.') }
     finally { setSubmitting(false) }
-  }, [submitting, load, events])
+  }, [submitting, load, loggedIn])
 
   const handlePick = useCallback((eventId: string, pick: SoccerPick) => {
     vibrate(12)
@@ -263,9 +291,11 @@ export default function FootballClient() {
   // acaba de tocar en la noticia se pierde en silencio y el circuito
   // artículo → predicción se rompe.
   //
-  // Se aplica únicamente con sesión iniciada: si no, guardar dispararía el
-  // login nada más aterrizar, que es una emboscada. La clave se limpia
-  // siempre — un pick de hace días no debe revivir en otra visita.
+  // Ya no hace falta tener sesión: `send` sabe guardarlo como invitado, que es
+  // justo lo que quiere alguien que viene de un artículo y aún no tiene cuenta.
+  // Antes se descartaba en ese caso, porque aplicarlo habría disparado el login
+  // nada más aterrizar. La clave se limpia siempre — un pick de hace días no
+  // debe revivir en otra visita.
   const pendingConsumed = useRef(false)
   useEffect(() => {
     if (pendingConsumed.current || loading || loggedIn === null) return
@@ -274,7 +304,6 @@ export default function FootballClient() {
     if (!raw) return
     pendingConsumed.current = true
     try { sessionStorage.removeItem('porra:pendingPick') } catch { /* */ }
-    if (!loggedIn) return
 
     try {
       const p = JSON.parse(raw) as { home?: string; away?: string; pick?: SoccerPick }
@@ -287,6 +316,74 @@ export default function FootballClient() {
       if (target && !preds[target.id]) void send(target.id, p.pick, null)
     } catch { /* pick corrupto: se descarta */ }
   }, [loading, loggedIn, events, preds, send])
+
+  // ── Entrar llevándose lo jugado ────────────────────────────────────────────
+  // El pick ya está en localStorage antes de salir hacia Google, así que da
+  // igual cuánto tarde el rodeo del OAuth o si el usuario se arrepiente a medias:
+  // al volver sigue ahí. La subida la hace el efecto de abajo.
+  const handleSignIn = useCallback(async () => {
+    if (signingIn) return
+    setSigningIn(true)
+    const sb = createClient()
+    if (!sb) { setSigningIn(false); setError('Login no disponible ahora mismo.'); return }
+    try {
+      await sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/predicciones` },
+      })
+    } catch {
+      setSigningIn(false)
+      setError('No se pudo abrir el login.')
+    }
+  }, [signingIn])
+
+  // ── Subir los picks de invitado en cuanto hay sesión ───────────────────────
+  // Se suben de uno en uno porque la API es por evento. Los que ya no admiten
+  // pick (se cerraron mientras el usuario se registraba) devuelven 409 y se
+  // descartan sin ruido: no se puede hacer nada con ellos y avisar solo sería
+  // estropear el momento de haber entrado.
+  const syncing = useRef(false)
+  useEffect(() => {
+    if (!loggedIn || loading || syncing.current) return
+    const guest = readGuestPicks()
+    const ids = Object.keys(guest)
+    if (ids.length === 0) return
+    syncing.current = true
+
+    void (async () => {
+      let subidos = 0
+      let falloDeRed = false
+      for (const eventId of ids) {
+        const g = guest[eventId]
+        if (!g?.pick) continue
+        try {
+          const body: Record<string, unknown> = { event_id: eventId, pick: g.pick }
+          if (g.exactScore) body.exactScore = g.exactScore
+          const r = await fetch('/api/ranked/predictions', {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(body),
+          })
+          if (r.ok) subidos++
+        } catch {
+          // Solo la red merece reintento. Un rechazo del servidor (el partido
+          // se cerró mientras se registraba) es definitivo.
+          falloDeRed = true
+        }
+      }
+      // Se conserva el almacén únicamente si algo se quedó sin intentar por
+      // red; si no, se limpia aunque no subiera nada — reintentar en cada carga
+      // unos picks que el servidor ya rechazó no los va a aceptar nunca.
+      if (!falloDeRed) {
+        clearGuestPicks()
+        setHasGuestPicks(false)
+      }
+      if (subidos > 0) {
+        await load()
+        try { window.dispatchEvent(new Event('taka:badge-check')) } catch { /* */ }
+      }
+      syncing.current = false
+    })()
+  }, [loggedIn, loading, load])
 
   const handleExactSet = useCallback((eventId: string, exact: { home: number; away: number } | null) => {
     const currentPick = preds[eventId]?.prediction?.pick
@@ -313,6 +410,15 @@ export default function FootballClient() {
   }, [events, nowMinute])
 
   const predictedIds = useMemo(() => new Set(Object.keys(preds)), [preds])
+
+  // Lo que el usuario puede pronosticar AHORA MISMO en esta pantalla: los
+  // partidos abiertos de todas las Jornadas visibles. Es el universo del que
+  // habla la barra de invitado — contar sus picks sobre una Jornada y el total
+  // sobre otra daba cosas como "16 de 7".
+  const pendingIds = useMemo(
+    () => new Set(jornadas.flatMap(j => j.pending.map(e => e.id))),
+    [jornadas],
+  )
 
   // ¿Ya ha apostado alguna vez al marcador? Se mira sobre lo que tiene vivo:
   // si tiene una apuesta en curso, ya conoce la mecánica y el consejo sobra.
@@ -467,11 +573,14 @@ export default function FootballClient() {
         </div>
       )}
 
-      {loggedIn === false && jornadas.length > 0 && (
+      {/* Antes del primer pick: se invita, no se exige — se puede jugar sin
+          cuenta. A partir del primer pick manda GuestSaveBar, que además dice
+          cuántos lleva y dónde están guardados. */}
+      {loggedIn === false && !hasGuestPicks && jornadas.length > 0 && (
         <div className="mb-6 rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: `${T.accent}0D`, border: `1px solid ${T.accent}30` }}>
           <span style={{ display: 'inline-flex', color: T.accent }}><LockIcon size={18} /></span>
           <p style={{ flex: 1, fontFamily: 'var(--font-sport)', fontSize: 12, color: 'var(--text-secondary)' }}>
-            Entra con tu cuenta para guardar tus picks y competir en la Liga Taka.
+            Puedes pronosticar sin cuenta. Entra cuando quieras guardarlo y competir en la Liga Taka.
           </p>
         </div>
       )}
@@ -622,6 +731,19 @@ export default function FootballClient() {
         )
       })}
 
+      {loggedIn === false && (
+        <GuestSaveBar
+          // Ambos números sobre lo MISMO: los partidos abiertos que hay en
+          // pantalla. La cabecera de cada Jornada cuenta sus 11 porque ese es
+          // el universo del Pleno; aquí se está diciendo "lo que llevas hecho",
+          // y los ya cerrados no se pueden hacer.
+          picks={[...pendingIds].filter(id => predictedIds.has(id)).length}
+          total={pendingIds.size}
+          accent={T.accent}
+          busy={signingIn}
+          onSignIn={handleSignIn}
+        />
+      )}
     </div>
   )
 }
