@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { sanityClient } from '@/lib/sanity'
 import { accentForSport } from '@/lib/sports'
+import { fetchImageDataUri } from '@/lib/og-image'
 
 export const alt = 'TakaSports'
 export const size = { width: 1200, height: 630 }
@@ -14,35 +15,6 @@ const OG_QUERY = `*[_type == "article" && (_id == $id || slug.current == $id)][0
   category,
   imageUrl,
 }`
-
-// Descarga la imagen a un data URI base64. CRÍTICO: NO basta con validar la URL
-// y pasarla a <img src> — ImageResponse (satori) hace su propio fetch de forma
-// lazy al streamear la respuesta, así que si ese fetch falla el error escapa de
-// cualquier try/catch y devuelve HTTP 500 ("Error de servidor 5xx" en GSC).
-//
-// Solución: fetcheamos los bytes NOSOTROS con timeout. Si falla (404, timeout,
-// content-type no-imagen, GET≠HEAD), devolvemos null → OG se renderiza sin foto
-// (fallback con branding + gradient, siempre 200). Al pasar un data: URI, satori
-// embebe los bytes directamente sin volver a fetchear → imposible que crashee.
-async function fetchImageDataUri(url: string | null): Promise<string | null> {
-  if (!url || !/^https?:\/\//.test(url)) return null
-  try {
-    const r = await fetch(url, {
-      signal: AbortSignal.timeout(3500),
-      headers: { 'User-Agent': 'Mozilla/5.0 TakaSportsOG/1.0' },
-    })
-    if (!r.ok) return null
-    const ct = r.headers.get('content-type') ?? ''
-    if (!ct.startsWith('image/')) return null
-    const buf = await r.arrayBuffer()
-    // Cap a 3MB para no inflar el render de satori ni la memoria de la función
-    if (buf.byteLength === 0 || buf.byteLength > 3_000_000) return null
-    const base64 = Buffer.from(buf).toString('base64')
-    return `data:${ct};base64,${base64}`
-  } catch {
-    return null
-  }
-}
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
