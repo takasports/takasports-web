@@ -8,11 +8,16 @@ export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 export const revalidate = 3600
 
+// Mismos select() que LISTING_FIELDS en @/lib/sanity: en los artículos del
+// pipeline (los que tienen `headline`) los campos title/short_summary/category
+// están a NULL — el contenido vive en headline/metaDescription/competition.
+// Pedirlos crudos dejaba la tarjeta OG de TODOS esos artículos con el título
+// genérico del fallback y sin resumen.
 const OG_QUERY = `*[_type == "article" && (_id == $id || slug.current == $id)][0]{
-  title,
-  short_summary,
+  "title": select(defined(headline) => headline, title),
+  "short_summary": select(defined(headline) => metaDescription, short_summary),
   sport,
-  category,
+  "category": select(defined(headline) => competition, category),
   imageUrl,
 }`
 
@@ -95,7 +100,10 @@ export default async function Image({ params }: { params: Promise<{ slug: string
             flexDirection: 'column',
             justifyContent: 'space-between',
             padding: '50px 58px',
-            width: imgUrl ? '58%' : '100%',
+            // 47% y no 58%: la foto arranca en el 45%, así que la columna ancha
+            // metía el final del titular y el resumen ENTERO bajo la imagen. No se
+            // notaba mientras la query devolvía título genérico y resumen vacío.
+            width: imgUrl ? '47%' : '100%',
             zIndex: 1,
           }}
         >
