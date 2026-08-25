@@ -11,6 +11,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { ImageResponse } from 'next/og'
+import { fetchImageDataUri } from '@/lib/og-image'
 
 export const OG_WIDTH  = 1200
 export const OG_HEIGHT = 630
@@ -50,12 +51,19 @@ export interface PlacaOGData {
 /**
  * Fetch la data del placa de un user para OG. Usa /api/placa/[userId]
  * internamente con URL absoluta (origin).
+ *
+ * El avatar sale de aquí ya convertido a data URI (ver @/lib/og-image): pasarle
+ * a satori una URL remota en el `<img>` es lo que tumbó la tarjeta de las
+ * noticias con un 5xx, porque el fetch lo hace él solo mientras streamea la
+ * respuesta, fuera del alcance de cualquier try/catch. Si la descarga falla
+ * queda a null y la placa cae a las iniciales, que siempre da 200.
  */
 export async function fetchPlacaForOG(userId: string, origin: string): Promise<PlacaOGData | null> {
   try {
     const res = await fetch(`${origin}/api/placa/${userId}`, { cache: 'no-store' })
     if (!res.ok) return null
-    return await res.json() as PlacaOGData
+    const data = await res.json() as PlacaOGData
+    return { ...data, avatarUrl: await fetchImageDataUri(data.avatarUrl) }
   } catch {
     return null
   }

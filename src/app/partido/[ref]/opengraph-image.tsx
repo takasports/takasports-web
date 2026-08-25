@@ -2,6 +2,7 @@ import { ImageResponse } from 'next/og'
 import type { MatchDetail } from '@/app/api/match/[ref]/route'
 import { SITE_URL } from '@/lib/constants'
 import { accentForSport } from '@/lib/sports'
+import { fetchImageDataUri } from '@/lib/og-image-edge'
 
 export const runtime = 'edge'
 export const alt = 'Partido — TakaSports'
@@ -18,25 +19,6 @@ async function fetchMatch(ref: string): Promise<MatchDetail | null> {
   }
 }
 
-// HEAD-check con timeout para evitar 5xx en ImageResponse si el logo de ESPN
-// responde lento o 404 (típico con equipos nuevos o IDs viejos).
-async function safeImageUrl(url: string | null | undefined): Promise<string | null> {
-  if (!url || !/^https?:\/\//.test(url)) return null
-  try {
-    const r = await fetch(url, {
-      method: 'HEAD',
-      signal: AbortSignal.timeout(2000),
-      headers: { 'User-Agent': 'Mozilla/5.0 TakaSportsOG/1.0' },
-    })
-    if (!r.ok) return null
-    const ct = r.headers.get('content-type') ?? ''
-    if (!ct.startsWith('image/')) return null
-    return url
-  } catch {
-    return null
-  }
-}
-
 export default async function Image({ params }: { params: Promise<{ ref: string }> }) {
   const { ref } = await params
   const match = await fetchMatch(ref)
@@ -46,10 +28,13 @@ export default async function Image({ params }: { params: Promise<{ ref: string 
   const away = match?.awayTeam ?? '—'
   const hasScore = match?.homeScore != null && match?.awayScore != null
   const league = match?.leagueLabel ?? 'TakaSports'
-  // Validamos logos en paralelo
+  // Los logos se descargan AQUÍ y viajan como data URI. El HEAD-check que había
+  // antes validaba una petición distinta de la que satori acababa haciendo por
+  // su cuenta: si ese GET fallaba, el error salía dentro del stream y la ruta
+  // devolvía 500 al crawler. Ver @/lib/og-image-edge.
   const [homeLogo, awayLogo] = await Promise.all([
-    safeImageUrl(match?.homeLogo),
-    safeImageUrl(match?.awayLogo),
+    fetchImageDataUri(match?.homeLogo),
+    fetchImageDataUri(match?.awayLogo),
   ])
 
   return new ImageResponse(
