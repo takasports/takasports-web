@@ -1,30 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mediaCreditFromUrl, storyTitleSize, truncate, displayCompetition } from './og-image'
-
-describe('mediaCreditFromUrl', () => {
-  it('reconoce los CDNs frecuentes del pipeline', () => {
-    expect(mediaCreditFromUrl('https://objetos-xlk.estaticos-marca.com/x.jpg')).toBe('Marca')
-    expect(mediaCreditFromUrl('https://e00-xlk-ue-marca-us.uecdn.es/x.jpg')).toBe('Marca')
-    expect(mediaCreditFromUrl('https://imagenes2.mundodeportivo.com/x.jpg')).toBe('Mundo Deportivo')
-    expect(mediaCreditFromUrl('https://media.formula1.com/x.webp')).toBe('Formula 1')
-  })
-
-  it('cae a la marca del dominio cuando no está en el mapa', () => {
-    expect(mediaCreditFromUrl('https://www.diarioinventado.es/foto.jpg')).toBe('Diarioinventado')
-  })
-
-  it('no acredita a nadie cuando la foto es NUESTRA', () => {
-    expect(mediaCreditFromUrl('https://cdn.sanity.io/images/x.jpg')).toBeNull()
-    expect(mediaCreditFromUrl('https://www.takasportsmedia.com/x.jpg')).toBeNull()
-    expect(mediaCreditFromUrl('https://d1234.cloudfront.net/portada.png')).toBeNull()
-  })
-
-  it('aguanta entradas rotas sin explotar', () => {
-    expect(mediaCreditFromUrl(null)).toBeNull()
-    expect(mediaCreditFromUrl('')).toBeNull()
-    expect(mediaCreditFromUrl('no-soy-una-url')).toBeNull()
-  })
-})
+import { storyTitleSize, truncate, displayCompetition } from './og-image'
 
 describe('storyTitleSize', () => {
   it('encoge según crece el titular', () => {

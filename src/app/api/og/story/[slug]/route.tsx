@@ -1,4 +1,4 @@
-// GET /api/og/story/[slug] → PNG 1080×1920 para compartir una noticia en
+// GET /api/og/story/[slug] → JPEG 1080×1920 para compartir una noticia en
 // historias de Instagram / WhatsApp / Telegram.
 //
 // Formato vertical 9:16 con la foto a sangre. Los márgenes NO son decorativos,
@@ -16,7 +16,7 @@
 // por eso los clientes copian el enlace al portapapeles al compartir.
 //
 // Se consume desde:
-//   · web  → fetch del PNG + navigator.share({ files })
+//   · web  → fetch de la imagen + navigator.share({ files })
 //   · app  → expo-file-system + expo-sharing
 // Una sola plantilla para ambas: el diseño vive aquí y solo aquí.
 
@@ -26,9 +26,7 @@ import { ImageResponse } from 'next/og'
 import sharp from 'sharp'
 import { sanityClient } from '@/lib/sanity'
 import { accentForSport, getSportLabel } from '@/lib/sports'
-import {
-  displayCompetition, fetchImageDataUri, mediaCreditFromUrl, storyTitleSize, truncate,
-} from '@/lib/og-image'
+import { displayCompetition, fetchImageDataUri, storyTitleSize, truncate } from '@/lib/og-image'
 
 export const runtime     = 'nodejs'
 export const contentType = 'image/jpeg'
@@ -87,7 +85,6 @@ export async function GET(
   const comp    = displayCompetition(article.competition, sport)
   const accent  = accentForSport(article.sport ?? article.competition)
   const photo   = await fetchImageDataUri(article.imageUrl)
-  const credit  = photo ? mediaCreditFromUrl(article.imageUrl) : null
   const { anton, semi, bold } = await fontData
 
   const titleSize = storyTitleSize(title)
@@ -187,10 +184,6 @@ export async function GET(
               </div>
             </div>
 
-            {/* Crédito del medio dueño de la foto */}
-            <span style={{ fontSize: 22, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>
-              {credit ? `Foto: ${credit}` : ' '}
-            </span>
           </div>
         </div>
       </div>

@@ -63,46 +63,6 @@ export async function fetchImageDataUri(url: string | null | undefined): Promise
 
 // ── Helpers de la placa de historias (1080×1920) ─────────────────
 
-// Nombre legible del medio dueño de la foto, deducido del dominio, para pintar
-// el crédito "Foto: X" en la placa. Las portadas vienen de ~130 dominios
-// distintos, así que el mapa cubre los frecuentes y el resto cae a la marca del
-// dominio (segundo nivel), capitalizada: `imagenes2.mundodeportivo.com` → si no
-// estuviera en el mapa, "Mundodeportivo".
-const CREDIT_BY_HOST: Array<[RegExp, string]> = [
-  [/estaticos-marca|uecdn\.es|marca\.com/, 'Marca'],
-  [/mundodeportivo/, 'Mundo Deportivo'],
-  [/nyt\.com|nytimes/, 'The New York Times'],
-  [/prensaiberica/, 'Prensa Ibérica'],
-  [/estadiodeportivo/, 'Estadio Deportivo'],
-  [/formula1\.com/, 'Formula 1'],
-  [/sportal365/, 'Sportal365'],
-  [/ole\.com\.ar/, 'Olé'],
-  [/tudn\.com/, 'TUDN'],
-  [/sportingnews/, 'Sporting News'],
-  [/okdiario/, 'OkDiario'],
-  [/clarin/, 'Clarín'],
-  [/as\.com|epimg\.net/, 'AS'],
-  [/elnacional/, 'El Nacional'],
-  [/perfil\.com/, 'Perfil'],
-  [/yimg\.com|zenfs/, 'Yahoo'],
-  [/autonocion/, 'Autonoción'],
-  [/upload\.wikimedia\.org/, 'Wikimedia Commons'],
-  [/espncdn/, 'ESPN'],
-]
-
-export function mediaCreditFromUrl(url: string | null | undefined): string | null {
-  if (!url) return null
-  let host = ''
-  try { host = new URL(url).hostname.toLowerCase() } catch { return null }
-  // Las nuestras no llevan crédito de tercero.
-  if (/cdn\.sanity\.io|takasportsmedia\.com|supabase\.co|cloudfront\.net/.test(host)) return null
-  for (const [re, name] of CREDIT_BY_HOST) if (re.test(host)) return name
-  const parts = host.replace(/^www\./, '').split('.')
-  const brand = parts.length >= 2 ? parts[parts.length - 2] : parts[0]
-  if (!brand) return null
-  return brand.charAt(0).toUpperCase() + brand.slice(1)
-}
-
 // Escalado del titular por longitud. Bajado un punto respecto al primer montaje:
 // al subir el margen lateral de 88 a 120 px (para sobrevivir al recorte de
 // Instagram en móviles altos) la caja de texto perdió 64 px de ancho y los

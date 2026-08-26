@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { storySplitIndex } from './article-split'
 
-const par   = (n = 1) => Array.from({ length: n }, () => ({ _type: 'block', style: 'normal' }))
-const head  = () => ({ _type: 'block', style: 'h2' })
-const item  = () => ({ _type: 'block', style: 'normal', listItem: 'bullet' })
-const image = () => ({ _type: 'image' })
+interface Block { _type?: string; style?: string; listItem?: string }
+
+const par   = (n = 1): Block[] => Array.from({ length: n }, () => ({ _type: 'block', style: 'normal' }))
+const head  = (): Block => ({ _type: 'block', style: 'h2' })
+const item  = (): Block => ({ _type: 'block', style: 'normal', listItem: 'bullet' })
+const image = (): Block => ({ _type: 'image' })
 
 describe('storySplitIndex', () => {
   it('no parte artículos cortos: la llamada caería pegada a la del final', () => {
