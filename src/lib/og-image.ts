@@ -60,3 +60,84 @@ export async function fetchImageDataUri(url: string | null | undefined): Promise
     return null
   }
 }
+
+// ── Helpers de la placa de historias (1080×1920) ─────────────────
+
+// Nombre legible del medio dueño de la foto, deducido del dominio, para pintar
+// el crédito "Foto: X" en la placa. Las portadas vienen de ~130 dominios
+// distintos, así que el mapa cubre los frecuentes y el resto cae a la marca del
+// dominio (segundo nivel), capitalizada: `imagenes2.mundodeportivo.com` → si no
+// estuviera en el mapa, "Mundodeportivo".
+const CREDIT_BY_HOST: Array<[RegExp, string]> = [
+  [/estaticos-marca|uecdn\.es|marca\.com/, 'Marca'],
+  [/mundodeportivo/, 'Mundo Deportivo'],
+  [/nyt\.com|nytimes/, 'The New York Times'],
+  [/prensaiberica/, 'Prensa Ibérica'],
+  [/estadiodeportivo/, 'Estadio Deportivo'],
+  [/formula1\.com/, 'Formula 1'],
+  [/sportal365/, 'Sportal365'],
+  [/ole\.com\.ar/, 'Olé'],
+  [/tudn\.com/, 'TUDN'],
+  [/sportingnews/, 'Sporting News'],
+  [/okdiario/, 'OkDiario'],
+  [/clarin/, 'Clarín'],
+  [/as\.com|epimg\.net/, 'AS'],
+  [/elnacional/, 'El Nacional'],
+  [/perfil\.com/, 'Perfil'],
+  [/yimg\.com|zenfs/, 'Yahoo'],
+  [/autonocion/, 'Autonoción'],
+  [/upload\.wikimedia\.org/, 'Wikimedia Commons'],
+  [/espncdn/, 'ESPN'],
+]
+
+export function mediaCreditFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  let host = ''
+  try { host = new URL(url).hostname.toLowerCase() } catch { return null }
+  // Las nuestras no llevan crédito de tercero.
+  if (/cdn\.sanity\.io|takasportsmedia\.com|supabase\.co|cloudfront\.net/.test(host)) return null
+  for (const [re, name] of CREDIT_BY_HOST) if (re.test(host)) return name
+  const parts = host.replace(/^www\./, '').split('.')
+  const brand = parts.length >= 2 ? parts[parts.length - 2] : parts[0]
+  if (!brand) return null
+  return brand.charAt(0).toUpperCase() + brand.slice(1)
+}
+
+// Escalado del titular por longitud. Bajado un punto respecto al primer montaje:
+// al subir el margen lateral de 88 a 120 px (para sobrevivir al recorte de
+// Instagram en móviles altos) la caja de texto perdió 64 px de ancho y los
+// titulares largos se iban a cinco líneas.
+export function storyTitleSize(title: string): number {
+  if (title.length > 78) return 74
+  if (title.length > 58) return 86
+  if (title.length > 40) return 100
+  return 116
+}
+
+/** Recorta por PALABRA, no por carácter: cortar a pelo dejaba "contr…". */
+export function truncate(s: string, max: number): string {
+  if (s.length <= max) return s
+  const cut = s.slice(0, max - 1)
+  const lastSpace = cut.lastIndexOf(' ')
+  // Si la última palabra es larguísima (sin espacios) caemos al corte duro.
+  const body = lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut
+  return body.replace(/[\s,;:.—-]+$/, '') + '…'
+}
+
+// La `competition` de Sanity es texto libre y llega sucia: mezcla castellano
+// ("Gran Premio de Italia") con inglés de la fuente y coletillas de temporada
+// ("Formula 1 2026 Season", "Eurocopa qualifiers"). En una placa de historia eso
+// resta más que suma, así que solo se pinta cuando aporta: sin año, sin jerga de
+// calendario y sin repetir lo que ya dice la píldora del deporte.
+const COMPETITION_NOISE = /\d{4}|season|qualifier|matchweek|matchday|round|regular|playoff/i
+
+export function displayCompetition(
+  competition: string | null | undefined,
+  sportLabel: string,
+): string | null {
+  const c = competition?.trim()
+  if (!c || c.length > 28) return null
+  if (COMPETITION_NOISE.test(c)) return null
+  if (c.toLowerCase().includes(sportLabel.toLowerCase())) return null
+  return c
+}

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Image from '@/components/DynamicImage'
 import Link from 'next/link'
-import { PortableText } from '@portabletext/react'
+import { PortableText, type PortableTextComponents } from '@portabletext/react'
 import { EmbeddedTweet } from 'react-tweet'
 import { getTweet, type Tweet } from 'react-tweet/api'
 import { sanityClient, articleDetailQuery, relatedArticlesQuery, nextArticleQuery, urlFor } from '@/lib/sanity'
@@ -17,6 +17,9 @@ import ReadTracker from '@/app/article/[id]/ReadTracker'
 import ArticleTableOfContents from '@/components/ArticleTableOfContents'
 import ArticleComments from '@/components/ArticleComments'
 import ArticlePushCta from '@/components/ArticlePushCta'
+import ShareStoryCta from '@/components/ShareStoryCta'
+import ShareStoryFab from '@/components/ShareStoryFab'
+import { storySplitIndex } from '@/lib/article-split'
 import MatchScheduleCard, { type MatchKickoffData } from '@/components/MatchScheduleCard'
 import PorraMatchWidget from '@/components/PorraMatchWidget'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
@@ -306,8 +309,18 @@ function ArticleSidebar({
           </div>
         )}
 
-        <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-          <ShareButton title={article.title} />
+        {/* La barra lateral es sticky, o sea que en escritorio esto ya SIGUE al
+            lector mientras baja — el equivalente de la flecha flotante del
+            móvil. Por eso la placa sale del desplegable y se pinta como botón
+            propio: escondida detrás de un menú no la abría nadie. */}
+        <div className="mt-4 pt-4 flex flex-col gap-3" style={{ borderTop: '1px solid var(--border)' }}>
+          <ShareStoryCta
+            slug={article.slug}
+            title={article.title}
+            accent={badgeColor}
+            variant="sidebar"
+          />
+          <ShareButton title={article.title} slug={article.slug} />
         </div>
       </div>
 
@@ -634,246 +647,10 @@ export default async function NoticiaPage({
   const _wc = bodyWordCount()
   const readMinutes = _wc ? Math.max(1, Math.round(_wc / 200)) : null
 
-  return (
-    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
-      {faqJsonLd && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      )}
-      {videoJsonLdList.map((v, i) => (
-        <script key={`video-jsonld-${i}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(v) }} />
-      ))}
-      <ReadingProgress accent={accent} />
-      <ReadTracker item={{
-        slug: article.slug ?? id,
-        title: article.title,
-        sport: article.sport,
-        category: article.category,
-        publishedAt: article.publishedAt,
-        imageUrl: (imgUrl as string | undefined) ?? undefined,
-      }} />
-
-      <div
-        data-sport={sportSlug || undefined}
-        className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20"
-        style={{
-          // "Se viste del deporte": tinte de acento muy sutil en la cabecera
-          // del artículo (radial que se funde al fondo). Va en el background del
-          // <main> → 0 capas absolutas, 0 riesgo de z-index, no compite con la
-          // lectura. Legibilidad intacta: el cuerpo del texto queda sobre el
-          // fondo base. data-sport engancha además el motor global --sport-accent.
-          backgroundImage: `radial-gradient(ellipse 100% 560px at 50% 0%, ${accent}1a 0%, transparent 72%)`,
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
-        <div className="lg:grid lg:gap-12 lg:items-start mx-auto" style={{ gridTemplateColumns: 'minmax(0,1fr) 268px', maxWidth: 1160 }}>
-
-          <div className="pt-6 pb-5 lg:col-span-2 flex items-center gap-3">
-            <BackButton />
-            {sportSlug && sportLabel && (
-              <nav className="hidden sm:flex items-center gap-1.5 text-[11px] min-w-0" aria-label="Breadcrumb">
-                <Link href="/" className="hover:opacity-70 transition-opacity flex-shrink-0" style={{ color: 'var(--text-faint)', textDecoration: 'none' }}>
-                  TakaSports
-                </Link>
-                <span style={{ color: 'var(--text-faint)' }}>/</span>
-                <Link href={`/${sportSlug}`} className="hover:opacity-70 transition-opacity flex-shrink-0 font-semibold" style={{ color: accent, textDecoration: 'none' }}>
-                  {sportLabel}
-                </Link>
-                <span style={{ color: 'var(--text-faint)' }}>/</span>
-                <span className="truncate" style={{ color: 'var(--text-muted)' }}>{article.title}</span>
-              </nav>
-            )}
-          </div>
-
-          <article>
-
-            <div className="flex items-center justify-between gap-2 mb-4 lg:hidden">
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                {article.takaStatus && article.takaStatus !== 'normal' && (
-                  <StatusBadge status={article.takaStatus} accent={badgeColor} />
-                )}
-                {(article.sport || article.category) && (
-                  <span
-                    className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full flex-shrink-0"
-                    style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}`, fontFamily: 'var(--font-sport)' }}
-                  >
-                    {getSportLabel(article.sport, article.category)}
-                  </span>
-                )}
-                {article.publishedAt && (
-                  <time dateTime={article.publishedAt} className="text-xs truncate" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>
-                    {timeAgo(article.publishedAt)}
-                  </time>
-                )}
-                {readMinutes && (
-                  <span className="text-xs flex-shrink-0 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                    <span aria-hidden="true" style={{ color: badgeColor }}>·</span>
-                    {readMinutes} min
-                  </span>
-                )}
-              </div>
-              <ShareButton title={article.title} />
-            </div>
-
-            <div className="hidden lg:flex items-center gap-3 mb-4">
-              {article.takaStatus && article.takaStatus !== 'normal' && (
-                <StatusBadge status={article.takaStatus} accent={badgeColor} />
-              )}
-              {(article.sport || article.category) && (
-                <span
-                  className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full"
-                  style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}`, fontFamily: 'var(--font-sport)' }}
-                >
-                  {getSportLabel(article.sport, article.category)}
-                </span>
-              )}
-              {article.publishedAt && (
-                <time
-                  dateTime={article.publishedAt}
-                  className="text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5"
-                  style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: 'var(--font-sport)' }}
-                  suppressHydrationWarning
-                >
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.6 }}>
-                    <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2" />
-                    <path d="M6 3.5v2.8l1.8 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                  </svg>
-                  {timeAgo(article.publishedAt)}
-                </time>
-              )}
-              {readMinutes && (
-                <span
-                  className="text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5"
-                  style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: 'var(--font-sport)' }}
-                >
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ color: badgeColor, opacity: 0.85 }} aria-hidden="true">
-                    <path d="M2 3h8M2 6h8M2 9h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                  </svg>
-                  {readMinutes} min de lectura
-                </span>
-              )}
-            </div>
-
-            <h1
-              className="font-black leading-tight mb-3"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(1.75rem, 5vw, 3rem)',
-                color: '#F8F8FF',
-                letterSpacing: '-0.015em',
-              }}
-            >
-              {article.title}
-            </h1>
-
-            {article.subtitle && (
-              <p
-                className="leading-relaxed mb-6"
-                style={{ fontSize: '1.25rem', color: '#7A7A96', letterSpacing: '-0.015em', fontWeight: 400 }}
-              >
-                {article.subtitle}
-              </p>
-            )}
-
-            {imgUrl && (
-              <div
-                className="relative w-full rounded-2xl overflow-hidden mb-8"
-                style={{
-                  height: 'clamp(240px, 52vw, 480px)',
-                  // Hero "broadcast": borde y glow teñidos del acento del deporte.
-                  border: `1px solid ${accent}30`,
-                  boxShadow: `0 18px 50px ${accent}1f`,
-                }}
-              >
-                <Image src={imgUrl} alt={article.imageAlt ?? article.title} fill className="object-cover" priority fetchPriority="high" loading="eager" sizes="(max-width: 768px) 100vw, 850px" />
-                <div
-                  className="absolute inset-0"
-                  style={{ background: 'linear-gradient(to top,rgba(9,9,15,0.2) 0%,transparent 50%)' }}
-                />
-              </div>
-            )}
-
-            {article.tldr && article.tldr.length > 0 && (
-              <aside
-                className="ts-keys mb-8 rounded-2xl overflow-hidden"
-                style={{
-                  background: `linear-gradient(135deg, ${badgeColor}12, ${badgeColor}05)`,
-                  border: `1px solid ${badgeBorder}`,
-                  maxWidth: 680,
-                }}
-                aria-label="Claves rápidas"
-              >
-                {/* Rótulo de TV: barra de acento + label + punto REC */}
-                <div
-                  className="ts-keys__bar flex items-center gap-2.5 px-5 py-2.5"
-                  style={{ borderBottom: `1px solid ${badgeBorder}`, background: `${badgeColor}10` }}
-                >
-                  <span aria-hidden className="ts-keys__tab" style={{ background: badgeColor }} />
-                  <span
-                    className="text-[10px] font-black uppercase tracking-widest"
-                    style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}
-                  >
-                    Claves en 30 segundos
-                  </span>
-                  <span aria-hidden className="ts-keys__rec ml-auto inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest" style={{ color: badgeColor }}>
-                    <span className="ts-keys__dot" style={{ background: badgeColor }} />
-                    EN DIRECTO
-                  </span>
-                </div>
-                <ul className="ts-keys__list flex flex-col px-5 py-4">
-                  {article.tldr.map((item, i) => (
-                    <li
-                      key={i}
-                      className="ts-keys__row flex gap-3 py-1.5"
-                      style={{ color: 'var(--body-list)', fontSize: '0.95rem', lineHeight: 1.55, '--ts-key-i': i } as React.CSSProperties}
-                    >
-                      <span aria-hidden className="ts-keys__num" style={{ color: badgeColor }}>
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </aside>
-            )}
-
-            <div style={{ maxWidth: 680 }}>
-              <ArticleTableOfContents headings={tocHeadings} variant="mobile" />
-            </div>
-
-            {article.short_summary && (
-              <p
-                className="leading-relaxed mb-8 pl-5"
-                style={{
-                  fontSize: '1.125rem',
-                  color: 'var(--body-lede)',
-                  borderLeft: `3px solid ${badgeColor}`,
-                  fontStyle: 'italic',
-                  maxWidth: 680,
-                }}
-              >
-                {article.short_summary}
-              </p>
-            )}
-
-            {article.matchKickoff?.iso && (
-              <MatchScheduleCard kickoff={article.matchKickoff} accent={badgeColor} />
-            )}
-
-            {/* Widget La Porra — solo con Ranked Fútbol activo (enseña cuotas y
-                puntos de la quiniela de LaLiga, hoy apagada). */}
-            {RANKED_FUTBOL_ENABLED && (
-              <div style={{ maxWidth: 680 }}>
-                <PorraMatchWidget title={article.title} tags={article.tags} />
-              </div>
-            )}
-
-            {article.bodyPortable && article.bodyPortable.length > 0 ? (
-              <div style={{ maxWidth: 680 }}>
-                <PortableText
-                  value={article.bodyPortable}
-                  components={{
+  // Config de PortableText extraída a una constante: el cuerpo se pinta en
+  // DOS instancias (antes y después de la llamada a compartir), y duplicar
+  // estas 400 líneas en el JSX era garantía de que se desincronizaran.
+  const portableComponents: PortableTextComponents = {
                     types: {
                       image: ({ value }) => {
                         const src = value?.asset ? urlFor(value).width(900).url() : null
@@ -1297,8 +1074,268 @@ export default async function NoticiaPage({
                       bullet: ({ children }) => <li>{children}</li>,
                       number: ({ children }) => <li>{children}</li>,
                     },
-                  }}
+  }
+
+  return (
+    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+      {faqJsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      )}
+      {videoJsonLdList.map((v, i) => (
+        <script key={`video-jsonld-${i}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(v) }} />
+      ))}
+      <ReadingProgress accent={accent} />
+      <ReadTracker item={{
+        slug: article.slug ?? id,
+        title: article.title,
+        sport: article.sport,
+        category: article.category,
+        publishedAt: article.publishedAt,
+        imageUrl: (imgUrl as string | undefined) ?? undefined,
+      }} />
+
+      <div
+        data-sport={sportSlug || undefined}
+        className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-20"
+        style={{
+          // "Se viste del deporte": tinte de acento muy sutil en la cabecera
+          // del artículo (radial que se funde al fondo). Va en el background del
+          // <main> → 0 capas absolutas, 0 riesgo de z-index, no compite con la
+          // lectura. Legibilidad intacta: el cuerpo del texto queda sobre el
+          // fondo base. data-sport engancha además el motor global --sport-accent.
+          backgroundImage: `radial-gradient(ellipse 100% 560px at 50% 0%, ${accent}1a 0%, transparent 72%)`,
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div className="lg:grid lg:gap-12 lg:items-start mx-auto" style={{ gridTemplateColumns: 'minmax(0,1fr) 268px', maxWidth: 1160 }}>
+
+          <div className="pt-6 pb-5 lg:col-span-2 flex items-center gap-3">
+            <BackButton />
+            {sportSlug && sportLabel && (
+              <nav className="hidden sm:flex items-center gap-1.5 text-[11px] min-w-0" aria-label="Breadcrumb">
+                <Link href="/" className="hover:opacity-70 transition-opacity flex-shrink-0" style={{ color: 'var(--text-faint)', textDecoration: 'none' }}>
+                  TakaSports
+                </Link>
+                <span style={{ color: 'var(--text-faint)' }}>/</span>
+                <Link href={`/${sportSlug}`} className="hover:opacity-70 transition-opacity flex-shrink-0 font-semibold" style={{ color: accent, textDecoration: 'none' }}>
+                  {sportLabel}
+                </Link>
+                <span style={{ color: 'var(--text-faint)' }}>/</span>
+                <span className="truncate" style={{ color: 'var(--text-muted)' }}>{article.title}</span>
+              </nav>
+            )}
+          </div>
+
+          <article>
+
+            <div className="flex items-center justify-between gap-2 mb-4 lg:hidden">
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                {article.takaStatus && article.takaStatus !== 'normal' && (
+                  <StatusBadge status={article.takaStatus} accent={badgeColor} />
+                )}
+                {(article.sport || article.category) && (
+                  <span
+                    className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full flex-shrink-0"
+                    style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}`, fontFamily: 'var(--font-sport)' }}
+                  >
+                    {getSportLabel(article.sport, article.category)}
+                  </span>
+                )}
+                {article.publishedAt && (
+                  <time dateTime={article.publishedAt} className="text-xs truncate" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>
+                    {timeAgo(article.publishedAt)}
+                  </time>
+                )}
+                {readMinutes && (
+                  <span className="text-xs flex-shrink-0 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                    <span aria-hidden="true" style={{ color: badgeColor }}>·</span>
+                    {readMinutes} min
+                  </span>
+                )}
+              </div>
+              <ShareButton title={article.title} slug={article.slug ?? id} />
+            </div>
+
+            <div className="hidden lg:flex items-center gap-3 mb-4">
+              {article.takaStatus && article.takaStatus !== 'normal' && (
+                <StatusBadge status={article.takaStatus} accent={badgeColor} />
+              )}
+              {(article.sport || article.category) && (
+                <span
+                  className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full"
+                  style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}`, fontFamily: 'var(--font-sport)' }}
+                >
+                  {getSportLabel(article.sport, article.category)}
+                </span>
+              )}
+              {article.publishedAt && (
+                <time
+                  dateTime={article.publishedAt}
+                  className="text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5"
+                  style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: 'var(--font-sport)' }}
+                  suppressHydrationWarning
+                >
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.6 }}>
+                    <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2" />
+                    <path d="M6 3.5v2.8l1.8 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  </svg>
+                  {timeAgo(article.publishedAt)}
+                </time>
+              )}
+              {readMinutes && (
+                <span
+                  className="text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5"
+                  style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontFamily: 'var(--font-sport)' }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ color: badgeColor, opacity: 0.85 }} aria-hidden="true">
+                    <path d="M2 3h8M2 6h8M2 9h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                  {readMinutes} min de lectura
+                </span>
+              )}
+            </div>
+
+            <h1
+              className="font-black leading-tight mb-3"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(1.75rem, 5vw, 3rem)',
+                color: '#F8F8FF',
+                letterSpacing: '-0.015em',
+              }}
+            >
+              {article.title}
+            </h1>
+
+            {article.subtitle && (
+              <p
+                className="leading-relaxed mb-6"
+                style={{ fontSize: '1.25rem', color: '#7A7A96', letterSpacing: '-0.015em', fontWeight: 400 }}
+              >
+                {article.subtitle}
+              </p>
+            )}
+
+            {imgUrl && (
+              <div
+                className="relative w-full rounded-2xl overflow-hidden mb-8"
+                style={{
+                  height: 'clamp(240px, 52vw, 480px)',
+                  // Hero "broadcast": borde y glow teñidos del acento del deporte.
+                  border: `1px solid ${accent}30`,
+                  boxShadow: `0 18px 50px ${accent}1f`,
+                }}
+              >
+                <Image src={imgUrl} alt={article.imageAlt ?? article.title} fill className="object-cover" priority fetchPriority="high" loading="eager" sizes="(max-width: 768px) 100vw, 850px" />
+                <div
+                  className="absolute inset-0"
+                  style={{ background: 'linear-gradient(to top,rgba(9,9,15,0.2) 0%,transparent 50%)' }}
                 />
+              </div>
+            )}
+
+            {article.tldr && article.tldr.length > 0 && (
+              <aside
+                className="ts-keys mb-8 rounded-2xl overflow-hidden"
+                style={{
+                  background: `linear-gradient(135deg, ${badgeColor}12, ${badgeColor}05)`,
+                  border: `1px solid ${badgeBorder}`,
+                  maxWidth: 680,
+                }}
+                aria-label="Claves rápidas"
+              >
+                {/* Rótulo de TV: barra de acento + label + punto REC */}
+                <div
+                  className="ts-keys__bar flex items-center gap-2.5 px-5 py-2.5"
+                  style={{ borderBottom: `1px solid ${badgeBorder}`, background: `${badgeColor}10` }}
+                >
+                  <span aria-hidden className="ts-keys__tab" style={{ background: badgeColor }} />
+                  <span
+                    className="text-[10px] font-black uppercase tracking-widest"
+                    style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}
+                  >
+                    Claves en 30 segundos
+                  </span>
+                  <span aria-hidden className="ts-keys__rec ml-auto inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest" style={{ color: badgeColor }}>
+                    <span className="ts-keys__dot" style={{ background: badgeColor }} />
+                    EN DIRECTO
+                  </span>
+                </div>
+                <ul className="ts-keys__list flex flex-col px-5 py-4">
+                  {article.tldr.map((item, i) => (
+                    <li
+                      key={i}
+                      className="ts-keys__row flex gap-3 py-1.5"
+                      style={{ color: 'var(--body-list)', fontSize: '0.95rem', lineHeight: 1.55, '--ts-key-i': i } as React.CSSProperties}
+                    >
+                      <span aria-hidden className="ts-keys__num" style={{ color: badgeColor }}>
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </aside>
+            )}
+
+            <div style={{ maxWidth: 680 }}>
+              <ArticleTableOfContents headings={tocHeadings} variant="mobile" />
+            </div>
+
+            {article.short_summary && (
+              <p
+                className="leading-relaxed mb-8 pl-5"
+                style={{
+                  fontSize: '1.125rem',
+                  color: 'var(--body-lede)',
+                  borderLeft: `3px solid ${badgeColor}`,
+                  fontStyle: 'italic',
+                  maxWidth: 680,
+                }}
+              >
+                {article.short_summary}
+              </p>
+            )}
+
+            {article.matchKickoff?.iso && (
+              <MatchScheduleCard kickoff={article.matchKickoff} accent={badgeColor} />
+            )}
+
+            {/* Widget La Porra — solo con Ranked Fútbol activo (enseña cuotas y
+                puntos de la quiniela de LaLiga, hoy apagada). */}
+            {RANKED_FUTBOL_ENABLED && (
+              <div style={{ maxWidth: 680 }}>
+                <PorraMatchWidget title={article.title} tags={article.tags} />
+              </div>
+            )}
+
+            {article.bodyPortable && article.bodyPortable.length > 0 ? (
+              <div style={{ maxWidth: 680 }}>
+                {(() => {
+                  // El cuerpo se parte en dos para colar la llamada a compartir
+                  // a mitad de lectura (el bloque del final solo lo ve quien
+                  // termina). `storySplitIndex` devuelve null si el artículo es
+                  // corto o no hay un corte limpio → se pinta de una pieza.
+                  const blocks = article.bodyPortable!
+                  const cut = storySplitIndex(blocks)
+                  if (cut === null) {
+                    return <PortableText value={blocks} components={portableComponents} />
+                  }
+                  return (
+                    <>
+                      <PortableText value={blocks.slice(0, cut)} components={portableComponents} />
+                      <ShareStoryCta
+                        slug={article.slug ?? id}
+                        title={article.title}
+                        accent={badgeColor}
+                        variant="inline"
+                      />
+                      <PortableText value={blocks.slice(cut)} components={portableComponents} />
+                    </>
+                  )
+                })()}
               </div>
             ) : paragraphs.length > 0 ? (
               <div className="flex flex-col gap-6" style={{ maxWidth: 680 }}>
@@ -1522,6 +1559,17 @@ export default async function NoticiaPage({
               )
             })()}
 
+            {/* Orden por coste para el lector: primero compartir (un toque),
+                luego los avisos (un permiso), luego comentar. La de compartir
+                es además la única que trae gente nueva. */}
+            <div style={{ maxWidth: 680 }}>
+              <ShareStoryCta
+                slug={article.slug ?? id}
+                title={article.title}
+                accent={badgeColor}
+              />
+            </div>
+
             {/* Justo al acabar de leer, que es cuando el lector ya ha decidido
                 si esto le interesa. Va ANTES de los comentarios y de la
                 newsletter del pie: pedir un clic cuesta menos que pedir un
@@ -1629,6 +1677,7 @@ export default async function NoticiaPage({
 
       <NewsletterSection source="articulo" />
       <ScrollToTop />
+      <ShareStoryFab slug={article.slug ?? id} title={article.title} accent={badgeColor} />
     </div>
   )
 }

@@ -25,7 +25,7 @@ export function trackArticleView(params: {
 
 export function trackArticleShare(params: {
   title: string
-  method: 'x' | 'whatsapp' | 'facebook' | 'copy'
+  method: 'x' | 'whatsapp' | 'facebook' | 'copy' | 'story' | 'native'
 }) {
   track('article_share', params)
 }
