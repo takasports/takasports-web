@@ -10,6 +10,20 @@
 //     antes el titular se cortaba; 120 px (11%) sobrevive con holgura.
 // Comprobado montando la placa real bajo la interfaz de Instagram.
 //
+// SIN CRÉDITO DE FOTO, a propósito (decisión del dueño, 26/08/2026). La placa
+// llevó un "Foto: <medio>" al pie durante un día. Si alguna vez hace falta
+// devolverlo —una reclamación de un medio o de una agencia, o simplemente
+// querer cubrirse: el derecho de paternidad del fotógrafo es irrenunciable en
+// España— está entero en el commit `29430c6`, que lo QUITÓ:
+//
+//   git show 29430c6 -- src/lib/og-image.ts    → el helper mediaCreditFromUrl
+//                                                (mapa de ~19 CDNs + fallback
+//                                                al dominio) y sus tests
+//   git show 29430c6 -- 'src/app/api/og/story/[slug]/route.tsx'
+//                                              → las 6 líneas del <span> del pie
+//
+// Revertirlo son ~25 líneas; no hay que reescribir nada desde cero.
+
 // El enlace NO viaja dentro de la imagen: Meta retiró `contentURL` de la API de
 // Sharing to Stories, así que no hay forma soportada de inyectar un link
 // clicable. Quien comparte pega la URL en el sticker de enlace de Instagram —
