@@ -19,6 +19,8 @@ import WorldMap from './WorldMap'
 import {
   getGa4Summary, getAppGa4Summary, getSearchDetail, getSearchTotals, getGa4Realtime, getAppGa4Realtime,
   getAppDownloads, getTrafficHistory, getTopContent, getAudience, getWebCountriesByWindow, getGamesTraffic, shortPath,
+  getShares, shareMethodLabel,
+  type SharesSummary,
   type Ga4Summary, type SearchDetail, type SearchTotals, type Ga4Realtime, type AppDownloads,
   type TrafficHistoryDay, type ContentItem, type Audience, type CountryWindow, type GamesTraffic,
 } from '@/lib/traffic'
@@ -321,11 +323,12 @@ function VisitsBlock({ ga4, kind, geo }: { ga4: Ga4Summary; kind: 'web' | 'app';
 export default async function TraficoPage() {
   await requireAdmin('/admin/trafico')
 
-  const [ga4, searchTotals, search, ios, realtime, history, routes, deploy, appGa4, appRealtime, content, audience, webGeo, games]: [
-    Ga4Summary, SearchTotals, SearchDetail, AppDownloads, Ga4Realtime, TrafficHistoryDay[], RouteCheck[], DeployStatus, Ga4Summary, Ga4Realtime, ContentItem[], Audience, CountryWindow[], GamesTraffic,
+  const [ga4, searchTotals, search, ios, realtime, history, routes, deploy, appGa4, appRealtime, content, audience, webGeo, games, shares]: [
+    Ga4Summary, SearchTotals, SearchDetail, AppDownloads, Ga4Realtime, TrafficHistoryDay[], RouteCheck[], DeployStatus, Ga4Summary, Ga4Realtime, ContentItem[], Audience, CountryWindow[], GamesTraffic, SharesSummary,
   ] = await Promise.all([
     getGa4Summary(), getSearchTotals(), getSearchDetail(), getAppDownloads(), getGa4Realtime(), getTrafficHistory(),
     checkRoutes(), checkVercelDeploy(), getAppGa4Summary(), getAppGa4Realtime(), getTopContent(), getAudience(), getWebCountriesByWindow(), getGamesTraffic(),
+    getShares(),
   ])
 
   const okCount = routes.filter((r) => r.ok).length
@@ -363,6 +366,59 @@ export default async function TraficoPage() {
           <RankTable rows={content.map((c) => ({ label: c.title, value: nf(c.views), sub: `${c.avgSec}s/vista` }))} />
         </section>
       )}
+
+      {/* Compartir noticias — la palanca de alcance que montamos en agosto.
+          La sección se pinta SIEMPRE: si la credencial no llega, lo dice, en vez
+          de desaparecer y dejarte pensando que nadie comparte. */}
+      <section className="mb-12">
+        <SectionTitle hint="28 días · evento `article_share` de web y app">Noticias compartidas</SectionTitle>
+        {!shares.available ? (
+          <PendingCard title="No se pudieron leer los datos de compartir">
+            {shares.note ?? 'GA4 no respondió.'}
+          </PendingCard>
+        ) : (
+          <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <Stat label="Compartidas · 28d" value={nf(shares.total28)} accent="#A855F7" />
+            <Stat label="Desde la web" value={nf(shares.web28)} accent="#A855F7" />
+            <Stat
+              label="Desde la app"
+              value={nf(shares.app28)}
+              accent="#A855F7"
+              hint="La app manda el evento desde la 1.0.7; antes de publicarla saldrá 0."
+            />
+            <Stat
+              label="Artículos distintos"
+              value={nf(shares.articles.length)}
+              accent="#A855F7"
+              hint="Cuántas noticias distintas ha compartido alguien, no cuántas veces."
+            />
+          </div>
+
+          {shares.total28 === 0 ? (
+            <PendingCard title="Todavía nadie ha compartido">
+              Es esperable: la placa de historias salió el 26 de agosto y antes de eso compartir estaba
+              escondido dentro de un desplegable. Este bloque se llena solo.
+            </PendingCard>
+          ) : (
+            <div className="grid lg:grid-cols-2 gap-4">
+              <div>
+                <Subhead>Qué noticias se comparten</Subhead>
+                <RankTable rows={shares.articles.map((a) => ({ label: a.title, value: nf(a.count) }))} />
+              </div>
+              <div>
+                <Subhead>Por dónde</Subhead>
+                {shares.byMethod ? (
+                  <RankTable rows={shares.byMethod.map((m) => ({ label: shareMethodLabel(m.method), value: nf(m.count) }))} />
+                ) : (
+                  <PendingCard title="Desglose por método sin activar">{shares.methodNote}</PendingCard>
+                )}
+              </div>
+            </div>
+          )}
+          </>
+        )}
+      </section>
 
       {/* Zona de juegos — ¿llega alguien, y desde dónde? */}
       {games.available && (

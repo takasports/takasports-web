@@ -629,6 +629,148 @@ export async function getTopContent(): Promise<ContentItem[]> {
   }
 }
 
+// ── Compartir noticias ────────────────────────────────────────────────────────
+//
+// Mide el evento `article_share`, que mandan la web (menú, bloques y flotante)
+// y la app (hoja de compartir). Viven en propiedades de GA4 DISTINTAS —"Deportes"
+// para la web y "taka-eef70" para la app— así que se piden por separado y se
+// suman aquí.
+//
+// El desglose por método (historia / enlace / WhatsApp / X…) necesita que
+// `method` esté registrado como DIMENSIÓN PERSONALIZADA en GA4; sin registrar,
+// la Data API rechaza la consulta. Por eso va aparte y degrada con una nota que
+// explica cómo encenderlo, en vez de tumbar la sección entera.
+//
+// Qué artículos se comparten sale de `pagePath`, que es dimensión estándar y
+// funciona sin configurar nada. La app no tiene pagePath (manda `slug` como
+// parámetro), así que la lista es de web; su total sí se suma.
+
+export interface SharedArticle { path: string; slug: string; title: string; count: number }
+
+export interface SharesSummary {
+  available: boolean
+  total28: number
+  web28: number
+  app28: number
+  byMethod: { method: string; count: number }[] | null
+  /** Por qué no hay desglose por método, si no lo hay. */
+  methodNote?: string
+  articles: SharedArticle[]
+  note?: string
+}
+
+const SHARE_METHOD_LABEL: Record<string, string> = {
+  story:    'En historia',
+  native:   'Hoja del sistema',
+  link:     'Enlace (app)',
+  whatsapp: 'WhatsApp',
+  x:        'X',
+  facebook: 'Facebook',
+  copy:     'Copiar enlace',
+}
+
+export function shareMethodLabel(m: string): string {
+  return SHARE_METHOD_LABEL[m] ?? m
+}
+
+async function shareCount(token: string, propertyId: string): Promise<number> {
+  const rows = await ga4RunReport(token, propertyId, {
+    dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
+    metrics: [{ name: 'eventCount' }],
+    dimensionFilter: { filter: { fieldName: 'eventName', stringFilter: { value: 'article_share' } } },
+  })
+  return Number(rows[0]?.metricValues?.[0]?.value ?? 0)
+}
+
+export async function getShares(): Promise<SharesSummary> {
+  const empty: SharesSummary = { available: false, total28: 0, web28: 0, app28: 0, byMethod: null, articles: [] }
+
+  let token: string | null = null
+  try {
+    token = (await getServiceAccountToken([ANALYTICS_SCOPE])) ?? (await getOauthAccessToken())
+  } catch (e) {
+    return { ...empty, note: `auth GA4: ${e instanceof Error ? e.message : String(e)}` }
+  }
+  if (!token) return { ...empty, note: 'Sin service account de Google configurada (GOOGLE_SA_CLIENT_EMAIL / GOOGLE_SA_PRIVATE_KEY)' }
+  const t = token
+
+  const safe = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+    try { return await fn() } catch { return fallback }
+  }
+
+  // El total de web es ESENCIAL: si falla (403 por scope, propiedad sin acceso…)
+  // hay que decir que no se pudo leer. Devolver "0 compartidas" sería mentir,
+  // porque en el panel se lee igual que "nadie ha compartido".
+  let web28: number
+  try {
+    web28 = await shareCount(t, GA4_PROPERTY_ID)
+  } catch (e) {
+    return { ...empty, note: e instanceof Error ? e.message : String(e) }
+  }
+
+  // El resto SÍ degrada: la app puede no tener datos todavía y el desglose por
+  // método depende de una dimensión que quizá no esté registrada.
+  const [app28, articleRows, methodRows] = await Promise.all([
+    safe(() => shareCount(t, GA4_APP_PROPERTY_ID), 0),
+    safe(() => ga4RunReport(t, GA4_PROPERTY_ID, {
+      dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
+      dimensions: [{ name: 'pagePath' }],
+      metrics: [{ name: 'eventCount' }],
+      dimensionFilter: { filter: { fieldName: 'eventName', stringFilter: { value: 'article_share' } } },
+      orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+      limit: 12,
+    }), []),
+    // `customEvent:method` peta si la dimensión no está registrada → null, no error.
+    safe(() => ga4RunReport(t, GA4_PROPERTY_ID, {
+      dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
+      dimensions: [{ name: 'customEvent:method' }],
+      metrics: [{ name: 'eventCount' }],
+      dimensionFilter: { filter: { fieldName: 'eventName', stringFilter: { value: 'article_share' } } },
+      orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+      limit: 10,
+    }).then((r) => r as Ga4Row[] | null), null),
+  ])
+
+  const articles: SharedArticle[] = articleRows
+    .map((r) => {
+      const path = r.dimensionValues?.[0]?.value ?? ''
+      const count = Number(r.metricValues?.[0]?.value ?? 0)
+      const slug = path.replace(/^\/noticias\//, '').split('?')[0].replace(/\/$/, '')
+      return { path, slug, title: slug.replace(/-/g, ' '), count }
+    })
+    .filter((a) => a.slug && a.path.includes('/noticias/'))
+
+  // Título real desde Sanity, igual que en "Contenido que rinde".
+  if (articles.length) {
+    try {
+      const docs = await sanityClient.fetch<{ slug: string; title: string }[]>(
+        `*[_type=="article" && slug.current in $slugs]{ "slug": slug.current, title }`,
+        { slugs: articles.map((a) => a.slug) },
+      )
+      const map = new Map((docs ?? []).map((d) => [d.slug, d.title]))
+      for (const a of articles) a.title = map.get(a.slug) ?? a.title
+    } catch { /* el slug legible sirve */ }
+  }
+
+  const byMethod = methodRows
+    ? methodRows
+        .map((r) => ({ method: r.dimensionValues?.[0]?.value ?? '', count: Number(r.metricValues?.[0]?.value ?? 0) }))
+        .filter((m) => m.method && m.method !== '(not set)')
+    : null
+
+  return {
+    available: true,
+    total28: web28 + app28,
+    web28,
+    app28,
+    byMethod: byMethod && byMethod.length ? byMethod : null,
+    methodNote: byMethod === null
+      ? 'Para ver el desglose por método hay que registrar `method` como dimensión personalizada en GA4 (Administrar → Definiciones personalizadas → Crear, ámbito de evento, parámetro `method`). Solo cuenta desde que se cree.'
+      : undefined,
+    articles,
+  }
+}
+
 // ── Audiencia y retención: % que vuelve (GA4) + suscriptores/registros (Supabase) ─
 
 export interface Audience {
