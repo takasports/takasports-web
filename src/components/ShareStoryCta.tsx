@@ -30,28 +30,37 @@ export default function ShareStoryCta({
    */
   variant?: 'end' | 'inline' | 'sidebar'
 }) {
-  const { state, share } = useShareStory({ slug, title })
+  const { state, share, prefetch } = useShareStory({ slug, title })
   if (!slug) return null
 
   const heading =
     state === 'busy'       ? 'Creando la imagen…' :
+    state === 'ready'      ? 'Listo — toca para compartir' :
     state === 'shared'     ? 'Enlace copiado' :
     state === 'downloaded' ? 'Imagen descargada' :
     state === 'failed'     ? 'No se pudo crear la imagen' :
     variant === 'sidebar' ? 'Compartir historia' : 'Compártelo en tu historia'
 
   const sub =
+    state === 'ready'      ? 'Se abrirá tu hoja de compartir.' :
     state === 'shared'     ? 'Añade el sticker «Enlace» en Instagram y pégalo.' :
     state === 'downloaded' ? 'El enlace está en tu portapapeles para el sticker.' :
     state === 'failed'     ? 'Inténtalo otra vez en un momento.' :
     'Te preparamos una imagen con el titular, lista para Instagram.'
 
   const done = state === 'shared' || state === 'downloaded'
+  const waiting = state === 'ready'
   const compact = variant !== 'end'   // icono y relleno más contenidos
 
   return (
     <button
       onClick={share}
+      // Empieza a traerse la placa al acercar el dedo o el ratón, antes del
+      // click: gana los milisegundos que hacen falta para que `share()` no
+      // tenga que esperar a la red (ver useShareStory).
+      onPointerEnter={prefetch}
+      onPointerDown={prefetch}
+      onFocus={prefetch}
       disabled={state === 'busy'}
       // El de cierre lleva el ancla: el botón flotante se esconde cuando este
       // entra en pantalla para no pedir lo mismo dos veces a la vez.
@@ -104,7 +113,7 @@ export default function ShareStoryCta({
         </span>
       </span>
 
-      {state === 'idle' && variant !== 'sidebar' && (
+      {(state === 'idle' || waiting) && variant !== 'sidebar' && (
         <span className="ml-auto flex-shrink-0" style={{ color: accent }} aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M6.5 3.5L12 9l-5.5 5.5" stroke="currentColor" strokeWidth="1.8"

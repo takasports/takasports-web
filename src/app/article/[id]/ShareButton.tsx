@@ -17,7 +17,13 @@ export default function ShareButton({ title, slug }: { title: string; slug?: str
   const [copied, setCopied] = React.useState(false)
   const ref = React.useRef<HTMLDivElement>(null)
   // Misma acción que el botón destacado del final del artículo → misma lógica.
-  const { state: story, linkCopied, share: shareStory } = useShareStory({ slug, title })
+  const { state: story, linkCopied, share: shareStory, prefetch } = useShareStory({ slug, title })
+
+  // Abrir el menú ya dispara la descarga de la placa: cuando el dedo llegue a
+  // la opción, `share()` podrá llamarse sin await por delante (ver useShareStory).
+  React.useEffect(() => {
+    if (open) prefetch()
+  }, [open, prefetch])
 
   React.useEffect(() => {
     if (!open) return
@@ -67,6 +73,7 @@ export default function ShareButton({ title, slug }: { title: string; slug?: str
 
   const storyLabel =
     story === 'busy'       ? 'Creando la imagen…' :
+    story === 'ready'      ? 'Listo — toca para compartir' :
     story === 'shared'     ? (linkCopied ? '✓ Enlace copiado — pégalo en el sticker' : '✓ Compartido') :
     story === 'downloaded' ? (linkCopied ? '✓ Imagen descargada y enlace copiado' : '✓ Imagen descargada') :
     story === 'failed'     ? 'No se pudo crear la imagen' :

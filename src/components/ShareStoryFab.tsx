@@ -28,7 +28,7 @@ export default function ShareStoryFab({
 }) {
   const [scrolled, setScrolled] = useState(false)
   const [ctaOnScreen, setCtaOnScreen] = useState(false)
-  const { state, share } = useShareStory({ slug, title })
+  const { state, share, prefetch } = useShareStory({ slug, title })
   const liveRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
@@ -49,11 +49,19 @@ export default function ShareStoryFab({
     return () => io.disconnect()
   }, [])
 
+  // Precarga en cuanto el botón aparece: a los 500 px de scroll el lector ya
+  // está enganchado, y así al pulsar la placa está en memoria y `share()` se
+  // llama dentro del gesto (ver useShareStory).
+  useEffect(() => {
+    if (scrolled) prefetch()
+  }, [scrolled, prefetch])
+
   if (!slug) return null
   const visible = scrolled && !ctaOnScreen
 
   const label =
     state === 'busy'   ? 'Creando la imagen…' :
+    state === 'ready'  ? 'Listo, toca para compartir' :
     state === 'shared' || state === 'downloaded' ? 'Enlace copiado, pégalo en el sticker' :
     state === 'failed' ? 'No se pudo crear la imagen' :
     'Compartir en historia'
@@ -68,7 +76,7 @@ export default function ShareStoryFab({
         style={{
           // 72 (ancla de ScrollToTop) + 40 (su alto) + 12 (aire) = 124
           bottom: 'calc(124px + env(safe-area-inset-bottom, 0px))',
-          background: `${accent}d9`,
+          background: state === 'ready' ? accent : `${accent}d9`,
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           border: `1px solid ${accent}66`,
@@ -78,7 +86,13 @@ export default function ShareStoryFab({
           pointerEvents: visible ? 'auto' : 'none',
         }}
       >
-        {state === 'busy' ? (
+        {state === 'ready' ? (
+          // Segundo toque pendiente: mismo avión, trazo más grueso y fondo sólido
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M21.4 2.6L10.9 13.1M21.4 2.6l-6.7 18.6-3.8-8.1-8.1-3.8L21.4 2.6z"
+                  stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : state === 'busy' ? (
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="animate-spin">
             <circle cx="8" cy="8" r="6" stroke="#fff" strokeWidth="1.7"
                     strokeLinecap="round" strokeDasharray="24 12" />
