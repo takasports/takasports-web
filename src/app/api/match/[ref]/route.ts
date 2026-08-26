@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { parseMatchRef } from '@/lib/match-ref'
 import { buildPlayerIndex, lookupPlayerId } from '@/lib/match-player-index'
 import type { StandingZone } from '@/lib/league-zones'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
@@ -1108,13 +1109,14 @@ export async function GET(
 ) {
   const { ref } = await params
 
-  // ref shape: "<sport>_<league>[.subleague]_<eventId>" → leagueSlug = "<sport>/<league>[...]"
-  const parts = ref.split('_')
-  if (parts.length < 3) return NextResponse.json(null, { status: 400 })
-  const eventId    = parts[parts.length - 1]
-  const leagueSlug = parts.slice(0, -1).join('/')
+  // El parser vive en @/lib/match-ref (con test): el slug de liga de ESPN lleva
+  // guiones bajos propios en las copas nacionales, así que trocearlo por todos
+  // los '_' devolvía 404 en seis competiciones.
+  const parsed = parseMatchRef(ref)
+  if (!parsed) return NextResponse.json(null, { status: 400 })
+  const { leagueSlug, eventId } = parsed
   const sport      = detectSport(leagueSlug)
-  const leagueLabel = COMP_LABELS[leagueSlug] ?? LEAGUE_LABEL_BY_SLUG[leagueSlug] ?? parts.slice(0, -1).join(' · ')
+  const leagueLabel = COMP_LABELS[leagueSlug] ?? LEAGUE_LABEL_BY_SLUG[leagueSlug] ?? leagueSlug.replace('/', ' · ')
 
   // Selecciones → español (Brazil→Brasil…); los clubes se dejan tal cual (son
   // nombres propios). Mismo criterio que lib/espn.ts: el slug ESPN mapea a su
