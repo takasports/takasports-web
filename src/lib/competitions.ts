@@ -52,9 +52,23 @@ export function getCompAccent(comp: string, fallback = '#7C3AED'): string {
 // dos equipos (hasta +4, ver pairBoost), clásico/derbi (hasta +6), fase final
 // (hasta +4), en vivo (+1.5) y prime time (+0.5).
 export const LEAGUE_IMPORTANCE: Record<string, number> = {
+  // OJO AL ORDEN: 'championship'.includes('champions') es TRUE, así que la
+  // segunda división inglesa puntuaba 12 — lo mismo que la Champions League — y
+  // encabezaba los Destacados con 11 partidos de Millwall y Blackburn. Tiene que
+  // ir ANTES para ganar el match (al revés no colisiona: ninguna competición
+  // europea contiene "championship").
+  'Championship': 5,
   'Champions': 12,
   'UCL': 12,
+  // Mismo problema de subcadena que Championship, y por el mismo motivo van
+  // ANTES: "Premiership" (Escocia y el rugby inglés) y "Premier Padel"
+  // contienen "Premier", y "LaLiga 2" contiene "LaLiga". Sin estas tres
+  // entradas, una segunda división y un torneo de pádel puntuaban 11 — lo mismo
+  // que la Premier League y LaLiga — y se colaban en Destacados.
+  'Premiership': 6,
+  'Premier Padel': 6,
   'Premier': 11,
+  'LaLiga 2': 5,
   'LaLiga': 11,
   'NBA': 11,
   // Grand Slams — máxima importancia en tenis
@@ -105,7 +119,6 @@ export const LEAGUE_IMPORTANCE: Record<string, number> = {
   'ATP': 6,
   'WTA': 6,
   'World Padel Tour': 6,
-  'Premier Padel': 6,
   'WPT': 6,
   'Pádel': 5,
   // Tercera competición europea y copa de la liga inglesa: existen, pero sus
@@ -312,6 +325,10 @@ function isMarqueeNation(name: string | null | undefined): boolean {
 // Detecta fases finales en el nombre de competición o stage del evento.
 function stageBoost(comp: string, stage?: string): number {
   const txt = `${comp} ${stage ?? ''}`.toLowerCase()
+  // La PREVIA resta, y va la primera: "Qualifying Final Round" contiene "final"
+  // y habría sumado +4 como la final del torneo. Sin esto, una previa del US Open
+  // puntuaba 11 como el cuadro final y llenaba Destacados de desconocidos.
+  if (/\bprevia\b|qualif/.test(txt)) return -4
   if (/\bfinal\b|gran final/.test(txt)) return 4
   if (/semifinal|semis/.test(txt)) return 3
   if (/cuartos|quarterfinal|qf/.test(txt)) return 2

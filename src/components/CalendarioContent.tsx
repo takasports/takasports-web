@@ -31,8 +31,12 @@ import { isLiveStatus, liveSportPassesFilter } from '@/lib/live-events'
 import { BellIcon, CalendarIcon, ClipboardIcon, LiveDotIcon, SearchIcon, SportIcon } from '@/components/icons/GameIcons'
 
 const DESTACADOS_MIN = 4
+// Listón de "partido bueno": por encima de él, TODOS entran (no hay tope por
+// día). En la escala de getEventHighlightScore, 12 = Champions/Mundial o
+// cualquier cartel que llegue ahí sumando pareja (hasta +4), clásico (hasta +6)
+// o fase final (hasta +4) sobre su liga. Un LaLiga de media tabla (11) no llega
+// y se queda para el mínimo del día.
 const DESTACADOS_ELITE = 12
-const DESTACADOS_MAX = 8
 
 // Timeline (vista Calendario): ventana de días PASADOS que se cargan de una vez
 // al montar y se anteponen a la lista. El endpoint con live=1 cubre ~10 días;
@@ -755,12 +759,15 @@ export default function CalendarioContent({
       arr.push(ev)
       byDay.set(day, arr)
     }
-    const scoreCache = new Map<string, number>()
-    const scoreFor = (ev: SportEvent) => {
-      const cached = scoreCache.get(ev.id)
-      if (cached !== undefined) return cached
-      const live = liveScores.has(ev.id) && isLiveStatus(liveScores.get(ev.id)?.status ?? '')
-      const s = getEventHighlightScore({
+    // Dos notas: `rankFor` (con el bonus de directo) ORDENA el día; `meritFor`
+    // (sin él) decide si el partido CUALIFICA para el corte. Si el directo
+    // cualificara, un torneo de nota 11 se colaría entero —rondas previas
+    // incluidas— por el simple hecho de estar en juego. Espejo de curateDay del
+    // shared. [José Tomás, 26/08/2026]
+    const rankCache = new Map<string, number>()
+    const meritCache = new Map<string, number>()
+    const scoreWith = (ev: SportEvent, live: boolean) =>
+      getEventHighlightScore({
         comp: ev.comp,
         home: ev.home,
         away: ev.away,
@@ -768,50 +775,52 @@ export default function CalendarioContent({
         isoDate: ev.isoDate,
         isLive: live,
       })
-      scoreCache.set(ev.id, s)
+    const rankFor = (ev: SportEvent) => {
+      const cached = rankCache.get(ev.id)
+      if (cached !== undefined) return cached
+      const live = liveScores.has(ev.id) && isLiveStatus(liveScores.get(ev.id)?.status ?? '')
+      const s = scoreWith(ev, live)
+      rankCache.set(ev.id, s)
       return s
     }
-    const todayKey = isoToLocalDate(new Date().toISOString(), tz)
+    const meritFor = (ev: SportEvent) => {
+      const cached = meritCache.get(ev.id)
+      if (cached !== undefined) return cached
+      const s = scoreWith(ev, false)
+      meritCache.set(ev.id, s)
+      return s
+    }
     const out: SportEvent[] = []
-    for (const [day, evs] of byDay) {
+    for (const evs of byDay.values()) {
       const sorted = [...evs].sort((a, b) => {
         const aFav = eventHasFavorite(favorites, a) ? 1 : 0
         const bFav = eventHasFavorite(favorites, b) ? 1 : 0
         if (aFav !== bFav) return bFav - aFav
-        const sA = scoreFor(a)
-        const sB = scoreFor(b)
+        const sA = rankFor(a)
+        const sB = rankFor(b)
         if (sA !== sB) return sB - sA
         return (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
       })
-      // Días YA JUGADOS (timeline "Ver resultados anteriores"): se muestran
-      // COMPLETOS, sin curación. Destacados solo tiene sentido como AVANCE de lo
-      // que viene; en un día terminado el usuario quiere TODOS los resultados,
-      // no 4 curados (que además esconderían resultados reales sin avisar).
-      if (day !== 'unknown' && day < todayKey) {
-        out.push(...sorted)
-        continue
-      }
       // Al menos MIN; se extiende mientras el siguiente siga siendo favorito o
-      // élite (≥ ELITE), hasta MAX. Ordenado desc. → en cuanto uno no cualifica,
-      // el resto tampoco: corte limpio.
+      // "bueno" (mérito ≥ ELITE). Ordenado desc. → en cuanto uno no cualifica, el
+      // resto tampoco: corte limpio. SIN tope: el día enseña tantos partidos
+      // buenos como tenga (antes había un MAX de 8 que recortaba a ciegas un
+      // sábado de Champions). Los días YA JUGADOS se curan igual — para ver todos
+      // los resultados de un día está el modo "Todo". [José Tomás, 26/08/2026]
       let keep = Math.min(DESTACADOS_MIN, sorted.length)
       while (
         keep < sorted.length &&
-        keep < DESTACADOS_MAX &&
-        (eventHasFavorite(favorites, sorted[keep]) || scoreFor(sorted[keep]) >= DESTACADOS_ELITE)
+        (eventHasFavorite(favorites, sorted[keep]) || meritFor(sorted[keep]) >= DESTACADOS_ELITE)
       ) {
         keep++
       }
-      // El Mundial y los DIRECTOS entran SIEMPRE en Destacados, aunque el tope del
-      // día (MAX) los dejara fuera: el Mundial garantiza cobertura del torneo y un
-      // directo es por definición un destacado. Se respeta el orden ya calculado
-      // (`sorted`). [23] antes faltaba `|| isLive` → los directos de liga menor se
-      // caían del cap (la app y el curateDay del shared sí los mantenían).
-      out.push(...sorted.filter((e, i) =>
-        i < keep ||
-        isMundial(e.comp) ||
-        (liveScores.has(e.id) && isLiveStatus(liveScores.get(e.id)?.status ?? '')),
-      ))
+      // Solo el Mundial entra SIEMPRE, aunque el corte lo dejara fuera: es
+      // cobertura comprometida del torneo, no una valoración del cartel. Estar EN
+      // DIRECTO ya NO cuela un partido (antes sí): un directo sube en el orden
+      // por su bonus, pero cualifica por mérito como cualquier otro. Se respeta
+      // el orden ya calculado (`sorted`). Los directos siguen todos a un toque,
+      // en "Todo" y en el chip EN VIVO. [José Tomás, 26/08/2026]
+      out.push(...sorted.filter((e, i) => i < keep || isMundial(e.comp)))
     }
     return out
   }, [filtered, activeFilter, activeComp, favorites, followedSports, search, liveScores, tz])
@@ -1269,7 +1278,11 @@ export default function CalendarioContent({
               hay otro sitio donde verlos. */}
           {liveHeroCards.length > 0 && !selectedDate && (
             <section>
-              <SectionHeader icon={<LiveDotIcon size={8} />} label="En Vivo" color="#FF4D2E" count={liveHeroCards.length} hint={liveHeroCards.length > 3 ? '← desliza →' : undefined} />
+              {/* El carrusel son los directos HUÉRFANOS (no están en la lista de
+                  abajo) y la línea de debajo son los que SÍ están. Sumados dan el
+                  número del chip de la barra. Antes las tres cifras salían sin
+                  decir qué contaba cada una y parecían contradecirse. */}
+              <SectionHeader icon={<LiveDotIcon size={8} />} label="En vivo ahora" color="#FF4D2E" count={liveHeroCards.length} hint={liveHeroCards.length > 3 ? '← desliza →' : undefined} />
               <LiveHeroStrip items={liveHeroCards} />
             </section>
           )}
@@ -1284,7 +1297,9 @@ export default function CalendarioContent({
             >
               <span className="rounded-full flex-shrink-0" style={{ width: 7, height: 7, background: '#FF4D2E', animation: 'live-pulse 1.6s ease-out infinite' }} />
               <span className="text-[11px] font-black uppercase tracking-[0.08em]" style={{ color: '#FF4D2E', fontFamily: 'var(--font-sport)' }}>
-                {liveEventsInList.length} en vivo ahora
+                {liveHeroCards.length > 0
+                  ? `${liveEventsInList.length} en vivo más, en la lista`
+                  : `${liveEventsInList.length} en vivo en la lista`}
               </span>
               <span className="ml-auto text-[10px] font-bold" style={{ color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>ir →</span>
             </button>
@@ -1401,6 +1416,7 @@ export default function CalendarioContent({
                   <DaySeparator
                     dateKey={dateKey}
                     count={dayEvents.length}
+                    curated={activeFilter === 'Destacados'}
                     liveCount={dayEvents.filter(e => liveScores.has(e.id) && isLiveStatus(liveScores.get(e.id)?.status ?? '')).length}
                     mineCount={dayEvents.filter(e => eventHasFavorite(favorites, e)).length}
                     tone={dateKey < todayKey ? 'past' : 'upcoming'}

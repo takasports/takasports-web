@@ -49,3 +49,15 @@ describe('LaLiga no debe arrastrar a Segunda', () => {
     if (segunda) expect(matchesCompetition(segunda, { comp: 'LaLiga 2', sport: 'Fútbol' })).toBe(true)
   })
 })
+
+
+describe('Champions vs Championship — la subcadena traicionera', () => {
+  const champions = getCompetition('champions')!
+  it('la Championship inglesa NO entra en Champions', () => {
+    expect(matchesCompetition(champions, { comp: 'Championship', sport: 'Fútbol' })).toBe(false)
+  })
+  it('la Champions de verdad sigue entrando', () => {
+    expect(matchesCompetition(champions, { comp: 'Champions', sport: 'Fútbol' })).toBe(true)
+    expect(matchesCompetition(champions, { comp: 'UEFA Champions League', sport: 'Fútbol' })).toBe(true)
+  })
+})

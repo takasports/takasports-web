@@ -94,9 +94,11 @@ export function filterByFollowed<T extends CurateEvent>(events: readonly T[], pr
 
 export interface CurateDayOptions extends FollowedPrefs, FollowFilterHooks {
   dayKey?: (iso: string | null | undefined) => string
+  /** @deprecated Ya no se usa: los días pasados se curan igual que los futuros. */
   now?: number
   min?: number
   elite?: number
+  /** Tope duro por día. Por defecto NO hay: el día enseña tantos buenos como haya. */
   max?: number
   filter?: boolean
 }
@@ -109,16 +111,19 @@ function defaultDayKey(iso?: string | null): string {
 }
 
 /**
- * Filtra por seguidos (salvo `filter:false`) y CURA por día: al menos `min`,
- * ampliando mientras el siguiente sea favorito o score ≥ `elite`, hasta `max`.
- * Mundial y directos entran SIEMPRE. Días ya jugados van completos. Unifica la
- * política que estaba duplicada inline en el calendario de app y web.
+ * Filtra por seguidos (salvo `filter:false`) y CURA por día: al menos `min`
+ * partidos y, a partir de ahí, TODOS los que sigan siendo de un equipo tuyo o
+ * "buenos" (mérito ≥ `elite`). El Mundial entra SIEMPRE.
+ *
+ * [José Tomás, 26/08/2026] Sin tope por día (antes 8), los días YA JUGADOS se
+ * curan igual que los futuros (antes salían completos), y estar EN DIRECTO
+ * ORDENA pero ya NO cualifica (antes todo directo entraba fuera del corte). Ver
+ * el espejo en takasports-shared/src/calendar/index.ts.
  */
 export function curateDay<T extends CurateEvent>(events: readonly T[], opts: CurateDayOptions = {}): T[] {
   const min = opts.min ?? 4
   const elite = opts.elite ?? 12
-  const max = opts.max ?? 8
-  const now = opts.now ?? Date.now()
+  const max = opts.max ?? Number.POSITIVE_INFINITY
   const dayKey = opts.dayKey ?? defaultDayKey
   const tm = opts.teamMatch ?? defaultTeamMatch
   const teams = opts.equiposSeguidos ?? []
@@ -133,38 +138,46 @@ export function curateDay<T extends CurateEvent>(events: readonly T[], opts: Cur
     arr.push(ev)
     byDay.set(k, arr)
   }
-  const todayKey = dayKey(new Date(now).toISOString())
-
   const isFav = (ev: T): boolean => {
     if (!teams.length) return false
     const h = homeOf(ev), a = awayOf(ev)
     return teams.some(t => (h && tm(t, h)) || (a && tm(t, a)))
   }
-  const scoreCache = new Map<T, number>()
-  const scoreFor = (ev: T): number => {
-    const c = scoreCache.get(ev)
+  // `rankFor` (con el bonus de directo) ordena; `meritFor` (sin él) cualifica.
+  // Ver la explicación larga en el espejo del shared.
+  const rankCache = new Map<T, number>()
+  const meritCache = new Map<T, number>()
+  const scoreWith = (ev: T, live: boolean): number => getEventHighlightScore({
+    comp: ev.comp ?? '', home: homeOf(ev) ?? undefined, away: awayOf(ev) ?? undefined,
+    stage: ev.stage, isoDate: ev.isoDate ?? undefined, isLive: live,
+  })
+  const rankFor = (ev: T): number => {
+    const c = rankCache.get(ev)
     if (c !== undefined) return c
-    const s = getEventHighlightScore({
-      comp: ev.comp ?? '', home: homeOf(ev) ?? undefined, away: awayOf(ev) ?? undefined,
-      stage: ev.stage, isoDate: ev.isoDate ?? undefined, isLive: isLive?.(ev) ?? false,
-    })
-    scoreCache.set(ev, s)
+    const s = scoreWith(ev, isLive?.(ev) ?? false)
+    rankCache.set(ev, s)
+    return s
+  }
+  const meritFor = (ev: T): number => {
+    const c = meritCache.get(ev)
+    if (c !== undefined) return c
+    const s = scoreWith(ev, false)
+    meritCache.set(ev, s)
     return s
   }
 
   const out: T[] = []
-  for (const [day, evs] of byDay) {
+  for (const evs of byDay.values()) {
     const sorted = [...evs].sort((a, b) => {
       const af = isFav(a) ? 1 : 0, bf = isFav(b) ? 1 : 0
       if (af !== bf) return bf - af
-      const sa = scoreFor(a), sb = scoreFor(b)
+      const sa = rankFor(a), sb = rankFor(b)
       if (sa !== sb) return sb - sa
       return (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
     })
-    if (day !== 'unknown' && day < todayKey) { out.push(...sorted); continue }
     let keep = Math.min(min, sorted.length)
-    while (keep < sorted.length && keep < max && (isFav(sorted[keep]) || scoreFor(sorted[keep]) >= elite)) keep++
-    out.push(...sorted.filter((e, i) => i < keep || isMundial(e.comp ?? '') || (isLive?.(e) ?? false)))
+    while (keep < sorted.length && keep < max && (isFav(sorted[keep]) || meritFor(sorted[keep]) >= elite)) keep++
+    out.push(...sorted.filter((e, i) => i < keep || isMundial(e.comp ?? '')))
   }
   return out
 }

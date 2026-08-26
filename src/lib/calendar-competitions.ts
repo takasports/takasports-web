@@ -20,6 +20,11 @@ export interface CompetitionConfig {
   /** Exige igualdad EXACTA de matchComp (no substring). Para etiquetas que son
    *  prefijo de otras: "Mundial" no debe capturar "Mundial de Clubes". */
   matchExact?: boolean
+  /** Competiciones que NO deben colarse aunque contengan `matchComp` como
+   *  subcadena. "Championship" contiene "Champions", así que la segunda división
+   *  inglesa entraba entera en /calendario/champions y en el filtro de Champions.
+   *  En minúsculas; se compara contra el `comp` del evento. */
+  matchExclude?: string[]
   /** Match alternativo contra el campo `sport` cuando matchComp no aplica. */
   matchSport?: CompetitionSport
   description: string
@@ -76,6 +81,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     shortName: 'Champions',
     sport: 'Fútbol',
     matchComp: 'Champions',
+    matchExclude: ['championship'],
     description: 'Calendario completo de la UEFA Champions League: fase liga, eliminatorias y final.',
     seasonLabel: '2025-2026',
     banner: '/banners/champions.webp',
@@ -285,6 +291,7 @@ export function matchesCompetition(
   if (comp.matchComp) {
     const c = (ev.comp ?? '').toLowerCase()
     const target = comp.matchComp.toLowerCase()
+    if (comp.matchExclude?.some((x) => c.includes(x))) return false
     if (comp.matchExact ? c === target : c.includes(target)) {
       // El match por substring del nombre de competición es laxo a propósito
       // ("Premier" cubre tanto "Premier" como "Premier League"), pero "Premier"

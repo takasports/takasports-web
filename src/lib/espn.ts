@@ -70,6 +70,27 @@ function espnHeadshot(competitor: Record<string, unknown> | undefined): string |
 
 // Final "no normal" de un partido de tenis. Un abandono deja los sets sin
 // cerrar, así que la fila mostraba "Final 0 - 0": cierto y a la vez ilegible.
+// Ronda del torneo, en español. ESPN la manda en `competition.round.displayName`
+// ("Qualifying 1st Round", "Quarterfinals"…) y el feed la TIRABA, así que todos
+// los partidos de un torneo valían lo mismo para Destacados: una previa del US
+// Open puntuaba como la final. Traducirla al español no es cosmética — el
+// `stageBoost` del ranking busca las palabras en español ("cuartos", "semifinal",
+// "final"), así que la ronda pasa a pesar sola. [José Tomás, 26/08/2026]
+export function tennisRoundLabel(displayName: string | undefined): string | undefined {
+  const r = (displayName ?? '').trim()
+  if (!r) return undefined
+  const low = r.toLowerCase()
+  // La previa PRIMERO: "Qualifying Final Round" contiene "final".
+  if (/qualif/.test(low)) return 'Previa'
+  if (/round of 16|\br16\b/.test(low)) return 'Octavos'
+  if (/quarter/.test(low)) return 'Cuartos'
+  if (/semi/.test(low)) return 'Semifinal'
+  if (/^final\b|final round/.test(low)) return 'Final'
+  const n = /(\d+)(?:st|nd|rd|th)\s+round/.exec(low)
+  if (n) return `${n[1]}ª ronda`
+  return r
+}
+
 function tennisFinishNote(statusName: string | undefined): string | undefined {
   if (statusName === 'STATUS_RETIRED') return 'Abandono'
   if (statusName === 'STATUS_WALKOVER') return 'W.O.'
@@ -409,6 +430,7 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
             away,
             sport:     'Tenis',
             comp:      tournamentName,
+            stage:     tennisRoundLabel((m.round as Record<string, unknown> | undefined)?.displayName as string | undefined),
             date:      dateLabel,
             time:      toTimeStr(isoDate),
             accent,
@@ -900,6 +922,7 @@ async function fetchTennisPast(slug: string, daysBack = 10): Promise<RawEvent[]>
             away,
             sport:     'Tenis',
             comp:      tournamentName,
+            stage:     tennisRoundLabel((m.round as Record<string, unknown> | undefined)?.displayName as string | undefined),
             date:      toDateLabel(isoDate),
             time:      toTimeStr(isoDate),
             accent,

@@ -372,8 +372,15 @@ export function CompGroupHeader({ comp, accent, count, first, crest, slug, banne
 // cercano al presente pegado al escudo no; simplemente izquierda→derecha = reciente→viejo).
 // Verde=victoria, gris=empate, rojo apagado=derrota. Fase 1 del rediseño del calendario:
 // este dato se calculaba en el SSR desde 2026-07 y no se pintaba en ninguna parte.
-export function FormBars({ form, align }: { form?: FormResult[]; align: 'left' | 'right' }) {
-  if (!form || form.length === 0) return null
+// Altura de las dos sublíneas bajo el nombre. Se reservan en AMBOS lados en
+// cuanto uno de los dos tiene contenido: la fila alinea al centro cada columna,
+// así que con el puesto (o la forma) en un solo lado los dos nombres quedaban a
+// distinta altura. Espejo del mismo arreglo en la app.
+const FORM_H = 6.5
+const STANDING_H = 14
+
+export function FormBars({ form, align, reserve }: { form?: FormResult[]; align: 'left' | 'right'; reserve?: boolean }) {
+  if (!form || form.length === 0) return reserve ? <span className="block" style={{ height: FORM_H }} /> : null
   const color = (r: FormResult) => r === 'W' ? '#34D399' : r === 'D' ? '#6B7280' : 'rgba(255,77,46,0.75)'
   const title = form.slice(0, 5).map(r => r === 'W' ? 'V' : r === 'D' ? 'E' : 'D').join('-')
   return (
@@ -448,13 +455,13 @@ export function TennisSetLine({ setsStr, accent }: { setsStr: string; accent: st
 // Puesto y puntos bajo el nombre ("4º · 38 pts"). Solo en ligas con tabla; el
 // dato lo adjunta fetchEspnEvents al evento, así que no cuesta ninguna llamada
 // extra aquí. Sin clasificación no pinta nada (no deja hueco).
-export function StandingLine({ standing, align }: { standing?: TeamStanding; align: 'left' | 'right' }) {
+export function StandingLine({ standing, align, reserve }: { standing?: TeamStanding; align: 'left' | 'right'; reserve?: boolean }) {
   const label = standingLabel(standing)
-  if (!label) return null
+  if (!label) return reserve ? <span className="block" style={{ height: STANDING_H }} /> : null
   return (
     <span
       className={`block truncate tabular-nums ${align === 'right' ? 'text-right' : 'text-left'}`}
-      style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.04em', color: '#6E6E80', fontFamily: 'var(--font-sport)', marginTop: 2 }}
+      style={{ fontSize: 9.5, lineHeight: '12px', height: STANDING_H - 2, fontWeight: 700, letterSpacing: '0.04em', color: '#6E6E80', fontFamily: 'var(--font-sport)', marginTop: 2 }}
     >
       {label}
     </span>
@@ -463,25 +470,32 @@ export function StandingLine({ standing, align }: { standing?: TeamStanding; ali
 
 // Cara del jugador (headshot de ESPN, redonda) o escudo (fútbol, cuadrado) que flanquea el
 // marcador en la fila. Prioriza la FOTO (tenis); si falla o no hay, el escudo; si tampoco,
-// NADA (la fila muestra solo el nombre — sin siglas raras). Aro tintado del acento (más si fav).
+// el hueco se queda VACÍO (la fila muestra solo el nombre — sin siglas raras). Aro tintado
+// del acento (más si fav).
+//
+// El hueco mide SIEMPRE lo mismo: antes eran 26 px (foto), 20 px (escudo) o nada
+// (el componente devolvía `null` y la columna del grid desaparecía con su gap),
+// así que la cápsula del marcador caía en una x distinta según la fila. Espejo
+// del mismo arreglo en la app.
+const CREST_SLOT = 26
+
 export function MatchCrest({ photo, logo, accent, fav }: { photo?: string; logo?: string; accent: string; fav?: boolean }) {
   const [photoErr, setPhotoErr] = useState(false)
   const [logoErr, setLogoErr] = useState(false)
-  if (photo && !photoErr) {
-    return (
-      <span className="inline-flex flex-shrink-0 rounded-full" style={{ boxShadow: `0 0 0 1.5px ${fav ? accent : `color-mix(in srgb, ${accent} 55%, transparent)`}` }}>
-        <img src={photo} alt="" width={26} height={26} onError={() => setPhotoErr(true)} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
-      </span>
-    )
-  }
-  if (logo && !logoErr) {
-    return (
-      <span className="inline-flex items-center justify-center flex-shrink-0" style={{ width: 20, height: 20, borderRadius: 6, border: fav ? `1.5px solid ${accent}` : '1.5px solid transparent' }}>
-        <img src={logo} alt="" width={18} height={18} onError={() => setLogoErr(true)} style={{ width: 18, height: 18, objectFit: 'contain' }} />
-      </span>
-    )
-  }
-  return null
+  const inner = photo && !photoErr ? (
+    <span className="inline-flex flex-shrink-0 rounded-full" style={{ boxShadow: `0 0 0 1.5px ${fav ? accent : `color-mix(in srgb, ${accent} 55%, transparent)`}` }}>
+      <img src={photo} alt="" width={26} height={26} onError={() => setPhotoErr(true)} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
+    </span>
+  ) : logo && !logoErr ? (
+    <span className="inline-flex items-center justify-center flex-shrink-0" style={{ width: 20, height: 20, borderRadius: 6, border: fav ? `1.5px solid ${accent}` : '1.5px solid transparent' }}>
+      <img src={logo} alt="" width={18} height={18} onError={() => setLogoErr(true)} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+    </span>
+  ) : null
+  return (
+    <span className="inline-flex items-center justify-center flex-shrink-0" style={{ width: CREST_SLOT, height: CREST_SLOT }}>
+      {inner}
+    </span>
+  )
 }
 
 // ─── Compact list row (una línea + canal) — paridad con la app compacta (§4) ──
@@ -594,6 +608,13 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
   const stakes = finished ? null : matchStakes(event.homeStanding, event.awayStanding)
   // El historial solo tiene sentido ANTES de jugarse (después manda el marcador).
   const h2hNote = finished || isLive ? null : event.h2hNote
+  // Simetría de la fila: el hueco del escudo y el de cada sublínea se reservan a
+  // los DOS lados en cuanto uno de ellos tiene contenido. Si NINGUNO de los dos
+  // trae imagen (tenis, veladas de UFC) no se reserva nada y la fila se queda
+  // compacta. Espejo del mismo arreglo en la app.
+  const hasCrests = !!(event.homeLogo || event.homePhoto || event.awayLogo || event.awayPhoto)
+  const showStanding = !finished && !!(standingLabel(event.homeStanding) || standingLabel(event.awayStanding))
+  const showForm = (formHome?.length ?? 0) > 0 || (formAway?.length ?? 0) > 0
   // Destino del NOMBRE de cada lado: su ficha. Sin id no hay slug posible → el
   // nombre queda como texto, que es mejor que un enlace roto.
   //
@@ -791,29 +812,29 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
         {isMatchup ? (
           /* Marcador central: nombres + escudos ABRAZAN la cápsula (no se van a los lados).
              Bajo cada nombre, la forma reciente (últimos 5) si el SSR la trajo. */
-          <div className="grid items-center" style={{ gridTemplateColumns: '1fr auto auto auto 1fr', gap: 7 }}>
+          <div className="grid items-center" style={{ gridTemplateColumns: hasCrests ? '1fr auto auto auto 1fr' : '1fr auto 1fr', gap: 7 }}>
             <span className="min-w-0">
               <TeamNameLink href={homeHref} name={rawHome} align="right">
                 <span className="block truncate text-right" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: homeLead ? 900 : 800, color: dimHome ? '#8A8A9E' : '#EDEDF5' }}>
                   {dispHome}
                 </span>
               </TeamNameLink>
-              <FormBars form={formHome} align="right" />
-              {finished ? null : <StandingLine standing={event.homeStanding} align="right" />}
+              {/* Con el marcador delante, el puesto de la tabla ya no sitúa nada:
+                  el contexto de previa se reserva para lo que aún no se ha jugado. */}
+              {finished ? null : <StandingLine standing={event.homeStanding} align="right" reserve={showStanding} />}
+              <FormBars form={formHome} align="right" reserve={showForm} />
             </span>
-            {crest(event.homeLogo, event.homePhoto, hFav)}
+            {hasCrests ? crest(event.homeLogo, event.homePhoto, hFav) : null}
             {scoreCapsule}
-            {crest(event.awayLogo, event.awayPhoto, aFav)}
+            {hasCrests ? crest(event.awayLogo, event.awayPhoto, aFav) : null}
             <span className="min-w-0">
               <TeamNameLink href={awayHref} name={rawAway} align="left">
                 <span className="block truncate text-left" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: awayLead ? 900 : 800, color: dimAway ? '#8A8A9E' : '#EDEDF5' }}>
                   {dispAway}
                 </span>
               </TeamNameLink>
-              <FormBars form={formAway} align="left" />
-              {/* Con el marcador delante, el puesto de la tabla ya no sitúa nada:
-                  el contexto de previa se reserva para lo que aún no se ha jugado. */}
-              {finished ? null : <StandingLine standing={event.awayStanding} align="left" />}
+              {finished ? null : <StandingLine standing={event.awayStanding} align="left" reserve={showStanding} />}
+              <FormBars form={formAway} align="left" reserve={showForm} />
             </span>
           </div>
         ) : (
@@ -940,9 +961,13 @@ export function formatDateSubtitle(localDate: string): string {
 }
 
 // Day separator — prominent header for each date in the events list.
-export function DaySeparator({ dateKey, count, liveCount = 0, mineCount = 0, tone = 'upcoming', tz }: {
+export function DaySeparator({ dateKey, count, curated = false, liveCount = 0, mineCount = 0, tone = 'upcoming', tz }: {
   dateKey: string
   count: number
+  /** El día viene CURADO (modo Destacados): el contador dice "N destacados", no
+   *  "N partidos". Decía "8 partidos" en un sábado que tuvo 96 y parecía que
+   *  ese día apenas se jugó. [José Tomás, 26/08/2026] */
+  curated?: boolean
   /** Partidos EN VIVO dentro del día (píldora roja en el resumen). */
   liveCount?: number
   /** Partidos con un equipo favorito del usuario ("N tuyos"). */
@@ -987,7 +1012,7 @@ export function DaySeparator({ dateKey, count, liveCount = 0, mineCount = 0, ton
             Los extras solo aparecen si aportan (M>0 / K>0) para no alargar el chip. */}
         <span className="flex items-center justify-center gap-1 h-[22px] px-2.5 rounded-full text-[10px] font-black tabular-nums flex-shrink-0"
           style={{ background: isToday ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.05)', color: chipColor, border: `1px solid ${isToday ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.08)'}`, fontFamily: 'var(--font-sport)' }}>
-          {count} {count === 1 ? 'partido' : 'partidos'}
+          {count} {curated ? (count === 1 ? 'destacado' : 'destacados') : count === 1 ? 'partido' : 'partidos'}
           {liveCount > 0 && (
             <span style={{ color: '#FF6349' }}>· {liveCount} en vivo</span>
           )}
