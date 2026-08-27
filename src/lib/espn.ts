@@ -86,7 +86,10 @@ export function tennisRoundLabel(displayName: string | undefined): string | unde
   if (/quarter/.test(low)) return 'Cuartos'
   if (/semi/.test(low)) return 'Semifinal'
   if (/^final\b|final round/.test(low)) return 'Final'
-  const n = /(\d+)(?:st|nd|rd|th)\s+round/.exec(low)
+  // ESPN manda las rondas del cuadro de DOS formas: "1st Round" en unos torneos
+  // y "Round 1" en otros (los 96 partidos del US Open del 30/08/2026 llegaban
+  // así, y salían en inglés en la fila por cubrir solo la primera).
+  const n = /(\d+)(?:st|nd|rd|th)\s+round/.exec(low) ?? /\bround\s+(\d+)/.exec(low)
   if (n) return `${n[1]}ª ronda`
   return r
 }

@@ -162,6 +162,11 @@ describe('tennisRoundLabel — la ronda de ESPN, en español', () => {
     ['Qualifying Final Round', 'Previa'], // contiene "final": la previa manda
     ['1st Round', '1ª ronda'],
     ['3rd Round', '3ª ronda'],
+    // ESPN usa los dos formatos según el torneo; el US Open manda "Round N".
+    ['Round 1', '1ª ronda'],
+    ['Round 4', '4ª ronda'],
+    ['Qualifying 2nd Round', 'Previa'],
+    ['Quarterfinal', 'Cuartos'],
     ['Round of 16', 'Octavos'],
     ['Quarterfinals', 'Cuartos'],
     ['Semifinals', 'Semifinal'],
