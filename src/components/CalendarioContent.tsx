@@ -1399,9 +1399,16 @@ export default function CalendarioContent({
               // competiciones quedan por su primer partido y, dentro de cada una, los
               // encuentros van en hora ascendente.
               const rawDay = grouped[dateKey] ?? []
-              const dayEvents = activeFilter === 'Destacados'
-                ? rawDay
-                : [...rawDay].sort((a, b) => (a.isoDate ?? '').localeCompare(b.isoDate ?? ''))
+              // Por hora, y lo que aún NO tiene hora asignada al FINAL: su isoDate
+              // es la medianoche de la sede (ver timeTbd), así que ordenado a pelo
+              // se colaba al principio del día por delante de partidos con hora real.
+              const porHora = (a: SportEvent, b: SportEvent) => {
+                const ta = a.timeTbd ? 1 : 0
+                const tb = b.timeTbd ? 1 : 0
+                if (ta !== tb) return ta - tb
+                return (a.isoDate ?? '').localeCompare(b.isoDate ?? '')
+              }
+              const dayEvents = [...rawDay].sort(porHora)
               // Agrupar por competición (orden de primera aparición) y ordenar por
               // hora los partidos DENTRO de cada liga. En Destacados venían por
               // relevancia ("caché"), no por hora → ver groupDayByCompetition.
@@ -1423,6 +1430,35 @@ export default function CalendarioContent({
                 })),
                 getLeagueScore,
               )
+              // Una fila, para los dos modos. El ancla "N en vivo ahora → ir" es el
+              // primer directo, esté donde esté.
+              const filaDe = (event: SportEvent, canalGrupo: string | null, conComp: boolean) => {
+                const esAncla = event.id === liveEventsInList[0]?.id
+                const fila = (
+                  <MatchRow
+                    key={event.id}
+                    event={event}
+                    liveScore={liveScores.get(event.id)}
+                    isReminded={reminders.has(event.id)}
+                    onToggleReminder={() => toggleReminder(event.id)}
+                    onClickUFC={setSelectedUFCDate}
+                    flashing={flashIds.has(event.id)}
+                    isFav={eventHasFavorite(favorites, event)}
+                    homeFav={isFavorite(favorites, event.home)}
+                    awayFav={isFavorite(favorites, event.away)}
+                    onToggleFav={() => toggleFavorite(event.home)}
+                    formHome={recentForms[formKey(event, event.home)]}
+                    formAway={event.away ? recentForms[formKey(event, event.away)] : undefined}
+                    canPredict={!!event.matchRef && predictableRefs.has(event.matchRef)}
+                    onPredict={goToPredicciones}
+                    showReason={activeFilter === 'Destacados'}
+                    showComp={conComp}
+                    tz={tz}
+                    groupChannel={canalGrupo}
+                  />
+                )
+                return esAncla ? <div key={event.id} id="primer-en-vivo">{fila}</div> : fila
+              }
               return (
                 // key incluye el filtro/fecha/onlyLive: al cambiarlos la sección
                 // se re-monta y dispara la entrada en cascada (Fase B). No incluye
@@ -1437,7 +1473,20 @@ export default function CalendarioContent({
                     tone={dateKey < todayKey ? 'past' : 'upcoming'}
                     tz={tz}
                   />
-                  {orderedComps.map((comp, compIdx) => {
+                  {/* DESTACADOS: lista PLANA por hora, sin cabeceras de liga.
+                      Agrupando por liga el reloj salta hacia atrás cada vez que
+                      cambias de grupo (medido: 13 saltos en un día de 161
+                      partidos) y no hay orden de grupos que lo arregle — las
+                      ligas abarcan el día entero, así que ordenarlas por su
+                      primer partido sale PEOR (15 saltos). Aquí un día son 4-12
+                      partidos: agrupar aporta poco y la línea de tiempo se lee
+                      sola; la competición pasa a la ceja de cada fila. En "Todo"
+                      se mantiene la agrupación. [José Tomás, 27/08/2026] */}
+                  {activeFilter === 'Destacados' ? (
+                    <div className="space-y-1.5">
+                      {dayEvents.map(event => filaDe(event, null, true))}
+                    </div>
+                  ) : orderedComps.map((comp, compIdx) => {
                     const compEvents = byComp[comp]
                     // FASE 3 (José Tomás 2026-07-09): cabecera de liga en el color
                     // POR DEPORTE (verde fútbol, ámbar básket…), igual que las tarjetas
@@ -1455,34 +1504,7 @@ export default function CalendarioContent({
                       <div key={comp} className="mb-2 relative cal-anim-in" style={{ animationDelay: `${Math.min(compIdx * 55, 280)}ms` }}>
                         <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} channel={canalGrupo} crest={cfg?.crest} slug={cfg?.slug} banner={activeComp && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} collapsed={collapsedComps.has(comp)} onToggleCollapse={() => toggleCollapsedComp(comp)} />
                         <div className="space-y-1.5">
-                          {collapsedComps.has(comp) ? null : compEvents.map(event => {
-                            // Ancla de la línea "N en vivo ahora → ir": el primero
-                            // que se esté jugando, esté en la liga que esté.
-                            const esAncla = event.id === liveEventsInList[0]?.id
-                            const fila = (
-                            <MatchRow
-                              key={event.id}
-                              event={event}
-                              liveScore={liveScores.get(event.id)}
-                              isReminded={reminders.has(event.id)}
-                              onToggleReminder={() => toggleReminder(event.id)}
-                              onClickUFC={setSelectedUFCDate}
-                              flashing={flashIds.has(event.id)}
-                              isFav={eventHasFavorite(favorites, event)}
-                              homeFav={isFavorite(favorites, event.home)}
-                              awayFav={isFavorite(favorites, event.away)}
-                              onToggleFav={() => toggleFavorite(event.home)}
-                              formHome={recentForms[formKey(event, event.home)]}
-                              formAway={event.away ? recentForms[formKey(event, event.away)] : undefined}
-                              canPredict={!!event.matchRef && predictableRefs.has(event.matchRef)}
-                              onPredict={goToPredicciones}
-                              showReason={activeFilter === 'Destacados'}
-                              tz={tz}
-                              groupChannel={canalGrupo}
-                            />
-                            )
-                            return esAncla ? <div key={event.id} id="primer-en-vivo">{fila}</div> : fila
-                          })}
+                          {collapsedComps.has(comp) ? null : compEvents.map(event => filaDe(event, canalGrupo, false))}
                         </div>
                       </div>
                     )

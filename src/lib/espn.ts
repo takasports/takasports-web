@@ -421,6 +421,12 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
 
         const matchId  = m.id as string
         const matchRef = `tennis_${shortSlug}_${matchId}`
+        // Hora aún sin asignar: ESPN lo dice con `timeValid: false` y pone la
+        // fecha a medianoche de la sede. Sin esto, una ronda entera aparecía
+        // con la misma hora falsa — el 30/08/2026, 64 partidos del US Open a
+        // las 04:00Z (= las 00:00 en Nueva York). La fila enseña "VS" y el día
+        // los manda al final, que es donde va lo que no tiene hora.
+        const horaPorConfirmar = m.timeValid === false
 
         results.push({
           isoDate,
@@ -432,7 +438,8 @@ async function fetchTennisLeague(slug: string): Promise<RawEvent[]> {
             comp:      tournamentName,
             stage:     tennisRoundLabel((m.round as Record<string, unknown> | undefined)?.displayName as string | undefined),
             date:      dateLabel,
-            time:      toTimeStr(isoDate),
+            time:      horaPorConfirmar ? '' : toTimeStr(isoDate),
+            ...(horaPorConfirmar ? { timeTbd: true } : {}),
             accent,
             isoDate,
             broadcast: getSpanishBroadcast(tournamentName, 'Tenis'),

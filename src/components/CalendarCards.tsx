@@ -629,10 +629,15 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
   // Canal de TV localizado según la zona horaria elegida (espejo de la app).
   // El canal solo se pinta aquí si NO es el que su liga ya anuncia en la cabecera
   // del grupo. Medido el 21/08: 16 de 22 filas del día repetían el mismo.
-  const channel = rowChannel(
-    getBroadcastForTz(compLabel, event.sport ?? '', tz ?? SOURCE_TZ) ?? event.broadcast,
-    groupChannel ?? null,
-  )
+  // En la lista PLANA (Destacados) la fila ya gasta su ceja en la competición;
+  // repetir además el canal en todas las filas del día es el ruido que la
+  // cabecera de grupo evitaba. Sigue en la ficha del partido. Espejo de la app.
+  const channel = showComp
+    ? undefined
+    : rowChannel(
+        getBroadcastForTz(compLabel, event.sport ?? '', tz ?? SOURCE_TZ) ?? event.broadcast,
+        groupChannel ?? null,
+      )
 
   // Recordatorio solo para PRÓXIMOS con ficha y fecha futura.
   const kickoffMs = event.isoDate ? new Date(event.isoDate).getTime() : NaN
@@ -695,7 +700,11 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
   // izquierda de la del resto. Medido el 27/08/2026 sobre 825 filas: dos grupos
   // limpios a 151,99 y 164,00 px. Simétrico, la cápsula no se mueve nunca —
   // pierde nombre por los bordes, que es donde no se nota. Espejo de la app.
-  const contentPad = canRemind ? 24 : 0
+  // 12 y no 24: la campana ocupa hasta 24 px del borde y la tarjeta ya pone 13
+  // de padding, así que con 12 más se despeja. Los 24 venían de cuando el estado
+  // iba en esa esquina; con el doble ya no hacía falta, y como ahora la reserva
+  // es simétrica, cada píxel de más se lo come el nombre por los dos lados.
+  const contentPad = canRemind ? 12 : 0
 
   // Cara del jugador (tenis) o escudo (fútbol) que flanquea el marcador. Si no hay ni
   // foto ni escudo → nada (solo el nombre); ya NO se muestran siglas raras (José Tomás).

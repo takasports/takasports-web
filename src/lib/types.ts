@@ -89,6 +89,11 @@ export interface SportEvent {
   isoDate?: string        // ISO-8601 UTC — para cálculos de fecha exactos
   venue?: string
   stage?: string
+  /** El torneo aún no ha asignado hora a este partido: `time` va vacío y la fila
+   *  no debe inventarse una. ESPN lo marca con `timeValid: false` y fecha a
+   *  medianoche de la sede — es una ronda entera sin horario (el 30/08/2026, 64
+   *  partidos del US Open compartían las 04:00Z = medianoche en Nueva York). */
+  timeTbd?: boolean
   broadcast?: string
   // Team identity
   homeLogo?: string
