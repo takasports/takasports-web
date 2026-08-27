@@ -90,11 +90,14 @@ export function matchStakes(
  */
 export function standingLabel(s: TeamStanding | undefined): string | null {
   if (!s) return null
-  // Sin tabla útil todavía (agosto), la fila enseña el CIERRE del año pasado.
-  // Va sin puntos a propósito: el puesto sitúa, los 86 puntos de la temporada
-  // anterior no le dicen nada a nadie y alargan la línea. Ver lib/last-season.ts.
+  // "Recién ascendido" SÍ sitúa y no caduca: se queda.
   if (s.promoted) return 'Recién ascendido'
-  if (s.lastSeason) return `${ord(s.rank)} el año pasado`
+  // El puesto del año pasado NO se pinta en la fila. Sale en todas —doce veces
+  // en una pantalla en agosto— y no dice nada útil: un "13º el año pasado" no
+  // sitúa a nadie, y el que sí sitúa (un grande) ya se reconoce por el nombre.
+  // El dato sigue calculándose (lib/last-season.ts) y vuelve solo, con sus
+  // puntos, en cuanto la tabla nueva es real. [José Tomás, 26/08/2026]
+  if (s.lastSeason) return null
   const puesto = s.group ? `${ord(s.rank)} ${s.group}` : ord(s.rank)
   const valor = s.relegation === false && s.record ? s.record : `${s.pts} pts`
   return `${puesto} · ${valor}`

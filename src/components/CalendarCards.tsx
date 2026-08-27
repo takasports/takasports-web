@@ -294,13 +294,43 @@ export function compConfigForGroup(comp: string, sport?: string) {
 // ─── Competition sub-header ───────────────────────────────────────────────
 // Si la competición tiene página propia, la cabecera lleva su escudo oficial y
 // es un enlace a /calendario/[slug] (anclaje visual + descubrimiento).
-export function CompGroupHeader({ comp, accent, count, first, crest, slug, banner, pinned, onTogglePin, channel }: {
+export function CompGroupHeader({ comp, accent, count, first, crest, slug, banner, pinned, onTogglePin, channel, collapsed, onToggleCollapse }: {
   comp: string; accent: string; count: number; first?: boolean; crest?: string; slug?: string
   banner?: string; pinned?: boolean; onTogglePin?: () => void
   /** Canal común a TODA la liga: se anuncia aquí una vez y las filas no lo repiten. */
   channel?: string | null
+  /** La liga está plegada: sus partidos no se pintan (el contador sí). */
+  collapsed?: boolean
+  /** Pliega/despliega la liga en TODO el timeline. */
+  onToggleCollapse?: () => void
 }) {
-  const inner = (
+  // El enlace a /calendario/[liga] abraza SOLO la identidad de la liga (espina,
+  // escudo, nombre y su flecha), no la cabecera entera. Antes envolvía TODO, con
+  // los botones de fijar y plegar dentro: un <button> dentro de un <a> no es HTML
+  // válido, y mientras la página no está hidratada esos botones NAVEGAN en vez de
+  // hacer lo suyo (visto el 26/08/2026 con el service worker sirviendo HTML
+  // fósil: pulsar la estrella de Serie A se iba a /calendario/serie-a). Hidratada
+  // funcionaban bien gracias al preventDefault, así que era un fallo de ventana
+  // estrecha — pero real, y esto lo cierra por estructura.
+  const identidad = (
+    <>
+      <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 14, background: accent, boxShadow: `0 0 8px ${accent}66` }} />
+      {crest && (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={crest} alt="" aria-hidden="true" width={16} height={16} loading="lazy" decoding="async"
+          style={{ objectFit: 'contain', width: 16, height: 16, flexShrink: 0 }} />
+      )}
+      <span className="text-[11px] font-bold uppercase tracking-[0.12em] truncate" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+        {comp}
+      </span>
+      {slug && (
+        <svg width="13" height="13" viewBox="0 0 12 12" fill="none" className="flex-shrink-0" aria-hidden style={{ opacity: 0.95 }}>
+          <path d="M4.5 2L8 6l-3.5 4" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </>
+  )
+  return (
     <div className={`relative px-2 pb-2 ${first ? 'pt-1' : 'pt-4'}`}>
       {/* Backdrop sutil de la competición (broadcast): la foto asoma muy tenue
           por la derecha; un scrim la apaga sobre el lado del texto. Solo en las
@@ -314,15 +344,15 @@ export function CompGroupHeader({ comp, accent, count, first, crest, slug, banne
         </div>
       )}
       <div className="relative flex items-center gap-2.5" style={{ zIndex: 1 }}>
-        <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 14, background: accent, boxShadow: `0 0 8px ${accent}66` }} />
-        {crest && (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={crest} alt="" aria-hidden="true" width={16} height={16} loading="lazy" decoding="async"
-            style={{ objectFit: 'contain', width: 16, height: 16, flexShrink: 0 }} />
+        {slug ? (
+          <Link href={`/calendario/${slug}`} prefetch={false}
+            className="flex items-center gap-2.5 min-w-0 flex-1 no-underline transition-all hover:brightness-125"
+            aria-label={`Ver calendario de ${comp}`}>
+            {identidad}
+          </Link>
+        ) : (
+          <span className="flex items-center gap-2.5 min-w-0 flex-1">{identidad}</span>
         )}
-        <span className="text-[11px] font-bold uppercase tracking-[0.12em] truncate flex-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
-          {comp}
-        </span>
         {channel && (
           /* El canal de toda la liga, una sola vez. Ver lib/comp-group-channel.ts. */
           <span className="flex items-center gap-1 flex-shrink-0" style={{ maxWidth: '42%' }}>
@@ -350,10 +380,22 @@ export function CompGroupHeader({ comp, accent, count, first, crest, slug, banne
             </svg>
           </button>
         )}
-        {slug && (
-          <svg width="13" height="13" viewBox="0 0 12 12" fill="none" className="flex-shrink-0" aria-hidden style={{ opacity: 0.95 }}>
-            <path d="M4.5 2L8 6l-3.5 4" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        {/* Plegar la liga. Un sábado en "Todo" son ~96 partidos en veinte grupos;
+            poder cerrar los que no interesan lo hace navegable. El contador de al
+            lado se queda para saber qué hay debajo. Espejo de la app. */}
+        {onToggleCollapse && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleCollapse() }}
+            aria-label={collapsed ? `Desplegar ${comp}` : `Plegar ${comp}`}
+            aria-expanded={!collapsed}
+            className="flex items-center justify-center flex-shrink-0 rounded-md transition-all"
+            style={{ width: 24, height: 24, cursor: 'pointer', background: 'transparent', border: 'none' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden
+              style={{ transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 140ms ease' }}>
+              <path d="M5 9l7 7 7-7" stroke={collapsed ? accent : '#6A6A80'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         )}
         <span className="text-[9px] font-bold tabular-nums px-2 py-0.5 rounded-full flex-shrink-0"
           style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
@@ -362,9 +404,6 @@ export function CompGroupHeader({ comp, accent, count, first, crest, slug, banne
       </div>
     </div>
   )
-  return slug
-    ? <Link href={`/calendario/${slug}`} prefetch={false} className="block no-underline transition-all hover:brightness-125" aria-label={`Ver calendario de ${comp}`}>{inner}</Link>
-    : inner
 }
 
 // Forma reciente (últimos 5): barritas W/D/L bajo el nombre del equipo. El dato más

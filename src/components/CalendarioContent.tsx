@@ -698,6 +698,21 @@ export default function CalendarioContent({
       .map(k => ({ key: k }))
   }, [events, search, activeFilter, activeCompCfg, tz])
 
+  // Ligas plegadas. La clave es el nombre de la competición, no el día: plegar la
+  // Saudi Pro League la pliega en TODOS los días, que es lo que uno quiere cuando
+  // no le interesa. Es estado de VISTA, no un filtro — el contador del día sigue
+  // diciendo cuántos partidos hay. No se persiste: es un "ahora mismo no me
+  // estorbes", no una preferencia. Espejo de la app. [José Tomás, 26/08/2026]
+  const [collapsedComps, setCollapsedComps] = useState<ReadonlySet<string>>(() => new Set())
+  const toggleCollapsedComp = useCallback((comp: string) => {
+    setCollapsedComps(prev => {
+      const next = new Set(prev)
+      if (next.has(comp)) next.delete(comp)
+      else next.add(comp)
+      return next
+    })
+  }, [])
+
   const liveEventsInList = useMemo(
     () => filtered.filter(e => liveScores.has(e.id) && isLiveStatus(liveScores.get(e.id)?.status ?? '')),
     [filtered, liveScores]
@@ -1438,9 +1453,9 @@ export default function CalendarioContent({
                       getBroadcastForTz(comp, compEvents[0]?.sport ?? '', tz) ?? groupChannel(compEvents)
                     return (
                       <div key={comp} className="mb-2 relative cal-anim-in" style={{ animationDelay: `${Math.min(compIdx * 55, 280)}ms` }}>
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} channel={canalGrupo} crest={cfg?.crest} slug={cfg?.slug} banner={activeComp && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} channel={canalGrupo} crest={cfg?.crest} slug={cfg?.slug} banner={activeComp && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} collapsed={collapsedComps.has(comp)} onToggleCollapse={() => toggleCollapsedComp(comp)} />
                         <div className="space-y-1.5">
-                          {compEvents.map(event => {
+                          {collapsedComps.has(comp) ? null : compEvents.map(event => {
                             // Ancla de la línea "N en vivo ahora → ir": el primero
                             // que se esté jugando, esté en la liga que esté.
                             const esAncla = event.id === liveEventsInList[0]?.id

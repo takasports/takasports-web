@@ -70,14 +70,14 @@ describe('pairLastSeason', () => {
 
   it('EL CASO ÚTIL: el que falta subió de categoría', () => {
     const r = pairLastSeason(row('Madrid', 2), undefined, opts)
-    expect(standingLabel(r?.home)).toBe('2º el año pasado')
+    expect(r?.home).toMatchObject({ rank: 2, lastSeason: true })
     expect(standingLabel(r?.away)).toBe('Recién ascendido')
   })
 
   it('funciona igual si el ascendido juega en casa', () => {
     const r = pairLastSeason(undefined, row('Madrid', 2), opts)
     expect(standingLabel(r?.home)).toBe('Recién ascendido')
-    expect(standingLabel(r?.away)).toBe('2º el año pasado')
+    expect(r?.away).toMatchObject({ rank: 2, lastSeason: true })
   })
 
   it('donde no hay ascensos, un solo puesto no se enseña', () => {
@@ -109,8 +109,15 @@ describe('el puesto viejo NO se disfraza de tabla viva', () => {
     expect(vivo?.label).toBe('Líder vs 2º')
   })
 
-  it('la etiqueta dice el año pasado y omite los puntos', () => {
-    expect(standingLabel({ rank: 4, pts: 72, lastSeason: true })).toBe('4º el año pasado')
+  it('el puesto del año pasado NO se pinta en la fila', () => {
+    // Salía en TODAS las filas —doce veces en una pantalla en agosto— y un "13º
+    // el año pasado" no sitúa a nadie. El dato se sigue calculando y vuelve solo,
+    // con sus puntos, cuando la tabla nueva es real. [José Tomás, 26/08/2026]
+    expect(standingLabel({ rank: 4, pts: 72, lastSeason: true })).toBeNull()
+  })
+
+  it('pero "Recién ascendido" sí se queda: eso no caduca', () => {
+    expect(standingLabel({ rank: 0, pts: 0, promoted: true })).toBe('Recién ascendido')
   })
 
   it('la etiqueta normal no cambia', () => {
