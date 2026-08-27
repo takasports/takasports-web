@@ -689,10 +689,13 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
 
   // Pronosticar: solo mientras el partido no haya arrancado (la quiniela cierra).
   const showPredict = !!canPredict && !isLive && !finished && !!onPredict
-  // Hueco a la derecha para no chocar con la pastilla/campana absolutas.
-  // El estado ya NO va en la esquina (pasa a ceja centrada) → el marcador queda CENTRADO;
-  // solo reservamos hueco a la dcha para la campana de recordatorio en próximos.
-  const contentPadRight = canRemind ? 24 : 0
+  // Hueco para no chocar con la campana de la esquina. Va a los DOS lados a
+  // propósito: reservándolo solo a la derecha, el contenido de las filas con
+  // campana quedaba 24 px más estrecho y su cápsula de marcador caía 12 px a la
+  // izquierda de la del resto. Medido el 27/08/2026 sobre 825 filas: dos grupos
+  // limpios a 151,99 y 164,00 px. Simétrico, la cápsula no se mueve nunca —
+  // pierde nombre por los bordes, que es donde no se nota. Espejo de la app.
+  const contentPad = canRemind ? 24 : 0
 
   // Cara del jugador (tenis) o escudo (fútbol) que flanquea el marcador. Si no hay ni
   // foto ni escudo → nada (solo el nombre); ya NO se muestran siglas raras (José Tomás).
@@ -776,7 +779,7 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
         </button>
       ) : null}
 
-      <div className="relative pointer-events-none" style={{ zIndex: 2, paddingRight: contentPadRight }}>
+      <div className="relative pointer-events-none" style={{ zIndex: 2, paddingLeft: contentPad, paddingRight: contentPad }}>
         {/* Ceja CENTRADA encima del marcador: estado (EN VIVO·min / DESCANSO / FINAL) +
             fecha (Recordatorios) + título de velada / competición. */}
         {(isLive || finished || eyebrowText || dateLabel || stakes || showPredict) ? (
