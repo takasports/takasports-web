@@ -4,6 +4,7 @@ import { sanityClient, articlesBySportQuery, reelsQuery, eventsBySportQuery } fr
 import { SLUG_TO_LABEL, getSportEmoji } from '@/lib/sports'
 import { getRanking } from '@/lib/rankings-data'
 import reelsData from '@/lib/reels-data.json'
+import { stripExpiredThumbs } from '@/lib/reel-thumbs'
 import Header from '@/components/Header'
 import BreakingNewsBar from '@/components/BreakingNewsBar'
 import LiveStrip from '@/components/LiveStrip'
@@ -115,7 +116,12 @@ export default async function SportPage({
   // Filter out any null/undefined entries (Sanity can return nulls for broken references)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const safeArticles = (articles as any[]).filter(Boolean)
-  const igReels = (reels as unknown[]).length > 0 ? reels : reelsData
+  // Sin URLs muertas, sea cual sea el origen. Instagram firma las miniaturas con
+  // caducidad y estas páginas leen los reels de Sanity —saltándose el filtro de
+  // getMergedReels— con un respaldo estático que es aún más viejo: las 6 del
+  // JSON del repo caducaron el 15/05/2026. Se filtra DESPUÉS de elegir origen,
+  // que es donde estaba el agujero. Ver stripExpiredThumbs.
+  const igReels = stripExpiredThumbs(((reels as unknown[]).length > 0 ? reels : reelsData) as { thumbnail_url?: string | null }[])
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sportEvents = ((upcomingEvents as any[]) ?? []).filter(Boolean)
 

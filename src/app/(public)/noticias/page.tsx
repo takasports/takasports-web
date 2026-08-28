@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { sanityClient, articlesQuery, reelsQuery, urlFor } from '@/lib/sanity'
 import reelsData from '@/lib/reels-data.json'
+import { stripExpiredThumbs } from '@/lib/reel-thumbs'
 import NoticiasContent from '@/components/NoticiasContent'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
@@ -34,7 +35,12 @@ export default async function NoticiasPage() {
     sanityClient.fetch(reelsQuery).catch(() => []),
   ])
 
-  const igReels = (reels as unknown[]).length > 0 ? reels : reelsData
+  // Sin URLs muertas, sea cual sea el origen. Instagram firma las miniaturas con
+  // caducidad y estas páginas leen los reels de Sanity —saltándose el filtro de
+  // getMergedReels— con un respaldo estático que es aún más viejo: las 6 del
+  // JSON del repo caducaron el 15/05/2026. Se filtra DESPUÉS de elegir origen,
+  // que es donde estaba el agujero. Ver stripExpiredThumbs.
+  const igReels = stripExpiredThumbs(((reels as unknown[]).length > 0 ? reels : reelsData) as { thumbnail_url?: string | null }[])
 
   type ListArticle = { _id: string; slug?: string; title: string; imageUrl?: string | null; image?: { asset: { _ref: string } } | null }
   const breadcrumbJsonLd = {

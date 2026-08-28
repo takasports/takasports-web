@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { sanityClient, articlesQuery, articlesBySlugsQuery, reelsQuery, eventsQuery, reportajesQuery } from '@/lib/sanity'
+import { stripExpiredThumbs } from '@/lib/reel-thumbs'
 import { HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, CATEGORY_TO_SLUG } from '@/lib/sports'
 import { normalizeEvent } from '@/lib/events'
 import { fetchEspnEvents } from '@/lib/espn'
@@ -123,11 +124,18 @@ export default async function Home() {
   })
 
   // SSR: Sanity reels → live Instagram API → seed placeholders
-  const reels = (sanityReels as unknown[]).length > 0
-    ? sanityReels
-    : igReels.length > 0
-      ? igReels
-      : SEED_REELS
+  // Sin URLs muertas, sea cual sea el origen. Instagram firma las miniaturas con
+  // caducidad y estas páginas leen los reels de Sanity —saltándose el filtro de
+  // getMergedReels— con un respaldo estático que es aún más viejo: las 6 del
+  // JSON del repo caducaron el 15/05/2026. Se filtra DESPUÉS de elegir origen,
+  // que es donde estaba el agujero. Ver stripExpiredThumbs.
+  const reels = stripExpiredThumbs(
+    ((sanityReels as unknown[]).length > 0
+      ? sanityReels
+      : igReels.length > 0
+        ? igReels
+        : SEED_REELS) as { thumbnail_url?: string | null }[],
+  ) as typeof sanityReels
 
   const sanityEvents = Array.isArray(rawEvents) && rawEvents.length > 0
     ? rawEvents.map(normalizeEvent)

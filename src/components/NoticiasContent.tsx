@@ -312,7 +312,11 @@ export default function NoticiasContent({
           <NoticiasPortada articles={filteredArticles} />
 
           {/* ── REELS ── */}
-          <SectionHeader label="En vídeo" sub={reels.length > 0 ? `${reels.length} reels` : undefined} />
+          {/* Sin contador: contaba la lista CRUDA y ReelsSection pinta la suya ya
+              filtrada por deporte, así que se contradecían en la misma pantalla
+              ("6 reels" arriba, "5 reels" en el chip de debajo). El bueno es el
+              del chip, que además cambia con el filtro. [José Tomás, 28/08/2026] */}
+          <SectionHeader label="En vídeo" />
           <div className="mb-0">
             <ReelsSection reels={reels} initialSport={activeSlug} />
           </div>
