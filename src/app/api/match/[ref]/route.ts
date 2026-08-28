@@ -7,6 +7,7 @@ import { LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
 import { fetchLeagueTableRows, fetchTournamentGroups, byGroup, groupLabel, type LeagueTableRow } from '@/lib/espn-standings'
 import { getPastEventByRef, type H2HResult, type H2HMatch, type FormResult } from '@/lib/past-events'
+import { tennisRoundLabel } from '@/lib/espn'
 import {
   normalizeScoringType, commentaryLabelFor, SOCCER_STAT_ORDER, SOCCER_LABELS,
 } from '@/lib/espn-soccer'
@@ -964,6 +965,7 @@ async function buildTennis(eventId: string, leagueSlug: string): Promise<{
   status: string
   statusLabel: string
   venue?: string
+  startDate?: string
 } | null> {
   const json = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/${leagueSlug}/scoreboard`)
   if (!json) return null
@@ -978,9 +980,27 @@ async function buildTennis(eventId: string, leagueSlug: string): Promise<{
         if (tennis) tennis.tournament = asString(rawEv.name)
         const statusObj  = asObj(asObj(m.status)?.type)
         const statusName = asString(statusObj?.name) ?? ''
-        const statusLabel = asString(statusObj?.shortDetail) ?? mapStatusLabel(statusName)
+        // El `shortDetail` de ESPN para un partido por jugar es su cadena cruda:
+        // "8/28 - 11:00 AM EDT". La web la imprimía tal cual —formato americano y
+        // hora de Nueva York en un sitio en español con selector de zona— y la app
+        // no tenía de dónde sacar la fecha porque este endpoint no mandaba
+        // `startDate` para tenis (sí para fútbol). Ahora: etiqueta traducida como
+        // en el resto de deportes y la fecha en ISO, que cada cliente pinta en la
+        // zona del usuario. [José Tomás, 27/08/2026]
+        const programado = statusName === 'STATUS_SCHEDULED' || statusName === 'STATUS_PRE_GAME'
+        const statusLabel = programado
+          ? mapStatusLabel(statusName)
+          : (asString(statusObj?.shortDetail) ?? mapStatusLabel(statusName))
         const venue = asString(asObj(m.venue)?.fullName)
-        return { tennis, homePlayer: tennis?.homePlayer, awayPlayer: tennis?.awayPlayer, status: statusName, statusLabel, venue }
+        return {
+          tennis,
+          homePlayer: tennis?.homePlayer,
+          awayPlayer: tennis?.awayPlayer,
+          status: statusName,
+          statusLabel,
+          venue,
+          startDate: asString(m.date),
+        }
       }
     }
   }
@@ -1024,9 +1044,14 @@ function buildTennisFromCompetition(comp: Record<string, unknown>): MatchDetail[
   const awayAth = athOf(away)
   const homePlayer = asString(homeAth?.displayName) ?? asString(asObj(home?.team)?.displayName)
   const awayPlayer = asString(awayAth?.displayName) ?? asString(asObj(away?.team)?.displayName)
-  const round = asString(asObj(comp.round)?.displayName)
-             ?? asString(asObj(comp.type)?.text)
-             ?? asString(asArr(comp.notes)[0] ? asObj(asArr(comp.notes)[0])?.headline : undefined)
+  // La ronda llega de ESPN en inglés ("Qualifying Final", "Round 1") y se
+  // enseñaba tal cual en la ficha, en la web y en la app. Misma traducción que
+  // usa el feed del calendario.
+  const round = tennisRoundLabel(
+    asString(asObj(comp.round)?.displayName)
+      ?? asString(asObj(comp.type)?.text)
+      ?? asString(asArr(comp.notes)[0] ? asObj(asArr(comp.notes)[0])?.headline : undefined),
+  )
   return {
     round,
     homePlayer,
@@ -1192,6 +1217,7 @@ export async function GET(
           status: data.status,
           statusLabel: data.statusLabel,
           venue: data.venue,
+          startDate: data.startDate,
           tennis: data.tennis,
         }
         return NextResponse.json(detail, matchCache(detail.status))

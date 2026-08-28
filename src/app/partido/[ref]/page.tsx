@@ -14,6 +14,7 @@ import { LeagueTableBlock } from './LeagueTable'
 import { LiveRefresh } from './LiveRefresh'
 import { LiveMatchProvider, HeroLiveCenter } from './LiveScore'
 import { StickyScoreBar } from './StickyScoreBar'
+import { Kickoff } from './Kickoff'
 import { ShareButton } from '@/components/ShareButton'
 import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import MatchNews from '@/components/MatchNews'
@@ -63,10 +64,13 @@ export async function generateMetadata({
   let description = ''
 
   if (match.homeTeam && match.awayTeam) {
-    const score = match.homeScore != null && match.awayScore != null
-      ? ` ${match.homeScore}–${match.awayScore}`
-      : ''
-    title = `${match.homeTeam}${score} ${match.awayTeam} · ${match.leagueLabel}`
+    // Con marcador, el resultado separa ("Racing 2–1 Elche"); sin él hacía falta
+    // un "vs" — el título salía como "Racing Santander Elche · LaLiga", que no se
+    // lee. [José Tomás, 27/08/2026]
+    const centro = match.homeScore != null && match.awayScore != null
+      ? `${match.homeScore}–${match.awayScore}`
+      : 'vs'
+    title = `${match.homeTeam} ${centro} ${match.awayTeam} · ${match.leagueLabel}`
     description = `${match.statusLabel} · ${match.homeTeam} vs ${match.awayTeam}${match.venue ? ` en ${match.venue}` : ''}`
   } else if (match.mma?.fighters?.length) {
     const [a, b] = match.mma.fighters
@@ -233,6 +237,10 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
       {!live && (
         <span aria-hidden="true" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 2, background: `linear-gradient(90deg, transparent, ${accent}80, transparent)` }} />
       )}
+      {/* El NOMBRE manda sobre la sigla. Se pintaba `homeAbbr ?? homeTeam`, así
+          que un Racing Santander–Elche salía como "RAC" vs "ELC" — ilegible, y
+          la app pone los nombres completos en el mismo ancho. La sigla queda de
+          respaldo por si la API no trae nombre. [José Tomás, 27/08/2026] */}
       <div className="flex items-center justify-between gap-4">
         {/* Home team */}
         {match.homeTeamId ? (
@@ -241,7 +249,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
             <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={68} />
             <p className="text-center font-bold text-sm leading-tight"
               style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-              {match.homeAbbr ?? match.homeTeam}
+              {match.homeTeam ?? match.homeAbbr}
             </p>
           </Link>
         ) : (
@@ -249,7 +257,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
             <TeamLogo logo={match.homeLogo} name={match.homeTeam ?? '—'} size={68} />
             <p className="text-center font-bold text-sm leading-tight"
               style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-              {match.homeAbbr ?? match.homeTeam}
+              {match.homeTeam ?? match.homeAbbr}
             </p>
           </div>
         )}
@@ -267,7 +275,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
             <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={68} />
             <p className="text-center font-bold text-sm leading-tight"
               style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-              {match.awayAbbr ?? match.awayTeam}
+              {match.awayTeam ?? match.awayAbbr}
             </p>
           </Link>
         ) : (
@@ -275,7 +283,7 @@ function TeamScoreboard({ match }: { match: MatchDetail }) {
             <TeamLogo logo={match.awayLogo} name={match.awayTeam ?? '—'} size={68} />
             <p className="text-center font-bold text-sm leading-tight"
               style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-              {match.awayAbbr ?? match.awayTeam}
+              {match.awayTeam ?? match.awayAbbr}
             </p>
           </div>
         )}
@@ -1578,6 +1586,8 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
   const hasSoccerStats    = isSoccer && (match.soccer?.stats.length ?? 0) > 0
   const hasBasketStats    = isBasket && (match.basketball?.stats.length ?? 0) > 0
   const hasSoccerScoring  = isSoccer && (match.soccer?.scoring.length ?? 0) > 0
+  // Aún no ha empezado: no hay nada que "faltar" todavía.
+  const scheduledStatus = !live && !isFinished(match.status)
   const hasCommentary     = isSoccer && (match.soccer?.commentary?.length ?? 0) > 0
   const hasStats   = hasSoccerStats || hasBasketStats
   const hasTable   = (match.leagueTable?.length ?? 0) > 0
@@ -1670,6 +1680,9 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
   const leaguePills = (
     <div className="flex items-center gap-2 mb-5 flex-wrap">
       <Pill color="#C4B5FD">{match.leagueLabel}</Pill>
+      {/* Cuándo se juega. Mientras no haya empezado; en cuanto arranca manda el
+          marcador y la fecha sobra. */}
+      {match.startDate && !live && !finishedStatus && <Kickoff isoDate={match.startDate} />}
       {live && (
         <span
           className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
@@ -1794,7 +1807,11 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
               )}
             </>
           )}
-          {!hasSoccerScoring && !isBasket && (
+          {/* La caja de "sin eventos" solo tiene sentido cuando el partido ya
+              está en marcha y todavía no ha pasado nada. En uno POR JUGAR era una
+              caja de 330 px diciendo lo obvio, justo encima de la forma reciente
+              y la probabilidad, que sí cuentan algo. [José Tomás, 27/08/2026] */}
+          {!hasSoccerScoring && !isBasket && !scheduledStatus && (
             <EmptyState message="Sin eventos registrados aún" kind="events" />
           )}
         </div>

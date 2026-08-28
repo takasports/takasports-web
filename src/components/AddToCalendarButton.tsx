@@ -98,7 +98,9 @@ export function AddToCalendarButton({
             <path d="M4 1.5v2M8 1.5v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
             <path d="M6 6.5v3M4.5 8h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
           </svg>
-          Calendario
+          {/* "Calendario" a secas chocaba con el botón de VOLVER al calendario,
+              que está a dos centímetros y dice lo mismo. */}
+          Añadir
         </>
       )}
     </button>
