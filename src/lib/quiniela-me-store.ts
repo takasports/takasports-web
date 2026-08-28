@@ -120,16 +120,43 @@ export function refreshQuinielaMe(): void {
   void doFetch(true)
 }
 
+// ¿Hay cookie de sesión de Supabase? `createBrowserClient` la guarda como
+// `sb-<ref>-auth-token` (troceada en `.0`, `.1`… cuando es grande). Mirarla es
+// síncrono y no obliga a esperar al chunk de Supabase.
+//
+// Si la detección fallara algún día (Supabase cambia el nombre de la cookie),
+// el peor caso es benigno: no se hace el fetch inicial y el nivel lo pinta el
+// evento de auth de abajo, unas décimas más tarde.
+function pareceLogueado(): boolean {
+  try {
+    return /(?:^|;\s*)sb-[^=;]*-auth-token(?:\.\d+)?=/.test(document.cookie)
+  } catch {
+    return true // sin acceso a cookies, mejor preguntar que quedarse sin nivel
+  }
+}
+
 // Inicializa los disparadores una sola vez (idempotente). Lo llama el
 // hook al montar el primer consumidor.
 function ensureInit() {
   if (initialized || typeof window === 'undefined') return
   initialized = true
 
-  // Fetch inicial: usa la cookie de sesión (se adjunta sola), así funciona
-  // aunque el JS de Supabase aún no haya cargado. Logueado → 200; invitado
-  // → 401 → disabled.
-  void doFetch(true)
+  // Fetch inicial, SOLO si hay cookie de sesión: se adjunta sola, así que
+  // funciona aunque el JS de Supabase no haya cargado todavía.
+  //
+  // Antes se lanzaba siempre y el invitado se comía un 401 garantizado —una
+  // petición y un error rojo en consola en CADA carga de CADA página, que es la
+  // mayoría del tráfico— solo para enterarse de que no hay sesión. La cookie ya
+  // lo dice gratis. [José Tomás, 28/08/2026]
+  const conSesion = pareceLogueado()
+  if (conSesion) {
+    void doFetch(true)
+  } else {
+    // Sin sesión, el store nace DESACTIVADO. Si no, los otros dos disparadores
+    // (volver a la pestaña, 'taka:badge-check') pedirían igual y el 401 volvía
+    // por la puerta de atrás. Un login lo reactiva: doFetch(true) limpia el flag.
+    disabled = true
+  }
 
   const onVisible = () => {
     if (document.visibilityState === 'visible') void doFetch(false)
@@ -148,12 +175,22 @@ function ensureInit() {
     .then(({ createClient }) => {
       const sb = createClient()
       if (!sb) return
-      // El primer evento (INITIAL_SESSION) ya lo cubre el doFetch inicial de
-      // arriba → lo saltamos para no duplicar la llamada en la carga.
-      let firstEvent = true
-      sb.auth.onAuthStateChange(() => {
-        if (firstEvent) {
-          firstEvent = false
+      // El primer evento (INITIAL_SESSION) se salta SOLO si ya hicimos el fetch
+      // inicial; si no lo hicimos (sin cookie), es justo el que tiene que
+      // dispararlo — así un logueado cuya cookie no reconociéramos sigue viendo
+      // su nivel.
+      let saltarPrimero = conSesion
+      sb.auth.onAuthStateChange((_evento, sesion) => {
+        if (saltarPrimero) {
+          saltarPrimero = false
+          return
+        }
+        // Sin sesión no hay nada que preguntar: sería un 401 seguro. Supabase
+        // emite INITIAL_SESSION también para el invitado, así que sin esta
+        // guardia el 401 volvía por aquí aunque no lo lanzáramos al arrancar.
+        // Al cerrar sesión basta con vaciar el store.
+        if (!sesion) {
+          setSnapshot(null)
           return
         }
         void doFetch(true)
