@@ -23,11 +23,11 @@
 // Auth: Bearer <CRON_SECRET>, como el resto de crons.
 
 import { NextRequest, NextResponse } from 'next/server'
-import webpush from 'web-push'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { apiError } from '@/lib/api-utils'
 import { RANKED_FOOTBALL_SPORT } from '@/lib/football-ranked'
+import { sendPushToUser } from '@/lib/push-helper'
 import { SOCCER_LOCK_MS } from '@/components/ranked/soccer/types'
 
 export const dynamic = 'force-dynamic'
@@ -39,7 +39,6 @@ const WINDOW_MAX_MIN = 60
 
 const MAX_NOTIFY_PER_RUN = 500
 
-interface SubRow { user_id: string; endpoint: string; p256dh: string; auth: string }
 interface EventRow {
   id: string
   team_home: string | null
@@ -49,25 +48,9 @@ interface EventRow {
   meta: { date_key?: string } | null
 }
 
-let vapidReady: boolean | null = null
-function initVapid(): boolean {
-  if (vapidReady !== null) return vapidReady
-  const pub  = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-  const priv = process.env.VAPID_PRIVATE_KEY
-  if (!pub || !priv) { vapidReady = false; return false }
-  try {
-    webpush.setVapidDetails(process.env.VAPID_EMAIL ?? 'mailto:taka@takasports.com', pub, priv)
-    vapidReady = true
-  } catch { vapidReady = false }
-  return vapidReady
-}
-
 export async function GET(req: NextRequest) {
   if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
-  }
-  if (!initVapid()) {
-    return NextResponse.json({ ok: false, error: 'vapid_not_configured' }, { status: 503 })
   }
   const admin = adminSupabase()
   if (!admin) return NextResponse.json({ ok: false, error: 'admin_unavailable' }, { status: 503 })
@@ -112,20 +95,19 @@ export async function GET(req: NextRequest) {
   }
   if (!target) return NextResponse.json({ ok: true, fecha: null, notified: 0 })
 
-  const { data: allSubs } = await admin
-    .from('push_subscriptions')
-    .select('user_id, endpoint, p256dh, auth')
-    .contains('topics', ['quiniela'])
+  // Candidatos: push de navegador con topic 'quiniela' MÁS quien tiene la app.
+  // `push_tokens` no tiene topics —la app trae un único interruptor—, y este es
+  // justo el aviso que ese interruptor promete. [José Tomás, 28/08/2026]
+  const [{ data: webSubs }, { data: appTokens }] = await Promise.all([
+    admin.from('push_subscriptions').select('user_id').contains('topics', ['quiniela']),
+    admin.from('push_tokens').select('user_id'),
+  ])
+  const candidatos = [...new Set(
+    [...(webSubs ?? []), ...(appTokens ?? [])].map((r) => r.user_id as string),
+  )]
 
-  if (!allSubs || allSubs.length === 0) {
+  if (candidatos.length === 0) {
     return NextResponse.json({ ok: true, fecha: target.dateKey, notified: 0, note: 'no_subs' })
-  }
-
-  const subsByUser = new Map<string, SubRow[]>()
-  for (const s of allSubs as SubRow[]) {
-    const arr = subsByUser.get(s.user_id) ?? []
-    arr.push(s)
-    subsByUser.set(s.user_id, arr)
   }
 
   // Cuántos partidos de la Jornada lleva pronosticados cada usuario. Solo se
@@ -143,8 +125,8 @@ export async function GET(req: NextRequest) {
   }
 
   const total = target.events.length
-  const toNotify = [...subsByUser.entries()]
-    .filter(([uid]) => (doneByUser.get(uid) ?? 0) < total)
+  const toNotify = candidatos
+    .filter((uid) => (doneByUser.get(uid) ?? 0) < total)
     .slice(0, MAX_NOTIFY_PER_RUN)
 
   if (toNotify.length === 0) {
@@ -158,36 +140,29 @@ export async function GET(req: NextRequest) {
   const mins = Math.max(1, Math.round((target.lockAt - now) / 60_000))
 
   let notified = 0
-  const toPrune: string[] = []
+  let notifiedApp = 0
+  let pruned = 0
 
-  await Promise.allSettled(
-    toNotify.flatMap(([uid, subs]) => {
+  // sendPushToUser reparte a navegador y app y purga lo muerto por su cuenta.
+  const enviados = await Promise.allSettled(
+    toNotify.map((uid) => {
       const left = total - (doneByUser.get(uid) ?? 0)
-      const payload = JSON.stringify({
+      return sendPushToUser(uid, {
         title: `⏰ La Jornada cierra en ${mins} min`,
         body: `⭐ ${starLabel} · te ${left === 1 ? 'falta 1 pick' : `faltan ${left} picks`}`,
         url: '/predicciones',
         // Un tag por Jornada: si algo llegara repetido, el navegador reemplaza
         // en vez de apilar notificaciones.
         tag: `fecha-${target!.dateKey}`,
-      })
-      return subs.map(async s => {
-        try {
-          await webpush.sendNotification(
-            { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } } as webpush.PushSubscription,
-            payload,
-          )
-          notified++
-        } catch (err: unknown) {
-          const e = err as { statusCode?: number }
-          if (e?.statusCode === 404 || e?.statusCode === 410) toPrune.push(s.endpoint)
-        }
+        topic: 'quiniela',
       })
     }),
   )
-
-  if (toPrune.length > 0) {
-    try { await admin.from('push_subscriptions').delete().in('endpoint', toPrune) } catch { /* */ }
+  for (const r of enviados) {
+    if (r.status !== 'fulfilled') continue
+    notified    += r.value.web.sent
+    notifiedApp += r.value.app.sent
+    pruned      += r.value.pruned
   }
 
   return NextResponse.json({
@@ -195,7 +170,8 @@ export async function GET(req: NextRequest) {
     fecha: target.dateKey,
     matches: total,
     notified,
-    pruned: toPrune.length,
-    subscribers: allSubs.length,
+    notified_app: notifiedApp,
+    pruned,
+    subscribers: candidatos.length,
   })
 }

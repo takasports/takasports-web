@@ -5,6 +5,14 @@
 //
 // Auth: Vercel manda Authorization: Bearer <CRON_SECRET>; aceptamos también el
 // header x-cron-secret para pruebas manuales.
+//
+// ESTE cron sigue siendo solo de navegador, a diferencia del resto (28/08/2026),
+// y no por olvido: `match_reminders` se indexa por ENDPOINT de Web Push, no por
+// usuario, y la campana de la app guarda sus recordatorios en AsyncStorage
+// (`@ts_match_reminders`, `src/stores/reminders.ts`) sin escribir nunca en la
+// tabla. Para que el móvil reciba el aviso de "empieza en 10 min" hay que
+// sincronizar antes esas campanas al servidor; es trabajo de app + esquema, no
+// de este emisor.
 
 import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
