@@ -12,10 +12,10 @@
 // Fire-and-forget: si el push falla por un endpoint muerto, se purga en bg.
 
 import { NextRequest, NextResponse } from 'next/server'
-import webpush from 'web-push'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { apiError } from '@/lib/api-utils'
+import { sendPushToUser } from '@/lib/push-helper'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,13 +26,6 @@ const WINDOW_MAX_MIN = 90
 // Límite de users a notificar por ejecución (seguridad anti-spam / timeout Vercel)
 const MAX_NOTIFY_PER_RUN = 500
 
-interface SubRow {
-  user_id:  string
-  endpoint: string
-  p256dh:   string
-  auth:     string
-}
-
 interface EventRow {
   id:        string
   team_home: string | null
@@ -40,36 +33,9 @@ interface EventRow {
   event_date: string
 }
 
-// VAPID lazy init
-let vapidReady: boolean | null = null
-function initVapid(): boolean {
-  if (vapidReady !== null) return vapidReady
-  const pub  = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-  const priv = process.env.VAPID_PRIVATE_KEY
-  if (pub && priv) {
-    try {
-      webpush.setVapidDetails(
-        process.env.VAPID_EMAIL ?? 'mailto:taka@takasports.com',
-        pub,
-        priv,
-      )
-      vapidReady = true
-    } catch {
-      vapidReady = false
-    }
-  } else {
-    vapidReady = false
-  }
-  return vapidReady
-}
-
 export async function GET(req: NextRequest) {
   if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
-  }
-
-  if (!initVapid()) {
-    return NextResponse.json({ ok: false, error: 'vapid_not_configured' }, { status: 503 })
   }
 
   const admin = adminSupabase()
@@ -97,26 +63,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, events_found: 0, notified: 0 })
   }
 
-  // 2. Todos los suscriptores push (topic quiniela)
-  const { data: allSubs } = await admin
-    .from('push_subscriptions')
-    .select('user_id, endpoint, p256dh, auth')
-    .contains('topics', ['quiniela'])
+  // 2. Candidatos: quien tiene push de navegador con topic 'quiniela' MÁS quien
+  // tiene la app instalada. Antes solo se miraba push_subscriptions, así que el
+  // recordatorio de predecir —la notificación más útil de la app— no salía nunca
+  // del navegador. push_tokens no tiene topics: la app trae un único interruptor
+  // de notificaciones, y quien lo activó pidió justo esto. [José Tomás, 28/08/2026]
+  const [{ data: webSubs }, { data: appTokens }] = await Promise.all([
+    admin.from('push_subscriptions').select('user_id').contains('topics', ['quiniela']),
+    admin.from('push_tokens').select('user_id'),
+  ])
+  const candidatos = [...new Set(
+    [...(webSubs ?? []), ...(appTokens ?? [])].map((r) => r.user_id as string),
+  )]
 
-  if (!allSubs || allSubs.length === 0) {
+  if (candidatos.length === 0) {
     return NextResponse.json({ ok: true, events_found: events.length, notified: 0, note: 'no_subs' })
   }
 
-  const subsByUser = new Map<string, SubRow[]>()
-  for (const s of allSubs as SubRow[]) {
-    const arr = subsByUser.get(s.user_id) ?? []
-    arr.push(s)
-    subsByUser.set(s.user_id, arr)
-  }
-
   let totalNotified = 0
+  let totalApp      = 0
   let totalPruned   = 0
-  const toPrune: string[] = []
 
   for (const event of events as EventRow[]) {
     // 3. Users que YA predijeron este partido
@@ -128,8 +94,8 @@ export async function GET(req: NextRequest) {
     const predictedSet = new Set((predicted ?? []).map((p: { user_id: string }) => p.user_id))
 
     // 4. Filtrar: solo notificar los que NO han predicho
-    const toNotify = [...subsByUser.entries()]
-      .filter(([uid]) => !predictedSet.has(uid))
+    const toNotify = candidatos
+      .filter((uid) => !predictedSet.has(uid))
       .slice(0, MAX_NOTIFY_PER_RUN)
 
     if (toNotify.length === 0) continue
@@ -142,40 +108,23 @@ export async function GET(req: NextRequest) {
     const minsLeft = Math.round((new Date(event.event_date).getTime() - now.getTime()) / 60000)
     const timeStr  = minsLeft <= 60 ? `${minsLeft} min` : `${Math.round(minsLeft / 60)}h`
 
-    const payload = JSON.stringify({
-      title: `⏰ ${timeStr} para predecir`,
-      body:  `${matchLabel} — ¡Cierra tu pick antes del pitazo!`,
-      url:   '/predicciones',
-      tag:   `mundial-reminder-${event.id}`,
-    })
-
-    // 5. Fan-out de push
-    await Promise.allSettled(
-      toNotify.flatMap(([, subs]) =>
-        subs.map(async s => {
-          try {
-            await webpush.sendNotification(
-              { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } } as webpush.PushSubscription,
-              payload,
-            )
-            totalNotified++
-          } catch (err: unknown) {
-            const e = err as { statusCode?: number }
-            if (e?.statusCode === 404 || e?.statusCode === 410) {
-              toPrune.push(s.endpoint)
-              totalPruned++
-            }
-          }
-        })
-      )
+    // 5. Fan-out de push. sendPushToUser reparte a navegador y app, y purga por
+    // su cuenta los endpoints y tokens muertos.
+    const enviados = await Promise.allSettled(
+      toNotify.map((uid) => sendPushToUser(uid, {
+        title: `⏰ ${timeStr} para predecir`,
+        body:  `${matchLabel} — ¡Cierra tu pick antes del pitazo!`,
+        url:   '/predicciones',
+        tag:   `mundial-reminder-${event.id}`,
+        topic: 'quiniela',
+      })),
     )
-  }
-
-  // 6. Purga de endpoints muertos (best-effort)
-  if (toPrune.length > 0) {
-    try {
-      await admin.from('push_subscriptions').delete().in('endpoint', toPrune)
-    } catch { /* swallow */ }
+    for (const r of enviados) {
+      if (r.status !== 'fulfilled') continue
+      totalNotified += r.value.web.sent
+      totalApp      += r.value.app.sent
+      totalPruned   += r.value.pruned
+    }
   }
 
   return NextResponse.json({
@@ -183,7 +132,8 @@ export async function GET(req: NextRequest) {
     events_found:   events.length,
     events:         (events as EventRow[]).map(e => e.id),
     notified:       totalNotified,
+    notified_app:   totalApp,
     pruned:         totalPruned,
-    subscribers:    allSubs.length,
+    subscribers:    candidatos.length,
   })
 }

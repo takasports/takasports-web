@@ -9,11 +9,11 @@
 // Auth: solo Bearer CRON_SECRET o header x-cron-secret.
 
 import { NextRequest, NextResponse } from 'next/server'
-import webpush from 'web-push'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { apiError } from '@/lib/api-utils'
 import { isoWeek } from '@/lib/quiniela'
+import { sendPushToUser } from '@/lib/push-helper'
 
 const DELTA_THRESHOLD = 1.5
 
@@ -27,21 +27,12 @@ type RankRow = {
   category: string | null
 }
 
-function initVapid(): boolean {
-  const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-  const priv = process.env.VAPID_PRIVATE_KEY
-  if (!pub || !priv) return false
-  webpush.setVapidDetails(process.env.VAPID_EMAIL ?? 'mailto:taka@takasports.com', pub, priv)
-  return true
-}
-
 export async function GET(req: NextRequest) {
   // Auth: solo Bearer CRON_SECRET o header x-cron-secret (comparación en tiempo
   // constante). El antiguo `?secret=` queda eliminado: se filtraba en logs/referer.
   if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
-  if (!initVapid()) return NextResponse.json({ error: 'VAPID no configurado' }, { status: 503 })
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ error: 'Supabase admin no configurado' }, { status: 503 })
 
@@ -78,21 +69,17 @@ export async function GET(req: NextRequest) {
 
   if (!favs || favs.length === 0) return NextResponse.json({ sent: 0, notes: 'sin usuarios suscritos' })
 
-  // 3) Resolve suscripciones push por user_id
+  // 3) ¿Alguno de esos usuarios tiene push activo? Se miran LAS DOS tablas: antes
+  // solo se consultaba push_subscriptions (navegador) y un usuario que únicamente
+  // tuviera la app instalada caía en el early-return sin recibir nada.
   const userIds = [...new Set(favs.map((f) => f.user_id))]
-  const { data: subs } = await sb
-    .from('push_subscriptions')
-    .select('user_id, endpoint, p256dh, auth')
-    .in('user_id', userIds)
-  if (!subs || subs.length === 0) return NextResponse.json({ sent: 0, notes: 'usuarios sin push activo' })
+  const [{ data: subs }, { data: tokens }] = await Promise.all([
+    sb.from('push_subscriptions').select('user_id').in('user_id', userIds),
+    sb.from('push_tokens').select('user_id').in('user_id', userIds),
+  ])
+  const conPush = new Set([...(subs ?? []), ...(tokens ?? [])].map((r) => r.user_id as string))
+  if (conPush.size === 0) return NextResponse.json({ sent: 0, notes: 'usuarios sin push activo' })
 
-  // index user_id → [subs]
-  const subsByUser = new Map<string, typeof subs>()
-  for (const s of subs) {
-    const arr = subsByUser.get(s.user_id) ?? []
-    arr.push(s)
-    subsByUser.set(s.user_id, arr)
-  }
   const moverById = new Map(movers.map((m) => [m.id, m]))
 
   // 4) Envía un push por user (la primera entry que tienen como favorito y movió)
@@ -123,33 +110,26 @@ export async function GET(req: NextRequest) {
     for (const r of claimedRows ?? []) claimed.add(r.user_id as string)
   }
 
+  // El envío pasa por sendPushToUser, que alcanza navegador Y app (Expo). Antes
+  // este cron hablaba directamente con web-push, así que el aviso de un favorito
+  // no llegaba nunca al móvil. `topic: null` conserva el público exacto de antes:
+  // este cron nunca filtró por topic (el usuario ya pidió el aviso al marcar el
+  // favorito). [José Tomás, 28/08/2026]
+  let sentApp = 0
   for (const [userId, m] of userToBestEntry) {
     if (!claimed.has(userId)) continue   // ya avisado esta semana → no reenviar
-    const userSubs = subsByUser.get(userId) ?? []
     const direction = m.delta >= 0 ? '↑' : '↓'
     const sign = m.delta >= 0 ? '+' : ''
-    const title = `${m.name} ${direction} ${sign}${m.delta.toFixed(1)} esta semana`
-    const body = m.trend_reason ?? `Score actual: ${Number(m.score).toFixed(1)}. Ver el Índice Taka.`
-    const payload = JSON.stringify({
-      title, body,
+    const r = await sendPushToUser(userId, {
+      title: `${m.name} ${direction} ${sign}${m.delta.toFixed(1)} esta semana`,
+      body: m.trend_reason ?? `Score actual: ${Number(m.score).toFixed(1)}. Ver el Índice Taka.`,
       url: `/rankings/${m.id}`,
       tag: `fav-${m.id}`,
+      topic: null,
     })
-    for (const sub of userSubs) {
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } } as webpush.PushSubscription,
-          payload,
-        )
-        sent++
-      } catch (err: unknown) {
-        const e = err as { statusCode?: number }
-        if (e?.statusCode === 404 || e?.statusCode === 410) {
-          await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
-          pruned++
-        }
-      }
-    }
+    sent += r.web.sent
+    sentApp += r.app.sent
+    pruned += r.pruned
   }
 
   return NextResponse.json({
@@ -157,6 +137,6 @@ export async function GET(req: NextRequest) {
     favs: favs.length,
     users_notified: claimed.size,
     skipped_already_notified: userToBestEntry.size - claimed.size,
-    sent, pruned,
+    sent, sent_app: sentApp, pruned,
   })
 }

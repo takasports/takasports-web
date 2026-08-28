@@ -17,6 +17,7 @@
 
 import webpush from 'web-push'
 import { adminSupabase } from './supabase-admin'
+import { sendExpoPush } from './expo-push'
 
 interface SubRow {
   endpoint: string
@@ -31,15 +32,21 @@ interface PushPayload {
   url?: string
   /** Tag de notificación — pushes con mismo tag se reemplazan en el dispositivo. */
   tag?: string
-  /** Topic filter (default 'quiniela'). El user debe estar suscrito a este topic. */
-  topic?: string
+  /** Topic filter (default 'quiniela'). El user debe estar suscrito a este topic.
+   *  `null` = NO filtrar: llega a todas sus suscripciones. Lo usan los avisos que
+   *  el usuario ya pidió explícitamente marcando un favorito. */
+  topic?: string | null
 }
 
 interface PushResult {
+  /** Entregas totales: navegador + app. */
   sent: number
   pruned: number
   failed: number
-  /** Razón si nada se envió (config, no subs, etc.) — para debug. */
+  /** Desglose por destino, para saber por dónde llegó (y por dónde no). */
+  web: { sent: number; pruned: number; failed: number; reason?: string }
+  app: { sent: number; pruned: number; failed: number; reason?: string }
+  /** Razón si nada se envió por NINGÚN lado — para debug. */
   reason?: string
 }
 
@@ -74,35 +81,73 @@ function initVapid(): boolean {
  * Fire-and-forget: el caller usualmente hace `void sendPushToUser(...)`
  * para no bloquear el response del endpoint.
  */
+const VACIO = { sent: 0, pruned: 0, failed: 0 }
+
 export async function sendPushToUser(
   userId: string,
   payload: PushPayload,
 ): Promise<PushResult> {
-  if (!initVapid()) return { sent: 0, pruned: 0, failed: 0, reason: 'no_vapid' }
-  if (!userId) return { sent: 0, pruned: 0, failed: 0, reason: 'no_user' }
-  if (!payload?.title || !payload?.body) {
-    return { sent: 0, pruned: 0, failed: 0, reason: 'no_payload' }
-  }
+  const nada = (reason: string): PushResult => ({
+    ...VACIO, reason, web: { ...VACIO, reason }, app: { ...VACIO, reason },
+  })
+  if (!userId) return nada('no_user')
+  if (!payload?.title || !payload?.body) return nada('no_payload')
 
   const admin = adminSupabase()
-  if (!admin) return { sent: 0, pruned: 0, failed: 0, reason: 'no_supabase' }
+  if (!admin) return nada('no_supabase')
 
-  const topic = payload.topic ?? 'quiniela'
-  let q = admin
+  const topic = payload.topic === null ? null : (payload.topic ?? 'quiniela')
+  // '/quiniela' está retirada (301 a /predicciones) desde hace tiempo: como
+  // destino por defecto mandaba a un redirect, y en la app a una ruta que no
+  // existe.
+  const url = payload.url ?? '/predicciones'
+  const tag = payload.tag ?? topic ?? 'taka'
+
+  // Los dos destinos van en paralelo y son independientes: que el navegador no
+  // esté configurado (sin VAPID) no puede dejar a la app sin su aviso, que es
+  // exactamente lo que pasaba hasta ahora —el helper se rendía en la primera
+  // línea si faltaba VAPID. [José Tomás, 28/08/2026]
+  const [web, app] = await Promise.all([
+    enviarWeb(admin, userId, topic, { ...payload, url, tag }),
+    enviarApp(admin, userId, { title: payload.title, body: payload.body, url, tag }),
+  ])
+
+  return {
+    sent: web.sent + app.sent,
+    pruned: web.pruned + app.pruned,
+    failed: web.failed + app.failed,
+    web,
+    app,
+    ...(web.sent + app.sent === 0 ? { reason: `web:${web.reason ?? 'ok'} app:${app.reason ?? 'ok'}` } : {}),
+  }
+}
+
+type Admin = NonNullable<ReturnType<typeof adminSupabase>>
+
+/** Navegadores suscritos a ese topic (Web Push / VAPID). */
+async function enviarWeb(
+  admin: Admin,
+  userId: string,
+  topic: string | null,
+  payload: PushPayload & { url: string; tag: string },
+): Promise<PushResult['web']> {
+  if (!initVapid()) return { ...VACIO, reason: 'no_vapid' }
+
+  let consulta = admin
     .from('push_subscriptions')
     .select('endpoint, p256dh, auth')
     .eq('user_id', userId)
-  q = q.contains('topics', [topic])
+  if (topic !== null) consulta = consulta.contains('topics', [topic])
+  const { data: subs, error } = await consulta
 
-  const { data: subs, error } = await q
-  if (error) return { sent: 0, pruned: 0, failed: 0, reason: `query_failed: ${error.message}` }
-  if (!subs || subs.length === 0) return { sent: 0, pruned: 0, failed: 0, reason: 'no_subs' }
+  if (error) return { ...VACIO, reason: `query_failed: ${error.message}` }
+  if (!subs || subs.length === 0) return { ...VACIO, reason: 'no_subs' }
 
   const body = JSON.stringify({
     title: payload.title,
     body: payload.body,
-    url: payload.url ?? '/quiniela',
-    tag: payload.tag ?? topic,
+    url: payload.url,
+    tag: payload.tag,
   })
 
   let sent = 0
@@ -131,7 +176,6 @@ export async function sendPushToUser(
     }),
   )
 
-  // Limpieza de endpoints muertos (best-effort)
   if (toPrune.length > 0) {
     try {
       await admin.from('push_subscriptions').delete().in('endpoint', toPrune)
@@ -139,4 +183,42 @@ export async function sendPushToUser(
   }
 
   return { sent, pruned, failed }
+}
+
+/**
+ * Dispositivos con la app (Expo). NO filtra por topic: `push_tokens` no tiene
+ * esa columna y la app ofrece un único interruptor de notificaciones en
+ * Ajustes, no preferencias por tema. Si algún día la app las tiene, este es el
+ * sitio donde filtrar.
+ */
+async function enviarApp(
+  admin: Admin,
+  userId: string,
+  msg: { title: string; body: string; url: string; tag: string },
+): Promise<PushResult['app']> {
+  const { data: filas, error } = await admin
+    .from('push_tokens')
+    .select('token')
+    .eq('user_id', userId)
+
+  if (error) return { ...VACIO, reason: `query_failed: ${error.message}` }
+  const tokens = (filas ?? []).map((f) => (f as { token: string }).token)
+  if (tokens.length === 0) return { ...VACIO, reason: 'no_tokens' }
+
+  const r = await sendExpoPush(tokens, {
+    title: msg.title,
+    body: msg.body,
+    data: { url: msg.url },
+    tag: msg.tag,
+  })
+
+  // Token muerto (app desinstalada, permiso revocado): fuera de la tabla, o se
+  // reintenta en cada envío para siempre.
+  if (r.dead.length > 0) {
+    try {
+      await admin.from('push_tokens').delete().in('token', r.dead)
+    } catch { /* swallow */ }
+  }
+
+  return { sent: r.sent, pruned: r.dead.length, failed: r.failed, reason: r.reason }
 }
