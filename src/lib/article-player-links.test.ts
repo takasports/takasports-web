@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  extraerNombresCandidatos, enlazarJugadores, textoDeBloques, resolverFichas,
+  extraerNombresCandidatos, enlazarEnBloques, textoDeBloques, resolverFichas,
   MARCA_JUGADOR, type PtBlock,
 } from './article-player-links'
 
@@ -37,11 +37,11 @@ describe('extraerNombresCandidatos', () => {
   })
 })
 
-describe('enlazarJugadores', () => {
+describe('enlazarEnBloques', () => {
   const enlaces = new Map([['Arnau Martínez', '/jugador/arnau-martinez-123']])
 
   it('parte el fragmento y deja el nombre marcado', () => {
-    const [b] = enlazarJugadores([parrafo('El Girona negocia por Arnau Martínez esta semana.')], enlaces)
+    const [b] = enlazarEnBloques([parrafo('El Girona negocia por Arnau Martínez esta semana.')], enlaces)
     const marcado = (b.children ?? []).find(c => c.marks?.length)
     expect(marcado?.text).toBe('Arnau Martínez')
     expect(b.markDefs).toContainEqual(expect.objectContaining({ _type: MARCA_JUGADOR, href: '/jugador/arnau-martinez-123' }))
@@ -49,17 +49,17 @@ describe('enlazarJugadores', () => {
 
   it('no pierde ni una letra del texto original', () => {
     const original = 'El Girona negocia por Arnau Martínez esta semana.'
-    const [b] = enlazarJugadores([parrafo(original)], enlaces)
+    const [b] = enlazarEnBloques([parrafo(original)], enlaces)
     expect(textoDe(b)).toBe(original)
   })
 
   it('enlaza SOLO la primera mención', () => {
-    const [b] = enlazarJugadores([parrafo('Arnau Martínez jugó. Arnau Martínez marcó.')], enlaces)
+    const [b] = enlazarEnBloques([parrafo('Arnau Martínez jugó. Arnau Martínez marcó.')], enlaces)
     expect((b.children ?? []).filter(c => c.marks?.length)).toHaveLength(1)
   })
 
   it('tampoco lo repite en un párrafo posterior', () => {
-    const bs = enlazarJugadores([parrafo('Arnau Martínez jugó.', 'b1'), parrafo('Arnau Martínez marcó.', 'b2')], enlaces)
+    const bs = enlazarEnBloques([parrafo('Arnau Martínez jugó.', 'b1'), parrafo('Arnau Martínez marcó.', 'b2')], enlaces)
     const total = bs.flatMap(b => (b.children ?? []).filter(c => c.marks?.length))
     expect(total).toHaveLength(1)
   })
@@ -67,37 +67,37 @@ describe('enlazarJugadores', () => {
   it('no toca un fragmento que ya tiene formato: partirlo se comería la negrita', () => {
     const b: PtBlock = { _type: 'block', _key: 'x', style: 'normal', markDefs: [],
       children: [{ _type: 'span', _key: 's', text: 'Arnau Martínez', marks: ['strong'] }] }
-    expect(enlazarJugadores([b], enlaces)[0]).toBe(b)
+    expect(enlazarEnBloques([b], enlaces)[0]).toBe(b)
   })
 
   it('no entra en titulares ni en bloques que no son texto', () => {
     const h: PtBlock = { ...parrafo('Arnau Martínez ficha'), style: 'h2' }
     const img: PtBlock = { _type: 'image', _key: 'i' }
-    const out = enlazarJugadores([h, img], enlaces)
+    const out = enlazarEnBloques([h, img], enlaces)
     expect(out[0]).toBe(h)
     expect(out[1]).toBe(img)
   })
 
   it('exige palabra completa: "Martínezos" no es Martínez', () => {
-    const [b] = enlazarJugadores([parrafo('Los Arnau Martínezos no existen.')], enlaces)
+    const [b] = enlazarEnBloques([parrafo('Los Arnau Martínezos no existen.')], enlaces)
     expect((b.children ?? []).some(c => c.marks?.length)).toBe(false)
   })
 
   it('respeta el tope de enlaces por artículo', () => {
     const muchos = new Map(Array.from({ length: 10 }, (_, i) => [`Jugador Numero${i}`, `/jugador/j${i}`]))
     const texto = Array.from({ length: 10 }, (_, i) => `Jugador Numero${i} corrió.`).join(' ')
-    const [b] = enlazarJugadores([parrafo(texto)], muchos, 3)
+    const [b] = enlazarEnBloques([parrafo(texto)], muchos, { max: 3 })
     expect((b.children ?? []).filter(c => c.marks?.length)).toHaveLength(3)
   })
 
   it('sin enlaces devuelve los bloques intactos', () => {
     const bs = [parrafo('Nada que enlazar aquí.')]
-    expect(enlazarJugadores(bs, new Map())).toBe(bs)
+    expect(enlazarEnBloques(bs, new Map())).toBe(bs)
   })
 
   it('mete dos jugadores distintos del mismo párrafo, en orden', () => {
     const dos = new Map([['Arnau Martínez', '/jugador/a-1'], ['Kylian Mbappé', '/jugador/k-2']])
-    const [b] = enlazarJugadores([parrafo('Kylian Mbappé saludó a Arnau Martínez en el túnel.')], dos)
+    const [b] = enlazarEnBloques([parrafo('Kylian Mbappé saludó a Arnau Martínez en el túnel.')], dos)
     expect((b.children ?? []).filter(c => c.marks?.length).map(c => c.text))
       .toEqual(['Kylian Mbappé', 'Arnau Martínez'])
   })

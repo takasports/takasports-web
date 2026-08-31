@@ -4,9 +4,10 @@ import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { PortableText, type PortableTextComponents } from '@portabletext/react'
 import {
-  textoDeBloques, extraerNombresCandidatos, resolverFichas, enlazarJugadores,
-  MARCA_JUGADOR, type PtBlock,
+  textoDeBloques, extraerNombresCandidatos, resolverFichas, enlazarEnBloques,
+  MARCA_JUGADOR, MARCA_GLOSARIO, type PtBlock,
 } from '@/lib/article-player-links'
+import { enlacesDeGlosario } from '@/lib/article-glossary-links'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { EmbeddedTweet } from 'react-tweet'
 import { getTweet, type Tweet } from 'react-tweet/api'
@@ -664,10 +665,17 @@ export default async function NoticiaPage({
   const bloquesConEnlaces: PtBlock[] = await (async () => {
     const crudos = (article.bodyPortable ?? []) as PtBlock[]
     if (!hasBody || crudos.length === 0) return crudos
-    const candidatos = extraerNombresCandidatos(textoDeBloques(crudos))
-    if (candidatos.length === 0) return crudos
-    const fichas = await resolverFichas(candidatos, adminSupabase() as never)
-    return enlazarJugadores(crudos, fichas)
+    const texto = textoDeBloques(crudos)
+    const candidatos = extraerNombresCandidatos(texto)
+    const fichas = candidatos.length
+      ? await resolverFichas(candidatos, adminSupabase() as never)
+      : new Map<string, string>()
+    // Primero los jugadores y DESPUÉS el glosario: la segunda pasada no entra en
+    // los fragmentos que marcó la primera, así que el orden fija la prioridad.
+    // El glosario va en minúsculas a mitad de frase, de ahí `ignorarCaja`.
+    const conJugadores = enlazarEnBloques(crudos, fichas)
+    const glosario = enlacesDeGlosario(texto, article.sport)
+    return enlazarEnBloques(conJugadores, glosario, { marca: MARCA_GLOSARIO, ignorarCaja: true })
   })()
 
   const { accent } = getSportStyle(article.sport, article.category)
@@ -1082,6 +1090,22 @@ export default async function NoticiaPage({
                       // —punteado en vez de subrayado— para que se lea como
                       // "aquí hay más sobre esta persona" y no como una fuente.
                       [MARCA_JUGADOR]: ({ value, children }) => (
+                        <Link
+                          href={(value as { href?: string })?.href ?? '#'}
+                          style={{
+                            color: 'inherit',
+                            textDecoration: 'underline',
+                            textDecorationStyle: 'dotted',
+                            textDecorationColor: 'rgba(139,92,246,0.7)',
+                            textUnderlineOffset: 3,
+                          }}
+                        >
+                          {children}
+                        </Link>
+                      ),
+                      // Término del glosario. Mismo punteado que la ficha del
+                      // jugador: los dos dicen "aquí hay más sobre esto".
+                      [MARCA_GLOSARIO]: ({ value, children }) => (
                         <Link
                           href={(value as { href?: string })?.href ?? '#'}
                           style={{

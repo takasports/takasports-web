@@ -38,8 +38,9 @@ export interface PtBlock {
   [k: string]: unknown
 }
 
-/** Tipo de la marca que añadimos. La pinta el componente del artículo. */
+/** Tipos de marca que añadimos. Los pinta el componente del artículo. */
 export const MARCA_JUGADOR = 'jugadorLink'
+export const MARCA_GLOSARIO = 'glosarioLink'
 
 /** Cuántos enlaces como mucho por artículo. Más satura y huele a granja de enlaces. */
 const MAX_ENLACES = 6
@@ -90,8 +91,12 @@ function escapar(s: string): string {
 }
 
 /**
- * Mete los enlaces en los bloques. Función PURA: recibe el mapa nombre→href ya
+ * Mete los enlaces en los bloques. Función PURA: recibe el mapa texto→href ya
  * resuelto, así se puede probar sin base de datos.
+ *
+ * Sirve para jugadores y para términos del glosario; solo cambia la marca. Se
+ * puede encadenar: la segunda pasada no toca los fragmentos que marcó la
+ * primera, porque nunca entra en un fragmento que ya tiene marcas.
  *
  * Reglas, todas por prudencia:
  *   · Solo párrafos normales — nada de titulares ni citas.
@@ -100,10 +105,11 @@ function escapar(s: string): string {
  *     otro enlace): reescribirlo se comería el formato del editor.
  *   · Tope de MAX_ENLACES.
  */
-export function enlazarJugadores(
+export function enlazarEnBloques(
   blocks: readonly PtBlock[],
   enlaces: ReadonlyMap<string, string>,
-  max = MAX_ENLACES,
+  { marca = MARCA_JUGADOR, max = MAX_ENLACES, ignorarCaja = false }:
+    { marca?: string; max?: number; ignorarCaja?: boolean } = {},
 ): PtBlock[] {
   if (enlaces.size === 0) return blocks as PtBlock[]
 
@@ -133,20 +139,25 @@ export function enlazarJugadores(
 
       // Se busca nombre a nombre, siempre sobre lo que queda del fragmento.
       while (puestos < max) {
-        let mejor: { nombre: string; href: string; i: number } | null = null
+        // `texto` es el literal TAL CUAL aparece en el artículo, que puede
+        // diferir en mayúsculas de la clave del mapa: los nombres propios van
+        // capitalizados pero un término del glosario se escribe "mercado de
+        // fichajes" en mitad de una frase. Se enlaza lo que hay escrito, nunca
+        // la clave, o cambiaríamos la prosa del redactor.
+        let mejor: { clave: string; texto: string; href: string; i: number } | null = null
         for (const [nombre, href] of pendientes) {
-          const re = new RegExp(`(?<![\\p{L}])${escapar(nombre)}(?![\\p{L}])`, 'u')
+          const re = new RegExp(`(?<![\\p{L}])${escapar(nombre)}(?![\\p{L}])`, ignorarCaja ? 'iu' : 'u')
           const m = re.exec(resto)
-          if (m && (mejor === null || m.index < mejor.i)) mejor = { nombre, href, i: m.index }
+          if (m && (mejor === null || m.index < mejor.i)) mejor = { clave: nombre, texto: m[0], href, i: m.index }
         }
         if (!mejor) break
 
         const clave = `jl-${bloque._key ?? 'b'}-${contador++}`
         if (mejor.i > 0) nuevosHijos.push({ _type: 'span', _key: `${clave}-a`, text: resto.slice(0, mejor.i), marks: [] })
-        nuevosHijos.push({ _type: 'span', _key: `${clave}-t`, text: mejor.nombre, marks: [clave] })
-        nuevasDefs.push({ _key: clave, _type: MARCA_JUGADOR, href: mejor.href })
-        resto = resto.slice(mejor.i + mejor.nombre.length)
-        pendientes.delete(mejor.nombre)
+        nuevosHijos.push({ _type: 'span', _key: `${clave}-t`, text: mejor.texto, marks: [clave] })
+        nuevasDefs.push({ _key: clave, _type: marca, href: mejor.href })
+        resto = resto.slice(mejor.i + mejor.texto.length)
+        pendientes.delete(mejor.clave)
         puestos++
         hizoAlgo = true
         tocado = true
