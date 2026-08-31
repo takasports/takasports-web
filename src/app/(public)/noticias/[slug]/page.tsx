@@ -3,6 +3,11 @@ import type { Metadata } from 'next'
 import Image from '@/components/DynamicImage'
 import Link from 'next/link'
 import { PortableText, type PortableTextComponents } from '@portabletext/react'
+import {
+  textoDeBloques, extraerNombresCandidatos, resolverFichas, enlazarJugadores,
+  MARCA_JUGADOR, type PtBlock,
+} from '@/lib/article-player-links'
+import { adminSupabase } from '@/lib/supabase-admin'
 import { EmbeddedTweet } from 'react-tweet'
 import { getTweet, type Tweet } from 'react-tweet/api'
 import { sanityClient, articleDetailQuery, relatedArticlesQuery, nextArticleQuery, urlFor } from '@/lib/sanity'
@@ -646,6 +651,20 @@ export default async function NoticiaPage({
     ? await matchEntriesInText(article.title, bodyTextForMatch, article.tags ?? [], 3)
     : []
 
+  // Enlaza los nombres de jugador del cuerpo a su ficha. El sitio posiciona
+  // NOMBRES DE PERSONA y hasta ahora la noticia no llevaba a ningún sitio sobre
+  // esa persona: 84 enlaces internos y ni uno a su ficha. Ver
+  // `lib/article-player-links.ts` para los números que lo motivan.
+  // Una sola consulta por artículo, solo por los nombres que el texto menciona.
+  const bloquesConEnlaces: PtBlock[] = await (async () => {
+    const crudos = (article.bodyPortable ?? []) as PtBlock[]
+    if (!hasBody || crudos.length === 0) return crudos
+    const candidatos = extraerNombresCandidatos(textoDeBloques(crudos))
+    if (candidatos.length === 0) return crudos
+    const fichas = await resolverFichas(candidatos, adminSupabase() as never)
+    return enlazarJugadores(crudos, fichas)
+  })()
+
   const { accent } = getSportStyle(article.sport, article.category)
   const badgeColor = accent
   const badgeBg = `${badgeColor}18`
@@ -1054,6 +1073,23 @@ export default async function NoticiaPage({
                     marks: {
                       strong: ({ children }) => <strong style={{ color: 'var(--body-strong)', fontWeight: 700 }}>{children}</strong>,
                       em: ({ children }) => <em style={{ color: 'var(--body-em)' }}>{children}</em>,
+                      // Ficha del jugador. Se pinta distinto del enlace normal
+                      // —punteado en vez de subrayado— para que se lea como
+                      // "aquí hay más sobre esta persona" y no como una fuente.
+                      [MARCA_JUGADOR]: ({ value, children }) => (
+                        <Link
+                          href={(value as { href?: string })?.href ?? '#'}
+                          style={{
+                            color: 'inherit',
+                            textDecoration: 'underline',
+                            textDecorationStyle: 'dotted',
+                            textDecorationColor: 'rgba(139,92,246,0.7)',
+                            textUnderlineOffset: 3,
+                          }}
+                        >
+                          {children}
+                        </Link>
+                      ),
                       link: ({ value, children }) => {
                         const href = value?.href ?? '#'
                         // Si es interno (mismo dominio o ruta relativa), no abrir en nueva pestaña.
@@ -1340,7 +1376,7 @@ export default async function NoticiaPage({
                   // a mitad de lectura (el bloque del final solo lo ve quien
                   // termina). `storySplitIndex` devuelve null si el artículo es
                   // corto o no hay un corte limpio → se pinta de una pieza.
-                  const blocks = article.bodyPortable!
+                  const blocks = bloquesConEnlaces
                   const cut = storySplitIndex(blocks)
                   if (cut === null) {
                     return <PortableText value={blocks} components={portableComponents} />

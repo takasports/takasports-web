@@ -8,6 +8,7 @@ import { COMPETITIONS } from '@/lib/calendar-competitions'
 import { GLOSARIO_TERMS } from '@/lib/glosario-terms'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { canonicalTeamSlug } from '@/lib/team-slug'
+import { adminSupabase } from '@/lib/supabase-admin'
 
 const BASE_URL = SITE_URL
 
@@ -101,8 +102,53 @@ async function statRoutes(): Promise<MetadataRoute.Sitemap> {
   } catch { return [] }
 }
 
+/**
+ * Fichas de jugador que ya tienen FOTO resuelta.
+ *
+ * Por qué esta condición y no "todos": en `sport_entities` hay ~27.000
+ * futbolistas de ligas cubiertas, pero publicar 27.000 páginas de las que la
+ * mayoría no tiene ni cara es sembrar el índice de páginas finas. La foto es la
+ * mejor vara de medir que tenemos porque NO es automática: la resuelve la
+ * cascada de fuentes corroborando identidad contra Wikidata para no coger
+ * homónimos. Si encontró foto, es alguien identificable con datos detrás.
+ *
+ * Hoy son ~6.850 y la cifra sube sola conforme el cron de fotos avanza. El
+ * sitemap pasa de 431 fichas de jugador a varios miles.
+ *
+ * El motivo de fondo (Search Console, 28 días a 31/08/2026): el sitio posiciona
+ * NOMBRES DE PERSONA —"arnau martínez" sale primero con 1.141 impresiones— y lo
+ * hace con noticias que caducan. La búsqueda del nombre es perenne; la ficha
+ * también. Hasta ahora Google casi no las conocía.
+ */
+async function playerEntityRoutes(): Promise<MetadataRoute.Sitemap> {
+  const db = adminSupabase()
+  if (!db) return []
+  try {
+    const PAGINA = 1000
+    const urls = new Set<string>()
+    for (let desde = 0; desde < 20_000; desde += PAGINA) {
+      const { data, error } = await db
+        .from('sport_entities')
+        .select('name, espn_id, sport_entity_images!inner(status)')
+        .eq('type', 'player')
+        .eq('sport_entity_images.status', 'ok')
+        .not('espn_id', 'is', null)
+        .order('id', { ascending: true })
+        .range(desde, desde + PAGINA - 1)
+      if (error || !data || data.length === 0) break
+      for (const r of data as Array<{ name: string; espn_id: string }>) {
+        if (r.name && r.espn_id) urls.add(`${BASE_URL}/jugador/${canonicalPlayerSlug(r.name, r.espn_id)}`)
+      }
+      if (data.length < PAGINA) break
+    }
+    return [...urls].map(url => ({
+      url, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly' as const, priority: 0.5,
+    }))
+  } catch { return [] }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articles, flatTags, dbIds, stats] = await Promise.all([
+  const [articles, flatTags, dbIds, stats, fichasJugador] = await Promise.all([
     sanityClient.fetch<Array<{ slug: string; publishedAt: string; _updatedAt?: string; sport?: string }>>(
       `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc) {
         "slug": slug.current, publishedAt, _updatedAt, sport
@@ -111,6 +157,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     sanityClient.fetch<string[]>(allTagsFlatQuery).catch(() => [] as string[]),
     getAllEntryIdsFromDb(2000).catch(() => [] as string[]),
     statRoutes(),
+    playerEntityRoutes(),
   ])
 
   // Poda de tags: cuenta cuántos artículos lleva cada tag y conserva en el sitemap
@@ -251,5 +298,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     }))
 
-  return [...staticRoutes, ...sportRoutes, ...rankingDetailRoutes, ...articleRoutes, ...paginatedHubRoutes, ...tagRoutes, ...stats]
+  // Las fichas van al final y deduplicadas: `statRoutes` ya trae a los goleadores
+  // y muchos repiten con los de `playerEntityRoutes`.
+  const todas = [...staticRoutes, ...sportRoutes, ...rankingDetailRoutes, ...articleRoutes,
+                 ...paginatedHubRoutes, ...tagRoutes, ...stats, ...fichasJugador]
+  const vistas = new Set<string>()
+  return todas.filter(r => !vistas.has(r.url) && vistas.add(r.url))
 }
