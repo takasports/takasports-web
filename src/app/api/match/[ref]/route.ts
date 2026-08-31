@@ -8,6 +8,7 @@ import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
 import { fetchLeagueTableRows, fetchTournamentGroups, byGroup, groupLabel, type LeagueTableRow } from '@/lib/espn-standings'
 import { getPastEventByRef, type H2HResult, type H2HMatch, type FormResult } from '@/lib/past-events'
 import { tennisRoundLabel } from '@/lib/espn'
+import { getTennisContext, type TennisContext } from '@/lib/tennis-context'
 import {
   normalizeScoringType, commentaryLabelFor, SOCCER_STAT_ORDER, SOCCER_LABELS,
 } from '@/lib/espn-soccer'
@@ -224,6 +225,9 @@ export interface MatchDetail {
     awayWon?: boolean
     sets: TennisSet
     setWinners?: ('home' | 'away' | null)[]   // ganador de cada set
+    /** Cómo llega cada jugador + su nota del Índice Taka. Ausente si no hay nada
+     *  que enseñar de ninguno de los dos (ver `lib/tennis-context.ts`). */
+    context?: TennisContext
   }
   golf?: {
     round?: string
@@ -1207,6 +1211,9 @@ export async function GET(
     if (sport === 'tennis') {
       const data = await buildTennis(eventId, leagueSlug)
       if (data) {
+        // El contexto va SIEMPRE, no solo en los partidos por jugarse: en uno ya
+        // terminado, "cómo llegaban" sigue siendo lo que explica el resultado.
+        const contexto = await getTennisContext(data.tennis?.homePlayer, data.tennis?.awayPlayer)
         const detail: MatchDetail = {
           id: eventId,
           sport,
@@ -1218,7 +1225,7 @@ export async function GET(
           statusLabel: data.statusLabel,
           venue: data.venue,
           startDate: data.startDate,
-          tennis: data.tennis,
+          tennis: data.tennis && { ...data.tennis, ...(contexto ? { context: contexto } : {}) },
         }
         return NextResponse.json(detail, matchCache(detail.status))
       }
@@ -1228,6 +1235,7 @@ export async function GET(
       // por sets + ganador. Antes cualquier resultado de tenis reciente daba 404.
       const past = await getPastEventByRef(ref)
       if (past && past.away) {
+        const contextoPasado = await getTennisContext(past.home, past.away)
         const hw = past.homeScore ?? null
         const aw = past.awayScore ?? null
         const known = hw != null && aw != null
@@ -1250,6 +1258,7 @@ export async function GET(
             awayWon: known ? aw > hw : undefined,
             sets: { home: hw != null ? [String(hw)] : [], away: aw != null ? [String(aw)] : [] },
             setWinners: known ? [hw > aw ? 'home' : aw > hw ? 'away' : null] : [],
+            ...(contextoPasado ? { context: contextoPasado } : {}),
           },
         }
         return NextResponse.json(detail, matchCache(detail.status))

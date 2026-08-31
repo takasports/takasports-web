@@ -692,6 +692,105 @@ function BoxscoreTeam({ team, abbr, home }: { team: BoxTeam; abbr: string; home:
   )
 }
 
+// ── Tenis: cómo llega cada jugador ─────────────────────────────────
+// La ficha de un partido por jugarse enseñaba seis datos y se acababa. Esto es lo
+// que cuenta la historia: quién llega lanzado y quién viene de perder. Sale de
+// `past_events`, que ya guardaba 623 partidos de tenis sin que nadie los usara.
+// Ver `lib/tennis-context.ts` para por qué NO hay cara a cara.
+function TennisForm({ match }: { match: MatchDetail }) {
+  const ctx = match.tennis?.context
+  if (!ctx) return null
+  const lados = [
+    { k: 'home' as const, nombre: match.tennis?.homePlayer, datos: ctx.home, color: '#A78BFA' },
+    { k: 'away' as const, nombre: match.tennis?.awayPlayer, datos: ctx.away, color: '#F59E0B' },
+  ].filter(l => l.datos.form.length > 0)
+  if (!lados.length) return null
+
+  return (
+    <div className="tk-glass rounded-2xl p-6 mb-6">
+      <p className="text-[10px] uppercase tracking-widest font-black mb-4"
+        style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
+        Cómo llegan
+      </p>
+      <div className="grid gap-6" style={{ gridTemplateColumns: lados.length > 1 ? '1fr 1fr' : '1fr' }}>
+        {lados.map(({ k, nombre, datos, color }) => (
+          <div key={k} className="min-w-0">
+            <p className="font-black text-sm truncate mb-2"
+              style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>{nombre}</p>
+            <div className="flex gap-1 mb-3">
+              {datos.form.map((m, i) => (
+                <span key={i} title={`${m.rival} · ${m.sets || 'sin marcador'}`}
+                  className="w-5 h-5 flex items-center justify-center rounded font-black text-[10px]"
+                  style={{
+                    background: m.won == null ? 'rgba(255,255,255,0.05)'
+                      : m.won ? 'rgba(74,222,128,0.16)' : 'rgba(239,68,68,0.16)',
+                    color: m.won == null ? '#7C7C8C' : m.won ? '#4ade80' : '#EF4444',
+                    fontFamily: 'var(--font-display)',
+                  }}>
+                  {m.won == null ? '·' : m.won ? 'V' : 'D'}
+                </span>
+              ))}
+            </div>
+            <div className="flex flex-col">
+              {datos.form.slice(0, 3).map((m, i) => (
+                <div key={i} className="flex items-center justify-between gap-2 py-1 text-[12px]"
+                  style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.06)' }}>
+                  <span className="truncate" style={{ color: '#C0C0D0' }}>{m.rival}</span>
+                  <span className="tabular-nums flex-shrink-0" style={{ color, fontFamily: 'var(--font-display)' }}>
+                    {m.sets || '—'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Tenis: la nota de cada uno en el Índice Taka ───────────────────
+// Solo el 40% de los tenistas del calendario tiene entrada activa, así que esto se
+// cae con elegancia: con uno solo se enseña su nota sin comparar, y sin ninguno el
+// bloque no se pinta. También es la única puerta del calendario hacia /rankings.
+function TennisTaka({ match }: { match: MatchDetail }) {
+  const ctx = match.tennis?.context
+  if (!ctx) return null
+  const lados = [
+    { k: 'home' as const, nombre: match.tennis?.homePlayer, datos: ctx.home },
+    { k: 'away' as const, nombre: match.tennis?.awayPlayer, datos: ctx.away },
+  ].filter(l => typeof l.datos.taka === 'number')
+  if (!lados.length) return null
+  // Ordenado por nota: en una comparación, el mejor va arriba.
+  lados.sort((a, b) => (b.datos.taka ?? 0) - (a.datos.taka ?? 0))
+
+  return (
+    <div className="tk-glass rounded-2xl p-6 mb-6">
+      <p className="text-[10px] uppercase tracking-widest font-black mb-4"
+        style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
+        Índice Taka
+      </p>
+      <div className="flex flex-col gap-3">
+        {lados.map(({ k, nombre, datos }) => (
+          <Link key={k} href={`/rankings/${datos.takaId}`} className="block group">
+            <div className="flex items-center justify-between gap-3 mb-1.5">
+              <span className="text-[13px] truncate group-hover:underline" style={{ color: '#E0E0F0' }}>{nombre}</span>
+              <span className="tabular-nums font-black text-sm flex-shrink-0"
+                style={{ color: '#A78BFA', fontFamily: 'var(--font-display)' }}>
+                {datos.taka!.toFixed(1)}
+              </span>
+            </div>
+            <span className="block h-[5px] rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+              <span className="block h-full rounded-full"
+                style={{ width: `${Math.max(0, Math.min(100, datos.taka!))}%`, background: '#A78BFA' }} />
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Tennis block ───────────────────────────────────────────────────
 function TennisBlock({ match }: { match: MatchDetail }) {
   if (!match.tennis) return null
@@ -1706,6 +1805,8 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           <div className="flex-1 min-w-0 w-full">
             {match.sport === 'tennis'     && <TennisBlock  match={match} />}
+            {match.sport === 'tennis'     && <TennisForm   match={match} />}
+            {match.sport === 'tennis'     && <TennisTaka   match={match} />}
             {match.sport === 'mma'        && <MmaBlock     match={match} />}
             {match.sport === 'racing'     && <RacingBlock  match={match} />}
             {match.sport === 'golf'       && <GolfBlock    match={match} />}
