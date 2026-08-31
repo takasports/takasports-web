@@ -16,7 +16,11 @@ const OPTIMIZED_HOSTS = [
   'fbcdn.net',
   'api-sports.io',
   'espncdn.com',          // headshots/escudos ESPN → next/image en vez del proxy
-  'upload.wikimedia.org', // fotos libres Wikimedia (fallback de la cascada de fotos)
+  // Cubre upload.wikimedia.org (Commons) y thumb.wikimedia.org, que es donde la
+  // API pageimages sirve los thumbnails de infobox — la fuente de identidad más
+  // fuerte de la cascada de fotos de WF-08. Antes solo estaba `upload`, así que
+  // los thumbs caían al proxy y se servían sin optimizar.
+  'wikimedia.org',
   'cloudfront.net',
   'twimg.com',
   'pbs.twimg.com',

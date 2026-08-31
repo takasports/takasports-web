@@ -72,6 +72,11 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "pbs.twimg.com" },
       { protocol: "https", hostname: "*.twimg.com" },
       { protocol: "https", hostname: "upload.wikimedia.org" },
+      // La API pageimages de Wikipedia (infobox del protagonista, la fuente de
+      // identidad más fuerte de la cascada de WF-08) devuelve los thumbnails en
+      // thumb.wikimedia.org, no en upload. Sin este patrón next/image los rechaza
+      // y caen al proxy sin optimizar.
+      { protocol: "https", hostname: "thumb.wikimedia.org" },
       { protocol: "https", hostname: "media.diariolasamericas.com" },
       { protocol: "https", hostname: "*.rtve.es" },
       { protocol: "https", hostname: "www.fichajes.net" },
