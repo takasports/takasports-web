@@ -9,6 +9,7 @@ import { GLOSARIO_TERMS } from '@/lib/glosario-terms'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { canonicalTeamSlug } from '@/lib/team-slug'
 import { adminSupabase } from '@/lib/supabase-admin'
+import { esTagIndexable, normalizarTag } from '@/lib/tag-policy'
 
 const BASE_URL = SITE_URL
 
@@ -120,9 +121,10 @@ async function statRoutes(): Promise<MetadataRoute.Sitemap> {
  * hace con noticias que caducan. La búsqueda del nombre es perenne; la ficha
  * también. Hasta ahora Google casi no las conocía.
  */
-async function playerEntityRoutes(): Promise<MetadataRoute.Sitemap> {
+async function playerEntityRoutes(): Promise<{ rutas: MetadataRoute.Sitemap; nombres: Set<string> }> {
   const db = adminSupabase()
-  if (!db) return []
+  const nombres = new Set<string>()
+  if (!db) return { rutas: [], nombres }
   try {
     const PAGINA = 1000
     const urls = new Set<string>()
@@ -137,14 +139,21 @@ async function playerEntityRoutes(): Promise<MetadataRoute.Sitemap> {
         .range(desde, desde + PAGINA - 1)
       if (error || !data || data.length === 0) break
       for (const r of data as Array<{ name: string; espn_id: string }>) {
-        if (r.name && r.espn_id) urls.add(`${BASE_URL}/jugador/${canonicalPlayerSlug(r.name, r.espn_id)}`)
+        if (!r.name || !r.espn_id) continue
+        urls.add(`${BASE_URL}/jugador/${canonicalPlayerSlug(r.name, r.espn_id)}`)
+        // Se guardan los nombres para descartar las etiquetas que los duplican.
+        // Sale gratis: ya están en memoria, no hace falta otra consulta.
+        nombres.add(normalizarTag(r.name))
       }
       if (data.length < PAGINA) break
     }
-    return [...urls].map(url => ({
-      url, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly' as const, priority: 0.5,
-    }))
-  } catch { return [] }
+    return {
+      rutas: [...urls].map(url => ({
+        url, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly' as const, priority: 0.5,
+      })),
+      nombres,
+    }
+  } catch { return { rutas: [], nombres } }
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -170,8 +179,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (!tag) continue
     tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
   }
+  // Una etiqueta que ES el nombre de un jugador con ficha no se indexa: la ficha
+  // responde mejor esa búsqueda y competían entre ellas.
   const tags = [...tagCounts.entries()]
-    .filter(([tag, count]) => count >= MIN_TAG_ARTICLES && !isJunkTag(tag))
+    .filter(([tag, count]) => esTagIndexable(tag, count, fichasJugador.nombres.has(normalizarTag(tag))))
     .map(([tag]) => tag)
 
   const hubLastMod = mostRecent(articles)
@@ -304,7 +315,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Las fichas van al final y deduplicadas: `statRoutes` ya trae a los goleadores
   // y muchos repiten con los de `playerEntityRoutes`.
   const todas = [...staticRoutes, ...sportRoutes, ...rankingDetailRoutes, ...articleRoutes,
-                 ...paginatedHubRoutes, ...tagRoutes, ...stats, ...fichasJugador]
+                 ...paginatedHubRoutes, ...tagRoutes, ...stats, ...fichasJugador.rutas]
   const vistas = new Set<string>()
   return todas.filter(r => !vistas.has(r.url) && vistas.add(r.url))
 }

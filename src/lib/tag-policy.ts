@@ -36,7 +36,24 @@ export function isJunkTag(tag: string): boolean {
   return false
 }
 
-/** ¿Esta etiqueta entra al sitemap y se indexa? */
-export function esTagIndexable(tag: string, articulos: number): boolean {
-  return !isJunkTag(tag) && articulos >= MIN_TAG_ARTICLES
+/** Normaliza para comparar una etiqueta con el nombre de una ficha. */
+export function normalizarTag(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
+}
+
+/**
+ * ¿Esta etiqueta entra al sitemap y se indexa?
+ *
+ * `duplicaFicha` manda por encima del recuento: si la etiqueta ES el nombre de
+ * un jugador que ya tiene ficha, no se indexa por muchos artículos que tenga.
+ * La ficha responde mejor esa búsqueda —tiene datos, foto y no caduca— y dos
+ * páginas nuestras compitiendo por la misma consulta se estorban.
+ *
+ * Ese caso no es teórico: "karim adeyemi" tiene exactamente 10 artículos, así
+ * que pasaba el umbral, y se comía 324 impresiones sin un solo clic.
+ */
+export function esTagIndexable(tag: string, articulos: number, duplicaFicha = false): boolean {
+  if (isJunkTag(tag)) return false
+  if (duplicaFicha) return false
+  return articulos >= MIN_TAG_ARTICLES
 }

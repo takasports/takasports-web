@@ -39,11 +39,18 @@ describe('esTagIndexable', () => {
     expect(esTagIndexable('fichajes', 10)).toBe(true)
   })
 
-  it('deja fuera la etiqueta de nombre suelto, que le robaba la consulta a la ficha', () => {
-    // "karim adeyemi" se comía 324 impresiones sin un solo clic, compitiendo
-    // con /jugador/ por la misma búsqueda.
-    expect(esTagIndexable('karim adeyemi', 4)).toBe(false)
+  it('deja fuera la etiqueta de nombre suelto por recuento', () => {
+    expect(esTagIndexable('thiago almada', 8)).toBe(false)
     expect(esTagIndexable('morten hjulmand', 2)).toBe(false)
+  })
+
+  it('si la etiqueta ES un jugador con ficha, no se indexa AUNQUE pase el umbral', () => {
+    // El caso que obligó a esto: "karim adeyemi" tiene exactamente 10 artículos
+    // —pasaba el umbral— y se comía 324 impresiones sin un solo clic,
+    // compitiendo con su propia ficha por la misma búsqueda.
+    expect(esTagIndexable('karim adeyemi', 10)).toBe(true)            // solo por recuento, entraría
+    expect(esTagIndexable('karim adeyemi', 10, true)).toBe(false)     // pero duplica ficha
+    expect(esTagIndexable('laliga', 487, false)).toBe(true)           // un tema no es una ficha
   })
 
   it('la basura no entra ni con muchos artículos', () => {

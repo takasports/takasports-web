@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { sanityClient, articlesByTagQuery, tagCountQuery, MIN_TAG_ARTICLES, isJunkTag } from '@/lib/sanity'
+import { sanityClient, articlesByTagQuery, tagCountQuery } from '@/lib/sanity'
+import { esTagIndexable } from '@/lib/tag-policy'
+import { adminSupabase } from '@/lib/supabase-admin'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { timeAgo } from '@/lib/timeAgo'
 import Image from '@/components/DynamicImage'
@@ -54,10 +56,26 @@ export async function generateMetadata({
   // Tags finos (frases de un solo uso) o basura → noindex,follow: no merecen
   // indexarse y son la mayor fuente de "Descubierta sin indexar" y soft-404,
   // pero conservamos follow para no perder el paso de enlaces. (Fase 0 SEO)
-  const count = await sanityClient
-    .fetch<number>(tagCountQuery, { tag: decoded } as Record<string, string>)
-    .catch(() => 0)
-  const thin = isJunkTag(decoded) || count < MIN_TAG_ARTICLES
+  const [count, duplicaFicha] = await Promise.all([
+    sanityClient
+      .fetch<number>(tagCountQuery, { tag: decoded } as Record<string, string>)
+      .catch(() => 0),
+    // ¿La etiqueta ES un jugador con ficha? `ilike` sin comodines compara sin
+    // distinguir mayúsculas, que es justo lo que hace falta: las etiquetas se
+    // guardan en minúscula y los nombres como los publica ESPN.
+    (async () => {
+      const db = adminSupabase()
+      if (!db) return false
+      const { data } = await db
+        .from('sport_entities')
+        .select('id')
+        .eq('type', 'player')
+        .ilike('name', decoded)
+        .limit(1)
+      return (data?.length ?? 0) > 0
+    })().catch(() => false),
+  ])
+  const thin = !esTagIndexable(decoded, count, duplicaFicha)
 
   return {
     title,
