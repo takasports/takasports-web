@@ -121,6 +121,33 @@ async function statRoutes(): Promise<MetadataRoute.Sitemap> {
  * hace con noticias que caducan. La búsqueda del nombre es perenne; la ficha
  * también. Hasta ahora Google casi no las conocía.
  */
+/**
+ * Nombres de TODOS los jugadores con ficha resoluble, normalizados.
+ *
+ * Se consultan aparte de las rutas publicadas a propósito: al sitemap solo van
+ * los que tienen foto, pero una etiqueta debe cederle la búsqueda a la ficha
+ * exista foto o no —la ficha resuelve igual y ahora se enlaza desde los
+ * artículos—. Usar dos poblaciones distintas dejaba etiquetas marcadas
+ * `noindex` en su propia página pero listadas en el sitemap: contradictorio.
+ */
+async function playerNames(db: NonNullable<ReturnType<typeof adminSupabase>>): Promise<Set<string>> {
+  const nombres = new Set<string>()
+  const PAGINA = 1000
+  for (let desde = 0; desde < 40_000; desde += PAGINA) {
+    const { data, error } = await db
+      .from('sport_entities')
+      .select('name')
+      .eq('type', 'player')
+      .not('espn_id', 'is', null)
+      .order('id', { ascending: true })
+      .range(desde, desde + PAGINA - 1)
+    if (error || !data || data.length === 0) break
+    for (const r of data as Array<{ name: string }>) if (r.name) nombres.add(normalizarTag(r.name))
+    if (data.length < PAGINA) break
+  }
+  return nombres
+}
+
 async function playerEntityRoutes(): Promise<{ rutas: MetadataRoute.Sitemap; nombres: Set<string> }> {
   const db = adminSupabase()
   const nombres = new Set<string>()
@@ -141,9 +168,6 @@ async function playerEntityRoutes(): Promise<{ rutas: MetadataRoute.Sitemap; nom
       for (const r of data as Array<{ name: string; espn_id: string }>) {
         if (!r.name || !r.espn_id) continue
         urls.add(`${BASE_URL}/jugador/${canonicalPlayerSlug(r.name, r.espn_id)}`)
-        // Se guardan los nombres para descartar las etiquetas que los duplican.
-        // Sale gratis: ya están en memoria, no hace falta otra consulta.
-        nombres.add(normalizarTag(r.name))
       }
       if (data.length < PAGINA) break
     }
@@ -151,7 +175,7 @@ async function playerEntityRoutes(): Promise<{ rutas: MetadataRoute.Sitemap; nom
       rutas: [...urls].map(url => ({
         url, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly' as const, priority: 0.5,
       })),
-      nombres,
+      nombres: await playerNames(db),
     }
   } catch { return { rutas: [], nombres } }
 }
