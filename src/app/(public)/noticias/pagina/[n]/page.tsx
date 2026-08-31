@@ -6,14 +6,14 @@ import { sanityClient, urlFor } from '@/lib/sanity'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { timeAgo } from '@/lib/timeAgo'
 import ScrollToTop from '@/components/ScrollToTop'
-import { SITE_URL } from '@/lib/constants'
+import { SITE_URL, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 
 export const revalidate = 3600
 export const dynamicParams = true
 
 const PAGE_SIZE = 40
 
-const pagedQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))]
+const pagedQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}]
   | order(publishedAt desc)[$from...$to] {
     _id,
     "slug": slug.current,
@@ -25,7 +25,7 @@ const pagedQuery = `*[_type == "article" && (status == "publicado" || (defined(h
     "category": select(defined(headline) => competition, category)
   }`
 
-const totalQuery = `count(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))])`
+const totalQuery = `count(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}])`
 
 export async function generateStaticParams() {
   const total: number = await sanityClient.fetch(totalQuery).catch(() => 0)

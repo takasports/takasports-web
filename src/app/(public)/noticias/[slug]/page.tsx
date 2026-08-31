@@ -39,7 +39,7 @@ import {
   type EntityIndex,
   type AutolinkContext,
 } from '@/lib/article-autolink'
-import { SITE_URL, LOGO_URL, ICON_URL, SOCIAL_SAMEAS } from '@/lib/constants'
+import { SITE_URL, LOGO_URL, ICON_URL, SOCIAL_SAMEAS, REPORTAJE_GROQ_FILTER, REPORTAJES_ENABLED } from '@/lib/constants'
 import RankingMentionCards from '@/components/articles/RankingMentionCards'
 import ArticleQuiz from '@/components/articles/ArticleQuiz'
 import { matchEntriesInText } from '@/lib/rankings-match'
@@ -51,7 +51,7 @@ export const revalidate = 3600
 export async function generateStaticParams() {
   const slugs = await sanityClient
     .fetch<Array<{ slug: string }>>(
-      `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(slug.current)] | order(publishedAt desc)[0...50] {
+      `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && defined(slug.current)] | order(publishedAt desc)[0...50] {
         "slug": slug.current
       }`,
     )
@@ -92,6 +92,7 @@ interface Article {
   takaStatus?: string | null
   category?: string
   sport?: string
+  type?: string
   tags?: string[]
   source_name?: string
   source_url?: string
@@ -112,8 +113,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const article = await sanityClient.fetch<Article>(articleDetailQuery, { id: slug })
-  // Artículo inexistente: noindex + self-canonical (evita el soft-404 con canonical-al-home).
-  if (!article) return {
+  // Artículo inexistente —o reportaje en pausa, que para el visitante es lo
+  // mismo—: noindex + self-canonical (evita el soft-404 con canonical-al-home).
+  if (!article || (!REPORTAJES_ENABLED && article.type === 'reportaje')) return {
     title: 'Noticia no encontrada',
     robots: { index: false, follow: true },
     alternates: { canonical: `${SITE_URL}/noticias/${slug}` },
@@ -417,6 +419,9 @@ export default async function NoticiaPage({
 
   const article = await sanityClient.fetch<Article>(articleDetailQuery, { id })
   if (!article) return notFound()
+  // La pieza existe pero la sección está en pausa: no se sirve hasta que se
+  // encienda REPORTAJES_ENABLED.
+  if (!REPORTAJES_ENABLED && article.type === 'reportaje') return notFound()
 
   // Tweets embebidos del cuerpo: se pre-cargan en el servidor (react-tweet) para
   // renderizarlos DENTRO de la noticia. Si X falla, cada bloque cae a un enlace.

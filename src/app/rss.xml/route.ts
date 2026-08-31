@@ -1,5 +1,5 @@
 import { sanityClient } from '@/lib/sanity'
-import { SITE_URL, LOGO_URL, SITE_NAME } from '@/lib/constants'
+import { SITE_URL, LOGO_URL, SITE_NAME, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 
 export const runtime = 'nodejs'
 export const revalidate = 3600
@@ -39,7 +39,7 @@ interface RssArticle {
   imageUrl: string | null
 }
 
-const RSS_QUERY = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(slug.current)] | order(publishedAt desc)[0...50] {
+const RSS_QUERY = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && defined(slug.current)] | order(publishedAt desc)[0...50] {
   _id,
   "title": coalesce(headline, title),
   "slug": slug.current,

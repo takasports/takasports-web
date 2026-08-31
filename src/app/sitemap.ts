@@ -3,7 +3,7 @@ import { sanityClient, allTagsFlatQuery, MIN_TAG_ARTICLES, isJunkTag } from '@/l
 import { SLUG_TO_LABEL } from '@/lib/sports'
 import { getAllRankingEntries } from '@/lib/rankings-search'
 import { getAllEntryIdsFromDb } from '@/lib/rankings-data'
-import { SITE_URL } from '@/lib/constants'
+import { SITE_URL, REPORTAJE_GROQ_FILTER, REPORTAJES_ENABLED } from '@/lib/constants'
 import { COMPETITIONS } from '@/lib/calendar-competitions'
 import { GLOSARIO_TERMS } from '@/lib/glosario-terms'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
@@ -150,7 +150,7 @@ async function playerEntityRoutes(): Promise<MetadataRoute.Sitemap> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [articles, flatTags, dbIds, stats, fichasJugador] = await Promise.all([
     sanityClient.fetch<Array<{ slug: string; publishedAt: string; _updatedAt?: string; sport?: string }>>(
-      `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc) {
+      `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}] | order(publishedAt desc) {
         "slug": slug.current, publishedAt, _updatedAt, sport
       }`
     ).catch(() => []),
@@ -180,8 +180,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: BASE_URL, lastModified: hubLastMod, changeFrequency: 'hourly', priority: 1 },
     { url: `${BASE_URL}/noticias`, lastModified: hubLastMod, changeFrequency: 'hourly', priority: 0.9 },
     // Reportajes: cambia poco (piezas de fondo, no actualidad) pero pesa en la
-    // marca, así que va con prioridad alta y frecuencia semanal.
-    { url: `${BASE_URL}/reportajes`, lastModified: hubLastMod, changeFrequency: 'weekly', priority: 0.85 },
+    // marca, así que va con prioridad alta y frecuencia semanal. Mientras la
+    // sección esté en pausa no se anuncia: la ruta redirige al feed.
+    ...(REPORTAJES_ENABLED
+      ? [{ url: `${BASE_URL}/reportajes`, lastModified: hubLastMod, changeFrequency: 'weekly' as const, priority: 0.85 }]
+      : []),
     { url: `${BASE_URL}/calendario`, lastModified: STATIC_LASTMOD, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE_URL}/estadisticas`, lastModified: STATIC_LASTMOD, changeFrequency: 'hourly', priority: 0.8 },
     // Una entrada por deporte para que Google indexe cada vista por separado

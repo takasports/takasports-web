@@ -4,7 +4,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import ArchivoContent from '@/components/ArchivoContent'
 import type { ArchivoFilterState } from '@/components/ArchivoFilters'
 import { presetToRange, VALID_PRESETS, type DateRangePreset } from '@/lib/archivo'
-import { SITE_URL } from '@/lib/constants'
+import { SITE_URL, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 
 export const revalidate = 60
 
@@ -45,7 +45,7 @@ const sanity = createClient({
   useCdn: true,
 })
 
-const BASE_FILTER = `_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))`
+const BASE_FILTER = `_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}`
 const PAGE_SIZE = 24
 
 interface SsrArticle {

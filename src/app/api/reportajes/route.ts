@@ -4,6 +4,7 @@ import { captureException } from '@/lib/monitoring'
 import { readingMinutes } from '@/lib/reading'
 import { displayAuthor } from '@/lib/brand'
 import { urlFor } from '@/lib/sanity'
+import { REPORTAJES_ENABLED } from '@/lib/constants'
 
 // Reportajes para la app móvil. Mismo cliente/caché que /api/articles (CDN de
 // Sanity, solo contenido publicado).
@@ -72,6 +73,16 @@ export async function GET(req: NextRequest) {
   const page = Math.max(1, Number(sp.get('page') ?? '1'))
   const start = (page - 1) * limit
   const end = start + limit
+
+  // Sección en pausa: la app recibe una lista vacía y pinta su estado vacío,
+  // igual que la web. Se contesta antes de tocar Sanity.
+  if (!REPORTAJES_ENABLED) {
+    const cache = 'public, s-maxage=300, stale-while-revalidate=900'
+    return NextResponse.json(
+      { reportajes: [], total: 0, page, limit, hasMore: false },
+      { headers: { 'Cache-Control': cache, 'CDN-Cache-Control': cache } }
+    )
+  }
 
   try {
     const [rows, total] = await Promise.all([

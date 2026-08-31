@@ -6,7 +6,7 @@ import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import ScrollToTop from '@/components/ScrollToTop'
 import SearchTracker from './SearchTracker'
-import { SITE_URL } from '@/lib/constants'
+import { SITE_URL, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 
 // Búsqueda cachea 60s por query: la mayoría de hits son del mismo término
 // (Google indexa, usuarios repiten). 60s da freshness razonable y evita
@@ -49,7 +49,7 @@ function buildSearchQuery(params: { sport?: string; range?: RangeKey }) {
   if (params.range) filters.push('publishedAt >= $fromDate')
   const filterStr = filters.length ? ' && ' + filters.join(' && ') : ''
 
-  return `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && (
+  return `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && (
     title match $q || headline match $q || short_summary match $q || metaDescription match $q
   )${filterStr}] | order(publishedAt desc)[0...40] {
     _id, "slug": slug.current,

@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { sanityClient, reportajesAllQuery } from '@/lib/sanity'
 import ReportajeCard, { coverUrl } from '@/components/ReportajeCard'
 import type { Reportaje } from '@/components/ReportajesBlock'
 import NewsletterSection from '@/components/NewsletterSection'
 import ScrollToTop from '@/components/ScrollToTop'
-import { SITE_URL } from '@/lib/constants'
+import { SITE_URL, REPORTAJES_ENABLED } from '@/lib/constants'
 
 export const revalidate = 300
 
@@ -28,6 +29,11 @@ export const metadata: Metadata = {
 }
 
 export default async function ReportajesPage() {
+  // Reportajes en pausa: en vez de un índice vacío que Google indexa como
+  // soft-404, mandamos al feed. Redirección temporal (307) porque la
+  // sección vuelve en cuanto REPORTAJES_ENABLED sea true.
+  if (!REPORTAJES_ENABLED) redirect('/noticias')
+
   const reportajes = await sanityClient.fetch<Reportaje[]>(reportajesAllQuery).catch(() => [] as Reportaje[])
 
   const breadcrumbJsonLd = {

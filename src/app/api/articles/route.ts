@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@sanity/client'
 import { captureException } from '@/lib/monitoring'
+import { REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 
 const sanity = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -16,7 +17,7 @@ const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 50
 
 // Base filter: public articles from both schemas
-const BASE_FILTER = `_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))`
+const BASE_FILTER = `_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}`
 
 interface Filters {
   sport?: string

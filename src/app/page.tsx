@@ -16,7 +16,7 @@ import Footer from '@/components/Footer'
 import NewsletterSection from '@/components/NewsletterSection'
 import ScrollToTop from '@/components/ScrollToTop'
 import { urlFor } from '@/lib/sanity'
-import { SITE_URL } from '@/lib/constants'
+import { SITE_URL, REPORTAJES_ENABLED } from '@/lib/constants'
 
 export const revalidate = 300
 
@@ -111,7 +111,11 @@ export default async function Home() {
           .catch(() => [] as HomeArticle[])
       })
     ),
-    sanityClient.fetch<Reportaje[]>(reportajesQuery).catch(() => [] as Reportaje[]),
+    // Reportajes en pausa (REPORTAJES_ENABLED): ni se pide, para no gastar
+    // una consulta a Sanity en un bloque que no se va a pintar.
+    REPORTAJES_ENABLED
+      ? sanityClient.fetch<Reportaje[]>(reportajesQuery).catch(() => [] as Reportaje[])
+      : Promise.resolve([] as Reportaje[]),
   ])
 
   const articles = sortForHome(rawArticles)

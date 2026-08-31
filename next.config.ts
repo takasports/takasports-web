@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { REPORTAJES_ENABLED } from "./src/lib/constants";
 
 const nextConfig: NextConfig = {
   // Oculta la cabecera `X-Powered-By: Next.js` en todas las respuestas: no
@@ -47,6 +48,14 @@ const nextConfig: NextConfig = {
       { source: '/auth',          destination: '/perfil?login=1',        permanent: false },
       { source: '/auth/login',    destination: '/perfil?login=1',        permanent: false },
       { source: '/auth/register', destination: '/perfil?login=register', permanent: false },
+      // Reportajes en pausa (REPORTAJES_ENABLED): el índice no se enseña hasta
+      // que haya piezas que enseñar. Va aquí y no dentro de la página porque un
+      // redirect() en una ruta prerenderizada se sirve como HTML cacheado con
+      // 200 y el visitante se come el esqueleto vacío. Temporal (307): la
+      // sección vuelve con su URL intacta al encender el flag.
+      ...(REPORTAJES_ENABLED
+        ? []
+        : [{ source: '/reportajes', destination: '/noticias', permanent: false }]),
     ]
   },
   images: {

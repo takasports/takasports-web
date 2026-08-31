@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createClient as createSanity } from '@sanity/client'
 import { createClient as createSupabase } from '@supabase/supabase-js'
 import { captureException } from '@/lib/monitoring'
+import { REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 
 const sanity = createSanity({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -16,7 +17,7 @@ export const revalidate = 30
 
 const ARTICLE_QUERY = `*[
   _type == "article"
-  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}
   && (
     title match $q + "*"
     || headline match $q + "*"

@@ -1,5 +1,6 @@
 import { createClient } from '@sanity/client'
 import { createImageUrlBuilder, type SanityImageSource } from '@sanity/image-url'
+import { REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 
 export const sanityClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -68,14 +69,14 @@ export const reportajesAllQuery = `*[_type == "article"
 }`
 
 // Feed principal — normaliza artículos viejos (status=="publicado") + nuevos de Taka System (tienen headline)
-export const articlesQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...40] {
+export const articlesQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}] | order(publishedAt desc)[0...40] {
   ${LISTING_FIELDS},
   "priority": select(defined(headline) => "destacado", priority)
 }`
 
 // Feed por deporte — para páginas /[sport] y /noticias?sport=. A2 (2026-06-06): mira sport
 // Y competition (igual que /api/articles), para no perder artículos cuyo deporte va en competition.
-export const articlesBySportQuery = `*[_type == "article" && (sport == $sport || competition == $sport) && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...40] {
+export const articlesBySportQuery = `*[_type == "article" && (sport == $sport || competition == $sport) && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}] | order(publishedAt desc)[0...40] {
   ${LISTING_FIELDS},
   "priority": select(defined(headline) => "destacado", priority)
 }`
@@ -85,7 +86,7 @@ export const articlesBySportQuery = `*[_type == "article" && (sport == $sport ||
 // que solo tengan el alias (ej. F1 guardado como sport='f1' o category='formula1').
 export const articlesBySlugsQuery = `*[_type == "article"
   && (sport in $slugs || category in $slugs || competition in $slugs)
-  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}
 ] | order(publishedAt desc)[0...20] {
   ${LISTING_FIELDS},
   "priority": select(defined(headline) => "destacado", priority)
@@ -121,6 +122,9 @@ export const articleDetailQuery = `*[_type == "article" && (slug.current == $id 
   "author": select(defined(headline) => author, null),
   "takaStatus": select(defined(headline) => status, null),
   sport,
+  // type marca la pieza de fondo (reportaje). La ficha lo necesita para poder
+  // no servirla mientras la sección esté en pausa (REPORTAJES_ENABLED).
+  type,
   "category": select(defined(headline) => competition, category),
   tags,
   source_name,
@@ -155,7 +159,7 @@ export const articleDetailQuery = `*[_type == "article" && (slug.current == $id 
 }`
 
 // Artículos relacionados — fallback dinámico cuando editorialRelated está vacío
-export const relatedArticlesQuery = `*[_type == "article" && _id != $id && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && (sport == $sport || category == $category)] | order(publishedAt desc)[0...3] {
+export const relatedArticlesQuery = `*[_type == "article" && _id != $id && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && (sport == $sport || category == $category)] | order(publishedAt desc)[0...3] {
   _id, "slug": slug.current,
   "title": select(defined(headline) => headline, title),
   "imageUrl": select(defined(headline) => imageUrl, null),
@@ -167,7 +171,7 @@ export const relatedArticlesQuery = `*[_type == "article" && _id != $id && (stat
 }`
 
 // Siguiente artículo — incluye ambos schemas
-export const nextArticleQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && publishedAt > $publishedAt] | order(publishedAt asc)[0] {
+export const nextArticleQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && publishedAt > $publishedAt] | order(publishedAt asc)[0] {
   _id, "slug": slug.current,
   "title": select(defined(headline) => headline, title),
   "short_summary": select(defined(headline) => metaDescription, short_summary),
@@ -179,7 +183,7 @@ export const nextArticleQuery = `*[_type == "article" && (status == "publicado" 
 }`
 
 // Búsqueda ligera — incluye ambos schemas
-export const searchArticlesQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))] | order(publishedAt desc)[0...120] {
+export const searchArticlesQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}] | order(publishedAt desc)[0...120] {
   _id, "slug": slug.current,
   "title": select(defined(headline) => headline, title),
   "short_summary": select(defined(headline) => metaDescription, short_summary),
@@ -191,22 +195,22 @@ export const searchArticlesQuery = `*[_type == "article" && (status == "publicad
 }`
 
 // Feed por tag — para páginas /tag/[tag]
-export const articlesByTagQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && $tag in coalesce(tags, [])] | order(publishedAt desc)[0...40] {
+export const articlesByTagQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && $tag in coalesce(tags, [])] | order(publishedAt desc)[0...40] {
   ${LISTING_FIELDS},
   "priority": select(defined(headline) => "destacado", priority)
 }`
 
 // Todos los tags únicos — para el sitemap (legacy: generateStaticParams del tag)
-export const allTagsQuery = `array::unique(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(tags)].tags[])`
+export const allTagsQuery = `array::unique(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && defined(tags)].tags[])`
 
 // Todos los tags CON repetición — para contar frecuencia y podar del sitemap los
 // tags finos (frases LLM de un solo uso). El sitemap solo indexa tags con >=3
 // artículos; el resto va a noindex,follow. (Fase 0 SEO, jun 2026)
-export const allTagsFlatQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(tags)].tags[]`
+export const allTagsFlatQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && defined(tags)].tags[]`
 
 // Nº de artículos publicados que llevan un tag concreto — para decidir noindex
 // de /tag/[tag] cuando es demasiado fino para merecer indexación.
-export const tagCountQuery = `count(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && $tag in coalesce(tags, [])])`
+export const tagCountQuery = `count(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && $tag in coalesce(tags, [])])`
 
 // Umbral mínimo de artículos para que un tag sea indexable (sitemap + meta robots).
 export const MIN_TAG_ARTICLES = 3
@@ -226,7 +230,7 @@ export function isJunkTag(tag: string): boolean {
 //   $needle: string con sufijo wildcard, ej. "lamine yamal*"
 //   $limit:  número (1-20)
 export const articlesByEntityQuery = `*[_type == "article"
-  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}
   && (
     title match $needle
     || headline match $needle
@@ -242,7 +246,7 @@ export const articlesByEntityQuery = `*[_type == "article"
 // Alimenta el bloque "Noticias relacionadas" de /partido — enlace interno
 // editorial→fixture, ventaja única de Taka por ser también redacción.
 export const articlesByMatchQuery = `*[_type == "article"
-  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}
   && (
     title match $home || headline match $home || short_summary match $home || metaDescription match $home
     || title match $away || headline match $away || short_summary match $away || metaDescription match $away
@@ -293,7 +297,7 @@ export const eventDetailQuery = `*[_type == "event" && _id == $id][0] {
 // Artículos relacionados a un evento — mismo deporte, ventana temporal ±7/+2 días
 export const relatedByEventQuery = `*[
   _type == "article" &&
-  (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) &&
+  (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} &&
   sport == $sport &&
   publishedAt >= $from &&
   publishedAt <= $to

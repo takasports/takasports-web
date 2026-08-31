@@ -7,7 +7,7 @@ import { timeAgo } from '@/lib/timeAgo'
 import Image from '@/components/DynamicImage'
 import { urlFor } from '@/lib/sanity'
 import ScrollToTop from '@/components/ScrollToTop'
-import { SITE_URL } from '@/lib/constants'
+import { SITE_URL, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 
 // Los tags llevan texto humano crudo en la URL (a diferencia del resto del
 // sitio, que va slugificado en ASCII). Con ISR, Next emite la cabecera
@@ -81,7 +81,7 @@ export async function generateMetadata({
   }
 }
 
-const relatedTagsQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && $tag in coalesce(tags, [])][0...80] { tags }`
+const relatedTagsQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && $tag in coalesce(tags, [])][0...80] { tags }`
 
 function topRelatedTags(rows: Array<{ tags?: string[] | null }>, currentTag: string, limit = 8): Array<{ tag: string; count: number }> {
   const counter = new Map<string, number>()

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from '@/components/DynamicImage'
 import { sanityClient, urlFor } from '@/lib/sanity'
-import { SITE_URL, LOGO_URL, SOCIAL_SAMEAS } from '@/lib/constants'
+import { SITE_URL, LOGO_URL, SOCIAL_SAMEAS, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 import { timeAgo } from '@/lib/timeAgo'
 
 export const revalidate = 1800
@@ -43,7 +43,7 @@ interface RecentArticle {
 }
 
 const recentByRedaccionQuery = `*[_type == "article"
-    && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+    && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}
   ] | order(publishedAt desc)[0...20] {
     _id,
     "slug": slug.current,

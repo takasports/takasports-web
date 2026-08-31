@@ -19,3 +19,16 @@ export const SOCIAL_SAMEAS = [
   'https://www.youtube.com/@takasports',
   'https://www.threads.net/@taka.sports',
 ]
+
+// ── Reportajes en pausa ────────────────────────────────────────────────────
+// El recinto de piezas de fondo no se enseña hasta que haya con qué llenarlo.
+// En `false`: no sale el bloque de la home, /reportajes redirige al feed, los
+// reportajes quedan fuera de listados, buscador, sitemaps, RSS y API, y su
+// ficha responde 404. Poner a `true` lo devuelve todo tal cual estaba.
+export const REPORTAJES_ENABLED = false
+
+// Fragmento GROQ que quita los reportajes de cualquier listado mientras dure la
+// pausa. Se pega detrás del filtro de publicados de cada query. Verificado
+// contra el dataset: `type != "reportaje"` también deja pasar los que no tienen
+// `type` (2.989 de 2.990 documentos), así que no hace falta coalesce.
+export const REPORTAJE_GROQ_FILTER = REPORTAJES_ENABLED ? '' : ' && type != "reportaje"'

@@ -1,5 +1,5 @@
 import { sanityClient } from '@/lib/sanity'
-import { SITE_URL } from '@/lib/constants'
+import { SITE_URL, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 
 // Fuerza nodejs runtime: las queries a Sanity vía sanityClient van mejor
 // fuera de edge, y evitamos sorpresas si Next cambia default en el futuro.
@@ -20,7 +20,7 @@ function escapeXml(str: string | null | undefined): string {
 // y `title` queda null. Si proyectamos title directo, esos artículos salen
 // sin título y se filtran fuera del sitemap. Con coalesce capturamos ambos
 // esquemas en una sola query.
-const ARTICLE_QUERY = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && publishedAt > $since] | order(publishedAt desc)[0...1000] {
+const ARTICLE_QUERY = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && publishedAt > $since] | order(publishedAt desc)[0...1000] {
   "slug": slug.current,
   "title": coalesce(headline, title),
   publishedAt
@@ -29,7 +29,7 @@ const ARTICLE_QUERY = `*[_type == "article" && (status == "publicado" || (define
 // Fallback: cuando la ventana 72h está vacía (gap de publicación o desajuste
 // de fechas) tiramos de los últimos 50. Filtro permite cualquiera de los dos
 // campos de título; el proyect coalesce los devuelve unificados.
-const FALLBACK_QUERY = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**')))) && defined(slug.current) && (defined(title) || defined(headline)) && defined(publishedAt)] | order(publishedAt desc)[0...50] {
+const FALLBACK_QUERY = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && defined(slug.current) && (defined(title) || defined(headline)) && defined(publishedAt)] | order(publishedAt desc)[0...50] {
   "slug": slug.current,
   "title": coalesce(headline, title),
   publishedAt
