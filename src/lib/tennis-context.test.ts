@@ -64,8 +64,8 @@ describe('getTennisContext — forma reciente', () => {
 
   it('mezcla los partidos de local y de visitante, del más reciente al más viejo', async () => {
     const get = await cargar({
-      local: [PASADO({ iso_date: '2026-08-10T00:00:00Z', away: 'Rival Viejo' })],
-      visitante: [PASADO({ iso_date: '2026-08-20T00:00:00Z', home: 'Rival Nuevo', away: 'Arthur Fils', home_score: 0, away_score: 2 })],
+      local: [PASADO({ iso_date: '2026-08-10T00:00:00Z', away: 'Rival Viejo', match_ref: 'ref-viejo' })],
+      visitante: [PASADO({ iso_date: '2026-08-20T00:00:00Z', home: 'Rival Nuevo', away: 'Arthur Fils', home_score: 0, away_score: 2, match_ref: 'ref-nuevo' })],
     })
     const ctx = await get('Arthur Fils', 'Otro')
 
@@ -76,7 +76,7 @@ describe('getTennisContext — forma reciente', () => {
   it('se queda en cinco partidos aunque la consulta traiga más', async () => {
     const get = await cargar({
       local: Array.from({ length: 9 }, (_, i) =>
-        PASADO({ iso_date: `2026-08-0${i + 1}T00:00:00Z`, away: `Rival ${i}` })),
+        PASADO({ iso_date: `2026-08-0${i + 1}T00:00:00Z`, away: `Rival ${i}`, match_ref: `ref-${i}` })),
     })
     const ctx = await get('Arthur Fils', 'Otro')
     expect(ctx!.home.form).toHaveLength(5)
@@ -89,9 +89,29 @@ describe('getTennisContext — forma reciente', () => {
     expect(ctx!.home.form[0]).toMatchObject({ won: null, sets: '' })
   })
 
+  it('el partido ENTRE los dos no se duplica al juntar las dos consultas', async () => {
+    // Si ya se enfrentaron, esa fila la devuelven las DOS consultas: uno era el
+    // local y el otro el visitante. Sin deduplicar salía dos veces en la misma
+    // columna y falseaba la racha.
+    const enfrentamiento = PASADO({ home: 'Arthur Fils', away: 'Frances Tiafoe', match_ref: 'tennis_atp_9' })
+    const get = await cargar({ local: [enfrentamiento], visitante: [enfrentamiento] })
+    const ctx = await get('Arthur Fils', 'Frances Tiafoe')
+
+    expect(ctx!.home.form).toHaveLength(1)
+    expect(ctx!.away.form).toHaveLength(1)
+  })
+
+  it('deduplica también sin match_ref, por fecha y nombres', async () => {
+    const sinRef = PASADO({ home: 'Arthur Fils', away: 'Frances Tiafoe', match_ref: null })
+    const get = await cargar({ local: [sinRef], visitante: [sinRef] })
+    const ctx = await get('Arthur Fils', 'Frances Tiafoe')
+
+    expect(ctx!.home.form).toHaveLength(1)
+  })
+
   it('no cuela partidos de otro jugador que venga en la misma consulta', async () => {
     const get = await cargar({
-      local: [PASADO(), PASADO({ home: 'Otro Tenista', away: 'Alguien' })],
+      local: [PASADO(), PASADO({ home: 'Otro Tenista', away: 'Alguien', match_ref: 'ref-ajeno' })],
     })
     const ctx = await get('Arthur Fils', 'Frances Tiafoe')
 

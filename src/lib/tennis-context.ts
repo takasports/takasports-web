@@ -130,7 +130,19 @@ export async function getTennisContext(
         .in('name', nombres),
     ])
 
+    // Deduplicar ANTES de repartir. Cuando los dos jugadores de la ficha ya se
+    // enfrentaron, esa fila sale en LAS DOS consultas (uno era local, el otro
+    // visitante) y sin esto aparecía dos veces en la misma columna — visto en
+    // Auger-Aliassime vs Tsitsipas, donde el partido anterior entre ellos salía
+    // repetido y además falseaba la racha. [José Tomás, 31/08/2026]
+    const vistas = new Set<string>()
     const filas = ([...(comoLocal.data ?? []), ...(comoVisitante.data ?? [])] as FilaPasada[])
+      .filter(f => {
+        const clave = f.match_ref ?? `${f.iso_date}|${f.home}|${f.away}`
+        if (vistas.has(clave)) return false
+        vistas.add(clave)
+        return true
+      })
       .sort((a, b) => (a.iso_date < b.iso_date ? 1 : a.iso_date > b.iso_date ? -1 : 0))
 
     // `ranking_entries` tiene PK compuesta (id, category): el mismo nombre puede
