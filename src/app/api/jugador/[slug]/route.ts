@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { competitionLabel } from '@/lib/competition-labels'
 import { SITE_URL } from '@/lib/constants'
 import type { TeamResult } from '@/app/api/team/[slug]/route'
 import { fetchPlayerGamelog, type MatchLogEntry } from '@/lib/player-gamelog'
@@ -75,18 +76,6 @@ async function jsonFetch(url: string, revalidate: number): Promise<Record<string
   } catch {
     return null
   }
-}
-
-const COMP_LABELS: Record<string, string> = {
-  'soccer/esp.1':          'LaLiga',
-  'soccer/eng.1':          'Premier League',
-  'soccer/ita.1':          'Serie A',
-  'soccer/ger.1':          'Bundesliga',
-  'soccer/fra.1':          'Ligue 1',
-  'soccer/uefa.champions': 'Champions League',
-  'soccer/uefa.europa':    'Europa League',
-  'soccer/uefa.conference':'Conference League',
-  'basketball/nba':        'NBA',
 }
 
 const COUNTRY_ES: Record<string, string> = {
@@ -314,8 +303,12 @@ export async function GET(
   const ovLeague = asObj(overviewJson?.league)
   const ovLeagueSlug = asString(ovLeague?.slug)
   if (sportSeg === 'soccer' && ovLeagueSlug) leagueSlug = `soccer/${ovLeagueSlug}`
-  const leagueLabel =
-    COMP_LABELS[leagueSlug] ?? asString(ovLeague?.abbreviation) ?? asString(ovLeague?.name) ?? leagueSlug
+  // Mapa compartido con la ficha del partido (antes estaba duplicado y a medias,
+  // y lo que faltaba salía en inglés con las erratas de ESPN dentro del <title>).
+  const leagueLabel = competitionLabel(
+    leagueSlug,
+    asString(ovLeague?.abbreviation) ?? asString(ovLeague?.name),
+  )
 
   const team = asObj(ath.team)
   const teamId = asString(team?.id)

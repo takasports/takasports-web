@@ -9,6 +9,7 @@ import { fetchLeagueTableRows, fetchTournamentGroups, byGroup, groupLabel, type 
 import { getPastEventByRef, type H2HResult, type H2HMatch, type FormResult } from '@/lib/past-events'
 import { tennisRoundLabel } from '@/lib/espn'
 import { getTennisContext, type TennisContext } from '@/lib/tennis-context'
+import { COMPETITION_LABELS } from '@/lib/competition-labels'
 import {
   normalizeScoringType, commentaryLabelFor, SOCCER_STAT_ORDER, SOCCER_LABELS,
 } from '@/lib/espn-soccer'
@@ -250,20 +251,7 @@ export interface MatchDetail {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
-const COMP_LABELS: Record<string, string> = {
-  'soccer/esp.1':          'LaLiga',
-  'soccer/eng.1':          'Premier League',
-  'soccer/ita.1':          'Serie A',
-  'soccer/ger.1':          'Bundesliga',
-  'soccer/fra.1':          'Ligue 1',
-  'soccer/uefa.champions': 'Champions League',
-  'basketball/nba':        'NBA',
-  'racing/f1':             'Fórmula 1',
-  'mma/ufc':               'UFC',
-  'tennis/atp':            'ATP',
-  'tennis/wta':            'WTA',
-  'golf/pga':              'PGA Tour',
-}
+
 
 function detectSport(leagueSlug: string): SportKind {
   if (leagueSlug.startsWith('soccer/')) return 'soccer'
@@ -1145,7 +1133,7 @@ export async function GET(
   if (!parsed) return NextResponse.json(null, { status: 400 })
   const { leagueSlug, eventId } = parsed
   const sport      = detectSport(leagueSlug)
-  const leagueLabel = COMP_LABELS[leagueSlug] ?? LEAGUE_LABEL_BY_SLUG[leagueSlug] ?? leagueSlug.replace('/', ' · ')
+  const leagueLabel = COMPETITION_LABELS[leagueSlug] ?? LEAGUE_LABEL_BY_SLUG[leagueSlug] ?? leagueSlug.replace('/', ' · ')
 
   // Selecciones → español (Brazil→Brasil…); los clubes se dejan tal cual (son
   // nombres propios). Mismo criterio que lib/espn.ts: el slug ESPN mapea a su
