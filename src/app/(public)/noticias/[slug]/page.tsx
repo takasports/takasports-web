@@ -21,6 +21,8 @@ import ShareStoryCta from '@/components/ShareStoryCta'
 import ShareStoryFab from '@/components/ShareStoryFab'
 import { storySplitIndex } from '@/lib/article-split'
 import MatchScheduleCard, { type MatchKickoffData } from '@/components/MatchScheduleCard'
+import BroadcastCard from '@/components/BroadcastCard'
+import { matchCompetition, getBroadcastRows, type BroadcastRow } from '@/lib/broadcast'
 import PorraMatchWidget from '@/components/PorraMatchWidget'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 import { displayAuthor } from '@/lib/brand'
@@ -425,6 +427,17 @@ export default async function NoticiaPage({
       try { const t = await getTweet(tid); if (t) tweetMap.set(tid, t) } catch { /* fallback a enlace */ }
     }))
   }
+
+  // "Dónde verlo": solo si la noticia tiene hora de partido Y su competición es una
+  // de las cubiertas en broadcast_rights. Si algo falla o no hay filas verificadas,
+  // broadcastRows queda vacío y el bloque no se pinta — un canal equivocado sería
+  // peor que no poner canal.
+  const competitionKey = article.matchKickoff?.iso
+    ? matchCompetition(article.matchKickoff.competition, article.title, ...(article.tags ?? []))
+    : null
+  const broadcastRows: BroadcastRow[] = competitionKey
+    ? await getBroadcastRows(competitionKey).catch(() => [])
+    : []
 
   // Usar picks editoriales si existen; si no, query dinámica por sport/category
   const [relatedFinal, nextArticle] = await Promise.all([
@@ -1301,6 +1314,15 @@ export default async function NoticiaPage({
 
             {article.matchKickoff?.iso && (
               <MatchScheduleCard kickoff={article.matchKickoff} accent={badgeColor} />
+            )}
+
+            {broadcastRows.length > 0 && (
+              <BroadcastCard
+                rows={broadcastRows}
+                kickoffIso={article.matchKickoff?.iso}
+                competitionLabel={article.matchKickoff?.competition}
+                accent={badgeColor}
+              />
             )}
 
             {/* Widget La Porra — solo con Ranked Fútbol activo (enseña cuotas y
