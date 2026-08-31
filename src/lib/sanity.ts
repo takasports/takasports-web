@@ -212,17 +212,10 @@ export const allTagsFlatQuery = `*[_type == "article" && (status == "publicado" 
 // de /tag/[tag] cuando es demasiado fino para merecer indexación.
 export const tagCountQuery = `count(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && $tag in coalesce(tags, [])])`
 
-// Umbral mínimo de artículos para que un tag sea indexable (sitemap + meta robots).
-export const MIN_TAG_ARTICLES = 3
-
-// Un tag es "basura" si su slug es numérico puro o de menos de 3 caracteres
-// (ej. /tag/2, /tag/a) → nunca indexar.
-export function isJunkTag(tag: string): boolean {
-  const t = tag.trim()
-  if (t.length < 3) return true
-  if (/^\d+$/.test(t)) return true
-  return false
-}
+// La política de indexación de etiquetas vive en `tag-policy.ts` (sin
+// dependencias, para poder probarla sin las env de Sanity). Se reexporta aquí
+// para no romper a quien ya la importaba de este módulo.
+export { MIN_TAG_ARTICLES, isJunkTag, esTagIndexable } from '@/lib/tag-policy'
 
 // Feed de noticias relacionadas con una entidad (jugador, equipo, etc.).
 // Búsqueda por matching en campos prioritarios (title/headline > summary > body).
