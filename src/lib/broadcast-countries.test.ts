@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { countryFromTimeZone, COUNTRY_TZ, COUNTRY_NAMES, COUNTRY_FLAGS } from './broadcast-countries'
+import { countryFromTimeZone, COUNTRY_TZ, COUNTRY_NAMES, COUNTRY_FLAGS, offsetLabel } from './broadcast-countries'
 
 describe('countryFromTimeZone', () => {
   it('resuelve las zonas de los nueve países de la primera tanda', () => {
@@ -51,5 +51,31 @@ describe('tablas de países', () => {
     for (const tz of Object.values(COUNTRY_TZ)) {
       expect(() => new Intl.DateTimeFormat('es-ES', { timeZone: tz })).not.toThrow()
     }
+  })
+})
+
+describe('offsetLabel', () => {
+  // 5 de septiembre: España en horario de verano (UTC+2), Chile en invierno (UTC-4).
+  const verano = '2026-09-05T19:00:00.000Z'
+
+  it('calcula el desfase respecto al país del lector', () => {
+    expect(offsetLabel(verano, 'Europe/Madrid', 'America/Santiago')).toBe('+6 h')
+    expect(offsetLabel(verano, 'America/Mexico_City', 'America/Santiago')).toBe('−2 h')
+    expect(offsetLabel(verano, 'America/Santiago', 'America/Santiago')).toBe('igual')
+  })
+
+  it('dice "igual" entre zonas distintas que comparten hora', () => {
+    expect(offsetLabel(verano, 'America/Bogota', 'America/Lima')).toBe('igual')
+  })
+
+  it('usa el instante real, no el offset de hoy', () => {
+    // En enero se invierte: España UTC+1 y Chile UTC-3 → 4 h, no 6.
+    const invierno = '2027-01-15T19:00:00.000Z'
+    expect(offsetLabel(invierno, 'Europe/Madrid', 'America/Santiago')).toBe('+4 h')
+  })
+
+  it('devuelve null si el instante o la zona no valen', () => {
+    expect(offsetLabel('no-es-fecha', 'Europe/Madrid', 'America/Santiago')).toBeNull()
+    expect(offsetLabel(verano, 'Zona/Inventada', 'America/Santiago')).toBeNull()
   })
 })

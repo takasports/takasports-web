@@ -1386,6 +1386,11 @@ export default async function NoticiaPage({
                 rows={broadcastRows}
                 kickoffIso={article.matchKickoff?.iso}
                 competitionLabel={article.matchKickoff?.competition}
+                matchLabel={
+                  article.matchKickoff?.home && article.matchKickoff?.away
+                    ? `${article.matchKickoff.home} – ${article.matchKickoff.away}`
+                    : null
+                }
                 accent={badgeColor}
               />
             )}
