@@ -2,6 +2,8 @@
 
 // Explorador por periodo: pills (24h / 7 días / Mes / Total) que cambian la
 // ventana de las métricas clave (visitas, clics, apariciones), con % vs el
+// OJO: "visitas" es GA4 y GA4 solo carga tras aceptar cookies, así que cuenta
+// una fracción del tráfico. La cifra honesta de volumen son los clics.
 // periodo anterior. Recibe TODOS los periodos pre-calculados del server.
 
 import { useState } from 'react'
@@ -77,7 +79,7 @@ export default function PeriodExplorer({ periods }: { periods: PeriodData[] }) {
 
       {/* Métricas del periodo */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card icon="👥" label="Visitas" hint="Personas distintas que ENTRARON a la web en el periodo (usuarios activos de Google Analytics)." accent="#7C3AED"
+        <Card icon="👥" label="Visitas (con cookies)" hint="Personas que entraron Y ACEPTARON el aviso de cookies: es lo único que Google Analytics puede contar. La cifra real es mayor — para volumen, usa los clics de Search Console." accent="#7C3AED"
           value={<>{nf(m.visits)}<Delta cur={m.visits} prev={m.visitsPrev} /></>} />
         <Card icon="🔍" label="Clics en Google" hint="Veces que alguien pinchó tu web en los resultados de búsqueda de Google (Search Console)." accent="#8B5CF6"
           value={<>{nf(m.clics)}<Delta cur={m.clics} prev={m.clicsPrev} /></>} />

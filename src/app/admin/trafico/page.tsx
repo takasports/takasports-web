@@ -10,6 +10,7 @@
 // Explicaciones: términos con `title` (tooltip). Protección: allowlist ADMIN_EMAILS.
 
 import type { CSSProperties, ReactNode } from 'react'
+import { coberturaGa4, textoCobertura } from '@/lib/analytics-coverage'
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/admin-auth'
 import RealtimePanel from './RealtimePanel'
@@ -253,18 +254,23 @@ function PendingCard({ title, children }: { title: string; children: ReactNode }
 }
 
 /** Bloque de "visitas GA4" reutilizable para web (propiedad Deportes) y app (taka-eef70). */
-function VisitsBlock({ ga4, kind, geo }: { ga4: Ga4Summary; kind: 'web' | 'app'; geo?: CountryWindow[] }) {
+function VisitsBlock({ ga4, kind, geo, clicsBuscador }: {
+  ga4: Ga4Summary; kind: 'web' | 'app'; geo?: CountryWindow[]
+  /** Clics de Search Console en 28 días — para estimar cuánto ve GA4. */
+  clicsBuscador?: number | null
+}) {
   const isApp = kind === 'app'
+  const cobertura = isApp ? null : coberturaGa4(ga4.total28, ga4.organicPct, clicsBuscador)
   return (
     <section className="mb-12">
       <SectionTitle hint={ga4.available && ga4.via ? `fuente: ${ga4.via === 'service-account' ? 'service account' : 'OAuth'}` : undefined}>
-        {isApp ? 'Usuarios de la app · Google Analytics' : 'Visitas a la web · Google Analytics'}
+        {isApp ? 'Usuarios de la app · Google Analytics' : 'Visitas a la web · Google Analytics (solo quien acepta cookies)'}
       </SectionTitle>
       {ga4.available ? (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <BigCard label="Usuarios · ayer" value={<>{nf(ga4.yesterday)}<TrendChip trend={ga4.trend} /></>} sub={`anteayer ${nf(ga4.dayBefore)}`} accent="#7C3AED" hint={isApp ? 'Personas que abrieron la app ayer.' : 'Personas distintas que entraron ayer a la web (usuarios activos de Google Analytics).'} />
-            <BigCard label="Usuarios · 28 días" value={<>{nf(ga4.total28)}<DeltaChip cur={ga4.total28} prev={ga4.prevTotal28} /></>} sub={ga4.prevTotal28 != null ? `mes anterior: ${nf(ga4.prevTotal28)}` : undefined} accent="#8B5CF6" hint="Personas distintas en los últimos 28 días, con el % de cambio frente a los 28 anteriores." />
+            <BigCard label="Usuarios · ayer" value={<>{nf(ga4.yesterday)}<TrendChip trend={ga4.trend} /></>} sub={`anteayer ${nf(ga4.dayBefore)}`} accent="#7C3AED" hint={isApp ? 'Personas que abrieron la app ayer.' : 'Personas que entraron ayer Y ACEPTARON las cookies. Quien rechaza o ignora el aviso no se cuenta, así que la cifra real es bastante mayor: ver la nota de cobertura debajo.'} />
+            <BigCard label="Usuarios · 28 días" value={<>{nf(ga4.total28)}<DeltaChip cur={ga4.total28} prev={ga4.prevTotal28} /></>} sub={ga4.prevTotal28 != null ? `mes anterior: ${nf(ga4.prevTotal28)}` : undefined} accent="#8B5CF6" hint="Personas distintas en los últimos 28 días DE LAS QUE ACEPTAN COOKIES, con el % de cambio frente a los 28 anteriores. Sirve para ver tendencia, no volumen." />
             <BigCard label="Media · 7 días" value={nf(ga4.avg7)} sub="usuarios/día" accent="#F472B6" />
             {isApp ? (
               <BigCard label="Sesiones · 28d" value={nf(ga4.sessions28)} sub="aperturas de la app" accent="#60A5FA" hint="Veces que se abrió la app (una sesión por uso)." />
@@ -272,6 +278,26 @@ function VisitsBlock({ ga4, kind, geo }: { ga4: Ga4Summary; kind: 'web' | 'app';
               <BigCard label="Orgánico · 7d" value={ga4.organicPct == null ? '–' : `${ga4.organicPct}%`} sub="llega desde búsqueda" accent="#60A5FA" hint="% de visitas que llegan desde resultados de búsqueda (Google/Bing) sin pagar anuncios." />
             )}
           </div>
+
+          {/* Cuánto ve GA4 de la realidad. El panel presentaba estas cifras como
+              "personas que entraron", y solo cuenta a quien acepta cookies. */}
+          {cobertura && (
+            <div
+              className="mb-6 rounded-xl px-4 py-3"
+              style={{
+                background: cobertura.fiable && (cobertura.techo ?? 1) < 0.8 ? 'rgba(245,158,11,0.10)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${cobertura.fiable && (cobertura.techo ?? 1) < 0.8 ? 'rgba(245,158,11,0.30)' : 'rgba(255,255,255,0.08)'}`,
+              }}
+            >
+              <p className="text-[12px] font-black uppercase tracking-widest mb-1" style={{ color: '#F59E0B' }}>
+                Cuánto ve Google Analytics
+              </p>
+              <p className="text-[13px]" style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                {textoCobertura(cobertura)}
+                {cobertura.fiable ? <> Para volumen real, mira los <strong>clics de Search Console</strong> más abajo.</> : null}
+              </p>
+            </div>
+          )}
 
           {ga4.series && ga4.series.length > 0 && (
             <div className="mb-6"><AreaChart series={ga4.series} /></div>
@@ -357,7 +383,7 @@ export default async function TraficoPage() {
     <>
       <PeriodExplorer periods={periods} />
       <RealtimePanel initial={realtime} />
-      <VisitsBlock ga4={ga4} kind="web" geo={webGeo} />
+      <VisitsBlock ga4={ga4} kind="web" geo={webGeo} clicsBuscador={searchTotals.d28?.clicks ?? null} />
 
       {/* Contenido que rinde */}
       {content.length > 0 && (
