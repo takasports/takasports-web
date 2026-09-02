@@ -1298,9 +1298,24 @@ export default async function NoticiaPage({
 
             {imgUrl && (
               <div
-                className="relative w-full rounded-2xl overflow-hidden mb-8"
+                // Proporción de la caja, en vez de un alto en clamp.
+                //
+                // El `height: clamp(240px, 52vw, 480px)` anterior daba, sin querer,
+                // dos cajas muy distintas: ~1,77 en escritorio y ~1,44 en móvil,
+                // porque ahí mandaba el suelo de 240 px. Como la foto va con
+                // object-cover, todo lo que baje del ratio de la caja se recorta
+                // arriba y abajo, y las fotos reales del pipeline rondan 1,3-1,5:
+                // en escritorio perdían entre el 15 % y el 25 % del alto.
+                //
+                // Por eso el ratio es RESPONSIVO y no un número único: en móvil ya
+                // estaba bien y ponerlo a 1,6 habría EMPEORADO el recorte (de 0 % a
+                // 11 % en la foto que se midió). Así se recorta menos que antes en
+                // las dos, no solo en escritorio.
+                //
+                // ⚠️ Esto y HERO_MIN_RATIO de WF-08 (hoy 1,3) son la misma decisión
+                // vista desde los dos extremos. Si cambias uno, revisa el otro.
+                className="relative w-full aspect-[1.45/1] sm:aspect-[1.6/1] rounded-2xl overflow-hidden mb-8"
                 style={{
-                  height: 'clamp(240px, 52vw, 480px)',
                   // Hero "broadcast": borde y glow teñidos del acento del deporte.
                   border: `1px solid ${accent}30`,
                   boxShadow: `0 18px 50px ${accent}1f`,
