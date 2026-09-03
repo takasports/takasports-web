@@ -776,10 +776,16 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
       {/* Recordatorio (campana) arriba-dcha SOLO en próximos. El estado (EN VIVO/Final)
           ya NO va en la esquina: pasa a una ceja CENTRADA encima del marcador (Opción A). */}
       {canRemind ? (
+        // La campana mide 32×32 y no 22: era el control más repetido del
+        // calendario y quedaba por debajo del mínimo táctil de 24 px (118
+        // controles solo-icono así, medidos el 03/09/2026 en un iPhone). El
+        // icono sigue siendo de 12 px y en el mismo sitio —top/right compensan
+        // el crecimiento—, o sea que la tarjeta no cambia de aspecto: lo único
+        // que crece es la zona que se puede tocar.
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleReminder() }}
           className="absolute z-[3] flex items-center justify-center rounded-full transition-colors"
-          style={{ top: 6, right: 7, width: 22, height: 22 }}
+          style={{ top: 1, right: 2, width: 32, height: 32 }}
           aria-label={isReminded ? 'Quitar recordatorio' : 'Recordar'}
           title={isReminded ? 'Quitar recordatorio' : 'Recordar'}
         >
