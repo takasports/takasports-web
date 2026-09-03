@@ -11,6 +11,7 @@ import type { SportEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
 import { SPORT_THEME, getEventHighlightScore, getLeagueScore, isCombat, isMundial, sportThemeKey } from '@/lib/competitions'
 import { orderCompGroups } from '@/lib/comp-group-order'
+import { ligasAbiertasPorDefecto, diasAbiertosPorDefecto, estaAbierto } from '@/lib/calendar-collapse'
 import { groupChannel } from '@/lib/comp-group-channel'
 import { getBroadcastForTz } from '@/lib/broadcasts'
 import { mergeFeedEvents } from '@/lib/calendar-initial-window'
@@ -703,15 +704,37 @@ export default function CalendarioContent({
   // no le interesa. Es estado de VISTA, no un filtro — el contador del día sigue
   // diciendo cuántos partidos hay. No se persiste: es un "ahora mismo no me
   // estorbes", no una preferencia. Espejo de la app. [José Tomás, 26/08/2026]
-  const [collapsedComps, setCollapsedComps] = useState<ReadonlySet<string>>(() => new Set())
-  const toggleCollapsedComp = useCallback((comp: string) => {
-    setCollapsedComps(prev => {
-      const next = new Set(prev)
-      if (next.has(comp)) next.delete(comp)
-      else next.add(comp)
+  //
+  // Desde el 03/09/2026 hay además una REGLA DE ARRANQUE (lib/calendar-collapse):
+  // hasta entonces todo nacía desplegado y la página medía ~15.600 px en un
+  // iPhone, o sea 23 pantallas, así que la tijera solo servía si la usabas quince
+  // veces. Lo que el usuario toca se guarda aparte, en `compOverride`, y manda
+  // siempre sobre la regla: si pliegas algo que la regla abría, se queda plegado.
+  const [compOverride, setCompOverride] = useState<ReadonlyMap<string, boolean>>(() => new Map())
+  const toggleCollapsedComp = useCallback((comp: string, abiertaAhora: boolean) => {
+    setCompOverride(prev => {
+      const next = new Map(prev)
+      next.set(comp, !abiertaAhora)
       return next
     })
   }, [])
+
+  // Días plegados. Mismo modelo: hoy abierto, el resto detrás de su cabecera —que
+  // ya enseña "N partidos · M en vivo · K tuyos"—, y lo que toques manda.
+  const [dayOverride, setDayOverride] = useState<ReadonlyMap<string, boolean>>(() => new Map())
+  const toggleDay = useCallback((dia: string, abiertoAhora: boolean) => {
+    setDayOverride(prev => {
+      const next = new Map(prev)
+      next.set(dia, !abiertoAhora)
+      return next
+    })
+  }, [])
+
+  // La regla NO se aplica en el render del servidor: así el HTML servido sigue
+  // trayendo todo (nada desaparece para un rastreador ni hay desajuste de
+  // hidratación) y el plegado ocurre ya en el navegador.
+  const [hidratado, setHidratado] = useState(false)
+  useEffect(() => { setHidratado(true) }, [])
 
   const liveEventsInList = useMemo(
     () => filtered.filter(e => liveScores.has(e.id) && isLiveStatus(liveScores.get(e.id)?.status ?? '')),
@@ -1024,7 +1047,15 @@ export default function CalendarioContent({
 
   // Día de HOY (local): separa los días pasados (tono rojo suave) de los
   // futuros en las cabeceras del timeline continuo.
+  // Bandera de render (no estado): se reinicia en cada pasada, justo antes de
+  // recorrer los días, y marca la primera fila de directo que llega a pintarse.
+  let anclaDirectoPuesta = false
+  // Días abiertos por defecto: hoy. Hasta hidratar, TODOS abiertos (ver `hidratado`),
+  // para que el HTML del servidor siga trayéndolo todo.
   const todayKey = isoToLocalDate(new Date().toISOString(), tz)
+  const diasAbiertos: ReadonlySet<string> = hidratado
+    ? diasAbiertosPorDefecto(orderedDates, todayKey)
+    : new Set(orderedDates)
 
   return (
     <main
@@ -1391,6 +1422,12 @@ export default function CalendarioContent({
                   <span>Resultados de días anteriores</span>
                 </div>
               ) : null}
+              {/* El ancla de "N en vivo → ir" se marca sobre la PRIMERA fila de
+                  directo que se pinta de verdad. Antes se calculaba sobre la lista
+                  completa, así que si ese partido caía en una liga plegada el nodo
+                  no existía y el botón no hacía nada, en silencio. Con el plegado
+                  por defecto eso pasaría de rareza a bug seguro. */}
+              {(() => { anclaDirectoPuesta = false; return null })()}
               {orderedDates.map(dateKey => {
               // Orden cronológico de los partidos del día. En "Destacados" se respeta
               // la curación por relevancia (top del día); en el resto (Todo / deporte /
@@ -1412,6 +1449,7 @@ export default function CalendarioContent({
               // Agrupar por competición (orden de primera aparición) y ordenar por
               // hora los partidos DENTRO de cada liga. En Destacados venían por
               // relevancia ("caché"), no por hora → ver groupDayByCompetition.
+              const diaAbierto = estaAbierto(dateKey, diasAbiertos, dayOverride)
               const { order: compOrder, byComp } = groupDayByCompetition(dayEvents)
               // Orden de las LIGAS: fijadas → en vivo → por jugarse → terminadas,
               // y dentro de cada estado por importancia. Antes era el orden de
@@ -1430,10 +1468,28 @@ export default function CalendarioContent({
                 })),
                 getLeagueScore,
               )
+              // Ligas abiertas al llegar: en vivo, con equipo tuyo, fijadas y las
+              // tres primeras del orden de arriba. El resto, plegadas con su
+              // contador. Hasta hidratar van todas abiertas (ver `hidratado`).
+              const ligasAbiertas = hidratado
+                ? ligasAbiertasPorDefecto(
+                    orderedComps.map(comp => ({
+                      comp,
+                      enVivo: byComp[comp].some(e => liveScores.has(e.id) && isLiveStatus(liveScores.get(e.id)?.status ?? '')),
+                      conFavorito: byComp[comp].some(e => eventHasFavorite(favorites, e)),
+                      fijada: favComps.has(compConfigForGroup(comp, byComp[comp][0]?.sport)?.slug ?? ''),
+                    })),
+                  )
+                : new Set(orderedComps)
               // Una fila, para los dos modos. El ancla "N en vivo ahora → ir" es el
-              // primer directo, esté donde esté.
+              // primer directo VISIBLE: si cae en un día o una liga plegados, su
+              // nodo no existe y el botón no hacía nada, en silencio. Por eso se
+              // marca aquí, ya sabiendo qué está desplegado, y no sobre la lista
+              // completa.
               const filaDe = (event: SportEvent, canalGrupo: string | null, conComp: boolean) => {
-                const esAncla = event.id === liveEventsInList[0]?.id
+                const esDirecto = liveScores.has(event.id) && isLiveStatus(liveScores.get(event.id)?.status ?? '')
+                const esAncla = esDirecto && !anclaDirectoPuesta
+                if (esAncla) anclaDirectoPuesta = true
                 const fila = (
                   <MatchRow
                     key={event.id}
@@ -1465,6 +1521,8 @@ export default function CalendarioContent({
                 // search ni liveScores → no re-anima al teclear ni en cada poll.
                 <section ref={dateKey === todayKey ? todaySepRef : undefined} key={`${activeFilter}|${selectedDate ?? ''}|${onlyLive ? 'L' : ''}|${dateKey}`}>
                   <DaySeparator
+                    collapsed={!diaAbierto}
+                    onToggleCollapse={() => toggleDay(dateKey, diaAbierto)}
                     dateKey={dateKey}
                     count={dayEvents.length}
                     curated={activeFilter === 'Destacados'}
@@ -1482,7 +1540,7 @@ export default function CalendarioContent({
                       partidos: agrupar aporta poco y la línea de tiempo se lee
                       sola; la competición pasa a la ceja de cada fila. En "Todo"
                       se mantiene la agrupación. [José Tomás, 27/08/2026] */}
-                  {activeFilter === 'Destacados' ? (
+                  {!diaAbierto ? null : activeFilter === 'Destacados' ? (
                     <div className="space-y-1.5">
                       {dayEvents.map(event => filaDe(event, null, true))}
                     </div>
@@ -1502,9 +1560,9 @@ export default function CalendarioContent({
                       getBroadcastForTz(comp, compEvents[0]?.sport ?? '', tz) ?? groupChannel(compEvents)
                     return (
                       <div key={comp} className="mb-2 relative cal-anim-in" style={{ animationDelay: `${Math.min(compIdx * 55, 280)}ms` }}>
-                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} channel={canalGrupo} crest={cfg?.crest} slug={cfg?.slug} banner={activeComp && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} collapsed={collapsedComps.has(comp)} onToggleCollapse={() => toggleCollapsedComp(comp)} />
+                        <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} channel={canalGrupo} crest={cfg?.crest} slug={cfg?.slug} banner={activeComp && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} collapsed={!estaAbierto(comp, ligasAbiertas, compOverride)} onToggleCollapse={() => toggleCollapsedComp(comp, estaAbierto(comp, ligasAbiertas, compOverride))} />
                         <div className="space-y-1.5">
-                          {collapsedComps.has(comp) ? null : compEvents.map(event => filaDe(event, canalGrupo, false))}
+                          {estaAbierto(comp, ligasAbiertas, compOverride) ? compEvents.map(event => filaDe(event, canalGrupo, false)) : null}
                         </div>
                       </div>
                     )

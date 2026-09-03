@@ -1019,9 +1019,12 @@ export function formatDateSubtitle(localDate: string): string {
 }
 
 // Day separator — prominent header for each date in the events list.
-export function DaySeparator({ dateKey, count, curated = false, liveCount = 0, mineCount = 0, tone = 'upcoming', tz }: {
+export function DaySeparator({ dateKey, count, curated = false, liveCount = 0, mineCount = 0, tone = 'upcoming', tz, collapsed, onToggleCollapse }: {
   dateKey: string
   count: number
+  /** El día llega plegado: se ve su cabecera y su resumen, no sus partidos. */
+  collapsed?: boolean
+  onToggleCollapse?: () => void
   /** El día viene CURADO (modo Destacados): el contador dice "N destacados", no
    *  "N partidos". Decía "8 partidos" en un sábado que tuvo 96 y parecía que
    *  ese día apenas se jugó. [José Tomás, 26/08/2026] */
@@ -1078,6 +1081,23 @@ export function DaySeparator({ dateKey, count, curated = false, liveCount = 0, m
             <span style={{ color: '#6EE7B7' }}>· {mineCount} {mineCount === 1 ? 'tuyo' : 'tuyos'}</span>
           )}
         </span>
+        {/* Chevron de plegado del DÍA. Solo hoy llega abierto; los demás se
+            despliegan de un toque. El resumen de arriba sigue diciendo lo que hay
+            dentro, así que plegado no es "vacío". */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? `Desplegar ${label}` : `Plegar ${label}`}
+            className="flex-shrink-0 flex items-center justify-center rounded-full transition-colors hover:bg-white/[0.06]"
+            style={{ width: 32, height: 32, color: collapsed ? chipColor : '#5A5A6E', background: 'transparent', border: 'none', cursor: 'pointer' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden
+              style={{ transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 180ms' }}>
+              <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   )
