@@ -31,7 +31,10 @@ import type { GameId } from '@/lib/games-store'
 
 // ── Datos ─────────────────────────────────────────────────────
 
-type GameStatus = 'active' | 'live' | 'coming'
+// 'archived' = ya se jugó y se puede consultar, pero no es una promesa de futuro.
+// Sin él, el Mundial 2026 —terminado el 19/07/2026— vivía en el cubo 'coming'
+// y la ficha decía «PRÓX · FINALIZADO» con un botón para avisar de su estreno.
+type GameStatus = 'active' | 'live' | 'coming' | 'archived'
 type Difficulty = 1 | 2 | 3
 
 /** Links externos para juegos que viven fuera de Taka (ej. Wrestling Fantasy) */
@@ -119,13 +122,13 @@ const GAMES: Game[] = [
     description: 'Consulta el cuadro completo, tus picks y el ranking final del Mundial 2026.',
     accent: '#FBBF24',
     accentDim: '#B45309',
-    status: 'coming',
+    status: 'archived',
+    href: '/mundial',
     icon: <IconMundial />,
     format: 'Archivo',
     category: 'Predicciones',
     difficulty: 2,
     timeEst: '~2 min',
-    releaseTarget: 'Finalizado',
     pts: 200,
   },
   {
@@ -209,7 +212,8 @@ const GAMES: Game[] = [
     category: 'Arcade',
     difficulty: 2,
     timeEst: 'Sin límite',
-    releaseTarget: 'Q3 2026',
+    // Sin `releaseTarget`: la tarjeta cae a «Próximamente», que no caduca. Estuvo
+    // meses prometiendo «Q3 2026» y ese trimestre acaba el 30/09/2026.
     pts: 500,
   },
   {
@@ -231,22 +235,9 @@ const GAMES: Game[] = [
     timeEst: '~5 min',
     pts: 300,
   },
-  {
-    id: 'ufcranked',
-    name: 'UFC Ranked',
-    tagline: 'Predice. Puntúa. Domina.',
-    description: 'Predice la cartelera de cada evento UFC: ganador y método de victoria. Los combates destacados puntúan doble.',
-    accent: '#FB923C',
-    accentDim: '#C2410C',
-    status: 'coming',
-    icon: <IconUFCPrediction />,
-    format: 'Por evento',
-    category: 'Predicciones',
-    difficulty: 3,
-    timeEst: '~3 min',
-    releaseTarget: 'Q3 2026',
-    pts: 400,
-  },
+  // ELIMINADO 03/09/2026: 'ufcranked' anunciaba como «PRÓX · Q3 2026» el mismo
+  // producto que 'ranked-ufc' ya sirve como 'live'. Dos tarjetas casi homónimas
+  // («Ranked UFC» y «UFC Ranked») con estados contradictorios en la misma página.
 ]
 
 // Aporte REAL a la Liga Taka por minijuego (game-points.ts: diarios 1→5,
@@ -899,6 +890,7 @@ export default function JuegosPageClient() {
   const jugables     = GAMES.filter(g => g.status === 'live' && !g.externalLinks && g.id !== 'mundial')
   const partnerGames = GAMES.filter(g => !!g.externalLinks)
   const comingGames  = GAMES.filter(g => g.status === 'coming')
+  const archivedGames = GAMES.filter(g => g.status === 'archived')
 
   // Estado del usuario: UNA lectura para la barra y para todas las tarjetas.
   const overview = useGamesOverview(TRACKED_GAMES)

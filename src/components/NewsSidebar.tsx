@@ -162,7 +162,7 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
       <div>
         <SectionHeader>Predicciones</SectionHeader>
         <Link
-          href="/mundial"
+          href="/predicciones"
           className="block p-4 rounded-xl transition-all hover:brightness-110"
           style={{
             background: 'linear-gradient(135deg, rgba(167,139,250,0.16) 0%, rgba(76,29,149,0.12) 100%)',
@@ -176,7 +176,7 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
               className="text-[9px] font-black uppercase tracking-widest"
               style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
             >
-              Mundial 2026
+              La Jornada
             </span>
           </div>
           <p
@@ -187,7 +187,7 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
               letterSpacing: '-0.01em',
             }}
           >
-            Predicciones del Mundial
+            Predicciones de la semana
           </p>
           <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
             Acierta cada partido y sube en la clasificación Taka

@@ -23,14 +23,17 @@ const AuthModal = dynamic(() => import('./AuthModal'), { ssr: false })
 const INNER = 'max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10'
 
 // `to` (opcional) = destino del clic cuando difiere del `href` que decide el
-// resaltado activo. Estadísticas abre directo el cuadro del Mundial mientras dura
-// el torneo (al acabar, quitar el `to` → vuelve a la portada Destacados).
+// resaltado activo. Se usó para que Estadísticas abriera directo el cuadro del
+// Mundial mientras duraba el torneo; el Mundial acabó el 19/07/2026 y el 03/09
+// se retiró ese `to`, así que Estadísticas vuelve a abrir la portada Destacados
+// con las clasificaciones vivas. El mecanismo se deja porque sirve para el
+// próximo torneo grande.
 const NAV_LINKS: { label: string; href: string; to?: string }[] = [
   { label: 'Inicio',       href: '/'              },
   { label: 'Noticias',     href: '/noticias'      },
   { label: 'Reels',        href: '/reels'         },
   { label: 'Calendario',   href: '/calendario'    },
-  { label: 'Estadísticas', href: '/estadisticas', to: '/estadisticas/mundial' },
+  { label: 'Estadísticas', href: '/estadisticas' },
   { label: 'Rankings',     href: '/rankings'      },
   { label: 'Juegos',       href: '/juegos'        },
 ]
