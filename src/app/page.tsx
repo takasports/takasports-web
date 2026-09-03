@@ -18,6 +18,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { urlFor } from '@/lib/sanity'
 import { SITE_URL, REPORTAJES_ENABLED } from '@/lib/constants'
 import MasLeidas from '@/components/MasLeidas'
+import { isoToLocalDate } from '@/lib/calendar'
 
 export const revalidate = 300
 
@@ -148,6 +149,22 @@ export default async function Home() {
   const sanityIds = new Set(sanityEvents.map((e: { home: string; away: string | null }) => `${e.home}|${e.away}`))
   const events = [...sanityEvents, ...espnEvents.filter(e => !sanityIds.has(`${e.home}|${e.away}`))]
 
+  // Partidos de HOY, en versión flaca, para el bloque "Tu día".
+  //
+  // Se calcula aquí y no en el cliente porque los favoritos viven en el
+  // navegador pero el calendario completo no: pedirlo desde el cliente son
+  // ~495 KB de `/api/events/feed` (el `?from=` solo recorta el pasado) para
+  // pintar tres filas. Del lado del servidor ya tenemos `espnEvents` en memoria,
+  // así que basta con filtrar el día y quedarnos con los campos que se pintan.
+  const hoyMadrid = isoToLocalDate(new Date().toISOString())
+  const eventosDeHoy = events
+    .filter(e => e.isoDate && isoToLocalDate(e.isoDate) === hoyMadrid)
+    .map(e => ({
+      id: e.id, home: e.home, away: e.away, sport: e.sport, comp: e.comp,
+      date: e.date, time: e.time, accent: e.accent,
+      isoDate: e.isoDate, timeTbd: e.timeTbd, matchRef: e.matchRef,
+    }))
+
   // F3.5: el initialSport ahora se calcula en HomeContent (client) leyendo `?sport=X`.
 
   // VideoObject JSON-LD: solo cuando tenemos reels reales de Sanity con datos suficientes
@@ -233,7 +250,7 @@ export default async function Home() {
           "En directo" queda fijo al scrollear, "Último momento" se colapsa, y el
           filtro de abajo se ancla a --console-h (sin hueco). */}
       <HeaderConsole breakingItems={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
-      <HomeContent articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} reportajes={reportajes} masLeidas={<MasLeidas />} />
+      <HomeContent eventosDeHoy={eventosDeHoy} articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} reportajes={reportajes} masLeidas={<MasLeidas />} />
       <NewsletterSection source="home" />
       <Footer />
       <WelcomeOnboarding />

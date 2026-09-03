@@ -23,6 +23,7 @@ import {
 } from '@/components/games/GameVisuals'
 import { SearchIcon } from '@/components/icons/GameIcons'
 import { getEventHighlightScore } from '@/lib/competitions'
+import TuDia from '@/components/TuDia'
 
 const HOME_PAGE_SIZE = 8
 
@@ -344,6 +345,7 @@ export default function HomeContent({
   featuredBySport = {},
   reportajes = [],
   masLeidas,
+  eventosDeHoy = [],
 }: {
   articles: Article[]
   reels: SanityReel[]
@@ -359,6 +361,8 @@ export default function HomeContent({
    * móvil, que es de donde viene casi todo el tráfico.
    */
   masLeidas?: React.ReactNode
+  /** Partidos de hoy en versión flaca, ya filtrados en el servidor, para "Tu día". */
+  eventosDeHoy?: SportEvent[]
 }) {
   const router = useRouter()
   const [activeSport, setActiveSport] = useState<string>('Todo')
@@ -531,6 +535,15 @@ export default function HomeContent({
             Se autooculta si no hay ninguno publicado. No se filtra por el chip
             de deporte activo — un reportaje no es actualidad de un deporte. */}
         <ReportajesBlock reportajes={reportajes} />
+
+        {/* ── 1.6 TU DÍA ─────────────────────────────────────────── */}
+        {/* DEBAJO de la portada, no encima: la home sigue abriendo con la
+            actualidad y lo personal viene justo después (decisión de José Tomás
+            al aprobar la maqueta, 03/09/2026). Se autooculta para quien todavía
+            no ha elegido ni deportes ni equipos. */}
+        <div className="mt-8">
+          <TuDia events={eventosDeHoy} />
+        </div>
 
         {/* ── 2. CALENDARIO ──────────────────────────────────────── */}
         <div className="mt-6">
