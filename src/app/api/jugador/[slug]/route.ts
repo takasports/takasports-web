@@ -8,6 +8,7 @@ import { resolvePlayerSlug } from '@/lib/player-slug'
 import { canonicalTeamSlug } from '@/lib/team-slug'
 import { getPhotosByEspnId } from '@/lib/sport-entities'
 import { buildTennisStats, findTennisRank, type TennisRank } from '@/lib/tennis-profile'
+import { alturaEnMetros } from '@/lib/player-measures'
 
 // ── Types ────────────────────────────────────────────────────────────
 export interface PlayerStat {
@@ -437,7 +438,7 @@ export async function GET(
     nationality: citizenshipEn
       ? (COUNTRY_ES[citizenshipEn] ?? citizenshipEn)
       : (asString(flag?.alt) ?? (tennisRank?.flagAlt ? (COUNTRY_ES[tennisRank.flagAlt] ?? tennisRank.flagAlt) : undefined)),
-    height: asString(ath.displayHeight),
+    height: alturaEnMetros(asString(ath.displayHeight)),
     birthDate: asString(ath.dateOfBirth)?.slice(0, 10),
     team: teamId
       ? (() => {
