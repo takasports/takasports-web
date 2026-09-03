@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import { HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, accentForSport, CATEGORY_TO_SLUG } from '@/lib/sports'
 import { FootballIcon, BasketballIcon, F1Icon, TennisIcon, UFCIcon, RugbyIcon, WWEIcon } from '@/components/icons/GameIcons'
 
@@ -24,6 +25,14 @@ interface Props {
   onSelect: (cat: string) => void
   categories?: string[]
   moreCategories?: string[]
+  /**
+   * Si viene, cada chip se pinta como ENLACE al hub de ese deporte en vez de
+   * como botón que filtra en el sitio. Se hizo así —aditivo— porque el mismo
+   * componente sirve a la home, a /noticias y a los propios hubs, y cada uno
+   * decide. De paso los chips pasan a ser enlaces rastreables, que es enlazado
+   * interno gratis hacia unas páginas que solo enlazaba el pie.
+   */
+  hrefFor?: (cat: string) => string | undefined
 }
 
 export default function CategoriesFilter({
@@ -31,6 +40,7 @@ export default function CategoriesFilter({
   onSelect,
   categories = HOME_SPORT_CATEGORIES,
   moreCategories = MORE_SPORT_CATEGORIES,
+  hrefFor,
 }: Props) {
   const [moreOpen, setMoreOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -62,19 +72,22 @@ export default function CategoriesFilter({
           const isActive = sport === active
           const { accent, Icon } = getMeta(sport)
 
-          return (
-            <button
-              key={sport}
-              onClick={() => { onSelect(sport); setMoreOpen(false) }}
-              className="group flex-shrink-0 flex items-center gap-1.5 relative transition-colors duration-200"
-              style={{
-                padding: '10px 14px 10px 12px',
-                minHeight: 44,
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
+          const href = hrefFor?.(sport)
+          // Mismo aspecto en las dos ramas: `inline-flex` + el mismo padding y
+          // `minHeight:44`, para que el área táctil no cambie al pasar de
+          // <button> a <Link>.
+          const estiloChip = {
+            padding: '10px 14px 10px 12px',
+            minHeight: 44,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            textDecoration: 'none',
+          } as const
+          const claseChip = 'group flex-shrink-0 inline-flex items-center gap-1.5 relative transition-colors duration-200'
+
+          const contenido = (
+            <>
               <span
                 className="leading-none flex-shrink-0 inline-flex items-center justify-center"
                 style={{
@@ -110,6 +123,29 @@ export default function CategoriesFilter({
                   transition: 'background 200ms, box-shadow 200ms',
                 }}
               />
+            </>
+          )
+
+          return href ? (
+            <Link
+              key={sport}
+              href={href}
+              prefetch={false}
+              aria-current={isActive ? 'page' : undefined}
+              onClick={() => setMoreOpen(false)}
+              className={claseChip}
+              style={estiloChip}
+            >
+              {contenido}
+            </Link>
+          ) : (
+            <button
+              key={sport}
+              onClick={() => { onSelect(sport); setMoreOpen(false) }}
+              className={claseChip}
+              style={estiloChip}
+            >
+              {contenido}
             </button>
           )
         })}

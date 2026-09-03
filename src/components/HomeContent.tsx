@@ -14,7 +14,7 @@ import QuinielaTeaser from '@/components/QuinielaTeaser'
 import RetoDelDia from '@/components/games/RetoDelDia'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 import CategoriesFilter from '@/components/CategoriesFilter'
-import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, SLUG_TO_LABEL } from '@/lib/sports'
+import { CATEGORY_TO_SLUG, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, SLUG_TO_LABEL, hubHrefForCategory } from '@/lib/sports'
 import type { SportEvent } from '@/lib/types'
 import {
   IconCrackQuiz,
@@ -450,9 +450,15 @@ export default function HomeContent({
           borderBottom: '1px solid rgba(255,255,255,0.04)',
         }}
       >
+        {/* Los chips LLEVAN al hub del deporte (03/09/2026). Antes filtraban en
+            el sitio y los hubs —con su ranking, sus próximos partidos y su
+            feed— solo se alcanzaban desde el pie de página, así que casi nadie
+            llegaba. El filtrado en sitio sigue vivo para los enlaces `?sport=`
+            que ya circulan (ver el efecto de deep-link). */}
         <CategoriesFilter
           active={activeSport}
           onSelect={handleSportChange}
+          hrefFor={(cat) => hubHrefForCategory(cat, '/')}
           categories={HOME_SPORT_CATEGORIES}
           moreCategories={MORE_SPORT_CATEGORIES}
         />

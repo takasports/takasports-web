@@ -5,9 +5,7 @@ import { SLUG_TO_LABEL, getSportEmoji } from '@/lib/sports'
 import { getRanking } from '@/lib/rankings-data'
 import reelsData from '@/lib/reels-data.json'
 import { stripExpiredThumbs } from '@/lib/reel-thumbs'
-import Header from '@/components/Header'
-import BreakingNewsBar from '@/components/BreakingNewsBar'
-import LiveStrip from '@/components/LiveStrip'
+import HeaderConsole from '@/components/HeaderConsole'
 import NoticiasContent from '@/components/NoticiasContent'
 import SportHubHeader from '@/components/SportHubHeader'
 import Footer from '@/components/Footer'
@@ -218,9 +216,14 @@ export default async function SportPage({
       {faqJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       )}
-      <Header />
-      <BreakingNewsBar
-        items={safeArticles.slice(0, 8).map(
+      {/* Consola sticky, igual que la home y (public). Antes el hub montaba
+          Header + BreakingNewsBar + LiveStrip SUELTOS, así que solo el Header
+          era sticky y `--console-h` valía ~56px aquí frente a ~132px en la home
+          y en /noticias: al pasar de una a otra, la barra de filtros pegajosa
+          daba un salto de ~76px. Con la consola, la altura es la misma en las
+          tres superficies y los marcadores en directo también se quedan fijos. */}
+      <HeaderConsole
+        breakingItems={safeArticles.slice(0, 8).map(
           (a: { title: string; slug?: string; sport?: string; category?: string }) => ({
             title: a.title,
             slug: a.slug,
@@ -228,7 +231,6 @@ export default async function SportPage({
           })
         )}
       />
-      <LiveStrip />
       <SportHubHeader
         sport={sportSlug}
         label={label}

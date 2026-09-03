@@ -35,6 +35,23 @@ export const HOME_SPORT_CATEGORIES = ['Todo', 'Fútbol', 'Lucha libre', 'F1', 'B
 // Categorías extra para el dropdown "Más" (vacío: ya no se muestra)
 export const MORE_SPORT_CATEGORIES: string[] = []
 
+/**
+ * Hub de deporte al que lleva un chip ("Fútbol" → "/futbol").
+ *
+ * Los hubs (`/futbol`, `/ufc`, `/tenis`…) tienen ranking, próximos partidos y
+ * el feed del deporte, y hasta el 03/09/2026 solo se alcanzaban desde el PIE de
+ * página: los chips filtraban en el sitio. Con esto el chip es la puerta de
+ * entrada, que es lo que la gente espera al tocarlo.
+ *
+ * `allHref` es a dónde va "Todo": la home lo manda a `/`, y `/noticias` a
+ * `/noticias`, para no echar a nadie de la sección en la que está.
+ */
+export function hubHrefForCategory(cat: string, allHref = '/'): string {
+  if (cat === 'Todo') return allHref
+  const slug = CATEGORY_TO_SLUG[cat]
+  return slug ? `/${slug}` : allHref
+}
+
 // Lista completa (compatibilidad interna)
 export const SPORT_CATEGORIES = ['Todo', ...Object.values(SLUG_TO_LABEL)]
 

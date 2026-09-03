@@ -7,7 +7,7 @@ import NewsPageFeed from '@/components/NewsPageFeed'
 import NewsSidebar from '@/components/NewsSidebar'
 import ReelsSection from '@/components/ReelsSection'
 import CategoriesFilter from '@/components/CategoriesFilter'
-import { CATEGORY_TO_SLUG, SLUG_TO_LABEL, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES } from '@/lib/sports'
+import { CATEGORY_TO_SLUG, SLUG_TO_LABEL, HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, hubHrefForCategory } from '@/lib/sports'
 import { SearchIcon } from '@/components/icons/GameIcons'
 
 interface Article {
@@ -233,9 +233,15 @@ export default function NoticiasContent({
           borderBottom: '1px solid rgba(255,255,255,0.04)',
         }}
       >
+        {/* Igual que en la home, el chip lleva al hub. Aquí además arregla una
+            incoherencia vieja: este mismo componente sirve a /noticias Y a los
+            12 hubs, así que dentro de /futbol tocar "Tenis" te dejaba en
+            `/futbol?sport=tenis` —feed de tenis bajo la cabecera de fútbol—.
+            "Todo" apunta a /noticias para no echarte de la sección. */}
         <CategoriesFilter
           active={activeCategory}
           onSelect={handleCategoryChange}
+          hrefFor={(cat) => hubHrefForCategory(cat, '/noticias')}
           categories={HOME_SPORT_CATEGORIES}
           moreCategories={MORE_SPORT_CATEGORIES}
         />
