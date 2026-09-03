@@ -14,6 +14,7 @@
 
 import { getOauthAccessToken, getServiceAccountToken } from './google-auth'
 import { sendTelegram } from './telegram'
+import { sanityClient } from './sanity'
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -65,14 +66,61 @@ export interface TrafficSummary {
   note?: string
 }
 
+/** Artículos ya publicados a los que les falta el `<title>` que ve Google. */
+export interface SeoTitleGap {
+  /** Publicados hace más de `HORAS_GRACIA` y todavía sin `seoTitle`. */
+  pendientes: number
+  /** Titular del más antiguo, para reconocerlo de un vistazo. */
+  masAntiguo?: string
+  /** Horas que lleva esperando el más antiguo. */
+  horasMasAntiguo?: number
+  available: boolean
+}
+
 export interface AuditReport {
   date: string
   alerts: string[]
+  seoTitles: SeoTitleGap
   deploy: DeployStatus
   routes: RouteCheck[]
   routesAllOk: boolean
   traffic: TrafficSummary
   message: string
+}
+
+// ── Títulos SEO sin generar ──────────────────────────────────────────────────
+//
+// El `seoTitle` NO lo escribe el pipeline: lo rellena `scripts/auto-seo-title.mjs`
+// por cron cada 15 min EN EL MAC del dueño, sacando las claves del contenedor de
+// n8n. Si Docker está apagado, ningún artículo nuevo tiene el título que ve
+// Google y el único rastro es un log local — o sea, un fallo silencioso en la
+// palanca de CTR más directa que tiene el sitio.
+//
+// Mientras el generador siga viviendo fuera de Vercel, esto al menos hace que se
+// note: si hay publicados con más de dos horas y sin título, salta la alerta.
+const HORAS_GRACIA = 2
+
+export async function checkSeoTitles(): Promise<SeoTitleGap> {
+  try {
+    const limite = new Date(Date.now() - HORAS_GRACIA * 3600_000).toISOString()
+    const query = `*[_type == "article" && (status == "publicado" || defined(headline)) && !(_id in path('drafts.**')) && defined(publishedAt) && publishedAt < $limite && !defined(seoTitle)] | order(publishedAt asc)[0...50]{ "t": coalesce(headline, title), publishedAt }`
+    const filas = await sanityClient
+      .fetch<Array<{ t?: string; publishedAt?: string }>>(query, { limite })
+      .catch(() => null)
+    if (!filas) return { pendientes: 0, available: false }
+    const primero = filas[0]
+    const horas = primero?.publishedAt
+      ? Math.round((Date.now() - Date.parse(primero.publishedAt)) / 3600_000)
+      : undefined
+    return {
+      pendientes: filas.length,
+      masAntiguo: primero?.t,
+      horasMasAntiguo: Number.isFinite(horas) ? horas : undefined,
+      available: true,
+    }
+  } catch {
+    return { pendientes: 0, available: false }
+  }
 }
 
 // ── Utilidades de fecha (UTC, sin libs) ──────────────────────────────────────
@@ -390,10 +438,11 @@ export async function runSeoAudit(
   const { send = true } = opts
   const date = ymd(new Date())
 
-  const [deploy, routes, traffic] = await Promise.all([
+  const [deploy, routes, traffic, seoTitles] = await Promise.all([
     checkVercelDeploy(),
     checkRoutes(),
     getTrafficSummary(),
+    checkSeoTitles(),
   ])
 
   const routesAllOk = routes.every((r) => r.ok)
@@ -407,8 +456,15 @@ export async function runSeoAudit(
   if (traffic.available && traffic.bigDrop) {
     alerts.push(`Caída brusca de clics: ${esNum(traffic.clicks)} vs media ${esNum(traffic.avgClicks7)}`)
   }
+  if (seoTitles.available && seoTitles.pendientes > 0) {
+    const detalle = seoTitles.horasMasAntiguo ? ` (el más viejo lleva ${seoTitles.horasMasAntiguo} h)` : ''
+    alerts.push(
+      `<b>${seoTitles.pendientes}</b> ${seoTitles.pendientes === 1 ? 'artículo publicado' : 'artículos publicados'} sin título SEO${detalle}. ` +
+      `Suele ser que Docker está apagado: el generador corre en el Mac.`,
+    )
+  }
 
-  const partial: Omit<AuditReport, 'message'> = { date, alerts, deploy, routes, routesAllOk, traffic }
+  const partial: Omit<AuditReport, 'message'> = { date, alerts, deploy, routes, routesAllOk, traffic, seoTitles }
   const message = buildMessage(partial)
 
   if (!send) {
