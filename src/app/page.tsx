@@ -17,6 +17,7 @@ import NewsletterSection from '@/components/NewsletterSection'
 import ScrollToTop from '@/components/ScrollToTop'
 import { urlFor } from '@/lib/sanity'
 import { SITE_URL, REPORTAJES_ENABLED } from '@/lib/constants'
+import MasLeidas from '@/components/MasLeidas'
 
 export const revalidate = 300
 
@@ -232,7 +233,7 @@ export default async function Home() {
           "En directo" queda fijo al scrollear, "Último momento" se colapsa, y el
           filtro de abajo se ancla a --console-h (sin hueco). */}
       <HeaderConsole breakingItems={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
-      <HomeContent articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} reportajes={reportajes} />
+      <HomeContent articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} reportajes={reportajes} masLeidas={<MasLeidas />} />
       <NewsletterSection source="home" />
       <Footer />
       <WelcomeOnboarding />

@@ -343,6 +343,7 @@ export default function HomeContent({
   topPlayers,
   featuredBySport = {},
   reportajes = [],
+  masLeidas,
 }: {
   articles: Article[]
   reels: SanityReel[]
@@ -350,6 +351,14 @@ export default function HomeContent({
   topPlayers?: RankingEntry[]
   featuredBySport?: Record<string, Article[]>
   reportajes?: Reportaje[]
+  /**
+   * Bloque "Lo más leído", renderizado en el SERVIDOR y pasado como nodo: sus
+   * datos vienen de Search Console y no deben viajar al cliente ni convertir
+   * este componente en asíncrono. Va en la columna principal y no en la barra
+   * lateral porque esa es `hidden lg:block`, o sea invisible justo para el
+   * móvil, que es de donde viene casi todo el tráfico.
+   */
+  masLeidas?: React.ReactNode
 }) {
   const router = useRouter()
   const [activeSport, setActiveSport] = useState<string>('Todo')
@@ -572,6 +581,8 @@ export default function HomeContent({
             </Link>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
+
+          {masLeidas ? <div className="mt-10">{masLeidas}</div> : null}
 
         </div>
 

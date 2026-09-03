@@ -25,6 +25,7 @@ import ArticleComments from '@/components/ArticleComments'
 import ArticlePushCta from '@/components/ArticlePushCta'
 import ShareStoryCta from '@/components/ShareStoryCta'
 import ShareStoryFab from '@/components/ShareStoryFab'
+import MasLeidas from '@/components/MasLeidas'
 import { storySplitIndex } from '@/lib/article-split'
 import MatchScheduleCard, { type MatchKickoffData } from '@/components/MatchScheduleCard'
 import BroadcastCard from '@/components/BroadcastCard'
@@ -1757,6 +1758,13 @@ export default async function NoticiaPage({
             </div>
           </div>
         )}
+
+        {/* Lo más leído: bloque transversal, a diferencia de "relacionadas" (mismo
+            tema) y "siguiente" (por fecha). Es lo único de la página que puede
+            llevarte a un deporte distinto del que estabas leyendo. */}
+        <div className="mx-auto mt-10" style={{ maxWidth: 1160 }}>
+          <MasLeidas excluirSlug={article.slug ?? id} />
+        </div>
 
         {sportSlug && sportLabel && (
           <div className="mx-auto mt-10 mb-4" style={{ maxWidth: 1160 }}>
