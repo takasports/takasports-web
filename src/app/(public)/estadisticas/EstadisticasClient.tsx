@@ -572,7 +572,12 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
             style={{ paddingRight: favorites.size > 0 ? 116 : 88 }}>
             {SPORTS.map(s => {
               const count = sportAvailableCounts[s.id] ?? 0
-              const isEmpty = count === 0 && s.id !== 'mundial'
+              // El Mundial dejó de estar exento del estado "sin datos" y de llevar
+              // el destacado ámbar fijo: ese trato era para MIENTRAS se jugaba, y el
+              // torneo acabó el 19/07/2026. `worldCupPhase` ya existía con tests; lo
+              // único que faltaba era que la pestaña la consultara.
+              const mundialVivo = s.id === 'mundial' && wcFase === 'en-curso'
+              const isEmpty = count === 0 && !mundialVivo
               const isActive = sportId === s.id
               return (
                 <button key={s.id} onClick={() => handleSportChange(s.id)}
@@ -582,18 +587,18 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                   className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap"
                   style={{
                     fontFamily: 'var(--font-sport)',
-                    color: isActive ? s.accent : s.id === 'mundial' ? '#f59e0b' : 'var(--text-muted)',
+                    color: isActive ? s.accent : mundialVivo ? '#f59e0b' : 'var(--text-muted)',
                     // Tanda v2: el tab activo (y el Mundial) llevan casquete de vidrio —
                     // velo del acento que cae a transparente + canto de luz arriba.
                     background: isActive
                       ? `linear-gradient(180deg, color-mix(in srgb, ${s.accent} 14%, rgba(255,255,255,0.04)), transparent 85%)`
-                      : s.id === 'mundial' ? 'linear-gradient(180deg, rgba(245,158,11,0.14), transparent 85%)' : 'none',
+                      : mundialVivo ? 'linear-gradient(180deg, rgba(245,158,11,0.14), transparent 85%)' : 'none',
                     border: 'none',
-                    borderBottom: isActive ? `2px solid ${s.accent}` : s.id === 'mundial' ? '2px solid rgba(245,158,11,0.35)' : '2px solid transparent',
-                    borderRadius: isActive || s.id === 'mundial' ? '10px 10px 0 0' : undefined,
+                    borderBottom: isActive ? `2px solid ${s.accent}` : mundialVivo ? '2px solid rgba(245,158,11,0.35)' : '2px solid transparent',
+                    borderRadius: isActive || mundialVivo ? '10px 10px 0 0' : undefined,
                     boxShadow: isActive
                       ? `inset 0 1px 0 color-mix(in srgb, ${s.accent} 30%, rgba(255,255,255,0.2))`
-                      : s.id === 'mundial' ? 'inset 0 1px 0 rgba(245,158,11,0.3)' : undefined,
+                      : mundialVivo ? 'inset 0 1px 0 rgba(245,158,11,0.3)' : undefined,
                     marginBottom: -1, cursor: 'pointer',
                     opacity: isEmpty && !isActive ? 0.45 : 1,
                   }}
@@ -618,7 +623,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                       {count}
                     </span>
                   )}
-                  {s.id !== 'mundial' && isEmpty && (
+                  {isEmpty && (
                     <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
                       style={{ background: 'rgba(248,113,113,0.10)', color: '#f87171', border: '1px solid rgba(248,113,113,0.25)' }}>
                       —

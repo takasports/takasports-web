@@ -200,46 +200,6 @@ export const SPORTS: SportConfig[] = [
     sections: [{ id: 'home', label: 'Hoy', icon: 'star', blocks: [] }],
   },
   {
-    id: 'mundial', label: 'Mundial 2026', emoji: 'globe', accent: '#f59e0b',
-    sections: [
-      // "Cuadro" es la pestaña de entrada del Mundial (sections[0] = default):
-      // la llave de eliminatorias renderizada por <MundialBracket/> (sin StatBlocks).
-      { id: 'cuadro', label: 'Cuadro', icon: 'bracket', blocks: [] },
-      {
-        id: 'grupos', label: 'Grupos', icon: 'trophy',
-        blocks: WC_GROUPS_FALLBACK.map(g => ({
-          id: g.id,
-          title: g.label,
-          metric: 'Pts',
-          rows: [],
-        })),
-      },
-      {
-        id: 'wc-goleo', label: 'Goleadores', icon: 'goal',
-        blocks: [
-          { id: 'wc-scorers', title: 'Mundial 2026 · Goleadores', metric: 'Goles',  rows: [] },
-          { id: 'wc-assists', title: 'Mundial 2026 · Asistencias', metric: 'Asist.', rows: [] },
-        ],
-      },
-      {
-        id: 'calendario', label: 'Próximos partidos', icon: 'calendar',
-        blocks: [{
-          id: 'wc-schedule',
-          title: 'Próximos partidos · Mundial 2026',
-          metric: 'Hora',
-          rows: [],
-        }],
-      },
-      {
-        id: 'clasificados', label: 'Clasificados', icon: 'check',
-        blocks: [{
-          id: 'wc-qualified', title: 'Selecciones clasificadas · 48 plazas',
-          metric: 'Grupo', rows: [],
-        }],
-      },
-    ],
-  },
-  {
     id: 'futbol', label: 'Fútbol', emoji: 'football', accent: '#34D399',
     sections: [
       { id: 'jugadores', label: 'Jugadores', icon: 'person', groups: FUTBOL_JUGADORES_GROUPS },
@@ -686,6 +646,50 @@ export const SPORTS: SportConfig[] = [
         blocks: [{
           id: 'motogp-constructores', title: 'Campeonato Constructores', metric: 'Pts',
           rows: [{ rank: 1, name: 'Cargando…', value: '—', sub: 'motogp.com (cron lunes)', trend: 'flat' as const }],
+        }],
+      },
+    ],
+  },
+  // Mundial 2026: pestaña de ARCHIVO desde el 03/09/2026. Era la segunda de la
+  // lista —el primer deporte real— para un torneo que acabó el 19/07/2026. El
+  // `id` no cambia, así que /estadisticas/mundial y los enlaces guardados
+  // siguen funcionando igual.
+  {
+    id: 'mundial', label: 'Mundial 2026', emoji: 'globe', accent: '#f59e0b',
+    sections: [
+      // "Cuadro" es la pestaña de entrada del Mundial (sections[0] = default):
+      // la llave de eliminatorias renderizada por <MundialBracket/> (sin StatBlocks).
+      { id: 'cuadro', label: 'Cuadro', icon: 'bracket', blocks: [] },
+      {
+        id: 'grupos', label: 'Grupos', icon: 'trophy',
+        blocks: WC_GROUPS_FALLBACK.map(g => ({
+          id: g.id,
+          title: g.label,
+          metric: 'Pts',
+          rows: [],
+        })),
+      },
+      {
+        id: 'wc-goleo', label: 'Goleadores', icon: 'goal',
+        blocks: [
+          { id: 'wc-scorers', title: 'Mundial 2026 · Goleadores', metric: 'Goles',  rows: [] },
+          { id: 'wc-assists', title: 'Mundial 2026 · Asistencias', metric: 'Asist.', rows: [] },
+        ],
+      },
+      {
+        id: 'calendario', label: 'Próximos partidos', icon: 'calendar',
+        blocks: [{
+          id: 'wc-schedule',
+          title: 'Próximos partidos · Mundial 2026',
+          metric: 'Hora',
+          rows: [],
+        }],
+      },
+      {
+        id: 'clasificados', label: 'Clasificados', icon: 'check',
+        blocks: [{
+          id: 'wc-qualified', title: 'Selecciones clasificadas · 48 plazas',
+          metric: 'Grupo', rows: [],
         }],
       },
     ],
