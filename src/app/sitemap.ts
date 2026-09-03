@@ -231,7 +231,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/estadisticas/tenis`,      lastModified: STATIC_LASTMOD, changeFrequency: 'hourly',  priority: 0.7 },
     { url: `${BASE_URL}/estadisticas/motogp`,     lastModified: STATIC_LASTMOD, changeFrequency: 'weekly',  priority: 0.7 },
     { url: `${BASE_URL}/estadisticas/ufc`,        lastModified: STATIC_LASTMOD, changeFrequency: 'weekly',  priority: 0.7 },
-    { url: `${BASE_URL}/estadisticas/mundial`,    lastModified: STATIC_LASTMOD, changeFrequency: 'daily',   priority: 0.85 },
+    // Mundial 2026: terminó el 19/07/2026. Sigue indexado como archivo, pero pedirle
+    // rastreo diario a Google gasta presupuesto que este sitio no tiene de sobra.
+    { url: `${BASE_URL}/estadisticas/mundial`,    lastModified: STATIC_LASTMOD, changeFrequency: 'yearly',  priority: 0.4 },
     // League hubs: tabla + goleadores + asistencias en una vista. Incluye las ligas
     // Latam (bra/mex/arg): son indexables y de alto valor para la audiencia
     // hispanohablante, pero faltaban en el sitemap y quedaban huérfanas.
@@ -244,7 +246,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/rankings`, lastModified: RANKINGS_LASTMOD, changeFrequency: 'weekly', priority: 0.9 },
     // Predicciones (hub) y Mundial (URL de campaña) — faltaban en el sitemap.
     { url: `${BASE_URL}/predicciones`, lastModified: hubLastMod, changeFrequency: 'daily', priority: 0.85 },
-    { url: `${BASE_URL}/mundial`, lastModified: hubLastMod, changeFrequency: 'daily', priority: 0.85 },
+    { url: `${BASE_URL}/mundial`, lastModified: hubLastMod, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE_URL}/mundial/fixture`, lastModified: hubLastMod, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${BASE_URL}/juegos`, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly', priority: 0.75 },
     { url: `${BASE_URL}/quiniela`, lastModified: STATIC_LASTMOD, changeFrequency: 'daily', priority: 0.7 },
     { url: `${BASE_URL}/crackquiz`, lastModified: STATIC_LASTMOD, changeFrequency: 'daily', priority: 0.65 },

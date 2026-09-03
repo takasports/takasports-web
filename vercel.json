@@ -104,6 +104,10 @@
     {
       "path": "/api/cron/crackquiz-featured",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/seo-audit",
+      "schedule": "45 7 * * *"
     }
   ],
   "functions": {

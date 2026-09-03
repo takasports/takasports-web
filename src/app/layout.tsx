@@ -205,11 +205,15 @@ export default function RootLayout({
                 description: 'Noticias deportivas de actualidad: fútbol, NBA, F1, UFC y tenis. Resultados en vivo, calendario, rankings y juegos.',
                 publisher: { '@id': `${SITE_URL}/#organization` },
                 inLanguage: 'es-ES',
-                potentialAction: {
-                  '@type': 'SearchAction',
-                  target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/noticias?q={search_term_string}` },
-                  'query-input': 'required name=search_term_string',
-                },
+                // SIN `potentialAction`/SearchAction a propósito (03/09/2026).
+                // Declaraba `/noticias?q=`, que NO busca: `/noticias` filtra por
+                // `?sport=` en cliente y se mantiene estática justamente por no
+                // leer searchParams. El buscador real es `/buscar`, que está en
+                // `Disallow` y seguirá estándolo: es un espacio de URL
+                // combinatorio, y este sitio ya se tumbó una vez por dejar
+                // rastrear uno (ver CRAWLER_TRAPS en robots.ts). Declarar una
+                // búsqueda que Google no puede usar no aporta nada, así que
+                // mejor no declararla.
               },
             ],
           }) }}
