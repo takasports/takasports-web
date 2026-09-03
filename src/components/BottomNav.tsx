@@ -5,18 +5,30 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { isLiveStatus } from '@/lib/live-events'
 
+const JUEGOS_ROUTES = ['/juegos', '/predicciones', '/quiniela', '/mionce', '/sopa-cracks', '/crackquiz', '/takagrid', '/liga-taka', '/badges']
+
 const TABS = [
-  { href: '/', label: 'Inicio',    match: (p: string) => p === '/',                                      icon: HomeIcon },
-  { href: '/noticias',   label: 'Noticias',   match: (p: string) => p === '/noticias' || p.startsWith('/noticias/') || p.startsWith('/article'), icon: NewsIcon },
-  { href: '/calendario', label: 'Calendario', match: (p: string) => p.startsWith('/calendario') || p.startsWith('/evento') || p.startsWith('/partido'), icon: CalIcon, live: true },
-  { href: '/predicciones', label: 'Predicciones', match: (p: string) => p.startsWith('/predicciones'), icon: PredIcon },
-  { href: '/juegos',     label: 'Juegos',     match: (p: string) => ['/juegos','/quiniela','/mionce','/sopa-cracks','/crackquiz','/takagrid'].some(r => p.startsWith(r)), icon: GameIcon },
+  { href: '/', label: 'Inicio', match: (p: string) => p === '/', icon: HomeIcon },
+  { href: '/noticias', label: 'Noticias', match: (p: string) => p === '/noticias' || p.startsWith('/noticias/') || p.startsWith('/article'), icon: NewsIcon },
+  { href: '/calendario', label: 'Partidos', match: (p: string) => p.startsWith('/calendario') || p.startsWith('/evento') || p.startsWith('/partido'), icon: CalIcon, live: true },
+  // "Jugar" reúne Predicciones y Juegos, que competían por dos pestañas de
+  // cinco. Entra por /predicciones —la Jornada es lo que trae de vuelta— y
+  // marca activo en todo el recinto de juego, minijuegos y Liga Taka incluidos.
+  { href: '/predicciones', label: 'Jugar', match: (p: string) => JUEGOS_ROUTES.some(r => p.startsWith(r)), icon: PredIcon },
+  { href: '/perfil', label: 'Tú', match: (p: string) => p.startsWith('/perfil'), icon: PersonIcon },
 ]
 
-// Barra inferior FLOTANTE en vidrio (móvil, lg:hidden) — paridad con el tab bar de la
-// app (foto de referencia estilo Instagram, aprobada por José Tomás): cápsula flotante
-// con blur REAL (chrome fijo → permitido), SOLO ICONOS, pastilla activa MORADA de marca
-// y punto rojo de directos en Calendario. Perfil NO es pestaña (vive en la cabecera).
+// Barra inferior FLOTANTE en vidrio (móvil, lg:hidden): cápsula con blur real,
+// pastilla activa morada de marca y punto rojo de directos en Partidos.
+//
+// Rediseñada el 03/09/2026 (fase 1, opción A aprobada por José Tomás). Antes eran
+// cinco iconos SIN una sola palabra —la diana era Predicciones y el mando Juegos,
+// pero había que adivinarlo— y el perfil vivía escondido en la cabecera, que es
+// justo donde no se vuelve. Ahora:
+//   · cada pestaña lleva su palabra debajo del icono;
+//   · "Jugar" reúne Predicciones y Juegos, que gastaban dos de las cinco plazas;
+//   · "Tú" sube el perfil (racha, puntos, avisos, guardados) a la barra.
+// Reels, Rankings y Estadísticas siguen en el cajón ☰ y en el pie.
 export default function BottomNav() {
   const pathname = usePathname() || '/'
   const [hasLive, setHasLive] = useState(false)
@@ -90,13 +102,13 @@ export default function BottomNav() {
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 10px)' }}
     >
       {/* Wrapper con la sombra (sin overflow, que la recortaría) */}
-      <div ref={capsuleRef} className="pointer-events-auto mx-auto" style={{ maxWidth: 460, borderRadius: 30, boxShadow: '0 18px 40px -14px rgba(0,0,0,0.7)', willChange: 'transform', transformOrigin: 'center bottom' }}>
+      <div ref={capsuleRef} className="pointer-events-auto mx-auto" style={{ maxWidth: 460, borderRadius: 22, boxShadow: '0 18px 40px -14px rgba(0,0,0,0.7)', willChange: 'transform', transformOrigin: 'center bottom' }}>
         {/* Cápsula: velo translúcido + blur real + canto de luz specular arriba */}
         <ul
           className="flex items-stretch justify-around overflow-hidden"
           style={{
-            height: 58,
-            borderRadius: 30,
+            height: 66,
+            borderRadius: 22,
             background: 'rgba(16,16,22,0.42)',
             backdropFilter: 'blur(30px) saturate(1.7)',
             WebkitBackdropFilter: 'blur(30px) saturate(1.7)',
@@ -114,17 +126,17 @@ export default function BottomNav() {
                   onClick={onTap}
                   aria-current={active ? 'page' : undefined}
                   aria-label={showDot ? `${label} (hay partidos en directo)` : label}
-                  className="flex items-center justify-center h-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)] focus-visible:ring-inset"
+                  className="flex flex-col items-center justify-center gap-[3px] h-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)] focus-visible:ring-inset"
                   style={{ color: active ? '#FFFFFF' : '#6A6A82', textDecoration: 'none' }}
                 >
-                  <span className="relative flex items-center justify-center" style={{ width: 54, height: 36 }}>
+                  <span className="relative flex items-center justify-center" style={{ width: 50, height: 26 }}>
                     {/* Pastilla activa (morado de marca) */}
                     {active && (
                       <span
                         aria-hidden="true"
                         className="absolute inset-0"
                         style={{
-                          borderRadius: 18,
+                          borderRadius: 14,
                           background: 'rgba(167,139,250,0.20)',
                           border: '1px solid rgba(167,139,250,0.32)',
                           boxShadow: '0 0 14px rgba(124,58,237,0.22)',
@@ -149,6 +161,19 @@ export default function BottomNav() {
                       />
                     )}
                   </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-sport)',
+                      fontSize: 9.5,
+                      fontWeight: active ? 700 : 600,
+                      letterSpacing: '0.045em',
+                      lineHeight: '10px',
+                      display: 'block',
+                      color: active ? '#FFFFFF' : '#7C7C8C',
+                    }}
+                  >
+                    {label}
+                  </span>
                 </Link>
               </li>
             )
@@ -159,9 +184,17 @@ export default function BottomNav() {
   )
 }
 
+function PersonIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="21" height="21" viewBox="0 0 22 22" fill={active ? 'rgba(255,255,255,0.14)' : 'none'}>
+      <circle cx="11" cy="7.6" r="3.4" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M4.5 18.5c0-3.4 2.9-5.6 6.5-5.6s6.5 2.2 6.5 5.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
 function HomeIcon({ active }: { active: boolean }) {
   return (
-    <svg width="23" height="23" viewBox="0 0 22 22" fill={active ? 'rgba(255,255,255,0.14)' : 'none'}>
+    <svg width="21" height="21" viewBox="0 0 22 22" fill={active ? 'rgba(255,255,255,0.14)' : 'none'}>
       <path d="M3 10.5L11 4l8 6.5V18a1 1 0 0 1-1 1h-4v-5h-6v5H4a1 1 0 0 1-1-1v-7.5z"
         stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -169,7 +202,7 @@ function HomeIcon({ active }: { active: boolean }) {
 }
 function NewsIcon({ active }: { active: boolean }) {
   return (
-    <svg width="23" height="23" viewBox="0 0 22 22" fill={active ? 'rgba(255,255,255,0.14)' : 'none'}>
+    <svg width="21" height="21" viewBox="0 0 22 22" fill={active ? 'rgba(255,255,255,0.14)' : 'none'}>
       <rect x="3.5" y="4.5" width="15" height="13" rx="2" stroke="currentColor" strokeWidth="1.7" />
       <path d="M6.5 8h9M6.5 11h9M6.5 14h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
@@ -177,7 +210,7 @@ function NewsIcon({ active }: { active: boolean }) {
 }
 function CalIcon({ active }: { active: boolean }) {
   return (
-    <svg width="23" height="23" viewBox="0 0 22 22" fill={active ? 'rgba(255,255,255,0.14)' : 'none'}>
+    <svg width="21" height="21" viewBox="0 0 22 22" fill={active ? 'rgba(255,255,255,0.14)' : 'none'}>
       <rect x="3.5" y="5" width="15" height="13" rx="2" stroke="currentColor" strokeWidth="1.7" />
       <path d="M3.5 9h15M7.5 3.5v3M14.5 3.5v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
@@ -185,7 +218,7 @@ function CalIcon({ active }: { active: boolean }) {
 }
 function GameIcon({ active }: { active: boolean }) {
   return (
-    <svg width="23" height="23" viewBox="0 0 22 22" fill={active ? 'rgba(255,255,255,0.14)' : 'none'}>
+    <svg width="21" height="21" viewBox="0 0 22 22" fill={active ? 'rgba(255,255,255,0.14)' : 'none'}>
       <rect x="2.5" y="6.5" width="17" height="10" rx="3" stroke="currentColor" strokeWidth="1.7" />
       <path d="M6.5 11.5h3M8 10v3M14 10.5h.01M16 12.5h.01" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
@@ -193,7 +226,7 @@ function GameIcon({ active }: { active: boolean }) {
 }
 function PredIcon({ active }: { active: boolean }) {
   return (
-    <svg width="23" height="23" viewBox="0 0 22 22" fill="none">
+    <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
       <circle cx="11" cy="11" r="7.5" stroke="currentColor" strokeWidth="1.7" fill={active ? 'rgba(255,255,255,0.14)' : 'none'} />
       <circle cx="11" cy="11" r="3.6" stroke="currentColor" strokeWidth="1.7" />
       <circle cx="11" cy="11" r="0.7" fill="currentColor" stroke="currentColor" strokeWidth="1.4" />

@@ -128,7 +128,9 @@ body {
 /* ── Reserve space at page bottom on mobile for the floating bottom nav ── */
 @media (max-width: 1023px) {
   body {
-    padding-bottom: calc(72px + max(env(safe-area-inset-bottom, 0px), 10px));
+    /* 78px = cápsula de 64 + los 14 de aire que ya había. Subió de 72 cuando la
+       barra ganó las etiquetas de texto (03/09/2026). */
+    padding-bottom: calc(78px + max(env(safe-area-inset-bottom, 0px), 10px));
   }
 }
 
