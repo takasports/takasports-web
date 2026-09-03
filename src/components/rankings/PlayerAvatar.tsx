@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { smallImage } from '@/lib/image-url'
 
 // Hash determinista nombre → hue (0-360) para que cada deportista
 // tenga siempre el mismo color de fallback.
@@ -30,8 +31,10 @@ export default function PlayerAvatar({
     return (
       /* eslint-disable-next-line @next/next/no-img-element */
       <img
-        src={src}
+        src={smallImage(src, (size ?? 40) * 2)}
         alt={alt}
+        loading="lazy"
+        decoding="async"
         className={`w-full h-full object-cover rounded-${rounded}`}
         onError={() => setOk(false)}
       />

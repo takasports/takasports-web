@@ -19,6 +19,7 @@ import { COMPETITIONS } from '@/lib/calendar-competitions'
 import { accentForSport } from '@/lib/sports'
 import { isLiveStatus } from '@/lib/live-events'
 import { F1Icon, SportIcon, TennisIcon, TvIcon } from '@/components/icons/GameIcons'
+import { smallImage } from '@/lib/image-url'
 
 // ─── Utilities ────────────────────────────────────────────────────────────
 export function TeamLogo({ logo, photo, name, size = 24, sport, accent, abbr }: { logo?: string; photo?: string; name: string; size?: number; sport?: string; accent?: string; abbr?: string }) {
@@ -27,7 +28,7 @@ export function TeamLogo({ logo, photo, name, size = 24, sport, accent, abbr }: 
 
   if (displayPhoto) {
     return (
-      <img src={photo} alt={name} width={size} height={size} onError={() => setErr(true)}
+      <img src={smallImage(photo, size * 2)} alt={name} width={size} height={size} loading="lazy" decoding="async" onError={() => setErr(true)}
         style={{ width: size, height: size, objectFit: 'cover', borderRadius: '50%', flexShrink: 0 }} />
     )
   }
@@ -69,7 +70,7 @@ export function TeamLogo({ logo, photo, name, size = 24, sport, accent, abbr }: 
     )
   }
   return (
-    <img src={logo} alt={name} width={size} height={size} onError={() => setErr(true)}
+    <img src={smallImage(logo, size * 2)} alt={name} width={size} height={size} loading="lazy" decoding="async" onError={() => setErr(true)}
       style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />
   )
 }
@@ -317,7 +318,7 @@ export function CompGroupHeader({ comp, accent, count, first, crest, slug, banne
       <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 14, background: accent, boxShadow: `0 0 8px ${accent}66` }} />
       {crest && (
         /* eslint-disable-next-line @next/next/no-img-element */
-        <img src={crest} alt="" aria-hidden="true" width={16} height={16} loading="lazy" decoding="async"
+        <img src={smallImage(crest, 32)} alt="" aria-hidden="true" width={16} height={16} loading="lazy" decoding="async"
           style={{ objectFit: 'contain', width: 16, height: 16, flexShrink: 0 }} />
       )}
       <span className="text-[11px] font-bold uppercase tracking-[0.12em] truncate" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
@@ -523,11 +524,11 @@ export function MatchCrest({ photo, logo, accent, fav }: { photo?: string; logo?
   const [logoErr, setLogoErr] = useState(false)
   const inner = photo && !photoErr ? (
     <span className="inline-flex flex-shrink-0 rounded-full" style={{ boxShadow: `0 0 0 1.5px ${fav ? accent : `color-mix(in srgb, ${accent} 55%, transparent)`}` }}>
-      <img src={photo} alt="" width={26} height={26} onError={() => setPhotoErr(true)} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
+      <img src={smallImage(photo, 52)} alt="" width={26} height={26} loading="lazy" decoding="async" onError={() => setPhotoErr(true)} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
     </span>
   ) : logo && !logoErr ? (
     <span className="inline-flex items-center justify-center flex-shrink-0" style={{ width: 20, height: 20, borderRadius: 6, border: fav ? `1.5px solid ${accent}` : '1.5px solid transparent' }}>
-      <img src={logo} alt="" width={18} height={18} onError={() => setLogoErr(true)} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+      <img src={smallImage(logo, 36)} alt="" width={18} height={18} loading="lazy" decoding="async" onError={() => setLogoErr(true)} style={{ width: 18, height: 18, objectFit: 'contain' }} />
     </span>
   ) : null
   return (

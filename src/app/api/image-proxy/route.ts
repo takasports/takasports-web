@@ -27,8 +27,12 @@ export const runtime = 'nodejs'
 // ~9 MB. El móvil NUNCA descarga eso: sharp las encoge a un WebP de ~50-120 KB y la
 // CDN cachea. El tope solo evita buffers absurdos en memoria (SSRF/DoS).
 const MAX_SIZE = 25 * 1024 * 1024 // 25 MB (entrada)
-const MAX_WIDTH = 1280            // ancho máximo servido (px) — evita fotos 2-3 MB en móvil
-const WEBP_QUALITY = 80           // calidad WebP (nítida en tarjetas grandes a todo el ancho)
+// Ancho por defecto cuando el llamador NO pide `w`. Era 1280: cualquier <img>
+// suelto se traía una foto de portada para pintarla a 88 px. Ninguna superficie
+// de la web pinta a más de 358 CSS px, así que 640 cubre pantallas @2x de sobra;
+// quien necesite más (el hero del artículo) pide su `w` explícito vía srcSet.
+const MAX_WIDTH = 640             // ancho por defecto servido (px) — evita fotos 2-3 MB en móvil
+const WEBP_QUALITY = 72           // calidad WebP (nítida en tarjetas grandes a todo el ancho)
 const TIMEOUT_MS = 8_000
 const MAX_HOPS = 3
 
@@ -193,7 +197,10 @@ export async function GET(request: NextRequest) {
         // una clave de caché distinta (si la foto rota, su URL cambia), así que
         // cachear más tiempo no sirve imágenes "viejas" — solo evita re-descargar
         // y re-procesar (sharp) la misma imagen.
-        'Cache-Control': 'public, s-maxage=604800, stale-while-revalidate=2592000',
+        // `max-age` además de `s-maxage`: sin él, el NAVEGADOR se quedaba sin
+        // freshness y revalidaba (o volvía a descargar) en cada visita, así que
+        // los megas del proxy se pagaban más de una vez por la misma persona.
+        'Cache-Control': 'public, max-age=604800, s-maxage=604800, stale-while-revalidate=2592000',
         'CDN-Cache-Control': 'public, s-maxage=604800, stale-while-revalidate=2592000',
         'X-Content-Type-Options': 'nosniff',
       },

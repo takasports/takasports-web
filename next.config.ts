@@ -62,6 +62,10 @@ const nextConfig: NextConfig = {
     // AVIF antes que WebP: ~20-30% menos bytes en heros/imágenes sin tocar un
     // solo asset. Next sirve AVIF a navegadores que lo soporten y cae a WebP.
     formats: ["image/avif", "image/webp"],
+    // El escalón más bajo por defecto de Next es 640 px, así que hasta las
+    // imágenes bien optimizadas se traían 640 px para tarjetas de 173 px y
+    // miniaturas de 88. 320/384 cubren esos huecos (y su versión @2x).
+    deviceSizes: [320, 384, 640, 750, 828, 1080, 1200, 1920],
     // Caché de la imagen YA optimizada: 31 días. Sin esto Next usa el default de
     // 60s → Vercel RE-OPTIMIZA (= re-cobra transformación) la misma imagen pasado
     // 1 min. Con 31d, cada (imagen, tamaño, formato) se transforma una sola vez al
@@ -86,6 +90,11 @@ const nextConfig: NextConfig = {
       // thumb.wikimedia.org, no en upload. Sin este patrón next/image los rechaza
       // y caen al proxy sin optimizar.
       { protocol: "https", hostname: "thumb.wikimedia.org" },
+      // commons.wikimedia.org sirve las fotos por `Special:FilePath/<archivo>?width=N`
+      // (redirige a upload). Sin este patrón, next/image devolvía 400
+      // INVALID_IMAGE_OPTIMIZE_REQUEST y la foto no salía: 2-3 por carga en la
+      // home y en los hubs de deporte, medido en producción el 03/09/2026.
+      { protocol: "https", hostname: "commons.wikimedia.org" },
       { protocol: "https", hostname: "media.diariolasamericas.com" },
       { protocol: "https", hostname: "*.rtve.es" },
       { protocol: "https", hostname: "www.fichajes.net" },

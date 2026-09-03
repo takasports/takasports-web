@@ -32,6 +32,10 @@ function isNew(publishedAt?: string): boolean {
 }
 
 
+  // `sizes` importa aunque haya `width`/`height`: sin él, next/image elige el
+  // escalón por el `width` declarado (200/400) y no por el hueco real, que en el
+  // listado es de 88 px (120 en escritorio). Con los `deviceSizes` bajos que
+  // ahora hay en next.config, esto baja la miniatura al escalón de 320.
 function Thumb({
   url, title, w, h, sport, category,
 }: {
@@ -39,7 +43,7 @@ function Thumb({
 }) {
   const [failed, setFailed] = useState(false)
   return url && !failed ? (
-    <Image src={url} alt={title} width={w} height={h} className="w-full h-full object-cover" onError={() => setFailed(true)} />
+    <Image src={url} alt={title} width={w} height={h} sizes="(max-width: 1024px) 88px, 120px" className="w-full h-full object-cover" onError={() => setFailed(true)} />
   ) : (
     <SportPlaceholder sport={sport} category={category} />
   )

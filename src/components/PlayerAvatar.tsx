@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
+import { smallImage } from '@/lib/image-url'
 
 /**
  * Avatar de jugador con fallback en cascada por error de carga:
@@ -40,7 +41,9 @@ export default function PlayerAvatar({
   if (headshot && !headFailed) {
     return (
       <Image
-        src={headshot}
+        // `unoptimized` sin redimensionar traía la cara "full" de ESPN (~300 KB)
+        // para pintarla a `headshotSize`. `smallImage` la pide ya al tamaño bueno.
+        src={smallImage(headshot, headshotSize * 2) ?? headshot}
         alt={name}
         width={headshotSize}
         height={headshotSize}
@@ -53,7 +56,7 @@ export default function PlayerAvatar({
   if (teamLogo && !logoFailed) {
     return (
       <Image
-        src={teamLogo}
+        src={smallImage(teamLogo, logoSize * 2) ?? teamLogo}
         alt={teamName ?? name}
         width={logoSize}
         height={logoSize}

@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react'
 import { getSportColor, getLiveLabel, isTennis, isCombat, isRacing } from '@/lib/competitions'
 import { getStoredTZ, SOURCE_TZ, convertEventTime, TZ_CHANGE_EVENT } from '@/lib/timezone'
 import { SportIcon } from '@/components/icons/GameIcons'
+import { toProxyUrl } from '@/lib/image-url'
 
 export interface LiveFixture {
   id: string
@@ -51,12 +52,20 @@ export interface UpcomingEvent {
 function TeamLogo({ logo, name, size = 14 }: { logo?: string; name: string; size?: number }) {
   const [err, setErr] = useState(false)
   if (logo && !err) {
+    // Mismo tratamiento que `LiveEventsSection`: ESPN sirve el escudo a 500 px
+    // (~236 KB de PNG) y aquí se ve a 14. Esta tira vive en la consola sticky de
+    // TODAS las páginas públicas, así que una tarde con 20 partidos en directo
+    // eran ~9 MB de escudos en cada carga del sitio. Por el proxy salen en WebP
+    // de un par de KB, y en diferido para no robarle ancho de banda al LCP.
+    const src = logo.startsWith('http') ? `${toProxyUrl(logo)}&w=${Math.round(size * 2)}` : logo
     return (
       <img
-        src={logo}
+        src={src}
         alt={name}
         width={size}
         height={size}
+        loading="lazy"
+        decoding="async"
         onError={() => setErr(true)}
         style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }}
       />

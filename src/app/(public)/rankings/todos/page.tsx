@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { createClient } from '@supabase/supabase-js'
 import { SITE_URL } from '@/lib/constants'
+import { smallImage } from '@/lib/image-url'
 
 export const metadata: Metadata = {
   title: 'Reyes del deporte hispano · Ranking Taka',
@@ -94,7 +95,7 @@ export default async function ReyesPage() {
                     {meta?.emoji ?? '🏅'}
                   </span>
                   {r.image_url ? (
-                    <img src={r.image_url} alt={r.name} width={40} height={40}
+                    <img src={smallImage(r.image_url, 80)} alt={r.name} width={40} height={40} loading="lazy" decoding="async"
                       style={{ borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
                   ) : (
                     <div style={{ width: 40, height: 40, borderRadius: 10,

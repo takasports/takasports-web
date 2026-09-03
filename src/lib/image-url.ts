@@ -1,3 +1,5 @@
+import { espnAt } from './espn-image'
+
 // Helper server-safe para resolver la URL FINAL que el navegador descargará
 // para una imagen src. Usado por:
 //   - DynamicImage.tsx (client) para decidir si pasa por proxy
@@ -53,6 +55,43 @@ export function isTrusted(hostname: string): boolean {
  */
 export function toProxyUrl(src: string): string {
   return `/api/image-proxy?url=${encodeURIComponent(src)}`
+}
+
+/**
+ * Loader de next/image para las imágenes que van por nuestro proxy.
+ *
+ * Por qué existe (03/09/2026): la rama del proxy de `DynamicImage` marcaba
+ * `unoptimized`, y Next DESCARTA `srcSet` **y** `sizes` cuando ve esa prop
+ * (`get-img-props.js`). O sea que todos los `sizes` escritos con cuidado en
+ * portada, feed y hero eran código muerto: salía un único `src` sin `w`, y el
+ * proxy sin `w` sirve a `MAX_WIDTH`. Medido en producción: `/noticias` en un
+ * móvil de 390 px descargaba fotos de 1280 px para huecos de 174 px, 11,2 MB
+ * en 153 imágenes.
+ *
+ * Con un loader propio, Next vuelve a generar el srcSet —y a respetar los
+ * `sizes`— pero apuntando a `/api/image-proxy`, así que NO pasa por
+ * `/_next/image` y no se paga ni una transformación de Vercel.
+ */
+export function proxyLoader({ src, width }: { src: string; width: number }): string {
+  return `${src}&w=${width}`
+}
+
+/**
+ * URL de una imagen PEQUEÑA (escudo, cara, miniatura) al ancho en que se va a
+ * ver, para los sitios que pintan un `<img>` suelto en vez de `next/image`.
+ *
+ * ESPN va por su propio redimensionador (gratis, sin gastar CPU nuestra) y el
+ * resto por el proxy con `w`. Sin esto, un escudo de 500 px (~237 KB) se
+ * descargaba entero para pintarlo a 18.
+ *
+ * `width` debe ser el ancho FÍSICO deseado: pásale el doble del CSS si quieres
+ * que se vea nítido en pantallas @2x.
+ */
+export function smallImage(src: string | null | undefined, width: number): string | undefined {
+  if (!src) return undefined
+  if (!src.startsWith('http')) return src
+  if (src.includes('a.espncdn.com')) return espnAt(src, width)
+  return `${toProxyUrl(src)}&w=${Math.round(width)}`
 }
 
 /**

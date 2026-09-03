@@ -5,11 +5,17 @@ import { FOLLOWABLE_SPORTS, useFollowedSports } from '@/lib/useFollowedSports'
 import { SLUG_TO_LABEL } from '@/lib/sports'
 import Image from 'next/image'
 import { StarIcon } from '@/components/icons/GameIcons'
+import { espnAt } from '@/lib/espn-image'
 
 // Logos vía ESPN CDN (escudos para equipos, headshots para individuales).
 // Fallback al icono emoji si la imagen falla en runtime.
-const ESPN_SOCCER = (id: number) => `https://a.espncdn.com/i/teamlogos/soccer/500/${id}.png`
-const ESPN_NBA = (abbr: string) => `https://a.espncdn.com/i/teamlogos/nba/500/${abbr}.png`
+//
+// Van por el combiner de ESPN a 72 px (el escudo se pinta a 36): esta rejilla
+// tiene ~100 equipos y a 500 px eran ~23 MB de escudos para un modal de
+// bienvenida. Ver `espnAt` en lib/espn-image.
+const LOGO_PX = 72
+const ESPN_SOCCER = (id: number) => espnAt(`https://a.espncdn.com/i/teamlogos/soccer/500/${id}.png`, LOGO_PX)!
+const ESPN_NBA = (abbr: string) => espnAt(`https://a.espncdn.com/i/teamlogos/nba/500/${abbr}.png`, LOGO_PX)!
 
 // Curated list of popular teams/athletes per sport. Names match what appears in the
 // SportEvent.home/away strings from ESPN/Sanity data.

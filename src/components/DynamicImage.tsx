@@ -1,7 +1,7 @@
 'use client'
 import Image, { ImageProps } from 'next/image'
 import { useState } from 'react'
-import { needsOptimization, isTrusted, toProxyUrl } from '@/lib/image-url'
+import { needsOptimization, isTrusted, toProxyUrl, proxyLoader } from '@/lib/image-url'
 
 // La lógica de host detection vive en src/lib/image-url.ts para que sea
 // importable desde Server Components (page.tsx) también — un archivo
@@ -50,7 +50,10 @@ export default function DynamicImage({ src, onError, ...props }: ImageProps) {
   }
 
   // Tercero desconocido, o fallback tras fallo de un host directo → proxy.
-  // El proxy ya sirve con Content-Type correcto y cache 24 h; unoptimized evita
-  // un doble salto de proxy.
-  return <Image src={toProxyUrl(src)} unoptimized onError={onError} {...props} />
+  //
+  // Va con `loader`, NO con `unoptimized`: los dos evitan el salto por
+  // `/_next/image` (y su coste de transformaciones), pero `unoptimized` además
+  // tiraba el `srcSet` y el `sizes`, así que el navegador se traía el ancho
+  // máximo del proxy pasara lo que pasara. Ver `proxyLoader` en lib/image-url.
+  return <Image src={toProxyUrl(src)} loader={proxyLoader} onError={onError} {...props} />
 }
