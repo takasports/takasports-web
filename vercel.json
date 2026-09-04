@@ -108,6 +108,10 @@
     {
       "path": "/api/cron/seo-audit",
       "schedule": "45 7 * * *"
+    },
+    {
+      "path": "/api/cron/seo-title",
+      "schedule": "*/15 * * * *"
     }
   ],
   "functions": {
