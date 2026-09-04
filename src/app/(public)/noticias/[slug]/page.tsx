@@ -26,6 +26,7 @@ import ArticlePushCta from '@/components/ArticlePushCta'
 import ShareStoryCta from '@/components/ShareStoryCta'
 import ShareStoryFab from '@/components/ShareStoryFab'
 import MasLeidas from '@/components/MasLeidas'
+import SaveArticleButton from '@/components/SaveArticleButton'
 import { storySplitIndex } from '@/lib/article-split'
 import MatchScheduleCard, { type MatchKickoffData } from '@/components/MatchScheduleCard'
 import BroadcastCard from '@/components/BroadcastCard'
@@ -1234,7 +1235,15 @@ export default async function NoticiaPage({
                   </span>
                 )}
               </div>
-              <ShareButton title={article.title} slug={article.slug ?? id} />
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <SaveArticleButton
+                  slug={article.slug ?? id}
+                  title={article.title}
+                  imageUrl={article.imageUrl}
+                  sport={article.sport ?? article.category}
+                />
+                <ShareButton title={article.title} slug={article.slug ?? id} />
+              </div>
             </div>
 
             <div className="hidden lg:flex items-center gap-3 mb-4">

@@ -29,6 +29,7 @@ import ExportDataSection from '@/components/ExportDataSection'
 import FollowedSportsEditor from '@/components/profile/FollowedSportsEditor'
 import DeleteAccountSection from '@/components/DeleteAccountSection'
 import { usePoints, useStreak } from '@/hooks/useGameState'
+import GuardadosSection from '@/components/profile/GuardadosSection'
 
 const REMINDERS_KEY = 'ts_reminders'
 const REMINDERS_DATA_KEY = 'ts_reminders_data'
@@ -1010,6 +1011,9 @@ export default function PerfilPage() {
                 </div>
               </section>
             )}
+
+            {/* GUARDADOS — se autooculta si no has guardado nada */}
+            <GuardadosSection />
 
             {/* ACTIVIDAD RECIENTE */}
             <section>
