@@ -46,6 +46,7 @@ import { SITE_URL, LOGO_URL, ICON_URL, SOCIAL_SAMEAS, REPORTAJE_GROQ_FILTER, REP
 import RankingMentionCards from '@/components/articles/RankingMentionCards'
 import ArticleQuiz from '@/components/articles/ArticleQuiz'
 import { matchEntriesInText } from '@/lib/rankings-match'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 export const revalidate = 3600
 
@@ -1591,10 +1592,7 @@ export default async function NoticiaPage({
 
               {relatedFinal.length > 0 && (
                 <div className="mt-10">
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <span className="section-accent" />
-                    <h2 className="section-label">Sigue leyendo</h2>
-                  </div>
+                  <SectionHeader>Sigue leyendo</SectionHeader>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {relatedFinal.map((rel) => {
                       const relImg = rel.imageUrl ?? (rel.image?.asset ? urlFor(rel.image).width(400).height(220).url() : null)

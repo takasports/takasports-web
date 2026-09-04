@@ -10,6 +10,7 @@ import Leaderboard from './Leaderboard'
 import { getGamePeriod } from '@/lib/games-periods'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import type { GameId } from '@/lib/games-store'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 interface TabSpec {
   id:     GameId
@@ -63,10 +64,7 @@ export default function LeaderboardTabs({ quinielaJornada }: Props) {
   return (
     <section className="mb-12">
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2.5">
-          <span className="section-accent" />
-          <h2 className="section-label">Rankings</h2>
-        </div>
+        <SectionHeader>Rankings</SectionHeader>
         <Link
           href={`/juegos/leaderboard/${active}`}
           className="text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-70"

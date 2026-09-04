@@ -24,6 +24,7 @@ import {
 import { SearchIcon } from '@/components/icons/GameIcons'
 import { getEventHighlightScore } from '@/lib/competitions'
 import TuDia from '@/components/TuDia'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 const HOME_PAGE_SIZE = 8
 
@@ -225,10 +226,7 @@ function GamesSection() {
   return (
     <section className="mt-8">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2.5">
-          <span className="section-accent" />
-          <h2 className="section-label">Juegos</h2>
-        </div>
+        <SectionHeader>Juegos</SectionHeader>
         <Link
           href="/juegos"
           className="text-[11px] font-semibold transition-opacity hover:opacity-70"

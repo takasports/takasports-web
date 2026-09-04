@@ -12,6 +12,7 @@ import { sanityClient } from '@/lib/sanity'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { getMergedReels } from '@/lib/reels-feed'
 import { requireAdmin } from '@/lib/admin-auth'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -234,10 +235,7 @@ export default async function AdminDashboardPage() {
 
         {/* Plays por juego */}
         <section className="mb-10">
-          <div className="flex items-center gap-2.5 mb-4">
-            <span className="section-accent" />
-            <h2 className="section-label">Plays por juego · últimos 7 días</h2>
-          </div>
+          <SectionHeader>Plays por juego · últimos 7 días</SectionHeader>
           {playsByGame.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Sin datos.</p>
           ) : (
@@ -281,10 +279,7 @@ export default async function AdminDashboardPage() {
 
         {/* Top tags */}
         <section>
-          <div className="flex items-center gap-2.5 mb-4">
-            <span className="section-accent" />
-            <h2 className="section-label">Top tags · últimos 30 días</h2>
-          </div>
+          <SectionHeader>Top tags · últimos 30 días</SectionHeader>
           {topTags.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Sin tags en el período.</p>
           ) : (

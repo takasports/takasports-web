@@ -26,6 +26,7 @@ import { formatCountdown, getGamePeriod } from '@/lib/games-periods'
 import { useGamesOverview, type GameCardState } from '@/hooks/useGamesOverview'
 import type { GameId } from '@/lib/games-store'
 import JugarTabs from '@/components/JugarTabs'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 // (iconos y previews movidos a src/components/games/GameVisuals.tsx)
 
@@ -981,10 +982,7 @@ export default function JuegosPageClient() {
             veces en la misma página. */}
         <section className="mb-10">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2.5">
-              <span className="section-accent" />
-              <h2 className="section-label">Juega hoy</h2>
-            </div>
+            <SectionHeader>Juega hoy</SectionHeader>
             <p className="text-[10px] hidden sm:block" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
               Todo suma a tu Liga Taka
             </p>

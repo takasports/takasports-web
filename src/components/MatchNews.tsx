@@ -6,6 +6,7 @@
 
 import ArticleCard from '@/components/news/ArticleCard'
 import { sanityClient, articlesByMatchQuery } from '@/lib/sanity'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 interface RelatedArticle {
   _id: string
@@ -41,12 +42,7 @@ export default async function MatchNews({
 
   return (
     <section className="mt-10 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-      <div className="flex items-center gap-2.5 mb-4">
-        <span className="section-accent" />
-        <h2 className="section-label" style={{ fontFamily: 'var(--font-sport)', textTransform: 'uppercase' }}>
-          Noticias relacionadas
-        </h2>
-      </div>
+      <SectionHeader>Noticias relacionadas</SectionHeader>
 
       <div className="flex flex-col gap-2">
         {articles.map((a) => (

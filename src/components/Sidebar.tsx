@@ -3,18 +3,7 @@ import type { SportEvent } from '@/lib/types'
 import { RANKING_JUGADORES, type RankingEntry } from '@/lib/rankings'
 import { PersonIcon, PodiumMedal } from '@/components/icons/GameIcons'
 import { toProxyUrl } from '@/lib/image-url'
-
-function SectionHeader({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2.5">
-        <span style={{ display: 'block', width: 3, height: 14, background: '#7C3AED', borderRadius: 2 }} />
-        <h3 className="section-label">{children}</h3>
-      </div>
-      {action}
-    </div>
-  )
-}
+import SectionHeader from '@/components/ui/SectionHeader'
 
 const TREND_COLOR: Record<string, string> = {
   up2: '#22c55e', up: '#4ade80', flat: '#6B6B8A', down: '#f87171', down2: '#ef4444',

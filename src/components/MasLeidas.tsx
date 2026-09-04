@@ -1,5 +1,6 @@
 import { getMostRead } from '@/lib/most-read'
 import ArticleCard, { type ArticleCardData } from '@/components/news/ArticleCard'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 // Bloque "Lo más leído de la semana".
 //
@@ -28,10 +29,7 @@ export default async function MasLeidas({
 
   return (
     <section aria-labelledby="mas-leidas-titulo">
-      <div className="flex items-center gap-2.5 mb-4">
-        <span className="section-accent" />
-        <h2 id="mas-leidas-titulo" className="section-label">{titulo}</h2>
-      </div>
+      <SectionHeader id="mas-leidas-titulo">{titulo}</SectionHeader>
 
       <ol className="flex flex-col gap-1" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
         {articulos.map((a, i) => (

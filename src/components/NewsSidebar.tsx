@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getSportStyle, SLUG_TO_LABEL } from '@/lib/sports'
 import ArticleCard from '@/components/news/ArticleCard'
 import { TrophyIcon } from '@/components/icons/GameIcons'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 interface Article {
   _id: string
@@ -13,25 +14,6 @@ interface Article {
   sport?: string
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
-}
-
-function SectionHeader({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2">
-        <span
-          style={{ display: 'block', width: 3, height: 14, background: '#7C3AED', borderRadius: 2 }}
-        />
-        <h3
-          className="font-black uppercase tracking-widest text-[11px]"
-          style={{ color: '#A0A0B8', fontFamily: 'var(--font-sport)' }}
-        >
-          {children}
-        </h3>
-      </div>
-      {action}
-    </div>
-  )
 }
 
 export default function NewsSidebar({ articles }: { articles: Article[] }) {
@@ -64,7 +46,7 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
       {/* ── Tendencias ── */}
       {trending.length > 0 && (
         <div>
-          <SectionHeader>Tendencias</SectionHeader>
+          <SectionHeader as="h3" className="mb-3">Tendencias</SectionHeader>
           <div className="flex flex-col gap-1">
             {trending.map((article, i) => (
               <ArticleCard
@@ -85,7 +67,7 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
       {/* ── Por deporte ── */}
       {sportEntries.length > 0 && (
         <div>
-          <SectionHeader>Por deporte</SectionHeader>
+          <SectionHeader as="h3" className="mb-3">Por deporte</SectionHeader>
           <div className="flex flex-col gap-1">
             {sportEntries.map(({ slug, label, count }) => {
               const { accent } = getSportStyle(slug)
@@ -127,7 +109,7 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
 
       {/* ── Predicciones Mundial CTA ── */}
       <div>
-        <SectionHeader>Predicciones</SectionHeader>
+        <SectionHeader as="h3" className="mb-3">Predicciones</SectionHeader>
         <Link
           href="/predicciones"
           className="block p-4 rounded-xl transition-all hover:brightness-110"

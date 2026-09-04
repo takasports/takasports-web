@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { MeAllResponse, GameSummary } from '@/app/api/games/me/all/route'
 import { FireIcon } from '@/components/icons/GameIcons'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 interface GameMeta {
   label:  string
@@ -58,10 +59,7 @@ export default function MyGamesActivity() {
 
   return (
     <section className="mt-12">
-      <div className="flex items-center gap-2.5 mb-4">
-        <span className="section-accent" />
-        <h2 className="section-label">Tu palmarés</h2>
-      </div>
+      <SectionHeader>Tu palmarés</SectionHeader>
 
       {/* Racha global */}
       {data.streak && data.streak.current > 0 && (

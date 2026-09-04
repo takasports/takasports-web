@@ -4,6 +4,7 @@ import Image from '@/components/DynamicImage'
 import { sanityClient, urlFor } from '@/lib/sanity'
 import { SITE_URL, LOGO_URL, SOCIAL_SAMEAS, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 import { timeAgo } from '@/lib/timeAgo'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 export const revalidate = 1800
 
@@ -212,10 +213,7 @@ export default async function RedaccionAuthorPage() {
         {/* Artículos recientes */}
         {recent.length > 0 && (
           <section>
-            <div className="flex items-center gap-2.5 mb-5">
-              <span className="section-accent" />
-              <h2 className="section-label">Artículos recientes de la redacción</h2>
-            </div>
+            <SectionHeader className="mb-5">Artículos recientes de la redacción</SectionHeader>
             <div className="flex flex-col gap-4">
               {recent.map((a) => {
                 if (!a.slug) return null
