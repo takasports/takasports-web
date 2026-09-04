@@ -130,7 +130,13 @@ export default function FootballClient() {
   const [loggedIn,   setLoggedIn]   = useState<boolean | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error,      setError]      = useState<string | null>(null)
-  const [nowMs,      setNowMs]      = useState(() => Date.now())
+  // Arranca en 0, NO en `Date.now()`: leer el reloj en el primer render hace
+  // que servidor y navegador discrepen. Hoy no se nota porque la Jornada llega
+  // por fetch y en SSR solo hay esqueleto —nada de esto se pinta—, pero el día
+  // que estos datos se sirvan desde el servidor sería un fallo de hidratación
+  // (#418) que tira la página entera. El efecto de abajo lo pone en hora al
+  // montar y el tick de 1s lo mantiene.
+  const [nowMs,      setNowMs]      = useState(0)
   // Hay picks de invitado guardados. Solo dice SI hay (para decidir si se
   // monta la barra y si toca subirlos); cuántos son se cuenta abajo, contra
   // los partidos que se pueden jugar ahora.
@@ -186,6 +192,9 @@ export default function FootballClient() {
   // Un solo reloj para toda la vista: si cada tarjeta llevara el suyo, las
   // cuentas atrás se irían desincronizando entre sí.
   useEffect(() => {
+    // En hora YA al montar: si esperásemos al primer tick, la cuenta atrás
+    // pasaría un segundo entero con el valor inicial.
+    setNowMs(Date.now())
     tickRef.current = setInterval(() => setNowMs(Date.now()), 1000)
     return () => { if (tickRef.current) clearInterval(tickRef.current) }
   }, [])

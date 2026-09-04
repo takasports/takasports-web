@@ -64,7 +64,16 @@ export function MatchCard({
 
   // ── Cuotas vivas: la línea se mueve por el consenso real + tiempo ──
   const [consensus, setConsensus] = useState<{ p1: number; px: number; p2: number; total: number } | null>(null)
-  const [oddsTick, setOddsTick] = useState(() => Date.now())
+  // Mismo cuidado que en FootballClient: nada de leer el reloj en el primer
+  // render. Durante ese único render `liveOdds` recibe 0, así que la deriva
+  // sale con el peso temporal MÍNIMO (0.4) en vez del que toque; el efecto de
+  // debajo lo pone en hora acto seguido. En la práctica no se llega a ver: la
+  // tarjeta solo aparece cuando ya han llegado los datos, o sea, ya montada.
+  const [oddsTick, setOddsTick] = useState(0)
+  // En hora al montar, en un efecto APARTE: el de abajo se sale antes de
+  // tiempo cuando el partido está bloqueado o no hay cuotas, y entonces el
+  // tick de 45s no llegaría nunca y la deriva se quedaría congelada.
+  useEffect(() => { setOddsTick(Date.now()) }, [])
   useEffect(() => {
     if (!jornada || !odds || locked) return
     let cancelled = false
