@@ -274,7 +274,7 @@ export function ChallengesPanel({
                   {isPending && !user && (
                     <p
                       className="text-[8px] mt-2 text-center"
-                      style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}
+                      style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
                     >
                       Iniciá sesión para participar y reclamar
                     </p>

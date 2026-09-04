@@ -138,7 +138,7 @@ export default function SobrePage() {
               Escríbenos a{' '}
               <a
                 href="mailto:contacto@takasportsmedia.com"
-                style={{ color: '#7C3AED', textDecoration: 'underline' }}
+                style={{ color: '#A78BFA', textDecoration: 'underline' }}
               >
                 contacto@takasportsmedia.com
               </a>
@@ -147,7 +147,7 @@ export default function SobrePage() {
                 href="https://www.instagram.com/taka.sports"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: '#7C3AED', textDecoration: 'underline' }}
+                style={{ color: '#A78BFA', textDecoration: 'underline' }}
               >
                 Instagram
               </a>
@@ -156,7 +156,7 @@ export default function SobrePage() {
                 href="https://x.com/takasportsx"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: '#7C3AED', textDecoration: 'underline' }}
+                style={{ color: '#A78BFA', textDecoration: 'underline' }}
               >
                 X (Twitter)
               </a>.

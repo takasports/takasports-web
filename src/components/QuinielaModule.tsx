@@ -172,7 +172,7 @@ function PredictionModal({
                       <span className="text-xs font-black text-right flex-1 truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>{m.home}</span>
                       <div className="flex flex-col items-center mx-2 flex-shrink-0">
                         <span className="text-[9px] font-black px-3 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A50', letterSpacing: '0.05em' }}>VS</span>
-                        {m.comp && <span className="text-[8px] mt-0.5" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>{m.comp}</span>}
+                        {m.comp && <span className="text-[8px] mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{m.comp}</span>}
                       </div>
                       <span className="text-xs font-black text-left flex-1 truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>{m.away}</span>
                     </div>
@@ -327,11 +327,11 @@ export default function QuinielaModule() {
             <div className="py-5 flex flex-col items-center gap-1.5">
               <span style={{ color: '#4A4A6A' }}><CalendarIcon size={26} /></span>
               <p className="text-xs font-black" style={{ color: '#4A4A6A', fontFamily: 'var(--font-display)' }}>Sin partidos esta semana</p>
-              <p className="text-[10px]" style={{ color: '#3A3A58' }}>Vuelve cuando haya jornada activa</p>
+              <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Vuelve cuando haya jornada activa</p>
             </div>
           ) : (
             <div className="py-5 flex items-center justify-center">
-              <span className="text-[10px] animate-pulse" style={{ color: '#3A3A58' }}>Cargando…</span>
+              <span className="text-[10px] animate-pulse" style={{ color: 'var(--text-muted)' }}>Cargando…</span>
             </div>
           )}
         </div>

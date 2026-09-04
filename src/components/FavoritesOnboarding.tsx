@@ -289,7 +289,7 @@ export default function FavoritesOnboarding({ onClose, onSave }: Props) {
         {/* Deportes que sigues — ordenan los Destacados del calendario. */}
         <div className="px-5 pt-3 pb-1">
           <p className="text-[10px] font-black uppercase tracking-widest mb-2"
-            style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             Deportes que sigues
           </p>
           <div className="flex items-center gap-1.5 flex-wrap">

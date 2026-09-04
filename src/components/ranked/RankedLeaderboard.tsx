@@ -155,7 +155,7 @@ export default function RankedLeaderboard({ activeSport }: Props) {
                 ? `${t.accent}18`
                 : 'rgba(255,255,255,0.03)',
               border: `1px solid ${tab === t.id && t.available ? `${t.accent}50` : 'rgba(255,255,255,0.06)'}`,
-              color: t.available ? (tab === t.id ? t.accent : 'var(--text-muted)') : '#3A3A52',
+              color: t.available ? (tab === t.id ? t.accent : 'var(--text-muted)') : 'var(--text-muted)',
               cursor: t.available ? 'pointer' : 'default',
               fontFamily: 'var(--font-sport)',
               opacity: t.available ? 1 : 0.5,
@@ -164,7 +164,7 @@ export default function RankedLeaderboard({ activeSport }: Props) {
             <span className="inline-flex"><RankedCategoryIcon sport={t.id} size={14} /></span>
             <span>{t.label}</span>
             {!t.available && (
-              <span className="text-[7px] px-1 py-0.5 ml-0.5" style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A52' }}>
+              <span className="text-[7px] px-1 py-0.5 ml-0.5" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)' }}>
                 Pronto
               </span>
             )}

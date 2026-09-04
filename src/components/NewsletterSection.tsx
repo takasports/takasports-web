@@ -41,7 +41,7 @@ export default function NewsletterSection({ source = 'page' }: Props) {
           <div className="flex-1 min-w-0">
             <p
               className="text-[10px] font-black uppercase tracking-[0.25em] mb-3"
-              style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}
+              style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}
             >
               Newsletter · Gratis
             </p>

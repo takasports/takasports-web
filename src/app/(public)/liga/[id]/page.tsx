@@ -238,7 +238,7 @@ function LeaderList({ title, players, metric, def }: { title: string; players: P
           const inner = (
             <div className="flex items-center gap-2.5 px-4 py-2.5"
               style={{ borderBottom: i < Math.min(players.length, 10) - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none' }}>
-              <span className="w-5 text-[11px] font-black tabular-nums text-right" style={{ color: i < 3 ? def.accent : '#5A5A72' }}>{i + 1}</span>
+              <span className="w-5 text-[11px] font-black tabular-nums text-right" style={{ color: i < 3 ? def.accent : 'var(--text-muted)' }}>{i + 1}</span>
               {/* Foto si el cron la resolvió: redonda y encuadrada arriba, porque las de
                   Commons son fotos de acción y la cara suele quedar en la parte alta.
                   Sin foto, el escudo del club como hasta ahora. */}
@@ -269,7 +269,7 @@ function LeaderList({ title, players, metric, def }: { title: string; players: P
               <span className="w-10 text-right font-black tabular-nums" style={{ color: i < 3 ? def.accent : '#fff', fontFamily: 'var(--font-display)' }}>
                 {p.value}
               </span>
-              <span className="hidden sm:block w-12 text-right text-[10px] uppercase tracking-wide" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>{metric}</span>
+              <span className="hidden sm:block w-12 text-right text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{metric}</span>
             </div>
           )
           return href

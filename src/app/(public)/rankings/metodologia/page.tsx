@@ -14,13 +14,13 @@ export default function MetodologiaPage() {
       <div className="max-w-3xl mx-auto">
         <Link href="/rankings"
           className="inline-block text-[10px] font-black uppercase tracking-[0.2em] mb-3"
-          style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
+          style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
           ← Volver al Ranking
         </Link>
 
         <h1 className="text-3xl font-black mb-2"
           style={{ color: '#E8E8F0', fontFamily: 'var(--font-display)' }}>
-          Cómo calculamos el <span style={{ color: '#7C3AED' }}>Ranking Taka</span>
+          Cómo calculamos el <span style={{ color: '#A78BFA' }}>Ranking Taka</span>
         </h1>
         <p className="text-sm mb-8 leading-relaxed"
           style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
@@ -37,7 +37,7 @@ export default function MetodologiaPage() {
             <Factor name="Mediático" pct="25%" desc="Presencia social, seguidores, apariciones, debate público." />
             <Factor name="Narrativa" pct="15%" desc="Historia detrás del deportista — joven promesa, regreso, derrota épica." />
           </ul>
-          <p className="mt-3 text-[11px]" style={{ color: '#5A5A72' }}>
+          <p className="mt-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             Score = (Rend × 0.40) + (Ctx × 0.20) + (Med × 0.25) + (Narr × 0.15)
           </p>
           <p className="mt-4">Para <strong>creadores y periodistas</strong> aplicamos un criterio
@@ -48,7 +48,7 @@ export default function MetodologiaPage() {
             <Factor name="Momento" pct="15%" desc="Crecimiento, viralidad reciente y relevancia en el debate actual." />
             <Factor name="Profundidad" pct="5%" desc="Nivel de análisis y conocimiento del deporte que cubren." />
           </ul>
-          <p className="mt-3 text-[11px]" style={{ color: '#5A5A72' }}>
+          <p className="mt-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
             Ranking de Contenido = (Aud × 0.50) + (Cont × 0.30) + (Mom × 0.15) + (Prof × 0.05)
           </p>
         </Section>
@@ -59,7 +59,7 @@ export default function MetodologiaPage() {
           <p className="mt-3">Eso significa que el top global está dominado por fútbol, porque tenemos
           ~3.000 futbolistas activos contra ~20 pilotos de F1. No es injusticia — es la realidad
           mediática del deporte hispanohablante. Para ver la diversidad real, usa
-          <Link href="/rankings/todos" style={{ color: '#7C3AED' }}> Reyes del deporte hispano </Link>
+          <Link href="/rankings/todos" style={{ color: '#A78BFA' }}> Reyes del deporte hispano </Link>
           (el #1 de cada disciplina) o filtra por deporte en el Ranking principal.</p>
         </Section>
 
@@ -97,8 +97,8 @@ export default function MetodologiaPage() {
           </ul>
         </Section>
 
-        <p className="text-[11px] mt-10 text-center" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
-          ¿Crees que un score está mal? Escríbenos a <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#7C3AED' }}>contacto@takasportsmedia.com</a> y lo revisamos.
+        <p className="text-[11px] mt-10 text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          ¿Crees que un score está mal? Escríbenos a <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#A78BFA' }}>contacto@takasportsmedia.com</a> y lo revisamos.
         </p>
       </div>
     </div>

@@ -30,10 +30,10 @@ export default function FeaturedCard({ entry }: { entry: RankingEntry }) {
           </Link>
           {entry.badge && <BadgePill text={entry.badge} />}
         </div>
-        <p className="text-[10px] truncate" style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>{entry.subtitle}</p>
+        <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{entry.subtitle}</p>
       </div>
       <p className="hidden lg:block text-[11px] flex-shrink-0 max-w-[220px] line-clamp-1"
-        style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         {entry.insight}
       </p>
       {entry.handles && <SocialHandles handles={entry.handles} />}

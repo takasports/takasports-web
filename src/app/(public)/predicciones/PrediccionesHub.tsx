@@ -312,7 +312,7 @@ export default function PrediccionesHub() {
                       className="text-[8px] px-1.5 py-0.5 rounded-full"
                       style={{
                         background: 'rgba(255,255,255,0.06)',
-                        color: '#3A3A52',
+                        color: 'var(--text-muted)',
                         fontFamily: 'var(--font-sport)',
                       }}
                     >

@@ -37,7 +37,7 @@ export default function ScopeTabBar<T extends string>({
             className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             style={{
               background: isActive ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.04)',
-              color: isActive ? '#C4B5FD' : '#5A5A72',
+              color: isActive ? '#C4B5FD' : 'var(--text-muted)',
               border: isActive ? '1px solid rgba(124,58,237,0.35)' : '1px solid rgba(255,255,255,0.06)',
               boxShadow: isActive ? '0 2px 12px rgba(124,58,237,0.2)' : 'none',
               cursor: 'pointer', fontFamily: 'var(--font-sport)',

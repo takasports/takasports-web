@@ -132,7 +132,7 @@ export default function MyGamesActivity() {
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                     Última: <strong style={{ color: '#9090B0' }}>{g.last_score} pts</strong>
                   </span>
-                  <span className="text-[10px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     {fmtAgo(g.last_at)}
                   </span>
                 </div>

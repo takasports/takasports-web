@@ -79,7 +79,7 @@ export function LeagueChat({ leagueId, nickname }: { leagueId: string; nickname:
 
   return (
     <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-      <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
+      <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         Chat de liga
       </p>
 
@@ -141,7 +141,7 @@ export function LeagueChat({ leagueId, nickname }: { leagueId: string; nickname:
           className="px-3 py-1.5 rounded-xl flex-shrink-0 text-[11px] font-black transition-opacity"
           style={{
             background: input.trim() ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.04)',
-            color: input.trim() ? '#C4B5FD' : '#3A3A52',
+            color: input.trim() ? '#C4B5FD' : 'var(--text-muted)',
             border: input.trim() ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.06)',
             cursor: input.trim() && !sending ? 'pointer' : 'not-allowed',
           }}

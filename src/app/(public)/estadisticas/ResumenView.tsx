@@ -275,7 +275,7 @@ export function ResumenCard({ card, onOpen }: { card: SummaryCard; onOpen: () =>
                 {r.name}
               </span>
               {r.sub && (
-                <span className="text-[10px] truncate hidden sm:block" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                <span className="text-[10px] truncate hidden sm:block" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   · {r.sub}
                 </span>
               )}
@@ -290,7 +290,7 @@ export function ResumenCard({ card, onOpen }: { card: SummaryCard; onOpen: () =>
       {/* Footer CTA */}
       <div className="px-4 py-2.5 flex items-center justify-between"
         style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-        <span className="text-[9px] font-black uppercase tracking-[0.15em]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+        <span className="text-[9px] font-black uppercase tracking-[0.15em]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           {card.metric}
         </span>
         <span className="text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-1"
@@ -344,7 +344,7 @@ export function ResumenView({
           </span>
         )}
         {lastUpdated && (
-          <span className="text-[10px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             · {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}

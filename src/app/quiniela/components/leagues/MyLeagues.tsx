@@ -94,7 +94,7 @@ export function MyLeagues({ onCreate }: { onCreate: () => void }) {
         <button
           onClick={onCreate}
           className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest"
-          style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)', background: 'none', border: 'none', cursor: 'pointer' }}
+          style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)', background: 'none', border: 'none', cursor: 'pointer' }}
         >
           + Nueva liga
         </button>
@@ -134,7 +134,7 @@ export function MyLeagues({ onCreate }: { onCreate: () => void }) {
                 )}
                 <svg
                   width="12" height="12" viewBox="0 0 12 12" fill="none"
-                  style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.22s', color: '#3A3A5A', flexShrink: 0 }}
+                  style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.22s', color: 'var(--text-muted)', flexShrink: 0 }}
                 >
                   <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

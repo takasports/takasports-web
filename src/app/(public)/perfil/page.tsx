@@ -964,7 +964,7 @@ export default function PerfilPage() {
                         {gridStats.finished ? (
                           <>
                             <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Hoy: <strong style={{ color: '#FDBA74' }}>{gridStats.solved}/9 celdas</strong></p>
-                            <p className="text-[10px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>Nuevo puzzle mañana</p>
+                            <p className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Nuevo puzzle mañana</p>
                           </>
                         ) : (
                           <p className="text-[10px]" style={{ color: '#4ade80' }}>Puzzle de hoy pendiente →</p>
@@ -986,7 +986,7 @@ export default function PerfilPage() {
                       <p className="text-[11px] font-black" style={{ color: '#93C5FD', fontFamily: 'var(--font-display)' }}>Mi Once</p>
                       <div className="flex flex-col gap-0.5">
                         <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{miOnceStats.filled === 11 ? '✓ Once completo' : `${miOnceStats.filled} jugadores elegidos`}</p>
-                        <p className="text-[10px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>Semana {miOnceStats.weekKey}</p>
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Semana {miOnceStats.weekKey}</p>
                       </div>
                     </Link>
                   )}
@@ -1125,7 +1125,7 @@ export default function PerfilPage() {
                           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: event.accent, fontFamily: 'var(--font-sport)' }}>
                             {event.sport}
                           </span>
-                          <span style={{ color: '#2A2A3A' }}>·</span>
+                          <span style={{ color: 'var(--text-muted)' }}>·</span>
                           <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{event.comp}</span>
                         </div>
                         <p className="text-sm font-semibold truncate" style={{ color: '#D0D0E0', fontFamily: 'var(--font-sport)' }}>

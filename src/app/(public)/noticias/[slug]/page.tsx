@@ -1581,7 +1581,7 @@ export default async function NoticiaPage({
                         {nextArticle.title}
                       </h3>
                     </div>
-                    <div className="flex items-center flex-shrink-0" style={{ color: '#7C3AED' }}>
+                    <div className="flex items-center flex-shrink-0" style={{ color: '#A78BFA' }}>
                       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                         <path d="M4 9h10M10 5l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
@@ -1756,7 +1756,7 @@ export default async function NoticiaPage({
                     {nextArticle.title}
                   </h3>
                 </div>
-                <div className="flex-shrink-0 ml-4 opacity-40 group-hover:opacity-100 transition-opacity" style={{ color: '#7C3AED' }}>
+                <div className="flex-shrink-0 ml-4 opacity-40 group-hover:opacity-100 transition-opacity" style={{ color: '#A78BFA' }}>
                   <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
                     <path d="M5 11h12M12 5l6 6-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>

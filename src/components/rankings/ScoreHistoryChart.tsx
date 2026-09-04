@@ -95,7 +95,7 @@ export default function ScoreHistoryChart({
     <div className="w-full">
       <div className="flex items-center justify-between mb-3">
         <p className="text-[9px] font-black uppercase tracking-[0.2em]"
-          style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+          style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           Histórico · últimas {Math.max(series.length, 2)} {series.length === 1 ? 'lectura' : 'lecturas'}
         </p>
         {points && points.length >= 2 && (
@@ -179,7 +179,7 @@ export default function ScoreHistoryChart({
 
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span className="text-[10px]" style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
+            <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Cargando histórico…
             </span>
           </div>
@@ -195,7 +195,7 @@ export default function ScoreHistoryChart({
 
       {points !== null && points.length < 2 && (
         <p className="text-[10px] text-center mt-2"
-          style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
+          style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           {/* Aún sin historial completo: cada domingo se añade un snapshot nuevo */}
           Aún sin historial completo · cada domingo se añade un snapshot nuevo
         </p>

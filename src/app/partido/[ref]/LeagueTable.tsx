@@ -33,7 +33,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div className="rounded-xl p-4 mb-4"
       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
       <p className="text-[9px] font-black uppercase tracking-widest mb-4"
-        style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         {title}
       </p>
       {children}
@@ -90,7 +90,7 @@ export function LeagueTableBlock({
         <table className="w-full text-[10px]"
           style={{ fontFamily: 'var(--font-sport)', borderCollapse: 'separate', borderSpacing: '0 1px' }}>
           <thead>
-            <tr style={{ color: '#3A3A5A' }}>
+            <tr style={{ color: 'var(--text-muted)' }}>
               <th className="text-left font-semibold pb-2 w-5">#</th>
               <th className="text-left font-semibold pb-2">Equipo</th>
               <th className="text-center font-semibold pb-2 px-1 w-7">PJ</th>
@@ -104,7 +104,7 @@ export function LeagueTableBlock({
           <tbody>
             {minI > 0 && (
               <tr>
-                <td colSpan={8} className="py-1 text-center text-[9px]" style={{ color: '#2A2A3A' }}>···</td>
+                <td colSpan={8} className="py-1 text-center text-[9px]" style={{ color: 'var(--text-muted)' }}>···</td>
               </tr>
             )}
             {visible.map((row) => {
@@ -124,7 +124,7 @@ export function LeagueTableBlock({
                   onClick={teamHref ? () => router.push(teamHref) : undefined}
                 >
                   <td className="py-1.5 pl-1 tabular-nums"
-                    style={{ color: accent ?? '#3A3A5A', fontWeight: accent ? 900 : 600 }}>
+                    style={{ color: accent ?? 'var(--text-muted)', fontWeight: accent ? 900 : 600 }}>
                     {row.rank}
                   </td>
                   <td className="py-1.5 pr-2">
@@ -139,11 +139,11 @@ export function LeagueTableBlock({
                       </span>
                     </div>
                   </td>
-                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.gp}</td>
-                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.w}</td>
-                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.d}</td>
-                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>{row.l}</td>
-                  <td className="text-center tabular-nums py-1.5" style={{ color: '#6A6A7A' }}>
+                  <td className="text-center tabular-nums py-1.5" style={{ color: 'var(--text-muted)' }}>{row.gp}</td>
+                  <td className="text-center tabular-nums py-1.5" style={{ color: 'var(--text-muted)' }}>{row.w}</td>
+                  <td className="text-center tabular-nums py-1.5" style={{ color: 'var(--text-muted)' }}>{row.d}</td>
+                  <td className="text-center tabular-nums py-1.5" style={{ color: 'var(--text-muted)' }}>{row.l}</td>
+                  <td className="text-center tabular-nums py-1.5" style={{ color: 'var(--text-muted)' }}>
                     {row.gd >= 0 ? `+${row.gd}` : row.gd}
                   </td>
                   <td className="text-center font-black tabular-nums py-1.5"
@@ -155,7 +155,7 @@ export function LeagueTableBlock({
             })}
             {!showAll && maxI < rows.length - 1 && (
               <tr>
-                <td colSpan={8} className="py-1 text-center text-[9px]" style={{ color: '#2A2A3A' }}>···</td>
+                <td colSpan={8} className="py-1 text-center text-[9px]" style={{ color: 'var(--text-muted)' }}>···</td>
               </tr>
             )}
           </tbody>

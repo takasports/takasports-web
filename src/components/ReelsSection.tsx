@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel, accentForSport } from '@/lib/sports'
+import { getSportStyle, getSportLabel, accentForSport, accentTexto } from '@/lib/sports'
 
 // Categorías que aparecen siempre en los tabs de Reels (independiente de si
 // hay contenido en este instante). Se ordenan: las que tienen reels primero.
@@ -470,7 +470,7 @@ function SportTabs({ sports, active, onChange }: { sports: string[]; active: str
               textTransform: 'uppercase' as const, flexShrink: 0, whiteSpace: 'nowrap' as const,
               border: `1px solid ${isActive ? accent : 'rgba(255,255,255,0.07)'}`,
               background: isActive ? `${accent}18` : 'transparent',
-              color: isActive ? accent : '#3A3A52',
+              color: isActive ? accentTexto(accent) : 'var(--text-muted)',
               cursor: 'pointer', transition: 'all 160ms ease',
             }}
           >
@@ -572,7 +572,7 @@ export default function ReelsSection({
             <h2 className="label-display text-[13px] uppercase" style={{ color: '#D4A0C8' }}>Reels</h2>
           </div>
           <span className="text-[10px]" style={{ color: '#3A3A4A' }}>·</span>
-          <span className="text-[11px]" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {hasReels ? `${visible.length} reels` : 'Próximamente'}
           </span>
         </div>
@@ -609,7 +609,7 @@ export default function ReelsSection({
                   <>
                     <div
                       className="flex flex-col items-center justify-center gap-2 flex-shrink-0"
-                      style={{ width: 360, minHeight: 200, color: '#3A3A52' }}
+                      style={{ width: 360, minHeight: 200, color: 'var(--text-muted)' }}
                     >
                       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                         <path d="M4 17l5-9h14l5 9v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
@@ -649,7 +649,7 @@ export default function ReelsSection({
               }}
             />
           </div>
-          <span className="text-[9px] font-black tabular-nums flex-shrink-0" style={{ color: '#38384A', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[9px] font-black tabular-nums flex-shrink-0" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {visible.length} reels
           </span>
         </div>

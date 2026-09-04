@@ -92,7 +92,7 @@ function PodiumColumn({
       >
         {score.toFixed(1)}
       </span>
-      <span className="text-[8px] font-semibold mb-2" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>/ 100</span>
+      <span className="text-[8px] font-semibold mb-2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>/ 100</span>
 
       {/* Pedestal con la posición */}
       <div

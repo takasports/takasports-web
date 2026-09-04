@@ -606,7 +606,7 @@ export default function SopaCracksPage() {
             <Link href="/juegos" className="text-[10px] font-black uppercase tracking-widest hover:opacity-100 transition-opacity" style={{ color: '#9090A4', fontFamily: 'var(--font-sport)', opacity: 0.7 }}>
               ← Juegos
             </Link>
-            <span style={{ color: '#3A3A52' }}>/</span>
+            <span style={{ color: 'var(--text-muted)' }}>/</span>
             <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: COLOR_ACCENT, fontFamily: 'var(--font-sport)' }}>
               Sopa de Cracks
             </span>
@@ -987,7 +987,7 @@ export default function SopaCracksPage() {
                   </p>
                   <p
                     className="font-black tabular-nums"
-                    style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: bestSeconds != null ? COLOR_ACCENT : '#3A3A52', letterSpacing: '-0.02em' }}
+                    style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: bestSeconds != null ? COLOR_ACCENT : 'var(--text-muted)', letterSpacing: '-0.02em' }}
                   >
                     {bestSeconds != null ? fmtTime(bestSeconds) : '—:—'}
                   </p>
@@ -1000,7 +1000,7 @@ export default function SopaCracksPage() {
                     className="font-black tabular-nums"
                     style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: '#9090B0' }}
                   >
-                    {found.length * POINTS_PER_WORD}<span style={{ fontSize: 12, color: '#3A3A52' }}>/{activeWords.length * POINTS_PER_WORD}</span>
+                    {found.length * POINTS_PER_WORD}<span style={{ fontSize: 12, color: 'var(--text-muted)' }}>/{activeWords.length * POINTS_PER_WORD}</span>
                   </p>
                 </div>
               </div>

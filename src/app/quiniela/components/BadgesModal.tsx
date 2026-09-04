@@ -189,7 +189,7 @@ export function BadgesModal({
                   className="text-[8px] font-black px-1.5 py-0.5 rounded"
                   style={{
                     background: equippedBadge ? equippedBadge.bg : 'rgba(255,255,255,0.03)',
-                    color: equippedBadge ? equippedBadge.color : '#3A3A52',
+                    color: equippedBadge ? equippedBadge.color : 'var(--text-muted)',
                     border: `1px solid ${equippedBadge ? equippedBadge.color + '55' : 'rgba(255,255,255,0.06)'}`,
                     fontFamily: 'var(--font-sport)',
                   }}

@@ -78,14 +78,14 @@ export default function GlobalSearchResults({ query }: { query: string }) {
           style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
           <SearchIcon size={10} /> Resultados globales · todos los rankings
         </span>
-        <span className="text-[9px] tabular-nums" style={{ color: '#5A5A72', fontFamily: 'var(--font-display)' }}>
+        <span className="text-[9px] tabular-nums" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
           {loading ? 'buscando…' : hits ? `${hits.length} ${hits.length === 1 ? 'coincidencia' : 'coincidencias'}` : ''}
         </span>
       </div>
 
       {!loading && hits && hits.length === 0 && (
         <div className="px-4 py-6 text-center">
-          <p className="text-xs" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             No encontramos a &ldquo;{query}&rdquo; en ningún ranking.
           </p>
         </div>
@@ -115,7 +115,7 @@ export default function GlobalSearchResults({ query }: { query: string }) {
                     </span>
                     {h.country && <span className="text-[10px] leading-none">{h.country}</span>}
                   </div>
-                  <p className="text-[10px] truncate" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                  <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     {h.subtitle}
                   </p>
                 </div>
@@ -137,7 +137,7 @@ export default function GlobalSearchResults({ query }: { query: string }) {
                   </span>
                   {h.rank !== undefined && (
                     <span className="text-[8px] tabular-nums leading-none mt-0.5"
-                      style={{ color: '#3A3A52', fontFamily: 'var(--font-display)' }}>
+                      style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
                       #{h.rank}
                     </span>
                   )}

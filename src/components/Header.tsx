@@ -327,7 +327,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       {label && (
-                        <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
+                        <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
                           {label}
                         </span>
                       )}

@@ -26,7 +26,7 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
             <Link
               href="/rankings"
               className="text-[10px] font-semibold transition-opacity hover:opacity-70"
-              style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}
+              style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}
             >
               Ver ranking →
             </Link>
@@ -113,7 +113,7 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
                   <p className="text-[12px] font-black tabular-nums" style={{ color: medalColor.score, fontFamily: 'var(--font-display)' }}>
                     {player.score}
                   </p>
-                  <p className="text-[9px] font-bold" style={{ color: TREND_COLOR[player.trend as string] ?? '#6B6B8A' }}>
+                  <p className="text-[9px] font-bold" style={{ color: TREND_COLOR[player.trend as string] ?? 'var(--text-muted)' }}>
                     {TREND_ICON[player.trend as string] ?? '—'}
                   </p>
                 </div>
@@ -130,7 +130,7 @@ export default function Sidebar({ topPlayers, events }: { topPlayers?: RankingEn
             <Link
               href="/calendario"
               className="text-[10px] font-semibold transition-opacity hover:opacity-70"
-              style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}
+              style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}
             >
               Ver todos →
             </Link>

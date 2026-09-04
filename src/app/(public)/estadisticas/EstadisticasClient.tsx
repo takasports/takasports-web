@@ -906,7 +906,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                     <p className="text-sm mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                       Esta sección no tiene datos verificables en vivo todavía.
                     </p>
-                    <p className="text-[11px] mb-4" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                    <p className="text-[11px] mb-4" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                       Hay {hiddenFlatCount} bloque{hiddenFlatCount !== 1 ? 's' : ''} ocult{hiddenFlatCount !== 1 ? 'os' : 'o'} por falta de fuente gratuita confiable.
                     </p>
                     <button onClick={() => setHideUnavailable(false)}
@@ -947,7 +947,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                 <span className="text-xl flex-shrink-0">{icon}</span>
                 <div>
                   <p className="text-xs font-semibold leading-tight" style={{ color: '#A0A0C0', fontFamily: 'var(--font-sport)' }}>{label}</p>
-                  <p className="text-[9px] mt-0.5" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{sub}</p>
+                  <p className="text-[9px] mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{sub}</p>
                 </div>
               </div>
             ))}

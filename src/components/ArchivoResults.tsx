@@ -99,7 +99,7 @@ export default function ArchivoResults({
       {!hasMore && articles.length > 0 && (
         <div className="mt-10 mb-4 flex items-center gap-4">
           <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             Fin · {articles.length} {articles.length === 1 ? 'resultado' : 'resultados'}
           </span>
           <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />

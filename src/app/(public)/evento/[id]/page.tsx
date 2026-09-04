@@ -328,7 +328,7 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
                 </div>
                 <div className="flex flex-col items-center gap-1 flex-shrink-0">
                   <span className="font-black"
-                    style={{ color: '#3A3A5A', fontFamily: 'var(--font-display)', fontSize: 28 }}>
+                    style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)', fontSize: 28 }}>
                     vs
                   </span>
                 </div>
@@ -374,7 +374,7 @@ export default async function EventoPage({ params }: { params: Promise<{ id: str
           {related.length > 0 && (
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest mb-3"
-                style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 Artículos relacionados
               </p>
               <div className="flex flex-col gap-2">

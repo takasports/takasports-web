@@ -10,6 +10,6 @@ export default function Image() {
     emoji: '🎮',
     title: 'Juegos',
     description: 'Predicciones, CrackQuiz, Mi Once, Sopa de Cracks y TakaGrid.',
-    accentColor: '#7C3AED',
+    accentColor: '#A78BFA',
   })
 }

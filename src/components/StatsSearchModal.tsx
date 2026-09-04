@@ -76,28 +76,28 @@ export function StatsSearchModal({ open, onClose, rows, onPick }: Props) {
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 18px 48px rgba(0,0,0,0.5)' }}
         onClick={e => e.stopPropagation()}>
         <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
-          <span aria-hidden style={{ color: '#5A5A72' }}><SearchIcon size={14} /></span>
+          <span aria-hidden style={{ color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
           <input value={q} onChange={e => setQ(e.target.value)}
             placeholder="Busca jugador o equipo..."
             className="flex-1 bg-transparent outline-none text-sm"
             style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }} />
-          <kbd className="text-[10px] font-black px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>esc</kbd>
+          <kbd className="text-[10px] font-black px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>esc</kbd>
         </div>
         <div className="max-h-[60vh] overflow-y-auto">
           {q.trim() === '' && (
-            <p className="px-4 py-6 text-center text-[11px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+            <p className="px-4 py-6 text-center text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Empieza a escribir un nombre, un equipo o una selección.
             </p>
           )}
           {q.trim() !== '' && matches.length === 0 && hits.length === 0 && (
-            <p className="px-4 py-6 text-center text-[11px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+            <p className="px-4 py-6 text-center text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Nada encontrado para &ldquo;{q}&rdquo;.
             </p>
           )}
           {hits.length > 0 && (
             <div style={{ borderBottom: matches.length ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
               <p className="px-4 pt-3 pb-1 text-[10px] font-black uppercase tracking-widest"
-                style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 Jugadores y equipos
               </p>
               {hits.map((h, i) => (
@@ -122,7 +122,7 @@ export function StatsSearchModal({ open, onClose, rows, onPick }: Props) {
           )}
           {matches.length > 0 && (
             <p className="px-4 pt-3 pb-1 text-[10px] font-black uppercase tracking-widest"
-              style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               En esta página
             </p>
           )}
@@ -142,7 +142,7 @@ export function StatsSearchModal({ open, onClose, rows, onPick }: Props) {
               <div className="flex items-center gap-1.5 text-[10px] mt-0.5" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
                 <span>{m.blockTitle}</span>
                 {m.rowTeam && <><span>·</span><span>{m.rowTeam}</span></>}
-                <span className="ml-auto" style={{ color: '#3A3A52' }}>{m.metric}</span>
+                <span className="ml-auto" style={{ color: 'var(--text-muted)' }}>{m.metric}</span>
               </div>
             </button>
           ))}

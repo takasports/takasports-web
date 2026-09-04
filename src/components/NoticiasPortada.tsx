@@ -305,7 +305,7 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
                 />
               </div>
 
-              <span className="flex-shrink-0 text-[10px] tabular-nums" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
+              <span className="flex-shrink-0 text-[10px] tabular-nums" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {pairIdx + 1} / {totalPairs}
               </span>
 

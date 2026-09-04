@@ -65,7 +65,7 @@ export default async function ReyesPage() {
       <div className="max-w-3xl mx-auto">
         <Link href="/rankings"
           className="inline-block text-[10px] font-black uppercase tracking-[0.2em] mb-3"
-          style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
+          style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
           ← Volver al Ranking
         </Link>
         <h1 className="text-3xl font-black mb-1"
@@ -103,7 +103,7 @@ export default async function ReyesPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-[9px] font-black uppercase tracking-[0.15em]"
-                      style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
+                      style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
                       {meta?.label ?? r.sport}
                     </p>
                     <p className="text-sm font-bold truncate"
@@ -112,7 +112,7 @@ export default async function ReyesPage() {
                     </p>
                     {r.subtitle && (
                       <p className="text-[10px] truncate"
-                        style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                         {r.subtitle}
                       </p>
                     )}
@@ -136,10 +136,10 @@ export default async function ReyesPage() {
         </div>
 
         <p className="text-[11px] mt-8 text-center"
-          style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+          style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           El score se calcula igual entre deportes. El fútbol domina el top general porque
           tiene más entries (3.000+) y mayor cobertura. Ver{' '}
-          <Link href="/rankings/metodologia" style={{ color: '#7C3AED' }}>metodología</Link>.
+          <Link href="/rankings/metodologia" style={{ color: '#A78BFA' }}>metodología</Link>.
         </p>
       </div>
     </div>

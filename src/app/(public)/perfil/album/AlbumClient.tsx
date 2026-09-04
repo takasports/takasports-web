@@ -98,7 +98,7 @@ export default function AlbumClient() {
                 <h2 className="text-sm font-black uppercase tracking-widest mb-3 inline-flex items-center gap-2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   <CountryFlag country={country} width={18} />
                   <span>{country}</span>
-                  <span className="text-[10px]" style={{ color: '#3A3A52' }}>{list.length}</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{list.length}</span>
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {list.map(c => <CardTile key={c.player.id} card={c} />)}

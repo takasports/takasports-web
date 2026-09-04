@@ -189,7 +189,7 @@ function MiniCard({ r, n }: { r: Reportaje; n: number }) {
         >
           {r.title}
         </h4>
-        <div style={{ fontFamily: 'var(--font-sport)', fontSize: 9.5, color: '#5A5A74', letterSpacing: '0.04em' }}>
+        <div style={{ fontFamily: 'var(--font-sport)', fontSize: 9.5, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
           {[readingLabel(r.readWords)?.replace(' de lectura', ''), getSportLabel(r.sport, r.category)].filter(Boolean).join(' · ')}
         </div>
       </div>

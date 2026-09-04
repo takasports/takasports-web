@@ -69,7 +69,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1 }}>
-          <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: '0.2em', color: '#5A5A72', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: '0.2em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
             takasportsmedia.com
           </span>
         </div>

@@ -49,7 +49,7 @@ export default function Leaderboard({
           <h3 className="text-[11px] font-black uppercase tracking-widest" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
             {heading}
           </h3>
-          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {displayPeriod}
           </span>
         </div>
@@ -90,7 +90,7 @@ export default function Leaderboard({
           <>
             <div className="my-3 flex items-center gap-2">
               <span className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.04)' }} />
-              <span className="text-[9px]" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>tu posición</span>
+              <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>tu posición</span>
               <span className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.04)' }} />
             </div>
             <Row
@@ -105,7 +105,7 @@ export default function Leaderboard({
         )}
 
         {!loading && me.total > 0 && (
-          <p className="text-center text-[9px] mt-3" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-center text-[9px] mt-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {me.total} {me.total === 1 ? 'jugador' : 'jugadores'} en total
           </p>
         )}

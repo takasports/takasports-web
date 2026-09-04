@@ -171,7 +171,7 @@ export function CreateLeagueModal({ onClose, onCreated, apiMatches, apiJornada }
                 className="w-full py-3.5 rounded-xl font-black uppercase tracking-widest transition-opacity hover:opacity-85"
                 style={{
                   background: alias.trim() ? 'linear-gradient(135deg,#7C3AED,#5B21B6)' : 'rgba(255,255,255,0.04)',
-                  color: alias.trim() ? '#fff' : '#3A3A52',
+                  color: alias.trim() ? '#fff' : 'var(--text-muted)',
                   fontSize: 12, fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
                   boxShadow: alias.trim() ? '0 6px 20px rgba(124,58,237,0.35)' : 'none',
                   cursor: alias.trim() ? 'pointer' : 'not-allowed',
@@ -228,7 +228,7 @@ export function CreateLeagueModal({ onClose, onCreated, apiMatches, apiJornada }
                 </div>
               )}
 
-              <div className="flex items-center justify-between text-[10px]" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
+              <div className="flex items-center justify-between text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 <button onClick={() => setMatches(apiMatches.map((_, i) => i))} style={{ background: 'none', border: 'none', color: '#5A5A7A', cursor: 'pointer', fontFamily: 'var(--font-sport)', fontSize: 10 }}>
                   Seleccionar todos
                 </button>
@@ -281,7 +281,7 @@ export function CreateLeagueModal({ onClose, onCreated, apiMatches, apiJornada }
                   {copied ? '✓ Copiado' : 'Copiar link'}
                 </button>
               </div>
-              <p className="text-[10px]" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 Tus amigos podrán unirse en <span style={{ color: '#5A4878' }}>takasports.com/quiniela?liga={createdCode}</span>
               </p>
 

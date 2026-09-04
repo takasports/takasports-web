@@ -242,7 +242,7 @@ function HistoryCalendar({ history }: { history: Array<HistoryEntry> }) {
       <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
         {/* Weekday labels */}
         {['L','M','X','J','V','S','D'].map(d => (
-          <div key={d} className="text-center text-[8px] font-black pb-1" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{d}</div>
+          <div key={d} className="text-center text-[8px] font-black pb-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{d}</div>
         ))}
         {/* Pad start — figure out which weekday the first day falls on */}
         {(() => {
@@ -333,7 +333,7 @@ function HistoryCalendar({ history }: { history: Array<HistoryEntry> }) {
         {[['rgba(110,231,183,0.55)', '≥8/10'], ['rgba(252,211,77,0.5)', '5–7/10'], ['rgba(248,113,113,0.45)', '≤4/10'], ['rgba(255,255,255,0.04)', 'Sin jugar']].map(([bg, label]) => (
           <div key={label} className="flex items-center gap-1">
             <div className="w-2.5 h-2.5 rounded-sm" style={{ background: bg as string }} />
-            <span className="text-[8px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{label}</span>
+            <span className="text-[8px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{label}</span>
           </div>
         ))}
       </div>

@@ -219,12 +219,12 @@ export default async function EntryDetailPage(
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-16">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-4 text-[11px]"
-          style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+          style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           <Link href="/rankings" className="hover:brightness-150 transition-all"
-            style={{ color: '#7C3AED' }}>
+            style={{ color: '#A78BFA' }}>
             ← Rankings
           </Link>
-          <span style={{ color: '#3A3A52' }}>/</span>
+          <span style={{ color: 'var(--text-muted)' }}>/</span>
           <span className="truncate">{entry.name}</span>
         </div>
 
@@ -261,7 +261,7 @@ export default async function EntryDetailPage(
                   {ds.toFixed(1)}
                 </span>
                 <span className="block text-[9px] font-black uppercase tracking-widest"
-                  style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
+                  style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   / 100
                 </span>
               </div>
@@ -299,7 +299,7 @@ export default async function EntryDetailPage(
                 {ds.toFixed(1)}
               </span>
               <span className="block text-[9px] font-black uppercase tracking-widest mt-1"
-                style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 / 100
               </span>
             </div>
@@ -311,7 +311,7 @@ export default async function EntryDetailPage(
           <div className="rounded-2xl p-5 sm:p-6 mb-6"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-4"
-              style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               {isCreatorEntry(entry) ? 'Desglose · Ranking de Contenido' : 'Desglose · 4 factores objetivos'}
             </p>
             <div className="flex flex-col gap-4">
@@ -332,7 +332,7 @@ export default async function EntryDetailPage(
                         <span
                           key={p.red}
                           className="text-[10px] tabular-nums"
-                          style={{ color: p.medida ? '#6A6A82' : '#8A7A4A', fontFamily: 'var(--font-sport)' }}
+                          style={{ color: p.medida ? 'var(--text-muted)' : '#8A7A4A', fontFamily: 'var(--font-sport)' }}
                           title={p.medida
                             ? `${p.label}: cifra leída del perfil, se actualiza cada semana`
                             : `${p.label}: estimación sin perfil anclado — no se ha podido comprobar`}
@@ -347,7 +347,7 @@ export default async function EntryDetailPage(
               ))}
             </div>
             {audiencia?.some(p => !p.medida) && (
-              <p className="text-[10px] mt-3" style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[10px] mt-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 Las cifras marcadas <span style={{ color: '#A08A3A' }}>·aprox</span> son estimaciones:
                 no tenemos anclado su perfil en esa red, así que no se pueden comprobar ni actualizar.
               </p>
@@ -356,7 +356,7 @@ export default async function EntryDetailPage(
             {Math.abs(editorialAdj) >= 0.1 && !['creadores', 'periodistas', 'creadores_wwe'].includes(cat) && (
               <div className="mt-4 pt-4 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px]" style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     Base objetiva (factores)
                   </span>
                   <span className="text-sm tabular-nums font-bold" style={{ color: '#8A8AA0', fontFamily: 'var(--font-display)' }}>
@@ -371,7 +371,7 @@ export default async function EntryDetailPage(
                     </p>
                     {entry.editorialNote && (
                       <p className="text-[11px]"
-                        style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
+                        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                         &ldquo;{entry.editorialNote}&rdquo;
                       </p>
                     )}
@@ -412,7 +412,7 @@ export default async function EntryDetailPage(
           <div className="rounded-2xl p-5 sm:p-6 mb-6"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-3"
-              style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Aparece también en
             </p>
             <div className="flex flex-wrap gap-2">
@@ -437,7 +437,7 @@ export default async function EntryDetailPage(
           style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.1)' }}>
           <span className="text-sm flex-shrink-0 mt-0.5">ℹ️</span>
           <p className="text-[11px] leading-relaxed"
-            style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             El <span style={{ color: '#9B7CF6' }}>Ranking Taka</span> pondera rendimiento reciente ({pctOf(SCORE_WEIGHTS.rendimiento)} %), contexto competitivo ({pctOf(SCORE_WEIGHTS.contexto)} %), influencia mediática ({pctOf(SCORE_WEIGHTS.mediatico)} %) y narrativa pública ({pctOf(SCORE_WEIGHTS.narrativa)} %). Las tendencias reflejan el movimiento respecto al período anterior.
           </p>
         </div>

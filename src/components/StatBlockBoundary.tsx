@@ -39,7 +39,7 @@ export class StatBlockBoundary extends React.Component<Props, State> {
           <p className="text-[11px] font-black uppercase tracking-widest mb-1" style={{ color: '#f87171', fontFamily: 'var(--font-sport)' }}>
             Bloque temporalmente no disponible
           </p>
-          <p className="text-[10px]" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             Refresca en unos minutos. ID: <span className="tabular-nums">{this.props.blockId}</span>
           </p>
         </section>

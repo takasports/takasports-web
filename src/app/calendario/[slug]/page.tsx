@@ -284,12 +284,12 @@ export default async function CompetitionCalendarPage({
               {tableRows.length > 0 || scorers.length > 0 || groups.length > 0 ? (
                 <>
                   Ahora mismo no hay partidos programados. Más abajo tienes la clasificación y los goleadores al día, o consulta el{' '}
-                  <Link href="/calendario" style={{ color: '#7C3AED', textDecoration: 'underline' }}>calendario completo</Link>.
+                  <Link href="/calendario" style={{ color: '#A78BFA', textDecoration: 'underline' }}>calendario completo</Link>.
                 </>
               ) : (
                 <>
                   Aún no hay partidos programados para esta competición. Consulta el{' '}
-                  <Link href="/calendario" style={{ color: '#7C3AED', textDecoration: 'underline' }}>calendario completo</Link>{' '}o busca otra desde la portada.
+                  <Link href="/calendario" style={{ color: '#A78BFA', textDecoration: 'underline' }}>calendario completo</Link>{' '}o busca otra desde la portada.
                 </>
               )}
             </p>

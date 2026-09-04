@@ -160,7 +160,7 @@ export function HitosPanel({ user }: { user: User | null }) {
             <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: '#4A4A6A', fontFamily: 'var(--font-sport)' }}>
               {data.xp.toLocaleString()} XP
             </span>
-            <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+            <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               {data.nextLevel
                 ? `${data.xpToNext.toLocaleString()} XP a L${data.nextLevel.level}`
                 : '✦ Nivel máximo'}
@@ -192,7 +192,7 @@ export function HitosPanel({ user }: { user: User | null }) {
             </span>
           </div>
           {unlockedBadges.length === 0 ? (
-            <p className="text-[10px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Aún no desbloqueaste ningún badge. Apostá tu primera jornada para empezar.
             </p>
           ) : (

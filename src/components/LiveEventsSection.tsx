@@ -531,7 +531,7 @@ export default function LiveEventsSection({
           {displayEvents.length > 0 && (
             <>
               <span className="text-[10px]" style={{ color: '#3A3A4A' }}>·</span>
-              <span className="text-[11px]" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {displayEvents.length} {filter === 'mis-equipos' ? 'de tus equipos' : filter === 'hoy' ? 'hoy' : 'próximos eventos'}
               </span>
             </>
@@ -539,7 +539,7 @@ export default function LiveEventsSection({
         </div>
         {preview && (
           <Link href="/calendario" className="text-[11px] font-semibold transition-opacity hover:opacity-70"
-            style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
+            style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
             Ver todos →
           </Link>
         )}
@@ -578,7 +578,7 @@ export default function LiveEventsSection({
         <div className="rounded-2xl px-5 py-6 flex items-center gap-3"
           style={{ background: 'rgba(124,58,237,0.04)', border: '1px dashed rgba(124,58,237,0.18)' }}>
           <span className="w-4 h-4 rounded-full animate-spin flex-shrink-0"
-            style={{ border: '2px solid rgba(124,58,237,0.25)', borderTopColor: '#7C3AED' }} />
+            style={{ border: '2px solid rgba(124,58,237,0.25)', borderTopColor: '#A78BFA' }} />
           <p className="text-[12px]" style={{ color: '#9090B0', fontFamily: 'var(--font-sport)' }}>
             Cargando partidos…
           </p>
@@ -599,7 +599,7 @@ export default function LiveEventsSection({
               <p className="font-black text-[13px]" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
                 {emptyTitle}
               </p>
-              <p className="text-[11px]" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {emptySub}
               </p>
             </div>
@@ -608,7 +608,7 @@ export default function LiveEventsSection({
             <Link href="/calendario"
               className="flex-shrink-0 text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
               style={{
-                color: '#7C3AED',
+                color: '#A78BFA',
                 background: 'rgba(124,58,237,0.08)',
                 border: '1px solid rgba(124,58,237,0.25)',
                 fontFamily: 'var(--font-sport)',

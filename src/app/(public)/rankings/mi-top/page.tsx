@@ -45,7 +45,7 @@ export default async function MiTopPage() {
       <div className="max-w-3xl mx-auto">
         <Link href="/rankings"
           className="inline-block text-[10px] font-black uppercase tracking-[0.2em] mb-3"
-          style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
+          style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
           ← Volver al Ranking
         </Link>
 

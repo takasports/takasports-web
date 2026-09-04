@@ -63,7 +63,7 @@ function DateSeparator({ label }: { label: DateGroup }) {
     <div className="flex items-center gap-3 py-2">
       <span
         className="text-[9px] font-black uppercase tracking-[0.18em] flex-shrink-0"
-        style={{ color: '#38384E', fontFamily: 'var(--font-sport)' }}
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
       >
         {label}
       </span>

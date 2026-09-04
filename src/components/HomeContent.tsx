@@ -172,7 +172,7 @@ function GamesSection() {
         <Link
           href="/juegos"
           className="text-[11px] font-semibold transition-opacity hover:opacity-70"
-          style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
+          style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
         >
           Ver todos →
         </Link>
@@ -261,7 +261,7 @@ function SectionCTA({ href, label }: { href: string; label: string }) {
     <a
       href={href}
       className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest transition-opacity hover:opacity-70"
-      style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
+      style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
     >
       {label}
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">

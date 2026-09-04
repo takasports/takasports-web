@@ -358,7 +358,7 @@ export function CompGroupHeader({ comp, accent, count, first, crest, slug, banne
           /* El canal de toda la liga, una sola vez. Ver lib/comp-group-channel.ts. */
           <span className="flex items-center gap-1 flex-shrink-0" style={{ maxWidth: '42%' }}>
             <TvIcon size={10} />
-            <span className="text-[9.5px] font-bold uppercase tracking-[0.05em] truncate" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+            <span className="text-[9.5px] font-bold uppercase tracking-[0.05em] truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               {channel}
             </span>
           </span>
@@ -426,6 +426,11 @@ export function FormBars({ form, align, reserve }: { form?: FormResult[]; align:
   return (
     <span
       className={`flex items-center gap-[2.5px] mt-[3px] ${align === 'right' ? 'justify-end' : 'justify-start'}`}
+      // `role="img"`: sin rol, un <span> NO admite aria-label y el lector de
+      // pantalla se come la forma reciente (axe: aria-prohibited-attr, 17 veces
+      // en /calendario). Con el rol, las cinco rayitas se anuncian como una sola
+      // imagen con su texto: «Forma reciente: V-V-D-V-D».
+      role="img"
       aria-label={`Forma reciente: ${title}`}
       title={`Últimos ${Math.min(form.length, 5)}: ${title}`}
     >
@@ -1120,7 +1125,7 @@ export function SectionHeader({ icon, label, color, count, hint }: {
         </span>
       )}
       {hint && (
-        <span className="text-[9px] ml-auto" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+        <span className="text-[9px] ml-auto" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           {hint}
         </span>
       )}

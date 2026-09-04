@@ -855,7 +855,7 @@ function ResultOverlay({ solved, grid, puzzle, dayKey, validAnswers, streak, onC
                                 </li>
                               ))}
                               {validAnswers[r][c].length > 3 && (
-                                <li className="text-[8px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+                                <li className="text-[8px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                                   +{validAnswers[r][c].length - 3} más
                                 </li>
                               )}

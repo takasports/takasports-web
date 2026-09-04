@@ -195,7 +195,7 @@ function CandidateGrid({ candidates, t1 }: { candidates: TeamCandidate[]; t1?: s
         <div key={g.label}>
           {groups.length > 1 && (
             <div className="text-[9px] font-black uppercase tracking-widest mb-2"
-              style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>{g.label}</div>
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{g.label}</div>
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {g.items.map(c => {

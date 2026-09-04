@@ -148,7 +148,7 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
 
       <div className="flex items-center gap-1.5 mb-2">
         <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{ background: '#4ade80', boxShadow: '0 0 6px rgba(74,222,128,0.7)' }} />
-        <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
+        <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           Clasificación en vivo
         </p>
       </div>
@@ -162,7 +162,7 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
       )}
 
       {!loading && ranked.length === 0 && (
-        <p className="text-[10px] mb-3" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+        <p className="text-[10px] mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           Nadie ha enviado picks todavía. Sé el primero.
         </p>
       )}
@@ -179,7 +179,7 @@ export function LeagueExpanded({ league, localResults }: { league: League; local
                   border: gold ? '1px solid rgba(245,158,11,0.2)' : isMe ? '1px solid rgba(124,58,237,0.18)' : '1px solid transparent',
                 }}
               >
-                <span className="text-[10px] font-black tabular-nums w-4" style={{ color: gold ? '#fbbf24' : '#3A3A58', fontFamily: 'var(--font-sport)' }}>
+                <span className="text-[10px] font-black tabular-nums w-4" style={{ color: gold ? '#fbbf24' : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   {pos + 1}
                 </span>
                 <span className="flex-1 text-[11px] font-bold" style={{ color: gold || isMe ? '#F0F0F5' : '#8080A0', fontFamily: 'var(--font-display)' }}>

@@ -176,7 +176,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="tk-glass rounded-xl p-4 mb-4">
       <p className="text-[9px] font-black uppercase tracking-widest mb-4"
-        style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         {title}
       </p>
       {children}
@@ -298,7 +298,7 @@ function InfoRow({ match }: { match: MatchDetail }) {
             <path d="M6 1C4.34 1 3 2.34 3 4c0 2.5 3 7 3 7s3-4.5 3-7c0-1.66-1.34-3-3-3z" stroke="#5A5A6A" strokeWidth="1.2" />
             <circle cx="6" cy="4" r="1" fill="#5A5A6A" />
           </svg>
-          <span className="text-[10px]" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>{match.venue}</span>
+          <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{match.venue}</span>
         </div>
       )}
       {match.broadcast && (() => {
@@ -337,7 +337,7 @@ function StatBar({ stat }: { stat: MatchStat }) {
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between text-[11px]" style={{ fontFamily: 'var(--font-sport)' }}>
         <span className="font-black" style={{ color: '#E0E0F0' }}>{stat.home}</span>
-        <span className="font-semibold uppercase tracking-widest text-[9px]" style={{ color: '#7C7C8C' }}>{stat.label}</span>
+        <span className="font-semibold uppercase tracking-widest text-[9px]" style={{ color: 'var(--text-muted)' }}>{stat.label}</span>
         <span className="font-black" style={{ color: '#E0E0F0' }}>{stat.away}</span>
       </div>
       {!isNaN(homePct) && (
@@ -548,7 +548,7 @@ function CommentaryFeed({ entries, leagueSlug }: { entries: CommentaryEntry[]; l
             <li key={i} className="relative grid items-center gap-2 py-1.5"
               style={{ gridTemplateColumns: '40px 24px 1fr' }}>
               <span className="text-right tabular-nums text-[10px] font-black"
-                style={{ color: e.key ? '#C4B5FD' : '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+                style={{ color: e.key ? '#C4B5FD' : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {e.minute ?? ''}
               </span>
               <span className="inline-flex items-center justify-center flex-shrink-0 z-10"
@@ -569,7 +569,7 @@ function CommentaryFeed({ entries, leagueSlug }: { entries: CommentaryEntry[]; l
                   </span>
                 )}
                 {e.assist && (
-                  <span className="text-[10px]" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     {' '}(asist. {e.assist})
                   </span>
                 )}
@@ -598,7 +598,7 @@ function QuarterTable({ home, away, homeAbbr, awayAbbr }: {
     <div className="overflow-x-auto">
       <table className="w-full text-[11px]" style={{ fontFamily: 'var(--font-sport)' }}>
         <thead>
-          <tr style={{ color: '#7C7C8C' }}>
+          <tr style={{ color: 'var(--text-muted)' }}>
             <th className="text-left font-semibold pb-2">EQUIPO</th>
             {labels.map(l => <th key={l} className="font-semibold pb-2 px-1 tabular-nums" style={{ width: 32 }}>{l}</th>)}
             <th className="font-black pb-2 px-1 tabular-nums" style={{ color: '#E0E0F0' }}>T</th>
@@ -634,12 +634,12 @@ function LeaderCard({ leader, leagueSlug }: { leader: BasketballLeader; leagueSl
         <p className="text-[11px] font-black truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
           <PlayerName name={leader.player} playerId={leader.playerId} leagueSlug={leagueSlug} />
         </p>
-        <p className="text-[9px] uppercase tracking-widest" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>{leader.category}</p>
+        <p className="text-[9px] uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{leader.category}</p>
       </div>
       <div className="text-right">
         <p className="font-black tabular-nums" style={{ color: accent, fontFamily: 'var(--font-display)', fontSize: 20, lineHeight: 1 }}>{leader.value}</p>
         {leader.summary && (
-          <p className="text-[9px]" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>{leader.summary}</p>
+          <p className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{leader.summary}</p>
         )}
       </div>
     </div>
@@ -660,7 +660,7 @@ function BoxscoreTeam({ team, abbr, home }: { team: BoxTeam; abbr: string; home:
       </div>
       <table className="w-full" style={{ fontFamily: 'var(--font-sport)' }}>
         <thead>
-          <tr className="text-[10px]" style={{ color: '#7C7C8C' }}>
+          <tr className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
             <th className="text-left font-normal pb-1.5">Jugador</th>
             <th className="text-center font-normal pb-1.5 w-9">PTS</th>
             <th className="text-center font-normal pb-1.5 w-9">REB</th>
@@ -673,12 +673,12 @@ function BoxscoreTeam({ team, abbr, home }: { team: BoxTeam; abbr: string; home:
             <tr key={`${p.name}-${i}`} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
               <td className="py-1.5 pr-2">
                 <span className="text-[12.5px]" style={{ color: '#D8D8E8' }}>{p.name}</span>
-                {p.starter && p.pos && <span className="ml-1 text-[9px]" style={{ color: '#7C7C8C' }}>{p.pos}</span>}
+                {p.starter && p.pos && <span className="ml-1 text-[9px]" style={{ color: 'var(--text-muted)' }}>{p.pos}</span>}
               </td>
               <td className="text-center text-[13px] font-black tabular-nums" style={{ color: '#EDEDF7' }}>{p.pts ?? '–'}</td>
               <td className="text-center text-[13px] tabular-nums" style={{ color: '#9A9AAE' }}>{p.reb ?? '–'}</td>
               <td className="text-center text-[13px] tabular-nums" style={{ color: '#9A9AAE' }}>{p.ast ?? '–'}</td>
-              <td className="text-center text-[13px] tabular-nums" style={{ color: '#7C7C8C' }}>{p.min ?? '–'}</td>
+              <td className="text-center text-[13px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{p.min ?? '–'}</td>
             </tr>
           ))}
         </tbody>
@@ -719,7 +719,7 @@ function TennisForm({ match }: { match: MatchDetail }) {
                   style={{
                     background: m.won == null ? 'rgba(255,255,255,0.05)'
                       : m.won ? 'rgba(74,222,128,0.16)' : 'rgba(239,68,68,0.16)',
-                    color: m.won == null ? '#7C7C8C' : m.won ? '#4ade80' : '#EF4444',
+                    color: m.won == null ? 'var(--text-muted)' : m.won ? '#4ade80' : '#EF4444',
                     fontFamily: 'var(--font-display)',
                   }}>
                   {m.won == null ? '·' : m.won ? 'V' : 'D'}
@@ -854,7 +854,7 @@ function TennisBlock({ match }: { match: MatchDetail }) {
                     <span key={i} className="w-7 h-7 flex items-center justify-center rounded-md font-black tabular-nums text-sm"
                       style={{
                         background: isSetWinner ? `${sideCol}1f` : 'rgba(255,255,255,0.04)',
-                        color: isSetWinner ? sideCol : isLiveSet ? '#E0E0F0' : '#7C7C8C',
+                        color: isSetWinner ? sideCol : isLiveSet ? '#E0E0F0' : 'var(--text-muted)',
                         border: isLiveSet ? '1px solid rgba(239,68,68,0.4)' : '1px solid transparent',
                         fontFamily: 'var(--font-display)',
                       }}>
@@ -868,7 +868,7 @@ function TennisBlock({ match }: { match: MatchDetail }) {
         })}
       </div>
       <p className="text-[10px] text-center mt-4 uppercase tracking-widest font-black"
-        style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         {match.statusLabel}
       </p>
     </div>
@@ -920,7 +920,7 @@ function MmaBlock({ match }: { match: MatchDetail }) {
           <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
             {m.weightClass && <Pill color="#f87171">{m.weightClass}</Pill>}
             {m.cardName && (
-              <span className="text-[10px] uppercase tracking-widest" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+              <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {m.cardName}
               </span>
             )}
@@ -929,9 +929,9 @@ function MmaBlock({ match }: { match: MatchDetail }) {
         <div className="flex items-start justify-between gap-4">
           {a ? <FighterCard fighter={a} side="home" /> : <div className="flex-1" />}
           <div className="flex flex-col items-center justify-center gap-2 flex-shrink-0 pt-6">
-            <span className="font-black" style={{ color: '#3A3A5A', fontFamily: 'var(--font-display)', fontSize: 22 }}>vs</span>
+            <span className="font-black" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)', fontSize: 22 }}>vs</span>
             <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
-              style={{ color: '#7C7C8C', background: 'rgba(255,255,255,0.04)', fontFamily: 'var(--font-sport)' }}>
+              style={{ color: 'var(--text-muted)', background: 'rgba(255,255,255,0.04)', fontFamily: 'var(--font-sport)' }}>
               {match.statusLabel}
             </span>
           </div>
@@ -941,13 +941,13 @@ function MmaBlock({ match }: { match: MatchDetail }) {
       <Section title="Detalles del combate">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>Rounds</p>
+            <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Rounds</p>
             <p className="text-sm font-black" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
               {m.rounds ? `${m.rounds} programados` : '—'}
             </p>
           </div>
           <div>
-            <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>Final</p>
+            <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Final</p>
             <p className="text-sm font-black" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
               {m.endRound ? `R${m.endRound}${m.endTime ? ` · ${m.endTime}` : ''}` : '—'}
             </p>
@@ -985,14 +985,14 @@ function FightCardList({ fights }: { fights: MmaFight[] }) {
                     </span>
                   )}
                   {f.weightClass && (
-                    <span className="text-[9px] uppercase tracking-wider" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+                    <span className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                       {f.weightClass}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 text-sm truncate" style={{ fontFamily: 'var(--font-sport)' }}>
                   <span style={{ color: a?.winner ? '#F0F0F8' : '#9A9AB0', fontWeight: a?.winner ? 900 : 600 }}>{a?.name ?? '—'}</span>
-                  <span style={{ color: '#4A4A5A' }}>vs</span>
+                  <span style={{ color: 'var(--text-muted)' }}>vs</span>
                   <span style={{ color: b?.winner ? '#F0F0F8' : '#9A9AB0', fontWeight: b?.winner ? 900 : 600 }}>{b?.name ?? '—'}</span>
                 </div>
               </div>
@@ -1047,12 +1047,12 @@ function RacingBlock({ match }: { match: MatchDetail }) {
               <div key={i} className="flex items-center gap-3 py-1.5 px-2 rounded-md"
                 style={{ background: i < 3 ? 'rgba(245,158,11,0.05)' : 'transparent' }}>
                 <span className="w-6 text-center font-black tabular-nums"
-                  style={{ color: i === 0 ? '#FCD34D' : i === 1 ? '#D1D5DB' : i === 2 ? '#D97706' : '#7C7C8C', fontFamily: 'var(--font-display)' }}>
+                  style={{ color: i === 0 ? '#FCD34D' : i === 1 ? '#D1D5DB' : i === 2 ? '#D97706' : 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
                   {row.pos}
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-[12px] font-black truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>{row.driver}</p>
-                  {row.team && <p className="text-[10px] truncate" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>{row.team}</p>}
+                  {row.team && <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{row.team}</p>}
                 </div>
                 {row.time && (
                   <span className="text-[11px] font-black tabular-nums" style={{ color: '#9CA3AF', fontFamily: 'var(--font-display)' }}>{row.time}</span>
@@ -1102,7 +1102,7 @@ function GolfBlock({ match }: { match: MatchDetail }) {
                 <span className="text-[11px] font-black tabular-nums"
                   style={{ color: '#A78BFA', fontFamily: 'var(--font-display)' }}>{row.score}</span>
                 {row.today && (
-                  <span className="text-[10px] tabular-nums" style={{ color: '#7C7C8C' }}>{row.today}</span>
+                  <span className="text-[10px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{row.today}</span>
                 )}
               </div>
             ))}
@@ -1326,7 +1326,7 @@ function BenchSection({ home, away, homeTeam, awayTeam, leagueSlug }: {
               return (
               <div key={i} className="flex items-center gap-2">
                 <span className="w-5 text-[9px] font-black tabular-nums text-right flex-shrink-0"
-                  style={{ color: '#7C7C8C' }}>
+                  style={{ color: 'var(--text-muted)' }}>
                   {p.jersey ?? '—'}
                 </span>
                 {href ? <Link href={href} prefetch={false}>{nameEl}</Link> : nameEl}
@@ -1370,7 +1370,7 @@ function LineupField({ lineups, homeTeam, awayTeam, leagueSlug, scoring }: {
             {lineups.away.formation ?? '—'}
           </span>
         </div>
-        <span className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+        <span className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           Formaciones
         </span>
         <div className="flex flex-col items-end gap-0.5">
@@ -1488,7 +1488,7 @@ function MatchPulse({ estimate, dominance, homeAbbr, awayAbbr }: {
           <div style={{ width: `${dominance.home}%`, background: HOME }} />
           <div style={{ width: `${dominance.away}%`, background: AWAY }} />
         </div>
-        <p className="text-[10px] mt-2.5" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+        <p className="text-[10px] mt-2.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           Reparto de {dominance.basis.join(' y ')}. Orientativo.
         </p>
       </Section>
@@ -1514,7 +1514,7 @@ function MatchPulse({ estimate, dominance, homeAbbr, awayAbbr }: {
             </div>
           ))}
         </div>
-        <p className="text-[10px] mt-3" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+        <p className="text-[10px] mt-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           Estimación a partir de la clasificación y la forma reciente. Orientativa — no es un pronóstico de apuesta.
         </p>
       </Section>
@@ -1544,7 +1544,7 @@ function FormGuide({ homeTeam, awayTeam, forms }: { homeTeam?: string; awayTeam?
           </div>
         )}
       </div>
-      <p className="text-[10px] mt-3" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+      <p className="text-[10px] mt-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         Últimos resultados · más reciente a la derecha
       </p>
     </Section>
@@ -1635,7 +1635,7 @@ function H2HBlock({ h2h, homeTeam, awayTeam }: { h2h: H2HResult; homeTeam: strin
                 <span className="flex items-center gap-1.5 tabular-nums font-black px-2"
                   style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)', fontSize: 14 }}>
                   <span>{m.homeScore ?? '-'}</span>
-                  <span style={{ color: '#38384A', fontWeight: 400 }}>·</span>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>·</span>
                   <span>{m.awayScore ?? '-'}</span>
                 </span>
                 <span className="text-[12px] font-bold truncate pl-1"
@@ -1661,7 +1661,7 @@ function H2HBlock({ h2h, homeTeam, awayTeam }: { h2h: H2HResult; homeTeam: strin
             )
           })}
         </div>
-        <p className="text-[10px] mt-3 text-center" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+        <p className="text-[10px] mt-3 text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           W = victoria local · L = victoria visitante · D = empate
         </p>
       </Section>

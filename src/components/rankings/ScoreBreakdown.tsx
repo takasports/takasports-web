@@ -57,7 +57,7 @@ export default function ScoreBreakdown({
   return (
     <div className={compact ? 'pt-1' : 'pt-2'}>
       <p className="text-[8px] font-black uppercase tracking-[0.15em] mb-2"
-        style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         Desglose Ranking Taka
       </p>
 
@@ -92,7 +92,7 @@ export default function ScoreBreakdown({
 
       <div className="mt-3 pt-2 flex flex-col gap-1" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="flex justify-between items-center">
-          <span className="text-[9px]" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             Base objetiva (sin ajuste)
           </span>
           <span className="text-[10px] tabular-nums font-bold"
@@ -103,7 +103,7 @@ export default function ScoreBreakdown({
         {boost !== 0 && (
           <div className="flex justify-between items-start gap-2">
             <span className="text-[9px] leading-snug flex-1 inline-flex items-start gap-1.5"
-              style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               <span className="mt-0.5"><PinIcon size={10} /></span>
               <span>
                 Ajuste editorial

@@ -239,7 +239,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                 className="flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-opacity hover:opacity-85"
                 style={{
                   background: joinAlias.trim() ? 'linear-gradient(135deg,#7C3AED,#5B21B6)' : 'rgba(255,255,255,0.04)',
-                  color: joinAlias.trim() ? '#fff' : '#3A3A52',
+                  color: joinAlias.trim() ? '#fff' : 'var(--text-muted)',
                   fontFamily: 'var(--font-sport)',
                   boxShadow: joinAlias.trim() ? '0 4px 16px rgba(124,58,237,0.3)' : 'none',
                   cursor: joinAlias.trim() ? 'pointer' : 'not-allowed',
@@ -566,7 +566,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                   <button
                     onClick={() => setShowAuthBanner(false)}
                     className="text-[9px] text-center"
-                    style={{ color: '#3A3A52', background: 'none', border: 'none', cursor: 'pointer' }}
+                    style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
                   >
                     Ahora no
                   </button>
@@ -612,7 +612,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                     <p className="font-black text-sm" style={{ color: div.color, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
                       División {div.name}
                     </p>
-                    <p className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+                    <p className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                       {history.length === 0 ? 'Completa tu primera jornada' : `${history.length} jornada${history.length !== 1 ? 's' : ''} completada${history.length !== 1 ? 's' : ''}`}
                     </p>
                   </div>
@@ -680,7 +680,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                   <p className="text-xs font-black" style={{ color: '#C0C0D8', fontFamily: 'var(--font-display)' }}>
                     {push.status === 'subscribed' ? 'Alertas activas' : 'Avisos de cierre'}
                   </p>
-                  <p className="text-[9px]" style={{ color: push.status === 'denied' ? '#f87171' : '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+                  <p className="text-[9px]" style={{ color: push.status === 'denied' ? '#f87171' : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     {push.status === 'denied' ? 'Permisos denegados en el navegador'
                       : push.status === 'subscribed' ? 'Te avisamos antes de cada cierre'
                       : 'Activa para no perder la jornada'}
@@ -750,7 +750,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                     <div className="flex flex-col gap-1">
                       {history.slice(-4).reverse().map((h, i) => (
                         <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                          <span className="text-[9px] font-black flex-shrink-0" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)', minWidth: 60 }}>{h.jornada}</span>
+                          <span className="text-[9px] font-black flex-shrink-0" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', minWidth: 60 }}>{h.jornada}</span>
                           <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 999, overflow: 'hidden' }}>
                             <div style={{ height: '100%', width: `${Math.round((h.correct/h.total)*100)}%`, background: '#7C3AED', borderRadius: 999 }} />
                           </div>
@@ -796,7 +796,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                     const color = pct >= 0.65 ? '#22c55e' : pct >= 0.45 ? '#A78BFA' : '#f87171'
                     return (
                       <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid transparent' }}>
-                        <span className="text-[10px] font-semibold" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+                        <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                           {h.jornada}
                         </span>
                         <span className="text-[10px] font-black tabular-nums" style={{ color, fontFamily: 'var(--font-display)' }}>
@@ -806,7 +806,7 @@ export default function QuinielaClient({ embedded = false }: { embedded?: boolea
                     )
                   })}
                   {history.length === 0 && !saved && (
-                    <p className="text-[9px] text-center py-1" style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
+                    <p className="text-[9px] text-center py-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                       Aún no has jugado ninguna jornada
                     </p>
                   )}

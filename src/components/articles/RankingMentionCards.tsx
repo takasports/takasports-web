@@ -12,7 +12,7 @@ export default function RankingMentionCards({ entries }: { entries: MatchedEntry
     <div style={{ maxWidth: 680, margin: '2.5rem 0' }}>
       <p
         className="text-[10px] font-black uppercase tracking-[0.2em] mb-2"
-        style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}
+        style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}
       >
         En el Ranking Taka
       </p>
@@ -66,7 +66,7 @@ export default function RankingMentionCards({ entries }: { entries: MatchedEntry
                   </p>
                   <p
                     className="text-[10px] truncate"
-                    style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}
+                    style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
                   >
                     {e.subtitle ?? e.category ?? ''}
                   </p>
@@ -95,9 +95,9 @@ export default function RankingMentionCards({ entries }: { entries: MatchedEntry
       </div>
       <p
         className="text-[9px] mt-2 text-right"
-        style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
       >
-        <Link href="/rankings" style={{ color: '#7C3AED' }}>Ver el Ranking completo →</Link>
+        <Link href="/rankings" style={{ color: '#A78BFA' }}>Ver el Ranking completo →</Link>
       </p>
     </div>
   )

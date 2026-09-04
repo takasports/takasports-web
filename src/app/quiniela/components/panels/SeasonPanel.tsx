@@ -71,7 +71,7 @@ export function SeasonPanel({ user }: { user: User | null }) {
       <div className="rounded-2xl p-8 flex flex-col items-center gap-3 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <span style={{ fontSize: 32 }}>🔮</span>
         <p className="font-black text-sm" style={{ color: '#C4B5FD', fontFamily: 'var(--font-display)' }}>Predicciones de temporada</p>
-        <p className="text-xs" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+        <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           Las preguntas de temporada aparecerán aquí cuando el admin las active.
         </p>
       </div>

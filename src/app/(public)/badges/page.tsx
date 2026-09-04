@@ -115,7 +115,7 @@ export default function BadgesPage() {
               <Link href="/juegos" className="text-[11px] transition-opacity hover:opacity-70" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}>
                 Juegos
               </Link>
-              <span style={{ color: '#3A3A5A', fontSize: 10 }}>›</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>›</span>
               <span className="text-[11px]" style={{ color: '#5A5A7A', fontFamily: 'var(--font-sport)' }}>Badges</span>
             </div>
             <h1

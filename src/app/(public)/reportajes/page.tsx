@@ -88,7 +88,7 @@ export default async function ReportajesPage() {
           <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800, color: '#C8C8DC', marginBottom: 8 }}>
             Todavía no hay reportajes publicados
           </p>
-          <p style={{ fontSize: '0.88rem', color: '#7C7C8C', marginBottom: 20 }}>
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: 20 }}>
             Estamos trabajando en las primeras piezas de fondo. Mientras tanto, tienes toda la actualidad en el feed.
           </p>
           <Link

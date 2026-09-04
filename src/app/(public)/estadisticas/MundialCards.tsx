@@ -84,7 +84,7 @@ export function WorldCupGroupCard({ block, accent, isLive, meta }: {
 
       {wcStarted && (
         <div className="px-4 pt-1.5 pb-1 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest"
-          style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.015)' }}>
+          style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.015)' }}>
           <span className="w-5 flex-shrink-0" />
           <span className="flex-1">Selección</span>
           {/* Mobile: solo PJ, GD, PTS */}
@@ -119,7 +119,7 @@ export function WorldCupGroupCard({ block, accent, isLive, meta }: {
                 borderLeft: isPromoted ? `3px solid ${accent}50` : '3px solid transparent',
               }}>
               <span className="w-5 flex-shrink-0 text-[10px] font-black tabular-nums"
-                style={{ color: isPromoted ? accent : '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                style={{ color: isPromoted ? accent : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {row.rank}
               </span>
               <span className="flex-1 min-w-0 text-[12px] font-semibold truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
@@ -140,7 +140,7 @@ export function WorldCupGroupCard({ block, accent, isLive, meta }: {
                   ))}
                 </>
               ) : (
-                <span className="text-[10px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>Sin jugar</span>
+                <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Sin jugar</span>
               )}
             </div>
           )

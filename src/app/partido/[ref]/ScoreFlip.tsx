@@ -50,7 +50,7 @@ export function ScoreFlip({
       style={{ color: '#F0F0FA', fontFamily: 'var(--font-headline)', gap: v.gap }}
     >
       <Side value={home} fontSize={v.fontSize} />
-      <span aria-hidden="true" style={{ color: '#38384A', fontWeight: 400, fontSize: v.fontSize }}>·</span>
+      <span aria-hidden="true" style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: v.fontSize }}>·</span>
       <Side value={away} fontSize={v.fontSize} />
     </span>
   )

@@ -100,12 +100,12 @@ function ColumnHeader() {
     <div className="flex items-center gap-3 px-4 pb-2 mb-1">
       <span className="w-7 flex-shrink-0" /><span className="w-9 flex-shrink-0" />
       <span className="flex-1 text-[9px] font-black uppercase tracking-widest"
-        style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         Nombre
       </span>
       <span className="hidden xl:block max-w-[260px] flex-shrink-0" />
       <span className="text-[9px] font-black uppercase tracking-widest ml-auto"
-        style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         Puntos
       </span>
       <span className="w-5 flex-shrink-0" />
@@ -464,14 +464,14 @@ export default function RankingsClient({
                 className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
                 style={{ background: 'rgba(196,181,253,0.12)', color: '#C4B5FD', border: '1px solid rgba(196,181,253,0.3)', fontFamily: 'var(--font-sport)' }}
               >
-                👑 Reyes del deporte <span style={{ color: '#7C3AED' }}>→</span>
+                👑 Reyes del deporte <span style={{ color: '#A78BFA' }}>→</span>
               </Link>
               <Link
                 href="/rankings/comparar"
                 className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
                 style={{ background: 'rgba(124,58,237,0.12)', color: '#C4B5FD', border: '1px solid rgba(124,58,237,0.3)', fontFamily: 'var(--font-sport)' }}
               >
-                ⚖️ Comparador <span style={{ color: '#7C3AED' }}>→</span>
+                ⚖️ Comparador <span style={{ color: '#A78BFA' }}>→</span>
               </Link>
               <Link
                 href="/rankings/mi-top"
@@ -564,7 +564,7 @@ export default function RankingsClient({
         <div className="flex flex-col sm:flex-row gap-2 mb-3 mt-3">
           <div className="relative flex-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none inline-flex items-center"
-              style={{ color: '#5A5A72' }}><SearchIcon size={13} /></span>
+              style={{ color: 'var(--text-muted)' }}><SearchIcon size={13} /></span>
             <input
               type="text"
               placeholder="Buscar en TODOS los rankings (ej: Messi, Ferrari, Pedrerol)..."
@@ -591,7 +591,7 @@ export default function RankingsClient({
 
         <div className="flex items-center justify-between gap-2 mb-6 mt-2">
           <span className="text-[9px] font-black uppercase tracking-widest"
-            style={{ color: isCreador ? '#f59e0b50' : `${sportAccent}50`, fontFamily: 'var(--font-sport)' }}>
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {isCreador ? '✦ Ranking editorial · Top curado por disciplina' : '✦ Ranking deportivo · Top 100 ampliable'}
           </span>
           {(!isCreador && hasHotData) && (
@@ -600,7 +600,7 @@ export default function RankingsClient({
               className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
               style={{
                 background: sortMode === 'hot' ? 'rgba(245,158,11,0.14)' : 'rgba(255,255,255,0.04)',
-                color: sortMode === 'hot' ? '#f59e0b' : '#4A4A62',
+                color: sortMode === 'hot' ? '#f59e0b' : 'var(--text-muted)',
                 border: sortMode === 'hot' ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.06)',
                 cursor: 'pointer', fontFamily: 'var(--font-sport)',
               }}>
@@ -671,11 +671,11 @@ export default function RankingsClient({
         {/* ── SIN RESULTADOS ───────────────────────────────────── */}
         {searchQuery.trim().length < 2 && finalEntries.length === 0 && (
           <div className="py-16 text-center flex flex-col items-center gap-2">
-            <span style={{ color: '#5A5A72' }}><SearchIcon size={28} /></span>
+            <span style={{ color: 'var(--text-muted)' }}><SearchIcon size={28} /></span>
             <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               {q ? 'Sin coincidencias' : 'Sin datos para esta combinación'}
             </p>
-            <p className="text-xs" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               {q ? `No encontramos a "${searchQuery}" en este ranking.` :
                'Prueba a cambiar el filtro o seleccionar otro deporte — ampliamos el índice cada semana.'}
             </p>
@@ -691,7 +691,7 @@ export default function RankingsClient({
               <>
                 {podios.some(g => g.seguido) && (
                   <p className="flex items-center gap-2.5 px-1 pb-2 text-[9.5px] font-black uppercase tracking-[0.18em]"
-                    style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
+                    style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     Tus deportes
                     <span aria-hidden="true" className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
                   </p>
@@ -701,7 +701,7 @@ export default function RankingsClient({
                     {/* Separador entre lo tuyo y el resto: solo donde cambia. */}
                     {g.seguido === false && podios[i - 1]?.seguido === true && (
                       <p className="flex items-center gap-2.5 px-1 pt-3 pb-2 text-[9.5px] font-black uppercase tracking-[0.18em]"
-                        style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
+                        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                         El resto
                         <span aria-hidden="true" className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
                       </p>
@@ -717,7 +717,7 @@ export default function RankingsClient({
                   <h2 className="font-black" style={{ fontFamily: 'var(--font-display)', fontSize: 21, color: '#F8F8FF', letterSpacing: '-0.01em' }}>
                     Todos los deportes
                   </h2>
-                  <p className="text-[11.5px] mt-1 mb-3" style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
+                  <p className="text-[11.5px] mt-1 mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     La lista completa, mezclando deportes. {finalEntries.length} {finalEntries.length === 1 ? 'nombre' : 'nombres'}.
                   </p>
                   <ColumnHeader />
@@ -837,14 +837,14 @@ export default function RankingsClient({
                   </span>
                 </div>
                 <p className="text-[10px] leading-relaxed"
-                  style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
+                  style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   {f.desc}
                 </p>
               </div>
             ))}
           </div>
           <p className="text-[10px] leading-relaxed mt-3"
-            style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             El índice se recalcula cada domingo con datos oficiales de ESPN, ATP/WTA, Jolpica F1 y otras fuentes
             públicas. Las tendencias <span style={{ color: '#22c55e' }}>↑</span> /{' '}
             <span style={{ color: '#f87171' }}>↓</span> comparan con la edición anterior. El ajuste editorial

@@ -70,7 +70,7 @@ export default function SportPodium({
           {entries.map((entry, i) => (
             <RankRow key={entry.id} entry={{ ...entry, rank: i + 1 }} maxScore={maxScore} minScore={minScore} />
           ))}
-          <p className="text-[10.5px] leading-snug px-1" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[10.5px] leading-snug px-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {total === 1
               ? 'Solo hay un nombre de este deporte en el índice: sin tres no hay podio.'
               : 'Aún no hay tres nombres de este deporte en el índice.'}

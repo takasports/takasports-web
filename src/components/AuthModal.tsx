@@ -290,7 +290,7 @@ export default function AuthModal({ onClose, initialMode, next }: AuthModalProps
                 {/* Divider */}
                 <div className="flex items-center gap-3">
                   <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
-                  <span className="text-[10px] uppercase tracking-widest" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>o con email</span>
+                  <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>o con email</span>
                   <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
                 </div>
 
@@ -360,7 +360,7 @@ export default function AuthModal({ onClose, initialMode, next }: AuthModalProps
                   className="w-full py-2.5 rounded-2xl text-xs font-semibold transition-opacity hover:opacity-70"
                   style={{
                     background: 'rgba(255,255,255,0.04)',
-                    color: '#5A5A72',
+                    color: 'var(--text-muted)',
                     border: '1px solid rgba(255,255,255,0.06)',
                     fontFamily: 'var(--font-sport)',
                   }}
@@ -467,7 +467,7 @@ export default function AuthModal({ onClose, initialMode, next }: AuthModalProps
               </>
             )}
 
-            <p className="text-center text-[9px]" style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-center text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Al continuar aceptas los{' '}
               <a href="/terminos" className="underline transition-opacity hover:opacity-70" style={{ color: '#5A5A7A' }}>Términos de Servicio</a>
               {' '}y la{' '}

@@ -100,7 +100,7 @@ export default async function Image({ params }: { params: Promise<{ ref: string 
                 {match!.homeScore}–{match!.awayScore}
               </span>
             ) : (
-              <span style={{ fontSize: 52, fontWeight: 900, color: '#3A3A52' }}>vs</span>
+              <span style={{ fontSize: 52, fontWeight: 900, color: 'var(--text-muted)' }}>vs</span>
             )}
             {match?.statusLabel && (
               <span style={{

@@ -68,7 +68,7 @@ function SectionHeader({ label, sub }: { label: string; sub?: string }) {
         <h2 className="section-label">{label}</h2>
       </div>
       {sub && (
-        <span className="text-[10px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{sub}</span>
+        <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{sub}</span>
       )}
     </div>
   )
@@ -231,7 +231,7 @@ export default function NoticiasContent({
               Noticias
             </HeadingTag>
           </div>
-          <p className="text-[10px] flex-shrink-0 pb-1" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[10px] flex-shrink-0 pb-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {editorialDate(renderedAt)}{filteredArticles.length > 0 ? ` · ${filteredArticles.length} historias` : ''}
           </p>
         </div>
@@ -287,7 +287,7 @@ export default function NoticiasContent({
                 className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all"
                 style={{
                   background: isActive ? `${accent}22` : 'rgba(255,255,255,0.04)',
-                  color: isActive ? accent : '#6A6A82',
+                  color: isActive ? accent : 'var(--text-muted)',
                   border: isActive ? `1px solid ${accent}55` : '1px solid rgba(255,255,255,0.06)',
                   fontFamily: 'var(--font-sport)',
                   cursor: 'pointer',

@@ -69,7 +69,7 @@ function MoverRow({ entry, color }: { entry: MoverEntry; color: string }) {
           {entry.name}
         </p>
         {entry.trendReason && (
-          <p className="text-[9px] truncate" style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[9px] truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {entry.trendReason}
           </p>
         )}

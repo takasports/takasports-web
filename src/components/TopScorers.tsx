@@ -21,7 +21,7 @@ export function TopScorers({
   return (
     <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
       <p className="text-[9px] font-black uppercase tracking-widest mb-4"
-        style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         {title}
       </p>
       <ul className="flex flex-col">

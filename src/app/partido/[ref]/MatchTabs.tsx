@@ -97,7 +97,7 @@ export function MatchTabs({
                 disabled={isDisabled}
                 className="relative px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] transition-all whitespace-nowrap flex-shrink-0 rounded-lg"
                 style={{
-                  color:      isActive   ? '#C4B5FD' : isDisabled ? '#2A2A3A' : '#5A5A6A',
+                  color:      isActive   ? '#C4B5FD' : isDisabled ? 'var(--text-muted)' : 'var(--text-muted)',
                   background: isActive   ? 'rgba(124,58,237,0.20)' : 'transparent',
                   border:     isActive   ? '1px solid rgba(124,58,237,0.35)' : '1px solid transparent',
                   cursor:     isDisabled ? 'default' : 'pointer',

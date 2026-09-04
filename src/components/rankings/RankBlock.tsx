@@ -29,7 +29,7 @@ export default function RankBlock({
         className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all hover:brightness-110"
         style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.2)', cursor: 'pointer' }}>
         <div className="flex items-center gap-2.5">
-          <span className="font-black text-xs" style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
+          <span className="font-black text-xs" style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
             {open ? '▲' : '▼'}
           </span>
           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9B7CF6', fontFamily: 'var(--font-sport)' }}>
@@ -53,7 +53,7 @@ export default function RankBlock({
             </span>
           )}
           <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ color: '#7C3AED', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)', fontFamily: 'var(--font-sport)' }}>
+            style={{ color: '#A78BFA', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)', fontFamily: 'var(--font-sport)' }}>
             {entries.length} entradas
           </span>
         </div>

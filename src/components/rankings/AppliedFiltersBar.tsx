@@ -30,7 +30,7 @@ export default function AppliedFiltersBar({
   return (
     <div className="flex items-center gap-2 flex-wrap mb-4 mt-1 pb-1">
       <span className="text-[8px] font-black uppercase tracking-[0.18em] flex-shrink-0"
-        style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         Filtros activos
       </span>
       <div className="flex items-center gap-1.5 flex-wrap flex-1">

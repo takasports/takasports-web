@@ -113,7 +113,7 @@ export function CalendarDropdown({ value, eventDays, onChange, onClose, anchorRe
             <div
               key={d}
               className="text-center text-[8px] font-black uppercase tracking-widest py-0.5"
-              style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
             >
               {d}
             </div>

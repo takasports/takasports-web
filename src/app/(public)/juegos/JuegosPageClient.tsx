@@ -347,7 +347,7 @@ function FeaturedGameCard({ game }: { game: Game }) {
           {game.heroNote && (
             <>
               <div className="w-px h-3 bg-white opacity-[0.06]" />
-              <span className="text-[10px]" style={{ color: '#3A3A5A', fontFamily: 'var(--font-sport)' }}>
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {game.heroNote}
               </span>
             </>
@@ -445,9 +445,9 @@ function LiveGameCard({ game, state }: { game: Game; state?: GameCardState }) {
 
         <div className="flex items-center gap-2.5 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
           <DifficultyDots level={game.difficulty} />
-          <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
-          <span className="text-[9px]" style={{ color: '#3A3A52' }}>·</span>
-          <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
+          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
+          <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>·</span>
+          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
           {/* Una sola escala: los puntos que suma a la Liga Taka. */}
           {LIGA_TAKA_MAX[game.id] && (
             <span className="ml-auto text-[9px] font-black" style={{ color: `${game.accent}A0`, fontFamily: 'var(--font-sport)' }}>
@@ -535,7 +535,7 @@ function ComingGameCard({ game }: { game: Game }) {
             </span>
             <span
               className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A5A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
+              style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
             >
               {game.category}
             </span>
@@ -566,9 +566,9 @@ function ComingGameCard({ game }: { game: Game }) {
           <div className="flex items-center gap-1">
             <DifficultyDots level={game.difficulty} />
           </div>
-          <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
-          <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>·</span>
-          <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
+          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
+          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>·</span>
+          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
           <span className="ml-auto text-[9px] font-black" style={{ color: `${game.accent}80`, fontFamily: 'var(--font-sport)' }}>
             {LIGA_TAKA_MAX[game.id] ?? game.pts} pts
           </span>
@@ -695,11 +695,11 @@ function ExternalGameCard({ game }: { game: Game }) {
             {/* Meta row */}
             <div className="flex items-center gap-2.5 mt-1">
               <DifficultyDots level={game.difficulty} />
-              <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
-              <span className="text-[9px]" style={{ color: '#2A2A3A' }}>·</span>
-              <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
-              <span className="text-[9px]" style={{ color: '#2A2A3A' }}>·</span>
-              <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>WWE · AEW · Triple AAA</span>
+              <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
+              <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>·</span>
+              <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
+              <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>·</span>
+              <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>WWE · AEW · Triple AAA</span>
             </div>
           </div>
 
@@ -983,7 +983,7 @@ export default function JuegosPageClient() {
         <section className="mb-10">
           <div className="flex items-center justify-between mb-4">
             <SectionHeader>Juega hoy</SectionHeader>
-            <p className="text-[10px] hidden sm:block" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-[10px] hidden sm:block" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Todo suma a tu Liga Taka
             </p>
           </div>
@@ -1042,7 +1042,7 @@ export default function JuegosPageClient() {
               {comingGames.length > 0 && (
                 <span
                   className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest"
-                  style={{ background: 'rgba(255,255,255,0.04)', color: '#3A3A5A', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
+                  style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
                 >
                   {comingGames.length} en camino
                 </span>

@@ -55,7 +55,7 @@ export default function RankRow({
           </span>
           {entry._globalRank !== undefined && entry._globalRank !== entry.rank && (
             <span className="text-[8px] tabular-nums leading-none mt-0.5"
-              style={{ color: '#3A3A52', fontFamily: 'var(--font-display)' }}
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}
               title="Rank global">
               #{entry._globalRank}
             </span>
@@ -94,7 +94,7 @@ export default function RankRow({
             {entry.badge && <BadgePill text={entry.badge} />}
             {entry.editorialNote && <EditorialNoteChip note={entry.editorialNote} />}
           </div>
-          <p className="text-[10px] truncate" style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {entry.subtitle}
           </p>
           {barFrac !== null && (
@@ -112,7 +112,7 @@ export default function RankRow({
           {entry.insight && (
             <p
               className="xl:hidden text-[11px] mt-1 line-clamp-2"
-              style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)', lineHeight: 1.35 }}
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', lineHeight: 1.35 }}
             >
               {entry.insight}
             </p>
@@ -120,7 +120,7 @@ export default function RankRow({
         </div>
         {entry.insight && (
           <p className="hidden xl:block text-[11px] flex-shrink-0 max-w-[220px] line-clamp-1"
-            style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {entry.insight}
           </p>
         )}
@@ -147,7 +147,7 @@ export default function RankRow({
             className="hidden sm:inline-flex items-center justify-center w-6 h-6 rounded-md flex-shrink-0 transition-all hover:brightness-150"
             style={{
               background: 'rgba(255,255,255,0.04)',
-              color: '#5A5A72',
+              color: 'var(--text-muted)',
               border: '1px solid rgba(255,255,255,0.07)',
               fontSize: 12,
             }}
@@ -186,7 +186,7 @@ export default function RankRow({
               className="hidden sm:flex items-center justify-center w-6 h-6 rounded-md transition-all hover:brightness-150"
               style={{
                 background: expanded ? `${sportAccent}22` : 'rgba(255,255,255,0.04)',
-                color: expanded ? sportAccent : '#5A5A72',
+                color: expanded ? sportAccent : 'var(--text-muted)',
                 border: `1px solid ${expanded ? sportAccent + '40' : 'rgba(255,255,255,0.07)'}`,
                 fontFamily: 'var(--font-sport)',
                 fontSize: 10,

@@ -100,7 +100,7 @@ function CompactStripItem({ art }: { art: Article }) {
           {art.title}
         </h3>
         {art.publishedAt && (
-          <p className="text-[10px] mt-2" style={{ color: '#52527A', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
+          <p className="text-[10px] mt-2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
             {timeAgo(art.publishedAt)}
           </p>
         )}
@@ -617,7 +617,7 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
           <div className="flex items-center gap-2">
             <span
               className="text-[11px] font-black tabular-nums"
-              style={{ color: '#6B6B8A', fontFamily: 'var(--font-sport)' }}
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
             >
               {String((offset % len) + 1).padStart(2, '0')} / {String(len).padStart(2, '0')}
             </span>
@@ -673,7 +673,7 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
               <span className="text-[11px] font-black uppercase tracking-wider" style={{ color: '#9090B0', fontFamily: 'var(--font-sport)' }}>
                 Más noticias
               </span>
-              <span className="text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: '#6B6B8A', fontFamily: 'var(--font-sport)' }}>
+              <span className="text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 desliza
                 <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
                   <path d="M3.5 2L7 5l-3.5 3" stroke="#6B6B8A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />

@@ -168,7 +168,7 @@ function Comparison({ a, b }: { a: PlayerDetail; b: PlayerDetail }) {
             {/* Etiqueta central */}
             <div className="w-20 text-center flex-shrink-0 px-0.5">
               <div className="text-[9.5px] uppercase tracking-wide leading-tight"
-                style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>{label}</div>
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{label}</div>
               {lessBetter && (
                 <div className="text-[8px] uppercase tracking-wide" style={{ color: 'var(--text-faint)' }}>menos = mejor</div>
               )}
@@ -204,7 +204,7 @@ function CandidateGrid({ candidates, p1 }: { candidates: Candidate[]; p1?: strin
         <div key={g.label}>
           {groups.length > 1 && (
             <div className="text-[9px] font-black uppercase tracking-widest mb-2"
-              style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>{g.label}</div>
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{g.label}</div>
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {g.items.map(c => {

@@ -91,11 +91,11 @@ export default async function RankingsAuditPage() {
 
       <main className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-2 mb-4 text-[11px]"
-          style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
-          <Link href="/rankings" className="hover:brightness-150 transition-all" style={{ color: '#7C3AED' }}>
+          style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          <Link href="/rankings" className="hover:brightness-150 transition-all" style={{ color: '#A78BFA' }}>
             ← Rankings
           </Link>
-          <span style={{ color: '#3A3A52' }}>/</span>
+          <span style={{ color: 'var(--text-muted)' }}>/</span>
           <span>Audit editorial</span>
         </div>
 
@@ -144,7 +144,7 @@ export default async function RankingsAuditPage() {
         {edits.length === 0 && !warning && (
           <div className="rounded-2xl py-16 text-center"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-sm" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Aún no hay ediciones registradas. Cualquier override hecho vía API quedará listado aquí.
             </p>
           </div>
@@ -187,7 +187,7 @@ export default async function RankingsAuditPage() {
                       )}
                     </div>
                     <span className="text-[10px] tabular-nums"
-                      style={{ color: '#5A5A72', fontFamily: 'var(--font-display)' }}>
+                      style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
                       {fmtDate(e.edited_at)}{e.edited_by ? ` · ${e.edited_by}` : ''}
                     </span>
                   </div>
@@ -197,7 +197,7 @@ export default async function RankingsAuditPage() {
                       style={{ background: 'rgba(255,255,255,0.03)' }}>
                       {fmtValue(e.old_value)}
                     </span>
-                    <span style={{ color: '#5A5A72' }}>→</span>
+                    <span style={{ color: 'var(--text-muted)' }}>→</span>
                     <span className="tabular-nums px-2 py-0.5 rounded font-bold"
                       style={{ background: `${pillColor}14`, color: pillColor }}>
                       {fmtValue(e.new_value)}

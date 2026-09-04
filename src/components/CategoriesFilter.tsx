@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, accentForSport, CATEGORY_TO_SLUG } from '@/lib/sports'
+import { HOME_SPORT_CATEGORIES, MORE_SPORT_CATEGORIES, accentForSport, CATEGORY_TO_SLUG, accentTexto } from '@/lib/sports'
 import { FootballIcon, BasketballIcon, F1Icon, TennisIcon, UFCIcon, RugbyIcon, WWEIcon } from '@/components/icons/GameIcons'
 
 const SPORT_META: Record<string, { accent: string; Icon: React.ComponentType<{ size?: number }> | null }> = {
@@ -91,7 +91,7 @@ export default function CategoriesFilter({
               <span
                 className="leading-none flex-shrink-0 inline-flex items-center justify-center"
                 style={{
-                  color: isActive ? accent : 'rgba(255,255,255,0.45)',
+                  color: isActive ? accentTexto(accent) : 'var(--text-muted)',
                   transition: 'color 200ms',
                 }}
               >

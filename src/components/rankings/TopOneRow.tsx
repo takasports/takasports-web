@@ -93,7 +93,7 @@ export default function TopOneRow({ entry, showSportEmoji = false }: { entry: Ra
             {displayScore.toFixed(1)}
           </span>
           <div className="flex items-center gap-1.5">
-            <span className="text-[8px] font-semibold" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>/ 100</span>
+            <span className="text-[8px] font-semibold" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>/ 100</span>
             {scoreDiff !== null && (
               <span className="text-[9px] tabular-nums font-bold"
                 style={{ color: scoreDiff >= 0 ? '#22c55e' : '#f87171', fontFamily: 'var(--font-display)' }}>

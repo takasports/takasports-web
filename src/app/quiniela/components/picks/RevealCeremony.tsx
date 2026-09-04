@@ -160,7 +160,7 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
                   }}>
                     {current.result.homeGoals}–{current.result.awayGoals}
                   </span>
-                  <span style={{ fontSize: 7, color: '#3A3A58', fontFamily: 'var(--font-sport)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em' }}>resultado</span>
+                  <span style={{ fontSize: 7, color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em' }}>resultado</span>
                 </div>
                 <div className="flex-1 flex flex-col items-center gap-2">
                   <TeamBadge name={current.away} logo={md?.awayLogo} size={48} />
@@ -175,7 +175,7 @@ export function RevealCeremony({ picks, results, matchData, onComplete }: {
               {/* Pick + verdict */}
               <div className="flex items-center gap-4">
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-[8px] font-black uppercase tracking-widest" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>Tu pick</span>
+                  <span className="text-[8px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Tu pick</span>
                   <span className="font-black px-3 py-2 rounded-xl text-center leading-tight" style={{
                     fontSize: 'clamp(0.7rem,3vw,0.9rem)', maxWidth: 90,
                     fontFamily: 'var(--font-display)',

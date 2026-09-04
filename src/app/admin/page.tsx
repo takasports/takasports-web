@@ -29,7 +29,7 @@ const PANELES = [
     titulo: 'Rankings',
     desc: 'Editar fichas del Índice Taka, retirar a alguien y dar de alta creadores por investigación automática.',
     emoji: '🏆',
-    color: '#7C3AED',
+    color: '#A78BFA',
   },
   {
     href: '/admin/rankings-audit',
@@ -103,7 +103,7 @@ export default async function AdminHubPage() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <main className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-10 pb-24">
         <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-1"
-          style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
+          style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
           TakaSports
         </p>
         <h1 className="text-3xl font-black mb-2"
@@ -150,7 +150,7 @@ export default async function AdminHubPage() {
                 <p className="text-2xl font-black tabular-nums" style={{ color: '#FCD34D', fontFamily: 'var(--font-display)' }}>
                   {encargosPendientes}
                 </p>
-                <p className="text-[10px] mt-0.5" style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   esperando al worker del Mac
                 </p>
               </div>

@@ -314,7 +314,7 @@ export function UpcomingEventCard({ ev }: { ev: UpcomingEvent }) {
       >
         {displayTime}
       </span>
-      <span className="text-[9px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+      <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         {ev.dateLabel}
       </span>
     </div>

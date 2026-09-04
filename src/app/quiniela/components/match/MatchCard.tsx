@@ -437,7 +437,7 @@ export function MatchCard({
                   style={{
                     background: exactSlotAvailable ? 'rgba(167,139,250,0.08)' : 'rgba(255,255,255,0.03)',
                     border: exactSlotAvailable ? '1px solid rgba(167,139,250,0.22)' : '1px dashed rgba(255,255,255,0.08)',
-                    color: exactSlotAvailable ? '#A78BFA' : '#3A3A52',
+                    color: exactSlotAvailable ? '#A78BFA' : 'var(--text-muted)',
                     cursor: exactSlotAvailable ? 'pointer' : 'not-allowed',
                     fontFamily: 'var(--font-sport)',
                     letterSpacing: '0.04em',

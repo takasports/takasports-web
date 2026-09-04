@@ -34,7 +34,7 @@ export function ResultToast({ home, away, homeGoals, awayGoals, correct, onDismi
           {correct ? '¡Acertaste! +10 pts' : 'No era esta vez'}
         </p>
       </div>
-      <button onClick={onDismiss} style={{ color: '#3A3A52', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, lineHeight: 1 }}>×</button>
+      <button onClick={onDismiss} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, lineHeight: 1 }}>×</button>
     </div>
   )
 }

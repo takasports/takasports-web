@@ -175,7 +175,7 @@ export default function TimezoneSelector({ value, onChange, compact = false }: P
             style={{
               color: '#D0D0E0',
               fontFamily: 'var(--font-sport)',
-              caretColor: '#7C3AED',
+              caretColor: '#A78BFA',
             }}
           />
           {search && (
@@ -271,7 +271,7 @@ export default function TimezoneSelector({ value, onChange, compact = false }: P
           className="px-3 py-2 flex items-center justify-between gap-2"
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
         >
-          <span className="text-[9px]" style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             Base: Madrid (CET/CEST)
           </span>
           <button
@@ -295,6 +295,11 @@ export default function TimezoneSelector({ value, onChange, compact = false }: P
       <button
         ref={btnRef}
         onClick={handleOpen}
+        // En modo `compact` el botón solo pinta el globo, así que se quedaba SIN
+        // nombre accesible (axe: button-name, crítico). El texto visible solo
+        // aparece fuera de compact, por eso el aria-label va siempre.
+        aria-label="Cambiar la zona horaria"
+        aria-expanded={open}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all"
         style={{
           background: open ? 'rgba(124,58,237,0.14)' : 'rgba(255,255,255,0.04)',
@@ -303,14 +308,14 @@ export default function TimezoneSelector({ value, onChange, compact = false }: P
           boxShadow: open ? '0 0 10px rgba(124,58,237,0.1)' : 'none',
         }}
       >
-        <GlobeIcon size={11} color={open ? '#C4B5FD' : '#5A5A74'} />
+        <GlobeIcon size={11} color={open ? '#C4B5FD' : 'var(--text-muted)'} />
         {!compact && (
           <>
             <span
               className="text-[9px] font-black uppercase tracking-widest"
               style={{
                 fontFamily: 'var(--font-sport)',
-                color: open ? '#C4B5FD' : '#5A5A74',
+                color: open ? '#C4B5FD' : 'var(--text-muted)',
                 whiteSpace: 'nowrap',
               }}
             >

@@ -113,7 +113,7 @@ export default function PoliticaEditorialPage() {
             UFC, tenis, MotoGP, WWE, rugby y los principales eventos del calendario
             deportivo internacional. Toda la información publicada es responsabilidad de
             la{' '}
-            <Link href="/autor/redaccion" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
+            <Link href="/autor/redaccion" style={{ color: '#A78BFA', textDecoration: 'underline' }}>
               Redacción de TakaSports
             </Link>.
           </p>
@@ -162,7 +162,7 @@ export default function PoliticaEditorialPage() {
             constancia explícita en el artículo afectado, indicando qué se corrigió y
             cuándo. Los cambios menores (tipográficos, ortográficos) se aplican sin
             mención. Si detectas un error, escríbenos a{' '}
-            <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
+            <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#A78BFA', textDecoration: 'underline' }}>
               contacto@takasportsmedia.com
             </a>{' '}
             con el enlace del artículo y nos pondremos en contacto contigo.
@@ -210,7 +210,7 @@ export default function PoliticaEditorialPage() {
         <Section title="10. Privacidad y cookies">
           <p>
             Nuestra política de privacidad y de cookies está disponible en{' '}
-            <Link href="/privacidad" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
+            <Link href="/privacidad" style={{ color: '#A78BFA', textDecoration: 'underline' }}>
               /privacidad
             </Link>. Recogemos el mínimo de datos necesarios para operar el servicio y
             nunca vendemos información personal a terceros.
@@ -221,7 +221,7 @@ export default function PoliticaEditorialPage() {
           <p>
             Para sugerencias, correcciones, propuestas de colaboración o quejas
             editoriales:{' '}
-            <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
+            <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#A78BFA', textDecoration: 'underline' }}>
               contacto@takasportsmedia.com
             </a>.
           </p>

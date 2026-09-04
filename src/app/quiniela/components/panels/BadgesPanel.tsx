@@ -38,14 +38,14 @@ export function BadgesPanel({ earned }: { earned: BadgeId[] }) {
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   width: 26, height: 26, lineHeight: 1,
                   filter: unlocked ? 'none' : 'grayscale(1)',
-                  color: unlocked ? '#C4B5FD' : '#3A3A52',
+                  color: unlocked ? '#C4B5FD' : 'var(--text-muted)',
                 }}
               >
                 {hasBadgeIcon(b.id)
                   ? <BadgeIcon id={b.id} size={22} strokeWidth={1.7} />
                   : <span style={{ fontSize: 22 }}>{b.emoji}</span>}
               </span>
-              <span style={{ fontSize: 7.5, fontWeight: 900, fontFamily: 'var(--font-sport)', color: unlocked ? '#C4B5FD' : '#3A3A52', textAlign: 'center', lineHeight: 1.2 }}>
+              <span style={{ fontSize: 7.5, fontWeight: 900, fontFamily: 'var(--font-sport)', color: unlocked ? '#C4B5FD' : 'var(--text-muted)', textAlign: 'center', lineHeight: 1.2 }}>
                 {b.name}
               </span>
             </div>

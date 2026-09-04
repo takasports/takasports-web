@@ -95,6 +95,18 @@ export const SPORT_STYLE: Record<string, { bg: string; accent: string }> = {
 }
 
 // Acepta slug canónico ('futbol', 'baloncesto'…) o label visual ('Fútbol', 'NBA'…)
+/**
+ * El acento, listo para pintar TEXTO.
+ *
+ * El morado de marca (#7C3AED) da 3,48:1 sobre el fondo base: vale para un fondo
+ * o un borde, pero NO llega al 4,5:1 que pide AA para texto. Los acentos de
+ * deporte son claros y pasan de sobra, así que solo se corrige el morado.
+ * [Bloque C de la fase 2, 04/09/2026]
+ */
+export function accentTexto(accent: string): string {
+  return accent.toLowerCase() === '#7c3aed' ? '#A78BFA' : accent
+}
+
 export function getSportStyle(sport?: string, category?: string) {
   const raw = sport ?? category ?? ''
   const slug = raw.toLowerCase()

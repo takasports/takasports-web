@@ -520,7 +520,7 @@ function PlayerSearchModal({ slot, challenge, slotTag, excludeIds, excludedClubs
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                 No hay jugadores que encajen.
               </p>
-              <p className="text-[11px] mt-1" style={{ color: '#3A3A52' }}>
+              <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
                 Prueba a cambiar el término de búsqueda.
               </p>
             </div>
@@ -1524,7 +1524,7 @@ export default function MiOncePage() {
                             </p>
                           </div>
                         ) : (
-                          <span className="flex-1 text-[12px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+                          <span className="flex-1 text-[12px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                             Sin jugador
                           </span>
                         )}

@@ -157,21 +157,21 @@ function EditPanel({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-0.5"
-              style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
+              style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
               Override editorial
             </p>
             <h2 className="text-base font-black" style={{ color: '#E8E8F0', fontFamily: 'var(--font-display)' }}>
               {entry.name}
             </h2>
-            <p className="text-[11px]" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               {entry.subtitle}
             </p>
           </div>
-          <button onClick={onClose} style={{ color: '#5A5A72', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', fontSize: 18, cursor: 'pointer' }}>✕</button>
         </div>
 
         {/* Valores actuales */}
-        <div className="grid grid-cols-2 gap-2 text-[10px]" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+        <div className="grid grid-cols-2 gap-2 text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           <div>Rank auto: <span style={{ color: '#A0A0B8' }}>#{entry.rank_auto ?? '—'}</span></div>
           <div>Rank manual: <span style={{ color: '#C4B5FD' }}>#{entry.rank_manual ?? '—'}</span></div>
           <div>Score auto: <span style={{ color: '#A0A0B8' }}>{entry.score_auto ?? '—'}</span></div>
@@ -184,7 +184,7 @@ function EditPanel({
         <div className="flex flex-col gap-3">
           <div>
             <label className="block text-[9px] font-black uppercase tracking-widest mb-1"
-              style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>Rank</label>
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Rank</label>
             <div className="flex gap-2">
               <input type="number" value={rank} onChange={e => setRank(e.target.value)}
                 className={inputCls} style={inputSty} placeholder="e.g. 5" />
@@ -196,7 +196,7 @@ function EditPanel({
 
           <div>
             <label className="block text-[9px] font-black uppercase tracking-widest mb-1"
-              style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>Score (0–100)</label>
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Score (0–100)</label>
             <div className="flex gap-2">
               <input type="number" value={score} onChange={e => setScore(e.target.value)}
                 className={inputCls} style={inputSty} placeholder="e.g. 87.5" min={0} max={100} step={0.5} />
@@ -208,7 +208,7 @@ function EditPanel({
 
           <div>
             <label className="block text-[9px] font-black uppercase tracking-widest mb-1"
-              style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>Insight editorial</label>
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Insight editorial</label>
             <div className="flex gap-2">
               <textarea value={insight} onChange={e => setInsight(e.target.value)} rows={2}
                 className={inputCls} style={{ ...inputSty, resize: 'vertical' }}
@@ -222,13 +222,13 @@ function EditPanel({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-[9px] font-black uppercase tracking-widest mb-1"
-                style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>Boost editorial</label>
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Boost editorial</label>
               <input type="number" value={editBoost} onChange={e => setEditBoost(e.target.value)}
                 className={inputCls} style={inputSty} placeholder="-15 a +15" min={-15} max={15} step={0.5} />
             </div>
             <div>
               <label className="block text-[9px] font-black uppercase tracking-widest mb-1"
-                style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>Nota boost</label>
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Nota boost</label>
               <input type="text" value={editNote} onChange={e => setEditNote(e.target.value)}
                 className={inputCls} style={inputSty} placeholder="Razón…" />
             </div>
@@ -242,7 +242,7 @@ function EditPanel({
               <div className="w-4 h-4 rounded-full transition-all"
                 style={{ background: '#fff', transform: locked ? 'translateX(16px)' : 'translateX(0)' }} />
             </div>
-            <span className="text-[11px] font-semibold" style={{ color: locked ? '#C4B5FD' : '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+            <span className="text-[11px] font-semibold" style={{ color: locked ? '#C4B5FD' : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Bloquear del cron (editorial_locked)
             </span>
           </label>
@@ -317,11 +317,11 @@ function EntryRow({ entry, onRefresh }: { entry: Entry; onRefresh: () => void })
         {/* Rank */}
         <td className="py-2.5 px-3 text-center" style={{ width: 52 }}>
           <span className="text-xs font-black tabular-nums"
-            style={{ color: entry.rank <= 3 ? '#C4B5FD' : '#5A5A72', fontFamily: 'var(--font-display)' }}>
+            style={{ color: entry.rank <= 3 ? '#C4B5FD' : 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
             #{entry.rank}
           </span>
           {entry.rank_manual !== null && (
-            <span className="block text-[9px]" style={{ color: '#7C3AED' }}>✏️</span>
+            <span className="block text-[9px]" style={{ color: '#A78BFA' }}>✏️</span>
           )}
         </td>
         {/* Name */}
@@ -339,7 +339,7 @@ function EntryRow({ entry, onRefresh }: { entry: Entry; onRefresh: () => void })
                   </span>
                 )}
               </p>
-              <p className="text-[10px]" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {entry.subtitle}
               </p>
             </div>
@@ -352,18 +352,18 @@ function EntryRow({ entry, onRefresh }: { entry: Entry; onRefresh: () => void })
             {Number(entry.score).toFixed(1)}
           </span>
           {entry.score_manual !== null && (
-            <span className="block text-[9px]" style={{ color: '#7C3AED' }}>manual</span>
+            <span className="block text-[9px]" style={{ color: '#A78BFA' }}>manual</span>
           )}
         </td>
         {/* Trend */}
         <td className="py-2.5 px-3 text-center" style={{ width: 44 }}>
-          <span className="text-xs font-black" style={{ color: TREND_COLORS[trend] ?? '#5A5A72' }}>
+          <span className="text-xs font-black" style={{ color: TREND_COLORS[trend] ?? 'var(--text-muted)' }}>
             {TREND_ICONS[trend] ?? '→'}
           </span>
         </td>
         {/* Insight */}
         <td className="py-2.5 px-2 hidden md:table-cell" style={{ maxWidth: 280 }}>
-          <p className="text-[10px] truncate" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {entry.insight ?? '—'}
           </p>
         </td>
@@ -424,14 +424,14 @@ export default function RankingsAdmin() {
       {/* Header */}
       <div className="max-w-5xl mx-auto mb-6">
         <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-1"
-          style={{ color: '#7C3AED', fontFamily: 'var(--font-sport)' }}>
+          style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
           Panel editorial
         </p>
         <h1 className="text-2xl font-black mb-1"
           style={{ color: '#E8E8F0', fontFamily: 'var(--font-display)' }}>
-          Índice Taka <span style={{ color: '#7C3AED' }}>Admin</span>
+          Índice Taka <span style={{ color: '#A78BFA' }}>Admin</span>
         </h1>
-        <p className="text-xs" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+        <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           Haz click en cualquier entry para editar su posición, score, insight o bloquearlo del cron.
         </p>
       </div>
@@ -444,7 +444,7 @@ export default function RankingsAdmin() {
             className="px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all"
             style={{
               background: vista === id ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.04)',
-              color: vista === id ? '#C4B5FD' : '#5A5A72',
+              color: vista === id ? '#C4B5FD' : 'var(--text-muted)',
               border: vista === id ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.07)',
               cursor: 'pointer', fontFamily: 'var(--font-sport)',
             }}>
@@ -469,7 +469,7 @@ export default function RankingsAdmin() {
               className="flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all"
               style={{
                 background: category === cat.id ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.04)',
-                color: category === cat.id ? '#C4B5FD' : '#5A5A72',
+                color: category === cat.id ? '#C4B5FD' : 'var(--text-muted)',
                 border: category === cat.id ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.07)',
                 cursor: 'pointer', fontFamily: 'var(--font-sport)',
               }}>
@@ -481,7 +481,7 @@ export default function RankingsAdmin() {
         {/* Stats + búsqueda */}
         <div className="flex items-center gap-3 mb-4">
           <div className="flex gap-3 text-[10px]" style={{ fontFamily: 'var(--font-sport)' }}>
-            <span style={{ color: '#4A4A5A' }}>{entries.length} entries</span>
+            <span style={{ color: 'var(--text-muted)' }}>{entries.length} entries</span>
             {overrideCount > 0 && <span style={{ color: '#C4B5FD' }}>✏️ {overrideCount} overrides</span>}
             {lockedCount > 0   && <span style={{ color: '#A78BFA' }}>🔒 {lockedCount} locked</span>}
             <span style={{ color: source === 'db' ? '#22c55e' : source === 'static' ? '#f59e0b' : '#f87171' }}>
@@ -520,11 +520,11 @@ export default function RankingsAdmin() {
         <div className="rounded-2xl overflow-hidden"
           style={{ border: '1px solid rgba(255,255,255,0.06)', background: 'var(--bg-card)' }}>
           {loading ? (
-            <div className="py-16 text-center text-sm" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+            <div className="py-16 text-center text-sm" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Cargando…
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-16 text-center text-sm" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+            <div className="py-16 text-center text-sm" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               {source === 'error' ? 'Error conectando con la DB — verifica SUPABASE_SERVICE_ROLE_KEY' : 'Sin entries'}
             </div>
           ) : (
@@ -533,7 +533,7 @@ export default function RankingsAdmin() {
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   {['#', 'Entry', 'Score', 'Trend', 'Insight'].map(h => (
                     <th key={h} className="py-2 px-3 text-left text-[9px] font-black uppercase tracking-widest"
-                      style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+                      style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                       {h}
                     </th>
                   ))}
@@ -550,7 +550,7 @@ export default function RankingsAdmin() {
 
         {/* Instrucciones */}
         <div className="mt-6 rounded-xl p-4 text-[11px] leading-relaxed"
-          style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.1)', color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
+          style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.1)', color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           <p><span style={{ color: '#9B7CF6' }}>✏️ Override</span> — sobreescribe el valor automático del cron. La vista <code style={{ color: '#C4B5FD' }}>ranking_view</code> aplica <code>COALESCE(manual, auto)</code>.</p>
           <p className="mt-1"><span style={{ color: '#9B7CF6' }}>🔒 Locked</span> — el cron nunca toca esa entry. Útil para posiciones que quieres fijar indefinidamente.</p>
           <p className="mt-1"><span style={{ color: '#9B7CF6' }}>Reset</span> — elimina todos los overrides de una entry. Vuelve al valor automático del cron.</p>

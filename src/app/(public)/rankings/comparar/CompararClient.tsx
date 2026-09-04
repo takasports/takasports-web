@@ -87,7 +87,7 @@ function EntryPicker({
   return (
     <div className="relative" ref={ref}>
       <p className="text-[8px] font-black uppercase tracking-[0.18em] mb-1.5"
-        style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         {label}
       </p>
       <button
@@ -115,12 +115,12 @@ function EntryPicker({
                 {value.country && <span className="text-[11px]">{value.country}</span>}
               </div>
               <p className="text-[10px] truncate"
-                style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {value.subtitle}
               </p>
             </>
           ) : (
-            <span className="text-sm" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+            <span className="text-sm" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Elegir entry…
             </span>
           )}
@@ -131,7 +131,7 @@ function EntryPicker({
             {getDisplayScore(value).toFixed(1)}
           </span>
         )}
-        <span className="text-xs flex-shrink-0" style={{ color: '#5A5A72' }}>▾</span>
+        <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>▾</span>
       </button>
 
       {open && (
@@ -152,7 +152,7 @@ function EntryPicker({
           </div>
           <div className="max-h-72 overflow-y-auto">
             {filtered.length === 0 && (
-              <p className="px-3 py-4 text-xs" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+              <p className="px-3 py-4 text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 Sin resultados
               </p>
             )}
@@ -179,7 +179,7 @@ function EntryPicker({
                       {e.name}
                     </p>
                     <p className="text-[10px] truncate"
-                      style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
+                      style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                       {e.subtitle}
                     </p>
                   </div>
@@ -396,12 +396,12 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-16">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-4 text-[11px]"
-          style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+          style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           <Link href="/rankings" className="hover:brightness-150 transition-all"
-            style={{ color: '#7C3AED' }}>
+            style={{ color: '#A78BFA' }}>
             ← Rankings
           </Link>
-          <span style={{ color: '#3A3A52' }}>/</span>
+          <span style={{ color: 'var(--text-muted)' }}>/</span>
           <span>Comparador</span>
         </div>
 
@@ -409,10 +409,10 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
         <div className="mb-6">
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-1.5"
             style={{ color: '#E8E8F0', fontFamily: 'var(--font-display)' }}>
-            Comparador <span style={{ color: '#7C3AED' }}>Taka</span>
+            Comparador <span style={{ color: '#A78BFA' }}>Taka</span>
           </h1>
           <p className="text-xs sm:text-sm"
-            style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             Enfrenta dos entries del Ranking Taka. Radar de los 4 factores,
             desglose objetivo y delta total.
           </p>
@@ -427,7 +427,7 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
             className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-all hover:brightness-125 disabled:opacity-30 disabled:cursor-not-allowed"
             style={{
               background: sameSportOnly ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.04)',
-              color: sameSportOnly ? '#C4B5FD' : '#5A5A72',
+              color: sameSportOnly ? '#C4B5FD' : 'var(--text-muted)',
               border: sameSportOnly ? '1px solid rgba(124,58,237,0.35)' : '1px solid rgba(255,255,255,0.06)',
               fontFamily: 'var(--font-sport)',
             }}
@@ -484,7 +484,7 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
               Elige dos entries para comparar
             </p>
             <p className="text-[11px]"
-              style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Funciona con jugadores, clubes, entrenadores, creadores y periodistas.
             </p>
           </div>
@@ -495,18 +495,18 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
               <CompareHeaderCard entry={entryA} accent={accentA} side="a" />
               <div className="flex flex-col items-center justify-center px-2">
                 <p className="text-[8px] font-black uppercase tracking-[0.2em] mb-1.5"
-                  style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                  style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   Delta
                 </p>
                 <p className="font-black tabular-nums text-2xl sm:text-3xl"
                   style={{
-                    color: delta === 0 ? '#6A6A82' : delta > 0 ? COLOR_A : COLOR_B,
+                    color: delta === 0 ? 'var(--text-muted)' : delta > 0 ? COLOR_A : COLOR_B,
                     fontFamily: 'var(--font-display)',
                   }}>
                   {delta > 0 ? '+' : ''}{delta.toFixed(1)}
                 </p>
                 <p className="text-[9px] uppercase tracking-widest mt-1.5"
-                  style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
+                  style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   {delta === 0 ? 'Empate' : delta > 0 ? 'Gana A' : 'Gana B'}
                 </p>
               </div>
@@ -517,7 +517,7 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
             <div className="rounded-2xl p-5 sm:p-6 mb-6"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
               <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-3"
-                style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {radarTitle}
               </p>
               <div className="flex flex-col items-center gap-4">
@@ -542,7 +542,7 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
             <div className="rounded-2xl p-5 sm:p-6 mb-6"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
               <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-4"
-                style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {desgloseTitle}
               </p>
               {mixedTrack && entryA && entryB && (
@@ -574,7 +574,7 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
                           </span>
                         )}
                         <span className="text-[10px] tabular-nums font-bold"
-                          style={{ color: d === 0 ? '#5A5A72' : d > 0 ? COLOR_A : COLOR_B,
+                          style={{ color: d === 0 ? 'var(--text-muted)' : d > 0 ? COLOR_A : COLOR_B,
                             fontFamily: 'var(--font-display)' }}>
                           {d > 0 ? '+' : ''}{d}
                         </span>
@@ -606,7 +606,7 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
                     {bothCreator ? 'Ranking de Contenido' : 'Ranking Taka'} · Total
                   </span>
                   <span className="text-[10px] tabular-nums font-bold"
-                    style={{ color: delta === 0 ? '#5A5A72' : delta > 0 ? COLOR_A : COLOR_B,
+                    style={{ color: delta === 0 ? 'var(--text-muted)' : delta > 0 ? COLOR_A : COLOR_B,
                       fontFamily: 'var(--font-display)' }}>
                     {delta > 0 ? '+' : ''}{delta.toFixed(1)}
                   </span>
@@ -616,7 +616,7 @@ export default function CompararClient({ dbEntries = [] }: { dbEntries?: Ranking
                     style={{ color: scoreColor(scoreA), fontFamily: 'var(--font-display)' }}>
                     {scoreA.toFixed(1)}
                   </span>
-                  <span className="text-[10px]" style={{ color: '#3A3A52' }}>vs</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>vs</span>
                   <span className="font-black tabular-nums text-lg"
                     style={{ color: scoreColor(scoreB), fontFamily: 'var(--font-display)' }}>
                     {scoreB.toFixed(1)}
@@ -692,7 +692,7 @@ function CompareHeaderCard({
         {entry.name}
       </p>
       <p className="text-[10px] line-clamp-1 mb-2"
-        style={{ color: '#4A4A5E', fontFamily: 'var(--font-sport)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         {entry.subtitle}
       </p>
       <span className="font-black tabular-nums text-2xl sm:text-3xl leading-none"

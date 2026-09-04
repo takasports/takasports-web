@@ -61,7 +61,7 @@ export function TrendArrow({ trend }: { trend?: 'up' | 'down' | 'flat' }) {
 export function MedalBadge({ rank }: { rank: number }) {
   if (rank <= 3) return <PodiumMedal position={rank} size={18} />
   return (
-    <span className="font-black tabular-nums text-xs w-5 text-center" style={{ color: '#3A3A52', fontFamily: 'var(--font-display)' }}>
+    <span className="font-black tabular-nums text-xs w-5 text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
       {rank}
     </span>
   )
@@ -81,14 +81,14 @@ export function PlaceholderBlockCard({ block, accent }: { block: StatBlock; acce
             PRÓXIMAMENTE
           </span>
         </div>
-        <span className="text-[10px] font-black" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>{block.metric}</span>
+        <span className="text-[10px] font-black" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{block.metric}</span>
       </div>
       <div className="px-5 py-8 flex flex-col items-center gap-2">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg"
           style={{ background: `${accent}10`, border: `1px solid ${accent}20` }}>
           🔒
         </div>
-        <p className="text-xs text-center" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+        <p className="text-xs text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           Integración de datos en desarrollo
         </p>
       </div>
@@ -199,7 +199,7 @@ export function PlayoffSeriesCard({ block, accent, isLive, meta }: {
 
       <div className="flex flex-col">
         {block.rows.length === 0 && (
-          <p className="px-5 py-8 text-center text-[11px]" style={{ color: '#3A3A52', fontFamily: 'var(--font-sport)' }}>
+          <p className="px-5 py-8 text-center text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             Sin partidos de playoffs activos
           </p>
         )}
@@ -227,7 +227,7 @@ export function PlayoffSeriesCard({ block, accent, isLive, meta }: {
                   <div className="font-black text-sm tabular-nums" style={{ color: isActive ? accent : '#8080A0', fontFamily: 'var(--font-display)' }}>
                     {row.value}
                   </div>
-                  <div className="text-[10px]" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+                  <div className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     {row.sub}
                   </div>
                 </div>
@@ -293,7 +293,7 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
           )}
           <button onClick={onShare} aria-label="Compartir bloque"
             className="text-[12px] leading-none px-1.5 py-1 rounded transition-opacity hover:opacity-80"
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#5A5A72' }}>
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
             ⤴
           </button>
           <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
@@ -303,7 +303,7 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
       </div>
 
       <div className="px-5 pt-2 pb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
-        style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
         <span className="w-8 flex-shrink-0">#</span>
         <span className="flex-1">Nombre</span>
         {extraKeys.slice(0, 2).map(k => (
@@ -315,7 +315,7 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
 
       <div className="flex flex-col">
         {displayRows.length === 0 && (
-          <div className="px-5 py-6 text-center" style={{ color: '#5A5A72', fontFamily: 'var(--font-sport)' }}>
+          <div className="px-5 py-6 text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             <p className="text-[12px] font-semibold mb-1">
               {meta?.status === 'unavailable'
                 ? 'Datos no disponibles ahora'
@@ -324,12 +324,12 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
                 : 'Sin datos disponibles'}
             </p>
             {meta?.fetchedAt && (
-              <p className="text-[10px]" style={{ color: '#3A3A52' }}>
+              <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                 Última comprobación: {formatFetchedAt(meta.fetchedAt)}
               </p>
             )}
             {meta?.source && (
-              <p className="text-[10px] mt-0.5" style={{ color: '#3A3A52' }}>{meta.source}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{meta.source}</p>
             )}
           </div>
         )}
@@ -366,7 +366,7 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
                     <Image src={row.logo} alt={row.name} width={22} height={22} unoptimized
                       style={{ objectFit: 'contain', width: 22, height: 22 }} />
                   ) : (
-                    <span className="text-[11px] font-black" style={{ color: '#7C7C8C' }}>{rowInitials(row.name)}</span>
+                    <span className="text-[11px] font-black" style={{ color: 'var(--text-muted)' }}>{rowInitials(row.name)}</span>
                   )}
                 </div>
                 {row.photo && row.logo && (
@@ -391,7 +391,7 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
                   className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ background: '#16161F', border: '1px solid rgba(255,255,255,0.12)' }}
                 >
-                  <span className="text-[10px] font-black" style={{ color: '#7C7C8C' }}>{rowInitials(row.name)}</span>
+                  <span className="text-[10px] font-black" style={{ color: 'var(--text-muted)' }}>{rowInitials(row.name)}</span>
                 </div>
               )
             ) : row.logo ? (
@@ -549,7 +549,7 @@ export function MetricGroupAccordion({ group, accent, expanded, onToggle, expand
               {group.label}
             </p>
             {group.description && (
-              <p className="text-[10px] mt-0.5 hidden sm:block" style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[10px] mt-0.5 hidden sm:block" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {group.description}
               </p>
             )}
@@ -564,7 +564,7 @@ export function MetricGroupAccordion({ group, accent, expanded, onToggle, expand
           )}
           {dataCount - liveCount > 0 && (
             <span className="text-[8px] font-black px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#5A5A72', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)' }}>
+              style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-sport)' }}>
               {dataCount - liveCount} tabla{dataCount - liveCount !== 1 ? 's' : ''}
             </span>
           )}

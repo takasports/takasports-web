@@ -187,7 +187,7 @@ export default async function RedaccionAuthorPage() {
           </ul>
           <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>
             Puedes leer nuestra{' '}
-            <Link href="/politica-editorial" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
+            <Link href="/politica-editorial" style={{ color: '#A78BFA', textDecoration: 'underline' }}>
               política editorial completa
             </Link>{' '}
             para conocer todos los estándares con los que operamos.
@@ -204,7 +204,7 @@ export default async function RedaccionAuthorPage() {
           </h2>
           <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>
             Para enviar una historia, reportar un error o proponer una colaboración:{' '}
-            <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#7C3AED', textDecoration: 'underline' }}>
+            <a href="mailto:contacto@takasportsmedia.com" style={{ color: '#A78BFA', textDecoration: 'underline' }}>
               contacto@takasportsmedia.com
             </a>.
           </p>

@@ -33,10 +33,10 @@ export default function EmptyState({
         border: action ? '1px solid rgba(124,58,237,0.22)' : '1px dashed rgba(255,255,255,0.07)',
       }}
     >
-      {icon ? <span aria-hidden style={{ color: action ? '#6D5B9E' : '#3A3A48' }}>{icon}</span> : null}
+      {icon ? <span aria-hidden style={{ color: action ? '#6D5B9E' : 'var(--text-muted)' }}>{icon}</span> : null}
       <p
         className="text-[12.5px] font-semibold max-w-xs leading-relaxed"
-        style={{ color: action ? 'var(--body-text)' : '#4A4A5A', fontFamily: 'var(--font-sport)' }}
+        style={{ color: action ? 'var(--body-text)' : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
       >
         {message}
       </p>

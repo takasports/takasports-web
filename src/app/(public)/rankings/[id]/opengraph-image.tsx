@@ -102,7 +102,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{
               fontSize: 18, fontWeight: 900, letterSpacing: '0.2em',
-              color: '#5A5A72', textTransform: 'uppercase',
+              color: 'var(--text-muted)', textTransform: 'uppercase',
             }}>
               takasportsmedia.com
             </span>
@@ -114,7 +114,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             }}>
               {score.toFixed(1)}
             </span>
-            <span style={{ fontSize: 28, color: '#5A5A72', fontWeight: 700 }}>
+            <span style={{ fontSize: 28, color: 'var(--text-muted)', fontWeight: 700 }}>
               / 100
             </span>
             {entry?.scorePrev !== undefined && entry.scorePrev !== null && (

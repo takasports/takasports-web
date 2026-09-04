@@ -1099,7 +1099,7 @@ export default function CalendarioContent({
               ) : (
                 <>
                   <span className="block rounded-sm" style={{ width: 3, height: 13, background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: '#5A5A74', fontFamily: 'var(--font-sport)' }}>
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     Todos los deportes
                   </span>
                 </>
@@ -1357,7 +1357,7 @@ export default function CalendarioContent({
 
           {orderedDates.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <p className="mb-2 flex justify-center" style={{ color: onlyLive ? '#FF4D2E' : '#7C7C8C' }}>
+              <p className="mb-2 flex justify-center" style={{ color: onlyLive ? '#FF4D2E' : 'var(--text-muted)' }}>
                 {onlyLive
                   ? <LiveDotIcon size={32} />
                   : search
@@ -1418,7 +1418,7 @@ export default function CalendarioContent({
                   Ver resultados anteriores
                 </button>
               ) : pastTimeline.length > 0 ? (
-                <div className="flex items-center justify-center py-2 text-[10px] uppercase tracking-widest" style={{ color: '#7C7C8C', fontFamily: 'var(--font-sport)' }}>
+                <div className="flex items-center justify-center py-2 text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   <span>Resultados de días anteriores</span>
                 </div>
               ) : null}

@@ -145,7 +145,7 @@ export default function BottomNav() {
                   aria-current={active ? 'page' : undefined}
                   aria-label={showDot ? `${label} (hay partidos en directo)` : label}
                   className="flex flex-col items-center justify-center gap-[3px] h-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)] focus-visible:ring-inset"
-                  style={{ color: active ? '#FFFFFF' : '#6A6A82', textDecoration: 'none' }}
+                  style={{ color: active ? '#FFFFFF' : 'var(--text-muted)', textDecoration: 'none' }}
                 >
                   <span className="relative flex items-center justify-center" style={{ width: 50, height: 26 }}>
                     {/* Pastilla activa (morado de marca) */}
@@ -187,7 +187,7 @@ export default function BottomNav() {
                       letterSpacing: '0.045em',
                       lineHeight: '10px',
                       display: 'block',
-                      color: active ? '#FFFFFF' : '#7C7C8C',
+                      color: active ? '#FFFFFF' : 'var(--text-muted)',
                     }}
                   >
                     {label}
