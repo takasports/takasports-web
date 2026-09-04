@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { useMounted } from '@/hooks/useMounted'
 import { isLiveStatus } from '@/lib/live-events'
 
 const JUEGOS_ROUTES = ['/juegos', '/predicciones', '/quiniela', '/mionce', '/sopa-cracks', '/crackquiz', '/takagrid', '/liga-taka', '/badges']
@@ -30,7 +31,24 @@ const TABS = [
 //   · "Tú" sube el perfil (racha, puntos, avisos, guardados) a la barra.
 // Reels, Rankings y Estadísticas siguen en el cajón ☰ y en el pie.
 export default function BottomNav() {
+  // La pestaña activa se marca SOLO tras hidratar, y no es un capricho: en
+  // algunas regeneraciones ISR de la portada el `usePathname()` del servidor no
+  // devuelve exactamente '/', así que el HTML cacheado salía sin ninguna
+  // pestaña marcada mientras el cliente sí marcaba "Inicio". Esa diferencia es
+  // ESTRUCTURAL (la pastilla activa es un <span> que aparece o no) y vive en el
+  // layout raíz, fuera del Suspense de la página: React tiraba el documento
+  // ENTERO —cabecera incluida, duplicando el <style> de layout.tsx— y repintaba
+  // la portada en cliente (error #418).
+  //
+  // Solo le pasaba a Inicio porque su `match` es una igualdad exacta
+  // (`p === '/'`); las demás pestañas usan `startsWith` y aguantan un pathname
+  // ligeramente distinto. Aun así el guard va en TODAS: el fallo es del reloj
+  // ajeno —lo que el servidor cree que es la ruta—, no de esta pestaña.
+  //
+  // Coste: el primer pintado del HTML no lleva pestaña resaltada y aparece al
+  // hidratar. Es preferible a servir una marcada MAL, que es lo que pasaba.
   const pathname = usePathname() || '/'
+  const montado = useMounted()
   const [hasLive, setHasLive] = useState(false)
   const capsuleRef = useRef<HTMLDivElement | null>(null)
 
@@ -117,7 +135,7 @@ export default function BottomNav() {
           }}
         >
           {TABS.map(({ href, label, match, icon: Icon, live }) => {
-            const active = match(pathname)
+            const active = montado && match(pathname)
             const showDot = !!live && hasLive
             return (
               <li key={href} className="flex-1 relative">
