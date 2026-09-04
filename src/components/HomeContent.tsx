@@ -23,6 +23,9 @@ import {
 } from '@/components/games/GameVisuals'
 import { SearchIcon } from '@/components/icons/GameIcons'
 import { getEventHighlightScore } from '@/lib/competitions'
+import { empujonRegional } from '@/lib/region-visitante'
+import { getStoredTZ } from '@/lib/timezone'
+import { useMounted } from '@/hooks/useMounted'
 import TuDia from '@/components/TuDia'
 import SectionHeader from '@/components/ui/SectionHeader'
 
@@ -43,7 +46,11 @@ const MAX_PER_SPORT = 2
 // partido que cruzara el corte de "ya terminó" entre el render cacheado y la
 // hidratación cambiaría los Destacados y React tiraría la portada entera por
 // fallo de hidratación (#418).
-function pickTopEvents(events: SportEvent[], now: number, n = 4): SportEvent[] {
+// `tz` = huso del visitante, y SOLO se pasa tras hidratar. En el servidor llega
+// null a propósito: el HTML es ISR y el mismo para todo el mundo (Google
+// incluido), así que ordenar por región ahí rompería la caché y, peor, no
+// coincidiría con el primer render del cliente (#418).
+function pickTopEvents(events: SportEvent[], now: number, n = 4, tz: string | null = null): SportEvent[] {
   const windowEnd = now + WINDOW_HOURS * 3600_000
 
   // 0) Deduplicar: mismo partido puede llegar dos veces (courts distintas
@@ -64,7 +71,8 @@ function pickTopEvents(events: SportEvent[], now: number, n = 4): SportEvent[] {
     const ts = ev.isoDate ? new Date(ev.isoDate).getTime() : NaN
     // Mismo ranking de Destacados que /calendario: liga top + equipos/selecciones
     // de renombre + finales/semis + prime time (escala ~0-18).
-    const base = getEventHighlightScore({ comp: ev.comp, home: ev.home, away: ev.away, isoDate: ev.isoDate })
+    const base = getEventHighlightScore({ comp: ev.comp, home: ev.home, away: ev.away, isoDate: ev.isoDate, tz })
+      + empujonRegional(ev.comp, tz)
     if (!Number.isFinite(ts)) {
       fallback.push({ ev, score: base, ts: Number.POSITIVE_INFINITY })
       continue
@@ -318,7 +326,12 @@ export default function HomeContent({
 
   // Top de eventos del calendario — se calcula 1 vez por cambio de `events`
   // (antes se recomputaba en cada render, y además 2 veces: calendario + sidebar).
-  const topEvents = useMemo(() => pickTopEvents(events, renderedAt, 4), [events, renderedAt])
+  // La región solo entra DESPUÉS de montar: en el primer render vale null y el
+  // orden es idéntico al del servidor. Para quien mira desde España o Europa
+  // `empujonRegional` devuelve 0 y no cambia nada nunca.
+  const montado = useMounted()
+  const tzVisitante = montado ? getStoredTZ() : null
+  const topEvents = useMemo(() => pickTopEvents(events, renderedAt, 4, tzVisitante), [events, renderedAt, tzVisitante])
 
   // F3.5 (jun 2026): preseleccionado por `?sport=X` se lee client-side al
   // montar. Antes se leía via searchParams en el server (forzaba dynamic).

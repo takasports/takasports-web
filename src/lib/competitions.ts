@@ -345,6 +345,11 @@ export function getEventHighlightScore(args: {
   stage?: string
   isoDate?: string
   isLive?: boolean
+  /** Huso con el que se juzga el «prime time». Por defecto Madrid, que es lo que
+   *  usa el servidor; los llamadores de CLIENTE pasan el del visitante para que
+   *  un partido de las 21:00 en Ciudad de México cuente como prime time allí y
+   *  no a las 21:00 de Madrid. Null = el de siempre. */
+  tz?: string | null
 }): number {
   let score = getLeagueScore(args.comp)
   score += pairBoost(args.home, args.away)
@@ -358,13 +363,14 @@ export function getEventHighlightScore(args: {
   else if (nations === 1) score += 5
   score += stageBoost(args.comp, args.stage)
   if (args.isLive) score += 1.5
-  // Prime time 18:00–23:00 hora Madrid: +0.5 para que un Real Madrid 21h
-  // gane a un partido menor a las 13h dentro de la misma liga.
+  // Prime time 18:00–23:00: +0.5 para que un Real Madrid 21h gane a un partido
+  // menor a las 13h dentro de la misma liga. La hora se juzga en el huso de
+  // `args.tz` — Madrid por defecto, el del visitante cuando lo pasa el cliente.
   if (args.isoDate) {
     try {
       const d = new Date(args.isoDate)
       const h = parseInt(new Intl.DateTimeFormat('en', {
-        timeZone: 'Europe/Madrid', hour: '2-digit', hour12: false,
+        timeZone: args.tz || 'Europe/Madrid', hour: '2-digit', hour12: false,
       }).format(d), 10)
       if (h >= 18 && h <= 23) score += 0.5
     } catch { /* ignore */ }

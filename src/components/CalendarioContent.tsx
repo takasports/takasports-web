@@ -18,6 +18,7 @@ import { mergeFeedEvents } from '@/lib/calendar-initial-window'
 import { formatDateLabel, groupDayByCompetition, groupEventsByDate, isoToLocalDate, namesMatch, orderedDateKeys } from '@/lib/calendar'
 import { nameMatch } from '@/lib/quiniela'
 import { SOURCE_TZ, TZ_KEY, getStoredTZ, setStoredTZ } from '@/lib/timezone'
+import { empujonRegional } from '@/lib/region-visitante'
 import TimezoneSelector from '@/components/TimezoneSelector'
 import UFCCardModal from '@/components/UFCCardModal'
 import FavoritesOnboarding from '@/components/FavoritesOnboarding'
@@ -810,6 +811,15 @@ export default function CalendarioContent({
     // shared. [José Tomás, 26/08/2026]
     const rankCache = new Map<string, number>()
     const meritCache = new Map<string, number>()
+    // `tz` arranca en SOURCE_TZ (lo que renderiza el servidor) y el efecto de
+    // montaje lo cambia al del visitante. Por eso el empujón regional entra
+    // solo DESPUÉS de hidratar: el HTML cacheado sigue siendo el mismo para
+    // todo el mundo, Google incluido, y no hay desajuste de hidratación.
+    //
+    // Para quien mira desde España o Europa `empujonRegional` devuelve 0 y esto
+    // no cambia absolutamente nada. Para quien mira desde México, su Liga MX
+    // sube 6 puntos: entra en los Destacados 11 de los 12 días que juega (hoy,
+    // 3) sin desalojar a los grandes europeos, que puntúan ~14.
     const scoreWith = (ev: SportEvent, live: boolean) =>
       getEventHighlightScore({
         comp: ev.comp,
@@ -818,7 +828,8 @@ export default function CalendarioContent({
         stage: ev.stage,
         isoDate: ev.isoDate,
         isLive: live,
-      })
+        tz,
+      }) + empujonRegional(ev.comp, tz)
     const rankFor = (ev: SportEvent) => {
       const cached = rankCache.get(ev.id)
       if (cached !== undefined) return cached
