@@ -1,7 +1,10 @@
 'use client'
 
-// WelcomeOnboarding — bienvenida de UNA pantalla para el usuario NUEVO.
-// Reutiliza FavoritesOnboarding (elegir equipos favoritos). Reglas:
+// WelcomeOnboarding — bienvenida para el usuario NUEVO.
+// Desde el 04/09/2026 son TRES PASOS (deportes → equipos → hecho), como en la
+// app: ver WelcomeSteps. Antes abría de golpe la rejilla de equipos
+// (FavoritesOnboarding), que sigue viva para editar favoritos desde el
+// calendario. Reglas:
 //  • Aparece UNA sola vez (clave `ts_onboarded`), nunca a quien ya eligió equipos.
 //  • Espera a que el aviso de cookies esté decidido (prioridad legal, no compite
 //    con el banner) y a que la página haya cargado; abre tras un respiro para NO
@@ -12,7 +15,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import FavoritesOnboarding from '@/components/FavoritesOnboarding'
+import WelcomeSteps, { IR_A_TU_DIA } from '@/components/WelcomeSteps'
 
 const ONBOARDED_KEY = 'ts_onboarded'
 const FAV_KEY = 'ts_favorites'
@@ -67,6 +70,31 @@ export default function WelcomeOnboarding() {
     }
   }, [])
 
+  // Vuelta de la bienvenida: el último paso recarga la portada para que lo
+  // elegido se note. Aquí se recoge la bandera y se baja al bloque «Tu día», que
+  // aparece en cuanto el navegador tiene deportes o equipos guardados. Se espera
+  // un poco porque el bloque se pinta tras leer el almacén (y la nube, si hay
+  // sesión); si a los 3 s no está, se abandona en silencio.
+  useEffect(() => {
+    let pendiente = false
+    try {
+      pendiente = sessionStorage.getItem(IR_A_TU_DIA) === '1'
+      if (pendiente) sessionStorage.removeItem(IR_A_TU_DIA)
+    } catch { return }
+    if (!pendiente) return
+    const t0 = Date.now()
+    const id = setInterval(() => {
+      const el = document.getElementById('tu-dia-titulo')
+      if (el) {
+        clearInterval(id)
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } else if (Date.now() - t0 > 3000) {
+        clearInterval(id)
+      }
+    }, 200)
+    return () => clearInterval(id)
+  }, [])
+
   const markDone = () => {
     try { localStorage.setItem(ONBOARDED_KEY, '1') } catch { /* ignore */ }
   }
@@ -102,7 +130,7 @@ export default function WelcomeOnboarding() {
 
   if (!open) return null
   return (
-    <FavoritesOnboarding
+    <WelcomeSteps
       onClose={handleClose}
       onSave={handleSave}
     />

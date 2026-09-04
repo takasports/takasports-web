@@ -19,7 +19,10 @@ const ESPN_NBA = (abbr: string) => espnAt(`https://a.espncdn.com/i/teamlogos/nba
 
 // Curated list of popular teams/athletes per sport. Names match what appears in the
 // SportEvent.home/away strings from ESPN/Sanity data.
-const POPULAR_TEAMS: { name: string; sport: string; league?: string; icon: string; logo?: string }[] = [
+export interface PopularTeam { name: string; sport: string; league?: string; icon: string; logo?: string }
+// Exportada para que la bienvenida de tres pasos (WelcomeSteps) reutilice la
+// MISMA lista y los mismos escudos: dos catálogos de equipos se desincronizan.
+export const POPULAR_TEAMS: PopularTeam[] = [
   // ⚽ LaLiga
   { name: 'Barcelona', sport: 'Fútbol', league: 'LaLiga', icon: '🔵', logo: ESPN_SOCCER(83) },
   { name: 'Real Madrid', sport: 'Fútbol', league: 'LaLiga', icon: '⚪', logo: ESPN_SOCCER(86) },
@@ -146,7 +149,7 @@ const POPULAR_TEAMS: { name: string; sport: string; league?: string; icon: strin
 ]
 
 // Pequeño componente con fallback a emoji si la imagen del escudo falla.
-function TeamIcon({ logo, fallback, name, active }: { logo?: string; fallback: string; name: string; active: boolean }) {
+export function TeamIcon({ logo, fallback, name, active }: { logo?: string; fallback: string; name: string; active: boolean }) {
   const [failed, setFailed] = useState(false)
   if (logo && !failed) {
     return (

@@ -325,8 +325,12 @@ export default function PorraCTA({ href, active, variant, onNavigate }: Props) {
           : 'none',
       }} />
       {state.label}
-      <span style={badgeStyle(state.badgeTone)}>{state.badge}</span>
+      {/* La cuenta atrás se cae por debajo de 1024: es lo que hacía que la
+          píldora no cupiera en la cabecera de tablet (f1-5). El enlace sigue
+          entero, solo pierde el badge. */}
+      <span className="porra-badge" style={badgeStyle(state.badgeTone)}>{state.badge}</span>
       <style>{`
+        @media (max-width: 1023px) { .porra-badge { display: none; } }
         @keyframes porraPulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50%      { opacity: 0.55; transform: scale(0.85); }

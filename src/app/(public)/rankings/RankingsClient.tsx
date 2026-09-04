@@ -19,6 +19,7 @@ import RankRow from '@/components/rankings/RankRow'
 import TopOneRow from '@/components/rankings/TopOneRow'
 import Podium from '@/components/rankings/Podium'
 import RankBlock from '@/components/rankings/RankBlock'
+import SportPodium from '@/components/rankings/SportPodium'
 import FeaturedCard from '@/components/rankings/FeaturedCard'
 import FilterPillBar from '@/components/rankings/FilterPillBar'
 import SportSelector from '@/components/rankings/SportSelector'
@@ -26,6 +27,8 @@ import GlobalSearchResults from '@/components/rankings/GlobalSearchResults'
 import AppliedFiltersBar, { type AppliedFilter } from '@/components/rankings/AppliedFiltersBar'
 import PredictWidget from '@/components/rankings/PredictWidget'
 import { MAX_WEEKLY_DELTA } from '@/lib/rankings-data'
+import { agruparPorDeporte } from '@/lib/rankings-por-deporte'
+import { useFollowedSports } from '@/lib/useFollowedSports'
 
 // ── Modelo: 3 tracks de alto nivel ────────────────────────────────────
 type Track = 'deportista' | 'equipo' | 'creador'
@@ -37,7 +40,11 @@ const TRACK_TABS: { id: Track; label: string }[] = [
 ]
 
 // Deportes que ofrece cada track (slugs para SportSelector.only)
-const DEPORTISTA_SPORTS = ['', 'futbol', 'baloncesto', 'formula1', 'tenis', 'ufc']
+// La lucha libre entró aquí el 04/09/2026: sus luchadores YA aparecían en
+// «Todos» (Roman Reigns es el nº 1 global), pero no había forma de filtrar por
+// ella. Con un podio por deporte el atajo «Ver los N →» necesita un chip al que
+// llegar.
+const DEPORTISTA_SPORTS = ['', 'futbol', 'baloncesto', 'formula1', 'tenis', 'ufc', 'wwe']
 const EQUIPO_SPORTS     = ['', 'futbol', 'baloncesto']
 // Creadores: verticales con creadores curados
 const CREADOR_SPORTS = ['futbol', 'ufc', 'wwe']
@@ -86,6 +93,25 @@ const FACTOR_CARDS_CONTENIDO = [
   { label: 'Relevancia', pct: '25%', color: '#c084fc',
     desc: 'Si su gente de verdad le ve: visitas de sus últimos vídeos en relación a su número de seguidores.' },
 ]
+
+// Cabecera de columnas de la TABLA (no de los podios).
+function ColumnHeader() {
+  return (
+    <div className="flex items-center gap-3 px-4 pb-2 mb-1">
+      <span className="w-7 flex-shrink-0" /><span className="w-9 flex-shrink-0" />
+      <span className="flex-1 text-[9px] font-black uppercase tracking-widest"
+        style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
+        Nombre
+      </span>
+      <span className="hidden xl:block max-w-[260px] flex-shrink-0" />
+      <span className="text-[9px] font-black uppercase tracking-widest ml-auto"
+        style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
+        Puntos
+      </span>
+      <span className="w-5 flex-shrink-0" />
+    </div>
+  )
+}
 
 type DbData = Partial<Record<string, RankingEntry[]>>
 
@@ -148,6 +174,10 @@ export default function RankingsClient({
   const [sortMode, setSortMode]             = useState<'score' | 'hot'>('score')
   const [toolsOpen, setToolsOpen]           = useState(false)
   const [searchQuery, setSearchQuery]       = useState(initialQuery)
+  // Ordena los podios de «Todos»: lo tuyo primero. Llega vacío en el primer
+  // render (localStorage solo existe tras hidratar) → el HTML del servidor y el
+  // del cliente coinciden, y el orden personal entra después.
+  const { sports: deportesSeguidos } = useFollowedSports()
 
   const isCreador = track === 'creador'
   const sportAccent = activeSport && !isCreador ? getSportStyle(activeSport).accent : (isCreador ? '#f59e0b' : '#7C3AED')
@@ -314,6 +344,31 @@ export default function RankingsClient({
     : undefined
 
   const showSportEmoji = !activeSport && !isCreador
+
+  // ── Podios por deporte (solo en «Todos») ───────────────────────────
+  // Mezclar deportes en una sola escalera hacía que el nº 1 del deporte fuera un
+  // luchador de la WWE por delante de Bellingham y de Sinner: las notas se
+  // calculan con fuentes distintas por deporte y no son comparables entre sí.
+  // Cada deporte tiene ahora su podio; la lista mezclada se conserva ENTERA
+  // debajo (José Tomás, 04/09/2026).
+  const ordenDeportes = isCreador
+    ? CREADOR_SPORTS
+    : track === 'equipo'
+      ? EQUIPO_SPORTS.filter(Boolean)
+      : DEPORTISTA_SPORTS.filter(Boolean)
+  // En «Hot now» la lista va ordenada por lo que MÁS SUBE esta semana, no por
+  // nota: un pedestal de oro/plata/bronce ahí diría algo que no es. Ese orden
+  // conserva la lista de siempre.
+  const podios = (!q && !activeSport && sortMode === 'score')
+    ? agruparPorDeporte(finalEntries, ordenDeportes, deportesSeguidos, 3)
+    : []
+  // Con un solo deporte no hay nada que separar: se queda la vista de siempre.
+  const mostrarPodios = podios.length >= 2
+
+  const abrirDeporte = (sport: string) => {
+    handleSportChange(sport)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   return (
     <div data-sport={activeSport || undefined} style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
@@ -630,21 +685,50 @@ export default function RankingsClient({
         {/* ── LISTADO PRINCIPAL ─────────────────────────────────── */}
         {searchQuery.trim().length < 2 && finalEntries.length > 0 && (
           <>
-            <div className="flex items-center gap-3 px-4 pb-2 mb-1">
-              <span className="w-7 flex-shrink-0" /><span className="w-9 flex-shrink-0" />
-              <span className="flex-1 text-[9px] font-black uppercase tracking-widest"
-                style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
-                Nombre
-              </span>
-              <span className="hidden xl:block max-w-[260px] flex-shrink-0" />
-              <span className="text-[9px] font-black uppercase tracking-widest ml-auto"
-                style={{ color: '#2A2A3A', fontFamily: 'var(--font-sport)' }}>
-                Puntos
-              </span>
-              <span className="w-5 flex-shrink-0" />
-            </div>
+            {!mostrarPodios && <ColumnHeader />}
 
-            {q ? (
+            {!q && mostrarPodios ? (
+              <>
+                {podios.some(g => g.seguido) && (
+                  <p className="flex items-center gap-2.5 px-1 pb-2 text-[9.5px] font-black uppercase tracking-[0.18em]"
+                    style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
+                    Tus deportes
+                    <span aria-hidden="true" className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+                  </p>
+                )}
+                {podios.map((g, i) => (
+                  <div key={g.sport}>
+                    {/* Separador entre lo tuyo y el resto: solo donde cambia. */}
+                    {g.seguido === false && podios[i - 1]?.seguido === true && (
+                      <p className="flex items-center gap-2.5 px-1 pt-3 pb-2 text-[9.5px] font-black uppercase tracking-[0.18em]"
+                        style={{ color: '#4A4A62', fontFamily: 'var(--font-sport)' }}>
+                        El resto
+                        <span aria-hidden="true" className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+                      </p>
+                    )}
+                    <SportPodium
+                      sport={g.sport} entries={g.entries} total={g.total} seguido={g.seguido}
+                      onOpen={abrirDeporte} maxScore={listMaxScore} minScore={listMinScore}
+                    />
+                  </div>
+                ))}
+
+                <div className="mt-6 pt-5 mb-8" style={{ borderTop: '1px solid rgba(255,255,255,0.09)' }}>
+                  <h2 className="font-black" style={{ fontFamily: 'var(--font-display)', fontSize: 21, color: '#F8F8FF', letterSpacing: '-0.01em' }}>
+                    Todos los deportes
+                  </h2>
+                  <p className="text-[11.5px] mt-1 mb-3" style={{ color: '#6A6A82', fontFamily: 'var(--font-sport)' }}>
+                    La lista completa, mezclando deportes. {finalEntries.length} {finalEntries.length === 1 ? 'nombre' : 'nombres'}.
+                  </p>
+                  <ColumnHeader />
+                  <RankBlock label="Posiciones 1 – 25" entries={finalEntries.slice(0, 25)} showSportEmoji={showSportEmoji} typeTagFn={typeTagFn} maxScore={listMaxScore} minScore={listMinScore} defaultOpen />
+                  <RankBlock label="Posiciones 26 – 50" entries={rank26to50} showSportEmoji={showSportEmoji} typeTagFn={typeTagFn} maxScore={listMaxScore} minScore={listMinScore} />
+                  {rank51on.length > 0 && (
+                    <RankBlock label="Posiciones 51+" entries={rank51on} showSportEmoji={showSportEmoji} typeTagFn={typeTagFn} maxScore={listMaxScore} minScore={listMinScore} />
+                  )}
+                </div>
+              </>
+            ) : q ? (
               <div className="flex flex-col gap-2 mb-8">
                 {finalEntries.map((entry) => (
                   <RankRow

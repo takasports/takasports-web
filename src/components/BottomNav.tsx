@@ -18,7 +18,7 @@ const TABS = [
   { href: '/perfil', label: 'Tú', match: (p: string) => p.startsWith('/perfil'), icon: PersonIcon },
 ]
 
-// Barra inferior FLOTANTE en vidrio (móvil, lg:hidden): cápsula con blur real,
+// Barra inferior FLOTANTE en vidrio (móvil, md:hidden): cápsula con blur real,
 // pastilla activa morada de marca y punto rojo de directos en Partidos.
 //
 // Rediseñada el 03/09/2026 (fase 1, opción A aprobada por José Tomás). Antes eran
@@ -98,7 +98,7 @@ export default function BottomNav() {
   return (
     <nav
       aria-label="Navegación inferior"
-      className="lg:hidden fixed inset-x-0 bottom-0 z-40 pointer-events-none px-3.5"
+      className="md:hidden fixed inset-x-0 bottom-0 z-40 pointer-events-none px-3.5"
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 10px)' }}
     >
       {/* Wrapper con la sombra (sin overflow, que la recortaría) */}

@@ -1848,6 +1848,25 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
         <TeamScoreboard match={match} />
       </div>
 
+      {/* «Dónde verlo» y la probabilidad, JUNTO AL MARCADOR y no en el lateral.
+          Vivían en el <aside>, que en móvil y tablet cae DEBAJO de las pestañas:
+          en un partido en juego quedaban por detrás del minuto a minuto, el
+          boxscore y las alineaciones — o sea, lo primero que alguien busca al
+          abrir la ficha era lo último que veía. En escritorio siguen arriba, con
+          la tarjeta acotada para que la barra no se estire a 1.440 px.
+          [José Tomás, 04/09/2026] */}
+      <InfoRow match={match} />
+      {hasPulse && (
+        <div className="lg:max-w-[640px]">
+          <MatchPulse
+            estimate={estimate}
+            dominance={dominance}
+            homeAbbr={match.homeAbbr ?? match.homeTeam ?? '—'}
+            awayAbbr={match.awayAbbr ?? match.awayTeam ?? '—'}
+          />
+        </div>
+      )}
+
       {/* 2 columnas en escritorio: pestañas (principal) + contexto del partido (lateral).
           En móvil/tablet se apila (flex-col): primero las pestañas, debajo el contexto. */}
       <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -1998,16 +2017,7 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
 
         {/* ── Lateral: contexto del partido (datos / forma / pulso / noticias) ── */}
         <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0">
-          <InfoRow match={match} />
           <FormGuide homeTeam={match.homeTeam} awayTeam={match.awayTeam} forms={forms} />
-          {hasPulse && (
-            <MatchPulse
-              estimate={estimate}
-              dominance={dominance}
-              homeAbbr={match.homeAbbr ?? match.homeTeam ?? '—'}
-              awayAbbr={match.awayAbbr ?? match.awayTeam ?? '—'}
-            />
-          )}
           <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
         </aside>
       </div>

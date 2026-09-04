@@ -731,7 +731,15 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
           />
 
           {/* Nav desktop */}
-          <nav ref={navRef} className="hidden lg:flex items-center gap-0 flex-1 relative" aria-label="Navegación principal">
+          {/* Nav: visible desde 768 px (tablet). Entre 768 y 1023 no cabía y la web
+              servía la cabecera de móvil —logo, lupa y ☰— sin Noticias, Calendario,
+              Rankings ni Predicciones a la vista. Medido a 1024 px el nav ocupa
+              exactamente el ancho disponible (105 + 755 + 84 + 32 = 976 = 976), así que
+              tampoco había holgura para un usuario con sesión (el LevelChip suma otros
+              ~80). De ahí `overflow-x-auto`: lo que no entre se desplaza en vez de
+              desbordar. A partir de 1024 no se mueve nada porque ya cabe.
+              [f1-5, 04/09/2026] */}
+          <nav ref={navRef} className="hidden md:flex items-center gap-0 flex-1 min-w-0 overflow-x-auto scrollbar-hide relative ts-nav-fade" aria-label="Navegación principal">
             {NAV_LINKS.map(({ label, href, to }) => {
               const active = isNavActive(href, pathname)
               return (
@@ -739,7 +747,7 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
                   key={href}
                   href={to ?? href}
                   aria-current={active ? 'page' : undefined}
-                  className={`nav-link relative flex items-center px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap${active ? ' active' : ''}`}
+                  className={`nav-link relative flex items-center px-2 lg:px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap${active ? ' active' : ''}`}
                   style={{ fontFamily: 'var(--font-sport)', textDecoration: 'none', letterSpacing: '0.01em' }}
                   onClick={href === '/' && pathname === '/' ? () => window.scrollTo({ top: 0, behavior: 'smooth' }) : undefined}
                 >
@@ -895,7 +903,7 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
               aria-expanded={menuOpen}
               aria-controls="mobile-drawer"
               onClick={() => setMenuOpen((v) => !v)}
-              className="lg:hidden flex items-center justify-center rounded-lg flex-shrink-0"
+              className="md:hidden flex items-center justify-center rounded-lg flex-shrink-0"
               style={{ width: 38, height: 38, background: menuOpen ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               {menuOpen ? (

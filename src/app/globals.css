@@ -186,6 +186,15 @@ body {
 
 /* ── Scrollbar ───────────────────── */
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+/* Cabecera de tablet (768-1023): el nav se desplaza si no cabe del todo. El
+   difuminado del borde derecho hace que el recorte se lea como "hay más" y no
+   como un elemento cortado. A partir de 1024 el nav entra entero y no se aplica. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .ts-nav-fade {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent 100%);
+  }
+}
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
