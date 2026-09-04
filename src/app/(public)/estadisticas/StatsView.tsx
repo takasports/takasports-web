@@ -122,16 +122,56 @@ function ClasificacionesHub({ data, sport }: { data: StatsStandingsResponse | nu
   if (!visibles.length) return null
 
   return (
-    <nav aria-label="Directorio de equipos y clasificaciones" className="max-w-2xl mx-auto px-4 pt-4 pb-12">
-      <h2
-        className="text-[11px] font-black uppercase tracking-widest mb-4"
-        style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sport)' }}
-      >
-        Equipos y clasificaciones
-      </h2>
+    <DirectorioPlegable titulo="Equipos y clasificaciones" etiqueta="Directorio de equipos y clasificaciones">
       {visibles.map((g) => (
         <DirectoryGroup key={g.title} title={g.title} hubHref={g.hubHref} teams={g.teams} />
       ))}
+    </DirectorioPlegable>
+  )
+}
+
+/**
+ * Envoltorio plegable de los directorios.
+ *
+ * Estos dos bloques existen POR SEO: sacan las fichas profundas de /equipo y
+ * /jugador del limbo "solo en el sitemap" y las dejan a un clic de una página
+ * con autoridad. Pero también hacían de /estadisticas una página de 17.424 px en
+ * un móvil, casi toda listas de enlaces que nadie recorre a dedo.
+ *
+ * `<details>` resuelve las dos cosas a la vez y por eso no se movieron a una URL
+ * aparte: el contenido de un `<details>` cerrado SIGUE en el HTML, así que
+ * Googlebot lo ve y los enlaces reparten igual; lo único que cambia es que la
+ * persona no tiene que pasar por encima. Mover el índice a otra página habría
+ * alejado esos enlaces un clic más y desactivado justo lo que se buscaba.
+ */
+function DirectorioPlegable({ titulo, etiqueta, children }: {
+  titulo: string
+  etiqueta: string
+  children: React.ReactNode
+}) {
+  return (
+    <nav aria-label={etiqueta} className="max-w-2xl mx-auto px-4 pb-8">
+      <details className="group">
+        <summary
+          className="flex items-center gap-2 cursor-pointer list-none py-3 rounded-lg transition-colors hover:bg-white/[0.03]"
+          style={{ minHeight: 44 }}
+        >
+          <span
+            className="text-[11px] font-black uppercase tracking-widest"
+            style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sport)' }}
+          >
+            {titulo}
+          </span>
+          <svg
+            width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden
+            className="ml-auto transition-transform group-open:rotate-180"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </summary>
+        <div className="pt-2">{children}</div>
+      </details>
     </nav>
   )
 }
@@ -171,17 +211,11 @@ function PlayersDirectory({ data }: { data: PlayersResponse | null }) {
   }
   if (!groups.length) return null
   return (
-    <nav aria-label="Goleadores y asistentes por liga" className="max-w-2xl mx-auto px-4 pb-12">
-      <h2
-        className="text-[11px] font-black uppercase tracking-widest mb-4"
-        style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sport)' }}
-      >
-        Goleadores y asistentes
-      </h2>
+    <DirectorioPlegable titulo="Goleadores y asistentes" etiqueta="Goleadores y asistentes por liga">
       {groups.map((g) => (
         <DirectoryGroup key={g.title} title={g.title} hubHref={g.hubHref} teams={g.teams} />
       ))}
-    </nav>
+    </DirectorioPlegable>
   )
 }
 
