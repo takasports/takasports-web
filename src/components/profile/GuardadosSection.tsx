@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import DynamicImage from '@/components/DynamicImage'
 import { leerGuardadosLocales } from '@/components/SaveArticleButton'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 // Lista de noticias guardadas, en el perfil.
 //
@@ -55,13 +56,11 @@ export default function GuardadosSection() {
 
   return (
     <section>
-      <div className="flex items-center gap-2.5 mb-4">
-        <span className="section-accent" />
-        <h2 className="section-label">Guardados</h2>
+      <SectionHeader action={<>
         <span className="text-[10px]" style={{ color: 'var(--text-faint)', fontFamily: 'var(--font-sport)' }}>
           {items.length}
         </span>
-      </div>
+</>}>Guardados</SectionHeader>
 
       <ul className="flex flex-col gap-1" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
         {items.slice(0, 8).map(g => (

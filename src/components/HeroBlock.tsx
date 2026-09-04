@@ -694,25 +694,41 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
         <ProgressBar offset={offset % len} paused={paused} />
 
         {/* ── Dots de posición ──────────────────────────────── */}
+        {/* El punto ERA el botón: 8×8 px, muy por debajo de los 24×24 que pide
+            WCAG 2.2. Ahora el botón mide 24 de alto y el punto es un span dentro,
+            así que se ve IGUAL y se pulsa tres veces mejor. El hueco baja de 6 a
+            0 porque el propio relleno del botón ya separa. */}
         {len >= 3 && (
-          <div className="flex items-center gap-1.5 mt-3 justify-center lg:justify-start">
+          <div className="flex items-center gap-0 mt-3 justify-center lg:justify-start">
             {Array.from({ length: len }).map((_, i) => (
               <button
                 key={i}
                 onClick={() => goTo(i)}
                 aria-label={`Ir al artículo ${i + 1}`}
+                aria-current={i === offset % len ? 'true' : undefined}
                 style={{
-                  width: i === offset % len ? 24 : 8,
-                  height: 8,
-                  borderRadius: 4,
-                  background: i === offset % len ? '#7C3AED' : 'rgba(255,255,255,0.2)',
+                  height: 24,
+                  padding: '0 8px',
+                  background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: 0,
-                  transition: 'width 250ms ease, background 250ms ease',
-                  boxShadow: i === offset % len ? '0 0 8px rgba(124,58,237,0.5)' : 'none',
+                  display: 'grid',
+                  placeItems: 'center',
                 }}
-              />
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    display: 'block',
+                    width: i === offset % len ? 24 : 8,
+                    height: 8,
+                    borderRadius: 4,
+                    background: i === offset % len ? '#7C3AED' : 'rgba(255,255,255,0.2)',
+                    transition: 'width 250ms ease, background 250ms ease',
+                    boxShadow: i === offset % len ? '0 0 8px rgba(124,58,237,0.5)' : 'none',
+                  }}
+                />
+              </button>
             ))}
           </div>
         )}

@@ -1043,9 +1043,7 @@ export default function JuegosPageClient() {
             y lo que está por venir. */}
         {(partnerGames.length > 0 || comingGames.length > 0) && (
           <section>
-            <div className="flex items-center gap-2.5 mb-4">
-              <span className="section-accent" />
-              <h2 className="section-label">Más adelante</h2>
+            <SectionHeader action={<>
               {comingGames.length > 0 && (
                 <span
                   className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest"
@@ -1054,7 +1052,7 @@ export default function JuegosPageClient() {
                   {comingGames.length} en camino
                 </span>
               )}
-            </div>
+</>}>Más adelante</SectionHeader>
 
             {partnerGames.map(game => (
               <div key={game.id} className="mb-4">

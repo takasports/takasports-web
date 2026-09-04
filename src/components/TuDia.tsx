@@ -8,6 +8,7 @@ import { isoToLocalDate } from '@/lib/calendar'
 import { useFollowedSports } from '@/lib/useFollowedSports'
 import { getStoredTZ } from '@/lib/timezone'
 import { convertEventTime, SOURCE_TZ } from '@/lib/timezone'
+import SectionHeader from '@/components/ui/SectionHeader'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // "Tu día" — el único bloque de la portada que sabe quién eres.
@@ -77,13 +78,11 @@ export default function TuDia({ events }: { events: SportEvent[] }) {
 
   return (
     <section aria-labelledby="tu-dia-titulo" className="mb-8">
-      <div className="flex items-center gap-2.5 mb-4">
-        <span className="section-accent" />
-        <h2 id="tu-dia-titulo" className="section-label">Tu día</h2>
+      <SectionHeader id="tu-dia-titulo" action={<>
         <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-faint)', fontFamily: 'var(--font-sport)' }}>
           {hoyLargo}
         </span>
-      </div>
+</>}>Tu día</SectionHeader>
 
       <div
         className="rounded-2xl p-4 flex flex-col gap-3"

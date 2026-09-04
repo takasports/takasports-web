@@ -137,6 +137,23 @@ body {
   html { font-size: 15px; }
 }
 
+/* ── Objetivo táctil mínimo en móvil (WCAG 2.2 AA · target-size) ──────────────
+   TRAMPA: la raíz baja a 15 px justo arriba, así que TODA medida en `rem` de
+   Tailwind encoge en móvil — y `w-6 h-6`, que se escribió pensando en 24 px,
+   mide en realidad 22,5. Nueve botones de la portada fallaban por píxel y medio,
+   y no se veía leyendo el código: hay que medirlo renderizado.
+   Se acota a elementos INTERACTIVOS para no inflar los iconos decorativos que
+   usan el mismo tamaño. [04/09/2026] */
+@media (max-width: 640px) {
+  button.w-6,
+  a.w-6,
+  [role="button"].w-6,
+  summary.w-6 {
+    min-width: 24px;
+    min-height: 24px;
+  }
+}
+
 /* ── Reserve space at page bottom on mobile for the floating bottom nav ── */
 @media (max-width: 1023px) {
   body {

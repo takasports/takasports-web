@@ -309,7 +309,10 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
                 {pairIdx + 1} / {totalPairs}
               </span>
 
-              <div className="flex items-center gap-1.5 flex-shrink-0">
+              {/* Mismo caso que los puntos del hero: eran de 6×6 px. El botón
+                  pasa a 24 de alto y el punto queda dentro, sin cambiar de
+                  aspecto. */}
+              <div className="flex items-center gap-0 flex-shrink-0">
                 {Array.from({ length: totalPairs }).map((_, i) => (
                   <button
                     key={i}
@@ -317,16 +320,27 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
                     aria-label={`Ir al grupo ${i + 1} de ${totalPairs}`}
                     aria-current={i === pairIdx ? 'true' : undefined}
                     style={{
-                      width: i === pairIdx ? 16 : 6,
-                      height: 6,
-                      borderRadius: 3,
-                      background: i === pairIdx ? '#7C3AED' : 'rgba(255,255,255,0.15)',
+                      height: 24,
+                      padding: '0 9px',
+                      background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      transition: 'all 300ms ease',
-                      padding: 0,
+                      display: 'grid',
+                      placeItems: 'center',
                     }}
-                  />
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        display: 'block',
+                        width: i === pairIdx ? 16 : 6,
+                        height: 6,
+                        borderRadius: 3,
+                        background: i === pairIdx ? '#7C3AED' : 'rgba(255,255,255,0.15)',
+                        transition: 'all 300ms ease',
+                      }}
+                    />
+                  </button>
                 ))}
               </div>
 

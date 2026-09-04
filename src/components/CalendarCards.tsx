@@ -457,7 +457,10 @@ export function TeamNameLink({ href, name, align, children }: {
       href={href}
       prefetch={false}
       className={`pointer-events-auto relative z-[3] block no-underline hover:underline ${align === 'right' ? 'text-right' : 'text-left'}`}
-      style={{ textUnderlineOffset: 3, textDecorationColor: 'rgba(255,255,255,0.35)' }}
+      // 24 px de alto mínimo: el enlace medía 23 y se quedaba a UN píxel del
+      // objetivo táctil que pide WCAG 2.2 (target-size, AA). Como el texto ya
+      // ocupa 23, esto crece un píxel y no se nota. [04/09/2026]
+      style={{ textUnderlineOffset: 3, textDecorationColor: 'rgba(255,255,255,0.35)', minHeight: 24 }}
       aria-label={`Ficha de ${name}`}
       onClick={(e) => e.stopPropagation()}
     >
