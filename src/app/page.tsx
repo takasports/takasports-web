@@ -19,6 +19,7 @@ import { urlFor } from '@/lib/sanity'
 import { SITE_URL, REPORTAJES_ENABLED } from '@/lib/constants'
 import MasLeidas from '@/components/MasLeidas'
 import { isoToLocalDate } from '@/lib/calendar'
+import { candidatosDestacados } from '@/lib/destacados-home'
 
 export const revalidate = 300
 
@@ -162,6 +163,14 @@ export default async function Home() {
   // coinciden (ver `renderedAt` en HomeContent).
   const renderedAt = Date.now()
   const hoyMadrid = isoToLocalDate(new Date(renderedAt).toISOString())
+  // Los Destacados solo pueden elegir entre los partidos de la ventana de 36 h
+  // (más un puñado de reserva). Mandar el calendario ENTERO al navegador para
+  // pintar cuatro costaba ~1 MB de HTML en cada visita: de 780 partidos, 590
+  // caían fuera de la ventana y 46 ya habían pasado. El recorte usa el MISMO
+  // reloj sellado y el MISMO criterio que `pickTopEvents` (ver
+  // lib/destacados-home.ts), así que la elección no cambia.
+  const eventosDestacables = candidatosDestacados(events, renderedAt)
+
   const eventosDeHoy = events
     .filter(e => e.isoDate && isoToLocalDate(e.isoDate) === hoyMadrid)
     .map(e => ({
@@ -255,7 +264,7 @@ export default async function Home() {
           "En directo" queda fijo al scrollear, "Último momento" se colapsa, y el
           filtro de abajo se ancla a --console-h (sin hueco). */}
       <HeaderConsole breakingItems={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
-      <HomeContent renderedAt={renderedAt} eventosDeHoy={eventosDeHoy} articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} reportajes={reportajes} masLeidas={<MasLeidas />} />
+      <HomeContent renderedAt={renderedAt} eventosDeHoy={eventosDeHoy} articles={articles} reels={reels} events={eventosDestacables} topPlayers={topPlayers} featuredBySport={featuredBySport} reportajes={reportajes} masLeidas={<MasLeidas />} />
       <NewsletterSection source="home" />
       <Footer />
       <WelcomeOnboarding />
