@@ -21,6 +21,7 @@ import RankedLeaderboard from '@/components/ranked/RankedLeaderboard'
 import PorraChallengeBanner from '@/components/PorraChallengeBanner'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 import { RankedCategoryIcon, FireIcon } from '@/components/icons/GameIcons'
+import JugarTabs from '@/components/JugarTabs'
 
 // Carga dinámica — solo se carga el cliente activo
 // Ranked Fútbol — la vista de Fechas. Sustituye al viejo QuinielaClient, que
@@ -177,6 +178,10 @@ export default function PrediccionesHub() {
           <PorraChallengeBanner />
         </Suspense>
       )}
+
+      {/* Las dos mitades de "Jugar": desde que la barra inferior las reúne en
+          una sola pestaña, hay que poder cruzar de aquí a los minijuegos. */}
+      <JugarTabs activo="predicciones" />
 
       {/* ── Hub tabs ──────────────────────────────────────────────── */}
       <div

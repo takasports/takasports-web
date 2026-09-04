@@ -25,6 +25,7 @@ import LeaderboardTabs from '@/components/games/LeaderboardTabs'
 import { formatCountdown, getGamePeriod } from '@/lib/games-periods'
 import { useGamesOverview, type GameCardState } from '@/hooks/useGamesOverview'
 import type { GameId } from '@/lib/games-store'
+import JugarTabs from '@/components/JugarTabs'
 
 // (iconos y previews movidos a src/components/games/GameVisuals.tsx)
 
@@ -924,6 +925,12 @@ export default function JuegosPageClient() {
           className="signal-tint"
           style={{ background: 'radial-gradient(120% 85% at 70% 0%, #7C3AED33 0%, transparent 60%)' }}
         />
+      </div>
+
+      {/* Las dos mitades de "Jugar", para poder volver a la Jornada sin pasar
+          por el cajón ☰. */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <JugarTabs activo="juegos" />
       </div>
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24" style={{ position: 'relative', zIndex: 1 }}>
