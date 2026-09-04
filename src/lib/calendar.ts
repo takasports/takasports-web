@@ -53,9 +53,16 @@ export function orderedDateKeys(grouped: Record<string, SportEvent[]>): string[]
 }
 
 // Format YYYY-MM-DD into a friendly label: "Hoy", "Mañana", or "Vie 5 May"
-export function formatDateLabel(localDate: string, tz: string = SOURCE_TZ): string {
+//
+// `hoy` (YYYY-MM-DD ya en `tz`) permite inyectar el día desde fuera. Quien
+// pinte esto en SSR DEBE pasarlo, sellado por el servidor: /calendario se
+// sirve cacheado (revalidate 5m) y si cada lado mira su propio reloj, una
+// cabecera que diga "Hoy" en el HTML y "Vie 4 Sep" al hidratar rompe la
+// hidratación (React #418) y repinta la página entera. Sin `hoy` se cae al
+// reloj local, que es lo correcto para lo que se pinta ya hidratado (modales).
+export function formatDateLabel(localDate: string, tz: string = SOURCE_TZ, hoy?: string): string {
   if (localDate === 'unknown') return 'Sin fecha'
-  const today = isoToLocalDate(new Date().toISOString(), tz)
+  const today = hoy ?? isoToLocalDate(new Date().toISOString(), tz)
   if (localDate === today) return 'Hoy'
 
   const tomorrow = new Date(today + 'T12:00:00Z')

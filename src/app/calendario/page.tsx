@@ -196,6 +196,7 @@ export default async function CalendarioPage() {
         <LiveStrip />
       </div>
       <CalendarioContent
+        renderedAt={Date.now()}
         events={initialEvents}
         deferredFrom={deferred.length > 0 ? windowEndDay(hoyIso) : undefined}
         recentForms={recentForms}

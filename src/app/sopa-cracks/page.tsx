@@ -6,6 +6,8 @@ import { trackGameStart, trackGameComplete } from '@/lib/analytics'
 import GameLayout from '@/components/games/GameLayout'
 import GameOnboarding from '@/components/games/GameOnboarding'
 import { recordPlay, currentWeekISO, type GamePlay } from '@/lib/games-store'
+import { useMounted } from '@/hooks/useMounted'
+import SopaCracksLoading from './loading'
 import { SOPA, scoreSopa } from '@/lib/game-scoring'
 import { madridWeekNumber } from '@/lib/taka-time'
 import { trackGameEvent } from '@/lib/games-telemetry'
@@ -121,6 +123,7 @@ function fmtTime(s: number): string {
 // ── Componente principal ──────────────────────────────────────
 
 export default function SopaCracksPage() {
+  const montado = useMounted()
   const staticPuzzle = useMemo(() => getWeeklyPuzzle(currentWeekISO()), [])
   const [featuredPuzzle, setFeaturedPuzzle] = useState<Puzzle | null>(null)
   const puzzle = featuredPuzzle ?? staticPuzzle
@@ -586,6 +589,15 @@ export default function SopaCracksPage() {
   }
 
   // ── Render ─────────────────────────────────────────────────
+
+  // Hasta hidratar NO sabemos de qué día/semana es el puzle, así que no se
+  // pinta ninguno. Esta página es ESTÁTICA de build y no revalida: su HTML
+  // lleva congelado el puzle del día en que se compiló, que a partir de la
+  // primera medianoche ya no es el de nadie. Antes se servía ese puzle viejo y
+  // React lo descartaba al hidratar (#418) repintando la página entera; ahora
+  // se sirve el mismo esqueleto que ya se ve mientras carga, y el puzle bueno
+  // entra sin tirar nada.
+  if (!montado) return <SopaCracksLoading />
 
   return (
     <GameLayout accent="#6EE7B7" accentDim="#34D399">

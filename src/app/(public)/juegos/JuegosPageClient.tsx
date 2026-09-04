@@ -23,6 +23,7 @@ import MissionsCard from '@/components/games/MissionsCard'
 import GamesStatusBar from '@/components/games/GamesStatusBar'
 import LeaderboardTabs from '@/components/games/LeaderboardTabs'
 import { formatCountdown, getGamePeriod } from '@/lib/games-periods'
+import { useMounted } from '@/hooks/useMounted'
 import { useGamesOverview, type GameCardState } from '@/hooks/useGamesOverview'
 import type { GameId } from '@/lib/games-store'
 import JugarTabs from '@/components/JugarTabs'
@@ -383,9 +384,15 @@ function LiveGameCard({ game, state }: { game: Game; state?: GameCardState }) {
   // la tarjeta. Antes vivía en un bloque aparte ("Tu día Taka") que repetía los
   // mismos cuatro juegos más arriba en la página: el mismo juego salía dos
   // veces, una como ficha de estado y otra como tarjeta.
+  // La cuenta atrás sale del reloj DEL NAVEGADOR y esta página es ESTÁTICA de
+  // build (sin revalidación): el "2d 6h" del HTML es el de cuando se compiló y
+  // no coincide nunca con el de quien la abre. Por eso se pinta tras montar
+  // —mismo patrón que RetoDelDia—: si no, React tira la página y la repinta
+  // entera (#418) en CADA carga.
+  const montado = useMounted()
   const period = getGamePeriod(game.id as GameId)
   const played = state?.played ?? false
-  const countdown = period.nextResetMs > 0 ? formatCountdown(period.nextResetMs) : null
+  const countdown = montado && period.nextResetMs > 0 ? formatCountdown(period.nextResetMs) : null
 
   return (
     <Link

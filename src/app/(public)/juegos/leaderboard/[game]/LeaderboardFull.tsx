@@ -6,6 +6,7 @@
 
 import Leaderboard from '@/components/games/Leaderboard'
 import { getGamePeriod } from '@/lib/games-periods'
+import { useMounted } from '@/hooks/useMounted'
 import type { GameId } from '@/lib/games-store'
 
 interface Props {
@@ -14,7 +15,11 @@ interface Props {
 }
 
 export default function LeaderboardFull({ gameId, accent }: Props) {
-  const period = getGamePeriod(gameId).period
+  // El periodo se deriva del reloj del navegador y se PINTA como texto
+  // ("2026-09-04"), así que solo después de montar: en el HTML servido iría el
+  // del servidor y al hidratar cambiaría → fallo de hidratación (#418).
+  const montado = useMounted()
+  const period = montado ? getGamePeriod(gameId).period : ''
   return (
     <Leaderboard
       gameId={gameId}

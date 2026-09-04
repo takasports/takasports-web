@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import Link from 'next/link'
 import Leaderboard from './Leaderboard'
 import { getGamePeriod } from '@/lib/games-periods'
+import { useMounted } from '@/hooks/useMounted'
 import { trackGameEvent } from '@/lib/games-telemetry'
 import type { GameId } from '@/lib/games-store'
 import SectionHeader from '@/components/ui/SectionHeader'
@@ -35,9 +36,12 @@ interface Props {
 export default function LeaderboardTabs({ quinielaJornada }: Props) {
   const [active, setActive] = useState<GameId>('quiniela')
 
+  // Mismo cuidado que en LeaderboardFull: el periodo depende del reloj del
+  // navegador y se pinta, así que no antes de hidratar.
+  const montado = useMounted()
   const period = useMemo(
-    () => getGamePeriod(active, quinielaJornada).period,
-    [active, quinielaJornada],
+    () => (montado ? getGamePeriod(active, quinielaJornada).period : ''),
+    [montado, active, quinielaJornada],
   )
   const accent = TABS.find(t => t.id === active)?.accent ?? '#A78BFA'
 

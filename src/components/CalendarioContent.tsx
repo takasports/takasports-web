@@ -55,6 +55,7 @@ export default function CalendarioContent({
   pastEvents = [],
   recentForms = {},
   initialTz = SOURCE_TZ,
+  renderedAt,
 }: {
   events: SportEvent[]
   /** Día (YYYY-MM-DD) desde el que faltan eventos por pedir. Ausente = están todos. */
@@ -62,6 +63,11 @@ export default function CalendarioContent({
   pastEvents?: SportEvent[]
   recentForms?: Record<string, FormResult[]>
   initialTz?: string
+  /** Momento del render en el SERVIDOR (epoch ms). Único reloj de todo lo que
+   *  se pinta en SSR y depende del día: las cabeceras "Hoy"/"Mañana", el tono
+   *  de los días pasados y los chips del selector. Sin él, el HTML cacheado
+   *  (revalidate 5m) y la hidratación discrepan al cruzar la medianoche. */
+  renderedAt: number
 }) {
   // El servidor solo pinta los días cercanos (ver lib/calendar-initial-window.ts:
   // mandaba 1,43 MB de HTML para enseñar nueve partidos). El resto llega aquí,
@@ -687,7 +693,7 @@ export default function CalendarioContent({
       const k = isoToLocalDate(e.isoDate, tz)
       counts[k] = (counts[k] ?? 0) + 1
     }
-    const today = isoToLocalDate(new Date().toISOString(), tz)
+    const today = isoToLocalDate(new Date(renderedAt).toISOString(), tz)
     // 42 días: cubre el Mundial completo (38 días) — antes el tope de 14 dejaba
     // fuera del selector las fechas de octavos en adelante.
     return Object.keys(counts)
@@ -697,7 +703,7 @@ export default function CalendarioContent({
       // counts solo sirve para saber QUÉ días tienen partidos; DayChips ya no
       // pinta ni label ni count (calcula su propia etiqueta desde la key).
       .map(k => ({ key: k }))
-  }, [events, search, activeFilter, activeCompCfg, tz])
+  }, [events, search, activeFilter, activeCompCfg, tz, renderedAt])
 
   // Ligas plegadas. La clave es el nombre de la competición, no el día: plegar la
   // Saudi Pro League la pliega en TODOS los días, que es lo que uno quiere cuando
@@ -1052,7 +1058,7 @@ export default function CalendarioContent({
   let anclaDirectoPuesta = false
   // Días abiertos por defecto: hoy. Hasta hidratar, TODOS abiertos (ver `hidratado`),
   // para que el HTML del servidor siga trayéndolo todo.
-  const todayKey = isoToLocalDate(new Date().toISOString(), tz)
+  const todayKey = isoToLocalDate(new Date(renderedAt).toISOString(), tz)
   const diasAbiertos: ReadonlySet<string> = hidratado
     ? diasAbiertosPorDefecto(orderedDates, todayKey)
     : new Set(orderedDates)
@@ -1530,6 +1536,7 @@ export default function CalendarioContent({
                     mineCount={dayEvents.filter(e => eventHasFavorite(favorites, e)).length}
                     tone={dateKey < todayKey ? 'past' : 'upcoming'}
                     tz={tz}
+                    hoy={todayKey}
                   />
                   {/* DESTACADOS: lista PLANA por hora, sin cabeceras de liga.
                       Agrupando por liga el reloj salta hacia atrás cada vez que
@@ -1618,8 +1625,8 @@ export default function CalendarioContent({
               <div className="space-y-1.5">
                 {remindedEvents.map(event => {
                   const evDate = event.isoDate ? isoToLocalDate(event.isoDate, tz) : null
-                  const today = isoToLocalDate(new Date().toISOString(), tz)
-                  const dateLabel = evDate && evDate !== today ? formatDateLabel(evDate, tz) : undefined
+                  const today = todayKey
+                  const dateLabel = evDate && evDate !== today ? formatDateLabel(evDate, tz, today) : undefined
                   return (
                     <MatchRow
                       key={event.id}

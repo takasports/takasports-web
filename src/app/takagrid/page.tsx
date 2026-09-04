@@ -12,6 +12,8 @@ import { getDailyPuzzle, isValidAnswer, getValidAnswers, type CellCoord, type Gr
 import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag, AlertIcon, CameraIcon, BoltIcon, LightbulbIcon } from '@/components/icons/GameIcons'
 import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
+import { useMounted } from '@/hooks/useMounted'
+import TakaGridLoading from './loading'
 import { scoreTakagrid } from '@/lib/game-scoring'
 import { averageRarity, rarityFor, rarityLabel, type TakagridHeatmap } from '@/lib/takagrid-heatmap'
 import { madridParts, madridDayISO } from '@/lib/taka-time'
@@ -899,6 +901,7 @@ export default function TakaGridPage() {
   const [pistaLetter, setPistaLetter] = useState<string | null>(null)
   const [awaitingPistaCell, setAwaitingPistaCell] = useState(false)
 
+  const montado = useMounted()
   const { puzzle, dayKey } = useMemo(() => getDailyPuzzle(), [])
   const validAnswers = useMemo(() => getValidAnswers(puzzle), [puzzle])
 
@@ -1030,6 +1033,15 @@ export default function TakaGridPage() {
       return current
     })
   }, [activeCell, puzzle, dayKey.key, hardMode])
+
+  // Hasta hidratar NO sabemos de qué día/semana es el puzle, así que no se
+  // pinta ninguno. Esta página es ESTÁTICA de build y no revalida: su HTML
+  // lleva congelado el puzle del día en que se compiló, que a partir de la
+  // primera medianoche ya no es el de nadie. Antes se servía ese puzle viejo y
+  // React lo descartaba al hidratar (#418) repintando la página entera; ahora
+  // se sirve el mismo esqueleto que ya se ve mientras carga, y el puzle bueno
+  // entra sin tirar nada.
+  if (!montado) return <TakaGridLoading />
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>

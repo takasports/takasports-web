@@ -14,6 +14,7 @@ import { rowChannel } from '@/lib/comp-group-channel'
 import { getLiveLabel, isCombat, isRacing, isTennis } from '@/lib/competitions'
 import { getBroadcastForTz, isSplitBroadcast } from '@/lib/broadcasts'
 import { formatDateLabel, isoToLocalDate } from '@/lib/calendar'
+import { useMounted } from '@/hooks/useMounted'
 import { SOURCE_TZ, convertEventTime } from '@/lib/timezone'
 import { COMPETITIONS } from '@/lib/calendar-competitions'
 import { accentForSport } from '@/lib/sports'
@@ -646,8 +647,16 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
       )
 
   // Recordatorio solo para PRÓXIMOS con ficha y fecha futura.
+  //
+  // La campana se pinta TRAS MONTAR: "¿ya ha empezado?" se decide con el reloj
+  // del navegador y el botón está o no está, así que sobre un HTML cacheado
+  // (revalidate 5m) un partido que arranque en ese hueco sale con campana en el
+  // servidor y sin ella en el cliente. Eso rompe la hidratación (React #418) y
+  // repinta TODO el calendario. Además es un control que sin JS no hace nada,
+  // así que no se pierde nada por no mandarlo en el HTML.
+  const montado = useMounted()
   const kickoffMs = event.isoDate ? new Date(event.isoDate).getTime() : NaN
-  const canRemind = !isLive && !finished && !!event.matchRef && !Number.isNaN(kickoffMs) && kickoffMs > Date.now()
+  const canRemind = montado && !isLive && !finished && !!event.matchRef && !Number.isNaN(kickoffMs) && kickoffMs > Date.now()
   const eventDate = event.isoDate ? isoToLocalDate(event.isoDate, tz) : null
 
   // Ceja: título de velada UFC parseado, o competición (vista Recordatorios).
@@ -1024,7 +1033,7 @@ export function formatDateSubtitle(localDate: string): string {
 }
 
 // Day separator — prominent header for each date in the events list.
-export function DaySeparator({ dateKey, count, curated = false, liveCount = 0, mineCount = 0, tone = 'upcoming', tz, collapsed, onToggleCollapse }: {
+export function DaySeparator({ dateKey, count, curated = false, liveCount = 0, mineCount = 0, tone = 'upcoming', tz, collapsed, onToggleCollapse, hoy }: {
   dateKey: string
   count: number
   /** El día llega plegado: se ve su cabecera y su resumen, no sus partidos. */
@@ -1040,8 +1049,12 @@ export function DaySeparator({ dateKey, count, curated = false, liveCount = 0, m
   mineCount?: number
   tone?: 'upcoming' | 'past'
   tz?: string
+  /** Día de hoy (YYYY-MM-DD en `tz`) SELLADO POR EL SERVIDOR. Sin él, servidor
+   *  y navegador miran relojes distintos sobre un HTML cacheado y la cabecera
+   *  sale "Hoy" en uno y "Vie 4 Sep" en el otro → fallo de hidratación (#418). */
+  hoy?: string
 }) {
-  const today = isoToLocalDate(new Date().toISOString(), tz)
+  const today = hoy ?? isoToLocalDate(new Date().toISOString(), tz)
   const isToday = dateKey === today
   // FASE 3: cabecera de día como la app/maqueta — barra MORADA de marca para HOY
   // (identidad), gris neutro el resto; sin brillo ni gradiente de color. Los días
@@ -1049,7 +1062,7 @@ export function DaySeparator({ dateKey, count, curated = false, liveCount = 0, m
   const bar = isToday ? '#7C3AED' : '#3A3A48'
   const chipColor = isToday ? '#C4B5FD' : '#8A8A9E'
   const subtitle = formatDateSubtitle(dateKey)
-  const label = formatDateLabel(dateKey, tz)
+  const label = formatDateLabel(dateKey, tz, today)
 
   return (
     <div className="relative pt-7 pb-4 mb-3">
