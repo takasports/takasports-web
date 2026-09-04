@@ -252,6 +252,13 @@ html[data-lectura="claro"] .ts-lectura blockquote {
   border-color: rgba(91,33,182,0.28) !important;
 }
 
+/* La barra inferior flota SOBRE la hoja de papel al llegar al cuerpo: en vidrio
+   translúcido sus etiquetas caían a 1,17:1. Opaca y oscura recupera el
+   contraste y sigue siendo chrome del sitio, que es oscuro. */
+html[data-lectura="claro"] {
+  --ts-bottomnav-bg: rgba(13,13,18,0.97);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ts-lectura { transition: none; }
 }

@@ -127,7 +127,15 @@ export default function BottomNav() {
           style={{
             height: 66,
             borderRadius: 22,
-            background: 'rgba(16,16,22,0.42)',
+            // La cápsula es vidrio (42% de opacidad) y eso funciona sobre el
+            // fondo oscuro del sitio. Con el modo lectura claro encendido, al
+            // llegar al cuerpo del artículo la barra queda FLOTANDO SOBRE PAPEL:
+            // el fondo efectivo se vuelve claro y sus etiquetas (#8A8A9C y el
+            // blanco de la activa) caen a 1,17:1 y 2,88:1. Medido con axe en
+            // producción, 5 incumplimientos. Con el claro encendido la cápsula
+            // se vuelve opaca y oscura: sigue siendo chrome del sitio, que es
+            // oscuro, y recupera el contraste. [04/09/2026]
+            background: 'var(--ts-bottomnav-bg, rgba(16,16,22,0.42))',
             backdropFilter: 'blur(30px) saturate(1.7)',
             WebkitBackdropFilter: 'blur(30px) saturate(1.7)',
             border: '1px solid rgba(255,255,255,0.10)',
