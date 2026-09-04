@@ -156,7 +156,12 @@ export default async function Home() {
   // ~495 KB de `/api/events/feed` (el `?from=` solo recorta el pasado) para
   // pintar tres filas. Del lado del servidor ya tenemos `espnEvents` en memoria,
   // así que basta con filtrar el día y quedarnos con los campos que se pintan.
-  const hoyMadrid = isoToLocalDate(new Date().toISOString())
+  // Único reloj de la portada: se sella aquí y viaja al cliente. Todo lo que
+  // se pinta en SSR y depende de la hora tiene que usarlo, no `Date.now()` del
+  // navegador — el HTML se sirve cacheado (revalidate 300) y los dos relojes no
+  // coinciden (ver `renderedAt` en HomeContent).
+  const renderedAt = Date.now()
+  const hoyMadrid = isoToLocalDate(new Date(renderedAt).toISOString())
   const eventosDeHoy = events
     .filter(e => e.isoDate && isoToLocalDate(e.isoDate) === hoyMadrid)
     .map(e => ({
@@ -250,7 +255,7 @@ export default async function Home() {
           "En directo" queda fijo al scrollear, "Último momento" se colapsa, y el
           filtro de abajo se ancla a --console-h (sin hueco). */}
       <HeaderConsole breakingItems={articles.slice(0, 8).map((a: { title: string; slug?: string; sport?: string; category?: string }) => ({ title: a.title, slug: a.slug, sport: a.sport || a.category }))} />
-      <HomeContent eventosDeHoy={eventosDeHoy} articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} reportajes={reportajes} masLeidas={<MasLeidas />} />
+      <HomeContent renderedAt={renderedAt} eventosDeHoy={eventosDeHoy} articles={articles} reels={reels} events={events} topPlayers={topPlayers} featuredBySport={featuredBySport} reportajes={reportajes} masLeidas={<MasLeidas />} />
       <NewsletterSection source="home" />
       <Footer />
       <WelcomeOnboarding />

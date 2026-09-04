@@ -37,8 +37,12 @@ const HOME_PAGE_SIZE = 8
 const WINDOW_HOURS = 36
 const MAX_PER_SPORT = 2
 
-function pickTopEvents(events: SportEvent[], n = 4): SportEvent[] {
-  const now = Date.now()
+// `now` llega SELLADO POR EL SERVIDOR (prop `renderedAt`), no de `Date.now()`.
+// La portada va con `revalidate = 300`: si cada lado mirara su propio reloj, un
+// partido que cruzara el corte de "ya terminó" entre el render cacheado y la
+// hidratación cambiaría los Destacados y React tiraría la portada entera por
+// fallo de hidratación (#418).
+function pickTopEvents(events: SportEvent[], now: number, n = 4): SportEvent[] {
   const windowEnd = now + WINDOW_HOURS * 3600_000
 
   // 0) Deduplicar: mismo partido puede llegar dos veces (courts distintas
@@ -346,6 +350,7 @@ export default function HomeContent({
   reportajes = [],
   masLeidas,
   eventosDeHoy = [],
+  renderedAt,
 }: {
   articles: Article[]
   reels: SanityReel[]
@@ -363,6 +368,9 @@ export default function HomeContent({
   masLeidas?: React.ReactNode
   /** Partidos de hoy en versión flaca, ya filtrados en el servidor, para "Tu día". */
   eventosDeHoy?: SportEvent[]
+  /** Momento del render en el SERVIDOR (epoch ms). Único reloj para lo que se
+   *  pinta en SSR, para que el HTML cacheado y la hidratación coincidan. */
+  renderedAt: number
 }) {
   const router = useRouter()
   const [activeSport, setActiveSport] = useState<string>('Todo')
@@ -370,7 +378,7 @@ export default function HomeContent({
 
   // Top de eventos del calendario — se calcula 1 vez por cambio de `events`
   // (antes se recomputaba en cada render, y además 2 veces: calendario + sidebar).
-  const topEvents = useMemo(() => pickTopEvents(events, 4), [events])
+  const topEvents = useMemo(() => pickTopEvents(events, renderedAt, 4), [events, renderedAt])
 
   // F3.5 (jun 2026): preseleccionado por `?sport=X` se lee client-side al
   // montar. Antes se leía via searchParams en el server (forzaba dynamic).

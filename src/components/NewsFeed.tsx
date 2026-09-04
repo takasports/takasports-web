@@ -8,6 +8,7 @@ import { urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { CATEGORY_TO_SLUG, getSportStyle, getSportLabel } from '@/lib/sports'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
+import { useMounted } from '@/hooks/useMounted'
 import SportPlaceholder from '@/components/SportPlaceholder'
 import { ReportajeSello } from '@/components/ReportajesBlock'
 import CategoriesFilter from './CategoriesFilter'
@@ -26,6 +27,11 @@ interface Article {
   imageUrl?: string | null
 }
 
+// OJO: se decide con el reloj del NAVEGADOR, así que solo se puede llamar
+// detrás de `useMounted()`. La página va con `revalidate = 300`: el HTML puede
+// llegar cinco minutos rancio y un artículo que cruce las 2 h entre medias
+// pintaría el badge en el servidor y no en el cliente. Eso es un fallo de
+// hidratación (React #418) que tira el árbol entero y lo repinta en cliente.
 function isNew(publishedAt?: string): boolean {
   if (!publishedAt) return false
   return Date.now() - new Date(publishedAt).getTime() < 7_200_000
@@ -65,6 +71,7 @@ export default function NewsFeed({
   hideFilter?: boolean
 }) {
   const router = useRouter()
+  const mounted = useMounted()
   const [category, setCategory] = useState(initialCategory)
   const [view, setView] = useState<'list' | 'grid'>('list')
   const listRef = useScrollReveal({ threshold: 0, rootMargin: '0px 0px 180px 0px' })
@@ -175,7 +182,7 @@ export default function NewsFeed({
                           {label}
                         </span>
                       )}
-                      {isNew(article.publishedAt) && (
+                      {mounted && isNew(article.publishedAt) && (
                         <span
                           className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
                           style={{ background: 'rgba(124,58,237,0.18)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.25)' }}
