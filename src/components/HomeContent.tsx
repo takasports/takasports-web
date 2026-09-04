@@ -164,64 +164,6 @@ const SECONDARY_GAMES = [
 // Anunciaba "Predicciones del Mundial" con badge "Nuevo" y llevaba a /mundial:
 // el torneo acabó el 19-jul-2026, así que la portada empujaba a un cuadro
 // cerrado. Ahora lleva a La Fecha, que es lo que se puede jugar hoy.
-function FechaBanner() {
-  return (
-    <Link
-      href="/predicciones"
-      className="group block mt-8 rounded-2xl overflow-hidden relative transition-all hover:-translate-y-0.5"
-      style={{
-        background: 'linear-gradient(110deg, #1a0b3d 0%, #2d0f55 45%, #4c1d95 100%)',
-        border: '1px solid rgba(167,139,250,0.35)',
-        boxShadow: '0 8px 32px rgba(76,29,149,0.35)',
-        textDecoration: 'none',
-      }}
-    >
-      {/* glow decorativo */}
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-60"
-        style={{ background: 'radial-gradient(120% 120% at 90% 0%, rgba(167,139,250,0.25), transparent 55%)' }}
-      />
-      <div className="relative flex items-center gap-4 px-5 py-4 sm:px-7 sm:py-5">
-        <div
-          className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl"
-          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
-        >
-          ⚽
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span
-              className="text-[9px] font-black uppercase tracking-[0.18em] px-2 py-0.5 rounded"
-              style={{ color: '#0a0a0f', background: '#facc15', fontFamily: 'var(--font-sport)' }}
-            >
-              Nuevo
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
-              La Fecha
-            </span>
-          </div>
-          <h3 className="text-base sm:text-xl font-black truncate" style={{ color: '#fff', fontFamily: 'var(--font-display)', letterSpacing: '0.01em' }}>
-            Los partidos de hoy
-          </h3>
-          <p className="text-[11px] sm:text-xs mt-0.5 truncate" style={{ color: 'rgba(255,255,255,0.7)' }}>
-            Acierta los partidos destacados del día. El Partido del Día vale doble.
-          </p>
-        </div>
-        <span
-          className="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-transform group-hover:translate-x-0.5"
-          style={{ background: '#fff', color: '#2d0f55', fontFamily: 'var(--font-sport)' }}
-        >
-          Jugar
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-            <path d="M2 5.5h6.5M5.5 2.5l3 3-3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-      </div>
-    </Link>
-  )
-}
-
 function GamesSection() {
   return (
     <section className="mt-8">
@@ -448,7 +390,13 @@ export default function HomeContent({
     : reels.filter((r) => matchesActive(r.sport, r.category))
 
   const heroArticles = filteredArticles.slice(0, 8)
-  const feedDisplayed = filteredArticles.slice(heroArticles.length)
+// La portada enseña DIEZ noticias, no el archivo entero. Medido el 04/09/2026:
+// el feed traía 37 tarjetas y 3.360 px — el 41% de una portada de 8.201 px (9,7
+// pantallas de iPhone)— repitiendo lo que ya está en /noticias. Con diez, la
+// portada baja a ~6,6 pantallas y el que quiere más tiene el botón justo debajo.
+// [José Tomás, 04/09/2026]
+const NOTICIAS_EN_PORTADA = 10
+  const feedDisplayed = filteredArticles.slice(heroArticles.length, heroArticles.length + NOTICIAS_EN_PORTADA)
   // La tira-carrusel del hero arranca tras los 3 destacados y sigue trayendo
   // noticias que no aparecen al principio (la 9, 10, 11…), hasta un máximo.
   const heroStripPool = filteredArticles.slice(3, 23)
@@ -561,8 +509,6 @@ export default function HomeContent({
           <ReelsSection reels={filteredReels} initialSport={activeSlug} />
         </div>
 
-        {/* ── 3.4 BANNER PREDICCIONES MUNDIAL ────────────────────── */}
-        <FechaBanner />
 
         {/* ── 3.5 JUEGOS ─────────────────────────────────────────── */}
         <GamesSection />
@@ -581,7 +527,7 @@ export default function HomeContent({
           <div className="mt-6 flex items-center gap-4">
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             <Link
-              href={activeSport === 'Todo' ? '/archivo' : `/archivo?sport=${CATEGORY_TO_SLUG[activeSport] ?? ''}`}
+              href={hubHrefForCategory(activeSport, '/noticias')}
               className="flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:brightness-110 hover:-translate-y-px active:translate-y-0"
               style={{
                 background: 'rgba(124,58,237,0.1)',
@@ -593,7 +539,7 @@ export default function HomeContent({
                 textDecoration: 'none',
               }}
             >
-              Ver histórico completo
+              Ver todas las noticias
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M2.5 6h7M6 2.5L9.5 6 6 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>

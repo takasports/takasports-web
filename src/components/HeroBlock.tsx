@@ -42,6 +42,7 @@ function CompactStripItem({ art }: { art: Article }) {
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 18vw"
             className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            style={{ objectPosition: 'center 30%' }}
             onError={() => setImgFailed(true)}
           />
         ) : (
@@ -175,6 +176,7 @@ function KenBurnsImage({
         fill
         sizes="(max-width: 1024px) 100vw, 62vw"
         className="object-cover"
+        style={{ objectPosition: 'center 30%' }}
         priority={priority}
         fetchPriority={priority ? 'high' : 'auto'}
         loading={priority ? 'eager' : 'lazy'}
@@ -363,6 +365,7 @@ function SmallCard({
           fill
           sizes="(max-width: 1024px) 100vw, 38vw"
           className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+          style={{ objectPosition: 'center 30%' }}
           onError={() => setImgFailed(true)}
         />
       ) : (

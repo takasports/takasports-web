@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import UiEmptyState from '@/components/ui/EmptyState'
 import Image from 'next/image'
 import type {
   MatchDetail, MatchStat, ScoringEvent, BasketballLeader, BoxTeam, MmaFighter, MmaFight,
@@ -208,16 +209,10 @@ function EmptyGlyph({ kind, size = 40 }: { kind?: EmptyKind; size?: number }) {
   }
 }
 
-function EmptyState({ message, kind }: { message: string; kind?: EmptyKind }) {
-  return (
-    <div className="text-center py-12 rounded-xl flex flex-col items-center gap-3"
-      style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.07)' }}>
-      <span style={{ color: '#3A3A48' }} aria-hidden><EmptyGlyph kind={kind} /></span>
-      <p className="text-[12px] font-semibold max-w-xs" style={{ color: '#4A4A5A', fontFamily: 'var(--font-sport)' }}>
-        {message}
-      </p>
-    </div>
-  )
+// Envoltorio local: conserva los iconos por tipo de vacío (`kind`) que solo
+// tienen sentido aquí, y delega la caja en la pieza común de components/ui.
+function EmptyState({ message, kind, action }: { message: React.ReactNode; kind?: EmptyKind; action?: React.ReactNode }) {
+  return <UiEmptyState message={message} icon={<EmptyGlyph kind={kind} />} action={action} />
 }
 
 // ── Scoreboard hero ────────────────────────────────────────────────
@@ -1932,11 +1927,30 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
               caja de 330 px diciendo lo obvio, justo encima de la forma reciente
               y la probabilidad, que sí cuentan algo. [José Tomás, 27/08/2026] */}
           {!hasSoccerScoring && !isBasket && !scheduledStatus && (
-            <EmptyState message="Sin eventos registrados aún" kind="events" />
+            <EmptyState
+              kind="events"
+              message="Todavía no hay goles ni tarjetas que contar. En cuanto pase algo, aparece aquí."
+              action={
+                <Link
+                  href="/predicciones"
+                  className="px-4 py-2.5 rounded-full text-[10.5px] font-black uppercase tracking-widest transition-all hover:brightness-125"
+                  style={{ background: 'rgba(124,58,237,0.24)', color: '#E0D0FF', border: '1px solid rgba(124,58,237,0.5)', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
+                >
+                  ☆ Pronosticar la jornada
+                </Link>
+              }
+            />
           )}
         </div>
 
         {/* ── Tab 1: Minuto a minuto ───────────────────── */}
+        {/* OJO: el vacío de abajo NO se ve nunca. La pestaña «Minuto a minuto» se
+            deshabilita con `available: hasCommentary`, o sea justo cuando este
+            mensaje tendría sentido. Lo mismo les pasa a los vacíos de Alineación,
+            Estadísticas, H2H y Clasificación: sus pestañas también se apagan sin
+            datos. Se dejan como red de seguridad, pero el único vacío que un
+            lector ve de verdad es el del Resumen, que es donde va la acción.
+            [04/09/2026] */}
         <div>
           {hasCommentary ? (
             <CommentaryFeed entries={match.soccer!.commentary!} leagueSlug={match.leagueSlug} />

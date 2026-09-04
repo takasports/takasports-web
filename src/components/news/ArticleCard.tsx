@@ -93,6 +93,11 @@ function Thumb({
       height={h}
       sizes={sizes}
       className="w-full h-full object-cover"
+      // Recorte al 30% y no centrado: estas fotos NO son nuestras —medido en
+      // /noticias, 0 de 33 vienen de Sanity, así que no hay foco que marcar— y
+      // en una foto de prensa la cara está casi siempre en el tercio superior.
+      // Centrado, el recorte decapitaba a media portada. [04/09/2026]
+      style={{ objectPosition: 'center 30%' }}
       onError={() => setFailed(true)}
     />
   ) : (

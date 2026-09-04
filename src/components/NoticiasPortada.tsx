@@ -84,6 +84,7 @@ function BigCard({ article, lcp = false }: { article: Article; lcp?: boolean }) 
           fill
           sizes="(max-width: 1024px) 100vw, 48vw"
           className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          style={{ objectPosition: 'center 30%' }}
           priority={lcp}
           fetchPriority={lcp ? 'high' : 'auto'}
           loading={lcp ? 'eager' : 'lazy'}
