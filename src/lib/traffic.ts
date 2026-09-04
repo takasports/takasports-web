@@ -391,6 +391,11 @@ export async function getTrafficHistory(days = 30): Promise<TrafficHistoryDay[]>
     .reverse() // ascendente para la gráfica
 }
 
+// La cobertura de medición (cuánto NO vemos por el consentimiento) vive aparte,
+// en `traffic-cobertura.ts`: es lógica pura y así se puede probar sin arrastrar
+// el cliente de Sanity, que este módulo importa y que exige envs al importarse.
+export { coberturaDeMedicion, type CoberturaMedicion } from './traffic-cobertura'
+
 // ── Search Console: totales por VENTANA (28d / 7d) ────────────────────────────
 // Antes el panel mostraba UN día suelto → parecía "mal" frente a la UI de Search
 // Console, que muestra rangos (28 días, 3 meses…). Esto da totales claros que

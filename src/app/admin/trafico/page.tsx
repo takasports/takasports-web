@@ -20,6 +20,7 @@ import WorldMap from './WorldMap'
 import {
   getGa4Summary, getAppGa4Summary, getSearchDetail, getSearchTotals, getGa4Realtime, getAppGa4Realtime,
   getAppDownloads, getTrafficHistory, getTopContent, getAudience, getWebCountriesByWindow, getGamesTraffic, shortPath,
+  coberturaDeMedicion,
   getShares, shareMethodLabel,
   type SharesSummary,
   type Ga4Summary, type SearchDetail, type SearchTotals, type Ga4Realtime, type AppDownloads,
@@ -551,6 +552,42 @@ export default async function TraficoPage() {
             <MiniSpark label="Clics Google · vent. 7d" values={history.map((h) => h.clics ?? 0)} latest={nf(history[history.length - 1]?.clics)} accent="#8B5CF6" />
             <MiniSpark label="Descargas iOS · total" values={history.map((h) => h.downloads ?? 0)} latest={nf(history[history.length - 1]?.downloads)} accent="#FCD34D" />
           </div>
+
+          {/* CUÁNTO NO ESTAMOS MIDIENDO.
+              La analítica solo carga tras un «Aceptar» explícito (decisión del
+              14/06/2026, apoyada en las Directrices 2/2023 del EDPB: hasta el
+              ping sin cookies es «acceso al equipo terminal»). Correcto de cara
+              al reglamento, pero convierte cada número de GA4 en un SUELO.
+              Search Console sí es insesgado: cuenta el clic pase lo que pase con
+              el banner. Dividiendo uno entre otro sale el factor de corrección,
+              y así el panel deja de mentir por omisión. */}
+          {(() => {
+            const cob = coberturaDeMedicion(history)
+            if (cob.cobertura === null) return null
+            const flojo = cob.cobertura < 70
+            return (
+              <div
+                className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl px-4 py-3"
+                style={{
+                  background: flojo ? 'rgba(245,158,11,0.07)' : 'rgba(52,211,153,0.06)',
+                  border: `1px solid ${flojo ? 'rgba(245,158,11,0.26)' : 'rgba(52,211,153,0.24)'}`,
+                }}
+              >
+                <span className="font-black tabular-nums" style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: flojo ? '#F5A524' : '#34D399', lineHeight: 1 }}>
+                  {cob.cobertura}%
+                </span>
+                <span className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
+                  de lo que entra por Google llega a medirse
+                </span>
+                <span className="text-[11.5px] w-full" style={{ color: 'var(--text-muted)' }}>
+                  {nf(cob.medidas)} visitas vistas por GA4 frente a {nf(cob.reales)} clics que Search Console cuenta igual,
+                  acepten o no las cookies ({cob.dias} día{cob.dias === 1 ? '' : 's'}). Todo lo demás de este panel que venga
+                  de GA4 es un suelo, no una medida — multiplícalo por {(100 / Math.max(cob.cobertura, 1)).toFixed(1)} para
+                  hacerte una idea.
+                </span>
+              </div>
+            )
+          })()}
         </section>
       )}
 
