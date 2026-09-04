@@ -27,6 +27,7 @@ import ShareStoryCta from '@/components/ShareStoryCta'
 import ShareStoryFab from '@/components/ShareStoryFab'
 import MasLeidas from '@/components/MasLeidas'
 import SaveArticleButton from '@/components/SaveArticleButton'
+import ReadingModeToggle from '@/components/ReadingModeToggle'
 import { storySplitIndex } from '@/lib/article-split'
 import MatchScheduleCard, { type MatchKickoffData } from '@/components/MatchScheduleCard'
 import BroadcastCard from '@/components/BroadcastCard'
@@ -1209,7 +1210,16 @@ export default async function NoticiaPage({
             )}
           </div>
 
-          <article>
+          {/* Aplica el modo lectura antes del primer pintado: el HTML del artículo
+          es ISR y cacheado, así que el servidor no puede saber la preferencia.
+          Sin esto, quien lo tiene en claro vería un fogonazo oscuro en cada
+          artículo. Esta ruta NO pasa por el middleware → no hay nonce CSP. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `try{if(localStorage.getItem('ts_lectura')==='claro')document.documentElement.dataset.lectura='claro'}catch(e){}`,
+        }}
+      />
+      <article>
 
             <div className="flex items-center justify-between gap-2 mb-4 lg:hidden">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -1244,6 +1254,7 @@ export default async function NoticiaPage({
                   sport={article.sport ?? article.category}
                 />
                 <ShareButton title={article.title} slug={article.slug ?? id} />
+                <ReadingModeToggle />
               </div>
             </div>
 
@@ -1430,7 +1441,7 @@ export default async function NoticiaPage({
             )}
 
             {article.bodyPortable && article.bodyPortable.length > 0 ? (
-              <div style={{ maxWidth: 680 }}>
+              <div className="ts-lectura" style={{ maxWidth: 680 }}>
                 {(() => {
                   // El cuerpo se parte en dos para colar la llamada a compartir
                   // a mitad de lectura (el bloque del final solo lo ve quien
@@ -1456,7 +1467,7 @@ export default async function NoticiaPage({
                 })()}
               </div>
             ) : paragraphs.length > 0 ? (
-              <div className="flex flex-col gap-6" style={{ maxWidth: 680 }}>
+              <div className="ts-lectura flex flex-col gap-6" style={{ maxWidth: 680 }}>
                 {paragraphs.map((p, i) => renderBodyBlock(p, i, autolink, i === firstBodyParagraphIndex))}
               </div>
             ) : (
