@@ -2,15 +2,9 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from '@/components/DynamicImage'
-import Link from 'next/link'
-import { urlFor } from '@/lib/sanity'
-import { timeAgo } from '@/lib/timeAgo'
-import { CATEGORY_TO_SLUG, getSportStyle, getSportLabel } from '@/lib/sports'
+import { CATEGORY_TO_SLUG } from '@/lib/sports'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
-import { useMounted } from '@/hooks/useMounted'
-import SportPlaceholder from '@/components/SportPlaceholder'
-import { ReportajeSello } from '@/components/ReportajesBlock'
+import ArticleCard from '@/components/news/ArticleCard'
 import CategoriesFilter from './CategoriesFilter'
 import ViewToggle from './ViewToggle'
 
@@ -27,34 +21,11 @@ interface Article {
   imageUrl?: string | null
 }
 
-// OJO: se decide con el reloj del NAVEGADOR, así que solo se puede llamar
-// detrás de `useMounted()`. La página va con `revalidate = 300`: el HTML puede
-// llegar cinco minutos rancio y un artículo que cruce las 2 h entre medias
-// pintaría el badge en el servidor y no en el cliente. Eso es un fallo de
-// hidratación (React #418) que tira el árbol entero y lo repinta en cliente.
-function isNew(publishedAt?: string): boolean {
-  if (!publishedAt) return false
-  return Date.now() - new Date(publishedAt).getTime() < 7_200_000
-}
-
 
   // `sizes` importa aunque haya `width`/`height`: sin él, next/image elige el
   // escalón por el `width` declarado (200/400) y no por el hueco real, que en el
   // listado es de 88 px (120 en escritorio). Con los `deviceSizes` bajos que
   // ahora hay en next.config, esto baja la miniatura al escalón de 320.
-function Thumb({
-  url, title, w, h, sport, category,
-}: {
-  url: string | null; title: string; w: number; h: number; sport?: string; category?: string
-}) {
-  const [failed, setFailed] = useState(false)
-  return url && !failed ? (
-    <Image src={url} alt={title} width={w} height={h} sizes="(max-width: 1024px) 88px, 120px" className="w-full h-full object-cover" onError={() => setFailed(true)} />
-  ) : (
-    <SportPlaceholder sport={sport} category={category} />
-  )
-}
-
 export default function NewsFeed({
   articles,
   initialCategory = 'Todo',
@@ -71,7 +42,6 @@ export default function NewsFeed({
   hideFilter?: boolean
 }) {
   const router = useRouter()
-  const mounted = useMounted()
   const [category, setCategory] = useState(initialCategory)
   const [view, setView] = useState<'list' | 'grid'>('list')
   const listRef = useScrollReveal({ threshold: 0, rootMargin: '0px 0px 180px 0px' })
@@ -152,128 +122,18 @@ export default function NewsFeed({
       {/* LIST */}
       {view === 'list' && displayed.length > 0 && (
         <div key={`list-${category}`} ref={listRef} className="flex flex-col gap-1.5 feed-animate">
-          {displayed.map((article) => {
-            const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(180).height(120).url() : null)
-            const label = getSportLabel(article.sport, article.category)
-            const { accent: sportAccent } = getSportStyle(article.sport, article.category)
-
-            return (
-              <Link
-                key={article._id}
-                href={`/noticias/${article.slug ?? article._id}`}
-                className="news-card tk-glass flex gap-3.5 rounded-xl p-3"
-                data-reveal
-                style={{ textDecoration: 'none' }}
-              >
-                {/* Thumbnail */}
-                <div className="flex-shrink-0 rounded-lg overflow-hidden w-[88px] h-[64px] lg:w-[120px] lg:h-[84px]">
-                  <Thumb url={imgUrl} title={article.title} w={120} h={84} sport={article.sport} category={article.category} />
-                </div>
-
-                {/* Content */}
-                <div className="flex flex-col justify-between flex-1 min-w-0 py-0.5">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      {label && (
-                        <span
-                          className="text-[9px] font-black uppercase tracking-widest"
-                          style={{ color: sportAccent, fontFamily: 'var(--font-sport)' }}
-                        >
-                          {label}
-                        </span>
-                      )}
-                      {mounted && isNew(article.publishedAt) && (
-                        <span
-                          className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
-                          style={{ background: 'rgba(124,58,237,0.18)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.25)' }}
-                        >
-                          Nuevo
-                        </span>
-                      )}
-                      {article.type === 'reportaje' && <ReportajeSello compact />}
-                    </div>
-                    <h3
-                      className="news-title text-[13px] font-semibold leading-snug line-clamp-2"
-                      style={{ color: 'var(--text-primary)' }}
-                    >
-                      {article.title}
-                    </h3>
-                    {article.short_summary && (
-                      <p
-                        className="text-[11px] leading-relaxed mt-0.5 line-clamp-1 hidden lg:block"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        {article.short_summary}
-                      </p>
-                    )}
-                  </div>
-                  {/* <time dateTime> en vez de <p>: "hace 2 h" es legible para una
-                      persona pero opaco para un buscador. El atributo dateTime da la
-                      fecha exacta en formato máquina, que es lo que Google usa para
-                      ordenar y fechar noticias. Visualmente idéntico. */}
-                  {article.publishedAt && (
-                    <time
-                      dateTime={article.publishedAt}
-                      className="block text-[10px] mt-1"
-                      style={{ color: 'var(--text-faint)' }}
- suppressHydrationWarning>
-                      {timeAgo(article.publishedAt)}
-                    </time>
-                  )}
-                </div>
-              </Link>
-            )
-          })}
+          {displayed.map((article) => (
+            <ArticleCard key={article._id} article={article} variant="row" size="md" reveal />
+          ))}
         </div>
       )}
 
       {/* GRID */}
       {view === 'grid' && displayed.length > 0 && (
         <div key={`grid-${category}`} ref={gridRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 feed-animate">
-          {displayed.map((article) => {
-            const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(400).height(220).url() : null)
-            const label = getSportLabel(article.sport, article.category)
-            const { accent } = getSportStyle(article.sport, article.category)
-
-            return (
-              <Link
-                key={article._id}
-                href={`/noticias/${article.slug ?? article._id}`}
-                className="news-card tk-glass rounded-xl overflow-hidden block"
-                data-reveal
-                style={{ textDecoration: 'none' }}
-              >
-                <div className="overflow-hidden" style={{ height: 120 }}>
-                  <Thumb url={imgUrl} title={article.title} w={400} h={120} sport={article.sport} category={article.category} />
-                </div>
-                <div className="p-3">
-                  {label && (
-                    <span
-                      className="text-[9px] font-black uppercase tracking-widest"
-                      style={{ color: accent, fontFamily: 'var(--font-sport)' }}
-                    >
-                      {label}
-                    </span>
-                  )}
-                  <h3
-                    className="news-title text-xs font-semibold leading-snug line-clamp-2 mt-0.5"
-                    style={{ color: 'var(--text-primary)' }}
-                  >
-                    {article.title}
-                  </h3>
-                  {article.publishedAt && (
-                    <time
-                      dateTime={article.publishedAt}
-                      className="block text-[10px] mt-2"
-                      style={{ color: 'var(--text-faint)' }}
- suppressHydrationWarning>
-                      {timeAgo(article.publishedAt)}
-                    </time>
-                  )}
-                </div>
-              </Link>
-            )
-          })}
+          {displayed.map((article) => (
+            <ArticleCard key={article._id} article={article} variant="grid" gridImageHeight={120} reveal />
+          ))}
         </div>
       )}
 

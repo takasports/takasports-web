@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { getSportStyle, getSportLabel, SLUG_TO_LABEL } from '@/lib/sports'
+import { getSportStyle, SLUG_TO_LABEL } from '@/lib/sports'
+import ArticleCard from '@/components/news/ArticleCard'
 import { TrophyIcon } from '@/components/icons/GameIcons'
 
 interface Article {
@@ -65,52 +66,18 @@ export default function NewsSidebar({ articles }: { articles: Article[] }) {
         <div>
           <SectionHeader>Tendencias</SectionHeader>
           <div className="flex flex-col gap-1">
-            {trending.map((article, i) => {
-              const { accent } = getSportStyle(article.sport, article.category)
-              const label = getSportLabel(article.sport, article.category)
-              return (
-                <Link
-                  key={article._id}
-                  href={`/noticias/${article.slug ?? article._id}`}
-                  className="group flex items-start gap-3 p-2.5 rounded-xl transition-all hover:brightness-110"
-                  style={{
-                    textDecoration: 'none',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderTop: '1px solid rgba(255,255,255,0.16)',
-                  }}
-                >
-                  {/* Número */}
-                  <span
-                    className="font-black text-[20px] leading-none flex-shrink-0 w-5 text-center mt-0.5"
-                    style={{
-                      fontFamily: 'var(--font-display)',
-                      color: i === 0 ? '#7C3AED' : '#2E2E42',
-                      letterSpacing: '-0.02em',
-                    }}
-                  >
-                    {i + 1}
-                  </span>
-
-                  <div className="flex-1 min-w-0">
-                    {label && (
-                      <span
-                        className="text-[8px] font-black uppercase tracking-widest"
-                        style={{ color: accent, fontFamily: 'var(--font-sport)' }}
-                      >
-                        {label}
-                      </span>
-                    )}
-                    <p
-                      className="text-[12px] font-semibold leading-snug line-clamp-2 transition-opacity group-hover:opacity-75"
-                      style={{ color: 'var(--text-primary)' }}
-                    >
-                      {article.title}
-                    </p>
-                  </div>
-                </Link>
-              )
-            })}
+            {trending.map((article, i) => (
+              <ArticleCard
+                key={article._id}
+                article={article}
+                variant="row"
+                size="sm"
+                rank={i + 1}
+                kicker
+                thumb={false}
+                fecha={false}
+              />
+            ))}
           </div>
         </div>
       )}

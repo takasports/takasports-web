@@ -9,6 +9,11 @@ import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { SportIcon } from '@/components/icons/GameIcons'
 import { useTilt } from '@/hooks/useTilt'
 import { useMounted } from '@/hooks/useMounted'
+// La regla de «Nuevo» (menos de 2 h) vive con la tarjeta: estaba escrita tres
+// veces, dos como 7_200_000 y una como 2*60*60*1000. OJO: decide con el reloj
+// del NAVEGADOR, así que SIEMPRE detrás de `useMounted()` — ver el porqué en
+// ArticleCard.
+import { esNuevo } from '@/components/news/ArticleCard'
 import HCarousel from '@/components/HCarousel'
 
 const STRIP_COLS = 5
@@ -21,7 +26,7 @@ function CompactStripItem({ art }: { art: Article }) {
   const rawImgUrl = art.imageUrl ?? (art.image?.asset ? urlFor(art.image).width(480).height(270).url() : null)
   const [imgFailed, setImgFailed] = useState(false)
   const imgUrl = imgFailed ? null : rawImgUrl
-  const fresh = useMounted() && isNew(art.publishedAt)
+  const fresh = useMounted() && esNuevo(art.publishedAt)
 
   return (
     <Link
@@ -136,18 +141,6 @@ interface Article {
 const INTERVAL = 6500
 const FADE_OUT = 320
 const FADE_IN  = 420
-const NEW_THRESHOLD_MS = 2 * 60 * 60 * 1000 // 2 horas
-
-// OJO: se decide con el reloj del NAVEGADOR, así que solo se puede llamar
-// detrás de `useMounted()`. La portada va con `revalidate = 300`: el HTML puede
-// llegar cinco minutos rancio y un artículo que cruce las 2 h entre medias
-// pintaría el badge en el servidor y no en el cliente. Eso es un fallo de
-// hidratación (React #418) que tira toda la portada y la repinta entera.
-function isNew(publishedAt?: string): boolean {
-  if (!publishedAt) return false
-  return Date.now() - new Date(publishedAt).getTime() < NEW_THRESHOLD_MS
-}
-
 // ── Ken Burns wrapper — la clave fuerza restart de la animación ─
 function KenBurnsImage({
   src,
@@ -209,7 +202,7 @@ function BigCard({
   const rawImgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1200).height(680).url() : null)
   const [imgFailed, setImgFailed] = useState(false)
   const imgUrl = imgFailed ? null : rawImgUrl
-  const fresh = useMounted() && isNew(article.publishedAt)
+  const fresh = useMounted() && esNuevo(article.publishedAt)
   const { elRef } = useTilt({ max: 4, scale: 1.01, speed: 0.1 })
 
   return (
@@ -345,7 +338,7 @@ function SmallCard({
   const rawImgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(500).height(300).url() : null)
   const [imgFailed, setImgFailed] = useState(false)
   const imgUrl = imgFailed ? null : rawImgUrl
-  const fresh = useMounted() && isNew(article.publishedAt)
+  const fresh = useMounted() && esNuevo(article.publishedAt)
   const fadeMs = visible ? FADE_IN : FADE_OUT
   const { elRef } = useTilt({ max: 3, scale: 1.015, speed: 0.1 })
 

@@ -4,10 +4,8 @@
 // editorial con el de fixtures. Server component, sin JS cliente → indexable y
 // distribuye autoridad interna partido → noticia. Si no hay artículos, no renderiza.
 
-import Link from 'next/link'
-import NewsThumb from '@/components/NewsThumb'
-import { sanityClient, articlesByMatchQuery, urlFor } from '@/lib/sanity'
-import { timeAgo } from '@/lib/timeAgo'
+import ArticleCard from '@/components/news/ArticleCard'
+import { sanityClient, articlesByMatchQuery } from '@/lib/sanity'
 
 interface RelatedArticle {
   _id: string
@@ -51,31 +49,9 @@ export default async function MatchNews({
       </div>
 
       <div className="flex flex-col gap-2">
-        {articles.map((a) => {
-          if (!a.slug) return null
-          const img = a.imageUrl ?? (a.image?.asset ? urlFor(a.image).width(96).height(64).url() : null)
-          return (
-            <Link
-              key={a._id}
-              href={`/noticias/${a.slug}`}
-              prefetch={false}
-              className="group flex gap-3 rounded-xl p-2.5 transition-colors hover:bg-white/[0.04]"
-              style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}
-            >
-              {img && <NewsThumb src={img} alt={a.title} />}
-              <div className="flex flex-col justify-center min-w-0 flex-1">
-                <h3 className="text-[13px] font-bold leading-snug line-clamp-2" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-                  {a.title}
-                </h3>
-                {a.publishedAt && (
-                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
-                    {timeAgo(a.publishedAt)}
-                  </p>
-                )}
-              </div>
-            </Link>
-          )
-        })}
+        {articles.map((a) => (
+          a.slug ? <ArticleCard key={a._id} article={a} variant="row" size="sm" prefetch={false} /> : null
+        ))}
       </div>
     </section>
   )

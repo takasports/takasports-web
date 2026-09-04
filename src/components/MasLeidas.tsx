@@ -1,8 +1,5 @@
-import Link from 'next/link'
-import DynamicImage from '@/components/DynamicImage'
 import { getMostRead } from '@/lib/most-read'
-import { getSportStyle, getSportLabel } from '@/lib/sports'
-import { urlFor } from '@/lib/sanity'
+import ArticleCard, { type ArticleCardData } from '@/components/news/ArticleCard'
 
 // Bloque "Lo más leído de la semana".
 //
@@ -37,73 +34,27 @@ export default async function MasLeidas({
       </div>
 
       <ol className="flex flex-col gap-1" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-        {articulos.map((a, i) => {
-          const estilo = getSportStyle(a.sport ?? undefined, a.category ?? undefined)
-          // `imageUrl` (medio de origen) o, si no, la imagen subida a Sanity.
-          let miniatura: string | null = a.imageUrl ?? null
-          if (!miniatura && a.image) {
-            try { miniatura = urlFor(a.image as Parameters<typeof urlFor>[0]).width(104).height(76).url() } catch { miniatura = null }
-          }
-          return (
-            <li key={a.slug}>
-              <Link
-                href={`/noticias/${a.slug}`}
-                prefetch={false}
-                className="flex items-center gap-3 rounded-xl transition-colors hover:bg-white/[0.03]"
-                style={{ padding: '9px 10px', textDecoration: 'none', minHeight: 44 }}
-              >
-                <span
-                  aria-hidden
-                  className="flex-shrink-0 text-center"
-                  style={{
-                    fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20,
-                    lineHeight: 1, width: 20, color: i === 0 ? estilo.accent : 'var(--text-faint)',
-                  }}
-                >
-                  {i + 1}
-                </span>
-
-                {miniatura ? (
-                  <span className="flex-shrink-0 rounded-lg overflow-hidden" style={{ width: 52, height: 38 }}>
-                    <DynamicImage
-                      src={miniatura}
-                      alt=""
-                      width={104}
-                      height={76}
-                      sizes="52px"
-                      className="w-full h-full object-cover"
-                    />
-                  </span>
-                ) : (
-                  <span
-                    className="flex-shrink-0 rounded-lg"
-                    // Placeholder con el acento del deporte, no un hueco: con la
-                    // opacidad anterior parecía que a la fila le faltaba algo.
-                    style={{ width: 52, height: 38, background: `${estilo.accent}26`, border: `1px solid ${estilo.accent}55` }}
-                  />
-                )}
-
-                <span className="min-w-0 flex flex-col gap-0.5">
-                  <span
-                    className="text-[9px] font-black uppercase tracking-widest"
-                    style={{ color: estilo.accent, fontFamily: 'var(--font-sport)' }}
-                  >
-                    {getSportLabel(a.sport ?? undefined, a.category ?? undefined)}
-                  </span>
-                  <span
-                    className="text-[13px] leading-snug"
-                    style={{
-                      color: 'var(--text-primary)', fontFamily: 'var(--font-display)', fontWeight: 700,
-                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                    }}
-                  >
-                    {a.title}
-                  </span>
-                </span>
-              </Link>
-            </li>
-          )
-        })}
+        {articulos.map((a, i) => (
+          <li key={a.slug}>
+            {/* Search Console no devuelve `_id` ni fecha: la tarjeta ya lo
+                contempla (el sello de fecha simplemente no se pinta). */}
+            <ArticleCard
+              article={{
+                slug: a.slug,
+                title: a.title,
+                imageUrl: a.imageUrl ?? null,
+                image: (a.image ?? null) as ArticleCardData['image'],
+                sport: a.sport ?? undefined,
+                category: a.category ?? undefined,
+              }}
+              variant="row"
+              size="sm"
+              rank={i + 1}
+              kicker
+              prefetch={false}
+            />
+          </li>
+        ))}
       </ol>
     </section>
   )

@@ -1,12 +1,7 @@
 'use client'
 
-import Link from 'next/link'
-import Image from '@/components/DynamicImage'
-import { urlFor } from '@/lib/sanity'
-import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel } from '@/lib/sports'
-import SportPlaceholder from '@/components/SportPlaceholder'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
+import ArticleCard from '@/components/news/ArticleCard'
 import { SearchIcon } from '@/components/icons/GameIcons'
 
 interface Article {
@@ -74,54 +69,9 @@ export default function ArchivoResults({
   return (
     <div className="px-4 sm:px-6 xl:px-10 pt-6">
       <div ref={gridRef} className="feed-animate grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {articles.map(article => {
-          const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(400).height(220).url() : null)
-          const sportLabel = getSportLabel(article.sport, article.category)
-          const { accent: sportAccent } = getSportStyle(article.sport, article.category)
-
-          return (
-            <Link
-              key={article._id}
-              href={`/noticias/${article.slug ?? article._id}`}
-              className="news-card flex flex-col rounded-xl overflow-hidden"
-              data-reveal
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                textDecoration: 'none',
-              }}
-            >
-              <div className="aspect-[16/10] overflow-hidden">
-                {imgUrl ? (
-                  <Image src={imgUrl} alt={article.title} width={400} height={250} className="w-full h-full object-cover" />
-                ) : (
-                  <SportPlaceholder sport={article.sport} category={article.category} />
-                )}
-              </div>
-              <div className="p-3 flex flex-col gap-1.5 flex-1">
-                {sportLabel && (
-                  <span
-                    className="text-[9px] font-black uppercase tracking-widest"
-                    style={{ color: sportAccent, fontFamily: 'var(--font-sport)' }}
-                  >
-                    {sportLabel}
-                  </span>
-                )}
-                <h3
-                  className="news-title text-sm font-semibold leading-snug line-clamp-3"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  {article.title}
-                </h3>
-                {article.publishedAt && (
-                  <p className="text-[10px] mt-auto" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
-                    {timeAgo(article.publishedAt)}
-                  </p>
-                )}
-              </div>
-            </Link>
-          )
-        })}
+        {articles.map(article => (
+          <ArticleCard key={article._id} article={article} variant="grid" gridImageAspect="16 / 10" reveal />
+        ))}
       </div>
 
       {hasMore && (
