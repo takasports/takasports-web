@@ -721,7 +721,12 @@ export default function RankingsClient({
                     La lista completa, mezclando deportes. {finalEntries.length} {finalEntries.length === 1 ? 'nombre' : 'nombres'}.
                   </p>
                   <ColumnHeader />
-                  <RankBlock label="Posiciones 1 – 25" entries={finalEntries.slice(0, 25)} showSportEmoji={showSportEmoji} typeTagFn={typeTagFn} maxScore={listMaxScore} minScore={listMinScore} defaultOpen />
+                  {/* Plegado por defecto: con seis podios delante, dejarlo
+                      abierto llevaba /rankings a 7.985 px en iPhone (9 pantallas
+                      y media). Cerrado son ~5.500, MENOS que antes del cambio, y
+                      la lista no pierde a nadie: está a un toque y el acordeón
+                      dice cuántos hay. [José Tomás, 04/09/2026] */}
+                  <RankBlock label="Posiciones 1 – 25" entries={finalEntries.slice(0, 25)} showSportEmoji={showSportEmoji} typeTagFn={typeTagFn} maxScore={listMaxScore} minScore={listMinScore} />
                   <RankBlock label="Posiciones 26 – 50" entries={rank26to50} showSportEmoji={showSportEmoji} typeTagFn={typeTagFn} maxScore={listMaxScore} minScore={listMinScore} />
                   {rank51on.length > 0 && (
                     <RankBlock label="Posiciones 51+" entries={rank51on} showSportEmoji={showSportEmoji} typeTagFn={typeTagFn} maxScore={listMaxScore} minScore={listMinScore} />
