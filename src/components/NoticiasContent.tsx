@@ -37,14 +37,27 @@ interface SanityReel {
   timestamp?: string
 }
 
-function editorialDate(): string {
-  const now = new Date()
+// Fecha editorial de la cabecera. Dos cuidados, los dos por hidratación:
+//   · el instante lo pone el SERVIDOR (`renderedAt`), no `Date.now()`;
+//   · el día se calcula SIEMPRE en Europe/Madrid, no en la zona de quien
+//     renderiza. Vercel corre en UTC y quien lee no: para un lector de Latam,
+//     "hoy" en UTC ya es mañana buena parte de la tarde, así que servidor y
+//     navegador escribían días distintos y React tiraba la página entera
+//     (#418). Mismo criterio que `timeAgo()`.
+// El día de la semana se saca con aritmética sobre el Y-M-D de Madrid, sin
+// depender de cómo nombre ICU los días en cada runtime.
+function editorialDate(renderedAt: number): string {
   const days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
   const months = [
     'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
     'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
   ]
-  return `${days[now.getDay()]}, ${now.getDate()} de ${months[now.getMonth()]}`
+  const ymd = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date(renderedAt))
+  const [y, m, d] = ymd.split('-').map(Number)
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay()
+  return `${days[dow]}, ${d} de ${months[m - 1]}`
 }
 
 function SectionHeader({ label, sub }: { label: string; sub?: string }) {
@@ -97,6 +110,7 @@ export default function NoticiasContent({
   reels,
   initialCategory = 'Todo',
   headingAs = 'h1',
+  renderedAt,
 }: {
   articles: Article[]
   reels: SanityReel[]
@@ -104,6 +118,10 @@ export default function NoticiasContent({
   // En /noticias es el H1 de la página; embebido en un hub de deporte
   // (que ya tiene su propio H1) debe ser H2 para no duplicar el H1. (Fix M1 SEO)
   headingAs?: 'h1' | 'h2'
+  /** Momento del render en el SERVIDOR (epoch ms). Único reloj de todo lo que
+   *  se pinta en SSR y depende de la hora: la fecha editorial de la cabecera y
+   *  los separadores de fecha del listado. */
+  renderedAt: number
 }) {
   const router = useRouter()
   const [activeCategory, setActiveCategory] = useState(initialCategory)
@@ -214,7 +232,7 @@ export default function NoticiasContent({
             </HeadingTag>
           </div>
           <p className="text-[10px] flex-shrink-0 pb-1" style={{ color: '#3A3A58', fontFamily: 'var(--font-sport)' }}>
-            {editorialDate()}{filteredArticles.length > 0 ? ` · ${filteredArticles.length} historias` : ''}
+            {editorialDate(renderedAt)}{filteredArticles.length > 0 ? ` · ${filteredArticles.length} historias` : ''}
           </p>
         </div>
       </div>
@@ -333,6 +351,7 @@ export default function NoticiasContent({
           <div className="flex gap-8 items-start">
             <div className="flex-1 min-w-0">
               <NewsPageFeed
+                renderedAt={renderedAt}
                 articles={filteredArticles}
                 initialCategory={activeCategory}
                 featuredCount={7}

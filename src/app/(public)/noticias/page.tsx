@@ -74,6 +74,7 @@ export default async function NoticiasPage() {
 
       <div className="max-w-[1440px] mx-auto pb-24">
         <NoticiasContent
+          renderedAt={Date.now()}
           articles={articles}
           reels={igReels as typeof reels}
         />

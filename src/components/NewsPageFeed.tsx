@@ -23,9 +23,15 @@ interface Article {
 
 type DateGroup = 'Hoy' | 'Ayer' | 'Esta semana' | 'Anterior'
 
-function getDateGroup(publishedAt?: string): DateGroup {
+// `ahora` llega SELLADO POR EL SERVIDOR (prop `renderedAt`), no de `Date.now()`.
+// Estos separadores son ESTRUCTURA —cada grupo es una sección del listado—, y
+// /noticias va con `revalidate = 300`: si cada lado mirara su propio reloj, un
+// artículo que cruzase las 24 h, las 48 h o los 7 días entre el render cacheado
+// y la hidratación cambiaría de grupo. React lo trata como fallo de hidratación
+// (#418), tira el árbol y repinta la página entera en cliente.
+function getDateGroup(publishedAt: string | undefined, ahora: number): DateGroup {
   if (!publishedAt) return 'Anterior'
-  const diff = Date.now() - new Date(publishedAt).getTime()
+  const diff = ahora - new Date(publishedAt).getTime()
   const days = diff / 86_400_000
   if (days < 1) return 'Hoy'
   if (days < 2) return 'Ayer'
@@ -33,7 +39,7 @@ function getDateGroup(publishedAt?: string): DateGroup {
   return 'Anterior'
 }
 
-function groupByDate(articles: Article[]): { label: DateGroup; items: Article[] }[] {
+function groupByDate(articles: Article[], ahora: number): { label: DateGroup; items: Article[] }[] {
   const groups: Record<DateGroup, Article[]> = {
     Hoy: [],
     Ayer: [],
@@ -41,7 +47,7 @@ function groupByDate(articles: Article[]): { label: DateGroup; items: Article[] 
     Anterior: [],
   }
   for (const a of articles) {
-    groups[getDateGroup(a.publishedAt)].push(a)
+    groups[getDateGroup(a.publishedAt, ahora)].push(a)
   }
   const ORDER: DateGroup[] = ['Hoy', 'Ayer', 'Esta semana', 'Anterior']
   return ORDER.filter((l) => groups[l].length > 0).map((l) => ({ label: l, items: groups[l] }))
@@ -75,6 +81,7 @@ export default function NewsPageFeed({
   onLoadMore,
   hasMore = false,
   loadingMore = false,
+  renderedAt,
 }: {
   articles: Article[]
   initialCategory?: string
@@ -84,6 +91,9 @@ export default function NewsPageFeed({
   onLoadMore?: () => void | Promise<void>
   hasMore?: boolean
   loadingMore?: boolean
+  /** Momento del render en el SERVIDOR (epoch ms). Único reloj de los
+   *  separadores de fecha, para que el HTML cacheado y la hidratación coincidan. */
+  renderedAt: number
 }) {
   const router = useRouter()
   const [category, setCategory] = useState(initialCategory)
@@ -120,7 +130,7 @@ export default function NewsPageFeed({
   // la paginación de histórico la maneja el botón "Cargar más" del padre.
   const feedArticles = filtered.slice(featuredCount)
   const visibleArticles = feedArticles
-  const groups = groupByDate(visibleArticles)
+  const groups = groupByDate(visibleArticles, renderedAt)
 
   return (
     <div>

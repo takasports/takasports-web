@@ -240,6 +240,7 @@ export default async function SportPage({
 
       <main className="max-w-[1440px] mx-auto pb-24">
         <NoticiasContent
+          renderedAt={Date.now()}
           articles={safeArticles}
           reels={igReels as typeof reels}
           initialCategory={label}
