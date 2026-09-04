@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TakaSports · web
 
-## Getting Started
+Plataforma deportiva: noticias, calendario y resultados en vivo, rankings,
+predicciones y minijuegos.
 
-First, run the development server:
+**Producción:** <https://www.takasportsmedia.com> · **Deploy:** Vercel, automático
+en cada `push` a `main`.
+
+| | |
+|---|---|
+| Framework | Next.js 16 (App Router) · React 19 · TypeScript |
+| Estilos | Tailwind 4 |
+| Contenido | Sanity (noticias y reportajes) |
+| Datos | Supabase (Postgres + Auth) |
+| Deportes | ESPN (gratis) y api-sports.io (cuota corta) |
+| Pruebas | Vitest — 1.250 en 89 ficheros |
+| Tamaño | 68 páginas · 151 rutas de API · 28 tareas programadas |
+
+## Arrancar
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install && npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Hace falta un `.env.local` con unas 25 variables (Sanity, Supabase, claves de
+deportes, VAPID de notificaciones). No hay fichero de ejemplo publicado porque
+varias son secretas; pídeselas a quien mantiene el proyecto.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Sin `.env.local` la web arranca, pero las páginas que leen Sanity o Supabase
+fallarán.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Orden | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo en el 3000 |
+| `npm run build` | Build de producción. **Valida tipos y lint: nada se commitea sin que pase** |
+| `npm test` | Vitest, una pasada |
+| `npm run rankings:sync` | Baja los rankings de la base de datos |
 
-## Learn More
+⚠️ **No levantes dos servidores de desarrollo en esta misma carpeta**: comparten
+`.next` y todas las rutas de API empiezan a responder 404. Si necesitas otro, usa
+un worktree de git aparte.
 
-To learn more about Next.js, take a look at the following resources:
+## Por dónde empezar a leer
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/            rutas (App Router). Cada carpeta es una URL
+│   ├── api/        151 rutas de servidor: eventos, predicciones, rankings, juegos, crons
+│   ├── partido/    ficha de partido — la pantalla más grande y más visitada
+│   └── admin/      panel interno, protegido
+├── components/     React reutilizable
+└── lib/            lógica de negocio, clientes y tipos
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Tipos globales:** `src/lib/types.ts`
+- **Deportes y ligas:** `src/lib/constants.ts`, `src/lib/sports.ts`
+- **Fórmula del Índice Taka:** `src/lib/rankings.ts` (espejo del trigger SQL)
+- **Imágenes externas permitidas:** `next.config.ts` → `images.remotePatterns`
 
-## Deploy on Vercel
+## De dónde sale el contenido
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Las noticias **no se escriben aquí**. Vienen de un pipeline de n8n que vive en
+otro repo (`taka-system`), pasa por Supabase y se publica en Sanity; esta web
+solo lee. El título SEO lo rellena aparte `/api/cron/seo-title`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Reglas de la casa
+
+- **Componentes de servidor por defecto.** `'use client'` solo si necesita estado.
+- **Imágenes de atletas y equipos:** `<DynamicImage>`, nunca `<Image>` a pelo.
+- **Fechas:** `timeAgo()` y `formatInTimezone()`, que respetan el huso del visitante.
+- **Nada decidido con el reloj del navegador en el primer render**, o rompes la
+  hidratación: usa `useMounted()`. Costó once páginas repintándose enteras.
+- **Sin credenciales en el código.** Siempre `.env.local`.
+- **Medir en producción, no en local**: `next start` no comprime y miente por ocho.
+
+## Documentación
+
+- `CLAUDE.md` — guía larga del repo (tablas de Supabase, límites de cada API…)
+- `CHANGELOG.md` — qué ha cambiado y cuándo
+- Hoja de ruta viva: artifact «Hoja de ruta Taka»

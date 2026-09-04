@@ -7,7 +7,7 @@ Plataforma deportiva de noticias, reels, eventos en vivo y juegos.
 
 | Capa | Tecnología |
 |---|---|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16 (App Router) · React 19 |
 | Estilos | Tailwind CSS |
 | CMS noticias | Sanity (`cdn.sanity.io`) |
 | Base de datos | Supabase (Postgres) |
