@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
-import { Barlow_Condensed, Bebas_Neue, Barlow_Semi_Condensed } from 'next/font/google'
+import { Barlow, Barlow_Condensed, Barlow_Semi_Condensed } from 'next/font/google'
 import './globals.css'
 import BottomNav from '@/components/BottomNav'
 import ConsentBanner from '@/components/ConsentBanner'
@@ -16,33 +15,38 @@ import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL, SOCIAL_SAMEAS 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID
 
-const geist = Geist({
-  variable: '--font-geist-sans',
+// Barlow (ancho normal) — el REPOSO del sitio: cuerpo de los artículos y todo lo
+// que no declara familia. Sustituye a Geist (04/09/2026, A1 de la fase 2).
+//
+// Geist no estaba elegido en ninguna página: era el `font-family` del `body`, así
+// que se lo comía todo lo que no declaraba familia —incluido el cuerpo de los
+// artículos— y de ahí venía la sensación de que portada, predicciones y
+// estadísticas «iban en otra fuente». Ahora el sitio entero es Barlow en tres
+// anchos: normal para leer, semi condensada para interfaz, condensada para
+// titulares.
+//
+// Ancho NORMAL y no la semi condensada que ya usa la interfaz: leer 1.500
+// palabras seguidas en condensada cansa. [José Tomás, 04/09/2026]
+const barlow = Barlow({
+  variable: '--font-body',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 })
 
 // Barlow Condensed 900 — para títulos editoriales largos (hero, artículos, secciones)
 // Condensed pero legible en mixed-case, peso fuerte sin ser tabloid
+// `--font-headline` (los rótulos cortos en mayúsculas: "REELS", "CALENDARIO", los
+// marcadores) era Bebas Neue, una familia entera para 44 usos. Ahora es esta
+// misma, Barlow Condensed, declarada como segunda variable: así los 44 sitios no
+// cambian de nombre de variable. Bebas solo tenía un peso y solo mayúsculas;
+// Barlow Condensed 900 hace el mismo trabajo y ya venía descargada.
 const barlowCondensed = Barlow_Condensed({
   variable: '--font-display',
   subsets: ['latin'],
   weight: ['700', '800', '900'],
   style: ['normal'],
   display: 'swap',
-})
-
-// Bebas Neue — solo para labels cortos de sección ("REELS", "CALENDARIO", etc.)
-// All-caps agresivo, perfecto en contextos breves de impacto.
-// preload:false — no pinta nunca el elemento LCP (solo labels). Con preload activo
-// Next emitía un <link rel="preload"> que competía por ancho de banda con la imagen
-// del hero justo durante el LCP en móvil. Carga igual, solo que sin prioridad.
-const bebasNeue = Bebas_Neue({
-  variable: '--font-headline',
-  subsets: ['latin'],
-  weight: '400',
-  display: 'swap',
-  preload: false,
 })
 
 // preload:false — 3 pesos = 3 archivos precargados solo para badges/chips de deporte.
@@ -136,7 +140,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geist.variable} ${barlowCondensed.variable} ${bebasNeue.variable} ${barlowSemiCondensed.variable} h-full`}
+      className={`${barlow.variable} ${barlowCondensed.variable} ${barlowSemiCondensed.variable} h-full`}
     >
       <head>
         <link rel="preconnect" href="https://cdn.sanity.io" />

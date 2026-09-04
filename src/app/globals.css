@@ -47,6 +47,12 @@
   --body-em:      #C4B5FD;  /* énfasis cursiva <em> */
   --body-lede:    #B0B0CC;  /* entradilla en cursiva (short_summary) */
 
+  /* Rótulos cortos en mayúsculas ("REELS", "CALENDARIO", los marcadores). Era
+     Bebas Neue —una familia entera para 44 usos, un solo peso y solo
+     mayúsculas—; desde el 04/09/2026 es la misma condensada de los titulares.
+     Se conserva el NOMBRE de la variable para no tocar los 44 sitios. */
+  --font-headline: var(--font-display);
+
   /* Borders */
   --border: rgba(255,255,255,0.06);
   --border-subtle: rgba(255,255,255,0.04);
@@ -179,7 +185,7 @@ body {
     radial-gradient(ellipse 70% 55% at 2% 78%, rgba(72,44,150,0.07) 0%, transparent 55%);
   background-attachment: fixed;
   color: var(--text-primary);
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -283,11 +289,23 @@ html[data-cap="full"] .ts-navline {
   background: rgba(124,58,237,0.2) !important;
 }
 
-/* ── Bebas Neue — solo para labels cortos de sección ── */
+/* ── Rótulos cortos de sección ── */
 .label-display {
   font-family: var(--font-headline);
+  font-weight: 900;
   letter-spacing: 0.06em;
   line-height: 1;
+}
+
+/* Bebas tenía un solo peso, así que los 43 sitios que piden `--font-headline`
+   en un `style` inline nunca declararon `font-weight` — con Barlow Condensed
+   saldrían en 400, demasiado finos para un rótulo. Esta regla les pone el 900
+   que Bebas daba de serie. Va en `:where()` para tener especificidad CERO: si
+   el elemento ya trae su propia clase de peso (`font-bold`, `font-black`),
+   manda la suya. Se puede retirar cuando el catálogo (A2) sustituya esos
+   estilos inline por una pieza. */
+:where([style*="--font-headline"]) {
+  font-weight: 900;
 }
 
 /* ── Section label system ── */

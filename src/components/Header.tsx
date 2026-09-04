@@ -179,7 +179,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
             onKeyDown={(e) => { if (e.key === 'Enter') submitSearch() }}
             placeholder="Buscar jugadores, noticias, deportes..."
             className="flex-1 bg-transparent outline-none text-sm"
-            style={{ color: '#EBEBF5', fontFamily: 'var(--font-geist-sans)' }}
+            style={{ color: '#EBEBF5', fontFamily: 'var(--font-body)' }}
           />
           {query && (
             <button onClick={() => setQuery('')} aria-label="Limpiar búsqueda" style={{ color: 'var(--text-muted)', flexShrink: 0 }}>
