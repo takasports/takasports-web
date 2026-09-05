@@ -16,7 +16,14 @@ const TABS = [
   // cinco. Entra por /predicciones —la Jornada es lo que trae de vuelta— y
   // marca activo en todo el recinto de juego, minijuegos y Liga Taka incluidos.
   { href: '/predicciones', label: 'Jugar', match: (p: string) => JUEGOS_ROUTES.some(r => p.startsWith(r)), icon: PredIcon },
-  { href: '/perfil', label: 'Tú', match: (p: string) => p.startsWith('/perfil'), icon: PersonIcon },
+  // `sinPrefetch`: /perfil es la ÚNICA ruta de la barra que se declara
+  // force-dynamic (necesita el nonce de la CSP por petición, ver el layout de
+  // /perfil). Next prefetchea por defecto todo Link que esté en pantalla, y esta
+  // barra está siempre en pantalla en móvil: eso disparaba DOS peticiones RSC a
+  // /perfil en cada carga de cada página, que el navegador acababa abortando
+  // (ERR_ABORTED) porque una ruta dinámica no se puede guardar en la caché del
+  // router. Coste: dos renders de servidor por visita, a cambio de nada.
+  { href: '/perfil', label: 'Tú', match: (p: string) => p.startsWith('/perfil'), icon: PersonIcon, sinPrefetch: true },
 ]
 
 // Barra inferior FLOTANTE en vidrio (móvil, md:hidden): cápsula con blur real,
@@ -142,13 +149,14 @@ export default function BottomNav() {
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.35)',
           }}
         >
-          {TABS.map(({ href, label, match, icon: Icon, live }) => {
+          {TABS.map(({ href, label, match, icon: Icon, live, sinPrefetch }) => {
             const active = montado && match(pathname)
             const showDot = !!live && hasLive
             return (
               <li key={href} className="flex-1 relative">
                 <Link
                   href={href}
+                  prefetch={sinPrefetch ? false : undefined}
                   onClick={onTap}
                   aria-current={active ? 'page' : undefined}
                   aria-label={showDot ? `${label} (hay partidos en directo)` : label}
