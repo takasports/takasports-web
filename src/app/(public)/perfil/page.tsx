@@ -1485,7 +1485,7 @@ export default function PerfilPage() {
                     </p>
                     <p
                       className="text-[9px]"
-                      style={{ color: '#3A3A50', fontFamily: 'var(--font-sport)' }}
+                      style={{ color: '#7B7BA6', fontFamily: 'var(--font-sport)' }}
                     >
                       {tzOpt.flag} {tzOpt.city} · {tzOffset}
                     </p>
@@ -1497,10 +1497,10 @@ export default function PerfilPage() {
                   style={{ borderTop: '1px solid var(--border)', background: 'rgba(255,255,255,0.015)' }}
                 >
                   <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                    <circle cx="6" cy="6" r="4.5" stroke="#3A3A50" strokeWidth="1.2" />
-                    <path d="M6 4v2.5l1.5 1" stroke="#3A3A50" strokeWidth="1.2" strokeLinecap="round" />
+                    <circle cx="6" cy="6" r="4.5" stroke="#7B7BA6" strokeWidth="1.2" />
+                    <path d="M6 4v2.5l1.5 1" stroke="#7B7BA6" strokeWidth="1.2" strokeLinecap="round" />
                   </svg>
-                  <span className="text-[9px]" style={{ color: '#2E2E40', fontFamily: 'var(--font-sport)' }}>
+                  <span className="text-[9px]" style={{ color: '#7E7EAB', fontFamily: 'var(--font-sport)' }}>
                     Los horarios del calendario se ajustan a tu zona
                   </span>
                 </div>

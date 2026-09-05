@@ -22,7 +22,9 @@
 
   /* Brand */
   --purple: #7C3AED;
-  --purple-light: #8B5CF6;
+  /* #8B5CF6 se quedaba en 4,43 sobre el fondo del banner de cookies: a un pelo
+     del 4,5 de AA. Este cambio es imperceptible y lo cruza. */
+  --purple-light: #8C5DF9;
 
   /* Reportajes — acento cálido propio. El violeta es "el sitio"; este ámbar
      marca la pieza de fondo (bloque de home, sello y /reportajes) para que se

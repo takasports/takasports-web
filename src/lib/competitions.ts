@@ -40,6 +40,27 @@ export const COMP_ACCENT: Record<string, string> = {
   'Brasileirão': '#1C7C3F',
 }
 
+/**
+ * Texto legible sobre un color de marca: casi negro o blanco, el que más
+ * contraste dé.
+ *
+ * La etiqueta de competición pintaba SIEMPRE `#0A0A12`, y eso solo funciona con
+ * los acentos claros. De los 28 colores de `COMP_ACCENT`, **15 no llegaban al
+ * 4,5 que exige AA**: Champions se quedaba en 2,24 y MLS en 2,15. No se toca
+ * ningún color de marca — solo se elige el texto que encima se lee.
+ */
+export function textoSobre(fondo: string): '#0A0A12' | '#FFFFFF' {
+  const h = fondo.replace('#', '')
+  const hh = h.length === 3 ? h.split('').map(c => c + c).join('') : h
+  const canal = (i: number) => {
+    const v = parseInt(hh.slice(i, i + 2), 16) / 255
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+  }
+  const L = 0.2126 * canal(0) + 0.7152 * canal(2) + 0.0722 * canal(4)
+  // contraste contra blanco vs contra el casi negro de marca (L ≈ 0.00477)
+  return (1.05 / (L + 0.05)) > ((L + 0.05) / 0.05477) ? '#FFFFFF' : '#0A0A12'
+}
+
 export function getCompAccent(comp: string, fallback = '#7C3AED'): string {
   for (const [key, color] of Object.entries(COMP_ACCENT)) {
     if (comp.toLowerCase().includes(key.toLowerCase())) return color

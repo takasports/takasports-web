@@ -268,7 +268,7 @@ function DifficultyDots({ level }: { level: Difficulty }) {
   )
 }
 
-function Badge({ label, color = 'rgba(255,255,255,0.06)', textColor = '#5A5A7A' }: { label: string; color?: string; textColor?: string }) {
+function Badge({ label, color = 'rgba(255,255,255,0.06)', textColor = '#7878A2' }: { label: string; color?: string; textColor?: string }) {
   return (
     <span
       className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex-shrink-0"
@@ -542,7 +542,7 @@ function ComingGameCard({ game }: { game: Game }) {
             </span>
             <span
               className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
+              style={{ background: 'rgba(255,255,255,0.04)', color: '#9090A2', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
             >
               {game.category}
             </span>
@@ -576,7 +576,7 @@ function ComingGameCard({ game }: { game: Game }) {
           <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
           <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>·</span>
           <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
-          <span className="ml-auto text-[9px] font-black" style={{ color: `${game.accent}80`, fontFamily: 'var(--font-sport)' }}>
+          <span className="ml-auto text-[9px] font-black" style={{ color: `${game.accent}B3`, fontFamily: 'var(--font-sport)' }}>
             {LIGA_TAKA_MAX[game.id] ?? game.pts} pts
           </span>
         </div>

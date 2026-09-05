@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { StarIcon, LiveDotIcon, LockIcon } from '@/components/icons/GameIcons'
-import { getCompAccent } from '@/lib/competitions'
+import { getCompAccent, textoSobre } from '@/lib/competitions'
 import { competitionArt } from './competition-art'
 import TeamCrest from './TeamCrest'
 import PickButton from './PickButton'
@@ -197,7 +197,7 @@ export default function MatchCard({
         )}
         <span className="cal-live-tag" style={{
           fontSize: 9, fontWeight: 900, padding: '4px 9px',
-          background: compColor, color: '#0A0A12',
+          background: compColor, color: textoSobre(compColor),
           fontFamily: 'var(--font-sport)',
           textTransform: 'uppercase', letterSpacing: '0.09em',
         }}>{event.competition}</span>

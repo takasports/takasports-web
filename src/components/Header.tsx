@@ -792,7 +792,7 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
               onClick={openSearch}
               title="Buscar (⌘K)"
               className="hidden xl:flex items-center gap-2 rounded-lg flex-shrink-0 transition-colors hover:border-white/15"
-              style={{ height: 38, width: 232, padding: '0 8px 0 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#7A7A8E' }}
+              style={{ height: 38, width: 232, padding: '0 8px 0 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#828296' }}
             >
               <SearchIcon />
               <span
@@ -813,7 +813,7 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
               onClick={openSearch}
               title="Buscar (⌘K)"
               className="flex xl:hidden items-center justify-center rounded-lg flex-shrink-0 transition-colors hover:border-white/15"
-              style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#7A7A8E' }}
+              style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#828296' }}
             >
               <SearchIcon />
             </button>

@@ -94,7 +94,9 @@ export default function LeaderboardTabs({ quinielaJornada }: Props) {
               className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full transition-all flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
               style={{
                 background:   on ? `${t.accent}18` : 'rgba(255,255,255,0.03)',
-                color:        on ? t.accent : '#5A5A7A',
+                // #5A5A7A daba 2,87 sobre el fondo: la pestaña que NO está
+                // activa es justo la que hay que poder leer para cambiarse a ella.
+                color:        on ? t.accent : '#7878A2',
                 border:       on ? `1px solid ${t.accent}40` : '1px solid rgba(255,255,255,0.04)',
                 fontFamily:   'var(--font-sport)',
                 letterSpacing:'0.06em',

@@ -181,7 +181,7 @@ export default function TimezoneSelector({ value, onChange, compact = false }: P
           {search && (
             <button
               onClick={() => setSearch('')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#3A3A50' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#8282B0' }}
             >
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                 <path d="M2 2l6 6M8 2L2 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
@@ -200,7 +200,7 @@ export default function TimezoneSelector({ value, onChange, compact = false }: P
           }}
         >
           {regions.length === 0 ? (
-            <p className="text-xs text-center py-6" style={{ color: '#3A3A50', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-xs text-center py-6" style={{ color: '#8282B0', fontFamily: 'var(--font-sport)' }}>
               Sin resultados
             </p>
           ) : (
@@ -323,7 +323,7 @@ export default function TimezoneSelector({ value, onChange, compact = false }: P
             </span>
             <span
               className="text-[8px]"
-              style={{ color: open ? '#7C5AAA' : '#3A3A50', fontFamily: 'var(--font-sport)' }}
+              style={{ color: open ? '#7C5AAA' : '#8282B0', fontFamily: 'var(--font-sport)' }}
             >
               {offsets[value] ?? ''}
             </span>
