@@ -26,7 +26,12 @@ export async function GET(req: Request) {
     const result = await searchPastEvents({ from, to, sport, comp, q, cursor, limit })
     if (result) {
       return NextResponse.json(result, {
-        headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
+        // ⚠️ La ventana era corta (600-900 s) y, pasada, la caché caducaba del todo: el
+        // siguiente en llegar ESPERABA la respuesta fría entera —20-21 s medidos—. La
+        // app se rinde a los 15 s y degrada a lista vacía, y por eso el 06/09/2026 no
+        // cargaban ni el inicio ni el calendario. Con un día ya nadie espera; lo
+        // mantiene fresco el cron `warm-events`.
+        headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400' },
       })
     }
     // result === null → tabla no existe o error; caemos al fallback ESPN.
@@ -47,6 +52,6 @@ export async function GET(req: Request) {
     return true
   })
   return NextResponse.json({ events: filtered.slice(0, limit), nextCursor: null }, {
-    headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
+    headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400' },
   })
 }

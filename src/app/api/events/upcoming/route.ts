@@ -284,8 +284,13 @@ function tennisPairKey(a: unknown, b: unknown): string | null {
 
 // Upcoming events: cambian poco. Cache edge 5min fresh + 15min stale.
 const UPCOMING_CACHE_HEADERS = {
-  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900',
-  'CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900',
+  // ⚠️ La ventana era corta (600-900 s) y, pasada, la caché caducaba del todo: el
+  // siguiente en llegar ESPERABA la respuesta fría entera —20-21 s medidos—. La
+  // app se rinde a los 15 s y degrada a lista vacía, y por eso el 06/09/2026 no
+  // cargaban ni el inicio ni el calendario. Con un día ya nadie espera; lo
+  // mantiene fresco el cron `warm-events`.
+  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400',
+  'CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400',
 } as const
 
 export async function GET() {
