@@ -18,6 +18,9 @@ import type { SportEvent } from '@/lib/types'
 // Se devuelven TODOS los partidos del día, sin curar: quién es "tuyo" lo decide
 // el cliente cruzando con sus equipos seguidos, que viven en su dispositivo.
 
+// Igual que /api/events/feed: sin esto, un fallo de caché mata la petición a
+// los ~12 s y el cliente recibe una conexión cortada en vez de una respuesta.
+export const maxDuration = 60
 export const revalidate = 300
 
 export interface TodayEvent {

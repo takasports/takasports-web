@@ -16,6 +16,17 @@ import { attachRecentForm } from '@/lib/recent-form-attach'
 import { filterFromDay } from '@/lib/calendar-initial-window'
 import { conTope } from '@/lib/enriquecer-con-tope'
 
+// ⚠️ `maxDuration` explícito. Sin él, la función se queda con el límite por
+// defecto (~12 s medidos) y, cuando a un POP del CDN le toca la caché fría, la
+// petición se MATA a medias: el cliente recibe una conexión cortada, ni siquiera
+// un error HTTP. Reproducido el 06/09/2026: 1 de cada 5 peticiones a
+// `/api/events/feed` moría a los 12,44 s exactos. Para la app eso es un
+// calendario vacío sin explicación.
+//
+// La ruta en frío pide a ESPN una veintena larga de scoreboards; los adjuntos ya
+// están acotados a 3 s cada uno. Con 60 s hay margen de sobra y, sobre todo, un
+// fallo de caché pasa a ser una respuesta LENTA en vez de una respuesta ROTA.
+export const maxDuration = 60
 export const revalidate = 300
 
 export async function GET(req: Request) {

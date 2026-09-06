@@ -25,6 +25,10 @@ export interface UpcomingEvent {
 interface CacheEntry { data: UpcomingEvent[]; ts: number }
 let cache: CacheEntry | null = null
 let staleCache: CacheEntry | null = null
+// Igual que /api/events/feed: sin esto, un fallo de caché mata la petición a los
+// ~12 s y el cliente recibe una conexión cortada en vez de una respuesta.
+export const maxDuration = 60
+
 const CACHE_TTL  = 5 * 60_000  // 5 min fresh
 const STALE_MAX  = 30 * 60_000 // serve stale up to 30 min after expiry
 

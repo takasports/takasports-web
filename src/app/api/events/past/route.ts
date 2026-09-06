@@ -8,6 +8,9 @@ import { conTopeValor } from '@/lib/enriquecer-con-tope'
 import { fetchEspnPastEvents } from '@/lib/espn'
 import type { SportEvent } from '@/lib/types'
 
+// Igual que /api/events/feed: sin esto, un fallo de caché mata la petición a
+// los ~12 s y el cliente recibe una conexión cortada en vez de una respuesta.
+export const maxDuration = 60
 export const revalidate = 300
 
 export async function GET(req: Request) {
