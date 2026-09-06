@@ -14,6 +14,7 @@ import { attachH2HNotes } from '@/lib/h2h-notes'
 import { attachAthletePhotos } from '@/lib/athlete-photos-attach'
 import { attachRecentForm } from '@/lib/recent-form-attach'
 import { filterFromDay } from '@/lib/calendar-initial-window'
+import { conTope } from '@/lib/enriquecer-con-tope'
 
 export const revalidate = 300
 
@@ -23,17 +24,21 @@ export async function GET(req: Request) {
   // mismo evento (`h2hNote`, `homePhoto`/`awayPhoto`, `homeForm`/`awayForm`) y
   // ninguno lee lo que escriben los otros, así que encadenarlos con `await` solo
   // sumaba esperas. En frío esta ruta tardaba 21 s y la app se rinde a los 15.
+  // Los tres van en paralelo (escriben campos distintos y ninguno lee lo del
+  // otro) y CON TOPE: son adornos que salen de Supabase, y el 06/09/2026 una
+  // caída suya —522 que tardaba 19,4 s en fallar— dejaba esta ruta en 21 s y el
+  // calendario de la app en blanco. Ver `enriquecer-con-tope.ts`.
   await Promise.all([
     // Historial en una línea para los cruces con motivo de tabla (unas pocas
     // consultas cacheadas). Se hace AQUÍ y no en fetchEspnEvents para que el lib
     // de ESPN no dependa de Supabase; el SSR del calendario llama a lo mismo.
-    attachH2HNotes(events),
+    conTope('h2h', attachH2HNotes(events)),
     // Cara del tenista/luchador desde NUESTRA caché resuelta (Wikimedia): manda
     // sobre el headshot de ESPN y sobre la lista estática.
-    attachAthletePhotos(events),
+    conTope('fotos', attachAthletePhotos(events)),
     // Barritas de forma reciente. La web las pinta desde su SSR; por API no salían,
     // así que la app tenía la fila sin ellas. Una consulta agrupada y cacheada.
-    attachRecentForm(events),
+    conTope('forma', attachRecentForm(events)),
   ])
   // `?from=YYYY-MM-DD` devuelve solo desde ese día. Lo usa el calendario web,
   // que ya trae los días cercanos pintados en el HTML y solo necesita el resto:

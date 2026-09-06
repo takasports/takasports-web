@@ -21,6 +21,7 @@ import { sanityClient, eventsQuery } from '@/lib/sanity'
 import { normalizeEvent } from '@/lib/events'
 import { searchPastEvents } from '@/lib/past-events'
 import { attachH2HNotes } from '@/lib/h2h-notes'
+import { conTope } from '@/lib/enriquecer-con-tope'
 import { matchStakes, standingLabel } from '@/lib/match-stakes'
 import { getBroadcastForTz } from '@/lib/broadcasts'
 import { SOURCE_TZ } from '@/lib/timezone'
@@ -96,7 +97,8 @@ const loadDay = cache(async (fecha: string): Promise<SportEvent[]> => {
     out.push(e)
   }
   out.sort((a, b) => (a.isoDate ?? '').localeCompare(b.isoDate ?? ''))
-  await attachH2HNotes(out)
+  // Con tope: adorno de Supabase, no puede congelar el día entero.
+  await conTope('h2h', attachH2HNotes(out))
   return out
 })
 

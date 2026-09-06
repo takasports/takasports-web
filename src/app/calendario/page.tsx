@@ -4,6 +4,7 @@ import { fetchEspnEvents } from '@/lib/espn'
 import { fetchPadelEvents } from '@/lib/padel'
 import { fetchRecentFormByTeams, type FormResult } from '@/lib/past-events'
 import { attachH2HNotes } from '@/lib/h2h-notes'
+import { conTope } from '@/lib/enriquecer-con-tope'
 import { attachAthletePhotos } from '@/lib/athlete-photos-attach'
 import { WOMENS_COMPS } from '@/lib/football-leagues'
 import { SOURCE_TZ } from '@/lib/timezone'
@@ -89,8 +90,12 @@ export default async function CalendarioPage() {
   // Historial en una línea para los cruces con motivo de tabla (mismo helper
   // que /api/events/feed, así que web y app enseñan la misma frase). Muta
   // `events`; best-effort, si Supabase no responde no pinta nada.
-  await attachH2HNotes(events)
-  await attachAthletePhotos(events)
+  // Con tope y en paralelo: son adornos de Supabase, y una caída suya (522 que
+  // tarda 19,4 s en fallar, 06/09/2026) congelaba el calendario entero.
+  await Promise.all([
+    conTope('h2h', attachH2HNotes(events)),
+    conTope('fotos', attachAthletePhotos(events)),
+  ])
 
   // Recent form (last 5 W/D/L) for every team. El mismo nombre de club existe
   // en masculino y femenino ("Real Madrid", "Barcelona"…), así que no podemos
