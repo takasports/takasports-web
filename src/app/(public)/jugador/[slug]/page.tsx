@@ -37,10 +37,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // consolidar duplicados. Los enlaces internos y el sitemap ya apuntan solo a la
   // nueva, así que la vieja se queda sin enlaces y sale del índice por su propio peso.
   // Sin sufijo " | TakaSports": el root layout ya aplica title.template '%s | TakaSports'.
-  const title = `${player.name} · ${player.leagueLabel}`
-  const description = `${player.name}${player.position ? ` · ${player.position}` : ''}${
-    player.team ? ` · ${player.team.name}` : ''
-  } — estadísticas de la temporada en ${player.leagueLabel}`
+  // El 94% de las impresiones de esta sección son el NOMBRE a secas, así que el
+  // nombre va primero y el resto del rótulo tiene que decir qué ofrecemos que no
+  // ofrezca Transfermarkt o Wikipedia. «Nombre · LaLiga» no prometía nada; el
+  // club reconocible + «estadísticas» sí. (Medido en Search Console, sep 2026.)
+  const club = player.team?.name ?? player.leagueLabel
+  const title = `${player.name} — ${club}: estadísticas y ficha`
+  const pos = positionEs(player)
+  const bio = [pos, player.age != null ? `${player.age} años` : null]
+    .filter(Boolean).join(', ')
+  const description = `${player.name}${bio ? `, ${bio}` : ''}${
+    player.team ? `, juega en el ${player.team.name}` : ''
+  }. Estadísticas de la temporada en ${player.leagueLabel}, trayectoria y últimos partidos.`
   // Canonical al slug con nombre, no al que haya pedido el visitante: si entra por
   // el formato histórico, el canonical ya apunta a la URL buena (y la página, además,
   // redirige 308).
@@ -95,6 +103,21 @@ const POSITION_ES_NBA: Record<string, string> = {
   Forward: 'Alero', 'Small Forward': 'Alero', 'Power Forward': 'Ala-pívot',
   Guard: 'Exterior', 'Point Guard': 'Base', 'Shooting Guard': 'Escolta',
   Center: 'Pívot', 'Forward-Center': 'Ala-pívot', 'Guard-Forward': 'Alero',
+}
+
+/** Deporte derivado del leagueSlug de ESPN ('soccer/esp.1' → 'futbol'). */
+function sportOf(player: Pick<PlayerDetail, 'leagueSlug'>): string {
+  const head = player.leagueSlug.split('/')[0]
+  if (head === 'soccer') return 'futbol'
+  return player.leagueSlug.startsWith('basketball') ? 'baloncesto' : ''
+}
+
+/** Posición en español, o la de ESPN si no está mapeada. La descripción de la
+ *  ficha la usaba en inglés ("Midfielder") en mitad de una frase en español. */
+function positionEs(player: Pick<PlayerDetail, 'leagueSlug' | 'position'>): string | null {
+  if (!player.position) return null
+  const map = sportOf(player) === 'baloncesto' ? POSITION_ES_NBA : POSITION_ES
+  return map[player.position] ?? player.position
 }
 
 const RESULT_STYLE: Record<string, { letter: string; color: string }> = {
@@ -168,15 +191,14 @@ function MatchRow({ r, teamId }: { r: TeamResult; teamId: string }) {
 
 // ── Content ───────────────────────────────────────────────────────────
 function PlayerContent({ player }: { player: PlayerDetail }) {
-  const sportSlug = player.leagueSlug.split('/')[0] === 'soccer' ? 'futbol'
-    : player.leagueSlug.startsWith('basketball') ? 'baloncesto' : ''
+  const sportSlug = sportOf(player)
   // Acento del deporte (fútbol verde, NBA naranja…) en vez del morado genérico.
   const accent = accentForSport(sportSlug || undefined)
   const isSoccer = sportSlug === 'futbol'
 
   const bio: string[] = []
-  const posMap = sportSlug === 'baloncesto' ? POSITION_ES_NBA : POSITION_ES
-  if (player.position) bio.push(posMap[player.position] ?? player.position)
+  const pos = positionEs(player)
+  if (pos) bio.push(pos)
   if (player.jersey) bio.push(`#${player.jersey}`)
   if (player.age != null) bio.push(`${player.age} años`)
   if (player.nationality) bio.push(player.nationality)

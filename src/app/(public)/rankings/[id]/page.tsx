@@ -6,6 +6,7 @@ import { getDisplayScore, scoreColor, isCreatorEntry } from '@/lib/rankings-ui'
 import { SCORE_WEIGHTS, CREATOR_WEIGHTS, weightedBase } from '@/lib/rankings'
 import { findEntryById, getEntrySources, getAllRankingEntries } from '@/lib/rankings-search'
 import { findEntryByIdFromDb, getAllEntryIdsFromDb, countryNameFromFlag } from '@/lib/rankings-data'
+import { entryTitle, entryDescription, parseOfficialRank } from '@/lib/rankings-seo'
 import { getCreatorAudience } from '@/lib/creator-audience'
 import { getSportStyle } from '@/lib/sports'
 import ShareButton from './ShareButton'
@@ -89,9 +90,12 @@ export async function generateMetadata(
     }
   }
 
-  const score = getDisplayScore(entry).toFixed(1)
-  const title = `${entry.name} · Ranking Taka ${score} — TakaSports`
-  const description = entry.insight ?? `${entry.subtitle}. Ranking Taka ${score}/100.`
+  // El rótulo lo decide `rankings-seo`: con ranking oficial (ATP/WTA #N, que ya
+  // viene en el subtitle) manda el puesto, porque es lo que se buscó — el 91% de
+  // las impresiones de esta sección son consultas «<nombre> ranking». La nota
+  // Taka baja a la descripción. Ver el porqué medido en el módulo.
+  const title = entryTitle(entry)
+  const description = entryDescription(entry, getDisplayScore(entry))
 
   return {
     title,
@@ -174,6 +178,16 @@ export default async function EntryDetailPage(
     ? Math.round(weightedBase(factors, isCreatorEntry(entry) ? CREATOR_WEIGHTS : SCORE_WEIGHTS) * 10) / 10
     : ds
   const editorialAdj = Math.round((ds - factorBase) * 10) / 10
+
+  // Puesto oficial (ATP/WTA) si la ingesta lo trajo en el subtitle. Se sube a la
+  // cabecera: quien llega buscando «shapovalov ranking» tiene que verlo sin
+  // bajar, o se vuelve a Google y el rótulo nuevo no habrá servido de nada.
+  const official = parseOfficialRank(entry.subtitle)
+  // Lo que quede del subtitle una vez extraído el puesto («ATP #48 · Tenis» →
+  // «Tenis»), para no repetir el dato dos veces seguidas.
+  const subtitleRest = official
+    ? entry.subtitle.replace(/^[A-Z]{2,5}\s*#\d+\s*(·\s*)?/, '').trim()
+    : entry.subtitle
 
   // JSON-LD por entry — tipo correcto según categoría
   const cat = entry.category ?? (sources.length > 0 ? sources[0] : '')
@@ -276,10 +290,24 @@ export default async function EntryDetailPage(
                 style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
                 {entry.name}
               </h1>
-              <p className="text-sm mb-3"
-                style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
-                {entry.subtitle}
-              </p>
+              {official ? (
+                <p className="flex items-baseline gap-2 flex-wrap mb-3">
+                  <span className="text-base sm:text-lg font-black tabular-nums"
+                    style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)' }}>
+                    {official.org} #{official.num}
+                  </span>
+                  {subtitleRest && (
+                    <span className="text-sm" style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
+                      {subtitleRest}
+                    </span>
+                  )}
+                </p>
+              ) : (
+                <p className="text-sm mb-3"
+                  style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
+                  {entry.subtitle}
+                </p>
+              )}
               {entry.insight && (
                 <p className="text-[12px] sm:text-sm leading-relaxed max-w-prose"
                   style={{ color: '#A0A0B8', fontFamily: 'var(--font-sport)' }}>
