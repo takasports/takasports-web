@@ -5,6 +5,19 @@ const nextConfig: NextConfig = {
   // Oculta la cabecera `X-Powered-By: Next.js` en todas las respuestas: no
   // revelar el framework reduce la superficie de fingerprinting/ataques dirigidos.
   poweredByHeader: false,
+  // El build genera 733 páginas con 9 procesos a la vez, y cada página tenía 60 s
+  // de tope. Bajo esa contención siempre se pasaba alguna —una DISTINTA en cada
+  // intento, que es la firma de un problema de contención y no de una página
+  // concreta— y Next tumbaba el despliegue entero tras tres reintentos.
+  // Producción llevaba así desde el 06/09/2026.
+  //
+  // Las páginas TERMINAN; solo necesitan más de un minuto cuando les toca
+  // competir. Esto les da tres.
+  //
+  // ⚠️ Es una tirita, no la cura: lo que hay debajo es que renderizar una noticia
+  // es caro (índice de entidades, fichas de jugadores, derechos de emisión, tuits)
+  // y nada de eso se comparte entre páginas. Con más contenido volverá a apretar.
+  staticPageGenerationTimeout: 180,
   async redirects() {
     return [
       // Canonical domain: non-www → www (permanent 301 for SEO link equity)
