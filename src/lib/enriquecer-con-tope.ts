@@ -31,6 +31,34 @@ export const TOPE_ENRIQUECIMIENTO_MS = 3_000
  * Devuelve `true` si llegó a tiempo — útil para registrar cuándo nos estamos
  * quedando sin adornos, que es la señal de que algo de abajo va mal.
  */
+/**
+ * Como `conTope`, pero devolviendo el VALOR de la tarea, o `null` si no llegó a
+ * tiempo o falló. Para cuando lo que se acota no es un adorno sino una fuente de
+ * datos que tiene alternativa: `/api/events/past` consulta Supabase y, si no
+ * responde, tira de ESPN — pero antes esperaba los 19,4 s que Supabase tardaba
+ * en fallar, y la app se rendía antes de ver la alternativa.
+ */
+export async function conTopeValor<T>(
+  nombre: string,
+  tarea: Promise<T>,
+  ms: number = TOPE_ENRIQUECIMIENTO_MS,
+): Promise<T | null> {
+  let temporizador: ReturnType<typeof setTimeout> | undefined
+  try {
+    const r = await Promise.race([
+      tarea,
+      new Promise<null>((res) => { temporizador = setTimeout(() => res(null), ms) }),
+    ])
+    if (r === null) console.warn(`[enriquecer] "${nombre}" pasó de ${ms} ms — se usa la alternativa`)
+    return r
+  } catch (e) {
+    console.warn(`[enriquecer] "${nombre}" falló (${(e as Error).message}) — se usa la alternativa`)
+    return null
+  } finally {
+    if (temporizador) clearTimeout(temporizador)
+  }
+}
+
 export async function conTope(
   nombre: string,
   tarea: Promise<unknown>,

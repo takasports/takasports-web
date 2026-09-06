@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server'
 import { searchPastEvents, pastEventsConfigured } from '@/lib/past-events'
+import { conTopeValor } from '@/lib/enriquecer-con-tope'
 import { fetchEspnPastEvents } from '@/lib/espn'
 import type { SportEvent } from '@/lib/types'
 
@@ -23,7 +24,13 @@ export async function GET(req: Request) {
   const live   = searchParams.get('live') === '1'
 
   if (!live && pastEventsConfigured()) {
-    const result = await searchPastEvents({ from, to, sport, comp, q, cursor, limit })
+    // Con tope: si Supabase no contesta, se cae a ESPN SIN esperar los 19,4 s que
+    // tarda en fallar cuando está caído (06/09/2026). La alternativa ya existía;
+    // lo que no existía era llegar a ella a tiempo.
+    const result = await conTopeValor(
+      'past_events',
+      searchPastEvents({ from, to, sport, comp, q, cursor, limit }),
+    )
     if (result) {
       return NextResponse.json(result, {
         // ⚠️ La ventana era corta (600-900 s) y, pasada, la caché caducaba del todo: el
