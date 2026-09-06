@@ -51,12 +51,24 @@ import SectionHeader from '@/components/ui/SectionHeader'
 
 export const revalidate = 3600
 
-// Pre-build los 50 artículos más recientes para LCP/INP estables en CrUX.
+// Pre-build los 12 artículos más recientes para LCP/INP estables en CrUX.
 // Los demás se generan ISR on-demand.
+//
+// ⚠️ Eran 50, y esta ruta es la MÁS CARA del sitio: doce `await` por página
+// (índice de entidades, fichas de jugadores, derechos de emisión, tuits) sin
+// nada compartido entre ellas. Todos los fallos de build del 06/09/2026 fueron
+// aquí, y en Vercel duele el triple porque construye con 3 procesos y no con los
+// 9 de un portátil. El build llegó a la hora, con el límite de Vercel en 45 min.
+//
+// Doce cubren la portada y lo que Google enseña de novedades, que es de donde
+// llega la gente. El resto sigue existiendo igual: se renderiza en la primera
+// visita y se cachea una hora (`revalidate`). Solo el primero en abrir una
+// noticia vieja paga la espera, y esa es la ÚLTIMA que estaba prerenderizada
+// hace tiempo de todas formas.
 export async function generateStaticParams() {
   const slugs = await sanityClient
     .fetch<Array<{ slug: string }>>(
-      `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && defined(slug.current)] | order(publishedAt desc)[0...50] {
+      `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && defined(slug.current)] | order(publishedAt desc)[0...12] {
         "slug": slug.current
       }`,
     )

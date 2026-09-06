@@ -13,7 +13,14 @@ export const revalidate = 300
 export async function generateStaticParams() {
   const events: { _id: string }[] = await sanityClient
     .fetch<{ _id: string }[]>(
-      `*[_type == "event" && status in ["programado", "en_vivo"]]{ _id }`
+      // Los 30 más inminentes, no todos. Cada evento prerenderiza además su
+      // imagen de portada para redes, así que sin tope esta ruta escala sola con
+      // el catálogo y encarece un build que ya iba justo (06/09/2026). El resto
+      // se genera en la primera visita y se cachea.
+      // El campo del schema es `date` (schemaTypes/event.ts), no `startsAt`:
+      // ordenar por un campo que no existe no da error en GROQ, solo un orden
+      // arbitrario, así que aquí un despiste no se nota hasta que molesta.
+      `*[_type == "event" && status in ["programado", "en_vivo"]] | order(date asc)[0...30]{ _id }`
     )
     .catch(() => [] as { _id: string }[]) // si Sanity cae, no tumbar el build
   return events.map(e => ({ id: e._id }))
