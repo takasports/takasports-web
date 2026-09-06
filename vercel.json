@@ -112,6 +112,10 @@
     {
       "path": "/api/cron/seo-title",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/warm-events",
+      "schedule": "*/10 * * * *"
     }
   ],
   "functions": {
