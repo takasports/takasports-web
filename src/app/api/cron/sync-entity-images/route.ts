@@ -5,8 +5,16 @@
 //
 // Va por lotes a propósito: la cascada hace varias peticiones por jugador (HEAD a ESPN,
 // búsqueda en Wikidata, Commons) y no queremos ni una función serverless colgada ni
-// martillear a Wikimedia. El cron se llama a menudo y avanza poco a poco; los 'missing'
-// se persisten, así que nunca se reintenta al mismo jugador sin foto.
+// martillear a Wikimedia. El cron avanza poco a poco; los 'missing' se persisten, así
+// que nunca se reintenta al mismo jugador sin foto.
+//
+// ⚠️ CADA 2 HORAS, no cada 10 minutos (06/09/2026). El paso 1 vuelve a sembrar los
+// líderes de ESPN en CADA pasada, y eso son ~543 upserts por pasada. A 144 pasadas
+// diarias salían **78.000 escrituras al día contra `sport_entities`**: el 92% de TODO
+// el tráfico del proyecto de Supabase (309.197 de 337.171 peticiones ese día, medido en
+// sus logs). Sembrar plantillas de jugadores cada diez minutos no aporta nada —esos
+// datos no cambian en diez minutos— y el paso 2 avanza igual de bien cada dos horas.
+// Ahora son ~6.500 al día, un 92% menos. Un jugador nuevo entra como mucho 2 h después.
 //
 // Se invoca desde un cron EXTERNO (n8n / GitHub Actions / cron-job.org): el plan Hobby
 // de Vercel solo permite un cron al día.

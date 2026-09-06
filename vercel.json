@@ -23,7 +23,7 @@
     },
     {
       "path": "/api/cron/sync-entity-images",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 */2 * * *"
     },
     {
       "path": "/api/cron/snapshot-player-stats",
