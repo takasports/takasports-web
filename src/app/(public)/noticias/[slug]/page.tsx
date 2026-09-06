@@ -438,8 +438,22 @@ export default async function NoticiaPage({
         .map((b) => (b as { videoId?: string }).videoId)
         .filter((x): x is string => Boolean(x)),
     )]
+    // ⚠️ CON TIEMPO LÍMITE. `getTweet` es de `react-tweet` y va contra la API de
+    // sindicación de X, que no promete nada: sin tope, una noticia con tuits
+    // incrustados puede quedarse colgada. Y al construir el sitio eso no es una
+    // espera, es un build ROTO: Next aborta la página a los 60 s, reintenta tres
+    // veces y tumba el despliegue entero. Pasó el 06/09/2026 con la noticia del
+    // KO a Belal Muhammad, y ningún cambio de código lo había provocado: fue X.
+    // Ocho segundos son de sobra para un tuit; pasado eso, cae al enlace, que es
+    // exactamente lo que ya hacía cuando X devolvía error.
     await Promise.all(ids.map(async (tid) => {
-      try { const t = await getTweet(tid); if (t) tweetMap.set(tid, t) } catch { /* fallback a enlace */ }
+      try {
+        const t = await Promise.race([
+          getTweet(tid),
+          new Promise<null>((r) => setTimeout(() => r(null), 8_000)),
+        ])
+        if (t) tweetMap.set(tid, t)
+      } catch { /* fallback a enlace */ }
     }))
   }
 
