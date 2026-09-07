@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
-  isValidDayParam, dayOffsetFrom, isServableDay, longDayLabel, shortDayLabel,
+  isValidDayParam, dayOffsetFrom, longDayLabel, shortDayLabel,
   relativeDayLabel, addDays, dayPageTitle, DAY_PAGE_PAST, DAY_PAGE_FUTURE,
+  isPastDay, dayPageDescription, servableDays,
 } from './calendar-day-page'
 
 describe('isValidDayParam', () => {
@@ -51,27 +52,6 @@ describe('dayOffsetFrom', () => {
   })
 })
 
-describe('isServableDay', () => {
-  const today = '2026-08-21'
-
-  it('sirve hoy y los bordes de la ventana', () => {
-    expect(isServableDay(today, today)).toBe(true)
-    expect(isServableDay(addDays(today, -DAY_PAGE_PAST), today)).toBe(true)
-    expect(isServableDay(addDays(today, DAY_PAGE_FUTURE), today)).toBe(true)
-  })
-
-  it('no sirve fuera de la ventana (daría un 200 vacío)', () => {
-    expect(isServableDay(addDays(today, -DAY_PAGE_PAST - 1), today)).toBe(false)
-    expect(isServableDay(addDays(today, DAY_PAGE_FUTURE + 1), today)).toBe(false)
-    expect(isServableDay('2020-01-01', today)).toBe(false)
-  })
-
-  it('no sirve una fecha inválida', () => {
-    expect(isServableDay('laliga', today)).toBe(false)
-    expect(isServableDay('2026-02-31', today)).toBe(false)
-  })
-})
-
 describe('etiquetas', () => {
   it('formatea el día largo en español', () => {
     expect(longDayLabel('2026-08-21')).toBe('viernes, 21 de agosto de 2026')
@@ -100,5 +80,91 @@ describe('addDays', () => {
     expect(addDays('2026-08-31', 1)).toBe('2026-09-01')
     expect(addDays('2026-01-01', -1)).toBe('2025-12-31')
     expect(addDays('2028-02-28', 1)).toBe('2028-02-29')
+  })
+})
+
+// ── Archivo de resultados ────────────────────────────────────────────────────
+// El calendario servía una ventana fija de -30 días mientras `past_events`
+// guardaba ~130 días con partidos. Estas pruebas cubren el cambio a "se sirve
+// un día pasado porque TIENE resultados", no porque caiga en un número redondo.
+
+describe('isPastDay', () => {
+  const today = '2026-09-06'
+
+  it('hoy, mañana y AYER no cuentan como pasado', () => {
+    expect(isPastDay(today, today)).toBe(false)
+    expect(isPastDay('2026-09-07', today)).toBe(false)
+    // Ayer sigue en presente a propósito: se busca igual el horario que el
+    // marcador, y la página aún mezcla feed en vivo y archivo.
+    expect(isPastDay('2026-09-05', today)).toBe(false)
+  })
+
+  it('a partir de anteayer sí', () => {
+    expect(isPastDay('2026-09-04', today)).toBe(true)
+    expect(isPastDay('2026-05-12', today)).toBe(true)
+  })
+})
+
+describe('dayPageTitle en pasado', () => {
+  const today = '2026-09-06'
+
+  it('un día jugado promete marcadores, no horarios', () => {
+    expect(dayPageTitle('2026-08-22', today))
+      .toBe('Resultados del 22 de agosto: todos los marcadores')
+  })
+
+  it('hoy y ayer siguen prometiendo horarios', () => {
+    expect(dayPageTitle(today, today)).toBe('Partidos de Hoy, 6 de septiembre: horarios y dónde ver')
+    expect(dayPageTitle('2026-09-05', today)).toBe('Partidos de Ayer, 5 de septiembre: horarios y dónde ver')
+  })
+})
+
+describe('dayPageDescription', () => {
+  const today = '2026-09-06'
+
+  it('en pasado habla de resultados', () => {
+    expect(dayPageDescription('2026-08-22', 89, today)).toContain('Resultados de los 89 partidos')
+  })
+
+  it('en presente habla de horarios y canal', () => {
+    expect(dayPageDescription('2026-09-07', 12, today)).toContain('horarios, canal de televisión')
+  })
+
+  it('sin todayIso mantiene el texto de siempre (compatibilidad)', () => {
+    expect(dayPageDescription('2026-08-22', 89)).toContain('horarios, canal de televisión')
+  })
+
+  it('un día vacío no promete nada', () => {
+    expect(dayPageDescription('2026-08-22', 0, today)).toBe('Agenda deportiva del sábado, 22 de agosto de 2026 en TakaSports.')
+  })
+})
+
+describe('servableDays', () => {
+  const today = '2026-09-06'
+
+  it('devuelve la ventana viva completa cuando no hay archivo', () => {
+    const days = servableDays(today)
+    expect(days.length).toBe(DAY_PAGE_PAST + DAY_PAGE_FUTURE + 1)
+    expect(days[0]).toBe(addDays(today, DAY_PAGE_FUTURE))
+    expect(days[days.length - 1]).toBe(addDays(today, -DAY_PAGE_PAST))
+  })
+
+  it('suma los días archivados sin duplicar los que ya estaban', () => {
+    const dentro = addDays(today, -3)          // ya en la ventana
+    const fuera = '2026-05-12'                 // solo en el archivo
+    const days = servableDays(today, [dentro, fuera])
+    expect(days.filter(d => d === dentro)).toHaveLength(1)
+    expect(days).toContain(fuera)
+    expect(days.length).toBe(DAY_PAGE_PAST + DAY_PAGE_FUTURE + 2)
+  })
+
+  it('ignora la basura que pueda venir de la base', () => {
+    const days = servableDays(today, ['no-es-fecha', '2026-02-31', addDays(today, 999)])
+    expect(days.length).toBe(DAY_PAGE_PAST + DAY_PAGE_FUTURE + 1)
+  })
+
+  it('sale ordenado de más reciente a más antiguo', () => {
+    const days = servableDays(today, ['2026-05-12'])
+    expect([...days].sort((a, b) => b.localeCompare(a))).toEqual(days)
   })
 })

@@ -39,12 +39,28 @@ export function dayOffsetFrom(iso: string, todayIso: string): number {
   return Math.round((utcMidnight(iso) - utcMidnight(todayIso)) / 86_400_000)
 }
 
-/** ¿Servimos esta fecha? Fuera de la ventana no tenemos datos que enseñar, así
- *  que la página daría un 200 vacío — peor que un 404 para Google y para el usuario. */
-export function isServableDay(iso: string, todayIso: string): boolean {
-  if (!isValidDayParam(iso)) return false
-  const off = dayOffsetFrom(iso, todayIso)
-  return off >= -DAY_PAGE_PAST && off <= DAY_PAGE_FUTURE
+/**
+ * Todos los días que la ruta debe generar, de más reciente a más antiguo.
+ *
+ * Dos fuentes: la ventana viva —hacia delante manda el feed (~45 días), hacia
+ * atrás los días recientes, que pueden tener partidos aún sin archivar— y el
+ * archivo completo de resultados. Hasta ahora solo existía la ventana, con un
+ * tope fijo de 30 días hacia atrás, y eso tiraba casi cien días de marcadores
+ * que YA estaban en `past_events`. Ahora un día pasado se sirve porque TIENE
+ * partidos, no porque caiga dentro de un número redondo.
+ *
+ * Fuera de esta lista la ruta da 404, que es lo correcto: una página de un día
+ * sin datos sería un 200 vacío, peor señal que no existir.
+ */
+export function servableDays(todayIso: string, archivedDays: readonly string[] = []): string[] {
+  const out = new Set<string>()
+  for (let n = DAY_PAGE_FUTURE; n >= -DAY_PAGE_PAST; n--) out.add(addDays(todayIso, n))
+  for (const d of archivedDays) {
+    // Un día archivado del futuro no tiene sentido, y uno inválido tampoco:
+    // esto lo alimenta la base, así que conviene no fiarse.
+    if (isValidDayParam(d) && dayOffsetFrom(d, todayIso) <= DAY_PAGE_FUTURE) out.add(d)
+  }
+  return [...out].sort((a, b) => b.localeCompare(a))
 }
 
 /** "2026-08-21" → "viernes, 21 de agosto de 2026". */
@@ -73,15 +89,36 @@ export function addDays(iso: string, n: number): string {
   return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`
 }
 
-/** Título SEO. El día relativo va delante porque es lo que la gente busca. */
+/**
+ * ¿Es un día ya jugado? Ayer cuenta como presente: a esa hora la gente sigue
+ * buscando «partidos de ayer» tanto como el marcador, y la página aún mezcla
+ * feed y archivo.
+ */
+export function isPastDay(iso: string, todayIso: string): boolean {
+  return dayOffsetFrom(iso, todayIso) <= -2
+}
+
+/**
+ * Título SEO. El día relativo va delante porque es lo que la gente busca.
+ *
+ * Y va en PASADO cuando el día ya se jugó: quien busca «resultados del 22 de
+ * agosto» no quiere «horarios y dónde ver», que es lo que servíamos para todo
+ * el archivo. Prometer el horario de un partido de hace un mes es prometer lo
+ * que el visitante ya sabe que no necesita.
+ */
 export function dayPageTitle(iso: string, todayIso: string): string {
   const rel = relativeDayLabel(iso, todayIso)
   const base = rel ? `${rel}, ${shortDayLabel(iso)}` : shortDayLabel(iso)
-  return `Partidos de ${base}: horarios y dónde ver`
+  return isPastDay(iso, todayIso)
+    ? `Resultados del ${base}: todos los marcadores`
+    : `Partidos de ${base}: horarios y dónde ver`
 }
 
-export function dayPageDescription(iso: string, count: number): string {
+export function dayPageDescription(iso: string, count: number, todayIso?: string): string {
   const when = longDayLabel(iso)
   if (count === 0) return `Agenda deportiva del ${when} en TakaSports.`
+  if (todayIso && isPastDay(iso, todayIso)) {
+    return `Resultados de los ${count} partidos del ${when}: marcadores finales, competición y crónica. Fútbol, NBA, tenis, F1 y más.`
+  }
   return `Los ${count} partidos del ${when}: horarios, canal de televisión, resultados y clasificación. Fútbol, NBA, tenis, F1 y más.`
 }

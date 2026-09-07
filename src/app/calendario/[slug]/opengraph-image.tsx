@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og'
-import { getCompetition } from '@/lib/calendar-competitions'
+import { getCompetition, seasonLabelOf } from '@/lib/calendar-competitions'
 import { accentForSport } from '@/lib/sports'
 
 export const alt = 'Calendario de competición — TakaSports'
@@ -12,7 +12,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const comp = getCompetition(slug)
 
   const name       = comp?.displayName ?? 'Calendario deportivo'
-  const season     = comp?.seasonLabel ?? ''
+  const season     = comp ? seasonLabelOf(comp) : ''
   const desc       = comp?.description ?? 'Partidos, horarios y resultados en TakaSports.'
   const sport      = comp?.sport ?? 'Fútbol'
   const accent     = accentForSport(sport)

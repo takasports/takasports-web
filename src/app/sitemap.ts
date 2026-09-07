@@ -10,6 +10,8 @@ import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { canonicalTeamSlug } from '@/lib/team-slug'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { esTagIndexable, normalizarTag } from '@/lib/tag-policy'
+import { getArchivedDays } from '@/lib/past-events'
+import { isPastDay, servableDays } from '@/lib/calendar-day-page'
 
 const BASE_URL = SITE_URL
 
@@ -20,23 +22,30 @@ const RANKINGS_LASTMOD = new Date('2026-05-28T00:00:00Z')
 const SPORT_HUB_FALLBACK_LASTMOD = new Date('2026-05-28T00:00:00Z')
 const TAG_LASTMOD = new Date('2026-05-28T00:00:00Z')
 
-// Ventana de días del calendario que entran al sitemap (ver /calendario/dia).
-function calendarDayUrls(): MetadataRoute.Sitemap {
+// Días del calendario que entran al sitemap (ver /calendario/dia).
+//
+// Antes se anunciaban 16 (de ayer a +14) mientras la ruta servía 76, y ahora
+// sirve también todo el archivo de resultados. Anunciar menos de lo que existe
+// deja el archivo sin descubrir: son las URLs con mejor CTR del sitio (3,6% de
+// media, 8,1% la mejor) y hasta hoy Google solo veía dos semanas de ellas.
+//
+// Un día ya jugado NO cambia, así que su `lastModified` es el propio día y su
+// `changeFrequency` es 'yearly': marcarlo como diario invita a Google a
+// regastar rastreo en páginas congeladas.
+async function calendarDayUrls(): Promise<MetadataRoute.Sitemap> {
   const today = new Date()
-  const iso = (n: number) => {
-    const d = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + n))
-    return d.toISOString().slice(0, 10)
-  }
-  const out: MetadataRoute.Sitemap = []
-  for (let n = -1; n <= 14; n++) {
-    out.push({
-      url: `${BASE_URL}/calendario/dia/${iso(n)}`,
-      lastModified: today,
-      changeFrequency: 'daily' as const,
-      priority: n === 0 ? 0.8 : 0.6,
-    })
-  }
-  return out
+  const todayIso = today.toISOString().slice(0, 10)
+  const archived = await getArchivedDays().catch(() => [] as string[])
+
+  return servableDays(todayIso, archived).map((day) => {
+    const past = isPastDay(day, todayIso)
+    return {
+      url: `${BASE_URL}/calendario/dia/${day}`,
+      lastModified: past ? new Date(`${day}T23:59:59Z`) : today,
+      changeFrequency: past ? ('yearly' as const) : ('daily' as const),
+      priority: day === todayIso ? 0.8 : past ? 0.5 : 0.6,
+    }
+  })
 }
 
 function mostRecent(items: Array<{ publishedAt?: string; _updatedAt?: string }>): Date {
@@ -273,11 +282,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const,
       priority: 0.75,
     })),
-    // Páginas de día (/calendario/dia/YYYY-MM-DD). Solo la ventana con datos
-    // reales: ayer + las dos próximas semanas. Más atrás el interés de búsqueda
-    // cae en picado y más adelante el feed aún no tiene partidos que enseñar.
-    // `lastModified` = hoy a propósito: su contenido cambia cada día.
-    ...calendarDayUrls(),
+    // Páginas de día (/calendario/dia/YYYY-MM-DD): la ventana viva más todo el
+    // archivo de resultados. Ver calendarDayUrls.
+    ...(await calendarDayUrls()),
   ]
 
   // Combina entradas estáticas curadas + entradas auto-generadas de DB (top 2000)

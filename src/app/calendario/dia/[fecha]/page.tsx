@@ -19,7 +19,7 @@ import { fetchEspnEvents } from '@/lib/espn'
 import { fetchPadelEvents } from '@/lib/padel'
 import { sanityClient, eventsQuery } from '@/lib/sanity'
 import { normalizeEvent } from '@/lib/events'
-import { searchPastEvents } from '@/lib/past-events'
+import { searchPastEvents, getArchivedDays, getArchivedDayEvents } from '@/lib/past-events'
 import { attachH2HNotes } from '@/lib/h2h-notes'
 import { conTope } from '@/lib/enriquecer-con-tope'
 import { matchStakes, standingLabel } from '@/lib/match-stakes'
@@ -29,8 +29,8 @@ import { isoToLocalDate } from '@/lib/calendar'
 import type { SportEvent } from '@/lib/types'
 import { SITE_URL, LOGO_URL } from '@/lib/constants'
 import {
-  DAY_PAGE_FUTURE, DAY_PAGE_PAST, addDays, dayPageDescription, dayPageTitle,
-  isServableDay, isValidDayParam, longDayLabel, relativeDayLabel, shortDayLabel,
+  addDays, dayPageDescription, dayPageTitle, isPastDay, isValidDayParam,
+  longDayLabel, relativeDayLabel, servableDays, shortDayLabel,
 } from '@/lib/calendar-day-page'
 
 export const revalidate = 300
@@ -49,13 +49,15 @@ function todayIso(): string {
 // Next antes de entrar en la página — mismo criterio que /calendario/[slug].
 //
 // Contrapartida asumida: la lista se congela en el build. Como Vercel despliega
-// en cada push, la ventana se refresca sola; y aunque pasara un mes sin
-// desplegar seguiría cubriendo lo que anuncia el sitemap (-1 … +14 días).
+// en cada push, la ventana se refresca sola; lo único que envejece es el borde
+// del futuro, y el archivo solo puede quedarse corto por el último día o dos.
 export async function generateStaticParams() {
-  const t = todayIso()
-  const out: { fecha: string }[] = []
-  for (let n = -DAY_PAGE_PAST; n <= DAY_PAGE_FUTURE; n++) out.push({ fecha: addDays(t, n) })
-  return out
+  // Además de la ventana viva, todos los días que YA tienen resultados
+  // archivados: eran ~130 y solo se servían los 30 últimos, así que cien días
+  // de marcadores reales daban 404 mientras «resultados del 22 de agosto» es
+  // una búsqueda que existe cada día del año.
+  const archived = await getArchivedDays().catch(() => [] as string[])
+  return servableDays(todayIso(), archived).map(fecha => ({ fecha }))
 }
 
 export const dynamicParams = false
@@ -63,12 +65,24 @@ export const dynamicParams = false
 /** Eventos de ese día (futuros del feed + resultados archivados). Memoizado por
  *  request para que generateMetadata y la página no dupliquen los fetch. */
 const loadDay = cache(async (fecha: string): Promise<SportEvent[]> => {
+  // Un día ya jugado se resuelve ENTERO con el archivo: el feed de ESPN solo
+  // trae la ventana viva, así que pedírselo para el 12 de mayo es tráfico y
+  // espera a cambio de nada. Importa porque el archivo pasó de 30 días a ~130
+  // y cada uno se prerenderiza en el build: el scoreboard de tenis pesa 2,4 MB
+  // y no cabe en la caché de datos de Next (lo avisa el propio build), o sea
+  // que sería una descarga íntegra por página.
+  const archiveOnly = isPastDay(fecha, todayIso())
+
   const [espnRes, sanityRes, padelRes, pastRes] = await Promise.allSettled([
-    fetchEspnEvents(),
-    sanityClient.fetch(eventsQuery),
-    fetchPadelEvents(),
-    // `to` es exclusivo en searchPastEvents → pedimos [fecha, fecha+1).
-    searchPastEvents({ from: fecha, to: addDays(fecha, 1), limit: 200 }),
+    archiveOnly ? Promise.resolve([]) : fetchEspnEvents(),
+    archiveOnly ? Promise.resolve([]) : sanityClient.fetch(eventsQuery),
+    archiveOnly ? Promise.resolve([]) : fetchPadelEvents(),
+    // Un día cerrado se lee por la vía cacheada 24 h: su contenido ya no cambia
+    // y la ruta revalida cada 5 minutos, que para el archivo serían consultas a
+    // Supabase a cambio de nada. `to` es exclusivo → [fecha, fecha+1).
+    archiveOnly
+      ? getArchivedDayEvents(fecha).then(events => ({ events, nextCursor: null }))
+      : searchPastEvents({ from: fecha, to: addDays(fecha, 1), limit: 200 }),
   ])
   const espn = espnRes.status === 'fulfilled' ? espnRes.value : []
   const padel = padelRes.status === 'fulfilled' ? padelRes.value : []
@@ -110,9 +124,12 @@ export async function generateMetadata({
   const { fecha } = await params
   if (!isValidDayParam(fecha)) return { title: 'Calendario | TakaSports' }
   const t = todayIso()
-  const events = isServableDay(fecha, t) ? await loadDay(fecha) : []
+  // Con dynamicParams=false solo llegan aquí fechas que enumeró el build, así
+  // que se carga sin más: el guardia de ventana descartaba justo los días del
+  // archivo que ahora sí servimos.
+  const events = await loadDay(fecha)
   const title = dayPageTitle(fecha, t)
-  const description = dayPageDescription(fecha, events.length)
+  const description = dayPageDescription(fecha, events.length, t)
   const url = `${SITE_URL}/calendario/dia/${fecha}`
   return {
     title: `${title} | TakaSports`,

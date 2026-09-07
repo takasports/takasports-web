@@ -14,8 +14,11 @@ import {
   COMPETITIONS,
   getCompetition,
   matchesCompetition,
+  seasonLabelOf,
+  eventNoun,
   type CompetitionConfig,
 } from '@/lib/calendar-competitions'
+import { searchPastEvents } from '@/lib/past-events'
 import { fetchLeagueTableRows, fetchTopScorers, fetchTournamentGroups, byGroup, groupLabel } from '@/lib/espn-standings'
 import { LeagueTableBlock } from '@/app/partido/[ref]/LeagueTable'
 import { TopScorers } from '@/components/TopScorers'
@@ -63,12 +66,22 @@ export async function generateMetadata({
   const { slug } = await params
   const comp = getCompetition(slug)
   if (!comp) return { title: 'Calendario | TakaSports' }
-  const title = `Calendario ${comp.displayName} ${comp.seasonLabel} — Partidos y horarios`
-  const description = `${comp.description} Temporada ${comp.seasonLabel}.`
+  const season = seasonLabelOf(comp)
+  // «resultados» entra en el rótulo porque la página ya los tiene: antes solo
+  // enseñaba próximos partidos y prometía solo horarios.
+  const que = eventNoun(comp.sport)
+  const title = `Calendario ${comp.displayName} ${season}: ${que}, horarios y resultados`
+  const description = `${comp.description} Resultados de lo último y próximos ${que} con horario y dónde verlos. Temporada ${season}.`
   const canonical = `${SITE_URL}/calendario/${comp.slug}`
-  // Sin eventos (off-season) → no indexar: evita páginas vacías en el índice de
-  // Google. Vuelve a indexarse sola cuando la competición tiene partidos.
-  const hasEvents = (await loadCompetitionEvents(comp)).length > 0
+  // Sin NADA que enseñar (off-season) → no indexar: evita páginas vacías en el
+  // índice de Google. Vuelve a indexarse sola cuando hay partidos. Ahora los
+  // resultados recientes también cuentan: una liga entre jornadas tiene
+  // contenido aunque el feed no traiga próximos partidos todavía.
+  const [proximos, recientes] = await Promise.all([
+    loadCompetitionEvents(comp),
+    recentCompetitionResults(comp),
+  ])
+  const hasEvents = proximos.length > 0 || recientes.length > 0
   return {
     title,
     description,
@@ -116,6 +129,124 @@ function formatTime(ev: SportEvent): string {
   return ''
 }
 
+/** Días de archivo que se enseñan en «Últimos resultados». */
+const RECENT_RESULT_DAYS = 21
+
+/**
+ * Últimos resultados de una competición, sacados del archivo.
+ *
+ * Memoizado por request: lo piden la página y (para decidir el `noindex`) la
+ * metadata. Se pide una ventana por fecha y se filtra en memoria en vez de
+ * usar el filtro `comp` de `searchPastEvents`, porque ese es igualdad exacta y
+ * `matchesCompetition` es la regla real del sitio (substring + deporte, con sus
+ * exclusiones: "Championship" contiene "Champions").
+ */
+const recentCompetitionResults = cache(async (comp: CompetitionConfig): Promise<SportEvent[]> => {
+  const desde = new Date(Date.now() - RECENT_RESULT_DAYS * 86_400_000).toISOString().slice(0, 10)
+  const res = await searchPastEvents({ from: desde, limit: 200 })
+  return (res?.events ?? []).filter((e) => matchesCompetition(comp, e))
+})
+
+/** Agrupa resultados por día, del más reciente al más antiguo. */
+function resultsByDay(events: SportEvent[]): Array<[string, SportEvent[]]> {
+  const map = new Map<string, SportEvent[]>()
+  for (const ev of events) {
+    const k = dayKey(ev)
+    if (!map.has(k)) map.set(k, [])
+    map.get(k)!.push(ev)
+  }
+  return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]))
+}
+
+/** Una fila de resultado con marcador. Estaba escrita a mano dentro del bloque
+ *  del Mundial; ahora la comparten ese bloque y los resultados de liga. */
+function ResultRow({ ev }: { ev: SportEvent }) {
+  const inner = (
+    <>
+      <div className="flex items-center justify-end gap-2 flex-1 min-w-0">
+        <span className="text-sm font-semibold truncate text-right" style={{ color: '#E8E8F4' }}>{ev.home}</span>
+        {ev.homeLogo && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={ev.homeLogo} alt="" loading="lazy" decoding="async" width={20} height={20} style={{ objectFit: 'contain', flexShrink: 0 }} />
+        )}
+      </div>
+      <span
+        className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[15px] font-black tabular-nums"
+        style={{ background: 'rgba(255,255,255,0.06)', color: '#F8F8FF', fontFamily: 'var(--font-sport)' }}
+      >
+        {ev.homeScore ?? 0}–{ev.awayScore ?? 0}
+      </span>
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        {ev.awayLogo && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={ev.awayLogo} alt="" loading="lazy" decoding="async" width={20} height={20} style={{ objectFit: 'contain', flexShrink: 0 }} />
+        )}
+        <span className="text-sm font-semibold truncate" style={{ color: '#E8E8F4' }}>{ev.away}</span>
+      </div>
+    </>
+  )
+  const meta = [ev.stage, ev.venue].filter(Boolean).join(' · ')
+  return (
+    <li className="rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      {ev.matchRef ? (
+        <Link href={`/partido/${ev.matchRef}`} prefetch={false} className="block px-4 py-3 hover:brightness-110 transition-[filter]">
+          <div className="flex items-center gap-3">{inner}</div>
+          {meta && <p className="text-xs text-center truncate mt-1.5" style={{ color: 'var(--text-muted)' }}>{meta}</p>}
+        </Link>
+      ) : (
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-3">{inner}</div>
+          {meta && <p className="text-xs text-center truncate mt-1.5" style={{ color: 'var(--text-muted)' }}>{meta}</p>}
+        </div>
+      )}
+    </li>
+  )
+}
+
+/**
+ * Bloque «resultados agrupados por día».
+ *
+ * La cabecera de cada día enlaza a `/calendario/dia/<fecha>`. No es adorno: esas
+ * páginas son las que mejor convierten del sitio (3,6% de CTR frente al 0,54%
+ * de media) y hasta ahora eran huérfanas —solo las enlazaba el sitemap—, así
+ * que Google apenas tenía por dónde llegar a ellas.
+ */
+function ResultsSection({ title, days }: { title: string; days: Array<[string, SportEvent[]]> }) {
+  if (days.length === 0) return null
+  return (
+    <section className="mt-14 pt-8" style={{ borderTop: '1px solid var(--border)' }}>
+      <div className="flex items-center gap-2.5 mb-5">
+        <span className="section-accent" />
+        <span className="section-label">{title}</span>
+      </div>
+      <div className="flex flex-col gap-8">
+        {days.map(([day, evs]) => (
+          <section key={day}>
+            <h2
+              className="mb-3"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '1.1rem',
+                fontWeight: 800,
+                color: '#E8E8F4',
+                letterSpacing: '-0.005em',
+                textTransform: 'capitalize',
+              }}
+            >
+              <Link href={`/calendario/dia/${day}`} prefetch={false} className="hover:underline" style={{ color: 'inherit' }}>
+                {formatDayHeader(day)}
+              </Link>
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {evs.map((ev) => <ResultRow key={ev.id} ev={ev} />)}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default async function CompetitionCalendarPage({
   params,
 }: {
@@ -144,13 +275,14 @@ export default async function CompetitionCalendarPage({
     : [[], []]
 
   // Resultados del Mundial agrupados por día (más reciente primero).
-  const wcResultsByDay = new Map<string, SportEvent[]>()
-  for (const ev of wcResults) {
-    const k = dayKey(ev)
-    if (!wcResultsByDay.has(k)) wcResultsByDay.set(k, [])
-    wcResultsByDay.get(k)!.push(ev)
-  }
-  const wcResultDayKeys = [...wcResultsByDay.keys()].sort().reverse()
+  const wcResultDays = resultsByDay(wcResults)
+
+  // Últimos resultados del resto de competiciones, del archivo. Se filtra con
+  // `matchesCompetition`, el MISMO matcher que usa el calendario en vivo, para
+  // no mantener dos reglas que puedan discrepar — `past_events` trae `comp` y
+  // `sport` con las mismas etiquetas que el feed.
+  const recentResults = isWorldCup ? [] : await recentCompetitionResults(comp)
+  const recentResultDays = resultsByDay(recentResults)
 
   // Agrupar por día.
   const groupedByDay = new Map<string, SportEvent[]>()
@@ -260,7 +392,7 @@ export default async function CompetitionCalendarPage({
         <header className="mb-10">
           <div className="flex items-center gap-2.5 mb-3">
             <span className="section-accent" />
-            <span className="section-label">Calendario {comp.seasonLabel}</span>
+            <span className="section-label">Calendario {seasonLabelOf(comp)}</span>
           </div>
           <h1
             className="font-black leading-tight mb-4"
@@ -346,78 +478,15 @@ export default async function CompetitionCalendarPage({
 
         {/* Mundial: resultados de TODO el torneo, con marcador y enlace al
             detalle del partido (goles, alineaciones, minuto a minuto). */}
-        {wcResultDayKeys.length > 0 && (
-          <section className="mt-14 pt-8" style={{ borderTop: '1px solid var(--border)' }}>
-            <div className="flex items-center gap-2.5 mb-5">
-              <span className="section-accent" />
-              <span className="section-label">Resultados del Mundial</span>
-            </div>
-            <div className="flex flex-col gap-8">
-              {wcResultDayKeys.map((day) => (
-                <section key={day}>
-                  <h2
-                    className="mb-3"
-                    style={{
-                      fontFamily: 'var(--font-display)',
-                      fontSize: '1.1rem',
-                      fontWeight: 800,
-                      color: '#E8E8F4',
-                      letterSpacing: '-0.005em',
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    {formatDayHeader(day)}
-                  </h2>
-                  <ul className="flex flex-col gap-2">
-                    {wcResultsByDay.get(day)!.map((ev) => {
-                      const inner = (
-                        <>
-                          <div className="flex items-center justify-end gap-2 flex-1 min-w-0">
-                            <span className="text-sm font-semibold truncate text-right" style={{ color: '#E8E8F4' }}>{ev.home}</span>
-                            {ev.homeLogo && (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img src={ev.homeLogo} alt="" loading="lazy" decoding="async" width={20} height={20} style={{ objectFit: 'contain', flexShrink: 0 }} />
-                            )}
-                          </div>
-                          <span
-                            className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[15px] font-black tabular-nums"
-                            style={{ background: 'rgba(255,255,255,0.06)', color: '#F8F8FF', fontFamily: 'var(--font-sport)' }}
-                          >
-                            {ev.homeScore ?? 0}–{ev.awayScore ?? 0}
-                          </span>
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {ev.awayLogo && (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img src={ev.awayLogo} alt="" loading="lazy" decoding="async" width={20} height={20} style={{ objectFit: 'contain', flexShrink: 0 }} />
-                            )}
-                            <span className="text-sm font-semibold truncate" style={{ color: '#E8E8F4' }}>{ev.away}</span>
-                          </div>
-                        </>
-                      )
-                      const meta = [ev.stage, ev.venue].filter(Boolean).join(' · ')
-                      return (
-                        <li key={ev.id} className="rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                          {ev.matchRef ? (
-                            <Link href={`/partido/${ev.matchRef}`} prefetch={false} className="block px-4 py-3 hover:brightness-110 transition-[filter]">
-                              <div className="flex items-center gap-3">{inner}</div>
-                              {meta && <p className="text-xs text-center truncate mt-1.5" style={{ color: 'var(--text-muted)' }}>{meta}</p>}
-                            </Link>
-                          ) : (
-                            <div className="px-4 py-3">
-                              <div className="flex items-center gap-3">{inner}</div>
-                              {meta && <p className="text-xs text-center truncate mt-1.5" style={{ color: 'var(--text-muted)' }}>{meta}</p>}
-                            </div>
-                          )}
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </section>
-              ))}
-            </div>
-          </section>
-        )}
+        <ResultsSection title="Resultados del Mundial" days={wcResultDays} />
 
+        {/* Resto de competiciones: últimos resultados del archivo.
+
+            La página solo enseñaba PRÓXIMOS partidos, y por eso pelea en la
+            posición 17,5 con 874 impresiones y un clic para «calendario
+            laliga»: quien busca una competición quiere también saber cómo
+            quedó la última jornada, y eso ya estaba en past_events sin usar. */}
+        <ResultsSection title="Últimos resultados" days={recentResultDays} />
         {/* Mundial: clasificación de los 12 grupos (A–L), cada uno con la tabla
             compacta de /partido. Los equipos enlazan a su página. */}
         {groups.length > 0 && (

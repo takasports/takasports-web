@@ -8,6 +8,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { SportEvent } from './types'
 import { adminSupabase } from './supabase-admin'
 import { WOMENS_SLUGS, isWomensSlug } from './football-leagues'
+import { isoToLocalDate } from './calendar'
+import { SOURCE_TZ } from './timezone'
 
 let _read: SupabaseClient | null | undefined
 
@@ -417,3 +419,92 @@ export const fetchRecentFormByTeams = unstable_cache(
   ['past-events:form'],
   { revalidate: 300, tags: ['past-events'] }
 )
+
+// ── Días con resultados archivados ──────────────────────────────────────────
+//
+// Para qué: `/calendario/dia/YYYY-MM-DD` servía una ventana fija de -30 días,
+// pero `past_events` guarda MUCHO más (128 días con partidos al 6/9/2026, desde
+// el 30/4). Casi cien días de resultados reales daban 404 mientras «resultados
+// del 22 de agosto» es una búsqueda que existe todos los días del año.
+//
+// Devuelve el recuento por día para poder descartar los días flojos: un día con
+// un solo partido es una página delgada, y de esas ya sobran (ver el glosario).
+
+/** Mínimo de partidos archivados para que un día merezca su propia página. */
+export const MIN_EVENTS_PER_ARCHIVED_DAY = 3
+
+/** Cuántas filas como mucho leemos al construir el índice de días. */
+const ARCHIVED_SCAN_CAP = 20_000
+
+async function _archivedDayCountsUncached(): Promise<Record<string, number>> {
+  const sb = readClient()
+  if (!sb) return {}
+
+  // Solo la columna de fecha, paginando: son ~2.300 filas hoy y crece ~40/día.
+  // No hay DISTINCT en PostgREST sin una RPC, y una RPC para esto no compensa.
+  const counts: Record<string, number> = {}
+  const PAGE = 1000
+  for (let from = 0; from < ARCHIVED_SCAN_CAP; from += PAGE) {
+    const { data, error } = await sb
+      .from('past_events')
+      .select('iso_date')
+      .order('iso_date', { ascending: false })
+      .range(from, from + PAGE - 1)
+    if (error || !data || data.length === 0) break
+    for (const row of data as { iso_date: string }[]) {
+      // `iso_date` es un timestamptz; el día se toma en la zona base del
+      // producto, igual que hace la página, o los partidos de noche caen en
+      // el día equivocado.
+      const day = isoToLocalDate(row.iso_date, SOURCE_TZ)
+      // isoToLocalDate compone la cadena a mano: con una fecha inválida
+      // devuelve "undefined-undefined-undefined", no vacío. De ahí el patrón.
+      if (/^\d{4}-\d{2}-\d{2}$/.test(day)) counts[day] = (counts[day] ?? 0) + 1
+    }
+    if (data.length < PAGE) break
+  }
+  return counts
+}
+
+/**
+ * Días pasados que tienen suficientes resultados archivados como para merecer
+ * página propia, de más reciente a más antiguo.
+ *
+ * Se cachea una hora: la lista solo cambia cuando el cron archiva un día nuevo,
+ * y la consultan el sitemap y el `generateStaticParams` de la ruta de día.
+ */
+export const getArchivedDays = unstable_cache(
+  async (): Promise<string[]> => {
+    const counts = await _archivedDayCountsUncached()
+    return Object.entries(counts)
+      .filter(([, n]) => n >= MIN_EVENTS_PER_ARCHIVED_DAY)
+      .map(([day]) => day)
+      .sort((a, b) => b.localeCompare(a))
+  },
+  ['past-events:archived-days'],
+  { revalidate: 3600, tags: ['past-events'] }
+)
+
+/**
+ * Resultados de UN día ya jugado.
+ *
+ * Existe aparte de `searchPastEvents` por el TTL: un día pasado no vuelve a
+ * cambiar, así que se cachea 24 h en vez de los 5 min del calendario vivo. Sin
+ * esto, cada una de las ~130 páginas de archivo consultaría Supabase cada 5
+ * minutos en cuanto reciba visitas, que es justo el patrón de gasto que ya nos
+ * mordió una vez (un cron llegó a ser el 92% del tráfico de la base).
+ */
+export const getArchivedDayEvents = unstable_cache(
+  async (day: string): Promise<SportEvent[]> => {
+    const res = await searchPastEvents({ from: day, to: addDay(day), limit: 200 })
+    return res?.events ?? []
+  },
+  ['past-events:day'],
+  { revalidate: 86_400, tags: ['past-events'] }
+)
+
+/** Día siguiente de un YYYY-MM-DD (el `to` de searchPastEvents es exclusivo). */
+function addDay(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d + 1))
+  return dt.toISOString().slice(0, 10)
+}

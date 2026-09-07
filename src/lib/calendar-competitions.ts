@@ -28,8 +28,10 @@ export interface CompetitionConfig {
   /** Match alternativo contra el campo `sport` cuando matchComp no aplica. */
   matchSport?: CompetitionSport
   description: string
-  /** Etiqueta de temporada actual mostrada en H1 e itemListJsonLd. */
-  seasonLabel: string
+  /** Cómo se nombra la temporada de esta competición. La ETIQUETA se calcula
+   *  (ver `seasonLabelOf`); estaba escrita a mano y llevaba desde mayo diciendo
+   *  «2025-2026» en el <title> de doce páginas indexadas. */
+  seasonKind: SeasonKind
   /** Logo opcional para schema/OG (URL absoluta). */
   logo?: string
   /** Banner decorativo (fondo abstracto generado con IA) para la cabecera.
@@ -47,6 +49,48 @@ export interface CompetitionConfig {
   featured?: boolean
 }
 
+/**
+ * Cómo se llama lo que se juega en cada deporte.
+ *
+ * El título decía «partidos» para todo, incluidas la Fórmula 1 y la UFC, que no
+ * tienen partidos. Es la palabra que la gente teclea («calendario carreras f1»),
+ * así que no es solo corrección: es la consulta.
+ */
+export function eventNoun(sport: CompetitionSport): string {
+  if (sport === 'F1') return 'carreras'
+  if (sport === 'UFC') return 'peleas'
+  return 'partidos'
+}
+
+/**
+ * Cómo se nombra la temporada: por año natural (F1, UFC, Mundial) o partida
+ * entre dos años (las ligas europeas y la NBA).
+ */
+export type SeasonKind = 'calendar' | 'split'
+
+/**
+ * Etiqueta de la temporada EN CURSO.
+ *
+ * Antes era una constante por competición y caducaba sola: en septiembre de
+ * 2026 las doce competiciones de temporada partida seguían anunciando
+ * «2025-2026» en el título, la descripción y el H1 — una temporada terminada en
+ * mayo. Un titular que ofrece el calendario del año pasado no se clica.
+ *
+ * El corte va en julio: de julio a diciembre la temporada es y/y+1, y de enero
+ * a junio es y-1/y. Sirve igual para las ligas europeas (agosto-mayo) y para la
+ * NBA (octubre-junio), porque en ambos casos el verano cae del lado nuevo.
+ */
+export function currentSeasonLabel(kind: SeasonKind, now: Date = new Date()): string {
+  const y = now.getUTCFullYear()
+  if (kind === 'calendar') return String(y)
+  return now.getUTCMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}`
+}
+
+/** Etiqueta de temporada de una competición concreta. */
+export function seasonLabelOf(comp: Pick<CompetitionConfig, 'seasonKind'>, now?: Date): string {
+  return currentSeasonLabel(comp.seasonKind, now)
+}
+
 export const COMPETITIONS: CompetitionConfig[] = [
   {
     slug: 'mundial',
@@ -56,7 +100,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchComp: 'Mundial',
     matchExact: true,
     description: 'Calendario completo del Mundial 2026: los 104 partidos con horarios, sedes, resultados y la clasificación de los 12 grupos.',
-    seasonLabel: '2026',
+    seasonKind: 'calendar',
     banner: '/banners/mundial.webp',
     crest: 'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/4.png',
   },
@@ -71,7 +115,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     // filtro del calendario como en /calendario/laliga.
     matchExact: true,
     description: 'Todos los partidos de la temporada de LaLiga: fechas, horarios, estadios y dónde verlos.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
     banner: '/banners/laliga.webp',
     crest: 'https://a.espncdn.com/i/leaguelogos/soccer/500-dark/15.png',
   },
@@ -83,7 +127,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     matchComp: 'Champions',
     matchExclude: ['championship'],
     description: 'Calendario completo de la UEFA Champions League: fase liga, eliminatorias y final.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
     banner: '/banners/champions.webp',
   },
   {
@@ -93,7 +137,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'Fútbol',
     matchComp: 'Premier',
     description: 'Calendario de la Premier League inglesa: todos los partidos de la temporada con horarios.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
     banner: '/banners/premier-league.webp',
   },
   {
@@ -103,7 +147,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'Fútbol',
     matchComp: 'Serie A',
     description: 'Calendario de la Serie A italiana: fechas y horarios de todos los partidos.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
     banner: '/banners/serie-a.webp',
   },
   {
@@ -113,7 +157,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'Fútbol',
     matchComp: 'Bundesliga',
     description: 'Calendario de la Bundesliga alemana: jornadas, horarios y dónde verlas.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
     banner: '/banners/bundesliga.webp',
   },
   {
@@ -123,7 +167,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'Fútbol',
     matchComp: 'Ligue 1',
     description: 'Calendario de la Ligue 1 francesa: todos los partidos con fecha y hora.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
     banner: '/banners/ligue-1.webp',
   },
   {
@@ -133,7 +177,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'Fútbol',
     matchComp: 'Europa',
     description: 'Calendario de la UEFA Europa League: fase liga, knockouts y final.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
   },
   {
     slug: 'nba',
@@ -142,7 +186,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'NBA',
     matchSport: 'NBA',
     description: 'Calendario NBA: partidos de regular season y playoffs con horarios España.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
     banner: '/banners/signal/nba.webp',
   },
   {
@@ -152,7 +196,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'F1',
     matchSport: 'F1',
     description: 'Calendario completo de la Fórmula 1: Grandes Premios, clasificaciones, sprints y carreras.',
-    seasonLabel: '2026',
+    seasonKind: 'calendar',
     banner: '/banners/signal/f1.webp',
   },
   {
@@ -162,7 +206,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'UFC',
     matchSport: 'UFC',
     description: 'Calendario UFC: próximos eventos, peleas estelares y horarios.',
-    seasonLabel: '2026',
+    seasonKind: 'calendar',
     banner: '/banners/signal/ufc.webp',
   },
   {
@@ -172,7 +216,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'Fútbol',
     matchComp: 'Copa Rey',
     description: 'Calendario de la Copa del Rey: rondas, horarios y dónde ver los partidos de la competición del KO del fútbol español.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
   },
   {
     slug: 'motogp',
@@ -181,7 +225,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'F1',
     matchComp: 'MotoGP',
     description: 'Calendario MotoGP: todos los Grandes Premios de la temporada con fechas, circuitos y horarios.',
-    seasonLabel: '2026',
+    seasonKind: 'calendar',
   },
   {
     slug: 'euroleague',
@@ -190,7 +234,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'Baloncesto',
     matchComp: 'Euroleague',
     description: 'Calendario de la EuroLiga: partidos de la fase regular, playoffs y Final Four con horarios y canales.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
   },
   {
     slug: 'copa-america',
@@ -199,7 +243,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'Fútbol',
     matchComp: 'Copa América',
     description: 'Calendario de la Copa América: partidos de grupos, cuartos, semis y final con horarios.',
-    seasonLabel: '2026',
+    seasonKind: 'calendar',
   },
   {
     slug: 'nations-league',
@@ -210,7 +254,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     // matchComp por substring 'Nations' captura ambos sin colisionar con otras.
     matchComp: 'Nations',
     description: 'Calendario de la UEFA Nations League: partidos de la fase de grupos y eliminatorias de la competición de selecciones europeas.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
   },
   {
     slug: 'liga-f',
@@ -219,7 +263,7 @@ export const COMPETITIONS: CompetitionConfig[] = [
     sport: 'Fútbol',
     matchComp: 'Liga F',
     description: 'Calendario de la Liga F, la primera división del fútbol femenino español: jornadas, horarios, clasificación y máximas goleadoras.',
-    seasonLabel: '2025-2026',
+    seasonKind: 'split',
   },
 ]
 
