@@ -43,6 +43,7 @@ const PLATFORM_LINKS = [
 ]
 const LEGAL_LINKS = [
   { label: 'Sobre TakaSports',  href: '/sobre' },
+  { label: 'Contacto',          href: '/contacto' },
   { label: 'Equipo editorial',  href: '/autor/redaccion' },
   { label: 'Política editorial', href: '/politica-editorial' },
   { label: 'Aviso legal',       href: '/aviso-legal' },

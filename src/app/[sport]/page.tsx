@@ -66,6 +66,11 @@ export async function generateMetadata({
         'es-ES':     `${SITE_URL}/${sport}`,
         'es-419':    `${SITE_URL}/${sport}`,
       },
+      // El feed de ESTE deporte, para que un lector de RSS lo encuentre solo al
+      // añadir la URL del hub. Sin esto habría que adivinar la ruta.
+      types: {
+        'application/rss+xml': `${SITE_URL}/rss/${sport}.xml`,
+      },
     },
     openGraph: {
       title: `${emoji} ${title} | TakaSports`,
