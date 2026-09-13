@@ -161,8 +161,13 @@ function merge(...sources: PublicReel[][]): PublicReel[] {
       if (seen.has(key)) continue
       const ms = tsToMs(r.timestamp)
       if (ms > 0 && now - ms > FRESHNESS_MAX_AGE_MS) continue
-      if (thumbnailExpired(r.thumbnail_url)) continue   // sin preview → fuera
-      seen.set(key, r)
+      // Una miniatura caducada NO tira el reel: se le quita la URL muerta y la tarjeta
+      // cae en su degradado. Es la misma decisión que ya tomó stripExpiredThumbs ("perder
+      // el reel entero sería peor que perder su foto"), que se aplicó a la home y se quedó
+      // sin aplicar aquí. El 06/09/2026 caducaron a la vez las miniaturas de los 4 reels de
+      // Storage, este `continue` los tiró todos, la mezcla quedó vacía y /reels y la API
+      // pasaron a servir el respaldo estático de mayo.
+      seen.set(key, thumbnailExpired(r.thumbnail_url) ? { ...r, thumbnail_url: null } : r)
     }
   }
   return Array.from(seen.values()).sort((a, b) => tsToMs(b.timestamp) - tsToMs(a.timestamp))
@@ -209,6 +214,10 @@ export async function getMergedReels(): Promise<PublicReel[]> {
 
   if (cache) return cache.data
 
-  // Último recurso: el JSON del repo, normalizado al mismo shape.
-  return (reelsData as PublicReel[]).map(normalizeReel)
+  // Último recurso: el JSON del repo, normalizado al mismo shape — pero pasando por las
+  // MISMAS reglas que la mezcla. Antes se devolvía tal cual, saltándose el filtro de
+  // frescura, así que cuando todas las fuentes vivas fallaban el sitio servía reels de
+  // hace 4 meses como si fueran de hoy. Si el respaldo también está viejo, mejor una lista
+  // vacía (la sección se esconde) que contenido caducado disfrazado de actual.
+  return merge((reelsData as PublicReel[]).map(normalizeReel))
 }
