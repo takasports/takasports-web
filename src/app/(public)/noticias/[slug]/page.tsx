@@ -1387,7 +1387,7 @@ export default async function NoticiaPage({
                 }}
                 aria-label="Claves rápidas"
               >
-                {/* Rótulo de TV: barra de acento + label + punto REC */}
+                {/* Rótulo de TV: barra de acento + label */}
                 <div
                   className="ts-keys__bar flex items-center gap-2.5 px-5 py-2.5"
                   style={{ borderBottom: `1px solid ${badgeBorder}`, background: `${badgeColor}10` }}
@@ -1399,10 +1399,11 @@ export default async function NoticiaPage({
                   >
                     Claves en 30 segundos
                   </span>
-                  <span aria-hidden className="ts-keys__rec ml-auto inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest" style={{ color: badgeColor }}>
-                    <span className="ts-keys__dot" style={{ background: badgeColor }} />
-                    EN DIRECTO
-                  </span>
+                  {/* Aquí parpadeaba un piloto «● EN DIRECTO». Salía en TODOS los
+                      artículos, incluido el de un partido acabado hace doce horas, y el
+                      lector lo entiende como «esto está pasando ahora». El rótulo ya se
+                      anuncia solo con «Claves en 30 segundos». Retirado a la vez que en la
+                      app, para no dejarlas distintas. [14/09/2026] */}
                 </div>
                 <ul className="ts-keys__list flex flex-col px-5 py-4">
                   {article.tldr.map((item, i) => (
