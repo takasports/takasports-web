@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { canonicalTeamSlug } from '@/lib/team-slug'
+import { FOOTBALL_LEAGUE_SLUGS } from '@/lib/football-leagues'
 
 export interface SearchHit {
   type: 'player' | 'team'
@@ -10,14 +11,52 @@ export interface SearchHit {
   logo?: string
 }
 
-// Curated allowlist: only top-5 European leagues + UEFA club competitions.
-// /jugador self-resolves the real domestic league from the ESPN overview, so
-// a uefa.champions-tagged Mbappé still shows LaLiga stats. Excluding cups,
-// lower divisions and women keeps the results clean and "pro".
-const SOCCER_ALLOWLIST = new Set([
-  'esp.1', 'eng.1', 'ita.1', 'ger.1', 'fra.1',
-  'uefa.champions', 'uefa.europa', 'uefa.conference',
-])
+// Cobertura de fútbol del buscador = LA MISMA que cubre el sitio.
+//
+// Antes era una lista escrita a mano con las 5 grandes ligas europeas + UEFA,
+// bajo la idea de que recortar dejaba los resultados "limpios y pro". El efecto
+// real: buscar "Messi" NO devolvía a Messi. Está en la MLS, que el sitio cubre
+// —hay calendario, tabla y ficha de equipo— pero el buscador no admitía. El
+// único jugador que salía era Junior Messias, del Genoa. Lo mismo con toda
+// Liga MX, Brasileirão, Liga Argentina, Championship, Saudi y J-League.
+//
+// Ahora se deriva de FOOTBALL_LEAGUES, que ya es la fuente única del calendario,
+// el feed en vivo y la caché de fotos. Así la regla es una y se explica sola: si
+// enseñamos sus partidos, sus jugadores tienen que poder buscarse. Y al añadir
+// una liga al sitio, el buscador la gana sin tocar este fichero.
+//
+// Los slugs del catálogo van como 'soccer/usa.1'; ESPN devuelve 'usa.1'.
+// [14/09/2026]
+const SOCCER_ALLOWLIST = new Set(
+  [...FOOTBALL_LEAGUE_SLUGS].map((s) => s.replace(/^soccer\//, '')),
+)
+
+/** Sin acentos y en minúsculas, para comparar "Mbappé" con "mbappe". */
+function normaliza(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+/** DOS bandas, no una nota fina: 1 = alguna palabra del nombre EMPIEZA por lo
+ *  buscado · 0 = solo lo contiene por dentro.
+ *
+ *  Dentro de cada banda se respeta el orden de ESPN, que ya sabe de popularidad.
+ *  Se probó puntuar más fino (exacta > empieza > contiene) y salía PEOR: con
+ *  "vinicius", el exacto "Vinícius" (un brasileño desconocido) adelantaba a
+ *  "Vinícius Júnior". La banda solo sirve para hundir las coincidencias por
+ *  dentro, que es lo que descolocaba de verdad: buscando "madrid" salían tres
+ *  jugadores apellidados Madrid por delante del Real Madrid. [14/09/2026] */
+function banda(nombre: string, q: string): number {
+  const n = normaliza(nombre)
+  const t = normaliza(q)
+  if (!t) return 0
+  if (n === t || n.startsWith(t)) return 1
+  if (n.split(/\s+/).some((p) => p.startsWith(t))) return 1
+  return 0
+}
 
 function idFromUid(uid: string, kind: 'a' | 't'): string | undefined {
   const m = uid.match(new RegExp(`~${kind}:(\\d+)`))
@@ -96,12 +135,22 @@ export async function GET(req: Request) {
             : undefined,
         })
       }
-      if (hits.length >= 12) break
     }
-    if (hits.length >= 12) break
   }
 
-  // Teams first (usually the intent when the query matches a club).
-  hits.sort((a, b) => (a.type === b.type ? 0 : a.type === 'team' ? -1 : 1))
-  return NextResponse.json({ hits })
+  // El recorte a 12 se hace AL FINAL, no durante la recogida. Antes se cortaba
+  // en cuanto había 12 candidatos, así que una coincidencia buena que ESPN
+  // devolviera tarde no llegaba a competir: se perdía sin haberla comparado.
+  // Array.sort es estable, así que a igualdad de banda y tipo se conserva el
+  // orden de llegada, que es el de ESPN.
+  hits.sort((a, b) => {
+    const ba = banda(a.name, q)
+    const bb = banda(b.name, q)
+    if (ba !== bb) return bb - ba
+    // A igualdad de banda, el club primero: cuando alguien escribe el nombre de
+    // un equipo, suele querer el equipo.
+    if (a.type !== b.type) return a.type === 'team' ? -1 : 1
+    return 0
+  })
+  return NextResponse.json({ hits: hits.slice(0, 12) })
 }
