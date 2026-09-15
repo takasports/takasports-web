@@ -50,19 +50,23 @@ function normaliza(s: string): string {
     .trim()
 }
 
-/** ¿Alguna palabra del equipo o la competición EMPIEZA por lo buscado?
+/** ¿Coincide el partido con lo buscado?
  *
- *  Misma regla de dos bandas que el buscador de jugadores: buscar «madrid» tiene
- *  que traer Real Madrid y Atlético, no un Colo-Colo cuyo estadio contiene esas
- *  letras por dentro. Se comprueba palabra a palabra para que «real» encuentre
- *  «Real Sociedad» y «bayer» encuentre «Bayer Leverkusen». */
+ *  Misma regla de dos bandas que el buscador de jugadores: cuenta que alguna
+ *  PALABRA del equipo o la competición EMPIECE por lo buscado, no que lo
+ *  contenga por dentro. Buscar «madrid» trae Real Madrid y Atlético; «bayer»
+ *  trae Bayer Leverkusen.
+ *
+ *  Con varias palabras se exigen TODAS. La primera versión comparaba el texto
+ *  buscado entero contra cada palabra, así que «real sociedad» no casaba ninguna
+ *  —ni «real» ni «sociedad» empiezan por «real sociedad»— y los próximos salían
+ *  vacíos mientras los pasados sí aparecían, porque esos los filtra Supabase con
+ *  su propio criterio. Se vio al probar el endpoint en producción. [15/09/2026] */
 function coincide(e: SportEvent, termino: string): boolean {
-  const campos = [e.home, e.away ?? '', e.comp]
-  return campos.some((campo) =>
-    normaliza(campo)
-      .split(/[\s.\-/]+/)
-      .some((palabra) => palabra.startsWith(termino)),
-  )
+  const buscadas = termino.split(/\s+/).filter(Boolean)
+  if (buscadas.length === 0) return false
+  const palabras = normaliza(`${e.home} ${e.away ?? ''} ${e.comp}`).split(/[\s.\-/]+/)
+  return buscadas.every((t) => palabras.some((p) => p.startsWith(t)))
 }
 
 function aHit(e: SportEvent, jugado: boolean): MatchHit {
