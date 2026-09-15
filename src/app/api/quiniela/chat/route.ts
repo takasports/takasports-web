@@ -48,8 +48,27 @@ function isMissingTable(err: { code?: string | null; message?: string } | null):
   return /(could not find the table|relation .* does not exist|schema cache)/i.test(err.message ?? '')
 }
 
+
+/** Normaliza el id de liga que llega por parámetro.
+ *
+ *  Las ligas de quiniela usaban CÓDIGOS en mayúsculas («ABC123») y el endpoint
+ *  los forzaba a mayúsculas para que «abc123» encontrara la misma liga. Al
+ *  fusionar los dos sistemas, el chat pasa a servir también a las ligas ranked,
+ *  cuyos ids son de otra forma y van en minúsculas («rl_taka001»): con el
+ *  `toUpperCase()` a secas se convertían en «RL_TAKA001» y no encontraban nunca
+ *  su liga.
+ *
+ *  Se conserva el comportamiento antiguo EXACTO para los códigos heredados
+ *  —alfanuméricos cortos, sin guion bajo— y se respeta tal cual todo lo demás.
+ *  [15/09/2026] */
+function normalizaLiga(raw: string | null | undefined): string | null {
+  const v = (raw ?? '').trim()
+  if (!v) return null
+  return /^[A-Za-z0-9]{4,12}$/.test(v) ? v.toUpperCase() : v
+}
+
 export async function GET(req: NextRequest) {
-  const liga  = req.nextUrl.searchParams.get('liga')?.toUpperCase()
+  const liga = normalizaLiga(req.nextUrl.searchParams.get('liga'))
   const limit = Math.min(parseInt(req.nextUrl.searchParams.get('limit') ?? '30', 10), 100)
   if (!liga) return NextResponse.json({ error: 'liga required' }, { status: 400 })
 
@@ -81,7 +100,7 @@ export async function POST(req: NextRequest) {
   if ('error' in parsed) return parsed.error
   const { liga, message, nickname: rawNick } = parsed.data
   try {
-    const ligaId = liga?.toUpperCase()
+    const ligaId = normalizaLiga(liga)
     const msg = String(message ?? '').trim().slice(0, 280)
     if (!ligaId || !msg) return NextResponse.json({ error: 'liga and message required' }, { status: 400 })
 
