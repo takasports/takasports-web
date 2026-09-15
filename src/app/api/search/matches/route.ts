@@ -65,7 +65,11 @@ function normaliza(s: string): string {
 function coincide(e: SportEvent, termino: string): boolean {
   const buscadas = termino.split(/\s+/).filter(Boolean)
   if (buscadas.length === 0) return false
-  const palabras = normaliza(`${e.home} ${e.away ?? ''} ${e.comp}`).split(/[\s.\-/]+/)
+  // Se busca también en el DEPORTE: «f1», «tenis» o «nba» son búsquedas que la
+  // gente hace, y sin este campo devolvían cero porque el nombre del deporte no
+  // aparece ni en los equipos ni en la competición (la comp de una carrera es el
+  // nombre del Gran Premio). [15/09/2026]
+  const palabras = normaliza(`${e.home} ${e.away ?? ''} ${e.comp} ${e.sport}`).split(/[\s.\-/]+/)
   return buscadas.every((t) => palabras.some((p) => p.startsWith(t)))
 }
 
