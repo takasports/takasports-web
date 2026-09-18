@@ -63,6 +63,49 @@ export function servableDays(todayIso: string, archivedDays: readonly string[] =
   return [...out].sort((a, b) => b.localeCompare(a))
 }
 
+/**
+ * Los días que el SITEMAP debe anunciar. Es un subconjunto de `servableDays`.
+ *
+ * ── Por qué no son los mismos ────────────────────────────────────────────────
+ * La ruta SIRVE 45 días hacia delante porque es barato y porque el feed puede
+ * traer un partido suelto muy lejano. Pero ESPN solo publica calendario unas
+ * tres semanas vista, así que la mayoría de esos días están vacíos, y un día
+ * vacío ya sale con `noindex` (lo pone `generateMetadata`).
+ *
+ * El resultado era una contradicción: el sitemap le decía a Google «indexa el
+ * 25 de octubre» y la página le decía «no me indexes». Medido el 18/09/2026,
+ * **36 de los 45 días futuros anunciados estaban vacíos**. Eso gasta rastreo en
+ * páginas que nosotros mismos hemos marcado como no indexables, y es justo el
+ * tipo de gasto que tumbó la facturación en septiembre.
+ *
+ * Así que hacia delante se anuncia solo lo que TIENE partidos. Hacia atrás no
+ * se toca nada: los días pasados y el archivo entran como hasta ahora, porque
+ * un día ya jugado tiene resultados por definición y son las URLs con mejor
+ * CTR del sitio.
+ *
+ * ── El cinturón ──────────────────────────────────────────────────────────────
+ * Si `diasConPartidos` viene vacío —ESPN caído, un fallo de red durante el
+ * build— NO se recorta nada: se anuncia la ventana entera, como antes. Dejar
+ * que un fallo de red encoja el sitemap sería el mismo error silencioso que nos
+ * dejó tres días sin fútbol en el calendario. Encoger tiene que ser una
+ * decisión con datos, nunca el resultado de no tener datos.
+ */
+export function sitemapDays(
+  todayIso: string,
+  archivedDays: readonly string[] = [],
+  diasConPartidos: ReadonlySet<string> = new Set(),
+): string[] {
+  const todos = servableDays(todayIso, archivedDays)
+  if (diasConPartidos.size === 0) return todos
+
+  const archivo = new Set(archivedDays.filter(isValidDayParam))
+  return todos.filter((d) => {
+    if (dayOffsetFrom(d, todayIso) <= 0) return true   // hoy y el pasado, intactos
+    if (archivo.has(d)) return true                    // por si el archivo se adelanta
+    return diasConPartidos.has(d)
+  })
+}
+
 /** "2026-08-21" → "viernes, 21 de agosto de 2026". */
 export function longDayLabel(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)

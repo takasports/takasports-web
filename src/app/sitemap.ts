@@ -11,7 +11,10 @@ import { canonicalTeamSlug } from '@/lib/team-slug'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { esTagIndexable, normalizarTag } from '@/lib/tag-policy'
 import { getArchivedDays } from '@/lib/past-events'
-import { isPastDay, servableDays } from '@/lib/calendar-day-page'
+import { isPastDay, sitemapDays } from '@/lib/calendar-day-page'
+import { fetchEspnEvents } from '@/lib/espn'
+import { isoToLocalDate } from '@/lib/calendar'
+import { SOURCE_TZ } from '@/lib/timezone'
 
 const BASE_URL = SITE_URL
 
@@ -32,12 +35,37 @@ const TAG_LASTMOD = new Date('2026-05-28T00:00:00Z')
 // Un día ya jugado NO cambia, así que su `lastModified` es el propio día y su
 // `changeFrequency` es 'yearly': marcarlo como diario invita a Google a
 // regastar rastreo en páginas congeladas.
+/**
+ * Días futuros que de verdad tienen partidos, según el mismo feed que pinta el
+ * calendario. Se lee de `fetchEspnEvents` a propósito: si el sitemap usara otra
+ * fuente podría anunciar un día que la página enseña vacío, que es exactamente
+ * la contradicción que venimos a quitar.
+ *
+ * El coste extra en el build es casi nulo: `/calendario` ya llama a esta misma
+ * función y las peticiones a ESPN van con `revalidate`, así que las comparten.
+ * Si falla, devuelve un conjunto vacío y `sitemapDays` no recorta nada.
+ */
+async function diasConPartidos(): Promise<Set<string>> {
+  try {
+    const dias = new Set<string>()
+    for (const e of await fetchEspnEvents()) {
+      if (e.isoDate) dias.add(isoToLocalDate(e.isoDate, SOURCE_TZ))
+    }
+    return dias
+  } catch {
+    return new Set()
+  }
+}
+
 async function calendarDayUrls(): Promise<MetadataRoute.Sitemap> {
   const today = new Date()
   const todayIso = today.toISOString().slice(0, 10)
-  const archived = await getArchivedDays().catch(() => [] as string[])
+  const [archived, conPartidos] = await Promise.all([
+    getArchivedDays().catch(() => [] as string[]),
+    diasConPartidos(),
+  ])
 
-  return servableDays(todayIso, archived).map((day) => {
+  return sitemapDays(todayIso, archived, conPartidos).map((day) => {
     const past = isPastDay(day, todayIso)
     return {
       url: `${BASE_URL}/calendario/dia/${day}`,

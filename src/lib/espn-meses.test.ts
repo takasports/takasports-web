@@ -88,12 +88,13 @@ describe('eventosDeVentana', () => {
   })
 
   it('nunca pide un rango: solo meses', async () => {
-    const espia = vi.fn(async () => respuesta([]))
+    const espia = vi.fn(async (url: string) => { void url; return respuesta([]) })
     vi.stubGlobal('fetch', espia)
     await eventosDeVentana({ slug: 'soccer/esp.1', desde: '20260918', hasta: '20261009' })
+    expect(espia.mock.calls.length).toBeGreaterThan(0)
     for (const [url] of espia.mock.calls) {
-      expect(String(url)).toMatch(/[?&]dates=\d{6}(&|$)/)
-      expect(String(url)).not.toMatch(/dates=\d+-\d+/)
+      expect(url).toMatch(/[?&]dates=\d{6}(&|$)/)
+      expect(url).not.toMatch(/dates=\d+-\d+/)
     }
   })
 })
