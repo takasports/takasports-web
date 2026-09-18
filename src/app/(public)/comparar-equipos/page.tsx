@@ -203,7 +203,7 @@ function CandidateGrid({ candidates, t1 }: { candidates: TeamCandidate[]; t1?: s
                 ? `/comparar-equipos?t1=${encodeURIComponent(t1)}&t2=${encodeURIComponent(c.slug)}`
                 : `/comparar-equipos?t1=${encodeURIComponent(c.slug)}`
               return (
-                <Link key={c.slug} href={href}
+                <Link key={c.slug} href={href} prefetch={false}
                   className="flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all hover:bg-white/5"
                   style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   {c.logo && (

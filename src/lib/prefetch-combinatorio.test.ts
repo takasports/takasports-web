@@ -65,6 +65,29 @@ function rutasSinCache(): string[] {
 /** `/tag/[tag]` → prefijo `/tag/` para reconocer los href. */
 const prefijo = (ruta: string) => ruta.replace(/\/\[[^\]]+\]$/, '/').replace(/\/$/, '/')
 
+/**
+ * A dónde apunta un <Link>: la ruta literal del href, o —si el href es una
+ * variable— la ruta que esa variable construye unas líneas más arriba.
+ *
+ * El caso de la variable no es rebuscado: es justo el de las dos páginas de
+ * comparar, que arman el href con un ternario (`const href = t1 ? … : …`)
+ * porque el destino cambia según si ya has elegido la primera entidad. La
+ * primera versión de esta prueba solo miraba hrefs literales y por eso dejó
+ * pasar la rejilla de equipos de /comparar-equipos: 80 enlaces, cada uno una
+ * URL distinta y sin cachear. [18/09/2026]
+ */
+function objetivo(src: string, etiqueta: string): string | null {
+  const literal = etiqueta.match(/href=\{?`?(\/[^`"'\s{}]*)/)?.[1]
+  if (literal) return literal
+
+  const variable = etiqueta.match(/href=\{(\w+)\}/)?.[1]
+  if (!variable) return null
+  const decl = src.match(new RegExp(`const\\s+${variable}\\s*(?::[^=]+)?=`))
+  if (decl?.index == null) return null
+  // 400 caracteres cubren un ternario de dos ramas con sus plantillas.
+  return src.slice(decl.index, decl.index + 400).match(/[`'"](\/[^`'"$\s]*)/)?.[1] ?? null
+}
+
 describe('los enlaces a páginas sin caché no se precargan', () => {
   const sinCache = rutasSinCache()
 
@@ -77,6 +100,8 @@ describe('los enlaces a páginas sin caché no se precargan', () => {
 
   it('ningún <Link> a una de ellas lleva prefetch activo', () => {
     const prefijos = sinCache.map(prefijo).filter((p) => p !== '/')
+    const apunta = (url: string) =>
+      prefijos.some((p) => url === p.replace(/\/$/, '') || url.startsWith(p))
     const sinProteger: string[] = []
 
     for (const f of [...ficheros(join(RAIZ, 'src/app')), ...ficheros(join(RAIZ, 'src/components'))]) {
@@ -84,12 +109,11 @@ describe('los enlaces a páginas sin caché no se precargan', () => {
       for (const m of src.matchAll(/<Link\b/g)) {
         // 420 caracteres cubren de sobra los atributos de una etiqueta de apertura.
         const etiqueta = src.slice(m.index!, m.index! + 420)
-        const href = etiqueta.match(/href=\{?`?(\/[^`"'\s{}]*)/)?.[1]
-        if (!href) continue
-        if (!prefijos.some((p) => href === p.replace(/\/$/, '') || href.startsWith(p))) continue
+        const destino = objetivo(src, etiqueta)
+        if (!destino || !apunta(destino)) continue
         if (/prefetch=\{false\}/.test(etiqueta)) continue
         const linea = src.slice(0, m.index!).split('\n').length
-        sinProteger.push(`${f.replace(RAIZ + '/', '')}:${linea} → ${href}`)
+        sinProteger.push(`${f.replace(RAIZ + '/', '')}:${linea} → ${destino}`)
       }
     }
 
