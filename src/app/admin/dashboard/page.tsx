@@ -286,6 +286,7 @@ export default async function AdminDashboardPage() {
             <div className="flex flex-wrap gap-2">
               {topTags.map(({ tag, count }) => (
                 <Link
+                prefetch={false}
                   key={tag}
                   href={`/tag/${encodeURIComponent(tag)}`}
                   style={{

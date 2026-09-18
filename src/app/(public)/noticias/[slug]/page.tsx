@@ -324,6 +324,7 @@ function ArticleSidebar({
           <div className="flex flex-wrap gap-1.5 mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
             {article.tags.map((tag) => (
               <Link
+                prefetch={false}
                 key={tag}
                 href={`/tag/${encodeURIComponent(tag)}`}
                 className="text-[10px] px-2.5 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"
@@ -1544,6 +1545,7 @@ export default async function NoticiaPage({
                 <div className="flex flex-wrap gap-2 mt-10">
                   {article.tags.map((tag) => (
                     <Link
+                      prefetch={false}
                       key={tag}
                       href={`/tag/${encodeURIComponent(tag)}`}
                       className="text-xs px-3 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"

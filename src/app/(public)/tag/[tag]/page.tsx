@@ -214,6 +214,7 @@ export default async function TagPage({
               {relatedTags.map(({ tag: rt, count }) => (
                 <Link
                   key={rt}
+                  prefetch={false}
                   href={`/tag/${encodeURIComponent(rt)}`}
                   style={{
                     display: 'inline-flex',

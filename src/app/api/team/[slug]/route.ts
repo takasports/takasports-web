@@ -478,7 +478,20 @@ export async function GET(
       featuredPlayer:  featured,
     }
 
-    return NextResponse.json(detail)
+    return NextResponse.json(detail, {
+      headers: {
+        // Caché de CDN. Estas dos rutas eran las MÁS llamadas del sitio —3.248 y
+        // 2.685 peticiones en 3 días— y no llevaban ninguna cabecera: cada llamada
+        // ejecutaba la función entera, con sus peticiones a ESPN y a Supabase.
+        //
+        // Media hora es exactamente la frescura que ya asumían sus consumidores
+        // (`revalidate: 1800` en las páginas que las piden), así que no se sirve
+        // nada más viejo que antes: solo se deja de recalcular lo mismo. Y con
+        // `stale-while-revalidate` de un día, una ficha nunca se queda sin
+        // respuesta aunque ESPN falle. [18/09/2026]
+        'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=86400',
+      },
+    })
   } catch (err) {
     console.error(`[team] fetch failed for ${slug}:`, err)
     return NextResponse.json(null, { status: 500 })
