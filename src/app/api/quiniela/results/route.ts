@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { MatchResult } from '@/lib/quiniela'
 import { QUINIELA_RESULTS_DAYS_BACK, QUINIELA_RESULTS_LIMIT } from '@/lib/quiniela'
+import { eventosDeVentana, diaDesplazado } from '@/lib/espn-meses'
 
 export type { MatchResult }
 
@@ -16,13 +17,6 @@ const FOOTBALL_SLUGS = [
   'soccer/fra.1',
 ]
 
-function dateRangeParam(): string {
-  const now = new Date()
-  const start = new Date(now)
-  start.setDate(now.getDate() - QUINIELA_RESULTS_DAYS_BACK)
-  const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
-  return `${fmt(start)}-${fmt(now)}`
-}
 
 async function fetchWithRetry(url: string): Promise<Response | null> {
   for (let i = 0; i < 2; i++) {
@@ -56,15 +50,18 @@ const FINAL_STATUSES = new Set([
 ])
 
 async function fetchResultsFromLeague(slug: string): Promise<MatchResult[]> {
-  const res = await fetchWithRetry(
-    `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${dateRangeParam()}&limit=${QUINIELA_RESULTS_LIMIT}`
-  )
-  if (!res || !res.ok) return []
-  let json: { events?: Array<Record<string, unknown>> }
-  try { json = await res.json() } catch { return [] }
+// Por meses, no por rango: ESPN dejó de aceptar `dates=A-B` para fútbol el
+// 18/09/2026 y respondía 400, que aquí se leía como «no hay partidos».
+// Ver lib/espn-meses.
+  const eventos = await eventosDeVentana({
+    slug,
+    desde: diaDesplazado(-QUINIELA_RESULTS_DAYS_BACK),
+    hasta: diaDesplazado(0),
+    limite: Math.max(QUINIELA_RESULTS_LIMIT, 200),
+  })
   const results: MatchResult[] = []
 
-  for (const ev of json.events ?? []) {
+  for (const ev of eventos) {
     const competition = (ev.competitions as Array<Record<string, unknown>> | undefined)?.[0]
     if (!competition) continue
     const status = competition.status as Record<string, unknown> | undefined

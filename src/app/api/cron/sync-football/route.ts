@@ -41,6 +41,7 @@ import {
   weekEndKey,
   type FootballFixture,
 } from '@/lib/football-ranked'
+import { eventosDeVentana } from '@/lib/espn-meses'
 
 export const dynamic = 'force-dynamic'
 // Tope anti-runaway: 19 ligas en paralelo, cada una con su propio timeout de
@@ -102,9 +103,9 @@ function yyyymmdd(d: Date): string {
 
 /** Ventana que se pide a ESPN: lo ya jugado que queda por liquidar + lo que se
  *  abre a predicción. */
-function espnDateRange(now = new Date()): string {
+function espnVentana(now = new Date()): { desde: string; hasta: string } {
   const from = new Date(now); from.setUTCDate(now.getUTCDate() - LOOKBACK_DAYS)
-  return `${yyyymmdd(from)}-${yyyymmdd(windowEnd(now))}`
+  return { desde: yyyymmdd(from), hasta: yyyymmdd(windowEnd(now)) }
 }
 
 /** Último día del fixture que esta pasada llega a ver. Es el horizonte que
@@ -140,16 +141,18 @@ function toWinner(
   return 'X'
 }
 
-async function fetchLeague(slug: string, range: string, limit: number): Promise<EspnEvent[]> {
-  const url = `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${range}&limit=${limit}`
-  try {
-    const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(10_000) })
-    if (!res.ok) return []
-    const json = await res.json() as { events?: EspnEvent[] }
-    return json.events ?? []
-  } catch {
-    return []
-  }
+// Por meses, no por rango: ESPN dejó de aceptar `dates=A-B` para fútbol el
+// 18/09/2026 y devolvía 400. Este cron es el que llena el archivo de
+// resultados, y un 400 aquí se veía como «no hubo partidos». Ver lib/espn-meses.
+async function fetchLeague(slug: string, desde: string, hasta: string, limit: number): Promise<EspnEvent[]> {
+  return eventosDeVentana<EspnEvent>({
+    slug,
+    desde,
+    hasta,
+    limite: Math.max(limit, 200),
+    fetchOpciones: { next: { revalidate: 0 } },
+    timeoutMs: 10_000,
+  })
 }
 
 /** Estado en el que ESPN deja el partido, traducido al vocabulario de ranked_events. */
@@ -269,11 +272,11 @@ async function handle(req: Request) {
   }
 
   // ── 1. Fixture crudo ───────────────────────────────────────────────────────
-  const range = espnDateRange()
+  const { desde, hasta } = espnVentana()
   const settled = await Promise.allSettled(
     RANKED_FOOTBALL_SOURCES.map(async src => ({
       src,
-      events: await fetchLeague(src.slug, range, src.fetchLimit ?? 100),
+      events: await fetchLeague(src.slug, desde, hasta, src.fetchLimit ?? 100),
     })),
   )
 

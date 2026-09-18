@@ -15,6 +15,7 @@ import { awardBadges } from '@/lib/badge-awards'
 import { sendTelegram } from '@/lib/telegram'
 
 export const dynamic = 'force-dynamic'
+import { eventosDeVentana } from '@/lib/espn-meses'
 // Tope anti-runaway: corta a los 60s en vez del límite por defecto (300s). Su
 // fetch a ESPN ya tiene AbortSignal.timeout(10s) más abajo.
 export const maxDuration = 60
@@ -49,16 +50,17 @@ interface EspnEvent {
   }[]
 }
 
+// Por meses, no por rango: ESPN dejó de aceptar `dates=A-B` el 18/09/2026 y
+// respondía 400 sin que nadie se enterara. Ver lib/espn-meses.
 async function fetchWcFixtures(): Promise<EspnEvent[]> {
-  const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${WC_START}-${WC_END}&limit=200`
-  try {
-    const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(10_000) })
-    if (!res.ok) return []
-    const json = await res.json() as { events?: EspnEvent[] }
-    return json.events ?? []
-  } catch {
-    return []
-  }
+  return eventosDeVentana<EspnEvent>({
+    slug: 'soccer/fifa.world',
+    desde: WC_START,
+    hasta: WC_END,
+    limite: 200,
+    fetchOpciones: { next: { revalidate: 0 } },
+    timeoutMs: 10_000,
+  })
 }
 
 function scoreToInt(s: string | { value: number } | undefined): number | null {

@@ -24,6 +24,7 @@ import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { apiError } from '@/lib/api-utils'
 import { evaluateTopNBadges } from '@/lib/special-badges'
 import { sendTelegram } from '@/lib/telegram'
+import { eventosDeVentana, diaDesplazado } from '@/lib/espn-meses'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60  // hasta 1 min — puede procesar muchos usuarios
@@ -45,13 +46,6 @@ const FOOTBALL_SLUGS = [
   'soccer/fra.1',
 ]
 
-function dateRangeParam(): string {
-  const now   = new Date()
-  const start = new Date(now)
-  start.setDate(now.getDate() - QUINIELA_RESULTS_DAYS_BACK)
-  const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
-  return `${fmt(start)}-${fmt(now)}`
-}
 
 const FINAL_STATUSES_ESPN = new Set([
   'STATUS_FINAL', 'STATUS_FULL_TIME', 'STATUS_FT', 'STATUS_ENDED',
@@ -65,12 +59,18 @@ async function fetchAllResults(): Promise<MatchResult[]> {
   const settled = await Promise.allSettled(
     FOOTBALL_SLUGS.map(async slug => {
       try {
-        const url = `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${dateRangeParam()}&limit=${QUINIELA_RESULTS_LIMIT}`
-        const res = await fetch(url, { next: { revalidate: 0 } })
-        if (!res.ok) return []
-        const json = await res.json() as { events?: unknown[] }
+        // Por meses, no por rango: ESPN dejó de aceptar `dates=A-B` para
+        // fútbol el 18/09/2026 y respondía 400, que aquí dejaba la quiniela sin
+        // resolver en silencio. Ver lib/espn-meses.
+        const eventos = await eventosDeVentana({
+          slug,
+          desde: diaDesplazado(-QUINIELA_RESULTS_DAYS_BACK),
+          hasta: diaDesplazado(0),
+          limite: Math.max(QUINIELA_RESULTS_LIMIT, 200),
+          fetchOpciones: { next: { revalidate: 0 } },
+        })
         const results: MatchResult[] = []
-        for (const raw of json.events ?? []) {
+        for (const raw of eventos) {
           const ev   = raw as Record<string, unknown>
           const comp = (ev.competitions as Record<string, unknown>[] | undefined)?.[0]
           if (!comp) continue

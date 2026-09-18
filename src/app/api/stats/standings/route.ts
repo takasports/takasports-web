@@ -13,6 +13,7 @@ import { worldCupPhase } from '@/lib/world-cup-phase'
 import type { FaltanDeportes } from '@/lib/stats-sports'
 import { UFC_DIVISIONS } from '@/lib/ufc-scraper'
 import { toSpanishNation } from '@/lib/nation-names'
+import { eventosDeVentana } from '@/lib/espn-meses'
 
 const staleSet = new Set<string>()
 
@@ -1220,13 +1221,14 @@ async function fetchWorldCupSchedule(): Promise<StandingRow[]> {
     const start = now < new Date('2026-06-11') ? new Date('2026-06-11') : now
     const end = new Date(start.getTime() + 14 * 86400_000)
     const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
-    const res = await tfetch(
-      `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${fmt(start)}-${fmt(end)}`,
-      { next: { revalidate: 600 } },
-    )
-    if (!res.ok) return []
-    const json = await res.json()
-    const events = (json.events as Record<string, unknown>[]) ?? []
+    // Por meses, no por rango. Ver lib/espn-meses.
+    const events = await eventosDeVentana<Record<string, unknown>>({
+      slug: 'soccer/fifa.world',
+      desde: fmt(start),
+      hasta: fmt(end),
+      limite: 200,
+      fetchOpciones: { next: { revalidate: 600 } },
+    })
     const rows: StandingRow[] = []
     for (const ev of events.slice(0, 12)) {
       const comp = ((ev.competitions as Record<string, unknown>[])?.[0]) as Record<string, unknown> | undefined

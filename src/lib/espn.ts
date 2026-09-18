@@ -1,4 +1,5 @@
 import type { SportEvent, TeamStanding } from './types'
+import { eventosDeVentana, diaDesplazado } from './espn-meses'
 import { getSportStyle } from './sports'
 import { SOURCE_TZ } from './timezone'
 import { getSpanishBroadcast } from './broadcasts'
@@ -125,21 +126,7 @@ function toTimeStr(isoDate: string): string {
   return `${h}:${m}`
 }
 
-function dateRangeParam(daysAhead: number): string {
-  const now = new Date()
-  const end = new Date(now)
-  end.setDate(now.getDate() + daysAhead)
-  const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
-  return `${fmt(now)}-${fmt(end)}`
-}
 
-function dateRangePastParam(daysBack: number): string {
-  const now = new Date()
-  const start = new Date(now)
-  start.setDate(now.getDate() - daysBack)
-  const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
-  return `${fmt(start)}-${fmt(now)}`
-}
 
 function parseScore(v: unknown): number | null {
   if (v == null) return null
@@ -230,19 +217,19 @@ function wcStageLabel(
 
 async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
   const { accent } = getSportStyle(source.sport)
-  const url = `https://site.api.espn.com/apis/site/v2/sports/${source.slug}/scoreboard?dates=${dateRangeParam(source.daysAhead ?? 21)}&limit=${source.fetchLimit ?? 75}`
-
-  let json: Record<string, unknown>
-  try {
-    const res = await espnFetch(url)
-    if (!res.ok) return []
-    json = await res.json()
-  } catch {
-    return []
-  }
+  // Por meses, no por rango: ESPN dejó de aceptar `dates=A-B` para fútbol y
+  // baloncesto el 18/09/2026 y respondía 400. Ver lib/espn-meses.
+  const espnEvents = await eventosDeVentana({
+    slug: source.slug,
+    desde: diaDesplazado(0),
+    hasta: diaDesplazado(source.daysAhead ?? 21),
+    // El tope es por MES, y un mes trae más que una ventana de tres semanas: la
+    // NBA sola pone 155 partidos en octubre. Se pide de sobra y recortamos aquí.
+    limite: Math.max(source.fetchLimit ?? 75, 200),
+    fetchOpciones: { next: { revalidate: 300 } },
+  })
 
   const results: RawEvent[] = []
-  const espnEvents = (json.events as unknown[]) ?? []
   const wcGroups = source.slug === WC_SLUG && espnEvents.length
     ? await fetchWorldCupGroupLetters()
     : null
@@ -721,19 +708,16 @@ function pastWinner(ev: Record<string, unknown>, comp: Record<string, unknown> |
 // ── Past results (last N days) ────────────────────────────────────────────
 async function fetchLeaguePast(source: EspnSource, daysBack = 10): Promise<RawEvent[]> {
   const { accent } = getSportStyle(source.sport)
-  const url = `https://site.api.espn.com/apis/site/v2/sports/${source.slug}/scoreboard?dates=${dateRangePastParam(daysBack)}&limit=${source.fetchLimit ?? 50}`
-
-  let json: Record<string, unknown>
-  try {
-    const res = await espnFetch(url)
-    if (!res.ok) return []
-    json = await res.json()
-  } catch {
-    return []
-  }
+  // Igual que el futuro: por meses. Ver lib/espn-meses.
+  const espnEvents = await eventosDeVentana({
+    slug: source.slug,
+    desde: diaDesplazado(-daysBack),
+    hasta: diaDesplazado(0),
+    limite: Math.max(source.fetchLimit ?? 50, 200),
+    fetchOpciones: { next: { revalidate: 300 } },
+  })
 
   const results: RawEvent[] = []
-  const espnEvents = (json.events as unknown[]) ?? []
   const wcGroups = source.slug === WC_SLUG && espnEvents.length
     ? await fetchWorldCupGroupLetters()
     : null

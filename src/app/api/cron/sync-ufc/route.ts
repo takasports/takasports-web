@@ -22,6 +22,7 @@ import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { sendTelegram } from '@/lib/telegram'
 
 export const dynamic = 'force-dynamic'
+import { eventosDeVentana } from '@/lib/espn-meses'
 // Tope anti-runaway: si algo se cuelga, Vercel corta a los 60s en vez de dejar
 // correr la función hasta el límite por defecto del plan (300s) = menos GB-horas.
 export const maxDuration = 60
@@ -72,17 +73,17 @@ async function fetchUfcEvents(): Promise<EspnEvent[]> {
   const start = new Date(now); start.setDate(now.getDate() - 7)
   const end   = new Date(now); end.setDate(now.getDate() + 90)
   const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
-  const url = `https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?dates=${fmt(start)}-${fmt(end)}&limit=100`
-  try {
-    // Timeout de 10s: si ESPN se cuelga, abortamos en vez de quedarnos colgados
-    // (mismo cinturón que ya tiene sync-mundial). El catch de abajo degrada a [].
-    const res = await fetch(url, { next: { revalidate: 0 }, signal: AbortSignal.timeout(10_000) })
-    if (!res.ok) return []
-    const json = await res.json() as { events?: EspnEvent[] }
-    return json.events ?? []
-  } catch {
-    return []
-  }
+  // UFC es de los pocos que todavía aceptaba el rango, pero se unifica: dos
+  // formas distintas para la misma llamada es lo que dejó el fallo oculto un
+  // mes en fútbol. El timeout de 10 s sigue siendo el mismo cinturón.
+  return eventosDeVentana<EspnEvent>({
+    slug: 'mma/ufc',
+    desde: fmt(start),
+    hasta: fmt(end),
+    limite: 100,
+    fetchOpciones: { next: { revalidate: 0 } },
+    timeoutMs: 10_000,
+  })
 }
 
 const FINAL_STATUSES = new Set([

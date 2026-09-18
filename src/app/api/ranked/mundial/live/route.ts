@@ -42,17 +42,20 @@ function clockLabel(status: EspnStatus | undefined): string | null {
 }
 
 const CACHE_OK = 'public, s-maxage=30, stale-while-revalidate=60'
+import { eventosDeVentana } from '@/lib/espn-meses'
 
 export async function GET() {
-  const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${WC_START}-${WC_END}&limit=200`
   try {
-    const res = await fetch(url, { next: { revalidate: 30 }, signal: AbortSignal.timeout(8000) })
-    if (!res.ok) {
-      return NextResponse.json({ live: {} }, { headers: { 'Cache-Control': 'public, s-maxage=15' } })
-    }
-    const json = (await res.json()) as { events?: EspnEvent[] }
+    // Por meses, no por rango. Ver lib/espn-meses.
+    const eventos = await eventosDeVentana<EspnEvent>({
+      slug: 'soccer/fifa.world',
+      desde: WC_START,
+      hasta: WC_END,
+      limite: 200,
+      fetchOpciones: { next: { revalidate: 30 } },
+    })
     const live: Record<string, { home: number | null; away: number | null; clock: string | null }> = {}
-    for (const ev of json.events ?? []) {
+    for (const ev of eventos) {
       const comp = ev.competitions?.[0]
       if (!comp) continue
       if (comp.status?.type?.state !== 'in') continue // solo partidos en curso

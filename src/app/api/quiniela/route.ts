@@ -3,6 +3,7 @@ import { SOURCE_TZ } from '@/lib/timezone'
 import { nameMatch } from '@/lib/quiniela'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { computeInternalOdds, neutralOdds } from '@/lib/internal-odds'
+import { eventosDeVentana, diaDesplazado } from '@/lib/espn-meses'
 
 export interface QuinielaMatch {
   home: string
@@ -89,13 +90,6 @@ function toTimeStr(isoDate: string): string {
   return `${h}:${m}`
 }
 
-function dateRangeParam(): string {
-  const now = new Date()
-  const end = new Date(now)
-  end.setDate(now.getDate() + 7)
-  const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
-  return `${fmt(now)}-${fmt(end)}`
-}
 
 function isUpcoming(isoDate: string): boolean {
   const ev  = new Date(isoDate)
@@ -236,16 +230,19 @@ function extractOdds(ev: OddsEvent): { home: number; draw: number; away: number 
 }
 
 async function fetchMatchesFromLeague(slug: string, comp: string): Promise<QuinielaMatch[]> {
-  const res = await fetchWithRetry(
-    `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${dateRangeParam()}&limit=20`,
-    { next: { revalidate: 300 } }
-  )
-  if (!res || !res.ok) return []
-  let json: { events?: Array<Record<string, unknown>> }
-  try { json = await res.json() } catch { return [] }
+// Por meses, no por rango: ESPN dejó de aceptar `dates=A-B` para fútbol el
+// 18/09/2026 y respondía 400, que aquí se leía como «no hay partidos».
+// Ver lib/espn-meses.
+  const eventos = await eventosDeVentana({
+    slug,
+    desde: diaDesplazado(0),
+    hasta: diaDesplazado(7),
+    limite: 200,
+    fetchOpciones: { next: { revalidate: 300 } },
+  })
   const results: QuinielaMatch[] = []
 
-  for (const ev of json.events ?? []) {
+  for (const ev of eventos) {
     const competition = (ev.competitions as Array<Record<string, unknown>> | undefined)?.[0]
     if (!competition) continue
     const status = competition.status as Record<string, unknown> | undefined
