@@ -137,3 +137,57 @@ describe('nadie vuelve a pedirle un rango de fechas a ESPN', () => {
     expect(culpables).toEqual([])
   })
 })
+
+// ── Quién puede pedir la ventana ancha ───────────────────────────────────────
+//
+// Del feed de ESPN cuelgan nueve consumidores y dos de ellos PUBLICAN lo que
+// reciben: `match-sitemap.xml` construye una URL `/partido/` por evento. Subir
+// la ventana para todos —que es lo que parecía el arreglo evidente— metería
+// unas 700 fichas de partido más en el índice, y `/partido` son 741 páginas
+// para 44 clics en cuatro semanas: justo el patrón que costó la factura de
+// septiembre.
+//
+// Así que la ventana ancha es opt-in y solo la piden los dos sitios donde la
+// demanda existe: la página de día y la parte del sitemap que anuncia esos
+// días. [18/09/2026]
+describe('la ventana ancha del feed no se le escapa a nadie', () => {
+  const PERMITIDOS = [
+    'src/app/calendario/dia/[fecha]/page.tsx',
+    'src/app/sitemap.ts',
+  ]
+
+  function ficherosDeApp(): string[] {
+    const out: string[] = []
+    const rec = (dir: string) => {
+      for (const e of readdirSync(dir)) {
+        if (e === 'node_modules' || e.startsWith('.')) continue
+        const p = join(dir, e)
+        if (statSync(p).isDirectory()) rec(p)
+        else if (e.endsWith('.ts') || e.endsWith('.tsx')) out.push(p)
+      }
+    }
+    rec(join(RAIZ, 'src'))
+    return out
+  }
+
+  it('solo la página de día y el sitemap piden más de 21 días', () => {
+    const pedigones: string[] = []
+    for (const f of ficherosDeApp()) {
+      const rel = f.replace(RAIZ + '/', '')
+      if (rel === 'src/lib/espn.ts') continue
+      const src = readFileSync(f, 'utf8')
+      if (!/fetchEspnEvents\(\s*\{/.test(src)) continue
+      if (PERMITIDOS.includes(rel)) continue
+      pedigones.push(rel)
+    }
+    expect(pedigones).toEqual([])
+  })
+
+  it('el sitemap de partidos sigue con la ventana corta', () => {
+    // Este es el que publica: si algún día pide la ancha, el índice se llena de
+    // fichas de partido que nadie busca.
+    const src = readFileSync(join(RAIZ, 'src/app/match-sitemap.xml/route.ts'), 'utf8')
+    expect(src).toMatch(/fetchEspnEvents\(\)/)
+    expect(src).not.toMatch(/fetchEspnEvents\(\s*\{/)
+  })
+})

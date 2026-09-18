@@ -25,6 +25,19 @@ interface EspnSource {
   fetchLimit?: number
 }
 
+/**
+ * Días de calendario que se piden por defecto.
+ *
+ * Quien quiera más lo pide explícitamente con `fetchEspnEvents({ diasVista })`.
+ * Es a propósito que sea opt-in y no un número más alto para todos: de este
+ * feed cuelgan nueve consumidores, y dos de ellos PUBLICAN lo que reciben —el
+ * sitemap de partidos construye una URL `/partido/` por evento—. Subir la
+ * ventana para todos metería ~700 fichas de partido más en el índice, y
+ * `/partido` son 741 páginas para 44 clics en cuatro semanas. La ventana ancha
+ * la quieren las páginas de día, que es donde la demanda existe de verdad.
+ */
+export const DIAS_VISTA_POR_DEFECTO = 21
+
 const SOURCES: EspnSource[] = [
   // Fútbol — lista maestra compartida (lib/football-leagues)
   ...FOOTBALL_LEAGUES.map((l): EspnSource => ({
@@ -215,14 +228,17 @@ function wcStageLabel(
   return WC_STAGE_ES[phase]
 }
 
-async function fetchLeague(source: EspnSource): Promise<RawEvent[]> {
+async function fetchLeague(source: EspnSource, diasVista?: number): Promise<RawEvent[]> {
   const { accent } = getSportStyle(source.sport)
+  // `diasVista` solo puede ENSANCHAR la ventana, nunca encogerla: el Mundial
+  // declara 45 días propios y no queremos que una llamada corriente lo recorte.
+  const dias = Math.max(source.daysAhead ?? DIAS_VISTA_POR_DEFECTO, diasVista ?? 0)
   // Por meses, no por rango: ESPN dejó de aceptar `dates=A-B` para fútbol y
   // baloncesto el 18/09/2026 y respondía 400. Ver lib/espn-meses.
   const espnEvents = await eventosDeVentana({
     slug: source.slug,
     desde: diaDesplazado(0),
-    hasta: diaDesplazado(source.daysAhead ?? 21),
+    hasta: diaDesplazado(dias),
     // El tope es por MES, y un mes trae más que una ventana de tres semanas: la
     // NBA sola pone 155 partidos en octubre. Se pide de sobra y recortamos aquí.
     limite: Math.max(source.fetchLimit ?? 75, 200),
@@ -630,9 +646,12 @@ async function attachStandings(raw: RawEvent[]): Promise<void> {
   }
 }
 
-export async function fetchEspnEvents(): Promise<SportEvent[]> {
+export async function fetchEspnEvents(
+  opciones: { diasVista?: number } = {},
+): Promise<SportEvent[]> {
+  const { diasVista } = opciones
   const [leagueResults, tennisResults] = await Promise.all([
-    Promise.allSettled(SOURCES.map(fetchLeague)),
+    Promise.allSettled(SOURCES.map(s => fetchLeague(s, diasVista))),
     Promise.allSettled(TENNIS_SLUGS.map(fetchTennisLeague)),
   ])
 

@@ -29,7 +29,7 @@ import { isoToLocalDate } from '@/lib/calendar'
 import type { SportEvent } from '@/lib/types'
 import { SITE_URL, LOGO_URL } from '@/lib/constants'
 import {
-  addDays, dayPageDescription, dayPageTitle, isPastDay, isValidDayParam,
+  addDays, dayPageDescription, dayPageTitle, DAY_PAGE_FUTURE, isPastDay, isValidDayParam,
   longDayLabel, relativeDayLabel, servableDays, shortDayLabel,
 } from '@/lib/calendar-day-page'
 
@@ -74,7 +74,12 @@ const loadDay = cache(async (fecha: string): Promise<SportEvent[]> => {
   const archiveOnly = isPastDay(fecha, todayIso())
 
   const [espnRes, sanityRes, padelRes, pastRes] = await Promise.allSettled([
-    archiveOnly ? Promise.resolve([]) : fetchEspnEvents(),
+    // Tantos días de feed como días de ruta generamos. Iban por su cuenta: la
+    // ruta servía 45 días y el feed traía 21, así que 22 páginas que existían,
+    // se prerenderizaban y se anunciaban salían VACÍAS teniendo ESPN 711
+    // partidos para ellas. Atados al mismo número, no pueden volver a
+    // separarse. La ventana ancha se pide solo aquí: ver DIAS_VISTA_POR_DEFECTO.
+    archiveOnly ? Promise.resolve([]) : fetchEspnEvents({ diasVista: DAY_PAGE_FUTURE }),
     archiveOnly ? Promise.resolve([]) : sanityClient.fetch(eventsQuery),
     archiveOnly ? Promise.resolve([]) : fetchPadelEvents(),
     // Un día cerrado se lee por la vía cacheada 24 h: su contenido ya no cambia

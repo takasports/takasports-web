@@ -11,7 +11,7 @@ import { canonicalTeamSlug } from '@/lib/team-slug'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { esTagIndexable, normalizarTag } from '@/lib/tag-policy'
 import { getArchivedDays } from '@/lib/past-events'
-import { isPastDay, sitemapDays } from '@/lib/calendar-day-page'
+import { DAY_PAGE_FUTURE, isPastDay, sitemapDays } from '@/lib/calendar-day-page'
 import { fetchEspnEvents } from '@/lib/espn'
 import { isoToLocalDate } from '@/lib/calendar'
 import { SOURCE_TZ } from '@/lib/timezone'
@@ -48,7 +48,7 @@ const TAG_LASTMOD = new Date('2026-05-28T00:00:00Z')
 async function diasConPartidos(): Promise<Set<string>> {
   try {
     const dias = new Set<string>()
-    for (const e of await fetchEspnEvents()) {
+    for (const e of await fetchEspnEvents({ diasVista: DAY_PAGE_FUTURE })) {
       if (e.isoDate) dias.add(isoToLocalDate(e.isoDate, SOURCE_TZ))
     }
     return dias
