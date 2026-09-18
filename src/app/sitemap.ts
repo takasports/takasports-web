@@ -113,32 +113,45 @@ async function statRoutes(): Promise<MetadataRoute.Sitemap> {
 }
 
 /**
- * Fichas de jugador que ya tienen FOTO resuelta.
+ * Las fichas de jugador NO van al sitemap. Se quitaron el 18/09/2026.
  *
- * Por qué esta condición y no "todos": en `sport_entities` hay ~27.000
- * futbolistas de ligas cubiertas, pero publicar 27.000 páginas de las que la
- * mayoría no tiene ni cara es sembrar el índice de páginas finas. La foto es la
- * mejor vara de medir que tenemos porque NO es automática: la resuelve la
- * cascada de fuentes corroborando identidad contra Wikidata para no coger
- * homónimos. Si encontró foto, es alguien identificable con datos detrás.
+ * Entraron el 31/08/2026 con un argumento razonable: el sitio posiciona nombres
+ * de persona y la ficha es perenne donde la noticia caduca. Tres semanas de
+ * datos dicen que no funciona, y el precio fue alto.
  *
- * Hoy son ~6.850 y la cifra sube sola conforme el cron de fotos avanza. El
- * sitemap pasa de 431 fichas de jugador a varios miles.
+ *   Search Console, 19/08–15/09/2026, solo /jugador/:
+ *     7.212 URLs en el sitemap · 4.930 llegaron a aparecer
+ *     53.820 impresiones · 30 clics · 0,06 % · posición media 20,8
  *
- * El motivo de fondo (Search Console, 28 días a 31/08/2026): el sitio posiciona
- * NOMBRES DE PERSONA —"arnau martínez" sale primero con 1.141 impresiones— y lo
- * hace con noticias que caducan. La búsqueda del nombre es perenne; la ficha
- * también. Hasta ahora Google casi no las conocía.
+ * Treinta clics en cuatro semanas, uno por cada 240 páginas. No es un problema
+ * de posición que se arregle empujando más: una búsqueda de nombre la responde
+ * Google con su propia ficha, y por encima están Transfermarkt, ESPN y
+ * Wikipedia. En el mismo tramo de resultados (puestos 5 a 8) una página de
+ * /calendario/dia convierte al 2,59 % y una ficha al 0,12 %.
+ *
+ * Y el coste: ese rastreo golpeaba /api/jugador/[slug], que hasta el 18/09 no
+ * tenía caché, y fue una de las dos causas de que Vercel pausara el proyecto el
+ * 17/09 por superar el límite de gasto.
+ *
+ * Las fichas SIGUEN EXISTIENDO y siguen enlazadas desde los artículos, el
+ * buscador y las fichas de partido. Esto no las borra ni las desindexa: deja de
+ * empujarle a Google 7.212 URLs que no le interesan a nadie.
+ *
+ * Y no se va TODO: `statRoutes` sigue publicando los goleadores y asistentes de
+ * cada liga —459 fichas hoy—, que son las que tienen demanda de verdad. El
+ * sitemap pasa de 7.212 fichas a 459: se queda la lista corta y curada, se va
+ * el barrido de la base entera.
+ *
+ * Lo que sí seguimos necesitando de aquí son los NOMBRES, porque la política de
+ * etiquetas los usa: una etiqueta que es el nombre de un jugador con ficha no se
+ * indexa, para que no compitan entre ellas. Eso no depende del sitemap.
  */
-/**
- * Nombres de TODOS los jugadores con ficha resoluble, normalizados.
- *
- * Se consultan aparte de las rutas publicadas a propósito: al sitemap solo van
- * los que tienen foto, pero una etiqueta debe cederle la búsqueda a la ficha
- * exista foto o no —la ficha resuelve igual y ahora se enlaza desde los
- * artículos—. Usar dos poblaciones distintas dejaba etiquetas marcadas
- * `noindex` en su propia página pero listadas en el sitemap: contradictorio.
- */
+async function playerNamesForTagPolicy(): Promise<Set<string>> {
+  const db = adminSupabase()
+  if (!db) return new Set()
+  try { return await playerNames(db) } catch { return new Set() }
+}
+
 async function playerNames(db: NonNullable<ReturnType<typeof adminSupabase>>): Promise<Set<string>> {
   const nombres = new Set<string>()
   const PAGINA = 1000
@@ -157,40 +170,8 @@ async function playerNames(db: NonNullable<ReturnType<typeof adminSupabase>>): P
   return nombres
 }
 
-async function playerEntityRoutes(): Promise<{ rutas: MetadataRoute.Sitemap; nombres: Set<string> }> {
-  const db = adminSupabase()
-  const nombres = new Set<string>()
-  if (!db) return { rutas: [], nombres }
-  try {
-    const PAGINA = 1000
-    const urls = new Set<string>()
-    for (let desde = 0; desde < 20_000; desde += PAGINA) {
-      const { data, error } = await db
-        .from('sport_entities')
-        .select('name, espn_id, sport_entity_images!inner(status)')
-        .eq('type', 'player')
-        .eq('sport_entity_images.status', 'ok')
-        .not('espn_id', 'is', null)
-        .order('id', { ascending: true })
-        .range(desde, desde + PAGINA - 1)
-      if (error || !data || data.length === 0) break
-      for (const r of data as Array<{ name: string; espn_id: string }>) {
-        if (!r.name || !r.espn_id) continue
-        urls.add(`${BASE_URL}/jugador/${canonicalPlayerSlug(r.name, r.espn_id)}`)
-      }
-      if (data.length < PAGINA) break
-    }
-    return {
-      rutas: [...urls].map(url => ({
-        url, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly' as const, priority: 0.5,
-      })),
-      nombres: await playerNames(db),
-    }
-  } catch { return { rutas: [], nombres } }
-}
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articles, flatTags, dbIds, stats, fichasJugador] = await Promise.all([
+  const [articles, flatTags, dbIds, stats, nombresDeJugador] = await Promise.all([
     sanityClient.fetch<Array<{ slug: string; publishedAt: string; _updatedAt?: string; sport?: string }>>(
       `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}] | order(publishedAt desc) {
         "slug": slug.current, publishedAt, _updatedAt, sport
@@ -199,7 +180,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     sanityClient.fetch<string[]>(allTagsFlatQuery).catch(() => [] as string[]),
     getAllEntryIdsFromDb(2000).catch(() => [] as string[]),
     statRoutes(),
-    playerEntityRoutes(),
+    playerNamesForTagPolicy(),
   ])
 
   // Poda de tags: cuenta cuántos artículos lleva cada tag y conserva en el sitemap
@@ -215,7 +196,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Una etiqueta que ES el nombre de un jugador con ficha no se indexa: la ficha
   // responde mejor esa búsqueda y competían entre ellas.
   const tags = [...tagCounts.entries()]
-    .filter(([tag, count]) => esTagIndexable(tag, count, fichasJugador.nombres.has(normalizarTag(tag))))
+    .filter(([tag, count]) => esTagIndexable(tag, count, nombresDeJugador.has(normalizarTag(tag))))
     .map(([tag]) => tag)
 
   const hubLastMod = mostRecent(articles)
@@ -347,10 +328,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     }))
 
-  // Las fichas van al final y deduplicadas: `statRoutes` ya trae a los goleadores
-  // y muchos repiten con los de `playerEntityRoutes`.
+  // Deduplicado final por URL. Desde el 18/09/2026 las únicas fichas de jugador
+  // que entran son las de `statRoutes` (goleadores y asistentes de cada liga);
+  // ver el comentario largo de arriba para por qué se fue el resto.
   const todas = [...staticRoutes, ...sportRoutes, ...rankingDetailRoutes, ...articleRoutes,
-                 ...paginatedHubRoutes, ...tagRoutes, ...stats, ...fichasJugador.rutas]
+                 ...paginatedHubRoutes, ...tagRoutes, ...stats]
   const vistas = new Set<string>()
   return todas.filter(r => !vistas.has(r.url) && vistas.add(r.url))
 }
