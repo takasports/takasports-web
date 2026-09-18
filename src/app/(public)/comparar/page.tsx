@@ -287,7 +287,7 @@ async function Content({ p1, p2 }: { p1?: string; p2?: string }) {
           </div>
           <Comparison a={a} b={b} />
           <div className="text-center">
-            <Link href={`/comparar?p1=${encodeURIComponent(p1!)}`}
+            <Link prefetch={false} href={`/comparar?p1=${encodeURIComponent(p1!)}`}
               className="text-[12px] font-semibold transition-opacity hover:opacity-80"
               style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}>
               ↻ Cambiar rival

@@ -474,6 +474,7 @@ export default async function EntryDetailPage(
         <div className="flex flex-wrap justify-center gap-3">
           <ShareButton title={entry.name} />
           <Link
+            prefetch={false}
             href={`/rankings/comparar?a=${entry.id}`}
             className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:brightness-125"
             style={{

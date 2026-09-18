@@ -140,6 +140,7 @@ export default function RankRow({
             <FavoriteToggle entryId={entry.id} size={16} />
           </div>
           <Link
+            prefetch={false}
             href={`/rankings/comparar?a=${encodeURIComponent(entry.id)}`}
             onClick={(e) => e.stopPropagation()}
             title="Comparar con otra entry"

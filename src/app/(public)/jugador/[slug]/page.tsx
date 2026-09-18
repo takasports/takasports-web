@@ -595,6 +595,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
         <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
           {/* Comparar */}
           <Link
+            prefetch={false}
             href={`/comparar?p1=${player.leagueSlug.replaceAll('/', '_')}_${player.id}`}
             className="block rounded-2xl p-4 transition-opacity hover:opacity-90"
             style={{ background: 'rgba(124,58,237,0.10)', border: '1px solid rgba(124,58,237,0.25)' }}

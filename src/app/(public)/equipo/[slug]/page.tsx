@@ -320,6 +320,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
         </Link>
         <div className="flex items-center gap-3">
           <Link
+            prefetch={false}
             href={`/comparar-equipos?t1=${team.leagueSlug.replaceAll('/', '_')}_${team.id}`}
             className="text-[12px] font-bold transition-opacity hover:opacity-80"
             style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}

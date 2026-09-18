@@ -79,6 +79,7 @@ export default function TopOneRow({ entry, showSportEmoji = false }: { entry: Ra
           <div className="flex items-center gap-2 mb-0.5">
             <FavoriteToggle entryId={entry.id} size={16} />
             <Link
+            prefetch={false}
               href={`/rankings/comparar?a=${encodeURIComponent(entry.id)}`}
               title="Comparar con otra entry"
               aria-label="Comparar con otra entry"
