@@ -71,7 +71,10 @@ function asArr(v: unknown): unknown[] {
 
 async function jsonFetch(url: string, revalidate: number): Promise<Record<string, unknown> | null> {
   try {
-    const r = await fetch(url, { next: { revalidate } })
+    // Tope de 8 s: sin él, un ESPN lento colgaba la función hasta el límite de
+    // 60 s de /api (82 cortes en la semana del 19/09/2026). Con él, ese bloque
+    // simplemente no sale, que es lo que ya pasaba cuando ESPN respondía error.
+    const r = await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(8_000) })
     if (!r.ok) return null
     return await r.json()
   } catch {

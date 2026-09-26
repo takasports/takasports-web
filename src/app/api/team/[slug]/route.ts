@@ -102,7 +102,10 @@ function asArr(v: unknown): unknown[] {
 
 async function espnFetch(url: string, revalidate = 300): Promise<Record<string, unknown> | null> {
   try {
-    const r = await fetch(url, { next: { revalidate } })
+    // Tope de 8 s: sin él, un ESPN lento colgaba la función hasta el límite de
+    // 60 s de /api (82 cortes en la semana del 19/09/2026). Con él, ese bloque
+    // simplemente no sale, que es lo que ya pasaba cuando ESPN respondía error.
+    const r = await fetch(url, { next: { revalidate }, signal: AbortSignal.timeout(8_000) })
     if (!r.ok) return null
     return await r.json()
   } catch {
@@ -350,7 +353,7 @@ async function fetchTeamTable(leagueSlug: string, teamId: string): Promise<TeamT
   try {
     const res = await fetch(
       `https://site.web.api.espn.com/apis/v2/sports/${leagueSlug}/standings`,
-      { next: { revalidate: 1800 } }
+      { next: { revalidate: 1800 }, signal: AbortSignal.timeout(8_000) }
     )
     if (!res.ok) return []
     const json = await res.json()

@@ -12,7 +12,10 @@ export const contentType = 'image/png'
 async function fetchMatch(ref: string): Promise<MatchDetail | null> {
   try {
     const base = process.env.NEXT_PUBLIC_SITE_URL ?? SITE_URL
-    const res = await fetch(`${base}/api/match/${ref}`, { next: { revalidate: 60 } })
+    // Tope de 12 s: esta imagen esperaba a su propia API sin límite y llegó a
+    // colgarse 300 s. Sin datos, pinta la tarjeta genérica, que es mejor que
+    // una tarjeta que no llega al compartir el partido.
+    const res = await fetch(`${base}/api/match/${ref}`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(12_000) })
     return res.ok ? res.json() : null
   } catch {
     return null
