@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: 'Síguenos en redes sociales | TakaSports',
+  title: 'Síguenos en redes sociales',
   description: 'Sigue a TakaSports en Instagram, TikTok, YouTube, X, Facebook y Threads. Noticias deportivas, reels y contenido exclusivo en todas las plataformas.',
   alternates: { canonical: `${SITE_URL}/redes` },
   openGraph: {

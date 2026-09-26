@@ -286,6 +286,9 @@ export interface LeaderboardEntry {
 }
 
 export async function getLeaderboard(gameId: GameId, period: string, limit = 50): Promise<LeaderboardEntry[]> {
+  // Sin periodo no hay ranking que pedir: el API responde 400. Pasaba en /juegos con
+  // la pestaña de la quiniela retirada. Mismo vacío que ya devolvía el error.
+  if (!period) return []
   try {
     const url = `/api/games/leaderboard?game=${encodeURIComponent(gameId)}&period=${encodeURIComponent(period)}&limit=${limit}`
     const res = await fetch(url)
@@ -302,6 +305,7 @@ export interface MyPosition {
 }
 
 export async function getMyPosition(gameId: GameId, period: string): Promise<MyPosition> {
+  if (!period) return { play: null, position: null, total: 0 }
   try {
     const res = await fetch(`/api/games/me?game=${encodeURIComponent(gameId)}&period=${encodeURIComponent(period)}`, { cache: 'no-store' })
     if (!res.ok) return { play: null, position: null, total: 0 }

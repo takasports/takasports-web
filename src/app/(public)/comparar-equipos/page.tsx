@@ -11,7 +11,7 @@ import { canonicalTeamSlug } from '@/lib/team-slug'
 export const revalidate = 1800
 
 export const metadata = {
-  title: 'Comparar equipos | TakaSports',
+  title: 'Comparar equipos',
   description: 'Compara dos clubes lado a lado: clasificación, racha y stats de temporada.',
   robots: { index: false, follow: true },
 }

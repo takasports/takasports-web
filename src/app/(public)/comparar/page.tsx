@@ -10,7 +10,7 @@ import { canonicalPlayerSlug } from '@/lib/player-slug'
 export const revalidate = 1800
 
 export const metadata = {
-  title: 'Comparar jugadores | TakaSports',
+  title: 'Comparar jugadores',
   description: 'Compara las estadísticas de dos jugadores lado a lado.',
   // Combinatorial URL space → keep out of the index.
   robots: { index: false, follow: true },
