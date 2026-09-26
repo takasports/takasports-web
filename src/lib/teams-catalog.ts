@@ -54,15 +54,15 @@ const TEAMS: Omit<TeamRecord, 'id'>[] = [
   { espnId: '94',  name: 'Valencia',            shortName: 'Valencia',   abbr: 'VAL', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#FF8C00', secondary: '#000000' },
   { espnId: '102', name: 'Villarreal',          shortName: 'Villarreal', abbr: 'VIL', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#FFD700', secondary: '#004994' },
   { espnId: '93',  name: 'Athletic Club',       shortName: 'Athletic',   abbr: 'ATH', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#EE2523', secondary: '#FFFFFF' },
-  { espnId: '97',  name: 'Real Sociedad',       shortName: 'Real Soc.',  abbr: 'RSO', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#143C8B', secondary: '#FFFFFF' },
-  { espnId: '99',  name: 'Osasuna',             shortName: 'Osasuna',    abbr: 'OSA', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#D72027', secondary: '#0C2340' },
+  { espnId: '89',  name: 'Real Sociedad',       shortName: 'Real Soc.',  abbr: 'RSO', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#143C8B', secondary: '#FFFFFF' },
+  { espnId: '97',  name: 'Osasuna',             shortName: 'Osasuna',    abbr: 'OSA', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#D72027', secondary: '#0C2340' },
   { espnId: '2922',name: 'Getafe',              shortName: 'Getafe',     abbr: 'GET', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#003DA5', secondary: '#FFFFFF' },
   { espnId: '85',  name: 'Celta Vigo',          shortName: 'Celta',      abbr: 'CEL', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#74B2E0', secondary: '#FFFFFF' },
   { espnId: '101', name: 'Rayo Vallecano',      shortName: 'Rayo',       abbr: 'RAY', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#E60000', secondary: '#FFCD00' },
   { espnId: '9812',name: 'Girona',              shortName: 'Girona',     abbr: 'GIR', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#B0001E', secondary: '#F89500' },
   { espnId: '84',  name: 'Mallorca',            shortName: 'Mallorca',   abbr: 'MLL', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#D80027', secondary: '#000000' },
   { espnId: '88',  name: 'Espanyol',            shortName: 'Espanyol',   abbr: 'ESP', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#003DA5', secondary: '#FFFFFF' },
-  { espnId: '90',  name: 'Leganés',             shortName: 'Leganés',    abbr: 'LEG', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#003DA5', secondary: '#FFFFFF' },
+  { espnId: '17534',  name: 'Leganés',             shortName: 'Leganés',    abbr: 'LEG', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#003DA5', secondary: '#FFFFFF' },
   { espnId: '98',  name: 'Las Palmas',          shortName: 'Las Palmas', abbr: 'LPA', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#FFD700', secondary: '#003DA5' },
   { espnId: '96',  name: 'Alavés',              shortName: 'Alavés',     abbr: 'ALA', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#003DA5', secondary: '#FFFFFF' },
   { espnId: '95',  name: 'Real Valladolid',     shortName: 'Valladolid', abbr: 'VLL', sport: 'soccer', league: 'esp.1', country: 'ES', primary: '#7B1E7A', secondary: '#FFFFFF' },
@@ -76,11 +76,11 @@ const TEAMS: Omit<TeamRecord, 'id'>[] = [
   { espnId: '367', name: 'Tottenham Hotspur',   shortName: 'Tottenham',  abbr: 'TOT', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#132257', secondary: '#FFFFFF' },
   { espnId: '361', name: 'Newcastle United',    shortName: 'Newcastle',  abbr: 'NEW', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#000000', secondary: '#FFFFFF' },
   { espnId: '362', name: 'Aston Villa',         shortName: 'Villa',      abbr: 'AVL', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#95BFE5', secondary: '#670E36' },
-  { espnId: '331', name: 'West Ham United',     shortName: 'West Ham',   abbr: 'WHU', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#7A263A', secondary: '#1BB1E7' },
-  { espnId: '371', name: 'Everton',             shortName: 'Everton',    abbr: 'EVE', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#003399', secondary: '#FFFFFF' },
+  { espnId: '371', name: 'West Ham United',     shortName: 'West Ham',   abbr: 'WHU', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#7A263A', secondary: '#1BB1E7' },
+  { espnId: '368', name: 'Everton',             shortName: 'Everton',    abbr: 'EVE', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#003399', secondary: '#FFFFFF' },
   { espnId: '384', name: 'Crystal Palace',      shortName: 'Palace',     abbr: 'CRY', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#1B458F', secondary: '#C4122E' },
-  { espnId: '337', name: 'Brighton',            shortName: 'Brighton',   abbr: 'BHA', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#0057B8', secondary: '#FFFFFF' },
-  { espnId: '397', name: 'Brentford',           shortName: 'Brentford',  abbr: 'BRE', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#E30613', secondary: '#FFFFFF' },
+  { espnId: '331', name: 'Brighton',            shortName: 'Brighton',   abbr: 'BHA', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#0057B8', secondary: '#FFFFFF' },
+  { espnId: '337', name: 'Brentford',           shortName: 'Brentford',  abbr: 'BRE', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#E30613', secondary: '#FFFFFF' },
   { name: 'Fulham',              shortName: 'Fulham',     abbr: 'FUL', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#FFFFFF', secondary: '#000000' },
   { name: 'Wolverhampton Wanderers', shortName: 'Wolves',  abbr: 'WOL', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#FDB913', secondary: '#231F20' },
   { name: 'Nottingham Forest',   shortName: 'Forest',     abbr: 'NFO', sport: 'soccer', league: 'eng.1', country: 'GB', primary: '#DD0000', secondary: '#FFFFFF' },
@@ -95,37 +95,37 @@ const TEAMS: Omit<TeamRecord, 'id'>[] = [
   { espnId: '111', name: 'Juventus',            shortName: 'Juventus',   abbr: 'JUV', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#000000', secondary: '#FFFFFF' },
   { espnId: '114', name: 'Napoli',              shortName: 'Napoli',     abbr: 'NAP', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#12A0D7', secondary: '#FFFFFF' },
   { espnId: '104', name: 'Roma',                shortName: 'Roma',       abbr: 'ROM', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#8E1F2F', secondary: '#F0BC42' },
-  { espnId: '105', name: 'Lazio',               shortName: 'Lazio',      abbr: 'LAZ', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#87CEEB', secondary: '#FFFFFF' },
-  { espnId: '113', name: 'Atalanta',            shortName: 'Atalanta',   abbr: 'ATA', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#1A2D58', secondary: '#000000' },
-  { espnId: '112', name: 'Fiorentina',          shortName: 'Fiorentina', abbr: 'FIO', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#592C82', secondary: '#FFFFFF' },
-  { espnId: '108', name: 'Bologna',             shortName: 'Bologna',    abbr: 'BOL', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#A50044', secondary: '#1B3A6F' },
-  { espnId: '120', name: 'Torino',              shortName: 'Torino',     abbr: 'TOR', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#8B0000', secondary: '#FFFFFF' },
-  { espnId: '107', name: 'Udinese',             shortName: 'Udinese',    abbr: 'UDI', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#000000', secondary: '#FFFFFF' },
-  { espnId: '115', name: 'Genoa',               shortName: 'Genoa',      abbr: 'GEN', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#C8102E', secondary: '#003DA5' },
+  { espnId: '112', name: 'Lazio',               shortName: 'Lazio',      abbr: 'LAZ', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#87CEEB', secondary: '#FFFFFF' },
+  { espnId: '105', name: 'Atalanta',            shortName: 'Atalanta',   abbr: 'ATA', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#1A2D58', secondary: '#000000' },
+  { espnId: '109', name: 'Fiorentina',          shortName: 'Fiorentina', abbr: 'FIO', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#592C82', secondary: '#FFFFFF' },
+  { espnId: '107', name: 'Bologna',             shortName: 'Bologna',    abbr: 'BOL', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#A50044', secondary: '#1B3A6F' },
+  { espnId: '239', name: 'Torino',              shortName: 'Torino',     abbr: 'TOR', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#8B0000', secondary: '#FFFFFF' },
+  { espnId: '118', name: 'Udinese',             shortName: 'Udinese',    abbr: 'UDI', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#000000', secondary: '#FFFFFF' },
+  { espnId: '3263', name: 'Genoa',               shortName: 'Genoa',      abbr: 'GEN', sport: 'soccer', league: 'ita.1', country: 'IT', primary: '#C8102E', secondary: '#003DA5' },
 
   // ── Bundesliga (ger.1) ──────────────────────────────────────
   { espnId: '132', name: 'Bayern Munich',       shortName: 'Bayern',     abbr: 'BAY', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#DC052D', secondary: '#0066B2' },
   { espnId: '124', name: 'Borussia Dortmund',   shortName: 'Dortmund',   abbr: 'BVB', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#FDE100', secondary: '#000000' },
-  { espnId: '125', name: 'Bayer Leverkusen',    shortName: 'Leverkusen', abbr: 'B04', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#E32221', secondary: '#000000' },
-  { espnId: '134', name: 'RB Leipzig',          shortName: 'Leipzig',    abbr: 'RBL', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#DD0741', secondary: '#FFFFFF' },
-  { espnId: '127', name: 'Eintracht Frankfurt', shortName: 'Frankfurt',  abbr: 'SGE', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#000000', secondary: '#E1000F' },
-  { espnId: '129', name: 'Wolfsburg',           shortName: 'Wolfsburg',  abbr: 'WOB', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#65B32E', secondary: '#FFFFFF' },
-  { espnId: '128', name: 'Stuttgart',           shortName: 'Stuttgart',  abbr: 'VFB', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#E32219', secondary: '#FFFFFF' },
-  { espnId: '139', name: 'Borussia Mönchengladbach', shortName: 'Gladbach', abbr: 'BMG', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#000000', secondary: '#00B04F' },
-  { espnId: '136', name: 'Werder Bremen',       shortName: 'Bremen',     abbr: 'SVW', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#1D9053', secondary: '#FFFFFF' },
-  { espnId: '131', name: 'Hoffenheim',          shortName: 'Hoffenh.',   abbr: 'TSG', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#1961AC', secondary: '#FFFFFF' },
+  { espnId: '131', name: 'Bayer Leverkusen',    shortName: 'Leverkusen', abbr: 'B04', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#E32221', secondary: '#000000' },
+  { espnId: '11420', name: 'RB Leipzig',          shortName: 'Leipzig',    abbr: 'RBL', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#DD0741', secondary: '#FFFFFF' },
+  { espnId: '125', name: 'Eintracht Frankfurt', shortName: 'Frankfurt',  abbr: 'SGE', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#000000', secondary: '#E1000F' },
+  { espnId: '138', name: 'Wolfsburg',           shortName: 'Wolfsburg',  abbr: 'WOB', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#65B32E', secondary: '#FFFFFF' },
+  { espnId: '134', name: 'Stuttgart',           shortName: 'Stuttgart',  abbr: 'VFB', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#E32219', secondary: '#FFFFFF' },
+  { espnId: '268', name: 'Borussia Mönchengladbach', shortName: 'Gladbach', abbr: 'BMG', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#000000', secondary: '#00B04F' },
+  { espnId: '137', name: 'Werder Bremen',       shortName: 'Bremen',     abbr: 'SVW', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#1D9053', secondary: '#FFFFFF' },
+  { espnId: '7911', name: 'Hoffenheim',          shortName: 'Hoffenh.',   abbr: 'TSG', sport: 'soccer', league: 'ger.1', country: 'DE', primary: '#1961AC', secondary: '#FFFFFF' },
 
   // ── Ligue 1 (fra.1) ─────────────────────────────────────────
   { espnId: '160', name: 'Paris Saint-Germain', shortName: 'PSG',        abbr: 'PSG', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#004170', secondary: '#DA291C' },
-  { espnId: '174', name: 'Marseille',           shortName: 'Marseille',  abbr: 'OM',  sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#2FAEE0', secondary: '#FFFFFF' },
-  { espnId: '171', name: 'Lyon',                shortName: 'Lyon',       abbr: 'OL',  sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#003DA5', secondary: '#E0001A' },
-  { espnId: '180', name: 'Monaco',              shortName: 'Monaco',     abbr: 'ASM', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#E0001A', secondary: '#FFFFFF' },
-  { espnId: '170', name: 'Lille',               shortName: 'Lille',      abbr: 'LOSC',sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#E32219', secondary: '#000080' },
-  { espnId: '177', name: 'Nice',                shortName: 'Nice',       abbr: 'NIC', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#E60012', secondary: '#000000' },
-  { espnId: '167', name: 'Rennes',              shortName: 'Rennes',     abbr: 'REN', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#E20613', secondary: '#000000' },
-  { espnId: '159', name: 'Lens',                shortName: 'Lens',       abbr: 'LEN', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#FFD700', secondary: '#E20613' },
-  { espnId: '162', name: 'Nantes',              shortName: 'Nantes',     abbr: 'NAN', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#FCD700', secondary: '#000000' },
-  { espnId: '158', name: 'Strasbourg',          shortName: 'Strasbg.',   abbr: 'STR', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#005BAA', secondary: '#FFFFFF' },
+  { espnId: '176', name: 'Marseille',           shortName: 'Marseille',  abbr: 'OM',  sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#2FAEE0', secondary: '#FFFFFF' },
+  { espnId: '167', name: 'Lyon',                shortName: 'Lyon',       abbr: 'OL',  sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#003DA5', secondary: '#E0001A' },
+  { espnId: '174', name: 'Monaco',              shortName: 'Monaco',     abbr: 'ASM', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#E0001A', secondary: '#FFFFFF' },
+  { espnId: '166', name: 'Lille',               shortName: 'Lille',      abbr: 'LOSC',sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#E32219', secondary: '#000080' },
+  { espnId: '2502', name: 'Nice',                shortName: 'Nice',       abbr: 'NIC', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#E60012', secondary: '#000000' },
+  { espnId: '169', name: 'Rennes',              shortName: 'Rennes',     abbr: 'REN', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#E20613', secondary: '#000000' },
+  { espnId: '175', name: 'Lens',                shortName: 'Lens',       abbr: 'LEN', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#FFD700', secondary: '#E20613' },
+  { espnId: '165', name: 'Nantes',              shortName: 'Nantes',     abbr: 'NAN', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#FCD700', secondary: '#000000' },
+  { espnId: '180', name: 'Strasbourg',          shortName: 'Strasbg.',   abbr: 'STR', sport: 'soccer', league: 'fra.1', country: 'FR', primary: '#005BAA', secondary: '#FFFFFF' },
 
   // ── NBA ─────────────────────────────────────────────────────
   { espnId: '13',  name: 'Los Angeles Lakers',    shortName: 'Lakers',     abbr: 'LAL', sport: 'basketball', league: 'nba', country: 'US', primary: '#552583', secondary: '#FDB927' },
@@ -230,12 +230,59 @@ export interface NormalizedTeam {
  * Normaliza un equipo crudo de ESPN/API-Sports usando el catálogo cuando
  * sea posible. Devuelve `null` si no hay datos suficientes para mostrar.
  */
+/** `Brighton & Hove Albion` → `brightonhovealbion`: para comparar sin tildes ni signos. */
+function compacto(s: string): string {
+  return teamSlug(s).replace(/-/g, '')
+}
+
+/**
+ * ¿El equipo del catálogo es de verdad el que nos manda ESPN?
+ *
+ * Existe porque el catálogo NO es fiable por número. El 26/09/2026, 31 de sus 95
+ * entradas tenían el `espnId` de otro equipo —Real Sociedad↔Osasuna,
+ * Lazio↔Atalanta↔Fiorentina, Leverkusen↔Frankfurt↔Hoffenheim…— y el directo
+ * busca primero por número, así que Osasuna salía con las siglas y los colores
+ * de la Real Sociedad. Y ESPN reutiliza números entre clubes y selecciones: el
+ * 162 era a la vez «Nantes» en el catálogo e Italia en ESPN, e Italia se pintó
+ * «Nantes vs Bélgica» en la tira «En directo».
+ *
+ * Se corrigieron los 31, pero la defensa de verdad es esta: un número solo vale
+ * si el nombre también encaja. Si no encaja se sigue por nombre y luego por lo
+ * que manda ESPN, que nunca pinta a un equipo con el nombre de otro.
+ */
+function mismoEquipo(rec: TeamRecord, rawName: string | undefined): boolean {
+  if (!rawName?.trim()) return true // sin nombre con el que comparar, manda el número
+  const crudo = compacto(rawName)
+  const candidatos = [rec.name, rec.shortName.length >= 5 ? rec.shortName : ''].filter(Boolean).map(compacto)
+  return candidatos.some((c) => c.length > 0 && (crudo.includes(c) || c.includes(crudo)))
+}
+
+/**
+ * Solo lo que manda ESPN, sin pasar por el catálogo.
+ *
+ * Para selecciones: el catálogo es de CLUBES, así que un número de ESPN de una
+ * selección solo puede coincidir con él por error.
+ */
+export function normalizeRawTeam(raw: RawTeamInput | undefined | null): NormalizedTeam | null {
+  if (!raw) return null
+  const rawName = raw.displayName ?? raw.name ?? raw.shortDisplayName
+  if (!rawName || !rawName.trim()) return null
+  const cleanName = rawName.trim()
+  return {
+    id: raw.id != null ? String(raw.id) : teamSlug(cleanName),
+    name: cleanName,
+    shortName: raw.shortDisplayName?.trim() || lastWord(cleanName),
+    abbr: raw.abbreviation?.trim().toUpperCase() || cleanName.slice(0, 3).toUpperCase(),
+    logo: raw.logo,
+  }
+}
+
 export function normalizeTeam(raw: RawTeamInput | undefined | null): NormalizedTeam | null {
   if (!raw) return null
 
-  // 1) Lookup por ESPN id (caso óptimo)
+  // 1) Lookup por ESPN id (caso óptimo), pero solo si el nombre también encaja
   const byEspn = findTeamByEspnId(raw.id)
-  if (byEspn) {
+  if (byEspn && mismoEquipo(byEspn, raw.displayName ?? raw.name ?? raw.shortDisplayName)) {
     return {
       id: byEspn.id,
       name: byEspn.name,
@@ -263,17 +310,7 @@ export function normalizeTeam(raw: RawTeamInput | undefined | null): NormalizedT
   }
 
   // 3) Fallback puro: usar lo que ESPN nos dio, validando que haya algo
-  if (!rawName || !rawName.trim()) return null
-  const cleanName = rawName.trim()
-  const fallbackShort = raw.shortDisplayName?.trim() || lastWord(cleanName)
-  const fallbackAbbr = raw.abbreviation?.trim().toUpperCase() || cleanName.slice(0, 3).toUpperCase()
-  return {
-    id: raw.id != null ? String(raw.id) : teamSlug(cleanName),
-    name: cleanName,
-    shortName: fallbackShort,
-    abbr: fallbackAbbr,
-    logo: raw.logo,
-  }
+  return normalizeRawTeam(raw)
 }
 
 function lastWord(s: string): string {

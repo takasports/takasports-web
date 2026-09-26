@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { formatTennisSets, parseCurrentSetScore, parseSetsWon } from '@/lib/tennis-sets'
-import { normalizeTeam, normalizeAthlete, type NormalizedTeam } from '@/lib/teams-catalog'
+import { normalizeTeam, normalizeRawTeam, normalizeAthlete, type NormalizedTeam } from '@/lib/teams-catalog'
 import { FOOTBALL_LEAGUES } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
 
@@ -188,12 +188,15 @@ async function fetchTeamLeague(slug: string, sport: string, comp: string, league
       const awayRaw = competitors.find((c) => c.homeAway === 'away') ?? competitors[1]
       if (!homeRaw || !awayRaw) continue
 
-      const home = normalizeTeam({
+      // Selecciones, SIN catálogo: es de clubes, y un número de ESPN de una
+      // selección solo puede coincidir con él por error (Italia salía «Nantes»).
+      const normalizar = NATIONAL_TEAM_COMPS.has(comp) ? normalizeRawTeam : normalizeTeam
+      const home = normalizar({
         ...(homeRaw.team as Record<string, unknown>),
         id: (homeRaw.team as Record<string, unknown>)?.id as string | undefined,
         logo: (homeRaw.team as Record<string, unknown>)?.logo as string | undefined,
       })
-      const away = normalizeTeam({
+      const away = normalizar({
         ...(awayRaw.team as Record<string, unknown>),
         id: (awayRaw.team as Record<string, unknown>)?.id as string | undefined,
         logo: (awayRaw.team as Record<string, unknown>)?.logo as string | undefined,
