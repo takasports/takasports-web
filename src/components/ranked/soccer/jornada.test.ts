@@ -393,3 +393,36 @@ describe('jornadaComplete', () => {
     expect(jornadaComplete(cerrada, { a: pred('1'), b: pred('2') })).toBe(true)
   })
 })
+
+// ── El caso del 26/09/2026 ───────────────────────────────────────────────────
+// El sábado, con el partido del jueves ya jugado e Inglaterra–España a las
+// 20:45, `/api/ranked/football/status` decía «abierta hasta las 19:45» y el
+// servidor rechazaba cualquier pronóstico. No era este cálculo: el endpoint le
+// pasaba solo los partidos SIN resolver, y sin el del jueves la Jornada parecía
+// empezar el sábado. Estas pruebas fijan que el cierre depende del primer
+// partido de la semana, se haya jugado o no, y que quien calcula necesita la
+// semana entera.
+describe('una Jornada con su primer partido ya jugado', () => {
+  const sabado = new Date('2026-09-26T03:20:00Z')
+  const jueves = ev({ id: 'jue', event_date: '2026-09-24T18:45:00Z', status: 'resolved', meta: { week_key: '2026-09-21' } })
+  const inglaterraEspana = ev({ id: 'sab', event_date: '2026-09-26T18:45:00Z', team_home: 'Inglaterra', team_away: 'España', meta: { week_key: '2026-09-21' } })
+  const lunesSiguiente = ev({ id: 'sig', event_date: '2026-09-29T18:45:00Z', meta: { week_key: '2026-09-28' } })
+
+  it('con la semana entera, la Jornada está cerrada desde el jueves', () => {
+    const [esta] = groupIntoJornadas([jueves, inglaterraEspana], sabado)
+    expect(esta.firstLockAt).toBeNull()
+    expect(esta.pending).toEqual([])
+  })
+
+  it('y la Jornada que se puede jugar es la siguiente', () => {
+    const abierta = groupIntoJornadas([jueves, inglaterraEspana, lunesSiguiente], sabado).find(j => j.firstLockAt !== null)
+    expect(abierta?.weekKey).toBe('2026-09-28')
+  })
+
+  it('sin el partido del jueves, el cálculo se equivoca: por eso el endpoint pide la semana entera', () => {
+    // Documenta el fallo: si alguien vuelve a filtrar los resueltos antes de
+    // agrupar, esto es lo que pasa.
+    const [esta] = groupIntoJornadas([inglaterraEspana], sabado)
+    expect(esta.firstLockAt).not.toBeNull()
+  })
+})

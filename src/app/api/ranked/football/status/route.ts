@@ -34,17 +34,26 @@ export async function GET(req: NextRequest) {
   const admin = adminSupabase()
   if (!admin) return NextResponse.json(EMPTY)
 
-  // Ventana corta: solo interesa lo que está por jugarse. Los partidos ya
-  // resueltos no entran, y los de días pasados los descarta el filtro de abajo.
-  const since = new Date(Date.now() - 6 * 3_600_000).toISOString()
+  // Ventana de OCHO DÍAS hacia atrás y SIN filtrar por estado, a propósito.
+  //
+  // La Jornada cierra entera una hora antes de su PRIMER partido, aunque ese
+  // partido ya se haya jugado (es la regla del POST de predicciones). Antes aquí
+  // solo entraban los partidos sin resolver de las últimas 6 h, así que el del
+  // jueves desaparecía y `groupIntoJornadas` creía que la Jornada empezaba con
+  // el siguiente: el sábado 26/09/2026 este endpoint decía «abierta hasta las
+  // 19:45» mientras el servidor rechazaba cualquier pronóstico desde el jueves.
+  // La app, que sí veía la semana entera, marcaba «CERRADO». Tres superficies,
+  // tres respuestas. Con la semana entera delante, el cálculo es el mismo en las
+  // tres. Ocho días cubren una semana completa aunque su primer partido sea el
+  // lunes anterior.
+  const since = new Date(Date.now() - 8 * 86_400_000).toISOString()
   const { data, error } = await admin
     .from('ranked_events')
     .select('id, sport, competition, event_date, team_home, team_away, featured, status, result, meta')
     .eq('sport', RANKED_FOOTBALL_SPORT)
-    .neq('status', 'resolved')
     .gte('event_date', since)
     .order('event_date', { ascending: true })
-    .limit(60)
+    .limit(200)
 
   if (error || !data || data.length === 0) return NextResponse.json(EMPTY)
 
@@ -80,8 +89,13 @@ export async function GET(req: NextRequest) {
     // equipos: limitado a la Jornada actual, una noticia sobre un partido de
     // la semana siguiente no encontraba nada y el artículo se quedaba sin
     // puerta de entrada al juego. La portada y el CTA siguen leyendo
-    // `matches` (la Jornada en curso).
-    upcoming: events
+    // `matches` (la Jornada en curso). Solo de Jornadas que siguen abiertas:
+    // un partido con `status: 'open'` puede estar ya cerrado por la regla de la
+    // Jornada (el cron que mueve el estado va cada media hora) y enlazarlo sería
+    // invitar a un pronóstico que el servidor va a rechazar.
+    upcoming: jornadas
+      .filter(j => j.firstLockAt !== null)
+      .flatMap(j => j.events)
       .filter(e => e.status === 'open')
       .map(e => ({
         home:     e.team_home ?? '',
