@@ -45,6 +45,27 @@ const FICHA_THEME: Record<string, { slug: string; accent: string }> = {
 }
 
 // ── Metadata ───────────────────────────────────────────────────────
+/**
+ * «Atlante 4–2 Monterrey · Liga MX». Lo usan el <title> y el <h1>, que tienen
+ * que decir lo mismo: Google compara los dos para decidir qué enseña.
+ */
+function tituloPartido(match: NonNullable<Awaited<ReturnType<typeof fetchMatchDetail>>>): string {
+  if (match.homeTeam && match.awayTeam) {
+    // Con marcador, el resultado separa ("Racing 2–1 Elche"); sin él hacía falta
+    // un "vs" — el título salía como "Racing Santander Elche · LaLiga", que no se
+    // lee. [José Tomás, 27/08/2026]
+    const centro = match.homeScore != null && match.awayScore != null
+      ? `${match.homeScore}–${match.awayScore}`
+      : 'vs'
+    return `${match.homeTeam} ${centro} ${match.awayTeam} · ${match.leagueLabel}`
+  }
+  if (match.mma?.fighters?.length) {
+    const [a, b] = match.mma.fighters
+    return `${a?.name ?? '?'} vs ${b?.name ?? '?'} · UFC`
+  }
+  return match.leagueLabel
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -61,24 +82,14 @@ export async function generateMetadata({
     alternates: { canonical: `${SITE_URL}/partido/${ref}` },
   }
 
-  let title = ''
+  const title = tituloPartido(match)
   let description = ''
 
   if (match.homeTeam && match.awayTeam) {
-    // Con marcador, el resultado separa ("Racing 2–1 Elche"); sin él hacía falta
-    // un "vs" — el título salía como "Racing Santander Elche · LaLiga", que no se
-    // lee. [José Tomás, 27/08/2026]
-    const centro = match.homeScore != null && match.awayScore != null
-      ? `${match.homeScore}–${match.awayScore}`
-      : 'vs'
-    title = `${match.homeTeam} ${centro} ${match.awayTeam} · ${match.leagueLabel}`
     description = `${match.statusLabel} · ${match.homeTeam} vs ${match.awayTeam}${match.venue ? ` en ${match.venue}` : ''}`
   } else if (match.mma?.fighters?.length) {
-    const [a, b] = match.mma.fighters
-    title = `${a?.name ?? '?'} vs ${b?.name ?? '?'} · UFC`
     description = `${match.mma.weightClass ?? 'UFC'} · ${match.statusLabel}`
   } else {
-    title = match.leagueLabel
     description = match.statusLabel
   }
 
@@ -2239,6 +2250,10 @@ export default async function MatchPage({
       <Header />
       <LiveStrip />
       <main className="flex-1">
+        {/* La ficha no tenía <h1>: el marcador es una tarjeta, no un titular. Oculto
+            a la vista pero no a Google ni al lector de pantalla, igual que la
+            portada y Reels. Mismo texto que el <title>. [26/09/2026] */}
+        <h1 className="sr-only">{tituloPartido(match)}</h1>
         <Suspense>
           <MatchContent match={match} h2h={h2h} forms={forms} matchRef={ref} />
         </Suspense>

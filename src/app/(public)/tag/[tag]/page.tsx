@@ -11,6 +11,16 @@ import { urlFor } from '@/lib/sanity'
 import ScrollToTop from '@/components/ScrollToTop'
 import { SITE_URL, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 
+/**
+ * `decodeURIComponent` LANZA con una secuencia mal formada (`/tag/%E0%A4%A`), y
+ * sin esto la página respondía 500: cuatro veces en septiembre de 2026, siempre
+ * desde enlaces rotos de fuera. Una etiqueta que no se puede leer no existe, así
+ * que es un 404.
+ */
+function decodificarTag(tag: string): string | null {
+  try { return decodeURIComponent(tag) } catch { return null }
+}
+
 // Los tags llevan texto humano crudo en la URL (a diferencia del resto del
 // sitio, que va slugificado en ASCII). Con ISR, Next emite la cabecera
 // `x-next-cache-tags` con el pathname dentro, y las cabeceras HTTP solo
@@ -48,7 +58,8 @@ export async function generateMetadata({
   params: Promise<{ tag: string }>
 }): Promise<Metadata> {
   const { tag } = await params
-  const decoded = decodeURIComponent(tag)
+  const decoded = decodificarTag(tag)
+  if (decoded === null) notFound()
   const title = `#${decoded} — noticias y artículos`
   const description = `Todos los artículos etiquetados con #${decoded} en TakaSports. Noticias, análisis y cobertura deportiva.`
   const canonical = `${SITE_URL}/tag/${tag}`
@@ -124,7 +135,8 @@ export default async function TagPage({
   params: Promise<{ tag: string }>
 }) {
   const { tag } = await params
-  const decoded = decodeURIComponent(tag)
+  const decoded = decodificarTag(tag)
+  if (decoded === null) notFound()
 
   const [articles, relatedRows] = await Promise.all([
     sanityClient
