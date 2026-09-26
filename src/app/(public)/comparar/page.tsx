@@ -6,6 +6,7 @@ import type { PlayerDetail } from '@/app/api/jugador/[slug]/route'
 import { getSportStyle } from '@/lib/sports'
 import { SITE_URL } from '@/lib/constants'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
+import { imagenPequenaGratis } from '@/lib/espn-image'
 
 export const revalidate = 1800
 
@@ -222,7 +223,7 @@ function CandidateGrid({ candidates, p1 }: { candidates: Candidate[]; p1?: strin
                   className="flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all hover:bg-white/5"
                   style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   {c.logo && (
-                    <Image src={c.logo} alt="" width={22} height={22} unoptimized
+                    <Image src={imagenPequenaGratis(c.logo, 22)!} alt="" width={22} height={22} unoptimized
                       style={{ objectFit: 'contain', flexShrink: 0 }} />
                   )}
                   <div className="min-w-0">

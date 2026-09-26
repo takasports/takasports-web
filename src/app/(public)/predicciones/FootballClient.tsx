@@ -565,8 +565,11 @@ export default function FootballClient() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) {
+    // Una pantalla de alto, igual que el indicador de PrediccionesHub: si este
+    // mide 130 px, la clasificación de abajo sube a la vista mientras llegan los
+    // datos y salta fuera cuando llegan. Solo afecta a la carga.
     return (
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 py-12 flex justify-center">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 py-12 flex justify-center" style={{ minHeight: '100svh' }}>
         <div className="w-8 h-8 rounded-full animate-spin" style={{ border: '2px solid rgba(255,255,255,0.08)', borderTopColor: T.accent }} />
       </div>
     )

@@ -469,8 +469,13 @@ function SportComingSoon({
 
 // ── Loading shim (mientras carga QuinielaClient) ──────────────────────
 function QuinielaLoadingShim() {
+  // Una pantalla de alto mientras se descarga el panel (`ssr: false`). Hay DOS
+  // cargas seguidas —el código del panel y luego sus datos— y las dos tienen
+  // que reservar el hueco: con solo una, la clasificación de la Liga Taka que va
+  // debajo entraba en pantalla en el hueco entre ambas y volvía a salir. Ver el
+  // estado `loading` de FootballClient. 0,49 de CLS en móvil el 26/09/2026.
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 py-12 flex justify-center">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 py-12 flex justify-center" style={{ minHeight: '100svh' }}>
       <div
         className="w-8 h-8 rounded-full animate-spin"
         style={{ border: '2px solid rgba(255,255,255,0.08)', borderTopColor: 'var(--accent)' }}

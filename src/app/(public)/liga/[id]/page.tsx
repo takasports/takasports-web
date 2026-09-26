@@ -8,6 +8,7 @@ import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
 import { fetchLeagueTableRows, byGroup, groupLabel } from '@/lib/espn-standings'
 import { canonicalTeamSlug } from '@/lib/team-slug'
+import { imagenPequenaGratis } from '@/lib/espn-image'
 
 export const revalidate = 1800
 
@@ -206,7 +207,7 @@ function StandingsGroup({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
             style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
             <span className="w-6 text-center text-[12px] font-black" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{r.rank}</span>
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              {r.logo && <Image src={r.logo} alt={r.abbr} width={20} height={20} unoptimized style={{ objectFit: 'contain', flexShrink: 0 }} />}
+              {r.logo && <Image src={imagenPequenaGratis(r.logo, 20)!} alt={r.abbr} width={20} height={20} unoptimized style={{ objectFit: 'contain', flexShrink: 0 }} />}
               <span className="text-[12px] font-semibold truncate" style={{ color: href ? '#fff' : '#9A9AAA' }}>{r.name}</span>
             </div>
             <span className="w-7 text-center text-[12px] text-[var(--text-muted)] tabular-nums">{(parseInt(r.extra?.V ?? '0') + parseInt(r.extra?.E ?? '0') + parseInt(r.extra?.D ?? '0')) || 0}</span>
@@ -244,7 +245,7 @@ function LeaderList({ title, players, metric, def }: { title: string; players: P
                   Sin foto, el escudo del club como hasta ahora. */}
               {(p.photo ?? p.teamLogo) && (
                 <Image
-                  src={(p.photo ?? p.teamLogo)!}
+                  src={imagenPequenaGratis(p.photo ?? p.teamLogo, 22)!}
                   // Si es la FOTO del jugador, el alt dice de quién es (contexto real
                   // para Google Imágenes y lectores de pantalla). Si es el escudo del
                   // club es decorativo: el equipo ya va en texto al lado → alt vacío.

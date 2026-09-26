@@ -2249,7 +2249,13 @@ export default async function MatchPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <Header />
       <LiveStrip />
-      <main className="flex-1">
+      {/* min-height de una pantalla: el pie de página mide ~700 px, casi un móvil
+          entero, así que mientras llegaba el contenido el <main> medía cero y lo
+          que se veía era el PIE ocupando la pantalla; al entrar la ficha, el pie
+          caía. Un único salto de 0,83 de CLS en móvil (lo aceptable es 0,1),
+          medido el 26/09/2026. La ficha terminada siempre mide más de una
+          pantalla, así que esto solo cambia el momento de carga. */}
+      <main className="flex-1" style={{ minHeight: '100svh' }}>
         {/* La ficha no tenía <h1>: el marcador es una tarjeta, no un titular. Oculto
             a la vista pero no a Google ni al lector de pantalla, igual que la
             portada y Reels. Mismo texto que el <title>. [26/09/2026] */}

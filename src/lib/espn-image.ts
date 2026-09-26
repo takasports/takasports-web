@@ -32,3 +32,38 @@ export function espnAt(url: string | null | undefined, width: number): string | 
   const w = Math.max(16, Math.min(1000, Math.round(width)))
   return `https://${ESPN_HOST}/combiner/i?img=${u.pathname}&w=${w}`
 }
+
+/**
+ * Anchos que Wikimedia sirve como miniatura. Desde 2025 solo genera tamaños
+ * estándar: pedir `44px-` da 400, `60px-` funciona. Comprobado el 26/09/2026.
+ */
+const WIKIMEDIA_ANCHOS = [60, 120, 250, 330, 500, 960, 1280] as const
+
+/**
+ * La misma imagen, al tamaño en que se pinta, pero SOLO por la vía gratuita de
+ * quien la sirve. Nunca pasa por nuestro proxy.
+ *
+ * Existe porque `smallImage()` manda todo lo que no es ESPN a
+ * `/api/image-proxy`, que redimensiona con sharp en NUESTRAS funciones. Para un
+ * avatar de 22 px eso es gastar dinero para ahorrar bytes. Aquí:
+ *
+ *   · ESPN      → su `combiner`, que redimensiona en su CDN.
+ *   · Wikimedia → su miniatura estándar más pequeña que no se quede corta.
+ *   · el resto  → la URL original, sin tocar.
+ *
+ * El caso que lo motivó: /comparar pintaba las caras de la NBA a tamaño completo
+ * (unos 300 KB cada PNG) en círculos de 22 px: 8,3 MB por visita. /liga pedía la
+ * foto de Wikimedia a 500 px (395 KB) para lo mismo.
+ */
+export function imagenPequenaGratis(src: string | null | undefined, anchoPintado: number): string | undefined {
+  if (!src) return undefined
+  if (src.includes(ESPN_HOST)) return espnAt(src, anchoPintado * 2)
+
+  const m = src.match(/^(https:\/\/upload\.wikimedia\.org\/.+\/thumb\/.+\/)(\d+)px-([^/]+)$/)
+  if (m) {
+    const objetivo = anchoPintado * 2
+    const ancho = WIKIMEDIA_ANCHOS.find((w) => w >= objetivo) ?? WIKIMEDIA_ANCHOS[WIKIMEDIA_ANCHOS.length - 1]
+    if (ancho < Number(m[2])) return `${m[1]}${ancho}px-${m[3]}`
+  }
+  return src
+}

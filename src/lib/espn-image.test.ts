@@ -30,3 +30,34 @@ describe('espnAt', () => {
     expect(espnAt(undefined, 40)).toBeUndefined()
   })
 })
+
+import { imagenPequenaGratis } from './espn-image'
+
+describe('imagenPequenaGratis', () => {
+  it('ESPN: pasa por su combiner al doble del tamaño pintado', () => {
+    expect(imagenPequenaGratis('https://a.espncdn.com/i/headshots/nba/players/full/4432166.png', 22))
+      .toBe('https://a.espncdn.com/combiner/i?img=/i/headshots/nba/players/full/4432166.png&w=44')
+  })
+
+  it('Wikimedia: la miniatura estándar más pequeña que no se queda corta', () => {
+    const src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/UnaiLopezShkedinja.png/500px-UnaiLopezShkedinja.png'
+    // 22 px pintados → 44 necesarios → 60, porque Wikimedia no sirve 44.
+    expect(imagenPequenaGratis(src, 22))
+      .toBe('https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/UnaiLopezShkedinja.png/60px-UnaiLopezShkedinja.png')
+  })
+
+  it('Wikimedia: nunca pide una miniatura MÁS grande que la que ya había', () => {
+    const src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/X.jpg/40px-X.jpg'
+    expect(imagenPequenaGratis(src, 22)).toBe(src)
+  })
+
+  it('cualquier otro sitio: la URL tal cual, sin pasar por nuestro proxy', () => {
+    const src = 'https://img.lagaceta.com.ar/foto.webp'
+    expect(imagenPequenaGratis(src, 22)).toBe(src)
+    expect(imagenPequenaGratis(src, 22)).not.toContain('/api/image-proxy')
+  })
+
+  it('sin imagen, nada', () => {
+    expect(imagenPequenaGratis(undefined, 22)).toBeUndefined()
+  })
+})
