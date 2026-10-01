@@ -179,6 +179,13 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Fotogramas de la intro de la home (IntroReveal). Sin esto se servían
+        // con max-age=0 y cada sesión nueva revalidaba los 12 antes de poder
+        // arrancar el revelado. Si cambian, cambiar también el NOMBRE.
+        source: "/intro/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
         // Universal Links (iOS): el fichero `apple-app-site-association` no tiene
         // extensión → sin este header Vercel lo serviría como octet-stream y, con
         // el `nosniff` global, Apple podría rechazarlo. Se sirve en www (dominio

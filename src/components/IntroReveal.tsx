@@ -24,7 +24,9 @@ const EXIT_MS = 380
 // El revelado NO arranca hasta tener los fotogramas decodificados: en la app
 // arrancaba a ciegas y la secuencia avanzaba sobre imágenes vacías (el logo
 // completo aparecía justo a tiempo de irse). Si tardan más que esto, no hay
-// intro: la portada ya está pintada debajo y no hay nada que esperar.
+// intro: la portada ya está pintada debajo y no hay nada que esperar. Mientras
+// se esperan, la capa NO tapa nada: en 3G tapaba con un fondo oscuro vacío
+// casi un segundo para luego no enseñar ningún logo.
 const LOAD_TIMEOUT_MS = 900
 
 const EASE_IN_CUBIC = 'cubic-bezier(0.55, 0, 1, 0.45)'
@@ -42,7 +44,7 @@ const ORDER: Record<Phase, number> = { pending: 0, loading: 1, playing: 2, leavi
 
 export default function IntroReveal() {
   // 'pending' → SSR y primer render cliente devuelven null (sin overlay = sin LCP block).
-  // 'loading' → fondo + resplandor tapando, fotogramas decodificándose.
+  // 'loading' → capa invisible (no tapa la portada), fotogramas decodificándose.
   const [phase, setPhase] = useState<Phase>('pending')
   const frameRefs = useRef<(HTMLImageElement | null)[]>([])
   const aliveRef = useRef(true)
@@ -107,12 +109,12 @@ export default function IntroReveal() {
     })
     Promise.all(decoded).then(
       () => { if (!settled) { settled = true; play() } },
-      () => { if (!settled) { settled = true; leave() } },
+      () => { if (!settled) { settled = true; set('done') } },
     )
     setTimeout(() => {
       if (settled) return
       settled = true
-      leave()
+      set('done')
     }, LOAD_TIMEOUT_MS)
 
     return cleanup
@@ -122,6 +124,7 @@ export default function IntroReveal() {
 
   const leaving = phase === 'leaving'
   const lit = phase === 'playing'
+  const hidden = phase === 'loading' || leaving
 
   return (
     <div
@@ -135,9 +138,11 @@ export default function IntroReveal() {
         alignItems: 'center',
         justifyContent: 'center',
         background: 'var(--bg-base, #09090F)',
-        opacity: leaving ? 0 : 1,
-        transition: `opacity ${EXIT_MS}ms ${EASE_IN_CUBIC}`,
-        pointerEvents: leaving ? 'none' : 'auto',
+        opacity: hidden ? 0 : 1,
+        // Sin transición al pasar de 'loading' a 'playing': tapa de golpe,
+        // como el fondo de la app; solo la salida se desvanece.
+        transition: leaving ? `opacity ${EXIT_MS}ms ${EASE_IN_CUBIC}` : 'none',
+        pointerEvents: hidden ? 'none' : 'auto',
       }}
     >
       {/* Resplandor detrás del logo: el mismo degradado que splash-glow.png de
