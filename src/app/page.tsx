@@ -10,7 +10,7 @@ import { SEED_REELS } from '@/lib/seed-reels'
 import HeaderConsole from '@/components/HeaderConsole'
 import HomeContent from '@/components/HomeContent'
 import type { Reportaje } from '@/components/ReportajesBlock'
-import SignalIntro from '@/components/SignalIntro'
+import IntroReveal from '@/components/IntroReveal'
 import WelcomeOnboarding from '@/components/WelcomeOnboarding'
 import Footer from '@/components/Footer'
 import NewsletterSection from '@/components/NewsletterSection'
@@ -254,7 +254,7 @@ export default async function Home() {
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <a href="#main" className="skip-link">Saltar al contenido</a>
-      <SignalIntro />
+      <IntroReveal />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
       {videoListJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoListJsonLd) }} />

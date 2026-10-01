@@ -42,7 +42,7 @@ export function LogoFull({
    * logo que el SERVIDOR ya pinta: si el componente aparece únicamente tras
    * hidratar, el preload no está en el HTML servido, el <head> deja de coincidir
    * y React tira la cabecera entera y la reconstruye (error #418). Pasar `false`
-   * en esos casos. Ver SignalIntro.
+   * en esos casos (lo era la antigua intro de la home).
    */
   priority?: boolean
 }) {
