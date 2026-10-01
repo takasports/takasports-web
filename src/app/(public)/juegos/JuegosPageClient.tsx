@@ -971,7 +971,9 @@ export default function JuegosPageClient() {
             >
               Pon a prueba tu instinto deportivo.
             </h1>
-            <p className="text-[13px]" style={{ color: 'var(--text-muted)', maxWidth: 520 }}>
+            {/* Más claro y con sombra: va encima de la foto de cabecera, y el
+                gris apagado se perdía en sus zonas claras. */}
+            <p className="text-[13px]" style={{ color: '#CFCFDD', textShadow: '0 1px 8px rgba(0,0,0,0.6)', maxWidth: 520 }}>
               Predicciones, trivia, fantasy y puzzles. Compite cada semana y sube en el ranking.
             </p>
           </div>

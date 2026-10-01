@@ -375,7 +375,9 @@ function TeamContent({ team }: { team: TeamDetail }) {
             </div>
             <div
               className="text-[13px] font-black px-3 py-1 rounded-full"
-              style={{ background: `${accent}22`, color: accent, fontFamily: 'var(--font-display)' }}
+              // El texto en blanco y el color del club solo en el fondo: con
+              // acentos oscuros (el granate del Barça) los puntos no se leían.
+              style={{ background: `${accent}22`, color: '#F4F4FA', fontFamily: 'var(--font-display)' }}
             >
               {team.record.pts} pts
             </div>

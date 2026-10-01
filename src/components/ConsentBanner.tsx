@@ -69,35 +69,34 @@ export default function ConsentBanner({ gaId, clarityId, nonce }: Props) {
           aria-modal="false"
           className="ts-consent-wrapper fixed inset-x-0 z-[60] px-4 lg:px-6"
         >
+          {/* Compacto: en el móvil el aviso tapaba media pantalla en la primera
+              visita, justo la que llega desde Google. Rechazar y Aceptar siguen
+              igual de grandes y a la misma altura. [01/10/2026] */}
           <div
-            className="ts-consent-card mx-auto max-w-[760px] flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 lg:gap-5"
+            className="ts-consent-card mx-auto max-w-[760px] flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-4 lg:gap-5"
+            style={{ padding: '12px 14px' }}
           >
             <div className="flex-1 min-w-0">
-              <p
-                id="ts-consent-title"
-                className="section-label"
-                style={{ color: 'var(--text-secondary)', marginBottom: 4 }}
-              >
+              {/* Solo para el lector de pantalla: nombra el diálogo. */}
+              <p id="ts-consent-title" className="sr-only">
                 Privacidad
               </p>
               <p
                 id="ts-consent-desc"
                 style={{
                   color: 'var(--text-primary)',
-                  fontSize: 14,
-                  lineHeight: 1.45,
+                  fontSize: 12.5,
+                  lineHeight: 1.4,
                 }}
               >
-                Usamos Google Analytics y Microsoft Clarity para medir cómo se usa TakaSports
-                y mejorarlo. Solo se activan si pulsas «Aceptar»; puedes rechazar y seguir
-                usando la web con normalidad.{' '}
+                Usamos Google Analytics y Microsoft Clarity para medir el uso de Taka, solo si
+                aceptas.{' '}
                 <a
                   href="/cookies"
                   style={{ color: 'var(--purple-light)', textDecoration: 'underline', textUnderlineOffset: 3 }}
                 >
                   Más información
                 </a>
-                .
               </p>
             </div>
 
@@ -109,7 +108,7 @@ export default function ConsentBanner({ gaId, clarityId, nonce }: Props) {
                 style={{
                   flex: '1 1 0',
                   minWidth: 110,
-                  padding: '10px 16px',
+                  padding: '8px 16px',
                   background: 'rgba(255,255,255,0.08)',
                   color: 'var(--text-primary)',
                   border: '1px solid var(--border)',
@@ -132,7 +131,7 @@ export default function ConsentBanner({ gaId, clarityId, nonce }: Props) {
                 style={{
                   flex: '1 1 0',
                   minWidth: 110,
-                  padding: '10px 16px',
+                  padding: '8px 16px',
                   background: 'var(--purple)',
                   color: '#fff',
                   border: '1px solid var(--purple)',

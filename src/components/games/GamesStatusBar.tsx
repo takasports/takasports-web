@@ -40,7 +40,7 @@ export default function GamesStatusBar({ overview, nextHref, nextLabel }: Props)
         <span className="inline-flex flex-shrink-0" style={{ color: '#FDBA74' }} aria-hidden>
           <FireIcon size={15} />
         </span>
-        <p className="text-[13px] flex-1 min-w-[220px]" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-[13px] flex-1 min-w-[220px]" style={{ color: '#CFCFDD', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
           Puedes jugar sin cuenta. <strong style={{ color: '#F0F0F5' }}>Entra</strong> y se te guardan la
           racha y los puntos de la Liga Taka.
         </p>

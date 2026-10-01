@@ -33,7 +33,13 @@ function Sep() {
   )
 }
 
-export default function LiveStrip() {
+export default function LiveStrip({
+  onLiveChange,
+}: {
+  /** Avisa de si hay algún partido EN JUEGO. La consola lo usa para enseñar
+   *  una sola tira: con directo, «Último momento» se retira. */
+  onLiveChange?: (hayDirecto: boolean) => void
+} = {}) {
   const [liveFixtures, setLiveFixtures] = useState<LiveFixture[]>([])
   const [upcoming,     setUpcoming]     = useState<UpcomingEvent[]>([])
   const [fetchedAt,    setFetchedAt]    = useState<number | null>(null)
@@ -103,6 +109,7 @@ export default function LiveStrip() {
   }, [liveFixtures.length, fetchLive, fetchUpcoming])
 
   const isLive   = liveFixtures.length > 0
+  useEffect(() => { onLiveChange?.(isLive) }, [isLive, onLiveChange])
   const ageLabel = useRelativeTime(fetchedAt)
   // Prioridad: eventos en vivo > próximos destacados con hora
   const stripMode: 'live' | 'upcoming' = isLive ? 'live' : 'upcoming'

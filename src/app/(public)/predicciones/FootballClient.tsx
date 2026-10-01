@@ -735,28 +735,9 @@ export default function FootballClient() {
         </div>
       )}
 
-      {nextJornada && (
-        <ScoringStrip
-          pleno={plenoBonus(nextJornada.events.length)}
-          matches={nextJornada.events.length}
-        />
-      )}
-
       {error && (
         <div className="mb-6 rounded-xl px-4 py-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.28)' }}>
           <p style={{ fontFamily: 'var(--font-sport)', fontSize: 12, color: '#FCA5A5' }}>{error}</p>
-        </div>
-      )}
-
-      {/* Antes del primer pick: se invita, no se exige — se puede jugar sin
-          cuenta. A partir del primer pick manda GuestSaveBar, que además dice
-          cuántos lleva y dónde están guardados. */}
-      {loggedIn === false && !hasGuestPicks && jornadas.length > 0 && (
-        <div className="mb-6 rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: `${T.accent}0D`, border: `1px solid ${T.accent}30` }}>
-          <span style={{ display: 'inline-flex', color: T.accent }}><LockIcon size={18} /></span>
-          <p style={{ flex: 1, fontFamily: 'var(--font-sport)', fontSize: 12, color: 'var(--text-secondary)' }}>
-            Puedes pronosticar sin cuenta. Entra cuando quieras guardarlo y competir en la Liga Taka.
-          </p>
         </div>
       )}
 
@@ -951,6 +932,29 @@ export default function FootballClient() {
           </section>
         )
       })}
+
+      {/* Las explicaciones van DETRÁS de los partidos: delante empujaban el
+          primer 1·X·2 bajo el pliegue del móvil. Quien viene a jugar ve primero
+          el partido; quien quiere saber cuánto vale, lo encuentra al bajar. */}
+      {nextJornada && (
+        <ScoringStrip
+          pleno={plenoBonus(nextJornada.events.length)}
+          matches={nextJornada.events.length}
+        />
+      )}
+
+      {/* Antes del primer pick: se invita, no se exige — se puede jugar sin
+          cuenta. A partir del primer pick manda GuestSaveBar, que además dice
+          cuántos lleva y dónde están guardados. */}
+      {loggedIn === false && !hasGuestPicks && jornadas.length > 0 && (
+        <div className="mb-6 rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: `${T.accent}0D`, border: `1px solid ${T.accent}30` }}>
+          <span style={{ display: 'inline-flex', color: T.accent }}><LockIcon size={18} /></span>
+          <p style={{ flex: 1, fontFamily: 'var(--font-sport)', fontSize: 12, color: 'var(--text-secondary)' }}>
+            Puedes pronosticar sin cuenta. Entra cuando quieras guardarlo y competir en la Liga Taka.
+          </p>
+        </div>
+      )}
+
 
       {loggedIn === false && (
         <GuestSaveBar

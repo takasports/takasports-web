@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Header from './Header'
 import BreakingNewsBar from './BreakingNewsBar'
 import LiveStrip from './LiveStrip'
@@ -36,6 +36,10 @@ export default function HeaderConsole({
   breakingItems?: { title: string; slug?: string; sport?: string }[]
 } = {}) {
   const ref = useRef<HTMLDivElement>(null)
+  // UNA sola tira arriba. Con un partido en juego manda el directo y se retira
+  // «Último momento»: dos tiras más la cabecera se comían un cuarto de la
+  // pantalla del móvil antes del primer titular. Sin directo, vuelve el ticker.
+  const [hayDirecto, setHayDirecto] = useState(false)
 
   useEffect(() => {
     const el = ref.current
@@ -55,8 +59,8 @@ export default function HeaderConsole({
   return (
     <div ref={ref} className="sticky top-0 z-50">
       <Header sticky={false} />
-      <BreakingNewsBar items={breakingItems} />
-      <LiveStrip />
+      {!hayDirecto && <BreakingNewsBar items={breakingItems} />}
+      <LiveStrip onLiveChange={setHayDirecto} />
     </div>
   )
 }

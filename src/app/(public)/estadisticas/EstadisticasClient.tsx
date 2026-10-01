@@ -527,7 +527,9 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
               <div>
                 <h1 className="font-black leading-none"
                   style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem,5vw,3.2rem)', letterSpacing: '-0.03em' }}>
-                  <span style={{ color: '#F8F8FF' }}>Estad</span><span style={{ color: sport.accent }}>ísticas</span>
+                  {/* Entera en blanco: con el acento de deportes oscuros (morado,
+                      azul) media palabra se perdía contra el fondo. */}
+                  <span style={{ color: '#F8F8FF' }}>Estadísticas</span>
                 </h1>
                 <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   ESPN · NBA.com · Jolpica · F1 oficial · Actualizado automáticamente
@@ -538,7 +540,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                 <span className="text-[10px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full sm:mb-0.5"
                   style={{ background: fetchError ? 'rgba(248,113,113,0.08)' : 'rgba(74,222,128,0.08)', color: fetchError ? '#f87171' : '#4ade80', border: `1px solid ${fetchError ? 'rgba(248,113,113,0.2)' : 'rgba(74,222,128,0.2)'}`, fontFamily: 'var(--font-sport)' }}>
                   <span className={refreshing ? 'animate-spin' : ''} style={{ display: 'inline-block' }}>⟳</span>
-                  {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                  Actualizado {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
               {updatedFlash && (

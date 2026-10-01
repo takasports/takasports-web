@@ -340,7 +340,7 @@ export function ResumenView({
         {histCount > 0 && (
           <span className="text-[10px] px-2.5 py-1 rounded-full font-bold"
             style={{ background: 'rgba(148,163,184,0.08)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.15)', fontFamily: 'var(--font-sport)' }}>
-            {histCount} snapshot
+            {histCount} {histCount === 1 ? 'histórico' : 'históricos'}
           </span>
         )}
         {lastUpdated && (
