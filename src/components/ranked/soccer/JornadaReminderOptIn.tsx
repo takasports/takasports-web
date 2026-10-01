@@ -67,8 +67,8 @@ export default function JornadaReminderOptIn({ accent }: { accent: string }) {
       <span aria-hidden style={{ fontSize: 15, lineHeight: 1 }}>{justSubscribed ? '🔔' : '⏰'}</span>
       <p style={{ flex: 1, minWidth: 200, fontFamily: 'var(--font-sport)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
         {justSubscribed
-          ? 'Listo. Te avisamos antes de que cierre cada Jornada.'
-          : <>Jornada completa. ¿Te avisamos antes de que cierre la próxima?</>}
+          ? 'Listo. Te avisamos antes del primer partido de cada día.'
+          : <>Jornada completa. ¿Te avisamos antes de que empiece la próxima?</>}
       </p>
       {!justSubscribed && (
         <button

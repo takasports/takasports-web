@@ -105,10 +105,15 @@ export const FOOTBALL_THEME: SoccerTheme = {
 
 // ── Constantes de reglas (espejo del servidor) ───────────────────────────────
 
-/** Los picks se cierran 60 min antes del kickoff. Lo IMPONE la API
+/** Cada partido se cierra con su SAQUE: margen cero. Lo IMPONE la API
  *  (/api/ranked/predictions); aquí solo se refleja para que la UI no ofrezca
- *  un botón que el servidor va a rechazar. */
-export const SOCCER_LOCK_MS = 60 * 60 * 1000
+ *  un botón que el servidor va a rechazar.
+ *
+ *  Hasta el 01/10/2026 la Jornada cerraba ENTERA una hora antes de su primer
+ *  partido, para que esperar no fuera la jugada óptima. Con Jornadas de jueves
+ *  a lunes, el coste era que el juego pasaba el fin de semana entero cerrado:
+ *  ningún pronóstico nuevo en tres semanas. Se cambió por decisión del dueño. */
+export const SOCCER_LOCK_MS = 0
 
 /**
  * Lo que paga cada jugada. Espejo EXACTO de `score_ranked_prediction`

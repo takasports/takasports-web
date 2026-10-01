@@ -125,8 +125,7 @@ export interface Jornada {
   /** Todos los partidos de la semana, en orden cronológico. Es el universo del
    *  Pleno: el bonus exige haber acertado TODOS, incluidos los ya cerrados. */
   events:  SoccerEvent[]
-  /** Los que aún se pueden pronosticar. Con cierre único eso es "todos" o
-   *  "ninguno": lo que manda es `deadline`, no el kickoff de cada uno. */
+  /** Los que aún se pueden pronosticar: cada partido se cierra con su saque. */
   pending: SoccerEvent[]
   /** Los que ya se jugaron. Van a un bloque aparte, plegado: cuando la Jornada
    *  va por la mitad son la mayoría y en la lista principal solo alargan la
@@ -143,14 +142,9 @@ export interface Jornada {
    *  honor a ancho completo: un Partidazo ya resuelto abriendo la sección es
    *  un cartel de algo que el usuario ya no puede hacer. */
   featuredPlayable: boolean
-  /** Cuándo cierra la JORNADA ENTERA: una hora antes de su primer partido,
-   *  sea cual sea. `null` si ya pasó.
-   *
-   *  Cerrando partido a partido, quien rellenaba el domingo por la mañana ya
-   *  había visto los resultados del sábado y tenía 24 h más de alineaciones que
-   *  quien lo hizo el jueves: esperar era la jugada óptima. Un cierre común deja
-   *  a todos en la misma línea de salida, y da una sola cuenta atrás. */
-  firstLockAt: number | null
+  /** Próximo cierre: el saque del primer partido aún por empezar. `null` si
+   *  ya no queda ninguno que pronosticar en esta Jornada. */
+  nextLockAt: number | null
 }
 
 /** Agrupa eventos en Jornadas (semanas), en orden cronológico. Dentro de cada
@@ -169,16 +163,13 @@ export function groupIntoJornadas(events: SoccerEvent[], now: Date = new Date())
     .map(([weekKey, list]) => {
       const sorted = [...list].sort((a, b) => a.event_date.localeCompare(b.event_date))
 
-      // La Jornada cierra ENTERA una hora antes de su primer partido. El
-      // `status` por sí solo no serviría: lo mueve un cron cada media hora, así
-      // que un partido puede seguir 'open' cuando la API ya rechaza picks.
+      // Cada partido se cierra con su saque. El `status` por sí solo no
+      // serviría: lo mueve un cron cada media hora, así que un partido puede
+      // seguir 'open' cuando la API ya rechaza picks.
       const nowMs = now.getTime()
-      const deadline = sorted.length > 0
-        ? new Date(sorted[0].event_date).getTime() - SOCCER_LOCK_MS
-        : null
-      const abierta = deadline !== null && nowMs < deadline
-
-      const pending = abierta ? sorted.filter(e => e.status === 'open') : []
+      const cierre = (e: SoccerEvent) => new Date(e.event_date).getTime() - SOCCER_LOCK_MS
+      const pending = sorted.filter(e => e.status === 'open' && nowMs < cierre(e))
+      const nextLockAt = pending.length > 0 ? cierre(pending[0]) : null
       const settled = sorted.filter(e => e.status === 'resolved')
       const porJugar = sorted.filter(e => e.status !== 'resolved')
 
@@ -216,8 +207,8 @@ export function groupIntoJornadas(events: SoccerEvent[], now: Date = new Date())
         settled,
         days,
         featured,
-        featuredPlayable: !!featured && abierta && featured.status === 'open',
-        firstLockAt: abierta ? deadline : null,
+        featuredPlayable: !!featured && pending.includes(featured),
+        nextLockAt,
       }
     })
 }

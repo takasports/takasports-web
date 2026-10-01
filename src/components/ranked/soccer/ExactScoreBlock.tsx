@@ -302,7 +302,7 @@ export default function ExactScoreBlock({
           onClick={() => setEditorOpen(true)}
           disabled={submitting}
           aria-label="Editar mi apuesta al marcador"
-          title="Puedes cambiarla o retirarla hasta 1 h antes del partido"
+          title="Puedes cambiarla o retirarla hasta que empiece el partido"
           style={{
             marginLeft: 'auto',
             display: 'inline-flex', alignItems: 'center', gap: 4,

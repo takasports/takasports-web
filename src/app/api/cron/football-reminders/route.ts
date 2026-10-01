@@ -81,9 +81,8 @@ export async function GET(req: NextRequest) {
     else byDay.set(key, [r])
   }
 
-  // La Jornada cuyo PRIMER cierre entra en la ventana. El primer cierre es el
-  // momento a partir del cual ya no se puede completar la Jornada entera, que es
-  // justo lo que queremos avisar.
+  // El día cuyo PRIMER partido entra en la ventana. Cada partido se cierra con
+  // su saque, así que a partir de ese momento empieza a escaparse el día.
   let target: { dateKey: string; events: EventRow[]; lockAt: number } | null = null
   for (const [dateKey, events] of byDay) {
     const lockAt = Math.min(...events.map(e => Date.parse(e.event_date) - SOCCER_LOCK_MS))
@@ -148,7 +147,7 @@ export async function GET(req: NextRequest) {
     toNotify.map((uid) => {
       const left = total - (doneByUser.get(uid) ?? 0)
       return sendPushToUser(uid, {
-        title: `⏰ La Jornada cierra en ${mins} min`,
+        title: `⏰ El primer partido de hoy empieza en ${mins} min`,
         body: `⭐ ${starLabel} · te ${left === 1 ? 'falta 1 pick' : `faltan ${left} picks`}`,
         url: '/predicciones',
         // Un tag por Jornada: si algo llegara repetido, el navegador reemplaza

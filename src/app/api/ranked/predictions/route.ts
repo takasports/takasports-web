@@ -112,6 +112,32 @@ function validateExactScore(v: unknown): { home: number; away: number } | null |
  * un problema de limpieza. La liquidación lee la predicción tal cual esté al
  * resolverse el partido, mucho después.
  */
+/** ¿Tiene ya el usuario capitán en otro partido de la semana que haya
+ *  empezado? Entonces el ×2 está jugado y no se puede mover. */
+async function capitanYaJugado(
+  sb: Awaited<ReturnType<typeof supabaseForRequest>>['supabase'],
+  userId: string,
+  weekKey: string,
+  eventId: string,
+  nowMs: number,
+): Promise<boolean> {
+  const { data: semana } = await sb
+    .from('ranked_events')
+    .select('id, event_date')
+    .eq('sport', RANKED_FOOTBALL_SPORT)
+    .eq('meta->>week_key', weekKey)
+  const empezados = ((semana ?? []) as { id: string; event_date: string }[])
+    .filter(e => e.id !== eventId && new Date(e.event_date).getTime() - SOCCER_LOCK_MS <= nowMs)
+    .map(e => e.id)
+  if (empezados.length === 0) return false
+  const { data: mias } = await sb
+    .from('ranked_predictions')
+    .select('prediction')
+    .eq('user_id', userId)
+    .in('event_id', empezados)
+  return ((mias ?? []) as { prediction?: { captain?: boolean } }[]).some(r => r.prediction?.captain === true)
+}
+
 async function dropCaptainElsewhere(
   sb: Awaited<ReturnType<typeof supabaseForRequest>>['supabase'],
   userId: string,
@@ -230,34 +256,17 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Cierre ─────────────────────────────────────────────────────────────────
-  // UFC y el archivo del Mundial cierran partido a partido: son carteleras y
-  // torneos, no Jornadas, y ahí no hay un bloque que compita entre sí.
+  // Cada partido se cierra con su propio saque (UFC, 30 min antes del combate).
   //
-  // Ranked Fútbol cierra la JORNADA ENTERA con su primer partido. Cerrando cada
-  // uno por su cuenta, quien rellenaba el domingo por la mañana ya había visto
-  // los resultados del sábado y tenía 24 h más de alineaciones y lesiones que
-  // quien lo hizo el jueves: esperar era la jugada óptima, y eso es ventaja
-  // gratis por llegar tarde en una competición por puntos. Un cierre común deja
-  // a todo el mundo en la misma línea de salida — y le da a la semana una sola
-  // cuenta atrás y un solo recordatorio.
+  // Hasta el 01/10/2026 Ranked Fútbol cerraba la JORNADA ENTERA una hora antes
+  // de su primer partido, para que esperar no fuera la jugada óptima. Con
+  // Jornadas de jueves a lunes el juego pasaba el fin de semana cerrado, y se
+  // cambió por decisión del dueño. Lo que sí hay que seguir impidiendo es mover
+  // el capitán desde un partido ya empezado: ver más abajo.
   const nowMs = Date.now()
   const lockOffsetMs = isUfc ? UFC_LOCK_MS : SOCCER_LOCK_MS
-
-  let deadline = new Date(ev.event_date).getTime() - lockOffsetMs
+  const deadline = new Date(ev.event_date).getTime() - lockOffsetMs
   const weekKey = ev.meta?.week_key
-  if (!isUfc && ev.sport === RANKED_FOOTBALL_SPORT && weekKey) {
-    // El primer saque de la semana manda, aunque sea el de otro partido.
-    const { data: primero } = await sb
-      .from('ranked_events')
-      .select('event_date')
-      .eq('sport', RANKED_FOOTBALL_SPORT)
-      .eq('meta->>week_key', weekKey)
-      .order('event_date', { ascending: true })
-      .limit(1)
-      .maybeSingle()
-    const inicio = (primero as { event_date?: string } | null)?.event_date
-    if (inicio) deadline = new Date(inicio).getTime() - lockOffsetMs
-  }
 
   if (nowMs >= deadline) {
     const minsLeft = Math.max(0, Math.ceil((deadline - nowMs) / 60_000))
@@ -266,7 +275,7 @@ export async function POST(req: NextRequest) {
         error: 'pick_locked',
         message: minsLeft > 0
           ? `Quedan ${minsLeft} min.`
-          : 'La Jornada ya está cerrada: se cierra entera con su primer partido.',
+          : 'Este partido ya ha empezado: cada partido se cierra con su saque.',
       },
       { status: 409 },
     )
@@ -302,6 +311,19 @@ export async function POST(req: NextRequest) {
   const existingCaptain = (existing as { prediction?: { captain?: boolean } } | null)?.prediction?.captain === true
   const wantsCaptain = body.captain ?? existingCaptain
   if (wantsCaptain && !isUfc) predictionPayload.captain = true
+
+  // Con cierre por partido, el capitán NO puede salir de un partido que ya ha
+  // empezado: pasarlo de uno jugado (o perdido) a otro por jugar sería cobrar el
+  // ×2 dos veces, o escapar de un fallo. Solo cuenta cuando se NOMBRA un capitán
+  // nuevo aquí; cambiar el pick de un partido sin tocar el capitán no lo mueve.
+  if (body.captain === true && !existingCaptain && !isUfc && weekKey) {
+    if (await capitanYaJugado(sb, user.id, weekKey, body.event_id, nowMs)) {
+      return NextResponse.json(
+        { error: 'captain_locked', message: 'Tu capitán ya está jugando: no se puede cambiar.' },
+        { status: 409 },
+      )
+    }
+  }
 
   // ── Cambio de pick (el evento sigue open) ────────────────────────
   // Si ya hay predicción y el partido aún no ha empezado, permitimos
@@ -397,7 +419,7 @@ export async function POST(req: NextRequest) {
 //   body: { event_id }
 //   Borra mi predicción para ese evento ("des-elegir" un pick). Solo si el
 //   evento sigue open y dentro de la ventana de picks (mismo lock que el POST:
-//   30 min UFC / 60 min fútbol). La RLS (rp_delete_own, migr. 073) ya limita
+//   30 min UFC / con el saque en fútbol). La RLS (rp_delete_own, migr. 073) ya limita
 //   a filas propias + eventos open; aquí añadimos el lock fino por tiempo.
 export async function DELETE(req: NextRequest) {
   if (!hasEnv()) return NextResponse.json({ error: 'no_config' }, { status: 503 })
@@ -425,7 +447,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'event_closed', status: ev.status }, { status: 409 })
   }
 
-  const lockOffsetMs = ev.sport === 'ufc' ? UFC_LOCK_MS : 60 * 60 * 1000
+  const lockOffsetMs = ev.sport === 'ufc' ? UFC_LOCK_MS : SOCCER_LOCK_MS
   const lockAt       = new Date(ev.event_date).getTime() - lockOffsetMs
   if (Date.now() >= lockAt) {
     return NextResponse.json(

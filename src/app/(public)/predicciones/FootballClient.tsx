@@ -39,7 +39,7 @@ import {
 } from '@/components/ranked/soccer/guest-picks'
 import { groupIntoJornadas, jornadaProgress, formatCountdown, thisWeekKey, plenoBonus, weekKeyOf, jornadaStreak, jornadaComplete, hasCaptain } from '@/components/ranked/soccer/jornada'
 import {
-  FOOTBALL_THEME, SOCCER_POINTS,
+  FOOTBALL_THEME, SOCCER_POINTS, SOCCER_LOCK_MS,
   type SoccerEvent, type SoccerPick, type PredMap, type LiveScore,
 } from '@/components/ranked/soccer/types'
 import { createClient } from '@/lib/supabase'
@@ -451,6 +451,20 @@ export default function FootballClient() {
 
   const predictedIds = useMemo(() => new Set(Object.keys(preds)), [preds])
 
+  // Semanas cuyo capitán ya está en un partido empezado: el ×2 está jugado y no
+  // se puede mover (lo rechaza el servidor). Sin reloj aún (antes de montar) no
+  // se bloquea nada, igual que el resto de cierres de la pantalla.
+  const capitanFijo = useMemo(() => {
+    const semanas = new Set<string>()
+    if (nowMinute === 0) return semanas
+    const ahora = nowMinute * 60_000
+    for (const e of events) {
+      if (preds[e.id]?.prediction?.captain !== true) continue
+      if (new Date(e.event_date).getTime() - SOCCER_LOCK_MS <= ahora) semanas.add(weekKeyOf(e))
+    }
+    return semanas
+  }, [events, preds, nowMinute])
+
   // ── Consenso de la comunidad ───────────────────────────────────────────────
   // Se pide por Jornada visible, no por partido. La tarjeta solo lo enseña en
   // los que el usuario ya ha pronosticado; traerlo entero de una vez evita
@@ -631,15 +645,15 @@ export default function FootballClient() {
               </>
             )}
 
-            {nextJornada.firstLockAt && (
+            {nextJornada.nextLockAt && (
               <>
                 <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'rgba(255,255,255,0.09)' }} />
                 <div className="whitespace-nowrap">
                   <p style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 900, color: 'var(--color-warning)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                    {formatCountdown(nextJornada.firstLockAt - nowMs)}
+                    {formatCountdown(nextJornada.nextLockAt - nowMs)}
                   </p>
                   <p style={{ fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
-                    <LockIcon size={8} className="inline-block align-middle mr-1" />cierra la jornada
+                    <LockIcon size={8} className="inline-block align-middle mr-1" />próximo cierre
                   </p>
                 </div>
               </>
@@ -845,7 +859,7 @@ export default function FootballClient() {
                   onExactTooltipDismiss={dismissExactTip}
                   animDelay={0}
                   nowMs={nowMs}
-                  deadlineMs={jornada.firstLockAt}
+                  captainLocked={capitanFijo.has(jornada.weekKey)}
                   consensus={consensus[jornada.featured.id]}
                 />
               </div>
@@ -879,7 +893,7 @@ export default function FootballClient() {
                         onExactTooltipDismiss={dismissExactTip}
                         animDelay={ji === 0 ? i * 60 : 0}
                         nowMs={nowMs}
-                  deadlineMs={jornada.firstLockAt}
+                  captainLocked={capitanFijo.has(jornada.weekKey)}
                   consensus={consensus[ev.id]}
                       />
                     ))}
@@ -921,7 +935,7 @@ export default function FootballClient() {
                       onCaptain={handleCaptain}
                       animDelay={0}
                       nowMs={nowMs}
-                  deadlineMs={jornada.firstLockAt}
+                  captainLocked={capitanFijo.has(jornada.weekKey)}
                   consensus={consensus[ev.id]}
                     />
                   ))}

@@ -118,15 +118,15 @@ describe('groupIntoJornadas', () => {
       ev({ id: 'tarde',   event_date: '2026-08-23T21:00:00Z', meta: { week_key: '2026-08-17' } }),
       ev({ id: 'temprano', event_date: '2026-08-22T17:00:00Z', meta: { week_key: '2026-08-17' } }),
     ], now)
-    expect(jornadas[0].firstLockAt).toBe(Date.parse('2026-08-22T17:00:00Z') - SOCCER_LOCK_MS)
+    expect(jornadas[0].nextLockAt).toBe(Date.parse('2026-08-22T17:00:00Z') - SOCCER_LOCK_MS)
   })
 
-  it('no propone deadline cuando todos los partidos de la semana ya están bloqueados', () => {
+  it('no propone deadline cuando todos los partidos de la semana ya han empezado', () => {
     const late = new Date('2026-08-23T20:00:00Z')
     const jornadas = groupIntoJornadas([
       ev({ id: 'ya', event_date: '2026-08-22T20:30:00Z', meta: { week_key: '2026-08-17' } }),
     ], late)
-    expect(jornadas[0].firstLockAt).toBeNull()
+    expect(jornadas[0].nextLockAt).toBeNull()
   })
 })
 
@@ -187,31 +187,45 @@ describe('formatCountdown', () => {
 
 // ── Jugable vs cerrado ───────────────────────────────────────────────────────
 
-describe('groupIntoJornadas · cierre único', () => {
-  // La Jornada cierra ENTERA una hora antes de su primer partido. Cerrando cada
-  // partido por su cuenta, quien rellenaba el domingo ya había visto el sábado:
-  // esperar era la jugada óptima.
+describe('groupIntoJornadas · cada partido cierra con su saque', () => {
+  // Desde el 01/10/2026. Antes la Jornada cerraba ENTERA una hora antes de su
+  // primer partido, y con Jornadas de jueves a lunes el juego pasaba el fin de
+  // semana entero cerrado.
   const semana = () => [
     ev({ id: 'sabado',  event_date: '2026-08-22T17:00:00Z', meta: { week_key: '2026-08-17', date_key: '2026-08-22' } }),
     ev({ id: 'domingo', event_date: '2026-08-23T19:00:00Z', meta: { week_key: '2026-08-17', date_key: '2026-08-23' } }),
   ]
 
-  it('antes del cierre, todo es jugable — incluido el partido de dentro de dos días', () => {
+  it('antes del primer saque, todo es jugable', () => {
     const j = groupIntoJornadas(semana(), new Date('2026-08-22T10:00:00Z'))[0]
     expect(j.pending.map(e => e.id)).toEqual(['sabado', 'domingo'])
-    expect(j.firstLockAt).toBe(new Date('2026-08-22T16:00:00Z').getTime())
+    expect(j.nextLockAt).toBe(new Date('2026-08-22T17:00:00Z').getTime())
   })
 
-  it('pasado el cierre no queda nada jugable, aunque el domingo no haya empezado', () => {
-    // Es justo el punto: el del domingo se cierra con el del sábado.
-    const j = groupIntoJornadas(semana(), new Date('2026-08-22T16:30:00Z'))[0]
-    expect(j.pending).toEqual([])
-    expect(j.firstLockAt).toBeNull()
+  it('hasta el último segundo antes del saque se puede pronosticar', () => {
+    const j = groupIntoJornadas(semana(), new Date('2026-08-22T16:59:00Z'))[0]
+    expect(j.pending.map(e => e.id)).toEqual(['sabado', 'domingo'])
   })
 
-  it('el cierre lo marca el PRIMER partido, no el que se esté mirando', () => {
+  it('empezado el sábado, el domingo SIGUE abierto', () => {
+    // Es justo lo que cambia: antes el del domingo se cerraba con el del sábado.
+    const j = groupIntoJornadas(semana(), new Date('2026-08-22T17:30:00Z'))[0]
+    expect(j.pending.map(e => e.id)).toEqual(['domingo'])
+    expect(j.nextLockAt).toBe(new Date('2026-08-23T19:00:00Z').getTime())
+  })
+
+  it('el próximo cierre es el del primer partido por empezar, venga en el orden que venga', () => {
     const j = groupIntoJornadas([...semana()].reverse(), new Date('2026-08-20T10:00:00Z'))[0]
-    expect(j.firstLockAt).toBe(new Date('2026-08-22T16:00:00Z').getTime())
+    expect(j.nextLockAt).toBe(new Date('2026-08-22T17:00:00Z').getTime())
+  })
+
+  it('el Partidazo deja de ser jugable cuando empieza él, no cuando empieza la Jornada', () => {
+    const conEstrella = [
+      ev({ id: 'sabado',  event_date: '2026-08-22T17:00:00Z', meta: { week_key: '2026-08-17' } }),
+      ev({ id: 'estrella', featured: true, event_date: '2026-08-23T19:00:00Z', meta: { week_key: '2026-08-17' } }),
+    ]
+    expect(groupIntoJornadas(conEstrella, new Date('2026-08-22T18:00:00Z'))[0].featuredPlayable).toBe(true)
+    expect(groupIntoJornadas(conEstrella, new Date('2026-08-23T19:01:00Z'))[0].featuredPlayable).toBe(false)
   })
 })
 
@@ -382,47 +396,41 @@ describe('jornadaComplete', () => {
     expect(jornadaComplete(abierta(), { a: pred('1', true) })).toBe(false)
   })
 
-  it('con la Jornada ya cerrada deja de exigir capitán', () => {
+  it('cuando ya no queda ningún partido por empezar deja de exigir capitán', () => {
     // Ya no se puede nombrar: reclamarlo sería marcar como incompleto algo que
     // el usuario no puede arreglar.
     const cerrada = groupIntoJornadas([
       ev({ id: 'a', event_date: '2026-08-22T17:00:00Z', meta: { week_key: '2026-08-17' } }),
       ev({ id: 'b', event_date: '2026-08-23T17:00:00Z', meta: { week_key: '2026-08-17' } }),
-    ], new Date('2026-08-22T18:00:00Z'))[0]
+    ], new Date('2026-08-23T18:00:00Z'))[0]
     expect(cerrada.pending).toEqual([])
     expect(jornadaComplete(cerrada, { a: pred('1'), b: pred('2') })).toBe(true)
   })
 })
 
-// ── El caso del 26/09/2026 ───────────────────────────────────────────────────
+// ── El caso del 26/09/2026, con la regla nueva ──────────────────────────────
 // El sábado, con el partido del jueves ya jugado e Inglaterra–España a las
-// 20:45, `/api/ranked/football/status` decía «abierta hasta las 19:45» y el
-// servidor rechazaba cualquier pronóstico. No era este cálculo: el endpoint le
-// pasaba solo los partidos SIN resolver, y sin el del jueves la Jornada parecía
-// empezar el sábado. Estas pruebas fijan que el cierre depende del primer
-// partido de la semana, se haya jugado o no, y que quien calcula necesita la
-// semana entera.
+// 20:45, el juego estaba cerrado entero desde el jueves. Con cierre por partido,
+// Inglaterra–España se puede pronosticar hasta su saque.
 describe('una Jornada con su primer partido ya jugado', () => {
   const sabado = new Date('2026-09-26T03:20:00Z')
   const jueves = ev({ id: 'jue', event_date: '2026-09-24T18:45:00Z', status: 'resolved', meta: { week_key: '2026-09-21' } })
   const inglaterraEspana = ev({ id: 'sab', event_date: '2026-09-26T18:45:00Z', team_home: 'Inglaterra', team_away: 'España', meta: { week_key: '2026-09-21' } })
   const lunesSiguiente = ev({ id: 'sig', event_date: '2026-09-29T18:45:00Z', meta: { week_key: '2026-09-28' } })
 
-  it('con la semana entera, la Jornada está cerrada desde el jueves', () => {
+  it('el partido del sábado sigue jugable aunque el del jueves ya se jugara', () => {
     const [esta] = groupIntoJornadas([jueves, inglaterraEspana], sabado)
-    expect(esta.firstLockAt).toBeNull()
-    expect(esta.pending).toEqual([])
+    expect(esta.pending.map(e => e.id)).toEqual(['sab'])
+    expect(esta.nextLockAt).toBe(Date.parse('2026-09-26T18:45:00Z'))
   })
 
-  it('y la Jornada que se puede jugar es la siguiente', () => {
-    const abierta = groupIntoJornadas([jueves, inglaterraEspana, lunesSiguiente], sabado).find(j => j.firstLockAt !== null)
-    expect(abierta?.weekKey).toBe('2026-09-28')
+  it('y la Jornada en curso es esta, no la siguiente', () => {
+    const abierta = groupIntoJornadas([jueves, inglaterraEspana, lunesSiguiente], sabado).find(j => j.nextLockAt !== null)
+    expect(abierta?.weekKey).toBe('2026-09-21')
   })
 
-  it('sin el partido del jueves, el cálculo se equivoca: por eso el endpoint pide la semana entera', () => {
-    // Documenta el fallo: si alguien vuelve a filtrar los resueltos antes de
-    // agrupar, esto es lo que pasa.
-    const [esta] = groupIntoJornadas([inglaterraEspana], sabado)
-    expect(esta.firstLockAt).not.toBeNull()
+  it('el total de la Jornada cuenta también el partido ya jugado', () => {
+    const [esta] = groupIntoJornadas([jueves, inglaterraEspana], sabado)
+    expect(esta.events.map(e => e.id)).toEqual(['jue', 'sab'])
   })
 })

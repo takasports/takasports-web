@@ -15,7 +15,9 @@ describe('/api/ranked/football/status', () => {
     expect(i).toBeGreaterThan(0)
     expect(consulta).not.toMatch(/\.neq\(\s*'status'\s*,\s*'resolved'\s*\)/)
   })
-  it('solo ofrece para pronosticar partidos de Jornadas abiertas', () => {
-    expect(src).toMatch(/upcoming:\s*jornadas\s*\.filter\(j => j\.firstLockAt !== null\)/)
+  it('solo ofrece para pronosticar partidos que aún no han empezado', () => {
+    // `pending` ya aplica el cierre por saque; un 'open' de la tabla puede
+    // llevar media hora jugándose.
+    expect(src).toMatch(/upcoming:\s*jornadas\s*\.flatMap\(j => j\.pending\)/)
   })
 })
