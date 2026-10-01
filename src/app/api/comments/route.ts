@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { getUserFromRequest } from '@/lib/supabase-server'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { nombrePorDefecto } from '@/lib/nombre-publico'
 
 export const runtime = 'nodejs'
 
@@ -128,7 +129,7 @@ export async function POST(req: NextRequest) {
 
   // Denormalizamos nombre y avatar del user para no joinar en cada lectura.
   const meta = user.user_metadata as { name?: string; full_name?: string; avatar_url?: string } | undefined
-  const userName = (meta?.name || meta?.full_name || user.email?.split('@')[0] || 'Usuario').slice(0, 64)
+  const userName = (meta?.name || meta?.full_name || nombrePorDefecto(user.id)).slice(0, 64)
   const userAvatar = typeof meta?.avatar_url === 'string' ? meta.avatar_url.slice(0, 500) : null
 
   const { data: inserted, error: insertErr } = await admin

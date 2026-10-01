@@ -3,6 +3,7 @@ import { type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { awardBadges } from '@/lib/badge-awards'
 import { WELCOME_BADGE_IDS } from '@/lib/badges'
+import { nombrePorDefecto } from '@/lib/nombre-publico'
 
 // Rutas internas válidas a las que el callback puede redirigir tras un login
 // correcto. 'next' SOLO puede ser una de estas (o /perfil por defecto): esto
@@ -24,10 +25,10 @@ async function ensureProfileAndWelcome(supabase: SupabaseClient): Promise<void> 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
 
-  // Nombre de display: proveedor OAuth → email prefix como fallback
+  // Nombre de display: el del proveedor (Google) o uno genérico. NUNCA la parte
+  // del correo: se enseña en clasificaciones públicas. Ver nombre-publico.ts.
   const providerName = (user.user_metadata?.full_name ?? user.user_metadata?.name) as string | undefined
-  const emailPrefix   = user.email?.split('@')[0] ?? null
-  const displayName   = providerName ?? emailPrefix
+  const displayName   = providerName ?? nombrePorDefecto(user.id)
 
   // Detectar si es usuario nuevo (perfil no existe todavía)
   const { count } = await supabase

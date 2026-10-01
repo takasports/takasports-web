@@ -557,9 +557,13 @@ async function fetchApiSportsLive(): Promise<LiveScore[]> {
   if (!key) return []
   if (apiSportsCache && Date.now() - apiSportsCache.ts < API_SPORTS_TTL) return apiSportsCache.data
   try {
+    // Mismo tope que las llamadas a ESPN de esta ruta: era la única sin él, y
+    // una conexión colgada retenía la función hasta su límite (hubo peticiones
+    // de 300 s en los registros del 26-28/09/2026).
     const res = await fetch('https://v3.football.api-sports.io/fixtures?live=all', {
       headers: { 'x-apisports-key': key },
       cache: 'no-store',
+      signal: AbortSignal.timeout(6000),
     })
     if (!res.ok) {
       // Suspendida/agotada → cachea el vacío 5 min para NO re-golpear la cuota.

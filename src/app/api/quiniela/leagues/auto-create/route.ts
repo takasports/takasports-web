@@ -16,6 +16,7 @@ import { NextResponse } from 'next/server'
 import { apiError } from '@/lib/api-utils'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { getQuinielaData } from '../../route'
+import { nombrePorDefecto } from '@/lib/nombre-publico'
 
 interface LeagueIdRow { league_id: string }
 interface LeagueNameRow { id: string; name: string | null }
@@ -24,14 +25,14 @@ function genCode(): string {
   return Math.random().toString(36).slice(2, 8).toUpperCase()
 }
 
-function userDisplayName(user: { email?: string | null; user_metadata?: Record<string, unknown> }): string {
+function userDisplayName(user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> }): string {
   const md = user.user_metadata ?? {}
   const full = typeof md.full_name === 'string' ? md.full_name : ''
   const display = typeof md.display_name === 'string' ? md.display_name : ''
   const handle = (full || display).trim().split(/\s+/)[0]
   if (handle) return handle.slice(0, 16)
-  const emailPart = user.email?.split('@')[0] ?? ''
-  return (emailPart || 'jugador').slice(0, 16)
+  // Nunca la parte del correo: el nombre sale en la liga, a la vista de todos.
+  return nombrePorDefecto(user.id).slice(0, 16)
 }
 
 export async function POST() {

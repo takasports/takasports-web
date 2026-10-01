@@ -4,6 +4,7 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { apiError, readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 import type { Pick } from '@/lib/quiniela'
+import { nombrePorDefecto } from '@/lib/nombre-publico'
 
 // Estructura de un partido referenciado en una liga (snapshot al crearla)
 interface LeagueMatchKey {
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
       await sb.from('quiniela_league_members').insert({
         league_id: id,
         user_id: user.id,
-        nickname: user.email?.split('@')[0]?.slice(0, 24) ?? `User-${user.id.slice(0, 6)}`,
+        nickname: nombrePorDefecto(user.id),
         picks: {},
       })
 
@@ -236,8 +237,9 @@ export async function PATCH(req: NextRequest) {
       const { supabase: sb, user } = await supabaseForRequest(req)
       if (!user) return NextResponse.json({ error: 'auth required' }, { status: 401 })
 
-      // Si el cliente no manda alias válido, derivamos del email — nunca 'Tú'
-      const safeNick = nickname || user.email?.split('@')[0]?.slice(0, 24) || `User-${user.id.slice(0, 6)}`
+      // Si el cliente no manda alias válido, uno genérico — nunca 'Tú', y nunca
+      // la parte del correo, que la ven todos los de la liga.
+      const safeNick = nickname || nombrePorDefecto(user.id)
 
       const { data: league } = await sb
         .from('quiniela_leagues').select('match_keys').eq('id', id).maybeSingle()
