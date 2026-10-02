@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
-import { REPORTAJES_ENABLED } from "./src/lib/constants";
+import { REPORTAJES_ENABLED, SITE_URL } from "./src/lib/constants";
+import { fetchTeamNameRedirects } from "./src/lib/team-name-redirects";
 
 const nextConfig: NextConfig = {
   // Oculta la cabecera `X-Powered-By: Next.js` en todas las respuestas: no
@@ -19,6 +20,10 @@ const nextConfig: NextConfig = {
   // y nada de eso se comparte entre páginas. Con más contenido volverá a apretar.
   staticPageGenerationTimeout: 180,
   async redirects() {
+    // /equipo/real-madrid → /equipo/real-madrid-86. Aquí y no en la página por
+    // lo mismo que /reportajes: en la ficha (ISR + streaming) el redirect se
+    // degrada a meta refresh con 200. Ver lib/team-name-redirects.ts.
+    const teamNameRedirects = await fetchTeamNameRedirects(SITE_URL)
     return [
       // Canonical domain: non-www → www (permanent 301 for SEO link equity)
       {
@@ -69,6 +74,7 @@ const nextConfig: NextConfig = {
       ...(REPORTAJES_ENABLED
         ? []
         : [{ source: '/reportajes', destination: '/noticias', permanent: false }]),
+      ...teamNameRedirects,
     ]
   },
   images: {
