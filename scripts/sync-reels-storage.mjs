@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+// ⚠️ SUSTITUIDO (02/10/2026) por el cron /api/cron/instagram-sync (src/lib/ig-sync.ts),
+// que además copia las portadas a Storage y avisa por Telegram. Nunca se llegó a
+// enchufar en n8n. Se conserva solo como herramienta manual de emergencia.
+//
 // Reemplazo de la lógica inline de WF-10 (n8n).
 //
 // Antes WF-10 hacía fetch al endpoint anónimo de Instagram

@@ -48,7 +48,7 @@ const SPORT_KEYWORDS: Array<[string, string[]]> = [
   ]],
 ]
 
-function detectSport(caption: string): string {
+export function detectSport(caption: string): string {
   if (!caption) return ''
   const text = caption
     .toLowerCase()
@@ -60,7 +60,7 @@ function detectSport(caption: string): string {
   return ''
 }
 
-function extractTitle(caption: string): string {
+export function extractTitle(caption: string): string {
   if (!caption) return 'Reel'
   // Primera línea, sin hashtags ni menciones
   const first = caption

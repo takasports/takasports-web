@@ -61,20 +61,36 @@ export async function GET(request: Request) {
 
   const days = Math.floor((longData.expires_in ?? 5183944) / 86400)
 
-  // Persistir en Supabase: a partir de aquí la web y el WF-10 lo leen
-  // de ahí y lo auto-refrescan. No hay que copiar nada a mano.
+  // Persistir en Supabase: a partir de aquí la web y el cron
+  // /api/cron/instagram-sync lo leen de ahí y lo renuevan solos. No hay que
+  // copiar nada a mano.
   const { saveIgToken } = await import('@/lib/ig-token')
   const stored = await saveIgToken(longData.access_token, longData.expires_in)
+
+  // Y se sincroniza YA, para que quien acaba de autorizar vea los reels al día
+  // sin esperar a la siguiente hora en punto. Sin avisos de Telegram aquí.
+  let synced = ''
+  if (stored) {
+    try {
+      const { syncInstagramReels } = await import('@/lib/ig-sync')
+      const r = await syncInstagramReels({ notify: false, budgetMs: 25_000 })
+      synced = r.ok
+        ? `<p>Reels sincronizados: <strong>${r.reels}</strong> (${r.newThumbs} portadas nuevas guardadas).</p>`
+        : `<p style="color:#f59e0b">El permiso está guardado, pero la primera sincronización falló (${esc(r.errors[0] ?? 'sin detalle')}). Se reintenta sola cada hora.</p>`
+    } catch {
+      synced = `<p style="color:#f59e0b">El permiso está guardado; los reels se sincronizarán en la próxima hora.</p>`
+    }
+  }
 
   return html(`
     <h2 style="color:#22c55e">✅ Token obtenido${stored ? ' y guardado' : ''}</h2>
     ${stored
-      ? `<p>Guardado en Supabase. La web y el WF-10 ya lo usan y lo
-         auto-refrescarán solos. <strong>No tienes que hacer nada más.</strong></p>`
+      ? `<p>Guardado en Supabase. La web ya lo usa y lo renovará sola.
+         <strong>No tienes que hacer nada más.</strong></p>${synced}`
       : `<p style="color:#f59e0b">⚠️ No se pudo guardar en Supabase
          (¿migración 025 aplicada?). Pégalo a mano en .env.local:</p>
          <pre style="background:#0d0d18;border:1px solid #2a2a4a;padding:16px;border-radius:8px;word-break:break-all;font-size:13px">INSTAGRAM_ACCESS_TOKEN=${esc(String(longData.access_token ?? ''))}</pre>`}
-    <p style="color:#52527A;font-size:13px">Expira en ~${days} días. Renovación automática vía WF-10; manual: <code>GET /api/instagram/refresh</code></p>
+    <p style="color:#52527A;font-size:13px">Expira en ~${days} días. Se renueva solo (cron <code>/api/cron/instagram-sync</code>); si algo falla, avisa por Telegram.</p>
   `)
 }
 
