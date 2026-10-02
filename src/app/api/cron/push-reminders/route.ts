@@ -1,68 +1,20 @@
 // Cron de avisos de juegos. Vercel lo dispara según vercel.json:
-//   ?kind=daily   → 09:00 UTC todos los días
-//   ?kind=weekly  → 08:00 UTC los lunes
+//   ?kind=daily   → una vez al día
+//   ?kind=weekly  → RETIRADO: responde 200 sin enviar nada (ver abajo)
+//
+// UN SOLO aviso al día. Antes el diario mandaba DOS (CrackQuiz + TakaGrid) y los
+// lunes el semanal sumaba otros dos (Sopa + Mi Once): cuatro notificaciones en
+// una mañana. Y en la app pesa el doble: `push_tokens` no tiene topics, así que
+// cada difusión llega a TODOS los móviles con la app. Ahora el diario elige UN
+// juego: el lunes, la novedad semanal (Sopa o Mi Once, alternando por semana);
+// el resto de días, CrackQuiz o TakaGrid alternando por día.
 //
 // Reusa /api/push/send (que ya valida PUSH_BROADCAST_SECRET y maneja VAPID).
-// Auth del cron: Vercel manda Authorization: Bearer <CRON_SECRET>; aceptamos
-// también ?secret= para pruebas manuales.
+// Auth del cron: Authorization: Bearer <CRON_SECRET> o x-cron-secret.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
-
-interface PushMessage {
-  title: string
-  body: string
-  url: string
-  tag: string
-}
-
-// Variantes por juego — rotan según el día del mes para que el aviso diario
-// no se sienta calcado. El tag se mantiene fijo por juego (iOS deduplica por
-// tag y reemplaza la notificación previa si aún no se ha tocado).
-
-const CRACKQUIZ_VARIANTS: Array<Omit<PushMessage, 'url' | 'tag'>> = [
-  { title: 'CrackQuiz de hoy 🎯',  body: '10 preguntas, 20 s cada una. ¿Mantienes la racha?' },
-  { title: 'Tu trivia diaria 🧠', body: '¿Cuánto sabes del deporte que sigues? Ponte a prueba.' },
-  { title: 'Pleno o nada 🎯',     body: 'Diez disparos. Cero segundos para dudar. ¡Adentro!' },
-  { title: 'Reta tu memoria 🔥',  body: 'Los 10 que jugaron ayer ya están dentro. ¿Y tú?' },
-]
-
-const TAKAGRID_VARIANTS: Array<Omit<PushMessage, 'url' | 'tag'>> = [
-  { title: 'TakaGrid de hoy 🟧',     body: 'Tres clubes, tres categorías. Un intento por celda.' },
-  { title: 'Nuevo grid disponible',  body: 'Encaja los nueve. Tu racha depende de ello.' },
-  { title: 'Conecta los nueve 🟧',   body: 'Un puzzle nuevo, nueve huecos, un solo intento.' },
-]
-
-const SOPACRACKS_VARIANTS: Array<Omit<PushMessage, 'url' | 'tag'>> = [
-  { title: 'Nueva Sopa de Cracks 🔤', body: 'Diez nombres ocultos en el puzzle semanal.' },
-  { title: 'Encuentra a los cracks',  body: 'Nueva sopa lista. ¿Cuántos cazas en menos de 2 min?' },
-]
-
-const MIONCE_VARIANTS: Array<Omit<PushMessage, 'url' | 'tag'>> = [
-  { title: 'Nuevo reto Mi Once ⚽',  body: 'Arma tu once con el reto de esta semana.' },
-  { title: 'Tu once de la semana',   body: 'Convocatoria abierta. Elige a los 11 que apuestan por ti.' },
-]
-
-function pickByDate<T>(arr: T[], seed = Date.now()): T {
-  const day = Math.floor(seed / (1000 * 60 * 60 * 24))
-  return arr[day % arr.length]
-}
-
-function buildDaily(): PushMessage[] {
-  const seed = Date.now()
-  return [
-    { ...pickByDate(CRACKQUIZ_VARIANTS, seed), url: '/crackquiz', tag: 'crackquiz' },
-    { ...pickByDate(TAKAGRID_VARIANTS, seed),  url: '/takagrid',  tag: 'takagrid'  },
-  ]
-}
-
-function buildWeekly(): PushMessage[] {
-  const seed = Date.now()
-  return [
-    { ...pickByDate(SOPACRACKS_VARIANTS, seed), url: '/sopa-cracks', tag: 'sopacracks' },
-    { ...pickByDate(MIONCE_VARIANTS, seed),     url: '/mionce',      tag: 'mionce'     },
-  ]
-}
+import { buildDaily, type PushMessage } from '@/lib/push-juegos'
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
@@ -80,14 +32,15 @@ export async function GET(req: NextRequest) {
   }
 
   const kind = url.searchParams.get('kind') ?? 'daily'
-  const messages: PushMessage[] =
-    kind === 'weekly' ? buildWeekly() :
-    kind === 'daily'  ? buildDaily()  :
-    []
-
-  if (messages.length === 0) {
+  // El semanal se ha fundido en el diario de los lunes. Se responde 200 para
+  // que la entrada de vercel.json, mientras exista, no cuente como fallo.
+  if (kind === 'weekly') {
+    return NextResponse.json({ kind, retired: true, note: 'integrado en el aviso diario del lunes' })
+  }
+  if (kind !== 'daily') {
     return NextResponse.json({ error: `unknown kind=${kind}` }, { status: 400 })
   }
+  const messages: PushMessage[] = [buildDaily()]
 
   const results: Array<{ tag: string; sent?: number; pruned?: number; error?: string }> = []
   for (const m of messages) {
