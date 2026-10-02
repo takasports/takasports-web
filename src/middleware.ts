@@ -93,8 +93,16 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  // Refresh session — do not remove
-  await supabase.auth.getUser()
+  // Refresh session — do not remove.
+  // Con tope: si el servicio de cuentas de Supabase se cuelga, sin él se colgaban
+  // con él todas las APIs del matcher (juegos, predicciones…), igual que la app
+  // en blanco de septiembre. Pasado el tope la petición sigue como estaba: la
+  // ruta vuelve a leer la sesión por su cuenta y, si no puede, la trata como
+  // invitado. El refresco de cookies se pierde solo en esa petición.
+  await Promise.race([
+    supabase.auth.getUser().catch(() => null),
+    new Promise(resolve => setTimeout(resolve, 3000)),
+  ])
 
   // Añadir CSP con nonce a la respuesta de las rutas cubiertas por este middleware.
   supabaseResponse.headers.set('Content-Security-Policy', cspHeader)
