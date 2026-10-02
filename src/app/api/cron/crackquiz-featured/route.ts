@@ -51,9 +51,14 @@ async function handle(req: Request) {
     }
   }
 
-  const result = await generateFeaturedQuestion(day)
+  const motivos: string[] = []
+  const result = await generateFeaturedQuestion(day, motivos)
   if (!result) {
-    return NextResponse.json({ ok: true, day, generated: false, reason: 'no_valid_question' })
+    // Antes este fallo era un 200 mudo: dejó de generarse el 24/07/2026 y nadie
+    // lo vio. Ahora queda el porqué en el log (y en data-freshness, que vigila
+    // la tabla crackquiz_featured).
+    console.warn(`[crackquiz-featured] sin pregunta para ${day}: ${motivos.join(' | ') || 'sin motivo'}`)
+    return NextResponse.json({ ok: true, day, generated: false, reason: 'no_valid_question', motivos })
   }
 
   if (dry) {

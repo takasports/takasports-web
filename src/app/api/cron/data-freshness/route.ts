@@ -85,6 +85,9 @@ const NOTICIAS_7D_GROQ = `count(*[_type == "article" && !(_id in path('drafts.**
 const CHECKS: ReadonlyArray<{ table: string; column: string; slaDays: number; label: string }> = [
   { table: 'past_events',   column: 'updated_at', slaDays: 2, label: 'Resultados pasados (sync diario)' },
   { table: 'content_items', column: 'created_at', slaDays: 2, label: 'Pipeline de noticias (ingesta)' },
+  // Pregunta de actualidad de CrackQuiz (cron diario con Gemini gratis). Se
+  // quedó parada del 24/07 a oct-2026 sin que nadie lo viera.
+  { table: 'crackquiz_featured', column: 'created_at', slaDays: 2, label: 'CrackQuiz · pregunta de actualidad' },
 ]
 
 // Índice Taka (recompute SEMANAL) → 9 días = 7 de cadencia + 2 de gracia.

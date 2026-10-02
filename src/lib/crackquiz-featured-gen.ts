@@ -5,11 +5,27 @@
 // inequívoca, devuelve null (no se publica basura). NO otorga puntos ni toca la
 // economía; solo alimenta la tabla crackquiz_featured que el juego ya consume.
 //
-// Coste ~$0 (gemini flash-lite, nivel gratuito). GEMINI_API_KEY en env.
+// Coste ~$0 (familia flash-lite/flash, nivel gratuito). GEMINI_API_KEY en env.
 
 import { sanityClient, articlesQuery, articleDetailQuery } from '@/lib/sanity'
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'
+// Cadena de modelos GRATUITOS (nivel free de Google AI Studio), en orden. Cada
+// modelo tiene su propio cupo diario en el nivel gratuito, así que si uno da 429
+// (cupo agotado) o 404 (retirado) se prueba el siguiente. Solo familia flash /
+// flash-lite: nada de "pro".
+//
+// Por qué: la pregunta dejó de generarse el 24/07/2026 sin una línea en los
+// logs. El código no cambió; el cron corre a las 06:00 UTC, justo ANTES de que
+// Google reinicie el cupo diario (medianoche del Pacífico = 07:00/08:00 UTC), y
+// el pipeline de n8n tira de Gemini free a destajo — si comparten proyecto, a
+// esa hora el cupo está agotado. Con un único modelo y `if (!res.ok) return
+// null`, cada fallo era un 200 «no_valid_question» mudo.
+export const GEMINI_MODELS: string[] = [...new Set([
+  process.env.GEMINI_MODEL,
+  'gemini-2.5-flash-lite',
+  'gemini-flash-lite-latest',
+  'gemini-2.5-flash',
+].filter((m): m is string => !!m))]
 
 export interface FeaturedQuestion {
   id: string
@@ -64,30 +80,48 @@ function tldrToText(tldr: unknown): string {
 
 // ── Gemini (REST, sin dependencias nuevas) ────────────────────────────────────
 
-async function callGemini(prompt: string, apiKey: string): Promise<string | null> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 18_000)
+type GeminiOutcome =
+  | { ok: true; text: string }
+  | { ok: false; status: number; detail: string }
+
+async function callGemini(prompt: string, apiKey: string, model: string): Promise<GeminiOutcome> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
   try {
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
+      // La clave va en cabecera, no en la URL: así no puede acabar en un log.
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      signal: AbortSignal.timeout(18_000),
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.4, responseMimeType: 'application/json' },
       }),
     })
-    if (!res.ok) return null
-    const json = (await res.json()) as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+    if (!res.ok) {
+      let detail = ''
+      try {
+        const j = (await res.json()) as { error?: { status?: string; message?: string } }
+        detail = [j?.error?.status, j?.error?.message].filter(Boolean).join(': ').slice(0, 240)
+      } catch { /* cuerpo no JSON */ }
+      return { ok: false, status: res.status, detail }
     }
-    return json?.candidates?.[0]?.content?.parts?.[0]?.text ?? null
-  } catch {
-    return null
-  } finally {
-    clearTimeout(timer)
+    const json = (await res.json()) as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }>
+    }
+    // Los modelos con razonamiento pueden mandar antes una parte `thought`: se
+    // une solo el texto de respuesta.
+    const parts = json?.candidates?.[0]?.content?.parts ?? []
+    const text = parts.filter(p => !p.thought && typeof p.text === 'string').map(p => p.text).join('')
+    return text ? { ok: true, text } : { ok: false, status: 200, detail: 'respuesta vacía' }
+  } catch (e) {
+    const name = (e as { name?: string })?.name
+    return { ok: false, status: 0, detail: name === 'TimeoutError' ? 'timeout 18 s' : (e as Error)?.message ?? 'error de red' }
   }
+}
+
+/** ¿El fallo es del modelo (probar otro) o de la clave/petición (no insistir)? */
+function fallaDelModelo(status: number): boolean {
+  return status === 404 || status === 429 || status === 500 || status === 503 || status === 0
 }
 
 function buildPrompt(a: { title: string; sport?: string; summary: string; body: string }): string {
@@ -167,25 +201,38 @@ function slugId(day: string, slug: string): string {
 
 /**
  * Genera la pregunta de actualidad para `day` (YYYY-MM-DD). Prueba con los
- * artículos más recientes hasta que uno produzca una MCQ válida. Devuelve la
- * pregunta + la fuente, o null si nada sirvió (o falta la API key).
+ * artículos más recientes hasta que uno produzca una MCQ válida, y con la
+ * cadena de modelos gratuitos si uno falla. Devuelve la pregunta + la fuente,
+ * o null si nada sirvió (o falta la API key). `motivos` recoge por qué falló
+ * cada intento, para que el cron lo deje en el log y en su respuesta.
  */
-export async function generateFeaturedQuestion(day: string): Promise<GenResult | null> {
+export async function generateFeaturedQuestion(day: string, motivos: string[] = []): Promise<GenResult | null> {
   const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return null
+  if (!apiKey) {
+    motivos.push('falta GEMINI_API_KEY')
+    return null
+  }
 
   let listed: ListedArticle[] = []
   try {
     listed = (await sanityClient.fetch(articlesQuery)) as ListedArticle[]
-  } catch {
+  } catch (e) {
+    motivos.push(`Sanity: ${(e as Error)?.message ?? 'error'}`)
     return null
   }
-  if (!Array.isArray(listed) || listed.length === 0) return null
+  if (!Array.isArray(listed) || listed.length === 0) {
+    motivos.push('Sanity no devolvió artículos')
+    return null
+  }
 
-  // Candidatos: recientes con título y slug; hasta 3 intentos (cabe en maxDuration 60).
+  // Candidatos: recientes con título y slug; hasta 3 intentos. Tope de tiempo
+  // global para caber en maxDuration 60 aunque haya que cambiar de modelo.
   const candidates = listed.filter((a) => a?.slug && a?.title).slice(0, 3)
+  const limite = Date.now() + 45_000
+  const modelosVivos = [...GEMINI_MODELS]
 
   for (const cand of candidates) {
+    if (Date.now() > limite || modelosVivos.length === 0) break
     // Detalle para enriquecer el contexto (tldr + cuerpo).
     let summary = cand.short_summary ?? ''
     let bodyTxt = ''
@@ -205,11 +252,25 @@ export async function generateFeaturedQuestion(day: string): Promise<GenResult |
     }
 
     const prompt = buildPrompt({ title: cand.title, sport: cand.sport, summary, body: bodyTxt })
-    const raw = await callGemini(prompt, apiKey)
+
+    let raw: string | null = null
+    while (modelosVivos.length > 0 && Date.now() <= limite) {
+      const model = modelosVivos[0]
+      const r = await callGemini(prompt, apiKey, model)
+      if (r.ok) { raw = r.text; break }
+      motivos.push(`${model}: ${r.status || 'red'}${r.detail ? ` ${r.detail}` : ''}`)
+      if (!fallaDelModelo(r.status)) {
+        // 400/401/403: clave inválida o petición rechazada — otro modelo no lo arregla.
+        if (r.status !== 200) return null
+        break // respuesta vacía: siguiente artículo, mismo modelo
+      }
+      modelosVivos.shift() // cupo agotado / retirado: se descarta para el resto
+    }
     if (!raw) continue
 
     const q = parseAndValidate(raw, slugId(day, cand.slug))
     if (q) return { question: q, source: { slug: cand.slug, title: cand.title } }
+    motivos.push(`pregunta no válida para «${cand.slug}»`)
   }
 
   return null
