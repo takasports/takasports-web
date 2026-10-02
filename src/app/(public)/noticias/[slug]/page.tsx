@@ -49,6 +49,7 @@ import RankingMentionCards from '@/components/articles/RankingMentionCards'
 import ArticleQuiz from '@/components/articles/ArticleQuiz'
 import { matchEntriesInText } from '@/lib/rankings-match'
 import SectionHeader from '@/components/ui/SectionHeader'
+import { excludeCurrentArticle } from '@/lib/related-articles'
 
 export const revalidate = 3600
 
@@ -484,12 +485,14 @@ export default async function NoticiaPage({
     : []
 
   // Usar picks editoriales si existen; si no, query dinámica por sport/category
-  const [relatedFinal, nextArticle] = await Promise.all([
+  const [relatedRaw, nextArticle] = await Promise.all([
     article.editorialRelated && article.editorialRelated.length > 0
       ? Promise.resolve(article.editorialRelated)
       : sanityClient
           .fetch<RelatedArticle[]>(relatedArticlesQuery, {
-            id,
+            // El _id real: `id` aquí es el slug de la URL y nunca coincide.
+            id: article._id,
+            slug: article.slug ?? slug,
             sport: article.sport ?? '',
             category: article.category ?? '',
           })
@@ -502,6 +505,9 @@ export default async function NoticiaPage({
           .catch(() => null)
       : Promise.resolve(null),
   ])
+  // Red de seguridad: los picks editoriales los elige una persona y pueden
+  // apuntar a la propia noticia; la consulta dinámica ya la excluye en GROQ.
+  const relatedFinal = excludeCurrentArticle(relatedRaw, { _id: article._id, slug: article.slug ?? slug })
 
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1400).height(600).url() : null)
   const canonical = `${SITE_URL}/noticias/${article.slug ?? id}`

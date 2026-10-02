@@ -161,8 +161,11 @@ export const articleDetailQuery = `*[_type == "article" && (slug.current == $id 
   matchRef
 }`
 
-// Artículos relacionados — fallback dinámico cuando editorialRelated está vacío
-export const relatedArticlesQuery = `*[_type == "article" && _id != $id && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && (sport == $sport || category == $category)] | order(publishedAt desc)[0...3] {
+// Artículos relacionados — fallback dinámico cuando editorialRelated está vacío.
+// ⚠️ $id es el `_id` REAL del artículo (no el slug de la URL) y además se excluye
+// por slug: antes se pasaba el slug como $id, `_id != slug` era siempre cierto y
+// «Sigue leyendo» recomendaba la propia noticia que estabas leyendo.
+export const relatedArticlesQuery = `*[_type == "article" && _id != $id && slug.current != $slug && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && (sport == $sport || category == $category)] | order(publishedAt desc)[0...3] {
   _id, "slug": slug.current,
   "title": select(defined(headline) => headline, title),
   "imageUrl": select(defined(headline) => imageUrl, null),
