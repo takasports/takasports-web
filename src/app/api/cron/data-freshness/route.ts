@@ -6,6 +6,10 @@
 // sin que nadie se entere. Esta alarma lo detecta mirando la BD directamente —
 // pase lo que pase con la máquina que lanza el recompute.
 //
+// Además (oct-2026): calendario de hoy sin fútbol en día de jornada, último reel
+// con más de 48 h y noticias publicadas en 7 días por debajo de 80. Las reglas
+// están en lib/data-freshness-rules.ts (probadas aparte).
+//
 // Manda ⚠️ a Telegram SOLO cuando algún dato excede su SLA (silencioso si todo
 // está fresco, para no generar ruido). Auth: x-cron-secret / Bearer CRON_SECRET.
 //   ?dry=1 → devuelve el informe JSON sin enviar Telegram.
@@ -15,9 +19,62 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { sendTelegram } from '@/lib/telegram'
 import { createClient } from '@supabase/supabase-js'
+import { sanityClient } from '@/lib/sanity'
+import { getMergedReels } from '@/lib/reels-feed'
+import { isoToLocalDate } from '@/lib/calendar'
+import { SOURCE_TZ } from '@/lib/timezone'
+import { fetchJsonExterno } from '@/lib/fetch-externo'
+import {
+  diaSemanaEn, evaluarCalendarioHoy, evaluarNoticiasSemana, evaluarReels,
+} from '@/lib/data-freshness-rules'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 30
+// 60 y no 30: ahora también lee el calendario público (/api/events/today), que
+// en frío puede tardar ~20 s.
+export const maxDuration = 60
+
+/** Origen público del sitio (mismo criterio que el cron warm-events). */
+function baseUrl(req: Request): string {
+  const env = process.env.NEXT_PUBLIC_SITE_URL
+  if (env) return env.replace(/\/$/, '')
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  return new URL(req.url).origin
+}
+
+// Partidos de fútbol con fecha de HOY (Madrid) en el calendario PÚBLICO, el que
+// ven web y app. Se lee por HTTP a propósito: si el CDN sirve una respuesta de
+// ayer o vacía, eso es justo lo que hay que detectar. null = no se pudo leer.
+async function futbolHoyPublico(req: Request, hoy: string): Promise<{ n: number | null; error?: string }> {
+  const json = await fetchJsonExterno<{ events?: Array<{ sport?: string; isoDate?: string }> }>(
+    `${baseUrl(req)}/api/events/today`,
+    { headers: { 'user-agent': 'taka-data-freshness' }, cache: 'no-store' },
+    { etiqueta: 'data-freshness', timeoutMs: 25_000 },
+  )
+  if (!json || !Array.isArray(json.events)) return { n: null, error: 'sin respuesta válida' }
+  const n = json.events.filter(e => e.sport === 'Fútbol' && e.isoDate && isoToLocalDate(e.isoDate) === hoy).length
+  return { n }
+}
+
+// Partidos de fútbol del mismo día de la semana pasada, del archivo past_events.
+async function futbolSemanaPasada(admin: NonNullable<ReturnType<typeof adminSupabase>>, ahora: number): Promise<number> {
+  const objetivo = isoToLocalDate(new Date(ahora - 7 * 86_400_000).toISOString())
+  const desde = new Date(ahora - 8.5 * 86_400_000).toISOString()
+  const hasta = new Date(ahora - 5.5 * 86_400_000).toISOString()
+  const { data, error } = await admin
+    .from('past_events')
+    .select('iso_date')
+    .eq('sport', 'Fútbol')
+    .gte('iso_date', desde)
+    .lte('iso_date', hasta)
+    .limit(1000)
+  if (error || !data) return 0 // sin base no se avisa (evita falsos positivos)
+  return (data as Array<{ iso_date: string }>).filter(r => isoToLocalDate(r.iso_date) === objetivo).length
+}
+
+// Noticias publicadas en Sanity en los últimos 7 días. Mismo criterio de
+// "publicada" que el feed (status publicado o artículo del pipeline con
+// headline, nunca borradores).
+const NOTICIAS_7D_GROQ = `count(*[_type == "article" && !(_id in path('drafts.**')) && (status == "publicado" || defined(headline)) && publishedAt > $since])`
 
 // SLA por dato: días que puede pasar sin actualizarse antes de avisar.
 //   · Resultados pasados (sync DIARIO) → 2 días = 1 de cadencia + 1 de gracia.
@@ -144,6 +201,58 @@ async function handle(req: Request) {
     }
   }
 
+  // ── Calendario, reels y noticias ────────────────────────────────────────
+  // Cada comprobación va aislada: si una falla no tumba las demás. El cron
+  // corre una vez al día, así que cada tipo de aviso llega como mucho una vez
+  // al día, todos juntos en el mismo mensaje.
+  const hoy = isoToLocalDate(new Date(now).toISOString())
+  const diaSemana = diaSemanaEn(new Date(now), SOURCE_TZ)
+
+  const [calendario, reels, noticias] = await Promise.all([
+    (async () => {
+      try {
+        const [hoyRes, base] = await Promise.all([futbolHoyPublico(req, hoy), futbolSemanaPasada(admin, now)])
+        return { futbolHoy: hoyRes.n, futbolSemanaPasada: base, error: hoyRes.error }
+      } catch (e) {
+        return { futbolHoy: null, futbolSemanaPasada: 0, error: (e as Error).message }
+      }
+    })(),
+    (async () => {
+      try {
+        const lista = await getMergedReels()
+        let max = 0
+        for (const r of lista) {
+          const ms = new Date(r.timestamp).getTime()
+          if (Number.isFinite(ms) && ms > max) max = ms
+        }
+        return { ultimoReelIso: max > 0 ? new Date(max).toISOString() : null }
+      } catch {
+        return { ultimoReelIso: null }
+      }
+    })(),
+    (async () => {
+      try {
+        const since = new Date(now - 7 * 86_400_000).toISOString()
+        const n = await sanityClient.fetch<number>(NOTICIAS_7D_GROQ, { since })
+        return { publicadas7d: typeof n === 'number' ? n : null }
+      } catch (e) {
+        return { publicadas7d: null, error: (e as Error).message }
+      }
+    })(),
+  ])
+
+  const avisoCalendario = evaluarCalendarioHoy({ ...calendario, diaSemana })
+  checks.push({ source: 'Calendario de hoy (fútbol)', ...calendario, diaSemana, ok: !avisoCalendario })
+  if (avisoCalendario) stale.push(avisoCalendario)
+
+  const avisoReels = evaluarReels({ ...reels, ahoraMs: now })
+  checks.push({ source: 'Reels (último)', ...reels, ok: !avisoReels })
+  if (avisoReels) stale.push(avisoReels)
+
+  const avisoNoticias = evaluarNoticiasSemana(noticias)
+  checks.push({ source: 'Noticias publicadas (7 días)', ...noticias, ok: !avisoNoticias })
+  if (avisoNoticias) stale.push(avisoNoticias)
+
   let telegram: { sent: boolean; note?: string } = { sent: false, note: 'sin alertas' }
   if (stale.length > 0) {
     if (dry) {
@@ -151,7 +260,7 @@ async function handle(req: Request) {
     } else {
       const msg =
         `⚠️ <b>TakaSports — datos viejos</b>\n\n${stale.join('\n')}\n\n` +
-        `Revisa el recompute semanal (launchd en el Mac) o el cron de sync correspondiente.`
+        `Revisa el recompute semanal (launchd en el Mac), el cron de sync o la fuente indicada.`
       telegram = await sendTelegram(msg)
     }
   }
