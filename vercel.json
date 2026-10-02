@@ -74,10 +74,6 @@
       "schedule": "5 0 * * 1"
     },
     {
-      "path": "/api/cron/settle-quiniela",
-      "schedule": "30 0,6,12,18 * * *"
-    },
-    {
       "path": "/api/cron/snapshot-history",
       "schedule": "0 10 * * 1"
     },
@@ -108,10 +104,6 @@
     {
       "path": "/api/cron/seo-audit",
       "schedule": "45 7 * * *"
-    },
-    {
-      "path": "/api/cron/seo-title",
-      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/cron/warm-events",
