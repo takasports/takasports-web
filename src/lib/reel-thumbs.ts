@@ -82,3 +82,15 @@ export function repairExpired<T extends {
     video_url: igUrlExpired(r.video_url) ? null : r.video_url,
   }
 }
+
+/**
+ * ¿El reel tiene alguna miniatura que pintar? La URL de Instagram (ya pasada
+ * por `stripExpiredThumbs`) o la imagen subida a Sanity. Sin ninguna, la
+ * tarjeta sale como un rectángulo casi negro: en la portada no se pinta.
+ */
+export function reelHasThumbnail(r: {
+  thumbnail_url?: string | null
+  thumbnail?: { asset?: unknown } | null
+}): boolean {
+  return Boolean(r.thumbnail_url) || Boolean(r.thumbnail?.asset)
+}

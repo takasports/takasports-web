@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import HeroBlock from '@/components/HeroBlock'
 import ReelsSection from '@/components/ReelsSection'
+import { reelHasThumbnail } from '@/lib/reel-thumbs'
 import LiveEventsSection from '@/components/LiveEventsSection'
 import NewsFeed from '@/components/NewsFeed'
 import ReportajesBlock, { type Reportaje } from '@/components/ReportajesBlock'
@@ -428,9 +429,13 @@ const NOTICIAS_EN_PORTADA = 10
         </div>
 
         {/* ── 3. REELS ───────────────────────────────────────────── */}
-        <div className="mt-6">
-          <ReelsSection reels={filteredReels} initialSport={activeSlug} />
-        </div>
+        {/* Solo reels con miniatura: sin ninguna, la sección entera no se pinta
+            (antes salían tarjetas negras cuando la foto de Instagram caducaba). */}
+        {reels.some(reelHasThumbnail) && (
+          <div className="mt-6">
+            <ReelsSection reels={filteredReels} initialSport={activeSlug} onlyWithThumbnail />
+          </div>
+        )}
 
 
         {/* ── 3.5 JUEGOS ─────────────────────────────────────────── */}

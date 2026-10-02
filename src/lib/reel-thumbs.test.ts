@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { stripExpiredThumbs, repairExpired, shortcodeOf } from './reel-thumbs'
+import { stripExpiredThumbs, repairExpired, shortcodeOf, reelHasThumbnail } from './reel-thumbs'
 
 // `oe` es la caducidad de la URL firmada de Instagram, en hex unix.
 const conOe = (segundos: number) =>
@@ -70,5 +70,17 @@ describe('shortcodeOf', () => {
     expect(shortcodeOf('https://www.instagram.com/reel/DdhEhBZAk06/')).toBe('DdhEhBZAk06')
     expect(shortcodeOf('https://instagram.com/p/DdXZNB-xDrZ/?igsh=1')).toBe('DdXZNB-xDrZ')
     expect(shortcodeOf('https://example.com/reel/x')).toBeNull()
+  })
+})
+
+describe('reelHasThumbnail', () => {
+  it('vale la URL de Instagram o la imagen de Sanity', () => {
+    expect(reelHasThumbnail({ thumbnail_url: 'https://x/y.jpg' })).toBe(true)
+    expect(reelHasThumbnail({ thumbnail: { asset: { _ref: 'image-1' } } })).toBe(true)
+  })
+  it('un reel al que stripExpiredThumbs quitó la URL y sin imagen de Sanity no tiene miniatura', () => {
+    const [r] = stripExpiredThumbs([{ thumbnail_url: conOe(AYER) }])
+    expect(reelHasThumbnail(r)).toBe(false)
+    expect(reelHasThumbnail({ thumbnail_url: null, thumbnail: null })).toBe(false)
   })
 })

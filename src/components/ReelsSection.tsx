@@ -486,14 +486,21 @@ function SportTabs({ sports, active, onChange }: { sports: string[]; active: str
 export default function ReelsSection({
   reels: rawReels,
   initialSport = '',
+  onlyWithThumbnail = false,
 }: {
   reels: SanityReel[]
   initialSport?: string
+  /** Portada: no pinta tarjetas sin miniatura (salían como rectángulos negros)
+   *  y, si no queda ninguna, no pinta la sección. */
+  onlyWithThumbnail?: boolean
 }) {
   const [liveReels, setLiveReels] = useState<SanityReel[] | null>(null)
   const [loadingLive, setLoadingLive] = useState(true)
   const source = liveReels ?? rawReels
-  const reels = source.map((r, i) => normalize(r, i))
+  const withThumb = (list: SanityReel[]) => list.map((r, i) => normalize(r, i)).filter((r) => r.thumbnailUrl)
+  let reels = onlyWithThumbnail ? withThumb(source) : source.map((r, i) => normalize(r, i))
+  // Si lo que llega en vivo no trae ninguna con foto, se queda lo del servidor.
+  if (onlyWithThumbnail && reels.length === 0 && liveReels) reels = withThumb(rawReels)
   const [activeSport, setActiveSport] = useState(initialSport)
   const [activeReel, setActiveReel] = useState<Reel | null>(null)
 
@@ -547,6 +554,7 @@ export default function ReelsSection({
   }, [activeSport])
 
   const hasReels = reels.length > 0
+  if (onlyWithThumbnail && !hasReels && !showSkeleton) return null
 
   // Tabs fijos: Fútbol, WWE. Los que tienen reels actualmente van primero.
   const reelsBySport = new Set(reels.map(r => r.sport).filter(Boolean) as string[])
