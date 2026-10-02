@@ -1,10 +1,12 @@
 import { Suspense } from 'react'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 import Image from 'next/image'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import type { PlayerDetail } from '@/app/api/jugador/[slug]/route'
 import { getSportStyle } from '@/lib/sports'
 import { SITE_URL } from '@/lib/constants'
+import { esNavegacionPropia } from '@/lib/navegacion-propia'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { imagenPequenaGratis } from '@/lib/espn-image'
 
@@ -313,7 +315,12 @@ async function Content({ p1, p2 }: { p1?: string; p2?: string }) {
 export default async function CompararPage({
   searchParams,
 }: { searchParams: Promise<{ p1?: string; p2?: string }> }) {
-  const { p1, p2 } = await searchParams
+  const params = await searchParams
+  // Una pareja ya montada solo se resuelve si se llega navegando por la web:
+  // un robot recorría todas las combinaciones (ver lib/navegacion-propia.ts).
+  const propia = esNavegacionPropia(await headers())
+  const p1 = propia ? params.p1 : undefined
+  const p2 = propia ? params.p2 : undefined
   return (
     <>
       <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>

@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 import Image from 'next/image'
 import PlayerAvatar from '@/components/PlayerAvatar'
@@ -6,6 +7,7 @@ import type { TeamDetail } from '@/app/api/team/[slug]/route'
 import DivergentBar from '@/components/comparators/DivergentBar'
 import { getSportStyle } from '@/lib/sports'
 import { SITE_URL } from '@/lib/constants'
+import { esNavegacionPropia } from '@/lib/navegacion-propia'
 import { canonicalTeamSlug } from '@/lib/team-slug'
 import { imagenPequenaGratis } from '@/lib/espn-image'
 
@@ -282,7 +284,12 @@ async function Content({ t1, t2 }: { t1?: string; t2?: string }) {
 export default async function CompararEquiposPage({
   searchParams,
 }: { searchParams: Promise<{ t1?: string; t2?: string }> }) {
-  const { t1, t2 } = await searchParams
+  const params = await searchParams
+  // Una pareja ya montada solo se resuelve si se llega navegando por la web:
+  // un robot recorría todas las combinaciones (ver lib/navegacion-propia.ts).
+  const propia = esNavegacionPropia(await headers())
+  const t1 = propia ? params.t1 : undefined
+  const t2 = propia ? params.t2 : undefined
   return (
     <>
       <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
