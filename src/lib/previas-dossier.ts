@@ -100,6 +100,8 @@ export interface DatosPrevia {
   kickoffIso: string
   estadio: string | null
   ciudad: string | null
+  /** Foto libre del estadio (Commons): fondo de la placa si no hay foto de noticias. */
+  fotoEstadio?: { url: string; autor: string | null; licencia: string | null; titulo: string } | null
 }
 
 /**

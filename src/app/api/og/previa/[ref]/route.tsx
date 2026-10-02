@@ -62,7 +62,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ref: st
 
   const r = await renderPlacaPrevia({
     home, away, competicion, kickoffIso: kickoff, estadio, ciudad, accent, colorHome, colorAway,
-    logoHome: logo(cHome), logoAway: logo(cAway), fotoUrl: encargo?.foto ?? null,
+    logoHome: logo(cHome), logoAway: logo(cAway),
+    // Foto de noticias del partido si WF-08 encontró una muy buena; si no, el estadio.
+    fotoUrl: encargo?.foto ?? encargo?.datos?.fotoEstadio?.url ?? null,
   })
   // Una previa no cambia hasta que cambia su foto, y eso ya rompe la caché con `?v=`.
   const cacheHeaders = {

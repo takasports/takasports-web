@@ -23,6 +23,7 @@ import { fetchEspnEvents } from '@/lib/espn'
 import { candidatasPrevia, cabeEnTopes, type CandidataPrevia } from '@/lib/previas'
 import { construirDossier, esPretemporada, fetchSummary } from '@/lib/previas-dossier'
 import { getBroadcastRows, matchCompetition } from '@/lib/broadcast'
+import { buscarFotoEstadio } from '@/lib/foto-estadio'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -73,6 +74,8 @@ async function handle(req: Request) {
       matchRef: ref, sport: c.sport, home: c.ev.home, away: c.ev.away!,
       competicion: c.ev.comp, kickoffIso: c.ev.isoDate!,
     }, tv)
+    // Fondo por defecto de la placa (la versión con foto es la que prefiere el editor).
+    datos.fotoEstadio = await buscarFotoEstadio(datos.estadio)
     elegidas.push(c)
     encargos.push({ partido, puntuacion: c.puntuacion, datos, dossierChars: texto.length, dossier: seco ? texto : undefined })
     if (seco) continue

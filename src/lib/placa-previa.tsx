@@ -28,6 +28,7 @@ export interface DatosEncargo {
   estadio?: string | null
   ciudad?: string | null
   sport?: string
+  fotoEstadio?: { url: string } | null
 }
 
 // Escudo con su transparencia: `fetchImageDataUri` pasa todo a JPEG (aplana el alfa
