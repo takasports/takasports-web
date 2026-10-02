@@ -49,6 +49,9 @@ const WIKIMEDIA_ANCHOS = [60, 120, 250, 330, 500, 960, 1280] as const
  *
  *   · ESPN      → su `combiner`, que redimensiona en su CDN.
  *   · Wikimedia → su miniatura estándar más pequeña que no se quede corta.
+ *   · TheSportsDB → sus variantes `/tiny` (100 px), `/small` (200) o `/medium`
+ *     (350), que sirve su propio CDN. Los recortes de jugador son PNG de 500 px
+ *     (~220 KB) y en /rankings se pintaban a 42: `/tiny` pesa 12 KB.
  *   · el resto  → la URL original, sin tocar.
  *
  * El caso que lo motivó: /comparar pintaba las caras de la NBA a tamaño completo
@@ -65,5 +68,19 @@ export function imagenPequenaGratis(src: string | null | undefined, anchoPintado
     const ancho = WIKIMEDIA_ANCHOS.find((w) => w >= objetivo) ?? WIKIMEDIA_ANCHOS[WIKIMEDIA_ANCHOS.length - 1]
     if (ancho < Number(m[2])) return `${m[1]}${ancho}px-${m[3]}`
   }
+
+  // TheSportsDB: solo el fichero original (…/media/…/x.png|jpg), sin variante ya puesta.
+  if (/^https:\/\/(r2|www)\.thesportsdb\.com\/images\/media\/.+\.(png|jpe?g)$/i.test(src)) {
+    const objetivo = anchoPintado * 2
+    const variante = THESPORTSDB_VARIANTES.find((v) => v.ancho >= objetivo)
+    if (variante) return `${src}/${variante.sufijo}`
+  }
   return src
 }
+
+/** Variantes que sirve TheSportsDB añadiendo un sufijo. Comprobado el 02/10/2026. */
+const THESPORTSDB_VARIANTES = [
+  { sufijo: 'tiny', ancho: 100 },
+  { sufijo: 'small', ancho: 200 },
+  { sufijo: 'medium', ancho: 350 },
+] as const

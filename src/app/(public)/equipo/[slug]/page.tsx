@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { imagenPequenaGratis } from '@/lib/espn-image'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import type { TeamDetail, TeamResult, RosterPlayer } from '@/app/api/team/[slug]/route'
 import { TeamTabs } from './TeamTabs'
@@ -119,7 +120,7 @@ function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterP
         style={{ width: 72, height: 72, background: `${accent}22` }}
       >
         {player.headshot ? (
-          <Image src={player.headshot} alt={player.name} width={72} height={72} unoptimized
+          <Image src={imagenPequenaGratis(player.headshot, 72)!} alt={player.name} width={72} height={72} unoptimized
             style={{ objectFit: 'cover', borderRadius: 'var(--radius-card)' }} />
         ) : (
           <span className="font-black text-2xl" style={{ color: accent, fontFamily: 'var(--font-display)' }}>
@@ -205,7 +206,7 @@ function ResultRow({ r, teamId }: { r: TeamResult; teamId: string }) {
               {r.homeTeam.abbr}
             </span>
             {r.homeTeam.logo && (
-              <Image src={r.homeTeam.logo} alt={r.homeTeam.abbr} width={20} height={20} unoptimized
+              <Image src={imagenPequenaGratis(r.homeTeam.logo, 20)!} alt={r.homeTeam.abbr} width={20} height={20} unoptimized
                 style={{ objectFit: 'contain', flexShrink: 0 }} />
             )}
           </div>
@@ -224,7 +225,7 @@ function ResultRow({ r, teamId }: { r: TeamResult; teamId: string }) {
           {/* Away */}
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             {r.awayTeam.logo && (
-              <Image src={r.awayTeam.logo} alt={r.awayTeam.abbr} width={20} height={20} unoptimized
+              <Image src={imagenPequenaGratis(r.awayTeam.logo, 20)!} alt={r.awayTeam.abbr} width={20} height={20} unoptimized
                 style={{ objectFit: 'contain', flexShrink: 0 }} />
             )}
             <span

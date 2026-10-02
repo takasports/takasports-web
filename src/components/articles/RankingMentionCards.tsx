@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { MatchedEntry } from '@/lib/rankings-match'
+import { imagenPequenaGratis } from '@/lib/espn-image'
 
 // Cards compactas del Ranking Taka para incrustar en artículos.
 // Se renderiza server-side desde la página del artículo cuando el autor
@@ -35,7 +36,7 @@ export default function RankingMentionCards({ entries }: { entries: MatchedEntry
               <div className="flex items-center gap-3 px-3 py-2.5">
                 {e.image_url ? (
                   <img
-                    src={e.image_url}
+                    src={imagenPequenaGratis(e.image_url, 40)}
                     alt={e.name}
                     width={40}
                     height={40}

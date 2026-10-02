@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { imagenPequenaGratis } from '@/lib/espn-image'
 import Link from 'next/link'
 import type { RosterPlayer } from '@/app/api/team/[slug]/route'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
@@ -32,7 +33,7 @@ function PlayerRow({ player, leagueSlug }: { player: RosterPlayer; leagueSlug: s
         style={{ background: 'rgba(124,58,237,0.18)', border: '1px solid rgba(124,58,237,0.25)' }}
       >
         {face ? (
-          <Image src={face} alt={player.name} width={32} height={32} unoptimized
+          <Image src={imagenPequenaGratis(face, 32)!} alt={player.name} width={32} height={32} unoptimized
             style={{ objectFit: 'cover', width: 32, height: 32, borderRadius: '50%' }} />
         ) : (
           <span className="text-[11px] font-black text-[#C4B5FD]" style={{ fontFamily: 'var(--font-sport)' }}>

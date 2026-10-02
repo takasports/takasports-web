@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { imagenPequenaGratis } from '@/lib/espn-image'
 
 interface Opt { id: string; name: string; image_url: string | null; score: number }
 interface PredictResp { week: string; category: string; options: Opt[]; myPick: string | null }
@@ -64,7 +65,7 @@ export default function PredictWidget({ category = 'jugadores' }: { category?: s
                 cursor: data.myPick ? 'default' : 'pointer',
               }}>
               {o.image_url ? (
-                <img src={o.image_url} alt="" width={42} height={42}
+                <img src={imagenPequenaGratis(o.image_url, 42)} alt="" width={42} height={42}
                   style={{ borderRadius: 'var(--radius-full)', objectFit: 'cover' }} />
               ) : (
                 <div style={{ width: 42, height: 42, borderRadius: 'var(--radius-full)', background: 'rgba(245,158,11,0.2)' }} />

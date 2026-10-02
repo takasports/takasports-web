@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { imagenPequenaGratis } from '@/lib/espn-image'
 import { useRouter } from 'next/navigation'
 import type { TeamTableRow, StandingZone } from '@/app/api/team/[slug]/route'
 import { canonicalTeamSlug } from '@/lib/team-slug'
@@ -81,7 +82,7 @@ export function StandingsTab({
               </span>
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 {row.logo && (
-                  <Image src={row.logo} alt={row.abbr} width={20} height={20} unoptimized
+                  <Image src={imagenPequenaGratis(row.logo, 20)!} alt={row.abbr} width={20} height={20} unoptimized
                     style={{ objectFit: 'contain', flexShrink: 0 }} />
                 )}
                 <span

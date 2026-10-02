@@ -61,3 +61,18 @@ describe('imagenPequenaGratis', () => {
     expect(imagenPequenaGratis(undefined, 22)).toBeUndefined()
   })
 })
+
+describe('imagenPequenaGratis · TheSportsDB', () => {
+  const src = 'https://r2.thesportsdb.com/images/media/player/cutout/h9u9vz1733653583.png'
+  it('elige la variante más pequeña que no se queda corta', () => {
+    expect(imagenPequenaGratis(src, 42)).toBe(`${src}/tiny`)
+    expect(imagenPequenaGratis(src, 80)).toBe(`${src}/small`)
+    expect(imagenPequenaGratis(src, 160)).toBe(`${src}/medium`)
+  })
+  it('más grande que la mayor variante: el original', () => {
+    expect(imagenPequenaGratis(src, 300)).toBe(src)
+  })
+  it('no apila sufijos', () => {
+    expect(imagenPequenaGratis(`${src}/small`, 42)).toBe(`${src}/small`)
+  })
+})
