@@ -93,9 +93,15 @@ export default function PWAManager() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
     let reloaded = false
+    // Solo hay "versión nueva" si la página YA estaba controlada por un SW. En
+    // la primera visita no hay ninguno: el SW se instala, hace clients.claim()
+    // y también dispara controllerchange. Sin esta guarda, a TODO visitante
+    // nuevo se le recargaba la página a los 1-3 s de entrar (13/06 → 02/10/2026):
+    // perdía lo que estuviera leyendo y se le cortaba la intro de la portada.
+    const hadController = !!navigator.serviceWorker.controller
 
     const onControllerChange = () => {
-      if (reloaded) return
+      if (!hadController || reloaded) return
       reloaded = true
       window.location.reload()
     }
