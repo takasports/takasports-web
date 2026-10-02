@@ -9,13 +9,15 @@
 // que exige variables de entorno al importarse, y esto tiene que poder probarse
 // (y usarse) sin arrastrar nada.
 
-/** ¿La miniatura es una URL de Instagram ya caducada? Acepta la URL directa o
- *  envuelta en el proxy `/api/instagram/thumbnail?url=…`. */
-export function thumbnailExpired(thumb: string | null | undefined): boolean {
-  if (!thumb) return false
+/** ¿Es una URL firmada de Instagram ya caducada? Acepta la URL directa o
+ *  envuelta en los proxies `/api/instagram/thumbnail?url=…` y
+ *  `/api/instagram/video?url=…`. Sirve igual para miniaturas que para vídeos:
+ *  los dos llevan el mismo `oe`. */
+export function igUrlExpired(u: string | null | undefined): boolean {
+  if (!u) return false
   try {
-    let ig = thumb
-    const m = thumb.match(/[?&]url=([^&]+)/)
+    let ig = u
+    const m = u.match(/[?&]url=([^&]+)/)
     if (m) ig = decodeURIComponent(m[1])
     const oe = new URL(ig, 'https://takasportsmedia.com').searchParams.get('oe')
     if (!oe) return false
@@ -24,6 +26,24 @@ export function thumbnailExpired(thumb: string | null | undefined): boolean {
   } catch {
     return false
   }
+}
+
+/** Alias histórico: la miniatura es el caso por el que se escribió. */
+export const thumbnailExpired = igUrlExpired
+
+/** Código corto del reel (`DdhEhBZAk06`) a partir de su enlace de Instagram. */
+export function shortcodeOf(url: string | null | undefined): string | null {
+  const m = url?.match(/instagram\.com\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]{5,40})/i)
+  return m ? m[1] : null
+}
+
+/**
+ * Miniatura de reserva que NO caduca: la URL apunta a nuestro proxy por código
+ * corto, y el proxy pide a Instagram una firma nueva en cada fallo de caché
+ * (`instagram.com/p/<código>/media/?size=l`, público y sin token).
+ */
+export function thumbBySc(sc: string): string {
+  return `/api/instagram/thumbnail?sc=${encodeURIComponent(sc)}`
 }
 
 /**
@@ -40,4 +60,25 @@ export function stripExpiredThumbs<T extends { thumbnail_url?: string | null }>(
   reels: readonly T[],
 ): T[] {
   return reels.map((r) => (thumbnailExpired(r.thumbnail_url) ? { ...r, thumbnail_url: undefined } : r))
+}
+
+/**
+ * Quita lo caducado sin tirar el reel (lo usa la mezcla de getMergedReels):
+ *   · portada caducada o ausente → la de código corto, que no caduca;
+ *   · vídeo caducado → fuera (daba 403; la web cae al embed igualmente).
+ * Además rellena `shortcode`, para que la API lo sirva siempre.
+ */
+export function repairExpired<T extends {
+  instagram_url: string; shortcode?: string; thumbnail_url: string | null; video_url: string | null
+}>(r: T): T & { shortcode?: string } {
+  const sc = r.shortcode || shortcodeOf(r.instagram_url) || undefined
+  const thumbDead = igUrlExpired(r.thumbnail_url)
+  let thumb = r.thumbnail_url
+  if (thumbDead || !thumb) thumb = sc ? thumbBySc(sc) : null
+  return {
+    ...r,
+    shortcode: sc,
+    thumbnail_url: thumb,
+    video_url: igUrlExpired(r.video_url) ? null : r.video_url,
+  }
 }

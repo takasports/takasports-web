@@ -76,7 +76,11 @@ function extractTitle(caption: string): string {
 
 export interface PublicReel {
   id: string
+  /** Enlace al reel en Instagram (`https://www.instagram.com/reel/<código>/`).
+   *  En el móvil abre la app de Instagram; es el destino de cada tarjeta. */
   instagram_url: string
+  /** Código corto del reel (`DdhEhBZAk06`). Opcional: lo rellena la mezcla. */
+  shortcode?: string
   thumbnail_url: string | null
   video_url: string | null
   timestamp: string

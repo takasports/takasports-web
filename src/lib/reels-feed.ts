@@ -5,8 +5,11 @@
 //
 // Prioridad de fuentes (gana el shortcode primero):
 //   1. Sanity CMS         — reels curados, no depende de Instagram
-//   2. Graph API oficial  — token OAuth (preferida para frescos)
-//   3. Supabase Storage   — refresca el WF-10 de n8n
+//   2. Supabase Storage   — reels.json que escribe cada hora el cron
+//                           /api/cron/instagram-sync, con portadas COPIADAS a
+//                           Storage (no caducan). Va antes que el Graph en vivo
+//                           justo por eso: mismas fichas, mejores portadas.
+//   3. Graph API oficial  — en vivo, solo aporta lo publicado en la última hora
 //   4. IG anónima         — suele dar 401 (defensiva)
 //   + JSON estático del repo como red de seguridad final.
 
@@ -15,7 +18,7 @@ import { fetchInstagramReels } from './instagram'
 import { getIgToken } from './ig-token'
 import { sanityClient, reelsQuery, urlFor } from './sanity'
 import reelsData from './reels-data.json'
-import { thumbnailExpired } from './reel-thumbs'
+import { repairExpired, shortcodeOf } from './reel-thumbs'
 
 interface SanityReelDoc {
   _id: string
@@ -83,9 +86,9 @@ function toPublicReel(r: {
 }
 
 function keyOf(r: PublicReel): string {
-  const m = r.instagram_url?.match(/\/(?:reel|p|tv)\/([^/?#]+)/i)
-  return m ? m[1] : r.id
+  return r.shortcode || shortcodeOf(r.instagram_url) || r.id
 }
+
 
 const STORAGE_URL =
   (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '') +
@@ -161,13 +164,13 @@ function merge(...sources: PublicReel[][]): PublicReel[] {
       if (seen.has(key)) continue
       const ms = tsToMs(r.timestamp)
       if (ms > 0 && now - ms > FRESHNESS_MAX_AGE_MS) continue
-      // Una miniatura caducada NO tira el reel: se le quita la URL muerta y la tarjeta
-      // cae en su degradado. Es la misma decisión que ya tomó stripExpiredThumbs ("perder
+      // Una miniatura caducada NO tira el reel: se cambia por la de código corto
+      // (repairExpired), que no caduca. Es la misma decisión que ya tomó stripExpiredThumbs ("perder
       // el reel entero sería peor que perder su foto"), que se aplicó a la home y se quedó
       // sin aplicar aquí. El 06/09/2026 caducaron a la vez las miniaturas de los 4 reels de
       // Storage, este `continue` los tiró todos, la mezcla quedó vacía y /reels y la API
       // pasaron a servir el respaldo estático de mayo.
-      seen.set(key, thumbnailExpired(r.thumbnail_url) ? { ...r, thumbnail_url: null } : r)
+      seen.set(key, repairExpired(r))
     }
   }
   return Array.from(seen.values()).sort((a, b) => tsToMs(b.timestamp) - tsToMs(a.timestamp))
@@ -199,7 +202,7 @@ export async function getMergedReels(): Promise<PublicReel[]> {
     withTimeout(fetchPublicReels().catch(() => [] as PublicReel[]), 5000, [] as PublicReel[]),
   ])
 
-  const merged = merge(sanity, official, fromStorage, live, reelsData as PublicReel[])
+  const merged = merge(sanity, fromStorage, official, live, reelsData as PublicReel[])
 
   // Mantén el cache previo si su contenido más reciente supera al actual
   // (defensa contra mezclas que retroceden por fallos puntuales de fuentes).
