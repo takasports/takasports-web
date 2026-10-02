@@ -12,7 +12,7 @@ import {
   CLUBES_LIGA_FILTERS, CLUBES_FEMENINO_LIGA_FILTERS, JUGADORAS_LIGA_FILTERS,
   type RankingEntry,
 } from '@/lib/rankings'
-import { getDisplayScore } from '@/lib/rankings-ui'
+import { getDisplayScore, esCompeticion } from '@/lib/rankings-ui'
 import { getSportStyle } from '@/lib/sports'
 import { SearchIcon, CrownIcon, FireIcon, TennisIcon, StarIcon } from '@/components/icons/GameIcons'
 import RankRow from '@/components/rankings/RankRow'
@@ -251,9 +251,10 @@ export default function RankingsClient({
           ? db('jugadoras', RANKING_JUGADORAS).filter(e => e.sport === 'tenis')
           : db('jugadoras', RANKING_JUGADORAS)
     } else {
+      // «Todos» = deportes de competición. La WWE sigue en su pestaña.
       entries = activeSport
         ? dbSportFilter('jugadores', RANKING_JUGADORES, activeSport)
-        : db('jugadores', RANKING_JUGADORES)
+        : db('jugadores', RANKING_JUGADORES).filter(e => esCompeticion(e.sport))
     }
     if (ligaFilter) entries = entries.filter(e => e.league === ligaFilter)
   }

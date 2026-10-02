@@ -14,6 +14,8 @@ const CREATOR_CATEGORIES = new Set(['creadores', 'periodistas', 'creadores_wwe']
 const CREATOR_IDS = new Set<string>(
   [...RANKING_CREADORES, ...RANKING_PERIODISTAS, ...RANKING_CREADORES_WWE].map(e => e.id),
 )
+export { DEPORTES_ESPECTACULO, esCompeticion } from './deportes-espectaculo'
+
 export function isCreatorEntry(entry: Pick<RankingEntry, 'id' | 'category'>): boolean {
   return CREATOR_CATEGORIES.has(entry.category ?? '') || CREATOR_IDS.has(entry.id)
 }

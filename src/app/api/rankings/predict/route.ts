@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseForRequest } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { apiError } from '@/lib/api-utils'
+import { DEPORTES_ESPECTACULO } from '@/lib/deportes-espectaculo'
 
 function pubClient() {
   return createClient(
@@ -35,6 +36,10 @@ export async function GET(req: NextRequest) {
     .from('ranking_view')
     .select('id,name,image_url,score')
     .eq('category', category)
+    // Solo deportes de competición: la WWE no entra en la votación (ver
+    // DEPORTES_ESPECTACULO). Mismo filtro en GET y POST, o el POST rechazaría
+    // un apoyo a quien el GET sí ofrece.
+    .not('sport', 'in', `(${DEPORTES_ESPECTACULO.join(',')})`)
     .order('score', { ascending: false })
     .limit(5)
 
@@ -70,6 +75,10 @@ export async function POST(req: NextRequest) {
   const { data: top } = await sb
     .from('ranking_view').select('id')
     .eq('category', category)
+    // Solo deportes de competición: la WWE no entra en la votación (ver
+    // DEPORTES_ESPECTACULO). Mismo filtro en GET y POST, o el POST rechazaría
+    // un apoyo a quien el GET sí ofrece.
+    .not('sport', 'in', `(${DEPORTES_ESPECTACULO.join(',')})`)
     .order('score', { ascending: false })
     .limit(5)
   if (!top?.some((t: { id: string }) => t.id === entryId)) {
