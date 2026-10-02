@@ -585,6 +585,74 @@ a[href^="/noticias/"]:visited .news-title {
   50%     { box-shadow: 0 0 0 3px rgba(239,68,68,0.65), 0 0 28px rgba(239,68,68,0.3); }
 }
 
+/* ── Intro de la portada (INTRO_BOOT_SCRIPT en lib/intro.ts, 1×/sesión) ──
+   El script marca <html data-intro> antes del primer pintado y todo lo demás
+   es esto: body::before es la cortina (fondo + resplandor) y body::after el
+   logo, animado por la tira de 12 fotogramas. Pseudo-elementos y no nodos
+   del DOM: React no los ve, así que no pueden romper la hidratación.
+   Red de seguridad: pase lo que pase con el script, la cortina se retira SOLA
+   a los 6 s; nunca puede dejar la web tapada. */
+:root {
+  /* El mismo degradado que splash-glow.png de la app (#7C3AED), ya con la
+     opacidad 0,9 con la que lo pinta la app. */
+  --ts-intro-glow: radial-gradient(closest-side, rgba(124,58,237,.9) 0%, rgba(124,58,237,.675) 12.5%, rgba(124,58,237,.477) 25%, rgba(124,58,237,.315) 37.5%, rgba(124,58,237,.198) 50%, rgba(124,58,237,.099) 62.5%, rgba(124,58,237,.045) 75%, rgba(124,58,237,.009) 87.5%, rgba(124,58,237,0) 100%);
+  --ts-intro-glow-size: min(532px, 133vw);
+  /* Tiene que coincidir con MAX_W / VW_RATIO de lib/intro.ts (cálculo del vuelo). */
+  --ts-intro-w: min(280px, 70vw);
+  --ts-intro-h: calc(var(--ts-intro-w) * 222 / 759);
+}
+html[data-intro] body::before,
+html[data-intro] body::after {
+  content: '';
+  position: fixed;
+  animation: tsIntroOut 300ms ease 6s forwards;
+}
+html[data-intro] body::before {
+  inset: 0;
+  z-index: 9998;
+  background: var(--ts-intro-glow) center / var(--ts-intro-glow-size) var(--ts-intro-glow-size) no-repeat, #09090F;
+}
+html[data-intro] body::after {
+  z-index: 9999;
+  left: calc(50% - var(--ts-intro-w) / 2);
+  top: calc(50% - var(--ts-intro-h) / 2);
+  width: var(--ts-intro-w);
+  height: var(--ts-intro-h);
+  background: url(/intro/v2/reveal-sprite.webp) 0 0 / 100% 1200% no-repeat;
+  transform-origin: 0 0;
+  opacity: 0;
+}
+/* Revelado: 12 fotogramas, 11 saltos de 40 ms; se queda en el último. */
+html[data-intro="play"] body::after {
+  opacity: 1;
+  animation: tsIntroReveal 440ms steps(11, end) forwards;
+}
+/* Vuelo a la cabecera: --ti-x/--ti-y/--ti-s los calcula el script con la
+   posición real del logo. El fondo se aclara a la vez y, al aterrizar, el
+   logo volador se funde con el real, que ya está debajo. */
+html[data-intro="fly"] body::before {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 480ms cubic-bezier(0.33, 1, 0.68, 1) 140ms;
+}
+html[data-intro="fly"] body::after {
+  background-position: 0 100%;
+  transform: translate(var(--ti-x), var(--ti-y)) scale(var(--ti-s));
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 560ms cubic-bezier(0.65, 0, 0.35, 1), opacity 160ms linear 500ms;
+}
+/* Salida rápida (clic para saltar, o algo no llegó a tiempo). */
+html[data-intro="out"] body::before,
+html[data-intro="out"] body::after {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+}
+html[data-intro="out"] body::after { background-position: 0 100%; }
+@keyframes tsIntroReveal { from { background-position: 0 0; } to { background-position: 0 100%; } }
+@keyframes tsIntroOut { to { opacity: 0; visibility: hidden; } }
+
 /* ── Reels card entrance — independiente del IntersectionObserver, que falla
    cuando el live fetch monta cards después de que la sección ya intersectó. ── */
 @keyframes reelEnter {

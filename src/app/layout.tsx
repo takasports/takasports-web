@@ -11,6 +11,7 @@ import DeviceCapInit from '@/components/DeviceCapInit'
 import ClientOnlyLayoutScripts from '@/components/ClientOnlyLayoutScripts'
 import PWAManager from '@/components/PWAManager'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL, SOCIAL_SAMEAS } from '@/lib/constants'
+import { INTRO_BOOT_SCRIPT } from '@/lib/intro'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID
@@ -162,6 +163,9 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
+        {/* Lo PRIMERO del body: decide si toca la intro de la portada antes de
+            que se pinte nada, incluido el esqueleto de loading.tsx. Ver lib/intro. */}
+        <script dangerouslySetInnerHTML={{ __html: INTRO_BOOT_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify({
