@@ -15,8 +15,9 @@ const FACTOR_META_ATHLETE = [
     desc: 'Nivel de la competición y posición del equipo en su liga' },
   { key: 'mediatico',   label: 'Mediático',   pct: pctStr(SCORE_WEIGHTS.mediatico), color: '#f59e0b',
     desc: 'Alcance en redes, búsquedas y cobertura en prensa especializada' },
-  { key: 'narrativa',   label: 'Narrativa',   pct: pctStr(SCORE_WEIGHTS.narrativa), color: '#c084fc',
-    desc: 'Momento de su carrera, hitos, polémicas y peso histórico' },
+  // Clave `narrativa` en la DB; desde la migración 110 el factor es la FORMA.
+  { key: 'narrativa',   label: 'Forma',       pct: pctStr(SCORE_WEIGHTS.narrativa), color: '#c084fc',
+    desc: 'Momentum reciente: cómo ha evolucionado su puntuación en las últimas semanas' },
 ] as const
 
 const FACTOR_META_CREATOR = [

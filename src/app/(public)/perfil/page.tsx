@@ -485,6 +485,10 @@ export default function PerfilPage() {
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
+        {/* La página no tenía ningún <h1> (con sesión o sin ella). Oculto a la
+            vista para no tocar el diseño; lo leen lectores de pantalla. */}
+        <h1 className="sr-only">Mi perfil</h1>
+
         {/* Aviso de error de inicio de sesión — descartable */}
         {authError && (
           <div

@@ -9,7 +9,6 @@ import { TrophyIcon } from './icons/GameIcons'
 // canonical hacia home (bug pendiente fix en [sport]/page.tsx).
 const SPORTS_LINKS = [
   { label: 'Fútbol',     href: '/futbol' },
-  { label: 'Mundial 2026', href: '/mundial' }, // hub /mundial: sin enlace sitewide hasta ahora (Fix M11 SEO)
   { label: 'Baloncesto', href: '/baloncesto' },
   { label: 'NBA',        href: '/nba' },        // hub /nba: sin enlace sitewide hasta ahora (Fix M11 SEO)
   { label: 'F1',         href: '/formula1' },
@@ -26,7 +25,6 @@ const LEAGUE_LINKS: { label: string; href: string; trophy?: boolean }[] = [
   { label: 'Serie A',         href: '/calendario/serie-a' },
   { label: 'Bundesliga',      href: '/calendario/bundesliga' },
   { label: 'Ligue 1',         href: '/calendario/ligue-1' },
-  { label: 'Mundial 2026',    href: '/mundial/fixture', trophy: true },
 ]
 const PLATFORM_LINKS = [
   { label: 'Inicio',       href: '/' },
@@ -140,7 +138,7 @@ export default function Footer() {
               <LogoFull size={28} />
             </div>
             <p className="text-xs leading-relaxed mb-5" style={{ color: 'var(--text-muted)', maxWidth: 200, lineHeight: '1.7' }}>
-              El deporte en tiempo real.<br />Noticias, análisis y quinielas.
+              El deporte en tiempo real.<br />Noticias, análisis y predicciones.
             </p>
             {/* Redes sociales */}
             <div className="flex gap-2 flex-wrap">

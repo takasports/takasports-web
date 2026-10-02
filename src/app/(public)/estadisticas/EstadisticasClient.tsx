@@ -525,12 +525,14 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
             {/* Title row */}
             <div className="flex flex-col sm:flex-row sm:items-end gap-3 mb-3">
               <div>
-                <h1 className="font-black leading-none"
+                {/* Rótulo visual, NO <h1>: el h1 lo pone el servidor (sr-only, con
+                    el deporte) en page.tsx y [sport]/page.tsx; con este había dos. */}
+                <p className="font-black leading-none"
                   style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem,5vw,3.2rem)', letterSpacing: '-0.03em' }}>
                   {/* Entera en blanco: con el acento de deportes oscuros (morado,
                       azul) media palabra se perdía contra el fondo. */}
                   <span style={{ color: '#F8F8FF' }}>Estadísticas</span>
-                </h1>
+                </p>
                 <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   ESPN · NBA.com · Jolpica · F1 oficial · Actualizado automáticamente
                 </p>

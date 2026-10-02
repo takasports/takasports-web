@@ -30,7 +30,9 @@ const FACTOR_DEFS = [
   { key: 'rendimiento', label: 'Rendimiento', pct: pctOf(SCORE_WEIGHTS.rendimiento), color: '#22c55e' },
   { key: 'contexto',    label: 'Contexto',    pct: pctOf(SCORE_WEIGHTS.contexto),    color: '#60a5fa' },
   { key: 'mediatico',   label: 'Mediático',   pct: pctOf(SCORE_WEIGHTS.mediatico),   color: '#f59e0b' },
-  { key: 'narrativa',   label: 'Narrativa',   pct: pctOf(SCORE_WEIGHTS.narrativa),   color: '#c084fc' },
+  // La clave sigue siendo `narrativa` (columna de la DB), pero desde la migración
+  // 110 ese factor es la FORMA: el momentum del score reciente.
+  { key: 'narrativa',   label: 'Forma',       pct: pctOf(SCORE_WEIGHTS.narrativa),   color: '#c084fc' },
 ] as const
 // Contenido (creadores/periodistas): criterio propio, audiencia-heavy
 const FACTOR_DEFS_CREATOR = [
@@ -466,7 +468,7 @@ export default async function EntryDetailPage(
           <span className="text-sm flex-shrink-0 mt-0.5">ℹ️</span>
           <p className="text-[11px] leading-relaxed"
             style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-            El <span style={{ color: '#9B7CF6' }}>Ranking Taka</span> pondera rendimiento reciente ({pctOf(SCORE_WEIGHTS.rendimiento)} %), contexto competitivo ({pctOf(SCORE_WEIGHTS.contexto)} %), influencia mediática ({pctOf(SCORE_WEIGHTS.mediatico)} %) y narrativa pública ({pctOf(SCORE_WEIGHTS.narrativa)} %). Las tendencias reflejan el movimiento respecto al período anterior.
+            El <span style={{ color: '#9B7CF6' }}>Ranking Taka</span> pondera rendimiento reciente ({pctOf(SCORE_WEIGHTS.rendimiento)} %), contexto competitivo ({pctOf(SCORE_WEIGHTS.contexto)} %), influencia mediática ({pctOf(SCORE_WEIGHTS.mediatico)} %) y forma reciente ({pctOf(SCORE_WEIGHTS.narrativa)} %). Las tendencias reflejan el movimiento respecto al período anterior.
           </p>
         </div>
 
