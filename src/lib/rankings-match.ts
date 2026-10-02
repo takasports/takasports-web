@@ -7,6 +7,7 @@
 // Sin LLM, sin API externa, sin coste. Cacheado por revalidate de Next.
 
 import { createClient } from '@supabase/supabase-js'
+import { esCaraFutbolEspn } from '@/lib/espn-image'
 
 export interface MatchedEntry {
   id: string
@@ -192,7 +193,11 @@ export async function matchEntriesInText(
   for (const h of hits) {
     if (seen.has(h.entry.id)) continue
     seen.add(h.entry.id)
-    final.push(h.entry)
+    // La cara de futbolista de ESPN da 404 casi siempre: sin URL, la tarjeta
+    // pinta su hueco de siempre sin hacer la petición (ni el preload que React
+    // añade por cada <img> del servidor, que la disparaba en toda la web al
+    // precargar noticias).
+    final.push(esCaraFutbolEspn(h.entry.image_url) ? { ...h.entry, image_url: null } : h.entry)
     if (final.length >= limit) break
   }
   return final

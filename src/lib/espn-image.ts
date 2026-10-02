@@ -84,3 +84,13 @@ const THESPORTSDB_VARIANTES = [
   { sufijo: 'small', ancho: 200 },
   { sufijo: 'medium', ancho: 350 },
 ] as const
+
+/**
+ * ¿Es una cara de futbolista de ESPN? ESPN no las publica: la URL existe en
+ * nuestros datos (sale del id de ESPN) pero da 404 casi siempre. Pedirla solo
+ * ensucia la consola; mejor pintar el hueco de siempre sin hacer la petición.
+ * Vale con la URL directa y con la del combiner.
+ */
+export function esCaraFutbolEspn(url: string | null | undefined): boolean {
+  return !!url && url.includes(ESPN_HOST) && /\/headshots\/soccer\//i.test(url)
+}

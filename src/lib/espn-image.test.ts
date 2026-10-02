@@ -31,7 +31,7 @@ describe('espnAt', () => {
   })
 })
 
-import { imagenPequenaGratis } from './espn-image'
+import { imagenPequenaGratis, esCaraFutbolEspn } from './espn-image'
 
 describe('imagenPequenaGratis', () => {
   it('ESPN: pasa por su combiner al doble del tamaño pintado', () => {
@@ -74,5 +74,17 @@ describe('imagenPequenaGratis · TheSportsDB', () => {
   })
   it('no apila sufijos', () => {
     expect(imagenPequenaGratis(`${src}/small`, 42)).toBe(`${src}/small`)
+  })
+})
+
+describe('esCaraFutbolEspn', () => {
+  it('reconoce la cara de futbolista, directa o por el combiner', () => {
+    expect(esCaraFutbolEspn('https://a.espncdn.com/i/headshots/soccer/players/full/238472.png')).toBe(true)
+    expect(esCaraFutbolEspn('https://a.espncdn.com/combiner/i?img=/i/headshots/soccer/players/full/238472.png')).toBe(true)
+  })
+  it('deja en paz las caras que ESPN sí publica y los escudos', () => {
+    expect(esCaraFutbolEspn('https://a.espncdn.com/i/headshots/nba/players/full/1966.png')).toBe(false)
+    expect(esCaraFutbolEspn('https://a.espncdn.com/i/teamlogos/soccer/500/86.png')).toBe(false)
+    expect(esCaraFutbolEspn(null)).toBe(false)
   })
 })

@@ -261,7 +261,7 @@ export const RANKING_JUGADORES: RankingEntry[] = [
     sport: 'ufc', score: 87.1, trend: 'up2', region: 'europa', badge: 'Nuevo',
     insight: 'Campeón indiscutido de los pesos pesados tras la retirada de Jon Jones en junio 2025. La nueva era de la división reina.',
     emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', country: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Tom_Aspinall_UFC_295_%28cropped%29.jpg/330px-Tom_Aspinall_UFC_295_%28cropped%29.jpg',
+    // Sin foto: el fichero de Commons se borró (404) y la DB no tiene otra.
     scorePrev: 70.0, trendReason: 'Campeón indiscutido tras la retirada de Jon Jones — nueva era del peso pesado',
     factors: { rendimiento: 89, contexto: 88, mediatico: 82, narrativa: 90 },
   },

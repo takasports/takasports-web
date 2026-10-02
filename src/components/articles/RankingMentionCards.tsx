@@ -40,6 +40,8 @@ export default function RankingMentionCards({ entries }: { entries: MatchedEntry
                     alt={e.name}
                     width={40}
                     height={40}
+                    loading="lazy"
+                    decoding="async"
                     style={{ borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
                   />
                 ) : (

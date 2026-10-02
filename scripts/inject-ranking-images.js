@@ -56,7 +56,7 @@ const IMAGE_MAP = {
   piastri:   'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/2026_Chinese_GP_-_Oscar_Piastri_%28cropped%29_%28cropped%29.jpg/330px-2026_Chinese_GP_-_Oscar_Piastri_%28cropped%29_%28cropped%29.jpg',
   leclerc:   'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/2024-08-25_Motorsport%2C_Formel_1%2C_Gro%C3%9Fer_Preis_der_Niederlande_2024_STP_3978_by_Stepro_%28cropped2%29.jpg/330px-2024-08-25_Motorsport%2C_Formel_1%2C_Gro%C3%9Fer_Preis_der_Niederlande_2024_STP_3978_by_Stepro_%28cropped2%29.jpg',
   // UFC
-  aspinall:  'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Tom_Aspinall_UFC_295_%28cropped%29.jpg/330px-Tom_Aspinall_UFC_295_%28cropped%29.jpg',
+  // aspinall: el fichero de Commons se borró (404), no reinyectar.
   topuria:   'https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Ilia_Topuria_at_the_Orbeliani_Palace_%28cropped%29.jpg/330px-Ilia_Topuria_at_the_Orbeliani_Palace_%28cropped%29.jpg',
   pereira:   'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Alex_Pereira_UFC_300.png/330px-Alex_Pereira_UFC_300.png',
   mcgregor:  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Conor_McGregor_2025.jpeg/330px-Conor_McGregor_2025.jpeg',
