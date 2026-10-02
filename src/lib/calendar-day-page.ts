@@ -175,7 +175,13 @@ export interface DayStar {
   /** "HH:MM" en la zona base; vacío o ausente si no hay hora. */
   time?: string
   channel?: string
+  /** Partido de una liga femenina: el nombre solo («Barcelona–Real Madrid») se
+   *  lee como el Clásico masculino, y quien busca ese y entra se va. */
+  femenino?: boolean
 }
+
+/** Competiciones femeninas tal y como las nombra el feed («Liga F», «WSL»…). */
+const COMP_FEMENINA = /\bliga f\b|femen|women|\bwsl\b|\bnwsl\b|arkema|frauen/i
 
 /** Lo que Google enseña antes de cortar con «…». */
 export const DAY_DESCRIPTION_MAX = 160
@@ -233,6 +239,7 @@ export function pickDayStars<E extends StarCandidate>(
       away: e.away!.trim(),
       time: e.timeTbd ? undefined : (e.time || undefined),
       channel: channel(e) || undefined,
+      ...(COMP_FEMENINA.test(e.comp) ? { femenino: true } : {}),
     })
   }
   return out
@@ -240,7 +247,7 @@ export function pickDayStars<E extends StarCandidate>(
 
 function starLabel(s: DayStar, withChannel: boolean): string {
   const extra = [s.time, withChannel ? s.channel : undefined].filter(Boolean).join(', ')
-  return `${s.home}–${s.away}${extra ? ` (${extra})` : ''}`
+  return `${s.home}–${s.away}${s.femenino ? ' femenino' : ''}${extra ? ` (${extra})` : ''}`
 }
 
 /** «Quién juega el …: A–B (17:00, DAZN), C–D (20:45) y 31 partidos más…». */

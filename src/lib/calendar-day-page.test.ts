@@ -210,6 +210,13 @@ describe('pickDayStars', () => {
     ])
   })
 
+  it('marca los partidos de liga femenina para no venderlos como el masculino', () => {
+    const [s] = pickDayStars([ev('1', 'Barcelona', 'Real Madrid', 17, { comp: 'Liga F', broadcast: 'DAZN' })], score, channel)
+    expect(s.femenino).toBe(true)
+    const desc = dayPageDescription('2026-10-04', 33, '2026-10-02', [s])
+    expect(desc).toContain('Barcelona–Real Madrid femenino (20:00, DAZN)')
+  })
+
   it('sin partidos grandes no devuelve nada', () => {
     expect(pickDayStars([ev('1', 'Mirandés', 'Eldense', 6)], score, channel)).toEqual([])
   })
