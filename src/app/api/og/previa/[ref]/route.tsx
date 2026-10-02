@@ -19,6 +19,7 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { fetchSummary, parseMatchRef } from '@/lib/previas-dossier'
 import { renderPlacaPrevia, type DatosEncargo } from '@/lib/placa-previa'
 import { accentForSport } from '@/lib/sports'
+import { toSpanishNation } from '@/lib/nation-names'
 
 export const runtime = 'nodejs'
 
@@ -45,8 +46,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ref: st
   if (!encargo?.datos && !cHome) return new Response('match_not_found', { status: 404 })
 
   const d = encargo?.datos ?? {}
-  const home = d.home ?? cHome?.team?.displayName ?? ''
-  const away = d.away ?? cAway?.team?.displayName ?? ''
+  // Sin encargo (p. ej. alguien abre la URL de un partido sin previa) los nombres
+  // salen de ESPN, en inglés: las selecciones se traducen ("Spain" → "España").
+  const home = d.home ?? toSpanishNation(cHome?.team?.displayName ?? '') ?? ''
+  const away = d.away ?? toSpanishNation(cAway?.team?.displayName ?? '') ?? ''
   const kickoff = d.kickoffIso ?? comp?.date
   const competicion = d.competicion ?? summary?.header?.league?.name ?? ''
   const venue = summary?.gameInfo?.venue
