@@ -31,15 +31,11 @@
     },
     {
       "path": "/api/cron/push-reminders?kind=daily",
-      "schedule": "0 9 * * *"
+      "schedule": "0 18 * * *"
     },
     {
       "path": "/api/cron/data-freshness",
       "schedule": "15 7 * * *"
-    },
-    {
-      "path": "/api/cron/push-reminders?kind=weekly",
-      "schedule": "0 8 * * 1"
     },
     {
       "path": "/api/cron/sync-football",
@@ -116,6 +112,14 @@
     {
       "path": "/api/cron/cronicas",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/instagram-sync",
+      "schedule": "20 * * * *"
+    },
+    {
+      "path": "/api/cron/crackquiz-featured",
+      "schedule": "15 8 * * *"
     }
   ],
   "functions": {
