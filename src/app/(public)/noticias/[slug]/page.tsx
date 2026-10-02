@@ -1772,8 +1772,10 @@ export default async function NoticiaPage({
 
         </div>
 
+        {/* Solo escritorio: en móvil «Siguiente artículo» ya va dentro del bloque
+            `lg:hidden` de arriba, justo tras el cuerpo, y salía dos veces. */}
         {nextArticle && (
-          <div className="mx-auto mt-16" style={{ maxWidth: 1160 }}>
+          <div className="mx-auto mt-16 hidden lg:block" style={{ maxWidth: 1160 }}>
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2.5rem' }}>
               <p
                 className="text-[10px] font-black uppercase tracking-widest mb-4"
