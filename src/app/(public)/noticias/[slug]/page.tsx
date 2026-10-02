@@ -310,14 +310,18 @@ function ArticleSidebar({
                 <circle cx="6.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.3" />
                 <path d="M1.5 11.5c0-2.485 2.239-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
               </svg>
-              <Link
-                href="/autor/redaccion"
-                rel="author"
-                className="text-[11px] hover:text-white transition-colors"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {displayAuthor(article.author)}
-              </Link>
+              {article.type === 'columna' ? (
+                <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{displayAuthor(article.author)}</span>
+              ) : (
+                <Link
+                  href="/autor/redaccion"
+                  rel="author"
+                  className="text-[11px] hover:text-white transition-colors"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {displayAuthor(article.author)}
+                </Link>
+              )}
             </div>
           )}
 
@@ -554,6 +558,7 @@ export default async function NoticiaPage({
   }
 
   const articleAuthor = displayAuthor(article.author)
+  const esColumna = article.type === 'columna'
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
@@ -590,14 +595,17 @@ export default async function NoticiaPage({
       cssSelector: ['h1', '[aria-label="Claves rápidas"]'],
     },
     isPartOf: { '@id': `${SITE_URL}/#website` },
-    author: {
-      '@type': 'NewsMediaOrganization',
-      '@id': `${SITE_URL}/autor/redaccion#author`,
-      name: articleAuthor,
-      url: `${SITE_URL}/autor/redaccion`,
-      logo: { '@type': 'ImageObject', url: `${SITE_URL}/taka-logo.png` },
-      sameAs: SOCIAL_SAMEAS,
-    },
+    // Las columnas de opinión las firma una persona, no la Redacción.
+    author: esColumna
+      ? { '@type': 'Person', name: articleAuthor }
+      : {
+          '@type': 'NewsMediaOrganization',
+          '@id': `${SITE_URL}/autor/redaccion#author`,
+          name: articleAuthor,
+          url: `${SITE_URL}/autor/redaccion`,
+          logo: { '@type': 'ImageObject', url: `${SITE_URL}/taka-logo.png` },
+          sameAs: SOCIAL_SAMEAS,
+        },
     publisher: { '@id': `${SITE_URL}/#organization` },
     copyrightHolder: { '@id': `${SITE_URL}/#organization` },
     copyrightYear: article.publishedAt ? new Date(article.publishedAt).getFullYear() : new Date().getFullYear(),
@@ -1332,6 +1340,17 @@ export default async function NoticiaPage({
               )}
             </div>
 
+            {esColumna && (
+              <div className="mb-3 flex items-center gap-2.5">
+                <span
+                  className="rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-widest"
+                  style={{ background: 'var(--sport-accent)', color: '#0A0A12', fontFamily: 'var(--font-sport)' }}
+                >
+                  Opinión
+                </span>
+                <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Por {articleAuthor}</span>
+              </div>
+            )}
             <h1
               className="font-black leading-tight mb-3"
               style={{
@@ -1575,10 +1594,9 @@ export default async function NoticiaPage({
               )}
               {/* Caja de autor de marca: siempre visible (articleAuthor con
                   fallback). Avatar teñido del deporte (--sport-accent). */}
-              <Link
-                href="/autor/redaccion"
-                rel="author"
-                aria-label={`Más artículos de ${articleAuthor}`}
+              <CajaAutor
+                esColumna={esColumna}
+                aria-label={esColumna ? `Columna de ${articleAuthor}` : `Más artículos de ${articleAuthor}`}
                 className="author-box hero-enter group mt-8 flex items-center gap-3.5 rounded-2xl p-4"
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)', textDecoration: 'none' }}
               >
@@ -1599,16 +1617,16 @@ export default async function NoticiaPage({
                     {articleAuthor}
                   </span>
                   <span className="text-[11px] leading-tight mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    Periodismo deportivo · Taka Sports
+                    {esColumna ? 'Columna de opinión · Taka Sports' : 'Periodismo deportivo · Taka Sports'}
                   </span>
-                  <span className="text-[11px] font-semibold leading-tight mt-1.5 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all" style={{ color: 'var(--sport-accent)' }}>
+                  {!esColumna && <span className="text-[11px] font-semibold leading-tight mt-1.5 inline-flex items-center gap-1 group-hover:gap-1.5 transition-all" style={{ color: 'var(--sport-accent)' }}>
                     Ver perfil
                     <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                       <path d="M3 6h6M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                  </span>
+                  </span>}
                 </span>
-              </Link>
+              </CajaAutor>
             </div>
 
             <div className="lg:hidden">
@@ -1861,4 +1879,11 @@ export default async function NoticiaPage({
       <ShareStoryFab slug={article.slug ?? id} title={article.title} accent={badgeColor} />
     </div>
   )
+}
+
+// Caja de autor: enlaza al perfil de la Redacción, salvo en las columnas de
+// opinión, que firma una persona y no tienen (aún) página de autor propia.
+function CajaAutor({ esColumna, children, ...rest }: { esColumna: boolean; children: React.ReactNode } & React.HTMLAttributes<HTMLElement>) {
+  if (esColumna) return <div {...rest}>{children}</div>
+  return <Link href="/autor/redaccion" rel="author" {...rest}>{children}</Link>
 }

@@ -247,3 +247,68 @@ export function golesPorEquipo(keyEvents: Array<Record<string, any>>, idHome: st
   const fmt = (m: Map<string, string[]>) => [...m.entries()].map(([n, mins]) => `${n} ${mins.join(', ')}`)
   return { home: fmt(lados.home), away: fmt(lados.away) }
 }
+
+// ── COLUMNA DE OPINIÓN ──────────────────────────────────────────────────────
+// Misma familia visual que las placas de partido, pero editorial: rótulo
+// «OPINIÓN», el titular grande y la firma. Foto de fondo si WF-08 encontró una
+// buena para el tema; si no, fondo con el acento del deporte.
+export async function renderPlacaColumna(p: { titulo: string; firma: string; accent: string; fotoUrl?: string | null }) {
+  const [foto, { anton, semi, bold }] = await Promise.all([
+    p.fotoUrl ? fetchImageDataUri(p.fotoUrl) : Promise.resolve(null),
+    fontData,
+  ])
+  const titulo = truncate(p.titulo, 95)
+  const tam = titulo.length > 70 ? 66 : titulo.length > 45 ? 78 : 92
+  const png = new ImageResponse(
+    (
+      <div style={{ width: W, height: H, display: 'flex', position: 'relative', background: '#09090F', fontFamily: 'Barlow Condensed' }}>
+        {foto && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={foto} alt="" width={W} height={H} style={{ position: 'absolute', top: 0, left: 0, width: W, height: H, objectFit: 'cover' }} />
+        )}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, width: W, height: H, display: 'flex',
+          background: foto
+            ? 'linear-gradient(90deg, rgba(9,9,15,0.94) 0%, rgba(9,9,15,0.82) 55%, rgba(9,9,15,0.55) 100%)'
+            : `radial-gradient(ellipse 900px 600px at 0% 100%, ${p.accent}40 0%, transparent 70%)`,
+        }} />
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: W, height: H, padding: '50px 64px 40px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <div style={{
+              display: 'flex', padding: '8px 22px 5px', borderRadius: 9999, background: p.accent, color: '#09090F',
+              fontSize: 26, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase',
+            }}>
+              Opinión
+            </div>
+          </div>
+          <div style={{ display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'center', gap: 26, maxWidth: 1000 }}>
+            <div style={{ display: 'flex', width: 90, height: 8, background: p.accent, borderRadius: 4 }} />
+            <div style={{ display: 'flex', fontFamily: 'Anton', fontSize: tam, lineHeight: 1.02, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.005em' }}>
+              {titulo}
+            </div>
+            <div style={{ display: 'flex', fontSize: 32, fontWeight: 700, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.04em' }}>
+              {`Por ${truncate(p.firma, 40)}`}
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 18, borderTop: '2px solid rgba(255,255,255,0.12)' }}>
+            <div style={{ display: 'flex', fontFamily: 'Anton', fontSize: 30, color: p.accent }}>TAKASPORTSMEDIA.COM</div>
+          </div>
+        </div>
+      </div>
+    ),
+    {
+      width: W, height: H,
+      fonts: [
+        { name: 'Anton', data: anton, weight: 400, style: 'normal' },
+        { name: 'Barlow Condensed', data: semi, weight: 600, style: 'normal' },
+        { name: 'Barlow Condensed', data: bold, weight: 700, style: 'normal' },
+      ],
+    },
+  )
+  try {
+    const jpeg = await sharp(Buffer.from(await png.arrayBuffer())).jpeg({ quality: 88, mozjpeg: true }).toBuffer()
+    return { body: new Uint8Array(jpeg) as Uint8Array | ReadableStream<Uint8Array> | null, type: 'image/jpeg' }
+  } catch {
+    return { body: png.body, type: 'image/png' }
+  }
+}
