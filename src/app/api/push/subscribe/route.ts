@@ -46,7 +46,11 @@ export async function POST(req: NextRequest) {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const sb = await createServerSupabaseClient()
       const { data: { user } } = await sb.auth.getUser()
-      const { error } = await sb.from('push_subscriptions').upsert({
+      // La escritura va con service role: la política de la tabla ya no deja a
+      // un anónimo leer ni tocar las suscripciones sin dueño (migración 135), y
+      // el user_id lo fija el servidor a partir de la sesión, no el cliente.
+      const writer = adminSupabase() ?? sb
+      const { error } = await writer.from('push_subscriptions').upsert({
         endpoint: sub.endpoint,
         user_id: user?.id ?? null,
         p256dh: sub.keys.p256dh,
@@ -77,8 +81,10 @@ export async function DELETE(req: NextRequest) {
     if (!endpoint) return NextResponse.json({ error: 'endpoint required' }, { status: 400 })
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      const sb = await createServerSupabaseClient()
-      await sb.from('push_subscriptions').delete().eq('endpoint', endpoint)
+      // El endpoint es el secreto de la suscripción: quien lo tiene puede darla
+      // de baja, como hasta ahora. Service role por la misma razón que arriba.
+      const writer = adminSupabase() ?? (await createServerSupabaseClient())
+      await writer.from('push_subscriptions').delete().eq('endpoint', endpoint)
     }
     memSubs.delete(endpoint)
     return NextResponse.json({ ok: true })
