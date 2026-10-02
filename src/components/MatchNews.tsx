@@ -17,6 +17,7 @@ interface RelatedArticle {
   sport?: string
   imageUrl?: string | null
   image?: { asset: { _ref: string } } | null
+  type?: string
 }
 
 export default async function MatchNews({
@@ -38,14 +39,16 @@ export default async function MatchNews({
     })
     .catch(() => [] as RelatedArticle[])
 
-  if (articles.length === 0) return null
+  // La previa ya va destacada arriba del Resumen (PreviaPartido): aquí sobraría.
+  const lista = articles.filter((a) => a.type !== 'previa')
+  if (lista.length === 0) return null
 
   return (
     <section className="mt-10 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
       <SectionHeader>Noticias relacionadas</SectionHeader>
 
       <div className="flex flex-col gap-2">
-        {articles.map((a) => (
+        {lista.map((a) => (
           a.slug ? <ArticleCard key={a._id} article={a} variant="row" size="sm" prefetch={false} /> : null
         ))}
       </div>

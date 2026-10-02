@@ -155,7 +155,10 @@ export const articleDetailQuery = `*[_type == "article" && (slug.current == $id 
       "approx": coalesce(matchKickoff.approx, false)
     },
     null
-  )
+  ),
+  // Partido de ESPN al que pertenece la nota (solo previas automáticas): enlaza
+  // la nota con su ficha /partido/[ref] sin adivinar por el titular.
+  matchRef
 }`
 
 // Artículos relacionados — fallback dinámico cuando editorialRelated está vacío
@@ -245,6 +248,14 @@ export const articlesByMatchQuery = `*[_type == "article"
     || title match $away || headline match $away || short_summary match $away || metaDescription match $away
   )
 ] | order(publishedAt desc)[0...$limit] {
+  ${LISTING_FIELDS}
+}`
+
+// La previa de Taka de un partido, por su matchRef exacto (no por texto). La
+// pinta la ficha /partido/[ref] destacada encima de las noticias relacionadas.
+export const previaByMatchRefQuery = `*[_type == "article" && matchRef == $ref && type == "previa"
+  && defined(headline) && !(_id in path('drafts.**'))
+] | order(publishedAt desc)[0] {
   ${LISTING_FIELDS}
 }`
 

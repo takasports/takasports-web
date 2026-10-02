@@ -82,6 +82,11 @@ const CATEGORIAS: Record<string, string> = {
   accuratePasses: 'Más pases acertados', saves: 'Más paradas', points: 'Máximo anotador',
   rebounds: 'Máximo reboteador', assists: 'Máximo asistente',
 }
+// Etiquetas que ESPN solo trae en inglés y sin clave conocida.
+const CATEGORIAS_TEXTO: Record<string, string> = {
+  'Defensive Interventions': 'Intervenciones defensivas', 'Goals': 'Goles', 'Assists': 'Asistencias',
+  'Points': 'Puntos', 'Rebounds': 'Rebotes', 'Total Shots': 'Tiros', 'Saves': 'Paradas',
+}
 // "Matches: 2, Goals: 3" → "3 goles en 2 partidos"; lo que no encaja se deja tal cual.
 function traducirValor(v: unknown): string {
   const t = String(v ?? '')
@@ -264,7 +269,7 @@ export function construirDossier(
   for (const t of summary?.leaders ?? []) {
     const id = String(t?.team?.id ?? '')
     const cats = (t?.leaders ?? []).map((c: J) => {
-      const etiqueta = CATEGORIAS[c?.name] ?? c?.displayName ?? c?.name
+      const etiqueta = CATEGORIAS[c?.name] ?? CATEGORIAS_TEXTO[c?.displayName] ?? c?.displayName ?? c?.name
       const top = (c?.leaders ?? []).slice(0, 2).map((x: J) => `${x?.athlete?.displayName} — ${traducirValor(x?.displayValue)}`)
       return top.length ? `${etiqueta}: ${top.join('; ')}` : null
     }).filter(Boolean)
@@ -311,6 +316,156 @@ export function construirDossier(
   if (noticias.length) {
     L.push('ACTUALIDAD RECIENTE DE LOS EQUIPOS (titulares en inglés; tradúcelos, no los cites literalmente):\n' +
       noticias.map((a: J) => `- ${fmtFecha(a.published)}: ${a.headline}${a.description ? ` — ${a.description}` : ''}`).join('\n'))
+  }
+
+  return { datos, texto: L.join('\n\n') }
+}
+
+// ── CRÓNICA ─────────────────────────────────────────────────────────────────
+// Mismo principio que la previa: todo dato que el redactor pueda citar sale de
+// aquí, ya contado y escrito sin ambigüedades (marcador al descanso calculado,
+// goles con minuto y autor, el ganador escrito). El resumen de ESPN (en inglés)
+// entra solo como contexto: el redactor no lo traduce ni lo copia.
+
+const ESTADISTICAS_FUTBOL: Array<[string, string, (v: string) => string]> = [
+  ['possessionPct', 'Posesión', (v) => `${v}%`],
+  ['totalShots', 'Tiros', (v) => v],
+  ['shotsOnTarget', 'Tiros a puerta', (v) => v],
+  ['wonCorners', 'Saques de esquina', (v) => v],
+  ['foulsCommitted', 'Faltas', (v) => v],
+  ['offsides', 'Fueras de juego', (v) => v],
+  ['saves', 'Paradas', (v) => v],
+  ['accuratePasses', 'Pases acertados', (v) => v],
+  ['totalPasses', 'Pases totales', (v) => v],
+  ['yellowCards', 'Amarillas', (v) => v],
+  ['redCards', 'Rojas', (v) => v],
+]
+
+/** ¿Este keyEvent de ESPN es un gol? Ojo: el penalti marcado llega como
+ *  "Penalty - Scored", SIN la palabra "goal" (lo cazó una prueba el 02/10/2026). */
+export function esGol(tipo: string): boolean {
+  if (/no goal|disallow|missed|saved/i.test(tipo)) return false
+  return /goal/i.test(tipo) || /penalty\s*-\s*scored/i.test(tipo)
+}
+
+/** Minuto de ESPN ("45'+2'") → número para ordenar y partir en mitades. */
+function minutoNum(m: string | undefined): number {
+  const x = /(\d+)'?(?:\s*\+\s*(\d+))?/.exec(m ?? '')
+  return x ? Number(x[1]) + (x[2] ? Number(x[2]) / 100 : 0) : 999
+}
+
+export function construirDossierCronica(
+  summary: J,
+  base: Omit<DatosPrevia, 'estadio' | 'ciudad' | 'fase'>,
+): { datos: DatosPrevia & { marcador: { home: number; away: number } }; texto: string } {
+  const comp = summary?.header?.competitions?.[0] ?? {}
+  const competidores: J[] = comp.competitors ?? []
+  const cH = competidores.find((c) => c.homeAway === 'home')
+  const cA = competidores.find((c) => c.homeAway === 'away')
+  const idH = String(cH?.team?.id ?? '')
+  const idA = String(cA?.team?.id ?? '')
+  const nombre = (id: string, fallback: string) => (id === idH ? base.home : id === idA ? base.away : nombreEs(fallback))
+  const gH = Number(cH?.score), gA = Number(cA?.score)
+  const venue = summary?.gameInfo?.venue ?? {}
+  const datos = {
+    ...base,
+    competicion: summary?.header?.league?.name || base.competicion,
+    fase: summary?.header?.season?.name ?? null,
+    estadio: venue.fullName ?? null,
+    ciudad: [venue.address?.city, venue.address?.country].filter(Boolean).join(', ') || null,
+    marcador: { home: gH, away: gA },
+  }
+
+  const L: string[] = []
+  const ganador = gH > gA ? `ganó ${base.home}` : gA > gH ? `ganó ${base.away}` : 'empate'
+  L.push(`RESULTADO FINAL: ${base.home} ${gH} - ${gA} ${base.away} (${ganador}). ${base.home} jugaba como local.`)
+  L.push(`COMPETICIÓN: ${datos.competicion}${datos.fase ? ` — ${traducir(datos.fase)}` : ''}. No consta grupo ni jornada: no los menciones.`)
+  L.push(`FECHA: ${fmtFecha(base.kickoffIso)}, ${fmtHora(base.kickoffIso, 'Europe/Madrid')} hora peninsular española.`)
+  if (datos.estadio) L.push(`ESTADIO: ${datos.estadio}${datos.ciudad ? ` (${datos.ciudad})` : ''}.`)
+  const gi = summary?.gameInfo ?? {}
+  if (gi.attendance) L.push(`ASISTENCIA: ${gi.attendance} espectadores.`)
+  const arbitros = (gi.officials ?? []).map((o: J) => o?.displayName).filter(Boolean)
+  if (arbitros.length) L.push(`ÁRBITRO: ${arbitros.join(', ')}.`)
+
+  // Goles, tarjetas y cambios, en orden de minuto
+  const ke: J[] = summary?.keyEvents ?? []
+  const goles: string[] = []
+  const tarjetas: string[] = []
+  let alDescanso = { h: 0, a: 0 }
+  for (const e of [...ke].sort((x, y) => minutoNum(x?.clock?.displayValue) - minutoNum(y?.clock?.displayValue))) {
+    const tipo = String(e?.type?.text ?? '')
+    const min = String(e?.clock?.displayValue ?? '')
+    const equipoId = String(e?.team?.id ?? '')
+    const equipo = nombre(equipoId, e?.team?.displayName ?? '')
+    const gente: string[] = (e?.participants ?? []).map((p: J) => p?.athlete?.displayName).filter(Boolean)
+    if (esGol(tipo)) {
+      const propia = /own goal/i.test(tipo)
+      const como = propia ? 'en propia puerta' : /penalty/i.test(tipo) ? 'de penalti' : /header/i.test(tipo) ? 'de cabeza' : ''
+      const asist = !propia && gente[1] ? `, asistencia de ${gente[1]}` : ''
+      goles.push(`- ${min}: gol de ${equipo} — ${gente[0] ?? 'autor no disponible'}${como ? ` (${como})` : ''}${asist}`)
+      if (minutoNum(min) <= 45.99) {
+        if (equipoId === idH) alDescanso.h++
+        else if (equipoId === idA) alDescanso.a++
+      }
+    } else if (/card/i.test(tipo)) {
+      tarjetas.push(`- ${min}: ${/red/i.test(tipo) ? 'ROJA' : 'amarilla'} a ${gente[0] ?? '?'} (${equipo})`)
+    }
+  }
+  if (base.sport === 'futbol') {
+    L.push('GOLES (los ÚNICOS del partido, en orden; minuto, equipo y autor):\n' + (goles.length ? goles.join('\n') : '- ninguno: el partido acabó sin goles'))
+    if (goles.length) L.push(`MARCADOR AL DESCANSO (calculado): ${base.home} ${alDescanso.h} - ${alDescanso.a} ${base.away}.`)
+    if (tarjetas.length) L.push('TARJETAS:\n' + tarjetas.join('\n'))
+  }
+
+  // Marcador por cuartos (NBA)
+  if (base.sport === 'baloncesto') {
+    const parciales = (c: J) => (c?.linescores ?? []).map((l: J) => l?.displayValue ?? l?.value).join(' - ')
+    if (cH?.linescores?.length) {
+      L.push(`PARCIALES POR CUARTO:\n- ${base.home}: ${parciales(cH)}\n- ${base.away}: ${parciales(cA)}`)
+    }
+  }
+
+  // Estadísticas del partido
+  const bx: J[] = summary?.boxscore?.teams ?? []
+  const bH = bx.find((t) => String(t?.team?.id) === idH)
+  const bA = bx.find((t) => String(t?.team?.id) === idA)
+  if (bH && bA) {
+    const mapa = (t: J) => Object.fromEntries((t.statistics ?? []).map((s: J) => [s.name, s.displayValue]))
+    const mH = mapa(bH), mA = mapa(bA)
+    const filas = base.sport === 'futbol'
+      ? ESTADISTICAS_FUTBOL.filter(([k]) => mH[k] != null && mA[k] != null).map(([k, et, f]) => `- ${et}: ${base.home} ${f(mH[k])}, ${base.away} ${f(mA[k])}`)
+      : (bH.statistics ?? []).slice(0, 12).map((s: J) => `- ${s.label ?? s.name}: ${base.home} ${s.displayValue}, ${base.away} ${mA[s.name] ?? '?'}`)
+    if (filas.length) L.push('ESTADÍSTICAS DEL PARTIDO:\n' + filas.join('\n'))
+  }
+
+  // Líderes del partido (NBA) / del equipo en la competición (fútbol)
+  for (const t of summary?.leaders ?? []) {
+    const id = String(t?.team?.id ?? '')
+    const cats = (t?.leaders ?? []).map((c: J) => {
+      const etiqueta = CATEGORIAS[c?.name] ?? CATEGORIAS_TEXTO[c?.displayName] ?? c?.displayName ?? c?.name
+      const top = (c?.leaders ?? []).slice(0, 1).map((x: J) => `${x?.athlete?.displayName} — ${traducirValor(x?.displayValue)}`)
+      return top.length ? `${etiqueta}: ${top.join('; ')}` : null
+    }).filter(Boolean)
+    if (cats.length) {
+      L.push(`DESTACADOS DEL PARTIDO EN ${nombre(id, t?.team?.displayName)}:\n- ` + cats.join('\n- '))
+    }
+  }
+
+  // Clasificación ya actualizada con este resultado
+  const filas: string[] = []
+  for (const g of summary?.standings?.groups ?? []) {
+    for (const e of g?.standings?.entries ?? []) {
+      const id = String(e.id ?? e.team?.id ?? '')
+      if (id !== idH && id !== idA) continue
+      const st = Object.fromEntries((e.stats ?? []).map((s: J) => [s.name, s.displayValue]))
+      filas.push(`- ${nombre(id, e.team)}: ${[st.rank ? `${st.rank}º` : null, st.points ? `${st.points} puntos` : null, st.gamesPlayed ? `${st.gamesPlayed} partidos` : null, st.overall ? `balance ${st.overall}` : null].filter(Boolean).join(', ')}`)
+    }
+  }
+  if (filas.length) L.push('CLASIFICACIÓN TRAS EL PARTIDO:\n' + filas.join('\n'))
+
+  const art = summary?.article
+  if (art?.headline) {
+    L.push(`RESUMEN DE AGENCIA (en inglés; solo contexto, NO lo traduzcas ni lo copies, y no cites el medio): ${art.headline}${art.description ? ` — ${art.description}` : ''}`)
   }
 
   return { datos, texto: L.join('\n\n') }

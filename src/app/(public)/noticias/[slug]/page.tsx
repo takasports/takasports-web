@@ -31,6 +31,7 @@ import ReadingModeToggle from '@/components/ReadingModeToggle'
 import { storySplitIndex } from '@/lib/article-split'
 import MatchScheduleCard, { type MatchKickoffData } from '@/components/MatchScheduleCard'
 import BroadcastCard from '@/components/BroadcastCard'
+import FichaPartidoLink from '@/components/FichaPartidoLink'
 import { matchCompetition, getBroadcastRows, type BroadcastRow } from '@/lib/broadcast'
 import PorraMatchWidget from '@/components/PorraMatchWidget'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
@@ -121,6 +122,7 @@ interface Article {
   sourceUrls?: SourceRef[] | null
   editorialRelated?: RelatedArticle[] | null
   matchKickoff?: MatchKickoffData | null
+  matchRef?: string | null
 }
 
 export async function generateMetadata({
@@ -1444,6 +1446,15 @@ export default async function NoticiaPage({
 
             {article.matchKickoff?.iso && (
               <MatchScheduleCard kickoff={article.matchKickoff} accent={badgeColor} />
+            )}
+
+            {article.matchRef && (
+              <FichaPartidoLink
+                matchRef={article.matchRef}
+                home={article.matchKickoff?.home}
+                away={article.matchKickoff?.away}
+                accent={badgeColor}
+              />
             )}
 
             {broadcastRows.length > 0 && (

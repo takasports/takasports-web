@@ -24,11 +24,10 @@ import { candidatasPrevia, cabeEnTopes, type CandidataPrevia } from '@/lib/previ
 import { construirDossier, esPretemporada, fetchSummary } from '@/lib/previas-dossier'
 import { getBroadcastRows, matchCompetition } from '@/lib/broadcast'
 import { buscarFotoEstadio } from '@/lib/foto-estadio'
+import { encargar, encargosRecientes } from '@/lib/produccion-propia'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
-
-const SITE = 'https://www.takasportsmedia.com'
 
 async function handle(req: Request) {
   if (!checkBearerOrHeader(req, 'x-cron-secret', process.env.CRON_SECRET)) {
@@ -42,15 +41,12 @@ async function handle(req: Request) {
 
   // Previas ya encargadas en los últimos días: no se repiten aunque el cron corra
   // dos veces o el partido siga dentro de la ventana mañana.
-  const { data: previas, error: errPrevias } = await sb
-    .from('route_jobs')
-    .select('input_json')
-    .eq('input_json->>kind', 'previa')
-    .gte('created_at', new Date(now - 4 * 86400_000).toISOString())
-  if (errPrevias) return NextResponse.json({ ok: false, error: errPrevias.message }, { status: 500 })
-  const yaHechas = new Set<string>(
-    (previas ?? []).map((r) => (r.input_json as { matchRef?: string } | null)?.matchRef).filter((x): x is string => !!x),
-  )
+  let yaHechas: Set<string>
+  try {
+    yaHechas = new Set((await encargosRecientes(sb, 'previa', 4)).map((e) => e.matchRef).filter((x): x is string => !!x))
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: (e as Error).message }, { status: 500 })
+  }
 
   const events = await fetchEspnEvents().catch(() => [])
   const candidatas = candidatasPrevia(events, now, yaHechas)
@@ -80,56 +76,8 @@ async function handle(req: Request) {
     encargos.push({ partido, puntuacion: c.puntuacion, datos, dossierChars: texto.length, dossier: seco ? texto : undefined })
     if (seco) continue
 
-    // El content_item es solo el soporte que WF-08 espera encontrar: nace ya
-    // "aprobado", puntuado y avisado para que ningún otro workflow (enriquecimiento,
-    // scoring, avisos, limpieza) lo coja como si fuera una noticia de RSS.
-    const titulo = `Previa: ${c.ev.home} - ${c.ev.away}`
-    const ahora = new Date().toISOString()
-    const { data: ci, error: errCi } = await sb.from('content_items').insert({
-      canonical_title: titulo,
-      original_title: titulo,
-      summary: `${c.ev.comp}. ${c.ev.home} recibe a ${c.ev.away}.`,
-      original_url: `${SITE}/partido/${ref}#previa`,
-      sport: c.sport,
-      language: 'es',
-      status: 'approved',
-      priority: 'high',
-      confidence_level: 'high',
-      source_count: 1,
-      source_list_json: [],
-      enriched_at: ahora,
-      score: Math.min(100, Math.round(c.puntuacion * 5)),
-      alert_type: 'previa',
-      notified_at: ahora,
-      entities_json: {
-        teams: [c.ev.home, c.ev.away],
-        players: [],
-        competition: c.ev.comp,
-        event_type: 'previa',
-        title_es: titulo,
-        summary_es: `${c.ev.comp}. ${c.ev.home} recibe a ${c.ev.away}.`,
-        sport_relevance: 10,
-      },
-    }).select('id').single()
-    if (errCi || !ci) { descartadas.push({ partido, motivo: 'content_item: ' + (errCi?.message ?? '?') }); elegidas.pop(); continue }
-
-    const { error: errJob } = await sb.from('route_jobs').insert({
-      content_item_id: ci.id,
-      route: 'web',
-      step: 'article',
-      step_status: 'pending',
-      status: 'pending',
-      input_json: { kind: 'previa', matchRef: ref, puntuacion: c.puntuacion, datos, dossier: texto, origen: 'cron-previas' },
-    })
-    if (errJob) { descartadas.push({ partido, motivo: 'route_job: ' + errJob.message }); elegidas.pop(); continue }
-
-    await sb.from('decision_log').insert({
-      content_item_id: ci.id,
-      action: 'previa_encargada',
-      actor: 'system:cron-previas',
-      routes_selected: ['web'],
-      metadata_json: { matchRef: ref, puntuacion: c.puntuacion },
-    })
+    const fallo = await encargar(sb, 'previa', c, datos, texto)
+    if (fallo) { descartadas.push({ partido, motivo: fallo }); elegidas.pop(); continue }
   }
 
   return NextResponse.json({

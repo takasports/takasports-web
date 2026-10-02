@@ -19,6 +19,7 @@ import { Kickoff } from './Kickoff'
 import { ShareButton } from '@/components/ShareButton'
 import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import MatchNews from '@/components/MatchNews'
+import PreviaPartido from '@/components/PreviaPartido'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import { isSplitBroadcast } from '@/lib/broadcasts'
 import { GoalIcon, YellowCardIcon, RedCardIcon } from '@/components/icons/GameIcons'
@@ -1896,6 +1897,7 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
       >
         {/* ── Tab 0: Resumen ───────────────────────────── */}
         <div>
+          <PreviaPartido matchRef={decodeURIComponent(matchRef)} />
           {hasSoccerScoring && (
             <Section title="Eventos del partido">
               <ScoringTimeline

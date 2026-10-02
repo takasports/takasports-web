@@ -6,6 +6,7 @@ import path from 'node:path'
 import { ImageResponse } from 'next/og'
 import sharp from 'sharp'
 import { fetchImageDataUri, truncate } from '@/lib/og-image'
+import { esGol } from '@/lib/previas-dossier'
 
 const W = 1200
 const H = 675
@@ -71,6 +72,10 @@ export interface PlacaPrevia {
   logoHome?: string | null
   logoAway?: string | null
   fotoUrl?: string | null
+  /** Crónica (02/10/2026): en vez de la hora, el marcador final y los goleadores. */
+  modo?: 'previa' | 'cronica'
+  marcador?: { home: number; away: number } | null
+  goles?: { home: string[]; away: string[] } | null
 }
 
 /** Devuelve la placa como JPEG (PNG si sharp falla). */
@@ -87,9 +92,15 @@ export async function renderPlacaPrevia(p: PlacaPrevia): Promise<{ body: Uint8Ar
   ])
 
   const tamNombre = Math.max(home.length, away.length) > 14 ? 40 : 52
+  const cronica = p.modo === 'cronica' && !!p.marcador
 
-  const equipo = (nombre: string, escudo: string | null) => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 330, gap: 18 }}>
+  const equipo = (nombre: string, escudo: string | null, goles: string[] = []) => (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', width: 330, gap: 18,
+      // En la crónica cada lado lleva una lista de goleadores de distinto largo: con
+      // altura fija y anclada arriba, los dos escudos quedan a la misma altura.
+      ...(cronica ? { height: 400, justifyContent: 'flex-start', paddingTop: 34 } : {}),
+    }}>
       <div style={{ display: 'flex', width: 210, height: 210, alignItems: 'center', justifyContent: 'center' }}>
         {escudo
           // eslint-disable-next-line @next/next/no-img-element
@@ -102,6 +113,14 @@ export async function renderPlacaPrevia(p: PlacaPrevia): Promise<{ body: Uint8Ar
       }}>
         {truncate(nombre, 22)}
       </div>
+      {cronica && goles.length > 0 && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, marginTop: -6,
+          fontSize: 21, fontWeight: 600, color: 'rgba(255,255,255,0.78)', letterSpacing: '0.02em',
+        }}>
+          {goles.slice(0, 4).map((g, i) => <div key={i} style={{ display: 'flex' }}>{truncate(g, 28)}</div>)}
+        </div>
+      )}
     </div>
   )
 
@@ -128,7 +147,7 @@ export async function renderPlacaPrevia(p: PlacaPrevia): Promise<{ body: Uint8Ar
               display: 'flex', padding: '8px 22px 5px', borderRadius: 9999, background: accent, color: '#09090F',
               fontSize: 26, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase',
             }}>
-              Previa
+              {cronica ? 'Crónica' : 'Previa'}
             </div>
             <div style={{ display: 'flex', fontSize: 26, fontWeight: 600, color: 'rgba(255,255,255,0.72)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
               {truncate(competicion, 48)}
@@ -137,9 +156,25 @@ export async function renderPlacaPrevia(p: PlacaPrevia): Promise<{ body: Uint8Ar
 
           {/* Enfrentamiento */}
           <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'space-between' }}>
-            {equipo(home, escHome)}
+            {equipo(home, escHome, p.goles?.home)}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: 440, gap: 6 }}>
-              {kickoff ? (
+              {cronica ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  {kickoff && (
+                    <div style={{ display: 'flex', fontSize: 24, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.12em' }}>
+                      {fecha(kickoff)}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 26, fontFamily: 'Anton', fontSize: 128, color: '#fff', lineHeight: 1 }}>
+                    <span>{p.marcador!.home}</span>
+                    <span style={{ fontSize: 80, color: 'rgba(255,255,255,0.45)' }}>-</span>
+                    <span>{p.marcador!.away}</span>
+                  </div>
+                  <div style={{ display: 'flex', fontSize: 24, fontWeight: 700, color: accent, letterSpacing: '0.3em' }}>
+                    FINAL
+                  </div>
+                </div>
+              ) : kickoff ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                   <div style={{ display: 'flex', fontSize: 24, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.12em' }}>
                     {fecha(kickoff)}
@@ -156,7 +191,7 @@ export async function renderPlacaPrevia(p: PlacaPrevia): Promise<{ body: Uint8Ar
                 </div>
               ) : null}
             </div>
-            {equipo(away, escAway)}
+            {equipo(away, escAway, p.goles?.away)}
           </div>
 
           {/* Pie: estadio y marca */}
@@ -191,4 +226,24 @@ export async function renderPlacaPrevia(p: PlacaPrevia): Promise<{ body: Uint8Ar
   } catch {
     return { body: png.body, type: 'image/png' }
   }
+}
+
+/** Crónica: goles por equipo agrupados por jugador ("Yamal 2', 63'"). Puro. */
+export function golesPorEquipo(keyEvents: Array<Record<string, any>>, idHome: string, idAway: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
+  const lados: Record<'home' | 'away', Map<string, string[]>> = { home: new Map(), away: new Map() }
+  for (const e of keyEvents ?? []) {
+    const tipo = String(e?.type?.text ?? '')
+    if (!esGol(tipo)) continue
+    const equipo = String(e?.team?.id ?? '')
+    const lado = equipo === idHome ? 'home' : equipo === idAway ? 'away' : null
+    if (!lado) continue
+    const nombre = String(e?.participants?.[0]?.athlete?.displayName ?? '')
+    const apellido = nombre.split(' ').slice(-1)[0] || '?'
+    const marca = /own goal/i.test(tipo) ? ' (p.p.)' : /penalty/i.test(tipo) ? ' (pen.)' : ''
+    const min = String(e?.clock?.displayValue ?? '').replace(/\s+/g, '')
+    const m = lados[lado]
+    m.set(apellido, [...(m.get(apellido) ?? []), `${min}${marca}`])
+  }
+  const fmt = (m: Map<string, string[]>) => [...m.entries()].map(([n, mins]) => `${n} ${mins.join(', ')}`)
+  return { home: fmt(lados.home), away: fmt(lados.away) }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { parseMatchRef } from '@/lib/match-ref'
+import { sanityClient, previaByMatchRefQuery } from '@/lib/sanity'
 import { buildPlayerIndex, lookupPlayerId } from '@/lib/match-player-index'
 import type { StandingZone } from '@/lib/league-zones'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
@@ -163,8 +164,12 @@ export interface TeamLineup {
   bench: LineupPlayer[]
 }
 
+export interface PreviaDePartido { slug: string; title: string; imageUrl: string | null }
+
 export interface MatchDetail {
   id: string
+  /** La previa de Taka de este partido (solo fútbol/NBA con previa publicada). */
+  previa?: PreviaDePartido | null
   sport: SportKind
   leagueSlug: string
   leagueLabel: string
@@ -1123,6 +1128,23 @@ async function buildGolf(eventId: string): Promise<{ golf: MatchDetail['golf']; 
 }
 
 // ── Route handler ───────────────────────────────────────────────────
+// La previa de Taka del partido, si existe (por matchRef exacto). Viaja en la
+// respuesta para que la APP la enlace desde su ficha sin consultar Sanity por su
+// cuenta (la app es cliente delgado de esta API). Solo fútbol y NBA tienen previa.
+async function conPrevia(detail: MatchDetail, ref: string): Promise<MatchDetail> {
+  if (!/^(soccer|basketball)_/.test(ref)) return detail
+  const previa = await sanityClient
+    .fetch<{ slug?: string; title?: string; imageUrl?: string | null } | null>(previaByMatchRefQuery, { ref })
+    .catch(() => null)
+  return previa?.slug && previa.title
+    ? { ...detail, previa: { slug: previa.slug, title: previa.title, imageUrl: previa.imageUrl ?? null } }
+    : detail
+}
+
+async function responder(detail: MatchDetail, ref: string) {
+  return NextResponse.json(await conPrevia(detail, decodeURIComponent(ref)), matchCache(detail.status))
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ ref: string }> }
@@ -1161,7 +1183,7 @@ export async function GET(
         statusLabel: data.statusLabel,
         mma: data.mma,
       }
-      return NextResponse.json(detail, matchCache(detail.status))
+      return responder(detail, ref)
     }
 
     // ─── Racing (F1) ──────────────────────────────────────────────────
@@ -1178,7 +1200,7 @@ export async function GET(
         venue: data.venue,
         racing: data.racing,
       }
-      return NextResponse.json(detail, matchCache(detail.status))
+      return responder(detail, ref)
     }
 
     // ─── Golf (PGA) ───────────────────────────────────────────────────
@@ -1195,7 +1217,7 @@ export async function GET(
         venue: data.venue,
         golf: data.golf,
       }
-      return NextResponse.json(detail, matchCache(detail.status))
+      return responder(detail, ref)
     }
 
     // ─── Tennis: scoreboard lookup (summary returns 400 for match IDs) ─
@@ -1218,7 +1240,7 @@ export async function GET(
           startDate: data.startDate,
           tennis: data.tennis && { ...data.tennis, ...(contexto ? { context: contexto } : {}) },
         }
-        return NextResponse.json(detail, matchCache(detail.status))
+        return responder(detail, ref)
       }
       // El scoreboard del torneo ya rotó (torneo terminado) → el partido no está en
       // vivo. Recuperamos el RESULTADO archivado (past_events) para no dar 404. Solo
@@ -1252,7 +1274,7 @@ export async function GET(
             ...(contextoPasado ? { context: contextoPasado } : {}),
           },
         }
-        return NextResponse.json(detail, matchCache(detail.status))
+        return responder(detail, ref)
       }
       return NextResponse.json(null, { status: 404 })
     }
@@ -1374,7 +1396,7 @@ export async function GET(
       detail.recentForm = buildRecentForm(json, hId, aId)
     }
 
-    return NextResponse.json(detail, matchCache(detail.status))
+    return responder(detail, ref)
   } catch (err) {
     console.error(`[match] fetch failed for ${ref}:`, err)
     return NextResponse.json(null, { status: 500 })

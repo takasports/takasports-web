@@ -120,6 +120,10 @@
     {
       "path": "/api/cron/previas",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/cronicas",
+      "schedule": "*/30 * * * *"
     }
   ],
   "functions": {
