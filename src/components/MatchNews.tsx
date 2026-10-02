@@ -7,6 +7,7 @@
 import ArticleCard from '@/components/news/ArticleCard'
 import { sanityClient, articlesByMatchQuery } from '@/lib/sanity'
 import SectionHeader from '@/components/ui/SectionHeader'
+import { matchNewsParams } from '@/lib/match-news'
 
 interface RelatedArticle {
   _id: string
@@ -23,20 +24,24 @@ interface RelatedArticle {
 export default async function MatchNews({
   homeTeam,
   awayTeam,
+  sport,
+  leagueSlug,
+  startDate,
   limit = 4,
 }: {
   homeTeam?: string
   awayTeam?: string
+  sport?: string
+  leagueSlug?: string
+  startDate?: string
   limit?: number
 }) {
-  if (!homeTeam || !awayTeam) return null
+  // Sin equipos o sin deporte cubierto por la redacción: no hay bloque.
+  const params = matchNewsParams({ homeTeam, awayTeam, sport, leagueSlug, startDate, limit })
+  if (!params) return null
 
   const articles = await sanityClient
-    .fetch<RelatedArticle[]>(articlesByMatchQuery, {
-      home: `${homeTeam.trim().toLowerCase()}*`,
-      away: `${awayTeam.trim().toLowerCase()}*`,
-      limit,
-    })
+    .fetch<RelatedArticle[]>(articlesByMatchQuery, { ...params })
     .catch(() => [] as RelatedArticle[])
 
   // La previa ya va destacada arriba del Resumen (PreviaPartido): aquí sobraría.

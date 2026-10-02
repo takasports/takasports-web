@@ -1820,7 +1820,7 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
           </div>
           <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0">
             <InfoRow match={match} />
-            <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
+            <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} sport={match.sport} leagueSlug={match.leagueSlug} startDate={match.startDate} />
           </aside>
         </div>
       </div>
@@ -2045,7 +2045,7 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
         {/* ── Lateral: contexto del partido (datos / forma / pulso / noticias) ── */}
         <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0">
           <FormGuide homeTeam={match.homeTeam} awayTeam={match.awayTeam} forms={forms} />
-          <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
+          <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} sport={match.sport} leagueSlug={match.leagueSlug} startDate={match.startDate} />
         </aside>
       </div>
       </LiveMatchProvider>

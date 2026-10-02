@@ -244,8 +244,12 @@ export const articlesByEntityQuery = `*[_type == "article"
 // de los dos equipos/jugadores (match prefijo en title/headline/summary/meta).
 // Alimenta el bloque "Noticias relacionadas" de /partido — enlace interno
 // editorial→fixture, ventaja única de Taka por ser también redacción.
+// Acotada por deporte y por fechas (`matchNewsParams` en lib/match-news): solo
+// con el texto, el Francia–Italia sacaba el GP de Italia de F1.
 export const articlesByMatchQuery = `*[_type == "article"
   && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER}
+  && sport == $sport
+  && publishedAt >= $from && publishedAt <= $to
   && (
     title match $home || headline match $home || short_summary match $home || metaDescription match $home
     || title match $away || headline match $away || short_summary match $away || metaDescription match $away
