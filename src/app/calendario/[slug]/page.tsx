@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { asignarJornadas, rangoJornada } from '@/lib/jornadas-liga'
 import { cache } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -70,8 +71,6 @@ export async function generateMetadata({
   // «resultados» entra en el rótulo porque la página ya los tiene: antes solo
   // enseñaba próximos partidos y prometía solo horarios.
   const que = eventNoun(comp.sport)
-  const title = `Calendario ${comp.displayName} ${season}: ${que}, horarios y resultados`
-  const description = `${comp.description} Resultados de lo último y próximos ${que} con horario y dónde verlos. Temporada ${season}.`
   const canonical = `${SITE_URL}/calendario/${comp.slug}`
   // Sin NADA que enseñar (off-season) → no indexar: evita páginas vacías en el
   // índice de Google. Vuelve a indexarse sola cuando hay partidos. Ahora los
@@ -82,6 +81,16 @@ export async function generateMetadata({
     recentCompetitionResults(comp),
   ])
   const hasEvents = proximos.length > 0 || recientes.length > 0
+  // La próxima jornada en el título: «horarios de la jornada» es como se busca
+  // el calendario de una liga, y la página no decía «jornada» en ningún sitio.
+  const tabla = comp.espnSlug && comp.espnSlug !== 'soccer/fifa.world' ? await fetchLeagueTableRows(comp.espnSlug) : []
+  const proxima = tabla.length > 0 ? asignarJornadas(proximos, tabla, dayKey)?.find((j) => j.numero !== null) : undefined
+  const title = proxima
+    ? `Calendario ${comp.displayName} ${season}: horarios de la jornada ${proxima.numero} y resultados`
+    : `Calendario ${comp.displayName} ${season}: ${que}, horarios y resultados`
+  const description = proxima
+    ? `Jornada ${proxima.numero} de ${comp.shortName}, ${rangoJornada(proxima.desde, proxima.hasta)}: todos los partidos con horario y dónde verlos. Resultados de lo último y clasificación. Temporada ${season}.`
+    : `${comp.description} Resultados de lo último y próximos ${que} con horario y dónde verlos. Temporada ${season}.`
   return {
     title,
     description,
@@ -247,6 +256,57 @@ function ResultsSection({ title, days }: { title: string; days: Array<[string, S
   )
 }
 
+// Un día de partidos. Mismo marcado que antes; dentro de una jornada el día
+// pasa a ser un subtítulo (h3), porque el título es la jornada.
+function DiaDePartidos({ day, eventos, nivel }: { day: string; eventos: SportEvent[]; nivel: 'h2' | 'h3' }) {
+  const Encabezado = nivel
+  return (
+    <section>
+      <Encabezado
+        className="mb-3"
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: '1.1rem',
+          fontWeight: 800,
+          color: '#E8E8F4',
+          letterSpacing: '-0.005em',
+          textTransform: 'capitalize',
+        }}
+      >
+        {formatDayHeader(day)}
+      </Encabezado>
+      <ul className="flex flex-col gap-2">
+        {eventos.map((ev) => (
+          <li
+            key={ev.id}
+            className="rounded-xl px-4 py-3 flex items-center gap-4"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          >
+            <div
+              className="text-sm font-semibold flex-shrink-0"
+              style={{
+                color: ev.accent ?? '#A78BFA',
+                fontFamily: 'var(--font-sport)',
+                minWidth: 56,
+              }}
+            >
+              {formatTime(ev)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate" style={{ color: '#E8E8F4' }}>
+                {ev.away ? `${ev.home} vs ${ev.away}` : ev.home}
+              </p>
+              <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                {[ev.stage, ev.venue, ev.broadcast].filter(Boolean).join(' · ')}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 export default async function CompetitionCalendarPage({
   params,
 }: {
@@ -292,6 +352,9 @@ export default async function CompetitionCalendarPage({
     groupedByDay.get(k)!.push(ev)
   }
   const dayKeys = [...groupedByDay.keys()].sort()
+
+  // Jornadas (solo ligas con clasificación). Si no cuadran, null → por días.
+  const jornadas = tableRows.length > 0 ? asignarJornadas(filtered, tableRows, dayKey) : null
 
   const canonical = `${SITE_URL}/calendario/${comp.slug}`
 
@@ -428,51 +491,30 @@ export default async function CompetitionCalendarPage({
           </div>
         ) : (
           <div className="flex flex-col gap-8">
-            {dayKeys.map((day) => (
-              <section key={day}>
-                <h2
-                  className="mb-3"
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: '1.1rem',
-                    fontWeight: 800,
-                    color: '#E8E8F4',
-                    letterSpacing: '-0.005em',
-                    textTransform: 'capitalize',
-                  }}
-                >
-                  {formatDayHeader(day)}
-                </h2>
-                <ul className="flex flex-col gap-2">
-                  {groupedByDay.get(day)!.map((ev) => (
-                    <li
-                      key={ev.id}
-                      className="rounded-xl px-4 py-3 flex items-center gap-4"
-                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
-                    >
-                      <div
-                        className="text-sm font-semibold flex-shrink-0"
-                        style={{
-                          color: ev.accent ?? '#A78BFA',
-                          fontFamily: 'var(--font-sport)',
-                          minWidth: 56,
-                        }}
-                      >
-                        {formatTime(ev)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate" style={{ color: '#E8E8F4' }}>
-                          {ev.away ? `${ev.home} vs ${ev.away}` : ev.home}
-                        </p>
-                        <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
-                          {[ev.stage, ev.venue, ev.broadcast].filter(Boolean).join(' · ')}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
+            {jornadas
+              ? jornadas.map((j, ji) => {
+                  const dias = [...new Set(j.partidos.map(dayKey))].sort()
+                  // La última jornada suele estar a medias: ESPN publica unas tres
+                  // semanas. «desde el 23» no promete que sea un único partido.
+                  const parcial = j.numero !== null && ji === jornadas.length - 1 && j.partidos.length < Math.floor(tableRows.length / 2)
+                  const cuando = parcial ? `desde ${rangoJornada(j.desde, j.desde)}` : rangoJornada(j.desde, j.hasta)
+                  return (
+                    <section key={`${j.numero ?? 'aplazado'}-${j.desde}`} className="flex flex-col gap-4">
+                      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 900, color: '#F8F8FF', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+                        {j.numero !== null ? `Jornada ${j.numero}` : 'Partido aplazado'}
+                        <span style={{ display: 'block', marginTop: 4, fontFamily: 'var(--font-sport)', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+                          {cuando.charAt(0).toUpperCase() + cuando.slice(1)}
+                        </span>
+                      </h2>
+                      {dias.map((day) => (
+                        <DiaDePartidos key={day} day={day} eventos={j.partidos.filter((e) => dayKey(e) === day)} nivel="h3" />
+                      ))}
+                    </section>
+                  )
+                })
+              : dayKeys.map((day) => (
+                  <DiaDePartidos key={day} day={day} eventos={groupedByDay.get(day)!} nivel="h2" />
+                ))}
           </div>
         )}
 
