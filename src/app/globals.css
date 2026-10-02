@@ -587,9 +587,13 @@ a[href^="/noticias/"]:visited .news-title {
 
 /* ── Intro de la portada (INTRO_BOOT_SCRIPT en lib/intro.ts, 1×/sesión) ──
    El script marca <html data-intro> antes del primer pintado y todo lo demás
-   es esto: body::before es la cortina (fondo + resplandor) y body::after el
+   es esto: html::before es la cortina (fondo + resplandor) y html::after el
    logo, animado por la tira de 12 fotogramas. Pseudo-elementos y no nodos
    del DOM: React no los ve, así que no pueden romper la hidratación.
+   ⚠️ En <html> y NO en <body>: body::after es la textura de grano (pantalla
+   completa). Cuando el logo vivía también en body::after, al quitarse
+   data-intro el MISMO pseudo-elemento saltaba de la caja del logo a toda la
+   pantalla y Chrome lo contaba como desplazamiento: CLS 0,45 en la portada.
    Red de seguridad: pase lo que pase con el script, la cortina se retira SOLA
    a los 6 s; nunca puede dejar la web tapada. */
 :root {
@@ -601,18 +605,18 @@ a[href^="/noticias/"]:visited .news-title {
   --ts-intro-w: min(280px, 70vw);
   --ts-intro-h: calc(var(--ts-intro-w) * 222 / 759);
 }
-html[data-intro] body::before,
-html[data-intro] body::after {
+html[data-intro]::before,
+html[data-intro]::after {
   content: '';
   position: fixed;
   animation: tsIntroOut 300ms ease 6s forwards;
 }
-html[data-intro] body::before {
+html[data-intro]::before {
   inset: 0;
   z-index: 9998;
   background: var(--ts-intro-glow) center / var(--ts-intro-glow-size) var(--ts-intro-glow-size) no-repeat, #09090F;
 }
-html[data-intro] body::after {
+html[data-intro]::after {
   z-index: 9999;
   left: calc(50% - var(--ts-intro-w) / 2);
   top: calc(50% - var(--ts-intro-h) / 2);
@@ -623,19 +627,19 @@ html[data-intro] body::after {
   opacity: 0;
 }
 /* Revelado: 12 fotogramas, 11 saltos de 40 ms; se queda en el último. */
-html[data-intro="play"] body::after {
+html[data-intro="play"]::after {
   opacity: 1;
   animation: tsIntroReveal 440ms steps(11, end) forwards;
 }
 /* Vuelo a la cabecera: --ti-x/--ti-y/--ti-s los calcula el script con la
    posición real del logo. El fondo se aclara a la vez y, al aterrizar, el
    logo volador se funde con el real, que ya está debajo. */
-html[data-intro="fly"] body::before {
+html[data-intro="fly"]::before {
   opacity: 0;
   pointer-events: none;
   transition: opacity 480ms cubic-bezier(0.33, 1, 0.68, 1) 140ms;
 }
-html[data-intro="fly"] body::after {
+html[data-intro="fly"]::after {
   background-position: 0 100%;
   transform: translate(var(--ti-x), var(--ti-y)) scale(var(--ti-s));
   opacity: 0;
@@ -643,13 +647,13 @@ html[data-intro="fly"] body::after {
   transition: transform 560ms cubic-bezier(0.65, 0, 0.35, 1), opacity 160ms linear 500ms;
 }
 /* Salida rápida (clic para saltar, o algo no llegó a tiempo). */
-html[data-intro="out"] body::before,
-html[data-intro="out"] body::after {
+html[data-intro="out"]::before,
+html[data-intro="out"]::after {
   opacity: 0;
   pointer-events: none;
   transition: opacity 280ms ease;
 }
-html[data-intro="out"] body::after { background-position: 0 100%; }
+html[data-intro="out"]::after { background-position: 0 100%; }
 @keyframes tsIntroReveal { from { background-position: 0 0; } to { background-position: 0 100%; } }
 @keyframes tsIntroOut { to { opacity: 0; visibility: hidden; } }
 
