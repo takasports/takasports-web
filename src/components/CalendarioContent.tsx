@@ -1,7 +1,7 @@
 'use client'
 
 import { eventHasFavorite, formKey, isFavorite } from './calendar-favorites'
-import { useLiveFixtures, useLiveScores } from './calendar-live'
+import { useLiveFixtures, useLiveScores, type RawLiveFixture } from './calendar-live'
 import { CompGroupHeader, DaySeparator, LiveHeroCard, LiveHeroStrip, MatchRow, SearchInput, SectionHeader, compConfigForGroup } from './CalendarCards'
 import { DayChips } from './CalendarDatePicker'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -33,6 +33,9 @@ import { isLiveStatus, liveSportPassesFilter } from '@/lib/live-events'
 import { BellIcon, CalendarIcon, ClipboardIcon, LiveDotIcon, SearchIcon, SportIcon } from '@/components/icons/GameIcons'
 
 const DESTACADOS_MIN = 4
+// Referencia estable para el valor por defecto (un `[]` en la firma sería un
+// array nuevo en cada render).
+const EMPTY_LIVE: RawLiveFixture[] = []
 // Listón de "partido bueno": por encima de él, TODOS entran (no hay tope por
 // día). En la escala de getEventHighlightScore, 12 = Champions/Mundial o
 // cualquier cartel que llegue ahí sumando pareja (hasta +4), clásico (hasta +6)
@@ -57,6 +60,7 @@ export default function CalendarioContent({
   recentForms = {},
   initialTz = SOURCE_TZ,
   renderedAt,
+  initialLive = EMPTY_LIVE,
 }: {
   events: SportEvent[]
   /** Día (YYYY-MM-DD) desde el que faltan eventos por pedir. Ausente = están todos. */
@@ -69,6 +73,9 @@ export default function CalendarioContent({
    *  de los días pasados y los chips del selector. Sin él, el HTML cacheado
    *  (revalidate 5m) y la hidratación discrepan al cruzar la medianoche. */
   renderedAt: number
+  /** Foto de /api/events/live en el render del servidor: la tira «En vivo
+   *  ahora» sale ya en el HTML y no empuja la lista al llegar. */
+  initialLive?: RawLiveFixture[]
 }) {
   // El servidor solo pinta los días cercanos (ver lib/calendar-initial-window.ts:
   // mandaba 1,43 MB de HTML para enseñar nueve partidos). El resto llega aquí,
@@ -155,8 +162,8 @@ export default function CalendarioContent({
   const stickyBarRef = useRef<HTMLDivElement | null>(null) // barra sticky (day chips + toolbar): su altura = offset del anclaje
   const todaySepRef = useRef<HTMLElement | null>(null) // sección de HOY (referencia; ya no se ancla al montar)
 
-  const liveScores = useLiveScores(events)
-  const liveFixtures = useLiveFixtures()
+  const liveScores = useLiveScores(events, initialLive)
+  const liveFixtures = useLiveFixtures(initialLive)
 
   useEffect(() => {
     // Auto-detect browser TZ on first visit (no stored preference).

@@ -108,9 +108,14 @@ export function livePollMs(data: RawLiveFixture[]): number {
   return data.some(f => isLiveStatus(f.status)) ? 20_000 : 60_000
 }
 
-export function useLiveFixtures() {
-  const [fixtures, setFixtures] = useState<RawLiveFixture[]>([])
-  const [pollMs, setPollMs] = useState(20_000)
+// `initial` = foto de /api/events/live que trae el servidor. Con ella el primer
+// render (servidor E hidratación) ya pinta la tira «En vivo ahora» y la línea
+// de directos de la lista; antes aparecían tras la consulta del cliente y
+// empujaban la lista ~300 px (CLS 0,25-0,33 en móvil). El sondeo sigue igual
+// y la corrige en cuanto llega.
+export function useLiveFixtures(initial: RawLiveFixture[] = []) {
+  const [fixtures, setFixtures] = useState<RawLiveFixture[]>(() => initial.filter(f => isLiveStatus(f.status)))
+  const [pollMs, setPollMs] = useState(() => (initial.length ? livePollMs(initial) : 20_000))
 
   const fetch_ = useCallback(async () => {
     const data = await fetchLiveSharedCached()
@@ -123,38 +128,45 @@ export function useLiveFixtures() {
   return fixtures
 }
 
-export function useLiveScores(events: SportEvent[]) {
-  const [scores, setScores] = useState<Map<string, LiveScore>>(new Map())
-  const [pollMs, setPollMs] = useState(20_000)
+/** Marcador en vivo de cada evento del calendario (clave: id del evento). */
+export function scoresFromFixtures(events: SportEvent[], fixtures: RawLiveFixture[]): Map<string, LiveScore> {
+  const byRef = new Map<string, RawLiveFixture>()
+  for (const f of fixtures) if (f.matchRef) byRef.set(f.matchRef, f)
+  const next = new Map<string, LiveScore>()
+  for (const ev of events) {
+    // Primario: matchRef (clave exacta). Fallback por nombre SOLO si es
+    // INEQUÍVOCO (una única fixture casa): con substring varias podían
+    // casar y se pegaba el marcador al partido equivocado.
+    let m = (ev.matchRef && byRef.get(ev.matchRef)) || undefined
+    if (!m) {
+      const cands = fixtures.filter(f => namesMatch(f.homeTeam, ev.home) && namesMatch(f.awayTeam, ev.away ?? ''))
+      if (cands.length === 1) m = cands[0]
+    }
+    if (m) {
+      next.set(ev.id, {
+        homeGoals: m.homeGoals,
+        awayGoals: m.awayGoals,
+        status:    m.status,
+        elapsed:   m.elapsed,
+        clock:     m.clock,
+        setsStr:   m.setsStr,
+      })
+    }
+  }
+  return next
+}
+
+export function useLiveScores(events: SportEvent[], initial: RawLiveFixture[] = []) {
+  const [scores, setScores] = useState<Map<string, LiveScore>>(
+    () => (initial.length ? scoresFromFixtures(events, initial) : new Map()),
+  )
+  const [pollMs, setPollMs] = useState(() => (initial.length ? livePollMs(initial) : 20_000))
 
   const fetch_ = useCallback(async () => {
     try {
       const fixtures = await fetchLiveSharedCached()
       setPollMs(livePollMs(fixtures))
-      const byRef = new Map<string, RawLiveFixture>()
-      for (const f of fixtures) if (f.matchRef) byRef.set(f.matchRef, f)
-      const next = new Map<string, LiveScore>()
-      for (const ev of events) {
-        // Primario: matchRef (clave exacta). Fallback por nombre SOLO si es
-        // INEQUÍVOCO (una única fixture casa): con substring varias podían
-        // casar y se pegaba el marcador al partido equivocado.
-        let m = (ev.matchRef && byRef.get(ev.matchRef)) || undefined
-        if (!m) {
-          const cands = fixtures.filter(f => namesMatch(f.homeTeam, ev.home) && namesMatch(f.awayTeam, ev.away ?? ''))
-          if (cands.length === 1) m = cands[0]
-        }
-        if (m) {
-          next.set(ev.id, {
-            homeGoals: m.homeGoals,
-            awayGoals: m.awayGoals,
-            status:    m.status,
-            elapsed:   m.elapsed,
-            clock:     m.clock,
-            setsStr:   m.setsStr,
-          })
-        }
-      }
-      setScores(next)
+      setScores(scoresFromFixtures(events, fixtures))
     } catch { /* ignore */ }
   }, [events])
 

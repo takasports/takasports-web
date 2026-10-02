@@ -18,6 +18,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
 import CalendarioContent from '@/components/CalendarioContent'
 import { SITE_URL, LOGO_URL } from '@/lib/constants'
+import { fetchLiveSnapshot } from '@/lib/live-snapshot'
 
 export const revalidate = 300
 
@@ -38,11 +39,15 @@ export default async function CalendarioPage() {
   // Los resultados pasados ya NO se traen en el SSR (lo hacía 1 fetch por liga,
   // ~38, y la mayoría de usuarios no abre la pestaña Resultados). Se cargan en
   // cliente vía /api/events/past?live=1 cuando hace falta. Aligera HTML y render.
-  const [espnEvents, rawSanity, padelEvents] = await Promise.allSettled([
+  const [espnEvents, rawSanity, padelEvents, liveSnap] = await Promise.allSettled([
     fetchEspnEvents(),
     sanityClient.fetch(eventsQuery),
     fetchPadelEvents(),
+    // Directos ya en el HTML: sin esto la tira «En vivo ahora» llegaba tras la
+    // consulta del cliente y empujaba la lista (CLS). Ver lib/live-snapshot.
+    fetchLiveSnapshot(),
   ])
+  const initialLive = liveSnap.status === 'fulfilled' ? liveSnap.value : []
 
   const sanityEvents = rawSanity.status === 'fulfilled' && Array.isArray(rawSanity.value) && rawSanity.value.length > 0
     ? rawSanity.value.map(normalizeEvent)
@@ -206,6 +211,7 @@ export default async function CalendarioPage() {
         deferredFrom={deferred.length > 0 ? windowEndDay(hoyIso) : undefined}
         recentForms={recentForms}
         initialTz={SOURCE_TZ}
+        initialLive={initialLive}
       />
       <NewsletterSection source="calendario" />
       <Footer />
