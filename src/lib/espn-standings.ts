@@ -9,6 +9,7 @@ import type { StandingZone } from '@/lib/league-zones'
 import { TABLE_LEAGUE_SLUGS } from '@/lib/football-leagues'
 import { toSpanishNation } from '@/lib/nation-names'
 import { hasEnoughGames } from '@/lib/standings-window'
+import { fetchJsonExterno } from '@/lib/fetch-externo'
 
 // ── Tipos ────────────────────────────────────────────────────────────
 export interface LeagueTableRow {
@@ -140,12 +141,12 @@ export async function fetchLeagueTable(leagueSlug: string, year?: number): Promi
   try {
     // `year` (no `season`): dentro se lee `json.season`, y compartir nombre lo tapaba.
     const qs = year ? `?season=${year}` : ''
-    const res = await fetch(
+    const json = await fetchJsonExterno<any>(
       `https://site.web.api.espn.com/apis/v2/sports/${leagueSlug}/standings${qs}`,
       { next: { revalidate: 1800 } },
+      { etiqueta: 'espn-standings' },
     )
-    if (!res.ok) return { rows: [] }
-    const json = await res.json()
+    if (!json) return { rows: [] }
     const seasonObj = asObj(json.season)
     const season = seasonObj
       ? {
@@ -211,12 +212,12 @@ export interface TournamentGroup {
 
 export async function fetchTournamentGroups(leagueSlug: string): Promise<TournamentGroup[]> {
   try {
-    const res = await fetch(
+    const json = await fetchJsonExterno<any>(
       `https://site.web.api.espn.com/apis/v2/sports/${leagueSlug}/standings`,
-      { next: { revalidate: 1800 } }
+      { next: { revalidate: 1800 } },
+      { etiqueta: 'espn-standings' },
     )
-    if (!res.ok) return []
-    const json = await res.json()
+    if (!json) return []
     const children = asArr(json.children) as Record<string, unknown>[]
     const out: TournamentGroup[] = []
     for (const child of children) {
@@ -265,12 +266,12 @@ export async function fetchTopScorers(leagueSlug: string, limit = 8): Promise<Sc
   const leagueId = leagueSlug.replace(/^soccer\//, '')
   const year = seasonStartYear()
   try {
-    const res = await fetch(
+    const json = await fetchJsonExterno<any>(
       `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${leagueId}/seasons/${year}/types/1/leaders`,
-      { next: { revalidate: 3600 } }
+      { next: { revalidate: 3600 } },
+      { etiqueta: 'espn-standings' },
     )
-    if (!res.ok) return []
-    const json = await res.json()
+    if (!json) return []
     const cats = asArr(json.categories) as Record<string, unknown>[]
     const goalsCat = cats.find(c => asString(c.name) === 'goalsLeaders')
                   ?? cats.find(c => asString(c.name) === 'goals')
@@ -292,9 +293,8 @@ export async function fetchTopScorers(leagueSlug: string, limit = 8): Promise<Sc
     const resolved = await Promise.all(top.map(async (s) => {
       if (!s.athleteRef) return null
       try {
-        const r = await fetch(s.athleteRef, { next: { revalidate: 3600 } })
-        if (!r.ok) return null
-        const a = await r.json()
+        const a = await fetchJsonExterno<any>(s.athleteRef, { next: { revalidate: 3600 } }, { etiqueta: 'espn-standings' })
+        if (!a) return null
         const name = asString(a.displayName) ?? asString(a.shortName)
         if (!name) return null
         return {

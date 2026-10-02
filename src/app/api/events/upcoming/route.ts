@@ -4,6 +4,7 @@ import { getSpanishBroadcast } from '@/lib/broadcasts'
 import { FOOTBALL_LEAGUES } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
 import { getEventHighlightScore } from '@/lib/competitions'
+import { fetchExterno, fetchJsonExterno } from '@/lib/fetch-externo'
 
 export interface UpcomingEvent {
   id: string
@@ -74,12 +75,13 @@ async function fetchUpcomingFromLeague(
   if (sport === 'tennis') return fetchUpcomingTennis(slug, comp)
 
   try {
-    const res = await fetch(
+    // Antes: sin tope de tiempo y `return []` mudo en cuanto ESPN fallaba.
+    const json = await fetchJsonExterno<any>(
       `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
-      { next: { revalidate: 300 } }
+      { next: { revalidate: 300 } },
+      { etiqueta: 'upcoming' },
     )
-    if (!res.ok) return []
-    const json = await res.json()
+    if (!json) return []
     const results: UpcomingEvent[] = []
 
     for (const ev of json.events ?? []) {
@@ -167,13 +169,14 @@ async function fetchUpcomingTennis(slug: string, comp: string): Promise<Upcoming
     // el par de ids de jugador. Ambas peticiones se cachean 5 min (revalidate 300)
     // como el resto del route.
     const [res, competitionByPair] = await Promise.all([
-      fetch(
+      fetchExterno(
         `https://site.api.espn.com/apis/site/v2/sports/${slug}/events?limit=50`,
-        { next: { revalidate: 300 } }
+        { next: { revalidate: 300 } },
+        { etiqueta: 'upcoming' },
       ),
       buildTennisCompetitionIndex(slug),
     ])
-    if (!res.ok) return []
+    if (!res) return []
     const json = await res.json()
     const results: UpcomingEvent[] = []
 
@@ -252,12 +255,12 @@ async function fetchUpcomingTennis(slug: string, comp: string): Promise<Upcoming
 async function buildTennisCompetitionIndex(slug: string): Promise<Map<string, string | null>> {
   const index = new Map<string, string | null>()
   try {
-    const res = await fetch(
+    const json = await fetchJsonExterno<any>(
       `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
-      { next: { revalidate: 300 } }
+      { next: { revalidate: 300 } },
+      { etiqueta: 'upcoming' },
     )
-    if (!res.ok) return index
-    const json = await res.json()
+    if (!json) return index
     for (const ev of (json.events ?? []) as Record<string, unknown>[]) {
       for (const g of (ev.groupings ?? []) as Record<string, unknown>[]) {
         for (const m of (g.competitions ?? []) as Record<string, unknown>[]) {

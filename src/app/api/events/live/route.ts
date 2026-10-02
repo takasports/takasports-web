@@ -3,6 +3,7 @@ import { formatTennisSets, parseCurrentSetScore, parseSetsWon } from '@/lib/tenn
 import { normalizeTeam, normalizeRawTeam, normalizeAthlete, type NormalizedTeam } from '@/lib/teams-catalog'
 import { FOOTBALL_LEAGUES } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
+import { fetchExterno, fetchJsonExterno } from '@/lib/fetch-externo'
 
 export interface LiveScore {
   id: string
@@ -156,12 +157,12 @@ function buildScore(
 
 async function fetchTeamLeague(slug: string, sport: string, comp: string, leagueKey: string): Promise<LiveScore[]> {
   try {
-    const res = await fetch(
+    const json = await fetchJsonExterno<any>(
       `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
-      { next: { revalidate: 20 }, signal: AbortSignal.timeout(6000) }
+      { next: { revalidate: 20 } },
+      { etiqueta: 'live', timeoutMs: 6000 },
     )
-    if (!res.ok) return []
-    const json = await res.json()
+    if (!json) return []
     const results: LiveScore[] = []
 
     for (const ev of json.events ?? []) {
@@ -293,17 +294,17 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
     // SIN tocar el parseo del marcador (cero riesgo para la visualización del directo);
     // si el cruce falla, se degrada a como estaba antes (sin matchRef, no una regresión).
     const [eventsRes, sbRes] = await Promise.all([
-      fetch(`https://site.api.espn.com/apis/site/v2/sports/${slug}/events?limit=50`,
-        { next: { revalidate: 20 }, signal: AbortSignal.timeout(6000) }),
-      fetch(`https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
-        { next: { revalidate: 20 }, signal: AbortSignal.timeout(6000) }).catch(() => null),
+      fetchExterno(`https://site.api.espn.com/apis/site/v2/sports/${slug}/events?limit=50`,
+        { next: { revalidate: 20 } }, { etiqueta: 'live', timeoutMs: 6000 }),
+      fetchExterno(`https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
+        { next: { revalidate: 20 } }, { etiqueta: 'live', timeoutMs: 6000 }),
     ])
-    if (!eventsRes.ok) return []
+    if (!eventsRes) return []
     const json = await eventsRes.json()
 
     // Mapa (pareja de nombres) → id de partido del scoreboard.
     const idByPair = new Map<string, string>()
-    if (sbRes && sbRes.ok) {
+    if (sbRes) {
       try {
         const sb = await sbRes.json()
         for (const ev of sb.events ?? []) {
@@ -411,12 +412,12 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
 
 async function fetchUfcLive(): Promise<LiveScore[]> {
   try {
-    const res = await fetch(
+    const json = await fetchJsonExterno<any>(
       'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
-      { next: { revalidate: 20 }, signal: AbortSignal.timeout(6000) }
+      { next: { revalidate: 20 } },
+      { etiqueta: 'live', timeoutMs: 6000 },
     )
-    if (!res.ok) return []
-    const json = await res.json()
+    if (!json) return []
     const results: LiveScore[] = []
 
     for (const ev of json.events ?? []) {
@@ -484,12 +485,12 @@ async function fetchUfcLive(): Promise<LiveScore[]> {
 
 async function fetchF1Live(): Promise<LiveScore[]> {
   try {
-    const res = await fetch(
+    const json = await fetchJsonExterno<any>(
       'https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard',
-      { next: { revalidate: 20 }, signal: AbortSignal.timeout(6000) }
+      { next: { revalidate: 20 } },
+      { etiqueta: 'live', timeoutMs: 6000 },
     )
-    if (!res.ok) return []
-    const json = await res.json()
+    if (!json) return []
     const results: LiveScore[] = []
 
     for (const ev of json.events ?? []) {
