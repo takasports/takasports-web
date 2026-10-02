@@ -13,6 +13,8 @@ interface SportEvent {
   status?: string
   stage?: string
   competition?: { name: string; slug: string }
+  /** Destino del enlace (eventos de ESPN → /partido/…). Sin él, /evento/<_id>. */
+  href?: string
 }
 
 interface Props {
@@ -252,7 +254,10 @@ export default function SportHubHeader({ sport, label, topRankings, upcomingEven
                   {upcomingEvents.slice(0, 4).map(ev => (
                     <li key={ev._id}>
                       <Link
-                        href={`/evento/${ev._id}`}
+                        href={ev.href ?? `/evento/${ev._id}`}
+                        // /partido se renderiza bajo demanda: sin prefetch, como
+                        // en el calendario (el prefetch de enlaces ya tumbó el sitio).
+                        prefetch={ev.href ? false : undefined}
                         className="flex items-center gap-2.5 group"
                       >
                         <span

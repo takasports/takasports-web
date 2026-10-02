@@ -12,6 +12,7 @@ import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
 import { urlFor } from '@/lib/sanity'
 import { SITE_URL } from '@/lib/constants'
+import { getHubEspnEvents } from '@/lib/sport-hub-events'
 
 export const revalidate = 300
 
@@ -105,11 +106,13 @@ export default async function SportPage({
   const sportSlug = sport.toLowerCase()
   const rankCategory = sportSlug === 'wwe' ? 'creadores_wwe' : 'jugadores'
 
-  const [articles, reels, allRankings, upcomingEvents] = await Promise.all([
+  const [articles, reels, allRankings, sanityEvents, espnEvents] = await Promise.all([
     sanityClient.fetch(articlesBySportQuery, { sport: sportSlug }).catch(() => []),
     sanityClient.fetch(reelsQuery).catch(() => []),
     getRanking(rankCategory),
     sanityClient.fetch(eventsBySportQuery, { sport: sportSlug }).catch(() => []),
+    // Lo mismo que el calendario y la portada. Ver lib/sport-hub-events.
+    getHubEspnEvents(sportSlug),
   ])
 
   const topRankings = rankCategory === 'jugadores'
@@ -125,8 +128,12 @@ export default async function SportPage({
   // JSON del repo caducaron el 15/05/2026. Se filtra DESPUÉS de elegir origen,
   // que es donde estaba el agujero. Ver stripExpiredThumbs.
   const igReels = stripExpiredThumbs(((reels as unknown[]).length > 0 ? reels : reelsData) as { thumbnail_url?: string | null }[])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sportEvents = ((upcomingEvents as any[]) ?? []).filter(Boolean)
+  // ESPN manda; los `event` de Sanity (que ya nadie alimenta) quedan de
+  // respaldo y para los deportes que ESPN no trae (lucha libre, rugby).
+  const sportEvents = espnEvents.length > 0
+    ? espnEvents
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    : ((sanityEvents as any[]) ?? []).filter(Boolean)
 
   const sportUrl = `${SITE_URL}/${sport}`
 
