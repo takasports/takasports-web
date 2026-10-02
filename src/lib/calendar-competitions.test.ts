@@ -125,3 +125,12 @@ describe('eventNoun', () => {
     expect(eventNoun(COMPETITIONS.find(c => c.slug === 'motogp')!.sport)).toBe('carreras')
   })
 })
+
+describe('Premier League no es la Premiership escocesa', () => {
+  it('deja fuera a Rangers y Celtic', () => {
+    const premier = getCompetition('premier-league')!
+    expect(matchesCompetition(premier, { comp: 'Premiership', sport: 'Fútbol' })).toBe(false)
+    expect(matchesCompetition(premier, { comp: 'Premier', sport: 'Fútbol' })).toBe(true)
+    expect(matchesCompetition(premier, { comp: 'Premier League', sport: 'Fútbol' })).toBe(true)
+  })
+})

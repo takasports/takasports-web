@@ -136,6 +136,10 @@ export const COMPETITIONS: CompetitionConfig[] = [
     shortName: 'Premier',
     sport: 'Fútbol',
     matchComp: 'Premier',
+    // «Premier» está dentro de «Premiership», la liga ESCOCESA: el 02/10/2026
+    // /calendario/premier-league enseñaba Rangers–Kilmarnock y Motherwell–Celtic
+    // entre los partidos de la Premier inglesa (12 de 33).
+    matchExclude: ['premiership'],
     description: 'Calendario de la Premier League inglesa: todos los partidos de la temporada con horarios.',
     seasonKind: 'split',
     banner: '/banners/premier-league.webp',
