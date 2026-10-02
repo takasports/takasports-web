@@ -15,6 +15,7 @@
 import { getOauthAccessToken, getServiceAccountToken } from './google-auth'
 import { sendTelegram } from './telegram'
 import { sanityClient } from './sanity'
+import { ETIQUETA_MOTIVO, revisarSeoTitle, type MotivoSeoTitle } from './seo-title-coherencia'
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,13 @@ export interface SeoTitleGap {
   masAntiguo?: string
   /** Horas que lleva esperando el más antiguo. */
   horasMasAntiguo?: number
+  /**
+   * seoTitles de las últimas 48 h que no casan con su titular (ver
+   * lib/seo-title-coherencia.ts). Como mucho los 5 primeros.
+   */
+  incoherentes?: Array<{ slug?: string; seoTitle: string; headline: string; motivos: MotivoSeoTitle[] }>
+  /** Total de incoherentes (puede ser mayor que `incoherentes.length`). */
+  totalIncoherentes?: number
   available: boolean
 }
 
@@ -112,15 +120,45 @@ export async function checkSeoTitles(): Promise<SeoTitleGap> {
     const horas = primero?.publishedAt
       ? Math.round((Date.now() - Date.parse(primero.publishedAt)) / 3600_000)
       : undefined
+    const coherencia = await revisarCoherenciaSeoTitles()
     return {
       pendientes: filas.length,
       masAntiguo: primero?.t,
       horasMasAntiguo: Number.isFinite(horas) ? horas : undefined,
+      ...coherencia,
       available: true,
     }
   } catch {
     return { pendientes: 0, available: false }
   }
+}
+
+// seoTitles que contradicen o recortan mal su titular. 48 h de ventana: la
+// auditoría es diaria, así que cada artículo se revisa dos veces como mucho.
+// Best-effort: si Sanity falla, no hay aviso (el bloque de arriba ya cubre la caída).
+const HORAS_COHERENCIA = 48
+
+async function revisarCoherenciaSeoTitles(): Promise<Pick<SeoTitleGap, 'incoherentes' | 'totalIncoherentes'>> {
+  try {
+    const desde = new Date(Date.now() - HORAS_COHERENCIA * 3600_000).toISOString()
+    const query = `*[_type == "article" && !(_id in path('drafts.**')) && defined(seoTitle) && defined(publishedAt) && publishedAt > $desde] | order(publishedAt desc)[0...200]{ "h": coalesce(headline, title), seoTitle, "slug": slug.current }`
+    const filas = await sanityClient.fetch<Array<{ h?: string; seoTitle?: string; slug?: string }>>(query, { desde })
+    const malos = (filas ?? [])
+      .map(f => ({
+        slug: f.slug,
+        seoTitle: f.seoTitle ?? '',
+        headline: f.h ?? '',
+        motivos: revisarSeoTitle(f.seoTitle ?? '', f.h ?? ''),
+      }))
+      .filter(f => f.motivos.length > 0)
+    return { incoherentes: malos.slice(0, 5), totalIncoherentes: malos.length }
+  } catch {
+    return {}
+  }
+}
+
+function escaparHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 // ── Utilidades de fecha (UTC, sin libs) ──────────────────────────────────────
@@ -461,6 +499,17 @@ export async function runSeoAudit(
     alerts.push(
       `<b>${seoTitles.pendientes}</b> ${seoTitles.pendientes === 1 ? 'artículo publicado' : 'artículos publicados'} sin título SEO${detalle}. ` +
       `Suele ser que Docker está apagado: el generador corre en el Mac.`,
+    )
+  }
+  if (seoTitles.totalIncoherentes && seoTitles.incoherentes?.length) {
+    const n = seoTitles.totalIncoherentes
+    const ejemplos = seoTitles.incoherentes.slice(0, 3).map(f =>
+      `\n   – «${escaparHtml(f.seoTitle)}» (${f.motivos.map(m => ETIQUETA_MOTIVO[m]).join(', ')})` +
+      (f.slug ? ` · /noticias/${escaparHtml(f.slug)}` : ''),
+    ).join('')
+    alerts.push(
+      `<b>${n}</b> ${n === 1 ? 'título SEO no casa' : 'títulos SEO no casan'} con su titular (48 h). ` +
+      `Corrígelos en Sanity (campo seoTitle):${ejemplos}`,
     )
   }
 
