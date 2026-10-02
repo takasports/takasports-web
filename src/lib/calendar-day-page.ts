@@ -141,20 +141,31 @@ export function isPastDay(iso: string, todayIso: string): boolean {
   return dayOffsetFrom(iso, todayIso) <= -2
 }
 
+/** "2026-10-03" → "sábado 3 de octubre de 2026": la fecha tal cual se busca. */
+export function searchDayLabel(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const wd = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]
+  return `${wd} ${d} de ${MONTHS[m - 1]} de ${y}`
+}
+
 /**
- * Título SEO. El día relativo va delante porque es lo que la gente busca.
+ * Título SEO, escrito COMO SE BUSCA. Medido en Search Console (3-30/09/2026,
+ * 3.674 impresiones de páginas de día): el 52 % de las búsquedas lleva el AÑO
+ * («partidos 27 de septiembre 2026») y el 12 % el día de la semana, y el
+ * título no llevaba ninguno de los dos. En cambio «horarios y dónde ver», que
+ * era la mitad del título, aparecía en el 0,3 %. Además decía «Partidos de 4
+ * de octubre», sin el «del».
  *
- * Y va en PASADO cuando el día ya se jugó: quien busca «resultados del 22 de
- * agosto» no quiere «horarios y dónde ver», que es lo que servíamos para todo
- * el archivo. Prometer el horario de un partido de hace un mes es prometer lo
- * que el visitante ya sabe que no necesita.
+ * En PASADO cuando el día ya se jugó: quien busca «resultados del 22 de
+ * agosto» no quiere horarios.
  */
 export function dayPageTitle(iso: string, todayIso: string): string {
+  const fecha = searchDayLabel(iso)
+  if (isPastDay(iso, todayIso)) return `Resultados del ${fecha}: todos los marcadores`
   const rel = relativeDayLabel(iso, todayIso)
-  const base = rel ? `${rel}, ${shortDayLabel(iso)}` : shortDayLabel(iso)
-  return isPastDay(iso, todayIso)
-    ? `Resultados del ${base}: todos los marcadores`
-    : `Partidos de ${base}: horarios y dónde ver`
+  // Con «hoy/mañana/ayer» delante el título ya es largo: sin coletilla, para
+  // que Google no corte la fecha.
+  return rel ? `Partidos de ${rel.toLowerCase()}, ${fecha}` : `Partidos del ${fecha}: horarios y TV`
 }
 
 export function dayPageDescription(iso: string, count: number, todayIso?: string): string {
@@ -163,5 +174,7 @@ export function dayPageDescription(iso: string, count: number, todayIso?: string
   if (todayIso && isPastDay(iso, todayIso)) {
     return `Resultados de los ${count} partidos del ${when}: marcadores finales, competición y crónica. Fútbol, NBA, tenis, F1 y más.`
   }
-  return `Los ${count} partidos del ${when}: horarios, canal de televisión, resultados y clasificación. Fútbol, NBA, tenis, F1 y más.`
+  // «Quién juega el 26 de septiembre» también se busca (4,7 % de las
+  // impresiones, cero clics): la descripción contesta esa pregunta tal cual.
+  return `Quién juega el ${searchDayLabel(iso)}: los ${count} partidos con horario y canal de televisión. Fútbol, NBA, tenis, F1 y más.`
 }

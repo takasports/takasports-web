@@ -70,8 +70,8 @@ describe('etiquetas', () => {
   })
 
   it('el título antepone el relativo cuando lo hay', () => {
-    expect(dayPageTitle('2026-08-21', '2026-08-21')).toBe('Partidos de Hoy, 21 de agosto: horarios y dónde ver')
-    expect(dayPageTitle('2026-08-25', '2026-08-21')).toBe('Partidos de 25 de agosto: horarios y dónde ver')
+    expect(dayPageTitle('2026-08-21', '2026-08-21')).toBe('Partidos de hoy, viernes 21 de agosto de 2026')
+    expect(dayPageTitle('2026-08-25', '2026-08-21')).toBe('Partidos del martes 25 de agosto de 2026: horarios y TV')
   })
 })
 
@@ -110,12 +110,12 @@ describe('dayPageTitle en pasado', () => {
 
   it('un día jugado promete marcadores, no horarios', () => {
     expect(dayPageTitle('2026-08-22', today))
-      .toBe('Resultados del 22 de agosto: todos los marcadores')
+      .toBe('Resultados del sábado 22 de agosto de 2026: todos los marcadores')
   })
 
   it('hoy y ayer siguen prometiendo horarios', () => {
-    expect(dayPageTitle(today, today)).toBe('Partidos de Hoy, 6 de septiembre: horarios y dónde ver')
-    expect(dayPageTitle('2026-09-05', today)).toBe('Partidos de Ayer, 5 de septiembre: horarios y dónde ver')
+    expect(dayPageTitle(today, today)).toBe('Partidos de hoy, domingo 6 de septiembre de 2026')
+    expect(dayPageTitle('2026-09-05', today)).toBe('Partidos de ayer, sábado 5 de septiembre de 2026')
   })
 })
 
@@ -127,11 +127,11 @@ describe('dayPageDescription', () => {
   })
 
   it('en presente habla de horarios y canal', () => {
-    expect(dayPageDescription('2026-09-07', 12, today)).toContain('horarios, canal de televisión')
+    expect(dayPageDescription('2026-09-07', 12, today)).toBe('Quién juega el lunes 7 de septiembre de 2026: los 12 partidos con horario y canal de televisión. Fútbol, NBA, tenis, F1 y más.')
   })
 
-  it('sin todayIso mantiene el texto de siempre (compatibilidad)', () => {
-    expect(dayPageDescription('2026-08-22', 89)).toContain('horarios, canal de televisión')
+  it('sin todayIso se trata como día por jugar', () => {
+    expect(dayPageDescription('2026-08-22', 89)).toContain('con horario y canal de televisión')
   })
 
   it('un día vacío no promete nada', () => {
@@ -219,5 +219,18 @@ describe('sitemapDays', () => {
   it('sale ordenado de más reciente a más antiguo, como antes', () => {
     const days = sitemapDays(today, ['2026-05-12'], conPartidos)
     expect([...days].sort((a, b) => b.localeCompare(a))).toEqual(days)
+  })
+})
+
+describe('el título se escribe como se busca', () => {
+  it('lleva el año y el día de la semana, que es como llegan las búsquedas', () => {
+    const t = dayPageTitle('2026-10-03', '2026-09-20')
+    expect(t).toContain('2026')
+    expect(t).toContain('sábado')
+    expect(t.startsWith('Partidos del ')).toBe(true)
+  })
+  it('cabe en lo que enseña Google (~60) en el caso más largo', () => {
+    expect(dayPageTitle('2026-09-30', '2026-09-01').length).toBeLessThanOrEqual(62)
+    expect(dayPageTitle('2026-09-30', '2026-09-30').length).toBeLessThanOrEqual(62)
   })
 })
