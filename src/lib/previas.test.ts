@@ -11,18 +11,18 @@ function ev(p: Partial<SportEvent>): SportEvent {
   n++
   return {
     id: `e${n}`, home: 'A', away: 'B', sport: 'Fútbol', comp: 'LaLiga', date: '', time: '', accent: '',
-    isoDate: enHoras(20), matchRef: `soccer_esp.1_${1000 + n}`, ...p,
+    isoDate: enHoras(10), matchRef: `soccer_esp.1_${1000 + n}`, ...p,
   }
 }
 
 describe('candidatasPrevia', () => {
-  it('solo coge lo que empieza entre 12 y 36 horas después', () => {
+  it('solo coge lo que empieza entre 4 y 16 horas después', () => {
     const evs = [
-      ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(6) }),
+      ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(2) }),
+      ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(10) }),
       ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(20) }),
-      ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(40) }),
     ]
-    expect(candidatasPrevia(evs, NOW).map((c) => c.ev.isoDate)).toEqual([enHoras(20)])
+    expect(candidatasPrevia(evs, NOW).map((c) => c.ev.isoDate)).toEqual([enHoras(10)])
   })
 
   it('descarta sin rival, sin matchRef, sin hora o de deportes sin previa', () => {
@@ -59,6 +59,13 @@ describe('topes', () => {
     expect(elegidas).toHaveLength(3)
     expect(cabeEnTopes(elegidas, { ev: evs[0], sport: 'baloncesto', puntuacion: 20 })).toBe(true)
     expect(MAX_PREVIAS_POR_DIA).toBe(4)
+  })
+  it('las de pasadas anteriores del día cuentan para el tope', () => {
+    const yaHoy = [{ sport: 'futbol' }, { sport: 'futbol' }, { sport: 'futbol' }]
+    const c = { ev: ev({}), sport: 'futbol' as const, puntuacion: 20 }
+    expect(cabeEnTopes(yaHoy, c)).toBe(false)
+    expect(cabeEnTopes(yaHoy, { ...c, sport: 'baloncesto' })).toBe(true)
+    expect(cabeEnTopes([...yaHoy, { sport: 'baloncesto' }], { ...c, sport: 'baloncesto' })).toBe(false)
   })
 })
 

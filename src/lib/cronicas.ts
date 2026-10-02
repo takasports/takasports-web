@@ -4,13 +4,14 @@ import { DEPORTES_CON_PREVIA, PUNTUACION_MINIMA, puntuarPrevia, type CandidataPr
 // Crónicas automáticas: QUÉ partidos terminados merecen crónica.
 //
 // La misma vara que las previas (destacados + interés hispano, mínimo 13): un gran
-// resultado es el resultado de un gran partido. El cron pasa cada 30 minutos y coge
-// lo que empezó entre 2 y 8 horas antes y ya terminó: así la crónica se encarga
-// poco después del pitido final. De noche, WF-08 está en silencio y la redacta a
+// resultado es el resultado de un gran partido. El cron pasa cada 15 minutos y coge
+// lo que ESPN ya da por terminado (empezó hace al menos 1 h 45 min): la crónica se
+// encarga 10-25 minutos después del pitido final, «no tan después» (editor,
+// 02/10/2026). La caché de resultados de ESPN es de 5 minutos. De noche, WF-08 está en silencio y la redacta a
 // las 8:00 (decisión del editor, 02/10/2026).
 
 export const CRONICA_DESDE_H = 8   // empezó hace como mucho 8 h
-export const CRONICA_HASTA_H = 2   // y como poco 2 h (un partido dura ~2 h)
+export const CRONICA_HASTA_H = 1.75 // y como poco 1 h 45 min: lo que manda es que ESPN lo dé por terminado
 export const MAX_CRONICAS_POR_DIA = 4
 
 export function candidatasCronica(

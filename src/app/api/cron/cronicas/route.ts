@@ -7,7 +7,7 @@
 // actualizada) y deja un route_job para WF-08, igual que las previas. Sin IA aquí;
 // la crónica se redacta solo con IA gratis y pasa por la aprobación del editor.
 //
-// Corre cada 30 minutos. De noche WF-08 está en silencio: lo que se encargue de
+// Corre cada 15 minutos. De noche WF-08 está en silencio: lo que se encargue de
 // madrugada se redacta a las 8:00.
 //
 // Ensayo sin escribir nada: `?dry=1` con `x-cron-secret` (y `&en=<ISO>` para

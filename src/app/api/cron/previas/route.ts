@@ -1,7 +1,7 @@
 // GET/POST /api/cron/previas
 //
-// Encarga las previas del día: elige los partidos destacados que empiezan entre 12
-// y 36 horas después (`lib/previas.ts`), monta su dossier de datos verificados con
+// Encarga las previas: cada hora, elige los partidos destacados que empiezan entre 4
+// y 16 horas después (`lib/previas.ts`), monta su dossier de datos verificados con
 // la ficha de ESPN (`lib/previas-dossier.ts`) y deja un trabajo en `route_jobs`
 // para el redactor de taka-system (WF-08). Aquí no se escribe ni una línea de la
 // nota y no se llama a ninguna IA: este cron solo decide QUÉ partido y con QUÉ
@@ -24,7 +24,7 @@ import { candidatasPrevia, cabeEnTopes, type CandidataPrevia } from '@/lib/previ
 import { construirDossier, esPretemporada, fetchSummary } from '@/lib/previas-dossier'
 import { getBroadcastRows, matchCompetition } from '@/lib/broadcast'
 import { buscarFotoEstadio } from '@/lib/foto-estadio'
-import { encargar, encargosRecientes } from '@/lib/produccion-propia'
+import { diaMadrid, encargar, encargosRecientes } from '@/lib/produccion-propia'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -37,16 +37,22 @@ async function handle(req: Request) {
   const sb = adminSupabase()
   if (!sb) return NextResponse.json({ ok: false, error: 'falta SUPABASE_SERVICE_ROLE_KEY' }, { status: 503 })
 
-  const now = Date.now()
+  // Solo en ensayo: `?en=<ISO>` simula otra hora.
+  const en = seco ? Date.parse(new URL(req.url).searchParams.get('en') ?? '') : NaN
+  const now = Number.isFinite(en) ? en : Date.now()
 
   // Previas ya encargadas en los últimos días: no se repiten aunque el cron corra
   // dos veces o el partido siga dentro de la ventana mañana.
-  let yaHechas: Set<string>
+  let recientes: Awaited<ReturnType<typeof encargosRecientes>>
   try {
-    yaHechas = new Set((await encargosRecientes(sb, 'previa', 4)).map((e) => e.matchRef).filter((x): x is string => !!x))
+    recientes = await encargosRecientes(sb, 'previa', 4)
   } catch (e) {
     return NextResponse.json({ ok: false, error: (e as Error).message }, { status: 500 })
   }
+  const yaHechas = new Set(recientes.map((e) => e.matchRef).filter((x): x is string => !!x))
+  // El cron corre cada hora: el tope diario cuenta también lo encargado en pasadas anteriores de hoy.
+  const hoy = diaMadrid(now)
+  const yaHoy: Array<{ sport: string }> = recientes.filter((e) => diaMadrid(e.creado) === hoy)
 
   const events = await fetchEspnEvents().catch(() => [])
   const candidatas = candidatasPrevia(events, now, yaHechas)
@@ -56,7 +62,7 @@ async function handle(req: Request) {
   const encargos: Record<string, unknown>[] = []
 
   for (const c of candidatas) {
-    if (!cabeEnTopes(elegidas, c)) continue
+    if (!cabeEnTopes(yaHoy, c)) continue
     const ref = c.ev.matchRef!
     const partido = `${c.ev.home} - ${c.ev.away}`
     const summary = await fetchSummary(ref)
@@ -73,11 +79,12 @@ async function handle(req: Request) {
     // Fondo por defecto de la placa (la versión con foto es la que prefiere el editor).
     datos.fotoEstadio = await buscarFotoEstadio(datos.estadio)
     elegidas.push(c)
+    yaHoy.push({ sport: c.sport })
     encargos.push({ partido, puntuacion: c.puntuacion, datos, dossierChars: texto.length, dossier: seco ? texto : undefined })
     if (seco) continue
 
     const fallo = await encargar(sb, 'previa', c, datos, texto)
-    if (fallo) { descartadas.push({ partido, motivo: fallo }); elegidas.pop(); continue }
+    if (fallo) { descartadas.push({ partido, motivo: fallo }); elegidas.pop(); yaHoy.pop(); continue }
   }
 
   return NextResponse.json({
@@ -85,6 +92,7 @@ async function handle(req: Request) {
     seco,
     candidatas: candidatas.length,
     yaEncargadas: yaHechas.size,
+    deHoy: yaHoy.length,
     encargos,
     descartadas,
   })

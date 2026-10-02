@@ -12,9 +12,9 @@ const ev = (p: Partial<SportEvent>): SportEvent => ({
 })
 
 describe('candidatasCronica', () => {
-  it('coge partidos destacados ya terminados entre 2 y 8 h antes', () => {
-    const r = candidatasCronica([ev({}), ev({ isoDate: haceH(1) }), ev({ isoDate: haceH(10) })], NOW)
-    expect(r).toHaveLength(1)
+  it('coge partidos destacados ya terminados que empezaron hace 1 h 45 min - 8 h', () => {
+    const r = candidatasCronica([ev({}), ev({ isoDate: haceH(1.5) }), ev({ isoDate: haceH(10) }), ev({ isoDate: haceH(1.9) })], NOW)
+    expect(r).toHaveLength(2)
   })
   it('sin marcador o sin terminar no hay crónica', () => {
     expect(candidatasCronica([ev({ homeScore: null }), ev({ isPast: false })], NOW)).toHaveLength(0)

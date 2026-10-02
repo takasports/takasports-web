@@ -12,12 +12,13 @@ import { getEventHighlightScore } from '@/lib/competitions'
 //
 // La nota se escribe con ANTELACIÓN: la demanda de un partido está delante, no
 // detrás (ver memoria «el calendario: la demanda está delante»). El cron corre una
-// vez al día por la mañana y coge lo que empieza entre 12 y 36 horas después, así
-// cada partido cae en una sola pasada: el de esta noche y el de mañana por la tarde
-// hoy; el de mañana por la noche, en la pasada de mañana.
+// vez por hora y coge lo que empieza entre 4 y 16 horas después: «no subirla mucho
+// tiempo antes» (criterio del editor, 02/10/2026). Con la franja nocturna en
+// silencio, casi todas llegan la misma mañana del partido: un 21:00 se encarga a
+// las 05:00 y se redacta a las 08:00; un 13:00, la víspera a las 21:00.
 
-export const VENTANA_DESDE_H = 12
-export const VENTANA_HASTA_H = 36
+export const VENTANA_DESDE_H = 4
+export const VENTANA_HASTA_H = 16
 /** Por debajo de esto no hay previa aunque el día venga flojo: mejor ninguna nota
  *  que una previa de un partido que no busca nadie. Calibrado el 02/10/2026 sobre
  *  807 partidos reales: con 11,5 entraban Polonia–Rumanía o Bélgica–Turquía (13,5
@@ -106,10 +107,11 @@ export function candidatasPrevia(
     new Date(a.ev.isoDate!).getTime() - new Date(b.ev.isoDate!).getTime())
 }
 
-/** ¿Cabe una previa más de este deporte con las ya elegidas? */
-export function cabeEnTopes(elegidas: readonly CandidataPrevia[], c: CandidataPrevia): boolean {
-  if (elegidas.length >= MAX_PREVIAS_POR_DIA) return false
-  const n = elegidas.filter((e) => e.sport === c.sport).length
+/** ¿Cabe una previa más de este deporte? `yaHoy` = las encargadas hoy (día de
+ *  Madrid), incluidas las de pasadas anteriores: el cron corre cada hora. */
+export function cabeEnTopes(yaHoy: ReadonlyArray<{ sport: string }>, c: CandidataPrevia): boolean {
+  if (yaHoy.length >= MAX_PREVIAS_POR_DIA) return false
+  const n = yaHoy.filter((e) => e.sport === c.sport).length
   return n < (MAX_POR_DEPORTE[c.sport] ?? 2)
 }
 
