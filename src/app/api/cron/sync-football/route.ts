@@ -42,6 +42,7 @@ import {
   type FootballFixture,
 } from '@/lib/football-ranked'
 import { eventosDeVentana } from '@/lib/espn-meses'
+import { avisarJornadasCerradas, otorgarInsigniasDeAcierto } from '@/lib/jornada-avisos'
 
 export const dynamic = 'force-dynamic'
 // Tope anti-runaway: 19 ligas en paralelo, cada una con su propio timeout de
@@ -394,6 +395,8 @@ async function handle(req: Request) {
   /** Semanas cuya composición ha cambiado en esta pasada: son las únicas donde
    *  el pleno puede haberse completado ahora. */
   const touchedWeeks = new Set<string>()
+  /** Partidos puntuados en esta pasada (para insignias de acierto). */
+  const scoredIds: string[] = []
 
   for (const [espnId, state] of stateByEspnId) {
     const id = rankedFootballId(espnId)
@@ -424,6 +427,7 @@ async function handle(req: Request) {
       scoringFailures++
     } else {
       resolved++
+      scoredIds.push(id)
       const wk = weekKeyById.get(id)
       if (wk) touchedWeeks.add(wk)
     }
@@ -469,6 +473,7 @@ async function handle(req: Request) {
       scoringFailures++
     } else {
       rescued++
+      scoredIds.push(row.id)
       if (row.meta?.week_key) touchedWeeks.add(row.meta.week_key)
     }
   }
@@ -481,6 +486,22 @@ async function handle(req: Request) {
   for (const weekKey of touchedWeeks) {
     const { data: awarded, error: plenoErr } = await admin.rpc('award_jornada_pleno', { p_week_key: weekKey })
     if (!plenoErr && typeof awarded === 'number') plenos += awarded
+  }
+
+  // ── 4d. Insignias y aviso de cierre de Jornada ───────────────────────────
+  // Después del puntuado y del pleno, y a prueba de fallos: cualquier error
+  // aquí se registra y se sigue — los puntos ya están acreditados.
+  let insignias = 0
+  let avisoJornada = { jornadas: 0, avisados: 0 }
+  try {
+    insignias = await otorgarInsigniasDeAcierto(admin, scoredIds)
+  } catch (e) {
+    console.warn('[sync-football] insignias de acierto fallaron', (e as Error).message)
+  }
+  try {
+    avisoJornada = await avisarJornadasCerradas(admin, touchedWeeks)
+  } catch (e) {
+    console.warn('[sync-football] aviso de Jornada falló', (e as Error).message)
   }
 
   // ── 5. Cerrar los ya empezados ─────────────────────────────────────────────
@@ -524,6 +545,8 @@ async function handle(req: Request) {
     resolved,
     rescued,
     plenos,
+    insignias,
+    avisoJornada,
     scoringFailures,
   })
 }
