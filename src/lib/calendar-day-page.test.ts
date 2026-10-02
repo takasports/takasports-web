@@ -3,6 +3,7 @@ import {
   isValidDayParam, dayOffsetFrom, longDayLabel, shortDayLabel,
   relativeDayLabel, addDays, dayPageTitle, DAY_PAGE_PAST, DAY_PAGE_FUTURE,
   isPastDay, dayPageDescription, servableDays, sitemapDays,
+  pickDayStars, DAY_DESCRIPTION_MAX, DAY_STAR_MIN_SCORE, type DayStar,
 } from './calendar-day-page'
 
 describe('isValidDayParam', () => {
@@ -136,6 +137,89 @@ describe('dayPageDescription', () => {
 
   it('un día vacío no promete nada', () => {
     expect(dayPageDescription('2026-08-22', 0, today)).toBe('Agenda deportiva del sábado, 22 de agosto de 2026 en TakaSports.')
+  })
+})
+
+describe('dayPageDescription con partidos estrella', () => {
+  const today = '2026-10-01'
+  const clasico: DayStar = { home: 'Barcelona', away: 'Real Madrid', time: '17:00', channel: 'DAZN' }
+  const derbi: DayStar = { home: 'Inter', away: 'Juventus', time: '20:45' }
+
+  it('nombra los dos partidos con hora y canal y cuenta el resto', () => {
+    const d = dayPageDescription('2026-10-03', 33, today, [clasico, derbi])
+    expect(d).toBe('Quién juega el sábado 3 de octubre de 2026: Barcelona–Real Madrid (17:00, DAZN), Inter–Juventus (20:45) y 31 partidos más con horario y TV.')
+    expect(d.length).toBeLessThanOrEqual(DAY_DESCRIPTION_MAX)
+  })
+
+  it('sin canal ni hora no deja paréntesis vacíos', () => {
+    const d = dayPageDescription('2026-10-03', 5, today, [{ home: 'Lakers', away: 'Celtics' }])
+    expect(d).toBe('Quién juega el sábado 3 de octubre de 2026: Lakers–Celtics y 4 partidos más con horario y TV.')
+  })
+
+  it('singular y «sin resto» se escriben bien', () => {
+    expect(dayPageDescription('2026-10-03', 3, today, [clasico, derbi])).toContain('y 1 partido más con horario')
+    expect(dayPageDescription('2026-10-03', 2, today, [clasico, derbi]))
+      .toBe('Quién juega el sábado 3 de octubre de 2026: Barcelona–Real Madrid (17:00, DAZN) y Inter–Juventus (20:45), con horario y TV.')
+  })
+
+  it('un día sin partidos grandes conserva la descripción genérica', () => {
+    expect(dayPageDescription('2026-10-03', 12, today, []))
+      .toBe('Quién juega el sábado 3 de octubre de 2026: los 12 partidos con horario y canal de televisión. Fútbol, NBA, tenis, F1 y más.')
+  })
+
+  it('con nombres largos recorta: primero el canal, luego el segundo partido', () => {
+    const largo1: DayStar = { home: 'Borussia Mönchengladbach', away: 'Eintracht Frankfurt', time: '18:30', channel: 'Movistar Plus+ Liga de Campeones' }
+    const largo2: DayStar = { home: 'Wolverhampton Wanderers', away: 'Brighton & Hove Albion', time: '21:00', channel: 'DAZN' }
+    const d = dayPageDescription('2026-10-03', 40, today, [largo1, largo2])
+    expect(d.length).toBeLessThanOrEqual(DAY_DESCRIPTION_MAX)
+    expect(d).toContain('Borussia Mönchengladbach–Eintracht Frankfurt (18:30)')
+    expect(d).not.toContain('Movistar')
+  })
+
+  it('si ni un partido cabe, vuelve a la genérica en vez de cortar a medias', () => {
+    const imposible: DayStar = { home: 'A'.repeat(80), away: 'B'.repeat(80), time: '12:00' }
+    expect(dayPageDescription('2026-10-03', 9, today, [imposible])).toContain('los 9 partidos con horario y canal de televisión')
+  })
+
+  it('un día ya jugado sigue hablando de resultados aunque haya estrellas', () => {
+    expect(dayPageDescription('2026-09-20', 30, today, [clasico])).toContain('Resultados de los 30 partidos')
+  })
+})
+
+describe('pickDayStars', () => {
+  type Ev = {
+    id: string; home: string; away: string | null; comp: string; sport: string
+    time: string; isoDate: string; score: number; broadcast?: string; timeTbd?: boolean
+  }
+  const ev = (id: string, home: string, away: string | null, score: number, extra: Partial<Ev> = {}): Ev =>
+    ({ id, home, away, comp: 'X', sport: 'Fútbol', time: '20:00', isoDate: `2026-10-03T${id}`, score, ...extra })
+  const score = (e: Ev) => e.score
+  const channel = (e: Ev) => e.broadcast
+
+  it('elige los de más puntuación por encima del listón y solo cara a cara', () => {
+    const stars = pickDayStars([
+      ev('1', 'Getafe', 'Alavés', DAY_STAR_MIN_SCORE - 0.5),
+      ev('2', 'Barcelona', 'Real Madrid', 17, { broadcast: 'DAZN' }),
+      ev('3', 'Gran Premio de Japón', null, 20),
+      ev('4', 'Inter', 'Juventus', 14),
+      ev('5', 'Lazio', 'Torino', 11),
+    ], score, channel)
+    expect(stars).toEqual([
+      { home: 'Barcelona', away: 'Real Madrid', time: '20:00', channel: 'DAZN' },
+      { home: 'Inter', away: 'Juventus', time: '20:00', channel: undefined },
+    ])
+  })
+
+  it('sin partidos grandes no devuelve nada', () => {
+    expect(pickDayStars([ev('1', 'Mirandés', 'Eldense', 6)], score, channel)).toEqual([])
+  })
+
+  it('no repite cruce ni inventa hora si no la hay', () => {
+    const stars = pickDayStars([
+      ev('1', 'Sinner', 'Alcaraz', 15, { timeTbd: true, time: '' }),
+      ev('2', 'Alcaraz', 'Sinner', 15),
+    ], score, channel)
+    expect(stars).toEqual([{ home: 'Sinner', away: 'Alcaraz', time: undefined, channel: undefined }])
   })
 })
 

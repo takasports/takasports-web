@@ -30,8 +30,9 @@ import type { SportEvent } from '@/lib/types'
 import { SITE_URL, LOGO_URL } from '@/lib/constants'
 import {
   addDays, dayPageDescription, dayPageTitle, DAY_PAGE_FUTURE, isPastDay, isValidDayParam,
-  longDayLabel, relativeDayLabel, servableDays, shortDayLabel,
+  longDayLabel, pickDayStars, relativeDayLabel, servableDays, shortDayLabel,
 } from '@/lib/calendar-day-page'
+import { getEventHighlightScore } from '@/lib/competitions'
 
 export const revalidate = 300
 
@@ -134,7 +135,14 @@ export async function generateMetadata({
   // archivo que ahora sí servimos.
   const events = await loadDay(fecha)
   const title = dayPageTitle(fecha, t)
-  const description = dayPageDescription(fecha, events.length, t)
+  // Los partidos estrella con el MISMO ranking que Destacados y el mismo canal
+  // que pinta la fila de abajo.
+  const stars = pickDayStars(
+    events,
+    e => getEventHighlightScore({ comp: e.comp, home: e.home, away: e.away, stage: e.stage, isoDate: e.isoDate }),
+    e => getBroadcastForTz(e.comp ?? '', e.sport ?? '', SOURCE_TZ) ?? e.broadcast,
+  )
+  const description = dayPageDescription(fecha, events.length, t, stars)
   const url = `${SITE_URL}/calendario/dia/${fecha}`
   return {
     title: `${title} | TakaSports`,

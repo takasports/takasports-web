@@ -168,12 +168,119 @@ export function dayPageTitle(iso: string, todayIso: string): string {
   return rel ? `Partidos de ${rel.toLowerCase()}, ${fecha}` : `Partidos del ${fecha}: horarios y TV`
 }
 
-export function dayPageDescription(iso: string, count: number, todayIso?: string): string {
+/** Un partido estrella del día, ya resuelto para el texto (sin marcador). */
+export interface DayStar {
+  home: string
+  away: string
+  /** "HH:MM" en la zona base; vacío o ausente si no hay hora. */
+  time?: string
+  channel?: string
+}
+
+/** Lo que Google enseña antes de cortar con «…». */
+export const DAY_DESCRIPTION_MAX = 160
+
+/**
+ * Listón de «partido estrella» en la escala de getEventHighlightScore: 10 deja
+ * entrar LaLiga, Premier, Serie A, Bundesliga, NBA y Champions, y los cruces
+ * de Ligue 1 o Europa League solo cuando juega un grande. Un día de segundas
+ * divisiones no tiene estrella y se queda con la descripción genérica: nombrar
+ * un Mirandés–Eldense como reclamo vende peor que no nombrar a nadie.
+ */
+export const DAY_STAR_MIN_SCORE = 10
+
+interface StarCandidate {
+  id: string
+  home: string
+  away: string | null
+  comp: string
+  sport: string
+  stage?: string
+  isoDate?: string
+  time: string
+  timeTbd?: boolean
+  broadcast?: string
+}
+
+/**
+ * Los `n` partidos que encabezan la descripción: los de más puntuación de
+ * Destacados (el mismo ranking que el calendario), solo cara a cara y por
+ * encima de DAY_STAR_MIN_SCORE. Empate → el que empieza antes.
+ *
+ * `score` y `channel` llegan inyectados para que esto siga siendo puro y
+ * testeable sin arrastrar las tablas de ligas y de televisiones.
+ */
+export function pickDayStars<E extends StarCandidate>(
+  events: readonly E[],
+  score: (e: E) => number,
+  channel: (e: E) => string | undefined,
+  n = 2,
+): DayStar[] {
+  const ranked = events
+    .filter(e => e.away && e.home)
+    .map(e => ({ e, s: score(e) }))
+    .filter(x => x.s >= DAY_STAR_MIN_SCORE)
+    .sort((a, b) => b.s - a.s || (a.e.isoDate ?? '').localeCompare(b.e.isoDate ?? ''))
+  const out: DayStar[] = []
+  const seen = new Set<string>()
+  for (const { e } of ranked) {
+    if (out.length >= n) break
+    const key = [e.home, e.away!].map(x => x.toLowerCase().trim()).sort().join('~')
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({
+      home: e.home.trim(),
+      away: e.away!.trim(),
+      time: e.timeTbd ? undefined : (e.time || undefined),
+      channel: channel(e) || undefined,
+    })
+  }
+  return out
+}
+
+function starLabel(s: DayStar, withChannel: boolean): string {
+  const extra = [s.time, withChannel ? s.channel : undefined].filter(Boolean).join(', ')
+  return `${s.home}–${s.away}${extra ? ` (${extra})` : ''}`
+}
+
+/** «Quién juega el …: A–B (17:00, DAZN), C–D (20:45) y 31 partidos más…». */
+function starsDescription(iso: string, count: number, stars: readonly DayStar[]): string | null {
+  const head = `Quién juega el ${searchDayLabel(iso)}: `
+  // De más rico a más escueto; gana el primero que cabe entero.
+  const variants: Array<[number, boolean]> = [[2, true], [2, false], [1, true], [1, false]]
+  for (const [k, withChannel] of variants) {
+    const picked = stars.slice(0, k)
+    if (picked.length === 0 || (k === 2 && picked.length < 2)) continue
+    const labels = picked.map(s => starLabel(s, withChannel))
+    const rest = count - picked.length
+    let body: string
+    if (rest <= 0) {
+      body = labels.length === 2 ? `${labels[0]} y ${labels[1]}, con horario y TV.` : `${labels[0]}, con horario y TV.`
+    } else {
+      body = `${labels.join(', ')} y ${rest} ${rest === 1 ? 'partido' : 'partidos'} más con horario y TV.`
+    }
+    const text = head + body
+    if (text.length <= DAY_DESCRIPTION_MAX) return text
+  }
+  return null
+}
+
+export function dayPageDescription(
+  iso: string,
+  count: number,
+  todayIso?: string,
+  stars: readonly DayStar[] = [],
+): string {
   const when = longDayLabel(iso)
   if (count === 0) return `Agenda deportiva del ${when} en TakaSports.`
   if (todayIso && isPastDay(iso, todayIso)) {
     return `Resultados de los ${count} partidos del ${when}: marcadores finales, competición y crónica. Fútbol, NBA, tenis, F1 y más.`
   }
+  // Con partidos grandes, la descripción los NOMBRA: quien busca «partidos
+  // del sábado» decide el clic por el Barça–Madrid, no por un recuento. La
+  // fórmula «quién juega el…» se mantiene (4,7 % de las impresiones).
+  const withStars = stars.length > 0 ? starsDescription(iso, count, stars) : null
+  if (withStars) return withStars
   // «Quién juega el 26 de septiembre» también se busca (4,7 % de las
   // impresiones, cero clics): la descripción contesta esa pregunta tal cual.
   return `Quién juega el ${searchDayLabel(iso)}: los ${count} partidos con horario y canal de televisión. Fútbol, NBA, tenis, F1 y más.`
