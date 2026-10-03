@@ -42,10 +42,16 @@ export interface MostReadArticle {
   clicks: number
 }
 
-function ymd(diasAtras: number): string {
-  const d = new Date()
+function ymd(diasAtras: number, ahora: Date = new Date()): string {
+  const d = new Date(ahora)
   d.setUTCDate(d.getUTCDate() - diasAtras)
   return d.toISOString().slice(0, 10)
+}
+
+/** Ventana que se le pide a Search Console: de hace 9 días a hace 3 (va con
+ *  retraso). Exportada para que quien la enseñe (la newsletter) diga la misma. */
+export function ventanaMasLeidas(ahora: Date = new Date()): { desde: string; hasta: string } {
+  return { desde: ymd(9, ahora), hasta: ymd(3, ahora) }
 }
 
 /** Saca el slug de una URL de artículo; null si no lo es. */
@@ -74,6 +80,7 @@ async function pedir(limite: number): Promise<MostReadArticle[]> {
   } catch { return [] }
   if (!token) return []
 
+  const ventana = ventanaMasLeidas()
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
   let filas: Array<{ keys?: string[]; clicks: number }> = []
@@ -83,7 +90,7 @@ async function pedir(limite: number): Promise<MostReadArticle[]> {
       {
         method: 'POST',
         headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ startDate: ymd(9), endDate: ymd(3), dimensions: ['page'], rowLimit: 25 }),
+        body: JSON.stringify({ startDate: ventana.desde, endDate: ventana.hasta, dimensions: ['page'], rowLimit: 25 }),
         signal: ctrl.signal,
       },
     )
@@ -125,6 +132,14 @@ async function pedir(limite: number): Promise<MostReadArticle[]> {
  * caché esto metería una llamada de red de hasta 8 s en el render de páginas
  * que hoy se sirven de CDN.
  */
+/**
+ * Sin caché: para quien corre una vez por semana (la newsletter) y para
+ * contextos sin la caché de Next (scripts). La web usa `getMostRead`.
+ */
+export function fetchMostReadUncached(limite = 5): Promise<MostReadArticle[]> {
+  return pedir(limite)
+}
+
 export const getMostRead = unstable_cache(
   async (limite = 5) => pedir(limite),
   ['mas-leidas-gsc'],
