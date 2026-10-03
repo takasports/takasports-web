@@ -62,9 +62,15 @@ export default function TuDia({ events }: { events: SportEvent[] }) {
   const misPartidos = useMemo(() => {
     const favs = (equipos ?? []).filter(Boolean)
     if (favs.length === 0) return []
-    const hoy = isoToLocalDate(new Date().toISOString())
+    const ahora = Date.now()
+    const hoy = isoToLocalDate(new Date(ahora).toISOString())
     return events
       .filter(ev => ev.isoDate && isoToLocalDate(ev.isoDate) === hoy)
+      // Los partidos del día llegan sin estado: uno que empezó hace más de 3 h
+      // ya se ha jugado y no puede seguir saliendo con su hora como pendiente.
+      // Sin riesgo de hidratación: `equipos` es null en el servidor, así que
+      // esto solo corre en el navegador.
+      .filter(ev => ahora - Date.parse(ev.isoDate!) <= 3 * 60 * 60 * 1000)
       .filter(ev => favs.some(t => (ev.home && nameMatch(t, ev.home)) || (ev.away && nameMatch(t, ev.away))))
       .slice(0, MAX_PARTIDOS)
   }, [events, equipos])
