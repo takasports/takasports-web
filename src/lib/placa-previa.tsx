@@ -248,50 +248,89 @@ export function golesPorEquipo(keyEvents: Array<Record<string, any>>, idHome: st
   return { home: fmt(lados.home), away: fmt(lados.away) }
 }
 
-// ── COLUMNA DE OPINIÓN ──────────────────────────────────────────────────────
-// Misma familia visual que las placas de partido, pero editorial: rótulo
-// «OPINIÓN», el titular grande y la firma. Foto de fondo si WF-08 encontró una
-// buena para el tema; si no, fondo con el acento del deporte.
+// Placa de columna (aprobada por el editor el 03/10/2026, «B2»): papel de periódico,
+// cabecera de sección negra con el isotipo, comillas y firma en el morado de la marca,
+// y la foto teñida de morado con el corte en diagonal de la «T» del logo (≈ 23°). La
+// columna es la voz de Taka, no la de un deporte: el color del deporte queda solo en
+// el punto del pie.
+const MORADO = '#B400FB'
+const PAPEL = '#F2EEE5'
+const TINTA = '#0E0B14'
+const ANGULO_T = 23
+
+const isotipo = readFile(path.join(process.cwd(), 'public', 'taka-icon.png'))
+  .then((b) => `data:image/png;base64,${b.toString('base64')}`)
+
+// Duotono morado: gris primero y luego el tinte (en una sola cadena sharp ignora el tinte).
+async function fotoMorada(url: string): Promise<string | null> {
+  const uri = await fetchImageDataUri(url)
+  if (!uri) return null
+  try {
+    const gris = await sharp(Buffer.from(uri.split(',')[1], 'base64')).grayscale().toBuffer()
+    const jpg = await sharp(gris).tint(MORADO).jpeg({ quality: 82 }).toBuffer()
+    return `data:image/jpeg;base64,${jpg.toString('base64')}`
+  } catch {
+    return null
+  }
+}
+
 export async function renderPlacaColumna(p: { titulo: string; firma: string; accent: string; fotoUrl?: string | null }) {
-  const [foto, { anton, semi, bold }] = await Promise.all([
-    p.fotoUrl ? fetchImageDataUri(p.fotoUrl) : Promise.resolve(null),
+  const [foto, logo, { anton, semi, bold }] = await Promise.all([
+    p.fotoUrl ? fotoMorada(p.fotoUrl) : Promise.resolve(null),
+    isotipo,
     fontData,
   ])
   const titulo = truncate(p.titulo, 95)
-  const tam = titulo.length > 70 ? 66 : titulo.length > 45 ? 78 : 92
+  const base = foto ? 74 : 90
+  const tam = titulo.length > 70 ? base * 0.72 : titulo.length > 45 ? base * 0.85 : base
+  const firma = truncate(p.firma, 24)
+  const panel = 470
+  const d = Math.round(H * Math.tan((ANGULO_T * Math.PI) / 180))
   const png = new ImageResponse(
     (
-      <div style={{ width: W, height: H, display: 'flex', position: 'relative', background: '#09090F', fontFamily: 'Barlow Condensed' }}>
+      <div style={{ width: W, height: H, display: 'flex', flexDirection: 'column', background: PAPEL, fontFamily: 'Barlow Condensed', position: 'relative' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logo} alt="" width={560} height={560} style={{ position: 'absolute', right: foto ? 360 : -60, bottom: -150, width: 560, height: 560, opacity: 0.07 }} />
         {foto && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={foto} alt="" width={W} height={H} style={{ position: 'absolute', top: 0, left: 0, width: W, height: H, objectFit: 'cover' }} />
-        )}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, width: W, height: H, display: 'flex',
-          background: foto
-            ? 'linear-gradient(90deg, rgba(9,9,15,0.94) 0%, rgba(9,9,15,0.82) 55%, rgba(9,9,15,0.55) 100%)'
-            : `radial-gradient(ellipse 900px 600px at 0% 100%, ${p.accent}40 0%, transparent 70%)`,
-        }} />
-        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: W, height: H, padding: '50px 64px 40px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <div style={{
-              display: 'flex', padding: '8px 22px 5px', borderRadius: 9999, background: p.accent, color: '#09090F',
-              fontSize: 26, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase',
-            }}>
-              Opinión
-            </div>
+          <div style={{ display: 'flex', position: 'absolute', top: 0, right: 0, width: panel, height: H }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={foto} alt="" width={panel} height={H} style={{ width: panel, height: H, objectFit: 'cover' }} />
+            <svg width={panel} height={H} viewBox={`0 0 ${panel} ${H}`} style={{ position: 'absolute', top: 0, left: 0 }}>
+              <polygon points={`0,0 ${d},0 0,${H}`} fill={PAPEL} />
+              <polygon points={`${d},0 ${d + 16},0 16,${H} 0,${H}`} fill={MORADO} />
+            </svg>
           </div>
-          <div style={{ display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'center', gap: 26, maxWidth: 1000 }}>
-            <div style={{ display: 'flex', width: 90, height: 8, background: p.accent, borderRadius: 4 }} />
-            <div style={{ display: 'flex', fontFamily: 'Anton', fontSize: tam, lineHeight: 1.02, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.005em' }}>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', height: 92, padding: '0 48px', background: TINTA, width: foto ? 800 : W, gap: 18, position: 'relative' }}>
+          {foto && (
+            <svg width={40} height={92} viewBox="0 0 40 92" style={{ position: 'absolute', top: 0, left: 800 }}>
+              <polygon points="0,0 40,0 0,92" fill={TINTA} />
+            </svg>
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logo} alt="" width={52} height={52} style={{ width: 52, height: 52 }} />
+          <div style={{ display: 'flex', fontFamily: 'Anton', fontSize: 40, color: '#fff', letterSpacing: '0.02em' }}>OPINIÓN</div>
+          <div style={{ display: 'flex', width: 3, height: 34, background: MORADO, marginLeft: 6, marginRight: 6, transform: `skewX(-${ANGULO_T}deg)` }} />
+          <div style={{ display: 'flex', fontSize: 30, fontWeight: 600, color: 'rgba(255,255,255,0.75)', letterSpacing: '0.14em' }}>
+            {`LA COLUMNA DE ${firma.toUpperCase()}`}
+          </div>
+        </div>
+        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', padding: '34px 56px 40px', width: foto ? 760 : W }}>
+          <div style={{ display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', fontFamily: 'Anton', fontSize: 130, lineHeight: 0.62, height: 64, marginBottom: 22, color: MORADO }}>«</div>
+            <div style={{ display: 'flex', fontFamily: 'Anton', fontSize: tam, lineHeight: 1.03, color: TINTA, textTransform: 'uppercase', maxWidth: foto ? 640 : 1000 }}>
               {titulo}
             </div>
-            <div style={{ display: 'flex', fontSize: 32, fontWeight: 700, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.04em' }}>
-              {`Por ${truncate(p.firma, 40)}`}
-            </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 18, borderTop: '2px solid rgba(255,255,255,0.12)' }}>
-            <div style={{ display: 'flex', fontFamily: 'Anton', fontSize: 30, color: p.accent }}>TAKASPORTSMEDIA.COM</div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', fontFamily: 'Anton', fontSize: firma.length > 14 ? 44 : 58, lineHeight: 1, color: TINTA }}>{firma.toUpperCase()}</div>
+              <div style={{ display: 'flex', width: 120, height: 9, background: MORADO, marginTop: 8, marginLeft: 4, transform: `skewX(-${ANGULO_T}deg)` }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'Anton', fontSize: 24, color: TINTA }}>
+              <div style={{ display: 'flex', width: 10, height: 10, background: p.accent, borderRadius: 9999 }} />
+              TAKASPORTSMEDIA.COM
+            </div>
           </div>
         </div>
       </div>
