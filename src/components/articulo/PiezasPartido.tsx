@@ -4,7 +4,7 @@
 // PortableText de la página de la noticia; son de servidor y sin estado.
 
 import DynamicImage from '@/components/DynamicImage'
-import type { EquipoVisual, EventoVisual, FilaClasificacion } from '@/lib/partido-visual'
+import type { EquipoVisual, EventoVisual, FilaClasificacion, Figura, PartidoPrevio } from '@/lib/partido-visual'
 
 const ICONO: Record<EventoVisual['tipo'], string> = { gol: '⚽', penalti: '⚽', propia: '⚽', roja: '🟥' }
 const NOTA: Record<EventoVisual['tipo'], string> = { gol: '', penalti: 'penalti', propia: 'en propia', roja: 'expulsado' }
@@ -130,6 +130,61 @@ export function Destacado({ texto, autor, accent }: { texto: string; autor: stri
         <span aria-hidden style={{ color: accent }}>«</span>{texto}<span aria-hidden style={{ color: accent }}>»</span>
       </blockquote>
       {autor && <figcaption style={{ marginTop: 10, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>— {autor}</figcaption>}
+    </figure>
+  )
+}
+
+export function FiguraPartido({ figura, equipo, accent }: { figura: Figura; equipo: EquipoVisual; accent: string }) {
+  const partes = [
+    figura.goles ? `${figura.goles} ${figura.goles === 1 ? 'gol' : 'goles'}${figura.penaltis ? ` (${figura.penaltis} de penalti)` : ''}` : null,
+    figura.asistencias ? `${figura.asistencias} ${figura.asistencias === 1 ? 'asistencia' : 'asistencias'}` : null,
+  ].filter(Boolean)
+  return (
+    <figure style={{ margin: '2rem 0', maxWidth: 680, display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 16, border: `1px solid ${accent}55`, background: `linear-gradient(135deg, ${accent}22, ${accent}08)` }}>
+      <span aria-hidden style={{ width: 46, height: 46, borderRadius: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, background: `${accent}2A`, flexShrink: 0 }}>⭐</span>
+      <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+        <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: accent }}>Figura del partido</span>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--body-heading)', lineHeight: 1.15, marginTop: 2 }}>{figura.jugador}</span>
+        <span style={{ fontSize: '0.85rem', color: 'var(--body-text)', marginTop: 2 }}>{partes.join(' · ')}</span>
+      </span>
+      <Escudo eq={equipo} size={34} />
+    </figure>
+  )
+}
+
+const fechaCorta = (iso: string) => new Intl.DateTimeFormat('es-ES', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(iso + 'T12:00:00Z'))
+
+export function CaraACaraPartido({ partidos, home, away, accent }: { partidos: PartidoPrevio[]; home: string; away: string; accent: string }) {
+  // Balance desde el punto de vista de los dos equipos de ESTA previa.
+  let vH = 0, vA = 0, e = 0
+  for (const p of partidos) {
+    const gH = p.local === home ? p.golesLocal : p.golesVisitante
+    const gA = p.local === home ? p.golesVisitante : p.golesLocal
+    if (gH > gA) vH++; else if (gA > gH) vA++; else e++
+  }
+  return (
+    <figure style={{ margin: '2rem 0', maxWidth: 680, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)' }}>
+      <div style={{ padding: '10px 14px', fontSize: 10.5, fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: accent, background: `${accent}10` }}>
+        Cara a cara <span style={{ color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'none' }}>· últimos {partidos.length}</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '12px 14px 4px', gap: 8 }}>
+        <span style={{ fontWeight: 700, color: 'var(--body-heading)' }}>{home} <span style={{ fontFamily: 'var(--font-display)', color: accent, marginLeft: 4 }}>{vH}</span></span>
+        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{e} {e === 1 ? 'empate' : 'empates'}</span>
+        <span style={{ fontWeight: 700, color: 'var(--body-heading)', textAlign: 'right' }}><span style={{ fontFamily: 'var(--font-display)', color: '#f5a623', marginRight: 4 }}>{vA}</span> {away}</span>
+      </div>
+      <div style={{ display: 'flex', height: 8, margin: '6px 14px 10px', borderRadius: 6, overflow: 'hidden', background: 'rgba(255,255,255,0.08)' }}>
+        <span style={{ width: `${(vH / partidos.length) * 100}%`, background: accent }} />
+        <span style={{ width: `${(e / partidos.length) * 100}%`, background: '#64748B' }} />
+        <span style={{ width: `${(vA / partidos.length) * 100}%`, background: '#f5a623' }} />
+      </div>
+      {partidos.map((p, i) => (
+        <div key={i} style={{ display: 'grid', gridTemplateColumns: '64px 1fr auto 1fr', alignItems: 'center', gap: 8, padding: '8px 14px', borderTop: '1px solid var(--border)', fontSize: '0.88rem' }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'capitalize' }}>{fechaCorta(p.fecha)}</span>
+          <span style={{ textAlign: 'right', color: 'var(--body-text)', fontWeight: p.golesLocal > p.golesVisitante ? 700 : 400 }}>{p.local}</span>
+          <span style={{ fontFamily: 'var(--font-display)', color: 'var(--body-heading)', fontVariantNumeric: 'tabular-nums', padding: '0 4px' }}>{p.golesLocal}-{p.golesVisitante}</span>
+          <span style={{ color: 'var(--body-text)', fontWeight: p.golesVisitante > p.golesLocal ? 700 : 400 }}>{p.visitante}</span>
+        </div>
+      ))}
     </figure>
   )
 }

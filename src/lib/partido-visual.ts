@@ -25,6 +25,8 @@ export interface EventoVisual {
 }
 export interface FilaEstadistica { label: string; home: number; away: number; unit?: string }
 export interface FilaClasificacion { pos: number; equipo: string; pj: number; pts: number; dif: string; destacado: boolean }
+export interface PartidoPrevio { fecha: string; local: string; golesLocal: number; visitante: string; golesVisitante: number }
+export interface Figura { jugador: string; lado: 'home' | 'away'; goles: number; penaltis: number; asistencias: number }
 export interface FichaVisual {
   home: EquipoVisual
   away: EquipoVisual
@@ -34,6 +36,10 @@ export interface FichaVisual {
   clasificacion: FilaClasificacion[]
   /** Últimos resultados, del más reciente al más antiguo: 'V' | 'E' | 'D'. */
   forma: { home: string[]; away: string[] }
+  /** Últimos enfrentamientos entre los dos, el más reciente primero (sin este partido). */
+  caraACara: PartidoPrevio[]
+  /** El que más pesó en el marcador (goles ×2 + asistencias), si no hay empate arriba. */
+  figura: Figura | null
 }
 
 const nombreEs = (n: unknown) => { const s = String(n ?? ''); return toSpanishNation(s) || s }
@@ -129,7 +135,46 @@ export function fichaVisual(summary: J | null | undefined, nombres?: { home?: st
       .slice(0, 5)
   }
 
-  return { home: equipo(cH, nombres?.home), away: equipo(cA, nombres?.away), terminado, eventos, estadisticas, clasificacion, forma }
+  // Cara a cara: la serie de ESPN, sin el propio partido ni nada posterior.
+  const inicio = Date.parse(comp?.date ?? '') || Infinity
+  const idEvento = String(summary?.header?.id ?? '')
+  const nomPorId = (id: string, fb: unknown) => (id === idH ? equipo(cH, nombres?.home).nombre : id === idA ? equipo(cA, nombres?.away).nombre : nombreEs(fb))
+  const caraACara: PartidoPrevio[] = []
+  for (const ev of [...(summary?.seasonseries?.[0]?.events ?? [])].sort((x: J, y: J) => Date.parse(y.date) - Date.parse(x.date))) {
+    if (String(ev?.id ?? '') === idEvento || !(Date.parse(ev?.date) < inicio) || ev?.status !== 'post') continue
+    const l = (ev.competitors ?? []).find((c: J) => c.homeAway === 'home')
+    const v = (ev.competitors ?? []).find((c: J) => c.homeAway === 'away')
+    if (!l || !v || l.score == null || v.score == null) continue
+    caraACara.push({
+      fecha: String(ev.date).slice(0, 10),
+      local: nomPorId(String(l.team?.id ?? ''), l.team?.displayName), golesLocal: Number(l.score),
+      visitante: nomPorId(String(v.team?.id ?? ''), v.team?.displayName), golesVisitante: Number(v.score),
+    })
+    if (caraACara.length >= 5) break
+  }
+
+  // Figura: solo con el partido acabado; un gol pesa el doble que una asistencia.
+  let figura: Figura | null = null
+  if (terminado) {
+    const cuenta = new Map<string, Figura>()
+    for (const e of eventos) {
+      if (e.tipo === 'gol' || e.tipo === 'penalti') {
+        const f = cuenta.get(e.jugador) ?? { jugador: e.jugador, lado: e.lado, goles: 0, penaltis: 0, asistencias: 0 }
+        f.goles++; if (e.tipo === 'penalti') f.penaltis++
+        cuenta.set(e.jugador, f)
+      }
+      if (e.asistencia) {
+        const f = cuenta.get(e.asistencia) ?? { jugador: e.asistencia, lado: e.lado, goles: 0, penaltis: 0, asistencias: 0 }
+        f.asistencias++
+        cuenta.set(e.asistencia, f)
+      }
+    }
+    const peso = (f: Figura) => f.goles * 2 + f.asistencias
+    const orden = [...cuenta.values()].sort((a, b) => peso(b) - peso(a))
+    if (orden[0] && peso(orden[0]) >= 3 && (!orden[1] || peso(orden[0]) > peso(orden[1]))) figura = orden[0]
+  }
+
+  return { home: equipo(cH, nombres?.home), away: equipo(cA, nombres?.away), terminado, eventos, estadisticas, clasificacion, forma, caraACara, figura }
 }
 
 export async function fetchFichaVisual(matchRef: string | null | undefined, nombres?: { home?: string; away?: string }): Promise<FichaVisual | null> {
@@ -147,6 +192,9 @@ export async function fetchFichaVisual(matchRef: string | null | undefined, nomb
 }
 
 // ── Montaje en el cuerpo ─────────────────────────────────────────────────────
+
+/** La figura del partido y el cara a cara esperan el visto bueno visual del editor. */
+export const EXTRAS_APROBADOS = false
 
 type Tramo = { _type: string; _key?: string; text?: string; marks?: string[] }
 type Bloque = { _type: string; _key?: string; style?: string; listItem?: string; children?: Tramo[]; [k: string]: unknown }
@@ -169,14 +217,17 @@ export function montarPiezasPartido(cuerpo: Bloque[], f: FichaVisual, tipo: 'cro
     else out.push(bloque)
   }
 
-  if (tipo === 'cronica' && (f.eventos.length || f.home.goles != null)) {
-    // Tras la entradilla: los dos primeros párrafos normales.
-    let normales = 0, pos = 0
+  // Tras la entradilla: los dos primeros párrafos normales.
+  const trasEntradilla = () => {
+    let normales = 0
     for (let i = 0; i < out.length; i++) {
       if (out[i]._type === 'block' && (out[i].style ?? 'normal') === 'normal' && !out[i].listItem) normales++
-      if (normales === 2) { pos = i + 1; break }
+      if (normales === 2) return i + 1
     }
-    out.splice(pos, 0, { _type: 'partidoMarcador', _key: 'pv-marcador', home: f.home, away: f.away, eventos: f.eventos })
+    return 0
+  }
+  if (tipo === 'cronica' && (f.eventos.length || f.home.goles != null)) {
+    out.splice(trasEntradilla(), 0, { _type: 'partidoMarcador', _key: 'pv-marcador', home: f.home, away: f.away, eventos: f.eventos })
   }
   if (tipo === 'cronica' && f.estadisticas.length >= 3) {
     insertarTras(/n[uú]meros|estad[ií]stic/i, {
@@ -184,8 +235,20 @@ export function montarPiezasPartido(cuerpo: Bloque[], f: FichaVisual, tipo: 'cro
       homeLabel: f.home.nombre, awayLabel: f.away.nombre, rows: f.estadisticas,
     })
   }
+  if (EXTRAS_APROBADOS && tipo === 'cronica' && f.figura) {
+    const i = idxH2(/protagonistas|figura|destacad/i)
+    const bloque = { _type: 'partidoFigura', _key: 'pv-figura', figura: f.figura, equipo: f.figura.lado === 'home' ? f.home : f.away }
+    if (i >= 0) out.splice(i + 1, 0, bloque)
+    else { const m = out.findIndex((b) => b._key === 'pv-marcador'); out.splice(m >= 0 ? m + 1 : out.length, 0, bloque) }
+  }
+  if (EXTRAS_APROBADOS && tipo === 'previa' && f.caraACara.length >= 2) {
+    insertarTras(/historial|cara a cara|enfrentamiento|precedente|duelos/i, { _type: 'partidoCaraACara', _key: 'pv-h2h', partidos: f.caraACara, home: f.home.nombre, away: f.away.nombre })
+  }
   if (tipo === 'previa' && (f.forma.home.length || f.forma.away.length)) {
-    insertarTras(/c[oó]mo llega|llegan|racha|forma/i, { _type: 'partidoForma', _key: 'pv-forma', home: f.home, away: f.away, forma: f.forma })
+    const bloque = { _type: 'partidoForma', _key: 'pv-forma', home: f.home, away: f.away, forma: f.forma }
+    const i = idxH2(/c[oó]mo llega|llegan|racha|forma/i)
+    if (i >= 0) out.splice(i + 1, 0, bloque)
+    else out.splice(trasEntradilla(), 0, bloque)  // sin sección propia: tras la entradilla
   }
   if (f.clasificacion.length >= 2) {
     insertarTras(/clasificaci[oó]n|qu[eé] cambia|en juego/i, { _type: 'partidoClasificacion', _key: 'pv-tabla', filas: f.clasificacion })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { citaDestacada, fichaVisual, montarDestacado, montarPiezasPartido, partirParrafosLargos } from '@/lib/partido-visual'
+import { EXTRAS_APROBADOS, citaDestacada, fichaVisual, montarDestacado, montarPiezasPartido, partirParrafosLargos } from '@/lib/partido-visual'
 
 const summary = {
   header: { competitions: [{ status: { type: { completed: true, state: 'post' } }, competitors: [
@@ -53,6 +53,27 @@ describe('fichaVisual', () => {
   })
 })
 
+describe('figura y cara a cara', () => {
+  it('figura: Lewandowski (2 goles en el fixture) y nadie si hay empate arriba', () => {
+    const f = fichaVisual(summary)!
+    expect(f.figura).toMatchObject({ jugador: 'Robert Lewandowski', goles: 2, penaltis: 1 })
+  })
+  it('cara a cara sin el propio partido, el más reciente primero', () => {
+    const s2 = JSON.parse(JSON.stringify(summary))
+    s2.header.id = '999'
+    s2.header.competitions[0].date = '2026-10-02T18:45Z'
+    s2.seasonseries = [{ events: [
+      { id: '1', date: '2018-06-01T19:00Z', status: 'post', competitors: [{ homeAway: 'home', score: '3', team: { id: '471', displayName: 'Poland' } }, { homeAway: 'away', score: '1', team: { id: '473', displayName: 'Romania' } }] },
+      { id: '999', date: '2026-10-02T18:45Z', status: 'post', competitors: [{ homeAway: 'home', score: '6', team: { id: '471' } }, { homeAway: 'away', score: '0', team: { id: '473' } }] },
+      { id: '2', date: '2024-09-06T18:45Z', status: 'post', competitors: [{ homeAway: 'home', score: '1', team: { id: '473', displayName: 'Romania' } }, { homeAway: 'away', score: '1', team: { id: '471', displayName: 'Poland' } }] },
+    ] }]
+    const f = fichaVisual(s2)!
+    expect(f.caraACara.map((p) => `${p.fecha} ${p.local} ${p.golesLocal}-${p.golesVisitante} ${p.visitante}`)).toEqual([
+      '2024-09-06 Rumanía 1-1 Polonia', '2018-06-01 Polonia 3-1 Rumanía',
+    ])
+  })
+})
+
 describe('montarPiezasPartido', () => {
   const cuerpo = [
     bloque('normal', 'Entradilla uno.', 'a'), bloque('normal', 'Entradilla dos.', 'b'),
@@ -62,7 +83,7 @@ describe('montarPiezasPartido', () => {
   ]
   it('marcador tras la entradilla, estadísticas y clasificación bajo su sección', () => {
     const out = montarPiezasPartido(cuerpo, fichaVisual(summary)!, 'cronica').map((b) => b._type === 'block' ? b._key : b._type)
-    expect(out).toEqual(['a', 'b', 'partidoMarcador', 'c', 'statChart', 'd', 'e', 'partidoClasificacion', 'f', 'g'])
+    expect(out).toEqual(['a', 'b', 'partidoMarcador', ...(EXTRAS_APROBADOS ? ['partidoFigura'] : []), 'c', 'statChart', 'd', 'e', 'partidoClasificacion', 'f', 'g'])
   })
 })
 

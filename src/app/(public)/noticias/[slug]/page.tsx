@@ -33,8 +33,8 @@ import MatchScheduleCard, { type MatchKickoffData } from '@/components/MatchSche
 import BroadcastCard from '@/components/BroadcastCard'
 import FichaPartidoLink from '@/components/FichaPartidoLink'
 import ImagenIntermedia from '@/components/articulo/ImagenIntermedia'
-import { MarcadorPartido, ClasificacionPartido, FormaPartido, Destacado } from '@/components/articulo/PiezasPartido'
-import { fetchFichaVisual, montarPiezasPartido, montarDestacado, partirParrafosLargos, type EquipoVisual, type EventoVisual, type FilaClasificacion } from '@/lib/partido-visual'
+import { MarcadorPartido, ClasificacionPartido, FormaPartido, Destacado, FiguraPartido, CaraACaraPartido } from '@/components/articulo/PiezasPartido'
+import { fetchFichaVisual, montarPiezasPartido, montarDestacado, partirParrafosLargos, type EquipoVisual, type EventoVisual, type FilaClasificacion, type Figura, type PartidoPrevio } from '@/lib/partido-visual'
 import { matchCompetition, getBroadcastRows, type BroadcastRow } from '@/lib/broadcast'
 import PorraMatchWidget from '@/components/PorraMatchWidget'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
@@ -865,6 +865,14 @@ export default async function NoticiaPage({
                       partidoForma: ({ value }) => {
                         const v = value as { home: EquipoVisual; away: EquipoVisual; forma: { home: string[]; away: string[] } }
                         return <FormaPartido home={v.home} away={v.away} forma={v.forma} accent={badgeColor} />
+                      },
+                      partidoFigura: ({ value }) => {
+                        const v = value as { figura: Figura; equipo: EquipoVisual }
+                        return <FiguraPartido figura={v.figura} equipo={v.equipo} accent={badgeColor} />
+                      },
+                      partidoCaraACara: ({ value }) => {
+                        const v = value as { partidos: PartidoPrevio[]; home: string; away: string }
+                        return <CaraACaraPartido partidos={v.partidos ?? []} home={v.home} away={v.away} accent={badgeColor} />
                       },
                       destacado: ({ value }) => {
                         const v = value as { texto: string; autor: string | null }
