@@ -15,9 +15,11 @@
 //   SANITY_WEBHOOK_SECRET=<openssl rand -base64 32>
 
 import { revalidatePath } from 'next/cache'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createHmac, timingSafeEqual } from 'crypto'
 import { pingIndexNow, pathsToUrls } from '@/lib/indexnow'
+import { avisosNoticiasEnabled } from '@/lib/feature-flags'
+import { avisarNoticiaPublicada } from '@/lib/avisos-noticias-run'
 
 export const dynamic = 'force-dynamic'
 
@@ -78,7 +80,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Parsear payload
-  let payload: { _type?: string; slug?: { current?: string }; status?: string } = {}
+  let payload: { _type?: string; slug?: { current?: string }; status?: string } & Record<string, unknown> = {}
   try {
     payload = JSON.parse(rawBody)
   } catch {
@@ -125,8 +127,28 @@ export async function POST(req: NextRequest) {
     console.log(`[sanity-webhook] indexnow submitted=${indexnow.submitted} status=${indexnow.status} ok=${indexnow.ok}`)
   }
 
+  // Aviso push a quien pidió noticias de ese deporte (`noticias:<deporte>`,
+  // lo suscribe ArticlePushCta). Va DESPUÉS de responder: Sanity no tiene por
+  // qué esperar a los envíos, y un fallo aquí no puede tumbar la revalidación.
+  // Apagado (AVISOS_NOTICIAS_ENABLED sin poner) solo deja en el log lo que
+  // habría enviado. Criterio y topes en lib/avisos-noticias.
+  let aviso: 'envio' | 'simulacion' | null = null
+  if (docType === 'article') {
+    const enviar = avisosNoticiasEnabled()
+    aviso = enviar ? 'envio' : 'simulacion'
+    after(async () => {
+      try {
+        const r = await avisarNoticiaPublicada(payload, { enviar })
+        console.log(`[avisos-noticias] ${enviar ? 'ENVIO' : 'simulacion'} ${JSON.stringify(r)}`)
+      } catch (e) {
+        console.error('[avisos-noticias] error', e)
+      }
+    })
+  }
+
   return NextResponse.json({
     ok: true,
+    aviso,
     revalidated,
     docType,
     slug: slug ?? null,
