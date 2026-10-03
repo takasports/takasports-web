@@ -32,6 +32,9 @@ import { storySplitIndex } from '@/lib/article-split'
 import MatchScheduleCard, { type MatchKickoffData } from '@/components/MatchScheduleCard'
 import BroadcastCard from '@/components/BroadcastCard'
 import FichaPartidoLink from '@/components/FichaPartidoLink'
+import ImagenIntermedia from '@/components/articulo/ImagenIntermedia'
+import { MarcadorPartido, ClasificacionPartido, FormaPartido, Destacado } from '@/components/articulo/PiezasPartido'
+import { fetchFichaVisual, montarPiezasPartido, montarDestacado, partirParrafosLargos, type EquipoVisual, type EventoVisual, type FilaClasificacion } from '@/lib/partido-visual'
 import { matchCompetition, getBroadcastRows, type BroadcastRow } from '@/lib/broadcast'
 import PorraMatchWidget from '@/components/PorraMatchWidget'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
@@ -710,7 +713,9 @@ export default async function NoticiaPage({
   // `lib/article-player-links.ts` para los números que lo motivan.
   // Una sola consulta por artículo, solo por los nombres que el texto menciona.
   const bloquesConEnlaces: PtBlock[] = await (async () => {
-    const crudos = (article.bodyPortable ?? []) as PtBlock[]
+    // Los párrafos de más de 75 palabras se parten ANTES de enlazar: con enlaces
+    // dentro ya no se puede cortar sin romperlos.
+    const crudos = partirParrafosLargos((article.bodyPortable ?? []) as never) as PtBlock[]
     if (!hasBody || crudos.length === 0) return crudos
     const texto = textoDeBloques(crudos)
     const candidatos = extraerNombresCandidatos(texto)
@@ -724,6 +729,15 @@ export default async function NoticiaPage({
     const glosario = enlacesDeGlosario(texto, article.sport)
     return enlazarEnBloques(conJugadores, glosario, { marca: MARCA_GLOSARIO, ignorarCaja: true })
   })()
+
+  // Menos bloque de letras (03/10/2026): en las notas de partido, el marcador, las
+  // estadísticas, la racha y la clasificación se pintan con los datos de ESPN en vez
+  // de contarse en prosa; en todas, la primera cita literal sale como destacado.
+  const tipoPartido = article.type === 'cronica' || article.type === 'previa' ? article.type : null
+  const fichaVisualPartido = tipoPartido && article.matchRef ? await fetchFichaVisual(article.matchRef) : null
+  const bloquesFinales: PtBlock[] = montarDestacado(
+    (fichaVisualPartido ? montarPiezasPartido(bloquesConEnlaces as never, fichaVisualPartido, tipoPartido!) : bloquesConEnlaces) as never,
+  ) as PtBlock[]
 
   const { accent } = getSportStyle(article.sport, article.category)
   const badgeColor = accent
@@ -786,43 +800,7 @@ export default async function NoticiaPage({
                       inlineImage: ({ value }) => {
                         const src = (value as { url?: string })?.url
                         if (!src) return null
-                        const alt = (value as { alt?: string })?.alt ?? ''
-                        const caption = (value as { caption?: string })?.caption
-                        return (
-                          <figure style={{ margin: '2.25rem 0' }}>
-                            <div
-                              style={{
-                                borderRadius: 'var(--radius-lg)',
-                                overflow: 'hidden',
-                                border: '1px solid var(--border)',
-                                boxShadow: 'var(--shadow-card)',
-                              }}
-                            >
-                              <Image
-                                src={src}
-                                alt={alt}
-                                width={900}
-                                height={540}
-                                className="w-full h-auto object-cover"
-                                unoptimized
-                              />
-                            </div>
-                            {caption && (
-                              <figcaption
-                                style={{
-                                  fontSize: '0.8rem',
-                                  color: 'var(--text-muted)',
-                                  marginTop: '0.6rem',
-                                  textAlign: 'center',
-                                  fontStyle: 'italic',
-                                  lineHeight: 1.5,
-                                }}
-                              >
-                                {caption}
-                              </figcaption>
-                            )}
-                          </figure>
-                        )
+                        return <ImagenIntermedia src={src} alt={(value as { alt?: string })?.alt ?? ''} caption={(value as { caption?: string })?.caption} />
                       },
                       // FASE 5 — embed de vídeo (YouTube iframe o enlace a tweet)
                       videoEmbed: ({ value }) => {
@@ -877,6 +855,20 @@ export default async function NoticiaPage({
                           }
                         }
                         return null
+                      },
+                      // Piezas de nota de partido y destacado (lib/partido-visual.ts)
+                      partidoMarcador: ({ value }) => {
+                        const v = value as { home: EquipoVisual; away: EquipoVisual; eventos: EventoVisual[] }
+                        return <MarcadorPartido home={v.home} away={v.away} eventos={v.eventos ?? []} accent={badgeColor} />
+                      },
+                      partidoClasificacion: ({ value }) => <ClasificacionPartido filas={(value as { filas: FilaClasificacion[] }).filas ?? []} accent={badgeColor} />,
+                      partidoForma: ({ value }) => {
+                        const v = value as { home: EquipoVisual; away: EquipoVisual; forma: { home: string[]; away: string[] } }
+                        return <FormaPartido home={v.home} away={v.away} forma={v.forma} accent={badgeColor} />
+                      },
+                      destacado: ({ value }) => {
+                        const v = value as { texto: string; autor: string | null }
+                        return <Destacado texto={v.texto} autor={v.autor} accent={badgeColor} />
                       },
                       // G4 — tabla de datos (ficha del partido, clasificación, comparativas)
                       table: ({ value }) => {
@@ -1511,7 +1503,7 @@ export default async function NoticiaPage({
                   // a mitad de lectura (el bloque del final solo lo ve quien
                   // termina). `storySplitIndex` devuelve null si el artículo es
                   // corto o no hay un corte limpio → se pinta de una pieza.
-                  const blocks = bloquesConEnlaces
+                  const blocks = bloquesFinales
                   const cut = storySplitIndex(blocks)
                   if (cut === null) {
                     return <PortableText value={blocks} components={portableComponents} />
