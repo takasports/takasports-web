@@ -52,7 +52,8 @@ interface PushResult {
 
 // VAPID lazy init — evita crash en build si las env vars no están.
 let vapidInitialized: boolean | null = null
-function initVapid(): boolean {
+/** Exportado para el envío por TEMA (lib/push-topic), que comparte las claves. */
+export function initVapid(): boolean {
   if (vapidInitialized !== null) return vapidInitialized
   const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
   const priv = process.env.VAPID_PRIVATE_KEY
