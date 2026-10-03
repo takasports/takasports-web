@@ -1,6 +1,12 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
+import { SCORE_WEIGHTS, CREATOR_WEIGHTS } from '@/lib/rankings'
+
+// Los porcentajes salen de la fórmula canónica: esta página llegó a explicar
+// la de julio (40/20/25/15 con «Narrativa») meses después de cambiarla.
+const pct = (w: number) => `${Math.round(w * 100)}%`
+const dec = (w: number) => w.toFixed(2)
 
 export const metadata: Metadata = {
   title: 'Metodología · Ranking Taka',
@@ -32,24 +38,23 @@ export default function MetodologiaPage() {
         <Section title="1. Los cuatro factores">
           <p>Cada entry se mide en una escala 40-99 sobre cuatro pilares:</p>
           <ul className="space-y-2 mt-3">
-            <Factor name="Rendimiento" pct="40%" desc="Resultados deportivos reales: goles, asistencias, victorias, puntos, KOs, títulos." />
-            <Factor name="Contexto" pct="20%" desc="Posición del equipo, fase del campeonato, dificultad del rival." />
-            <Factor name="Mediático" pct="25%" desc="Presencia social, seguidores, apariciones, debate público." />
-            <Factor name="Narrativa" pct="15%" desc="Historia detrás del deportista — joven promesa, regreso, derrota épica." />
+            <Factor name="Rendimiento" pct={pct(SCORE_WEIGHTS.rendimiento)} desc="Stats reales de la temporada: goles y asistencias, PER en la NBA, puntos del Mundial en F1, ranking en tenis." />
+            <Factor name="Contexto" pct={pct(SCORE_WEIGHTS.contexto)} desc="Nivel de la competición y posición del equipo en su liga." />
+            <Factor name="Mediático" pct={pct(SCORE_WEIGHTS.mediatico)} desc="Interés público medido con las visitas a su página de Wikipedia." />
+            <Factor name="Forma" pct={pct(SCORE_WEIGHTS.narrativa)} desc="Momentum reciente: cómo ha evolucionado su puntuación en las últimas semanas." />
           </ul>
           <p className="mt-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Score = (Rend × 0.40) + (Ctx × 0.20) + (Med × 0.25) + (Narr × 0.15)
+            Score = (Rend × {dec(SCORE_WEIGHTS.rendimiento)}) + (Ctx × {dec(SCORE_WEIGHTS.contexto)}) + (Med × {dec(SCORE_WEIGHTS.mediatico)}) + (Forma × {dec(SCORE_WEIGHTS.narrativa)})
           </p>
           <p className="mt-4">Para <strong>creadores y periodistas</strong> aplicamos un criterio
           paralelo, centrado en su oficio y no en resultados deportivos:</p>
           <ul className="space-y-2 mt-3">
-            <Factor name="Audiencia" pct="50%" desc="Seguidores y suscriptores totales, ponderados por plataforma (YouTube, Instagram, TikTok, Twitch, X)." />
-            <Factor name="Contenido" pct="30%" desc="Calidad, frecuencia y engagement de lo que publican." />
-            <Factor name="Momento" pct="15%" desc="Crecimiento, viralidad reciente y relevancia en el debate actual." />
-            <Factor name="Profundidad" pct="5%" desc="Nivel de análisis y conocimiento del deporte que cubren." />
+            <Factor name="Audiencia" pct={pct(CREATOR_WEIGHTS.mediatico)} desc="Seguidores y suscriptores totales, ponderados por plataforma (YouTube, Instagram, TikTok, Twitch, X)." />
+            <Factor name="Contenido" pct={pct(CREATOR_WEIGHTS.rendimiento)} desc="Frecuencia y constancia de lo que publican." />
+            <Factor name="Momento" pct={pct(CREATOR_WEIGHTS.narrativa)} desc="Relevancia en el debate actual, medida con las visitas a su página de Wikipedia cuando la tienen." />
           </ul>
           <p className="mt-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Ranking de Contenido = (Aud × 0.50) + (Cont × 0.30) + (Mom × 0.15) + (Prof × 0.05)
+            Ranking de Contenido = (Aud × {dec(CREATOR_WEIGHTS.mediatico)}) + (Cont × {dec(CREATOR_WEIGHTS.rendimiento)}) + (Mom × {dec(CREATOR_WEIGHTS.narrativa)})
           </p>
         </Section>
 
@@ -82,8 +87,7 @@ export default function MetodologiaPage() {
 
         <Section title="5. Cuándo se actualiza">
           <ul className="space-y-1">
-            <li>• <strong>Domingo 22:00</strong> — ligas europeas + tenis (WF-11)</li>
-            <li>• <strong>Domingo 23:15</strong> — NBA, F1, UFC y clubes (WF-12)</li>
+            <li>• <strong>Domingo 23:45 y miércoles 22:00</strong> — recálculo completo de deportistas y clubes (ESPN, Jolpica, Wikipedia)</li>
             <li>• Creadores y periodistas — overrides editoriales en tiempo real desde el admin.</li>
           </ul>
         </Section>
@@ -92,7 +96,7 @@ export default function MetodologiaPage() {
           <ul className="space-y-1 text-[11px]" style={{ color: '#8E8E9E' }}>
             <li>• ESPN API (rosters, stats individuales, standings)</li>
             <li>• Jolpica F1 (clasificación pilotos)</li>
-            <li>• TheSportsDB + Wikipedia (fotos de deportistas)</li>
+            <li>• Wikipedia (visitas a cada página, para el factor mediático) y Wikimedia/TheSportsDB (fotos)</li>
             <li>• YouTube Data API + redes públicas (métricas de creadores)</li>
           </ul>
         </Section>

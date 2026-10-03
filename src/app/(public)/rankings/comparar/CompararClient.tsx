@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ScrollToTop from '@/components/ScrollToTop'
-import { type RankingEntry } from '@/lib/rankings'
+import { type RankingEntry, SCORE_WEIGHTS, CREATOR_WEIGHTS } from '@/lib/rankings'
 import { getDisplayScore, scoreColor, isCreatorEntry } from '@/lib/rankings-ui'
 import { getAllRankingEntries } from '@/lib/rankings-search'
 import { getSportStyle } from '@/lib/sports'
@@ -16,19 +16,23 @@ const SPORT_EMOJI: Record<string, string> = {
   ufc: '🥊', wwe: '🤼', contenido: '✍️',
 }
 
+// Pesos derivados de la fórmula canónica (lib/rankings.ts) para que el
+// comparador no vuelva a enseñar una fórmula vieja: decía 40/20/25/15 y
+// «Narrativa» cuando desde la migración 110 son 45/20/15/20 y el factor es Forma.
+const pct = (w: number) => `${Math.round(w * 100)}%`
 const FACTOR_DEFS = [
-  { key: 'rendimiento', label: 'Rendimiento', pct: '40%', color: '#22c55e' },
-  { key: 'contexto',    label: 'Contexto',    pct: '20%', color: '#60a5fa' },
-  { key: 'mediatico',   label: 'Mediático',   pct: '25%', color: '#f59e0b' },
-  { key: 'narrativa',   label: 'Narrativa',   pct: '15%', color: '#c084fc' },
+  { key: 'rendimiento', label: 'Rendimiento', pct: pct(SCORE_WEIGHTS.rendimiento), color: '#22c55e' },
+  { key: 'contexto',    label: 'Contexto',    pct: pct(SCORE_WEIGHTS.contexto),    color: '#60a5fa' },
+  { key: 'mediatico',   label: 'Mediático',   pct: pct(SCORE_WEIGHTS.mediatico),   color: '#f59e0b' },
+  { key: 'narrativa',   label: 'Forma',       pct: pct(SCORE_WEIGHTS.narrativa),   color: '#c084fc' },
 ] as const
 // Contenido (creadores/periodistas): criterio propio, audiencia-heavy. Mismas
 // claves que el atleta pero distinta etiqueta y peso (espejo de /rankings/[id]).
 const FACTOR_DEFS_CREATOR = [
-  { key: 'mediatico',   label: 'Audiencia',   pct: '50%', color: '#f59e0b' },
-  { key: 'rendimiento', label: 'Contenido',   pct: '30%', color: '#22c55e' },
-  { key: 'narrativa',   label: 'Momento',     pct: '15%', color: '#c084fc' },
-  { key: 'contexto',    label: 'Profundidad', pct: '5%',  color: '#60a5fa' },
+  { key: 'mediatico',   label: 'Audiencia',   pct: pct(CREATOR_WEIGHTS.mediatico),   color: '#f59e0b' },
+  { key: 'rendimiento', label: 'Contenido',   pct: pct(CREATOR_WEIGHTS.rendimiento), color: '#22c55e' },
+  { key: 'narrativa',   label: 'Momento',     pct: pct(CREATOR_WEIGHTS.narrativa),   color: '#c084fc' },
+  { key: 'contexto',    label: 'Profundidad', pct: pct(CREATOR_WEIGHTS.contexto),    color: '#60a5fa' },
 ] as const
 type FactorKey = typeof FACTOR_DEFS[number]['key']
 type FactorDef = { key: FactorKey; label: string; pct: string; color: string }
@@ -231,7 +235,7 @@ function RadarChart({
   // Descripción a11y: "A: rendimiento 85, contexto 70, mediático 90, narrativa 60.
   // B: rendimiento 80, contexto 75, mediático 85, narrativa 65."
   const describe = (label: string, vals: Record<FactorKey, number>) =>
-    `${label}: rendimiento ${Math.round(vals.rendimiento)}, contexto ${Math.round(vals.contexto)}, mediático ${Math.round(vals.mediatico)}, narrativa ${Math.round(vals.narrativa)}`
+    `${label}: rendimiento ${Math.round(vals.rendimiento)}, contexto ${Math.round(vals.contexto)}, mediático ${Math.round(vals.mediatico)}, forma ${Math.round(vals.narrativa)}`
   const ariaLabel = `Radar 4 factores. ${describe('A', a)}. ${describe('B', b)}.`
 
   return (
