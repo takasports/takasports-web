@@ -193,8 +193,8 @@ export async function fetchFichaVisual(matchRef: string | null | undefined, nomb
 
 // ── Montaje en el cuerpo ─────────────────────────────────────────────────────
 
-/** La figura del partido y el cara a cara esperan el visto bueno visual del editor. */
-export const EXTRAS_APROBADOS = false
+/** Figura del partido y cara a cara: aprobados por el editor el 04/10/2026. */
+export const EXTRAS_APROBADOS = true
 
 type Tramo = { _type: string; _key?: string; text?: string; marks?: string[] }
 type Bloque = { _type: string; _key?: string; style?: string; listItem?: string; children?: Tramo[]; [k: string]: unknown }
