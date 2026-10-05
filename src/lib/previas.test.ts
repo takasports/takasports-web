@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SportEvent } from '@/lib/types'
-import { candidatasPrevia, cabeEnTopes, elegirPrevias, interesHispano, MAX_PREVIAS_POR_DIA } from '@/lib/previas'
+import { candidatasPrevia, cabeEnTopes, elegirPrevias, esDiaGrande, esGrandeLatam, interesHispano, MAX_PREVIAS_POR_DIA } from '@/lib/previas'
 import { construirDossier, esPretemporada, parseMatchRef, probImplicita } from '@/lib/previas-dossier'
 
 const NOW = Date.parse('2026-10-02T06:00:00Z')
@@ -66,6 +66,48 @@ describe('topes', () => {
     expect(cabeEnTopes(yaHoy, c)).toBe(false)
     expect(cabeEnTopes(yaHoy, { ...c, sport: 'baloncesto' })).toBe(true)
     expect(cabeEnTopes([...yaHoy, { sport: 'baloncesto' }], { ...c, sport: 'baloncesto' })).toBe(false)
+  })
+})
+
+describe('carril latinoamericano y días grandes', () => {
+  it('un grande de Liga MX entra con su mínimo; un partido menor, no', () => {
+    const clasico = ev({ home: 'América', away: 'Guadalajara', comp: 'Liga MX', matchRef: 'soccer_mex.1_9001' })
+    const menor = ev({ home: 'Puebla', away: 'León', comp: 'Liga MX', matchRef: 'soccer_mex.1_9002' })
+    const cs = candidatasPrevia([clasico, menor], NOW)
+    expect(cs.map((c) => c.ev.home)).toEqual(['América'])
+    expect(cs[0].latam).toBe(true)
+  })
+  it('Brasileirão solo con cartel; Argentina con un grande sí entra', () => {
+    const menorBr = ev({ home: 'Remo', away: 'Grêmio', comp: 'Brasileirão', matchRef: 'soccer_bra.1_9003' })
+    const boca = ev({ home: 'Boca Juniors', away: 'Tigre', comp: 'Liga Argentina', matchRef: 'soccer_arg.1_9004' })
+    expect(candidatasPrevia([menorBr, boca], NOW).map((c) => c.ev.home)).toEqual(['Boca Juniors'])
+  })
+  it('los grandes: nombre exacto, sin homónimos', () => {
+    expect(esGrandeLatam('Boca Juniors')).toBe(true)
+    expect(esGrandeLatam('Independiente')).toBe(true)
+    expect(esGrandeLatam('Independiente Rivadavia')).toBe(false)
+    expect(esGrandeLatam('Deportivo Riestra')).toBe(false)
+  })
+  it('las latinoamericanas tienen su cupo de 2 y no quitan sitio a Europa', () => {
+    const lat = { ev: ev({}), sport: 'futbol' as const, puntuacion: 12, latam: true }
+    const eu = { ev: ev({}), sport: 'futbol' as const, puntuacion: 20 }
+    expect(cabeEnTopes([{ sport: 'futbol', latam: true }], lat)).toBe(true)
+    expect(cabeEnTopes([{ sport: 'futbol', latam: true }, { sport: 'futbol', latam: true }], lat)).toBe(false)
+    const tresEuropa = [{ sport: 'futbol' }, { sport: 'futbol' }, { sport: 'futbol' }]
+    expect(cabeEnTopes([...tresEuropa, { sport: 'futbol', latam: true }, { sport: 'futbol', latam: true }], eu)).toBe(false)
+    expect(cabeEnTopes([{ sport: 'futbol', latam: true }, { sport: 'futbol', latam: true }], eu)).toBe(true)
+  })
+  it('fin de semana o día de Champions: tope 7 y 5 de fútbol', () => {
+    const sabado = Date.parse('2026-10-03T09:00:00Z')
+    expect(esDiaGrande([], sabado)).toBe(true)
+    expect(esDiaGrande([], NOW)).toBe(false)
+    expect(esDiaGrande([ev({ comp: 'Champions', isoDate: '2026-10-02T19:00:00Z' })], NOW)).toBe(true)
+    expect(esDiaGrande([ev({ comp: 'Champions League (F)', isoDate: '2026-10-02T19:00:00Z' })], NOW)).toBe(false)
+    const cuatro = Array.from({ length: 4 }, () => ({ sport: 'futbol' }))
+    const c = { ev: ev({}), sport: 'futbol' as const, puntuacion: 20 }
+    expect(cabeEnTopes(cuatro, c, false)).toBe(false)
+    expect(cabeEnTopes(cuatro, c, true)).toBe(true)
+    expect(cabeEnTopes([...cuatro, { sport: 'futbol' }], c, true)).toBe(false)
   })
 })
 

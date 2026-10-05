@@ -32,6 +32,47 @@ export const MAX_PREVIAS_POR_DIA = 4
 /** El fútbol es el grueso del tráfico: con un tope plano de 2, una noche de
  *  Champions con tres españoles dejaba fuera a uno para meter un partido de NBA. */
 export const MAX_POR_DEPORTE: Record<string, number> = { futbol: 3, baloncesto: 2 }
+/** Fines de semana y días de Champions (05/10/2026, decisión del editor): es cuando se
+ *  juega casi todo lo que se busca y 4 previas se quedaban cortas. */
+export const MAX_PREVIAS_DIA_GRANDE = 7
+export const MAX_FUTBOL_DIA_GRANDE = 5
+
+/** CARRIL LATINOAMERICANO (05/10/2026). Latinoamérica es la mitad de las impresiones en
+ *  Google, pero con la puntuación general su mejor partido sacaba 7 (Liga MX) o 4,5
+ *  (Argentina) y nunca llegaba al mínimo de 13: cero previas latinoamericanas. Va en un
+ *  carril aparte, con su mínimo, su empujón a los grandes y su cupo diario, que no
+ *  quita sitio a las europeas. Se reconoce por la liga del matchRef de ESPN. */
+export const LIGAS_LATAM = new Set([
+  'mex.1', 'arg.1', 'bra.1', 'col.1', 'chi.1', 'conmebol.libertadores', 'conmebol.sudamericana',
+])
+export const PUNTUACION_MINIMA_LATAM = 9
+/** Ajustes por liga dentro del carril. Argentina parte de 4 en la puntuación general
+ *  (no está en la tabla de ligas) frente al 7 de Liga MX: sin esto, ni un Boca entraba.
+ *  El Brasileirão se lee en portugués: para el lector hispano solo vale un cartel de
+ *  dos grandes, así que su mínimo es el general. */
+const EXTRA_LIGA_LATAM: Record<string, number> = { 'arg.1': 3 }
+const MINIMO_LIGA_LATAM: Record<string, number> = { 'bra.1': PUNTUACION_MINIMA }
+export const MAX_LATAM_POR_DIA = 2
+export const EMPUJON_GRANDE_LATAM = 3
+const GRANDES_LATAM = [
+  'américa', 'guadalajara', 'chivas', 'cruz azul', 'pumas', 'tigres', 'monterrey', 'toluca',
+  'boca juniors', 'river plate', 'racing club', 'independiente', 'san lorenzo', 'estudiantes de la plata', 'vélez',
+  'flamengo', 'palmeiras', 'corinthians', 'são paulo', 'fluminense', 'atlético-mg', 'grêmio', 'internacional',
+  'atlético nacional', 'millonarios', 'américa de cali', 'colo-colo', 'universidad de chile', 'universidad católica',
+]
+const norm = (s?: string | null) => (s ?? '').trim().toLowerCase()
+// «Independiente» no debe sumar a «Independiente Rivadavia», ni «Santos» de Brasil al
+// «Santos» de México por accidente de nombre: se exige el nombre exacto o que empiece por
+// el del grande seguido de nada más que un espacio y un sufijo de ciudad conocido.
+export function esGrandeLatam(n?: string | null): boolean {
+  const x = norm(n)
+  return GRANDES_LATAM.some((g) => x === g || (x.startsWith(g + ' ') && !/rivadavia|laguna/.test(x)))
+}
+export function ligaDe(matchRef?: string | null): string | null {
+  const m = /^soccer_(.+)_\d+$/.exec(matchRef ?? '')
+  return m ? m[1] : null
+}
+export const esLatam = (matchRef?: string | null) => LIGAS_LATAM.has(ligaDe(matchRef) ?? '')
 
 /** Deportes con previa en esta primera versión. Son los que tienen ficha de
  *  partido completa en ESPN (clasificación, forma, cara a cara). F1, UFC y tenis
@@ -60,6 +101,7 @@ export interface CandidataPrevia {
   ev: SportEvent
   sport: 'futbol' | 'baloncesto'
   puntuacion: number
+  latam?: boolean
 }
 
 export function puntuarPrevia(ev: SportEvent): number {
@@ -97,9 +139,13 @@ export function candidatasPrevia(
     if (!Number.isFinite(ts) || ts < desde || ts > hasta) continue
     vistos.add(ev.matchRef)
 
-    const puntuacion = puntuarPrevia(ev)
-    if (puntuacion < PUNTUACION_MINIMA) continue
-    candidatas.push({ ev, sport, puntuacion })
+    const latam = esLatam(ev.matchRef)
+    const liga = ligaDe(ev.matchRef) ?? ''
+    const puntuacion = puntuarPrevia(ev) + (latam
+      ? (EXTRA_LIGA_LATAM[liga] ?? 0) + (esGrandeLatam(ev.home) ? EMPUJON_GRANDE_LATAM : 0) + (esGrandeLatam(ev.away) ? EMPUJON_GRANDE_LATAM : 0)
+      : 0)
+    if (puntuacion < (latam ? (MINIMO_LIGA_LATAM[liga] ?? PUNTUACION_MINIMA_LATAM) : PUNTUACION_MINIMA)) continue
+    candidatas.push({ ev, sport, puntuacion, ...(latam ? { latam: true } : {}) })
   }
 
   return candidatas.sort((a, b) =>
@@ -107,12 +153,32 @@ export function candidatasPrevia(
     new Date(a.ev.isoDate!).getTime() - new Date(b.ev.isoDate!).getTime())
 }
 
-/** ¿Cabe una previa más de este deporte? `yaHoy` = las encargadas hoy (día de
- *  Madrid), incluidas las de pasadas anteriores: el cron corre cada hora. */
-export function cabeEnTopes(yaHoy: ReadonlyArray<{ sport: string }>, c: CandidataPrevia): boolean {
-  if (yaHoy.length >= MAX_PREVIAS_POR_DIA) return false
-  const n = yaHoy.filter((e) => e.sport === c.sport).length
-  return n < (MAX_POR_DEPORTE[c.sport] ?? 2)
+/** ¿Cabe una previa más? `yaHoy` = las encargadas hoy (día de Madrid), incluidas las de
+ *  pasadas anteriores: el cron corre cada hora. Las latinoamericanas van en su propio
+ *  cupo y no cuentan para el de Europa/NBA. `diaGrande` = fin de semana o día de
+ *  Champions. */
+export function cabeEnTopes(
+  yaHoy: ReadonlyArray<{ sport: string; latam?: boolean }>,
+  c: CandidataPrevia,
+  diaGrande = false,
+): boolean {
+  if (c.latam) return yaHoy.filter((e) => e.latam).length < MAX_LATAM_POR_DIA
+  const resto = yaHoy.filter((e) => !e.latam)
+  if (resto.length >= (diaGrande ? MAX_PREVIAS_DIA_GRANDE : MAX_PREVIAS_POR_DIA)) return false
+  const n = resto.filter((e) => e.sport === c.sport).length
+  const tope = c.sport === 'futbol' && diaGrande ? MAX_FUTBOL_DIA_GRANDE : (MAX_POR_DEPORTE[c.sport] ?? 2)
+  return n < tope
+}
+
+/** Fin de semana (en Madrid) o un día con partidos de la Champions masculina (la
+ *  etiqueta exacta 'Champions': la femenina, la asiática o la de Concacaf no cuentan).
+ *  Puro. */
+export function esDiaGrande(events: SportEvent[], now: number): boolean {
+  const dia = (t: number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(t))
+  const sem = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', weekday: 'short' }).format(new Date(now))
+  if (sem === 'Sat' || sem === 'Sun') return true
+  const hoy = dia(now)
+  return events.some((e) => e.comp === 'Champions' && !!e.isoDate && dia(Date.parse(e.isoDate)) === hoy)
 }
 
 /** Selección sin mirar ESPN: candidatas en orden, recortadas por los topes. */
@@ -122,8 +188,9 @@ export function elegirPrevias(
   yaHechas: ReadonlySet<string> = new Set(),
 ): CandidataPrevia[] {
   const elegidas: CandidataPrevia[] = []
+  const grande = esDiaGrande(events, now)
   for (const c of candidatasPrevia(events, now, yaHechas)) {
-    if (cabeEnTopes(elegidas, c)) elegidas.push(c)
+    if (cabeEnTopes(elegidas, c, grande)) elegidas.push(c)
   }
   return elegidas
 }

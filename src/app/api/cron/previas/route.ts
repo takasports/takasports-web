@@ -20,7 +20,7 @@ import { NextResponse } from 'next/server'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { fetchEspnEvents } from '@/lib/espn'
-import { candidatasPrevia, cabeEnTopes, type CandidataPrevia } from '@/lib/previas'
+import { candidatasPrevia, cabeEnTopes, esDiaGrande, esLatam, type CandidataPrevia } from '@/lib/previas'
 import { construirDossier, esPretemporada, fetchSummary } from '@/lib/previas-dossier'
 import { getBroadcastRows, matchCompetition } from '@/lib/broadcast'
 import { buscarFotoEstadio } from '@/lib/foto-estadio'
@@ -52,17 +52,18 @@ async function handle(req: Request) {
   const yaHechas = new Set(recientes.map((e) => e.matchRef).filter((x): x is string => !!x))
   // El cron corre cada hora: el tope diario cuenta también lo encargado en pasadas anteriores de hoy.
   const hoy = diaMadrid(now)
-  const yaHoy: Array<{ sport: string }> = recientes.filter((e) => diaMadrid(e.creado) === hoy)
+  const yaHoy: Array<{ sport: string; latam?: boolean }> = recientes.filter((e) => diaMadrid(e.creado) === hoy).map((e) => ({ sport: e.sport, latam: esLatam(e.matchRef) }))
 
   const events = await fetchEspnEvents().catch(() => [])
   const candidatas = candidatasPrevia(events, now, yaHechas)
+  const diaGrande = esDiaGrande(events, now)
 
   const elegidas: CandidataPrevia[] = []
   const descartadas: { partido: string; motivo: string }[] = []
   const encargos: Record<string, unknown>[] = []
 
   for (const c of candidatas) {
-    if (!cabeEnTopes(yaHoy, c)) continue
+    if (!cabeEnTopes(yaHoy, c, diaGrande)) continue
     const ref = c.ev.matchRef!
     const partido = `${c.ev.home} - ${c.ev.away}`
     const summary = await fetchSummary(ref)
@@ -79,7 +80,7 @@ async function handle(req: Request) {
     // Fondo por defecto de la placa (la versión con foto es la que prefiere el editor).
     datos.fotoEstadio = await buscarFotoEstadio(datos.estadio)
     elegidas.push(c)
-    yaHoy.push({ sport: c.sport })
+    yaHoy.push({ sport: c.sport, latam: c.latam })
     encargos.push({ partido, puntuacion: c.puntuacion, datos, dossierChars: texto.length, dossier: seco ? texto : undefined })
     if (seco) continue
 
@@ -93,6 +94,7 @@ async function handle(req: Request) {
     candidatas: candidatas.length,
     yaEncargadas: yaHechas.size,
     deHoy: yaHoy.length,
+    diaGrande,
     encargos,
     descartadas,
   })
