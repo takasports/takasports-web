@@ -75,7 +75,8 @@ const TITULOS_CHAMPIONS = ['Suena el himno de la Champions 🎶', 'Noche de Cham
 const TITULOS_COPA = ['Huele a Libertadores 🏆', 'Noche de Copa 🏆']
 
 const balonDe = (compNorm: string) => /euroliga|euroleague|\bacb\b|\bnba\b|basket|baloncesto/.test(compNorm) ? '🏀' : '⚽'
-const rivalidadDe = (home: string, away: string) => {
+/** La gran rivalidad de este cruce, si la hay («el Clásico»). También la usa lib/seo-partido. */
+export const rivalidadDe = (home: string, away: string) => {
   const h = norm(home), a = norm(away)
   return RIVALIDADES.find((r) => (r.a.test(h) && r.b.test(a)) || (r.a.test(a) && r.b.test(h)))
 }

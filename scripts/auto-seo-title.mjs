@@ -163,7 +163,10 @@ async function patch(id, seoTitle) {
   if (!r.ok) throw new Error('Sanity mutate ' + r.status + ' ' + (await r.text()).slice(0, 160))
 }
 
-const filter = REGEN ? 'defined(headline)' : 'defined(headline) && !defined(seoTitle)'
+// Previas y crónicas no: su <title> lo arma la web con los datos del partido
+// (lib/seo-partido, 05/10/2026) y no lee seoTitle; generarlo sería gastar IA en balde.
+const SIN_PARTIDO = '!(type in ["previa", "cronica"])'
+const filter = REGEN ? `defined(headline) && ${SIN_PARTIDO}` : `defined(headline) && !defined(seoTitle) && ${SIN_PARTIDO}`
 const q = encodeURIComponent(`*[_type=="article" && ${filter}] | order(publishedAt desc){_id,"slug":slug.current,headline,metaDescription,tldr,sport}`)
 const resp = await fetch(`${QURL}?query=${q}`, { headers: { Authorization: `Bearer ${SANITY_TOKEN}` } })
 if (!resp.ok) { console.error(`${new Date().toISOString()} ERROR query ${resp.status}`); process.exit(1) }

@@ -36,6 +36,9 @@ import ImagenIntermedia from '@/components/articulo/ImagenIntermedia'
 import { MarcadorPartido, ClasificacionPartido, FormaPartido, Destacado, FiguraPartido, CaraACaraPartido } from '@/components/articulo/PiezasPartido'
 import { fetchFichaVisual, montarPiezasPartido, montarDestacado, partirParrafosLargos, type EquipoVisual, type EventoVisual, type FilaClasificacion, type Figura, type PartidoPrevio } from '@/lib/partido-visual'
 import { matchCompetition, getBroadcastRows, type BroadcastRow } from '@/lib/broadcast'
+import { competicionCorta, descripcionSeoPartido, faqPartido, sportsEventJsonLd, tituloSeoPartido, unirPreguntas, type DatosSeoPartido } from '@/lib/seo-partido'
+import { parseMatchRef } from '@/lib/previas-dossier'
+import type { FichaVisual } from '@/lib/partido-visual'
 import PorraMatchWidget from '@/components/PorraMatchWidget'
 import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 import { displayAuthor } from '@/lib/brand'
@@ -129,6 +132,33 @@ interface Article {
   matchRef?: string | null
 }
 
+/** Datos para el SEO de una previa o crónica (lib/seo-partido). Null en el resto de
+ *  notas o si no se sabe quién juega. La ficha y la TV se pasan si ya están pedidas. */
+async function datosSeoPartido(
+  article: Article,
+  pre?: { ficha?: FichaVisual | null; tv?: BroadcastRow[] },
+): Promise<DatosSeoPartido | null> {
+  const tipo = article.type === 'previa' || article.type === 'cronica' ? article.type : null
+  if (!tipo) return null
+  const ficha = pre?.ficha !== undefined ? pre.ficha : article.matchRef ? await fetchFichaVisual(article.matchRef) : null
+  const k = article.matchKickoff
+  const home = k?.home || ficha?.home.nombre
+  const away = k?.away || ficha?.away.nombre
+  if (!home || !away) return null
+  let tv = pre?.tv ?? []
+  if (!pre?.tv && tipo === 'previa' && k?.iso) {
+    const clave = matchCompetition(k.competition, article.title, ...(article.tags ?? []))
+    tv = clave ? await getBroadcastRows(clave).catch(() => []) : []
+  }
+  return {
+    tipo, home, away,
+    iso: k?.iso || ficha?.iso || null,
+    competicion: competicionCorta(article.matchRef, k?.competition || ficha?.liga),
+    deporte: parseMatchRef(article.matchRef ?? '')?.sport === 'basketball' ? 'baloncesto' : 'futbol',
+    ficha, tv,
+  }
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -153,13 +183,19 @@ export async function generateMetadata({
   // si el doc no tuviera ni seoTitle ni title (borrador mal migrado) → evita un
   // <title>/og:title vacío. El H1 nunca cambia.
   const metaTitle = (article.seoTitle?.trim() || article.title?.trim() || 'TakaSports')
+  // Previas y crónicas (05/10/2026): el <title> y la descripción responden a lo que se
+  // busca de un partido («horario y dónde ver», «resumen, goles y figura»), con datos
+  // verificados y sin IA (lib/seo-partido). Las redes siguen con el titular.
+  const seoPartido = await datosSeoPartido(article).catch(() => null)
+  const tituloBuscador = seoPartido ? tituloSeoPartido(seoPartido) : metaTitle
+  const descripcion = (seoPartido && descripcionSeoPartido(seoPartido)) || (article.short_summary ?? article.subtitle)
 
   return {
     // absolute: el pipeline ya genera titulares de 57-59 chars con la keyword
     // delante; el sufijo " | TakaSports" de la plantilla raíz los empujaba a
     // 70-72 chars y Google truncaba justo la cola. (Fase 0 SEO, jun 2026)
-    title: { absolute: metaTitle },
-    description: article.short_summary ?? article.subtitle,
+    title: { absolute: tituloBuscador },
+    description: descripcion,
     authors: [{ name: displayAuthor(article.author) }],
     alternates: { canonical },
     keywords: keywordList.length > 0 ? keywordList : undefined,
@@ -491,6 +527,12 @@ export default async function NoticiaPage({
     ? await getBroadcastRows(competitionKey).catch(() => [])
     : []
 
+  const tipoPartido = article.type === 'cronica' || article.type === 'previa' ? article.type : null
+  const fichaVisualPartido = tipoPartido && article.matchRef ? await fetchFichaVisual(article.matchRef) : null
+  const seoPartido = await datosSeoPartido(article, { ficha: fichaVisualPartido, tv: broadcastRows }).catch(() => null)
+  const preguntas = seoPartido ? unirPreguntas(faqPartido(seoPartido), article.faq) : (article.faq ?? [])
+  const eventoJsonLd = seoPartido ? sportsEventJsonLd(seoPartido, `${SITE_URL}/noticias/${article.slug ?? id}`, descripcionSeoPartido(seoPartido)) : null
+
   // Usar picks editoriales si existen; si no, query dinámica por sport/category
   const [relatedRaw, nextArticle] = await Promise.all([
     article.editorialRelated && article.editorialRelated.length > 0
@@ -614,6 +656,7 @@ export default async function NoticiaPage({
     copyrightYear: article.publishedAt ? new Date(article.publishedAt).getFullYear() : new Date().getFullYear(),
     // EEAT: enlaza el artículo con la política editorial verificable
     publishingPrinciples: `${SITE_URL}/politica-editorial`,
+    ...(eventoJsonLd ? { about: { '@id': eventoJsonLd['@id'] } } : {}),
   }
 
   const sportSlug = article.sport ?? null
@@ -636,12 +679,12 @@ export default async function NoticiaPage({
     ],
   }
 
-  const faqJsonLd = article.faq && article.faq.length > 0 ? {
+  const faqJsonLd = preguntas.length > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
     inLanguage: 'es-ES',
     isPartOf: { '@id': canonical },
-    mainEntity: article.faq.map((f) => ({
+    mainEntity: preguntas.map((f) => ({
       '@type': 'Question',
       name: f.q,
       acceptedAnswer: { '@type': 'Answer', text: f.a, inLanguage: 'es-ES' },
@@ -733,8 +776,6 @@ export default async function NoticiaPage({
   // Menos bloque de letras (03/10/2026): en las notas de partido, el marcador, las
   // estadísticas, la racha y la clasificación se pintan con los datos de ESPN en vez
   // de contarse en prosa; en todas, la primera cita literal sale como destacado.
-  const tipoPartido = article.type === 'cronica' || article.type === 'previa' ? article.type : null
-  const fichaVisualPartido = tipoPartido && article.matchRef ? await fetchFichaVisual(article.matchRef) : null
   const bloquesFinales: PtBlock[] = montarDestacado(
     (fichaVisualPartido ? montarPiezasPartido(bloquesConEnlaces as never, fichaVisualPartido, tipoPartido!) : bloquesConEnlaces) as never,
   ) as PtBlock[]
@@ -1205,6 +1246,9 @@ export default async function NoticiaPage({
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+      {eventoJsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventoJsonLd) }} />
+      )}
       {faqJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       )}
@@ -1540,7 +1584,7 @@ export default async function NoticiaPage({
               </p>
             )}
 
-            {article.faq && article.faq.length > 0 && (
+            {preguntas.length > 0 && (
               <section className="mt-12" style={{ maxWidth: 680 }} aria-label="Preguntas frecuentes">
                 <h2
                   className="text-[10px] font-black uppercase tracking-widest mb-4"
@@ -1549,7 +1593,7 @@ export default async function NoticiaPage({
                   Preguntas frecuentes
                 </h2>
                 <div className="flex flex-col gap-2.5">
-                  {article.faq.map((f, i) => (
+                  {preguntas.map((f, i) => (
                     <details
                       key={i}
                       className="rounded-xl overflow-hidden group"

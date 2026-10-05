@@ -40,6 +40,11 @@ export interface FichaVisual {
   caraACara: PartidoPrevio[]
   /** El que más pesó en el marcador (goles ×2 + asistencias), si no hay empate arriba. */
   figura: Figura | null
+  /** Para el título, la descripción y los datos estructurados de la nota (lib/seo-partido). */
+  iso?: string | null
+  liga?: string | null
+  estadio?: string | null
+  ciudad?: string | null
 }
 
 const nombreEs = (n: unknown) => { const s = String(n ?? ''); return toSpanishNation(s) || s }
@@ -174,7 +179,14 @@ export function fichaVisual(summary: J | null | undefined, nombres?: { home?: st
     if (orden[0] && peso(orden[0]) >= 3 && (!orden[1] || peso(orden[0]) > peso(orden[1]))) figura = orden[0]
   }
 
-  return { home: equipo(cH, nombres?.home), away: equipo(cA, nombres?.away), terminado, eventos, estadisticas, clasificacion, forma, caraACara, figura }
+  const venue = summary?.gameInfo?.venue
+  return {
+    home: equipo(cH, nombres?.home), away: equipo(cA, nombres?.away), terminado, eventos, estadisticas, clasificacion, forma, caraACara, figura,
+    iso: comp?.date ?? null,
+    liga: summary?.header?.league?.name ?? null,
+    estadio: venue?.fullName ?? null,
+    ciudad: venue?.address?.city ?? null,
+  }
 }
 
 export async function fetchFichaVisual(matchRef: string | null | undefined, nombres?: { home?: string; away?: string }): Promise<FichaVisual | null> {
