@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SportEvent } from '@/lib/types'
-import { candidatasPrevia, cabeEnTopes, elegirPrevias, esDiaGrande, esGrandeLatam, interesHispano, MAX_PREVIAS_POR_DIA } from '@/lib/previas'
+import { candidatasPrevia, cabeEnTopes, elegirPrevias, esDiaGrande, esGrandeLatam, interesHispano, MAX_PREVIAS_POR_DIA, PUNTUACION_ANTICIPADA } from '@/lib/previas'
 import { construirDossier, esPretemporada, parseMatchRef, probImplicita } from '@/lib/previas-dossier'
 
 const NOW = Date.parse('2026-10-02T06:00:00Z')
@@ -16,13 +16,21 @@ function ev(p: Partial<SportEvent>): SportEvent {
 }
 
 describe('candidatasPrevia', () => {
-  it('solo coge lo que empieza entre 4 y 16 horas después', () => {
+  it('entre 4 y 16 horas después; los grandes de fútbol, hasta 40 (la víspera)', () => {
     const evs = [
       ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(2) }),
       ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(10) }),
-      ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(20) }),
+      ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(30) }),
+      ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(44) }),
+      ev({ home: 'Sevilla', away: 'Getafe', isoDate: enHoras(30) }),
     ]
-    expect(candidatasPrevia(evs, NOW).map((c) => c.ev.isoDate)).toEqual([enHoras(10)])
+    const cs = candidatasPrevia(evs, NOW)
+    expect(cs.map((c) => c.ev.isoDate)).toEqual([enHoras(10), enHoras(30)])
+    expect(cs[1].puntuacion).toBeGreaterThanOrEqual(PUNTUACION_ANTICIPADA)
+  })
+  it('el baloncesto no se adelanta aunque tenga cartel', () => {
+    const nba = ev({ home: 'Los Angeles Lakers', away: 'Boston Celtics', sport: 'Baloncesto', comp: 'NBA', matchRef: 'basketball_nba_77', isoDate: enHoras(30) })
+    expect(candidatasPrevia([nba], NOW)).toHaveLength(0)
   })
 
   it('descarta sin rival, sin matchRef, sin hora o de deportes sin previa', () => {
@@ -53,15 +61,22 @@ describe('candidatasPrevia', () => {
 })
 
 describe('topes', () => {
-  it('como mucho 3 de fútbol y el total del día', () => {
+  it('como mucho 4 de fútbol y el total del día', () => {
     const evs = Array.from({ length: 8 }, () => ev({ home: 'Real Madrid', away: 'Barcelona' }))
     const elegidas = elegirPrevias(evs, NOW)
-    expect(elegidas).toHaveLength(3)
+    expect(elegidas).toHaveLength(4)
     expect(cabeEnTopes(elegidas, { ev: evs[0], sport: 'baloncesto', puntuacion: 20 })).toBe(true)
-    expect(MAX_PREVIAS_POR_DIA).toBe(4)
+    expect(MAX_PREVIAS_POR_DIA).toBe(5)
+  })
+  it('los topes van por el día del partido: la víspera no gasta el cupo de hoy', () => {
+    const hoy = Array.from({ length: 5 }, () => ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(10) }))
+    const manana = Array.from({ length: 2 }, () => ev({ home: 'Real Madrid', away: 'Barcelona', isoDate: enHoras(34) }))
+    const elegidas = elegirPrevias([...hoy, ...manana], NOW)
+    expect(elegidas.filter((c) => c.ev.isoDate === enHoras(10))).toHaveLength(4)
+    expect(elegidas.filter((c) => c.ev.isoDate === enHoras(34))).toHaveLength(2)
   })
   it('las de pasadas anteriores del día cuentan para el tope', () => {
-    const yaHoy = [{ sport: 'futbol' }, { sport: 'futbol' }, { sport: 'futbol' }]
+    const yaHoy = [{ sport: 'futbol' }, { sport: 'futbol' }, { sport: 'futbol' }, { sport: 'futbol' }]
     const c = { ev: ev({}), sport: 'futbol' as const, puntuacion: 20 }
     expect(cabeEnTopes(yaHoy, c)).toBe(false)
     expect(cabeEnTopes(yaHoy, { ...c, sport: 'baloncesto' })).toBe(true)
@@ -88,26 +103,27 @@ describe('carril latinoamericano y días grandes', () => {
     expect(esGrandeLatam('Independiente Rivadavia')).toBe(false)
     expect(esGrandeLatam('Deportivo Riestra')).toBe(false)
   })
-  it('las latinoamericanas tienen su cupo de 2 y no quitan sitio a Europa', () => {
+  it('las latinoamericanas tienen su cupo de 3 y no quitan sitio a Europa', () => {
     const lat = { ev: ev({}), sport: 'futbol' as const, puntuacion: 12, latam: true }
     const eu = { ev: ev({}), sport: 'futbol' as const, puntuacion: 20 }
-    expect(cabeEnTopes([{ sport: 'futbol', latam: true }], lat)).toBe(true)
-    expect(cabeEnTopes([{ sport: 'futbol', latam: true }, { sport: 'futbol', latam: true }], lat)).toBe(false)
-    const tresEuropa = [{ sport: 'futbol' }, { sport: 'futbol' }, { sport: 'futbol' }]
-    expect(cabeEnTopes([...tresEuropa, { sport: 'futbol', latam: true }, { sport: 'futbol', latam: true }], eu)).toBe(false)
-    expect(cabeEnTopes([{ sport: 'futbol', latam: true }, { sport: 'futbol', latam: true }], eu)).toBe(true)
+    const L = { sport: 'futbol', latam: true }
+    expect(cabeEnTopes([L, L], lat)).toBe(true)
+    expect(cabeEnTopes([L, L, L], lat)).toBe(false)
+    const cuatroEuropa = [{ sport: 'futbol' }, { sport: 'futbol' }, { sport: 'futbol' }, { sport: 'futbol' }]
+    expect(cabeEnTopes([...cuatroEuropa, L, L, L], eu)).toBe(false)
+    expect(cabeEnTopes([L, L, L], eu)).toBe(true)
   })
-  it('fin de semana o día de Champions: tope 7 y 5 de fútbol', () => {
+  it('fin de semana o día de Champions: tope 8 y 6 de fútbol', () => {
     const sabado = Date.parse('2026-10-03T09:00:00Z')
     expect(esDiaGrande([], sabado)).toBe(true)
     expect(esDiaGrande([], NOW)).toBe(false)
     expect(esDiaGrande([ev({ comp: 'Champions', isoDate: '2026-10-02T19:00:00Z' })], NOW)).toBe(true)
     expect(esDiaGrande([ev({ comp: 'Champions League (F)', isoDate: '2026-10-02T19:00:00Z' })], NOW)).toBe(false)
-    const cuatro = Array.from({ length: 4 }, () => ({ sport: 'futbol' }))
+    const cinco = Array.from({ length: 5 }, () => ({ sport: 'futbol' }))
     const c = { ev: ev({}), sport: 'futbol' as const, puntuacion: 20 }
-    expect(cabeEnTopes(cuatro, c, false)).toBe(false)
-    expect(cabeEnTopes(cuatro, c, true)).toBe(true)
-    expect(cabeEnTopes([...cuatro, { sport: 'futbol' }], c, true)).toBe(false)
+    expect(cabeEnTopes(cinco, c, false)).toBe(false)
+    expect(cabeEnTopes(cinco, c, true)).toBe(true)
+    expect(cabeEnTopes([...cinco, { sport: 'futbol' }], c, true)).toBe(false)
   })
 })
 

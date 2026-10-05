@@ -1,7 +1,7 @@
 // GET/POST /api/cron/previas
 //
 // Encarga las previas: cada hora, elige los partidos destacados que empiezan entre 4
-// y 16 horas después (`lib/previas.ts`), monta su dossier de datos verificados con
+// y 16 horas después (los de fútbol de más cartel, hasta 40 h: la víspera) (`lib/previas.ts`), monta su dossier de datos verificados con
 // la ficha de ESPN (`lib/previas-dossier.ts`) y deja un trabajo en `route_jobs`
 // para el redactor de taka-system (WF-08). Aquí no se escribe ni una línea de la
 // nota y no se llama a ninguna IA: este cron solo decide QUÉ partido y con QUÉ
@@ -20,11 +20,11 @@ import { NextResponse } from 'next/server'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { fetchEspnEvents } from '@/lib/espn'
-import { candidatasPrevia, cabeEnTopes, esDiaGrande, esLatam, type CandidataPrevia } from '@/lib/previas'
+import { candidatasPrevia, cabeEnTopes, diaDelPartido, esDiaGrande, esLatam, type CandidataPrevia } from '@/lib/previas'
 import { construirDossier, esPretemporada, fetchSummary } from '@/lib/previas-dossier'
 import { getBroadcastRows, matchCompetition } from '@/lib/broadcast'
 import { buscarFotoEstadio } from '@/lib/foto-estadio'
-import { diaMadrid, encargar, encargosRecientes } from '@/lib/produccion-propia'
+import { encargar, encargosRecientes } from '@/lib/produccion-propia'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -50,9 +50,12 @@ async function handle(req: Request) {
     return NextResponse.json({ ok: false, error: (e as Error).message }, { status: 500 })
   }
   const yaHechas = new Set(recientes.map((e) => e.matchRef).filter((x): x is string => !!x))
-  // El cron corre cada hora: el tope diario cuenta también lo encargado en pasadas anteriores de hoy.
-  const hoy = diaMadrid(now)
-  const yaHoy: Array<{ sport: string; latam?: boolean }> = recientes.filter((e) => diaMadrid(e.creado) === hoy).map((e) => ({ sport: e.sport, latam: esLatam(e.matchRef) }))
+  // Los topes van por el DÍA DEL PARTIDO (las grandes se encargan la víspera) y cuentan
+  // lo encargado en pasadas anteriores. Los encargos viejos sin hora de partido cuentan
+  // por el día en que se encargaron.
+  const ya: Array<{ dia: string; sport: string; latam?: boolean }> = recientes.map((e) => ({
+    dia: diaDelPartido(e.kickoff ?? e.creado), sport: e.sport, latam: esLatam(e.matchRef),
+  }))
 
   const events = await fetchEspnEvents().catch(() => [])
   const candidatas = candidatasPrevia(events, now, yaHechas)
@@ -63,7 +66,8 @@ async function handle(req: Request) {
   const encargos: Record<string, unknown>[] = []
 
   for (const c of candidatas) {
-    if (!cabeEnTopes(yaHoy, c, diaGrande)) continue
+    const dia = diaDelPartido(c.ev.isoDate!)
+    if (!cabeEnTopes(ya.filter((e) => e.dia === dia), c, esDiaGrande(events, Date.parse(c.ev.isoDate!)))) continue
     const ref = c.ev.matchRef!
     const partido = `${c.ev.home} - ${c.ev.away}`
     const summary = await fetchSummary(ref)
@@ -80,12 +84,12 @@ async function handle(req: Request) {
     // Fondo por defecto de la placa (la versión con foto es la que prefiere el editor).
     datos.fotoEstadio = await buscarFotoEstadio(datos.estadio)
     elegidas.push(c)
-    yaHoy.push({ sport: c.sport, latam: c.latam })
+    ya.push({ dia, sport: c.sport, latam: c.latam })
     encargos.push({ partido, puntuacion: c.puntuacion, datos, dossierChars: texto.length, dossier: seco ? texto : undefined })
     if (seco) continue
 
     const fallo = await encargar(sb, 'previa', c, datos, texto)
-    if (fallo) { descartadas.push({ partido, motivo: fallo }); elegidas.pop(); yaHoy.pop(); continue }
+    if (fallo) { descartadas.push({ partido, motivo: fallo }); elegidas.pop(); ya.pop(); continue }
   }
 
   return NextResponse.json({
@@ -93,7 +97,7 @@ async function handle(req: Request) {
     seco,
     candidatas: candidatas.length,
     yaEncargadas: yaHechas.size,
-    deHoy: yaHoy.length,
+    porDia: ya.reduce<Record<string, number>>((a, e) => ({ ...a, [e.dia]: (a[e.dia] ?? 0) + 1 }), {}),
     diaGrande,
     encargos,
     descartadas,

@@ -23,8 +23,8 @@ export async function encargosRecientes(sb: SupabaseClient, kind: TipoProduccion
     .gte('created_at', new Date(Date.now() - dias * 86400_000).toISOString())
   if (error) throw new Error(error.message)
   return (data ?? []).map((r) => {
-    const ij = r.input_json as { matchRef?: string; datos?: { sport?: string } } | null
-    return { matchRef: ij?.matchRef ?? null, sport: ij?.datos?.sport ?? '', creado: r.created_at as string }
+    const ij = r.input_json as { matchRef?: string; datos?: { sport?: string; kickoffIso?: string } } | null
+    return { matchRef: ij?.matchRef ?? null, sport: ij?.datos?.sport ?? '', creado: r.created_at as string, kickoff: ij?.datos?.kickoffIso ?? null }
   })
 }
 

@@ -13,12 +13,20 @@ import { getEventHighlightScore } from '@/lib/competitions'
 // La nota se escribe con ANTELACIÓN: la demanda de un partido está delante, no
 // detrás (ver memoria «el calendario: la demanda está delante»). El cron corre una
 // vez por hora y coge lo que empieza entre 4 y 16 horas después: «no subirla mucho
-// tiempo antes» (criterio del editor, 02/10/2026). Con la franja nocturna en
+// tiempo antes» (criterio del editor, 02/10/2026; desde el 05/10 los grandes, la
+// víspera: ver VENTANA_ANTICIPADA_HASTA_H). Con la franja nocturna en
 // silencio, casi todas llegan la misma mañana del partido: un 21:00 se encarga a
 // las 05:00 y se redacta a las 08:00; un 13:00, la víspera a las 21:00.
 
 export const VENTANA_DESDE_H = 4
 export const VENTANA_HASTA_H = 16
+/** PREVIAS A LA VÍSPERA (05/10/2026, decisión del editor). Una previa sale en Google
+ *  ~10 veces más que una noticia, pero la gente busca el horario de un partido grande
+ *  con días de antelación y la nota llegaba la misma mañana. Los partidos de fútbol de
+ *  más cartel (14,5: Real Madrid-Villarreal, Liverpool-City, Croacia-España…) se
+ *  encargan hasta 40 h antes, así que salen la víspera; el resto sigue en 4-16 h. */
+export const VENTANA_ANTICIPADA_HASTA_H = 40
+export const PUNTUACION_ANTICIPADA = 14.5
 /** Por debajo de esto no hay previa aunque el día venga flojo: mejor ninguna nota
  *  que una previa de un partido que no busca nadie. Calibrado el 02/10/2026 sobre
  *  807 partidos reales: con 11,5 entraban Polonia–Rumanía o Bélgica–Turquía (13,5
@@ -28,14 +36,18 @@ export const VENTANA_HASTA_H = 16
  *  LaLiga (11 + cartel + horario de máxima audiencia) pasa; el día flojo lo
  *  resuelve el orden, que pone delante a los hispanos y a los carteles. */
 export const PUNTUACION_MINIMA = 13
-export const MAX_PREVIAS_POR_DIA = 4
+/** Topes por DÍA DEL PARTIDO (Madrid), no por día de encargo: con las previas a la
+ *  víspera, un sábado se encarga en parte el viernes. Subidos el 05/10/2026 (4→5,
+ *  fútbol 3→4; días grandes 7→8 y 5→6; Latinoamérica 2→3) porque las previas son lo que
+ *  más sale en Google. */
+export const MAX_PREVIAS_POR_DIA = 5
 /** El fútbol es el grueso del tráfico: con un tope plano de 2, una noche de
  *  Champions con tres españoles dejaba fuera a uno para meter un partido de NBA. */
-export const MAX_POR_DEPORTE: Record<string, number> = { futbol: 3, baloncesto: 2 }
+export const MAX_POR_DEPORTE: Record<string, number> = { futbol: 4, baloncesto: 2 }
 /** Fines de semana y días de Champions (05/10/2026, decisión del editor): es cuando se
  *  juega casi todo lo que se busca y 4 previas se quedaban cortas. */
-export const MAX_PREVIAS_DIA_GRANDE = 7
-export const MAX_FUTBOL_DIA_GRANDE = 5
+export const MAX_PREVIAS_DIA_GRANDE = 8
+export const MAX_FUTBOL_DIA_GRANDE = 6
 
 /** CARRIL LATINOAMERICANO (05/10/2026). Latinoamérica es la mitad de las impresiones en
  *  Google, pero con la puntuación general su mejor partido sacaba 7 (Liga MX) o 4,5
@@ -52,7 +64,7 @@ export const PUNTUACION_MINIMA_LATAM = 9
  *  dos grandes, así que su mínimo es el general. */
 const EXTRA_LIGA_LATAM: Record<string, number> = { 'arg.1': 3 }
 const MINIMO_LIGA_LATAM: Record<string, number> = { 'bra.1': PUNTUACION_MINIMA }
-export const MAX_LATAM_POR_DIA = 2
+export const MAX_LATAM_POR_DIA = 3
 export const EMPUJON_GRANDE_LATAM = 3
 const GRANDES_LATAM = [
   'américa', 'guadalajara', 'chivas', 'cruz azul', 'pumas', 'tigres', 'monterrey', 'toluca',
@@ -125,6 +137,7 @@ export function candidatasPrevia(
 ): CandidataPrevia[] {
   const desde = now + VENTANA_DESDE_H * 3600_000
   const hasta = now + VENTANA_HASTA_H * 3600_000
+  const hastaAnticipada = now + VENTANA_ANTICIPADA_HASTA_H * 3600_000
   const vistos = new Set<string>()
   const candidatas: CandidataPrevia[] = []
 
@@ -136,8 +149,7 @@ export function candidatasPrevia(
     if (!ev.matchRef || !ev.away || ev.isPast || ev.timeTbd || !ev.isoDate) continue
     if (yaHechas.has(ev.matchRef) || vistos.has(ev.matchRef)) continue
     const ts = new Date(ev.isoDate).getTime()
-    if (!Number.isFinite(ts) || ts < desde || ts > hasta) continue
-    vistos.add(ev.matchRef)
+    if (!Number.isFinite(ts) || ts < desde || ts > hastaAnticipada) continue
 
     const latam = esLatam(ev.matchRef)
     const liga = ligaDe(ev.matchRef) ?? ''
@@ -145,6 +157,9 @@ export function candidatasPrevia(
       ? (EXTRA_LIGA_LATAM[liga] ?? 0) + (esGrandeLatam(ev.home) ? EMPUJON_GRANDE_LATAM : 0) + (esGrandeLatam(ev.away) ? EMPUJON_GRANDE_LATAM : 0)
       : 0)
     if (puntuacion < (latam ? (MINIMO_LIGA_LATAM[liga] ?? PUNTUACION_MINIMA_LATAM) : PUNTUACION_MINIMA)) continue
+    // Más allá de las 16 h solo el fútbol de más cartel (la víspera).
+    if (ts > hasta && !(sport === 'futbol' && puntuacion >= PUNTUACION_ANTICIPADA)) continue
+    vistos.add(ev.matchRef)
     candidatas.push({ ev, sport, puntuacion, ...(latam ? { latam: true } : {}) })
   }
 
@@ -153,8 +168,8 @@ export function candidatasPrevia(
     new Date(a.ev.isoDate!).getTime() - new Date(b.ev.isoDate!).getTime())
 }
 
-/** ¿Cabe una previa más? `yaHoy` = las encargadas hoy (día de Madrid), incluidas las de
- *  pasadas anteriores: el cron corre cada hora. Las latinoamericanas van en su propio
+/** ¿Cabe una previa más? `yaHoy` = las ya encargadas para partidos del MISMO día (de
+ *  Madrid) que esta, incluidas las de pasadas anteriores: el cron corre cada hora. Las latinoamericanas van en su propio
  *  cupo y no cuentan para el de Europa/NBA. `diaGrande` = fin de semana o día de
  *  Champions. */
 export function cabeEnTopes(
@@ -181,16 +196,20 @@ export function esDiaGrande(events: SportEvent[], now: number): boolean {
   return events.some((e) => e.comp === 'Champions' && !!e.isoDate && dia(Date.parse(e.isoDate)) === hoy)
 }
 
-/** Selección sin mirar ESPN: candidatas en orden, recortadas por los topes. */
+/** Día de Madrid (AAAA-MM-DD) de un partido: los topes van por él. */
+export const diaDelPartido = (iso: string | number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(iso))
+
+/** Selección sin mirar ESPN: candidatas en orden, recortadas por los topes de su día. */
 export function elegirPrevias(
   events: SportEvent[],
   now: number,
   yaHechas: ReadonlySet<string> = new Set(),
 ): CandidataPrevia[] {
   const elegidas: CandidataPrevia[] = []
-  const grande = esDiaGrande(events, now)
   for (const c of candidatasPrevia(events, now, yaHechas)) {
-    if (cabeEnTopes(elegidas, c, grande)) elegidas.push(c)
+    const dia = diaDelPartido(c.ev.isoDate!)
+    const delDia = elegidas.filter((e) => diaDelPartido(e.ev.isoDate!) === dia)
+    if (cabeEnTopes(delDia, c, esDiaGrande(events, Date.parse(c.ev.isoDate!)))) elegidas.push(c)
   }
   return elegidas
 }
