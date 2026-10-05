@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.takasportsmedia.app",
+      "sha256_cert_fingerprints": [
+        "DF:F2:5B:2E:B1:EA:B7:BD:62:D2:F2:4E:27:6C:C0:9F:0C:80:0B:10:C0:7F:18:6C:D5:3F:41:1F:95:BB:B4:B0"
+      ]
+    }
+  }
+]
