@@ -120,6 +120,10 @@
     {
       "path": "/api/cron/crackquiz-featured",
       "schedule": "15 8 * * *"
+    },
+    {
+      "path": "/api/cron/push-previas",
+      "schedule": "10,40 * * * *"
     }
   ],
   "functions": {
