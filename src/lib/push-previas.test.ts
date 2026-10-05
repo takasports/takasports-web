@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { previasParaAvisar, textoAviso } from '@/lib/push-previas'
+import { previasParaAvisar, puntuarFinal, textoAviso, textoFinal, urlAviso } from '@/lib/push-previas'
 
 const NOW = Date.parse('2026-10-25T17:00:00Z')
 const p = (slug: string, home: string, away: string, minutos: number, competicion = 'LaLiga') =>
@@ -36,5 +36,28 @@ describe('aviso de previas', () => {
     const a = textoAviso(p('x1', 'Villarreal', 'Valencia', 120))
     expect(a).toEqual(textoAviso(p('x1', 'Villarreal', 'Valencia', 120)))
     expect(a.body).toMatch(/^Villarreal y Valencia, cara a cara a las/)
+  })
+})
+
+describe('aviso al acabar', () => {
+  const f = (o: Partial<Parameters<typeof textoFinal>[0]> = {}) => ({
+    slug: 'cr', eventId: '1', home: 'Barcelona', away: 'Real Madrid', golesHome: 2, golesAway: 1,
+    competicion: 'Spanish LALIGA', iso: '2026-10-25T19:00:00Z', figura: 'Lamine Yamal', ...o,
+  })
+  it('rivalidad: ganador o tablas, marcador y figura', () => {
+    expect(textoFinal(f())).toEqual({ title: 'El Clásico ya tiene dueño ⚽', body: 'Barcelona 2-1 Real Madrid. Lamine Yamal, la figura. Cómo se decidió, en la crónica.' })
+    expect(textoFinal(f({ golesHome: 1, figura: null })).title).toBe('Tablas en el Clásico ⚽')
+    expect(textoFinal(f({ figura: null })).body).toBe('Barcelona 2-1 Real Madrid. Cómo se decidió, en la crónica.')
+  })
+  it('Champions y el resto', () => {
+    expect(textoFinal(f({ home: 'Roma', competicion: 'UEFA Champions League' })).title).toMatch(/Champions/)
+    expect(textoFinal(f({ home: 'Villarreal', away: 'Valencia' })).title).toMatch(/⚽$/)
+  })
+  it('un grande puntúa por encima del listón y uno menor no', () => {
+    expect(puntuarFinal(f())).toBeGreaterThanOrEqual(13)
+    expect(puntuarFinal(f({ home: 'Getafe', away: 'Alavés' }))).toBeLessThan(13)
+  })
+  it('el enlace lleva la campaña para medirlo', () => {
+    expect(urlAviso('https://x.com', 'a-b', 'cronica')).toBe('https://x.com/noticias/a-b?utm_source=aviso&utm_medium=push&utm_campaign=cronica')
   })
 })

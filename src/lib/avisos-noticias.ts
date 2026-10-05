@@ -32,7 +32,9 @@ import { madridDayISO, madridParts } from './taka-time'
 export const TOPE_POR_TEMA_DIA = 2
 export const MAX_ANTIGUEDAD_MIN = 180
 export const UMBRAL_TAKA_SCORE = 85
-export const TIPOS_EXCLUIDOS: ReadonlySet<string> = new Set(['previa', 'columna', 'galeria'])
+// La crónica tiene su propio aviso, «Pitido final» (/api/cron/push-cronicas, 05/10/2026):
+// fuera de aquí para que el mismo partido no avise dos veces.
+export const TIPOS_EXCLUIDOS: ReadonlySet<string> = new Set(['previa', 'cronica', 'columna', 'galeria'])
 export const FRANJA_MADRID = { desde: 9, hasta: 23 } as const
 const PRIORIDADES_FUERTES = new Set(['hero', 'destacado'])
 const ESTADOS_NO_PUBLICADOS = new Set(['borrador', 'draft', 'pendiente_aprobacion', 'archivado'])

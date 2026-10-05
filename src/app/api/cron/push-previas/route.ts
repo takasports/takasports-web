@@ -14,7 +14,7 @@ import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { sanityClient } from '@/lib/sanity'
 import { sendPushToTopic, audienciaDeTema } from '@/lib/push-topic'
-import { MAX_AVISOS_DIA, previasParaAvisar, textoAviso, type PreviaPublicada } from '@/lib/push-previas'
+import { MAX_AVISOS_DIA, previasParaAvisar, textoAviso, urlAviso, type PreviaPublicada } from '@/lib/push-previas'
 import { diaMadrid } from '@/lib/produccion-propia'
 
 export const dynamic = 'force-dynamic'
@@ -53,7 +53,7 @@ async function handle(req: Request) {
   const huecos = Math.max(0, MAX_AVISOS_DIA - enviadasHoy.length)
   const elegidas = previasParaAvisar(previas.filter((p) => p.home && p.away), now, todas).slice(0, huecos)
 
-  const avisos = elegidas.map((p) => ({ slug: p.slug, ...textoAviso(p), url: `${SITE}/noticias/${p.slug}` }))
+  const avisos = elegidas.map((p) => ({ slug: p.slug, ...textoAviso(p), url: urlAviso(SITE, p.slug, 'previa') }))
   if (seco || avisos.length === 0) {
     return NextResponse.json({ ok: true, seco, activo: ACTIVO, candidatas: previas.length, enviadasHoy: enviadasHoy.length, avisos, audiencia: await audienciaDeTema(TEMA) })
   }
