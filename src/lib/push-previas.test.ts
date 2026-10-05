@@ -16,9 +16,25 @@ describe('aviso de previas', () => {
     ]
     expect(previasParaAvisar(lista, NOW, new Set(['ya'])).map((x) => x.slug)).toEqual(['clasico'])
   })
-  it('el texto lleva la hora de España y la de México', () => {
-    const t = textoAviso(p('clasico', 'Barcelona', 'Real Madrid', 180))
-    expect(t.title).toBe('⚽ Hoy: Barcelona - Real Madrid')
-    expect(t.body).toBe('21:00 en España · 14:00 en México. Dónde verlo y lo que se juega.')
+  it('las rivalidades llevan su frase y la hora de España y México', () => {
+    const t = textoAviso(p('clasico', 'Real Madrid', 'Barcelona', 180))
+    expect(t.title).toBe('Se viene el Clásico ⚽')
+    expect(t.body).toBe('Barça y Madrid, cara a cara a las 21:00 🇪🇸 · 14:00 🇲🇽. Lo que se juega y dónde verlo, en la previa.')
+    expect(textoAviso(p('av', 'Racing Club', 'Independiente', 120)).title).toBe('Avellaneda se tiñe de dos colores ⚽')
+    expect(textoAviso(p('am', 'Club América', 'Guadalajara', 120)).title).toBe('Llega el Clásico Nacional ⚽')
+  })
+  it('sin confundir nombres parecidos ni el Clásico de baloncesto', () => {
+    expect(textoAviso(p('rb', 'Racing Bulls', 'Independiente', 120)).title).not.toMatch(/Avellaneda/)
+    expect(textoAviso(p('idv', 'Racing Club', 'Independiente del Valle', 120)).title).not.toMatch(/Avellaneda/)
+    const basket = textoAviso(p('eb', 'Real Madrid', 'Barcelona', 120, 'Euroliga'))
+    expect(basket.title).toMatch(/🏀$/)
+    expect(basket.body).toMatch(/^Real Madrid y Barcelona, cara a cara/)
+  })
+  it('Champions y Copa tienen su frase; el resto rota pero es estable', () => {
+    expect(textoAviso(p('ucl', 'Roma', 'Real Madrid', 120, 'Champions')).title).toMatch(/Champions/)
+    expect(textoAviso(p('lib', 'Fluminense', 'Palmeiras', 120, 'Copa Libertadores')).title).toMatch(/Libertadores|Copa/)
+    const a = textoAviso(p('x1', 'Villarreal', 'Valencia', 120))
+    expect(a).toEqual(textoAviso(p('x1', 'Villarreal', 'Valencia', 120)))
+    expect(a.body).toMatch(/^Villarreal y Valencia, cara a cara a las/)
   })
 })

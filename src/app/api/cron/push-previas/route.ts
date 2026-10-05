@@ -5,8 +5,8 @@
 // guarda en system_config.push_previas = {dia, enviadas:[slug]} para no repetir y para
 // contar el tope diario.
 //
-// APAGADO hasta el visto bueno visual del editor (`ACTIVO`): sin él, la ruta responde
-// lo que mandaría y no envía nada. `?dry=1` fuerza el ensayo aunque esté activo, y
+// Encendido el 05/10/2026 con el tono «con carácter» que eligió el editor. Con `ACTIVO`
+// a false la ruta solo responde lo que mandaría y no envía nada. `?dry=1` fuerza el ensayo aunque esté activo, y
 // `?en=<ISO>` simula otra hora en el ensayo.
 
 import { NextResponse } from 'next/server'
@@ -20,7 +20,7 @@ import { diaMadrid } from '@/lib/produccion-propia'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const ACTIVO = false
+const ACTIVO = true
 const TEMA = 'calendario'
 const SITE = 'https://www.takasportsmedia.com'
 
