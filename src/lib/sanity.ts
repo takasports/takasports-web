@@ -1,6 +1,6 @@
 import { createClient } from '@sanity/client'
 import { createImageUrlBuilder, type SanityImageSource } from '@sanity/image-url'
-import { REPORTAJE_GROQ_FILTER } from '@/lib/constants'
+import { REPORTAJE_GROQ_FILTER, REPORTAJES_OCULTOS_GROQ } from '@/lib/constants'
 
 export const sanityClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -56,14 +56,14 @@ const REPORTAJE_FIELDS = `
 // parámetro en el rango.
 export const reportajesQuery = `*[_type == "article"
   && type == "reportaje"
-  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJES_OCULTOS_GROQ}
 ] | order(publishedAt desc)[0...4] {
   ${REPORTAJE_FIELDS}
 }`
 
 export const reportajesAllQuery = `*[_type == "article"
   && type == "reportaje"
-  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJES_OCULTOS_GROQ}
 ] | order(publishedAt desc)[0...60] {
   ${REPORTAJE_FIELDS}
 }`
@@ -100,7 +100,7 @@ export const articlesAllQuery = `*[_type == "article"] | order(publishedAt desc)
 
 // Artículo detalle — normaliza ambos schemas + campos SEO long-form
 // Incluye: author, takaStatus, editorialRelated (picks editoriales, expande referencias)
-export const articleDetailQuery = `*[_type == "article" && (slug.current == $id || _id == $id)][0] {
+export const articleDetailQuery = `*[_type == "article" && (slug.current == $id || _id == $id)${REPORTAJES_OCULTOS_GROQ}][0] {
   _id,
   _updatedAt,
   "slug": slug.current,

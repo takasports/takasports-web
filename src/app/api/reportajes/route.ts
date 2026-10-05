@@ -4,7 +4,7 @@ import { captureException } from '@/lib/monitoring'
 import { readingMinutes } from '@/lib/reading'
 import { displayAuthor } from '@/lib/brand'
 import { urlFor } from '@/lib/sanity'
-import { REPORTAJES_ENABLED } from '@/lib/constants'
+import { REPORTAJES_ENABLED, REPORTAJES_OCULTOS_GROQ } from '@/lib/constants'
 
 // Reportajes para la app móvil. Mismo cliente/caché que /api/articles (CDN de
 // Sanity, solo contenido publicado).
@@ -24,7 +24,7 @@ const MAX_LIMIT = 50
 
 const QUERY = `*[_type == "article"
   && type == "reportaje"
-  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJES_OCULTOS_GROQ}
 ] | order(publishedAt desc)[$start...$end] {
   _id,
   "slug": slug.current,
@@ -42,7 +42,7 @@ const QUERY = `*[_type == "article"
 
 const COUNT_QUERY = `count(*[_type == "article"
   && type == "reportaje"
-  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))])`
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJES_OCULTOS_GROQ}])`
 
 interface Row {
   _id: string

@@ -20,15 +20,30 @@ export const SOCIAL_SAMEAS = [
   'https://www.threads.net/@taka.sports',
 ]
 
-// ── Reportajes en pausa ────────────────────────────────────────────────────
-// El recinto de piezas de fondo no se enseña hasta que haya con qué llenarlo.
-// En `false`: no sale el bloque de la home, /reportajes redirige al feed, los
-// reportajes quedan fuera de listados, buscador, sitemaps, RSS y API, y su
-// ficha responde 404. Poner a `true` lo devuelve todo tal cual estaba.
-export const REPORTAJES_ENABLED = false
+// ── Reportajes ─────────────────────────────────────────────────────────────
+// Interruptor de toda la sección. En `false`: no sale el bloque de la home,
+// /reportajes redirige al feed, los reportajes quedan fuera de listados,
+// buscador, sitemaps, RSS y API, y su ficha responde 404.
+//
+// Encendido desde el 05/10/2026 para la nota de Rafa Ferreira. Mientras tanto
+// el del Cerezo Osaka sigue sin enseñarse: está publicado en Sanity pero espera
+// la autorización del club y el PDF corregido, así que se oculta por su id.
+// Cuando llegue ese visto bueno, basta con quitarlo de esta lista.
+export const REPORTAJES_ENABLED = true
 
-// Fragmento GROQ que quita los reportajes de cualquier listado mientras dure la
-// pausa. Se pega detrás del filtro de publicados de cada query. Verificado
-// contra el dataset: `type != "reportaje"` también deja pasar los que no tienen
-// `type` (2.989 de 2.990 documentos), así que no hace falta coalesce.
-export const REPORTAJE_GROQ_FILTER = REPORTAJES_ENABLED ? '' : ' && type != "reportaje"'
+// Reportajes publicados en Sanity que NO se enseñan todavía (ids de documento).
+export const REPORTAJES_OCULTOS: string[] = ['reportaje-cerezo-osaka-espanol']
+
+// Fragmento GROQ que excluye esos ids. Va solo en las consultas que ya filtran
+// por `type == "reportaje"` (bloque de la home, índice, API de la app) y en la
+// ficha, que no pasan por REPORTAJE_GROQ_FILTER.
+export const REPORTAJES_OCULTOS_GROQ = REPORTAJES_OCULTOS.length
+  ? ` && !(_id in ${JSON.stringify(REPORTAJES_OCULTOS)})`
+  : ''
+
+// Fragmento GROQ para cualquier listado general. Se pega detrás del filtro de
+// publicados de cada query. Con la sección apagada quita TODOS los reportajes
+// (verificado contra el dataset: `type != "reportaje"` también deja pasar los
+// que no tienen `type`, así que no hace falta coalesce); encendida, solo quita
+// los ocultos.
+export const REPORTAJE_GROQ_FILTER = REPORTAJES_ENABLED ? REPORTAJES_OCULTOS_GROQ : ' && type != "reportaje"'
