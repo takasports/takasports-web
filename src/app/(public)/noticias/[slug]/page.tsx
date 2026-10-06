@@ -11,7 +11,7 @@ import { enlacesDeGlosario } from '@/lib/article-glossary-links'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { EmbeddedTweet } from 'react-tweet'
 import { getTweet, type Tweet } from 'react-tweet/api'
-import { sanityClient, articleDetailQuery, relatedArticlesQuery, nextArticleQuery, urlFor } from '@/lib/sanity'
+import { sanityClient, articleDetailQuery, relatedArticlesQuery, nextArticleQuery, notaHermanaQuery, urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import NewsletterSection from '@/components/NewsletterSection'
@@ -32,6 +32,7 @@ import { storySplitIndex } from '@/lib/article-split'
 import MatchScheduleCard, { type MatchKickoffData } from '@/components/MatchScheduleCard'
 import BroadcastCard from '@/components/BroadcastCard'
 import FichaPartidoLink from '@/components/FichaPartidoLink'
+import NotaHermanaLink from '@/components/NotaHermanaLink'
 import ImagenIntermedia from '@/components/articulo/ImagenIntermedia'
 import { MarcadorPartido, ClasificacionPartido, FormaPartido, Destacado, FiguraPartido, CaraACaraPartido } from '@/components/articulo/PiezasPartido'
 import { fetchFichaVisual, montarPiezasPartido, montarDestacado, partirParrafosLargos, type EquipoVisual, type EventoVisual, type FilaClasificacion, type Figura, type PartidoPrevio } from '@/lib/partido-visual'
@@ -531,6 +532,16 @@ export default async function NoticiaPage({
   const fichaVisualPartido = tipoPartido && article.matchRef ? await fetchFichaVisual(article.matchRef) : null
   const seoPartido = await datosSeoPartido(article, { ficha: fichaVisualPartido, tv: broadcastRows }).catch(() => null)
   const preguntas = seoPartido ? unirPreguntas(faqPartido(seoPartido), article.faq) : (article.faq ?? [])
+  // La otra nota del partido: la crónica desde la previa, la previa desde la crónica.
+  const tipoHermana = tipoPartido === 'previa' ? 'cronica' : tipoPartido === 'cronica' ? 'previa' : null
+  const hermana = tipoHermana && article.matchRef
+    ? await sanityClient.fetch<{ slug: string } | null>(notaHermanaQuery, { ref: article.matchRef, tipo: tipoHermana }).catch(() => null)
+    : null
+  const golesHermana = fichaVisualPartido?.terminado && fichaVisualPartido.home.goles != null && fichaVisualPartido.away.goles != null
+    ? [fichaVisualPartido.home.goles, fichaVisualPartido.away.goles] : null
+  const partidoHermana = seoPartido
+    ? (tipoHermana === 'cronica' && golesHermana ? `${seoPartido.home} ${golesHermana[0]}-${golesHermana[1]} ${seoPartido.away}` : `${seoPartido.home} – ${seoPartido.away}`)
+    : null
   const eventoJsonLd = seoPartido ? sportsEventJsonLd(seoPartido, `${SITE_URL}/noticias/${article.slug ?? id}`, descripcionSeoPartido(seoPartido)) : null
 
   // Usar picks editoriales si existen; si no, query dinámica por sport/category
@@ -1416,6 +1427,14 @@ export default async function NoticiaPage({
               </p>
             )}
 
+            {/* En la previa de un partido ya jugado, lo primero es el resultado y la crónica:
+                encima de la foto, que es lo que ve quien llega tarde desde Google. */}
+            {hermana && tipoHermana === 'cronica' && partidoHermana && (
+              <div className="mb-6">
+                <NotaHermanaLink tipo="cronica" slug={hermana.slug} partido={partidoHermana} accent={badgeColor} />
+              </div>
+            )}
+
             {imgUrl && (
               <div
                 // Proporción de la caja, en vez de un alto en clamp.
@@ -1520,10 +1539,14 @@ export default async function NoticiaPage({
             {article.matchRef && (
               <FichaPartidoLink
                 matchRef={article.matchRef}
-                home={article.matchKickoff?.home}
-                away={article.matchKickoff?.away}
+                home={article.matchKickoff?.home ?? seoPartido?.home}
+                away={article.matchKickoff?.away ?? seoPartido?.away}
                 accent={badgeColor}
               />
+            )}
+
+            {hermana && tipoHermana === 'previa' && partidoHermana && (
+              <NotaHermanaLink tipo="previa" slug={hermana.slug} partido={partidoHermana} accent={badgeColor} />
             )}
 
             {broadcastRows.length > 0 && (

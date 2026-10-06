@@ -266,6 +266,12 @@ export const previaByMatchRefQuery = `*[_type == "article" && matchRef == $ref &
   ${LISTING_FIELDS}
 }`
 
+// La otra nota del mismo partido (previa ↔ crónica), por matchRef exacto. La pinta la
+// nota para unir las dos (NotaHermanaLink).
+export const notaHermanaQuery = `*[_type == "article" && matchRef == $ref && type == $tipo
+  && defined(slug.current) && !(_id in path('drafts.**'))
+] | order(publishedAt desc)[0] { "slug": slug.current }`
+
 // Breaking — ticker de últimas horas
 // Cubre: artículos viejos con type=="breaking" + artículos Taka con status=="breaking"
 export const breakingQuery = `*[_type == "article" && publishedAt > $since && (
