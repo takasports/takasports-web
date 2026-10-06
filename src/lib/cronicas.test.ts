@@ -19,6 +19,18 @@ describe('candidatasCronica', () => {
   it('sin marcador o sin terminar no hay crónica', () => {
     expect(candidatasCronica([ev({ homeScore: null }), ev({ isPast: false })], NOW)).toHaveLength(0)
   })
+  it('todo partido con previa tiene crónica, aunque no llegue al cartel, y va primero', () => {
+    const menor = ev({ home: 'Chipre', away: 'Armenia' })
+    const grande = ev({})
+    const r = candidatasCronica([grande, menor], NOW, new Set(), new Set([menor.matchRef!]))
+    expect(r.map((c) => c.ev.home)).toEqual(['Chipre', 'España'])
+    expect(r[0].conPrevia).toBe(true)
+  })
+  it('carril latinoamericano: un clásico de Liga MX entra', () => {
+    const r = candidatasCronica([ev({ home: 'América', away: 'Guadalajara', comp: 'Liga MX', matchRef: 'soccer_mex.1_77' })], NOW)
+    expect(r).toHaveLength(1)
+    expect(r[0].latam).toBe(true)
+  })
   it('no repite ni coge partidos sin cartel', () => {
     const e = ev({})
     expect(candidatasCronica([e], NOW, new Set([e.matchRef!]))).toHaveLength(0)

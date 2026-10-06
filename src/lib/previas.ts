@@ -122,6 +122,17 @@ export function puntuarPrevia(ev: SportEvent): number {
   }) + interesHispano(ev.home, ev.away)
 }
 
+/** Puntuación con el carril latinoamericano y el mínimo que le toca. La comparten
+ *  previas y crónicas (06/10/2026: «crónicas y previas de los destacados»). */
+export function puntuarConCarril(ev: SportEvent): { puntuacion: number; latam: boolean; minimo: number } {
+  const latam = esLatam(ev.matchRef)
+  const liga = ligaDe(ev.matchRef) ?? ''
+  const puntuacion = puntuarPrevia(ev) + (latam
+    ? (EXTRA_LIGA_LATAM[liga] ?? 0) + (esGrandeLatam(ev.home) ? EMPUJON_GRANDE_LATAM : 0) + (esGrandeLatam(ev.away) ? EMPUJON_GRANDE_LATAM : 0)
+    : 0)
+  return { puntuacion, latam, minimo: latam ? (MINIMO_LIGA_LATAM[liga] ?? PUNTUACION_MINIMA_LATAM) : PUNTUACION_MINIMA }
+}
+
 /**
  * Partidos que PUEDEN llevar previa, de más a menos interesante, sin topes. Puro.
  * `yaHechas` son los matchRef que ya tienen previa encargada (no se repiten).
@@ -151,12 +162,8 @@ export function candidatasPrevia(
     const ts = new Date(ev.isoDate).getTime()
     if (!Number.isFinite(ts) || ts < desde || ts > hastaAnticipada) continue
 
-    const latam = esLatam(ev.matchRef)
-    const liga = ligaDe(ev.matchRef) ?? ''
-    const puntuacion = puntuarPrevia(ev) + (latam
-      ? (EXTRA_LIGA_LATAM[liga] ?? 0) + (esGrandeLatam(ev.home) ? EMPUJON_GRANDE_LATAM : 0) + (esGrandeLatam(ev.away) ? EMPUJON_GRANDE_LATAM : 0)
-      : 0)
-    if (puntuacion < (latam ? (MINIMO_LIGA_LATAM[liga] ?? PUNTUACION_MINIMA_LATAM) : PUNTUACION_MINIMA)) continue
+    const { puntuacion, latam, minimo } = puntuarConCarril(ev)
+    if (puntuacion < minimo) continue
     // Más allá de las 16 h solo el fútbol de más cartel (la víspera).
     if (ts > hasta && !(sport === 'futbol' && puntuacion >= PUNTUACION_ANTICIPADA)) continue
     vistos.add(ev.matchRef)

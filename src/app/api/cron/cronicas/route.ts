@@ -1,7 +1,8 @@
 // GET/POST /api/cron/cronicas
 //
-// Encarga las crónicas de los grandes resultados: los partidos destacados (misma
-// vara que las previas) que empezaron entre 2 y 8 horas antes y ya terminaron.
+// Encarga las crónicas de los grandes resultados: todo partido que tuvo previa y los
+// destacados (misma vara y topes que las previas, ver lib/cronicas.ts) que empezaron
+// entre 2 y 8 horas antes y ya terminaron.
 // Monta con la ficha de ESPN un dossier del partido acabado (resultado, goles con
 // minuto y autor, marcador al descanso, tarjetas, estadísticas, clasificación ya
 // actualizada) y deja un route_job para WF-08, igual que las previas. Sin IA aquí;
@@ -17,7 +18,8 @@ import { NextResponse } from 'next/server'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { fetchEspnPastEvents } from '@/lib/espn'
-import { candidatasCronica, MAX_CRONICAS_POR_DIA } from '@/lib/cronicas'
+import { candidatasCronica } from '@/lib/cronicas'
+import { cabeEnTopes, diaDelPartido, esDiaGrande, esLatam } from '@/lib/previas'
 import { construirDossierCronica, esPretemporada, fetchSummary } from '@/lib/previas-dossier'
 import { buscarFotoEstadio } from '@/lib/foto-estadio'
 import { encargar, encargosRecientes } from '@/lib/produccion-propia'
@@ -37,25 +39,28 @@ async function handle(req: Request) {
   const now = Number.isFinite(en) ? en : Date.now()
 
   let recientes: Awaited<ReturnType<typeof encargosRecientes>>
+  let previas: Awaited<ReturnType<typeof encargosRecientes>>
   try {
-    recientes = await encargosRecientes(sb, 'cronica', 2)
+    ;[recientes, previas] = await Promise.all([encargosRecientes(sb, 'cronica', 2), encargosRecientes(sb, 'previa', 4)])
   } catch (e) {
     return NextResponse.json({ ok: false, error: (e as Error).message }, { status: 500 })
   }
   const yaHechas = new Set(recientes.map((e) => e.matchRef).filter((x): x is string => !!x))
-  // Tope diario por día de Madrid: las de hoy ya encargadas cuentan.
-  const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(now))
-  const deHoy = recientes.filter((e) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(e.creado)) === hoy).length
-  let hueco = Math.max(0, MAX_CRONICAS_POR_DIA - deHoy)
+  const conPrevia = new Set(previas.map((e) => e.matchRef).filter((x): x is string => !!x))
+  // Topes por DÍA DEL PARTIDO, los mismos que las previas; lo ya encargado cuenta.
+  const ya: Array<{ dia: string; sport: string; latam?: boolean }> = recientes.map((e) => ({
+    dia: diaDelPartido(e.kickoff ?? e.creado), sport: e.sport, latam: esLatam(e.matchRef),
+  }))
 
   const events = await fetchEspnPastEvents().catch(() => [])
-  const candidatas = candidatasCronica(events, now, yaHechas)
+  const candidatas = candidatasCronica(events, now, yaHechas, conPrevia)
   const encargos: Record<string, unknown>[] = []
   const descartadas: { partido: string; motivo: string }[] = []
 
   for (const c of candidatas) {
-    if (hueco <= 0) break
     const ref = c.ev.matchRef!
+    const dia = diaDelPartido(c.ev.isoDate!)
+    if (!cabeEnTopes(ya.filter((e) => e.dia === dia), c, esDiaGrande(events, Date.parse(c.ev.isoDate!)))) continue
     const partido = `${c.ev.home} ${c.ev.homeScore}-${c.ev.awayScore} ${c.ev.away}`
     const summary = await fetchSummary(ref)
     if (!summary) { descartadas.push({ partido, motivo: 'sin ficha de ESPN' }); continue }
@@ -68,14 +73,14 @@ async function handle(req: Request) {
       competicion: c.ev.comp, kickoffIso: c.ev.isoDate!,
     })
     datos.fotoEstadio = await buscarFotoEstadio(datos.estadio)
-    hueco--
-    encargos.push({ partido, puntuacion: c.puntuacion, datos, dossierChars: texto.length, dossier: seco ? texto : undefined })
+    ya.push({ dia, sport: c.sport, latam: c.latam })
+    encargos.push({ partido, puntuacion: c.puntuacion, conPrevia: !!c.conPrevia, datos, dossierChars: texto.length, dossier: seco ? texto : undefined })
     if (seco) continue
     const fallo = await encargar(sb, 'cronica', c, datos, texto)
-    if (fallo) { descartadas.push({ partido, motivo: fallo }); hueco++ }
+    if (fallo) { descartadas.push({ partido, motivo: fallo }); ya.pop() }
   }
 
-  return NextResponse.json({ ok: true, seco, candidatas: candidatas.length, deHoy, encargos, descartadas })
+  return NextResponse.json({ ok: true, seco, candidatas: candidatas.length, conPrevia: conPrevia.size, encargos, descartadas })
 }
 
 export async function GET(req: Request) { return handle(req) }
