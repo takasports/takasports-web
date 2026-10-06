@@ -40,8 +40,13 @@ describe('seo de partido', () => {
     expect(tituloSeoPartido(pre())).toBe('Barcelona vs Real Madrid: horario y dónde ver el Clásico')
     expect(tituloSeoPartido(pre({ home: 'Sevilla', away: 'Villarreal' }))).toBe('Sevilla vs Villarreal: horario y dónde ver el partido | LaLiga')
     const largo = tituloSeoPartido(pre({ home: 'Borussia Mönchengladbach', away: 'Eintracht Frankfurt', competicion: 'Bundesliga' }))
-    expect(largo.length).toBeLessThanOrEqual(MAX_TITULO)
+    expect(largo!.length).toBeLessThanOrEqual(MAX_TITULO)
     expect(largo).toMatch(/^Borussia Mönchengladbach vs Eintracht Frankfurt: horario/)
+  })
+  it('UFC: «el combate» en la previa y el titular propio en la crónica', () => {
+    expect(tituloSeoPartido(pre({ home: 'Natalia Silva', away: 'Wang Cong', competicion: 'UFC', deporte: 'ufc', ficha: null, tv: [] }))).toBe('Natalia Silva vs Wang Cong: horario y dónde ver el combate')
+    expect(tituloSeoPartido({ ...cronica, deporte: 'ufc', ficha: null })).toBeNull()
+    expect(faqPartido(pre({ home: 'Natalia Silva', away: 'Wang Cong', deporte: 'ufc', ficha: null, tv: [] }))[0].q).toBe('¿A qué hora es el combate Natalia Silva vs Wang Cong?')
   })
   it('título de crónica con el marcador', () => {
     expect(tituloSeoPartido(cronica)).toBe('Polonia 6-0 Rumanía: resumen, goles y figura | Nations League')

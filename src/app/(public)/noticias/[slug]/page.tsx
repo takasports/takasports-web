@@ -155,7 +155,7 @@ async function datosSeoPartido(
     tipo, home, away,
     iso: k?.iso || ficha?.iso || null,
     competicion: competicionCorta(article.matchRef, k?.competition || ficha?.liga),
-    deporte: parseMatchRef(article.matchRef ?? '')?.sport === 'basketball' ? 'baloncesto' : 'futbol',
+    deporte: /^mma_/.test(article.matchRef ?? '') ? 'ufc' : parseMatchRef(article.matchRef ?? '')?.sport === 'basketball' ? 'baloncesto' : 'futbol',
     ficha, tv,
   }
 }
@@ -188,7 +188,7 @@ export async function generateMetadata({
   // busca de un partido («horario y dónde ver», «resumen, goles y figura»), con datos
   // verificados y sin IA (lib/seo-partido). Las redes siguen con el titular.
   const seoPartido = await datosSeoPartido(article).catch(() => null)
-  const tituloBuscador = seoPartido ? tituloSeoPartido(seoPartido) : metaTitle
+  const tituloBuscador = (seoPartido && tituloSeoPartido(seoPartido)) || metaTitle
   const descripcion = (seoPartido && descripcionSeoPartido(seoPartido)) || (article.short_summary ?? article.subtitle)
 
   return {

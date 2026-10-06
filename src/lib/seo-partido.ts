@@ -29,7 +29,7 @@ export interface DatosSeoPartido {
   iso: string | null
   /** Etiqueta corta de la competición («LaLiga», «Champions»), si se conoce. */
   competicion: string | null
-  deporte: 'futbol' | 'baloncesto'
+  deporte: 'futbol' | 'baloncesto' | 'ufc'
   ficha: FichaVisual | null
   tv: BroadcastRow[]
 }
@@ -92,7 +92,8 @@ function goleadores(f: FichaVisual): string[] {
 }
 
 // ── Título ───────────────────────────────────────────────────────────────────
-export function tituloSeoPartido(d: DatosSeoPartido): string {
+/** Null = usar el titular de la nota (p. ej. la crónica de una velada: no hay marcador). */
+export function tituloSeoPartido(d: DatosSeoPartido): string | null {
   const comp = d.competicion ? ` | ${d.competicion}` : ''
   const g = goles(d)
   if (d.tipo === 'cronica' && g) {
@@ -100,10 +101,12 @@ export function tituloSeoPartido(d: DatosSeoPartido): string {
     const conGoles = g.h + g.a > 0 ? 'resumen, goles y figura' : 'resumen y estadísticas'
     return primero([`${m}: ${conGoles}${comp}`, `${m}: ${conGoles}`, `${m}: resumen y goles`, `${m}: resumen`, m], MAX_TITULO)
   }
+  // Una crónica sin marcador de goles (una velada) se queda con su titular.
+  if (d.tipo === 'cronica') return null
   // «vs»: es como más se escribe la búsqueda («barcelona vs real madrid»), sobre todo en Latinoamérica.
   const cruce = `${d.home} vs ${d.away}`
   const riv = d.deporte === 'futbol' ? rivalidadDe(d.home, d.away) : null
-  const que = riv ? riv.nombre : 'el partido'
+  const que = riv ? riv.nombre : d.deporte === 'ufc' ? 'el combate' : 'el partido'
   return primero([`${cruce}: horario y dónde ver ${que}${comp}`, `${cruce}: horario y dónde ver ${que}`, `${cruce}: horario y dónde verlo`, `${cruce}: horario y TV`, cruce], MAX_TITULO)
 }
 
@@ -130,7 +133,7 @@ export function descripcionSeoPartido(d: DatosSeoPartido): string | null {
   const cuando = `${diaLargo(d.iso)}, ${hora(d.iso, 'Europe/Madrid')} en España y ${hora(d.iso, 'America/Mexico_City')} en México`
   const tv = canalEspana(d.tv)
   const base = `${d.home} - ${d.away}${comp}: ${cuando}.`
-  const extra = ' Previa con la forma, el cara a cara y lo que se juega.'
+  const extra = d.deporte === 'ufc' ? ' Previa con la cartelera estelar y lo que se juega.' : ' Previa con la forma, el cara a cara y lo que se juega.'
   return primero([`${base}${tv ? ` Por ${tv}.` : ''}${extra}`, `${base}${tv ? ` Por ${tv}.` : ''}`, base], MAX_DESCRIPCION)
 }
 
@@ -142,7 +145,7 @@ const racha = (r: string[]) => {
 }
 
 export function faqPartido(d: DatosSeoPartido): PreguntaFrecuente[] {
-  const cruce = `${d.home} - ${d.away}`
+  const cruce = d.deporte === 'ufc' ? `combate ${d.home} vs ${d.away}` : `${d.home} - ${d.away}`
   const f = d.ficha
   const out: PreguntaFrecuente[] = []
   const posicion = () => {
@@ -200,7 +203,7 @@ export function sportsEventJsonLd(d: DatosSeoPartido, canonical: string, descrip
     startDate: d.iso,
     ...(d.tipo === 'previa' ? { eventStatus: 'https://schema.org/EventScheduled' } : {}),
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-    sport: d.deporte === 'baloncesto' ? 'Baloncesto' : 'Fútbol',
+    sport: d.deporte === 'baloncesto' ? 'Baloncesto' : d.deporte === 'ufc' ? 'Artes marciales mixtas' : 'Fútbol',
     ...(descripcion ? { description: descripcion } : {}),
     homeTeam: equipo(d.home),
     awayTeam: equipo(d.away),

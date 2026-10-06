@@ -32,18 +32,28 @@ export async function encargosRecientes(sb: SupabaseClient, kind: TipoProduccion
 export const diaMadrid = (t: number | string) =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(t))
 
+/** Lo mínimo para encargar: un partido (CandidataPrevia) o una velada de UFC. */
+export interface Encargable {
+  ev: Pick<CandidataPrevia['ev'], 'home' | 'away' | 'comp' | 'matchRef' | 'homeScore' | 'awayScore'>
+  sport: string
+  puntuacion: number
+}
+
 export async function encargar(
   sb: SupabaseClient,
   kind: TipoProduccion,
-  c: CandidataPrevia,
+  c: Encargable,
   datos: unknown,
   dossier: string,
+  /** Veladas (06/10/2026): los protagonistas son personas, no equipos; así la búsqueda
+   *  de foto de WF-08 los trata como tales. */
+  opciones: { personas?: string[]; titulo?: string; resumen?: string } = {},
 ): Promise<string | null> {
   const ref = c.ev.matchRef!
-  const titulo = `${kind === 'previa' ? 'Previa' : 'Crónica'}: ${c.ev.home} - ${c.ev.away}`
-  const resumen = kind === 'previa'
+  const titulo = opciones.titulo ?? `${kind === 'previa' ? 'Previa' : 'Crónica'}: ${c.ev.home} - ${c.ev.away}`
+  const resumen = opciones.resumen ?? (kind === 'previa'
     ? `${c.ev.comp}. ${c.ev.home} recibe a ${c.ev.away}.`
-    : `${c.ev.comp}. ${c.ev.home} ${c.ev.homeScore ?? '?'} - ${c.ev.awayScore ?? '?'} ${c.ev.away}.`
+    : `${c.ev.comp}. ${c.ev.home} ${c.ev.homeScore ?? '?'} - ${c.ev.awayScore ?? '?'} ${c.ev.away}.`)
   const ahora = new Date().toISOString()
   const { data: ci, error: errCi } = await sb.from('content_items').insert({
     canonical_title: titulo,
@@ -62,8 +72,8 @@ export async function encargar(
     alert_type: kind,
     notified_at: ahora,
     entities_json: {
-      teams: [c.ev.home, c.ev.away],
-      players: [],
+      teams: opciones.personas ? [] : [c.ev.home, c.ev.away],
+      players: opciones.personas ?? [],
       competition: c.ev.comp,
       event_type: kind,
       title_es: titulo,
