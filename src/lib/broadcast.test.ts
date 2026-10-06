@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { matchCompetition } from './broadcast'
+import { matchCompetition, paisDeSeleccion, filasParaPartido } from './broadcast'
 
 describe('matchCompetition', () => {
   it('reconoce cada competición cubierta', () => {
@@ -46,5 +46,41 @@ describe('matchCompetition', () => {
   it('no confunde palabras que contienen el nombre por dentro', () => {
     // "premiere" no es la Premier League.
     expect(matchCompetition('la premiere del documental')).toBeNull()
+  })
+})
+
+describe('selecciones: solo los países que juegan', () => {
+  const filas = ['ES', 'MX', 'AR', 'CO', 'PE', 'CL', 'US'].map((countryCode) => ({ countryCode, country: countryCode, channels: ['X'] }))
+
+  it('reconoce los amistosos internacionales', () => {
+    expect(matchCompetition('International Friendly', 'Colombia vs Perú: horario y dónde ver')).toBe('selecciones')
+    expect(matchCompetition('Partido amistoso')).toBe('selecciones')
+  })
+
+  it('reconoce la selección por su nombre exacto', () => {
+    expect(paisDeSeleccion('México')).toBe('MX')
+    expect(paisDeSeleccion('Estados Unidos')).toBe('US')
+    expect(paisDeSeleccion('EE.\u202fUU.')).toBe('US')
+    expect(paisDeSeleccion('Selección de Chile')).toBe('CL')
+    expect(paisDeSeleccion('Inter de Italia')).toBeNull()
+    expect(paisDeSeleccion('Chile Sub-20')).toBeNull()
+    expect(paisDeSeleccion(null)).toBeNull()
+  })
+
+  it('un Colombia–Perú enseña Colombia y Perú, y nada más', () => {
+    const r = filasParaPartido('selecciones', filas, 'Colombia', 'Perú').map((f) => f.countryCode)
+    expect(r.sort()).toEqual(['CO', 'PE'])
+  })
+
+  it('un amistoso de clubes se queda sin filas', () => {
+    expect(filasParaPartido('selecciones', filas, 'FC Barcelona', 'Getafe')).toEqual([])
+  })
+
+  it('sin equipos no hay filas de selecciones (versiones viejas de la app)', () => {
+    expect(filasParaPartido('selecciones', filas, null, null)).toEqual([])
+  })
+
+  it('el resto de competiciones no se filtra', () => {
+    expect(filasParaPartido('nations_league', filas, 'Francia', 'Italia')).toHaveLength(filas.length)
   })
 })

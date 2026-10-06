@@ -36,7 +36,7 @@ import NotaHermanaLink from '@/components/NotaHermanaLink'
 import ImagenIntermedia from '@/components/articulo/ImagenIntermedia'
 import { MarcadorPartido, ClasificacionPartido, FormaPartido, Destacado, FiguraPartido, CaraACaraPartido } from '@/components/articulo/PiezasPartido'
 import { fetchFichaVisual, montarPiezasPartido, montarDestacado, partirParrafosLargos, type EquipoVisual, type EventoVisual, type FilaClasificacion, type Figura, type PartidoPrevio } from '@/lib/partido-visual'
-import { matchCompetition, getBroadcastRows, type BroadcastRow } from '@/lib/broadcast'
+import { matchCompetition, getBroadcastRows, filasParaPartido, type BroadcastRow } from '@/lib/broadcast'
 import { competicionCorta, descripcionSeoPartido, faqPartido, sportsEventJsonLd, tituloSeoPartido, unirPreguntas, type DatosSeoPartido } from '@/lib/seo-partido'
 import { parseMatchRef } from '@/lib/previas-dossier'
 import type { FichaVisual } from '@/lib/partido-visual'
@@ -525,7 +525,7 @@ export default async function NoticiaPage({
     ? matchCompetition(article.matchKickoff.competition, article.title, ...(article.tags ?? []))
     : null
   const broadcastRows: BroadcastRow[] = competitionKey
-    ? await getBroadcastRows(competitionKey).catch(() => [])
+    ? filasParaPartido(competitionKey, await getBroadcastRows(competitionKey).catch(() => []), article.matchKickoff?.home, article.matchKickoff?.away)
     : []
 
   const tipoPartido = article.type === 'cronica' || article.type === 'previa' ? article.type : null

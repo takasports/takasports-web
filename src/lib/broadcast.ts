@@ -26,7 +26,11 @@ const COMPETITION_PATTERNS: Array<{ key: CompetitionKey; rx: RegExp }> = [
   { key: 'premier',     rx: /\bpremier\b/ },
   { key: 'laliga',      rx: /\b(la ?liga|primera division|liga ea sports|liga espanola)\b/ },
   { key: 'ufc',         rx: /\b(ufc|mma)\b/ },
-  { key: 'selecciones', rx: /\b(mundial|world cup|eliminatorias|clasificatorias|copa america|eurocopa)\b/ },
+  // Partidos de selecciones fuera de la Nations League. Los canales son los de la
+  // selección LOCAL y solo se enseñan para los países que juegan (ver
+  // `filasParaPartido`); «amistoso» casa también con los de clubes, que se quedan
+  // sin filas porque sus equipos no son selecciones.
+  { key: 'selecciones', rx: /\b(mundial|world cup|eliminatorias|clasificatorias|copa america|eurocopa|amistoso|friendly)\b/ },
 ]
 
 const deburr = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -41,6 +45,44 @@ export function matchCompetition(...texts: Array<string | null | undefined>): Co
     if (rx.test(hay)) return key
   }
   return null
+}
+
+// ── Selecciones: solo el país que juega ──────────────────────────────────────
+// Los partidos de una selección los vende su federación, país a país y a veces
+// partido a partido: TyC Sports da los de Argentina, Caracol los de Colombia. Esos
+// canales no dicen nada de un Brasil–Uruguay visto desde Chile. Por eso, en la clave
+// «selecciones», solo se enseña la fila de los países cuyas selecciones JUEGAN; los
+// demás se quedan sin fila, que es mejor que un canal equivocado. [06/10/2026]
+const SELECCION_PAIS: Record<string, string> = {
+  espana: 'ES', spain: 'ES',
+  mexico: 'MX',
+  argentina: 'AR',
+  peru: 'PE',
+  'estados unidos': 'US', 'ee. uu.': 'US', 'ee.uu.': 'US', eeuu: 'US', usa: 'US', 'united states': 'US',
+  colombia: 'CO',
+  chile: 'CL',
+  venezuela: 'VE',
+  ecuador: 'EC',
+}
+
+/** País (ISO alfa-2) de una selección por su nombre exacto, o null. «Inter de Italia»
+ *  o «Chile Sub-20» no son la selección absoluta: nombre exacto, nunca «contiene». */
+export function paisDeSeleccion(nombre: string | null | undefined): string | null {
+  if (!nombre) return null
+  const k = deburr(nombre).replace(/\u202f/g, ' ').replace(/^seleccion (de )?/, '').replace(/\s+/g, ' ').trim()
+  return SELECCION_PAIS[k] ?? null
+}
+
+/** Las filas que valen para ESTE partido. Fuera de «selecciones», todas. */
+export function filasParaPartido(
+  competition: CompetitionKey,
+  rows: BroadcastRow[],
+  home: string | null | undefined,
+  away: string | null | undefined,
+): BroadcastRow[] {
+  if (competition !== 'selecciones') return rows
+  const juegan = new Set([paisDeSeleccion(home), paisDeSeleccion(away)].filter(Boolean))
+  return rows.filter((r) => juegan.has(r.countryCode))
 }
 
 // Lee las filas verificadas y vigentes de una competición. Server-only: usa la

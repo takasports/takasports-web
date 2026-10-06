@@ -10,6 +10,7 @@
 //   node scripts/seed-broadcast-rights.mjs              # imprime la tabla
 //   node scripts/seed-broadcast-rights.mjs --apply      # carga/actualiza (las `ok` se muestran)
 //   node scripts/seed-broadcast-rights.mjs --verify=laliga,premier   # marca verificadas
+//   node scripts/seed-broadcast-rights.mjs --caducan[=45]  # lo publicado que caduca en N días (lee la BASE)
 //
 // Competiciones y países elegidos con Search Console (90 días). Los nueve países son
 // el 81 % de las impresiones; LaLiga es la primera en todos ellos y la Premier es
@@ -90,21 +91,23 @@ const SEED = {
     { country_code: 'ES', channels: ['HBO Max', 'Eurosport'], note: 'Eurosport emite hasta 14 veladas al año', ok: true, fuente: 'eurosport.es (04-10-2026)' },
     { country_code: 'US', channels: ['Paramount+', 'CBS'], ok: true, fuente: 'ufc.com — acuerdo Paramount/TKO desde 2026' },
   ],
-  // ⚠️ SIN PUBLICAR. Estos son los canales de los partidos de la SELECCIÓN LOCAL
-  // (amistosos, eliminatorias), que cada federación vende por su cuenta y a veces
-  // partido a partido. Solo valen cuando juega la selección de ese país, y la web
-  // aún no sabe distinguirlo: con esta clave, un Brasil–Uruguay saldría con TyC
-  // Sports en Argentina. Hasta modelarlo (`seleccion_local`), verified=false.
+  // Canales de los partidos de la SELECCIÓN LOCAL (amistosos, eliminatorias), que
+  // cada federación vende por su cuenta y a veces partido a partido. La web solo
+  // enseña la fila de los países cuyas selecciones juegan (lib/broadcast →
+  // filasParaPartido): un Brasil–Uruguay no saca TyC Sports en Argentina.
+  // Los amistosos cambian de canal de una fecha FIFA a otra: sus filas caducan al
+  // cerrar la ventana (`hasta`) y hay que revisarlas en cada una. España y EE. UU.
+  // tienen contrato largo.
   selecciones: [
-    { country_code: 'ES', channels: ['La 1 (RTVE)'], ok: false, fuente: '2playbook.com — RTVE, todos los partidos de España 2026-28' },
-    { country_code: 'MX', channels: ['TUDN', 'ViX', 'Canal 5', 'Azteca 7'], ok: false, fuente: 'infobae.com/mexico (05-10-2026)' },
-    { country_code: 'AR', channels: ['TyC Sports', 'TV Pública'], ok: false, fuente: 'tribunadeportiva.com.ar (sep-2026)' },
-    { country_code: 'CL', channels: ['Mega'], ok: false, fuente: 'biobiochile.cl (05-10-2026)' },
-    { country_code: 'CO', channels: ['Caracol TV', 'RCN'], ok: false, fuente: 'noticiascaracol.com' },
-    { country_code: 'PE', channels: ['América TV'], ok: false, fuente: 'infobae.com/peru (03-10-2026)' },
-    { country_code: 'VE', channels: ['Televen'], ok: false, fuente: 'rpp.pe; infobae (02-10-2026)' },
-    { country_code: 'EC', channels: ['Teleamazonas', 'TC'], ok: false, fuente: 'primicias.ec' },
-    { country_code: 'US', channels: ['Telemundo', 'Universo'], ok: false, fuente: 'ussoccer.com (may-2026), hasta 2030' },
+    { country_code: 'ES', channels: ['La 1 (RTVE)'], ok: true, hasta: '2028-07-31', fuente: '2playbook.com — RTVE, todos los partidos de España 2026-28' },
+    { country_code: 'US', channels: ['Telemundo', 'Universo'], ok: true, hasta: '2030-07-31', fuente: 'ussoccer.com (may-2026), en español hasta 2030' },
+    { country_code: 'MX', channels: ['TUDN', 'ViX', 'Canal 5', 'Azteca 7'], ok: true, hasta: '2026-10-14', fuente: 'infobae.com/mexico (05-10-2026) — fecha FIFA de octubre' },
+    { country_code: 'AR', channels: ['TyC Sports', 'TV Pública'], ok: true, hasta: '2026-10-14', fuente: 'tribunadeportiva.com.ar (sep-2026) — fecha FIFA de octubre' },
+    { country_code: 'CL', channels: ['Mega'], ok: true, hasta: '2026-10-14', fuente: 'biobiochile.cl (05-10-2026) — fecha FIFA de octubre' },
+    { country_code: 'CO', channels: ['Caracol TV', 'RCN'], ok: true, hasta: '2026-10-14', fuente: 'noticiascaracol.com — fecha FIFA de octubre' },
+    { country_code: 'PE', channels: ['América TV'], ok: true, hasta: '2026-10-14', fuente: 'infobae.com/peru (03-10-2026) — fecha FIFA de octubre' },
+    { country_code: 'VE', channels: ['Televen'], ok: true, hasta: '2026-10-14', fuente: 'rpp.pe; infobae (02-10-2026) — fecha FIFA de octubre' },
+    { country_code: 'EC', channels: ['Teleamazonas', 'TC'], ok: true, hasta: '2026-10-14', fuente: 'primicias.ec — fecha FIFA de octubre' },
   ],
 }
 
@@ -114,6 +117,30 @@ const args = process.argv.slice(2)
 const APPLY = args.includes('--apply')
 const VERIFY = (args.find((a) => a.startsWith('--verify=')) || '').split('=')[1]
 const sb = createClient(URL, KEY, { auth: { persistSession: false } })
+
+// Revisión: qué filas PUBLICADAS caducan pronto o ya caducaron (y por tanto ya no
+// salen). Lee la base de datos, no la tabla de arriba: es lo que ve el lector.
+const CADUCAN = args.find((a) => a.startsWith('--caducan'))
+if (CADUCAN) {
+  const dias = Number(CADUCAN.split('=')[1] || 45)
+  const hoy = new Date().toISOString().slice(0, 10)
+  const limite = new Date(Date.now() + dias * 86400_000).toISOString().slice(0, 10)
+  const { data, error } = await sb
+    .from('broadcast_rights')
+    .select('competition_key, country_code, channels, valid_to')
+    .eq('verified', true)
+    .not('valid_to', 'is', null)
+    .lte('valid_to', limite)
+    .order('valid_to')
+  if (error) { console.error('Error:', error.message); process.exit(1) }
+  if (!data.length) { console.log(`Nada caduca en los próximos ${dias} días.`); process.exit(0) }
+  for (const r of data) {
+    const estado = r.valid_to < hoy ? 'CADUCADA (ya no sale)' : `caduca el ${r.valid_to}`
+    console.log(`${r.competition_key.padEnd(15)} ${(NOMBRES[r.country_code] || r.country_code).padEnd(10)} ${r.channels.join(' / ').padEnd(40)} ${estado}`)
+  }
+  console.log(`\n${data.length} filas a revisar. Corrige la tabla de este script, ponles nuevo \`hasta\` y repite con --apply.`)
+  process.exit(0)
+}
 
 if (VERIFY) {
   const keys = VERIFY.split(',').map((s) => s.trim()).filter(Boolean)
