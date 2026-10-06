@@ -4,8 +4,14 @@
 // por texto, y Google ve las dos notas unidas.
 //
 // prefetch={false}, como el resto de enlaces de la nota a páginas pesadas.
+//
+// Diseño: el sistema de casillas de la nota (`.cas-*`, globals.css). «Ya terminó» es la
+// casilla PROTAGONISTA de una previa vieja (lo primero que debe ver quien llega tarde);
+// «Antes del partido» es solo navegación y pesa lo mismo que el enlace a la ficha.
 
 import Link from 'next/link'
+import type { CSSProperties } from 'react'
+import { accentTexto } from '@/lib/sports'
 
 export default function NotaHermanaLink({
   tipo,
@@ -25,34 +31,30 @@ export default function NotaHermanaLink({
     <Link
       href={`/noticias/${slug}`}
       prefetch={false}
-      className="ts-ficha-link mb-4 flex items-center gap-4 rounded-2xl px-5 py-4 transition-colors"
-      style={{ border: `1px solid ${accent}${cronica ? '66' : '33'}`, background: `${accent}${cronica ? '1a' : '0d'}`, maxWidth: 680 }}
+      className={`ts-ficha-link cas-link${cronica ? ' cas-link--hero' : ''}`}
+      style={{ '--acc': accent, '--acc-text': accentTexto(accent) } as CSSProperties}
     >
-      <span
-        aria-hidden
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[18px]"
-        style={{ background: `${accent}1f`, color: accent }}
-      >
-        {cronica ? '🏁' : (
+      <span aria-hidden className="cas-link__icon">
+        {cronica ? (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 21V4" />
+            <path d="M5 4h13l-2.5 4L18 12H5" />
+          </svg>
+        ) : (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7v5l3 2" />
           </svg>
         )}
       </span>
-      <span className="flex min-w-0 flex-col">
-        <span
-          className="text-[10px] font-black uppercase tracking-widest"
-          style={{ color: accent, fontFamily: 'var(--font-sport)' }}
-        >
-          {cronica ? 'Ya terminó' : 'Antes del partido'}
-        </span>
-        <span className="truncate text-[15px] font-bold">{partido}</span>
-        <span className="text-[12.5px]" style={{ color: 'var(--body-lede, #9aa0aa)' }}>
+      <span className="cas-link__body">
+        <span className="cas-link__kicker">{cronica ? 'Ya terminó' : 'Antes del partido'}</span>
+        <span className="cas-link__title">{partido}</span>
+        <span className="cas-link__sub">
           {cronica ? 'Lee la crónica: goles, figura y estadísticas' : 'La previa: lo que se jugaban y cómo llegaban'}
         </span>
       </span>
-      <span aria-hidden className="ml-auto text-[20px] font-bold" style={{ color: accent }}>→</span>
+      <span aria-hidden className="cas-link__arrow">→</span>
     </Link>
   )
 }

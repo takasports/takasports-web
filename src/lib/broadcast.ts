@@ -11,17 +11,22 @@ export type { BroadcastRow }
 // Competiciones cubiertas, por orden de tráfico real (Search Console, 90 días).
 // LaLiga es la primera en los nueve países; la Premier es MÁS grande en Latam que
 // en España (Perú 4,7 % frente a España 2,0 %), y por eso entra en la primera tanda.
-export const COMPETITION_KEYS = ['laliga', 'premier', 'champions', 'ufc', 'selecciones'] as const
+export const COMPETITION_KEYS = ['laliga', 'premier', 'champions', 'nations_league', 'ufc', 'selecciones'] as const
 export type CompetitionKey = (typeof COMPETITION_KEYS)[number]
 
 // El orden importa: Champions antes que LaLiga, para que "el Barcelona en Champions"
 // resuelva a Champions y no a la liga doméstica.
 const COMPETITION_PATTERNS: Array<{ key: CompetitionKey; rx: RegExp }> = [
   { key: 'champions',   rx: /\b(champions|liga de campeones|europa league|conference league)\b/ },
+  // La Nations League la vende la UEFA de forma centralizada y la emite OTRO operador
+  // que los partidos de la selección local (en Sudamérica, ESPN/Disney+; en México,
+  // Sky). Con la clave «selecciones» la previa de un Francia–Italia enseñaba TyC
+  // Sports o Caracol, que no lo emiten: canal equivocado en 8 de 9 países. [06/10/2026]
+  { key: 'nations_league', rx: /\b(nations league|liga de (las )?naciones)\b/ },
   { key: 'premier',     rx: /\bpremier\b/ },
   { key: 'laliga',      rx: /\b(la ?liga|primera division|liga ea sports|liga espanola)\b/ },
   { key: 'ufc',         rx: /\b(ufc|mma)\b/ },
-  { key: 'selecciones', rx: /\b(mundial|world cup|eliminatorias|clasificatorias|nations league|copa america|eurocopa)\b/ },
+  { key: 'selecciones', rx: /\b(mundial|world cup|eliminatorias|clasificatorias|copa america|eurocopa)\b/ },
 ]
 
 const deburr = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

@@ -83,7 +83,7 @@ export default function ArticleTableOfContents({ headings, variant = 'sidebar' }
                 fontSize: h.level === 3 ? 12 : 13,
                 fontWeight: active ? 700 : 500,
                 color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-                borderLeft: active ? '2px solid var(--purple)' : '2px solid transparent',
+                borderLeft: active ? '2px solid var(--sport-accent, var(--purple))' : '2px solid transparent',
                 marginLeft: h.level === 3 ? 8 : 0,
                 textDecoration: 'none',
                 lineHeight: 1.35,
@@ -101,30 +101,8 @@ export default function ArticleTableOfContents({ headings, variant = 'sidebar' }
 
   if (variant === 'mobile') {
     return (
-      <details
-        className="lg:hidden mb-6 rounded-2xl overflow-hidden"
-        style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-        }}
-      >
-        <summary
-          style={{
-            cursor: 'pointer',
-            listStyle: 'none',
-            padding: 'var(--space-sm) var(--space-md)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            fontFamily: 'var(--font-sport)',
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            color: 'var(--text-secondary)',
-          }}
-        >
+      <details className="cas-toc lg:hidden">
+        <summary className="cas-toc__sum">
           <span>En este artículo · {headings.length}</span>
           <svg
             width="14"
@@ -138,7 +116,7 @@ export default function ArticleTableOfContents({ headings, variant = 'sidebar' }
             <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </summary>
-        <nav aria-label="Índice del artículo" style={{ padding: 'var(--space-xs) var(--space-sm) var(--space-sm)' }}>
+        <nav aria-label="Índice del artículo" className="cas-toc__nav">
           {list}
         </nav>
       </details>
@@ -146,20 +124,8 @@ export default function ArticleTableOfContents({ headings, variant = 'sidebar' }
   }
 
   return (
-    <nav
-      aria-label="Índice del artículo"
-      className="hidden lg:block"
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-md)',
-      }}
-    >
-      <p
-        className="section-label"
-        style={{ marginBottom: 10 }}
-      >
+    <nav aria-label="Índice del artículo" className="cas-toc-side hidden lg:block">
+      <p className="section-label" style={{ marginBottom: 10 }}>
         En este artículo
       </p>
       {list}

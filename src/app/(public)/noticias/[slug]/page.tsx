@@ -13,7 +13,7 @@ import { EmbeddedTweet } from 'react-tweet'
 import { getTweet, type Tweet } from 'react-tweet/api'
 import { sanityClient, articleDetailQuery, relatedArticlesQuery, nextArticleQuery, notaHermanaQuery, urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel } from '@/lib/sports'
+import { getSportStyle, getSportLabel, accentTexto } from '@/lib/sports'
 import NewsletterSection from '@/components/NewsletterSection'
 import ShareButton from '@/app/article/[id]/ShareButton'
 import BackButton from '@/app/article/[id]/BackButton'
@@ -570,6 +570,7 @@ export default async function NoticiaPage({
   const relatedFinal = excludeCurrentArticle(relatedRaw, { _id: article._id, slug: article.slug ?? slug })
 
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1400).height(600).url() : null)
+  const esPlaca = Boolean(imgUrl && /\/api\/og\//.test(imgUrl))
   const canonical = `${SITE_URL}/noticias/${article.slug ?? id}`
   // Imagen para datos estructurados / Discover. Orden: imagen líder real del
   // artículo (la misma que publica el image-sitemap, resuelve 200) → tarjeta OG
@@ -983,7 +984,7 @@ export default async function NoticiaPage({
                           </figure>
                         )
                       },
-                      // Gráfico comparativo (infografía "liquid glass"). Lo emite WF-07 cuando
+                      // Gráfico comparativo (casilla de datos, `.cas-stats`). Lo emite WF-07 cuando
                       // el redactor aporta cifras reales (posesión, tiros…). Nunca inventadas.
                       statChart: ({ value }) => {
                         const v = (value || {}) as {
@@ -996,61 +997,39 @@ export default async function NoticiaPage({
                         if (!rows.length) return null
                         const home = v.homeLabel || 'Local'
                         const away = v.awayLabel || 'Visitante'
-                        const scStyle = { '--sc-home': badgeColor, '--sc-away': '#f5a623' } as React.CSSProperties
+                        const scStyle = { '--acc': badgeColor, '--acc-text': accentTexto(badgeColor), '--sc-home': badgeColor, '--sc-away': '#f5a623' } as React.CSSProperties
                         return (
-                          <figure className="tk-sc-stage" style={scStyle}>
-                            <style>{`
-                              .tk-sc-stage{position:relative;margin:2.25rem auto;max-width:620px;padding:24px 18px;border-radius:26px;overflow:hidden;isolation:isolate;}
-                              .tk-sc-stage::before,.tk-sc-stage::after{content:"";position:absolute;border-radius:50%;filter:blur(48px);opacity:.38;z-index:0;pointer-events:none;}
-                              .tk-sc-stage::before{width:220px;height:220px;left:-50px;top:-70px;background:radial-gradient(circle,var(--sc-home),transparent 70%);}
-                              .tk-sc-stage::after{width:230px;height:230px;right:-60px;bottom:-80px;background:radial-gradient(circle,var(--sc-away),transparent 70%);}
-                              .tk-sc-glass{position:relative;z-index:1;border-radius:20px;padding:20px 20px 16px;background:rgba(255,255,255,.06);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,.14);box-shadow:0 20px 50px -20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(0,0,0,.25);}
-                              .tk-sc-kick{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--sc-home);}
-                              .tk-sc-title{font-size:1.2rem;font-weight:800;letter-spacing:-.02em;color:var(--body-heading);margin:3px 0 1px;}
-                              .tk-sc-sub{font-size:.8rem;color:var(--body-text);opacity:.65;margin-bottom:14px;}
-                              .tk-sc-leg{display:flex;gap:14px;margin-bottom:15px;font-size:.8rem;font-weight:600;color:var(--body-text);}
-                              .tk-sc-dot{width:11px;height:11px;border-radius:4px;display:inline-block;margin-right:6px;vertical-align:-1px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5);}
-                              .tk-sc-row{margin:0 0 12px;}
-                              .tk-sc-vals{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
-                              .tk-sc-lab{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--body-text);opacity:.7;font-weight:600;}
-                              .tk-sc-hv{font-weight:800;font-size:.92rem;color:var(--sc-home);font-variant-numeric:tabular-nums;}
-                              .tk-sc-av{font-weight:800;font-size:.92rem;color:var(--sc-away);font-variant-numeric:tabular-nums;}
-                              .tk-sc-bar{display:flex;height:11px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.08);box-shadow:inset 0 1px 3px rgba(0,0,0,.35),inset 0 -1px 0 rgba(255,255,255,.12);}
-                              .tk-sc-seg{transition:width .3s ease;}
-                              .tk-sc-bh{background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0) 55%),var(--sc-home);}
-                              .tk-sc-ba{background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0) 55%),var(--sc-away);}
-                              .tk-sc-foot{margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);font-size:.62rem;color:var(--body-text);opacity:.55;}
-                            `}</style>
-                            <div className="tk-sc-glass">
-                              <div className="tk-sc-kick">Estadísticas</div>
-                              <div className="tk-sc-title">{v.title || `${home} vs ${away}`}</div>
-                              {v.subtitle ? <div className="tk-sc-sub">{v.subtitle}</div> : null}
-                              <div className="tk-sc-leg">
-                                <span><span className="tk-sc-dot" style={{ background: 'var(--sc-home)' }} />{home}</span>
-                                <span><span className="tk-sc-dot" style={{ background: 'var(--sc-away)' }} />{away}</span>
-                              </div>
-                              {rows.map((r, i) => {
-                                const h = Number(r.home) || 0
-                                const a = Number(r.away) || 0
-                                const tot = h + a
-                                const hw = tot > 0 ? Math.round((h / tot) * 100) : 50
-                                const u = r.unit || ''
-                                return (
-                                  <div className="tk-sc-row" key={i}>
-                                    <div className="tk-sc-vals">
-                                      <span className="tk-sc-hv">{h}{u}</span>
-                                      <span className="tk-sc-lab">{r.label}</span>
-                                      <span className="tk-sc-av">{a}{u}</span>
-                                    </div>
-                                    <div className="tk-sc-bar">
-                                      <span className="tk-sc-seg tk-sc-bh" style={{ width: `${hw}%` }} />
-                                      <span className="tk-sc-seg tk-sc-ba" style={{ width: `${100 - hw}%` }} />
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                              <div className="tk-sc-foot">Datos verificados de la fuente</div>
+                          <figure className="cas cas--data cas-stats" style={scStyle}>
+                            <div className="cas__head">
+                              <span className="cas__label">Estadísticas</span>
                             </div>
+                            <div className="cas-stats__title">{v.title || `${home} vs ${away}`}</div>
+                            {v.subtitle ? <div className="cas-stats__sub">{v.subtitle}</div> : null}
+                            <div className="cas-stats__leg">
+                              <span><span className="cas-stats__dot" style={{ background: 'var(--sc-home)' }} />{home}</span>
+                              <span><span className="cas-stats__dot" style={{ background: 'var(--sc-away)' }} />{away}</span>
+                            </div>
+                            {rows.map((r, i) => {
+                              const h = Number(r.home) || 0
+                              const a = Number(r.away) || 0
+                              const tot = h + a
+                              const hw = tot > 0 ? Math.round((h / tot) * 100) : 50
+                              const u = r.unit || ''
+                              return (
+                                <div className="cas-stats__row" key={i}>
+                                  <div className="cas-stats__vals">
+                                    <span className="cas-stats__hv">{h}{u}</span>
+                                    <span className="cas-stats__lab">{r.label}</span>
+                                    <span className="cas-stats__av">{a}{u}</span>
+                                  </div>
+                                  <div className="cas-stats__bar">
+                                    <span style={{ width: `${hw}%`, background: 'var(--sc-home)' }} />
+                                    <span style={{ width: `${100 - hw}%`, background: 'var(--sc-away)' }} />
+                                  </div>
+                                </div>
+                              )
+                            })}
+                            <div className="cas__foot">Datos verificados de la fuente</div>
                           </figure>
                         )
                       },
@@ -1291,7 +1270,9 @@ export default async function NoticiaPage({
       >
         <div className="lg:grid lg:gap-12 lg:items-start mx-auto" style={{ gridTemplateColumns: 'minmax(0,1fr) 268px', maxWidth: 1160 }}>
 
-          <div className="pt-6 pb-5 lg:col-span-2 flex items-center gap-3">
+          {/* En el móvil, «Volver» se come una fila entera (~70 px) para una flecha:
+              allí va como botón de icono al principio de la fila de metadatos. */}
+          <div className="hidden sm:flex pt-6 pb-5 lg:col-span-2 items-center gap-3">
             <BackButton />
             {sportSlug && sportLabel && (
               <nav className="hidden sm:flex items-center gap-1.5 text-[11px] min-w-0" aria-label="Breadcrumb">
@@ -1319,8 +1300,9 @@ export default async function NoticiaPage({
       />
       <article>
 
-            <div className="flex items-center justify-between gap-2 mb-4 lg:hidden">
+            <div className="flex items-center justify-between gap-2 mb-4 pt-4 sm:pt-0 lg:hidden">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <span className="sm:hidden"><BackButton compact /></span>
                 {article.takaStatus && article.takaStatus !== 'normal' && (
                   <StatusBadge status={article.takaStatus} accent={badgeColor} />
                 )}
@@ -1430,9 +1412,7 @@ export default async function NoticiaPage({
             {/* En la previa de un partido ya jugado, lo primero es el resultado y la crónica:
                 encima de la foto, que es lo que ve quien llega tarde desde Google. */}
             {hermana && tipoHermana === 'cronica' && partidoHermana && (
-              <div className="mb-6">
-                <NotaHermanaLink tipo="cronica" slug={hermana.slug} partido={partidoHermana} accent={badgeColor} />
-              </div>
+              <NotaHermanaLink tipo="cronica" slug={hermana.slug} partido={partidoHermana} accent={badgeColor} />
             )}
 
             {imgUrl && (
@@ -1453,7 +1433,11 @@ export default async function NoticiaPage({
                 //
                 // ⚠️ Esto y HERO_MIN_RATIO de WF-08 (hoy 1,3) son la misma decisión
                 // vista desde los dos extremos. Si cambias uno, revisa el otro.
-                className="relative w-full aspect-[1.45/1] sm:aspect-[1.6/1] rounded-2xl overflow-hidden mb-8"
+                //
+                // Las PLACAS de previa, crónica y columna (/api/og/…) son 1200×630 y
+                // llevan texto hasta los bordes: recortadas se leía «ÓNICA» y «E DE
+                // FRANCE». Van enteras, a su proporción.
+                className={`relative w-full ${esPlaca ? 'aspect-[1200/630]' : 'aspect-[1.45/1] sm:aspect-[1.6/1]'} rounded-2xl overflow-hidden mb-6`}
                 style={{
                   // Hero "broadcast": borde y glow teñidos del acento del deporte.
                   border: `1px solid ${accent}30`,
@@ -1470,40 +1454,26 @@ export default async function NoticiaPage({
 
             {article.tldr && article.tldr.length > 0 && (
               <aside
-                className="ts-keys mb-8 rounded-2xl overflow-hidden"
-                style={{
-                  background: `linear-gradient(135deg, ${badgeColor}12, ${badgeColor}05)`,
-                  border: `1px solid ${badgeBorder}`,
-                  maxWidth: 680,
-                }}
+                className="ts-keys cas cas--data cas--keys"
+                style={{ '--acc': badgeColor, '--acc-text': accentTexto(badgeColor) } as React.CSSProperties}
                 aria-label="Claves rápidas"
               >
-                {/* Rótulo de TV: barra de acento + label */}
-                <div
-                  className="ts-keys__bar flex items-center gap-2.5 px-5 py-2.5"
-                  style={{ borderBottom: `1px solid ${badgeBorder}`, background: `${badgeColor}10` }}
-                >
-                  <span aria-hidden className="ts-keys__tab" style={{ background: badgeColor }} />
-                  <span
-                    className="text-[10px] font-black uppercase tracking-widest"
-                    style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}
-                  >
-                    Claves en 30 segundos
-                  </span>
+                <div className="cas__head">
+                  <span className="cas__label">Claves en 30 segundos</span>
                   {/* Aquí parpadeaba un piloto «● EN DIRECTO». Salía en TODOS los
                       artículos, incluido el de un partido acabado hace doce horas, y el
                       lector lo entiende como «esto está pasando ahora». El rótulo ya se
                       anuncia solo con «Claves en 30 segundos». Retirado a la vez que en la
                       app, para no dejarlas distintas. [14/09/2026] */}
                 </div>
-                <ul className="ts-keys__list flex flex-col px-5 py-4">
+                <ul className="ts-keys__list">
                   {article.tldr.map((item, i) => (
                     <li
                       key={i}
-                      className="ts-keys__row flex gap-3 py-1.5"
-                      style={{ color: 'var(--body-list)', fontSize: '0.95rem', lineHeight: 1.55, '--ts-key-i': i } as React.CSSProperties}
+                      className="ts-keys__row"
+                      style={{ '--ts-key-i': i } as React.CSSProperties}
                     >
-                      <span aria-hidden className="ts-keys__num" style={{ color: badgeColor }}>
+                      <span aria-hidden className="ts-keys__num">
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       <span>{item}</span>
@@ -1608,35 +1578,20 @@ export default async function NoticiaPage({
             )}
 
             {preguntas.length > 0 && (
-              <section className="mt-12" style={{ maxWidth: 680 }} aria-label="Preguntas frecuentes">
-                <h2
-                  className="text-[10px] font-black uppercase tracking-widest mb-4"
-                  style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}
-                >
-                  Preguntas frecuentes
-                </h2>
-                <div className="flex flex-col gap-2.5">
+              <section
+                className="cas-faq"
+                style={{ '--acc': badgeColor, '--acc-text': accentTexto(badgeColor) } as React.CSSProperties}
+                aria-label="Preguntas frecuentes"
+              >
+                <h2 className="cas__label">Preguntas frecuentes</h2>
+                <div className="cas-faq__list">
                   {preguntas.map((f, i) => (
-                    <details
-                      key={i}
-                      className="rounded-xl overflow-hidden group"
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}
-                    >
-                      <summary
-                        className="cursor-pointer list-none [&::-webkit-details-marker]:hidden px-4 py-3 text-sm font-semibold flex justify-between items-center gap-3"
-                        style={{ color: 'var(--body-heading)' }}
-                      >
+                    <details key={i} className="cas-faq__item group">
+                      <summary className="cas-faq__q [&::-webkit-details-marker]:hidden">
                         <span>{f.q}</span>
-                        <span
-                          className="transition-transform group-open:rotate-45"
-                          style={{ color: badgeColor, flexShrink: 0, fontWeight: 800 }}
-                        >
-                          +
-                        </span>
+                        <span aria-hidden className="cas-faq__mark">+</span>
                       </summary>
-                      <div className="px-4 pb-4 text-sm" style={{ color: 'var(--body-text)', lineHeight: 1.6 }}>
-                        {f.a}
-                      </div>
+                      <div className="cas-faq__a">{f.a}</div>
                     </details>
                   ))}
                 </div>

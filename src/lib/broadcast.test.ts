@@ -11,6 +11,14 @@ describe('matchCompetition', () => {
     expect(matchCompetition('Liga de Campeones')).toBe('champions')
     expect(matchCompetition('UFC 320')).toBe('ufc')
     expect(matchCompetition('Eliminatorias Sudamericanas')).toBe('selecciones')
+    expect(matchCompetition('UEFA Nations League')).toBe('nations_league')
+  })
+
+  it('la Nations League no cae en «selecciones»', () => {
+    // La emite otro operador que los partidos de la selección local: con la clave
+    // genérica, un Francia–Italia salía con TyC Sports en Argentina.
+    expect(matchCompetition('UEFA Nations League', 'Francia vs Italia: horario, dónde ver y lo que se juega en la Nations League')).toBe('nations_league')
+    expect(matchCompetition('Liga de las Naciones')).toBe('nations_league')
   })
 
   it('prioriza Champions sobre la liga doméstica', () => {

@@ -87,7 +87,7 @@ export default function ShareButton({ title, slug }: { title: string; slug?: str
         onClick={() => setOpen(v => !v)}
         aria-label="Compartir artículo"
         aria-expanded={open}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80"
+        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80"
         style={{ background: 'rgba(255,255,255,0.06)', color: '#8E8E9E', border: '1px solid var(--border)' }}
       >
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -96,7 +96,8 @@ export default function ShareButton({ title, slug }: { title: string; slug?: str
           <circle cx="2.5" cy="6.5" r="1.5" stroke="currentColor" strokeWidth="1.3" />
           <path d="M4 5.8L9 3.2M4 7.2L9 9.8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
         </svg>
-        Compartir
+        {/* En el móvil, solo el icono: la fila de metadatos no da para más (aria-label arriba). */}
+        <span className="hidden sm:inline">Compartir</span>
       </button>
 
       {open && (

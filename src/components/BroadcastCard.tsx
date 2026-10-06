@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
+import { accentTexto } from '@/lib/sports'
 import { formatInstantInZone, getStoredTZ, TZ_CHANGE_EVENT } from '@/lib/timezone'
 import {
   COUNTRY_FLAGS,
@@ -71,32 +72,17 @@ export default function BroadcastCard({
 
   return (
     <section
-      className="ts-bcast mb-8 rounded-2xl overflow-hidden"
-      style={{ border: `1px solid ${accent}33`, background: `${accent}0a`, maxWidth: 680 }}
+      className="cas cas--data cas-bcast"
+      style={{ '--acc': accent, '--acc-text': accentTexto(accent) } as CSSProperties}
       aria-label="Dónde ver el partido por país"
     >
-      <header
-        className="flex items-center gap-2.5 px-4 py-2.5"
-        style={{ borderBottom: `1px solid ${accent}33`, background: `${accent}16` }}
-      >
-        <span className="block rounded-sm" style={{ width: 3, height: 13, background: accent }} aria-hidden />
-        <span
-          className="text-[11px] font-black uppercase"
-          style={{ color: accent, letterSpacing: '0.16em', fontFamily: 'var(--font-sport), sans-serif' }}
-        >
-          Dónde verlo
-        </span>
-        {subtitulo && (
-          <span
-            className="ml-auto text-[12px] truncate"
-            style={{ color: 'var(--text-muted, #7C7C8C)', fontFamily: 'var(--font-headline), sans-serif' }}
-          >
-            {subtitulo}
-          </span>
-        )}
+      <header className="cas__head">
+        <TvIcon />
+        <span className="cas__label">Dónde verlo</span>
+        {subtitulo && <span className="cas__meta">{subtitulo}</span>}
       </header>
 
-      <ul className="flex flex-col">
+      <ul className="cas-bcast__list">
         {visibles.map((r) => {
           const mine = r.countryCode === myCountry
           const tz = COUNTRY_TZ[r.countryCode]
@@ -108,40 +94,14 @@ export default function BroadcastCard({
               : null
 
           return (
-            <li
-              key={r.countryCode}
-              className="flex items-center gap-3 px-4 py-2.5"
-              style={{
-                borderTop: `1px solid ${accent}14`,
-                borderLeft: mine ? `3px solid ${accent}` : '3px solid transparent',
-                background: mine ? `${accent}12` : undefined,
-                paddingLeft: mine ? 13 : undefined,
-              }}
-            >
-              <span aria-hidden className="text-[13px] shrink-0">
+            <li key={r.countryCode} className={mine ? 'is-mine' : undefined}>
+              <span aria-hidden className="cas-bcast__flag">
                 {COUNTRY_FLAGS[r.countryCode] ?? '🏳️'}
               </span>
 
-              <span
-                className="shrink-0 text-[16px]"
-                style={{
-                  width: 96,
-                  color: mine ? accent : 'var(--text-primary, #EBEBF5)',
-                  fontWeight: mine ? 600 : 400,
-                  letterSpacing: '0.02em',
-                  fontFamily: 'var(--font-headline), sans-serif',
-                }}
-              >
-                {r.country}
-              </span>
+              <span className="cas-bcast__country">{r.country}</span>
 
-              <span
-                className="rounded-md px-2 py-0.5 text-[12px] min-w-0 truncate"
-                style={{
-                  border: `1px solid ${mine ? `${accent}55` : 'rgba(255,255,255,0.09)'}`,
-                  color: mine ? accent : 'var(--body-lede, #9090A4)',
-                }}
-              >
+              <span className="cas-bcast__channels">
                 {r.url ? (
                   <a href={r.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
                     {r.channels.join(' · ')}
@@ -151,36 +111,12 @@ export default function BroadcastCard({
                 )}
               </span>
 
-              {desfase && (
-                <span
-                  className="ml-auto shrink-0 text-[11px] uppercase"
-                  style={{
-                    color: mine ? accent : 'var(--text-muted, #7C7C8C)',
-                    opacity: mine ? 0.75 : 1,
-                    letterSpacing: '0.06em',
-                    fontFamily: 'var(--font-headline), sans-serif',
-                  }}
-                >
-                  {desfase}
-                </span>
-              )}
+              {desfase && <span className="cas-bcast__offset">{desfase}</span>}
 
               {zt && (
-                <span
-                  className={desfase ? 'shrink-0 text-right' : 'ml-auto shrink-0 text-right'}
-                  style={{
-                    minWidth: 58,
-                    fontFamily: 'var(--font-sport), sans-serif',
-                    fontSize: mine ? 23 : 20,
-                    fontWeight: mine ? 800 : 700,
-                    fontVariantNumeric: 'tabular-nums',
-                    color: mine ? accent : 'var(--text-primary, #EBEBF5)',
-                  }}
-                >
+                <span className={desfase ? 'cas-bcast__time' : 'cas-bcast__time cas-bcast__time--solo'}>
                   {zt.time}
-                  {zt.dayLabel && (
-                    <em className="not-italic block text-[10px] font-normal opacity-60">{zt.dayLabel}</em>
-                  )}
+                  {zt.dayLabel && <em>{zt.dayLabel}</em>}
                 </span>
               )}
             </li>
@@ -189,20 +125,19 @@ export default function BroadcastCard({
       </ul>
 
       {hayCorte && (
-        <button
-          type="button"
-          onClick={() => setExpandido(true)}
-          className="w-full py-2.5 text-[13px]"
-          style={{
-            borderTop: `1px solid ${accent}14`,
-            color: 'var(--text-muted, #7C7C8C)',
-            letterSpacing: '0.04em',
-            fontFamily: 'var(--font-headline), sans-serif',
-          }}
-        >
+        <button type="button" onClick={() => setExpandido(true)} className="cas__more">
           Ver los {ordered.length} países ›
         </button>
       )}
     </section>
+  )
+}
+
+function TvIcon() {
+  return (
+    <svg className="cas__icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="6" width="18" height="12" rx="2" />
+      <path d="M8 21h8M9 3l3 3 3-3" />
+    </svg>
   )
 }
