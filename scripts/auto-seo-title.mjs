@@ -16,7 +16,16 @@
 // del contenedor n8n en marcha. Log en ~/.taka/seo.log.
 //
 // Autónomo (sin dependencias): rellena/optimiza el seoTitle de artículos de Sanity.
-// Lee SANITY_TOKEN y OPENAI_API_KEY del entorno. NO toca el H1 (headline).
+// Lee del entorno SANITY_TOKEN y las claves GRATUITAS del robot: GEMINI_KEYS (separadas
+// por comas) y GROQ_API_KEY. NO toca el H1 (headline).
+//
+// IA GRATUITA (06/10/2026). Usaba gpt-4o-mini de OpenAI; la cuenta se quedó sin saldo
+// el 03/10 y desde entonces el 100 % de los títulos fue el recorte del titular, sin que
+// nada avisara (el log solo decía «recorte=10»). Ahora: Gemini flash-lite gratis (dos
+// proyectos) → Groq gpt-oss-20b (cuota propia; el 120b lo reserva el redactor). Si no
+// queda IA, recorte como antes y el artículo se REINTENTA en las siguientes pasadas
+// (estado en ~/.taka/seo-reintentos.json): los recortes de los últimos 30 días se rehacen
+// solos, unos pocos por pasada.
 //
 // Modos:
 //   (normal)   solo artículos SIN seoTitle  → cron horario.
@@ -30,15 +39,20 @@
 // la noticia (titular+meta+tldr).
 
 const PROJECT = '43g1qwh9', DATASET = 'production', APIV = 'v2024-01-01'
-const MODEL = 'gpt-4o-mini', MAXLEN = 58, CONC = 4
+const MAXLEN = 58, CONC = 2
 const QURL = `https://${PROJECT}.api.sanity.io/${APIV}/data/query/${DATASET}`
 const MURL = `https://${PROJECT}.api.sanity.io/${APIV}/data/mutate/${DATASET}`
-const SANITY_TOKEN = process.env.SANITY_TOKEN, OPENAI_API_KEY = process.env.OPENAI_API_KEY
+const SANITY_TOKEN = process.env.SANITY_TOKEN
+const GEMINI_KEYS = (process.env.GEMINI_KEYS || '').split(',').map(x => x.trim()).filter(Boolean)
+const GROQ_API_KEY = process.env.GROQ_API_KEY || ''
 const DRY = process.argv.includes('--dry')
 const REGEN = process.argv.includes('--regen')
 const limRaw = (process.argv.find(a => a.startsWith('--limit')) || '').split('=')[1]
 const LIMIT = limRaw && Number.isFinite(+limRaw) ? +limRaw : Infinity
-if (!SANITY_TOKEN || !OPENAI_API_KEY) { console.error('Falta SANITY_TOKEN u OPENAI_API_KEY'); process.exit(1) }
+if (!SANITY_TOKEN || (!GEMINI_KEYS.length && !GROQ_API_KEY)) { console.error('Falta SANITY_TOKEN o alguna clave de IA gratuita (GEMINI_KEYS / GROQ_API_KEY)'); process.exit(1) }
+// Reintentos de los recortes: por pasada, cuántos y de cuántos días atrás.
+const REINTENTOS_POR_PASADA = 6, REINTENTO_DIAS = 30, MAX_INTENTOS = 2
+const ESTADO = process.env.SEO_STATE || `${process.env.HOME}/.taka/seo-reintentos.json`
 
 // Títulos curados a mano (set-seo-title.mjs) — NO se sobrescriben en --regen.
 const KEEP = new Set([
@@ -127,7 +141,7 @@ function grounded(t, src) {
   for (let k = 1; k < w.length; k++) { const x = w[k].replace(/[^\p{L}\p{N}]/gu, ''); if (x.length >= 4 && /^[A-ZÁÉÍÓÚÑ]/.test(x) && !f.includes(fold(x))) return false }
   return true
 }
-const pOriginal = (h, ctx, sport) => `Eres editor SEO de un medio deportivo español. Escribe un TÍTULO SEO para Google que MAXIMICE los clics.
+const pOriginal = (h, ctx, sport, kw) => `Eres editor SEO de un medio deportivo español. Escribe un TÍTULO SEO para Google que MAXIMICE los clics.
 Reglas:
 - ORIGINAL: estructura y enfoque propios, NO copies el titular tal cual ni titulares de otros medios.
 - Empieza por la ENTIDAD o KEYWORD que la gente busca (nombre, equipo, competición).
@@ -137,7 +151,7 @@ Reglas:
 - Sin "TakaSports" ni " | ...". Devuelve SOLO el título.
 
 Deporte: ${sport || '-'}
-Titular: ${h}
+${kw ? `Lo que busca la gente (ponlo al principio si encaja): ${kw}\n` : ''}Titular: ${h}
 Contexto: ${ctx}
 Título SEO:`
 const pCompress = (h, sport) => `Acorta este titular deportivo a un TÍTULO SEO de máximo 57 caracteres, en español, gramatical y fiel.
@@ -145,19 +159,50 @@ No inventes ni añadas nombres o cifras; usa solo los del titular. Sin "TakaSpor
 
 Titular: ${h}
 Título corto:`
+// Cascada gratuita. Un proveedor que responde 429 (o 402/403) queda fuera el resto de la
+// pasada. Sin ninguno disponible se lanza SIN_IA, que no cuenta como intento fallido.
+const fuera = new Set()
+const usos = {}
+const uso = (id, t) => { usos[id] = (usos[id] || 0) + 1; return t }
+class SinIA extends Error {}
+const limpio = (t) => stripBrand(String(t || '').split('\n').map(x => x.trim()).filter(Boolean)[0] || '').replace(/^t[ií]tulo( seo| corto)?:\s*/i, '')
 async function ask(content, temp) {
-  const r = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_API_KEY}` }, body: JSON.stringify({ model: MODEL, temperature: temp, max_tokens: 32, messages: [{ role: 'user', content }] }) })
-  if (!r.ok) throw new Error('OpenAI ' + r.status)
-  return stripBrand(((await r.json()).choices?.[0]?.message?.content || '').trim())
+  for (const [i, key] of GEMINI_KEYS.entries()) {
+    const id = 'gemini' + i
+    if (fuera.has(id)) continue
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: content }] }], generationConfig: { temperature: temp, maxOutputTokens: 60 } }),
+        signal: AbortSignal.timeout(30000),
+      })
+      if (r.ok) { const t = limpio((await r.json())?.candidates?.[0]?.content?.parts?.[0]?.text); if (t) return uso(id, t); continue }
+      if ([402, 403, 404, 429].includes(r.status)) fuera.add(id)
+    } catch {}
+  }
+  if (GROQ_API_KEY && !fuera.has('groq20')) {
+    try {
+      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
+        body: JSON.stringify({ model: 'openai/gpt-oss-20b', reasoning_effort: 'low', temperature: temp, max_tokens: 600, messages: [{ role: 'user', content }] }),
+        signal: AbortSignal.timeout(30000),
+      })
+      if (r.ok) { const t = limpio((await r.json())?.choices?.[0]?.message?.content); if (t) return uso('groq20', t) }
+      else if ([402, 403, 429].includes(r.status)) fuera.add('groq20')
+    } catch {}
+  }
+  throw new SinIA('sin IA gratuita disponible')
 }
 const valid = (t, src) => t && t.length <= MAXLEN && grounded(t, src)
 async function decide(a) {
   const ctx = `${a.metaDescription || ''} ${tldrText(a.tldr)}`.trim().slice(0, 400)
   const src = `${a.headline} ${a.metaDescription || ''} ${tldrText(a.tldr)}`
-  try { const t = await ask(pOriginal(a.headline, ctx, a.sport), 0.45); if (valid(t, src) && fold(t) !== fold(a.headline)) return { seoTitle: t, via: 'IA' } } catch {}
-  try { const t = await ask(pCompress(a.headline, a.sport), 0.2); if (valid(t, src)) return { seoTitle: t, via: 'IA2' } } catch {}
-  return { seoTitle: cleanTrim(stripBrand(a.headline)), via: 'rec' }
+  let sinIA = false
+  try { const t = await ask(pOriginal(a.headline, ctx, a.sport, a.focusKeyword), 0.45); if (valid(t, src) && fold(t) !== fold(a.headline)) return { seoTitle: t, via: 'IA' } } catch (e) { if (e instanceof SinIA) sinIA = true }
+  if (!sinIA) try { const t = await ask(pCompress(a.headline, a.sport), 0.2); if (valid(t, src)) return { seoTitle: t, via: 'IA2' } } catch (e) { if (e instanceof SinIA) sinIA = true }
+  return { seoTitle: recorte(a), via: 'rec', sinIA }
 }
+const recorte = (a) => cleanTrim(stripBrand(a.headline || ''))
 async function patch(id, seoTitle) {
   const r = await fetch(MURL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SANITY_TOKEN}` }, body: JSON.stringify({ mutations: [{ patch: { id, set: { seoTitle } } }] }) })
   if (!r.ok) throw new Error('Sanity mutate ' + r.status + ' ' + (await r.text()).slice(0, 160))
@@ -167,22 +212,43 @@ async function patch(id, seoTitle) {
 // (lib/seo-partido, 05/10/2026) y no lee seoTitle; generarlo sería gastar IA en balde.
 const SIN_PARTIDO = '!(type in ["previa", "cronica"])'
 const filter = REGEN ? `defined(headline) && ${SIN_PARTIDO}` : `defined(headline) && !defined(seoTitle) && ${SIN_PARTIDO}`
-const q = encodeURIComponent(`*[_type=="article" && ${filter}] | order(publishedAt desc){_id,"slug":slug.current,headline,metaDescription,tldr,sport}`)
-const resp = await fetch(`${QURL}?query=${q}`, { headers: { Authorization: `Bearer ${SANITY_TOKEN}` } })
-if (!resp.ok) { console.error(`${new Date().toISOString()} ERROR query ${resp.status}`); process.exit(1) }
-let arts = (await resp.json()).result || []
+const CAMPOS = '{_id,"slug":slug.current,headline,seoTitle,metaDescription,tldr,sport,focusKeyword}'
+const consulta = async (groq) => {
+  const r = await fetch(`${QURL}?query=${encodeURIComponent(groq)}`, { headers: { Authorization: `Bearer ${SANITY_TOKEN}` } })
+  if (!r.ok) { console.error(`${new Date().toISOString()} ERROR query ${r.status}`); process.exit(1) }
+  return (await r.json()).result || []
+}
+let arts = await consulta(`*[_type=="article" && ${filter}] | order(publishedAt desc)${CAMPOS}`)
 if (REGEN) arts = arts.filter(a => !KEEP.has(a.slug))
 arts = arts.slice(0, LIMIT)
-console.log(`${new Date().toISOString()} ${REGEN ? 'REGEN' : 'normal'} · ${arts.length} a procesar${DRY ? ' (DRY)' : ''}`)
-let ia = 0, ia2 = 0, rec = 0, err = 0
-for (let i = 0; i < arts.length; i += CONC) {
-  await Promise.all(arts.slice(i, i + CONC).map(async a => {
-    try {
-      const { seoTitle, via } = await decide(a)
-      if (via === 'IA') ia++; else if (via === 'IA2') ia2++; else rec++
-      if (DRY) console.log(`  [${via.padEnd(3)}] ${(a.headline || '').slice(0, 30).padEnd(30)} → ${seoTitle}`)
-      else await patch(a._id, seoTitle)
-    } catch (e) { err++; console.error('  ERROR ' + a._id + ': ' + e.message) }
-  }))
+
+// Recortes recientes que se quedaron sin título de IA: se rehacen unos pocos por pasada.
+const fs = await import('node:fs')
+let estado = {}
+try { estado = JSON.parse(fs.readFileSync(ESTADO, 'utf8')) } catch {}
+let reintentos = []
+if (!REGEN) {
+  const desde = new Date(Date.now() - REINTENTO_DIAS * 86400000).toISOString()
+  const recientes = await consulta(`*[_type=="article" && defined(headline) && defined(seoTitle) && ${SIN_PARTIDO} && publishedAt >= "${desde}"] | order(publishedAt desc)${CAMPOS}`)
+  reintentos = recientes.filter(a => !KEEP.has(a.slug) && fold(a.seoTitle) === fold(recorte(a)) && (estado[a.slug] || 0) < MAX_INTENTOS).slice(0, REINTENTOS_POR_PASADA)
 }
-console.log(`${new Date().toISOString()} hecho original=${ia} compresion=${ia2} recorte=${rec} err=${err}${DRY ? ' (DRY)' : ''}`)
+console.log(`${new Date().toISOString()} ${REGEN ? 'REGEN' : 'normal'} · ${arts.length} a procesar + ${reintentos.length} recortes a rehacer${DRY ? ' (DRY)' : ''}`)
+let ia = 0, ia2 = 0, rec = 0, err = 0, rehechos = 0, sinIA = 0
+const tarea = (a, esReintento) => async () => {
+  try {
+    const d = await decide(a)
+    if (d.sinIA) sinIA++
+    if (esReintento) {
+      if (d.via === 'rec') { if (!d.sinIA) estado[a.slug] = (estado[a.slug] || 0) + 1; return }
+      rehechos++
+    }
+    if (d.via === 'IA') ia++; else if (d.via === 'IA2') ia2++; else rec++
+    if (DRY) console.log(`  [${d.via.padEnd(3)}]${esReintento ? '↻' : ' '} ${(a.headline || '').slice(0, 30).padEnd(30)} → ${d.seoTitle}`)
+    else await patch(a._id, d.seoTitle)
+    if (esReintento) delete estado[a.slug]
+  } catch (e) { err++; console.error('  ERROR ' + a._id + ': ' + e.message) }
+}
+const tareas = [...arts.map(a => tarea(a, false)), ...reintentos.map(a => tarea(a, true))]
+for (let i = 0; i < tareas.length; i += CONC) await Promise.all(tareas.slice(i, i + CONC).map(t => t()))
+if (!DRY) try { fs.writeFileSync(ESTADO, JSON.stringify(estado)) } catch {}
+console.log(`${new Date().toISOString()} hecho original=${ia} compresion=${ia2} recorte=${rec} rehechos=${rehechos} sinIA=${sinIA} err=${err} ia=${JSON.stringify(usos)}${fuera.size ? ' agotados=' + [...fuera].join(',') : ''}${DRY ? ' (DRY)' : ''}`)
