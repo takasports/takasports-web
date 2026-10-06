@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { TocHeading } from '@/lib/article-toc'
 
 interface Props {
+  /** Idioma del artículo; solo cambia el rótulo (por defecto español). */
+  lang?: string | null
   headings: TocHeading[]
   variant?: 'sidebar' | 'mobile'
 }
@@ -11,7 +13,8 @@ interface Props {
 // Offset del header sticky (56px) + un poco de respiro.
 const SCROLL_OFFSET = 80
 
-export default function ArticleTableOfContents({ headings, variant = 'sidebar' }: Props) {
+export default function ArticleTableOfContents({ headings, variant = 'sidebar', lang }: Props) {
+  const rotulo = lang === 'en' ? 'In this article' : 'En este artículo'
   const [activeId, setActiveId] = useState<string | null>(headings[0]?.id ?? null)
   const tickingRef = useRef(false)
 
@@ -103,7 +106,7 @@ export default function ArticleTableOfContents({ headings, variant = 'sidebar' }
     return (
       <details className="cas-toc lg:hidden">
         <summary className="cas-toc__sum">
-          <span>En este artículo · {headings.length}</span>
+          <span>{rotulo} · {headings.length}</span>
           <svg
             width="14"
             height="14"
@@ -126,7 +129,7 @@ export default function ArticleTableOfContents({ headings, variant = 'sidebar' }
   return (
     <nav aria-label="Índice del artículo" className="cas-toc-side hidden lg:block">
       <p className="section-label" style={{ marginBottom: 10 }}>
-        En este artículo
+        {rotulo}
       </p>
       {list}
     </nav>

@@ -21,6 +21,8 @@ import ScrollToTop from '@/components/ScrollToTop'
 import ReadingProgress from '@/app/article/[id]/ReadingProgress'
 import ReadTracker from '@/app/article/[id]/ReadTracker'
 import ArticleTableOfContents from '@/components/ArticleTableOfContents'
+import { IdiomaAuto, IdiomaSelector } from '@/components/IdiomaSelector'
+import { IDIOMAS, esIdioma, mapaHreflang, textosFicha } from '@/lib/idiomas'
 import ArticleComments from '@/components/ArticleComments'
 import ArticlePushCta from '@/components/ArticlePushCta'
 import ShareStoryCta from '@/components/ShareStoryCta'
@@ -101,6 +103,9 @@ interface RelatedArticle {
 }
 
 interface Article {
+  /** Idioma de este documento (ausente = español) y sus otras versiones publicadas. */
+  language?: string
+  versiones?: { lang: string; slug: string }[]
   _id: string
   _updatedAt?: string
   slug?: string
@@ -177,6 +182,12 @@ export async function generateMetadata({
 
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1200).height(630).url() : undefined)
   const canonical = `${SITE_URL}/noticias/${article.slug ?? slug}`
+  // Reportajes con varias versiones: hreflang entre ellas (cada una se autoreferencia).
+  const idioma = esIdioma(article.language) ? article.language : 'es'
+  const versionesIdioma = article.versiones ?? []
+  const hreflang = versionesIdioma.length > 0
+    ? mapaHreflang(SITE_URL, { lang: idioma, slug: article.slug ?? slug }, versionesIdioma)
+    : undefined
   const keywordList = [article.focusKeyword, ...(article.secondaryKeywords ?? []), ...(article.tags ?? [])]
     .filter((k): k is string => Boolean(k))
   // Título para buscadores/redes: usa seoTitle si el editor lo definió (optimizado
@@ -198,7 +209,7 @@ export async function generateMetadata({
     title: { absolute: tituloBuscador },
     description: descripcion,
     authors: [{ name: displayAuthor(article.author) }],
-    alternates: { canonical },
+    alternates: hreflang ? { canonical, languages: hreflang } : { canonical },
     keywords: keywordList.length > 0 ? keywordList : undefined,
     other: keywordList.length > 0 ? { news_keywords: keywordList.slice(0, 10).join(', ') } : undefined,
     openGraph: {
@@ -212,7 +223,7 @@ export async function generateMetadata({
       publishedTime: article.publishedAt,
       modifiedTime: article._updatedAt ?? article.publishedAt,
       siteName: 'TakaSports',
-      locale: 'es_ES',
+      locale: IDIOMAS[idioma].og,
     },
     twitter: {
       card: 'summary_large_image',
@@ -318,7 +329,7 @@ function ArticleSidebar({
   return (
     <aside className="hidden lg:flex flex-col gap-6 sticky top-20 self-start">
 
-      <ArticleTableOfContents headings={tocHeadings} variant="sidebar" />
+      <ArticleTableOfContents headings={tocHeadings} variant="sidebar" lang={article.language} />
 
       <div
         className="rounded-2xl p-5"
@@ -338,7 +349,7 @@ function ArticleSidebar({
                   })}
                 </time>
                 <p className="text-[10px]" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
-                  {timeAgo(article.publishedAt)}
+                  {timeAgo(article.publishedAt, article.language)}
                 </p>
               </div>
             </div>
@@ -615,6 +626,10 @@ export default async function NoticiaPage({
   }
 
   const articleAuthor = displayAuthor(article.author)
+  // Idioma de ESTA versión y las demás (reportajes con varias lenguas; casi siempre vacío).
+  const lang = esIdioma(article.language) ? article.language : 'es'
+  const tx = textosFicha(lang)
+  const versiones = article.versiones ?? []
   const esColumna = article.type === 'columna'
 
   const articleJsonLd = {
@@ -625,7 +640,7 @@ export default async function NoticiaPage({
     image: articleImages,
     datePublished: article.publishedAt,
     dateModified: article._updatedAt ?? article.publishedAt,
-    inLanguage: 'es-ES',
+    inLanguage: IDIOMAS[lang].html,
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
     keywords: [article.focusKeyword, ...(article.secondaryKeywords ?? []), ...(article.tags ?? [])]
       .filter(Boolean)
@@ -694,7 +709,7 @@ export default async function NoticiaPage({
   const faqJsonLd = preguntas.length > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    inLanguage: 'es-ES',
+    inLanguage: IDIOMAS[lang].html,
     isPartOf: { '@id': canonical },
     mainEntity: preguntas.map((f) => ({
       '@type': 'Question',
@@ -1298,7 +1313,9 @@ export default async function NoticiaPage({
           __html: `try{if(localStorage.getItem('ts_lectura')==='claro')document.documentElement.dataset.lectura='claro'}catch(e){}`,
         }}
       />
-      <article>
+      <article lang={lang === 'es' ? undefined : IDIOMAS[lang].html}>
+
+            {versiones.length > 0 && <IdiomaAuto actual={lang} versiones={versiones} />}
 
             <div className="flex items-center justify-between gap-2 mb-4 pt-4 sm:pt-0 lg:hidden">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -1316,17 +1333,18 @@ export default async function NoticiaPage({
                 )}
                 {article.publishedAt && (
                   <time dateTime={article.publishedAt} className="text-xs truncate" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>
-                    {timeAgo(article.publishedAt)}
+                    {timeAgo(article.publishedAt, article.language)}
                   </time>
                 )}
                 {readMinutes && (
                   <span className="text-xs flex-shrink-0 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                     <span aria-hidden="true" style={{ color: badgeColor }}>·</span>
-                    {readMinutes} min
+                    {readMinutes} {tx.minCorto}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                {versiones.length > 0 && <IdiomaSelector actual={lang} versiones={versiones} variante="icono" />}
                 <SaveArticleButton
                   slug={article.slug ?? id}
                   title={article.title}
@@ -1361,7 +1379,7 @@ export default async function NoticiaPage({
                     <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2" />
                     <path d="M6 3.5v2.8l1.8 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                   </svg>
-                  {timeAgo(article.publishedAt)}
+                  {timeAgo(article.publishedAt, article.language)}
                 </time>
               )}
               {readMinutes && (
@@ -1372,9 +1390,10 @@ export default async function NoticiaPage({
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ color: badgeColor, opacity: 0.85 }} aria-hidden="true">
                     <path d="M2 3h8M2 6h8M2 9h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
                   </svg>
-                  {readMinutes} min de lectura
+                  {readMinutes} {tx.minLectura}
                 </span>
               )}
+              {versiones.length > 0 && <IdiomaSelector actual={lang} versiones={versiones} variante="chip" />}
             </div>
 
             {esColumna && (
@@ -1385,7 +1404,7 @@ export default async function NoticiaPage({
                 >
                   Opinión
                 </span>
-                <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Por {articleAuthor}</span>
+                <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{tx.por} {articleAuthor}</span>
               </div>
             )}
             <h1
@@ -1484,7 +1503,7 @@ export default async function NoticiaPage({
             )}
 
             <div style={{ maxWidth: 680 }}>
-              <ArticleTableOfContents headings={tocHeadings} variant="mobile" />
+              <ArticleTableOfContents headings={tocHeadings} variant="mobile" lang={article.language} />
             </div>
 
             {article.short_summary && (
@@ -1655,7 +1674,7 @@ export default async function NoticiaPage({
               {nextArticle && (
                 <div className="mt-12 pt-8" style={{ borderTop: '1px solid var(--border)' }}>
                   <p className="text-[10px] font-black uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>
-                    Siguiente artículo
+                    {tx.siguiente}
                   </p>
                   <Link
                     href={`/noticias/${nextArticle.slug ?? nextArticle._id}`}
@@ -1689,7 +1708,7 @@ export default async function NoticiaPage({
 
               {relatedFinal.length > 0 && (
                 <div className="mt-10">
-                  <SectionHeader>Sigue leyendo</SectionHeader>
+                  <SectionHeader>{tx.seguirLeyendo}</SectionHeader>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {relatedFinal.map((rel) => {
                       const relImg = rel.imageUrl ?? (rel.image?.asset ? urlFor(rel.image).width(400).height(220).url() : null)
@@ -1748,7 +1767,7 @@ export default async function NoticiaPage({
                       className="text-[10px] font-black uppercase tracking-widest"
                       style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}
                     >
-                      Fuentes
+                      {tx.fuentes}
                     </h2>
                   </div>
                   <ul className="flex flex-col gap-2">
@@ -1821,7 +1840,7 @@ export default async function NoticiaPage({
                 className="text-[10px] font-black uppercase tracking-widest mb-4"
                 style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
               >
-                Siguiente artículo
+                {tx.siguiente}
               </p>
               <Link
                 href={`/noticias/${nextArticle.slug ?? nextArticle._id}`}

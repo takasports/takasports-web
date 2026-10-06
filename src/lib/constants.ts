@@ -46,4 +46,12 @@ export const REPORTAJES_OCULTOS_GROQ = REPORTAJES_OCULTOS.length
 // (verificado contra el dataset: `type != "reportaje"` también deja pasar los
 // que no tienen `type`, así que no hace falta coalesce); encendida, solo quita
 // los ocultos.
-export const REPORTAJE_GROQ_FILTER = REPORTAJES_ENABLED ? REPORTAJES_OCULTOS_GROQ : ' && type != "reportaje"'
+// Versiones traducidas de un reportaje (campo `language` ≠ 'es'): cada una es su
+// propio documento con su URL, pero NO deben aparecer en los listados en español
+// (home, índice, búsqueda, RSS, sitemaps, API de la app). Se llega a ellas desde
+// el selector de idioma de la ficha y por hreflang. Un documento sin `language`
+// es español.
+export const SOLO_ESPANOL_GROQ = ' && (!defined(language) || language == "es")'
+
+export const REPORTAJE_GROQ_FILTER =
+  (REPORTAJES_ENABLED ? REPORTAJES_OCULTOS_GROQ : ' && type != "reportaje"') + SOLO_ESPANOL_GROQ

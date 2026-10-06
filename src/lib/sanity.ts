@@ -1,6 +1,6 @@
 import { createClient } from '@sanity/client'
 import { createImageUrlBuilder, type SanityImageSource } from '@sanity/image-url'
-import { REPORTAJE_GROQ_FILTER, REPORTAJES_OCULTOS_GROQ } from '@/lib/constants'
+import { REPORTAJE_GROQ_FILTER, REPORTAJES_OCULTOS_GROQ, SOLO_ESPANOL_GROQ } from '@/lib/constants'
 
 export const sanityClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -56,14 +56,14 @@ const REPORTAJE_FIELDS = `
 // parámetro en el rango.
 export const reportajesQuery = `*[_type == "article"
   && type == "reportaje"
-  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJES_OCULTOS_GROQ}
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJES_OCULTOS_GROQ}${SOLO_ESPANOL_GROQ}
 ] | order(publishedAt desc)[0...4] {
   ${REPORTAJE_FIELDS}
 }`
 
 export const reportajesAllQuery = `*[_type == "article"
   && type == "reportaje"
-  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJES_OCULTOS_GROQ}
+  && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJES_OCULTOS_GROQ}${SOLO_ESPANOL_GROQ}
 ] | order(publishedAt desc)[0...60] {
   ${REPORTAJE_FIELDS}
 }`
@@ -111,6 +111,18 @@ export const articleDetailQuery = `*[_type == "article" && (slug.current == $id 
   "imageUrl": select(defined(headline) => imageUrl, null),
   "image": select(defined(headline) => mainImage, image),
   "imageAlt": select(defined(headline) => imageAlt, null),
+  // Idioma de este documento y sus versiones hermanas (reportajes con varias
+  // lenguas): las que apuntan a este, o a las que apunta este, o las que
+  // comparten original con él. Solo versiones publicadas. Para probar con un
+  // borrador sin publicar, arrancar con PREVIEW_VERSIONES_IDIOMA=1.
+  language,
+  "versiones": *[_type == "article" && defined(language) && _id != ^._id
+    && status in ["publicado"${process.env.PREVIEW_VERSIONES_IDIOMA ? ', "borrador"' : ''}]
+    && !(_id in path('drafts.**'))
+    && (translationOf._ref == ^._id
+        || _id == ^.translationOf._ref
+        || (defined(^.translationOf._ref) && translationOf._ref == ^.translationOf._ref))
+  ]{ "lang": language, "slug": slug.current },
   // El reparto va por la FORMA del cuerpo, no por el pipeline que lo creó:
   // body es Portable Text también en los artículos escritos a mano en el Studio
   // (los que no tienen headline), y mandarlos a bodyText —que el lector trata
