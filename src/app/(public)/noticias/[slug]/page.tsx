@@ -155,7 +155,7 @@ async function datosSeoPartido(
     tipo, home, away,
     iso: k?.iso || ficha?.iso || null,
     competicion: competicionCorta(article.matchRef, k?.competition || ficha?.liga),
-    deporte: /^mma_/.test(article.matchRef ?? '') ? 'ufc' : parseMatchRef(article.matchRef ?? '')?.sport === 'basketball' ? 'baloncesto' : 'futbol',
+    deporte: /^mma_/.test(article.matchRef ?? '') ? 'ufc' : /^racing_/.test(article.matchRef ?? '') ? 'f1' : parseMatchRef(article.matchRef ?? '')?.sport === 'basketball' ? 'baloncesto' : 'futbol',
     ficha, tv,
   }
 }

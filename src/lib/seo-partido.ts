@@ -29,7 +29,7 @@ export interface DatosSeoPartido {
   iso: string | null
   /** Etiqueta corta de la competición («LaLiga», «Champions»), si se conoce. */
   competicion: string | null
-  deporte: 'futbol' | 'baloncesto' | 'ufc'
+  deporte: 'futbol' | 'baloncesto' | 'ufc' | 'f1'
   ficha: FichaVisual | null
   tv: BroadcastRow[]
 }
@@ -101,8 +101,13 @@ export function tituloSeoPartido(d: DatosSeoPartido): string | null {
     const conGoles = g.h + g.a > 0 ? 'resumen, goles y figura' : 'resumen y estadísticas'
     return primero([`${m}: ${conGoles}${comp}`, `${m}: ${conGoles}`, `${m}: resumen y goles`, `${m}: resumen`, m], MAX_TITULO)
   }
-  // Una crónica sin marcador de goles (una velada) se queda con su titular.
+  // Una crónica sin marcador de goles (una velada, un GP) se queda con su titular.
   if (d.tipo === 'cronica') return null
+  if (d.deporte === 'f1') {
+    // En F1 se busca «horarios GP de Singapur»: el GP es el «partido» y away es el circuito.
+    const gp = d.home.replace(/^Gran Premio/, 'GP')
+    return primero([`${gp}: horarios y dónde ver la carrera | F1`, `${gp}: horarios y dónde ver la carrera`, `${gp}: horarios de la F1`, gp], MAX_TITULO)
+  }
   // «vs»: es como más se escribe la búsqueda («barcelona vs real madrid»), sobre todo en Latinoamérica.
   const cruce = `${d.home} vs ${d.away}`
   const riv = d.deporte === 'futbol' ? rivalidadDe(d.home, d.away) : null
@@ -132,6 +137,10 @@ export function descripcionSeoPartido(d: DatosSeoPartido): string | null {
   if (!valido(d.iso)) return null
   const cuando = `${diaLargo(d.iso)}, ${hora(d.iso, 'Europe/Madrid')} en España y ${hora(d.iso, 'America/Mexico_City')} en México`
   const tv = canalEspana(d.tv)
+  if (d.deporte === 'f1') {
+    const gp = d.home.replace(/^Gran Premio/, 'GP')
+    return primero([`${gp}: carrera el ${cuando}. Horarios de libres, clasificación y carrera, y cómo llega el Mundial.`, `${gp}: carrera el ${cuando}.`], MAX_DESCRIPCION)
+  }
   const base = `${d.home} - ${d.away}${comp}: ${cuando}.`
   const extra = d.deporte === 'ufc' ? ' Previa con la cartelera estelar y lo que se juega.' : ' Previa con la forma, el cara a cara y lo que se juega.'
   return primero([`${base}${tv ? ` Por ${tv}.` : ''}${extra}`, `${base}${tv ? ` Por ${tv}.` : ''}`, base], MAX_DESCRIPCION)
@@ -145,7 +154,7 @@ const racha = (r: string[]) => {
 }
 
 export function faqPartido(d: DatosSeoPartido): PreguntaFrecuente[] {
-  const cruce = d.deporte === 'ufc' ? `combate ${d.home} vs ${d.away}` : `${d.home} - ${d.away}`
+  const cruce = d.deporte === 'ufc' ? `combate ${d.home} vs ${d.away}` : d.deporte === 'f1' ? d.home : `${d.home} - ${d.away}`
   const f = d.ficha
   const out: PreguntaFrecuente[] = []
   const posicion = () => {
@@ -156,11 +165,14 @@ export function faqPartido(d: DatosSeoPartido): PreguntaFrecuente[] {
   if (d.tipo === 'previa') {
     if (valido(d.iso)) {
       const otras = ZONAS.map(([pais, tz]) => `en ${pais}, a las ${hora(d.iso!, tz)}`)
-      out.push({ q: `¿A qué hora es el ${cruce}?`, a: `Se juega el ${diaLargo(d.iso)} a las ${hora(d.iso, 'Europe/Madrid')} en España (hora peninsular); ${lista(otras)}.` })
+      out.push(d.deporte === 'f1'
+        ? { q: `¿A qué hora es la carrera del ${cruce}?`, a: `La carrera se corre el ${diaLargo(d.iso)} a las ${hora(d.iso, 'Europe/Madrid')} en España (hora peninsular); ${lista(otras)}. Los horarios de libres y clasificación están en la previa.` }
+        : { q: `¿A qué hora es el ${cruce}?`, a: `Se juega el ${diaLargo(d.iso)} a las ${hora(d.iso, 'Europe/Madrid')} en España (hora peninsular); ${lista(otras)}.` })
     }
     const tv = d.tv.filter((r) => r.channels.length).slice(0, 7)
     if (tv.length) out.push({ q: `¿Dónde ver el ${cruce} por TV?`, a: tv.map((r) => `En ${r.country}, por ${lista(r.channels)}.`).join(' ') })
     if (f?.estadio) out.push({ q: `¿Dónde se juega el ${cruce}?`, a: `En ${f.estadio}${f.ciudad ? `, en ${f.ciudad}` : ''}.` })
+    else if (d.deporte === 'f1' && d.away) out.push({ q: `¿Dónde se corre el ${cruce}?`, a: `En el circuito ${d.away}.` })
     if (f && (f.forma.home.length || f.forma.away.length)) {
       const partes = [f.forma.home.length ? `${d.home} suma ${racha(f.forma.home)} en sus últimos ${f.forma.home.length} partidos` : null,
         f.forma.away.length ? `${d.away}, ${racha(f.forma.away)} en los últimos ${f.forma.away.length}` : null].filter(Boolean)
@@ -199,15 +211,16 @@ export function sportsEventJsonLd(d: DatosSeoPartido, canonical: string, descrip
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
     '@id': `${canonical}#partido`,
-    name: `${d.home} - ${d.away}`,
+    name: d.deporte === 'f1' ? d.home : `${d.home} - ${d.away}`,
     startDate: d.iso,
     ...(d.tipo === 'previa' ? { eventStatus: 'https://schema.org/EventScheduled' } : {}),
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-    sport: d.deporte === 'baloncesto' ? 'Baloncesto' : d.deporte === 'ufc' ? 'Artes marciales mixtas' : 'Fútbol',
+    sport: d.deporte === 'baloncesto' ? 'Baloncesto' : d.deporte === 'ufc' ? 'Artes marciales mixtas' : d.deporte === 'f1' ? 'Fórmula 1' : 'Fútbol',
     ...(descripcion ? { description: descripcion } : {}),
-    homeTeam: equipo(d.home),
-    awayTeam: equipo(d.away),
-    competitor: [equipo(d.home), equipo(d.away)],
+    // En F1 no hay dos rivales: el «local» es el GP y el «visitante», el circuito.
+    ...(d.deporte === 'f1'
+      ? { location: { '@type': 'Place', name: d.away, address: d.away } }
+      : { homeTeam: equipo(d.home), awayTeam: equipo(d.away), competitor: [equipo(d.home), equipo(d.away)] }),
     ...(f?.estadio ? { location: { '@type': 'Place', name: f.estadio, address: f.ciudad ?? f.estadio } } : {}),
     ...(d.competicion ? { superEvent: { '@type': 'SportsEvent', name: d.competicion } } : {}),
     url: canonical,

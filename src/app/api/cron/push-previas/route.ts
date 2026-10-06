@@ -39,7 +39,7 @@ async function handle(req: Request) {
   const hasta = new Date(now + 4 * 3600000).toISOString()
   const previas = await sanityClient.fetch<PreviaPublicada[]>(
     `*[_type == "article" && type == "previa" && defined(slug.current) && defined(matchKickoff.iso) && matchKickoff.iso >= $desde && matchKickoff.iso <= $hasta]{
-      "slug": slug.current, "home": matchKickoff.home, "away": matchKickoff.away, "iso": matchKickoff.iso, "competicion": matchKickoff.competition
+      "slug": slug.current, "home": matchKickoff.home, "away": matchKickoff.away, "iso": matchKickoff.iso, "competicion": matchKickoff.competition, matchRef
     }`,
     { desde, hasta },
   ).catch(() => [] as PreviaPublicada[])
@@ -51,7 +51,8 @@ async function handle(req: Request) {
   const enviadasHoy = estado.dia === hoy ? (estado.enviadas ?? []) : []
   const todas = new Set([...(estado.historico ?? []), ...(estado.enviadas ?? [])])
   const huecos = Math.max(0, MAX_AVISOS_DIA - enviadasHoy.length)
-  const elegidas = previasParaAvisar(previas.filter((p) => p.home && p.away), now, todas).slice(0, huecos)
+  // Los GP de F1 no son «X y Y, cara a cara» (el «visitante» es el circuito): fuera.
+  const elegidas = previasParaAvisar(previas.filter((p) => p.home && p.away && !/^racing_/.test((p as { matchRef?: string }).matchRef ?? '')), now, todas).slice(0, huecos)
 
   const avisos = elegidas.map((p) => ({ slug: p.slug, ...textoAviso(p), url: urlAviso(SITE, p.slug, 'previa') }))
   if (seco || avisos.length === 0) {

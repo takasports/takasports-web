@@ -34,7 +34,7 @@ describe('veladas de UFC', () => {
   it('dossier de previa y de crónica con tarjetas de los jueces', () => {
     const pre = construirDossierVelada(v, 'previa')
     expect(pre.texto).toMatch(/^VELADA: UFC 332: Silva vs\. Wang \(evento numerado de la UFC\)\./)
-    expect(pre.texto).toMatch(/1\. COMBATE ESTELAR — peso mosca femenino, CON TÍTULO EN JUEGO, a 5 asaltos: Natalia Silva \(21-5-1, Brasil, campeón\/a vigente\) contra Wang Cong/)
+    expect(pre.texto).toMatch(/1\. COMBATE ESTELAR — peso mosca femenino, CON TÍTULO EN JUEGO, a 5 asaltos: Natalia Silva \(21-5-1, Brasil, campeona vigente\) contra Wang Cong/)
     expect(pre.datos).toMatchObject({ matchRef: 'mma_ufc_600061182', sport: 'ufc', home: 'Natalia Silva', away: 'Wang Cong', competicion: 'UFC' })
     const conMetodo: Velada = { ...v, estelar: v.estelar.map((c, i) => ({ ...c, metodo: i === 0 ? 'decisión unánime' : 'KO/TKO' })) }
     const cr = construirDossierVelada(conMetodo, 'cronica').texto

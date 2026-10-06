@@ -123,7 +123,7 @@ export function veladaDesdeEvento(e: J): Velada | null {
     numerado: /^UFC \d+/i.test(nombre),
     iso: String(comps[comps.length - 1]?.date ?? e?.date ?? ''),
     estadio: venue?.fullName ?? null,
-    ciudad: [venue?.address?.city, venue?.address?.country].filter(Boolean).join(', ') || null,
+    ciudad: [venue?.address?.city, venue?.address?.country ? (PAISES_ES[minusc(venue.address.country)] ?? venue.address.country) : null].filter(Boolean).join(', ') || null,
     tv: [...new Set<string>(comps.flatMap((c: J) => (c?.broadcasts ?? []).flatMap((b: J) => b?.names ?? [])))],
     terminada: estelar.every((c) => c.terminado),
     estelar,
@@ -145,7 +145,7 @@ const fmt = (iso: string, tz: string, o: Intl.DateTimeFormatOptions) => new Intl
 const hora = (iso: string, tz: string) => fmt(iso, tz, { hour: '2-digit', minute: '2-digit', hour12: false })
 const fecha = (iso: string) => fmt(iso, 'Europe/Madrid', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-const ficha = (l: Luchador) => `${l.nombre} (${[l.record, l.pais, l.campeon ? 'campeón/a vigente' : null].filter(Boolean).join(', ')})`
+const ficha = (l: Luchador, femenino = false) => `${l.nombre} (${[l.record, l.pais, l.campeon ? (femenino ? 'campeona vigente' : 'campeón vigente') : null].filter(Boolean).join(', ')})`
 const ETIQUETAS = ['COMBATE ESTELAR', 'COESTELAR', 'CARTELERA ESTELAR', 'CARTELERA ESTELAR', 'CARTELERA ESTELAR']
 
 export function metodoEs(m: string | null | undefined): string | null {
@@ -181,15 +181,16 @@ export function construirDossierVelada(v: Velada, tipo: 'previa' | 'cronica'): {
   L.push(tipo === 'previa' ? 'CARTELERA ESTELAR (del combate estelar hacia abajo):' : 'RESULTADOS DE LA CARTELERA ESTELAR (del combate estelar hacia abajo):')
   v.estelar.forEach((c, i) => {
     const cab = `${i + 1}. ${ETIQUETAS[i]} — ${c.peso}${c.tituloEnJuego ? ', CON TÍTULO EN JUEGO' : ''}, a ${c.asaltos} asaltos`
-    if (tipo === 'previa' || !c.terminado) { L.push(`${cab}: ${ficha(c.a)} contra ${ficha(c.b)}.`); return }
+    const fem = /femenino/.test(c.peso)
+    if (tipo === 'previa' || !c.terminado) { L.push(`${cab}: ${ficha(c.a, fem)} contra ${ficha(c.b, fem)}.`); return }
     const [g, p] = c.a.ganador ? [c.a, c.b] : c.b.ganador ? [c.b, c.a] : [null, null]
     const metodo = c.metodo ? ` por ${c.metodo}` : ''
     const decision = /decisión/.test(c.metodo ?? '') && g && g.tarjetas.length && p && p.tarjetas.length === g.tarjetas.length
       ? ` (tarjetas: ${g.tarjetas.map((x, k) => `${x}-${p.tarjetas[k]}`).join(', ')})` : ''
     const cuando = c.asalto && !/decisión/.test(c.metodo ?? '') ? ` en el asalto ${c.asalto}${c.tiempo ? ` (${c.tiempo})` : ''}` : ''
     L.push(g && p
-      ? `${cab}: GANÓ ${ficha(g)} a ${ficha(p)}${metodo}${cuando}${decision}.`
-      : `${cab}: ${ficha(c.a)} contra ${ficha(c.b)}: sin ganador (${c.metodo ?? 'resultado no consta'}).`)
+      ? `${cab}: GANÓ ${ficha(g, fem)} a ${ficha(p, fem)}${metodo}${cuando}${decision}.`
+      : `${cab}: ${ficha(c.a, fem)} contra ${ficha(c.b, fem)}: sin ganador (${c.metodo ?? 'resultado no consta'}).`)
   })
   L.push('')
   L.push('Los récords son los que tenía cada luchador según ESPN en el momento de la consulta. Los nombres de pesos y países ya están en español.')
