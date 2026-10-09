@@ -99,7 +99,7 @@ import { createServerClient } from '@/lib/supabase-server'
 | api-sports.io | `API_SPORTS_KEY` | ~100 req/día free. Usar con cuidado. |
 | the-odds-api.com | `ODDS_API_KEY` | **500 req/mes AGOTADO** en free. NO usar en prod. Solo dev con `QUINIELA_DEV_ODDS`. |
 | Sanity CDN | `NEXT_PUBLIC_SANITY_*` | Sin límite práctico. Contenido editorial. |
-| Instagram Graph API | `INSTAGRAM_ACCESS_TOKEN` | Token de larga duración. `/api/instagram/refresh` lo renueva. |
+| Instagram Graph API | `app_secrets.ig_access_token` (respaldo `INSTAGRAM_ACCESS_TOKEN`) | Token largo (60 d) que guarda el callback OAuth al abrir `/api/instagram/auth` con sesión de admin; lo renueva solo el cron `/api/cron/instagram-sync`, que deja su estado en `app_secrets.ig_sync_status`. **A 10/10/2026 no hay token** (nunca se conectó): el cron va en modo `repair` y no entran reels nuevos. El WF-10 de n8n que raspaba Instagram está apagado. |
 | YouTube API | `YOUTUBE_API_KEY` | Solo scraping público, no producción. |
 
 ## Sistema editorial (Pipeline n8n + Sanity)
