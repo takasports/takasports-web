@@ -187,6 +187,11 @@ describe('resultado final', () => {
     expect(textoAvisoFinal(atleti, leerEstadoSummary(summary('STATUS_HALFTIME', '1', '0'))!)).toBeNull()
     expect(textoAvisoFinal(atleti, { final: true, statusName: 'STATUS_FINAL', homeScore: null, awayScore: 1 })).toBeNull()
   })
+  it('la etiqueta usa el id numérico de ESPN, el mismo que «Pitido final»', () => {
+    const [ambos] = cruzarPartidos(['Atlético Madrid', 'Barcelona'], [atletiBarsa])
+    const e = leerEstadoSummary(summary('STATUS_FULL_TIME', '2', '1'))!
+    expect(textoAvisoFinal(ambos, e)?.tag).toBe('equipo-final-1')
+  })
   it('si sigue a los dos, resultado neutro', () => {
     const [ambos] = cruzarPartidos(['Atlético Madrid', 'Barcelona'], [atletiBarsa])
     const e = leerEstadoSummary(summary('STATUS_FULL_TIME', '2', '1'))!

@@ -278,7 +278,11 @@ export function textoAvisoFinal(c: Cruce, e: EstadoPartido): AvisoTexto | null {
   if (!e.final || e.homeScore == null || e.awayScore == null || !p.away) return null
   const penaltis = /PEN/.test(e.statusName)
   const marcador = `${p.home} ${e.homeScore}-${e.awayScore} ${p.away}${penaltis ? ' (penaltis)' : ''}`
-  const base = { url: urlPartido(p), tag: `equipo-final-${p.id}` }
+  // La etiqueta lleva el id NUMÉRICO de ESPN (cola del matchRef), el mismo que usa
+  // «Pitido final» (push-cronicas): con el id del feed («espn-soccer-…-401…»)
+  // las dos notificaciones del mismo partido no se sustituían en el navegador.
+  const idEspn = p.matchRef?.match(/_(\d+)$/)?.[1] ?? p.id.match(/(\d+)$/)?.[1] ?? p.id
+  const base = { url: urlPartido(p), tag: `equipo-final-${idEspn}` }
   const cola = `Resultado final${p.comp ? ` · ${p.comp}` : ''}. Mira las estadísticas del partido.`
   if (c.sigueAmbos) return { ...base, title: `Final: ${marcador}`, body: cola }
 

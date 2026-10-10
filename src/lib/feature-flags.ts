@@ -25,5 +25,11 @@ function envActivo(nombre: string): boolean {
   const v = (process.env[nombre] ?? '').trim().toLowerCase()
   return v === 'true' || v === '1'
 }
-export const avisosEquipoEnabled = (): boolean => envActivo('AVISOS_EQUIPO_ENABLED')
+// ENCENDIDO el 10/10/2026 (visto bueno del editor a «hoy juega tu equipo» y
+// «resultado final»). Para apagarlo de urgencia sin tocar código basta con poner
+// AVISOS_EQUIPO_ENABLED=false (o 0) en Vercel y redesplegar.
+export const avisosEquipoEnabled = (): boolean => {
+  const v = (process.env.AVISOS_EQUIPO_ENABLED ?? '').trim().toLowerCase()
+  return !(v === 'false' || v === '0')
+}
 export const avisosNoticiasEnabled = (): boolean => envActivo('AVISOS_NOTICIAS_ENABLED')

@@ -140,6 +140,10 @@
     {
       "path": "/api/cron/tenis",
       "schedule": "45 * * * *"
+    },
+    {
+      "path": "/api/cron/avisos-equipo",
+      "schedule": "*/15 * * * *"
     }
   ],
   "functions": {
