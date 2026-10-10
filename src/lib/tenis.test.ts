@@ -82,7 +82,7 @@ describe('dossier', () => {
     expect(texto).toContain('Buenos Aires')
     expect(texto).toMatch(/Carlos Alcaraz: debuta en el torneo en esta ronda/)
     expect(texto).toMatch(/Juan Manuel Cerundolo: primera ronda: venció a Nicolas Mejia por 6-4, 6-4/)
-    expect(texto).toContain('NO CONSTAN: el cara a cara')
+    expect(texto).toMatch(/SIN DATOS \(no los tenemos, lo que NO significa que no existan/)
     expect(datos).toMatchObject({ sport: 'tenis', home: 'Carlos Alcaraz', competicion: 'Masters de Shanghái', horaFija: true })
   })
 

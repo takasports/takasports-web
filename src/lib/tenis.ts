@@ -267,7 +267,7 @@ function camino(t: Tenista, p: PartidoTenis, todos: PartidoTenis[]): string {
     return yo.ganador
       ? `${x.ronda}: venció a ${rival.nombre} por ${marcador(yo, rival)}${x.retirada ? ' (retirada del rival)' : ''}`
       : `${x.ronda}: perdió con ${rival.nombre}`
-  }).join('; ') + '.'
+  }).join('; ') + '. De esos partidos solo consta el marcador.'
 }
 
 /** Siguiente partido del ganador, si el cuadro ya lo tiene. */
@@ -318,7 +318,9 @@ export function construirDossierTenis(p: PartidoTenis, tipo: 'previa' | 'cronica
     L.push(`- ${camino(p.b, p, todos)}`)
   }
   L.push('')
-  L.push('NO CONSTAN: el cara a cara entre ambos, las estadísticas del partido (saques, roturas, errores) ni la emisión en España y Latinoamérica.')
+  // «No consta el cara a cara» lo leyó la IA como «nunca se han enfrentado» (previa de
+  // Alcaraz-Cerúndolo, 10/10/2026): se dice que NO TENEMOS el dato, no que no exista.
+  L.push('SIN DATOS (no los tenemos, lo que NO significa que no existan; no hables de ellos): el historial de enfrentamientos entre ambos, cómo fueron sus partidos anteriores más allá del marcador, las estadísticas del partido (saques, roturas, errores) y la emisión en España y Latinoamérica.')
   L.push('Ranking y puntos: clasificación de esta semana según ESPN. La cabeza de serie es la de este torneo. Los nombres de países y rondas ya están en español.')
   const datos = {
     matchRef: refTenis(p), sport: 'tenis', home: p.a.nombre, away: p.b.nombre, competicion: t.corto,
